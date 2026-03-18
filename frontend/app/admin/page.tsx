@@ -12,6 +12,7 @@ import { AdminLocalUsersTab } from "./components/AdminLocalUsersTab";
 import { AdminOverviewTab } from "./components/AdminOverviewTab";
 import { AdminRbacTab } from "./components/AdminRbacTab";
 import { AdminShell, type AdminSection } from "./components/AdminShell";
+import { useAdminOverview } from "./hooks/useAdminOverview";
 import { adminTranslations, type AdminTranslationKey } from "../../i18n/admin";
 import type {
   AdminTab,
@@ -21,8 +22,6 @@ import type {
   BackupJob,
   BackupProfile,
   CatalogLanguage,
-  DashboardSnapshot,
-  ExampleReferenceItem,
   FeatureFlag,
   InlineFeedback,
   LdapConfigForm,
@@ -66,12 +65,6 @@ export default function AdminPage() {
   const [selectedCatalogCode, setSelectedCatalogCode] = useState("");
   const [catalogQuery, setCatalogQuery] = useState("");
   const [status, setStatus] = useState<string | null>(null);
-
-  const [dashboardLoading, setDashboardLoading] = useState(false);
-  const [overviewFeedback, setOverviewFeedback] = useState<InlineFeedback | null>(null);
-  const [dashboardSnapshot, setDashboardSnapshot] = useState<DashboardSnapshot | null>(null);
-  const [exampleReferenceItems, setExampleReferenceItems] = useState<ExampleReferenceItem[]>([]);
-  const [dashboardStamp, setDashboardStamp] = useState(() => new Date().toLocaleString());
 
   const [localUsers, setLocalUsers] = useState<LocalUser[]>([]);
   const [localFeedback, setLocalFeedback] = useState<InlineFeedback | null>(null);
@@ -178,10 +171,6 @@ export default function AdminPage() {
   }, [l]);
 
   const enabledLanguages = supportedLanguages.filter((item) => item.enabled).length;
-  const enabledLanguageCodes = supportedLanguages
-    .filter((item) => item.enabled)
-    .map((item) => item.code)
-    .join(", ");
   const systemLanguages = supportedLanguages.filter((item) => item.system).length;
   const selectedLocalUser = localUsers.find((item) => item.user_id === selectedLocalUserId) || null;
   const localFilterBadges = [
@@ -336,47 +325,22 @@ export default function AdminPage() {
     }
   }, [buildAuthHeaders, l.errorPrefix]);
 
-  const loadDashboard = useCallback(async () => {
-    setOverviewFeedback(null);
-    setDashboardLoading(true);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const res = await fetch(`${baseUrl}/admin/dashboard`, {
-        headers: buildAuthHeaders(),
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setOverviewFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      const json = (await res.json()) as DashboardSnapshot;
-      setDashboardSnapshot(json);
-      setDashboardStamp(new Date(json.generated_at).toLocaleString());
-
-      const exampleRes = await fetch(`${baseUrl}/admin/example-slice/reference-items`, {
-        headers: buildAuthHeaders(),
-        credentials: "include",
-        cache: "no-store",
-      });
-      if (exampleRes.ok) {
-        const exampleJson = (await exampleRes.json()) as { items?: ExampleReferenceItem[] };
-        setExampleReferenceItems(exampleJson.items || []);
-      }
-
-      setOverviewFeedback({ tone: "success", message: tx("overviewRefreshed") });
-    } catch (error) {
-      setOverviewFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setDashboardLoading(false);
-    }
-  }, [buildAuthHeaders, l.errorPrefix, tx]);
+  const {
+    dashboardLoading,
+    overviewFeedback,
+    dashboardSnapshot,
+    exampleReferenceItems,
+    dashboardStamp,
+    enabledLanguageCodes,
+    loadDashboard,
+    touchDashboardStamp,
+  } = useAdminOverview({
+    activeTab,
+    buildAuthHeaders,
+    errorPrefix: l.errorPrefix,
+    supportedLanguages,
+    tx,
+  });
 
   const loadLocalUsers = useCallback(async (overrides?: { search?: string; role?: string; language?: string }) => {
     setLocalListBusy(true);
@@ -1000,13 +964,6 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (activeTab !== "overview") {
-      return;
-    }
-    void loadDashboard();
-  }, [activeTab, loadDashboard]);
-
-  useEffect(() => {
     if (activeTab !== "local-users") {
       return;
     }
@@ -1240,7 +1197,7 @@ export default function AdminPage() {
       await loadLocalUsers();
       await loadDashboard();
       setLocalFeedback({ tone: "success", message: l.localUserCreated });
-      setDashboardStamp(new Date().toLocaleString());
+      touchDashboardStamp();
     } catch (error) {
       setLocalFeedback({ tone: "error", message: String(error) });
     } finally {
