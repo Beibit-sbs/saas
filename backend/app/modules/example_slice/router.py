@@ -8,6 +8,10 @@ from app.modules.rbac.security import get_actor, permission_dependency
 
 router = APIRouter(prefix="/api/admin/example-slice", tags=["example-slice"])
 
+# Example-only reference route.
+# This module demonstrates namespacing, RBAC guarding, and audit wiring only.
+# It is intentionally removable in derived projects and is not a full domain CRUD reference.
+
 
 @router.get("/reference-items")
 def get_reference_items(

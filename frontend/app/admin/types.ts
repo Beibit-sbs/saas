@@ -1,5 +1,7 @@
-export type AdminTab = "overview" | "languages" | "local-users" | "rbac" | "integrations" | "feature-flags" | "backups" | "audit";
-export type UiLang = "ru" | "en" | "kk" | "zh";
+import type { AdminTranslationDictionary, AdminTranslationKey } from "../../i18n/admin";
+
+export type AdminTab = "overview" | "languages" | "local-users" | "rbac" | "integrations" | "backups" | "audit" | "feature-flags" | "example-notes";
+export type UiLang = "ru" | "en" | "kk";
 export type CatalogLanguage = { code: string; name: string; native_name: string };
 
 export type LdapStatus = {
@@ -176,6 +178,6 @@ export type SupportedLanguage = {
   system: boolean;
 };
 
-export type AdminCopy = Record<string, string>;
-export type TxFn = (key: string, fallback: string) => string;
+export type AdminCopy = AdminTranslationDictionary;
+export type TxFn = (key: AdminTranslationKey, fallback?: string) => string;
 export type AuditExportBusy = "" | "csv" | "json";

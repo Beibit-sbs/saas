@@ -1,6 +1,7 @@
 # University Platform Core Template
 
-Use this template to ensure every university project includes mandatory platform capabilities.
+Use this template when the derived project targets higher education.
+For other verticals, treat it as an example profile and adapt capability requirements to domain scope.
 
 ## 1. Admin Dashboard
 - User and role management

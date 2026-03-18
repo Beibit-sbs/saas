@@ -7,10 +7,10 @@ BACKEND_DIR = ROOT_DIR / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from fastapi.routing import APIRoute
-from fastapi.testclient import TestClient
+from fastapi.routing import APIRoute  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
-from app.main import app
+from app.main import app  # noqa: E402
 
 REQUIRED_DOCS = [
     ROOT_DIR / "README.md",
@@ -31,7 +31,7 @@ REQUIRED_MODULE_PATHS = [
     ROOT_DIR / "backend/app/modules/integrations",
     ROOT_DIR / "backend/app/modules/ai_gateway",
     ROOT_DIR / "backend/app/modules/feature_flags",
-    ROOT_DIR / "backend/app/modules/example_slice",
+    ROOT_DIR / "backend/app/modules/example_notes",
     ROOT_DIR / "backend/app/modules/backup",
     ROOT_DIR / "backend/app/modules/i18n",
     ROOT_DIR / "backend/app/modules/observability",
@@ -47,8 +47,10 @@ REQUIRED_ROUTE_PATHS = {
     "/api/admin/rbac/roles",
     "/api/admin/integrations/ldap",
     "/api/admin/ai/providers",
+    "/api/admin/ai/models",
+    "/api/ai/chat",
     "/api/admin/feature-flags",
-    "/api/admin/example-slice/reference-items",
+    "/api/admin/example-notes",
     "/api/admin/backups/settings",
     "/api/admin/audit/events",
     "/api/i18n/languages",

@@ -1,0 +1,318 @@
+import os
+from base64 import urlsafe_b64encode
+from dataclasses import dataclass
+from functools import lru_cache
+from hashlib import sha256
+
+from cryptography.fernet import Fernet, InvalidToken
+
+try:
+    import psycopg
+except ImportError:  # pragma: no cover
+    psycopg = None
+
+
+@dataclass
+class SettingEntry:
+    key: str
+    value: str
+    is_secret: bool
+
+
+_settings: dict[str, SettingEntry] = {}
+_SECRET_PREFIX = "enc:v1:"
+
+
+def _db_url() -> str | None:
+    return os.getenv("DATABASE_URL")
+
+
+def _raw_encryption_secret() -> str:
+    explicit = os.getenv("INTEGRATIONS_ENCRYPTION_KEY", "").strip()
+    if explicit:
+        return explicit
+    # Reuse JWT secret in local/dev if dedicated encryption secret is not set.
+    return os.getenv("JWT_SECRET", "change_me_jwt_secret")
+
+
+def _derive_fernet_key(secret: str) -> bytes:
+    digest = sha256(secret.encode("utf-8")).digest()
+    return urlsafe_b64encode(digest)
+
+
+@lru_cache(maxsize=1)
+def _fernet() -> Fernet:
+    return Fernet(_derive_fernet_key(_raw_encryption_secret()))
+
+
+def _encrypt_secret(value: str) -> str:
+    if not value:
+        return value
+    token = _fernet().encrypt(value.encode("utf-8")).decode("utf-8")
+    return f"{_SECRET_PREFIX}{token}"
+
+
+def _decrypt_secret(value: str) -> str:
+    if not value:
+        return value
+    if not value.startswith(_SECRET_PREFIX):
+        # Backward compatibility for values saved before encryption-at-rest.
+        return value
+
+    token = value[len(_SECRET_PREFIX) :]
+    try:
+        return _fernet().decrypt(token.encode("utf-8")).decode("utf-8")
+    except InvalidToken:
+        return ""
+
+
+def _use_database() -> bool:
+    return bool(_db_url()) and psycopg is not None
+
+
+def _should_fallback_to_memory(exc: Exception) -> bool:
+    """Fallback only on DB availability/connectivity issues, not logic bugs."""
+    if isinstance(exc, RuntimeError) and str(exc) == "database unavailable":
+        return True
+    if isinstance(exc, (ConnectionError, TimeoutError, OSError)):
+        return True
+    if psycopg is not None and isinstance(exc, (psycopg.OperationalError, psycopg.InterfaceError)):
+        return True
+    return False
+
+
+def _ensure_table(conn) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS app_integration_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                is_secret BOOLEAN NOT NULL DEFAULT FALSE,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+    conn.commit()
+
+
+def _save_db(key: str, value: str, is_secret: bool) -> None:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+
+    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+        _ensure_table(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO app_integration_settings(key, value, is_secret)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (key)
+                DO UPDATE SET value = EXCLUDED.value, is_secret = EXCLUDED.is_secret, updated_at = NOW()
+                """,
+                (key, value, is_secret),
+            )
+        conn.commit()
+
+
+def _get_db(key: str) -> SettingEntry | None:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+
+    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+        _ensure_table(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT key, value, is_secret FROM app_integration_settings WHERE key = %s",
+                (key,),
+            )
+            row = cur.fetchone()
+            if row is None:
+                return None
+            return SettingEntry(key=row[0], value=row[1], is_secret=row[2])
+
+
+def save_setting(key: str, value: str, is_secret: bool = False) -> None:
+    normalized_key = key.strip()
+    if not normalized_key:
+        raise ValueError("setting key is required")
+
+    value_to_store = _encrypt_secret(value) if is_secret else value
+
+    if _use_database():
+        try:
+            _save_db(normalized_key, value_to_store, is_secret)
+            return
+        except Exception as exc:
+            # Keep admin/runtime settings usable when DATABASE_URL points to an
+            # unreachable host (for example, local tests outside docker network).
+            if not _should_fallback_to_memory(exc):
+                raise
+
+    _settings[normalized_key] = SettingEntry(
+        key=normalized_key,
+        value=value_to_store,
+        is_secret=is_secret,
+    )
+
+
+def get_setting(key: str) -> SettingEntry | None:
+    normalized_key = key.strip()
+    if not normalized_key:
+        return None
+
+    if _use_database():
+        try:
+            entry = _get_db(normalized_key)
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+            entry = _settings.get(normalized_key)
+    else:
+        entry = _settings.get(normalized_key)
+
+    if entry is None:
+        return None
+
+    if entry.is_secret and entry.value and not entry.value.startswith(_SECRET_PREFIX):
+        encrypted = _encrypt_secret(entry.value)
+        if _use_database():
+            try:
+                _save_db(entry.key, encrypted, True)
+            except Exception as exc:
+                if not _should_fallback_to_memory(exc):
+                    raise
+                _settings[entry.key] = SettingEntry(key=entry.key, value=encrypted, is_secret=True)
+        else:
+            _settings[entry.key] = SettingEntry(key=entry.key, value=encrypted, is_secret=True)
+        return SettingEntry(key=entry.key, value=entry.value, is_secret=True)
+
+    value = _decrypt_secret(entry.value) if entry.is_secret else entry.value
+    return SettingEntry(key=entry.key, value=value, is_secret=entry.is_secret)
+
+
+def get_runtime_value(key: str, env_name: str, default: str = "") -> str:
+    entry = get_setting(key)
+    if entry is not None and entry.value is not None:
+        return entry.value
+    return os.getenv(env_name, default)
+
+
+def _to_bool(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def get_ldap_config_for_admin() -> dict[str, object]:
+    config = get_ldap_runtime_config()
+    return {
+        "enabled": _to_bool(config["enabled"]),
+        "server_uri": config["server_uri"],
+        "bind_dn": config["bind_dn"],
+        "has_bind_password": bool(config["bind_password"]),
+        "base_dn": config["base_dn"],
+        "user_filter": config["user_filter"],
+        "display_name_attribute": config["display_name_attribute"],
+        "login_attribute": config["login_attribute"],
+        "group_attribute": config["group_attribute"],
+        "group_role_map_json": config["group_role_map_json"],
+        "default_role": config["default_role"],
+        "timeout_seconds": config["timeout_seconds"],
+    }
+
+
+def get_ldap_runtime_config() -> dict[str, str]:
+    return {
+        "enabled": get_runtime_value("ldap.enabled", "AUTH_LDAP_ENABLED", "false"),
+        "server_uri": get_runtime_value("ldap.server_uri", "LDAP_SERVER_URI", ""),
+        "bind_dn": get_runtime_value("ldap.bind_dn", "LDAP_BIND_DN", ""),
+        "bind_password": get_runtime_value("ldap.bind_password", "LDAP_BIND_PASSWORD", ""),
+        "base_dn": get_runtime_value("ldap.base_dn", "LDAP_BASE_DN", ""),
+        "user_filter": get_runtime_value("ldap.user_filter", "LDAP_USER_FILTER", "(sAMAccountName={username})"),
+        "display_name_attribute": get_runtime_value("ldap.display_name_attribute", "LDAP_DISPLAY_NAME_ATTRIBUTE", "displayName"),
+        "login_attribute": get_runtime_value("ldap.login_attribute", "LDAP_LOGIN_ATTRIBUTE", "sAMAccountName"),
+        "group_attribute": get_runtime_value("ldap.group_attribute", "LDAP_GROUP_ATTRIBUTE", "memberOf"),
+        "group_role_map_json": get_runtime_value("ldap.group_role_map_json", "LDAP_GROUP_ROLE_MAP_JSON", "{}"),
+        "default_role": get_runtime_value("ldap.default_role", "LDAP_DEFAULT_ROLE", "student"),
+        "timeout_seconds": get_runtime_value("ldap.timeout_seconds", "LDAP_TIMEOUT_SECONDS", "5"),
+    }
+
+
+def save_ldap_config(payload: dict[str, object]) -> dict[str, object]:
+    mapping = {
+        "enabled": ("ldap.enabled", False),
+        "server_uri": ("ldap.server_uri", False),
+        "bind_dn": ("ldap.bind_dn", False),
+        "bind_password": ("ldap.bind_password", True),
+        "base_dn": ("ldap.base_dn", False),
+        "user_filter": ("ldap.user_filter", False),
+        "display_name_attribute": ("ldap.display_name_attribute", False),
+        "login_attribute": ("ldap.login_attribute", False),
+        "group_attribute": ("ldap.group_attribute", False),
+        "group_role_map_json": ("ldap.group_role_map_json", False),
+        "default_role": ("ldap.default_role", False),
+        "timeout_seconds": ("ldap.timeout_seconds", False),
+    }
+
+    for field, (key, secret) in mapping.items():
+        if field in payload and payload[field] is not None:
+            save_setting(key, str(payload[field]).strip(), is_secret=secret)
+
+    return get_ldap_config_for_admin()
+
+
+def get_ai_provider_config_for_admin(provider: str) -> dict[str, object]:
+    runtime = get_ai_provider_runtime_config(provider)
+    return {
+        "provider": provider,
+        "configured": bool(runtime["api_key"] or (provider == "custom" and runtime["validation_url"])),
+        "has_api_key": bool(runtime["api_key"]),
+        "validation_url": runtime["validation_url"],
+    }
+
+
+def get_ai_provider_runtime_config(provider: str) -> dict[str, str]:
+    provider = provider.strip().lower()
+    config_map = {
+        "openai": {
+            "api_key": ("ai.openai.api_key", "OPENAI_API_KEY", ""),
+            "validation_url": ("ai.openai.validation_url", "", "https://api.openai.com/v1/models"),
+        },
+        "gemini": {
+            "api_key": ("ai.gemini.api_key", "GEMINI_API_KEY", ""),
+            "validation_url": ("ai.gemini.validation_url", "", "https://generativelanguage.googleapis.com/v1beta/models"),
+        },
+        "anthropic": {
+            "api_key": ("ai.anthropic.api_key", "ANTHROPIC_API_KEY", ""),
+            "validation_url": ("ai.anthropic.validation_url", "", "https://api.anthropic.com/v1/models"),
+        },
+        "custom": {
+            "api_key": ("ai.custom.api_key", "AI_CUSTOM_PROVIDER_API_KEY", ""),
+            "validation_url": ("ai.custom.validation_url", "AI_CUSTOM_PROVIDER_URL", ""),
+        },
+    }
+    if provider not in config_map:
+        raise ValueError("unknown provider")
+
+    provider_config = config_map[provider]
+    return {
+        "api_key": get_runtime_value(*provider_config["api_key"]),
+        "validation_url": get_runtime_value(*provider_config["validation_url"]),
+    }
+
+
+def save_ai_provider_config(provider: str, api_key: str | None, validation_url: str | None) -> dict[str, object]:
+    provider = provider.strip().lower()
+    if provider not in {"openai", "gemini", "anthropic", "custom"}:
+        raise ValueError("unknown provider")
+
+    if api_key is not None:
+        save_setting(f"ai.{provider}.api_key", api_key.strip(), is_secret=True)
+    if validation_url is not None:
+        save_setting(f"ai.{provider}.validation_url", validation_url.strip(), is_secret=False)
+
+    return get_ai_provider_config_for_admin(provider)
+
+
+def list_ai_provider_config_for_admin() -> list[dict[str, object]]:
+    providers = ["openai", "gemini", "anthropic", "custom"]
+    return [get_ai_provider_config_for_admin(provider) for provider in providers]

@@ -71,9 +71,9 @@ export function AdminBackupsTab({
   return (
     <div className="grid2">
       <article className="panelCard">
-        <h2>{tx("backupPlan", "Backup Plan")}</h2>
-        <p className="subText">{tx("backupHelp", "Use storage profiles. Profile paths must stay inside allowed root directories.")}</p>
-        <p className="subText"><b>{tx("allowedRoots", "Allowed root paths")}:</b> {backupAllowedRoots.join(", ") || "-"}</p>
+        <h2>{tx("backupPlan")}</h2>
+        <p className="subText">{tx("backupHelp")}</p>
+        <p className="subText"><b>{tx("allowedRoots")}:</b> {backupAllowedRoots.join(", ") || "-"}</p>
         {backupFeedback ? (
           <p className={`inlineFeedback inlineFeedback${backupFeedback.tone === "error" ? "Error" : backupFeedback.tone === "success" ? "Success" : "Info"}`}>
             {backupFeedback.message}
@@ -82,7 +82,7 @@ export function AdminBackupsTab({
 
         <div className="rowButtons" style={{ marginBottom: 8 }}>
           <button type="button" className="ghost" onClick={() => void onLoadBackupStatus(true)} disabled={backupActionsBusy}>
-            {backupListLoading ? tx("backupLoading", "Loading...") : tx("backupReload", "Reload backup data")}
+            {backupListLoading ? tx("backupLoading") : tx("backupReload")}
           </button>
         </div>
 
@@ -92,45 +92,45 @@ export function AdminBackupsTab({
               <option key={profile.id} value={profile.id}>{profile.label} ({profile.id})</option>
             ))}
           </select>
-          <button type="button" onClick={onAddBackupProfile} className="ghost">{tx("addProfile", "Add profile")}</button>
+          <button type="button" onClick={onAddBackupProfile} className="ghost">{tx("addProfile")}</button>
         </div>
 
         <div className="providerStack">
           {backupProfilesForm.map((profile, index) => (
             <div key={`${profile.id}-${index}`} className="providerCard">
               <div className="formGrid compactFormGrid">
-                <input value={profile.id} onChange={(e) => onUpdateBackupProfile(index, "id", e.target.value)} placeholder={tx("profileId", "Profile ID")} />
-                <input value={profile.label} onChange={(e) => onUpdateBackupProfile(index, "label", e.target.value)} placeholder={tx("profileLabel", "Profile label")} />
-                <input value={profile.path} onChange={(e) => onUpdateBackupProfile(index, "path", e.target.value)} placeholder={tx("profilePath", "Storage path")} style={{ gridColumn: "1 / -1" }} />
+                <input value={profile.id} onChange={(e) => onUpdateBackupProfile(index, "id", e.target.value)} placeholder={tx("profileId")} />
+                <input value={profile.label} onChange={(e) => onUpdateBackupProfile(index, "label", e.target.value)} placeholder={tx("profileLabel")} />
+                <input value={profile.path} onChange={(e) => onUpdateBackupProfile(index, "path", e.target.value)} placeholder={tx("profilePath")} style={{ gridColumn: "1 / -1" }} />
               </div>
               <div className="providerActions">
-                <span className="badge">{profile.id === backupActiveProfile ? tx("activeBackupProfile", "Active profile") : tx("planned", "Planned")}</span>
-                <button type="button" onClick={() => onRemoveBackupProfile(index)} className="ghost danger">{tx("removeProfile", "Remove profile")}</button>
+                <span className="badge">{profile.id === backupActiveProfile ? tx("activeBackupProfile") : tx("planned")}</span>
+                <button type="button" onClick={() => onRemoveBackupProfile(index)} className="ghost danger">{tx("removeProfile")}</button>
               </div>
             </div>
           ))}
         </div>
 
         <div className="rowButtons">
-          <button type="button" onClick={() => void onSaveBackupProfiles()} className="primary" disabled={backupActionsBusy}>{tx("saveBackupSettings", "Save profiles")}</button>
-          <button type="button" onClick={() => void onRunBackupNow()} className="ghost" disabled={backupActionsBusy}>{tx("runBackupNow", "Run backup now")}</button>
+          <button type="button" onClick={() => void onSaveBackupProfiles()} className="primary" disabled={backupActionsBusy}>{tx("saveBackupSettings")}</button>
+          <button type="button" onClick={() => void onRunBackupNow()} className="ghost" disabled={backupActionsBusy}>{tx("runBackupNow")}</button>
         </div>
 
         <hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "14px 0" }} />
-        <h3>{tx("retentionTitle", "Retention policy")}</h3>
-        <p className="subText">{tx("retentionHelp", "Keep recent backups and delete old dump files by policy.")}</p>
+        <h3>{tx("retentionTitle")}</h3>
+        <p className="subText">{tx("retentionHelp")}</p>
         <div className="formGrid compactFormGrid">
-          <input type="number" min={0} value={retentionDays} onChange={(e) => onRetentionDaysChange(e.target.value)} placeholder={tx("retentionDays", "Retention days")} />
-          <input type="number" min={0} value={retentionMinFiles} onChange={(e) => onRetentionMinFilesChange(e.target.value)} placeholder={tx("retentionMinFiles", "Minimum files to keep")} />
+          <input type="number" min={0} value={retentionDays} onChange={(e) => onRetentionDaysChange(e.target.value)} placeholder={tx("retentionDays")} />
+          <input type="number" min={0} value={retentionMinFiles} onChange={(e) => onRetentionMinFilesChange(e.target.value)} placeholder={tx("retentionMinFiles")} />
         </div>
         <div className="rowButtons">
-          <button type="button" className="ghost" onClick={() => void onApplyRetention(true)} disabled={backupActionsBusy}>{tx("retentionDryRun", "Retention dry-run")}</button>
-          <button type="button" className="ghost danger" onClick={() => void onApplyRetention(false)} disabled={backupActionsBusy}>{tx("retentionApply", "Apply retention")}</button>
+          <button type="button" className="ghost" onClick={() => void onApplyRetention(true)} disabled={backupActionsBusy}>{tx("retentionDryRun")}</button>
+          <button type="button" className="ghost danger" onClick={() => void onApplyRetention(false)} disabled={backupActionsBusy}>{tx("retentionApply")}</button>
         </div>
 
         <hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "14px 0" }} />
-        <h3>{tx("restoreTitle", "Restore")}</h3>
-        <p className="subText">{tx("restoreHelp", "Choose backup file and run dry-run before real restore.")}</p>
+        <h3>{tx("restoreTitle")}</h3>
+        <p className="subText">{tx("restoreHelp")}</p>
         <div className="formGrid compactFormGrid">
           <select value={restoreProfileId} onChange={(e) => onRestoreProfileIdChange(e.target.value)}>
             {backupProfilesForm.map((profile) => (
@@ -139,7 +139,7 @@ export function AdminBackupsTab({
           </select>
           <select value={restoreFileName} onChange={(e) => onRestoreFileNameChange(e.target.value)}>
             {restoreCandidates.length === 0 ? (
-              <option value="">{tx("noRestoreCandidates", "No .dump files found")}</option>
+              <option value="">{tx("noRestoreCandidates")}</option>
             ) : (
               restoreCandidates.map((candidate) => (
                 <option key={candidate.file_name} value={candidate.file_name}>{candidate.file_name}</option>
@@ -148,22 +148,22 @@ export function AdminBackupsTab({
           </select>
         </div>
         <div className="rowButtons">
-          <button type="button" className="ghost" onClick={() => void onLoadRestoreCandidates()} disabled={backupActionsBusy}>{tx("refreshRestoreFiles", "Refresh files")}</button>
-          <button type="button" className="primary" onClick={() => void onRunRestore(true)} disabled={backupActionsBusy}>{tx("restoreDryRun", "Restore dry-run")}</button>
-          <button type="button" className="ghost danger" onClick={() => void onRunRestore(false)} disabled={backupActionsBusy}>{tx("restoreNow", "Restore now")}</button>
+          <button type="button" className="ghost" onClick={() => void onLoadRestoreCandidates()} disabled={backupActionsBusy}>{tx("refreshRestoreFiles")}</button>
+          <button type="button" className="primary" onClick={() => void onRunRestore(true)} disabled={backupActionsBusy}>{tx("restoreDryRun")}</button>
+          <button type="button" className="ghost danger" onClick={() => void onRunRestore(false)} disabled={backupActionsBusy}>{tx("restoreNow")}</button>
         </div>
-        <h3 style={{ marginTop: 14 }}>{tx("restoreCandidatesList", "Restore files")}</h3>
+        <h3 style={{ marginTop: 14 }}>{tx("restoreCandidatesList")}</h3>
         {restoreCandidates.length === 0 ? (
-          <p className="subText">{tx("noRestoreCandidates", "No .dump files found")}</p>
+          <p className="subText">{tx("noRestoreCandidates")}</p>
         ) : (
           <div className="tableWrap">
             <table>
               <thead>
                 <tr>
-                  <th>{tx("backupFile", "File")}</th>
-                  <th>{tx("backupSize", "Size")}</th>
-                  <th>{tx("restoreModifiedAt", "Modified")}</th>
-                  <th>{tx("actions", "Actions")}</th>
+                  <th>{tx("backupFile")}</th>
+                  <th>{tx("backupSize")}</th>
+                  <th>{tx("restoreModifiedAt")}</th>
+                  <th>{tx("actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -173,7 +173,7 @@ export function AdminBackupsTab({
                     <td>{formatBytes(candidate.size_bytes)}</td>
                     <td>{formatAuditTimestamp(candidate.modified_at)}</td>
                     <td>
-                      <button type="button" className="ghost" onClick={() => onRestoreFileNameChange(candidate.file_name)} disabled={backupActionsBusy}>{tx("backupSelectForRestore", "Select")}</button>
+                      <button type="button" className="ghost" onClick={() => onRestoreFileNameChange(candidate.file_name)} disabled={backupActionsBusy}>{tx("backupSelectForRestore")}</button>
                     </td>
                   </tr>
                 ))}
@@ -184,26 +184,26 @@ export function AdminBackupsTab({
       </article>
 
       <article className="panelCard">
-        <h2>{tx("backupHistory", "Backup history")}</h2>
+        <h2>{tx("backupHistory")}</h2>
         <div className="rowMeta">
-          <span className="subText">{tx("backupHistorySummaryAvailable", "Backups available: {count}").replace("{count}", String(backupSummaryCount))}</span>
-          <span className="subText">{tx("backupHistorySummaryLatest", "Latest backup: {value}").replace("{value}", formatAuditTimestamp(backupSummaryLatest))}</span>
-          <span className="subText">{tx("backupHistorySummaryStatus", "Latest status: {value}").replace("{value}", backupSummaryStatus)}</span>
+          <span className="subText">{tx("backupHistorySummaryAvailable").replace("{count}", String(backupSummaryCount))}</span>
+          <span className="subText">{tx("backupHistorySummaryLatest").replace("{value}", formatAuditTimestamp(backupSummaryLatest))}</span>
+          <span className="subText">{tx("backupHistorySummaryStatus").replace("{value}", backupSummaryStatus)}</span>
         </div>
         {backupJobsSorted.length === 0 ? (
-          <p className="subText">{tx("noBackupJobs", "No backup jobs yet.")}</p>
+          <p className="subText">{tx("noBackupJobs")}</p>
         ) : (
           <div className="tableWrap">
             <table>
               <thead>
                 <tr>
-                  <th>{tx("backupFile", "File")}</th>
-                  <th>{tx("backupProfile", "Profile")}</th>
-                  <th>{tx("backupSize", "Size")}</th>
-                  <th>{tx("backupCreatedAt", "Created")}</th>
-                  <th>{tx("status", "Status")}</th>
-                  <th>{tx("backupJobType", "Type")}</th>
-                  <th>{tx("restoreTitle", "Restore")}</th>
+                  <th>{tx("backupFile")}</th>
+                  <th>{tx("backupProfile")}</th>
+                  <th>{tx("backupSize")}</th>
+                  <th>{tx("backupCreatedAt")}</th>
+                  <th>{tx("status")}</th>
+                  <th>{tx("backupJobType")}</th>
+                  <th>{tx("restoreTitle")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -214,16 +214,16 @@ export function AdminBackupsTab({
                     <td>{formatBytes(job.size_bytes)}</td>
                     <td>{formatAuditTimestamp(job.started_at || job.finished_at)}</td>
                     <td>
-                      <span className={`badge ${backupStatusBadgeClass(job.status || tx("backupStatusUnknown", "unknown"))}`}>
-                        {job.status || tx("backupStatusUnknown", "unknown")}
+                      <span className={`badge ${backupStatusBadgeClass(job.status || tx("backupStatusUnknown"))}`}>
+                        {job.status || tx("backupStatusUnknown")}
                       </span>
                     </td>
                     <td>{job.job_type || "backup"}</td>
                     <td>
                       {restoreCandidateNames.has(fileNameFromPath(job.file_path)) ? (
-                        <span className="badge badgeOk">{tx("backupRestoreAvailable", "Restore available")}</span>
+                        <span className="badge badgeOk">{tx("backupRestoreAvailable")}</span>
                       ) : (
-                        <span className="badge badgeInfo">{tx("backupRestoreNotAvailable", "Not in restore list")}</span>
+                        <span className="badge badgeInfo">{tx("backupRestoreNotAvailable")}</span>
                       )}
                     </td>
                   </tr>

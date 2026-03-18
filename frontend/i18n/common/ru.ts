@@ -1,0 +1,18 @@
+export const ru = {
+  "lang.kazakh": "Казахский",
+  "lang.russian": "Русский",
+  "lang.english": "Английский",
+  "ui.language": "Язык",
+  "ui.apply": "Применить",
+  "home.title": "AI Engineering Center",
+  "home.subtitle": "Стартовый шаблон для browser-based систем.",
+  "admin.title": "Админ-панель университета (стартовая)",
+  "admin.subtitle": "Здесь управляются роли, LDAP/AD, AI-провайдеры и аудит.",
+  "help.title": "AI-справочник проекта",
+  "help.page": "Страница",
+  "help.field": "Поле (опционально)",
+  "help.question": "Вопрос",
+  "help.ask": "Спросить",
+  "help.thinking": "Думаю...",
+  "help.error.empty": "Напиши вопрос перед отправкой.",
+} as const;

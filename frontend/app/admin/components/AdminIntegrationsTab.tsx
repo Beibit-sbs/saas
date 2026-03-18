@@ -68,11 +68,11 @@ export function AdminIntegrationsTab({
           <span className="badge">LDAP/AD</span>
           <span className="badge">{l.enabledFlag}: {ldapStatus?.enabled ? l.yes : l.no}</span>
           <span className="badge">{ldapStatus?.configured ? l.configured : l.notConfigured}</span>
-          {integrationsLoading ? <span className="badge badgeInfo">{tx("loading", "Loading...")}</span> : null}
+          {integrationsLoading ? <span className="badge badgeInfo">{tx("loading")}</span> : null}
         </div>
         <div className="rowButtons" style={{ marginTop: 8 }}>
           <button type="button" className="ghost" onClick={() => void onReloadIntegrations(true)} disabled={integrationsLoading}>
-            {integrationsLoading ? tx("loading", "Loading...") : tx("refreshList", "Refresh list")}
+            {integrationsLoading ? tx("loading") : tx("refreshList")}
           </button>
         </div>
         {integrationsFeedback ? (
@@ -100,7 +100,7 @@ export function AdminIntegrationsTab({
               <input value={ldapConfigForm.default_role} onChange={(e) => onLdapConfigChange({ ...ldapConfigForm, default_role: e.target.value })} placeholder={l.ldapDefaultRole} />
               <input value={ldapConfigForm.timeout_seconds} onChange={(e) => onLdapConfigChange({ ...ldapConfigForm, timeout_seconds: e.target.value })} placeholder={l.ldapTimeout} />
             </div>
-            <p className="subText">{tx("keepSecretHint", "Leave blank to keep existing secret")}</p>
+            <p className="subText">{tx("keepSecretHint")}</p>
             {ldapFeedback ? (
               <p className={`inlineFeedback inlineFeedback${ldapFeedback.tone === "error" ? "Error" : ldapFeedback.tone === "success" ? "Success" : "Info"}`}>
                 {ldapFeedback.message}
@@ -112,13 +112,13 @@ export function AdminIntegrationsTab({
             </div>
             <div className="rowButtons">
               <button type="button" onClick={() => void onSaveLdapConfig()} className="primary" disabled={ldapSaveBusy || ldapTestServiceBusy || ldapTestUserBusy || integrationsLoading}>
-                {ldapSaveBusy ? tx("saving", "Saving...") : l.saveSettings}
+                {ldapSaveBusy ? tx("saving") : l.saveSettings}
               </button>
               <button type="button" onClick={() => void onTestLdapConnection(false)} className="ghost" disabled={ldapSaveBusy || ldapTestServiceBusy || ldapTestUserBusy || integrationsLoading}>
-                {ldapTestServiceBusy ? tx("testing", "Testing...") : l.testConnection}
+                {ldapTestServiceBusy ? tx("testing") : l.testConnection}
               </button>
               <button type="button" onClick={() => void onTestLdapConnection(true)} className="primary" disabled={ldapSaveBusy || ldapTestServiceBusy || ldapTestUserBusy || integrationsLoading}>
-                {ldapTestUserBusy ? tx("testing", "Testing...") : l.testUserBind}
+                {ldapTestUserBusy ? tx("testing") : l.testUserBind}
               </button>
             </div>
             {ldapTestResult ? <p className="subText">{ldapTestResult}</p> : null}
@@ -156,15 +156,15 @@ export function AdminIntegrationsTab({
                       disabled={providerBusy}
                     />
                   </div>
-                  <p className="subText">{tx("keepSecretHint", "Leave blank to keep existing secret")}</p>
+                  <p className="subText">{tx("keepSecretHint")}</p>
                   <div className="providerActions">
                     <span className="badge">{provider.configured ? l.configured : l.notConfigured}</span>
-                    {providerBusy ? <span className="badge badgeInfo">{tx("loading", "Loading...")}</span> : null}
+                    {providerBusy ? <span className="badge badgeInfo">{tx("loading")}</span> : null}
                     <button type="button" onClick={() => void onSaveProviderConfig(provider.provider)} className="primary" disabled={providerBusy}>
-                      {aiSaveBusyByProvider[provider.provider] ? tx("saving", "Saving...") : l.saveSettings}
+                      {aiSaveBusyByProvider[provider.provider] ? tx("saving") : l.saveSettings}
                     </button>
                     <button type="button" onClick={() => void onValidateProvider(provider.provider)} className="ghost" disabled={providerBusy}>
-                      {aiValidateBusyByProvider[provider.provider] ? tx("validating", "Validating...") : l.validateProvider}
+                      {aiValidateBusyByProvider[provider.provider] ? tx("validating") : l.validateProvider}
                     </button>
                   </div>
                   {aiProviderFeedback[provider.provider] ? (

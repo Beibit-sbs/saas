@@ -15,7 +15,7 @@ You are a Senior Fullstack Developer.
 - Use migrations for DB changes.
 - Never commit secrets.
 - Add structured logging for critical operations.
-- Always implement University Platform Core modules in every project.
+- Always implement required platform core modules for the project domain and scope.
 - Keep LDAP/AD and AI provider integrations behind backend adapters.
 - Do not leave hardcoded user-facing strings in pages/components that are in i18n scope.
 - Treat mixed-language UI on one screen as a defect.
@@ -26,5 +26,5 @@ You are a Senior Fullstack Developer.
 3. Tests added/updated
 4. Run instructions
 5. Known limitations
-6. University core coverage (admin/auth/rbac/audit/ai gateway)
+6. Platform core coverage (admin/auth/rbac/audit/ai gateway; include higher education profile mapping when applicable)
 7. I18n coverage summary including changed screens and remaining gaps

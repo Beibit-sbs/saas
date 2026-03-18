@@ -60,18 +60,18 @@ export function AdminAuditTab({
         <h2>{l.auditVisibility}</h2>
         <p className="subText">{l.auditHelp}</p>
         <div className="formGrid compactFormGrid">
-          <input value={auditActor} onChange={(e) => onAuditActorChange(e.target.value)} placeholder={tx("auditActorFilter", "Filter by actor")} />
-          <input value={auditAction} onChange={(e) => onAuditActionChange(e.target.value)} placeholder={tx("auditActionFilter", "Filter by action")} />
-          <input value={auditEntity} onChange={(e) => onAuditEntityChange(e.target.value)} placeholder={tx("auditEntityFilter", "Filter by entity")} />
-          <input value={auditResult} onChange={(e) => onAuditResultChange(e.target.value)} placeholder={tx("auditResultFilter", "Filter by result")} />
-          <input value={auditCorrelationId} onChange={(e) => onAuditCorrelationIdChange(e.target.value)} placeholder={tx("auditCorrelationFilter", "Filter by correlation ID")} />
-          <input value={auditSince} onChange={(e) => onAuditSinceChange(e.target.value)} placeholder={tx("auditSinceFilter", "Since (ISO, e.g. 2026-03-15T00:00:00Z)")} />
+          <input value={auditActor} onChange={(e) => onAuditActorChange(e.target.value)} placeholder={tx("auditActorFilter")} />
+          <input value={auditAction} onChange={(e) => onAuditActionChange(e.target.value)} placeholder={tx("auditActionFilter")} />
+          <input value={auditEntity} onChange={(e) => onAuditEntityChange(e.target.value)} placeholder={tx("auditEntityFilter")} />
+          <input value={auditResult} onChange={(e) => onAuditResultChange(e.target.value)} placeholder={tx("auditResultFilter")} />
+          <input value={auditCorrelationId} onChange={(e) => onAuditCorrelationIdChange(e.target.value)} placeholder={tx("auditCorrelationFilter")} />
+          <input value={auditSince} onChange={(e) => onAuditSinceChange(e.target.value)} placeholder={tx("auditSinceFilter")} />
         </div>
         <div className="rowButtons">
-          <button type="button" className="primary" onClick={() => void onLoadAuditEvents()} disabled={auditLoading || auditExportBusy !== ""}>{auditLoading ? tx("auditLoading", "Loading...") : tx("loadAuditEvents", "Load events")}</button>
-          <button type="button" className="ghost" onClick={onClearAuditFilters} disabled={auditLoading || auditExportBusy !== ""}>{tx("auditClearFilters", "Clear filters")}</button>
-          <button type="button" className="ghost" onClick={() => void onExportAudit("csv")} disabled={auditLoading || auditExportBusy !== ""}>{auditExportBusy === "csv" ? tx("auditExportingCsv", "Exporting CSV...") : tx("exportCsv", "Export CSV")}</button>
-          <button type="button" className="ghost" onClick={() => void onExportAudit("json")} disabled={auditLoading || auditExportBusy !== ""}>{auditExportBusy === "json" ? tx("auditExportingJson", "Exporting JSON...") : tx("exportJson", "Export JSON")}</button>
+          <button type="button" className="primary" onClick={() => void onLoadAuditEvents()} disabled={auditLoading || auditExportBusy !== ""}>{auditLoading ? tx("auditLoading") : tx("loadAuditEvents")}</button>
+          <button type="button" className="ghost" onClick={onClearAuditFilters} disabled={auditLoading || auditExportBusy !== ""}>{tx("auditClearFilters")}</button>
+          <button type="button" className="ghost" onClick={() => void onExportAudit("csv")} disabled={auditLoading || auditExportBusy !== ""}>{auditExportBusy === "csv" ? tx("auditExportingCsv") : tx("exportCsv")}</button>
+          <button type="button" className="ghost" onClick={() => void onExportAudit("json")} disabled={auditLoading || auditExportBusy !== ""}>{auditExportBusy === "json" ? tx("auditExportingJson") : tx("exportJson")}</button>
         </div>
         {auditFeedback ? (
           <p className={`inlineFeedback inlineFeedback${auditFeedback.tone === "error" ? "Error" : auditFeedback.tone === "success" ? "Success" : "Info"}`}>
@@ -80,9 +80,9 @@ export function AdminAuditTab({
         ) : null}
         <div className="rowMeta">
           <span className="subText">
-            {hasActiveAuditFilters ? tx("auditShowingFilteredEvents", "Showing {count} filtered events").replace("{count}", String(auditEvents.length)) : tx("auditShowingEvents", "Showing {count} events").replace("{count}", String(auditEvents.length))}
+            {hasActiveAuditFilters ? tx("auditShowingFilteredEvents").replace("{count}", String(auditEvents.length)) : tx("auditShowingEvents").replace("{count}", String(auditEvents.length))}
           </span>
-          <span className="subText">{tx("auditLastEvent", "Last event")}: {formatAuditTimestamp(auditLatestTimestamp)}</span>
+          <span className="subText">{tx("auditLastEvent")}: {formatAuditTimestamp(auditLatestTimestamp)}</span>
         </div>
         <div className="rowMeta">
           {hasActiveAuditFilters ? (
@@ -92,24 +92,24 @@ export function AdminAuditTab({
               ))}
             </div>
           ) : (
-            <span className="subText">{tx("auditNoFiltersActive", "No active filters")}</span>
+            <span className="subText">{tx("auditNoFiltersActive")}</span>
           )}
         </div>
 
         {auditEvents.length === 0 ? (
-          <p className="subText">{tx("noAuditEvents", "No audit events found.")}</p>
+          <p className="subText">{tx("noAuditEvents")}</p>
         ) : (
           <div className="tableWrap">
             <table>
               <thead>
                 <tr>
-                  <th>{tx("auditTs", "Timestamp")}</th>
-                  <th>{tx("auditActor", "Actor")}</th>
-                  <th>{tx("auditAction", "Action")}</th>
-                  <th>{tx("auditEntity", "Entity")}</th>
-                  <th>{tx("auditPath", "Path")}</th>
-                  <th>{tx("auditResult", "Result")}</th>
-                  <th>{tx("auditCorrelation", "Correlation ID")}</th>
+                  <th>{tx("auditTs")}</th>
+                  <th>{tx("auditActor")}</th>
+                  <th>{tx("auditAction")}</th>
+                  <th>{tx("auditEntity")}</th>
+                  <th>{tx("auditPath")}</th>
+                  <th>{tx("auditResult")}</th>
+                  <th>{tx("auditCorrelation")}</th>
                 </tr>
               </thead>
               <tbody>

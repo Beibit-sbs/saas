@@ -1,0 +1,34 @@
+name: Deploy (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deployment target (staging|prod)"
+        required: true
+        default: "staging"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create release archive
+        run: tar --exclude-vcs --exclude='.env' --exclude='node_modules' --exclude='.venv' -czf release.tar.gz .
+      - name: Upload to server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          scp -o StrictHostKeyChecking=no release.tar.gz ${DEPLOY_USER}@${DEPLOY_HOST}:~/
+      - name: Remote deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \
+            "mkdir -p ~/app && tar -xzf ~/release.tar.gz -C ~/app && cd ~/app/infra && cp -n .env.example .env && docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml up -d --build"

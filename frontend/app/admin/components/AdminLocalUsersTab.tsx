@@ -124,28 +124,28 @@ export function AdminLocalUsersTab(props: AdminLocalUsersTabProps) {
         </select>
         <div className="rowButtons">
           <button type="button" onClick={() => void onCreateLocalUser()} className="primary" disabled={localCreateBusy}>
-            {localCreateBusy ? tx("saving", "Saving...") : l.addLocalUser}
+            {localCreateBusy ? tx("saving") : l.addLocalUser}
           </button>
           <button type="button" onClick={() => void onRefreshLocalUsers()} className="ghost" disabled={localListBusy}>{l.refreshList}</button>
         </div>
       </div>
 
       <div className="formGrid compactFormGrid" style={{ marginTop: 12 }}>
-        <input value={localSearch} onChange={(e) => onLocalSearchChange(e.target.value)} placeholder={tx("localSearch", "Search by login, user id, display name")} />
-        <input value={localRoleFilter} onChange={(e) => onLocalRoleFilterChange(e.target.value)} placeholder={tx("localRoleFilter", "Filter by role")} />
+        <input value={localSearch} onChange={(e) => onLocalSearchChange(e.target.value)} placeholder={tx("localSearch")} />
+        <input value={localRoleFilter} onChange={(e) => onLocalRoleFilterChange(e.target.value)} placeholder={tx("localRoleFilter")} />
         <select value={localLanguageFilter} onChange={(e) => onLocalLanguageFilterChange(e.target.value)}>
-          <option value="">{tx("localLanguageAll", "All languages")}</option>
+          <option value="">{tx("localLanguageAll")}</option>
           {supportedLanguages.map((lang) => (
             <option key={lang.code} value={lang.code}>{lang.native_name} ({lang.code})</option>
           ))}
         </select>
         <div className="rowButtons">
-          <button type="button" className="ghost" onClick={() => void onRefreshLocalUsers()} disabled={localListBusy}>{tx("localApplyFilters", "Apply filters")}</button>
-          <button type="button" className="ghost" onClick={() => void onClearLocalFilters()} disabled={localListBusy}>{tx("localClearFilters", "Clear filters")}</button>
+          <button type="button" className="ghost" onClick={() => void onRefreshLocalUsers()} disabled={localListBusy}>{tx("localApplyFilters")}</button>
+          <button type="button" className="ghost" onClick={() => void onClearLocalFilters()} disabled={localListBusy}>{tx("localClearFilters")}</button>
         </div>
       </div>
       <div className="rowMeta">
-        <span className="subText">{tx("localResultCount", "Results")}: {localUsers.length}</span>
+        <span className="subText">{tx("localResultCount")}: {localUsers.length}</span>
         {localFilterBadges.length > 0 ? (
           <div className="badgeRow" style={{ marginTop: 0 }}>
             {localFilterBadges.map((item) => (
@@ -153,7 +153,7 @@ export function AdminLocalUsersTab(props: AdminLocalUsersTabProps) {
             ))}
           </div>
         ) : (
-          <span className="subText">{tx("localFiltersNone", "No active filters")}</span>
+          <span className="subText">{tx("localFiltersNone")}</span>
         )}
       </div>
 
@@ -188,9 +188,9 @@ export function AdminLocalUsersTab(props: AdminLocalUsersTabProps) {
 
       {localUsers.length > 0 ? (
         <article className="panelCard" style={{ marginTop: 16 }}>
-          <h3>{tx("localUserOps", "Local user operations")}</h3>
+          <h3>{tx("localUserOps")}</h3>
           <p className="subText">
-            {tx("localSelectedUser", "Selected user")}: {selectedLocalUser ? `${selectedLocalUser.display_name} (${selectedLocalUser.login}) [${selectedLocalUser.user_id}]` : "-"}
+            {tx("localSelectedUser")}: {selectedLocalUser ? `${selectedLocalUser.display_name} (${selectedLocalUser.login}) [${selectedLocalUser.user_id}]` : "-"}
           </p>
           <div className="formGrid compactFormGrid">
             <select value={selectedLocalUserId} onChange={(e) => onSelectLocalUser(e.target.value)}>
@@ -198,35 +198,35 @@ export function AdminLocalUsersTab(props: AdminLocalUsersTabProps) {
                 <option key={item.user_id} value={item.user_id}>{item.display_name} ({item.user_id})</option>
               ))}
             </select>
-            <input value={editLocalDisplayName} onChange={(e) => onEditLocalDisplayNameChange(e.target.value)} placeholder={tx("localEditDisplayName", "Display name")} />
+            <input value={editLocalDisplayName} onChange={(e) => onEditLocalDisplayNameChange(e.target.value)} placeholder={tx("localEditDisplayName")} />
             <select value={editLocalLanguage} onChange={(e) => onEditLocalLanguageChange(e.target.value)}>
               {supportedLanguages.map((lang) => (
                 <option key={lang.code} value={lang.code}>{lang.native_name} ({lang.code})</option>
               ))}
             </select>
-            <input value={editLocalRoles} onChange={(e) => onEditLocalRolesChange(e.target.value)} placeholder={tx("localEditRoles", "Roles: registrar,auditor")} />
+            <input value={editLocalRoles} onChange={(e) => onEditLocalRolesChange(e.target.value)} placeholder={tx("localEditRoles")} />
             <div className="rowButtons">
               <button type="button" className="primary" onClick={() => void onUpdateLocalUser()} disabled={!localUpdateHasChanges || localUpdateBusy}>
-                {localUpdateBusy ? tx("saving", "Saving...") : tx("localUpdate", "Update user")}
+                {localUpdateBusy ? tx("saving") : tx("localUpdate")}
               </button>
               <button type="button" className="ghost" onClick={onRevertLocalUserForm} disabled={localUpdateBusy}>
-                {tx("localRevert", "Revert changes")}
+                {tx("localRevert")}
               </button>
               <button type="button" className="ghost danger" onClick={() => void onDeleteLocalUser()} disabled={localDeleteBusy}>
-                {localDeleteBusy ? tx("deleting", "Deleting...") : tx("localDelete", "Delete user")}
+                {localDeleteBusy ? tx("deleting") : tx("localDelete")}
               </button>
             </div>
           </div>
           <div className="formGrid compactFormGrid" style={{ marginTop: 8 }}>
-            <input type="password" value={editLocalPassword} onChange={(e) => onEditLocalPasswordChange(e.target.value)} placeholder={tx("localSetPassword", "New password")} />
-            <input type="password" value={editLocalPasswordConfirm} onChange={(e) => onEditLocalPasswordConfirmChange(e.target.value)} placeholder={tx("localConfirmPassword", "Confirm password")} />
+            <input type="password" value={editLocalPassword} onChange={(e) => onEditLocalPasswordChange(e.target.value)} placeholder={tx("localSetPassword")} />
+            <input type="password" value={editLocalPasswordConfirm} onChange={(e) => onEditLocalPasswordConfirmChange(e.target.value)} placeholder={tx("localConfirmPassword")} />
             <div className="rowButtons">
               <button type="button" className="ghost" onClick={() => void onUpdateLocalUserPassword()} disabled={localPasswordBusy}>
-                {localPasswordBusy ? tx("saving", "Saving...") : tx("localPasswordAction", "Set password")}
+                {localPasswordBusy ? tx("saving") : tx("localPasswordAction")}
               </button>
             </div>
           </div>
-          <p className="subText">{tx("localPasswordHint", "Password must be at least 6 characters and both fields must match.")}</p>
+          <p className="subText">{tx("localPasswordHint")}</p>
         </article>
       ) : null}
     </>

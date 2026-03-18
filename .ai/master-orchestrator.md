@@ -49,7 +49,7 @@ Output:
 4. DB schema draft
 5. Risks and mitigations
 6. Implementation plan by phases
-7. University Platform Core mapping (admin/auth/rbac/audit/ai gateway)
+7. Platform core mapping (admin/auth/rbac/audit/ai gateway), with higher education profile mapping when applicable
 8. I18n coverage map showing how language switching propagates across all user-facing screens and shared components
 9. For template hardening tasks: bootstrap flow, maturity status, confirmed contracts, and validation entrypoint
 

@@ -18,9 +18,11 @@ from app.core.config import (
 from app.modules.admin.router import router as admin_router
 from app.modules.admin.local_users_router import router as admin_local_users_router
 from app.modules.ai_gateway.router import router as ai_gateway_router
+from app.modules.ai_gateway.public_router import router as ai_gateway_public_router
 from app.modules.audit.router import router as audit_router
 from app.modules.audit.service import log_admin_action
 from app.modules.backup.router import router as backup_router
+from app.modules.example_notes.router import router as example_notes_router
 from app.modules.example_slice.router import router as example_slice_router
 from app.modules.feature_flags.router import router as feature_flags_router
 from app.modules.auth.router import router as auth_router
@@ -57,6 +59,7 @@ app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(admin_local_users_router)
 app.include_router(ai_gateway_router)
+app.include_router(ai_gateway_public_router)
 app.include_router(rbac_router)
 app.include_router(audit_router)
 app.include_router(help_router)
@@ -66,6 +69,7 @@ app.include_router(integrations_router)
 app.include_router(ldap_router)
 app.include_router(backup_router)
 app.include_router(feature_flags_router)
+app.include_router(example_notes_router)
 app.include_router(example_slice_router)
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}

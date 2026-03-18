@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "filesystem-readonly": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "--read-only",
+        "/home/sbs/AI"
+      ]
+    },
+    "postgres-readonly": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres"
+      ],
+      "env": {
+        "DATABASE_URL": "postgresql://readonly_user:change_me@localhost:5432/app"
+      }
+    }
+  }
+}

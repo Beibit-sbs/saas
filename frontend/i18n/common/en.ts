@@ -1,0 +1,18 @@
+export const en = {
+  "lang.kazakh": "Kazakh",
+  "lang.russian": "Russian",
+  "lang.english": "English",
+  "ui.language": "Language",
+  "ui.apply": "Apply",
+  "home.title": "AI Engineering Center",
+  "home.subtitle": "Starter template for browser-based systems.",
+  "admin.title": "University Admin Dashboard (Starter)",
+  "admin.subtitle": "Use this area to manage roles, LDAP/AD, AI providers, and audits.",
+  "help.title": "Project AI Help",
+  "help.page": "Page",
+  "help.field": "Field (optional)",
+  "help.question": "Question",
+  "help.ask": "Ask",
+  "help.thinking": "Thinking...",
+  "help.error.empty": "Please enter a question before sending.",
+} as const;

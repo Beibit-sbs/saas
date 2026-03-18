@@ -9,6 +9,8 @@ class ExampleReferenceItem:
     audit_action: str
 
 
+# Example-only reference data for the template.
+# This slice does not demonstrate migrations, persistence, or full CRUD yet.
 _EXAMPLE_ITEMS: tuple[ExampleReferenceItem, ...] = (
     ExampleReferenceItem(
         key="example_rbac_guarded_read",

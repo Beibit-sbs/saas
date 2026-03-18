@@ -19,13 +19,13 @@ System type: browser-based web applications only.
 8. Personal data must be minimized and protected.
 9. CI must fail on test/lint/security failures.
 10. Production configs must avoid default credentials.
-11. Every university project must include an admin dashboard.
-12. Every university project must support LDAP/AD as an auth mode.
-13. Every university project must include API-key based AI provider integration.
+11. Every project must include an admin dashboard when privileged operational workflows are in scope.
+12. If enterprise directory authentication is required, support LDAP/AD as an auth mode.
+13. If AI capabilities are in scope, include API-key based AI provider integration.
 14. AI provider access must go through backend gateway adapters.
 15. Role-based access control (RBAC) is mandatory.
-16. Every university project must include an in-app help assistant for users.
-17. Every project UI must support three languages: Kazakh (kk), Russian (ru), English (en), and allow adding extra languages from admin settings.
+16. If user workflows are complex, include an in-app help assistant (or equivalent in-product guidance).
+17. Every project UI must support three languages: Kazakh (kk), Russian (ru), English (en).
 18. Language selection must change the full user-facing UI consistently on every screen in scope; mixed-language screens are not acceptable.
 19. AI gateway must enforce rate limiting and quota policies.
 20. Every service must emit structured logs with request or correlation IDs.
@@ -36,6 +36,9 @@ System type: browser-based web applications only.
 25. Template hardening must document bootstrap flow, maturity, and validation before large decomposition work.
 26. Example-only modules must stay explicitly labeled, namespaced, and removable in derived systems.
 27. Template validation must have one explicit entrypoint that is easy to run and understand.
+28. Frontend i18n dictionaries must use `ru` as canonical key set, with exact key parity in `en` and `kk`.
+29. Demo auth users and routes must be clearly marked as local/template-only and must not be presented as production defaults.
+30. Template starter documents must clearly state whether they are confirmed baseline content or derived-project fill-in guidance.
 
 ## System Boundaries
 - Frontend: UI only, no core business logic.
@@ -49,7 +52,8 @@ System type: browser-based web applications only.
 - Keep security and observability as default platform behavior, not optional add-ons.
 - Apply changes in small, verifiable steps to avoid breaking the template.
 
-## University Platform Core (Required)
+## Platform Core Capability Set (Baseline)
+Higher education remains one explicit example vertical, and this baseline can be applied to other domains.
 - Admin Dashboard Core: user/role management, integration settings, system controls.
 - Auth Core: local auth + LDAP/AD + service/API-key access.
 - RBAC Core: platform roles and resource-level permissions.

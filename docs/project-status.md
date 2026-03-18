@@ -23,7 +23,13 @@ Primary platform capabilities:
 - Audit event collection and export
 - Backup settings, execution, retention, and restore workflows
 - Feature flags admin module (scaffold/in-memory)
+- Example-only `example_notes` CRUD reference module
 - Admin operational console
+
+Template honesty notes:
+- demo auth users and demo login routes are present for local/template use only and require explicit removal, disablement, or replacement before production launch
+- `example_notes` is the canonical educational CRUD slice and remains removable/example-only
+- `example_slice` remains a lightweight reference-only wiring slice for derived projects
 
 ### Template Bootstrap Position
 
@@ -71,6 +77,11 @@ What derived systems should treat as platform baseline unless explicitly approve
 - Backup service with path allowlist, profile persistence, retention, and restore paths
 - Audit service with list/export and filterable event retrieval
 
+### Demo Auth Status
+
+- Demo and mock login paths are intentionally present for bootstrap and local template use.
+- They are not a production baseline and must be reviewed explicitly in every derived project.
+
 ### Migration Inventory
 
 Repository contains:
@@ -84,6 +95,12 @@ Note:
 ### Partially Implemented
 
 - `feature_flags` backend module is currently scaffold/in-memory and not productionized.
+
+### Example Slice Status
+
+- `example_notes` demonstrates one small database-backed entity with migration, router, service layer, RBAC checks, audit logging, frontend usage, i18n wiring, and tests.
+- It is intentionally example-only and should be removed or replaced by derived projects when real domain modules are introduced.
+- `example_slice` remains available as a lightweight reference-only wiring example.
 
 ### Known Backend Gap
 
@@ -108,6 +125,7 @@ Note:
   - `rbac`
   - `integrations`
   - `feature-flags`
+  - `example-notes`
   - `backups`
   - `audit`
 
@@ -126,6 +144,13 @@ Note:
 ### Frontend Gap
 
 - Dedicated standalone frontend test suite is not yet documented as part of the current validation package.
+
+### Frontend i18n Baseline
+
+- Frontend UI dictionaries are maintained for `ru`, `en`, `kk` only.
+- `ru` is the canonical key source for frontend dictionaries.
+- Key parity is enforced by `frontend/i18n/check/i18n-check.mjs` and wired into CI.
+- Local validation should enforce the same parity check before frontend lint/build.
 
 ---
 
@@ -170,12 +195,14 @@ Current module maturity from the repository:
 | rbac | production_baseline | DB-backed roles/assignments with fail-closed operational behavior. |
 | audit | production_baseline | Admin action logging, filters, export, DB or memory fallback. |
 | integrations | usable | LDAP and AI provider admin settings work, but broader lifecycle/governance is still light. |
-| ai_gateway | usable | Provider status/validation and rate limits exist, but full gateway v1 contract is not complete. |
+| ai_gateway | usable | Provider status/validation plus AI Gateway v1 exist: model registry, provider adapter boundary, unified `/api/ai/chat`, usage logging, and audit hooks. |
 | feature_flags | scaffold | Admin tab and API exist, persistence/rollout maturity is not productionized. |
+| example_notes | usable | Example-only CRUD reference slice with migration, RBAC, audit, frontend usage, i18n, and tests. |
 | backups | usable | Profiles, retention, run/restore flows exist, but no HA/DR baseline. |
 | i18n | production_baseline | Registry, protected system languages, profile preference, admin management. |
 | observability | usable | Structured logs, request IDs, and metrics exist, but operational depth is still limited. |
 | infra/tls | scaffold | Base deployment is HTTP-only; production TLS must be added by derived systems. |
+| example_slice | scaffold | Demonstrates namespacing, RBAC guard, and audit wiring only; kept as a lightweight reference alongside `example_notes`. |
 
 Detailed reusable contracts are tracked in `docs/templates/template-contracts.md`.
 
@@ -205,19 +232,19 @@ Detailed reusable contracts are tracked in `docs/templates/template-contracts.md
 
 - Backend tests:
   - `cd /home/sbs/AI/backend && .venv/bin/pytest -q`
-  - Result: `86 passed in 0.81s`
+  - Result: pending refresh after current template hardening pass
 - Backend lint:
   - `ruff check .`
-  - Result: not rerun in this pass
+  - Result: pending refresh after current template hardening pass
 - Frontend validation:
-  - `npm run lint && npm run build`
-  - Result: lint passed, build passed (`/admin` 36.4 kB)
+  - `npm run i18n:check && npm run lint && npm run build`
+  - Result: pending refresh after current template hardening pass
 - Template validation:
   - `make template-validate`
-  - Result: `5 passed in 0.01s`
+  - Result: pending initial implementation in current template hardening pass
 - Full pipeline:
   - `make pipeline`
-  - Result: not rerun in this pass
+  - Result: pending refresh after current template hardening pass
 
 ### Notes on Historical Noise in Logs
 
@@ -243,5 +270,5 @@ Detailed reusable contracts are tracked in `docs/templates/template-contracts.md
 
 1. Productionize feature flags (persistence, rollout strategy, auditability).
 2. Add TLS-enabled production profile and certificate handling documentation.
-3. Continue test decomposition beyond `backend/test_health.py` into module-focused suites.
-4. Expand operational observability around privileged admin actions.
+3. Keep `example_notes` intentionally small and example-only as derived projects replace it with real domain modules.
+4. Continue test decomposition and expand operational observability around privileged admin actions.

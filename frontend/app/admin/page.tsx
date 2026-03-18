@@ -4,14 +4,16 @@ import { buildCsrfHeaders } from "../components/csrf";
 import { useLanguage } from "../components/LanguageProvider";
 import { AdminAuditTab } from "./components/AdminAuditTab";
 import { AdminBackupsTab } from "./components/AdminBackupsTab";
+import { AdminExampleNotesTab } from "./components/AdminExampleNotesTab";
 import { AdminFeatureFlagsTab } from "./components/AdminFeatureFlagsTab";
 import { AdminIntegrationsTab } from "./components/AdminIntegrationsTab";
 import { AdminLanguagesTab } from "./components/AdminLanguagesTab";
 import { AdminLocalUsersTab } from "./components/AdminLocalUsersTab";
 import { AdminOverviewTab } from "./components/AdminOverviewTab";
 import { AdminRbacTab } from "./components/AdminRbacTab";
+import { AdminShell, type AdminSection } from "./components/AdminShell";
+import { adminTranslations, type AdminTranslationKey } from "../../i18n/admin";
 import type {
-  AdminCopy,
   AdminTab,
   AiProviderForm,
   AiProviderStatus,
@@ -34,7 +36,7 @@ import type {
 } from "./types";
 
 const toUiLang = (value: string): UiLang => {
-  if (value === "en" || value === "kk" || value === "zh") {
+  if (value === "en" || value === "kk") {
     return value;
   }
   return "ru";
@@ -160,1042 +162,20 @@ export default function AdminPage() {
 
   const uiLang = toUiLang(String(language));
 
-  const labels: Record<UiLang, AdminCopy> = {
-    ru: {
-      controlCenter: "Платформенный центр управления",
-      lastChange: "Последнее изменение",
-      adminUser: "Администратор",
-      enabledLanguages: "Включенные языки",
-      total: "Всего",
-      systemLanguages: "Системные языки",
-      protectedCore: "Защищенное ядро",
-      localUsers: "Локальные пользователи",
-      nonAdAccounts: "Аккаунты без AD",
-      adminMode: "Режим админа",
-      adminActive: "Активен",
-      rbacEnforced: "RBAC активен",
-      overview: "Обзор",
-      languages: "Языки",
-      integrations: "Интеграции",
-      backups: "Бэкапы",
-      audit: "Аудит",
-      platformModules: "Платформенные модули",
-      operationalFocus: "Операционный фокус",
-      usersRoles: "Пользователи и роли",
-      ldapSettings: "LDAP/AD настройки",
-      aiControls: "Управление AI-провайдерами",
-      auditEvents: "Аудит и события безопасности",
-      trackChanges: "Отслеживай изменения ролей и привилегированные действия",
-      keepI18n: "Поддерживай i18n-ядро (`kk`, `ru`, `en`) в рабочем состоянии",
-      controlledExceptions: "Используй local users только как контролируемое исключение",
-      documentActions: "Документируй каждое важное админ-действие",
-      languageManagement: "Управление языками",
-      langHelp: "Добавляй языки без ломки ядра. Системные языки защищены.",
-      catalogTitle: "Каталог языков",
-      catalogHelp: "Выбери язык из справочника. Список прокручивается и ищется по коду, английскому и native имени.",
-      searchLanguagePlaceholder: "Поиск языка: zh, Chinese, 中文",
-      selectedLanguage: "Выбранный язык",
-      noLanguageSelected: "Выбери язык из каталога справа от поиска.",
-      noCatalogResults: "По запросу ничего не найдено.",
-      code: "Код",
-      name: "Название",
-      type: "Тип",
-      status: "Статус",
-      actions: "Действия",
-      system: "Системный",
-      custom: "Пользовательский",
-      enabled: "Включен",
-      disabled: "Выключен",
-      disable: "Выключить",
-      enable: "Включить",
-      delete: "Удалить",
-      localUsersNoAd: "Локальные пользователи (без синхронизации с AD)",
-      localUsersHelp: "Для сервисных и исключительных сценариев. Поля AD не синхронизируются.",
-      loginPlaceholder: "Логин (local.registrar)",
-      passwordPlaceholder: "Пароль",
-      displayNamePlaceholder: "Отображаемое имя",
-      rolesPlaceholder: "Роли: registrar,auditor",
-      addLocalUser: "Добавить локального пользователя",
-      refreshList: "Обновить список",
-      noLocalUsers: "Пока нет локальных пользователей.",
-      user: "Пользователь",
-      userId: "User ID",
-      roles: "Роли",
-      source: "Источник",
-      adSync: "ad_sync",
-      on: "вкл",
-      off: "выкл",
-      directoryIdentity: "Directory и идентификация",
-      directoryHelp: "Проверки LDAP/AD и тесты подключений.",
-      planned: "Планируется",
-      aiProviders: "AI-провайдеры",
-      aiHelp: "Ключи провайдеров, policy маршрутизации и контроль квот.",
-      configured: "Сконфигурирован",
-      notConfigured: "Не настроен",
-      enabledFlag: "Флаг enabled",
-      yes: "Да",
-      no: "Нет",
-      testConnection: "Проверить соединение",
-      testUserBind: "Проверить bind пользователя",
-      saveSettings: "Сохранить настройки",
-      ldapConfigTitle: "LDAP/AD конфигурация",
-      ldapEnabled: "Включить LDAP",
-      ldapServerUri: "LDAP server URI",
-      ldapBindDn: "Bind DN",
-      ldapBindPassword: "Bind password",
-      ldapBaseDn: "Base DN",
-      ldapUserFilter: "User filter",
-      ldapDisplayAttr: "Display name attribute",
-      ldapLoginAttr: "Login attribute",
-      ldapGroupAttr: "Group attribute",
-      ldapRoleMapJson: "Group->Role map JSON",
-      ldapDefaultRole: "Default role",
-      ldapTimeout: "Timeout (seconds)",
-      providerApiKey: "API key",
-      ldapLoginPlaceholder: "LDAP login",
-      ldapPasswordPlaceholder: "LDAP password",
-      validationEndpoint: "Endpoint проверки",
-      validateProvider: "Проверить провайдера",
-      providerSaved: "Настройки провайдера сохранены",
-      ldapSaved: "LDAP настройки сохранены",
-      validationOk: "Проверка успешна",
-      serviceBindOk: "Service bind успешен",
-      noProviders: "Пока нет провайдеров для отображения.",
-      featureFlagsLoading: "Загрузка...",
-      featureFlagUpdating: "Обновление...",
-      featureFlagSearch: "Поиск по ключу или описанию",
-      featureFlagsEnabledOnly: "Показать только включенные",
-      featureFlagsShowing: "Показано флагов: {count}",
-      featureFlagsShowingFiltered: "Показано отфильтрованных флагов: {count}",
-      featureFlagsNoFiltersActive: "Фильтры не активны",
-      featureFlagFilterSearch: "Поиск",
-      featureFlagFilterEnabledOnly: "Только включенные",
-      featureFlagEnableConfirm: "Включить feature flag {flag}?",
-      featureFlagDisableConfirm: "Выключить feature flag {flag}?",
-      featureFlagUpdateCancelled: "Изменение feature flag отменено",
-      featureFlagUpdated: "Feature flag {flag} переключен: {status}",
-      featureFlagLastChanged: "Последнее изменение",
-      auditVisibility: "Видимость аудита",
-      auditHelp: "Отслеживай actor, action, entity и correlation ID для критичных изменений.",
-      export: "Экспорт CSV/JSON",
-      filter: "Фильтр по пользователю/действию/дате",
-      investigate: "Расследование по correlation ID",
-      securityPosture: "Состояние безопасности",
-      securityHelp: "Админ-действия должны быть аудируемыми и защищенными правами.",
-      auditRequired: "Audit обязателен",
-      backupPlan: "План бэкапов",
-      backupHelp: "Используйте профили хранилищ. Путь должен быть внутри разрешенных root-директорий.",
-      activeBackupProfile: "Активный профиль",
-      profileId: "ID профиля",
-      profileLabel: "Название профиля",
-      profilePath: "Путь хранения",
-      allowedRoots: "Разрешенные root-пути",
-      addProfile: "Добавить профиль",
-      removeProfile: "Удалить профиль",
-      saveBackupSettings: "Сохранить профили",
-      runBackupNow: "Запустить backup сейчас",
-      backupHistory: "История backup",
-      backupHistorySummaryAvailable: "Бэкапов доступно: {count}",
-      backupHistorySummaryLatest: "Последний backup: {value}",
-      backupHistorySummaryStatus: "Последний статус: {value}",
-      backupReload: "Обновить backup данные",
-      backupLoading: "Загрузка...",
-      backupRunning: "Запуск...",
-      backupRestoring: "Восстановление...",
-      backupApplying: "Применение...",
-      backupRunConfirm: "Запустить backup сейчас?",
-      backupRunCancelled: "Запуск backup отменен",
-      backupRestoreConfirmByFile: "Восстановить backup {file}?",
-      backupRetentionConfirm: "Применить политику retention?",
-      backupRestoreAvailable: "Доступно для restore",
-      backupRestoreNotAvailable: "Нет в restore списке",
-      backupCreatedAt: "Создан",
-      backupProfile: "Профиль",
-      backupStatusUnknown: "unknown",
-      backupStatusRunning: "running",
-      backupStatusFailed: "failed",
-      backupStatusSuccess: "success",
-      backupSelectForRestore: "Выбрать",
-      restoreCandidatesList: "Файлы для восстановления",
-      restoreModifiedAt: "Изменен",
-      backupSaved: "Профили backup сохранены",
-      backupCompleted: "Backup выполнен",
-      noBackupJobs: "Пока нет backup задач.",
-      backupFile: "Файл",
-      backupSize: "Размер",
-      finishedAt: "Завершено",
-      addLanguage: "Добавить язык",
-      languageAdded: "Язык добавлен.",
-      languageEnabledMsg: "Язык {code} включен.",
-      languageDisabledMsg: "Язык {code} выключен.",
-      languageDeletedMsg: "Язык {code} удален.",
-      languageRequired: "Выбери язык из каталога.",
-      localUserRequired: "Для локального пользователя заполни login, password и display name.",
-      localUserCreated: "Локальный пользователь создан (без AD sync).",
-      restoreConfirmPrompt: "Восстановление перезапишет состояние базы данных. Продолжить?",
-      restoreCancelled: "Восстановление отменено",
-      retentionConfirmPrompt: "Применение политики удалит старые файлы бэкапов безвозвратно. Продолжить?",
-      retentionCancelled: "Применение политики отменено",
-      auditAction: "Action",
-      auditActionFilter: "Filter by action",
-      auditActor: "Actor",
-      auditActorFilter: "Filter by actor",
-      auditCorrelation: "Correlation ID",
-      auditEntity: "Entity",
-      auditPath: "Path",
-      auditResult: "Result",
-      auditSinceFilter: "Since (ISO, e.g. 2026-03-15T00:00:00Z)",
-      auditTs: "Timestamp",
-      auditClearFilters: "Очистить фильтры",
-      auditNoFiltersActive: "Активных фильтров нет",
-      auditShowingEvents: "Показано событий: {count}",
-      auditShowingFilteredEvents: "Показано отфильтрованных событий: {count}",
-      auditLastEvent: "Последнее событие",
-      auditLoading: "Загрузка...",
-      auditExportingCsv: "Экспорт CSV...",
-      auditExportingJson: "Экспорт JSON...",
-      authManagedByBackend: "Identity and roles are resolved by backend auth.",
-      backupJobType: "Type",
-      exportCsv: "Export CSV",
-      exportJson: "Export JSON",
-      keepSecretHint: "Оставьте пустым, чтобы сохранить существующий секрет",
-      loadAuditEvents: "Load events",
-      localApplyFilters: "Apply filters",
-      localDelete: "Delete user",
-      localEditDisplayName: "Display name",
-      localEditRoles: "Roles: registrar,auditor",
-      localLanguageAll: "All languages",
-      localPasswordAction: "Set password",
-      localPasswordRequired: "Password is required.",
-      localPasswordUpdated: "Password updated",
-      localRoleFilter: "Filter by role",
-      localSearch: "Search by login, user id, display name",
-      localSetPassword: "New password",
-      localUpdate: "Update user",
-      localUserDeleted: "Local user deleted",
-      localUserOps: "Local user operations",
-      localUserSelectRequired: "Select a local user first.",
-      localUserUpdated: "Local user updated",
-      noAuditEvents: "No audit events found.",
-      noRestoreCandidates: "No .dump files found",
-      overviewAi: "Configured AI providers",
-      overviewApi: "API health",
-      overviewAssignments: "Assignments",
-      overviewBackend: "Backend health",
-      overviewLive: "Live operational snapshot",
-      overviewNoData: "No snapshot loaded yet.",
-      overviewRefresh: "Refresh snapshot",
-      overviewRoles: "Roles",
-      overviewUsers: "Local users",
-      rbac: "RBAC",
-      rbacAssign: "Assign role",
-      rbacAssignHelp: "Assign a role to a specific user ID.",
-      rbacAssignRequired: "User ID and role are required.",
-      rbacAssignTitle: "Assign role",
-      rbacAssigned: "Role assigned",
-      rbacFilterRole: "Filter by role",
-      rbacFilterUser: "Filter by user ID",
-      rbacNoAssignments: "No assignments found.",
-      rbacNoRoles: "No roles found.",
-      rbacPermissions: "Permissions: admin.dashboard.read,admin.audit.read",
-      rbacPerms: "Permissions",
-      rbacRefresh: "Refresh",
-      rbacRefreshAssignments: "Refresh assignments",
-      rbacRevoke: "Revoke",
-      rbacRevoked: "Role revoked",
-      rbacRole: "Role",
-      rbacRoleName: "Role name",
-      rbacRoleRequired: "Role name is required.",
-      rbacRoleSaved: "Role saved",
-      rbacRolesHelp: "Create or update role with comma-separated permissions.",
-      rbacRolesTitle: "Roles and permissions",
-      rbacSaveRole: "Save role",
-      rbacUserId: "User ID",
-      refreshRestoreFiles: "Refresh files",
-      restoreCompleted: "Restore completed",
-      restoreDryRun: "Restore dry-run",
-      restoreDryRunOk: "Restore dry-run prepared",
-      restoreFileRequired: "Select backup file for restore.",
-      restoreHelp: "Choose backup file and run dry-run before real restore.",
-      restoreNow: "Restore now",
-      restoreProfileRequired: "Select restore profile.",
-      restoreTitle: "Restore",
-      retentionApplied: "Retention applied: {count} file(s) deleted",
-      retentionApply: "Apply retention",
-      retentionDays: "Retention days",
-      retentionDryRun: "Retention dry-run",
-      retentionDryRunDone: "Retention dry-run: {count} file(s) can be deleted",
-      retentionHelp: "Keep recent backups and delete old dump files by policy.",
-      retentionMinFiles: "Minimum files to keep",
-      retentionTitle: "Retention policy",
-      errorPrefix: "Ошибка",
-    },
-    en: {
-      controlCenter: "University Platform Control Center",
-      lastChange: "Last change",
-      adminUser: "Admin user",
-      enabledLanguages: "Enabled languages",
-      total: "Total",
-      systemLanguages: "System languages",
-      protectedCore: "Protected core",
-      localUsers: "Local users",
-      nonAdAccounts: "Non-AD accounts",
-      adminMode: "Admin mode",
-      adminActive: "Active",
-      rbacEnforced: "RBAC enforced",
-      overview: "Overview",
-      languages: "Languages",
-      integrations: "Integrations",
-      backups: "Backups",
-      audit: "Audit",
-      platformModules: "Platform Modules",
-      operationalFocus: "Operational Focus",
-      usersRoles: "Users and Roles",
-      ldapSettings: "LDAP/AD integration settings",
-      aiControls: "AI provider controls",
-      auditEvents: "Audit and security events",
-      trackChanges: "Track role changes and privileged actions",
-      keepI18n: "Keep i18n core (`kk`, `ru`, `en`) healthy",
-      controlledExceptions: "Use local users only for controlled exceptions",
-      documentActions: "Document every major admin action",
-      languageManagement: "Language Management",
-      langHelp: "Add languages without breaking the core. System languages are protected.",
-      catalogTitle: "Language catalog",
-      catalogHelp: "Pick a language from the catalog. The list supports scrolling and search by code, English name, and native name.",
-      searchLanguagePlaceholder: "Search language: zh, Chinese, 中文",
-      selectedLanguage: "Selected language",
-      noLanguageSelected: "Choose a language from the catalog list.",
-      noCatalogResults: "No languages found for this query.",
-      code: "Code",
-      name: "Name",
-      type: "Type",
-      status: "Status",
-      actions: "Actions",
-      system: "System",
-      custom: "Custom",
-      enabled: "Enabled",
-      disabled: "Disabled",
-      disable: "Disable",
-      enable: "Enable",
-      delete: "Delete",
-      localUsersNoAd: "Local Users (No AD Sync)",
-      localUsersHelp: "For service or exception flows. AD fields are not synchronized.",
-      loginPlaceholder: "Login (local.registrar)",
-      passwordPlaceholder: "Password",
-      displayNamePlaceholder: "Display name",
-      rolesPlaceholder: "Roles: registrar,auditor",
-      addLocalUser: "Add local user",
-      refreshList: "Refresh list",
-      noLocalUsers: "No local users yet.",
-      user: "User",
-      userId: "User ID",
-      roles: "Roles",
-      source: "Source",
-      adSync: "ad_sync",
-      on: "on",
-      off: "off",
-      directoryIdentity: "Directory and Identity",
-      directoryHelp: "LDAP/AD integration checks and connection tests.",
-      planned: "Planned",
-      aiProviders: "AI Providers",
-      aiHelp: "Provider keys, routing policy, and quota controls.",
-      configured: "Configured",
-      notConfigured: "Not configured",
-      enabledFlag: "Enabled flag",
-      yes: "Yes",
-      no: "No",
-      testConnection: "Test connection",
-      testUserBind: "Test user bind",
-      saveSettings: "Save settings",
-      ldapConfigTitle: "LDAP/AD configuration",
-      ldapEnabled: "Enable LDAP",
-      ldapServerUri: "LDAP server URI",
-      ldapBindDn: "Bind DN",
-      ldapBindPassword: "Bind password",
-      ldapBaseDn: "Base DN",
-      ldapUserFilter: "User filter",
-      ldapDisplayAttr: "Display name attribute",
-      ldapLoginAttr: "Login attribute",
-      ldapGroupAttr: "Group attribute",
-      ldapRoleMapJson: "Group->Role map JSON",
-      ldapDefaultRole: "Default role",
-      ldapTimeout: "Timeout (seconds)",
-      providerApiKey: "API key",
-      ldapLoginPlaceholder: "LDAP login",
-      ldapPasswordPlaceholder: "LDAP password",
-      validationEndpoint: "Validation endpoint",
-      validateProvider: "Validate provider",
-      providerSaved: "Provider settings saved",
-      ldapSaved: "LDAP settings saved",
-      validationOk: "Validation passed",
-      serviceBindOk: "Service bind passed",
-      noProviders: "No providers to display yet.",
-      featureFlagsLoading: "Loading...",
-      featureFlagUpdating: "Updating...",
-      featureFlagSearch: "Search by key or description",
-      featureFlagsEnabledOnly: "Show enabled only",
-      featureFlagsShowing: "Showing {count} flags",
-      featureFlagsShowingFiltered: "Showing {count} filtered flags",
-      featureFlagsNoFiltersActive: "No active filters",
-      featureFlagFilterSearch: "Search",
-      featureFlagFilterEnabledOnly: "Enabled only",
-      featureFlagEnableConfirm: "Enable feature flag {flag}?",
-      featureFlagDisableConfirm: "Disable feature flag {flag}?",
-      featureFlagUpdateCancelled: "Feature flag update cancelled",
-      featureFlagUpdated: "Feature flag {flag} set to {status}",
-      featureFlagLastChanged: "Last changed",
-      auditVisibility: "Audit Visibility",
-      auditHelp: "Track actor, action, entity, and correlation ID for critical changes.",
-      export: "Export CSV/JSON",
-      filter: "Filter by user/action/date",
-      investigate: "Investigate by correlation ID",
-      securityPosture: "Security Posture",
-      securityHelp: "Admin actions must remain auditable and permission-protected.",
-      auditRequired: "Audit required",
-      backupPlan: "Backup Plan",
-      backupHelp: "Use storage profiles. Profile paths must stay inside allowed root directories.",
-      activeBackupProfile: "Active profile",
-      profileId: "Profile ID",
-      profileLabel: "Profile label",
-      profilePath: "Storage path",
-      allowedRoots: "Allowed root paths",
-      addProfile: "Add profile",
-      removeProfile: "Remove profile",
-      saveBackupSettings: "Save profiles",
-      runBackupNow: "Run backup now",
-      backupHistory: "Backup history",
-      backupHistorySummaryAvailable: "Backups available: {count}",
-      backupHistorySummaryLatest: "Latest backup: {value}",
-      backupHistorySummaryStatus: "Latest status: {value}",
-      backupReload: "Reload backup data",
-      backupLoading: "Loading...",
-      backupRunning: "Running...",
-      backupRestoring: "Restoring...",
-      backupApplying: "Applying...",
-      backupRunConfirm: "Run backup now?",
-      backupRunCancelled: "Backup run cancelled",
-      backupRestoreConfirmByFile: "Restore backup {file}?",
-      backupRetentionConfirm: "Apply retention policy?",
-      backupRestoreAvailable: "Restore available",
-      backupRestoreNotAvailable: "Not in restore list",
-      backupCreatedAt: "Created",
-      backupProfile: "Profile",
-      backupStatusUnknown: "unknown",
-      backupStatusRunning: "running",
-      backupStatusFailed: "failed",
-      backupStatusSuccess: "success",
-      backupSelectForRestore: "Select",
-      restoreCandidatesList: "Restore files",
-      restoreModifiedAt: "Modified",
-      backupSaved: "Backup profiles saved",
-      backupCompleted: "Backup completed",
-      noBackupJobs: "No backup jobs yet.",
-      backupFile: "File",
-      backupSize: "Size",
-      finishedAt: "Finished at",
-      addLanguage: "Add language",
-      languageAdded: "Language added.",
-      languageEnabledMsg: "Language {code} enabled.",
-      languageDisabledMsg: "Language {code} disabled.",
-      languageDeletedMsg: "Language {code} deleted.",
-      languageRequired: "Choose a language from the catalog.",
-      localUserRequired: "For local user fill login, password and display name.",
-      localUserCreated: "Local user created (without AD sync).",
-      restoreConfirmPrompt: "Restore will overwrite database state. Continue?",
-      restoreCancelled: "Restore cancelled",
-      retentionConfirmPrompt: "Apply retention will permanently delete old backup files. Continue?",
-      retentionCancelled: "Retention cancelled",
-      auditAction: "Action",
-      auditActionFilter: "Filter by action",
-      auditActor: "Actor",
-      auditActorFilter: "Filter by actor",
-      auditCorrelation: "Correlation ID",
-      auditEntity: "Entity",
-      auditPath: "Path",
-      auditResult: "Result",
-      auditSinceFilter: "Since (ISO, e.g. 2026-03-15T00:00:00Z)",
-      auditTs: "Timestamp",
-      auditClearFilters: "Clear filters",
-      auditNoFiltersActive: "No active filters",
-      auditShowingEvents: "Showing {count} events",
-      auditShowingFilteredEvents: "Showing {count} filtered events",
-      auditLastEvent: "Last event",
-      auditLoading: "Loading...",
-      auditExportingCsv: "Exporting CSV...",
-      auditExportingJson: "Exporting JSON...",
-      authManagedByBackend: "Identity and roles are resolved by backend auth.",
-      backupJobType: "Type",
-      exportCsv: "Export CSV",
-      exportJson: "Export JSON",
-      keepSecretHint: "Leave blank to keep existing secret",
-      loadAuditEvents: "Load events",
-      localApplyFilters: "Apply filters",
-      localDelete: "Delete user",
-      localEditDisplayName: "Display name",
-      localEditRoles: "Roles: registrar,auditor",
-      localLanguageAll: "All languages",
-      localPasswordAction: "Set password",
-      localPasswordRequired: "Password is required.",
-      localPasswordUpdated: "Password updated",
-      localRoleFilter: "Filter by role",
-      localSearch: "Search by login, user id, display name",
-      localSetPassword: "New password",
-      localUpdate: "Update user",
-      localUserDeleted: "Local user deleted",
-      localUserOps: "Local user operations",
-      localUserSelectRequired: "Select a local user first.",
-      localUserUpdated: "Local user updated",
-      noAuditEvents: "No audit events found.",
-      noRestoreCandidates: "No .dump files found",
-      overviewAi: "Configured AI providers",
-      overviewApi: "API health",
-      overviewAssignments: "Assignments",
-      overviewBackend: "Backend health",
-      overviewLive: "Live operational snapshot",
-      overviewNoData: "No snapshot loaded yet.",
-      overviewRefresh: "Refresh snapshot",
-      overviewRoles: "Roles",
-      overviewUsers: "Local users",
-      rbac: "RBAC",
-      rbacAssign: "Assign role",
-      rbacAssignHelp: "Assign a role to a specific user ID.",
-      rbacAssignRequired: "User ID and role are required.",
-      rbacAssignTitle: "Assign role",
-      rbacAssigned: "Role assigned",
-      rbacFilterRole: "Filter by role",
-      rbacFilterUser: "Filter by user ID",
-      rbacNoAssignments: "No assignments found.",
-      rbacNoRoles: "No roles found.",
-      rbacPermissions: "Permissions: admin.dashboard.read,admin.audit.read",
-      rbacPerms: "Permissions",
-      rbacRefresh: "Refresh",
-      rbacRefreshAssignments: "Refresh assignments",
-      rbacRevoke: "Revoke",
-      rbacRevoked: "Role revoked",
-      rbacRole: "Role",
-      rbacRoleName: "Role name",
-      rbacRoleRequired: "Role name is required.",
-      rbacRoleSaved: "Role saved",
-      rbacRolesHelp: "Create or update role with comma-separated permissions.",
-      rbacRolesTitle: "Roles and permissions",
-      rbacSaveRole: "Save role",
-      rbacUserId: "User ID",
-      refreshRestoreFiles: "Refresh files",
-      restoreCompleted: "Restore completed",
-      restoreDryRun: "Restore dry-run",
-      restoreDryRunOk: "Restore dry-run prepared",
-      restoreFileRequired: "Select backup file for restore.",
-      restoreHelp: "Choose backup file and run dry-run before real restore.",
-      restoreNow: "Restore now",
-      restoreProfileRequired: "Select restore profile.",
-      restoreTitle: "Restore",
-      retentionApplied: "Retention applied: {count} file(s) deleted",
-      retentionApply: "Apply retention",
-      retentionDays: "Retention days",
-      retentionDryRun: "Retention dry-run",
-      retentionDryRunDone: "Retention dry-run: {count} file(s) can be deleted",
-      retentionHelp: "Keep recent backups and delete old dump files by policy.",
-      retentionMinFiles: "Minimum files to keep",
-      retentionTitle: "Retention policy",
-      errorPrefix: "Error",
-    },
-    kk: {
-      controlCenter: "Университет платформасын басқару орталығы",
-      lastChange: "Соңғы өзгеріс",
-      adminUser: "Әкімші",
-      enabledLanguages: "Қосылған тілдер",
-      total: "Жалпы",
-      systemLanguages: "Жүйелік тілдер",
-      protectedCore: "Қорғалған өзек",
-      localUsers: "Жергілікті қолданушылар",
-      nonAdAccounts: "AD-сыз аккаунттар",
-      adminMode: "Әкімші режимі",
-      adminActive: "Белсенді",
-      rbacEnforced: "RBAC қосулы",
-      overview: "Шолу",
-      languages: "Тілдер",
-      integrations: "Интеграциялар",
-      backups: "Backup",
-      audit: "Аудит",
-      platformModules: "Платформа модульдері",
-      operationalFocus: "Операциялық фокус",
-      usersRoles: "Қолданушылар мен рөлдер",
-      ldapSettings: "LDAP/AD баптаулары",
-      aiControls: "AI провайдер бақылауы",
-      auditEvents: "Аудит және қауіпсіздік оқиғалары",
-      trackChanges: "Рөл өзгерістерін және артықшылықты әрекеттерді қадағала",
-      keepI18n: "i18n өзегін (`kk`, `ru`, `en`) тұрақты ұста",
-      controlledExceptions: "local users тек бақыланатын ерекше жағдай үшін",
-      documentActions: "Әр маңызды әкімші әрекетін құжатта",
-      languageManagement: "Тілдерді басқару",
-      langHelp: "Өзекті бұзбай жаңа тілдерді қос.",
-      catalogTitle: "Тілдер каталогы",
-      catalogHelp: "Каталогтан тілді таңда. Тізім код, ағылшынша атау және native name бойынша ізделеді.",
-      searchLanguagePlaceholder: "Тілді іздеу: zh, Chinese, 中文",
-      selectedLanguage: "Таңдалған тіл",
-      noLanguageSelected: "Каталог тізімінен тілді таңда.",
-      noCatalogResults: "Сұрауыңыз бойынша тіл табылмады.",
-      code: "Код",
-      name: "Атауы",
-      type: "Түр",
-      status: "Күй",
-      actions: "Эрекеттер",
-      system: "Жүйелік",
-      custom: "Қосымша",
-      enabled: "Қосулы",
-      disabled: "Өшік",
-      disable: "Өшіру",
-      enable: "Қосу",
-      delete: "Жою",
-      localUsersNoAd: "Жергілікті қолданушылар (AD sync жоқ)",
-      localUsersHelp: "Сервистік не ерекше сценарийлер үшін.",
-      loginPlaceholder: "Логин (local.registrar)",
-      passwordPlaceholder: "Құпия сөз",
-      displayNamePlaceholder: "Көрсетілетін аты",
-      rolesPlaceholder: "Рөлдер: registrar,auditor",
-      addLocalUser: "Жергілікті қолданушы қосу",
-      refreshList: "Тізімді жаңарту",
-      noLocalUsers: "Әзірше жергілікті қолданушы жоқ.",
-      user: "Қолданушы",
-      userId: "User ID",
-      roles: "Рөлдер",
-      source: "Дереккөз",
-      adSync: "ad_sync",
-      on: "қосулы",
-      off: "өшік",
-      directoryIdentity: "Directory және идентификация",
-      directoryHelp: "LDAP/AD тексеру және байланыс тесттері.",
-      planned: "Жоспарда",
-      aiProviders: "AI провайдерлер",
-      aiHelp: "Кілттер, маршрут саясаты және квота бақылауы.",
-      configured: "Бапталған",
-      notConfigured: "Бапталмаған",
-      enabledFlag: "Enabled жалауы",
-      yes: "Иә",
-      no: "Жоқ",
-      testConnection: "Байланысты тексеру",
-      testUserBind: "Пайдаланушы bind тексеру",
-      saveSettings: "Баптауларды сақтау",
-      ldapConfigTitle: "LDAP/AD баптауы",
-      ldapEnabled: "LDAP қосу",
-      ldapServerUri: "LDAP server URI",
-      ldapBindDn: "Bind DN",
-      ldapBindPassword: "Bind password",
-      ldapBaseDn: "Base DN",
-      ldapUserFilter: "User filter",
-      ldapDisplayAttr: "Display name attribute",
-      ldapLoginAttr: "Login attribute",
-      ldapGroupAttr: "Group attribute",
-      ldapRoleMapJson: "Group->Role map JSON",
-      ldapDefaultRole: "Default role",
-      ldapTimeout: "Timeout (секунд)",
-      providerApiKey: "API кілті",
-      ldapLoginPlaceholder: "LDAP логин",
-      ldapPasswordPlaceholder: "LDAP құпия сөзі",
-      validationEndpoint: "Тексеру endpoint",
-      validateProvider: "Провайдерді тексеру",
-      providerSaved: "Провайдер баптаулары сақталды",
-      ldapSaved: "LDAP баптаулары сақталды",
-      validationOk: "Тексеру сәтті өтті",
-      serviceBindOk: "Service bind сәтті өтті",
-      noProviders: "Көрсетілетін провайдер жоқ.",
-      featureFlagsLoading: "Жүктелуде...",
-      featureFlagUpdating: "Жаңартылуда...",
-      featureFlagSearch: "Кілт немесе сипаттама бойынша іздеу",
-      featureFlagsEnabledOnly: "Тек қосылғандарын көрсету",
-      featureFlagsShowing: "Көрсетілген флагтар: {count}",
-      featureFlagsShowingFiltered: "Көрсетілген сүзілген флагтар: {count}",
-      featureFlagsNoFiltersActive: "Белсенді фильтр жоқ",
-      featureFlagFilterSearch: "Іздеу",
-      featureFlagFilterEnabledOnly: "Тек қосылған",
-      featureFlagEnableConfirm: "{flag} feature flag-ін қосу керек пе?",
-      featureFlagDisableConfirm: "{flag} feature flag-ін өшіру керек пе?",
-      featureFlagUpdateCancelled: "Feature flag өзгерісі тоқтатылды",
-      featureFlagUpdated: "Feature flag {flag} күйі: {status}",
-      featureFlagLastChanged: "Соңғы өзгеріс",
-      auditVisibility: "Аудит көрінісі",
-      auditHelp: "Маңызды өзгерістер үшін actor/action/entity/correlation ID қара.",
-      export: "CSV/JSON экспорт",
-      filter: "Пайдаланушы/әрекет/күн бойынша сүзгі",
-      investigate: "correlation ID бойынша талдау",
-      securityPosture: "Қауіпсіздік жағдайы",
-      securityHelp: "Әкімші әрекеттері аудиттеліп, құқықпен қорғалуы керек.",
-      auditRequired: "Audit міндетті",
-      backupPlan: "Backup жоспары",
-      backupHelp: "Сақтау профильдерін қолданыңыз. Жол рұқсат етілген root ішінде болуы керек.",
-      activeBackupProfile: "Белсенді профиль",
-      profileId: "Профиль ID",
-      profileLabel: "Профиль атауы",
-      profilePath: "Сақтау жолы",
-      allowedRoots: "Рұқсат етілген root жолдар",
-      addProfile: "Профиль қосу",
-      removeProfile: "Профиль өшіру",
-      saveBackupSettings: "Профильдерді сақтау",
-      runBackupNow: "Backup іске қосу",
-      backupHistory: "Backup тарихы",
-      backupHistorySummaryAvailable: "Қолжетімді backup: {count}",
-      backupHistorySummaryLatest: "Соңғы backup: {value}",
-      backupHistorySummaryStatus: "Соңғы күй: {value}",
-      backupReload: "Backup деректерін жаңарту",
-      backupLoading: "Жүктелуде...",
-      backupRunning: "Іске қосылуда...",
-      backupRestoring: "Қалпына келтірілуде...",
-      backupApplying: "Қолданылуда...",
-      backupRunConfirm: "Backup қазір іске қосылсын ба?",
-      backupRunCancelled: "Backup іске қосу тоқтатылды",
-      backupRestoreConfirmByFile: "{file} backup-ын қалпына келтіру керек пе?",
-      backupRetentionConfirm: "Retention саясатын қолдану керек пе?",
-      backupRestoreAvailable: "Restore үшін қолжетімді",
-      backupRestoreNotAvailable: "Restore тізімінде жоқ",
-      backupCreatedAt: "Құрылған",
-      backupProfile: "Профиль",
-      backupStatusUnknown: "unknown",
-      backupStatusRunning: "running",
-      backupStatusFailed: "failed",
-      backupStatusSuccess: "success",
-      backupSelectForRestore: "Таңдау",
-      restoreCandidatesList: "Қалпына келтіру файлдары",
-      restoreModifiedAt: "Өзгертілген",
-      backupSaved: "Backup профильдері сақталды",
-      backupCompleted: "Backup орындалды",
-      noBackupJobs: "Әзірше backup тапсырмасы жоқ.",
-      backupFile: "Файл",
-      backupSize: "Көлем",
-      finishedAt: "Аяқталды",
-      addLanguage: "Тілді қосу",
-      languageAdded: "Тіл қосылды.",
-      languageEnabledMsg: "{code} тілі қосылды.",
-      languageDisabledMsg: "{code} тілі өшірілді.",
-      languageDeletedMsg: "{code} тілі жойылды.",
-      languageRequired: "Каталогтан тілді таңда.",
-      localUserRequired: "login, password және display name толтыр.",
-      localUserCreated: "Жергілікті қолданушы қосылды (AD sync жоқ).",
-      restoreConfirmPrompt: "Қалпына келтіру дерекқор күйін қайта жазады. Жалғастыру?",
-      restoreCancelled: "Қалпына келтіру тоқтатылды",
-      retentionConfirmPrompt: "Саясатты қолдану ескі бэкап файлдарын жояды. Жалғастыру?",
-      retentionCancelled: "Саясатты қолдану тоқтатылды",
-      auditAction: "Action",
-      auditActionFilter: "Filter by action",
-      auditActor: "Actor",
-      auditActorFilter: "Filter by actor",
-      auditCorrelation: "Correlation ID",
-      auditEntity: "Entity",
-      auditPath: "Path",
-      auditResult: "Result",
-      auditSinceFilter: "Since (ISO, e.g. 2026-03-15T00:00:00Z)",
-      auditTs: "Timestamp",
-      auditClearFilters: "Фильтрлерді тазалау",
-      auditNoFiltersActive: "Белсенді фильтр жоқ",
-      auditShowingEvents: "Көрсетілген оқиғалар: {count}",
-      auditShowingFilteredEvents: "Көрсетілген сүзілген оқиғалар: {count}",
-      auditLastEvent: "Соңғы оқиға",
-      auditLoading: "Жүктелуде...",
-      auditExportingCsv: "CSV экспорт...",
-      auditExportingJson: "JSON экспорт...",
-      authManagedByBackend: "Identity and roles are resolved by backend auth.",
-      backupJobType: "Type",
-      exportCsv: "Export CSV",
-      exportJson: "Export JSON",
-      keepSecretHint: "Бар құпияны сақтау үшін бос қалдырыңыз",
-      loadAuditEvents: "Load events",
-      localApplyFilters: "Apply filters",
-      localDelete: "Delete user",
-      localEditDisplayName: "Display name",
-      localEditRoles: "Roles: registrar,auditor",
-      localLanguageAll: "All languages",
-      localPasswordAction: "Set password",
-      localPasswordRequired: "Password is required.",
-      localPasswordUpdated: "Password updated",
-      localRoleFilter: "Filter by role",
-      localSearch: "Search by login, user id, display name",
-      localSetPassword: "New password",
-      localUpdate: "Update user",
-      localUserDeleted: "Local user deleted",
-      localUserOps: "Local user operations",
-      localUserSelectRequired: "Select a local user first.",
-      localUserUpdated: "Local user updated",
-      noAuditEvents: "No audit events found.",
-      noRestoreCandidates: "No .dump files found",
-      overviewAi: "Configured AI providers",
-      overviewApi: "API health",
-      overviewAssignments: "Assignments",
-      overviewBackend: "Backend health",
-      overviewLive: "Live operational snapshot",
-      overviewNoData: "No snapshot loaded yet.",
-      overviewRefresh: "Refresh snapshot",
-      overviewRoles: "Roles",
-      overviewUsers: "Local users",
-      rbac: "RBAC",
-      rbacAssign: "Assign role",
-      rbacAssignHelp: "Assign a role to a specific user ID.",
-      rbacAssignRequired: "User ID and role are required.",
-      rbacAssignTitle: "Assign role",
-      rbacAssigned: "Role assigned",
-      rbacFilterRole: "Filter by role",
-      rbacFilterUser: "Filter by user ID",
-      rbacNoAssignments: "No assignments found.",
-      rbacNoRoles: "No roles found.",
-      rbacPermissions: "Permissions: admin.dashboard.read,admin.audit.read",
-      rbacPerms: "Permissions",
-      rbacRefresh: "Refresh",
-      rbacRefreshAssignments: "Refresh assignments",
-      rbacRevoke: "Revoke",
-      rbacRevoked: "Role revoked",
-      rbacRole: "Role",
-      rbacRoleName: "Role name",
-      rbacRoleRequired: "Role name is required.",
-      rbacRoleSaved: "Role saved",
-      rbacRolesHelp: "Create or update role with comma-separated permissions.",
-      rbacRolesTitle: "Roles and permissions",
-      rbacSaveRole: "Save role",
-      rbacUserId: "User ID",
-      refreshRestoreFiles: "Refresh files",
-      restoreCompleted: "Restore completed",
-      restoreDryRun: "Restore dry-run",
-      restoreDryRunOk: "Restore dry-run prepared",
-      restoreFileRequired: "Select backup file for restore.",
-      restoreHelp: "Choose backup file and run dry-run before real restore.",
-      restoreNow: "Restore now",
-      restoreProfileRequired: "Select restore profile.",
-      restoreTitle: "Restore",
-      retentionApplied: "Retention applied: {count} file(s) deleted",
-      retentionApply: "Apply retention",
-      retentionDays: "Retention days",
-      retentionDryRun: "Retention dry-run",
-      retentionDryRunDone: "Retention dry-run: {count} file(s) can be deleted",
-      retentionHelp: "Keep recent backups and delete old dump files by policy.",
-      retentionMinFiles: "Minimum files to keep",
-      retentionTitle: "Retention policy",
-      errorPrefix: "Қате",
-    },
-    zh: {
-      controlCenter: "平台控制中心",
-      lastChange: "最后更新",
-      adminUser: "管理员",
-      enabledLanguages: "已启用语言",
-      total: "总数",
-      systemLanguages: "系统语言",
-      protectedCore: "受保护核心",
-      localUsers: "本地用户",
-      nonAdAccounts: "非 AD 账户",
-      adminMode: "管理模式",
-      adminActive: "已启用",
-      rbacEnforced: "RBAC 已启用",
-      overview: "概览",
-      languages: "语言",
-      integrations: "集成",
-      backups: "备份",
-      audit: "审计",
-      platformModules: "平台模块",
-      operationalFocus: "运维重点",
-      usersRoles: "用户与角色",
-      ldapSettings: "LDAP/AD 设置",
-      aiControls: "AI 提供商控制",
-      auditEvents: "审计与安全事件",
-      trackChanges: "跟踪角色变更和特权操作",
-      keepI18n: "保持 i18n 核心（`kk`, `ru`, `en`, `zh`）可用",
-      controlledExceptions: "本地用户仅用于受控例外场景",
-      documentActions: "记录每个重要管理员操作",
-      languageManagement: "语言管理",
-      langHelp: "在不破坏核心的情况下添加新语言。系统语言受保护。",
-      catalogTitle: "语言目录",
-      catalogHelp: "从目录中选择语言。列表支持滚动，并可按代码、英文名和本地名搜索。",
-      searchLanguagePlaceholder: "搜索语言：zh, Chinese, 中文",
-      selectedLanguage: "已选语言",
-      noLanguageSelected: "请从目录列表中选择语言。",
-      noCatalogResults: "没有找到匹配的语言。",
-      code: "代码",
-      name: "名称",
-      type: "类型",
-      status: "状态",
-      actions: "操作",
-      system: "系统",
-      custom: "自定义",
-      enabled: "启用",
-      disabled: "停用",
-      disable: "停用",
-      enable: "启用",
-      delete: "删除",
-      localUsersNoAd: "本地用户（不与 AD 同步）",
-      localUsersHelp: "用于服务账户或特殊场景。AD 字段不会同步。",
-      loginPlaceholder: "登录名（local.registrar）",
-      passwordPlaceholder: "密码",
-      displayNamePlaceholder: "显示名称",
-      rolesPlaceholder: "角色：registrar,auditor",
-      addLocalUser: "添加本地用户",
-      refreshList: "刷新列表",
-      noLocalUsers: "暂无本地用户。",
-      user: "用户",
-      userId: "用户 ID",
-      roles: "角色",
-      source: "来源",
-      adSync: "ad_sync",
-      on: "开",
-      off: "关",
-      directoryIdentity: "目录与身份",
-      directoryHelp: "LDAP/AD 集成检查与连接测试。",
-      planned: "计划中",
-      aiProviders: "AI 提供商",
-      aiHelp: "提供商密钥、路由策略和配额控制。",
-      configured: "已配置",
-      notConfigured: "未配置",
-      enabledFlag: "启用标志",
-      yes: "是",
-      no: "否",
-      testConnection: "测试连接",
-      testUserBind: "测试用户绑定",
-      saveSettings: "保存设置",
-      ldapConfigTitle: "LDAP/AD 配置",
-      ldapEnabled: "启用 LDAP",
-      ldapServerUri: "LDAP server URI",
-      ldapBindDn: "Bind DN",
-      ldapBindPassword: "Bind password",
-      ldapBaseDn: "Base DN",
-      ldapUserFilter: "User filter",
-      ldapDisplayAttr: "Display name attribute",
-      ldapLoginAttr: "Login attribute",
-      ldapGroupAttr: "Group attribute",
-      ldapRoleMapJson: "Group->Role map JSON",
-      ldapDefaultRole: "Default role",
-      ldapTimeout: "Timeout（秒）",
-      providerApiKey: "API 密钥",
-      ldapLoginPlaceholder: "LDAP 登录名",
-      ldapPasswordPlaceholder: "LDAP 密码",
-      validationEndpoint: "验证端点",
-      validateProvider: "验证提供商",
-      providerSaved: "提供商设置已保存",
-      ldapSaved: "LDAP 设置已保存",
-      validationOk: "验证成功",
-      serviceBindOk: "服务账号绑定成功",
-      noProviders: "暂无可显示的提供商。",
-      auditVisibility: "审计可见性",
-      auditHelp: "为关键变更跟踪 actor、action、entity 和 correlation ID。",
-      export: "导出 CSV/JSON",
-      filter: "按用户/操作/日期筛选",
-      investigate: "按 correlation ID 调查",
-      securityPosture: "安全态势",
-      securityHelp: "管理员操作必须可审计且受权限保护。",
-      auditRequired: "必须审计",
-      backupPlan: "备份计划",
-      backupHelp: "请使用存储配置档。路径必须位于允许的根目录内。",
-      activeBackupProfile: "当前配置档",
-      profileId: "配置档 ID",
-      profileLabel: "配置档名称",
-      profilePath: "存储路径",
-      allowedRoots: "允许的根路径",
-      addProfile: "新增配置档",
-      removeProfile: "删除配置档",
-      saveBackupSettings: "保存配置档",
-      runBackupNow: "立即执行备份",
-      backupHistory: "备份历史",
-      backupSaved: "备份配置档已保存",
-      backupCompleted: "备份已完成",
-      noBackupJobs: "暂无备份任务。",
-      backupFile: "文件",
-      backupSize: "大小",
-      finishedAt: "完成时间",
-      addLanguage: "添加语言",
-      languageAdded: "语言已添加。",
-      languageEnabledMsg: "语言 {code} 已启用。",
-      languageDisabledMsg: "语言 {code} 已停用。",
-      languageDeletedMsg: "语言 {code} 已删除。",
-      languageRequired: "请先从目录中选择语言。",
-      localUserRequired: "本地用户必须填写 login、password 和 display name。",
-      localUserCreated: "本地用户已创建（无 AD sync）。",
-      restoreConfirmPrompt: "恢复将覆盖当前数据库状态。是否继续?",
-      restoreCancelled: "恢复已取消",
-      retentionConfirmPrompt: "应用保留策略将永久删除旧备份文件。是否继续?",
-      retentionCancelled: "保留策略已取消",
-      auditAction: "Action",
-      auditActionFilter: "Filter by action",
-      auditActor: "Actor",
-      auditActorFilter: "Filter by actor",
-      auditCorrelation: "Correlation ID",
-      auditEntity: "Entity",
-      auditPath: "Path",
-      auditResult: "Result",
-      auditSinceFilter: "Since (ISO, e.g. 2026-03-15T00:00:00Z)",
-      auditTs: "Timestamp",
-      authManagedByBackend: "Identity and roles are resolved by backend auth.",
-      backupJobType: "Type",
-      exportCsv: "Export CSV",
-      exportJson: "Export JSON",
-      keepSecretHint: "留空以保留现有密钥",
-      loadAuditEvents: "Load events",
-      localApplyFilters: "Apply filters",
-      localDelete: "Delete user",
-      localEditDisplayName: "Display name",
-      localEditRoles: "Roles: registrar,auditor",
-      localLanguageAll: "All languages",
-      localPasswordAction: "Set password",
-      localPasswordRequired: "Password is required.",
-      localPasswordUpdated: "Password updated",
-      localRoleFilter: "Filter by role",
-      localSearch: "Search by login, user id, display name",
-      localSetPassword: "New password",
-      localUpdate: "Update user",
-      localUserDeleted: "Local user deleted",
-      localUserOps: "Local user operations",
-      localUserSelectRequired: "Select a local user first.",
-      localUserUpdated: "Local user updated",
-      noAuditEvents: "No audit events found.",
-      noRestoreCandidates: "No .dump files found",
-      overviewAi: "Configured AI providers",
-      overviewApi: "API health",
-      overviewAssignments: "Assignments",
-      overviewBackend: "Backend health",
-      overviewLive: "Live operational snapshot",
-      overviewNoData: "No snapshot loaded yet.",
-      overviewRefresh: "Refresh snapshot",
-      overviewRoles: "Roles",
-      overviewUsers: "Local users",
-      rbac: "RBAC",
-      rbacAssign: "Assign role",
-      rbacAssignHelp: "Assign a role to a specific user ID.",
-      rbacAssignRequired: "User ID and role are required.",
-      rbacAssignTitle: "Assign role",
-      rbacAssigned: "Role assigned",
-      rbacFilterRole: "Filter by role",
-      rbacFilterUser: "Filter by user ID",
-      rbacNoAssignments: "No assignments found.",
-      rbacNoRoles: "No roles found.",
-      rbacPermissions: "Permissions: admin.dashboard.read,admin.audit.read",
-      rbacPerms: "Permissions",
-      rbacRefresh: "Refresh",
-      rbacRefreshAssignments: "Refresh assignments",
-      rbacRevoke: "Revoke",
-      rbacRevoked: "Role revoked",
-      rbacRole: "Role",
-      rbacRoleName: "Role name",
-      rbacRoleRequired: "Role name is required.",
-      rbacRoleSaved: "Role saved",
-      rbacRolesHelp: "Create or update role with comma-separated permissions.",
-      rbacRolesTitle: "Roles and permissions",
-      rbacSaveRole: "Save role",
-      rbacUserId: "User ID",
-      refreshRestoreFiles: "Refresh files",
-      restoreCompleted: "Restore completed",
-      restoreDryRun: "Restore dry-run",
-      restoreDryRunOk: "Restore dry-run prepared",
-      restoreFileRequired: "Select backup file for restore.",
-      restoreHelp: "Choose backup file and run dry-run before real restore.",
-      restoreNow: "Restore now",
-      restoreProfileRequired: "Select restore profile.",
-      restoreTitle: "Restore",
-      retentionApplied: "Retention applied: {count} file(s) deleted",
-      retentionApply: "Apply retention",
-      retentionDays: "Retention days",
-      retentionDryRun: "Retention dry-run",
-      retentionDryRunDone: "Retention dry-run: {count} file(s) can be deleted",
-      retentionHelp: "Keep recent backups and delete old dump files by policy.",
-      retentionMinFiles: "Minimum files to keep",
-      retentionTitle: "Retention policy",
-      errorPrefix: "错误",
-    },
-  };
-
-  const l = labels[uiLang];
-  const tx = useCallback((key: string, fallback: string) => l[key] || fallback, [l]);
+  const l = adminTranslations[uiLang];
+  const tx = useCallback((key: AdminTranslationKey, fallback?: string) => {
+    const value = l[key] ?? adminTranslations.ru[key];
+    if (value !== undefined) {
+      return value;
+    }
+    if (fallback !== undefined) {
+      return fallback;
+    }
+    if (process.env.NODE_ENV !== "production") {
+      return `missing translation: ${String(key)}`;
+    }
+    return adminTranslations.ru.errorPrefix;
+  }, [l]);
 
   const enabledLanguages = supportedLanguages.filter((item) => item.enabled).length;
   const enabledLanguageCodes = supportedLanguages
@@ -1205,25 +185,25 @@ export default function AdminPage() {
   const systemLanguages = supportedLanguages.filter((item) => item.system).length;
   const selectedLocalUser = localUsers.find((item) => item.user_id === selectedLocalUserId) || null;
   const localFilterBadges = [
-    localSearch.trim() ? `${tx("localFilterSearch", "Search")}: ${localSearch.trim()}` : "",
-    localRoleFilter.trim() ? `${tx("localFilterRole", "Role")}: ${localRoleFilter.trim()}` : "",
-    localLanguageFilter.trim() ? `${tx("localFilterLanguage", "Language")}: ${localLanguageFilter.trim()}` : "",
+    localSearch.trim() ? `${tx("localFilterSearch")}: ${localSearch.trim()}` : "",
+    localRoleFilter.trim() ? `${tx("localFilterRole")}: ${localRoleFilter.trim()}` : "",
+    localLanguageFilter.trim() ? `${tx("localFilterLanguage")}: ${localLanguageFilter.trim()}` : "",
   ].filter(Boolean);
   const rbacFilterBadges = [
-    assignmentUserFilter.trim() ? `${tx("rbacFilterUser", "Filter by user ID")}: ${assignmentUserFilter.trim()}` : "",
-    assignmentRoleFilter.trim() ? `${tx("rbacFilterRole", "Filter by role")}: ${assignmentRoleFilter.trim()}` : "",
+    assignmentUserFilter.trim() ? `${tx("rbacFilterUser")}: ${assignmentUserFilter.trim()}` : "",
+    assignmentRoleFilter.trim() ? `${tx("rbacFilterRole")}: ${assignmentRoleFilter.trim()}` : "",
   ].filter(Boolean);
   const rbacAssignmentRows = useMemo(
     () => rbacAssignments.flatMap((row) => row.roles.map((role) => ({ user_id: row.user_id, role }))),
     [rbacAssignments],
   );
   const auditFilterBadges = [
-    auditActor.trim() ? `${tx("auditActor", "Actor")}: ${auditActor.trim()}` : "",
-    auditAction.trim() ? `${tx("auditAction", "Action")}: ${auditAction.trim()}` : "",
-    auditEntity.trim() ? `${tx("auditEntity", "Entity")}: ${auditEntity.trim()}` : "",
-    auditResult.trim() ? `${tx("auditResult", "Result")}: ${auditResult.trim()}` : "",
-    auditSince.trim() ? `${tx("auditTs", "Timestamp")}: ${auditSince.trim()}` : "",
-    auditCorrelationId.trim() ? `${tx("auditCorrelation", "Correlation ID")}: ${auditCorrelationId.trim()}` : "",
+    auditActor.trim() ? `${tx("auditActor")}: ${auditActor.trim()}` : "",
+    auditAction.trim() ? `${tx("auditAction")}: ${auditAction.trim()}` : "",
+    auditEntity.trim() ? `${tx("auditEntity")}: ${auditEntity.trim()}` : "",
+    auditResult.trim() ? `${tx("auditResult")}: ${auditResult.trim()}` : "",
+    auditSince.trim() ? `${tx("auditTs")}: ${auditSince.trim()}` : "",
+    auditCorrelationId.trim() ? `${tx("auditCorrelation")}: ${auditCorrelationId.trim()}` : "",
   ].filter(Boolean);
   const normalizedFeatureFlagSearch = featureFlagSearch.trim().toLowerCase();
   const filteredFeatureFlags = useMemo(() => {
@@ -1239,13 +219,13 @@ export default function AdminPage() {
     });
   }, [featureFlags, featureFlagEnabledOnly, normalizedFeatureFlagSearch]);
   const featureFlagFilterBadges = [
-    normalizedFeatureFlagSearch ? `${tx("featureFlagFilterSearch", "Search")}: ${featureFlagSearch.trim()}` : "",
-    featureFlagEnabledOnly ? tx("featureFlagFilterEnabledOnly", "Enabled only") : "",
+    normalizedFeatureFlagSearch ? `${tx("featureFlagFilterSearch")}: ${featureFlagSearch.trim()}` : "",
+    featureFlagEnabledOnly ? tx("featureFlagFilterEnabledOnly") : "",
   ].filter(Boolean);
   const hasActiveFeatureFlagFilters = featureFlagFilterBadges.length > 0;
   const featureFlagSummary = hasActiveFeatureFlagFilters
-    ? tx("featureFlagsShowingFiltered", "Showing {count} filtered flags").replace("{count}", String(filteredFeatureFlags.length))
-    : tx("featureFlagsShowing", "Showing {count} flags").replace("{count}", String(filteredFeatureFlags.length));
+    ? tx("featureFlagsShowingFiltered").replace("{count}", String(filteredFeatureFlags.length))
+    : tx("featureFlagsShowing").replace("{count}", String(filteredFeatureFlags.length));
   const featureFlagsMutating = useMemo(
     () => Object.values(featureFlagUpdateBusy).some(Boolean),
     [featureFlagUpdateBusy],
@@ -1261,7 +241,7 @@ export default function AdminPage() {
   const backupLatestJob = backupJobsSorted[0] || null;
   const backupSummaryCount = backupJobsSorted.length > 0 ? backupJobsSorted.length : restoreCandidates.length;
   const backupSummaryLatest = backupLatestJob?.started_at || restoreCandidates[0]?.modified_at || "-";
-  const backupSummaryStatus = backupLatestJob?.status || tx("backupStatusUnknown", "unknown");
+  const backupSummaryStatus = backupLatestJob?.status || tx("backupStatusUnknown");
   const backupActionsBusy = backupListLoading || backupRunBusy || backupRestoreBusy || backupRetentionBusy;
   const hasActiveAuditFilters = auditFilterBadges.length > 0;
   const auditLatestTimestamp = useMemo(() => {
@@ -1390,7 +370,7 @@ export default function AdminPage() {
         setExampleReferenceItems(exampleJson.items || []);
       }
 
-      setOverviewFeedback({ tone: "success", message: tx("overviewRefreshed", "Snapshot refreshed") });
+      setOverviewFeedback({ tone: "success", message: tx("overviewRefreshed") });
     } catch (error) {
       setOverviewFeedback({ tone: "error", message: String(error) });
     } finally {
@@ -1538,7 +518,7 @@ export default function AdminPage() {
           message: `${l.errorPrefix}: ${loadErrors.join(" | ")}`,
         });
       } else if (showFeedback) {
-        setIntegrationsFeedback({ tone: "success", message: tx("integrationsReloaded", "Integrations status refreshed") });
+        setIntegrationsFeedback({ tone: "success", message: tx("integrationsReloaded") });
       } else {
         setIntegrationsFeedback(null);
       }
@@ -1672,7 +652,7 @@ export default function AdminPage() {
       if (errors.length > 0) {
         setBackupFeedback({ tone: "error", message: `${l.errorPrefix}: ${errors.join(" | ")}` });
       } else if (showFeedback) {
-        setBackupFeedback({ tone: "success", message: tx("backupReload", "Reload backup data") });
+        setBackupFeedback({ tone: "success", message: tx("backupReload") });
       }
     } catch (error) {
       setBackupFeedback({ tone: "error", message: String(error) });
@@ -1722,20 +702,20 @@ export default function AdminPage() {
   const runRestore = async (dryRun: boolean) => {
     setBackupFeedback(null);
     if (!restoreProfileId) {
-      setBackupFeedback({ tone: "error", message: tx("restoreProfileRequired", "Select restore profile.") });
+      setBackupFeedback({ tone: "error", message: tx("restoreProfileRequired") });
       return;
     }
     if (!restoreFileName) {
-      setBackupFeedback({ tone: "error", message: tx("restoreFileRequired", "Select backup file for restore.") });
+      setBackupFeedback({ tone: "error", message: tx("restoreFileRequired") });
       return;
     }
 
     if (!dryRun) {
       const confirmed = window.confirm(
-        tx("backupRestoreConfirmByFile", "Restore backup {file}?").replace("{file}", restoreFileName),
+        tx("backupRestoreConfirmByFile").replace("{file}", restoreFileName),
       );
       if (!confirmed) {
-        setBackupFeedback({ tone: "info", message: tx("restoreCancelled", "Restore cancelled") });
+        setBackupFeedback({ tone: "info", message: tx("restoreCancelled") });
         return;
       }
     }
@@ -1770,8 +750,8 @@ export default function AdminPage() {
       setBackupFeedback({
         tone: "success",
         message: dryRun
-          ? tx("restoreDryRunOk", "Restore dry-run prepared")
-          : tx("restoreCompleted", "Restore completed"),
+          ? tx("restoreDryRunOk")
+          : tx("restoreCompleted"),
       });
       if (json.job?.status) {
         await loadBackupStatus();
@@ -1818,12 +798,12 @@ export default function AdminPage() {
   const setFeatureFlagEnabled = async (flag: FeatureFlag, enabled: boolean) => {
     const confirmed = window.confirm(
       (enabled
-        ? tx("featureFlagEnableConfirm", "Enable feature flag {flag}?")
-        : tx("featureFlagDisableConfirm", "Disable feature flag {flag}?"))
+        ? tx("featureFlagEnableConfirm")
+        : tx("featureFlagDisableConfirm"))
         .replace("{flag}", flag.key),
     );
     if (!confirmed) {
-      setFeatureFlagsFeedback({ tone: "info", message: tx("featureFlagUpdateCancelled", "Feature flag update cancelled") });
+      setFeatureFlagsFeedback({ tone: "info", message: tx("featureFlagUpdateCancelled") });
       return;
     }
 
@@ -1858,10 +838,10 @@ export default function AdminPage() {
       }
 
       await loadFeatureFlags(true);
-      const statusLabel = enabled ? tx("enabled", "Enabled") : tx("disabled", "Disabled");
+      const statusLabel = enabled ? tx("enabled") : tx("disabled");
       setFeatureFlagsFeedback({
         tone: "success",
-        message: tx("featureFlagUpdated", "Feature flag {flag} set to {status}")
+        message: tx("featureFlagUpdated")
           .replace("{flag}", flag.key)
           .replace("{status}", statusLabel),
       });
@@ -1931,7 +911,7 @@ export default function AdminPage() {
       setAuditEvents(rows);
       setAuditFeedback({
         tone: "success",
-        message: tx("auditShowingEvents", "Showing {count} events").replace("{count}", String(rows.length)),
+        message: tx("auditShowingEvents").replace("{count}", String(rows.length)),
       });
     } catch (error) {
       setAuditFeedback({ tone: "error", message: String(error) });
@@ -1992,7 +972,7 @@ export default function AdminPage() {
       URL.revokeObjectURL(url);
       setAuditFeedback({
         tone: "success",
-        message: tx("export", "Export CSV/JSON"),
+        message: tx("export"),
       });
     } catch (error) {
       setAuditFeedback({ tone: "error", message: String(error) });
@@ -2008,7 +988,7 @@ export default function AdminPage() {
     setAuditResult("");
     setAuditCorrelationId("");
     setAuditSince("");
-    setAuditFeedback({ tone: "info", message: tx("auditNoFiltersActive", "No active filters") });
+    setAuditFeedback({ tone: "info", message: tx("auditNoFiltersActive") });
     await loadAuditEvents({
       actor: "",
       action: "",
@@ -2291,7 +1271,7 @@ export default function AdminPage() {
     setEditLocalRoles(selectedLocalUser.roles.join(","));
     setEditLocalPassword("");
     setEditLocalPasswordConfirm("");
-    setLocalFeedback({ tone: "info", message: tx("localFormReverted", "Changes reverted") });
+    setLocalFeedback({ tone: "info", message: tx("localFormReverted") });
   };
 
   const clearLocalFilters = async () => {
@@ -2305,11 +1285,11 @@ export default function AdminPage() {
   const updateLocalUser = async () => {
     setLocalFeedback(null);
     if (!selectedLocalUserId) {
-      setLocalFeedback({ tone: "error", message: tx("localUserSelectRequired", "Select a local user first.") });
+      setLocalFeedback({ tone: "error", message: tx("localUserSelectRequired") });
       return;
     }
     if (!localUpdateHasChanges) {
-      setLocalFeedback({ tone: "info", message: tx("localNoChanges", "No changes to save") });
+      setLocalFeedback({ tone: "info", message: tx("localNoChanges") });
       return;
     }
 
@@ -2346,7 +1326,7 @@ export default function AdminPage() {
 
       await loadLocalUsers();
       await loadDashboard();
-      setLocalFeedback({ tone: "success", message: tx("localUserUpdated", "Local user updated") });
+      setLocalFeedback({ tone: "success", message: tx("localUserUpdated") });
     } catch (error) {
       setLocalFeedback({ tone: "error", message: String(error) });
     } finally {
@@ -2357,19 +1337,19 @@ export default function AdminPage() {
   const updateLocalUserPassword = async () => {
     setLocalFeedback(null);
     if (!selectedLocalUserId) {
-      setLocalFeedback({ tone: "error", message: tx("localUserSelectRequired", "Select a local user first.") });
+      setLocalFeedback({ tone: "error", message: tx("localUserSelectRequired") });
       return;
     }
     if (!editLocalPassword.trim()) {
-      setLocalFeedback({ tone: "error", message: tx("localPasswordRequired", "Password is required.") });
+      setLocalFeedback({ tone: "error", message: tx("localPasswordRequired") });
       return;
     }
     if (editLocalPassword.trim().length < 6) {
-      setLocalFeedback({ tone: "error", message: tx("localPasswordMinLength", "Password must be at least 6 characters") });
+      setLocalFeedback({ tone: "error", message: tx("localPasswordMinLength") });
       return;
     }
     if (editLocalPassword !== editLocalPasswordConfirm) {
-      setLocalFeedback({ tone: "error", message: tx("localPasswordMismatch", "Passwords do not match") });
+      setLocalFeedback({ tone: "error", message: tx("localPasswordMismatch") });
       return;
     }
 
@@ -2399,7 +1379,7 @@ export default function AdminPage() {
 
       setEditLocalPassword("");
       setEditLocalPasswordConfirm("");
-      setLocalFeedback({ tone: "success", message: tx("localPasswordUpdated", "Password updated") });
+      setLocalFeedback({ tone: "success", message: tx("localPasswordUpdated") });
     } catch (error) {
       setLocalFeedback({ tone: "error", message: String(error) });
     } finally {
@@ -2410,17 +1390,17 @@ export default function AdminPage() {
   const deleteLocalUser = async () => {
     setLocalFeedback(null);
     if (!selectedLocalUserId) {
-      setLocalFeedback({ tone: "error", message: tx("localUserSelectRequired", "Select a local user first.") });
+      setLocalFeedback({ tone: "error", message: tx("localUserSelectRequired") });
       return;
     }
 
     const target = localUsers.find((item) => item.user_id === selectedLocalUserId);
     const confirmed = window.confirm(
-      tx("localDeleteConfirm", "Delete selected local user?") +
+      tx("localDeleteConfirm") +
       (target ? `\n${target.display_name} (${target.login}) [${target.user_id}]` : ""),
     );
     if (!confirmed) {
-      setLocalFeedback({ tone: "info", message: tx("localDeleteCancelled", "Delete cancelled") });
+      setLocalFeedback({ tone: "info", message: tx("localDeleteCancelled") });
       return;
     }
 
@@ -2448,7 +1428,7 @@ export default function AdminPage() {
 
       await loadLocalUsers();
       await loadDashboard();
-      setLocalFeedback({ tone: "success", message: tx("localUserDeleted", "Local user deleted") });
+      setLocalFeedback({ tone: "success", message: tx("localUserDeleted") });
     } catch (error) {
       setLocalFeedback({ tone: "error", message: String(error) });
     } finally {
@@ -2459,7 +1439,7 @@ export default function AdminPage() {
   const saveRbacRole = async () => {
     setRbacFeedback(null);
     if (!newRoleName.trim()) {
-      setRbacFeedback({ tone: "error", message: tx("rbacRoleRequired", "Role name is required.") });
+      setRbacFeedback({ tone: "error", message: tx("rbacRoleRequired") });
       return;
     }
 
@@ -2493,7 +1473,7 @@ export default function AdminPage() {
         return;
       }
 
-      setRbacFeedback({ tone: "success", message: tx("rbacRoleSaved", "Role saved") });
+      setRbacFeedback({ tone: "success", message: tx("rbacRoleSaved") });
       setNewRoleName("");
       await loadRbacRoles();
     } catch (error) {
@@ -2506,7 +1486,7 @@ export default function AdminPage() {
   const assignRbacRole = async () => {
     setRbacFeedback(null);
     if (!assignUserId.trim() || !assignRoleName.trim()) {
-      setRbacFeedback({ tone: "error", message: tx("rbacAssignRequired", "User ID and role are required.") });
+      setRbacFeedback({ tone: "error", message: tx("rbacAssignRequired") });
       return;
     }
 
@@ -2537,7 +1517,7 @@ export default function AdminPage() {
         return;
       }
 
-      setRbacFeedback({ tone: "success", message: tx("rbacAssigned", "Role assigned") });
+      setRbacFeedback({ tone: "success", message: tx("rbacAssigned") });
       await loadRbacAssignments();
       await loadDashboard();
     } catch (error) {
@@ -2551,10 +1531,10 @@ export default function AdminPage() {
     setRbacFeedback(null);
     const revokeLabel = `${userId} / ${role}`;
     const confirmed = window.confirm(
-      tx("rbacRevokeConfirm", "Revoke selected role assignment?") + `\n${revokeLabel}`,
+      tx("rbacRevokeConfirm") + `\n${revokeLabel}`,
     );
     if (!confirmed) {
-      setRbacFeedback({ tone: "info", message: tx("rbacRevokeCancelled", "Revoke cancelled") });
+      setRbacFeedback({ tone: "info", message: tx("rbacRevokeCancelled") });
       return;
     }
 
@@ -2585,7 +1565,7 @@ export default function AdminPage() {
 
       await loadRbacAssignments();
       await loadDashboard();
-      setRbacFeedback({ tone: "success", message: tx("rbacRevoked", "Role revoked") });
+      setRbacFeedback({ tone: "success", message: tx("rbacRevoked") });
     } catch (error) {
       setRbacFeedback({ tone: "error", message: String(error) });
     } finally {
@@ -2664,7 +1644,7 @@ export default function AdminPage() {
         ? `${l.validationOk}: ${json.result.user_check.user_id} (${(json.result.user_check.roles || []).join(", ")})`
         : l.serviceBindOk;
       setLdapTestResult(details);
-      setLdapFeedback({ tone: "success", message: tx("validationOk", "Validation passed") });
+      setLdapFeedback({ tone: "success", message: tx("validationOk") });
       await loadIntegrationStatus();
     } catch (error) {
       setLdapFeedback({ tone: "error", message: String(error) });
@@ -2864,7 +1844,7 @@ export default function AdminPage() {
         return;
       }
 
-      setBackupFeedback({ tone: "success", message: tx("backupSaved", "Backup profiles saved") });
+      setBackupFeedback({ tone: "success", message: tx("backupSaved") });
       await loadBackupStatus();
     } catch (error) {
       setBackupFeedback({ tone: "error", message: String(error) });
@@ -2876,10 +1856,10 @@ export default function AdminPage() {
 
     if (!dryRun) {
       const confirmed = window.confirm(
-        tx("backupRetentionConfirm", "Apply retention policy?"),
+        tx("backupRetentionConfirm"),
       );
       if (!confirmed) {
-        setBackupFeedback({ tone: "info", message: tx("retentionCancelled", "Retention cancelled") });
+        setBackupFeedback({ tone: "info", message: tx("retentionCancelled") });
         return;
       }
     }
@@ -2911,8 +1891,8 @@ export default function AdminPage() {
       const json = (await res.json()) as { job?: { deleted_count?: number; status?: string } };
       const deleted = json.job?.deleted_count ?? 0;
       const retentionStatusTemplate = dryRun
-        ? tx("retentionDryRunDone", "Retention dry-run: {count} file(s) can be deleted")
-        : tx("retentionApplied", "Retention applied: {count} file(s) deleted");
+        ? tx("retentionDryRunDone")
+        : tx("retentionApplied");
       setBackupFeedback({ tone: "success", message: retentionStatusTemplate.replace("{count}", String(deleted)) });
       await loadBackupStatus();
       await loadRestoreCandidates();
@@ -2924,9 +1904,9 @@ export default function AdminPage() {
   };
 
   const runBackupNow = async () => {
-    const confirmed = window.confirm(tx("backupRunConfirm", "Run backup now?"));
+    const confirmed = window.confirm(tx("backupRunConfirm"));
     if (!confirmed) {
-      setBackupFeedback({ tone: "info", message: tx("backupRunCancelled", "Backup run cancelled") });
+      setBackupFeedback({ tone: "info", message: tx("backupRunCancelled") });
       return;
     }
 
@@ -2949,7 +1929,7 @@ export default function AdminPage() {
         return;
       }
 
-      setBackupFeedback({ tone: "success", message: tx("backupCompleted", "Backup completed") });
+      setBackupFeedback({ tone: "success", message: tx("backupCompleted") });
       await loadBackupStatus();
       await loadRestoreCandidates();
     } catch (error) {
@@ -2959,10 +1939,32 @@ export default function AdminPage() {
     }
   };
 
-  const tabButtonClass = (tab: AdminTab) => (activeTab === tab ? "tabButton tabButtonActive" : "tabButton");
+  const adminSections: AdminSection[] = [
+    { id: "overview", label: l.overview, icon: "◧" },
+    { id: "languages", label: l.languages, icon: "⟲" },
+    { id: "local-users", label: l.localUsers, icon: "◫" },
+    { id: "rbac", label: tx("rbac"), icon: "◎" },
+    { id: "integrations", label: l.integrations, icon: "◇" },
+    { id: "backups", label: tx("backups"), icon: "▣" },
+    { id: "audit", label: l.audit, icon: "◌" },
+    { id: "feature-flags", label: tx("featureFlags"), icon: "✦" },
+    { id: "example-notes", label: tx("exampleNotesTab", "Example Notes"), icon: "▤" },
+  ];
 
   return (
-    <main className="adminRoot">
+    <AdminShell
+      activeTab={activeTab}
+      onTabChange={(tab) => setActiveTab(tab as AdminTab)}
+      sections={adminSections}
+      platformName={t("admin.title")}
+      headerControls={
+        <div className="shellHeaderMeta">
+          <span>{l.adminUser}</span>
+          <small>{tx("authManagedByBackend")}</small>
+        </div>
+      }
+    >
+    <main className="adminRoot" data-testid="admin-page-shell">
       <section className="hero cardFade">
         <div>
           <p className="kicker">{l.controlCenter}</p>
@@ -2972,7 +1974,7 @@ export default function AdminPage() {
         </div>
         <div className="heroRight">
           <p>{l.adminUser}</p>
-          <small>{tx("authManagedByBackend", "Identity and roles are resolved by backend auth.")}</small>
+          <small>{tx("authManagedByBackend")}</small>
         </div>
       </section>
 
@@ -2997,17 +1999,6 @@ export default function AdminPage() {
           <strong>{l.adminActive}</strong>
           <small>{l.rbacEnforced}</small>
         </article>
-      </section>
-
-      <section className="tabs cardFade">
-        <button type="button" onClick={() => setActiveTab("overview")} className={tabButtonClass("overview")}>{l.overview}</button>
-        <button type="button" onClick={() => setActiveTab("languages")} className={tabButtonClass("languages")}>{l.languages}</button>
-        <button type="button" onClick={() => setActiveTab("local-users")} className={tabButtonClass("local-users")}>{l.localUsers}</button>
-        <button type="button" onClick={() => setActiveTab("rbac")} className={tabButtonClass("rbac")}>{tx("rbac", "RBAC")}</button>
-        <button type="button" onClick={() => setActiveTab("integrations")} className={tabButtonClass("integrations")}>{l.integrations}</button>
-        <button type="button" onClick={() => setActiveTab("feature-flags")} className={tabButtonClass("feature-flags")}>{tx("featureFlags", "Feature Flags")}</button>
-        <button type="button" onClick={() => setActiveTab("backups")} className={tabButtonClass("backups")}>{tx("backups", "Backups")}</button>
-        <button type="button" onClick={() => setActiveTab("audit")} className={tabButtonClass("audit")}>{l.audit}</button>
       </section>
 
       <section className="panel cardFade">
@@ -3220,6 +2211,14 @@ export default function AdminPage() {
           />
         ) : null}
 
+        {activeTab === "example-notes" ? (
+          <AdminExampleNotesTab
+            baseUrl={process.env.NEXT_PUBLIC_API_BASE_URL || "/api"}
+            buildAuthHeaders={buildAuthHeaders}
+            tx={tx}
+          />
+        ) : null}
+
         {activeTab === "audit" ? (
           <AdminAuditTab
             l={l}
@@ -3252,42 +2251,52 @@ export default function AdminPage() {
         {status ? <p className="statusLine">{status}</p> : null}
       </section>
 
-      <style jsx>{`
+      <style>{`
         .adminRoot {
-          --paper: #f7f4ea;
+          --paper: #f3f6fa;
           --sand: #efe7d3;
           --ink: #17212f;
-          --muted: #5d6a79;
-          --line: #d8ceb5;
-          --accent: #0f766e;
-          --accent-2: #9a3412;
-          min-height: 100vh;
-          padding: 24px;
-          background:
-            radial-gradient(circle at 12% 12%, #fff2cc 0%, transparent 36%),
-            radial-gradient(circle at 88% 10%, #dbeafe 0%, transparent 34%),
-            linear-gradient(160deg, var(--paper), #f5efe0);
+          --muted: #5f6f84;
+          --line: #dce4ef;
+          --accent: #2563eb;
+          --accent-2: #b45309;
+          min-height: 100%;
+          padding: 20px;
+          background: transparent;
           color: var(--ink);
           font-family: "Space Grotesk", "IBM Plex Sans", "Segoe UI", sans-serif;
+        }
+
+        .shellHeaderMeta {
+          display: grid;
+          gap: 1px;
+          text-align: right;
+          color: #607085;
+          font-size: 11px;
+        }
+
+        .shellHeaderMeta span,
+        .shellHeaderMeta small {
+          margin: 0;
         }
 
         .hero,
         .statGrid,
         .tabs,
         .panel {
-          width: min(1140px, 100%);
+          width: min(1220px, 100%);
           margin: 0 auto;
         }
 
         .hero {
           display: grid;
           grid-template-columns: 2fr 1fr;
-          gap: 20px;
-          background: rgba(255, 255, 255, 0.75);
-          border: 1px solid rgba(255, 255, 255, 0.9);
-          border-radius: 20px;
-          padding: 22px;
-          box-shadow: 0 20px 45px rgba(23, 33, 47, 0.08);
+          gap: 18px;
+          background: #ffffff;
+          border: 1px solid var(--line);
+          border-radius: 14px;
+          padding: 18px;
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
         }
 
         .kicker {
@@ -3295,19 +2304,19 @@ export default function AdminPage() {
           letter-spacing: 0.08em;
           text-transform: uppercase;
           color: var(--accent);
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 700;
         }
 
         h1 {
           margin: 0;
-          font-size: clamp(28px, 4vw, 42px);
-          line-height: 1.1;
+          font-size: clamp(24px, 3.2vw, 34px);
+          line-height: 1.15;
         }
 
         h2 {
           margin: 0 0 8px;
-          font-size: 22px;
+          font-size: 20px;
         }
 
         p {
@@ -3316,14 +2325,22 @@ export default function AdminPage() {
 
         .stamp {
           color: var(--muted);
-          font-size: 13px;
+          font-size: 12px;
         }
 
         .heroRight {
           display: grid;
-          gap: 8px;
+          gap: 6px;
           align-content: start;
-          background: linear-gradient(180deg, #ffffff, #f8fafc);
+          background: #f8fbff;
+            border-radius: 12px;
+2337c            border: 1px solid var(--line);
+2338c            padding: 11px 12px;
+2339,2340d
+;2367s/0.07em/0.06em/;2372s/8px/7px/;2373s/28px/26px/;2389s/#ffffff/#f8fbff/;2390s/var(--ink)/#314256/;2403s/var(--ink)/#243449/;2405s/var(--ink)/#243449/;2410c          background: #ffffff;
+;2411c          border: 1px solid var(--line);
+;2412s/18px/14px/;2413s/18px/16px/;2414c          box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+;2430s/14px/12px/;2431s/14px/13px/
           border-radius: 14px;
           border: 1px solid var(--line);
           padding: 12px;
@@ -3353,7 +2370,7 @@ export default function AdminPage() {
         .statCard span {
           display: block;
           color: var(--muted);
-          font-size: 12px;
+          font-size: 11px;
           text-transform: uppercase;
           letter-spacing: 0.07em;
         }
@@ -3412,7 +2429,7 @@ export default function AdminPage() {
 
         .grid2 {
           display: grid;
-          gap: 12px;
+          gap: 14px;
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
@@ -3528,7 +2545,7 @@ export default function AdminPage() {
 
         .catalogItemActive {
           border-color: var(--accent);
-          background: #ecfeff;
+          background: #eef5ff;
           box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.15);
         }
 
@@ -3800,9 +2817,9 @@ export default function AdminPage() {
           margin: 14px 0 0;
           padding: 10px 12px;
           border-radius: 10px;
-          background: #ecfeff;
-          border: 1px solid #a5f3fc;
-          color: #155e75;
+          background: #eef5ff;
+          border: 1px solid #cfe0fb;
+          color: #274265;
         }
 
         .truncateMono {
@@ -3877,5 +2894,6 @@ export default function AdminPage() {
         }
       `}</style>
     </main>
+    </AdminShell>
   );
 }

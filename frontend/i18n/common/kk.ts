@@ -1,0 +1,18 @@
+export const kk = {
+  "lang.kazakh": "Қазақша",
+  "lang.russian": "Орысша",
+  "lang.english": "Ағылшынша",
+  "ui.language": "Тіл",
+  "ui.apply": "Қолдану",
+  "home.title": "AI Engineering Center",
+  "home.subtitle": "Браузерге негізделген жүйелерге арналған бастапқы шаблон.",
+  "admin.title": "Университеттің әкімші панелі (бастапқы)",
+  "admin.subtitle": "Бұл бетте рөлдер, LDAP/AD, AI провайдерлер және аудит басқарылады.",
+  "help.title": "Жоба бойынша AI-анықтама",
+  "help.page": "Бет",
+  "help.field": "Өріс (қаласа)",
+  "help.question": "Сұрақ",
+  "help.ask": "Сұрау",
+  "help.thinking": "Ойланып тұр...",
+  "help.error.empty": "Жіберер алдында сұрақ жазыңыз.",
+} as const;

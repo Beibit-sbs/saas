@@ -39,18 +39,18 @@ export function AdminFeatureFlagsTab({
   return (
     <div className="grid2">
       <article className="panelCard">
-        <h2>{tx("featureFlags", "Feature Flags")}</h2>
-        <p className="subText">{tx("featureFlagsHelp", "Use flags to safely roll out operational features.")}</p>
+        <h2>{tx("featureFlags")}</h2>
+        <p className="subText">{tx("featureFlagsHelp")}</p>
         <div className="rowButtons">
           <button type="button" className="ghost" onClick={() => void onLoadFeatureFlags()} disabled={featureFlagsLoading || featureFlagsMutating}>
-            {featureFlagsLoading ? tx("featureFlagsLoading", "Loading...") : tx("overviewRefresh", "Refresh snapshot")}
+            {featureFlagsLoading ? tx("featureFlagsLoading") : tx("overviewRefresh")}
           </button>
         </div>
         <div className="formGrid compactFormGrid">
-          <input value={featureFlagSearch} onChange={(e) => onFeatureFlagSearchChange(e.target.value)} placeholder={tx("featureFlagSearch", "Search by key or description")} />
+          <input value={featureFlagSearch} onChange={(e) => onFeatureFlagSearchChange(e.target.value)} placeholder={tx("featureFlagSearch")} />
           <label className="toggleRow">
             <input type="checkbox" checked={featureFlagEnabledOnly} onChange={(e) => onFeatureFlagEnabledOnlyChange(e.target.checked)} />
-            {tx("featureFlagsEnabledOnly", "Show enabled only")}
+            {tx("featureFlagsEnabledOnly")}
           </label>
         </div>
         {featureFlagsFeedback ? (
@@ -67,11 +67,11 @@ export function AdminFeatureFlagsTab({
               ))}
             </div>
           ) : (
-            <span className="subText">{tx("featureFlagsNoFiltersActive", "No active filters")}</span>
+            <span className="subText">{tx("featureFlagsNoFiltersActive")}</span>
           )}
         </div>
         {filteredFeatureFlags.length === 0 ? (
-          <p className="subText">{tx("featureFlagsEmpty", "No feature flags found.")}</p>
+          <p className="subText">{tx("featureFlagsEmpty")}</p>
         ) : (
           <div className="featureFlagList">
             {filteredFeatureFlags.map((flag) => {
@@ -83,17 +83,17 @@ export function AdminFeatureFlagsTab({
                     <p className="featureFlagKey">{flag.key}</p>
                     <p className="subText">{flag.description || "-"}</p>
                     <div className="badgeRow featureFlagBadges">
-                      <span className={`badge ${flag.enabled ? "badgeOk" : "badgeWarn"}`}>{flag.enabled ? tx("enabled", "Enabled") : tx("disabled", "Disabled")}</span>
+                      <span className={`badge ${flag.enabled ? "badgeOk" : "badgeWarn"}`}>{flag.enabled ? tx("enabled") : tx("disabled")}</span>
                       <span className="badge badgeInfo">{flag.scope || "global"}</span>
                     </div>
-                    {lastChanged ? <p className="subText featureFlagLastChanged">{tx("featureFlagLastChanged", "Last changed")}: {lastChanged}</p> : null}
+                    {lastChanged ? <p className="subText featureFlagLastChanged">{tx("featureFlagLastChanged")}: {lastChanged}</p> : null}
                   </div>
                   <div className="featureFlagActions">
-                    <button type="button" className={`featureFlagSwitch ${flag.enabled ? "featureFlagSwitchOn" : ""}`} aria-label={`${flag.enabled ? tx("disable", "Disable") : tx("enable", "Enable")} ${flag.key}`} onClick={() => void onSetFeatureFlagEnabled(flag, !flag.enabled)} disabled={featureFlagsLoading || featureFlagsMutating}>
+                    <button type="button" className={`featureFlagSwitch ${flag.enabled ? "featureFlagSwitchOn" : ""}`} aria-label={`${flag.enabled ? tx("disable") : tx("enable")} ${flag.key}`} onClick={() => void onSetFeatureFlagEnabled(flag, !flag.enabled)} disabled={featureFlagsLoading || featureFlagsMutating}>
                       <span className="featureFlagSwitchKnob" />
                     </button>
                     <button type="button" className="ghost" onClick={() => void onSetFeatureFlagEnabled(flag, !flag.enabled)} disabled={featureFlagsLoading || featureFlagsMutating}>
-                      {rowBusy ? tx("featureFlagUpdating", "Updating...") : flag.enabled ? tx("disable", "Disable") : tx("enable", "Enable")}
+                      {rowBusy ? tx("featureFlagUpdating") : flag.enabled ? tx("disable") : tx("enable")}
                     </button>
                   </div>
                 </div>

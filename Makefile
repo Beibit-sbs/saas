@@ -16,14 +16,14 @@ logs:
 
 ci:
 	cd backend && pytest -q && ruff check .
-	cd frontend && npm run lint
+	cd frontend && npm run i18n:check && npm run lint
 
 test:
 	cd backend && pytest -q
 
 lint:
 	cd backend && ruff check .
-	cd frontend && npm run lint
+	cd frontend && npm run i18n:check && npm run lint
 
 pipeline:
 	./scripts/pipeline.sh

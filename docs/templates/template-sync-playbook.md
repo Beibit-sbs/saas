@@ -17,7 +17,7 @@ Rule:
 4. Run validation in template:
    - template validation entrypoint
    - backend tests
-   - frontend lint/build
+   - frontend i18n parity check + lint/build
    - docker compose smoke check
 5. Update docs and checklists.
 6. Create new projects only from updated template.
@@ -37,7 +37,8 @@ Rule:
    - `JWT_SECRET`
    - `NEXT_PUBLIC_API_BASE_URL`
 5. Review scaffold modules before promising them for production use.
-6. Run template validation before adding domain features.
+6. Review demo auth flows and replace, disable, or remove them before any production promise.
+7. Run template validation before adding domain features.
 
 ## What Can Be Promoted
 - Cross-project modules and adapters.
@@ -60,6 +61,7 @@ Rule:
 - README and module docs updated.
 - Contracts and env/config docs are grounded in confirmed code behavior or existing env examples.
 - Example-only modules remain explicitly labeled and removable.
+- Demo-only auth paths and users are clearly marked and not presented as production defaults.
 
 ## New Project Rule
 When starting a new project:
@@ -67,7 +69,8 @@ When starting a new project:
 2. Initialize a new repository.
 3. Add `PROJECT_CONTEXT.md` with project-specific scope.
 4. Keep platform core unchanged unless approved.
-5. Run the template validation entrypoint before feature development.
+5. Review demo auth and scaffold modules before making production claims.
+6. Run the template validation entrypoint before feature development.
 
 ## Suggested Commit Message Prefixes
 - `template(core): ...`

@@ -2,6 +2,11 @@
 
 This document records contracts that already exist in the repository. It does not define a new architecture.
 
+Template honesty note:
+- This file describes confirmed platform-template contracts only.
+- It does not imply that scaffold modules are production-ready.
+- It does not replace project-specific architecture, threat model, or full API documentation in derived projects.
+
 ## Platform Settings Keys
 
 Confirmed runtime settings keys stored through the integration settings service:
@@ -46,9 +51,13 @@ Ownership rule:
 Confirmed admin API conventions in the current backend:
 
 - Admin routes use the `/api/admin` prefix or a nested admin prefix such as `/api/admin/rbac`, `/api/admin/integrations`, `/api/admin/audit`, `/api/admin/backups`, `/api/admin/feature-flags`, `/api/admin/ai`, `/api/admin/ldap`, `/api/admin/i18n`, `/api/admin/local-users`.
+- Example-only reference CRUD routes may use their own namespaced admin prefix such as `/api/admin/example-notes`.
 - Admin read/write routes require authenticated actor resolution plus permission checks.
 - Admin responses typically return named payload objects instead of raw arrays.
 - Sensitive admin mutations are expected to generate audit events.
+
+Demo auth note:
+- `/api/auth/demo-users`, `/api/auth/demo-login`, and other demo/mock auth surfaces exist for local/template bootstrap use only and must be reviewed explicitly before production launch in derived projects.
 
 ## Audit Event Fields
 
@@ -77,27 +86,20 @@ Field conventions:
 Current repository contract:
 
 - Admin AI gateway routes are exposed under `/api/admin/ai`.
+- Model registry admin routes are exposed under `/api/admin/ai/models` and use soft-disable (`enabled=false`) as the baseline removal behavior.
+- Unified execution route is exposed under `/api/ai/chat`.
 - Supported provider names are `openai`, `gemini`, `anthropic`, and `custom`.
 - Provider status returns `provider`, `configured`, and `validation_url`.
 - Provider validation returns `result` and may surface `429` when runtime rate limits are exceeded.
+- Chat request is provider-neutral and supports `model`, `messages[]`, optional `temperature`, optional `max_tokens`.
+- Chat response is normalized and provider-neutral: `model`, `provider`, `provider_model_id`, `output_text`, `finish_reason`, `usage`, `latency_ms`.
+- Provider-specific execution is isolated behind an internal adapter interface (`AIProviderAdapter`) rather than router-level branching.
 - Runtime provider configuration uses the stable `ai.<provider>.*` key pattern.
+- AI usage logging captures actor, provider, model, outcome, latency, optional token usage, and failure reason.
 
 Current limitation:
-- The repository currently exposes provider status/validation, not a full public chat/model registry gateway contract.
-
-## Canonical Example Vertical Slice
-
-Reference-only example module contract:
-
-- Backend route: `/api/admin/example-slice/reference-items`.
-- Route is RBAC-guarded with `admin.dashboard.read`.
-- Route emits audit action `example_slice.read` with entity `example_slice`.
-- Response contains `items[]` with fields: `key`, `title`, `required_permission`, `audit_action`.
-- Frontend admin overview reads and displays this payload as a template reference block.
-
-Derived-project guidance:
-- Keep educational modules namespaced as `example_*`.
-- Remove or replace example modules when introducing real domain modules.
+- AI Gateway v1 is non-streaming and text chat only in this phase.
+- Embeddings, tools/function-calling orchestration, RAG/vector DB, and billing/quota subsystems are out of current scope.
 
 ## Runtime Configuration Boundaries
 
@@ -114,3 +116,35 @@ Admin runtime-owned configuration domains already present in code:
 - backup profiles and retention
 
 Do not assume admin runtime ownership for unrelated domains unless code already uses the runtime settings service for that domain.
+
+## Frontend i18n Contracts
+
+Confirmed frontend contract:
+
+- UI dictionary sources are centralized under `frontend/i18n/common` and `frontend/i18n/admin`.
+- UI language set for frontend dictionaries is `ru`, `en`, `kk`.
+- `ru` is canonical for dictionary key sets.
+- `en` and `kk` must exactly match `ru` keys (no missing and no extra keys).
+- Automated parity check is implemented in `frontend/i18n/check/i18n-check.mjs` and is expected in both local validation and CI before frontend lint/build.
+
+## Auth Session Baseline
+
+Confirmed current repository behavior:
+- the template currently implements signed access-token based auth
+- browser flows use HttpOnly auth cookies
+- CSRF protection applies to cookie-authenticated mutation requests
+
+Current limitation:
+- refresh-token flow is not implemented in the current template baseline and should not be assumed by derived projects
+
+## Example Slice Baseline
+
+Confirmed current repository behavior:
+- `example_slice` is intentionally namespaced and removable
+- it demonstrates RBAC-guarded read access and admin audit logging wiring
+- `example_notes` is intentionally namespaced and removable
+- it demonstrates the preferred small end-to-end template pattern: migration, service layer, router, RBAC, audit, frontend usage, i18n, and tests
+
+Current limitation:
+- `example_notes` is educational and intentionally small; it is not meant to become a production business subsystem
+- `example_slice` remains a lightweight reference-only wiring slice rather than the canonical CRUD example

@@ -1,0 +1,15 @@
+services:
+  backend:
+    restart: always
+    environment:
+      APP_ENV: production
+
+  frontend:
+    restart: always
+    environment:
+      NODE_ENV: production
+
+  nginx:
+    restart: always
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro,Z

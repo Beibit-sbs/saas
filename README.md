@@ -1,6 +1,19 @@
 # AI Engineering Center
 
-Platform template for browser-based systems with a reusable university-focused core.
+Platform template for browser-based systems with a reusable platform core (higher education is one supported example vertical).
+
+## Supported Vertical Profiles
+
+This platform template is domain-neutral and can be adapted to multiple domains.
+
+Common adaptation profiles include:
+
+- Higher education platforms
+- Internal enterprise tools
+- Regulated administrative systems
+- AI-enabled internal services
+
+The repository may include example profiles (such as higher education) to demonstrate how the platform core can be adapted to specific domains.
 
 ## What This Platform Provides
 
@@ -16,10 +29,12 @@ Platform core modules:
 - RBAC with PostgreSQL persistence
 - LDAP/Active Directory integration
 - AI provider configuration (OpenAI, Gemini, Anthropic, custom)
+- AI Gateway v1: model registry, provider adapter boundary, unified `POST /api/ai/chat`, usage logging, and audit hooks
 - i18n language registry with protected system languages `kk`, `ru`, `en`
 - Audit logging
 - Backup management (profiles, retention, restore)
 - Feature flags module (currently scaffold/in-memory)
+- Example notes module (example-only CRUD reference for derived projects)
 - Admin operational console
 
 ## Admin Console
@@ -33,6 +48,7 @@ Current tabs:
 - `rbac`
 - `integrations`
 - `feature-flags`
+- `example-notes`
 - `backups`
 - `audit`
 
@@ -45,6 +61,7 @@ Operational highlights:
 - Backup profile management, retention dry-run/apply, restore dry-run/execute.
 - Audit explorer with filters (`actor`, `action`, `entity`, `result`, `correlation_id`, `since`) and JSON/CSV export.
 - Feature flags visibility and on/off toggle via admin API.
+- Example notes CRUD tab showing DB-backed entity, migration, RBAC, audit, frontend usage, and i18n wiring in one removable example module.
 
 ## Quick Start
 
@@ -66,6 +83,12 @@ make up
 make down
 ```
 
+## Demo Auth Warning
+
+- Demo users and demo login paths exist only for local/template/demo use.
+- They are not a production baseline and must be disabled, removed, or replaced before production launch.
+- Every derived project must explicitly review `/api/auth/demo-users`, `/api/auth/demo-login`, and any mock/demo credential flow before go-live.
+
 ## Template Bootstrap
 
 Use this repository as the master template, not as a finished product.
@@ -79,7 +102,8 @@ Use this repository as the master template, not as a finished product.
 3. Copy `infra/.env.example` to `infra/.env` and review the confirmed startup variables before the first run.
 4. Fill `PROJECT_CONTEXT.md` from `docs/templates/project-context-template.md` with derived-system scope, roles, integrations, and deployment boundaries.
 5. Keep platform-core modules unchanged unless the derived project explicitly approves a platform change.
-6. Run template validation before feature work starts.
+6. Review demo auth flows and remove, disable, or replace them before promising production readiness.
+7. Run template validation before feature work starts.
 
 Confirmed startup variables from `infra/.env.example` that must be reviewed before first local use:
 - `POSTGRES_DB`
@@ -99,11 +123,13 @@ Variables that are strongly recommended for real deployments, but can stay empty
 
 Platform baseline vs scaffold summary:
 - Baseline for derived systems: auth, RBAC, audit, i18n, admin console shell, LDAP/AI integration settings, backup workflows.
-- Scaffold or partial modules that require explicit review before production reuse: AI gateway, feature flags, observability depth, base infra TLS.
+- Scaffold or partial modules that require explicit review before production reuse: feature flags, observability depth, base infra TLS.
+- Example-only educational modules: `example_notes` is the canonical small CRUD reference slice; `example_slice` remains a lightweight reference-only wiring example.
 - Detailed maturity status is tracked in `docs/templates/platform-maturity-matrix.md`.
 
 Production review areas before launch:
 - Replace placeholder secrets and review cookie/auth settings.
+- Remove, disable, or replace demo users and demo auth paths.
 - Decide whether LDAP/AD is required and validate role mapping.
 - Review AI provider policy, rate limits, and provider key handling.
 - Confirm backup roots, retention, and restore procedures.
@@ -140,9 +166,15 @@ pytest -q
 Frontend only:
 ```bash
 cd /home/sbs/AI/frontend
+npm run i18n:check
 npm run lint
 npm run build
 ```
+
+i18n guardrail for frontend UI dictionaries:
+- Canonical key set is `ru`.
+- `en` and `kk` must have exact key parity with `ru` (no missing, no extra keys).
+- CI runs `npm run i18n:check` before frontend lint/build.
 
 Template validation only:
 ```bash
@@ -153,6 +185,7 @@ make template-validate
 
 - Signed access tokens are validated server-side.
 - Browser flow uses HttpOnly auth cookie.
+- Refresh-token flow is not implemented in the current template baseline.
 - Legacy identity headers are disabled by default.
 - CSRF uses double-submit token for cookie-authenticated `POST/PUT/PATCH/DELETE`.
 - Integrations secrets are encrypted at rest in runtime settings storage.
@@ -168,6 +201,10 @@ make template-validate
 
 - Feature flags are scaffold-level (in-memory) and not yet productionized.
 - Base Nginx profile is HTTP-only (no default TLS termination).
+- AI Gateway v1 is request/response only in this phase: no streaming, no embeddings, no tools/function-calling orchestration, no RAG/vector DB, no billing/quota subsystem.
+- Demo auth paths are intentionally present for local/template use and require explicit removal or replacement in derived production projects.
+- `example_notes` is example-only and removable; it exists to teach patterns, not to act as a production business subsystem.
+- `example_slice` remains a lightweight reference-only slice for wiring patterns.
 - Top-level `tests/` directory is present but not yet populated.
 
 ## Repository Structure

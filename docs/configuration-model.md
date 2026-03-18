@@ -54,12 +54,11 @@ Environment keys:
 - `AUTH_ACCESS_TOKEN_TTL_MINUTES`
 - `AUTH_ACCESS_COOKIE_NAME`
 - `AUTH_ACCESS_COOKIE_SAMESITE`
-- `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`
-- `JWT_REFRESH_TOKEN_EXPIRE_MINUTES`
 
 Behavior:
 - Signed token validation with backend-side verification.
 - Cookie and bearer auth modes.
+- Refresh-token flow is not implemented in the current template baseline.
 
 ## CSRF
 
