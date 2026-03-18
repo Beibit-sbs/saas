@@ -12,6 +12,7 @@ import { AdminLocalUsersTab } from "./components/AdminLocalUsersTab";
 import { AdminOverviewTab } from "./components/AdminOverviewTab";
 import { AdminRbacTab } from "./components/AdminRbacTab";
 import { AdminShell, type AdminSection } from "./components/AdminShell";
+import { useAdminFeatureFlags } from "./hooks/useAdminFeatureFlags";
 import { useAdminOverview } from "./hooks/useAdminOverview";
 import { useAdminLanguages } from "./hooks/useAdminLanguages";
 import { adminTranslations, type AdminTranslationKey } from "../../i18n/admin";
@@ -22,7 +23,6 @@ import type {
   AuditEvent,
   BackupJob,
   BackupProfile,
-  FeatureFlag,
   InlineFeedback,
   LdapConfigForm,
   LdapStatus,
@@ -141,13 +141,6 @@ export default function AdminPage() {
   const [auditCorrelationId, setAuditCorrelationId] = useState("");
   const [auditSince, setAuditSince] = useState("");
 
-  const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([]);
-  const [featureFlagsFeedback, setFeatureFlagsFeedback] = useState<InlineFeedback | null>(null);
-  const [featureFlagsLoading, setFeatureFlagsLoading] = useState(false);
-  const [featureFlagUpdateBusy, setFeatureFlagUpdateBusy] = useState<Record<string, boolean>>({});
-  const [featureFlagSearch, setFeatureFlagSearch] = useState("");
-  const [featureFlagEnabledOnly, setFeatureFlagEnabledOnly] = useState(false);
-
   const uiLang = toUiLang(String(language));
 
   const l = adminTranslations[uiLang];
@@ -186,31 +179,6 @@ export default function AdminPage() {
     auditSince.trim() ? `${tx("auditTs")}: ${auditSince.trim()}` : "",
     auditCorrelationId.trim() ? `${tx("auditCorrelation")}: ${auditCorrelationId.trim()}` : "",
   ].filter(Boolean);
-  const normalizedFeatureFlagSearch = featureFlagSearch.trim().toLowerCase();
-  const filteredFeatureFlags = useMemo(() => {
-    return featureFlags.filter((flag) => {
-      if (featureFlagEnabledOnly && !flag.enabled) {
-        return false;
-      }
-      if (!normalizedFeatureFlagSearch) {
-        return true;
-      }
-      const haystack = `${flag.key} ${flag.description || ""}`.toLowerCase();
-      return haystack.includes(normalizedFeatureFlagSearch);
-    });
-  }, [featureFlags, featureFlagEnabledOnly, normalizedFeatureFlagSearch]);
-  const featureFlagFilterBadges = [
-    normalizedFeatureFlagSearch ? `${tx("featureFlagFilterSearch")}: ${featureFlagSearch.trim()}` : "",
-    featureFlagEnabledOnly ? tx("featureFlagFilterEnabledOnly") : "",
-  ].filter(Boolean);
-  const hasActiveFeatureFlagFilters = featureFlagFilterBadges.length > 0;
-  const featureFlagSummary = hasActiveFeatureFlagFilters
-    ? tx("featureFlagsShowingFiltered").replace("{count}", String(filteredFeatureFlags.length))
-    : tx("featureFlagsShowing").replace("{count}", String(filteredFeatureFlags.length));
-  const featureFlagsMutating = useMemo(
-    () => Object.values(featureFlagUpdateBusy).some(Boolean),
-    [featureFlagUpdateBusy],
-  );
   const backupJobsSorted = useMemo(
     () => [...backupJobs].sort((a, b) => new Date(b.started_at || b.finished_at || 0).getTime() - new Date(a.started_at || a.finished_at || 0).getTime()),
     [backupJobs],
@@ -297,6 +265,28 @@ export default function AdminPage() {
     buildAuthHeaders,
     errorPrefix: l.errorPrefix,
     supportedLanguages,
+    tx,
+  });
+
+  const {
+    featureFlagsFeedback,
+    featureFlagsLoading,
+    featureFlagUpdateBusy,
+    featureFlagSearch,
+    featureFlagEnabledOnly,
+    filteredFeatureFlags,
+    featureFlagFilterBadges,
+    hasActiveFeatureFlagFilters,
+    featureFlagSummary,
+    featureFlagsMutating,
+    setFeatureFlagSearch,
+    setFeatureFlagEnabledOnly,
+    loadFeatureFlags,
+    setFeatureFlagEnabled,
+  } = useAdminFeatureFlags({
+    activeTab,
+    buildAuthHeaders,
+    l,
     tx,
   });
 
@@ -689,94 +679,6 @@ export default function AdminPage() {
     }
   };
 
-  const loadFeatureFlags = useCallback(async (preserveFeedback = false) => {
-    setFeatureFlagsLoading(true);
-    if (!preserveFeedback) {
-      setFeatureFlagsFeedback(null);
-    }
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const res = await fetch(`${baseUrl}/admin/feature-flags`, {
-        headers: buildAuthHeaders(),
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setFeatureFlagsFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      const json = (await res.json()) as { flags?: FeatureFlag[] };
-      setFeatureFlags(json.flags || []);
-    } catch (error) {
-      setFeatureFlagsFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setFeatureFlagsLoading(false);
-    }
-  }, [buildAuthHeaders, l.errorPrefix]);
-
-  const setFeatureFlagEnabled = async (flag: FeatureFlag, enabled: boolean) => {
-    const confirmed = window.confirm(
-      (enabled
-        ? tx("featureFlagEnableConfirm")
-        : tx("featureFlagDisableConfirm"))
-        .replace("{flag}", flag.key),
-    );
-    if (!confirmed) {
-      setFeatureFlagsFeedback({ tone: "info", message: tx("featureFlagUpdateCancelled") });
-      return;
-    }
-
-    setFeatureFlagUpdateBusy((prev) => ({ ...prev, [flag.key]: true }));
-    setFeatureFlagsFeedback(null);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/feature-flags`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-          ...csrfHeaders,
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          key: flag.key,
-          enabled,
-          description: flag.description || "",
-          scope: flag.scope || "global",
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setFeatureFlagsFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      await loadFeatureFlags(true);
-      const statusLabel = enabled ? tx("enabled") : tx("disabled");
-      setFeatureFlagsFeedback({
-        tone: "success",
-        message: tx("featureFlagUpdated")
-          .replace("{flag}", flag.key)
-          .replace("{status}", statusLabel),
-      });
-    } catch (error) {
-      setFeatureFlagsFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setFeatureFlagUpdateBusy((prev) => ({ ...prev, [flag.key]: false }));
-    }
-  };
-
   const loadAuditEvents = useCallback(async (overrides?: {
     actor?: string;
     action?: string;
@@ -982,13 +884,6 @@ export default function AdminPage() {
     }
     void loadAuditEvents();
   }, [activeTab, loadAuditEvents]);
-
-  useEffect(() => {
-    if (activeTab !== "feature-flags") {
-      return;
-    }
-    void loadFeatureFlags();
-  }, [activeTab, loadFeatureFlags]);
 
   const createLocalUser = async () => {
     setLocalFeedback(null);
