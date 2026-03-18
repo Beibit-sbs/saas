@@ -13,6 +13,7 @@ import { AdminOverviewTab } from "./components/AdminOverviewTab";
 import { AdminRbacTab } from "./components/AdminRbacTab";
 import { AdminShell, type AdminSection } from "./components/AdminShell";
 import { useAdminOverview } from "./hooks/useAdminOverview";
+import { useAdminLanguages } from "./hooks/useAdminLanguages";
 import { adminTranslations, type AdminTranslationKey } from "../../i18n/admin";
 import type {
   AdminTab,
@@ -21,7 +22,6 @@ import type {
   AuditEvent,
   BackupJob,
   BackupProfile,
-  CatalogLanguage,
   FeatureFlag,
   InlineFeedback,
   LdapConfigForm,
@@ -30,7 +30,6 @@ import type {
   RbacAssignmentEntry,
   RbacRoleEntry,
   RestoreCandidate,
-  SupportedLanguage,
   UiLang,
 } from "./types";
 
@@ -60,10 +59,6 @@ export default function AdminPage() {
   const { t, language } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
-  const [supportedLanguages, setSupportedLanguages] = useState<SupportedLanguage[]>([]);
-  const [languageCatalog, setLanguageCatalog] = useState<CatalogLanguage[]>([]);
-  const [selectedCatalogCode, setSelectedCatalogCode] = useState("");
-  const [catalogQuery, setCatalogQuery] = useState("");
   const [status, setStatus] = useState<string | null>(null);
 
   const [localUsers, setLocalUsers] = useState<LocalUser[]>([]);
@@ -169,9 +164,6 @@ export default function AdminPage() {
     }
     return adminTranslations.ru.errorPrefix;
   }, [l]);
-
-  const enabledLanguages = supportedLanguages.filter((item) => item.enabled).length;
-  const systemLanguages = supportedLanguages.filter((item) => item.system).length;
   const selectedLocalUser = localUsers.find((item) => item.user_id === selectedLocalUserId) || null;
   const localFilterBadges = [
     localSearch.trim() ? `${tx("localFilterSearch")}: ${localSearch.trim()}` : "",
@@ -264,66 +256,32 @@ export default function AdminPage() {
 
     return displayChanged || languageChanged || rolesChanged;
   }, [editLocalDisplayName, editLocalLanguage, editLocalRoles, selectedLocalUser]);
-  const availableCatalogLanguages = languageCatalog.filter((item) => {
-    const exists = supportedLanguages.some((lang) => lang.code === item.code);
-    if (exists) {
-      return false;
-    }
 
-    if (!catalogQuery.trim()) {
-      return true;
-    }
-
-    const haystack = `${item.code} ${item.name} ${item.native_name}`.toLowerCase();
-    return haystack.includes(catalogQuery.trim().toLowerCase());
-  });
-  const selectedCatalogLanguage = languageCatalog.find((item) => item.code === selectedCatalogCode) || null;
-
-  const loadLanguageCatalog = useCallback(async () => {
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const res = await fetch(`${baseUrl}/i18n/catalog`, { cache: "no-store" });
-      if (!res.ok) {
-        return;
-      }
-
-      const json = (await res.json()) as { languages?: CatalogLanguage[] };
-      if (json.languages && json.languages.length > 0) {
-        setLanguageCatalog(json.languages);
-      }
-    } catch {
-      // Keep local fallback catalog when backend catalog is unavailable.
-    }
-  }, []);
 
   const buildAuthHeaders = useCallback((): Record<string, string> => {
     const token = localStorage.getItem("app.token");
     return token ? { Authorization: `Bearer ${token}` } : {};
   }, []);
 
-  const reloadLanguages = useCallback(async () => {
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const res = await fetch(`${baseUrl}/admin/i18n/languages`, {
-        headers: buildAuthHeaders(),
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setStatus(`${l.errorPrefix}: ${err.detail || res.status}`);
-        return;
-      }
-
-      const json = (await res.json()) as { items?: SupportedLanguage[] };
-      const items = json.items || [];
-      setSupportedLanguages(items);
+  const {
+    supportedLanguages,
+    catalogQuery,
+    availableCatalogLanguages,
+    selectedCatalogCode,
+    selectedCatalogLanguage,
+    setCatalogQuery,
+    setSelectedCatalogCode,
+    addLanguage,
+    setLanguageEnabled,
+    deleteLanguage,
+  } = useAdminLanguages({
+    buildAuthHeaders,
+    l,
+    onStatusChange: setStatus,
+    onLanguagesReloaded: (items) => {
       setLocalDefaultLanguage((current) => current || items.find((item) => item.enabled)?.code || "ru");
-    } catch (error) {
-      setStatus(String(error));
-    }
-  }, [buildAuthHeaders, l.errorPrefix]);
+    },
+  });
 
   const {
     dashboardLoading,
@@ -341,6 +299,9 @@ export default function AdminPage() {
     supportedLanguages,
     tx,
   });
+
+  const enabledLanguages = supportedLanguages.filter((item) => item.enabled).length;
+  const systemLanguages = supportedLanguages.filter((item) => item.system).length;
 
   const loadLocalUsers = useCallback(async (overrides?: { search?: string; role?: string; language?: string }) => {
     setLocalListBusy(true);
@@ -1028,126 +989,6 @@ export default function AdminPage() {
     }
     void loadFeatureFlags();
   }, [activeTab, loadFeatureFlags]);
-
-  useEffect(() => {
-    void loadLanguageCatalog();
-  }, [loadLanguageCatalog]);
-
-  useEffect(() => {
-    const enabledCodes = new Set(supportedLanguages.map((item) => item.code));
-    if (selectedCatalogCode && enabledCodes.has(selectedCatalogCode)) {
-      setSelectedCatalogCode("");
-      return;
-    }
-
-    if (!selectedCatalogCode) {
-      const firstAvailable = languageCatalog.find((item) => !enabledCodes.has(item.code));
-      if (firstAvailable) {
-        setSelectedCatalogCode(firstAvailable.code);
-      }
-    }
-  }, [languageCatalog, selectedCatalogCode, supportedLanguages]);
-
-  const addLanguage = async () => {
-    setStatus(null);
-
-    if (!selectedCatalogLanguage) {
-      setStatus(l.languageRequired);
-      return;
-    }
-
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/i18n/languages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-          ...csrfHeaders,
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          code: selectedCatalogLanguage.code,
-          name: selectedCatalogLanguage.name,
-          native_name: selectedCatalogLanguage.native_name,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setStatus(`${l.errorPrefix}: ${err.detail || res.status}`);
-        return;
-      }
-
-      setSelectedCatalogCode("");
-      setCatalogQuery("");
-      await reloadLanguages();
-      setStatus(l.languageAdded);
-    } catch (error) {
-      setStatus(String(error));
-    }
-  };
-
-  const setLanguageEnabled = async (codeToUpdate: string, enabled: boolean) => {
-    setStatus(null);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/i18n/languages/${codeToUpdate}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-          ...csrfHeaders,
-        },
-        credentials: "include",
-        body: JSON.stringify({ enabled }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setStatus(`${l.errorPrefix}: ${err.detail || res.status}`);
-        return;
-      }
-
-      await reloadLanguages();
-      setStatus(
-        enabled
-          ? l.languageEnabledMsg.replace("{code}", codeToUpdate)
-          : l.languageDisabledMsg.replace("{code}", codeToUpdate),
-      );
-    } catch (error) {
-      setStatus(String(error));
-    }
-  };
-
-  const deleteLanguage = async (codeToDelete: string) => {
-    setStatus(null);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/i18n/languages/${codeToDelete}`, {
-        method: "DELETE",
-        headers: {
-          ...buildAuthHeaders(),
-          ...csrfHeaders,
-        },
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setStatus(`${l.errorPrefix}: ${err.detail || res.status}`);
-        return;
-      }
-
-      await reloadLanguages();
-      setStatus(l.languageDeletedMsg.replace("{code}", codeToDelete));
-    } catch (error) {
-      setStatus(String(error));
-    }
-  };
 
   const createLocalUser = async () => {
     setLocalFeedback(null);
