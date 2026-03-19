@@ -17,13 +17,17 @@ from app.core.config import (
 
 from app.modules.admin.router import router as admin_router
 from app.modules.admin.local_users_router import router as admin_local_users_router
+from app.modules.academic_records.router import router as academic_records_router
 from app.modules.ai_gateway.router import router as ai_gateway_router
 from app.modules.ai_gateway.public_router import router as ai_gateway_public_router
 from app.modules.audit.router import router as audit_router
 from app.modules.audit.service import log_admin_action
 from app.modules.backup.router import router as backup_router
+from app.modules.courses.router import router as courses_router
+from app.modules.enrollments.router import router as enrollments_router
 from app.modules.example_notes.router import router as example_notes_router
 from app.modules.example_slice.router import router as example_slice_router
+from app.modules.faculty.router import router as faculty_router
 from app.modules.feature_flags.router import router as feature_flags_router
 from app.modules.auth.router import router as auth_router
 from app.modules.help.router import router as help_router
@@ -31,9 +35,12 @@ from app.modules.i18n.router import admin_router as i18n_admin_router
 from app.modules.i18n.router import public_router as i18n_public_router
 from app.modules.integrations.router import router as integrations_router
 from app.modules.ldap.router import router as ldap_router
+from app.modules.programs.router import router as programs_router
 from app.modules.rbac.router import router as rbac_router
 from app.modules.rbac.security import get_actor
 from app.modules.rbac.security import resolve_current_user_claims
+from app.modules.students.router import router as students_router
+from app.modules.tenants.router import router as tenants_router
 from app.modules.observability.logging import configure_json_logging, request_id_var
 from app.modules.observability.metrics import record_request, render_metrics
 from app.modules.security.rate_limit import (
@@ -71,6 +78,13 @@ app.include_router(backup_router)
 app.include_router(feature_flags_router)
 app.include_router(example_notes_router)
 app.include_router(example_slice_router)
+app.include_router(students_router)
+app.include_router(faculty_router)
+app.include_router(programs_router)
+app.include_router(courses_router)
+app.include_router(enrollments_router)
+app.include_router(academic_records_router)
+app.include_router(tenants_router)
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 

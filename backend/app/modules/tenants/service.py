@@ -1,0 +1,314 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+import os
+from threading import Lock
+
+try:
+    import psycopg
+except ImportError:  # pragma: no cover
+    psycopg = None
+
+
+@dataclass
+class TenantMemoryState:
+    data: dict[int, dict[str, object]] = field(default_factory=dict)
+    counter: int = 0
+
+
+_state_lock = Lock()
+_state = TenantMemoryState(
+    data={
+        1: {
+            "id": 1,
+            "slug": "default",
+            "name": "Default Organization",
+            "status": "active",
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "updated_at": "2026-01-01T00:00:00+00:00",
+        }
+    },
+    counter=1,
+)
+
+
+def clear_tenant_state() -> None:
+    """Reset to initial state with default tenant (used in tests)."""
+    with _state_lock:
+        _state.data.clear()
+        _state.data[1] = {
+            "id": 1,
+            "slug": "default",
+            "name": "Default Organization",
+            "status": "active",
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "updated_at": "2026-01-01T00:00:00+00:00",
+        }
+        _state.counter = 1
+
+
+def _db_url() -> str | None:
+    return os.getenv("DATABASE_URL")
+
+
+def _use_database() -> bool:
+    return bool(_db_url()) and psycopg is not None
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _should_fallback_to_memory(exc: Exception) -> bool:
+    if isinstance(exc, RuntimeError) and str(exc) == "database unavailable":
+        return True
+    if isinstance(exc, (ConnectionError, TimeoutError, OSError, ValueError)):
+        return True
+    if psycopg is not None and isinstance(exc, (psycopg.OperationalError, psycopg.InterfaceError)):
+        return True
+    return False
+
+
+def _row_to_dict(row: object) -> dict[str, object]:
+    return {
+        "id": row[0],
+        "slug": row[1],
+        "name": row[2],
+        "status": row[3],
+        "created_at": row[4].isoformat() if hasattr(row[4], "isoformat") else str(row[4]),
+        "updated_at": row[5].isoformat() if hasattr(row[5], "isoformat") else str(row[5]),
+    }
+
+
+# ---------------------------------------------------------------------------
+# DB implementations
+# ---------------------------------------------------------------------------
+
+def _list_tenants_db() -> list[dict[str, object]]:
+    url = _db_url()
+    assert url
+    with psycopg.connect(url) as conn:
+        rows = conn.execute(
+            "SELECT id, slug, name, status, created_at, updated_at FROM app_tenants ORDER BY id"
+        ).fetchall()
+    return [_row_to_dict(r) for r in rows]
+
+
+def _create_tenant_db(payload: dict[str, object]) -> dict[str, object]:
+    url = _db_url()
+    assert url
+    with psycopg.connect(url) as conn:
+        row = conn.execute(
+            """
+            INSERT INTO app_tenants (slug, name, status, created_at, updated_at)
+            VALUES (%s, %s, %s, NOW(), NOW())
+            RETURNING id, slug, name, status, created_at, updated_at
+            """,
+            (payload["slug"], payload["name"], payload.get("status", "active")),
+        ).fetchone()
+        conn.commit()
+    return _row_to_dict(row)
+
+
+def _update_tenant_db(tenant_id: int, payload: dict[str, object]) -> dict[str, object]:
+    url = _db_url()
+    assert url
+    with psycopg.connect(url) as conn:
+        existing = conn.execute(
+            "SELECT id, slug, name, status, created_at, updated_at FROM app_tenants WHERE id = %s",
+            (tenant_id,),
+        ).fetchone()
+        if not existing:
+            raise ValueError(f"Tenant {tenant_id} not found")
+        name = payload.get("name") or existing[2]
+        status = payload.get("status") or existing[3]
+        row = conn.execute(
+            """
+            UPDATE app_tenants SET name = %s, status = %s, updated_at = NOW()
+            WHERE id = %s
+            RETURNING id, slug, name, status, created_at, updated_at
+            """,
+            (name, status, tenant_id),
+        ).fetchone()
+        conn.commit()
+    return _row_to_dict(row)
+
+
+def _delete_tenant_db(tenant_id: int) -> dict[str, object]:
+    url = _db_url()
+    assert url
+    with psycopg.connect(url) as conn:
+        row = conn.execute(
+            """
+            UPDATE app_tenants SET status = 'inactive', updated_at = NOW()
+            WHERE id = %s
+            RETURNING id, slug, name, status, created_at, updated_at
+            """,
+            (tenant_id,),
+        ).fetchone()
+        if not row:
+            raise ValueError(f"Tenant {tenant_id} not found")
+        conn.commit()
+    return _row_to_dict(row)
+
+
+def _get_tenant_db(tenant_id: int) -> dict[str, object] | None:
+    url = _db_url()
+    assert url
+    with psycopg.connect(url) as conn:
+        row = conn.execute(
+            "SELECT id, slug, name, status, created_at, updated_at FROM app_tenants WHERE id = %s",
+            (tenant_id,),
+        ).fetchone()
+    return _row_to_dict(row) if row else None
+
+
+def _get_tenant_by_slug_db(slug: str) -> dict[str, object] | None:
+    url = _db_url()
+    assert url
+    with psycopg.connect(url) as conn:
+        row = conn.execute(
+            "SELECT id, slug, name, status, created_at, updated_at FROM app_tenants WHERE slug = %s",
+            (slug,),
+        ).fetchone()
+    return _row_to_dict(row) if row else None
+
+
+# ---------------------------------------------------------------------------
+# Memory implementations
+# ---------------------------------------------------------------------------
+
+def _list_tenants_memory() -> list[dict[str, object]]:
+    with _state_lock:
+        return sorted(_state.data.values(), key=lambda t: int(t["id"]))  # type: ignore[arg-type]
+
+
+def _create_tenant_memory(payload: dict[str, object]) -> dict[str, object]:
+    slug = str(payload.get("slug", "")).strip()
+    name = str(payload.get("name", "")).strip()
+    status = str(payload.get("status", "active")).strip() or "active"
+    if not slug:
+        raise ValueError("slug is required")
+    if not name:
+        raise ValueError("name is required")
+    now = _now_iso()
+    with _state_lock:
+        for existing in _state.data.values():
+            if existing["slug"] == slug:
+                raise ValueError(f"Tenant with slug '{slug}' already exists")
+        _state.counter += 1
+        new_id = _state.counter
+        record: dict[str, object] = {
+            "id": new_id,
+            "slug": slug,
+            "name": name,
+            "status": status,
+            "created_at": now,
+            "updated_at": now,
+        }
+        _state.data[new_id] = record
+    return dict(record)
+
+
+def _update_tenant_memory(tenant_id: int, payload: dict[str, object]) -> dict[str, object]:
+    now = _now_iso()
+    with _state_lock:
+        existing = _state.data.get(tenant_id)
+        if not existing:
+            raise ValueError(f"Tenant {tenant_id} not found")
+        if "name" in payload and payload["name"]:
+            existing["name"] = str(payload["name"]).strip()
+        if "status" in payload and payload["status"]:
+            existing["status"] = str(payload["status"]).strip()
+        existing["updated_at"] = now
+    return dict(existing)
+
+
+def _delete_tenant_memory(tenant_id: int) -> dict[str, object]:
+    now = _now_iso()
+    with _state_lock:
+        existing = _state.data.get(tenant_id)
+        if not existing:
+            raise ValueError(f"Tenant {tenant_id} not found")
+        existing["status"] = "inactive"
+        existing["updated_at"] = now
+    return dict(existing)
+
+
+def _get_tenant_memory(tenant_id: int) -> dict[str, object] | None:
+    with _state_lock:
+        existing = _state.data.get(tenant_id)
+    return dict(existing) if existing else None
+
+
+def _get_tenant_by_slug_memory(slug: str) -> dict[str, object] | None:
+    with _state_lock:
+        for existing in _state.data.values():
+            if existing["slug"] == slug:
+                return dict(existing)
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+def list_tenants() -> list[dict[str, object]]:
+    if _use_database():
+        try:
+            return _list_tenants_db()
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+    return _list_tenants_memory()
+
+
+def create_tenant(payload: dict[str, object]) -> dict[str, object]:
+    if _use_database():
+        try:
+            return _create_tenant_db(payload)
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+    return _create_tenant_memory(payload)
+
+
+def update_tenant(tenant_id: int, payload: dict[str, object]) -> dict[str, object]:
+    if _use_database():
+        try:
+            return _update_tenant_db(tenant_id, payload)
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+    return _update_tenant_memory(tenant_id, payload)
+
+
+def delete_tenant(tenant_id: int) -> dict[str, object]:
+    if _use_database():
+        try:
+            return _delete_tenant_db(tenant_id)
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+    return _delete_tenant_memory(tenant_id)
+
+
+def get_tenant(tenant_id: int) -> dict[str, object] | None:
+    if _use_database():
+        try:
+            return _get_tenant_db(tenant_id)
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+    return _get_tenant_memory(tenant_id)
+
+
+def get_tenant_by_slug(slug: str) -> dict[str, object] | None:
+    if _use_database():
+        try:
+            return _get_tenant_by_slug_db(slug)
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+    return _get_tenant_by_slug_memory(slug)

@@ -25,6 +25,8 @@ from app.modules.i18n import service as i18n_service
 from app.modules.integrations import service as integrations_service
 from app.modules.rbac import service as rbac_service
 from app.modules.security import rate_limit as rate_limit_service
+from app.modules.tenants import service as tenant_service
+from app.modules.university_core import service as university_core_service
 
 
 client = TestClient(app)
@@ -77,6 +79,8 @@ def _reset_template_state() -> None:
     example_notes_service.clear_example_notes()
     integrations_service._settings.clear()
     integrations_service._fernet.cache_clear()
+    university_core_service.clear_university_state()
+    tenant_service.clear_tenant_state()
     if hasattr(rbac_service, "_clear_permission_cache"):
         rbac_service._clear_permission_cache()
     _reset_local_user_store()

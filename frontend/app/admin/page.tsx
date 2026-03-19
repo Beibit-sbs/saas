@@ -12,6 +12,8 @@ import { AdminLocalUsersTab } from "./components/AdminLocalUsersTab";
 import { AdminOverviewTab } from "./components/AdminOverviewTab";
 import { AdminRbacTab } from "./components/AdminRbacTab";
 import { AdminSystemTab } from "./components/AdminSystemTab";
+import { AdminTenantsTab } from "./components/AdminTenantsTab";
+import { AdminUniversityTab } from "./components/AdminUniversityTab";
 import { AdminShell, type AdminSection } from "./components/AdminShell";
 import { useAdminAudit } from "./hooks/useAdminAudit";
 import { useAdminBackups } from "./hooks/useAdminBackups";
@@ -22,6 +24,8 @@ import { useAdminLocalUsers } from "./hooks/useAdminLocalUsers";
 import { useAdminOverview } from "./hooks/useAdminOverview";
 import { useAdminRbac } from "./hooks/useAdminRbac";
 import { useAdminSystemHealth } from "./hooks/useAdminSystemHealth";
+import { useAdminTenants } from "./hooks/useAdminTenants";
+import { useAdminUniversity } from "./hooks/useAdminUniversity";
 import type { AdminTab, UiLang } from "./types";
 
 const toUiLang = (value: string): UiLang => {
@@ -326,6 +330,38 @@ export default function AdminPage() {
     buildAuthHeaders,
   });
 
+  const {
+    activeEntity,
+    setActiveEntity,
+    itemsByEntity,
+    loading: universityLoading,
+    mutating: universityMutating,
+    feedback: universityFeedback,
+    lastUpdated: universityLastUpdated,
+    refresh: refreshUniversity,
+    createItem: createUniversityItem,
+    updateItem: updateUniversityItem,
+    deleteItem: deleteUniversityItem,
+  } = useAdminUniversity({
+    activeTab,
+    buildAuthHeaders,
+  });
+
+  const {
+    tenants,
+    loading: tenantsLoading,
+    mutating: tenantsMutating,
+    feedback: tenantsFeedback,
+    lastUpdated: tenantsLastUpdated,
+    refresh: refreshTenants,
+    createTenant,
+    updateTenant,
+    deleteTenant,
+  } = useAdminTenants({
+    activeTab,
+    buildAuthHeaders,
+  });
+
   const adminSections: AdminSection[] = [
     { id: "overview", label: l.overview, icon: "◧" },
     { id: "languages", label: l.languages, icon: "⟲" },
@@ -337,6 +373,8 @@ export default function AdminPage() {
     { id: "feature-flags", label: tx("featureFlags"), icon: "✦" },
     { id: "example-notes", label: tx("exampleNotesTab", "Example Notes"), icon: "▤" },
     { id: "system", label: "System", icon: "◍" },
+    { id: "university", label: "University", icon: "◬" },
+    { id: "tenants", label: "Tenants", icon: "⬡" },
   ];
 
   return (
@@ -642,6 +680,36 @@ export default function AdminPage() {
             onLoadAuditEvents={loadAuditEvents}
             onClearAuditFilters={clearAuditFilters}
             onExportAudit={exportAudit}
+          />
+        ) : null}
+
+        {activeTab === "university" ? (
+          <AdminUniversityTab
+            activeEntity={activeEntity}
+            onEntityChange={setActiveEntity}
+            itemsByEntity={itemsByEntity}
+            loading={universityLoading}
+            mutating={universityMutating}
+            feedback={universityFeedback}
+            lastUpdated={universityLastUpdated}
+            onRefresh={refreshUniversity}
+            onCreateItem={createUniversityItem}
+            onUpdateItem={updateUniversityItem}
+            onDeleteItem={deleteUniversityItem}
+          />
+        ) : null}
+
+        {activeTab === "tenants" ? (
+          <AdminTenantsTab
+            tenants={tenants}
+            loading={tenantsLoading}
+            mutating={tenantsMutating}
+            feedback={tenantsFeedback}
+            lastUpdated={tenantsLastUpdated}
+            onRefresh={refreshTenants}
+            onCreateTenant={createTenant}
+            onUpdateTenant={updateTenant}
+            onDeleteTenant={deleteTenant}
           />
         ) : null}
 
