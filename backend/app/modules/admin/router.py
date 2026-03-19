@@ -1,3 +1,5 @@
+import os
+import shutil
 from datetime import datetime, timezone
 from typing import Annotated
 
@@ -12,6 +14,61 @@ from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.rbac.service import list_roles, list_user_role_assignments
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+@router.get("/system/health")
+def admin_system_health(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))],
+) -> dict[str, object]:
+    now = datetime.now(timezone.utc)
+    languages = list_languages(enabled_only=False)
+    local_users = local_user_store.list_users()
+    roles = list_roles()
+    assignments = list_user_role_assignments()
+    backup_jobs = list_backup_history()
+    recent_audit_events = list_admin_actions(limit=50)
+
+    total_bytes, used_bytes, free_bytes = shutil.disk_usage("/")
+    usage_percent = round((used_bytes / total_bytes) * 100, 2) if total_bytes > 0 else 0.0
+
+    load_1m, load_5m, load_15m = os.getloadavg()
+    running_backup_jobs = sum(
+        1
+        for job in backup_jobs
+        if str(job.get("status", "")).lower() in {"running", "in_progress", "planned", "queued"}
+    )
+
+    return {
+        "status": "ok",
+        "services": {
+            "backend": "ok",
+            "api": "ok",
+            "metrics": "available",
+        },
+        "metrics": {
+            "generated_at": now.isoformat(),
+            "load_avg_1m": round(load_1m, 2),
+            "load_avg_5m": round(load_5m, 2),
+            "load_avg_15m": round(load_15m, 2),
+            "local_users_count": len(local_users),
+            "roles_count": len(roles),
+            "assignments_count": len(assignments),
+            "languages_count": len(languages),
+        },
+        "queues": {
+            "backup_jobs_total": len(backup_jobs),
+            "backup_jobs_running": running_backup_jobs,
+            "audit_events_recent": len(recent_audit_events),
+        },
+        "disk": {
+            "path": "/",
+            "total_bytes": total_bytes,
+            "used_bytes": used_bytes,
+            "free_bytes": free_bytes,
+            "usage_percent": usage_percent,
+        },
+    }
 
 
 @router.get("/dashboard")
