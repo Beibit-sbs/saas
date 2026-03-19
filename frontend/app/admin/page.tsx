@@ -14,6 +14,7 @@ import { AdminOverviewTab } from "./components/AdminOverviewTab";
 import { AdminRbacTab } from "./components/AdminRbacTab";
 import { AdminShell, type AdminSection } from "./components/AdminShell";
 import { useAdminFeatureFlags } from "./hooks/useAdminFeatureFlags";
+import { useAdminLocalUsers } from "./hooks/useAdminLocalUsers";
 import { useAdminOverview } from "./hooks/useAdminOverview";
 import { useAdminLanguages } from "./hooks/useAdminLanguages";
 import { adminTranslations, type AdminTranslationKey } from "../../i18n/admin";
@@ -27,7 +28,6 @@ import type {
   InlineFeedback,
   LdapConfigForm,
   LdapStatus,
-  LocalUser,
   RbacAssignmentEntry,
   RbacRoleEntry,
   RestoreCandidate,
@@ -61,28 +61,6 @@ export default function AdminPage() {
 
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [status, setStatus] = useState<string | null>(null);
-
-  const [localUsers, setLocalUsers] = useState<LocalUser[]>([]);
-  const [localFeedback, setLocalFeedback] = useState<InlineFeedback | null>(null);
-  const [localCreateBusy, setLocalCreateBusy] = useState(false);
-  const [localListBusy, setLocalListBusy] = useState(false);
-  const [localDeleteBusy, setLocalDeleteBusy] = useState(false);
-  const [localUpdateBusy, setLocalUpdateBusy] = useState(false);
-  const [localPasswordBusy, setLocalPasswordBusy] = useState(false);
-  const [localLogin, setLocalLogin] = useState("");
-  const [localPassword, setLocalPassword] = useState("");
-  const [localDisplayName, setLocalDisplayName] = useState("");
-  const [localRoles, setLocalRoles] = useState("student");
-  const [localDefaultLanguage, setLocalDefaultLanguage] = useState("ru");
-  const [localSearch, setLocalSearch] = useState("");
-  const [localRoleFilter, setLocalRoleFilter] = useState("");
-  const [localLanguageFilter, setLocalLanguageFilter] = useState("");
-  const [selectedLocalUserId, setSelectedLocalUserId] = useState("");
-  const [editLocalDisplayName, setEditLocalDisplayName] = useState("");
-  const [editLocalLanguage, setEditLocalLanguage] = useState("ru");
-  const [editLocalRoles, setEditLocalRoles] = useState("student");
-  const [editLocalPassword, setEditLocalPassword] = useState("");
-  const [editLocalPasswordConfirm, setEditLocalPasswordConfirm] = useState("");
 
   const [rbacFeedback, setRbacFeedback] = useState<InlineFeedback | null>(null);
   const [rbacRolesBusy, setRbacRolesBusy] = useState(false);
@@ -147,12 +125,7 @@ export default function AdminPage() {
     }
     return adminTranslations.ru.errorPrefix;
   }, [l]);
-  const selectedLocalUser = localUsers.find((item) => item.user_id === selectedLocalUserId) || null;
-  const localFilterBadges = [
-    localSearch.trim() ? `${tx("localFilterSearch")}: ${localSearch.trim()}` : "",
-    localRoleFilter.trim() ? `${tx("localFilterRole")}: ${localRoleFilter.trim()}` : "",
-    localLanguageFilter.trim() ? `${tx("localFilterLanguage")}: ${localLanguageFilter.trim()}` : "",
-  ].filter(Boolean);
+
   const rbacFilterBadges = [
     assignmentUserFilter.trim() ? `${tx("rbacFilterUser")}: ${assignmentUserFilter.trim()}` : "",
     assignmentRoleFilter.trim() ? `${tx("rbacFilterRole")}: ${assignmentRoleFilter.trim()}` : "",
@@ -175,25 +148,6 @@ export default function AdminPage() {
   const backupSummaryStatus = backupLatestJob?.status || tx("backupStatusUnknown");
   const backupActionsBusy = backupListLoading || backupRunBusy || backupRestoreBusy || backupRetentionBusy;
 
-  const localUpdateHasChanges = useMemo(() => {
-    if (!selectedLocalUser) {
-      return false;
-    }
-
-    const displayChanged = selectedLocalUser.display_name.trim() !== editLocalDisplayName.trim();
-    const languageChanged = selectedLocalUser.default_language.trim().toLowerCase() !== editLocalLanguage.trim().toLowerCase();
-
-    const originalRoles = [...selectedLocalUser.roles].map((item) => item.trim()).filter(Boolean).sort();
-    const editedRoles = editLocalRoles
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .sort();
-    const rolesChanged = JSON.stringify(originalRoles) !== JSON.stringify(editedRoles);
-
-    return displayChanged || languageChanged || rolesChanged;
-  }, [editLocalDisplayName, editLocalLanguage, editLocalRoles, selectedLocalUser]);
-
 
   const buildAuthHeaders = useCallback((): Record<string, string> => {
     const token = localStorage.getItem("app.token");
@@ -215,9 +169,6 @@ export default function AdminPage() {
     buildAuthHeaders,
     l,
     onStatusChange: setStatus,
-    onLanguagesReloaded: (items) => {
-      setLocalDefaultLanguage((current) => current || items.find((item) => item.enabled)?.code || "ru");
-    },
   });
 
   const {
@@ -292,49 +243,64 @@ export default function AdminPage() {
   const enabledLanguages = supportedLanguages.filter((item) => item.enabled).length;
   const systemLanguages = supportedLanguages.filter((item) => item.system).length;
 
-  const loadLocalUsers = useCallback(async (overrides?: { search?: string; role?: string; language?: string }) => {
-    setLocalListBusy(true);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const effectiveSearch = overrides?.search ?? localSearch;
-      const effectiveRole = overrides?.role ?? localRoleFilter;
-      const effectiveLanguage = overrides?.language ?? localLanguageFilter;
-      const params = new URLSearchParams();
-      if (effectiveSearch.trim()) {
-        params.set("search", effectiveSearch.trim());
-      }
-      if (effectiveRole.trim()) {
-        params.set("role", effectiveRole.trim());
-      }
-      if (effectiveLanguage.trim()) {
-        params.set("language", effectiveLanguage.trim());
-      }
-
-      const query = params.toString();
-      const endpoint = query ? `${baseUrl}/admin/local-users?${query}` : `${baseUrl}/admin/local-users`;
-      const res = await fetch(endpoint, {
-        headers: buildAuthHeaders(),
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setLocalFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      const json = (await res.json()) as { users?: typeof localUsers };
-      setLocalUsers(json.users || []);
-    } catch (error) {
-      setLocalFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setLocalListBusy(false);
-    }
-  }, [buildAuthHeaders, l.errorPrefix, localLanguageFilter, localRoleFilter, localSearch]);
+  const {
+    localUsers,
+    localFeedback,
+    localCreateBusy,
+    localListBusy,
+    localDeleteBusy,
+    localUpdateBusy,
+    localPasswordBusy,
+    localLogin,
+    localPassword,
+    localDisplayName,
+    localRoles,
+    localDefaultLanguage,
+    localSearch,
+    localRoleFilter,
+    localLanguageFilter,
+    selectedLocalUser,
+    selectedLocalUserId,
+    editLocalDisplayName,
+    editLocalLanguage,
+    editLocalRoles,
+    editLocalPassword,
+    editLocalPasswordConfirm,
+    localFilterBadges,
+    localUpdateHasChanges,
+    setLocalLogin,
+    setLocalPassword,
+    setLocalDisplayName,
+    setLocalRoles,
+    setLocalDefaultLanguage,
+    setLocalSearch,
+    setLocalRoleFilter,
+    setLocalLanguageFilter,
+    setEditLocalDisplayName,
+    setEditLocalLanguage,
+    setEditLocalRoles,
+    setEditLocalPassword,
+    setEditLocalPasswordConfirm,
+    loadLocalUsers,
+    createLocalUser,
+    selectLocalUser,
+    revertLocalUserForm,
+    clearLocalFilters,
+    updateLocalUser,
+    updateLocalUserPassword,
+    deleteLocalUser,
+  } = useAdminLocalUsers({
+    activeTab,
+    buildAuthHeaders,
+    l,
+    supportedLanguages,
+    tx,
+    onAfterCreate: async () => {
+      await loadDashboard();
+      touchDashboardStamp();
+    },
+    onAfterMutate: loadDashboard,
+  });
 
   const loadIntegrationStatus = useCallback(async (showFeedback = false) => {
     setIntegrationsLoading(true);
@@ -679,13 +645,6 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (activeTab !== "local-users") {
-      return;
-    }
-    void loadLocalUsers();
-  }, [activeTab, loadLocalUsers]);
-
-  useEffect(() => {
     if (activeTab !== "integrations") {
       return;
     }
@@ -701,22 +660,6 @@ export default function AdminPage() {
   }, [activeTab, loadRbacAssignments, loadRbacRoles]);
 
   useEffect(() => {
-    if (localUsers.length === 0) {
-      setSelectedLocalUserId("");
-      setEditLocalDisplayName("");
-      setEditLocalLanguage("ru");
-      setEditLocalRoles("student");
-      return;
-    }
-
-    const selected = localUsers.find((item) => item.user_id === selectedLocalUserId) || localUsers[0];
-    setSelectedLocalUserId(selected.user_id);
-    setEditLocalDisplayName(selected.display_name);
-    setEditLocalLanguage(selected.default_language);
-    setEditLocalRoles(selected.roles.join(","));
-  }, [localUsers, selectedLocalUserId]);
-
-  useEffect(() => {
     if (activeTab !== "backups") {
       return;
     }
@@ -729,250 +672,6 @@ export default function AdminPage() {
     }
     void loadRestoreCandidates();
   }, [activeTab, loadRestoreCandidates, restoreProfileId]);
-
-  const createLocalUser = async () => {
-    setLocalFeedback(null);
-    if (!localLogin.trim() || !localPassword.trim() || !localDisplayName.trim()) {
-      setLocalFeedback({ tone: "error", message: l.localUserRequired });
-      return;
-    }
-
-    setLocalCreateBusy(true);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/local-users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-          ...csrfHeaders,
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          login: localLogin,
-          password: localPassword,
-          display_name: localDisplayName,
-          roles: localRoles
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
-          default_language: localDefaultLanguage,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setLocalFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      setLocalLogin("");
-      setLocalPassword("");
-      setLocalDisplayName("");
-      setLocalRoles("student");
-      setLocalDefaultLanguage("ru");
-      await loadLocalUsers();
-      await loadDashboard();
-      setLocalFeedback({ tone: "success", message: l.localUserCreated });
-      touchDashboardStamp();
-    } catch (error) {
-      setLocalFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setLocalCreateBusy(false);
-    }
-  };
-
-  const selectLocalUser = (userId: string) => {
-    const selected = localUsers.find((item) => item.user_id === userId);
-    if (!selected) {
-      return;
-    }
-    setSelectedLocalUserId(selected.user_id);
-    setEditLocalDisplayName(selected.display_name);
-    setEditLocalLanguage(selected.default_language);
-    setEditLocalRoles(selected.roles.join(","));
-    setEditLocalPassword("");
-    setEditLocalPasswordConfirm("");
-  };
-
-  const revertLocalUserForm = () => {
-    if (!selectedLocalUser) {
-      return;
-    }
-
-    setEditLocalDisplayName(selectedLocalUser.display_name);
-    setEditLocalLanguage(selectedLocalUser.default_language);
-    setEditLocalRoles(selectedLocalUser.roles.join(","));
-    setEditLocalPassword("");
-    setEditLocalPasswordConfirm("");
-    setLocalFeedback({ tone: "info", message: tx("localFormReverted") });
-  };
-
-  const clearLocalFilters = async () => {
-    setLocalSearch("");
-    setLocalRoleFilter("");
-    setLocalLanguageFilter("");
-    setLocalFeedback(null);
-    await loadLocalUsers({ search: "", role: "", language: "" });
-  };
-
-  const updateLocalUser = async () => {
-    setLocalFeedback(null);
-    if (!selectedLocalUserId) {
-      setLocalFeedback({ tone: "error", message: tx("localUserSelectRequired") });
-      return;
-    }
-    if (!localUpdateHasChanges) {
-      setLocalFeedback({ tone: "info", message: tx("localNoChanges") });
-      return;
-    }
-
-    setLocalUpdateBusy(true);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/local-users/${encodeURIComponent(selectedLocalUserId)}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-          ...csrfHeaders,
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          display_name: editLocalDisplayName,
-          language: editLocalLanguage,
-          roles: editLocalRoles
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setLocalFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      await loadLocalUsers();
-      await loadDashboard();
-      setLocalFeedback({ tone: "success", message: tx("localUserUpdated") });
-    } catch (error) {
-      setLocalFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setLocalUpdateBusy(false);
-    }
-  };
-
-  const updateLocalUserPassword = async () => {
-    setLocalFeedback(null);
-    if (!selectedLocalUserId) {
-      setLocalFeedback({ tone: "error", message: tx("localUserSelectRequired") });
-      return;
-    }
-    if (!editLocalPassword.trim()) {
-      setLocalFeedback({ tone: "error", message: tx("localPasswordRequired") });
-      return;
-    }
-    if (editLocalPassword.trim().length < 6) {
-      setLocalFeedback({ tone: "error", message: tx("localPasswordMinLength") });
-      return;
-    }
-    if (editLocalPassword !== editLocalPasswordConfirm) {
-      setLocalFeedback({ tone: "error", message: tx("localPasswordMismatch") });
-      return;
-    }
-
-    setLocalPasswordBusy(true);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/local-users/${encodeURIComponent(selectedLocalUserId)}/password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-          ...csrfHeaders,
-        },
-        credentials: "include",
-        body: JSON.stringify({ password: editLocalPassword }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setLocalFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      setEditLocalPassword("");
-      setEditLocalPasswordConfirm("");
-      setLocalFeedback({ tone: "success", message: tx("localPasswordUpdated") });
-    } catch (error) {
-      setLocalFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setLocalPasswordBusy(false);
-    }
-  };
-
-  const deleteLocalUser = async () => {
-    setLocalFeedback(null);
-    if (!selectedLocalUserId) {
-      setLocalFeedback({ tone: "error", message: tx("localUserSelectRequired") });
-      return;
-    }
-
-    const target = localUsers.find((item) => item.user_id === selectedLocalUserId);
-    const confirmed = window.confirm(
-      tx("localDeleteConfirm") +
-      (target ? `\n${target.display_name} (${target.login}) [${target.user_id}]` : ""),
-    );
-    if (!confirmed) {
-      setLocalFeedback({ tone: "info", message: tx("localDeleteCancelled") });
-      return;
-    }
-
-    setLocalDeleteBusy(true);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/local-users/${encodeURIComponent(selectedLocalUserId)}`, {
-        method: "DELETE",
-        headers: {
-          ...buildAuthHeaders(),
-          ...csrfHeaders,
-        },
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setLocalFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      await loadLocalUsers();
-      await loadDashboard();
-      setLocalFeedback({ tone: "success", message: tx("localUserDeleted") });
-    } catch (error) {
-      setLocalFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setLocalDeleteBusy(false);
-    }
-  };
 
   const saveRbacRole = async () => {
     setRbacFeedback(null);
