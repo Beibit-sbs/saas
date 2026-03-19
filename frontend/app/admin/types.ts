@@ -1,6 +1,6 @@
 import type { AdminTranslationDictionary, AdminTranslationKey } from "../../i18n/admin";
 
-export type AdminTab = "overview" | "languages" | "local-users" | "rbac" | "integrations" | "backups" | "audit" | "feature-flags" | "example-notes";
+export type AdminTab = "overview" | "languages" | "local-users" | "rbac" | "integrations" | "backups" | "audit" | "feature-flags" | "example-notes" | "system";
 export type UiLang = "ru" | "en" | "kk";
 export type CatalogLanguage = { code: string; name: string; native_name: string };
 

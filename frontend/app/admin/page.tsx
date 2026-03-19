@@ -11,6 +11,7 @@ import { AdminLanguagesTab } from "./components/AdminLanguagesTab";
 import { AdminLocalUsersTab } from "./components/AdminLocalUsersTab";
 import { AdminOverviewTab } from "./components/AdminOverviewTab";
 import { AdminRbacTab } from "./components/AdminRbacTab";
+import { AdminSystemTab } from "./components/AdminSystemTab";
 import { AdminShell, type AdminSection } from "./components/AdminShell";
 import { useAdminAudit } from "./hooks/useAdminAudit";
 import { useAdminBackups } from "./hooks/useAdminBackups";
@@ -20,6 +21,7 @@ import { useAdminLanguages } from "./hooks/useAdminLanguages";
 import { useAdminLocalUsers } from "./hooks/useAdminLocalUsers";
 import { useAdminOverview } from "./hooks/useAdminOverview";
 import { useAdminRbac } from "./hooks/useAdminRbac";
+import { useAdminSystemHealth } from "./hooks/useAdminSystemHealth";
 import type { AdminTab, UiLang } from "./types";
 
 const toUiLang = (value: string): UiLang => {
@@ -313,6 +315,17 @@ export default function AdminPage() {
     tx,
   });
 
+  const {
+    systemHealth,
+    loading: systemHealthLoading,
+    feedback: systemHealthFeedback,
+    refresh: refreshSystemHealth,
+    lastUpdated: systemHealthLastUpdated,
+  } = useAdminSystemHealth({
+    activeTab,
+    buildAuthHeaders,
+  });
+
   const adminSections: AdminSection[] = [
     { id: "overview", label: l.overview, icon: "◧" },
     { id: "languages", label: l.languages, icon: "⟲" },
@@ -323,6 +336,7 @@ export default function AdminPage() {
     { id: "audit", label: l.audit, icon: "◌" },
     { id: "feature-flags", label: tx("featureFlags"), icon: "✦" },
     { id: "example-notes", label: tx("exampleNotesTab", "Example Notes"), icon: "▤" },
+    { id: "system", label: "System", icon: "◍" },
   ];
 
   return (
@@ -589,6 +603,16 @@ export default function AdminPage() {
           <AdminExampleNotesTab
             buildAuthHeaders={buildAuthHeaders}
             tx={tx}
+          />
+        ) : null}
+
+        {activeTab === "system" ? (
+          <AdminSystemTab
+            systemHealth={systemHealth}
+            loading={systemHealthLoading}
+            feedback={systemHealthFeedback}
+            lastUpdated={systemHealthLastUpdated}
+            onRefresh={refreshSystemHealth}
           />
         ) : null}
 
