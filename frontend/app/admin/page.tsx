@@ -590,7 +590,6 @@ export default function AdminPage() {
 
         {activeTab === "example-notes" ? (
           <AdminExampleNotesTab
-            baseUrl={process.env.NEXT_PUBLIC_API_BASE_URL || "/api"}
             buildAuthHeaders={buildAuthHeaders}
             tx={tx}
           />
