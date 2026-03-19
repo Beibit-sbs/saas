@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildCsrfHeaders } from "../components/csrf";
 import { useLanguage } from "../components/LanguageProvider";
+import { useAdminAudit } from "./hooks/useAdminAudit";
 import { AdminAuditTab } from "./components/AdminAuditTab";
 import { AdminBackupsTab } from "./components/AdminBackupsTab";
 import { AdminExampleNotesTab } from "./components/AdminExampleNotesTab";
@@ -130,17 +131,6 @@ export default function AdminPage() {
   const [restoreProfileId, setRestoreProfileId] = useState("");
   const [restoreFileName, setRestoreFileName] = useState("");
 
-  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
-  const [auditFeedback, setAuditFeedback] = useState<InlineFeedback | null>(null);
-  const [auditLoading, setAuditLoading] = useState(false);
-  const [auditExportBusy, setAuditExportBusy] = useState<"" | "csv" | "json">("");
-  const [auditActor, setAuditActor] = useState("");
-  const [auditAction, setAuditAction] = useState("");
-  const [auditEntity, setAuditEntity] = useState("");
-  const [auditResult, setAuditResult] = useState("");
-  const [auditCorrelationId, setAuditCorrelationId] = useState("");
-  const [auditSince, setAuditSince] = useState("");
-
   const uiLang = toUiLang(String(language));
 
   const l = adminTranslations[uiLang];
@@ -171,14 +161,6 @@ export default function AdminPage() {
     () => rbacAssignments.flatMap((row) => row.roles.map((role) => ({ user_id: row.user_id, role }))),
     [rbacAssignments],
   );
-  const auditFilterBadges = [
-    auditActor.trim() ? `${tx("auditActor")}: ${auditActor.trim()}` : "",
-    auditAction.trim() ? `${tx("auditAction")}: ${auditAction.trim()}` : "",
-    auditEntity.trim() ? `${tx("auditEntity")}: ${auditEntity.trim()}` : "",
-    auditResult.trim() ? `${tx("auditResult")}: ${auditResult.trim()}` : "",
-    auditSince.trim() ? `${tx("auditTs")}: ${auditSince.trim()}` : "",
-    auditCorrelationId.trim() ? `${tx("auditCorrelation")}: ${auditCorrelationId.trim()}` : "",
-  ].filter(Boolean);
   const backupJobsSorted = useMemo(
     () => [...backupJobs].sort((a, b) => new Date(b.started_at || b.finished_at || 0).getTime() - new Date(a.started_at || a.finished_at || 0).getTime()),
     [backupJobs],
@@ -192,19 +174,6 @@ export default function AdminPage() {
   const backupSummaryLatest = backupLatestJob?.started_at || restoreCandidates[0]?.modified_at || "-";
   const backupSummaryStatus = backupLatestJob?.status || tx("backupStatusUnknown");
   const backupActionsBusy = backupListLoading || backupRunBusy || backupRestoreBusy || backupRetentionBusy;
-  const hasActiveAuditFilters = auditFilterBadges.length > 0;
-  const auditLatestTimestamp = useMemo(() => {
-    if (auditEvents.length === 0) {
-      return "-";
-    }
-    let latest = auditEvents[0].timestamp;
-    for (const item of auditEvents) {
-      if (new Date(item.timestamp).getTime() > new Date(latest).getTime()) {
-        latest = item.timestamp;
-      }
-    }
-    return latest;
-  }, [auditEvents]);
 
   const localUpdateHasChanges = useMemo(() => {
     if (!selectedLocalUser) {
@@ -284,6 +253,36 @@ export default function AdminPage() {
     loadFeatureFlags,
     setFeatureFlagEnabled,
   } = useAdminFeatureFlags({
+    activeTab,
+    buildAuthHeaders,
+    l,
+    tx,
+  });
+
+  const {
+    auditActor,
+    auditAction,
+    auditEntity,
+    auditResult,
+    auditCorrelationId,
+    auditSince,
+    auditEvents,
+    auditFeedback,
+    auditLoading,
+    auditExportBusy,
+    auditFilterBadges,
+    hasActiveAuditFilters,
+    auditLatestTimestamp,
+    setAuditActor,
+    setAuditAction,
+    setAuditEntity,
+    setAuditResult,
+    setAuditCorrelationId,
+    setAuditSince,
+    loadAuditEvents,
+    exportAudit,
+    clearAuditFilters,
+  } = useAdminAudit({
     activeTab,
     buildAuthHeaders,
     l,
@@ -679,153 +678,6 @@ export default function AdminPage() {
     }
   };
 
-  const loadAuditEvents = useCallback(async (overrides?: {
-    actor?: string;
-    action?: string;
-    entity?: string;
-    result?: string;
-    correlationId?: string;
-    since?: string;
-  }) => {
-    setAuditLoading(true);
-    setAuditFeedback(null);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const effectiveActor = overrides?.actor ?? auditActor;
-      const effectiveAction = overrides?.action ?? auditAction;
-      const effectiveEntity = overrides?.entity ?? auditEntity;
-      const effectiveResult = overrides?.result ?? auditResult;
-      const effectiveCorrelationId = overrides?.correlationId ?? auditCorrelationId;
-      const effectiveSince = overrides?.since ?? auditSince;
-      const params = new URLSearchParams();
-      if (effectiveActor.trim()) {
-        params.set("actor", effectiveActor.trim());
-      }
-      if (effectiveAction.trim()) {
-        params.set("action", effectiveAction.trim());
-      }
-      if (effectiveEntity.trim()) {
-        params.set("entity", effectiveEntity.trim());
-      }
-      if (effectiveResult.trim()) {
-        params.set("result", effectiveResult.trim());
-      }
-      if (effectiveCorrelationId.trim()) {
-        params.set("correlation_id", effectiveCorrelationId.trim());
-      }
-      if (effectiveSince.trim()) {
-        params.set("since", effectiveSince.trim());
-      }
-      params.set("limit", "200");
-
-      const res = await fetch(`${baseUrl}/admin/audit/events?${params.toString()}`, {
-        headers: buildAuthHeaders(),
-          credentials: "include",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setAuditFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      const json = (await res.json()) as { events?: AuditEvent[] };
-      const rows = json.events || [];
-      setAuditEvents(rows);
-      setAuditFeedback({
-        tone: "success",
-        message: tx("auditShowingEvents").replace("{count}", String(rows.length)),
-      });
-    } catch (error) {
-      setAuditFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setAuditLoading(false);
-    }
-  }, [buildAuthHeaders, auditActor, auditAction, auditEntity, auditResult, auditCorrelationId, auditSince, l.errorPrefix, tx]);
-
-  const exportAudit = async (format: "json" | "csv") => {
-    setAuditFeedback(null);
-    setAuditExportBusy(format);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const params = new URLSearchParams();
-      params.set("format", format);
-      if (auditActor.trim()) {
-        params.set("actor", auditActor.trim());
-      }
-      if (auditAction.trim()) {
-        params.set("action", auditAction.trim());
-      }
-      if (auditEntity.trim()) {
-        params.set("entity", auditEntity.trim());
-      }
-      if (auditResult.trim()) {
-        params.set("result", auditResult.trim());
-      }
-      if (auditCorrelationId.trim()) {
-        params.set("correlation_id", auditCorrelationId.trim());
-      }
-      if (auditSince.trim()) {
-        params.set("since", auditSince.trim());
-      }
-
-      const res = await fetch(`${baseUrl}/admin/audit/export?${params.toString()}`, {
-        headers: buildAuthHeaders(),
-          credentials: "include",
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setAuditFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      const text = await res.text();
-      const blob = new Blob([text], { type: format === "csv" ? "text/csv" : "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = format === "csv" ? "audit-events.csv" : "audit-events.json";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      setAuditFeedback({
-        tone: "success",
-        message: tx("export"),
-      });
-    } catch (error) {
-      setAuditFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setAuditExportBusy("");
-    }
-  };
-
-  const clearAuditFilters = async () => {
-    setAuditActor("");
-    setAuditAction("");
-    setAuditEntity("");
-    setAuditResult("");
-    setAuditCorrelationId("");
-    setAuditSince("");
-    setAuditFeedback({ tone: "info", message: tx("auditNoFiltersActive") });
-    await loadAuditEvents({
-      actor: "",
-      action: "",
-      entity: "",
-      result: "",
-      correlationId: "",
-      since: "",
-    });
-  };
-
   useEffect(() => {
     if (activeTab !== "local-users") {
       return;
@@ -877,13 +729,6 @@ export default function AdminPage() {
     }
     void loadRestoreCandidates();
   }, [activeTab, loadRestoreCandidates, restoreProfileId]);
-
-  useEffect(() => {
-    if (activeTab !== "audit") {
-      return;
-    }
-    void loadAuditEvents();
-  }, [activeTab, loadAuditEvents]);
 
   const createLocalUser = async () => {
     setLocalFeedback(null);
