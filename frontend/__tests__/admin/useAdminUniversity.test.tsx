@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 
 import { useAdminUniversity } from "../../app/admin/hooks/useAdminUniversity";
 
@@ -116,13 +116,22 @@ describe("useAdminUniversity", () => {
       tenant_id: null,
     };
 
-    const created = await result.current.createItem("students", payload);
+    let created: Record<string, unknown> | null = null;
+    await act(async () => {
+      created = await result.current.createItem("students", payload);
+    });
     expect(created).toEqual({ id: 11 });
 
-    const updated = await result.current.updateItem("students", 11, { ...payload, status: "on_leave" });
+    let updated: Record<string, unknown> | null = null;
+    await act(async () => {
+      updated = await result.current.updateItem("students", 11, { ...payload, status: "on_leave" });
+    });
     expect(updated).toEqual({ id: 11 });
 
-    const deleted = await result.current.deleteItem("students", 11);
+    let deleted = false;
+    await act(async () => {
+      deleted = await result.current.deleteItem("students", 11);
+    });
     expect(deleted).toBe(true);
 
     await waitFor(() => {

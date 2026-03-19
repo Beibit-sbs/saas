@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -15,6 +15,23 @@ const emptyItems = {
 };
 
 describe("AdminUniversityTab", () => {
+  const realConsoleError = console.error;
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation((...args) => {
+      const firstArg = String(args[0] ?? "");
+      if (firstArg.includes("not wrapped in act(...)") || firstArg.includes("wrap-tests-with-act")) {
+        return;
+      }
+      realConsoleError(...args);
+    });
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
   it("renders University tab base UI", () => {
     render(
       <AdminUniversityTab
