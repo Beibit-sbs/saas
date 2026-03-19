@@ -5,13 +5,14 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
+from app.core.tenant import get_current_tenant
 from app.modules.audit.service import list_admin_actions
 from app.modules.auth.local_users_service import local_user_store
 from app.modules.backup.service import get_backup_settings_for_admin, list_backup_history
 from app.modules.i18n.service import list_languages
 from app.modules.integrations.service import get_ldap_config_for_admin, list_ai_provider_config_for_admin
 from app.modules.rbac.security import get_actor, permission_dependency
-from app.modules.rbac.service import list_roles, list_user_role_assignments
+from app.modules.rbac.service import list_roles_for_tenant, list_user_role_assignments_for_tenant
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -20,12 +21,14 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 def admin_system_health(
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
     now = datetime.now(timezone.utc)
     languages = list_languages(enabled_only=False)
     local_users = local_user_store.list_users()
-    roles = list_roles()
-    assignments = list_user_role_assignments()
+    tenant_id = int(tenant["id"])
+    roles = list_roles_for_tenant(tenant_id)
+    assignments = list_user_role_assignments_for_tenant(tenant_id)
     backup_jobs = list_backup_history()
     recent_audit_events = list_admin_actions(limit=50)
 
@@ -75,11 +78,13 @@ def admin_system_health(
 def admin_dashboard_meta(
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
     languages = list_languages(enabled_only=False)
     local_users = local_user_store.list_users()
-    roles = list_roles()
-    assignments = list_user_role_assignments()
+    tenant_id = int(tenant["id"])
+    roles = list_roles_for_tenant(tenant_id)
+    assignments = list_user_role_assignments_for_tenant(tenant_id)
     ldap = get_ldap_config_for_admin()
     ai_providers = list_ai_provider_config_for_admin()
     backup_settings = get_backup_settings_for_admin()

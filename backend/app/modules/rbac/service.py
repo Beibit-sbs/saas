@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from threading import Lock
 from typing import Dict, List, Set
 
+from app.modules.auth.local_users_service import local_user_store
+
 try:
     import psycopg
 except ImportError:  # pragma: no cover
@@ -101,6 +103,17 @@ state = RbacState(
 _permission_cache: dict[tuple[str, ...], Set[str]] = {}
 _cache_lock = Lock()
 
+_DEFAULT_TENANT_ID = 1
+_PLATFORM_ADMIN_ROLE = "superadmin"
+
+# Tenant-aware in-memory stores used by tenant-scoped APIs.
+_tenant_roles_state: dict[int, dict[str, set[str]]] = {
+    _DEFAULT_TENANT_ID: {role: set(perms) for role, perms in BASELINE_ROLE_PERMISSIONS.items()}
+}
+_tenant_user_roles_state: dict[int, dict[str, set[str]]] = {
+    _DEFAULT_TENANT_ID: {}
+}
+
 
 def _db_url() -> str | None:
     return os.getenv("DATABASE_URL")
@@ -115,7 +128,15 @@ def _should_fallback_to_memory(exc: Exception) -> bool:
         return True
     if isinstance(exc, (ConnectionError, TimeoutError, OSError)):
         return True
-    if psycopg is not None and isinstance(exc, (psycopg.OperationalError, psycopg.InterfaceError)):
+    if psycopg is not None and isinstance(
+        exc,
+        (
+            psycopg.OperationalError,
+            psycopg.InterfaceError,
+            psycopg.ProgrammingError,
+            psycopg.DataError,
+        ),
+    ):
         return True
     return False
 
@@ -129,12 +150,12 @@ def _seed_baseline_data(conn) -> None:
     with conn.cursor() as cur:
         cur.execute(
             """
-            INSERT INTO app_roles (name, description)
+            INSERT INTO app_roles (name, description, tenant_id)
             VALUES
-                ('superadmin', 'Full platform access'),
-                ('admin', 'Platform administration access'),
-                ('auditor', 'Read-only audit and dashboard access')
-            ON CONFLICT (name) DO NOTHING
+                ('superadmin', 'Full platform access', 1),
+                ('admin', 'Platform administration access', 1),
+                ('auditor', 'Read-only audit and dashboard access', 1)
+            ON CONFLICT (tenant_id, name) DO NOTHING
             """
         )
 
@@ -151,11 +172,11 @@ def _seed_baseline_data(conn) -> None:
         for role_name, permission_codes in BASELINE_ROLE_PERMISSIONS.items():
             cur.executemany(
                 """
-                INSERT INTO app_role_permissions (role_id, permission_id)
-                SELECT r.id, p.id
+                INSERT INTO app_role_permissions (role_id, permission_id, tenant_id)
+                SELECT r.id, p.id, 1
                 FROM app_roles r
                 JOIN app_permissions p ON p.code = %s
-                WHERE r.name = %s
+                WHERE r.tenant_id = 1 AND r.name = %s
                 ON CONFLICT (role_id, permission_id) DO NOTHING
                 """,
                 [(code, role_name) for code in permission_codes],
@@ -168,10 +189,12 @@ def _ensure_schema_and_seed(conn) -> None:
             """
             CREATE TABLE IF NOT EXISTS app_roles (
                 id BIGSERIAL PRIMARY KEY,
-                name TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
                 description TEXT NOT NULL DEFAULT '',
+                tenant_id BIGINT NOT NULL DEFAULT 1,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (tenant_id, name)
             )
             """
         )
@@ -191,6 +214,7 @@ def _ensure_schema_and_seed(conn) -> None:
             CREATE TABLE IF NOT EXISTS app_role_permissions (
                 role_id BIGINT NOT NULL REFERENCES app_roles(id) ON DELETE CASCADE,
                 permission_id BIGINT NOT NULL REFERENCES app_permissions(id) ON DELETE CASCADE,
+                tenant_id BIGINT NOT NULL DEFAULT 1,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 PRIMARY KEY (role_id, permission_id)
             )
@@ -201,6 +225,7 @@ def _ensure_schema_and_seed(conn) -> None:
             CREATE TABLE IF NOT EXISTS app_user_roles (
                 user_id TEXT NOT NULL,
                 role_id BIGINT NOT NULL REFERENCES app_roles(id) ON DELETE CASCADE,
+                tenant_id BIGINT NOT NULL DEFAULT 1,
                 assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 PRIMARY KEY (user_id, role_id)
             )
@@ -214,6 +239,7 @@ def _ensure_schema_and_seed(conn) -> None:
         )
         cur.execute("CREATE INDEX IF NOT EXISTS ix_app_user_roles_user_id ON app_user_roles (user_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS ix_app_user_roles_role_id ON app_user_roles (role_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS ix_app_roles_tenant_name ON app_roles (tenant_id, name)")
 
     _seed_baseline_data(conn)
     conn.commit()
@@ -550,14 +576,19 @@ def assign_role(user_id: str, role: str) -> Dict[str, List[str]]:
     return {"user_id": normalized_user_id, "roles": sorted(state.user_roles[normalized_user_id])}
 
 
-def sync_user_roles_from_trusted_source(user_id: str, roles: List[str]) -> Dict[str, List[str]]:
+def sync_user_roles_from_trusted_source(
+    user_id: str,
+    roles: List[str],
+    tenant_id: int = _DEFAULT_TENANT_ID,
+) -> Dict[str, List[str]]:
     normalized_user_id = user_id.strip()
     if not normalized_user_id:
         raise ValueError("user_id is required")
 
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
     normalized_roles = sorted({role.strip() for role in roles if role.strip()})
 
-    if _use_database():
+    if normalized_tenant_id == _DEFAULT_TENANT_ID and _use_database():
         try:
             synced = _sync_user_roles_db(normalized_user_id, normalized_roles)
             _clear_permission_cache()
@@ -566,20 +597,27 @@ def sync_user_roles_from_trusted_source(user_id: str, roles: List[str]) -> Dict[
             if not _should_fallback_to_memory(exc):
                 raise
 
-    state.user_roles[normalized_user_id] = set(normalized_roles)
+    _ensure_tenant_memory_state(normalized_tenant_id)
+    _tenant_user_roles_state[normalized_tenant_id][normalized_user_id] = set(normalized_roles)
     if not normalized_roles:
-        state.user_roles.pop(normalized_user_id, None)
+        _tenant_user_roles_state[normalized_tenant_id].pop(normalized_user_id, None)
+
+    if normalized_tenant_id == _DEFAULT_TENANT_ID:
+        state.user_roles[normalized_user_id] = set(normalized_roles)
+        if not normalized_roles:
+            state.user_roles.pop(normalized_user_id, None)
+
     _clear_permission_cache()
     return {"user_id": normalized_user_id, "roles": normalized_roles}
 
 
-def clear_user_roles_for_user(user_id: str) -> Dict[str, object]:
+def clear_user_roles_for_user(user_id: str, tenant_id: int = _DEFAULT_TENANT_ID) -> Dict[str, object]:
     normalized_user_id = user_id.strip()
     if not normalized_user_id:
         raise ValueError("user_id is required")
 
-    previous_roles = get_user_roles(normalized_user_id)
-    sync_user_roles_from_trusted_source(normalized_user_id, [])
+    previous_roles = get_user_roles_for_tenant(normalized_user_id, tenant_id)
+    sync_user_roles_from_trusted_source(normalized_user_id, [], tenant_id=tenant_id)
     return {
         "user_id": normalized_user_id,
         "removed": bool(previous_roles),
@@ -602,14 +640,14 @@ def get_user_roles(user_id: str) -> List[str]:
         except Exception as exc:
             if not _should_fallback_to_memory(exc):
                 raise
-    return sorted(state.user_roles.get(normalized_user_id, set()))
+    return get_user_roles_for_tenant(normalized_user_id, _DEFAULT_TENANT_ID)
 
 
 def get_user_roles_db_source(user_id: str) -> List[str]:
     normalized_user_id = user_id.strip()
     if not normalized_user_id:
         return []
-    return _get_user_roles_db(normalized_user_id)
+    return _get_user_roles_for_tenant_db(normalized_user_id, _DEFAULT_TENANT_ID)
 
 
 def resolve_permissions(roles: List[str]) -> Set[str]:
@@ -699,4 +737,566 @@ def revoke_role(user_id: str, role: str) -> Dict[str, object]:
         "role": normalized_role,
         "removed": removed,
         "roles": remaining_roles,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Tenant-aware RBAC API
+# ---------------------------------------------------------------------------
+
+
+def _normalize_tenant_id(tenant_id: int) -> int:
+    if tenant_id <= 0:
+        raise ValueError("tenant_id must be positive")
+    return int(tenant_id)
+
+
+def _ensure_tenant_memory_state(tenant_id: int) -> None:
+    _tenant_roles_state.setdefault(tenant_id, {})
+    _tenant_user_roles_state.setdefault(tenant_id, {})
+
+
+def _list_roles_for_tenant_db(tenant_id: int) -> Dict[str, List[str]]:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+
+    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+        _ensure_schema_and_seed(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT r.name, p.code
+                FROM app_roles r
+                LEFT JOIN app_role_permissions rp ON rp.role_id = r.id AND rp.tenant_id = %s
+                LEFT JOIN app_permissions p ON p.id = rp.permission_id
+                WHERE r.tenant_id = %s
+                ORDER BY r.name, p.code
+                """,
+                (tenant_id, tenant_id),
+            )
+            rows = cur.fetchall()
+
+    roles: Dict[str, Set[str]] = {}
+    for role_name, permission_code in rows:
+        roles.setdefault(role_name, set())
+        if permission_code:
+            roles[role_name].add(permission_code)
+    return {name: sorted(perms) for name, perms in roles.items()}
+
+
+def _add_or_update_role_for_tenant_db(
+    tenant_id: int,
+    name: str,
+    permissions: Set[str],
+) -> Dict[str, List[str]]:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+
+    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+        _ensure_schema_and_seed(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO app_roles (name, description, tenant_id)
+                VALUES (%s, '', %s)
+                ON CONFLICT (tenant_id, name) DO UPDATE
+                SET updated_at = NOW()
+                """,
+                (name, tenant_id),
+            )
+
+            if permissions:
+                cur.executemany(
+                    """
+                    INSERT INTO app_permissions (code, description)
+                    VALUES (%s, '')
+                    ON CONFLICT (code) DO NOTHING
+                    """,
+                    [(perm,) for perm in sorted(permissions)],
+                )
+
+            cur.execute(
+                """
+                DELETE FROM app_role_permissions
+                WHERE tenant_id = %s
+                  AND role_id = (
+                      SELECT id FROM app_roles WHERE tenant_id = %s AND name = %s
+                  )
+                """,
+                (tenant_id, tenant_id, name),
+            )
+
+            if permissions:
+                cur.executemany(
+                    """
+                    INSERT INTO app_role_permissions (role_id, permission_id, tenant_id)
+                    SELECT r.id, p.id, %s
+                    FROM app_roles r
+                    JOIN app_permissions p ON p.code = %s
+                    WHERE r.tenant_id = %s AND r.name = %s
+                    ON CONFLICT (role_id, permission_id) DO NOTHING
+                    """,
+                    [(tenant_id, perm, tenant_id, name) for perm in sorted(permissions)],
+                )
+
+        conn.commit()
+
+    return {name: sorted(permissions)}
+
+
+def _is_platform_admin_db(user_id: str) -> bool:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+
+    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+        _ensure_schema_and_seed(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM app_user_roles ur
+                JOIN app_roles r ON r.id = ur.role_id
+                WHERE ur.user_id = %s AND r.name = %s
+                LIMIT 1
+                """,
+                (user_id, _PLATFORM_ADMIN_ROLE),
+            )
+            return cur.fetchone() is not None
+
+
+def _get_user_roles_for_tenant_db(
+    user_id: str,
+    tenant_id: int,
+    include_platform_admin: bool = True,
+) -> List[str]:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+
+    roles: set[str] = set()
+    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+        _ensure_schema_and_seed(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT r.name
+                FROM app_user_roles ur
+                JOIN app_roles r ON r.id = ur.role_id
+                WHERE ur.user_id = %s
+                  AND ur.tenant_id = %s
+                  AND r.tenant_id = %s
+                ORDER BY r.name
+                """,
+                (user_id, tenant_id, tenant_id),
+            )
+            roles.update(row[0] for row in cur.fetchall())
+
+    if include_platform_admin:
+        try:
+            if _is_platform_admin_db(user_id):
+                roles.add(_PLATFORM_ADMIN_ROLE)
+        except Exception:
+            # Keep primary tenant result when platform-admin probe is unavailable.
+            pass
+
+    return sorted(roles)
+
+
+def _resolve_permissions_for_tenant_db(roles: List[str], tenant_id: int) -> Set[str]:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+    if not roles:
+        return set()
+
+    if _PLATFORM_ADMIN_ROLE in roles:
+        return set(BASELINE_ROLE_PERMISSIONS.get(_PLATFORM_ADMIN_ROLE, set()))
+
+    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+        _ensure_schema_and_seed(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT DISTINCT p.code
+                FROM app_roles r
+                JOIN app_role_permissions rp ON rp.role_id = r.id AND rp.tenant_id = %s
+                JOIN app_permissions p ON p.id = rp.permission_id
+                WHERE r.tenant_id = %s AND r.name = ANY(%s)
+                """,
+                (tenant_id, tenant_id, roles),
+            )
+            return {row[0] for row in cur.fetchall()}
+
+
+def _assert_user_tenant_match(user_id: str, tenant_id: int) -> None:
+    local_user = local_user_store.get_user(user_id)
+    if local_user is None:
+        return
+    user_tenant = int(local_user.get("tenant_id", _DEFAULT_TENANT_ID))
+    if user_tenant != tenant_id:
+        raise PermissionError("cross-tenant role assignment is forbidden")
+
+
+def _assign_role_for_tenant_db(user_id: str, role: str, tenant_id: int) -> Dict[str, List[str]]:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+
+    _assert_user_tenant_match(user_id, tenant_id)
+
+    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+        _ensure_schema_and_seed(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id FROM app_roles WHERE tenant_id = %s AND name = %s",
+                (tenant_id, role),
+            )
+            role_row = cur.fetchone()
+            if role_row is None:
+                raise ValueError(f"unknown role: {role}")
+
+            cur.execute(
+                """
+                INSERT INTO app_user_roles (user_id, role_id, tenant_id)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (user_id, role_id) DO NOTHING
+                """,
+                (user_id, role_row[0], tenant_id),
+            )
+
+            cur.execute(
+                """
+                SELECT r.name
+                FROM app_user_roles ur
+                JOIN app_roles r ON r.id = ur.role_id
+                WHERE ur.user_id = %s
+                  AND ur.tenant_id = %s
+                  AND r.tenant_id = %s
+                ORDER BY r.name
+                """,
+                (user_id, tenant_id, tenant_id),
+            )
+            roles = [row[0] for row in cur.fetchall()]
+
+        conn.commit()
+
+    return {"user_id": user_id, "roles": roles}
+
+
+def _list_user_role_assignments_for_tenant_db(
+    tenant_id: int,
+    user_id: str | None = None,
+    role: str | None = None,
+) -> List[Dict[str, object]]:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+
+    clauses: list[str] = ["ur.tenant_id = %s", "r.tenant_id = %s"]
+    params: list[object] = [tenant_id, tenant_id]
+    if user_id:
+        clauses.append("ur.user_id = %s")
+        params.append(user_id)
+    if role:
+        clauses.append("r.name = %s")
+        params.append(role)
+
+    where_clause = " AND ".join(clauses)
+
+    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+        _ensure_schema_and_seed(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                f"""
+                SELECT ur.user_id, r.name
+                FROM app_user_roles ur
+                JOIN app_roles r ON r.id = ur.role_id
+                WHERE {where_clause}
+                ORDER BY ur.user_id, r.name
+                """,
+                params,
+            )
+            rows = cur.fetchall()
+
+    assignments: Dict[str, List[str]] = {}
+    for current_user_id, current_role in rows:
+        assignments.setdefault(current_user_id, []).append(current_role)
+
+    return [
+        {"user_id": current_user_id, "roles": roles}
+        for current_user_id, roles in assignments.items()
+    ]
+
+
+def _revoke_role_for_tenant_db(user_id: str, role: str, tenant_id: int) -> Dict[str, object]:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+
+    removed = False
+    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+        _ensure_schema_and_seed(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id FROM app_roles WHERE tenant_id = %s AND name = %s",
+                (tenant_id, role),
+            )
+            role_row = cur.fetchone()
+            if role_row is not None:
+                cur.execute(
+                    "DELETE FROM app_user_roles WHERE user_id = %s AND role_id = %s AND tenant_id = %s",
+                    (user_id, role_row[0], tenant_id),
+                )
+                removed = cur.rowcount > 0
+
+            cur.execute(
+                """
+                SELECT r.name
+                FROM app_user_roles ur
+                JOIN app_roles r ON r.id = ur.role_id
+                WHERE ur.user_id = %s
+                  AND ur.tenant_id = %s
+                  AND r.tenant_id = %s
+                ORDER BY r.name
+                """,
+                (user_id, tenant_id, tenant_id),
+            )
+            roles = [row[0] for row in cur.fetchall()]
+
+        conn.commit()
+
+    return {"user_id": user_id, "role": role, "removed": removed, "roles": roles}
+
+
+def is_platform_admin(user_id: str) -> bool:
+    normalized_user_id = user_id.strip()
+    if not normalized_user_id:
+        return False
+
+    if _use_database():
+        try:
+            return _is_platform_admin_db(normalized_user_id)
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+
+    for tenant_roles in _tenant_user_roles_state.values():
+        if _PLATFORM_ADMIN_ROLE in tenant_roles.get(normalized_user_id, set()):
+            return True
+    return False
+
+
+def list_roles_for_tenant(tenant_id: int) -> Dict[str, List[str]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+
+    if _use_database():
+        try:
+            return _list_roles_for_tenant_db(normalized_tenant_id)
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+
+    _ensure_tenant_memory_state(normalized_tenant_id)
+    roles = _tenant_roles_state.get(normalized_tenant_id, {})
+    return {name: sorted(perms) for name, perms in roles.items()}
+
+
+def add_or_update_role_for_tenant(
+    tenant_id: int,
+    name: str,
+    permissions: List[str],
+) -> Dict[str, List[str]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_name = name.strip()
+    if not normalized_name:
+        raise ValueError("role name is required")
+
+    normalized_permissions = {perm.strip() for perm in permissions if perm.strip()}
+
+    if _use_database():
+        try:
+            result = _add_or_update_role_for_tenant_db(
+                normalized_tenant_id,
+                normalized_name,
+                normalized_permissions,
+            )
+            _clear_permission_cache()
+            return result
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+
+    _ensure_tenant_memory_state(normalized_tenant_id)
+    _tenant_roles_state[normalized_tenant_id][normalized_name] = normalized_permissions
+    _clear_permission_cache()
+    return {normalized_name: sorted(normalized_permissions)}
+
+
+def assign_role_to_user(tenant_id: int, user_id: str, role: str) -> Dict[str, List[str]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_user_id = user_id.strip()
+    normalized_role = role.strip()
+    if not normalized_user_id:
+        raise ValueError("user_id is required")
+    if not normalized_role:
+        raise ValueError("role is required")
+
+    if _use_database():
+        try:
+            assigned = _assign_role_for_tenant_db(normalized_user_id, normalized_role, normalized_tenant_id)
+            _clear_permission_cache()
+            return assigned
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+
+    _ensure_tenant_memory_state(normalized_tenant_id)
+    _assert_user_tenant_match(normalized_user_id, normalized_tenant_id)
+    roles_for_tenant = _tenant_roles_state[normalized_tenant_id]
+    if normalized_role not in roles_for_tenant:
+        raise ValueError(f"unknown role: {normalized_role}")
+
+    tenant_assignments = _tenant_user_roles_state[normalized_tenant_id]
+    tenant_assignments.setdefault(normalized_user_id, set()).add(normalized_role)
+    _clear_permission_cache()
+    return {
+        "user_id": normalized_user_id,
+        "roles": sorted(tenant_assignments[normalized_user_id]),
+    }
+
+
+def get_user_roles_for_tenant(user_id: str, tenant_id: int) -> List[str]:
+    normalized_user_id = user_id.strip()
+    if not normalized_user_id:
+        return []
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+
+    if _use_database():
+        try:
+            return _get_user_roles_for_tenant_db(normalized_user_id, normalized_tenant_id)
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+
+    _ensure_tenant_memory_state(normalized_tenant_id)
+    roles = set(_tenant_user_roles_state[normalized_tenant_id].get(normalized_user_id, set()))
+    if is_platform_admin(normalized_user_id):
+        roles.add(_PLATFORM_ADMIN_ROLE)
+    return sorted(roles)
+
+
+def get_user_roles_for_tenant_db_source(user_id: str, tenant_id: int) -> List[str]:
+    normalized_user_id = user_id.strip()
+    if not normalized_user_id:
+        return []
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    if normalized_tenant_id == _DEFAULT_TENANT_ID:
+        return _get_user_roles_db(normalized_user_id)
+    return _get_user_roles_for_tenant_db(normalized_user_id, normalized_tenant_id)
+
+
+def resolve_permissions_for_tenant(roles: List[str], tenant_id: int) -> Set[str]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_roles = sorted({role.strip() for role in roles if role.strip()})
+    cache_key = tuple([f"tenant:{normalized_tenant_id}", *normalized_roles])
+
+    with _cache_lock:
+        cached = _permission_cache.get(cache_key)
+        if cached is not None:
+            return set(cached)
+
+    if _PLATFORM_ADMIN_ROLE in normalized_roles:
+        permissions = set(BASELINE_ROLE_PERMISSIONS.get(_PLATFORM_ADMIN_ROLE, set()))
+    elif _use_database():
+        try:
+            permissions = _resolve_permissions_for_tenant_db(normalized_roles, normalized_tenant_id)
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+            _ensure_tenant_memory_state(normalized_tenant_id)
+            permissions = set()
+            for role in normalized_roles:
+                permissions.update(_tenant_roles_state[normalized_tenant_id].get(role, set()))
+    else:
+        _ensure_tenant_memory_state(normalized_tenant_id)
+        permissions = set()
+        for role in normalized_roles:
+            permissions.update(_tenant_roles_state[normalized_tenant_id].get(role, set()))
+
+    with _cache_lock:
+        _permission_cache[cache_key] = set(permissions)
+    return permissions
+
+
+def resolve_permissions_for_tenant_db_source(roles: List[str], tenant_id: int) -> Set[str]:
+    normalized_roles = sorted({role.strip() for role in roles if role.strip()})
+    if not normalized_roles:
+        return set()
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    if normalized_tenant_id == _DEFAULT_TENANT_ID:
+        return _resolve_permissions_db(normalized_roles)
+    return _resolve_permissions_for_tenant_db(normalized_roles, normalized_tenant_id)
+
+
+def list_user_role_assignments_for_tenant(
+    tenant_id: int,
+    user_id: str | None = None,
+    role: str | None = None,
+) -> List[Dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_user_id = user_id.strip() if user_id else None
+    normalized_role = role.strip() if role else None
+
+    if _use_database():
+        try:
+            return _list_user_role_assignments_for_tenant_db(
+                normalized_tenant_id,
+                normalized_user_id,
+                normalized_role,
+            )
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+
+    _ensure_tenant_memory_state(normalized_tenant_id)
+    assignments: List[Dict[str, object]] = []
+    for current_user_id in sorted(_tenant_user_roles_state[normalized_tenant_id]):
+        if normalized_user_id and current_user_id != normalized_user_id:
+            continue
+        roles_for_user = sorted(_tenant_user_roles_state[normalized_tenant_id].get(current_user_id, set()))
+        if normalized_role and normalized_role not in roles_for_user:
+            continue
+        assignments.append({"user_id": current_user_id, "roles": roles_for_user})
+    return assignments
+
+
+def revoke_role_for_tenant(tenant_id: int, user_id: str, role: str) -> Dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_user_id = user_id.strip()
+    normalized_role = role.strip()
+    if not normalized_user_id:
+        raise ValueError("user_id is required")
+    if not normalized_role:
+        raise ValueError("role is required")
+
+    if _use_database():
+        try:
+            result = _revoke_role_for_tenant_db(normalized_user_id, normalized_role, normalized_tenant_id)
+            _clear_permission_cache()
+            return result
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+
+    _ensure_tenant_memory_state(normalized_tenant_id)
+    tenant_assignments = _tenant_user_roles_state[normalized_tenant_id]
+    roles_for_user = tenant_assignments.setdefault(normalized_user_id, set())
+    removed = normalized_role in roles_for_user
+    roles_for_user.discard(normalized_role)
+    if not roles_for_user:
+        tenant_assignments.pop(normalized_user_id, None)
+        remaining: list[str] = []
+    else:
+        remaining = sorted(roles_for_user)
+    _clear_permission_cache()
+    return {
+        "user_id": normalized_user_id,
+        "role": normalized_role,
+        "removed": removed,
+        "roles": remaining,
     }

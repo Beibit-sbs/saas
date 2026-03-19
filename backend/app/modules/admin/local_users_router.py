@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from app.core.tenant import get_current_tenant
 from app.modules.auth.local_users_service import local_user_store
 from app.modules.i18n.service import list_languages, normalize_code
 from app.modules.rbac.service import clear_user_roles_for_user, sync_user_roles_from_trusted_source
@@ -41,6 +42,7 @@ def _ensure_enabled_language(language: str) -> str:
 def get_local_users(
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.users.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
     search: str | None = Query(default=None),
     role: str | None = Query(default=None),
     language: str | None = Query(default=None),
@@ -50,6 +52,7 @@ def get_local_users(
             search=search,
             role=role,
             language=normalize_code(language) if language else None,
+            tenant_id=int(tenant["id"]),
         )
     }
 
@@ -59,6 +62,7 @@ def create_local_user(
     payload: CreateLocalUserPayload,
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.users.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, dict[str, object]]:
     normalized_language = _ensure_enabled_language(payload.default_language)
 
@@ -68,6 +72,7 @@ def create_local_user(
         display_name=payload.display_name,
         roles=payload.roles,
         default_language=normalized_language,
+        tenant_id=int(tenant["id"]),
     )
     sync_user_roles_from_trusted_source(
         str(created["user_id"]),
@@ -82,6 +87,7 @@ def update_local_user(
     payload: UpdateLocalUserPayload,
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.users.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, dict[str, object]]:
     updated = local_user_store.update_user(
         user_id=user_id,

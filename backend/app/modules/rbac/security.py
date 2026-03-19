@@ -9,10 +9,27 @@ from app.modules.auth.token_service import (
     parse_access_token_from_request,
 )
 from app.modules.rbac.service import (
-    get_user_roles_db_source,
+    get_user_roles_for_tenant,
+    get_user_roles_for_tenant_db_source,
+    is_platform_admin,
     resolve_permissions,
-    resolve_permissions_db_source,
+    resolve_permissions_for_tenant,
+    resolve_permissions_for_tenant_db_source,
 )
+from app.modules.tenants.service import get_tenant
+
+
+_DEFAULT_TENANT_ID = 1
+
+
+def _resolve_tenant_id(x_tenant_id: int | None) -> int:
+    tenant_id = x_tenant_id if x_tenant_id is not None else _DEFAULT_TENANT_ID
+    tenant = get_tenant(tenant_id)
+    if tenant is None:
+        raise HTTPException(status_code=404, detail=f"Tenant {tenant_id} not found")
+    if tenant.get("status") != "active":
+        raise HTTPException(status_code=403, detail=f"Tenant {tenant_id} is not active")
+    return int(tenant_id)
 
 
 def resolve_current_user_claims(
@@ -52,20 +69,26 @@ async def require_permission(
     authorization: Annotated[str | None, Header()] = None,
     x_user_roles: Annotated[str | None, Header()] = None,
     x_admin_user: Annotated[str | None, Header()] = None,
+    x_tenant_id: Annotated[int | None, Header(alias="X-Tenant-ID")] = None,
 ) -> None:
     fallback_allowed = allow_rbac_dev_fallback()
     claims = getattr(request.state, "auth_claims", None)
     if claims is None:
         claims = resolve_current_user_claims(request, authorization)
 
+    tenant_id = _resolve_tenant_id(x_tenant_id)
     db_source = True
+    claims_fallback_used = False
     try:
-        role_values = get_user_roles_db_source(claims.user_id)
+        role_values = get_user_roles_for_tenant_db_source(claims.user_id, tenant_id)
     except Exception as exc:
         if not fallback_allowed:
             raise HTTPException(status_code=503, detail="rbac database unavailable") from exc
         db_source = False
-        role_values = [r.strip() for r in claims.roles if r.strip()]
+        role_values = get_user_roles_for_tenant(claims.user_id, tenant_id)
+        if not role_values:
+            role_values = [r.strip() for r in claims.roles if r.strip()]
+            claims_fallback_used = True
 
     # Legacy headers are ignored in operational mode and never treated as source
     # of truth. In compatibility mode they can only narrow access, never escalate.
@@ -76,18 +99,18 @@ async def require_permission(
         if requested:
             role_values = [r for r in role_values if r in requested]
 
-    if "superadmin" in role_values:
+    if "superadmin" in role_values or is_platform_admin(claims.user_id):
         return
 
     if db_source:
         try:
-            granted = resolve_permissions_db_source(role_values)
+            granted = resolve_permissions_for_tenant_db_source(role_values, tenant_id)
         except Exception as exc:
             if not fallback_allowed:
                 raise HTTPException(status_code=503, detail="rbac database unavailable") from exc
-            granted = resolve_permissions(role_values)
+            granted = resolve_permissions(role_values) if claims_fallback_used else resolve_permissions_for_tenant(role_values, tenant_id)
     else:
-        granted = resolve_permissions(role_values)
+        granted = resolve_permissions(role_values) if claims_fallback_used else resolve_permissions_for_tenant(role_values, tenant_id)
 
     if permission not in granted:
         raise HTTPException(status_code=403, detail=f"missing permission: {permission}")
@@ -99,7 +122,15 @@ def permission_dependency(permission: str):
         authorization: Annotated[str | None, Header()] = None,
         x_user_roles: Annotated[str | None, Header()] = None,
         x_admin_user: Annotated[str | None, Header()] = None,
+        x_tenant_id: Annotated[int | None, Header(alias="X-Tenant-ID")] = None,
     ) -> None:
-        await require_permission(request, permission, authorization, x_user_roles, x_admin_user)
+        await require_permission(
+            request,
+            permission,
+            authorization,
+            x_user_roles,
+            x_admin_user,
+            x_tenant_id,
+        )
 
     return dependency

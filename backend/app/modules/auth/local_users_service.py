@@ -85,6 +85,9 @@ class LocalUserStore:
             if not user_id or not login:
                 continue
 
+            if "tenant_id" not in item:
+                item["tenant_id"] = 1
+
             self._users_by_id[user_id] = item
             self._users_by_login[login] = user_id
 
@@ -103,6 +106,7 @@ class LocalUserStore:
             "display_name": item["display_name"],
             "roles": item["roles"],
             "default_language": item["default_language"],
+            "tenant_id": int(item.get("tenant_id", 1)),
             "auth_source": "local",
             "sync_with_ad": False,
         }
@@ -112,6 +116,7 @@ class LocalUserStore:
         search: str | None = None,
         role: str | None = None,
         language: str | None = None,
+        tenant_id: int | None = None,
     ) -> List[dict[str, object]]:
         self._load_once()
         normalized_search = (search or "").strip().lower()
@@ -120,6 +125,9 @@ class LocalUserStore:
 
         result: List[dict[str, object]] = []
         for item in self._users_by_id.values():
+            if tenant_id is not None and int(item.get("tenant_id", 1)) != int(tenant_id):
+                continue
+
             if normalized_search:
                 haystack = " ".join(
                     [
@@ -154,6 +162,7 @@ class LocalUserStore:
         display_name: str,
         roles: List[str],
         default_language: str,
+        tenant_id: int = 1,
     ) -> dict[str, object]:
         self._load_once()
         normalized_login = login.strip().lower()
@@ -172,6 +181,7 @@ class LocalUserStore:
             "display_name": display_name.strip(),
             "roles": [r.strip() for r in roles if r.strip()] or ["student"],
             "default_language": default_language,
+            "tenant_id": int(tenant_id),
             "auth_source": "local",
             "sync_with_ad": False,
         }
