@@ -51,6 +51,7 @@ Current tabs:
 - `example-notes`
 - `backups`
 - `audit`
+- `system`
 
 Operational highlights:
 - Overview dashboard with system, RBAC, language, integrations, backups, and audit snapshot indicators.
@@ -62,6 +63,7 @@ Operational highlights:
 - Audit explorer with filters (`actor`, `action`, `entity`, `result`, `correlation_id`, `since`) and JSON/CSV export.
 - Feature flags visibility and on/off toggle via admin API.
 - Example notes CRUD tab showing DB-backed entity, migration, RBAC, audit, frontend usage, and i18n wiring in one removable example module.
+- System observability tab with authenticated health snapshot (`/api/admin/system/health`) and periodic refresh while active.
 
 ## Quick Start
 

@@ -27,6 +27,7 @@ pushd backend >/dev/null
 source .venv/bin/activate
 ruff check .
 pytest -q
+pytest -q tests/test_template_validation.py
 deactivate
 popd >/dev/null
 
@@ -34,6 +35,7 @@ pushd frontend >/dev/null
 npm run i18n:check
 npm run lint
 npm run build
+npm run test:frontend
 popd >/dev/null
 
 pushd infra >/dev/null

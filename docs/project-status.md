@@ -128,6 +128,7 @@ Note:
   - `example-notes`
   - `backups`
   - `audit`
+  - `system`
 
 ### Admin Panel Functional State
 
@@ -140,10 +141,11 @@ Note:
 - Audit explorer with advanced filters:
   - `actor`, `action`, `entity`, `result`, `correlation_id`, `since`
 - Feature flags tab integrated with admin feature flags API
+- System tab integrated with authenticated health snapshot and active-tab auto-refresh
 
 ### Frontend Gap
 
-- Dedicated standalone frontend test suite is not yet documented as part of the current validation package.
+- Frontend tests exist and run, but coverage is still concentrated on shell-level flows and selected component paths.
 
 ### Frontend i18n Baseline
 
@@ -232,19 +234,22 @@ Detailed reusable contracts are tracked in `docs/templates/template-contracts.md
 
 - Backend tests:
   - `cd /home/sbs/AI/backend && .venv/bin/pytest -q`
-  - Result: pending refresh after current template hardening pass
+  - Result: passed (`101 passed`)
 - Backend lint:
   - `ruff check .`
-  - Result: pending refresh after current template hardening pass
+  - Result: passed
 - Frontend validation:
   - `npm run i18n:check && npm run lint && npm run build`
-  - Result: pending refresh after current template hardening pass
+  - Result: passed
+- Frontend tests:
+  - `npm run test:frontend`
+  - Result: passed (`3 files, 11 tests`)
 - Template validation:
   - `make template-validate`
-  - Result: pending initial implementation in current template hardening pass
+  - Result: passed
 - Full pipeline:
   - `make pipeline`
-  - Result: pending refresh after current template hardening pass
+  - Result: expected to pass when dependencies and docker runtime are available
 
 ### Notes on Historical Noise in Logs
 
