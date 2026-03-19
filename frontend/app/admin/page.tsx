@@ -15,6 +15,7 @@ import { AdminRbacTab } from "./components/AdminRbacTab";
 import { AdminShell, type AdminSection } from "./components/AdminShell";
 import { useAdminFeatureFlags } from "./hooks/useAdminFeatureFlags";
 import { useAdminLocalUsers } from "./hooks/useAdminLocalUsers";
+import { useAdminRbac } from "./hooks/useAdminRbac";
 import { useAdminOverview } from "./hooks/useAdminOverview";
 import { useAdminLanguages } from "./hooks/useAdminLanguages";
 import { adminTranslations, type AdminTranslationKey } from "../../i18n/admin";
@@ -28,8 +29,6 @@ import type {
   InlineFeedback,
   LdapConfigForm,
   LdapStatus,
-  RbacAssignmentEntry,
-  RbacRoleEntry,
   RestoreCandidate,
   UiLang,
 } from "./types";
@@ -61,21 +60,6 @@ export default function AdminPage() {
 
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [status, setStatus] = useState<string | null>(null);
-
-  const [rbacFeedback, setRbacFeedback] = useState<InlineFeedback | null>(null);
-  const [rbacRolesBusy, setRbacRolesBusy] = useState(false);
-  const [rbacRoleSaveBusy, setRbacRoleSaveBusy] = useState(false);
-  const [rbacAssignmentsBusy, setRbacAssignmentsBusy] = useState(false);
-  const [rbacAssignBusy, setRbacAssignBusy] = useState(false);
-  const [rbacRevokeBusyKey, setRbacRevokeBusyKey] = useState("");
-  const [rbacRoles, setRbacRoles] = useState<RbacRoleEntry[]>([]);
-  const [rbacAssignments, setRbacAssignments] = useState<RbacAssignmentEntry[]>([]);
-  const [newRoleName, setNewRoleName] = useState("");
-  const [newRolePermissions, setNewRolePermissions] = useState("admin.dashboard.read");
-  const [assignUserId, setAssignUserId] = useState("");
-  const [assignRoleName, setAssignRoleName] = useState("");
-  const [assignmentUserFilter, setAssignmentUserFilter] = useState("");
-  const [assignmentRoleFilter, setAssignmentRoleFilter] = useState("");
 
   const [integrationsLoading, setIntegrationsLoading] = useState(false);
   const [integrationsFeedback, setIntegrationsFeedback] = useState<InlineFeedback | null>(null);
@@ -125,15 +109,6 @@ export default function AdminPage() {
     }
     return adminTranslations.ru.errorPrefix;
   }, [l]);
-
-  const rbacFilterBadges = [
-    assignmentUserFilter.trim() ? `${tx("rbacFilterUser")}: ${assignmentUserFilter.trim()}` : "",
-    assignmentRoleFilter.trim() ? `${tx("rbacFilterRole")}: ${assignmentRoleFilter.trim()}` : "",
-  ].filter(Boolean);
-  const rbacAssignmentRows = useMemo(
-    () => rbacAssignments.flatMap((row) => row.roles.map((role) => ({ user_id: row.user_id, role }))),
-    [rbacAssignments],
-  );
   const backupJobsSorted = useMemo(
     () => [...backupJobs].sort((a, b) => new Date(b.started_at || b.finished_at || 0).getTime() - new Date(a.started_at || a.finished_at || 0).getTime()),
     [backupJobs],
@@ -302,6 +277,43 @@ export default function AdminPage() {
     onAfterMutate: loadDashboard,
   });
 
+  const {
+    rbacFeedback,
+    rbacRolesBusy,
+    rbacRoleSaveBusy,
+    rbacAssignmentsBusy,
+    rbacAssignBusy,
+    rbacRevokeBusyKey,
+    rbacRoles,
+    rbacAssignments,
+    newRoleName,
+    newRolePermissions,
+    assignUserId,
+    assignRoleName,
+    assignmentUserFilter,
+    assignmentRoleFilter,
+    rbacFilterBadges,
+    rbacAssignmentRows,
+    setNewRoleName,
+    setNewRolePermissions,
+    setAssignUserId,
+    setAssignRoleName,
+    setAssignmentUserFilter,
+    setAssignmentRoleFilter,
+    loadRbacRoles,
+    loadRbacAssignments,
+    saveRbacRole,
+    assignRbacRole,
+    revokeRbacRole,
+    clearRbacFilters,
+  } = useAdminRbac({
+    activeTab,
+    buildAuthHeaders,
+    l,
+    tx,
+    onAfterMutate: loadDashboard,
+  });
+
   const loadIntegrationStatus = useCallback(async (showFeedback = false) => {
     setIntegrationsLoading(true);
     try {
@@ -408,79 +420,6 @@ export default function AdminPage() {
       setIntegrationsLoading(false);
     }
   }, [buildAuthHeaders, l.errorPrefix, tx]);
-
-  const loadRbacRoles = useCallback(async () => {
-    setRbacRolesBusy(true);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const res = await fetch(`${baseUrl}/admin/rbac/roles`, {
-        headers: buildAuthHeaders(),
-          credentials: "include",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setRbacFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      const json = (await res.json()) as { roles?: Record<string, string[]> };
-      const rows = Object.entries(json.roles || {}).map(([name, permissions]) => ({
-        name,
-        permissions: permissions || [],
-      }));
-      setRbacRoles(rows);
-      setAssignRoleName((current) => current || rows[0]?.name || "");
-      setRbacFeedback(null);
-    } catch (error) {
-      setRbacFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setRbacRolesBusy(false);
-    }
-  }, [buildAuthHeaders, l.errorPrefix]);
-
-  const loadRbacAssignments = useCallback(async () => {
-    setRbacAssignmentsBusy(true);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const params = new URLSearchParams();
-      if (assignmentUserFilter.trim()) {
-        params.set("user_id", assignmentUserFilter.trim());
-      }
-      if (assignmentRoleFilter.trim()) {
-        params.set("role", assignmentRoleFilter.trim());
-      }
-
-      const query = params.toString();
-      const endpoint = query ? `${baseUrl}/admin/rbac/assignments?${query}` : `${baseUrl}/admin/rbac/assignments`;
-      const res = await fetch(endpoint, {
-        headers: buildAuthHeaders(),
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setRbacFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      const json = (await res.json()) as { assignments?: RbacAssignmentEntry[] };
-      setRbacAssignments(json.assignments || []);
-      setRbacFeedback(null);
-    } catch (error) {
-      setRbacFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setRbacAssignmentsBusy(false);
-    }
-  }, [assignmentRoleFilter, assignmentUserFilter, buildAuthHeaders, l.errorPrefix]);
 
   const loadBackupStatus = useCallback(async (showFeedback = false) => {
     setBackupListLoading(true);
@@ -652,14 +591,6 @@ export default function AdminPage() {
   }, [activeTab, loadIntegrationStatus]);
 
   useEffect(() => {
-    if (activeTab !== "rbac") {
-      return;
-    }
-    void loadRbacRoles();
-    void loadRbacAssignments();
-  }, [activeTab, loadRbacAssignments, loadRbacRoles]);
-
-  useEffect(() => {
     if (activeTab !== "backups") {
       return;
     }
@@ -672,174 +603,6 @@ export default function AdminPage() {
     }
     void loadRestoreCandidates();
   }, [activeTab, loadRestoreCandidates, restoreProfileId]);
-
-  const saveRbacRole = async () => {
-    setRbacFeedback(null);
-    if (!newRoleName.trim()) {
-      setRbacFeedback({ tone: "error", message: tx("rbacRoleRequired") });
-      return;
-    }
-
-    setRbacRoleSaveBusy(true);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/rbac/roles`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-          ...csrfHeaders,
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          name: newRoleName.trim(),
-          permissions: newRolePermissions
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setRbacFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      setRbacFeedback({ tone: "success", message: tx("rbacRoleSaved") });
-      setNewRoleName("");
-      await loadRbacRoles();
-    } catch (error) {
-      setRbacFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setRbacRoleSaveBusy(false);
-    }
-  };
-
-  const assignRbacRole = async () => {
-    setRbacFeedback(null);
-    if (!assignUserId.trim() || !assignRoleName.trim()) {
-      setRbacFeedback({ tone: "error", message: tx("rbacAssignRequired") });
-      return;
-    }
-
-    setRbacAssignBusy(true);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/rbac/assign`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-          ...csrfHeaders,
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          user_id: assignUserId.trim(),
-          role: assignRoleName.trim(),
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setRbacFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      setRbacFeedback({ tone: "success", message: tx("rbacAssigned") });
-      await loadRbacAssignments();
-      await loadDashboard();
-    } catch (error) {
-      setRbacFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setRbacAssignBusy(false);
-    }
-  };
-
-  const revokeRbacRole = async (userId: string, role: string) => {
-    setRbacFeedback(null);
-    const revokeLabel = `${userId} / ${role}`;
-    const confirmed = window.confirm(
-      tx("rbacRevokeConfirm") + `\n${revokeLabel}`,
-    );
-    if (!confirmed) {
-      setRbacFeedback({ tone: "info", message: tx("rbacRevokeCancelled") });
-      return;
-    }
-
-    setRbacRevokeBusyKey(`${userId}:${role}`);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(
-        `${baseUrl}/admin/rbac/assignments/${encodeURIComponent(userId)}/${encodeURIComponent(role)}`,
-        {
-          method: "DELETE",
-          headers: {
-            ...buildAuthHeaders(),
-            ...csrfHeaders,
-          },
-          credentials: "include",
-        },
-      );
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setRbacFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      await loadRbacAssignments();
-      await loadDashboard();
-      setRbacFeedback({ tone: "success", message: tx("rbacRevoked") });
-    } catch (error) {
-      setRbacFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setRbacRevokeBusyKey("");
-    }
-  };
-
-  const clearRbacFilters = async () => {
-    setAssignmentUserFilter("");
-    setAssignmentRoleFilter("");
-    setRbacFeedback(null);
-    setRbacAssignmentsBusy(true);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const res = await fetch(`${baseUrl}/admin/rbac/assignments`, {
-        headers: buildAuthHeaders(),
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setRbacFeedback({
-          tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
-        });
-        return;
-      }
-
-      const json = (await res.json()) as { assignments?: RbacAssignmentEntry[] };
-      setRbacAssignments(json.assignments || []);
-    } catch (error) {
-      setRbacFeedback({ tone: "error", message: String(error) });
-    } finally {
-      setRbacAssignmentsBusy(false);
-    }
-  };
 
   const testLdapConnection = async (withUserBind: boolean) => {
     setLdapFeedback(null);
