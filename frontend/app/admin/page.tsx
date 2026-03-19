@@ -1,7 +1,7 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { adminTranslations, type AdminTranslationKey } from "../../i18n/admin";
 import { useLanguage } from "../components/LanguageProvider";
-import { useAdminAudit } from "./hooks/useAdminAudit";
 import { AdminAuditTab } from "./components/AdminAuditTab";
 import { AdminBackupsTab } from "./components/AdminBackupsTab";
 import { AdminExampleNotesTab } from "./components/AdminExampleNotesTab";
@@ -12,18 +12,15 @@ import { AdminLocalUsersTab } from "./components/AdminLocalUsersTab";
 import { AdminOverviewTab } from "./components/AdminOverviewTab";
 import { AdminRbacTab } from "./components/AdminRbacTab";
 import { AdminShell, type AdminSection } from "./components/AdminShell";
-import { useAdminFeatureFlags } from "./hooks/useAdminFeatureFlags";
-import { useAdminLocalUsers } from "./hooks/useAdminLocalUsers";
-import { useAdminRbac } from "./hooks/useAdminRbac";
-import { useAdminIntegrations } from "./hooks/useAdminIntegrations";
-import { useAdminOverview } from "./hooks/useAdminOverview";
+import { useAdminAudit } from "./hooks/useAdminAudit";
 import { useAdminBackups } from "./hooks/useAdminBackups";
+import { useAdminFeatureFlags } from "./hooks/useAdminFeatureFlags";
+import { useAdminIntegrations } from "./hooks/useAdminIntegrations";
 import { useAdminLanguages } from "./hooks/useAdminLanguages";
-import { adminTranslations, type AdminTranslationKey } from "../../i18n/admin";
-import type {
-  AdminTab,
-  UiLang,
-} from "./types";
+import { useAdminLocalUsers } from "./hooks/useAdminLocalUsers";
+import { useAdminOverview } from "./hooks/useAdminOverview";
+import { useAdminRbac } from "./hooks/useAdminRbac";
+import type { AdminTab, UiLang } from "./types";
 
 const toUiLang = (value: string): UiLang => {
   if (value === "en" || value === "kk") {
@@ -709,14 +706,6 @@ export default function AdminPage() {
           gap: 6px;
           align-content: start;
           background: #f8fbff;
-            border-radius: 12px;
-2337c            border: 1px solid var(--line);
-2338c            padding: 11px 12px;
-2339,2340d
-;2367s/0.07em/0.06em/;2372s/8px/7px/;2373s/28px/26px/;2389s/#ffffff/#f8fbff/;2390s/var(--ink)/#314256/;2403s/var(--ink)/#243449/;2405s/var(--ink)/#243449/;2410c          background: #ffffff;
-;2411c          border: 1px solid var(--line);
-;2412s/18px/14px/;2413s/18px/16px/;2414c          box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
-;2430s/14px/12px/;2431s/14px/13px/
           border-radius: 14px;
           border: 1px solid var(--line);
           padding: 12px;
