@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
+from app.core.tenant import get_current_tenant
 from app.modules.feature_flags.service import list_flags, set_flag
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -20,8 +21,9 @@ class FeatureFlagPayload(BaseModel):
 def get_feature_flags(
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, list[dict[str, object]]]:
-    return {"flags": list_flags()}
+    return {"flags": list_flags(tenant_id=int(tenant["id"]))}
 
 
 @router.post("")
@@ -29,11 +31,13 @@ def upsert_feature_flag(
     payload: FeatureFlagPayload,
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, dict[str, object]]:
     updated = set_flag(
         key=payload.key,
         enabled=payload.enabled,
         description=payload.description,
         scope=payload.scope,
+        tenant_id=int(tenant["id"]),
     )
     return {"flag": updated}

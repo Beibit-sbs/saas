@@ -745,11 +745,11 @@ def list_usage_logs(limit: int = 100) -> list[dict[str, object]]:
         return list(_usage_logs)[: max(1, min(limit, 500))]
 
 
-def _provider_config() -> dict[str, dict[str, Any]]:
-    openai_cfg = get_ai_provider_runtime_config("openai")
-    gemini_cfg = get_ai_provider_runtime_config("gemini")
-    anthropic_cfg = get_ai_provider_runtime_config("anthropic")
-    custom_cfg = get_ai_provider_runtime_config("custom")
+def _provider_config(tenant_id: int | None = None) -> dict[str, dict[str, Any]]:
+    openai_cfg = get_ai_provider_runtime_config("openai", tenant_id=tenant_id)
+    gemini_cfg = get_ai_provider_runtime_config("gemini", tenant_id=tenant_id)
+    anthropic_cfg = get_ai_provider_runtime_config("anthropic", tenant_id=tenant_id)
+    custom_cfg = get_ai_provider_runtime_config("custom", tenant_id=tenant_id)
 
     return {
         "openai": {
@@ -786,41 +786,45 @@ def _provider_config() -> dict[str, dict[str, Any]]:
     }
 
 
-def _provider_runtime_config(provider: str) -> dict[str, str]:
+def _provider_runtime_config(provider: str, tenant_id: int | None = None) -> dict[str, str]:
     provider = provider.strip().lower()
-    runtime = get_ai_provider_runtime_config(provider)
+    runtime = get_ai_provider_runtime_config(provider, tenant_id=tenant_id)
 
     if provider == "openai":
         runtime["chat_url"] = get_runtime_value(
             "ai.openai.chat_url",
             "AI_OPENAI_CHAT_URL",
             "https://api.openai.com/v1/chat/completions",
+            tenant_id=tenant_id,
         )
     elif provider == "gemini":
         runtime["chat_url"] = get_runtime_value(
             "ai.gemini.chat_url",
             "AI_GEMINI_CHAT_URL",
             "https://generativelanguage.googleapis.com/v1beta/models",
+            tenant_id=tenant_id,
         )
     elif provider == "anthropic":
         runtime["chat_url"] = get_runtime_value(
             "ai.anthropic.chat_url",
             "AI_ANTHROPIC_CHAT_URL",
             "https://api.anthropic.com/v1/messages",
+            tenant_id=tenant_id,
         )
     elif provider == "custom":
         runtime["chat_url"] = get_runtime_value(
             "ai.custom.chat_url",
             "AI_CUSTOM_PROVIDER_CHAT_URL",
             runtime.get("validation_url", ""),
+            tenant_id=tenant_id,
         )
 
     return runtime
 
 
-def list_provider_status() -> list[dict[str, Any]]:
+def list_provider_status(tenant_id: int | None = None) -> list[dict[str, Any]]:
     providers = []
-    for name, config in _provider_config().items():
+    for name, config in _provider_config(tenant_id=tenant_id).items():
         providers.append(
             {
                 "provider": name,
@@ -1151,8 +1155,13 @@ def _adapter_for_provider(provider: str) -> AIProviderAdapter:
     return adapter
 
 
-def validate_provider_runtime(provider: str, actor: str | None = None, roles: list[str] | None = None) -> dict[str, Any]:
-    config = _provider_config().get(provider)
+def validate_provider_runtime(
+    provider: str,
+    actor: str | None = None,
+    roles: list[str] | None = None,
+    tenant_id: int | None = None,
+) -> dict[str, Any]:
+    config = _provider_config(tenant_id=tenant_id).get(provider)
     if config is None:
         raise ValueError("unknown provider")
     if not config["configured"]:
@@ -1187,6 +1196,7 @@ def execute_chat(
     *,
     actor: str,
     roles: list[str],
+    tenant_id: int | None = None,
     correlation_id: str | None = None,
 ) -> dict[str, object]:
     model_key = str(payload.get("model", "")).strip()
@@ -1233,7 +1243,7 @@ def execute_chat(
         ) from exc
 
     adapter = _adapter_for_provider(provider)
-    runtime_config = _provider_runtime_config(provider)
+    runtime_config = _provider_runtime_config(provider, tenant_id=tenant_id)
     normalized_messages = [
         {
             "role": str(item.get("role", "")),

@@ -39,7 +39,7 @@ def test_create_list_retry_cancel_jobs() -> None:
 def test_worker_executes_backup_run_job_end_to_end(monkeypatch) -> None:
     jobs_service.clear_jobs_state()
 
-    def fake_backup_run(actor: str):
+    def fake_backup_run(actor: str, tenant_id: int | None = None):
         return {
             "job_id": "backup-001",
             "job_type": "backup",

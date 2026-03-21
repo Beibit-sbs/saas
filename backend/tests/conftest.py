@@ -35,6 +35,10 @@ os.environ.setdefault("AUTH_DEV_DEMO_COMPATIBILITY", "true")
 os.environ.setdefault("RBAC_ALLOW_DEV_FALLBACK", "true")
 
 DEFAULT_FLAGS = copy.deepcopy(feature_flags_service._flags)
+DEFAULT_FLAGS_BY_TENANT = {
+    tenant_id: copy.deepcopy(store)
+    for tenant_id, store in feature_flags_service._flags_by_tenant.items()
+}
 DEFAULT_LANGUAGES = copy.deepcopy(i18n_service.languages)
 
 
@@ -90,6 +94,13 @@ def _reset_template_state() -> None:
     i18n_service.languages.update(copy.deepcopy(DEFAULT_LANGUAGES))
     feature_flags_service._flags.clear()
     feature_flags_service._flags.update(copy.deepcopy(DEFAULT_FLAGS))
+    feature_flags_service._flags_by_tenant.clear()
+    feature_flags_service._flags_by_tenant.update(
+        {
+            tenant_id: copy.deepcopy(store)
+            for tenant_id, store in DEFAULT_FLAGS_BY_TENANT.items()
+        }
+    )
 
 
 @pytest.fixture(autouse=True)

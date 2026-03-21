@@ -41,7 +41,10 @@ def test_sensitive_admin_rate_limit_returns_429_and_audits(monkeypatch) -> None:
     monkeypatch.setenv("RATE_LIMIT_GENERAL_LIMIT", "0")
     monkeypatch.setenv("RATE_LIMIT_SENSITIVE_ADMIN_WINDOW_SECONDS", "60")
     monkeypatch.setenv("RATE_LIMIT_SENSITIVE_ADMIN_LIMIT", "1")
-    monkeypatch.setattr("app.modules.ldap.router.test_ldap_connection", lambda username, password: {"status": "ok", "bind": bool(username)})
+    monkeypatch.setattr(
+        "app.modules.ldap.router.test_ldap_connection",
+        lambda username, password, tenant_id=None: {"status": "ok", "bind": bool(username)},
+    )
 
     first = client.post("/api/admin/ldap/test-connection", headers=ADMIN_HEADERS, json={"username": "user", "password": "secret"})
     second = client.post("/api/admin/ldap/test-connection", headers=ADMIN_HEADERS, json={"username": "user", "password": "secret"})

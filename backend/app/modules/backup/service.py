@@ -9,11 +9,25 @@ from typing import Any
 from app.modules.integrations.service import get_runtime_value, save_setting
 
 _BACKUP_HISTORY_LIMIT = 100
-_backup_history: list[dict[str, Any]] = []
+_backup_history: dict[int, list[dict[str, Any]]] = {}
 
 
-def _retention_days() -> int:
-    raw = get_runtime_value("backup.retention_days", "BACKUP_RETENTION_DAYS", "14")
+def _normalize_tenant_id(tenant_id: int | None) -> int:
+    if tenant_id is None:
+        return 1
+    normalized = int(tenant_id)
+    if normalized <= 0:
+        raise ValueError("tenant_id must be positive")
+    return normalized
+
+
+def _retention_days(tenant_id: int) -> int:
+    raw = get_runtime_value(
+        "backup.retention_days",
+        "BACKUP_RETENTION_DAYS",
+        "14",
+        tenant_id=tenant_id,
+    )
     try:
         value = int(str(raw).strip())
     except (TypeError, ValueError):
@@ -21,8 +35,13 @@ def _retention_days() -> int:
     return max(0, min(value, 3650))
 
 
-def _retention_min_files() -> int:
-    raw = get_runtime_value("backup.retention_min_files", "BACKUP_RETENTION_MIN_FILES", "3")
+def _retention_min_files(tenant_id: int) -> int:
+    raw = get_runtime_value(
+        "backup.retention_min_files",
+        "BACKUP_RETENTION_MIN_FILES",
+        "3",
+        tenant_id=tenant_id,
+    )
     try:
         value = int(str(raw).strip())
     except (TypeError, ValueError):
@@ -110,9 +129,15 @@ def _default_profiles() -> list[dict[str, str]]:
     ]
 
 
-def get_backup_settings_for_admin() -> dict[str, Any]:
+def get_backup_settings_for_admin(tenant_id: int | None = None) -> dict[str, Any]:
+    tenant = _normalize_tenant_id(tenant_id)
     roots = _allowed_roots()
-    profiles_json = get_runtime_value("backup.profiles_json", "BACKUP_PROFILES_JSON", "")
+    profiles_json = get_runtime_value(
+        "backup.profiles_json",
+        "BACKUP_PROFILES_JSON",
+        "",
+        tenant_id=tenant,
+    )
 
     if profiles_json:
         try:
@@ -132,7 +157,12 @@ def get_backup_settings_for_admin() -> dict[str, Any]:
         deduped.append(profile)
     profiles = deduped
 
-    configured_active = get_runtime_value("backup.active_profile", "BACKUP_DEFAULT_PROFILE", "")
+    configured_active = get_runtime_value(
+        "backup.active_profile",
+        "BACKUP_DEFAULT_PROFILE",
+        "",
+        tenant_id=tenant,
+    )
     active_profile = configured_active.strip().lower() if configured_active else ""
     available_ids = {profile["id"] for profile in profiles}
     if active_profile not in available_ids:
@@ -142,12 +172,13 @@ def get_backup_settings_for_admin() -> dict[str, Any]:
         "active_profile": active_profile,
         "profiles": profiles,
         "allowed_roots": roots,
-        "retention_days": _retention_days(),
-        "retention_min_files": _retention_min_files(),
+        "retention_days": _retention_days(tenant),
+        "retention_min_files": _retention_min_files(tenant),
     }
 
 
-def save_backup_settings(payload: dict[str, Any]) -> dict[str, Any]:
+def save_backup_settings(payload: dict[str, Any], tenant_id: int | None = None) -> dict[str, Any]:
+    tenant = _normalize_tenant_id(tenant_id)
     roots = _allowed_roots()
     raw_profiles = payload.get("profiles")
     if not isinstance(raw_profiles, list) or not raw_profiles:
@@ -164,8 +195,18 @@ def save_backup_settings(payload: dict[str, Any]) -> dict[str, Any]:
     if active_profile not in set(ids):
         raise ValueError("active backup profile must exist in profiles")
 
-    save_setting("backup.profiles_json", json.dumps(profiles), is_secret=False)
-    save_setting("backup.active_profile", active_profile, is_secret=False)
+    save_setting(
+        "backup.profiles_json",
+        json.dumps(profiles),
+        is_secret=False,
+        tenant_id=tenant,
+    )
+    save_setting(
+        "backup.active_profile",
+        active_profile,
+        is_secret=False,
+        tenant_id=tenant,
+    )
 
     if payload.get("retention_days") is not None:
         try:
@@ -174,7 +215,12 @@ def save_backup_settings(payload: dict[str, Any]) -> dict[str, Any]:
             raise ValueError("retention_days must be an integer") from exc
         if retention_days < 0 or retention_days > 3650:
             raise ValueError("retention_days must be between 0 and 3650")
-        save_setting("backup.retention_days", str(retention_days), is_secret=False)
+        save_setting(
+            "backup.retention_days",
+            str(retention_days),
+            is_secret=False,
+            tenant_id=tenant,
+        )
 
     if payload.get("retention_min_files") is not None:
         try:
@@ -183,9 +229,14 @@ def save_backup_settings(payload: dict[str, Any]) -> dict[str, Any]:
             raise ValueError("retention_min_files must be an integer") from exc
         if retention_min_files < 0 or retention_min_files > 1000:
             raise ValueError("retention_min_files must be between 0 and 1000")
-        save_setting("backup.retention_min_files", str(retention_min_files), is_secret=False)
+        save_setting(
+            "backup.retention_min_files",
+            str(retention_min_files),
+            is_secret=False,
+            tenant_id=tenant,
+        )
 
-    return get_backup_settings_for_admin()
+    return get_backup_settings_for_admin(tenant_id=tenant)
 
 
 def _run_pg_dump_command(db_url: str, output_path: str) -> None:
@@ -219,14 +270,16 @@ def _run_pg_restore_command(db_url: str, input_path: str) -> None:
     )
 
 
-def _record_history(entry: dict[str, Any]) -> None:
-    _backup_history.insert(0, entry)
-    if len(_backup_history) > _BACKUP_HISTORY_LIMIT:
-        del _backup_history[_BACKUP_HISTORY_LIMIT:]
+def _record_history(entry: dict[str, Any], tenant_id: int) -> None:
+    rows = _backup_history.setdefault(tenant_id, [])
+    rows.insert(0, entry)
+    if len(rows) > _BACKUP_HISTORY_LIMIT:
+        del rows[_BACKUP_HISTORY_LIMIT:]
 
 
-def list_backup_history() -> list[dict[str, Any]]:
-    return list(_backup_history)
+def list_backup_history(tenant_id: int | None = None) -> list[dict[str, Any]]:
+    tenant = _normalize_tenant_id(tenant_id)
+    return list(_backup_history.get(tenant, []))
 
 
 def _resolve_profile(settings: dict[str, Any], profile_id: str | None = None) -> dict[str, str]:
@@ -238,8 +291,9 @@ def _resolve_profile(settings: dict[str, Any], profile_id: str | None = None) ->
     return profile
 
 
-def list_restore_candidates(profile_id: str | None = None) -> dict[str, Any]:
-    settings = get_backup_settings_for_admin()
+def list_restore_candidates(profile_id: str | None = None, tenant_id: int | None = None) -> dict[str, Any]:
+    tenant = _normalize_tenant_id(tenant_id)
+    settings = get_backup_settings_for_admin(tenant_id=tenant)
     profile = _resolve_profile(settings, profile_id=profile_id)
 
     profile_dir = Path(profile["path"]).expanduser().resolve()
@@ -299,8 +353,10 @@ def run_restore_now(
     file_name: str | None,
     dry_run: bool,
     confirm_text: str | None,
+    tenant_id: int | None = None,
 ) -> dict[str, Any]:
-    settings = get_backup_settings_for_admin()
+    tenant = _normalize_tenant_id(tenant_id)
+    settings = get_backup_settings_for_admin(tenant_id=tenant)
     profile = _resolve_profile(settings, profile_id=profile_id)
 
     database_url = os.getenv("DATABASE_URL", "").strip()
@@ -324,11 +380,12 @@ def run_restore_now(
     if dry_run:
         planned = {
             **base_result,
+            "tenant_id": tenant,
             "status": "planned",
             "finished_at": _now_iso(),
             "command_preview": f"pg_restore --clean --if-exists --no-owner --no-privileges --dbname=<DATABASE_URL> {restore_file}",
         }
-        _record_history(planned)
+        _record_history(planned, tenant_id=tenant)
         return planned
 
     if (confirm_text or "").strip().upper() != "RESTORE":
@@ -338,34 +395,43 @@ def run_restore_now(
         _run_pg_restore_command(database_url, str(restore_file))
         completed = {
             **base_result,
+            "tenant_id": tenant,
             "status": "completed",
             "finished_at": _now_iso(),
         }
-        _record_history(completed)
+        _record_history(completed, tenant_id=tenant)
         return completed
     except FileNotFoundError as exc:
         failed = {
             **base_result,
+            "tenant_id": tenant,
             "status": "failed",
             "finished_at": _now_iso(),
             "error": "pg_restore is not available in backend runtime",
         }
-        _record_history(failed)
+        _record_history(failed, tenant_id=tenant)
         raise ValueError("pg_restore is not available in backend runtime") from exc
     except subprocess.CalledProcessError as exc:
         detail = (exc.stderr or exc.stdout or "pg_restore failed").strip()[:300]
         failed = {
             **base_result,
+            "tenant_id": tenant,
             "status": "failed",
             "finished_at": _now_iso(),
             "error": detail,
         }
-        _record_history(failed)
+        _record_history(failed, tenant_id=tenant)
         raise ValueError(f"restore failed: {detail}") from exc
 
 
-def apply_retention_policy(profile_id: str | None, dry_run: bool, actor: str) -> dict[str, Any]:
-    settings = get_backup_settings_for_admin()
+def apply_retention_policy(
+    profile_id: str | None,
+    dry_run: bool,
+    actor: str,
+    tenant_id: int | None = None,
+) -> dict[str, Any]:
+    tenant = _normalize_tenant_id(tenant_id)
+    settings = get_backup_settings_for_admin(tenant_id=tenant)
     profile = _resolve_profile(settings, profile_id=profile_id)
     profile_dir = Path(profile["path"]).expanduser().resolve()
     if not profile_dir.exists() or not profile_dir.is_dir():
@@ -399,6 +465,7 @@ def apply_retention_policy(profile_id: str | None, dry_run: bool, actor: str) ->
     result = {
         "job_id": str(uuid.uuid4()),
         "job_type": "retention",
+        "tenant_id": tenant,
         "status": "planned" if dry_run else "completed",
         "profile_id": profile["id"],
         "profile_label": profile["label"],
@@ -412,12 +479,13 @@ def apply_retention_policy(profile_id: str | None, dry_run: bool, actor: str) ->
         "finished_at": _now_iso(),
         "actor": actor,
     }
-    _record_history(result)
+    _record_history(result, tenant_id=tenant)
     return result
 
 
-def run_backup_now(actor: str) -> dict[str, Any]:
-    settings = get_backup_settings_for_admin()
+def run_backup_now(actor: str, tenant_id: int | None = None) -> dict[str, Any]:
+    tenant = _normalize_tenant_id(tenant_id)
+    settings = get_backup_settings_for_admin(tenant_id=tenant)
     active_profile = str(settings.get("active_profile", ""))
     profiles = settings.get("profiles", [])
 
@@ -444,6 +512,7 @@ def run_backup_now(actor: str) -> dict[str, Any]:
         result = {
             "job_id": job_id,
             "job_type": "backup",
+            "tenant_id": tenant,
             "status": "completed",
             "profile_id": profile["id"],
             "profile_label": profile["label"],
@@ -453,12 +522,13 @@ def run_backup_now(actor: str) -> dict[str, Any]:
             "finished_at": _now_iso(),
             "actor": actor,
         }
-        _record_history(result)
+        _record_history(result, tenant_id=tenant)
         return result
     except FileNotFoundError as exc:
         failure = {
             "job_id": job_id,
             "job_type": "backup",
+            "tenant_id": tenant,
             "status": "failed",
             "profile_id": profile["id"],
             "profile_label": profile["label"],
@@ -469,13 +539,14 @@ def run_backup_now(actor: str) -> dict[str, Any]:
             "actor": actor,
             "error": "pg_dump is not available in backend runtime",
         }
-        _record_history(failure)
+        _record_history(failure, tenant_id=tenant)
         raise ValueError("pg_dump is not available in backend runtime") from exc
     except subprocess.CalledProcessError as exc:
         detail = (exc.stderr or exc.stdout or "pg_dump failed").strip()[:300]
         failure = {
             "job_id": job_id,
             "job_type": "backup",
+            "tenant_id": tenant,
             "status": "failed",
             "profile_id": profile["id"],
             "profile_label": profile["label"],
@@ -486,5 +557,5 @@ def run_backup_now(actor: str) -> dict[str, Any]:
             "actor": actor,
             "error": detail,
         }
-        _record_history(failure)
+        _record_history(failure, tenant_id=tenant)
         raise ValueError(f"backup failed: {detail}") from exc

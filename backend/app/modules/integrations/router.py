@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from app.core.tenant import get_current_tenant
 from app.modules.integrations.service import (
     get_ldap_config_for_admin,
     list_ai_provider_config_for_admin,
@@ -38,10 +39,11 @@ class AiProviderConfigPayload(BaseModel):
 def get_settings(
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
     return {
-        "ldap": get_ldap_config_for_admin(),
-        "ai_providers": list_ai_provider_config_for_admin(),
+        "ldap": get_ldap_config_for_admin(tenant_id=int(tenant["id"])),
+        "ai_providers": list_ai_provider_config_for_admin(tenant_id=int(tenant["id"])),
     }
 
 
@@ -50,8 +52,9 @@ def update_ldap_settings(
     payload: LdapConfigPayload,
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
-    ldap = save_ldap_config(payload.model_dump(exclude_unset=True))
+    ldap = save_ldap_config(payload.model_dump(exclude_unset=True), tenant_id=int(tenant["id"]))
     return {"ldap": ldap}
 
 
@@ -61,9 +64,15 @@ def update_ai_provider_settings(
     payload: AiProviderConfigPayload,
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
     try:
-        result = save_ai_provider_config(provider, payload.api_key, payload.validation_url)
+        result = save_ai_provider_config(
+            provider,
+            payload.api_key,
+            payload.validation_url,
+            tenant_id=int(tenant["id"]),
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

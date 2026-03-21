@@ -9,7 +9,7 @@ from app.modules.jobs import service as jobs_service
 
 def _execute_backup_run(job: dict[str, Any]) -> dict[str, Any]:
     actor = str(job.get("created_by") or "system")
-    result = run_backup_now(actor=actor)
+    result = run_backup_now(actor=actor, tenant_id=int(job["tenant_id"]))
     return {
         "job_type": "backup.run",
         "backup_job": result,

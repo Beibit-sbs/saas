@@ -78,7 +78,7 @@ def test_ldap_admin_can_access_all_protected_ldap_ai_integrations_endpoints(monk
     assignments: dict[str, list[str]] = {}
     _configure_db_only_role_resolution(monkeypatch, assignments)
 
-    def fake_authenticate(username: str, password: str):
+    def fake_authenticate(username: str, password: str, tenant_id: int | None = None):
         return {
             "user_id": "ad.bob",
             "display_name": "Bob Admin",

@@ -152,7 +152,7 @@ def test_ldap_login_success(monkeypatch) -> None:
     client.cookies.clear()
     monkeypatch.setenv("AUTH_LDAP_ENABLED", "true")
 
-    def fake_authenticate(username: str, password: str):
+    def fake_authenticate(username: str, password: str, tenant_id: int | None = None):
         assert username == "alice"
         assert password == "secret"
         return {
@@ -175,7 +175,7 @@ def test_ldap_login_syncs_roles_to_db(monkeypatch) -> None:
     monkeypatch.setenv("AUTH_LDAP_ENABLED", "true")
     synced: dict[str, list[str]] = {}
 
-    def fake_authenticate(username: str, password: str):
+    def fake_authenticate(username: str, password: str, tenant_id: int | None = None):
         return {
             "user_id": "ad.alice",
             "display_name": "Alice Admin",

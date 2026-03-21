@@ -48,8 +48,9 @@ class BackupRetentionPayload(BaseModel):
 def get_backup_settings(
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.backup.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, Any]:
-    return get_backup_settings_for_admin()
+    return get_backup_settings_for_admin(tenant_id=int(tenant["id"]))
 
 
 @router.put("/settings")
@@ -58,11 +59,13 @@ def update_backup_settings(
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.backup.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, Any]:
     try:
-        result = save_backup_settings(payload.model_dump())
+        result = save_backup_settings(payload.model_dump(), tenant_id=int(tenant["id"]))
         log_admin_action(
             actor=actor,
+            tenant_id=int(tenant["id"]),
             action="backup_settings_updated",
             path="/api/admin/backups/settings",
             client_ip=request.client.host if request.client else "unknown",
@@ -79,18 +82,20 @@ def update_backup_settings(
 def get_backup_history(
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.backup.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, Any]:
-    return {"jobs": list_backup_history()}
+    return {"jobs": list_backup_history(tenant_id=int(tenant["id"]))}
 
 
 @router.get("/restore-candidates")
 def get_restore_candidates(
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.backup.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
     profile_id: str | None = None,
 ) -> dict[str, Any]:
     try:
-        return list_restore_candidates(profile_id=profile_id)
+        return list_restore_candidates(profile_id=profile_id, tenant_id=int(tenant["id"]))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -101,6 +106,7 @@ def run_restore(
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.backup.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, Any]:
     try:
         result = run_restore_now(
@@ -109,9 +115,11 @@ def run_restore(
             file_name=payload.file_name,
             dry_run=payload.dry_run,
             confirm_text=payload.confirm_text,
+            tenant_id=int(tenant["id"]),
         )
         log_admin_action(
             actor=actor,
+            tenant_id=int(tenant["id"]),
             action="backup_restore" if not payload.dry_run else "backup_restore_plan",
             path="/api/admin/backups/restore",
             client_ip=request.client.host if request.client else "unknown",
@@ -123,6 +131,7 @@ def run_restore(
     except ValueError as exc:
         log_admin_action(
             actor=actor,
+            tenant_id=int(tenant["id"]),
             action="backup_restore_failed",
             path="/api/admin/backups/restore",
             client_ip=request.client.host if request.client else "unknown",
@@ -140,15 +149,18 @@ def apply_retention(
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.backup.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, Any]:
     try:
         result = apply_retention_policy(
             profile_id=payload.profile_id,
             dry_run=payload.dry_run,
             actor=actor,
+            tenant_id=int(tenant["id"]),
         )
         log_admin_action(
             actor=actor,
+            tenant_id=int(tenant["id"]),
             action="backup_retention_run" if not payload.dry_run else "backup_retention_plan",
             path="/api/admin/backups/retention/apply",
             client_ip=request.client.host if request.client else "unknown",
@@ -160,6 +172,7 @@ def apply_retention(
     except ValueError as exc:
         log_admin_action(
             actor=actor,
+            tenant_id=int(tenant["id"]),
             action="backup_retention_failed",
             path="/api/admin/backups/retention/apply",
             client_ip=request.client.host if request.client else "unknown",

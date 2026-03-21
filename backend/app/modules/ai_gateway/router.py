@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+from app.core.tenant import get_current_tenant
 from app.modules.ai_gateway.schemas import AIModelEnabledPayload, AIModelUpsertPayload
 from app.modules.ai_gateway.service import (
     list_models,
@@ -20,8 +21,9 @@ router = APIRouter(prefix="/api/admin/ai", tags=["ai-gateway"])
 def provider_status(
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.ai.providers.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
-    return {"providers": list_provider_status()}
+    return {"providers": list_provider_status(tenant_id=int(tenant["id"]))}
 
 
 @router.post("/providers/{provider}/validate")
@@ -30,11 +32,12 @@ def validate_provider_key(
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.ai.providers.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
     try:
         claims = getattr(request.state, "auth_claims", None)
         roles = [item.strip() for item in claims.roles if item.strip()] if claims else []
-        result = validate_provider_runtime(provider, actor=actor, roles=roles)
+        result = validate_provider_runtime(provider, actor=actor, roles=roles, tenant_id=int(tenant["id"]))
     except ValueError as exc:
         detail = str(exc)
         log_admin_action(

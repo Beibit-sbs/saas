@@ -1,7 +1,7 @@
 from typing import Annotated
 import secrets
 
-from fastapi import APIRouter, Header, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.core.config import (
@@ -12,6 +12,7 @@ from app.core.config import (
     get_auth_cookie_same_site,
     get_auth_modes,
 )
+from app.core.tenant import get_current_tenant
 from app.modules.ldap.service import authenticate_ldap_user
 from app.modules.auth.local_users_service import local_user_store
 from app.modules.auth.preferences_service import get_user_language, set_user_language
@@ -211,9 +212,14 @@ def mock_login(payload: MockLoginPayload, request: Request, response: Response) 
 
 
 @router.post("/ldap-login")
-def ldap_login(payload: LdapLoginPayload, request: Request, response: Response) -> dict[str, object]:
+def ldap_login(
+    payload: LdapLoginPayload,
+    request: Request,
+    response: Response,
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict[str, object]:
     try:
-        user = authenticate_ldap_user(payload.login, payload.password)
+        user = authenticate_ldap_user(payload.login, payload.password, tenant_id=int(tenant["id"]))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
