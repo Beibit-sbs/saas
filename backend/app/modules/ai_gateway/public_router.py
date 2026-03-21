@@ -26,15 +26,28 @@ def chat(
     tenant_id = int(current_tenant.get("id"))
 
     try:
-        return {
-            "result": execute_chat(
-                payload.model_dump(),
-                actor=actor,
-                roles=roles,
-                tenant_id=tenant_id,
-                correlation_id=getattr(request.state, "request_id", None),
-            )
-        }
+        result = execute_chat(
+            payload.model_dump(),
+            actor=actor,
+            roles=roles,
+            tenant_id=tenant_id,
+            correlation_id=getattr(request.state, "request_id", None),
+        )
+        log_admin_action(
+            actor=actor,
+            action="ai.chat.execute",
+            path=str(request.url.path),
+            client_ip=request.client.host if request.client else "unknown",
+            correlation_id=getattr(request.state, "request_id", None),
+            entity="ai_gateway",
+            result="success",
+            tenant_id=tenant_id,
+            metadata={
+                "model": result.get("model"),
+                "provider": result.get("provider"),
+            },
+        )
+        return {"result": result}
     except AIGatewayError as exc:
         log_admin_action(
             actor=actor,
@@ -44,6 +57,7 @@ def chat(
             correlation_id=getattr(request.state, "request_id", None),
             entity="ai_gateway",
             result="failed",
+            tenant_id=tenant_id,
             metadata={
                 "provider": exc.provider,
                 "model": exc.model,
