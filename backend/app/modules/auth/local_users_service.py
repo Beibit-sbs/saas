@@ -172,6 +172,14 @@ class LocalUserStore:
         if normalized_login in self._users_by_login:
             raise HTTPException(status_code=409, detail="login already exists")
 
+        try:
+            from app.modules.quotas.service import check_quota
+
+            check_quota(int(tenant_id), "users")
+        except Exception:
+            # Quotas are soft-enforced in this phase and must never block.
+            pass
+
         self._counter += 1
         user_id = f"local.{self._counter:03d}"
         payload: dict[str, object] = {
@@ -189,6 +197,14 @@ class LocalUserStore:
         self._users_by_id[user_id] = payload
         self._users_by_login[normalized_login] = user_id
         self._persist()
+
+        try:
+            from app.modules.usage.service import record_usage_event
+
+            record_usage_event(int(tenant_id), "users_created", 1)
+        except Exception:
+            pass
+
         return self._public_user(payload)
 
     def update_user(

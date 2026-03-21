@@ -1199,6 +1199,15 @@ def execute_chat(
     tenant_id: int | None = None,
     correlation_id: str | None = None,
 ) -> dict[str, object]:
+    normalized_tenant_id = int(tenant_id or 1)
+
+    try:
+        from app.modules.quotas.service import check_quota
+
+        check_quota(normalized_tenant_id, "ai_requests_per_day")
+    except Exception:
+        pass
+
     model_key = str(payload.get("model", "")).strip()
     if not model_key:
         raise AIGatewayError(status_code=400, detail="model is required", audit_reason="invalid_payload")
@@ -1320,6 +1329,13 @@ def execute_chat(
         failure_reason=None,
         correlation_id=correlation_id,
     )
+
+    try:
+        from app.modules.usage.service import record_usage_event
+
+        record_usage_event(normalized_tenant_id, "ai_requests", 1)
+    except Exception:
+        pass
 
     return {
         "model": model_key,

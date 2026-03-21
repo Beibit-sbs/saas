@@ -485,6 +485,14 @@ def apply_retention_policy(
 
 def run_backup_now(actor: str, tenant_id: int | None = None) -> dict[str, Any]:
     tenant = _normalize_tenant_id(tenant_id)
+
+    try:
+        from app.modules.quotas.service import check_quota
+
+        check_quota(tenant, "backup_storage_mb")
+    except Exception:
+        pass
+
     settings = get_backup_settings_for_admin(tenant_id=tenant)
     active_profile = str(settings.get("active_profile", ""))
     profiles = settings.get("profiles", [])
@@ -523,6 +531,15 @@ def run_backup_now(actor: str, tenant_id: int | None = None) -> dict[str, Any]:
             "actor": actor,
         }
         _record_history(result, tenant_id=tenant)
+
+        try:
+            from app.modules.usage.service import record_usage_event
+
+            record_usage_event(tenant, "backups_created", 1)
+            record_usage_event(tenant, "backup_storage_mb", int(size_bytes / (1024 * 1024)))
+        except Exception:
+            pass
+
         return result
     except FileNotFoundError as exc:
         failure = {

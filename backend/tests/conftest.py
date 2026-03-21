@@ -24,9 +24,12 @@ from app.modules.feature_flags import service as feature_flags_service
 from app.modules.i18n import service as i18n_service
 from app.modules.integrations import service as integrations_service
 from app.modules.jobs import service as jobs_service
+from app.modules.plans import service as plans_service
+from app.modules.quotas import service as quotas_service
 from app.modules.rbac import service as rbac_service
 from app.modules.security import rate_limit as rate_limit_service
 from app.modules.tenants import service as tenant_service
+from app.modules.usage import service as usage_service
 from app.modules.university_core import service as university_core_service
 
 
@@ -82,11 +85,14 @@ def _reset_template_state() -> None:
     audit_service.clear_audit_events()
     backup_service._backup_history.clear()
     jobs_service.clear_jobs_state()
+    usage_service.clear_usage_state()
     example_notes_service.clear_example_notes()
     integrations_service._settings.clear()
     integrations_service._fernet.cache_clear()
     university_core_service.clear_university_state()
     tenant_service.clear_tenant_state()
+    plans_service.clear_plans_state()
+    quotas_service.clear_quotas_state()
     if hasattr(rbac_service, "_clear_permission_cache"):
         rbac_service._clear_permission_cache()
     _reset_local_user_store()

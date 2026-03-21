@@ -25,6 +25,7 @@ _state = TenantMemoryState(
             "slug": "default",
             "name": "Default Organization",
             "status": "active",
+            "plan_id": 3,
             "created_at": "2026-01-01T00:00:00+00:00",
             "updated_at": "2026-01-01T00:00:00+00:00",
         }
@@ -42,6 +43,7 @@ def clear_tenant_state() -> None:
             "slug": "default",
             "name": "Default Organization",
             "status": "active",
+            "plan_id": 3,
             "created_at": "2026-01-01T00:00:00+00:00",
             "updated_at": "2026-01-01T00:00:00+00:00",
         }
@@ -76,8 +78,9 @@ def _row_to_dict(row: object) -> dict[str, object]:
         "slug": row[1],
         "name": row[2],
         "status": row[3],
-        "created_at": row[4].isoformat() if hasattr(row[4], "isoformat") else str(row[4]),
-        "updated_at": row[5].isoformat() if hasattr(row[5], "isoformat") else str(row[5]),
+        "plan_id": int(row[4]) if row[4] is not None else 1,
+        "created_at": row[5].isoformat() if hasattr(row[5], "isoformat") else str(row[5]),
+        "updated_at": row[6].isoformat() if hasattr(row[6], "isoformat") else str(row[6]),
     }
 
 
@@ -90,7 +93,7 @@ def _list_tenants_db() -> list[dict[str, object]]:
     assert url
     with psycopg.connect(url) as conn:
         rows = conn.execute(
-            "SELECT id, slug, name, status, created_at, updated_at FROM app_tenants ORDER BY id"
+            "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants ORDER BY id"
         ).fetchall()
     return [_row_to_dict(r) for r in rows]
 
@@ -101,11 +104,16 @@ def _create_tenant_db(payload: dict[str, object]) -> dict[str, object]:
     with psycopg.connect(url) as conn:
         row = conn.execute(
             """
-            INSERT INTO app_tenants (slug, name, status, created_at, updated_at)
-            VALUES (%s, %s, %s, NOW(), NOW())
-            RETURNING id, slug, name, status, created_at, updated_at
+            INSERT INTO app_tenants (slug, name, status, plan_id, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, NOW(), NOW())
+            RETURNING id, slug, name, status, plan_id, created_at, updated_at
             """,
-            (payload["slug"], payload["name"], payload.get("status", "active")),
+            (
+                payload["slug"],
+                payload["name"],
+                payload.get("status", "active"),
+                int(payload.get("plan_id") or 1),
+            ),
         ).fetchone()
         conn.commit()
     return _row_to_dict(row)
@@ -116,20 +124,21 @@ def _update_tenant_db(tenant_id: int, payload: dict[str, object]) -> dict[str, o
     assert url
     with psycopg.connect(url) as conn:
         existing = conn.execute(
-            "SELECT id, slug, name, status, created_at, updated_at FROM app_tenants WHERE id = %s",
+            "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants WHERE id = %s",
             (tenant_id,),
         ).fetchone()
         if not existing:
             raise ValueError(f"Tenant {tenant_id} not found")
         name = payload.get("name") or existing[2]
         status = payload.get("status") or existing[3]
+        plan_id = int(payload.get("plan_id") or existing[4] or 1)
         row = conn.execute(
             """
-            UPDATE app_tenants SET name = %s, status = %s, updated_at = NOW()
+            UPDATE app_tenants SET name = %s, status = %s, plan_id = %s, updated_at = NOW()
             WHERE id = %s
-            RETURNING id, slug, name, status, created_at, updated_at
+            RETURNING id, slug, name, status, plan_id, created_at, updated_at
             """,
-            (name, status, tenant_id),
+            (name, status, plan_id, tenant_id),
         ).fetchone()
         conn.commit()
     return _row_to_dict(row)
@@ -143,7 +152,7 @@ def _delete_tenant_db(tenant_id: int) -> dict[str, object]:
             """
             UPDATE app_tenants SET status = 'inactive', updated_at = NOW()
             WHERE id = %s
-            RETURNING id, slug, name, status, created_at, updated_at
+            RETURNING id, slug, name, status, plan_id, created_at, updated_at
             """,
             (tenant_id,),
         ).fetchone()
@@ -158,7 +167,7 @@ def _get_tenant_db(tenant_id: int) -> dict[str, object] | None:
     assert url
     with psycopg.connect(url) as conn:
         row = conn.execute(
-            "SELECT id, slug, name, status, created_at, updated_at FROM app_tenants WHERE id = %s",
+            "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants WHERE id = %s",
             (tenant_id,),
         ).fetchone()
     return _row_to_dict(row) if row else None
@@ -169,7 +178,7 @@ def _get_tenant_by_slug_db(slug: str) -> dict[str, object] | None:
     assert url
     with psycopg.connect(url) as conn:
         row = conn.execute(
-            "SELECT id, slug, name, status, created_at, updated_at FROM app_tenants WHERE slug = %s",
+            "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants WHERE slug = %s",
             (slug,),
         ).fetchone()
     return _row_to_dict(row) if row else None
@@ -188,6 +197,7 @@ def _create_tenant_memory(payload: dict[str, object]) -> dict[str, object]:
     slug = str(payload.get("slug", "")).strip()
     name = str(payload.get("name", "")).strip()
     status = str(payload.get("status", "active")).strip() or "active"
+    plan_id = int(payload.get("plan_id") or 1)
     if not slug:
         raise ValueError("slug is required")
     if not name:
@@ -204,6 +214,7 @@ def _create_tenant_memory(payload: dict[str, object]) -> dict[str, object]:
             "slug": slug,
             "name": name,
             "status": status,
+            "plan_id": plan_id,
             "created_at": now,
             "updated_at": now,
         }
@@ -221,6 +232,8 @@ def _update_tenant_memory(tenant_id: int, payload: dict[str, object]) -> dict[st
             existing["name"] = str(payload["name"]).strip()
         if "status" in payload and payload["status"]:
             existing["status"] = str(payload["status"]).strip()
+        if "plan_id" in payload and payload["plan_id"]:
+            existing["plan_id"] = int(payload["plan_id"])
         existing["updated_at"] = now
     return dict(existing)
 
@@ -312,3 +325,35 @@ def get_tenant_by_slug(slug: str) -> dict[str, object] | None:
             if not _should_fallback_to_memory(exc):
                 raise
     return _get_tenant_by_slug_memory(slug)
+
+
+def force_delete_tenant(tenant_id: int) -> bool:
+    """Hard-delete tenant row for failed provisioning rollback paths."""
+    normalized_tenant_id = int(tenant_id)
+    if normalized_tenant_id <= 0 or normalized_tenant_id == 1:
+        return False
+
+    if _use_database():
+        try:
+            url = _db_url()
+            assert url
+            with psycopg.connect(url) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("DELETE FROM app_user_roles WHERE tenant_id = %s", (normalized_tenant_id,))
+                    cur.execute("DELETE FROM app_role_permissions WHERE tenant_id = %s", (normalized_tenant_id,))
+                    cur.execute("DELETE FROM app_roles WHERE tenant_id = %s", (normalized_tenant_id,))
+                    cur.execute("DELETE FROM app_usage_events WHERE tenant_id = %s", (normalized_tenant_id,))
+                    cur.execute("DELETE FROM app_jobs WHERE tenant_id = %s", (normalized_tenant_id,))
+                    cur.execute("DELETE FROM app_audit_events WHERE tenant_id = %s", (normalized_tenant_id,))
+                    cur.execute("DELETE FROM app_tenants WHERE id = %s", (normalized_tenant_id,))
+                    removed = cur.rowcount > 0
+                conn.commit()
+            if removed:
+                return True
+        except Exception as exc:
+            if not _should_fallback_to_memory(exc):
+                raise
+
+    with _state_lock:
+        existing = _state.data.pop(normalized_tenant_id, None)
+    return existing is not None

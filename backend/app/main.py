@@ -37,6 +37,7 @@ from app.modules.integrations.router import router as integrations_router
 from app.modules.ldap.router import router as ldap_router
 from app.modules.jobs.router import router as jobs_router
 from app.modules.programs.router import router as programs_router
+from app.modules.platform.router import router as platform_router
 from app.modules.rbac.router import router as rbac_router
 from app.modules.rbac.security import get_actor
 from app.modules.rbac.security import resolve_current_user_claims
@@ -87,6 +88,7 @@ app.include_router(courses_router)
 app.include_router(enrollments_router)
 app.include_router(academic_records_router)
 app.include_router(tenants_router)
+app.include_router(platform_router)
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 _DEFAULT_TENANT_ID = 1

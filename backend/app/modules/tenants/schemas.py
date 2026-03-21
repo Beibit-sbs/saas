@@ -5,6 +5,7 @@ class TenantBase(BaseModel):
     slug: str = Field(min_length=1, max_length=128)
     name: str = Field(min_length=1, max_length=255)
     status: str = Field(min_length=1, max_length=64, default="active")
+    plan_id: int | None = Field(default=None, ge=1)
 
 
 class TenantCreatePayload(TenantBase):
@@ -14,6 +15,7 @@ class TenantCreatePayload(TenantBase):
 class TenantUpdatePayload(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     status: str | None = Field(default=None, min_length=1, max_length=64)
+    plan_id: int | None = Field(default=None, ge=1)
 
 
 class TenantResponse(BaseModel):
@@ -21,6 +23,7 @@ class TenantResponse(BaseModel):
     slug: str
     name: str
     status: str
+    plan_id: int
     created_at: str
     updated_at: str
 

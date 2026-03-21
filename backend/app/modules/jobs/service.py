@@ -398,6 +398,14 @@ def enqueue_job(
 ) -> dict[str, Any]:
     normalized_tenant_id = _normalize_tenant_id(tenant_id)
     _ensure_tenant_exists(normalized_tenant_id)
+
+    try:
+        from app.modules.quotas.service import check_quota
+
+        check_quota(normalized_tenant_id, "jobs_per_day")
+    except Exception:
+        pass
+
     normalized_job_type = _normalize_job_type(job_type)
     safe_payload = _to_json_safe(payload)
     normalized_max_retries = max(0, min(int(max_retries), 20))
@@ -427,7 +435,16 @@ def enqueue_job(
             "created_by": created_by,
         }
         _jobs_state.rows[job_id] = row
-        return dict(row)
+        created = dict(row)
+
+    try:
+        from app.modules.usage.service import record_usage_event
+
+        record_usage_event(normalized_tenant_id, "jobs_executed", 1)
+    except Exception:
+        pass
+
+    return created
 
 
 def list_jobs_for_tenant(tenant_id: int, status: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
