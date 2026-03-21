@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from app.modules.audit.service import log_admin_action
-from app.modules.rbac.security import get_actor, permission_dependency
+from app.modules.rbac.security import get_actor, permission_dependency, resolve_current_user_claims
+from app.modules.rbac.service import is_platform_admin
 from app.modules.tenants.schemas import (
     TenantCreatePayload,
     TenantDeleteResponse,
@@ -16,9 +17,22 @@ from app.modules.tenants.service import create_tenant, delete_tenant, list_tenan
 router = APIRouter(prefix="/api/admin/tenants", tags=["tenants"])
 
 
+def _require_platform_tenant_context(
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+    authorization: Annotated[str | None, Header()] = None,
+) -> str:
+    claims = resolve_current_user_claims(request, authorization)
+    if int(claims.tenant_id) == 1:
+        return actor
+    if is_platform_admin(actor):
+        return actor
+    raise HTTPException(status_code=403, detail="platform tenant context required")
+
+
 @router.get("", response_model=TenantListResponse)
 def get_tenants(
-    _: Annotated[str, Depends(get_actor)],
+    _: Annotated[str, Depends(_require_platform_tenant_context)],
     __: Annotated[None, Depends(permission_dependency("admin.tenants.read"))],
 ) -> TenantListResponse:
     return {"tenants": list_tenants()}
@@ -28,7 +42,7 @@ def get_tenants(
 def create_tenant_endpoint(
     payload: TenantCreatePayload,
     request: Request,
-    actor: Annotated[str, Depends(get_actor)],
+    actor: Annotated[str, Depends(_require_platform_tenant_context)],
     _: Annotated[None, Depends(permission_dependency("admin.tenants.write"))],
 ) -> TenantItemResponse:
     try:
@@ -54,7 +68,7 @@ def update_tenant_endpoint(
     tenant_id: int,
     payload: TenantUpdatePayload,
     request: Request,
-    actor: Annotated[str, Depends(get_actor)],
+    actor: Annotated[str, Depends(_require_platform_tenant_context)],
     _: Annotated[None, Depends(permission_dependency("admin.tenants.write"))],
 ) -> TenantItemResponse:
     try:
@@ -81,7 +95,7 @@ def update_tenant_endpoint(
 def delete_tenant_endpoint(
     tenant_id: int,
     request: Request,
-    actor: Annotated[str, Depends(get_actor)],
+    actor: Annotated[str, Depends(_require_platform_tenant_context)],
     _: Annotated[None, Depends(permission_dependency("admin.tenants.write"))],
 ) -> TenantDeleteResponse:
     try:

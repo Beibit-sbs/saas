@@ -27,7 +27,7 @@ vi.mock("../../app/components/csrf", () => ({
 }));
 
 describe("AdminPage shell integration", () => {
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let consoleErrorSpy: { mockRestore: () => void };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,9 +40,7 @@ describe("AdminPage shell integration", () => {
       realConsoleError(...args);
     });
 
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
         if (url.includes("/i18n/catalog")) {
           return new Response(JSON.stringify({ languages: [] }), { status: 200 });
@@ -76,8 +74,8 @@ describe("AdminPage shell integration", () => {
           return new Response(JSON.stringify({ events: [] }), { status: 200 });
         }
         return new Response(JSON.stringify({}), { status: 200 });
-      }),
-    );
+      });
+    vi.stubGlobal("fetch", fetchMock);
   });
 
   afterEach(() => {
@@ -103,5 +101,23 @@ describe("AdminPage shell integration", () => {
       expect(screen.getByTestId("sidebar-section-languages")).toHaveClass("active");
       expect(screen.getByRole("listbox")).toBeInTheDocument();
     });
+  });
+
+  it("loads admin data without Authorization header and relies on cookie-first credentials", async () => {
+    render(<AdminPage />);
+
+    await screen.findByTestId("admin-page-shell");
+
+    const dashboardCall = vi.mocked(fetch).mock.calls.find(([input]) => String(input).includes("/admin/dashboard"));
+    expect(dashboardCall).toBeDefined();
+
+    const init = dashboardCall?.[1] as RequestInit | undefined;
+    expect(init).toEqual(
+      expect.objectContaining({
+        credentials: "include",
+        cache: "no-store",
+      }),
+    );
+    expect(init?.headers).not.toHaveProperty("Authorization");
   });
 });

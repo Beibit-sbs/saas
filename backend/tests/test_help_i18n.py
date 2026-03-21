@@ -1,4 +1,15 @@
+from app.modules.auth.token_service import create_access_token
 from tests.conftest import ADMIN_HEADERS, _auth_headers, client
+
+
+def _tenant_admin_headers(tenant_id: int) -> dict[str, str]:
+    token = create_access_token(
+        user_id="tenant.admin@example.com",
+        roles=["admin"],
+        auth_source="test",
+        tenant_id=tenant_id,
+    )
+    return {"Authorization": f"Bearer {token}"}
 
 
 def test_help_topics_endpoint() -> None:
@@ -15,7 +26,7 @@ def test_help_ask_endpoint() -> None:
         "field": "role_name",
         "language": "ru",
     }
-    response = client.post("/api/help/ask", json=payload)
+    response = client.post("/api/help/ask", json=payload, headers=ADMIN_HEADERS)
     assert response.status_code == 200
     body = response.json()
     assert "answer" in body
@@ -30,7 +41,7 @@ def test_help_ask_endpoint_english() -> None:
         "field": "role_name",
         "language": "en",
     }
-    response = client.post("/api/help/ask", json=payload)
+    response = client.post("/api/help/ask", json=payload, headers=ADMIN_HEADERS)
     assert response.status_code == 200
     body = response.json()
     assert body["context"]["language"] == "en"
@@ -152,3 +163,48 @@ def test_profile_language_preference_rejects_disabled_language() -> None:
         headers=headers,
     )
     assert response.status_code == 400
+
+
+def test_non_platform_tenant_admin_cannot_mutate_i18n() -> None:
+    create_tenant_b = client.post(
+        "/api/admin/tenants",
+        headers=ADMIN_HEADERS,
+        json={"slug": "tenant-b-i18n", "name": "Tenant B I18N", "status": "active"},
+    )
+    assert create_tenant_b.status_code == 200, create_tenant_b.text
+    tenant_b_id = int(create_tenant_b.json()["tenant"]["id"])
+
+    headers = _tenant_admin_headers(tenant_b_id)
+    denied = client.post(
+        "/api/admin/i18n/languages",
+        json={"code": "bn", "name": "Bengali", "native_name": "বাংলা"},
+        headers=headers,
+    )
+    assert denied.status_code == 403, denied.text
+    assert "platform tenant context required" in str(denied.json().get("detail", ""))
+
+
+def test_i18n_mutations_are_audited() -> None:
+    add_response = client.post(
+        "/api/admin/i18n/languages",
+        json={"code": "bn", "name": "Bengali", "native_name": "বাংলা"},
+        headers=ADMIN_HEADERS,
+    )
+    assert add_response.status_code == 200, add_response.text
+
+    patch_response = client.patch(
+        "/api/admin/i18n/languages/bn",
+        json={"enabled": False},
+        headers=ADMIN_HEADERS,
+    )
+    assert patch_response.status_code == 200, patch_response.text
+
+    delete_response = client.delete("/api/admin/i18n/languages/bn", headers=ADMIN_HEADERS)
+    assert delete_response.status_code == 200, delete_response.text
+
+    events_response = client.get("/api/admin/audit/events", headers=ADMIN_HEADERS)
+    assert events_response.status_code == 200, events_response.text
+    actions = [item.get("action") for item in events_response.json().get("events", [])]
+    assert "i18n.languages.create" in actions
+    assert "i18n.languages.update" in actions
+    assert "i18n.languages.delete" in actions

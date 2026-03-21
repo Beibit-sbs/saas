@@ -18,6 +18,8 @@ services:
       context: ../backend
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      INTEGRATIONS_ENCRYPTION_KEY: ${INTEGRATIONS_ENCRYPTION_KEY}
       BACKUP_DEFAULT_PROFILE: "${BACKUP_DEFAULT_PROFILE:-local}"
       BACKUP_ALLOWED_ROOTS: "${BACKUP_ALLOWED_ROOTS:-/tmp/app-backups,/var/backups/app}"
       BACKUP_PROFILES_JSON: "${BACKUP_PROFILES_JSON:-[{\"id\":\"local\",\"label\":\"Local backup volume\",\"path\":\"/tmp/app-backups/local\"}]}"

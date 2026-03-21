@@ -12,7 +12,9 @@ from typing import Any, Protocol
 import httpx
 
 from app.modules.integrations.service import get_ai_provider_runtime_config
+from app.modules.integrations.service import get_global_runtime_value
 from app.modules.integrations.service import get_runtime_value
+from app.modules.security.db_tenant_context import set_db_tenant_context
 
 try:
     import psycopg
@@ -155,7 +157,7 @@ def _timeout() -> float:
 
 
 def _runtime_int(setting_key: str, env_name: str, default: int) -> int:
-    raw = get_runtime_value(setting_key, env_name, str(default)).strip()
+    raw = get_global_runtime_value(setting_key, env_name, str(default)).strip()
     try:
         return int(raw)
     except ValueError:
@@ -250,7 +252,8 @@ def _ensure_ai_gateway_tables(conn) -> None:
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS app_ai_models (
-                model_key TEXT PRIMARY KEY,
+                tenant_id BIGINT NOT NULL DEFAULT 1,
+                model_key TEXT NOT NULL,
                 provider TEXT NOT NULL,
                 provider_model_id TEXT NOT NULL,
                 display_name TEXT NOT NULL,
@@ -258,17 +261,53 @@ def _ensure_ai_gateway_tables(conn) -> None:
                 priority INTEGER NOT NULL DEFAULT 100,
                 metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT pk_app_ai_models_tenant_model PRIMARY KEY (tenant_id, model_key)
             )
             """
         )
+        cur.execute("ALTER TABLE app_ai_models ADD COLUMN IF NOT EXISTS tenant_id BIGINT")
+        cur.execute("UPDATE app_ai_models SET tenant_id = 1 WHERE tenant_id IS NULL")
+        cur.execute("ALTER TABLE app_ai_models ALTER COLUMN tenant_id SET NOT NULL")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS ix_app_ai_models_provider_enabled ON app_ai_models (provider, enabled)"
+            """
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'app_ai_models_pkey'
+                      AND conrelid = 'app_ai_models'::regclass
+                ) THEN
+                    ALTER TABLE app_ai_models DROP CONSTRAINT app_ai_models_pkey;
+                END IF;
+            END
+            $$;
+            """
+        )
+        cur.execute(
+            """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'pk_app_ai_models_tenant_model'
+                      AND conrelid = 'app_ai_models'::regclass
+                ) THEN
+                    ALTER TABLE app_ai_models
+                    ADD CONSTRAINT pk_app_ai_models_tenant_model PRIMARY KEY (tenant_id, model_key);
+                END IF;
+            END
+            $$;
+            """
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS ix_app_ai_models_tenant_provider_enabled ON app_ai_models (tenant_id, provider, enabled)"
         )
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS app_ai_usage_logs (
                 id BIGSERIAL PRIMARY KEY,
+                tenant_id BIGINT NOT NULL DEFAULT 1,
                 timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 actor TEXT NOT NULL,
                 provider TEXT NOT NULL,
@@ -284,22 +323,26 @@ def _ensure_ai_gateway_tables(conn) -> None:
             )
             """
         )
+        cur.execute("ALTER TABLE app_ai_usage_logs ADD COLUMN IF NOT EXISTS tenant_id BIGINT")
+        cur.execute("UPDATE app_ai_usage_logs SET tenant_id = 1 WHERE tenant_id IS NULL")
+        cur.execute("ALTER TABLE app_ai_usage_logs ALTER COLUMN tenant_id SET NOT NULL")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS ix_app_ai_usage_logs_timestamp ON app_ai_usage_logs (timestamp DESC)"
+            "CREATE INDEX IF NOT EXISTS ix_app_ai_usage_logs_tenant_timestamp ON app_ai_usage_logs (tenant_id, timestamp DESC)"
         )
     conn.commit()
 
 
-def _seed_default_models_db(conn) -> None:
+def _seed_default_models_db(conn, tenant_id: int) -> None:
     with conn.cursor() as cur:
         cur.executemany(
             """
-            INSERT INTO app_ai_models (model_key, provider, provider_model_id, display_name, enabled, priority, metadata)
-            VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
-            ON CONFLICT (model_key) DO NOTHING
+            INSERT INTO app_ai_models (tenant_id, model_key, provider, provider_model_id, display_name, enabled, priority, metadata)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+            ON CONFLICT (tenant_id, model_key) DO NOTHING
             """,
             [
                 (
+                    tenant_id,
                     item["model_key"],
                     item["provider"],
                     item["provider_model_id"],
@@ -314,13 +357,20 @@ def _seed_default_models_db(conn) -> None:
     conn.commit()
 
 
-def _seed_default_models_memory() -> None:
+def _tenant_registry_key(tenant_id: int, model_key: str) -> str:
+    return f"{tenant_id}:{model_key}"
+
+
+def _seed_default_models_memory(tenant_id: int) -> None:
     with _registry_lock:
-        if _model_registry:
+        has_tenant_seed = any(key.startswith(f"{tenant_id}:") for key in _model_registry)
+        if has_tenant_seed:
             return
         for item in DEFAULT_MODELS:
-            _model_registry[item["model_key"]] = {
+            storage_key = _tenant_registry_key(tenant_id, str(item["model_key"]))
+            _model_registry[storage_key] = {
                 **item,
+                "tenant_id": tenant_id,
                 "created_at": _now_iso(),
                 "updated_at": _now_iso(),
             }
@@ -340,6 +390,15 @@ def _normalize_provider(value: str) -> str:
     if normalized not in SUPPORTED_PROVIDERS:
         raise ValueError("unknown provider")
     return normalized
+
+
+def _normalize_tenant_id(value: int | None) -> int:
+    if value is None:
+        raise ValueError("tenant_id is required")
+    tenant_id = int(value)
+    if tenant_id <= 0:
+        raise ValueError("tenant_id must be positive")
+    return tenant_id
 
 
 def _normalize_model_payload(
@@ -376,7 +435,7 @@ def _normalize_model_payload(
 
 
 def _model_row_to_dict(row: tuple[Any, ...]) -> dict[str, object]:
-    metadata = row[6]
+    metadata = row[7]
     if isinstance(metadata, str):
         try:
             metadata = json.loads(metadata)
@@ -385,62 +444,68 @@ def _model_row_to_dict(row: tuple[Any, ...]) -> dict[str, object]:
     if not isinstance(metadata, dict):
         metadata = {}
 
-    created_at = row[7].isoformat() if hasattr(row[7], "isoformat") else str(row[7])
-    updated_at = row[8].isoformat() if hasattr(row[8], "isoformat") else str(row[8])
+    created_at = row[8].isoformat() if hasattr(row[8], "isoformat") else str(row[8])
+    updated_at = row[9].isoformat() if hasattr(row[9], "isoformat") else str(row[9])
 
     return {
-        "model_key": row[0],
-        "provider": row[1],
-        "provider_model_id": row[2],
-        "display_name": row[3],
-        "enabled": bool(row[4]),
-        "priority": int(row[5]),
+        "tenant_id": int(row[0]),
+        "model_key": row[1],
+        "provider": row[2],
+        "provider_model_id": row[3],
+        "display_name": row[4],
+        "enabled": bool(row[5]),
+        "priority": int(row[6]),
         "metadata": metadata,
         "created_at": created_at,
         "updated_at": updated_at,
     }
 
 
-def _list_models_db(include_disabled: bool = True) -> list[dict[str, object]]:
+def _list_models_db(*, include_disabled: bool = True, tenant_id: int) -> list[dict[str, object]]:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
     with psycopg.connect(_db_url(), connect_timeout=5) as conn:
         _ensure_ai_gateway_tables(conn)
-        _seed_default_models_db(conn)
+        set_db_tenant_context(conn, tenant_id=tenant_id)
+        _seed_default_models_db(conn, tenant_id)
         with conn.cursor() as cur:
             if include_disabled:
                 cur.execute(
                     """
-                    SELECT model_key, provider, provider_model_id, display_name, enabled, priority, metadata, created_at, updated_at
+                    SELECT tenant_id, model_key, provider, provider_model_id, display_name, enabled, priority, metadata, created_at, updated_at
                     FROM app_ai_models
+                    WHERE tenant_id = %s
                     ORDER BY priority ASC, model_key ASC
-                    """
+                    """,
+                    (tenant_id,),
                 )
             else:
                 cur.execute(
                     """
-                    SELECT model_key, provider, provider_model_id, display_name, enabled, priority, metadata, created_at, updated_at
+                    SELECT tenant_id, model_key, provider, provider_model_id, display_name, enabled, priority, metadata, created_at, updated_at
                     FROM app_ai_models
-                    WHERE enabled = TRUE
+                    WHERE tenant_id = %s AND enabled = TRUE
                     ORDER BY priority ASC, model_key ASC
-                    """
+                    """,
+                    (tenant_id,),
                 )
             return [_model_row_to_dict(row) for row in cur.fetchall()]
 
 
-def _upsert_model_db(entry: dict[str, object]) -> dict[str, object]:
+def _upsert_model_db(entry: dict[str, object], *, tenant_id: int) -> dict[str, object]:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
     with psycopg.connect(_db_url(), connect_timeout=5) as conn:
         _ensure_ai_gateway_tables(conn)
+        set_db_tenant_context(conn, tenant_id=tenant_id)
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO app_ai_models (model_key, provider, provider_model_id, display_name, enabled, priority, metadata)
-                VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
-                ON CONFLICT (model_key)
+                INSERT INTO app_ai_models (tenant_id, model_key, provider, provider_model_id, display_name, enabled, priority, metadata)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                ON CONFLICT (tenant_id, model_key)
                 DO UPDATE SET
                     provider = EXCLUDED.provider,
                     provider_model_id = EXCLUDED.provider_model_id,
@@ -449,9 +514,10 @@ def _upsert_model_db(entry: dict[str, object]) -> dict[str, object]:
                     priority = EXCLUDED.priority,
                     metadata = EXCLUDED.metadata,
                     updated_at = NOW()
-                RETURNING model_key, provider, provider_model_id, display_name, enabled, priority, metadata, created_at, updated_at
+                RETURNING tenant_id, model_key, provider, provider_model_id, display_name, enabled, priority, metadata, created_at, updated_at
                 """,
                 (
+                    tenant_id,
                     entry["model_key"],
                     entry["provider"],
                     entry["provider_model_id"],
@@ -469,22 +535,23 @@ def _upsert_model_db(entry: dict[str, object]) -> dict[str, object]:
     return _model_row_to_dict(row)
 
 
-def _set_model_enabled_db(model_key: str, enabled: bool) -> dict[str, object]:
+def _set_model_enabled_db(model_key: str, enabled: bool, *, tenant_id: int) -> dict[str, object]:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
     with psycopg.connect(_db_url(), connect_timeout=5) as conn:
         _ensure_ai_gateway_tables(conn)
+        set_db_tenant_context(conn, tenant_id=tenant_id)
         with conn.cursor() as cur:
             cur.execute(
                 """
                 UPDATE app_ai_models
                 SET enabled = %s,
                     updated_at = NOW()
-                WHERE model_key = %s
-                RETURNING model_key, provider, provider_model_id, display_name, enabled, priority, metadata, created_at, updated_at
+                WHERE tenant_id = %s AND model_key = %s
+                RETURNING tenant_id, model_key, provider, provider_model_id, display_name, enabled, priority, metadata, created_at, updated_at
                 """,
-                (bool(enabled), model_key),
+                (bool(enabled), tenant_id, model_key),
             )
             row = cur.fetchone()
         conn.commit()
@@ -494,21 +561,22 @@ def _set_model_enabled_db(model_key: str, enabled: bool) -> dict[str, object]:
     return _model_row_to_dict(row)
 
 
-def _resolve_model_db(model_key: str) -> dict[str, object] | None:
+def _resolve_model_db(model_key: str, *, tenant_id: int) -> dict[str, object] | None:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
     with psycopg.connect(_db_url(), connect_timeout=5) as conn:
         _ensure_ai_gateway_tables(conn)
-        _seed_default_models_db(conn)
+        set_db_tenant_context(conn, tenant_id=tenant_id)
+        _seed_default_models_db(conn, tenant_id)
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT model_key, provider, provider_model_id, display_name, enabled, priority, metadata, created_at, updated_at
+                SELECT tenant_id, model_key, provider, provider_model_id, display_name, enabled, priority, metadata, created_at, updated_at
                 FROM app_ai_models
-                WHERE model_key = %s
+                WHERE tenant_id = %s AND model_key = %s
                 """,
-                (model_key,),
+                (tenant_id, model_key),
             )
             row = cur.fetchone()
 
@@ -523,10 +591,12 @@ def _insert_usage_log_db(entry: dict[str, object]) -> None:
 
     with psycopg.connect(_db_url(), connect_timeout=5) as conn:
         _ensure_ai_gateway_tables(conn)
+        set_db_tenant_context(conn, tenant_id=int(entry["tenant_id"]))
         with conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO app_ai_usage_logs (
+                    tenant_id,
                     timestamp,
                     actor,
                     provider,
@@ -541,10 +611,11 @@ def _insert_usage_log_db(entry: dict[str, object]) -> None:
                     correlation_id
                 )
                 VALUES (
-                    NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
                 """,
                 (
+                    entry["tenant_id"],
                     entry["actor"],
                     entry["provider"],
                     entry["model_key"],
@@ -561,59 +632,64 @@ def _insert_usage_log_db(entry: dict[str, object]) -> None:
         conn.commit()
 
 
-def _list_usage_logs_db(limit: int) -> list[dict[str, object]]:
+def _list_usage_logs_db(limit: int, *, tenant_id: int) -> list[dict[str, object]]:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
     with psycopg.connect(_db_url(), connect_timeout=5) as conn:
         _ensure_ai_gateway_tables(conn)
+        set_db_tenant_context(conn, tenant_id=tenant_id)
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT actor, provider, model_key, provider_model_id, outcome, latency_ms,
+                  SELECT tenant_id, actor, provider, model_key, provider_model_id, outcome, latency_ms,
                        input_tokens, output_tokens, total_tokens, failure_reason, correlation_id,
                        timestamp
                 FROM app_ai_usage_logs
+                  WHERE tenant_id = %s
                 ORDER BY timestamp DESC
                 LIMIT %s
                 """,
-                (max(1, min(limit, 500)),),
+                  (tenant_id, max(1, min(limit, 500))),
             )
             rows = cur.fetchall()
 
     result: list[dict[str, object]] = []
     for row in rows:
-        ts = row[11].isoformat() if hasattr(row[11], "isoformat") else str(row[11])
+        ts = row[12].isoformat() if hasattr(row[12], "isoformat") else str(row[12])
         result.append(
             {
-                "actor": row[0],
-                "provider": row[1],
-                "model_key": row[2],
-                "provider_model_id": row[3],
-                "outcome": row[4],
-                "latency_ms": int(row[5]),
-                "input_tokens": row[6],
-                "output_tokens": row[7],
-                "total_tokens": row[8],
-                "failure_reason": row[9],
-                "correlation_id": row[10],
+                "tenant_id": int(row[0]),
+                "actor": row[1],
+                "provider": row[2],
+                "model_key": row[3],
+                "provider_model_id": row[4],
+                "outcome": row[5],
+                "latency_ms": int(row[6]),
+                "input_tokens": row[7],
+                "output_tokens": row[8],
+                "total_tokens": row[9],
+                "failure_reason": row[10],
+                "correlation_id": row[11],
                 "timestamp": ts,
             }
         )
     return result
 
 
-def list_models(include_disabled: bool = True) -> list[dict[str, object]]:
+def list_models(*, include_disabled: bool = True, tenant_id: int) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
     if _use_database():
         try:
-            return _list_models_db(include_disabled=include_disabled)
+            return _list_models_db(include_disabled=include_disabled, tenant_id=normalized_tenant_id)
         except Exception as exc:
             if not _should_fallback_to_memory(exc):
                 raise
 
-    _seed_default_models_memory()
+    _seed_default_models_memory(normalized_tenant_id)
     with _registry_lock:
-        rows = list(_model_registry.values())
+        prefix = f"{normalized_tenant_id}:"
+        rows = [item for key, item in _model_registry.items() if key.startswith(prefix)]
 
     if not include_disabled:
         rows = [item for item in rows if bool(item.get("enabled"))]
@@ -629,7 +705,9 @@ def upsert_model(
     enabled: bool,
     priority: int,
     metadata: dict[str, Any] | None,
+    tenant_id: int,
 ) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
     entry = _normalize_model_payload(
         model_key=model_key,
         provider=provider,
@@ -642,36 +720,40 @@ def upsert_model(
 
     if _use_database():
         try:
-            return _upsert_model_db(entry)
+            return _upsert_model_db(entry, tenant_id=normalized_tenant_id)
         except Exception as exc:
             if not _should_fallback_to_memory(exc):
                 raise
 
-    _seed_default_models_memory()
+    _seed_default_models_memory(normalized_tenant_id)
     now = _now_iso()
     with _registry_lock:
-        previous = _model_registry.get(entry["model_key"])
+        storage_key = _tenant_registry_key(normalized_tenant_id, str(entry["model_key"]))
+        previous = _model_registry.get(storage_key)
         merged = {
             **entry,
+            "tenant_id": normalized_tenant_id,
             "created_at": previous.get("created_at") if previous else now,
             "updated_at": now,
         }
-        _model_registry[entry["model_key"]] = merged
+        _model_registry[storage_key] = merged
         return merged
 
 
-def set_model_enabled(model_key: str, enabled: bool) -> dict[str, object]:
+def set_model_enabled(model_key: str, enabled: bool, *, tenant_id: int) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
     normalized_key = _normalize_model_key(model_key)
     if _use_database():
         try:
-            return _set_model_enabled_db(normalized_key, enabled)
+            return _set_model_enabled_db(normalized_key, enabled, tenant_id=normalized_tenant_id)
         except Exception as exc:
             if not _should_fallback_to_memory(exc):
                 raise
 
-    _seed_default_models_memory()
+    _seed_default_models_memory(normalized_tenant_id)
     with _registry_lock:
-        current = _model_registry.get(normalized_key)
+        storage_key = _tenant_registry_key(normalized_tenant_id, normalized_key)
+        current = _model_registry.get(storage_key)
         if current is None:
             raise ValueError("model not found")
         current["enabled"] = bool(enabled)
@@ -679,22 +761,24 @@ def set_model_enabled(model_key: str, enabled: bool) -> dict[str, object]:
         return current
 
 
-def _resolve_model(model_key: str) -> dict[str, object] | None:
+def _resolve_model(model_key: str, *, tenant_id: int) -> dict[str, object] | None:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
     normalized_key = _normalize_model_key(model_key)
     if _use_database():
         try:
-            return _resolve_model_db(normalized_key)
+            return _resolve_model_db(normalized_key, tenant_id=normalized_tenant_id)
         except Exception as exc:
             if not _should_fallback_to_memory(exc):
                 raise
 
-    _seed_default_models_memory()
+    _seed_default_models_memory(normalized_tenant_id)
     with _registry_lock:
-        return _model_registry.get(normalized_key)
+        return _model_registry.get(_tenant_registry_key(normalized_tenant_id, normalized_key))
 
 
 def _record_usage_log(
     *,
+    tenant_id: int,
     actor: str,
     provider: str,
     model_key: str,
@@ -707,7 +791,9 @@ def _record_usage_log(
     failure_reason: str | None,
     correlation_id: str | None,
 ) -> None:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
     entry = {
+        "tenant_id": normalized_tenant_id,
         "actor": actor,
         "provider": provider,
         "model_key": model_key,
@@ -733,16 +819,18 @@ def _record_usage_log(
         _usage_logs.appendleft(entry)
 
 
-def list_usage_logs(limit: int = 100) -> list[dict[str, object]]:
+def list_usage_logs(limit: int = 100, *, tenant_id: int) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
     if _use_database():
         try:
-            return _list_usage_logs_db(limit)
+            return _list_usage_logs_db(limit, tenant_id=normalized_tenant_id)
         except Exception as exc:
             if not _should_fallback_to_memory(exc):
                 raise
 
     with _usage_lock:
-        return list(_usage_logs)[: max(1, min(limit, 500))]
+        rows = [item for item in _usage_logs if int(item.get("tenant_id", 0)) == normalized_tenant_id]
+        return rows[: max(1, min(limit, 500))]
 
 
 def _provider_config(tenant_id: int | None = None) -> dict[str, dict[str, Any]]:
@@ -1199,7 +1287,10 @@ def execute_chat(
     tenant_id: int | None = None,
     correlation_id: str | None = None,
 ) -> dict[str, object]:
-    normalized_tenant_id = int(tenant_id or 1)
+    try:
+        normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    except ValueError as exc:
+        raise AIGatewayError(status_code=400, detail=str(exc), audit_reason="invalid_payload") from exc
 
     try:
         from app.modules.quotas.service import check_quota
@@ -1216,7 +1307,7 @@ def execute_chat(
     if not isinstance(messages, list) or not messages:
         raise AIGatewayError(status_code=400, detail="messages are required", audit_reason="invalid_payload", model=model_key)
 
-    model_entry = _resolve_model(model_key)
+    model_entry = _resolve_model(model_key, tenant_id=normalized_tenant_id)
     if model_entry is None:
         raise AIGatewayError(status_code=400, detail="unknown model", audit_reason="unknown_model", model=model_key)
     if not bool(model_entry.get("enabled")):
@@ -1231,6 +1322,7 @@ def execute_chat(
     except ValueError as exc:
         latency_ms = max(1, int((time.monotonic() - started) * 1000))
         _record_usage_log(
+            tenant_id=normalized_tenant_id,
             actor=actor,
             provider=provider,
             model_key=model_key,
@@ -1252,7 +1344,7 @@ def execute_chat(
         ) from exc
 
     adapter = _adapter_for_provider(provider)
-    runtime_config = _provider_runtime_config(provider, tenant_id=tenant_id)
+    runtime_config = _provider_runtime_config(provider, tenant_id=normalized_tenant_id)
     normalized_messages = [
         {
             "role": str(item.get("role", "")),
@@ -1273,6 +1365,7 @@ def execute_chat(
     except AIProviderTimeoutError as exc:
         latency_ms = max(1, int((time.monotonic() - started) * 1000))
         _record_usage_log(
+            tenant_id=normalized_tenant_id,
             actor=actor,
             provider=provider,
             model_key=model_key,
@@ -1295,6 +1388,7 @@ def execute_chat(
     except AIProviderExecutionError as exc:
         latency_ms = max(1, int((time.monotonic() - started) * 1000))
         _record_usage_log(
+            tenant_id=normalized_tenant_id,
             actor=actor,
             provider=provider,
             model_key=model_key,
@@ -1317,6 +1411,7 @@ def execute_chat(
 
     latency_ms = max(1, int((time.monotonic() - started) * 1000))
     _record_usage_log(
+        tenant_id=normalized_tenant_id,
         actor=actor,
         provider=provider,
         model_key=model_key,

@@ -26,8 +26,8 @@ def admin_system_health(
 ) -> dict[str, object]:
     now = datetime.now(timezone.utc)
     languages = list_languages(enabled_only=False)
-    local_users = local_user_store.list_users()
     tenant_id = int(tenant["id"])
+    local_users = local_user_store.list_users(tenant_id=tenant_id)
     roles = list_roles_for_tenant(tenant_id)
     assignments = list_user_role_assignments_for_tenant(tenant_id)
     backup_jobs = list_backup_history(tenant_id=tenant_id)
@@ -86,11 +86,11 @@ def admin_dashboard_meta(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
     languages = list_languages(enabled_only=False)
-    local_users = local_user_store.list_users()
     tenant_id = int(tenant["id"])
+    local_users = local_user_store.list_users(tenant_id=tenant_id)
     roles = list_roles_for_tenant(tenant_id)
     assignments = list_user_role_assignments_for_tenant(tenant_id)
-    ldap = get_ldap_config_for_admin()
+    ldap = get_ldap_config_for_admin(tenant_id=tenant_id)
     ai_providers = list_ai_provider_config_for_admin(tenant_id=tenant_id)
     backup_settings = get_backup_settings_for_admin(tenant_id=tenant_id)
     backup_jobs = list_backup_history(tenant_id=tenant_id)

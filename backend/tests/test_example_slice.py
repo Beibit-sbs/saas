@@ -18,5 +18,5 @@ def test_example_slice_access_is_audited() -> None:
     response = client.get("/api/admin/example-slice/reference-items", headers=ADMIN_HEADERS)
     assert response.status_code == 200
 
-    events = list_admin_actions(action="example_slice.read", entity="example_slice", limit=20)
+    events = list_admin_actions(action="example_slice.read", entity="example_slice", limit=20, tenant_id=1)
     assert any(event.get("path") == "/api/admin/example-slice/reference-items" for event in events)

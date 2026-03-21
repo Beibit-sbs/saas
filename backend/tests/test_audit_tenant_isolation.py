@@ -1,4 +1,5 @@
 import threading
+import pytest
 
 from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 from app.modules.audit import service as audit_service
@@ -91,32 +92,30 @@ def test_audit_event_always_contains_tenant_id() -> None:
         action="tenant_id_presence_check",
         path="/test/tenant-id",
         client_ip="127.0.0.1",
+        tenant_id=1,
     )
 
-    events = audit_service.list_admin_actions(action="tenant_id_presence_check", limit=5)
+    events = audit_service.list_admin_actions(action="tenant_id_presence_check", tenant_id=1, limit=5)
     assert len(events) >= 1
     assert "tenant_id" in events[0]
     assert int(events[0]["tenant_id"]) == 1
 
 
-def test_background_thread_audit_event_uses_default_tenant_when_context_missing() -> None:
+def test_audit_event_without_tenant_context_fails_closed() -> None:
     audit_service.clear_audit_events()
 
-    def producer() -> None:
+    with pytest.raises(RuntimeError, match="tenant_id is required"):
         audit_service.log_admin_action(
-            actor="bg-worker@example.com",
+            actor="tenant-check@example.com",
             action="background_default_tenant",
             path="/workers/background-default",
             client_ip="127.0.0.1",
         )
 
-    worker = threading.Thread(target=producer)
-    worker.start()
-    worker.join()
 
-    events = audit_service.list_admin_actions(action="background_default_tenant", tenant_id=1, limit=5)
-    assert len(events) >= 1
-    assert int(events[0]["tenant_id"]) == 1
+def test_list_admin_actions_without_tenant_context_fails_closed() -> None:
+    with pytest.raises(RuntimeError, match="tenant_id is required"):
+        audit_service.list_admin_actions(action="background_default_tenant", limit=5)
 
 
 def test_background_thread_audit_event_honors_explicit_tenant_id() -> None:

@@ -7,6 +7,8 @@ from __future__ import annotations
 from collections import defaultdict
 from threading import Lock
 
+from app.modules.observability.security_signals import snapshot_security_metrics
+
 _lock = Lock()
 
 # http_requests_total{method, path, status}
@@ -54,6 +56,19 @@ def render_metrics() -> str:
     for (method, path), (count, _) in sorted(dur_snapshot.items()):
         labels = f'method="{_escape(method)}",path="{_escape(path)}"'
         lines.append(f"http_request_duration_seconds_count{{{labels}}} {count}")
+
+    security_events, security_anomalies = snapshot_security_metrics()
+    lines.append("# HELP security_events_total Total number of security-relevant events.")
+    lines.append("# TYPE security_events_total counter")
+    for (signal, outcome), count in sorted(security_events.items()):
+        labels = f'signal="{_escape(signal)}",outcome="{_escape(outcome)}"'
+        lines.append(f"security_events_total{{{labels}}} {count}")
+
+    lines.append("# HELP security_anomalies_total Total number of detected security anomalies.")
+    lines.append("# TYPE security_anomalies_total counter")
+    for signal, count in sorted(security_anomalies.items()):
+        labels = f'signal="{_escape(signal)}"'
+        lines.append(f"security_anomalies_total{{{labels}}} {count}")
 
     lines.append("")
     return "\n".join(lines)

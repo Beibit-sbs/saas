@@ -38,7 +38,7 @@ def test_ai_usage_log_records_success(monkeypatch) -> None:
     )
     assert response.status_code == 200
 
-    logs = ai_service.list_usage_logs(limit=10)
+    logs = ai_service.list_usage_logs(limit=10, tenant_id=1)
     assert logs
     assert logs[0]["outcome"] == "success"
     assert logs[0]["actor"] == "owner@example.com"
@@ -78,7 +78,7 @@ def test_ai_usage_log_records_failure(monkeypatch) -> None:
     )
     assert response.status_code == 502
 
-    logs = ai_service.list_usage_logs(limit=10)
+    logs = ai_service.list_usage_logs(limit=10, tenant_id=1)
     assert logs
     assert logs[0]["outcome"] == "failed"
     assert logs[0]["failure_reason"]

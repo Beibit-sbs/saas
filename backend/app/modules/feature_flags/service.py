@@ -12,7 +12,7 @@ class FeatureFlag:
     updated_at: str
 
 
-_DEFAULT_TENANT_ID = 1
+_PLATFORM_DEFAULT_TENANT_ID = 1
 
 
 # Scaffold-only in-memory store.
@@ -26,12 +26,12 @@ _flags: Dict[str, FeatureFlag] = {
         updated_at=datetime.now(timezone.utc).isoformat(),
     )
 }
-_flags_by_tenant: Dict[int, Dict[str, FeatureFlag]] = {_DEFAULT_TENANT_ID: _flags}
+_flags_by_tenant: Dict[int, Dict[str, FeatureFlag]] = {_PLATFORM_DEFAULT_TENANT_ID: _flags}
 
 
-def _normalize_tenant_id(tenant_id: int | None) -> int:
+def _require_tenant_id(tenant_id: int | None, *, operation: str) -> int:
     if tenant_id is None:
-        return _DEFAULT_TENANT_ID
+        raise ValueError(f"tenant_id is required for {operation}")
     normalized = int(tenant_id)
     if normalized <= 0:
         raise ValueError("tenant_id must be positive")
@@ -58,7 +58,7 @@ def _tenant_store(tenant_id: int) -> Dict[str, FeatureFlag]:
 
 
 def list_flags(tenant_id: int | None = None) -> List[dict[str, object]]:
-    store = _tenant_store(_normalize_tenant_id(tenant_id))
+    store = _tenant_store(_require_tenant_id(tenant_id, operation="list_flags"))
     return [
         {
             "key": item.key,
@@ -78,7 +78,7 @@ def set_flag(
     scope: str = "global",
     tenant_id: int | None = None,
 ) -> dict[str, object]:
-    store = _tenant_store(_normalize_tenant_id(tenant_id))
+    store = _tenant_store(_require_tenant_id(tenant_id, operation="set_flag"))
     now = datetime.now(timezone.utc).isoformat()
     existing = store.get(key)
 

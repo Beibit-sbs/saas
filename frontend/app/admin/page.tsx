@@ -64,10 +64,7 @@ export default function AdminPage() {
     return adminTranslations.ru.errorPrefix;
   }, [l]);
 
-  const buildAuthHeaders = useCallback((): Record<string, string> => {
-    const token = localStorage.getItem("app.token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }, []);
+  const buildAuthHeaders = useCallback((): Record<string, string> => ({}), []);
 
   const {
     supportedLanguages,

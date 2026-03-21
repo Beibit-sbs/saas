@@ -71,8 +71,9 @@ def validate_provider_key(
 def model_registry(
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.ai.models.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
-    return {"models": list_models(include_disabled=True)}
+    return {"models": list_models(include_disabled=True, tenant_id=int(tenant["id"]))}
 
 
 @router.put("/models/{model_key}")
@@ -82,6 +83,7 @@ def upsert_model_endpoint(
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.ai.models.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
     try:
         model = upsert_model(
@@ -92,6 +94,7 @@ def upsert_model_endpoint(
             enabled=payload.enabled,
             priority=payload.priority,
             metadata=payload.metadata,
+            tenant_id=int(tenant["id"]),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -110,6 +113,7 @@ def upsert_model_endpoint(
             "enabled": model.get("enabled"),
             "priority": model.get("priority"),
         },
+        tenant_id=int(tenant["id"]),
     )
     return {"model": model}
 
@@ -121,9 +125,10 @@ def set_model_enabled_endpoint(
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.ai.models.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
     try:
-        model = set_model_enabled(model_key, payload.enabled)
+        model = set_model_enabled(model_key, payload.enabled, tenant_id=int(tenant["id"]))
     except ValueError as exc:
         detail = str(exc)
         status = 404 if "not found" in detail else 400
@@ -141,5 +146,6 @@ def set_model_enabled_endpoint(
             "model_key": model.get("model_key"),
             "enabled": model.get("enabled"),
         },
+        tenant_id=int(tenant["id"]),
     )
     return {"model": model}

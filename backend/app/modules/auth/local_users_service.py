@@ -7,7 +7,7 @@ from typing import Dict, List
 
 from fastapi import HTTPException
 
-from app.modules.integrations.service import get_setting, save_setting
+from app.modules.integrations.service import get_global_setting, save_global_setting
 
 
 _LOCAL_USERS_SETTINGS_KEY = "auth.local_users_json"
@@ -56,14 +56,14 @@ class LocalUserStore:
             "counter": self._counter,
             "users": list(self._users_by_id.values()),
         }
-        save_setting(_LOCAL_USERS_SETTINGS_KEY, json.dumps(payload), is_secret=True)
+        save_global_setting(_LOCAL_USERS_SETTINGS_KEY, json.dumps(payload), is_secret=True)
 
     def _load_once(self) -> None:
         if self._loaded:
             return
         self._loaded = True
 
-        raw = get_setting(_LOCAL_USERS_SETTINGS_KEY)
+        raw = get_global_setting(_LOCAL_USERS_SETTINGS_KEY)
         if raw is None or not raw.value:
             return
 
@@ -210,6 +210,7 @@ class LocalUserStore:
     def update_user(
         self,
         user_id: str,
+        tenant_id: int,
         display_name: str | None = None,
         language: str | None = None,
         roles: List[str] | None = None,
@@ -218,6 +219,8 @@ class LocalUserStore:
         normalized_user_id = user_id.strip()
         user = self._users_by_id.get(normalized_user_id)
         if user is None:
+            raise HTTPException(status_code=404, detail="local user not found")
+        if int(user.get("tenant_id", 1)) != int(tenant_id):
             raise HTTPException(status_code=404, detail="local user not found")
 
         changed = False
@@ -245,9 +248,15 @@ class LocalUserStore:
         self._persist()
         return self._public_user(user)
 
-    def delete_user(self, user_id: str) -> bool:
+    def delete_user(self, user_id: str, tenant_id: int) -> bool:
         self._load_once()
         normalized_user_id = user_id.strip()
+        user = self._users_by_id.get(normalized_user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="local user not found")
+        if int(user.get("tenant_id", 1)) != int(tenant_id):
+            raise HTTPException(status_code=404, detail="local user not found")
+
         user = self._users_by_id.pop(normalized_user_id, None)
         if user is None:
             raise HTTPException(status_code=404, detail="local user not found")
@@ -258,11 +267,13 @@ class LocalUserStore:
         self._persist()
         return True
 
-    def set_password(self, user_id: str, password: str) -> None:
+    def set_password(self, user_id: str, password: str, tenant_id: int) -> None:
         self._load_once()
         normalized_user_id = user_id.strip()
         user = self._users_by_id.get(normalized_user_id)
         if user is None:
+            raise HTTPException(status_code=404, detail="local user not found")
+        if int(user.get("tenant_id", 1)) != int(tenant_id):
             raise HTTPException(status_code=404, detail="local user not found")
 
         normalized_password = password.strip()
@@ -303,6 +314,16 @@ class LocalUserStore:
 
     def get_user(self, user_id: str) -> dict[str, object] | None:
         self._load_once()
+        return self._users_by_id.get(user_id)
+
+    def find_user_by_login(self, login: str) -> dict[str, object] | None:
+        self._load_once()
+        normalized_login = str(login).strip().lower()
+        if not normalized_login:
+            return None
+        user_id = self._users_by_login.get(normalized_login)
+        if not user_id:
+            return None
         return self._users_by_id.get(user_id)
 
 

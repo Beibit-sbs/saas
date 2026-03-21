@@ -5,7 +5,7 @@ import logging
 import time
 import uuid
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.responses import PlainTextResponse
 
@@ -13,6 +13,9 @@ from app.core.config import (
     get_auth_cookie_name,
     get_auth_csrf_cookie_name,
     is_csrf_protection_enabled,
+    get_metrics_allowed_ips,
+    get_metrics_token,
+    is_production_mode,
 )
 
 from app.modules.admin.router import router as admin_router
@@ -30,10 +33,16 @@ from app.modules.example_slice.router import router as example_slice_router
 from app.modules.faculty.router import router as faculty_router
 from app.modules.feature_flags.router import router as feature_flags_router
 from app.modules.auth.router import router as auth_router
+from app.modules.auth.token_service import (
+    TokenValidationError,
+    parse_access_token_from_request,
+    validate_token_signing_config,
+)
 from app.modules.help.router import router as help_router
 from app.modules.i18n.router import admin_router as i18n_admin_router
 from app.modules.i18n.router import public_router as i18n_public_router
 from app.modules.integrations.router import router as integrations_router
+from app.modules.identity.router import router as identity_router
 from app.modules.ldap.router import router as ldap_router
 from app.modules.jobs.router import router as jobs_router
 from app.modules.programs.router import router as programs_router
@@ -42,9 +51,11 @@ from app.modules.rbac.router import router as rbac_router
 from app.modules.rbac.security import get_actor
 from app.modules.rbac.security import resolve_current_user_claims
 from app.modules.students.router import router as students_router
+from app.modules.service_accounts.router import router as service_accounts_router
 from app.modules.tenants.router import router as tenants_router
 from app.modules.observability.logging import configure_json_logging, request_id_var
 from app.modules.observability.metrics import record_request, render_metrics
+from app.modules.observability.security_signals import record_security_signal
 from app.modules.security.rate_limit import (
     check_request_rate_limit,
     get_rate_limit_audit_metadata,
@@ -60,6 +71,7 @@ request_logger = logging.getLogger("app.request")
 async def lifespan(_: FastAPI):
     # Re-apply on process startup so third-party logger setup doesn't override JSON handlers.
     configure_json_logging()
+    validate_token_signing_config()
     yield
 
 
@@ -75,6 +87,7 @@ app.include_router(help_router)
 app.include_router(i18n_public_router)
 app.include_router(i18n_admin_router)
 app.include_router(integrations_router)
+app.include_router(identity_router)
 app.include_router(ldap_router)
 app.include_router(backup_router)
 app.include_router(jobs_router)
@@ -82,6 +95,7 @@ app.include_router(feature_flags_router)
 app.include_router(example_notes_router)
 app.include_router(example_slice_router)
 app.include_router(students_router)
+app.include_router(service_accounts_router)
 app.include_router(faculty_router)
 app.include_router(programs_router)
 app.include_router(courses_router)
@@ -110,27 +124,62 @@ def _resolve_rate_limit_actor(request: Request) -> str | None:
 
 def _resolve_request_tenant_id(request: Request) -> int:
     raw = request.headers.get("x-tenant-id")
-    if raw is None:
-        return _DEFAULT_TENANT_ID
+    if raw is not None:
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            value = _DEFAULT_TENANT_ID
+        return value if value > 0 else _DEFAULT_TENANT_ID
+
     try:
-        value = int(raw)
-    except (TypeError, ValueError):
-        return _DEFAULT_TENANT_ID
-    return value if value > 0 else _DEFAULT_TENANT_ID
+        claims = parse_access_token_from_request(request, request.headers.get("authorization"))
+    except TokenValidationError:
+        claims = None
+    if claims is not None and int(claims.tenant_id) > 0:
+        return int(claims.tenant_id)
+    return _DEFAULT_TENANT_ID
+
+
+def _resolve_client_ip(request: Request) -> str:
+    ip = request.headers.get("x-real-ip", "").strip()
+    if ip:
+        return ip
+    forwarded_for = request.headers.get("x-forwarded-for", "")
+    if forwarded_for.strip():
+        ips = [item.strip() for item in forwarded_for.split(",") if item.strip()]
+        if ips:
+            return ips[-1]
+    return request.client.host if request.client else "unknown"
+
+
+def _is_security_scoped_path(path: str) -> bool:
+    return path.startswith("/api/") or path == "/platform" or path.startswith("/platform/")
+
+
+def _is_admin_scoped_path(path: str) -> bool:
+    return path.startswith("/api/admin/") or path == "/platform" or path.startswith("/platform/")
 
 
 @app.middleware("http")
 async def enforce_rate_limit(request: Request, call_next):
     body = b""
-    if request.method.upper() in {"POST", "PUT", "PATCH", "DELETE"} and request.url.path.startswith("/api/"):
+    if request.method.upper() in {"POST", "PUT", "PATCH", "DELETE"} and _is_security_scoped_path(request.url.path):
         body = await request.body()
 
     actor = None
-    if request.url.path.startswith("/api/admin/"):
+    if _is_admin_scoped_path(request.url.path):
         actor = _resolve_rate_limit_actor(request)
 
     decision = check_request_rate_limit(request, actor=actor, body=body)
     if decision is not None:
+        record_security_signal(
+            signal="rate_limit.blocked",
+            outcome="blocked",
+            actor=actor,
+            client_ip=_resolve_client_ip(request),
+            path=request.url.path,
+            tenant_id=_resolve_request_tenant_id(request),
+        )
         if should_audit_rate_limit(request.url.path):
             log_admin_action(
                 tenant_id=_resolve_request_tenant_id(request),
@@ -160,7 +209,7 @@ async def enforce_csrf(request: Request, call_next):
     if request.method in SAFE_METHODS:
         return await call_next(request)
 
-    if not request.url.path.startswith("/api/"):
+    if not _is_security_scoped_path(request.url.path):
         return await call_next(request)
 
     auth_cookie = request.cookies.get(get_auth_cookie_name())
@@ -174,8 +223,24 @@ async def enforce_csrf(request: Request, call_next):
     csrf_cookie = request.cookies.get(get_auth_csrf_cookie_name(), "")
     csrf_header = request.headers.get("x-csrf-token", "")
     if not csrf_cookie or not csrf_header:
+        record_security_signal(
+            signal="auth.csrf.failed",
+            outcome="denied",
+            actor=_resolve_rate_limit_actor(request),
+            client_ip=_resolve_client_ip(request),
+            path=request.url.path,
+            tenant_id=_resolve_request_tenant_id(request),
+        )
         return JSONResponse(status_code=403, content={"detail": "csrf token required"})
     if not hmac.compare_digest(csrf_cookie, csrf_header):
+        record_security_signal(
+            signal="auth.csrf.failed",
+            outcome="denied",
+            actor=_resolve_rate_limit_actor(request),
+            client_ip=_resolve_client_ip(request),
+            path=request.url.path,
+            tenant_id=_resolve_request_tenant_id(request),
+        )
         return JSONResponse(status_code=403, content={"detail": "invalid csrf token"})
 
     return await call_next(request)
@@ -223,8 +288,51 @@ def api_health() -> dict[str, str]:
 
 
 @app.get("/metrics", response_class=PlainTextResponse, include_in_schema=False)
-def metrics() -> str:
-    """Prometheus text format metrics endpoint."""
+def metrics(request: Request) -> str:
+    """Prometheus text format metrics endpoint.
+
+    Protected by METRICS_TOKEN bearer auth when the environment variable is set.
+    In production, additionally restrict access at the reverse-proxy layer so
+    this endpoint is only reachable from internal/monitoring network segments.
+    """
+    if is_production_mode():
+        allowed_ips = get_metrics_allowed_ips()
+        if allowed_ips:
+            client_ip = request.headers.get("x-real-ip", "").strip()
+            if not client_ip:
+                client_ip = request.client.host if request.client else ""
+            if client_ip not in allowed_ips:
+                record_security_signal(
+                    signal="metrics.access.denied",
+                    outcome="denied",
+                    client_ip=_resolve_client_ip(request),
+                    path=request.url.path,
+                    tenant_id=_resolve_request_tenant_id(request),
+                )
+                raise HTTPException(status_code=403, detail="metrics access forbidden from this IP")
+
+    token = get_metrics_token()
+    if token is not None:
+        auth_header = request.headers.get("authorization", "")
+        if not auth_header.startswith("Bearer "):
+            record_security_signal(
+                signal="metrics.access.denied",
+                outcome="denied",
+                client_ip=_resolve_client_ip(request),
+                path=request.url.path,
+                tenant_id=_resolve_request_tenant_id(request),
+            )
+            raise HTTPException(status_code=401, detail="metrics authentication required")
+        provided = auth_header[len("Bearer "):]
+        if not hmac.compare_digest(provided.encode(), token.encode()):
+            record_security_signal(
+                signal="metrics.access.denied",
+                outcome="denied",
+                client_ip=_resolve_client_ip(request),
+                path=request.url.path,
+                tenant_id=_resolve_request_tenant_id(request),
+            )
+            raise HTTPException(status_code=403, detail="invalid metrics token")
     return render_metrics()
 
 

@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import os
 from threading import Lock
-from typing import Any
 
 from app.modules.plans.service import get_plan_by_code, get_plan_by_id, list_plans
 from app.modules.tenants.service import get_tenant

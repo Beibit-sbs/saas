@@ -85,9 +85,9 @@ def test_example_notes_mutations_are_audited() -> None:
     delete_response = client.delete(f"/api/admin/example-notes/{note_id}", headers=ADMIN_HEADERS)
     assert delete_response.status_code == 200
 
-    create_events = list_admin_actions(action="example_notes.create", entity="example_notes", limit=20)
-    update_events = list_admin_actions(action="example_notes.update", entity="example_notes", limit=20)
-    delete_events = list_admin_actions(action="example_notes.delete", entity="example_notes", limit=20)
+    create_events = list_admin_actions(action="example_notes.create", entity="example_notes", limit=20, tenant_id=1)
+    update_events = list_admin_actions(action="example_notes.update", entity="example_notes", limit=20, tenant_id=1)
+    delete_events = list_admin_actions(action="example_notes.delete", entity="example_notes", limit=20, tenant_id=1)
 
     assert any(event.get("path") == "/api/admin/example-notes" for event in create_events)
     assert any(event.get("path") == f"/api/admin/example-notes/{note_id}" for event in update_events)

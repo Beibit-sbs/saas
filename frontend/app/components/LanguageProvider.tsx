@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { buildCsrfHeaders } from "./csrf";
+import { useAuth } from "./AuthProvider";
 import { commonTranslations, type CommonTranslationKey } from "../../i18n/common";
 
 type BaseLanguage = "kk" | "ru" | "en";
@@ -38,8 +39,8 @@ function isBaseLanguage(lang: string): lang is BaseLanguage {
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [language, setLanguage] = useState<AppLanguage>("ru");
-  const [userId, setUserId] = useState<string | null>(null);
   const [supportedLanguages, setSupportedLanguages] = useState<SupportedLanguage[]>(
     defaultSupportedLanguages,
   );
@@ -64,40 +65,27 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const syncUserId = () => {
-      const currentUserId = localStorage.getItem("app.userId");
-      setUserId(currentUserId);
-    };
-
-    syncUserId();
-
     const saved = localStorage.getItem("app.language");
     if (saved) {
       setLanguage(saved);
       document.documentElement.lang = saved;
     }
 
-    window.addEventListener("app-auth-changed", syncUserId);
     void reloadLanguages();
-
-    return () => {
-      window.removeEventListener("app-auth-changed", syncUserId);
-    };
   }, [reloadLanguages]);
 
   useEffect(() => {
     const loadUserPreference = async () => {
+      const userId = user?.user_id;
       if (!userId) return;
+
+      if (user.language) {
+        setLanguage((current) => (current === user.language ? current : user.language));
+      }
 
       try {
         const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-        const token = localStorage.getItem("app.token");
-        const headers: Record<string, string> = {};
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
         const res = await fetch(`${baseUrl}/auth/me/preferences`, {
-          headers,
           credentials: "include",
           cache: "no-store",
         });
@@ -113,29 +101,25 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     };
 
     void loadUserPreference();
-  }, [userId]);
+  }, [user?.language, user?.user_id]);
 
   useEffect(() => {
     localStorage.setItem("app.language", language);
     document.documentElement.lang = language;
 
     const saveUserPreference = async () => {
+      const userId = user?.user_id;
       if (!userId) return;
 
       try {
         const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-        const token = localStorage.getItem("app.token");
         const csrfHeaders = await buildCsrfHeaders(baseUrl);
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-          ...csrfHeaders,
-        };
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
         await fetch(`${baseUrl}/auth/me/preferences/language`, {
           method: "PUT",
-          headers,
+          headers: {
+          "Content-Type": "application/json",
+          ...csrfHeaders,
+          },
           credentials: "include",
           body: JSON.stringify({ language }),
         });
@@ -145,7 +129,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     };
 
     void saveUserPreference();
-  }, [language, userId]);
+  }, [language, user?.user_id]);
 
   const value = useMemo<LanguageContextValue>(() => {
     const activeBaseLanguage = isBaseLanguage(language) ? language : "ru";

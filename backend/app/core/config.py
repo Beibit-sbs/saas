@@ -23,17 +23,31 @@ def get_ai_provider_status() -> dict[str, bool]:
 
 
 def get_auth_access_token_ttl_minutes() -> int:
-    raw = os.getenv("AUTH_ACCESS_TOKEN_TTL_MINUTES", "60").strip()
+    raw = os.getenv("AUTH_ACCESS_TOKEN_TTL_MINUTES", "15").strip()
     try:
         value = int(raw)
     except ValueError:
-        return 60
+        return 15
     return max(5, min(value, 24 * 60))
+
+
+def get_auth_refresh_token_ttl_minutes() -> int:
+    raw = os.getenv("AUTH_REFRESH_TOKEN_TTL_MINUTES", str(7 * 24 * 60)).strip()
+    try:
+        value = int(raw)
+    except ValueError:
+        return 7 * 24 * 60
+    return max(30, min(value, 30 * 24 * 60))
 
 
 def get_auth_cookie_name() -> str:
     raw = os.getenv("AUTH_ACCESS_COOKIE_NAME", "app_access_token").strip()
     return raw or "app_access_token"
+
+
+def get_auth_refresh_cookie_name() -> str:
+    raw = os.getenv("AUTH_REFRESH_COOKIE_NAME", "app_refresh_token").strip()
+    return raw or "app_refresh_token"
 
 
 def get_auth_cookie_same_site() -> str:
@@ -81,6 +95,11 @@ def allow_rbac_dev_fallback() -> bool:
     )
 
 
+def get_auth_revocation_redis_url() -> str | None:
+    raw = os.getenv("AUTH_REVOCATION_REDIS_URL", os.getenv("REDIS_URL", "")).strip()
+    return raw or None
+
+
 def _int_env(name: str, default: int, *, minimum: int = 0, maximum: int | None = None) -> int:
     raw = os.getenv(name, str(default)).strip()
     try:
@@ -122,3 +141,31 @@ def get_rate_limit_general_window_seconds() -> int:
 
 def get_rate_limit_general_limit() -> int:
     return _int_env("RATE_LIMIT_GENERAL_LIMIT", 120, minimum=0, maximum=100000)
+
+
+def get_rate_limit_redis_url() -> str | None:
+    raw = os.getenv("RATE_LIMIT_REDIS_URL", os.getenv("REDIS_URL", "")).strip()
+    return raw or None
+
+
+def get_metrics_allowed_ips() -> set[str]:
+    raw = os.getenv("METRICS_ALLOWED_IPS", "").strip()
+    if not raw:
+        return set()
+    return {item.strip() for item in raw.split(",") if item.strip()}
+
+
+def is_production_mode() -> bool:
+    raw = os.getenv("APP_ENV", os.getenv("ENVIRONMENT", "development")).strip().lower()
+    return raw in {"prod", "production"}
+
+
+def get_metrics_token() -> str | None:
+    """Optional static bearer token required to read /metrics.
+
+    Set METRICS_TOKEN to a strong random value in production.
+    When unset the endpoint is accessible only from trusted network segments
+    (e.g. blocked at nginx for external traffic).
+    """
+    raw = os.getenv("METRICS_TOKEN", "").strip()
+    return raw or None

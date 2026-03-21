@@ -4,8 +4,10 @@ import json
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
+from functools import lru_cache
 from threading import Lock
 from typing import Any
+from uuid import uuid4
 
 from fastapi import Request
 
@@ -15,6 +17,7 @@ from app.core.config import (
     get_rate_limit_login_identifier_limit,
     get_rate_limit_login_ip_limit,
     get_rate_limit_login_window_seconds,
+    get_rate_limit_redis_url,
     get_rate_limit_sensitive_admin_limit,
     get_rate_limit_sensitive_admin_window_seconds,
     is_rate_limit_enabled,
@@ -57,6 +60,16 @@ _GENERAL_EXEMPT_PATHS = {"/health", "/api/health", "/metrics"}
 def clear_rate_limit_state() -> None:
     with _limit_lock:
         _limit_events.clear()
+    redis_client = _get_rate_limit_redis_client()
+    if redis_client is not None:
+        try:
+            for key in redis_client.scan_iter("rate_limit:*"):
+                redis_client.delete(key)
+        except Exception:
+            pass
+    cache_clear = getattr(_get_rate_limit_redis_client, "cache_clear", None)
+    if callable(cache_clear):
+        cache_clear()
 
 
 def _prune(bucket: deque[float], now: float, window_seconds: int) -> None:
@@ -66,9 +79,17 @@ def _prune(bucket: deque[float], now: float, window_seconds: int) -> None:
 
 
 def _extract_client_ip(request: Request) -> str:
+    # Prefer X-Real-IP set by the trusted reverse proxy (nginx: proxy_set_header).
+    real_ip = request.headers.get("x-real-ip", "").strip()
+    if real_ip:
+        return real_ip
+    # Fall back to rightmost IP in X-Forwarded-For.  The rightmost entry is
+    # appended by the outermost trusted proxy and cannot be forged by the client.
     forwarded_for = request.headers.get("x-forwarded-for", "")
     if forwarded_for.strip():
-        return forwarded_for.split(",")[0].strip() or "unknown"
+        ips = [ip.strip() for ip in forwarded_for.split(",") if ip.strip()]
+        if ips:
+            return ips[-1]
     if request.client and request.client.host:
         return request.client.host
     return "unknown"
@@ -98,6 +119,10 @@ def _match_sensitive_admin_path(method: str, path: str) -> bool:
     normalized_method = method.upper()
     if (normalized_method, path) in _SENSITIVE_ADMIN_PATHS:
         return True
+    if normalized_method in {"POST", "PUT", "PATCH", "DELETE"} and (
+        path == "/platform" or path.startswith("/platform/")
+    ):
+        return True
     if normalized_method == "POST" and path.startswith("/api/admin/ai/providers/") and path.endswith("/validate"):
         return True
     if normalized_method == "PUT" and path.startswith("/api/admin/integrations/ai/"):
@@ -106,7 +131,9 @@ def _match_sensitive_admin_path(method: str, path: str) -> bool:
 
 
 def _should_apply_general_api_limit(path: str) -> bool:
-    return path.startswith("/api/") and path not in _GENERAL_EXEMPT_PATHS
+    if path in _GENERAL_EXEMPT_PATHS:
+        return False
+    return path.startswith("/api/") or path == "/platform" or path.startswith("/platform/")
 
 
 def _enforce_checks(scope: str, checks: list[LimitCheck], window_seconds: int) -> RateLimitDecision | None:
@@ -117,6 +144,15 @@ def _enforce_checks(scope: str, checks: list[LimitCheck], window_seconds: int) -
         return None
 
     now = time.time()
+
+    redis_client = _get_rate_limit_redis_client()
+    if redis_client is not None:
+        try:
+            return _enforce_checks_redis(redis_client, scope, effective_checks, window_seconds, now)
+        except Exception:
+            # Fail open to in-memory limiter when Redis path is unavailable.
+            pass
+
     with _limit_lock:
         for item in effective_checks:
             bucket = _limit_events[item.bucket_key]
@@ -128,6 +164,58 @@ def _enforce_checks(scope: str, checks: list[LimitCheck], window_seconds: int) -
         for item in effective_checks:
             _limit_events[item.bucket_key].append(now)
 
+    return None
+
+
+@lru_cache(maxsize=1)
+def _get_rate_limit_redis_client():
+    redis_url = get_rate_limit_redis_url()
+    if not redis_url:
+        return None
+    try:
+        import redis
+    except Exception:
+        return None
+    try:
+        client = redis.Redis.from_url(redis_url, decode_responses=True, socket_timeout=1)
+        client.ping()
+        return client
+    except Exception:
+        return None
+
+
+def _rate_limit_redis_key(bucket_key: tuple[str, ...]) -> str:
+    route = bucket_key[1] if len(bucket_key) > 1 else "global"
+    subject = bucket_key[-1] if bucket_key else "unknown"
+    return f"rate_limit:{subject}:{route}"
+
+
+def _enforce_checks_redis(
+    redis_client,
+    scope: str,
+    checks: list[LimitCheck],
+    window_seconds: int,
+    now: float,
+) -> RateLimitDecision | None:
+    cutoff = now - window_seconds
+    for item in checks:
+        key = _rate_limit_redis_key(item.bucket_key)
+        redis_client.zremrangebyscore(key, 0, cutoff)
+        current_count = redis_client.zcard(key)
+        if int(current_count) >= item.limit:
+            oldest = redis_client.zrange(key, 0, 0, withscores=True)
+            if oldest:
+                oldest_ts = float(oldest[0][1])
+                retry_after = max(1, int(window_seconds - (now - oldest_ts)))
+            else:
+                retry_after = window_seconds
+            return RateLimitDecision(scope=scope, retry_after=retry_after, label=item.label)
+
+    member = f"{now}:{uuid4()}"
+    for item in checks:
+        key = _rate_limit_redis_key(item.bucket_key)
+        redis_client.zadd(key, {member: now})
+        redis_client.expire(key, max(1, window_seconds + 1))
     return None
 
 
@@ -189,7 +277,12 @@ def check_request_rate_limit(
 
 
 def should_audit_rate_limit(path: str) -> bool:
-    return path.startswith("/api/auth/") or path.startswith("/api/admin/")
+    return (
+        path.startswith("/api/auth/")
+        or path.startswith("/api/admin/")
+        or path == "/platform"
+        or path.startswith("/platform/")
+    )
 
 
 def get_rate_limit_audit_metadata(

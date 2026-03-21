@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.core.tenant import get_current_tenant
+from app.modules.audit.service import log_admin_action
 from app.modules.integrations.service import (
     get_ldap_config_for_admin,
     list_ai_provider_config_for_admin,
@@ -50,11 +51,27 @@ def get_settings(
 @router.put("/ldap")
 def update_ldap_settings(
     payload: LdapConfigPayload,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
-    ldap = save_ldap_config(payload.model_dump(exclude_unset=True), tenant_id=int(tenant["id"]))
+    updated_fields = payload.model_dump(exclude_unset=True)
+    ldap = save_ldap_config(updated_fields, tenant_id=int(tenant["id"]))
+    log_admin_action(
+        actor=actor,
+        action="integrations.ldap.update",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="integrations_ldap",
+        result="success",
+        metadata={
+            "fields_updated": sorted(list(updated_fields.keys())),
+            "bind_password_changed": "bind_password" in updated_fields,
+        },
+        tenant_id=int(tenant["id"]),
+    )
     return {"ldap": ldap}
 
 
@@ -62,7 +79,8 @@ def update_ldap_settings(
 def update_ai_provider_settings(
     provider: str,
     payload: AiProviderConfigPayload,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
@@ -75,5 +93,21 @@ def update_ai_provider_settings(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    log_admin_action(
+        actor=actor,
+        action="integrations.ai_provider.update",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="integrations_ai",
+        result="success",
+        metadata={
+            "provider": provider,
+            "api_key_updated": payload.api_key is not None,
+            "validation_url_updated": payload.validation_url is not None,
+        },
+        tenant_id=int(tenant["id"]),
+    )
 
     return {"provider": result}

@@ -9,7 +9,6 @@ export type SessionUser = {
   display_name: string;
   roles: string[];
   language: string;
-  access_token?: string;
 };
 
 type AuthContextValue = {
@@ -33,26 +32,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const persistSession = useCallback((session: SessionUser) => {
     setUser(session);
-    localStorage.setItem("app.session", JSON.stringify(session));
-    localStorage.setItem("app.userId", session.user_id);
-    localStorage.setItem("app.language", session.language);
-    if (session.access_token) {
-      localStorage.setItem("app.token", session.access_token);
-    }
     emitAuthChanged();
   }, []);
 
   useEffect(() => {
-    const raw = localStorage.getItem("app.session");
-    if (!raw) return;
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
-    try {
-      const parsed = JSON.parse(raw) as SessionUser;
-      setUser(parsed);
-      localStorage.setItem("app.userId", parsed.user_id);
-    } catch {
-      localStorage.removeItem("app.session");
-    }
+    void (async () => {
+      try {
+        const res = await fetch(`${baseUrl}/auth/me/profile`, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          setUser(null);
+          emitAuthChanged();
+          return;
+        }
+
+        const json = (await res.json()) as SessionUser;
+        setUser(json);
+        emitAuthChanged();
+      } catch {
+        setUser(null);
+      }
+    })();
   }, []);
 
   const loginDemo = useCallback(async (userId: string) => {
@@ -146,9 +150,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
 
     setUser(null);
-    localStorage.removeItem("app.session");
-    localStorage.removeItem("app.userId");
-    localStorage.removeItem("app.token");
     clearCsrfToken();
     emitAuthChanged();
   }, []);

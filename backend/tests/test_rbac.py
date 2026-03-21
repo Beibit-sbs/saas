@@ -1,4 +1,4 @@
-from tests.conftest import ADMIN_HEADERS, _auth_headers, client
+from tests.conftest import ADMIN_HEADERS, client
 from app.modules.auth.token_service import create_access_token
 from app.modules.rbac import service as rbac_service
 

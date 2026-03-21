@@ -8,6 +8,7 @@ from app.modules.auth.token_service import (
     TokenValidationError,
     parse_access_token_from_request,
 )
+from app.modules.observability.security_signals import record_security_signal
 from app.modules.rbac.service import (
     get_user_roles_for_tenant,
     get_user_roles_for_tenant_db_source,
@@ -22,8 +23,36 @@ from app.modules.tenants.service import get_tenant
 _DEFAULT_TENANT_ID = 1
 
 
-def _resolve_tenant_id(x_tenant_id: int | None) -> int:
-    tenant_id = x_tenant_id if x_tenant_id is not None else _DEFAULT_TENANT_ID
+def _resolve_tenant_id(request: Request, claims: AccessTokenClaims, x_tenant_id: int | None) -> int:
+    if x_tenant_id is not None:
+        if x_tenant_id != claims.tenant_id:
+            if claims.token_type == "service":
+                if not bool(getattr(claims, "platform_global", False)):
+                    record_security_signal(
+                        signal="tenant.override.denied",
+                        outcome="denied",
+                        actor=claims.user_id,
+                        client_ip=request.client.host if request.client else "unknown",
+                        path=request.url.path,
+                        tenant_id=claims.tenant_id,
+                    )
+                    raise HTTPException(status_code=403, detail="cross-tenant override forbidden")
+            elif (
+                "superadmin" not in {role.strip() for role in claims.roles if role.strip()}
+                and not is_platform_admin(claims.user_id)
+            ):
+                record_security_signal(
+                    signal="tenant.override.denied",
+                    outcome="denied",
+                    actor=claims.user_id,
+                    client_ip=request.client.host if request.client else "unknown",
+                    path=request.url.path,
+                    tenant_id=claims.tenant_id,
+                )
+                raise HTTPException(status_code=403, detail="cross-tenant override forbidden")
+        tenant_id = x_tenant_id
+    else:
+        tenant_id = claims.tenant_id if claims.tenant_id > 0 else _DEFAULT_TENANT_ID
     tenant = get_tenant(tenant_id)
     if tenant is None:
         raise HTTPException(status_code=404, detail=f"Tenant {tenant_id} not found")
@@ -76,7 +105,7 @@ async def require_permission(
     if claims is None:
         claims = resolve_current_user_claims(request, authorization)
 
-    tenant_id = _resolve_tenant_id(x_tenant_id)
+    tenant_id = _resolve_tenant_id(request, claims, x_tenant_id)
     db_source = True
     claims_fallback_used = False
     try:
@@ -98,6 +127,12 @@ async def require_permission(
         requested = {r.strip() for r in x_user_roles.split(",") if r.strip()}
         if requested:
             role_values = [r for r in role_values if r in requested]
+
+    if claims.token_type == "service":
+        granted_scopes = {item.strip() for item in getattr(claims, "permissions", []) if item.strip()}
+        if permission not in granted_scopes:
+            raise HTTPException(status_code=403, detail=f"missing permission: {permission}")
+        return
 
     if "superadmin" in role_values or is_platform_admin(claims.user_id):
         return

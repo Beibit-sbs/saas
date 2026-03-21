@@ -1,5 +1,10 @@
-from tests.conftest import ADMIN_HEADERS, _auth_headers, _configure_db_only_role_resolution, client
-from app.modules.auth.token_service import create_access_token, verify_access_token
+from tests.conftest import _auth_headers, _configure_db_only_role_resolution, client
+from app.modules.auth.token_service import (
+    create_access_token,
+    revoke_token,
+    verify_access_token,
+    verify_refresh_token,
+)
 from app.modules.ldap import service as ldap_service
 
 
@@ -37,9 +42,18 @@ def test_mock_login_endpoint() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["user_id"] == "admin.001"
-    claims = verify_access_token(body["access_token"])
+    assert isinstance(body.get("access_token"), str)
+    assert isinstance(body.get("refresh_token"), str)
+    token = response.cookies.get("app_access_token")
+    refresh = response.cookies.get("app_refresh_token")
+    assert isinstance(token, str)
+    assert isinstance(refresh, str)
+    claims = verify_access_token(token)
+    refresh_claims = verify_refresh_token(refresh)
     assert claims.user_id == "admin.001"
     assert "admin" in claims.roles
+    assert claims.tenant_id == 1
+    assert refresh_claims.user_id == "admin.001"
 
 
 def test_demo_admin_login_syncs_db_roles_and_allows_admin_endpoints(monkeypatch) -> None:
@@ -47,7 +61,8 @@ def test_demo_admin_login_syncs_db_roles_and_allows_admin_endpoints(monkeypatch)
     assignments: dict[str, list[str]] = {}
     _configure_db_only_role_resolution(monkeypatch, assignments)
 
-    def fake_sync(user_id: str, roles: list[str]) -> dict[str, object]:
+    def fake_sync(user_id: str, roles: list[str], tenant_id: int = 1) -> dict[str, object]:
+        assert tenant_id == 1
         assignments[user_id] = sorted({role for role in roles if role})
         return {"user_id": user_id, "roles": assignments[user_id]}
 
@@ -60,11 +75,8 @@ def test_demo_admin_login_syncs_db_roles_and_allows_admin_endpoints(monkeypatch)
     )
     assert login_response.status_code == 200
     assert assignments.get("admin.001") == ["admin"]
-
-    token = login_response.json()["access_token"]
     dashboard_response = client.get(
         "/api/admin/dashboard",
-        headers={"Authorization": f"Bearer {token}"},
     )
     assert dashboard_response.status_code == 200
 
@@ -74,7 +86,8 @@ def test_demo_teacher_and_student_have_expected_limited_or_no_admin_access(monke
     assignments: dict[str, list[str]] = {}
     _configure_db_only_role_resolution(monkeypatch, assignments)
 
-    def fake_sync(user_id: str, roles: list[str]) -> dict[str, object]:
+    def fake_sync(user_id: str, roles: list[str], tenant_id: int = 1) -> dict[str, object]:
+        assert tenant_id == 1
         assignments[user_id] = sorted({role for role in roles if role})
         return {"user_id": user_id, "roles": assignments[user_id]}
 
@@ -88,16 +101,13 @@ def test_demo_teacher_and_student_have_expected_limited_or_no_admin_access(monke
     assert teacher_login.status_code == 200
     assert assignments.get("teacher.001") == ["auditor"]
 
-    teacher_token = teacher_login.json()["access_token"]
     teacher_dashboard = client.get(
         "/api/admin/dashboard",
-        headers={"Authorization": f"Bearer {teacher_token}"},
     )
     assert teacher_dashboard.status_code == 200
 
     teacher_rbac = client.get(
         "/api/admin/rbac/roles",
-        headers={"Authorization": f"Bearer {teacher_token}"},
     )
     assert teacher_rbac.status_code == 403
 
@@ -109,10 +119,8 @@ def test_demo_teacher_and_student_have_expected_limited_or_no_admin_access(monke
     assert student_login.status_code == 200
     assert assignments.get("student.001", []) == []
 
-    student_token = student_login.json()["access_token"]
     student_dashboard = client.get(
         "/api/admin/dashboard",
-        headers={"Authorization": f"Bearer {student_token}"},
     )
     assert student_dashboard.status_code == 403
 
@@ -128,17 +136,84 @@ def test_me_profile_endpoint() -> None:
     assert "roles" in body
 
 
-def test_login_returns_signed_access_token() -> None:
+def test_login_sets_signed_auth_cookie() -> None:
     client.cookies.clear()
     response = client.post(
         "/api/auth/mock-login",
         json={"login": "admin", "password": "admin123"},
     )
     assert response.status_code == 200
-    token = response.json()["access_token"]
+    assert isinstance(response.json().get("access_token"), str)
+    assert isinstance(response.json().get("refresh_token"), str)
+    token = response.cookies.get("app_access_token")
+    refresh = response.cookies.get("app_refresh_token")
+    assert isinstance(token, str)
+    assert isinstance(refresh, str)
     claims = verify_access_token(token)
     assert claims.user_id == "admin.001"
     assert "admin" in claims.roles
+    assert claims.tenant_id == 1
+
+
+def test_revoked_access_token_is_rejected() -> None:
+    token = create_access_token("admin.001", ["admin"], "test")
+    claims = verify_access_token(token)
+    revoke_token(claims.jti, expires_at=claims.expires_at)
+
+    response = client.get(
+        "/api/auth/me/profile",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 401
+    assert "revoked" in response.json()["detail"]
+
+
+def test_refresh_flow_rotates_tokens_and_issues_new_access() -> None:
+    client.cookies.clear()
+    login = client.post(
+        "/api/auth/mock-login",
+        json={"login": "admin", "password": "admin123"},
+    )
+    assert login.status_code == 200
+    old_access = client.cookies.get("app_access_token")
+    old_refresh = client.cookies.get("app_refresh_token")
+    assert isinstance(old_access, str)
+    assert isinstance(old_refresh, str)
+
+    csrf = client.get("/api/auth/csrf")
+    assert csrf.status_code == 200
+    csrf_token = csrf.json()["csrf_token"]
+
+    refresh_response = client.post("/api/auth/refresh", headers={"X-CSRF-Token": csrf_token})
+    assert refresh_response.status_code == 200
+    new_access = client.cookies.get("app_access_token")
+    new_refresh = client.cookies.get("app_refresh_token")
+    assert isinstance(new_access, str)
+    assert isinstance(new_refresh, str)
+    assert new_access != old_access
+    assert new_refresh != old_refresh
+
+
+def test_revoked_refresh_token_is_rejected() -> None:
+    client.cookies.clear()
+    login = client.post(
+        "/api/auth/mock-login",
+        json={"login": "admin", "password": "admin123"},
+    )
+    assert login.status_code == 200
+    refresh_token = client.cookies.get("app_refresh_token")
+    assert isinstance(refresh_token, str)
+
+    refresh_claims = verify_refresh_token(refresh_token)
+    revoke_token(refresh_claims.jti, expires_at=refresh_claims.expires_at)
+
+    csrf = client.get("/api/auth/csrf")
+    assert csrf.status_code == 200
+    csrf_token = csrf.json()["csrf_token"]
+
+    response = client.post("/api/auth/refresh", headers={"X-CSRF-Token": csrf_token})
+    assert response.status_code == 401
+    assert "revoked" in response.json()["detail"]
 
 
 def test_ldap_login_requires_enabled_config(monkeypatch) -> None:
@@ -170,6 +245,30 @@ def test_ldap_login_success(monkeypatch) -> None:
     assert response.json()["auth_source"] == "ldap"
 
 
+def test_ldap_user_can_read_me_profile(monkeypatch) -> None:
+    client.cookies.clear()
+    monkeypatch.setenv("AUTH_LDAP_ENABLED", "true")
+
+    def fake_authenticate(username: str, password: str, tenant_id: int | None = None):
+        return {
+            "user_id": "ad.alice",
+            "display_name": "Alice Admin",
+            "roles": ["admin"],
+            "language": "ru",
+        }
+
+    monkeypatch.setattr(ldap_service, "authenticate_ldap_user", fake_authenticate)
+    monkeypatch.setattr("app.modules.auth.router.authenticate_ldap_user", fake_authenticate)
+
+    login = client.post("/api/auth/ldap-login", json={"login": "alice", "password": "secret"})
+    assert login.status_code == 200
+
+    profile = client.get("/api/auth/me/profile")
+    assert profile.status_code == 200
+    assert profile.json()["user_id"] == "ad.alice"
+    assert profile.json()["auth_source"] == "ldap"
+
+
 def test_ldap_login_syncs_roles_to_db(monkeypatch) -> None:
     client.cookies.clear()
     monkeypatch.setenv("AUTH_LDAP_ENABLED", "true")
@@ -183,7 +282,8 @@ def test_ldap_login_syncs_roles_to_db(monkeypatch) -> None:
             "language": "ru",
         }
 
-    def fake_sync(user_id: str, roles: list[str]) -> dict[str, object]:
+    def fake_sync(user_id: str, roles: list[str], tenant_id: int = 1) -> dict[str, object]:
+        assert tenant_id == 1
         synced[user_id] = sorted(roles)
         return {"user_id": user_id, "roles": sorted(roles)}
 

@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 import copy
 import os
 import sys
@@ -17,6 +19,8 @@ from app.main import app
 from app.modules.ai_gateway import service as ai_service
 from app.modules.audit import service as audit_service
 from app.modules.auth.local_users_service import local_user_store
+from app.modules.auth.mfa_service import clear_mfa_state
+from app.modules.auth.session_service import clear_sessions_state
 from app.modules.auth.token_service import create_access_token
 from app.modules.backup import service as backup_service
 from app.modules.example_notes import service as example_notes_service
@@ -27,6 +31,7 @@ from app.modules.jobs import service as jobs_service
 from app.modules.plans import service as plans_service
 from app.modules.quotas import service as quotas_service
 from app.modules.rbac import service as rbac_service
+from app.modules.observability.security_signals import clear_security_signal_state
 from app.modules.security import rate_limit as rate_limit_service
 from app.modules.tenants import service as tenant_service
 from app.modules.usage import service as usage_service
@@ -80,6 +85,7 @@ def _reset_local_user_store() -> None:
 
 def _reset_template_state() -> None:
     client.cookies.clear()
+    clear_security_signal_state()
     rate_limit_service.clear_rate_limit_state()
     ai_service.clear_ai_gateway_state()
     audit_service.clear_audit_events()
@@ -96,6 +102,8 @@ def _reset_template_state() -> None:
     if hasattr(rbac_service, "_clear_permission_cache"):
         rbac_service._clear_permission_cache()
     _reset_local_user_store()
+    clear_mfa_state()
+    clear_sessions_state()
     i18n_service.languages.clear()
     i18n_service.languages.update(copy.deepcopy(DEFAULT_LANGUAGES))
     feature_flags_service._flags.clear()

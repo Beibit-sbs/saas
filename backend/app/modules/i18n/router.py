@@ -1,13 +1,28 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from app.modules.audit.service import log_admin_action
 from app.modules.i18n.service import add_language, delete_language, list_language_catalog, list_languages, set_language_enabled
-from app.modules.rbac.security import get_actor, permission_dependency
+from app.modules.rbac.security import get_actor, permission_dependency, resolve_current_user_claims
+from app.modules.rbac.service import is_platform_admin
 
 public_router = APIRouter(prefix="/api/i18n", tags=["i18n"])
 admin_router = APIRouter(prefix="/api/admin/i18n", tags=["i18n-admin"])
+
+
+def _require_platform_tenant_context(
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+    authorization: Annotated[str | None, Header()] = None,
+) -> str:
+    claims = resolve_current_user_claims(request, authorization)
+    if int(claims.tenant_id) == 1:
+        return actor
+    if is_platform_admin(actor):
+        return actor
+    raise HTTPException(status_code=403, detail="platform tenant context required")
 
 
 class AddLanguagePayload(BaseModel):
@@ -41,7 +56,8 @@ def get_admin_languages(
 @admin_router.post("/languages")
 def create_language(
     payload: AddLanguagePayload,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(_require_platform_tenant_context)],
     __: Annotated[None, Depends(permission_dependency("admin.i18n.manage"))],
 ) -> dict[str, dict[str, str | bool]]:
     try:
@@ -49,6 +65,17 @@ def create_language(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    log_admin_action(
+        actor=actor,
+        tenant_id=1,
+        action="i18n.languages.create",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="i18n",
+        result="success",
+        metadata={"code": language.get("code"), "enabled": language.get("enabled")},
+    )
     return {"language": language}
 
 
@@ -56,7 +83,8 @@ def create_language(
 def update_language_status(
     code: str,
     payload: UpdateLanguageStatusPayload,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(_require_platform_tenant_context)],
     __: Annotated[None, Depends(permission_dependency("admin.i18n.manage"))],
 ) -> dict[str, dict[str, str | bool]]:
     try:
@@ -64,13 +92,25 @@ def update_language_status(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    log_admin_action(
+        actor=actor,
+        tenant_id=1,
+        action="i18n.languages.update",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="i18n",
+        result="success",
+        metadata={"code": language.get("code"), "enabled": language.get("enabled")},
+    )
     return {"language": language}
 
 
 @admin_router.delete("/languages/{code}")
 def remove_language(
     code: str,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(_require_platform_tenant_context)],
     __: Annotated[None, Depends(permission_dependency("admin.i18n.manage"))],
 ) -> dict[str, str]:
     try:
@@ -78,4 +118,15 @@ def remove_language(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    log_admin_action(
+        actor=actor,
+        tenant_id=1,
+        action="i18n.languages.delete",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="i18n",
+        result="success",
+        metadata={"code": code},
+    )
     return {"status": "deleted", "code": code}

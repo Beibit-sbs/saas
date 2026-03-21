@@ -1,4 +1,15 @@
+from app.modules.auth.token_service import create_access_token
 from tests.conftest import ADMIN_HEADERS, client
+
+
+def _tenant_admin_headers(tenant_id: int) -> dict[str, str]:
+    token = create_access_token(
+        user_id="tenant.admin@example.com",
+        roles=["admin"],
+        auth_source="test",
+        tenant_id=tenant_id,
+    )
+    return {"Authorization": f"Bearer {token}"}
 
 
 def test_list_tenants_default_tenant_exists() -> None:
@@ -123,3 +134,22 @@ def test_default_tenant_always_present_after_reset() -> None:
     assert response.status_code == 200
     slugs = [t["slug"] for t in response.json()["tenants"]]
     assert "default" in slugs
+
+
+def test_non_platform_tenant_admin_cannot_mutate_tenants() -> None:
+    create_tenant_b = client.post(
+        "/api/admin/tenants",
+        headers=ADMIN_HEADERS,
+        json={"slug": "tenant-b-control", "name": "Tenant B Control", "status": "active"},
+    )
+    assert create_tenant_b.status_code == 200, create_tenant_b.text
+    tenant_b_id = int(create_tenant_b.json()["tenant"]["id"])
+
+    headers = _tenant_admin_headers(tenant_b_id)
+    denied_create = client.post(
+        "/api/admin/tenants",
+        headers=headers,
+        json={"slug": "forbidden-tenant", "name": "Forbidden Tenant", "status": "active"},
+    )
+    assert denied_create.status_code == 403, denied_create.text
+    assert "platform tenant context required" in str(denied_create.json().get("detail", ""))

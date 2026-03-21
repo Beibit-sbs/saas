@@ -12,9 +12,9 @@ _BACKUP_HISTORY_LIMIT = 100
 _backup_history: dict[int, list[dict[str, Any]]] = {}
 
 
-def _normalize_tenant_id(tenant_id: int | None) -> int:
+def _require_tenant_id(tenant_id: int | None, *, operation: str) -> int:
     if tenant_id is None:
-        return 1
+        raise ValueError(f"tenant_id is required for {operation}")
     normalized = int(tenant_id)
     if normalized <= 0:
         raise ValueError("tenant_id must be positive")
@@ -130,7 +130,7 @@ def _default_profiles() -> list[dict[str, str]]:
 
 
 def get_backup_settings_for_admin(tenant_id: int | None = None) -> dict[str, Any]:
-    tenant = _normalize_tenant_id(tenant_id)
+    tenant = _require_tenant_id(tenant_id, operation="get_backup_settings_for_admin")
     roots = _allowed_roots()
     profiles_json = get_runtime_value(
         "backup.profiles_json",
@@ -178,7 +178,7 @@ def get_backup_settings_for_admin(tenant_id: int | None = None) -> dict[str, Any
 
 
 def save_backup_settings(payload: dict[str, Any], tenant_id: int | None = None) -> dict[str, Any]:
-    tenant = _normalize_tenant_id(tenant_id)
+    tenant = _require_tenant_id(tenant_id, operation="save_backup_settings")
     roots = _allowed_roots()
     raw_profiles = payload.get("profiles")
     if not isinstance(raw_profiles, list) or not raw_profiles:
@@ -278,7 +278,7 @@ def _record_history(entry: dict[str, Any], tenant_id: int) -> None:
 
 
 def list_backup_history(tenant_id: int | None = None) -> list[dict[str, Any]]:
-    tenant = _normalize_tenant_id(tenant_id)
+    tenant = _require_tenant_id(tenant_id, operation="list_backup_history")
     return list(_backup_history.get(tenant, []))
 
 
@@ -292,7 +292,7 @@ def _resolve_profile(settings: dict[str, Any], profile_id: str | None = None) ->
 
 
 def list_restore_candidates(profile_id: str | None = None, tenant_id: int | None = None) -> dict[str, Any]:
-    tenant = _normalize_tenant_id(tenant_id)
+    tenant = _require_tenant_id(tenant_id, operation="list_restore_candidates")
     settings = get_backup_settings_for_admin(tenant_id=tenant)
     profile = _resolve_profile(settings, profile_id=profile_id)
 
@@ -355,7 +355,7 @@ def run_restore_now(
     confirm_text: str | None,
     tenant_id: int | None = None,
 ) -> dict[str, Any]:
-    tenant = _normalize_tenant_id(tenant_id)
+    tenant = _require_tenant_id(tenant_id, operation="run_restore_now")
     settings = get_backup_settings_for_admin(tenant_id=tenant)
     profile = _resolve_profile(settings, profile_id=profile_id)
 
@@ -430,7 +430,7 @@ def apply_retention_policy(
     actor: str,
     tenant_id: int | None = None,
 ) -> dict[str, Any]:
-    tenant = _normalize_tenant_id(tenant_id)
+    tenant = _require_tenant_id(tenant_id, operation="apply_retention_policy")
     settings = get_backup_settings_for_admin(tenant_id=tenant)
     profile = _resolve_profile(settings, profile_id=profile_id)
     profile_dir = Path(profile["path"]).expanduser().resolve()
@@ -484,7 +484,7 @@ def apply_retention_policy(
 
 
 def run_backup_now(actor: str, tenant_id: int | None = None) -> dict[str, Any]:
-    tenant = _normalize_tenant_id(tenant_id)
+    tenant = _require_tenant_id(tenant_id, operation="run_backup_now")
 
     try:
         from app.modules.quotas.service import check_quota

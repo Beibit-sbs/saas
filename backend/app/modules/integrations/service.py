@@ -32,12 +32,32 @@ def _normalize_tenant_id(tenant_id: int | None) -> int | None:
     return normalized
 
 
+def _require_tenant_id(tenant_id: int | None, *, operation: str) -> int:
+    normalized = _normalize_tenant_id(tenant_id)
+    if normalized is None:
+        raise ValueError(f"tenant_id is required for {operation}")
+    return normalized
+
+
 def _scoped_setting_key(key: str, tenant_id: int | None) -> str:
     normalized_tenant = _normalize_tenant_id(tenant_id)
     normalized_key = key.strip()
     if normalized_tenant is None:
+        # Global settings are allowed, but callers must opt into them explicitly.
         return normalized_key
     return f"tenant:{normalized_tenant}:{normalized_key}"
+
+
+def save_global_setting(key: str, value: str, is_secret: bool = False) -> None:
+    save_setting(key, value, is_secret=is_secret, tenant_id=None)
+
+
+def get_global_setting(key: str) -> SettingEntry | None:
+    return get_setting(key, tenant_id=None)
+
+
+def get_global_runtime_value(key: str, env_name: str, default: str = "") -> str:
+    return get_runtime_value(key, env_name, default, tenant_id=None)
 
 
 def _db_url() -> str | None:
@@ -224,7 +244,8 @@ def _to_bool(value: str | None) -> bool:
 
 
 def get_ldap_config_for_admin(tenant_id: int | None = None) -> dict[str, object]:
-    config = get_ldap_runtime_config(tenant_id=tenant_id)
+    normalized_tenant_id = _require_tenant_id(tenant_id, operation="get_ldap_config_for_admin")
+    config = get_ldap_runtime_config(tenant_id=normalized_tenant_id)
     return {
         "enabled": _to_bool(config["enabled"]),
         "server_uri": config["server_uri"],
@@ -242,23 +263,25 @@ def get_ldap_config_for_admin(tenant_id: int | None = None) -> dict[str, object]
 
 
 def get_ldap_runtime_config(tenant_id: int | None = None) -> dict[str, str]:
+    normalized_tenant_id = _require_tenant_id(tenant_id, operation="get_ldap_runtime_config")
     return {
-        "enabled": get_runtime_value("ldap.enabled", "AUTH_LDAP_ENABLED", "false", tenant_id=tenant_id),
-        "server_uri": get_runtime_value("ldap.server_uri", "LDAP_SERVER_URI", "", tenant_id=tenant_id),
-        "bind_dn": get_runtime_value("ldap.bind_dn", "LDAP_BIND_DN", "", tenant_id=tenant_id),
-        "bind_password": get_runtime_value("ldap.bind_password", "LDAP_BIND_PASSWORD", "", tenant_id=tenant_id),
-        "base_dn": get_runtime_value("ldap.base_dn", "LDAP_BASE_DN", "", tenant_id=tenant_id),
-        "user_filter": get_runtime_value("ldap.user_filter", "LDAP_USER_FILTER", "(sAMAccountName={username})", tenant_id=tenant_id),
-        "display_name_attribute": get_runtime_value("ldap.display_name_attribute", "LDAP_DISPLAY_NAME_ATTRIBUTE", "displayName", tenant_id=tenant_id),
-        "login_attribute": get_runtime_value("ldap.login_attribute", "LDAP_LOGIN_ATTRIBUTE", "sAMAccountName", tenant_id=tenant_id),
-        "group_attribute": get_runtime_value("ldap.group_attribute", "LDAP_GROUP_ATTRIBUTE", "memberOf", tenant_id=tenant_id),
-        "group_role_map_json": get_runtime_value("ldap.group_role_map_json", "LDAP_GROUP_ROLE_MAP_JSON", "{}", tenant_id=tenant_id),
-        "default_role": get_runtime_value("ldap.default_role", "LDAP_DEFAULT_ROLE", "student", tenant_id=tenant_id),
-        "timeout_seconds": get_runtime_value("ldap.timeout_seconds", "LDAP_TIMEOUT_SECONDS", "5", tenant_id=tenant_id),
+        "enabled": get_runtime_value("ldap.enabled", "AUTH_LDAP_ENABLED", "false", tenant_id=normalized_tenant_id),
+        "server_uri": get_runtime_value("ldap.server_uri", "LDAP_SERVER_URI", "", tenant_id=normalized_tenant_id),
+        "bind_dn": get_runtime_value("ldap.bind_dn", "LDAP_BIND_DN", "", tenant_id=normalized_tenant_id),
+        "bind_password": get_runtime_value("ldap.bind_password", "LDAP_BIND_PASSWORD", "", tenant_id=normalized_tenant_id),
+        "base_dn": get_runtime_value("ldap.base_dn", "LDAP_BASE_DN", "", tenant_id=normalized_tenant_id),
+        "user_filter": get_runtime_value("ldap.user_filter", "LDAP_USER_FILTER", "(sAMAccountName={username})", tenant_id=normalized_tenant_id),
+        "display_name_attribute": get_runtime_value("ldap.display_name_attribute", "LDAP_DISPLAY_NAME_ATTRIBUTE", "displayName", tenant_id=normalized_tenant_id),
+        "login_attribute": get_runtime_value("ldap.login_attribute", "LDAP_LOGIN_ATTRIBUTE", "sAMAccountName", tenant_id=normalized_tenant_id),
+        "group_attribute": get_runtime_value("ldap.group_attribute", "LDAP_GROUP_ATTRIBUTE", "memberOf", tenant_id=normalized_tenant_id),
+        "group_role_map_json": get_runtime_value("ldap.group_role_map_json", "LDAP_GROUP_ROLE_MAP_JSON", "{}", tenant_id=normalized_tenant_id),
+        "default_role": get_runtime_value("ldap.default_role", "LDAP_DEFAULT_ROLE", "student", tenant_id=normalized_tenant_id),
+        "timeout_seconds": get_runtime_value("ldap.timeout_seconds", "LDAP_TIMEOUT_SECONDS", "5", tenant_id=normalized_tenant_id),
     }
 
 
 def save_ldap_config(payload: dict[str, object], tenant_id: int | None = None) -> dict[str, object]:
+    normalized_tenant_id = _require_tenant_id(tenant_id, operation="save_ldap_config")
     mapping = {
         "enabled": ("ldap.enabled", False),
         "server_uri": ("ldap.server_uri", False),
@@ -276,13 +299,14 @@ def save_ldap_config(payload: dict[str, object], tenant_id: int | None = None) -
 
     for field, (key, secret) in mapping.items():
         if field in payload and payload[field] is not None:
-            save_setting(key, str(payload[field]).strip(), is_secret=secret, tenant_id=tenant_id)
+            save_setting(key, str(payload[field]).strip(), is_secret=secret, tenant_id=normalized_tenant_id)
 
-    return get_ldap_config_for_admin(tenant_id=tenant_id)
+    return get_ldap_config_for_admin(tenant_id=normalized_tenant_id)
 
 
 def get_ai_provider_config_for_admin(provider: str, tenant_id: int | None = None) -> dict[str, object]:
-    runtime = get_ai_provider_runtime_config(provider, tenant_id=tenant_id)
+    normalized_tenant_id = _require_tenant_id(tenant_id, operation="get_ai_provider_config_for_admin")
+    runtime = get_ai_provider_runtime_config(provider, tenant_id=normalized_tenant_id)
     return {
         "provider": provider,
         "configured": bool(runtime["api_key"] or (provider == "custom" and runtime["validation_url"])),
@@ -292,6 +316,7 @@ def get_ai_provider_config_for_admin(provider: str, tenant_id: int | None = None
 
 
 def get_ai_provider_runtime_config(provider: str, tenant_id: int | None = None) -> dict[str, str]:
+    normalized_tenant_id = _require_tenant_id(tenant_id, operation="get_ai_provider_runtime_config")
     provider = provider.strip().lower()
     config_map = {
         "openai": {
@@ -316,8 +341,8 @@ def get_ai_provider_runtime_config(provider: str, tenant_id: int | None = None) 
 
     provider_config = config_map[provider]
     return {
-        "api_key": get_runtime_value(*provider_config["api_key"], tenant_id=tenant_id),
-        "validation_url": get_runtime_value(*provider_config["validation_url"], tenant_id=tenant_id),
+        "api_key": get_runtime_value(*provider_config["api_key"], tenant_id=normalized_tenant_id),
+        "validation_url": get_runtime_value(*provider_config["validation_url"], tenant_id=normalized_tenant_id),
     }
 
 
@@ -327,18 +352,20 @@ def save_ai_provider_config(
     validation_url: str | None,
     tenant_id: int | None = None,
 ) -> dict[str, object]:
+    normalized_tenant_id = _require_tenant_id(tenant_id, operation="save_ai_provider_config")
     provider = provider.strip().lower()
     if provider not in {"openai", "gemini", "anthropic", "custom"}:
         raise ValueError("unknown provider")
 
     if api_key is not None:
-        save_setting(f"ai.{provider}.api_key", api_key.strip(), is_secret=True, tenant_id=tenant_id)
+        save_setting(f"ai.{provider}.api_key", api_key.strip(), is_secret=True, tenant_id=normalized_tenant_id)
     if validation_url is not None:
-        save_setting(f"ai.{provider}.validation_url", validation_url.strip(), is_secret=False, tenant_id=tenant_id)
+        save_setting(f"ai.{provider}.validation_url", validation_url.strip(), is_secret=False, tenant_id=normalized_tenant_id)
 
-    return get_ai_provider_config_for_admin(provider, tenant_id=tenant_id)
+    return get_ai_provider_config_for_admin(provider, tenant_id=normalized_tenant_id)
 
 
 def list_ai_provider_config_for_admin(tenant_id: int | None = None) -> list[dict[str, object]]:
+    normalized_tenant_id = _require_tenant_id(tenant_id, operation="list_ai_provider_config_for_admin")
     providers = ["openai", "gemini", "anthropic", "custom"]
-    return [get_ai_provider_config_for_admin(provider, tenant_id=tenant_id) for provider in providers]
+    return [get_ai_provider_config_for_admin(provider, tenant_id=normalized_tenant_id) for provider in providers]

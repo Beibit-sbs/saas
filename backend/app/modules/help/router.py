@@ -1,5 +1,9 @@
+from typing import Annotated
+
 from pydantic import BaseModel, Field
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.modules.rbac.security import get_actor
 
 router = APIRouter(prefix="/api/help", tags=["help"])
 
@@ -164,7 +168,10 @@ def get_help_topics() -> dict[str, dict[str, list[str]]]:
 
 
 @router.post("/ask")
-def ask_help(payload: HelpQuestion) -> dict[str, object]:
+def ask_help(
+    payload: HelpQuestion,
+    _: Annotated[str, Depends(get_actor)],
+) -> dict[str, object]:
     answer, next_steps = build_answer(
         payload.page,
         payload.question,

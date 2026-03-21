@@ -71,8 +71,9 @@ def test_local_user_login_syncs_server_roles_and_is_idempotent(monkeypatch) -> N
     _configure_db_only_role_resolution(monkeypatch, assignments)
     sync_calls = {"count": 0}
 
-    def fake_sync(current_user_id: str, roles: list[str]) -> dict[str, object]:
+    def fake_sync(current_user_id: str, roles: list[str], tenant_id: int = 1) -> dict[str, object]:
         sync_calls["count"] += 1
+        assert tenant_id > 0
         assignments[current_user_id] = sorted({role for role in roles if role})
         return {"user_id": current_user_id, "roles": assignments[current_user_id]}
 
@@ -92,11 +93,8 @@ def test_local_user_login_syncs_server_roles_and_is_idempotent(monkeypatch) -> N
     assert second_login.status_code == 200
     assert assignments.get(user_id) == ["auditor"]
     assert sync_calls["count"] == 2
-
-    token = second_login.json()["access_token"]
     dashboard_response = client.get(
         "/api/admin/dashboard",
-        headers={"Authorization": f"Bearer {token}"},
     )
     assert dashboard_response.status_code == 200
 
@@ -213,7 +211,8 @@ def test_admin_can_update_local_user() -> None:
 def test_local_user_create_and_update_sync_rbac_assignments(monkeypatch) -> None:
     sync_events: list[tuple[str, list[str]]] = []
 
-    def fake_sync(user_id: str, roles: list[str]) -> dict[str, object]:
+    def fake_sync(user_id: str, roles: list[str], tenant_id: int = 1) -> dict[str, object]:
+        assert tenant_id > 0
         normalized = sorted({role for role in roles if role})
         sync_events.append((user_id, normalized))
         return {"user_id": user_id, "roles": normalized}

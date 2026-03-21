@@ -861,10 +861,12 @@ def _is_platform_admin_db(user_id: str) -> bool:
                 SELECT 1
                 FROM app_user_roles ur
                 JOIN app_roles r ON r.id = ur.role_id
-                WHERE ur.user_id = %s AND r.name = %s
+                WHERE ur.user_id = %s
+                  AND r.name = %s
+                  AND r.tenant_id = %s
                 LIMIT 1
                 """,
-                (user_id, _PLATFORM_ADMIN_ROLE),
+                (user_id, _PLATFORM_ADMIN_ROLE, _DEFAULT_TENANT_ID),
             )
             return cur.fetchone() is not None
 
@@ -1080,10 +1082,9 @@ def is_platform_admin(user_id: str) -> bool:
             if not _should_fallback_to_memory(exc):
                 raise
 
-    for tenant_roles in _tenant_user_roles_state.values():
-        if _PLATFORM_ADMIN_ROLE in tenant_roles.get(normalized_user_id, set()):
-            return True
-    return False
+    # Memory fallback: platform admin role is valid ONLY in the platform tenant.
+    platform_tenant_roles = _tenant_user_roles_state.get(_DEFAULT_TENANT_ID, {})
+    return _PLATFORM_ADMIN_ROLE in platform_tenant_roles.get(normalized_user_id, set())
 
 
 def list_roles_for_tenant(tenant_id: int) -> Dict[str, List[str]]:
@@ -1110,6 +1111,13 @@ def add_or_update_role_for_tenant(
     normalized_name = name.strip()
     if not normalized_name:
         raise ValueError("role name is required")
+
+    # Platform-reserved roles may only exist in the platform tenant (tenant_id=1).
+    if normalized_name == _PLATFORM_ADMIN_ROLE and normalized_tenant_id != _DEFAULT_TENANT_ID:
+        raise PermissionError(
+            f"role '{_PLATFORM_ADMIN_ROLE}' is reserved for the platform tenant "
+            "and cannot be created in other tenants"
+        )
 
     normalized_permissions = {perm.strip() for perm in permissions if perm.strip()}
 

@@ -16,7 +16,7 @@ const emptyItems = {
 
 describe("AdminUniversityTab", () => {
   const realConsoleError = console.error;
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let consoleErrorSpy: { mockRestore: () => void };
 
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation((...args) => {

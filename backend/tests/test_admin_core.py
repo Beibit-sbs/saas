@@ -82,10 +82,11 @@ def test_admin_audit_uses_database_storage_when_available(monkeypatch) -> None:
         client_ip="127.0.0.1",
         entity="audit",
         result="success",
+        tenant_id=1,
         metadata={"source": "db-test"},
     )
 
-    events = audit_service.list_admin_actions(limit=5)
+    events = audit_service.list_admin_actions(limit=5, tenant_id=1)
     assert len(events) == 1
     assert events[0]["actor"] == "db-admin@example.com"
     assert events[0]["metadata"]["source"] == "db-test"
@@ -123,9 +124,10 @@ def test_admin_audit_falls_back_to_memory_when_database_unavailable(monkeypatch)
         client_ip="127.0.0.1",
         entity="audit",
         result="success",
+        tenant_id=1,
     )
 
-    events = audit_service.list_admin_actions(limit=10)
+    events = audit_service.list_admin_actions(limit=10, tenant_id=1)
     assert len(events) >= 1
     assert events[0]["action"] == "fallback_audit_test"
 

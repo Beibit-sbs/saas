@@ -20,24 +20,25 @@ logger = logging.getLogger("app.audit")
 _MAX_AUDIT_EVENTS = 1000
 _audit_events: deque[dict[str, Any]] = deque(maxlen=_MAX_AUDIT_EVENTS)
 _audit_lock = Lock()
-_DEFAULT_TENANT_ID = 1
 _request_tenant_id_var: ContextVar[int | None] = ContextVar("audit_request_tenant_id", default=None)
 
 
-def _normalize_tenant_id(value: int | str | None) -> int:
+def _require_tenant_id(value: int | str | None, *, operation: str) -> int:
     if value is None:
-        return _DEFAULT_TENANT_ID
+        raise RuntimeError(f"tenant_id is required for {operation}")
     try:
         tenant_id = int(value)
     except (TypeError, ValueError):
-        return _DEFAULT_TENANT_ID
+        raise RuntimeError(f"tenant_id is required for {operation}") from None
     if tenant_id <= 0:
-        return _DEFAULT_TENANT_ID
+        raise RuntimeError(f"tenant_id is required for {operation}")
     return tenant_id
 
 
 def set_request_tenant_id(tenant_id: int | None) -> Token[int | None]:
-    return _request_tenant_id_var.set(_normalize_tenant_id(tenant_id))
+    if tenant_id is None:
+        return _request_tenant_id_var.set(None)
+    return _request_tenant_id_var.set(_require_tenant_id(tenant_id, operation="set_request_tenant_id"))
 
 
 def reset_request_tenant_id(token: Token[int | None]) -> None:
@@ -46,19 +47,16 @@ def reset_request_tenant_id(token: Token[int | None]) -> None:
 
 def _effective_tenant_id(tenant_id: int | None, metadata: dict[str, Any] | None = None) -> int:
     if tenant_id is not None:
-        return _normalize_tenant_id(tenant_id)
+        return _require_tenant_id(tenant_id, operation="audit event")
 
     if metadata is not None and "tenant_id" in metadata:
-        return _normalize_tenant_id(metadata.get("tenant_id"))
+        return _require_tenant_id(metadata.get("tenant_id"), operation="audit event")
 
     request_tenant_id = _request_tenant_id_var.get()
     if request_tenant_id is not None:
-        return _normalize_tenant_id(request_tenant_id)
+        return _require_tenant_id(request_tenant_id, operation="audit event")
 
-    resolved_tenant_id = _DEFAULT_TENANT_ID
-    if resolved_tenant_id is None:  # pragma: no cover - defensive guard
-        raise RuntimeError("Audit event attempted without tenant_id")
-    return resolved_tenant_id
+    raise RuntimeError("tenant_id is required for audit event")
 
 
 def _db_url() -> str | None:
@@ -120,6 +118,7 @@ def _ensure_table(conn) -> None:
             "ALTER TABLE app_audit_events ADD COLUMN IF NOT EXISTS tenant_id BIGINT"
         )
         cur.execute(
+            # Backfill legacy rows created before tenant-aware writes were enforced.
             "UPDATE app_audit_events SET tenant_id = 1 WHERE tenant_id IS NULL"
         )
         cur.execute(
@@ -188,8 +187,8 @@ def _list_memory(
     if correlation_filter:
         rows = [item for item in rows if correlation_filter in str(item.get("correlation_id", "")).lower()]
     if not include_all_tenants:
-        effective_tenant_id = _normalize_tenant_id(tenant_id)
-        rows = [item for item in rows if _normalize_tenant_id(item.get("tenant_id")) == effective_tenant_id]
+        effective_tenant_id = _require_tenant_id(tenant_id, operation="list_admin_actions")
+        rows = [item for item in rows if _require_tenant_id(item.get("tenant_id"), operation="stored audit row") == effective_tenant_id]
     if since_filter:
         rows = [item for item in rows if str(item.get("timestamp", "")) >= since_filter]
 
@@ -217,7 +216,7 @@ def _row_to_event(row: tuple[Any, ...]) -> dict[str, Any]:
         "ip": row[6],
         "client_ip": row[6],
         "result": row[7],
-        "tenant_id": _normalize_tenant_id(row[9]),
+        "tenant_id": _require_tenant_id(row[9], operation="stored audit row"),
         "correlation_id": row[10],
         "metadata": metadata,
     }
@@ -247,7 +246,7 @@ def _insert_db(event: dict[str, Any]) -> None:
                     event["path"],
                     event["ip"],
                     event["result"],
-                    _normalize_tenant_id(event.get("tenant_id")),
+                    _require_tenant_id(event.get("tenant_id"), operation="audit event"),
                     event["correlation_id"],
                     json.dumps(event["metadata"], ensure_ascii=False),
                 ),
@@ -298,7 +297,7 @@ def _list_db(
         params.append(f"%{correlation_filter}%")
     if not include_all_tenants:
         where_clauses.append("tenant_id = %s")
-        params.append(_normalize_tenant_id(tenant_id))
+        params.append(_require_tenant_id(tenant_id, operation="list_admin_actions"))
     if since_filter:
         where_clauses.append("timestamp >= %s")
         params.append(_parse_timestamp(since_filter))
@@ -365,8 +364,6 @@ def log_admin_action(
 ) -> None:
     event_id = str(uuid4())
     normalized_tenant_id = _effective_tenant_id(tenant_id, metadata)
-    if normalized_tenant_id is None:  # pragma: no cover - defensive guard
-        raise RuntimeError("Audit event attempted without tenant_id")
     event = {
         "event_id": event_id,
         "timestamp": _now_iso(),
@@ -417,7 +414,7 @@ def list_admin_actions(
     include_all_tenants: bool = False,
 ) -> list[dict[str, Any]]:
     cap = max(1, min(limit, 500))
-    effective_tenant_id = _effective_tenant_id(tenant_id)
+    effective_tenant_id = None if include_all_tenants else _effective_tenant_id(tenant_id)
     memory_rows = _list_memory(
         actor=actor,
         action=action,

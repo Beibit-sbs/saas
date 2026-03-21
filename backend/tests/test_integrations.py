@@ -1,5 +1,6 @@
 from tests.conftest import ADMIN_HEADERS, _configure_db_only_role_resolution, client
 from app.modules.ai_gateway import service as ai_service
+from app.modules.auth.token_service import create_access_token
 from app.modules.integrations import service as integrations_service
 from app.modules.ldap import service as ldap_service
 
@@ -38,6 +39,12 @@ def test_admin_can_update_and_read_integration_settings() -> None:
     assert body["ldap"]["has_bind_password"] is True
     openai_row = next(item for item in body["ai_providers"] if item["provider"] == "openai")
     assert openai_row["has_api_key"] is True
+
+    events_response = client.get("/api/admin/audit/events", headers=ADMIN_HEADERS)
+    assert events_response.status_code == 200, events_response.text
+    actions = [item.get("action") for item in events_response.json().get("events", [])]
+    assert "integrations.ldap.update" in actions
+    assert "integrations.ai_provider.update" in actions
 
 
 def test_integration_secret_is_encrypted_at_rest_in_memory(monkeypatch) -> None:
@@ -86,7 +93,8 @@ def test_ldap_admin_can_access_all_protected_ldap_ai_integrations_endpoints(monk
             "language": "en",
         }
 
-    def fake_sync(user_id: str, roles: list[str]) -> dict[str, object]:
+    def fake_sync(user_id: str, roles: list[str], tenant_id: int = 1) -> dict[str, object]:
+        assert tenant_id > 0
         assignments[user_id] = sorted({r for r in roles if r})
         return {"user_id": user_id, "roles": assignments[user_id]}
 
@@ -98,7 +106,7 @@ def test_ldap_admin_can_access_all_protected_ldap_ai_integrations_endpoints(monk
     assert login_response.status_code == 200
     assert assignments.get("ad.bob") == ["admin"]
 
-    token = login_response.json()["access_token"]
+    token = create_access_token(user_id="ad.bob", roles=["admin"], auth_source="test")
     auth = {"Authorization": f"Bearer {token}"}
 
     r = client.get("/api/admin/ldap/status", headers=auth)
@@ -142,3 +150,21 @@ def test_ldap_admin_can_access_all_protected_ldap_ai_integrations_endpoints(monk
         headers=auth,
     )
     assert r.status_code == 200
+
+
+def test_ldap_test_connection_is_audited(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.modules.ldap.router.test_ldap_connection",
+        lambda username, password, tenant_id=None: {"status": "ok", "bind": bool(username)},
+    )
+    response = client.post(
+        "/api/admin/ldap/test-connection",
+        headers=ADMIN_HEADERS,
+        json={"username": "auditor", "password": "secret"},
+    )
+    assert response.status_code == 200, response.text
+
+    events_response = client.get("/api/admin/audit/events", headers=ADMIN_HEADERS)
+    assert events_response.status_code == 200, events_response.text
+    actions = [item.get("action") for item in events_response.json().get("events", [])]
+    assert "ldap.test_connection" in actions

@@ -1,10 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from app.core.tenant import get_current_tenant
 from app.modules.auth.local_users_service import local_user_store
+from app.modules.audit.service import log_admin_action
 from app.modules.i18n.service import list_languages, normalize_code
 from app.modules.rbac.service import clear_user_roles_for_user, sync_user_roles_from_trusted_source
 from app.modules.rbac.security import get_actor, permission_dependency
@@ -60,7 +61,8 @@ def get_local_users(
 @router.post("")
 def create_local_user(
     payload: CreateLocalUserPayload,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.users.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, dict[str, object]]:
@@ -78,6 +80,17 @@ def create_local_user(
         str(created["user_id"]),
         [str(value) for value in created.get("roles", [])],
     )
+    log_admin_action(
+        actor=actor,
+        tenant_id=int(tenant["id"]),
+        action="local_users.create",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="local_users",
+        result="success",
+        metadata={"user_id": str(created.get("user_id", "")), "login": str(created.get("login", ""))},
+    )
     return {"user": created}
 
 
@@ -85,12 +98,14 @@ def create_local_user(
 def update_local_user(
     user_id: str,
     payload: UpdateLocalUserPayload,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.users.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, dict[str, object]]:
     updated = local_user_store.update_user(
         user_id=user_id,
+        tenant_id=int(tenant["id"]),
         display_name=payload.display_name,
         language=_ensure_enabled_language(payload.language) if payload.language is not None else None,
         roles=payload.roles,
@@ -99,17 +114,41 @@ def update_local_user(
         str(updated["user_id"]),
         [str(value) for value in updated.get("roles", [])],
     )
+    log_admin_action(
+        actor=actor,
+        tenant_id=int(tenant["id"]),
+        action="local_users.update",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="local_users",
+        result="success",
+        metadata={"user_id": str(updated.get("user_id", ""))},
+    )
     return {"user": updated}
 
 
 @router.delete("/{user_id}")
 def delete_local_user(
     user_id: str,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.users.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
-    local_user_store.delete_user(user_id)
+    local_user_store.delete_user(user_id, tenant_id=int(tenant["id"]))
     clear_user_roles_for_user(user_id)
+    log_admin_action(
+        actor=actor,
+        tenant_id=int(tenant["id"]),
+        action="local_users.delete",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="local_users",
+        result="success",
+        metadata={"user_id": user_id},
+    )
     return {"status": "deleted", "user_id": user_id}
 
 
@@ -117,8 +156,21 @@ def delete_local_user(
 def set_local_user_password(
     user_id: str,
     payload: UpdateLocalUserPasswordPayload,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.users.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, str]:
-    local_user_store.set_password(user_id, payload.password)
+    local_user_store.set_password(user_id, payload.password, tenant_id=int(tenant["id"]))
+    log_admin_action(
+        actor=actor,
+        tenant_id=int(tenant["id"]),
+        action="local_users.set_password",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="local_users",
+        result="success",
+        metadata={"user_id": user_id},
+    )
     return {"status": "updated"}
