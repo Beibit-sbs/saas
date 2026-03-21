@@ -31,9 +31,13 @@ import { useAdminUniversity } from "./hooks/useAdminUniversity";
 import type { AdminTab, UiLang } from "./types";
 
 const toUiLang = (value: string): UiLang => {
-  if (value === "en" || value === "kk") {
-    return value;
+  const normalized = String(value || "").toLowerCase();
+  const base = normalized.split(/[-_]/)[0];
+
+  if (base === "en" || base === "kk" || base === "ru") {
+    return base;
   }
+
   return "ru";
 };
 
@@ -47,7 +51,7 @@ export default function AdminPage() {
 
   const l = adminTranslations[uiLang];
   const tx = useCallback((key: AdminTranslationKey, fallback?: string) => {
-    const value = l[key] ?? adminTranslations.ru[key];
+    const value = l?.[key] ?? adminTranslations.ru[key];
     if (value !== undefined) {
       return value;
     }
