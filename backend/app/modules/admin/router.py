@@ -30,7 +30,7 @@ def admin_system_health(
     tenant_id = int(tenant["id"])
     roles = list_roles_for_tenant(tenant_id)
     assignments = list_user_role_assignments_for_tenant(tenant_id)
-    backup_jobs = list_backup_history()
+    backup_jobs = list_backup_history(tenant_id=tenant_id)
     recent_audit_events = list_admin_actions(limit=50, tenant_id=tenant_id)
     job_counts = count_jobs_for_tenant(tenant_id)
 
@@ -91,9 +91,9 @@ def admin_dashboard_meta(
     roles = list_roles_for_tenant(tenant_id)
     assignments = list_user_role_assignments_for_tenant(tenant_id)
     ldap = get_ldap_config_for_admin()
-    ai_providers = list_ai_provider_config_for_admin()
-    backup_settings = get_backup_settings_for_admin()
-    backup_jobs = list_backup_history()
+    ai_providers = list_ai_provider_config_for_admin(tenant_id=tenant_id)
+    backup_settings = get_backup_settings_for_admin(tenant_id=tenant_id)
+    backup_jobs = list_backup_history(tenant_id=tenant_id)
     audit_events = list_admin_actions(limit=1, tenant_id=tenant_id)
     last_backup_job = backup_jobs[0] if backup_jobs else None
     last_audit_event = audit_events[0] if audit_events else None

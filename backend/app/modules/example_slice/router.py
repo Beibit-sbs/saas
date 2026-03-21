@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
 
+from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
 from app.modules.example_slice.service import list_reference_items
 from app.modules.rbac.security import get_actor, permission_dependency
@@ -18,7 +19,9 @@ def get_reference_items(
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     _: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
+    tenant_id = int(tenant["id"])
     items = list_reference_items()
     log_admin_action(
         actor=actor,
@@ -28,6 +31,7 @@ def get_reference_items(
         correlation_id=getattr(request.state, "request_id", None),
         entity="example_slice",
         result="success",
+        tenant_id=tenant_id,
         metadata={"items_count": len(items)},
     )
     return {
