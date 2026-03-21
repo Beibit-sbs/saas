@@ -41,6 +41,7 @@ def create_record_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.records.create",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -70,6 +71,7 @@ def update_record_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.records.update",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -98,6 +100,7 @@ def delete_record_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.records.delete",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",

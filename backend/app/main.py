@@ -21,7 +21,7 @@ from app.modules.academic_records.router import router as academic_records_route
 from app.modules.ai_gateway.router import router as ai_gateway_router
 from app.modules.ai_gateway.public_router import router as ai_gateway_public_router
 from app.modules.audit.router import router as audit_router
-from app.modules.audit.service import log_admin_action
+from app.modules.audit.service import log_admin_action, reset_request_tenant_id, set_request_tenant_id
 from app.modules.backup.router import router as backup_router
 from app.modules.courses.router import router as courses_router
 from app.modules.enrollments.router import router as enrollments_router
@@ -87,6 +87,7 @@ app.include_router(academic_records_router)
 app.include_router(tenants_router)
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+_DEFAULT_TENANT_ID = 1
 
 
 def _has_bearer_auth(request: Request) -> bool:
@@ -103,6 +104,17 @@ def _resolve_rate_limit_actor(request: Request) -> str | None:
     return claims.user_id
 
 
+def _resolve_request_tenant_id(request: Request) -> int:
+    raw = request.headers.get("x-tenant-id")
+    if raw is None:
+        return _DEFAULT_TENANT_ID
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT_TENANT_ID
+    return value if value > 0 else _DEFAULT_TENANT_ID
+
+
 @app.middleware("http")
 async def enforce_rate_limit(request: Request, call_next):
     body = b""
@@ -117,6 +129,7 @@ async def enforce_rate_limit(request: Request, call_next):
     if decision is not None:
         if should_audit_rate_limit(request.url.path):
             log_admin_action(
+                tenant_id=_resolve_request_tenant_id(request),
                 actor=actor or "anonymous",
                 action="rate_limit_exceeded",
                 path=str(request.url.path),
@@ -170,6 +183,7 @@ async def add_request_id(request: Request, call_next):
     request.state.request_id = request_id
     # Propagate into logging context
     token = request_id_var.set(request_id)
+    tenant_token = set_request_tenant_id(_resolve_request_tenant_id(request))
     start = time.monotonic()
     response = None
     try:
@@ -188,6 +202,7 @@ async def add_request_id(request: Request, call_next):
                 "duration_ms": round(duration * 1000, 2),
             },
         )
+        reset_request_tenant_id(tenant_token)
         request_id_var.reset(token)
     response.headers["x-request-id"] = request_id
     return response

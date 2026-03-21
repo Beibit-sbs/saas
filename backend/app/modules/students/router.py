@@ -41,6 +41,7 @@ def create_student_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.students.create",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -70,6 +71,7 @@ def update_student_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.students.update",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -98,6 +100,7 @@ def delete_student_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.students.delete",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",

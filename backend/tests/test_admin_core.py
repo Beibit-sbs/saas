@@ -55,6 +55,8 @@ def test_admin_audit_uses_database_storage_when_available(monkeypatch) -> None:
         correlation_id: str | None = None,
         since: str | None = None,
         limit: int = 100,
+        tenant_id: int | None = None,
+        include_all_tenants: bool = False,
     ) -> list[dict[str, object]]:
         assert actor is None
         assert action is None
@@ -63,6 +65,8 @@ def test_admin_audit_uses_database_storage_when_available(monkeypatch) -> None:
         assert correlation_id is None
         assert since is None
         assert limit == 5
+        assert tenant_id == 1
+        assert include_all_tenants is False
         return [captured["event"]] if "event" in captured else []
 
     monkeypatch.setattr(audit_service, "_use_database", lambda: True)
@@ -85,6 +89,7 @@ def test_admin_audit_uses_database_storage_when_available(monkeypatch) -> None:
     assert len(events) == 1
     assert events[0]["actor"] == "db-admin@example.com"
     assert events[0]["metadata"]["source"] == "db-test"
+    assert events[0]["tenant_id"] == 1
 
 
 def test_admin_audit_falls_back_to_memory_when_database_unavailable(monkeypatch) -> None:
@@ -101,6 +106,8 @@ def test_admin_audit_falls_back_to_memory_when_database_unavailable(monkeypatch)
         correlation_id: str | None = None,
         since: str | None = None,
         limit: int = 100,
+        tenant_id: int | None = None,
+        include_all_tenants: bool = False,
     ) -> list[dict[str, object]]:
         raise RuntimeError("db offline")
 

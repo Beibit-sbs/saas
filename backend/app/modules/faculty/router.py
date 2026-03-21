@@ -46,6 +46,7 @@ def create_faculty_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.faculty.create",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -75,6 +76,7 @@ def update_faculty_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.faculty.update",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -103,6 +105,7 @@ def delete_faculty_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.faculty.delete",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",

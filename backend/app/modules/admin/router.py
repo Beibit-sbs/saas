@@ -30,7 +30,7 @@ def admin_system_health(
     roles = list_roles_for_tenant(tenant_id)
     assignments = list_user_role_assignments_for_tenant(tenant_id)
     backup_jobs = list_backup_history()
-    recent_audit_events = list_admin_actions(limit=50)
+    recent_audit_events = list_admin_actions(limit=50, tenant_id=tenant_id)
 
     total_bytes, used_bytes, free_bytes = shutil.disk_usage("/")
     usage_percent = round((used_bytes / total_bytes) * 100, 2) if total_bytes > 0 else 0.0
@@ -89,7 +89,7 @@ def admin_dashboard_meta(
     ai_providers = list_ai_provider_config_for_admin()
     backup_settings = get_backup_settings_for_admin()
     backup_jobs = list_backup_history()
-    audit_events = list_admin_actions(limit=1)
+    audit_events = list_admin_actions(limit=1, tenant_id=tenant_id)
     last_backup_job = backup_jobs[0] if backup_jobs else None
     last_audit_event = audit_events[0] if audit_events else None
 

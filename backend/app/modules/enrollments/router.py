@@ -41,6 +41,7 @@ def create_enrollment_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.enrollments.create",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -70,6 +71,7 @@ def update_enrollment_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.enrollments.update",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -98,6 +100,7 @@ def delete_enrollment_endpoint(
 
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant["id"]),
         action="university.enrollments.delete",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",

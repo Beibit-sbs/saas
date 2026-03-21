@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
+from contextvars import ContextVar, Token
 from datetime import datetime, timezone
 import json
 import logging
@@ -19,6 +20,45 @@ logger = logging.getLogger("app.audit")
 _MAX_AUDIT_EVENTS = 1000
 _audit_events: deque[dict[str, Any]] = deque(maxlen=_MAX_AUDIT_EVENTS)
 _audit_lock = Lock()
+_DEFAULT_TENANT_ID = 1
+_request_tenant_id_var: ContextVar[int | None] = ContextVar("audit_request_tenant_id", default=None)
+
+
+def _normalize_tenant_id(value: int | str | None) -> int:
+    if value is None:
+        return _DEFAULT_TENANT_ID
+    try:
+        tenant_id = int(value)
+    except (TypeError, ValueError):
+        return _DEFAULT_TENANT_ID
+    if tenant_id <= 0:
+        return _DEFAULT_TENANT_ID
+    return tenant_id
+
+
+def set_request_tenant_id(tenant_id: int | None) -> Token[int | None]:
+    return _request_tenant_id_var.set(_normalize_tenant_id(tenant_id))
+
+
+def reset_request_tenant_id(token: Token[int | None]) -> None:
+    _request_tenant_id_var.reset(token)
+
+
+def _effective_tenant_id(tenant_id: int | None, metadata: dict[str, Any] | None = None) -> int:
+    if tenant_id is not None:
+        return _normalize_tenant_id(tenant_id)
+
+    if metadata is not None and "tenant_id" in metadata:
+        return _normalize_tenant_id(metadata.get("tenant_id"))
+
+    request_tenant_id = _request_tenant_id_var.get()
+    if request_tenant_id is not None:
+        return _normalize_tenant_id(request_tenant_id)
+
+    resolved_tenant_id = _DEFAULT_TENANT_ID
+    if resolved_tenant_id is None:  # pragma: no cover - defensive guard
+        raise RuntimeError("Audit event attempted without tenant_id")
+    return resolved_tenant_id
 
 
 def _db_url() -> str | None:
@@ -71,9 +111,29 @@ def _ensure_table(conn) -> None:
                 ip TEXT NOT NULL,
                 result TEXT NOT NULL,
                 correlation_id TEXT NOT NULL,
+                tenant_id BIGINT NOT NULL DEFAULT 1 REFERENCES app_tenants(id),
                 metadata JSONB NOT NULL DEFAULT '{}'::jsonb
             )
             """
+        )
+        cur.execute(
+            "ALTER TABLE app_audit_events ADD COLUMN IF NOT EXISTS tenant_id BIGINT"
+        )
+        cur.execute(
+            "UPDATE app_audit_events SET tenant_id = 1 WHERE tenant_id IS NULL"
+        )
+        cur.execute(
+            "ALTER TABLE app_audit_events ALTER COLUMN tenant_id SET NOT NULL"
+        )
+        cur.execute(
+            "DO $$ BEGIN "
+            "IF NOT EXISTS ("
+            "SELECT 1 FROM pg_constraint WHERE conname = 'fk_app_audit_events_tenant_id'"
+            ") THEN "
+            "ALTER TABLE app_audit_events "
+            "ADD CONSTRAINT fk_app_audit_events_tenant_id FOREIGN KEY (tenant_id) REFERENCES app_tenants(id); "
+            "END IF; "
+            "END $$"
         )
         cur.execute(
             "CREATE INDEX IF NOT EXISTS ix_app_audit_events_timestamp ON app_audit_events (timestamp DESC)"
@@ -83,6 +143,9 @@ def _ensure_table(conn) -> None:
         )
         cur.execute(
             "CREATE INDEX IF NOT EXISTS ix_app_audit_events_action ON app_audit_events (action)"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS ix_app_audit_events_tenant_created ON app_audit_events (tenant_id, timestamp DESC)"
         )
     conn.commit()
 
@@ -100,6 +163,8 @@ def _list_memory(
     correlation_id: str | None = None,
     since: str | None = None,
     limit: int = 100,
+    tenant_id: int | None = None,
+    include_all_tenants: bool = False,
 ) -> list[dict[str, Any]]:
     actor_filter = (actor or "").strip().lower()
     action_filter = (action or "").strip().lower()
@@ -122,6 +187,9 @@ def _list_memory(
         rows = [item for item in rows if result_filter in str(item.get("result", "")).lower()]
     if correlation_filter:
         rows = [item for item in rows if correlation_filter in str(item.get("correlation_id", "")).lower()]
+    if not include_all_tenants:
+        effective_tenant_id = _normalize_tenant_id(tenant_id)
+        rows = [item for item in rows if _normalize_tenant_id(item.get("tenant_id")) == effective_tenant_id]
     if since_filter:
         rows = [item for item in rows if str(item.get("timestamp", "")) >= since_filter]
 
@@ -149,7 +217,8 @@ def _row_to_event(row: tuple[Any, ...]) -> dict[str, Any]:
         "ip": row[6],
         "client_ip": row[6],
         "result": row[7],
-        "correlation_id": row[9],
+        "tenant_id": _normalize_tenant_id(row[9]),
+        "correlation_id": row[10],
         "metadata": metadata,
     }
 
@@ -165,9 +234,9 @@ def _insert_db(event: dict[str, Any]) -> None:
             cur.execute(
                 """
                 INSERT INTO app_audit_events(
-                    event_id, timestamp, actor, action, entity, path, ip, result, correlation_id, metadata
+                    event_id, timestamp, actor, action, entity, path, ip, result, tenant_id, correlation_id, metadata
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
                 """,
                 (
                     event["event_id"],
@@ -178,6 +247,7 @@ def _insert_db(event: dict[str, Any]) -> None:
                     event["path"],
                     event["ip"],
                     event["result"],
+                    _normalize_tenant_id(event.get("tenant_id")),
                     event["correlation_id"],
                     json.dumps(event["metadata"], ensure_ascii=False),
                 ),
@@ -193,6 +263,8 @@ def _list_db(
     correlation_id: str | None = None,
     since: str | None = None,
     limit: int = 100,
+    tenant_id: int | None = None,
+    include_all_tenants: bool = False,
 ) -> list[dict[str, Any]]:
     db_url = _db_url()
     if not db_url or psycopg is None:
@@ -224,6 +296,9 @@ def _list_db(
     if correlation_filter:
         where_clauses.append("LOWER(correlation_id) LIKE %s")
         params.append(f"%{correlation_filter}%")
+    if not include_all_tenants:
+        where_clauses.append("tenant_id = %s")
+        params.append(_normalize_tenant_id(tenant_id))
     if since_filter:
         where_clauses.append("timestamp >= %s")
         params.append(_parse_timestamp(since_filter))
@@ -235,7 +310,7 @@ def _list_db(
         with conn.cursor() as cur:
             cur.execute(
                 f"""
-                SELECT event_id, timestamp, actor, action, entity, path, ip, result, metadata, correlation_id
+                SELECT event_id, timestamp, actor, action, entity, path, ip, result, metadata, tenant_id, correlation_id
                 FROM app_audit_events
                 {where_sql}
                 ORDER BY timestamp DESC
@@ -286,11 +361,16 @@ def log_admin_action(
     metadata: dict[str, Any] | None = None,
     entity: str | None = None,
     result: str = "success",
+    tenant_id: int | None = None,
 ) -> None:
     event_id = str(uuid4())
+    normalized_tenant_id = _effective_tenant_id(tenant_id, metadata)
+    if normalized_tenant_id is None:  # pragma: no cover - defensive guard
+        raise RuntimeError("Audit event attempted without tenant_id")
     event = {
         "event_id": event_id,
         "timestamp": _now_iso(),
+        "tenant_id": normalized_tenant_id,
         "actor": actor,
         "action": action,
         "entity": entity or "admin",
@@ -333,8 +413,11 @@ def list_admin_actions(
     correlation_id: str | None = None,
     since: str | None = None,
     limit: int = 100,
+    tenant_id: int | None = None,
+    include_all_tenants: bool = False,
 ) -> list[dict[str, Any]]:
     cap = max(1, min(limit, 500))
+    effective_tenant_id = _effective_tenant_id(tenant_id)
     memory_rows = _list_memory(
         actor=actor,
         action=action,
@@ -343,6 +426,8 @@ def list_admin_actions(
         correlation_id=correlation_id,
         since=since,
         limit=cap,
+        tenant_id=effective_tenant_id,
+        include_all_tenants=include_all_tenants,
     )
 
     if not _use_database():
@@ -357,6 +442,8 @@ def list_admin_actions(
             correlation_id=correlation_id,
             since=since,
             limit=cap,
+            tenant_id=effective_tenant_id,
+            include_all_tenants=include_all_tenants,
         )
     except Exception as exc:  # pragma: no cover - depends on runtime DB state
         _warn_db_unavailable("list", exc)
