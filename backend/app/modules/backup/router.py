@@ -3,6 +3,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
 from app.modules.backup.service import (
     apply_retention_policy,
@@ -10,9 +11,9 @@ from app.modules.backup.service import (
     list_backup_history,
     list_restore_candidates,
     run_restore_now,
-    run_backup_now,
     save_backup_settings,
 )
+from app.modules.jobs.service import enqueue_job
 from app.modules.rbac.security import get_actor, permission_dependency
 
 router = APIRouter(prefix="/api/admin/backups", tags=["backups"])
@@ -175,22 +176,32 @@ def run_backup(
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.backup.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, Any]:
     try:
-        result = run_backup_now(actor=actor)
+        result = enqueue_job(
+            tenant_id=int(tenant["id"]),
+            job_type="backup.run",
+            payload={"source": "admin.backups.run"},
+            created_by=actor,
+            max_retries=3,
+        )
         log_admin_action(
             actor=actor,
+            tenant_id=int(tenant["id"]),
             action="backup_run",
             path="/api/admin/backups/run",
             client_ip=request.client.host if request.client else "unknown",
             correlation_id=getattr(request.state, "request_id", None),
             entity="backup_job",
-            result="success",
+            result="queued",
+            metadata={"job_id": result.get("id"), "job_type": result.get("job_type")},
         )
         return {"job": result}
     except ValueError as exc:
         log_admin_action(
             actor=actor,
+            tenant_id=int(tenant["id"]),
             action="backup_run_failed",
             path="/api/admin/backups/run",
             client_ip=request.client.host if request.client else "unknown",

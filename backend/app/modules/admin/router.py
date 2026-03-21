@@ -11,6 +11,7 @@ from app.modules.auth.local_users_service import local_user_store
 from app.modules.backup.service import get_backup_settings_for_admin, list_backup_history
 from app.modules.i18n.service import list_languages
 from app.modules.integrations.service import get_ldap_config_for_admin, list_ai_provider_config_for_admin
+from app.modules.jobs.service import count_jobs_for_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.rbac.service import list_roles_for_tenant, list_user_role_assignments_for_tenant
 
@@ -31,6 +32,7 @@ def admin_system_health(
     assignments = list_user_role_assignments_for_tenant(tenant_id)
     backup_jobs = list_backup_history()
     recent_audit_events = list_admin_actions(limit=50, tenant_id=tenant_id)
+    job_counts = count_jobs_for_tenant(tenant_id)
 
     total_bytes, used_bytes, free_bytes = shutil.disk_usage("/")
     usage_percent = round((used_bytes / total_bytes) * 100, 2) if total_bytes > 0 else 0.0
@@ -63,6 +65,9 @@ def admin_system_health(
             "backup_jobs_total": len(backup_jobs),
             "backup_jobs_running": running_backup_jobs,
             "audit_events_recent": len(recent_audit_events),
+            "jobs_queued": job_counts.get("queued", 0),
+            "jobs_running": job_counts.get("running", 0),
+            "jobs_failed": job_counts.get("failed", 0),
         },
         "disk": {
             "path": "/",

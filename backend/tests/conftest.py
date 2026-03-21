@@ -23,6 +23,7 @@ from app.modules.example_notes import service as example_notes_service
 from app.modules.feature_flags import service as feature_flags_service
 from app.modules.i18n import service as i18n_service
 from app.modules.integrations import service as integrations_service
+from app.modules.jobs import service as jobs_service
 from app.modules.rbac import service as rbac_service
 from app.modules.security import rate_limit as rate_limit_service
 from app.modules.tenants import service as tenant_service
@@ -76,6 +77,7 @@ def _reset_template_state() -> None:
     ai_service.clear_ai_gateway_state()
     audit_service.clear_audit_events()
     backup_service._backup_history.clear()
+    jobs_service.clear_jobs_state()
     example_notes_service.clear_example_notes()
     integrations_service._settings.clear()
     integrations_service._fernet.cache_clear()

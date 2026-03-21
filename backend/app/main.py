@@ -35,6 +35,7 @@ from app.modules.i18n.router import admin_router as i18n_admin_router
 from app.modules.i18n.router import public_router as i18n_public_router
 from app.modules.integrations.router import router as integrations_router
 from app.modules.ldap.router import router as ldap_router
+from app.modules.jobs.router import router as jobs_router
 from app.modules.programs.router import router as programs_router
 from app.modules.rbac.router import router as rbac_router
 from app.modules.rbac.security import get_actor
@@ -75,6 +76,7 @@ app.include_router(i18n_admin_router)
 app.include_router(integrations_router)
 app.include_router(ldap_router)
 app.include_router(backup_router)
+app.include_router(jobs_router)
 app.include_router(feature_flags_router)
 app.include_router(example_notes_router)
 app.include_router(example_slice_router)

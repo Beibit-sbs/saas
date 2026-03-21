@@ -3,6 +3,8 @@ import os
 from tests.conftest import ADMIN_HEADERS, client
 from app.modules.backup import service as backup_service
 from app.modules.integrations import service as integrations_service
+from app.modules.jobs import service as jobs_service
+from app.modules.jobs import worker as jobs_worker
 
 
 def test_backup_settings_reject_path_outside_allowed_roots() -> None:
@@ -23,6 +25,7 @@ def test_backup_settings_reject_path_outside_allowed_roots() -> None:
 
 def test_backup_settings_and_run_success(monkeypatch, tmp_path) -> None:
     backup_service._backup_history.clear()
+    jobs_service.clear_jobs_state()
 
     profile_path = tmp_path / "db-backups"
     payload = {
@@ -62,8 +65,11 @@ def test_backup_settings_and_run_success(monkeypatch, tmp_path) -> None:
 
     run_response = client.post("/api/admin/backups/run", headers=ADMIN_HEADERS)
     assert run_response.status_code == 200
-    assert run_response.json()["job"]["status"] == "completed"
-    assert run_response.json()["job"]["size_bytes"] > 0
+    assert run_response.json()["job"]["status"] == "queued"
+
+    processed = jobs_worker.execute_next_queued_job()
+    assert processed is not None
+    assert processed["status"] == "succeeded"
 
     history_response = client.get("/api/admin/backups/history", headers=ADMIN_HEADERS)
     assert history_response.status_code == 200

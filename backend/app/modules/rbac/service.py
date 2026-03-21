@@ -23,6 +23,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.i18n.manage",
         "admin.users.manage",
         "admin.backup.manage",
+        "admin.jobs.read",
+        "admin.jobs.write",
         "example.notes.read",
         "example.notes.manage",
         "admin.students.read",
@@ -51,6 +53,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.i18n.manage",
         "admin.users.manage",
         "admin.backup.manage",
+        "admin.jobs.read",
+        "admin.jobs.write",
         "example.notes.read",
         "example.notes.manage",
         "admin.students.read",
@@ -79,6 +83,7 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.enrollments.read",
         "admin.records.read",
         "admin.tenants.read",
+        "admin.jobs.read",
     },
 }
 

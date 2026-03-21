@@ -1,6 +1,6 @@
 import type { AdminTranslationDictionary, AdminTranslationKey } from "../../i18n/admin";
 
-export type AdminTab = "overview" | "languages" | "local-users" | "rbac" | "integrations" | "backups" | "audit" | "feature-flags" | "example-notes" | "system" | "university" | "tenants";
+export type AdminTab = "overview" | "languages" | "local-users" | "rbac" | "integrations" | "backups" | "jobs" | "audit" | "feature-flags" | "example-notes" | "system" | "university" | "tenants";
 export type UiLang = "ru" | "en" | "kk";
 export type CatalogLanguage = { code: string; name: string; native_name: string };
 
@@ -42,6 +42,22 @@ export type BackupJob = {
   started_at: string;
   finished_at: string;
   error?: string;
+};
+
+export type JobItem = {
+  id: number;
+  tenant_id: number;
+  job_type: string;
+  status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+  payload_json: Record<string, unknown>;
+  result_json?: Record<string, unknown> | null;
+  error_message?: string | null;
+  retry_count: number;
+  max_retries: number;
+  created_at: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+  created_by?: string | null;
 };
 
 export type RestoreCandidate = {

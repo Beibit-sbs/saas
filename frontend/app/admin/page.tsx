@@ -7,6 +7,7 @@ import { AdminBackupsTab } from "./components/AdminBackupsTab";
 import { AdminExampleNotesTab } from "./components/AdminExampleNotesTab";
 import { AdminFeatureFlagsTab } from "./components/AdminFeatureFlagsTab";
 import { AdminIntegrationsTab } from "./components/AdminIntegrationsTab";
+import { AdminJobsTab } from "./components/AdminJobsTab";
 import { AdminLanguagesTab } from "./components/AdminLanguagesTab";
 import { AdminLocalUsersTab } from "./components/AdminLocalUsersTab";
 import { AdminOverviewTab } from "./components/AdminOverviewTab";
@@ -19,6 +20,7 @@ import { useAdminAudit } from "./hooks/useAdminAudit";
 import { useAdminBackups } from "./hooks/useAdminBackups";
 import { useAdminFeatureFlags } from "./hooks/useAdminFeatureFlags";
 import { useAdminIntegrations } from "./hooks/useAdminIntegrations";
+import { useAdminJobs } from "./hooks/useAdminJobs";
 import { useAdminLanguages } from "./hooks/useAdminLanguages";
 import { useAdminLocalUsers } from "./hooks/useAdminLocalUsers";
 import { useAdminOverview } from "./hooks/useAdminOverview";
@@ -320,6 +322,23 @@ export default function AdminPage() {
   });
 
   const {
+    jobsLoading,
+    jobsMutating,
+    jobsFeedback,
+    jobsStatusFilter,
+    filteredJobs,
+    setJobsStatusFilter,
+    loadJobs,
+    createJob,
+    retryJob,
+    cancelJob,
+  } = useAdminJobs({
+    activeTab,
+    buildAuthHeaders,
+    tx,
+  });
+
+  const {
     systemHealth,
     loading: systemHealthLoading,
     feedback: systemHealthFeedback,
@@ -369,6 +388,7 @@ export default function AdminPage() {
     { id: "rbac", label: tx("rbac"), icon: "◎" },
     { id: "integrations", label: l.integrations, icon: "◇" },
     { id: "backups", label: tx("backups"), icon: "▣" },
+    { id: "jobs", label: "Jobs", icon: "◔" },
     { id: "audit", label: l.audit, icon: "◌" },
     { id: "feature-flags", label: tx("featureFlags"), icon: "✦" },
     { id: "example-notes", label: tx("exampleNotesTab", "Example Notes"), icon: "▤" },
@@ -643,7 +663,6 @@ export default function AdminPage() {
             tx={tx}
           />
         ) : null}
-
         {activeTab === "system" ? (
           <AdminSystemTab
             systemHealth={systemHealth}
@@ -651,6 +670,22 @@ export default function AdminPage() {
             feedback={systemHealthFeedback}
             lastUpdated={systemHealthLastUpdated}
             onRefresh={refreshSystemHealth}
+          />
+        ) : null}
+
+        {activeTab === "jobs" ? (
+          <AdminJobsTab
+            tx={tx}
+            jobsLoading={jobsLoading}
+            jobsMutating={jobsMutating}
+            jobsFeedback={jobsFeedback}
+            jobsStatusFilter={jobsStatusFilter}
+            filteredJobs={filteredJobs}
+            onStatusFilterChange={setJobsStatusFilter}
+            onLoadJobs={loadJobs}
+            onCreateJob={createJob}
+            onRetryJob={retryJob}
+            onCancelJob={cancelJob}
           />
         ) : null}
 
