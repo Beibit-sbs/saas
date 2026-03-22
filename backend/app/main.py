@@ -21,6 +21,7 @@ from app.core.config import (
 from app.modules.admin.router import router as admin_router
 from app.modules.admin.local_users_router import router as admin_local_users_router
 from app.modules.academic_records.router import router as academic_records_router
+from app.modules.admissions.router import router as admissions_router
 from app.modules.ai_gateway.router import router as ai_gateway_router
 from app.modules.ai_gateway.public_router import router as ai_gateway_public_router
 from app.modules.audit.router import router as audit_router
@@ -53,6 +54,7 @@ from app.modules.rbac.security import resolve_current_user_claims
 from app.modules.students.router import router as students_router
 from app.modules.service_accounts.router import router as service_accounts_router
 from app.modules.tenants.router import router as tenants_router
+from app.core.db import build_engine, make_session_factory
 from app.modules.observability.logging import configure_json_logging, request_id_var
 from app.modules.observability.metrics import record_request, render_metrics
 from app.modules.observability.security_signals import record_security_signal
@@ -68,17 +70,40 @@ request_logger = logging.getLogger("app.request")
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(fastapi_app: FastAPI):
     # Re-apply on process startup so third-party logger setup doesn't override JSON handlers.
     configure_json_logging()
     validate_token_signing_config()
+
+    # Wire the admissions SQLAlchemy session factory.
+    # build_engine() raises RuntimeError when DATABASE_URL is absent; we catch it
+    # and log a warning so that the server still starts (endpoints return 503).
+    # In production DATABASE_URL must always be set.
+    _admissions_engine = None
+    try:
+        _admissions_engine = build_engine()
+        fastapi_app.state.admissions_session_factory = make_session_factory(_admissions_engine)
+        logger.info("admissions database engine initialised (pool_size=5, max_overflow=10)")
+    except RuntimeError as exc:
+        logger.warning(
+            "admissions database not configured — admissions endpoints will return HTTP 503. "
+            "Reason: %s",
+            exc,
+        )
+
     yield
+
+    # Release all pooled connections on shutdown.
+    if _admissions_engine is not None:
+        _admissions_engine.dispose()
+        logger.info("admissions database engine disposed")
 
 
 app = FastAPI(title="AI Engineering Backend", version="0.1.0", lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(admin_local_users_router)
+app.include_router(admissions_router)
 app.include_router(ai_gateway_router)
 app.include_router(ai_gateway_public_router)
 app.include_router(rbac_router)

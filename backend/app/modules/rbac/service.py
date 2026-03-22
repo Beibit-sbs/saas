@@ -41,6 +41,10 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.records.write",
         "admin.tenants.read",
         "admin.tenants.write",
+        "admissions.read",
+        "admissions.write",
+        "admissions.decide",
+        "admissions.documents.write",
     },
     "admin": {
         "admin.dashboard.read",
@@ -71,6 +75,10 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.records.write",
         "admin.tenants.read",
         "admin.tenants.write",
+        "admissions.read",
+        "admissions.write",
+        "admissions.decide",
+        "admissions.documents.write",
     },
     "auditor": {
         "admin.audit.read",
@@ -84,6 +92,7 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.records.read",
         "admin.tenants.read",
         "admin.jobs.read",
+        "admissions.read",
     },
 }
 
