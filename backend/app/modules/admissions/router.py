@@ -23,6 +23,7 @@ from app.modules.admissions.schemas import (
     ApplicationListResponseSchema,
     ApplicationReadSchema,
     ApplicationStage,
+    ApplicationSubmitRequestSchema,
     DecisionMakeRequestSchema,
     DocumentAttachRequestSchema,
     DocumentReadSchema,
@@ -251,6 +252,40 @@ async def attach_document_endpoint(
     service = DocumentService(db)
     try:
         return await service.attach_document(int(tenant["id"]), application_id, request_model, actor)
+    except (PermissionError, ValueError, IntegrityError) as exc:
+        raise _map_service_error(exc) from exc
+
+
+@router.post(
+    "/applications/{application_id}/submit",
+    response_model=ApplicationReadSchema,
+    responses={400: {"model": ErrorDetailResponse}, 403: {"model": ErrorDetailResponse}, 404: {"model": ErrorDetailResponse}, 409: {"model": ErrorDetailResponse}},
+)
+async def submit_application_endpoint(
+    application_id: int,
+    payload: dict[str, Any] = Body(...),
+    actor: Actor = None,
+    _: Annotated[None, Depends(permission_dependency("admissions.write"))] = None,
+    tenant: TrustedTenant = None,
+    db: AdmissionsDb = None,
+) -> ApplicationReadSchema:
+    """Submit an application (transition from NEW → RECEIVED) and start workflow.
+    
+    - Requires admissions.write permission
+    - Tenant ID from trusted context header (X-Tenant-ID)
+    - Accepts expected_version for optimistic locking
+    - Triggers admissions workflow start
+    - Fail-closed: tenant validation, version mismatch raise HTTP 409
+    """
+    request_model = _parse_payload(ApplicationSubmitRequestSchema, payload)
+    service = ApplicationService(db)
+    try:
+        return await service.submit_application(
+            tenant_id=int(tenant["id"]),
+            application_id=application_id,
+            actor=actor,
+            expected_version=request_model.expected_version,
+        )
     except (PermissionError, ValueError, IntegrityError) as exc:
         raise _map_service_error(exc) from exc
 
