@@ -28,3 +28,6 @@ dist/
 build/
 coverage/
 *.tsbuildinfo
+
+# Local archives
+ai-platform-backup.tar.gz
