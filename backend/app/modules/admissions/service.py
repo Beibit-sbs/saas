@@ -934,12 +934,13 @@ class DecisionService:
         actor: str,
     ) -> None:
         """
-        Create Person/Student for accepted admissions decision.
+        Create/reuse Person and provision canonical Students lifecycle identity
+        for accepted admissions decision.
 
         Transaction notes:
         - Runs inside the same DB transaction as decision finalization.
         - Does not commit; caller owns commit/rollback boundary.
-        - Idempotent by (tenant,email) for Person and (tenant,person_id) for Student.
+        - Idempotent by (tenant,email) for Person and lifecycle compat helper for Student.
         """
         tenant_id = validate_tenant_id_provided(tenant_id)
 
@@ -948,7 +949,9 @@ class DecisionService:
             return
 
         # Lazy imports keep module boundaries loose and avoid hard import coupling.
-        from app.modules.profiles.models import PersonModel, ProgramModel, StudentModel
+        from app.modules.profiles.models import PersonModel
+        from app.modules.students.schemas import AdmissionsProvisionStudentRequestSchema
+        from app.modules.students.service import StudentLifecycleService
 
         applicant = self.db.execute(
             select(ApplicantModel).where(
@@ -961,19 +964,6 @@ class DecisionService:
         if not applicant:
             raise ValueError(
                 f"Applicant {application.applicant_id} not found in tenant {tenant_id}"
-            )
-
-        program = self.db.execute(
-            select(ProgramModel).where(
-                and_(
-                    ProgramModel.id == application.program_id,
-                    ProgramModel.tenant_id == tenant_id,
-                )
-            )
-        ).scalar_one_or_none()
-        if not program:
-            raise ValueError(
-                f"Program {application.program_id} not found in tenant {tenant_id}"
             )
 
         person = self.db.execute(
@@ -1021,56 +1011,50 @@ class DecisionService:
                 tenant_id=tenant_id,
             )
 
-        student = self.db.execute(
-            select(StudentModel).where(
-                and_(
-                    StudentModel.tenant_id == tenant_id,
-                    StudentModel.person_id == person.id,
-                )
-            )
-        ).scalar_one_or_none()
-
-        if not student:
-            student_metadata: dict[str, Any] = {
-                "source": "admissions_acceptance",
-                "admissions_application_id": application.id,
-                "admissions_program_id": application.program_id,
-            }
-            student = StudentModel(
-                tenant_id=tenant_id,
+        lifecycle_service = StudentLifecycleService(self.db)
+        lifecycle_result = await lifecycle_service.provision_student_for_admissions_compat(
+            tenant_id=tenant_id,
+            request=AdmissionsProvisionStudentRequestSchema(
                 person_id=person.id,
                 program_id=application.program_id,
                 student_number=self._build_student_number(tenant_id, application.id),
                 cohort_year=applicant.application_year,
-                status="active",
-                metadata_json=student_metadata,
-                created_by=actor,
-            )
-            self.db.add(student)
-            self.db.flush()
-            self.db.refresh(student)
-
-            log_admin_action(
-                actor=actor,
-                action=build_audit_action("profiles", "student", "created"),
-                path=f"/internal/profiles/students/{student.id}",
-                client_ip="service",
-                entity="student",
-                metadata={
-                    "resource_id": str(student.id),
-                    "person_id": person.id,
-                    "program_id": application.program_id,
-                    "student_number": student.student_number,
-                    "provisioning_source": "admissions_acceptance",
-                    "application_id": application.id,
+                metadata_json={
+                    "source": "admissions_acceptance",
+                    "admissions_application_id": application.id,
+                    "admissions_program_id": application.program_id,
                 },
-                tenant_id=tenant_id,
-            )
+            ),
+            actor_id=actor,
+        )
+
+        log_admin_action(
+            actor=actor,
+            action=build_audit_action("admissions", "student_provision", "completed"),
+            path=f"/internal/admissions/applications/{application.id}/student-provision",
+            client_ip="service",
+            entity="student_provision",
+            metadata={
+                "resource_id": str(application.id),
+                "person_id": person.id,
+                "student_profile_id": lifecycle_result.student_profile.id,
+                "student_number": lifecycle_result.student_profile.student_number,
+                "program_id": lifecycle_result.active_primary_program.program_id,
+                "program_binding_id": lifecycle_result.active_primary_program.id,
+                "provisioning_source": "admissions_acceptance",
+            },
+            tenant_id=tenant_id,
+        )
 
         # Link back to admissions metadata for traceability and idempotent reads.
         application.metadata_json["person_id"] = person.id
-        application.metadata_json["student_id"] = student.id
-        application.metadata_json["student_number"] = student.student_number
+        # Keep legacy key for backward compatibility while canonicalizing to profile.
+        application.metadata_json["student_id"] = lifecycle_result.student_profile.id
+        application.metadata_json["student_number"] = lifecycle_result.student_profile.student_number
+        application.metadata_json["student_profile_id"] = lifecycle_result.student_profile.id
+        application.metadata_json["student_program_binding_id"] = (
+            lifecycle_result.active_primary_program.id
+        )
 
     async def make_decision(
         self,

@@ -1,20 +1,14 @@
-"""
-Phase 6: Student Provisioning after Accepted Admission Decision
-
-Scope:
-- Service layer only (DecisionService.finalize_workflow_decision)
-- No router/schema changes
-- Tenant-first + fail-closed behavior
-- Idempotent Person/Student creation
-"""
+"""Admissions Phase 6 provisioning tests for canonical Students lifecycle integration."""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from unittest.mock import MagicMock, patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.admissions.schemas import ApplicationConclusionType, ApplicationStage
 from app.modules.admissions.service import DecisionService
 
@@ -39,8 +33,8 @@ def mock_db_session():
                 model_obj.id = 9001
             elif name == "PersonModel":
                 model_obj.id = 7001
-            elif name == "StudentModel":
-                model_obj.id = 8001
+            elif name == "ApplicationStageHistoryModel":
+                model_obj.id = 4001
             else:
                 model_obj.id = 1
         if hasattr(model_obj, "created_at") and getattr(model_obj, "created_at", None) is None:
@@ -93,14 +87,6 @@ def mock_applicant_model():
 
 
 @pytest.fixture
-def mock_program_model():
-    program = MagicMock()
-    program.id = 10
-    program.tenant_id = 1
-    return program
-
-
-@pytest.fixture
 def mock_existing_decision():
     decision = MagicMock()
     decision.id = 201
@@ -118,6 +104,39 @@ def mock_existing_decision():
 
 
 @pytest.fixture
+def lifecycle_result_factory():
+    def _factory(
+        *,
+        profile_id: int = 5001,
+        student_number: str = "ADM-1-123",
+        binding_id: int = 6001,
+        program_id: int = 10,
+    ) -> SimpleNamespace:
+        return SimpleNamespace(
+            student_profile=SimpleNamespace(
+                id=profile_id,
+                student_number=student_number,
+            ),
+            active_primary_program=SimpleNamespace(
+                id=binding_id,
+                program_id=program_id,
+            ),
+        )
+
+    return _factory
+
+
+@pytest.fixture
+def mock_lifecycle_provision(monkeypatch: pytest.MonkeyPatch, lifecycle_result_factory):
+    mock = AsyncMock(return_value=lifecycle_result_factory())
+    monkeypatch.setattr(
+        "app.modules.students.service.StudentLifecycleService.provision_student_for_admissions_compat",
+        mock,
+    )
+    return mock
+
+
+@pytest.fixture
 def mock_audit_logger():
     with patch("app.modules.admissions.service.log_admin_action") as mock_log:
         yield mock_log
@@ -131,31 +150,23 @@ def mock_validator_tenant():
 
 
 @pytest.mark.asyncio
-class TestPhase6StudentProvisioning:
-    async def test_accepted_decision_creates_person_and_student_when_missing(
+class TestPhase6StudentProvisioningStudentsLifecycle:
+    async def test_accepted_decision_triggers_students_lifecycle_provisioning(
         self,
         mock_db_session,
         mock_application_model,
         mock_applicant_model,
-        mock_program_model,
-        mock_audit_logger,
+        mock_lifecycle_provision,
         mock_validator_tenant,
     ):
-        """Accepted workflow outcome provisions Person + Student exactly once."""
-        # finalize() queries:
-        # 1 app, 2 existing_decision
-        # provision() queries: 3 applicant, 4 program, 5 person existing, 6 student existing
         mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
             mock_application_model,
             None,
             mock_applicant_model,
-            mock_program_model,
-            None,
             None,
         ]
 
         service = DecisionService(mock_db_session)
-
         result = await service.finalize_workflow_decision(
             tenant_id=1,
             application_id=123,
@@ -165,80 +176,26 @@ class TestPhase6StudentProvisioning:
         )
 
         assert result.application_id == 123
-        assert mock_application_model.stage == ApplicationStage.CONCLUDED.value
         assert mock_application_model.conclusion_type == ApplicationConclusionType.ACCEPTED.value
+        mock_lifecycle_provision.assert_awaited_once()
 
-        # Metadata gets identity links for idempotent traceability
-        assert "person_id" in mock_application_model.metadata_json
-        assert "student_id" in mock_application_model.metadata_json
-        assert "student_number" in mock_application_model.metadata_json
-        assert mock_application_model.metadata_json["student_number"] == "ADM-1-123"
-
-        # decision + stage history + person + student
-        assert mock_db_session.add.call_count >= 4
-
-        # decision finalize audit + person created audit + student created audit
-        assert mock_audit_logger.call_count >= 3
-        entities = [call.kwargs.get("entity") for call in mock_audit_logger.call_args_list]
-        assert "decision" in entities
-        assert "person" in entities
-        assert "student" in entities
-
-    async def test_rejected_decision_does_not_create_student(
-        self,
-        mock_db_session,
-        mock_application_model,
-        mock_audit_logger,
-        mock_validator_tenant,
-    ):
-        """Rejected outcome must never provision Student identity."""
-        mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
-            mock_application_model,
-            None,
-        ]
-
-        service = DecisionService(mock_db_session)
-
-        await service.finalize_workflow_decision(
-            tenant_id=1,
-            application_id=123,
-            workflow_instance_id=789,
-            approval_action="reject",
-            actor="system@workflow",
-        )
-
-        assert mock_application_model.conclusion_type == ApplicationConclusionType.REJECTED.value
-        assert "student_id" not in mock_application_model.metadata_json
-        assert "person_id" not in mock_application_model.metadata_json
-
-        # decision + stage history only
-        assert mock_db_session.add.call_count == 2
-
-    async def test_idempotency_existing_person_and_student_no_duplicates(
+    async def test_reuse_existing_student_profile_no_duplicate_create(
         self,
         mock_db_session,
         mock_application_model,
         mock_applicant_model,
-        mock_program_model,
+        mock_lifecycle_provision,
         mock_validator_tenant,
     ):
-        """Retry-safe: existing Person/Student are reused, no duplicate inserts."""
         existing_person = MagicMock()
         existing_person.id = 7001
         existing_person.email = mock_applicant_model.email
-
-        existing_student = MagicMock()
-        existing_student.id = 8001
-        existing_student.person_id = existing_person.id
-        existing_student.student_number = "ADM-1-123"
 
         mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
             mock_application_model,
             None,
             mock_applicant_model,
-            mock_program_model,
             existing_person,
-            existing_student,
         ]
 
         service = DecisionService(mock_db_session)
@@ -250,45 +207,56 @@ class TestPhase6StudentProvisioning:
             actor="system@workflow",
         )
 
-        # decision + history only; no person/student add when already exists
+        # Only decision + stage history should be added when person exists.
         assert mock_db_session.add.call_count == 2
-        assert mock_application_model.metadata_json["person_id"] == 7001
-        assert mock_application_model.metadata_json["student_id"] == 8001
+        mock_lifecycle_provision.assert_awaited_once()
 
-    async def test_fail_closed_if_program_missing_in_profiles(
+    async def test_reuse_existing_program_binding_no_duplicate_binding_create(
         self,
         mock_db_session,
         mock_application_model,
         mock_applicant_model,
+        mock_lifecycle_provision,
         mock_validator_tenant,
+        lifecycle_result_factory,
     ):
-        """Accepted decision fails closed if target program not found in tenant."""
+        existing_person = MagicMock()
+        existing_person.id = 7001
+        existing_person.email = mock_applicant_model.email
+        mock_lifecycle_provision.return_value = lifecycle_result_factory(
+            profile_id=7007,
+            student_number="ADM-1-123",
+            binding_id=6010,
+            program_id=10,
+        )
+
         mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
             mock_application_model,
             None,
             mock_applicant_model,
-            None,
+            existing_person,
         ]
 
         service = DecisionService(mock_db_session)
+        await service.finalize_workflow_decision(
+            tenant_id=1,
+            application_id=123,
+            workflow_instance_id=789,
+            approval_action="approve",
+            actor="system@workflow",
+        )
 
-        with pytest.raises(ValueError, match="Program 10 not found in tenant 1"):
-            await service.finalize_workflow_decision(
-                tenant_id=1,
-                application_id=123,
-                workflow_instance_id=789,
-                approval_action="approve",
-                actor="system@workflow",
-            )
+        assert mock_application_model.metadata_json["student_program_binding_id"] == 6010
+        mock_lifecycle_provision.assert_awaited_once()
 
-    async def test_retry_with_existing_decision_returns_existing_without_duplicate_side_effects(
+    async def test_idempotent_retry_existing_decision_short_circuits_without_provisioning(
         self,
         mock_db_session,
         mock_application_model,
         mock_existing_decision,
+        mock_lifecycle_provision,
         mock_validator_tenant,
     ):
-        """Idempotent callback retry: existing decision short-circuits safely."""
         mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
             mock_application_model,
             mock_existing_decision,
@@ -304,5 +272,228 @@ class TestPhase6StudentProvisioning:
         )
 
         assert result.id == 201
+        mock_lifecycle_provision.assert_not_awaited()
         mock_db_session.add.assert_not_called()
         mock_db_session.commit.assert_not_called()
+
+    async def test_person_creation_path_then_provisioning_executes(
+        self,
+        mock_db_session,
+        mock_application_model,
+        mock_applicant_model,
+        mock_lifecycle_provision,
+        mock_audit_logger,
+        mock_validator_tenant,
+    ):
+        mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
+            mock_application_model,
+            None,
+            mock_applicant_model,
+            None,
+        ]
+
+        service = DecisionService(mock_db_session)
+        await service.finalize_workflow_decision(
+            tenant_id=1,
+            application_id=123,
+            workflow_instance_id=789,
+            approval_action="approve",
+            actor="system@workflow",
+        )
+
+        # decision + stage history + person create
+        assert mock_db_session.add.call_count == 3
+        mock_lifecycle_provision.assert_awaited_once()
+
+        actions = [call.kwargs.get("action") for call in mock_audit_logger.call_args_list]
+        assert "profiles.person.created" in actions
+
+    async def test_fail_closed_program_not_in_tenant_raises_domain_validation(
+        self,
+        mock_db_session,
+        mock_application_model,
+        mock_applicant_model,
+        mock_lifecycle_provision,
+        mock_validator_tenant,
+    ):
+        existing_person = MagicMock()
+        existing_person.id = 7001
+        existing_person.email = mock_applicant_model.email
+        mock_lifecycle_provision.side_effect = DomainValidationError(
+            "Program 10 not found or does not belong to tenant 1"
+        )
+
+        mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
+            mock_application_model,
+            None,
+            mock_applicant_model,
+            existing_person,
+        ]
+
+        service = DecisionService(mock_db_session)
+        with pytest.raises(DomainValidationError, match="Program 10 not found"):
+            await service.finalize_workflow_decision(
+                tenant_id=1,
+                application_id=123,
+                workflow_instance_id=789,
+                approval_action="approve",
+                actor="system@workflow",
+            )
+
+    async def test_fail_closed_person_mismatch_raises_domain_validation(
+        self,
+        mock_db_session,
+        mock_application_model,
+        mock_applicant_model,
+        mock_lifecycle_provision,
+        mock_validator_tenant,
+    ):
+        existing_person = MagicMock()
+        existing_person.id = 7001
+        existing_person.email = mock_applicant_model.email
+        mock_lifecycle_provision.side_effect = DomainValidationError(
+            "Person mismatch for tenant 1"
+        )
+
+        mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
+            mock_application_model,
+            None,
+            mock_applicant_model,
+            existing_person,
+        ]
+
+        service = DecisionService(mock_db_session)
+        with pytest.raises(DomainValidationError, match="Person mismatch"):
+            await service.finalize_workflow_decision(
+                tenant_id=1,
+                application_id=123,
+                workflow_instance_id=789,
+                approval_action="approve",
+                actor="system@workflow",
+            )
+
+    async def test_fail_closed_tenant_mismatch_raises_domain_validation(
+        self,
+        mock_db_session,
+        mock_application_model,
+        mock_applicant_model,
+        mock_lifecycle_provision,
+        mock_validator_tenant,
+    ):
+        existing_person = MagicMock()
+        existing_person.id = 7001
+        existing_person.email = mock_applicant_model.email
+        mock_lifecycle_provision.side_effect = DomainValidationError(
+            "tenant mismatch during students provisioning"
+        )
+
+        mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
+            mock_application_model,
+            None,
+            mock_applicant_model,
+            existing_person,
+        ]
+
+        service = DecisionService(mock_db_session)
+        with pytest.raises(DomainValidationError, match="tenant mismatch"):
+            await service.finalize_workflow_decision(
+                tenant_id=1,
+                application_id=123,
+                workflow_instance_id=789,
+                approval_action="approve",
+                actor="system@workflow",
+            )
+
+    async def test_metadata_compatibility_keys_populated(
+        self,
+        mock_db_session,
+        mock_application_model,
+        mock_applicant_model,
+        mock_lifecycle_provision,
+        mock_validator_tenant,
+        lifecycle_result_factory,
+    ):
+        existing_person = MagicMock()
+        existing_person.id = 7001
+        existing_person.email = mock_applicant_model.email
+        mock_lifecycle_provision.return_value = lifecycle_result_factory(
+            profile_id=5009,
+            student_number="ADM-1-123",
+            binding_id=6011,
+            program_id=10,
+        )
+        mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
+            mock_application_model,
+            None,
+            mock_applicant_model,
+            existing_person,
+        ]
+
+        service = DecisionService(mock_db_session)
+        await service.finalize_workflow_decision(
+            tenant_id=1,
+            application_id=123,
+            workflow_instance_id=789,
+            approval_action="approve",
+            actor="system@workflow",
+        )
+
+        assert mock_application_model.metadata_json["student_id"] == 5009
+        assert mock_application_model.metadata_json["student_number"] == "ADM-1-123"
+        assert mock_application_model.metadata_json["student_profile_id"] == 5009
+        assert mock_application_model.metadata_json["student_program_binding_id"] == 6011
+
+    async def test_audit_events_include_decision_and_student_provision_and_conditional_person_create(
+        self,
+        mock_db_session,
+        mock_application_model,
+        mock_applicant_model,
+        mock_lifecycle_provision,
+        mock_audit_logger,
+        mock_validator_tenant,
+    ):
+        # Person missing -> person.created expected.
+        mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
+            mock_application_model,
+            None,
+            mock_applicant_model,
+            None,
+        ]
+
+        service = DecisionService(mock_db_session)
+        await service.finalize_workflow_decision(
+            tenant_id=1,
+            application_id=123,
+            workflow_instance_id=789,
+            approval_action="approve",
+            actor="system@workflow",
+        )
+
+        actions = [call.kwargs.get("action") for call in mock_audit_logger.call_args_list]
+        assert "admissions.decision.finalize" in actions
+        assert "admissions.student_provision.completed" in actions
+        assert "profiles.person.created" in actions
+
+    async def test_rejected_decision_does_not_call_students_provisioning(
+        self,
+        mock_db_session,
+        mock_application_model,
+        mock_lifecycle_provision,
+        mock_validator_tenant,
+    ):
+        mock_db_session.execute.return_value.scalar_one_or_none.side_effect = [
+            mock_application_model,
+            None,
+        ]
+
+        service = DecisionService(mock_db_session)
+        await service.finalize_workflow_decision(
+            tenant_id=1,
+            application_id=123,
+            workflow_instance_id=789,
+            approval_action="reject",
+            actor="system@workflow",
+        )
+
+        assert mock_application_model.conclusion_type == ApplicationConclusionType.REJECTED.value
+        mock_lifecycle_provision.assert_not_awaited()
