@@ -49,6 +49,7 @@ from app.modules.jobs.router import router as jobs_router
 from app.modules.programs.router import router as programs_router
 from app.modules.platform.router import router as platform_router
 from app.modules.profiles.router import router as profiles_router
+from app.modules.workflows.router import router as workflows_router
 from app.modules.rbac.router import router as rbac_router
 from app.modules.rbac.security import get_actor
 from app.modules.rbac.security import resolve_current_user_claims
@@ -85,9 +86,11 @@ async def lifespan(fastapi_app: FastAPI):
         _admissions_engine = build_engine()
         fastapi_app.state.admissions_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.profiles_session_factory = make_session_factory(_admissions_engine)
+        fastapi_app.state.workflows_session_factory = make_session_factory(_admissions_engine)
         logger.info("admissions database engine initialised (pool_size=5, max_overflow=10)")
     except RuntimeError as exc:
         fastapi_app.state.profiles_session_factory = None
+        fastapi_app.state.workflows_session_factory = None
         logger.warning(
             "admissions database not configured — admissions endpoints will return HTTP 503. "
             "Reason: %s",
@@ -95,6 +98,11 @@ async def lifespan(fastapi_app: FastAPI):
         )
         logger.warning(
             "profiles database not configured — profiles endpoints will return HTTP 503. "
+            "Reason: %s",
+            exc,
+        )
+        logger.warning(
+            "workflows database not configured — workflows endpoints will return HTTP 503. "
             "Reason: %s",
             exc,
         )
@@ -115,6 +123,7 @@ app.include_router(admissions_router)
 app.include_router(ai_gateway_router)
 app.include_router(ai_gateway_public_router)
 app.include_router(profiles_router)
+app.include_router(workflows_router)
 app.include_router(rbac_router)
 app.include_router(audit_router)
 app.include_router(help_router)
