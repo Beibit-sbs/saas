@@ -14,7 +14,7 @@ Design principles:
 """
 
 from datetime import UTC, datetime
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.exc import IntegrityError
@@ -921,6 +921,157 @@ class DecisionService:
     def __init__(self, db_session: Session):
         self.db = db_session
 
+    @staticmethod
+    def _build_student_number(tenant_id: int, application_id: int) -> str:
+        """Deterministic student number for idempotent retries."""
+        return f"ADM-{tenant_id}-{application_id}".upper()
+
+    async def _provision_student_identity_on_accept(
+        self,
+        *,
+        tenant_id: int,
+        application: ApplicationModel,
+        actor: str,
+    ) -> None:
+        """
+        Create Person/Student for accepted admissions decision.
+
+        Transaction notes:
+        - Runs inside the same DB transaction as decision finalization.
+        - Does not commit; caller owns commit/rollback boundary.
+        - Idempotent by (tenant,email) for Person and (tenant,person_id) for Student.
+        """
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        # Only accepted decisions are eligible for identity provisioning.
+        if application.conclusion_type != ApplicationConclusionType.ACCEPTED.value:
+            return
+
+        # Lazy imports keep module boundaries loose and avoid hard import coupling.
+        from app.modules.profiles.models import PersonModel, ProgramModel, StudentModel
+
+        applicant = self.db.execute(
+            select(ApplicantModel).where(
+                and_(
+                    ApplicantModel.id == application.applicant_id,
+                    ApplicantModel.tenant_id == tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if not applicant:
+            raise ValueError(
+                f"Applicant {application.applicant_id} not found in tenant {tenant_id}"
+            )
+
+        program = self.db.execute(
+            select(ProgramModel).where(
+                and_(
+                    ProgramModel.id == application.program_id,
+                    ProgramModel.tenant_id == tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if not program:
+            raise ValueError(
+                f"Program {application.program_id} not found in tenant {tenant_id}"
+            )
+
+        person = self.db.execute(
+            select(PersonModel).where(
+                and_(
+                    PersonModel.tenant_id == tenant_id,
+                    PersonModel.email == applicant.email,
+                )
+            )
+        ).scalar_one_or_none()
+
+        if not person:
+            person_metadata: dict[str, Any] = {
+                "source": "admissions_acceptance",
+                "admissions_applicant_id": applicant.id,
+                "admissions_application_id": application.id,
+            }
+            person = PersonModel(
+                tenant_id=tenant_id,
+                email=applicant.email,
+                first_name=applicant.first_name,
+                last_name=applicant.last_name,
+                phone=applicant.phone,
+                external_person_key=applicant.external_id,
+                status="active",
+                metadata_json=person_metadata,
+                created_by=actor,
+            )
+            self.db.add(person)
+            self.db.flush()
+            self.db.refresh(person)
+
+            log_admin_action(
+                actor=actor,
+                action=build_audit_action("profiles", "person", "created"),
+                path=f"/internal/profiles/people/{person.id}",
+                client_ip="service",
+                entity="person",
+                metadata={
+                    "resource_id": str(person.id),
+                    "email": person.email,
+                    "provisioning_source": "admissions_acceptance",
+                    "application_id": application.id,
+                },
+                tenant_id=tenant_id,
+            )
+
+        student = self.db.execute(
+            select(StudentModel).where(
+                and_(
+                    StudentModel.tenant_id == tenant_id,
+                    StudentModel.person_id == person.id,
+                )
+            )
+        ).scalar_one_or_none()
+
+        if not student:
+            student_metadata: dict[str, Any] = {
+                "source": "admissions_acceptance",
+                "admissions_application_id": application.id,
+                "admissions_program_id": application.program_id,
+            }
+            student = StudentModel(
+                tenant_id=tenant_id,
+                person_id=person.id,
+                program_id=application.program_id,
+                student_number=self._build_student_number(tenant_id, application.id),
+                cohort_year=applicant.application_year,
+                status="active",
+                metadata_json=student_metadata,
+                created_by=actor,
+            )
+            self.db.add(student)
+            self.db.flush()
+            self.db.refresh(student)
+
+            log_admin_action(
+                actor=actor,
+                action=build_audit_action("profiles", "student", "created"),
+                path=f"/internal/profiles/students/{student.id}",
+                client_ip="service",
+                entity="student",
+                metadata={
+                    "resource_id": str(student.id),
+                    "person_id": person.id,
+                    "program_id": application.program_id,
+                    "student_number": student.student_number,
+                    "provisioning_source": "admissions_acceptance",
+                    "application_id": application.id,
+                },
+                tenant_id=tenant_id,
+            )
+
+        # Link back to admissions metadata for traceability and idempotent reads.
+        application.metadata_json["person_id"] = person.id
+        application.metadata_json["student_id"] = student.id
+        application.metadata_json["student_number"] = student.student_number
+
     async def make_decision(
         self,
         tenant_id: int,
@@ -1191,6 +1342,13 @@ class DecisionService:
                 "approval_action": approval_action,
             },
             tenant_id=tenant_id,
+        )
+
+        # Phase 6: accepted decisions provision Person/Student identities.
+        await self._provision_student_identity_on_accept(
+            tenant_id=tenant_id,
+            application=application,
+            actor=actor,
         )
         
         self.db.commit()

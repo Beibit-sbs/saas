@@ -158,6 +158,17 @@ def mock_validator_tenant():
         yield mock_val
 
 
+@pytest.fixture(autouse=True)
+def mock_phase6_student_provisioning():
+    """Phase 5A suite isolates workflow-decision logic from Phase 6 side effects."""
+    with patch.object(
+        DecisionService,
+        "_provision_student_identity_on_accept",
+        new_callable=AsyncMock,
+    ) as mock_provision:
+        yield mock_provision
+
+
 # ==============================================================================
 # TEST SUITE: ApplicationService.submit_application()
 # ==============================================================================
