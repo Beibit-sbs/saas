@@ -317,3 +317,101 @@ class WorkflowService:
         ).scalars().all()
 
         return list(rows)
+
+    async def on_workflow_completed(
+        self,
+        workflow_id: int,
+        tenant_id: int,
+        entity_type: str,
+        entity_id: int,
+        workflow_key: str,
+        outcome: dict | None = None,
+    ) -> dict:
+        """
+        Handle workflow completion callback (dispatcher).
+        
+        Invoked by WorkflowRuntimeEngine when workflow reaches END state.
+        Dispatches to appropriate handler based on entity_type.
+        
+        Idempotent: safe to call multiple times.
+        
+        Args:
+            workflow_id: Workflow instance ID
+            tenant_id: Tenant (mandatory, fail-closed)
+            entity_type: "admission_application" | other_type
+            entity_id: Application ID (for admission_application)
+            workflow_key: "admissions" | other_key
+            outcome: Workflow outcome {
+                "action": "approve"|"reject"|None,
+                "reason": str,
+                "metadata": dict,
+            }
+        
+        Returns:
+            {
+                "status": "success" | "no_action" | "skipped",
+                "entity_type": str,
+                "entity_id": int,
+                "result_id": int | None,
+                "message": str,
+            }
+        
+        Raises:
+            ValueError: Invalid input, validation failure
+            PermissionError: Tenant mismatch
+        """
+        # Fail-closed: validate tenant
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        
+        # Get callback registry
+        from app.modules.workflows.callback_handler import get_callback_registry
+        
+        registry = get_callback_registry()
+        
+        # Dispatch to handler (safe unknown entity → no_action)
+        try:
+            result = await registry.dispatch(
+                workflow_id=workflow_id,
+                tenant_id=tenant_id,
+                entity_type=entity_type,
+                entity_id=entity_id,
+                workflow_key=workflow_key,
+                outcome=outcome,
+            )
+            
+            # Audit callback execution
+            _audit(
+                actor="system@workflow",
+                action=build_audit_action("workflows", "callback", "executed"),
+                path=f"/internal/workflows/{workflow_id}/callback",
+                entity="workflow_callback",
+                metadata={
+                    "workflow_id": workflow_id,
+                    "entity_type": entity_type,
+                    "entity_id": entity_id,
+                    "callback_status": result["status"],
+                    "result_id": result.get("result_id"),
+                },
+                tenant_id=tenant_id,
+            )
+            
+            return result
+        
+        except Exception as e:
+            # Callback failure: log and propagate
+            _audit(
+                actor="system@workflow",
+                action=build_audit_action("workflows", "callback", "failed"),
+                path=f"/internal/workflows/{workflow_id}/callback_error",
+                entity="workflow_callback",
+                metadata={
+                    "workflow_id": workflow_id,
+                    "entity_type": entity_type,
+                    "entity_id": entity_id,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                },
+                tenant_id=tenant_id,
+            )
+            # Propagate: caller decides retry strategy
+            raise

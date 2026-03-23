@@ -401,6 +401,193 @@ class ApplicationService:
             items=[ApplicationReadSchema.model_validate(app) for app in applications],
         )
 
+    async def submit_application(
+        self,
+        tenant_id: int,
+        application_id: int,
+        actor: str,
+        expected_version: int,
+    ) -> ApplicationReadSchema:
+        """
+        Submit (transition to 'received') and start workflow.
+        
+        Workflow trigger:
+        1. Validate application in 'new' stage
+        2. Transition to 'received' stage (record in history)
+        3. Start admissions workflow instance
+        4. Store workflow_instance_id in application.metadata_json
+        
+        Idempotency:
+        - If workflow_instance_id already in metadata_json, skip workflow creation
+        - Still update stage/history (idempotent)
+        
+        Audit Events:
+        - "application.submitted" (application state change)
+        - "workflow.started" (workflow event) [logged by WorkflowService]
+        
+        Args:
+            tenant_id: Tenant (mandatory, fail-closed)
+            application_id: Application to submit
+            actor: User submitting (typically applicant in UI; system in admin)
+            expected_version: Expected version (optimistic lock)
+        
+        Returns:
+            ApplicationReadSchema with updated stage + metadata
+        
+        Raises:
+            ValueError: If application not found, wrong stage, or version mismatch
+            PermissionError: If applicant lacks admissions.write permission
+        
+        Constraints:
+        - Tenant isolation: all queries filtered by tenant_id
+        - Fail-closed: no implicit defaults
+        - Audit: all mutations logged via build_audit_action + log_admin_action
+        - Optimistic locking: validate_version_match(current_version, expected_version)
+        """
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        
+        # Fetch application
+        application = self.db.execute(
+            select(ApplicationModel).where(
+                and_(
+                    ApplicationModel.id == application_id,
+                    ApplicationModel.tenant_id == tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+        
+        if not application:
+            raise ValueError(f"Application {application_id} not found in tenant {tenant_id}")
+        
+        # Validate optimistic lock
+        if application.version != expected_version:
+            raise ValueError(
+                f"Version mismatch for application {application_id}: "
+                f"expected {expected_version}, got {application.version}"
+            )
+        
+        # Validate current stage
+        if application.stage != ApplicationStage.NEW.value:
+            raise ValueError(
+                f"Cannot submit application in stage '{application.stage}'. "
+                f"Only 'new' applications can be submitted."
+            )
+        
+        # Check if workflow already started (idempotency)
+        workflow_instance_id = application.metadata_json.get("workflow_instance_id")
+        if not workflow_instance_id:
+            # Start workflow
+            workflow_instance = await self._start_admissions_workflow(
+                tenant_id=tenant_id,
+                application_id=application_id,
+                applicant_id=application.applicant_id,
+                program_id=application.program_id,
+                actor=actor,
+            )
+            workflow_instance_id = workflow_instance.id
+            
+            # Store workflow reference in metadata
+            application.metadata_json["workflow_instance_id"] = workflow_instance_id
+            application.metadata_json["workflow_key"] = "admissions"
+            application.metadata_json["workflow_status"] = "in_progress"
+            application.metadata_json["workflow_started_at"] = _utc_now().isoformat()
+        
+        # Transition stage
+        application.stage = ApplicationStage.RECEIVED.value
+        application.received_at = _utc_now()
+        application.version += 1  # Version increment
+        
+        # Record stage transition in history
+        stage_history = ApplicationStageHistoryModel(
+            tenant_id=tenant_id,
+            application_id=application_id,
+            from_stage=ApplicationStage.NEW.value,
+            to_stage=ApplicationStage.RECEIVED.value,
+            reason="Application submitted by applicant",
+            action_type=StageTransitionAction.MANUAL.value,
+            actor_id=actor,
+            metadata_json={
+                "workflow_instance_id": workflow_instance_id,
+                "trigger_type": "user_submission",
+            },
+        )
+        self.db.add(stage_history)
+        
+        self.db.flush()
+        
+        # Audit logging
+        log_admin_action(
+            actor=actor,
+            action=build_audit_action("admissions", "application", "submit"),
+            path=f"/internal/admissions/applications/{application_id}/submit",
+            client_ip="service",
+            entity="application",
+            metadata={
+                "resource_id": str(application_id),
+                "workflow_instance_id": workflow_instance_id,
+                "stage_transition": f"{ApplicationStage.NEW.value} → {ApplicationStage.RECEIVED.value}",
+            },
+            tenant_id=tenant_id,
+        )
+        
+        self.db.commit()
+        return ApplicationReadSchema.model_validate(application)
+
+    async def _start_admissions_workflow(
+        self,
+        tenant_id: int,
+        application_id: int,
+        applicant_id: int,
+        program_id: int,
+        actor: str,
+    ) -> object:  # WorkflowInstanceReadSchema from workflows module
+        """
+        Internal helper: Start admissions workflow for an application.
+        
+        Workflow Configuration:
+        - Workflow key: "admissions"
+        - Entity type: "admission_application"
+        - Entity ID: application_id
+        - Steps: document_review, dept_approval, dean_approval, registrar_approval, final_decision
+        - Trigger mode: manual (no auto-advance)
+        
+        Task Assignments (from metadata):
+        - document_review → "group:admissions_staff"
+        - dept_approval → "group:department_chairs"
+        - dean_approval → "group:deans"
+        - registrar_approval → "group:registrars"
+        - final_decision → "group:admissions_leadership"
+        
+        Returns:
+            WorkflowInstanceReadSchema
+        
+        Raises:
+            ValueError: If workflow template not found
+            RuntimeError: If workflow service not available
+        """
+        from app.modules.workflows.workflow_service import WorkflowService
+        
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        
+        # Lazy import to avoid circular dependency
+        workflow_service = WorkflowService(self.db)
+        
+        # Start workflow
+        workflow_instance = await workflow_service.start_workflow(
+            tenant_id=tenant_id,
+            workflow_key="admissions",
+            entity_type="admission_application",
+            entity_id=application_id,
+            actor=actor,
+            metadata_json={
+                "applicant_id": applicant_id,
+                "application_id": application_id,
+                "program_id": str(program_id),
+            },
+        )
+        
+        return workflow_instance
+
 
 # ==============================================================================
 # DOCUMENT SERVICE
@@ -858,3 +1045,154 @@ class DecisionService:
             raise ValueError(f"No decision found for application {application_id}")
 
         return ApplicationDecisionReadSchema.model_validate(decision)
+
+    async def finalize_workflow_decision(
+        self,
+        tenant_id: int,
+        application_id: int,
+        workflow_instance_id: int,
+        approval_action: str,
+        actor: str = "system@workflow",
+    ) -> ApplicationDecisionReadSchema:
+        """
+        Finalize admission decision based on workflow outcome.
+        
+        Called by: WorkflowService.on_workflow_completed() callback
+        
+        Workflow Action Mapping:
+        - "approve" → conclusion_type="accepted"
+        - "reject" → conclusion_type="rejected"
+        
+        Transaction:
+        1. Validate application exists and matches workflow instance
+        2. Check if decision already exists (idempotency)
+        3. Create ApplicationDecisionModel
+        4. Update application: stage=concluded, conclusion_type, decision_at
+        5. Record stage transition in history
+        6. Audit log
+        7. Commit
+        
+        Args:
+            tenant_id: Tenant (mandatory, fail-closed)
+            application_id: Application to finalize
+            workflow_instance_id: Workflow that completed (validation)
+            approval_action: "approve" or "reject"
+            actor: Decision maker (default: system)
+        
+        Returns:
+            ApplicationDecisionReadSchema
+        
+        Raises:
+            ValueError: application not found, workflow mismatch, invalid action
+            PermissionError: tenant mismatch
+        """
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        
+        # Fetch application
+        application = self.db.execute(
+            select(ApplicationModel).where(
+                and_(
+                    ApplicationModel.id == application_id,
+                    ApplicationModel.tenant_id == tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+        
+        if not application:
+            raise ValueError(f"Application {application_id} not found in tenant {tenant_id}")
+        
+        # Validate workflow instance ID
+        stored_workflow_id = application.metadata_json.get("workflow_instance_id")
+        if stored_workflow_id != workflow_instance_id:
+            raise ValueError(
+                f"Workflow instance ID mismatch for application {application_id}: "
+                f"expected {stored_workflow_id}, got {workflow_instance_id}"
+            )
+        
+        # Check if decision already exists (idempotency)
+        existing_decision = self.db.execute(
+            select(ApplicationDecisionModel).where(
+                and_(
+                    ApplicationDecisionModel.application_id == application_id,
+                    ApplicationDecisionModel.tenant_id == tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+        
+        if existing_decision:
+            return ApplicationDecisionReadSchema.model_validate(existing_decision)
+        
+        # Map approval action to conclusion type
+        if approval_action == "approve":
+            conclusion_type = ApplicationConclusionType.ACCEPTED.value
+        elif approval_action == "reject":
+            conclusion_type = ApplicationConclusionType.REJECTED.value
+        else:
+            raise ValueError(
+                f"Invalid approval_action '{approval_action}'. Must be 'approve' or 'reject'."
+            )
+        
+        # Update application
+        application.stage = ApplicationStage.CONCLUDED.value
+        application.conclusion_type = conclusion_type
+        application.decision_at = _utc_now()
+        
+        # Update metadata
+        application.metadata_json["workflow_status"] = "completed"
+        application.metadata_json["workflow_outcome"] = approval_action
+        application.metadata_json["workflow_completed_at"] = _utc_now().isoformat()
+        
+        # Create decision record
+        decision = ApplicationDecisionModel(
+            tenant_id=tenant_id,
+            application_id=application_id,
+            decision_type=conclusion_type,
+            decision_rationale=f"Workflow decision: {approval_action}",
+            decided_by_id=actor,
+            conditions_json={
+                "workflow_instance_id": workflow_instance_id,
+                "approval_action": approval_action,
+                "decision_source": "workflow_engine",
+            },
+        )
+        self.db.add(decision)
+        
+        # Record stage transition
+        stage_history = ApplicationStageHistoryModel(
+            tenant_id=tenant_id,
+            application_id=application_id,
+            from_stage=ApplicationStage.DECISION_PENDING.value,
+            to_stage=ApplicationStage.CONCLUDED.value,
+            reason=f"Workflow completed with decision: {approval_action}",
+            action_type=StageTransitionAction.AUTOMATED.value,
+            actor_id=actor,
+            metadata_json={
+                "workflow_instance_id": workflow_instance_id,
+                "trigger_type": "workflow_completion",
+                "approval_action": approval_action,
+            },
+        )
+        self.db.add(stage_history)
+        
+        self.db.flush()
+        self.db.refresh(decision)
+        
+        # Audit logging
+        log_admin_action(
+            actor=actor,
+            action=build_audit_action("admissions", "decision", "finalize"),
+            path=f"/internal/admissions/applications/{application_id}/decision",
+            client_ip="service",
+            entity="decision",
+            metadata={
+                "resource_id": str(application_id),
+                "workflow_instance_id": workflow_instance_id,
+                "conclusion_type": conclusion_type,
+                "approval_action": approval_action,
+            },
+            tenant_id=tenant_id,
+        )
+        
+        self.db.commit()
+        return ApplicationDecisionReadSchema.model_validate(decision)
+

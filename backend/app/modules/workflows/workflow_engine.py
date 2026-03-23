@@ -110,6 +110,7 @@ class WorkflowRuntimeEngine:
         )
 
         # End-state close when transition reaches END and no tasks are generated.
+        reached_end = False
         if not next_tasks:
             target_steps = self.db.execute(
                 select(WorkflowStepModel).where(
@@ -123,6 +124,7 @@ class WorkflowRuntimeEngine:
                 instance.status = WorkflowInstanceStatus.COMPLETED
                 instance.completed_at = _utc_now()
                 instance.current_step_id = None
+                reached_end = True
 
         self.db.flush()
         self.db.refresh(instance)
@@ -142,7 +144,89 @@ class WorkflowRuntimeEngine:
         )
 
         self.db.commit()
+
+        # ═══════════════════════════════════════════════════════
+        # PHASE 5B: NEW - Invoke callback on workflow completion
+        # ═══════════════════════════════════════════════════════
+        if reached_end:
+            try:
+                # Import here to avoid circular dependency
+                from app.modules.workflows.workflow_service import WorkflowService
+                
+                # Get workflow service to invoke callback
+                workflow_service = WorkflowService(self.db)
+                
+                # Extract outcome from instance metadata
+                outcome = self._extract_outcome_data(instance)
+                
+                # Invoke callback (idempotent, safe to retry)
+                callback_result = await workflow_service.on_workflow_completed(
+                    workflow_id=instance.id,
+                    tenant_id=instance.tenant_id,
+                    entity_type=instance.entity_type,
+                    entity_id=instance.entity_id,
+                    workflow_key="",  # Not directly available; will be inferred by handler
+                    outcome=outcome,
+                )
+                
+                # Log callback execution result
+                _audit(
+                    actor="engine",
+                    action=build_audit_action("workflows", "engine", "callback_result"),
+                    path=f"/internal/workflows/{workflow_instance_id}/callback_result",
+                    entity="workflow_runtime",
+                    metadata={
+                        "workflow_id": instance.id,
+                        "callback_status": callback_result["status"],
+                        "result_id": callback_result.get("result_id"),
+                    },
+                    tenant_id=instance.tenant_id,
+                )
+            
+            except Exception as e:
+                # Callback failure: log error but don't fail workflow completion
+                _audit(
+                    actor="engine",
+                    action=build_audit_action("workflows", "engine", "callback_error"),
+                    path=f"/internal/workflows/{workflow_instance_id}/callback_error",
+                    entity="workflow_runtime",
+                    metadata={
+                        "workflow_id": instance.id,
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                    },
+                    tenant_id=instance.tenant_id,
+                )
+                # Re-raise: caller decides retry strategy
+                raise
+
         return next_tasks
+    
+    @staticmethod
+    def _extract_outcome_data(instance: WorkflowInstanceModel) -> dict:
+        """
+        Extract workflow decision outcome for callback.
+        
+        Looks in metadata_json["outcome"] or returns empty dict.
+        
+        Args:
+            instance: Workflow instance
+        
+        Returns:
+            Outcome dict {
+                "action": "approve"|"reject"|None,
+                "reason": str,
+                "metadata": dict,
+            } or empty dict
+        """
+        if not instance.metadata_json:
+            return {}
+        
+        outcome = instance.metadata_json.get("outcome")
+        if isinstance(outcome, dict):
+            return outcome
+        
+        return {}
 
     async def create_next_tasks(
         self,

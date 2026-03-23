@@ -127,6 +127,13 @@ class ApplicationCreateSchema(ApplicationBaseSchema):
     pass
 
 
+class ApplicationSubmitRequestSchema(BaseModel):
+    """Request schema for submitting an application (transitions new → received)."""
+    expected_version: int = Field(..., ge=1, description="Expected version for optimistic locking")
+
+    model_config = {"json_schema_extra": {"example": {"expected_version": 1}}}
+
+
 class ApplicationUpdateSchema(BaseModel):
     """Request schema for updating an application (metadata only in MVP)."""
     metadata_json: Optional[dict] = None
