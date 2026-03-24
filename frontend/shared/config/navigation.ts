@@ -12,6 +12,7 @@ import {
   BarChart3,
   FileText,
   CalendarDays,
+  Network,
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS, type Permission } from "./permissions";
@@ -96,6 +97,12 @@ export const NAVIGATION: NavGroup[] = [
         href: "/console/ai/copilot",
         icon: Bot,
         permission: PERMISSIONS.AI_COPILOT_READ,
+      },
+      {
+        label: "Federation",
+        href: "/console/federation",
+        icon: Network,
+        permission: PERMISSIONS.FEDERATION_READ,
       },
     ],
   },

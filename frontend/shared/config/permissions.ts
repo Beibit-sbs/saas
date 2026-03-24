@@ -65,6 +65,10 @@ export const PERMISSIONS = {
 
   // AI Copilot (read-only foundation v1)
   AI_COPILOT_READ: "metrics.read",
+
+  // Federation Layer v1
+  FEDERATION_READ: "federation.read",
+  FEDERATION_WRITE: "federation.write",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -86,7 +90,8 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.GRADES_READ,
     PERMISSIONS.TRANSCRIPTS_READ,
     PERMISSIONS.SCHEDULING_READ,
-      PERMISSIONS.AUTOMATION_READ,
+    PERMISSIONS.AUTOMATION_READ,
+    PERMISSIONS.FEDERATION_READ,
   ],
   viewer: [
     PERMISSIONS.TENANTS_READ,
