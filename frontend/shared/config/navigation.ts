@@ -91,6 +91,12 @@ export const NAVIGATION: NavGroup[] = [
           },
         ],
       },
+      {
+        label: "AI Copilot",
+        href: "/console/ai/copilot",
+        icon: Bot,
+        permission: PERMISSIONS.AI_COPILOT_READ,
+      },
     ],
   },
   {

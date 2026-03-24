@@ -62,6 +62,9 @@ export const PERMISSIONS = {
     // Automation / Workflow Engine
     AUTOMATION_READ: "automation.read",
     AUTOMATION_WRITE: "automation.write",
+
+  // AI Copilot (read-only foundation v1)
+  AI_COPILOT_READ: "metrics.read",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -77,6 +80,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.NOTIFICATIONS_READ,
     PERMISSIONS.HEALTH_READ,
     PERMISSIONS.METRICS_READ,
+    PERMISSIONS.AI_COPILOT_READ,
     PERMISSIONS.STUDENTS_READ,
     PERMISSIONS.ENROLLMENTS_READ,
     PERMISSIONS.GRADES_READ,
