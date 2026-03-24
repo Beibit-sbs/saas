@@ -81,4 +81,93 @@ describe("AICopilotPage", () => {
 
     expect(screen.getByText("Copilot request failed")).toBeInTheDocument();
   });
+
+  it("renders recommendations section when present", () => {
+    useAskCopilotMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      data: {
+        question: "Are there students at risk?",
+        summary: "1 student(s) flagged at risk.",
+        insights: [],
+        sources: [],
+        warnings: [],
+        recommendations: [
+          {
+            recommendation_type: "academic_risk_followup",
+            title: "Follow up with at-risk students",
+            priority: "medium",
+            reason: "1 student(s) are flagged as academically at risk.",
+            suggested_actions: [
+              { action_type: "navigate", label: "View Academic Risk Report", target: "/console/analytics/academic-risk" },
+            ],
+          },
+        ],
+      },
+    });
+
+    render(<AICopilotPage />);
+
+    expect(screen.getByTestId("copilot-recommendations")).toBeInTheDocument();
+    expect(screen.getByTestId("copilot-recommendation-academic_risk_followup")).toBeInTheDocument();
+    expect(screen.getByText("Follow up with at-risk students")).toBeInTheDocument();
+    expect(screen.getByText("1 student(s) are flagged as academically at risk.")).toBeInTheDocument();
+    const badge = screen.getByTestId("copilot-rec-priority-badge");
+    expect(badge).toHaveTextContent("medium");
+    const link = screen.getByTestId("copilot-rec-action-link");
+    expect(link).toHaveTextContent("View Academic Risk Report");
+    expect(link).toHaveAttribute("href", "/console/analytics/academic-risk");
+  });
+
+  it("does not render recommendations section when empty", () => {
+    useAskCopilotMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      data: {
+        question: "KPI?",
+        summary: "All good.",
+        insights: [],
+        sources: [],
+        warnings: [],
+        recommendations: [],
+      },
+    });
+
+    render(<AICopilotPage />);
+
+    expect(screen.queryByTestId("copilot-recommendations")).not.toBeInTheDocument();
+  });
+
+  it("renders high priority recommendation with destructive badge", () => {
+    useAskCopilotMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      data: {
+        question: "Platform health?",
+        summary: "20 jobs failed.",
+        insights: [],
+        sources: [],
+        warnings: [],
+        recommendations: [
+          {
+            recommendation_type: "failed_jobs_attention",
+            title: "Investigate failed background jobs",
+            priority: "high",
+            reason: "20 background job(s) have failed.",
+            suggested_actions: [
+              { action_type: "navigate", label: "View Job Queue", target: "/console/platform/jobs" },
+            ],
+          },
+        ],
+      },
+    });
+
+    render(<AICopilotPage />);
+
+    const badge = screen.getByTestId("copilot-rec-priority-badge");
+    expect(badge).toHaveTextContent("high");
+  });
 });

@@ -9,12 +9,27 @@ export type CopilotInsightCard = {
   explanation: string;
 };
 
+export type CopilotRecommendationAction = {
+  action_type: "navigate" | "review" | "alert" | string;
+  label: string;
+  target?: string | null;
+};
+
+export type CopilotRecommendation = {
+  recommendation_type: string;
+  title: string;
+  priority: "high" | "medium" | "low";
+  reason: string;
+  suggested_actions: CopilotRecommendationAction[];
+};
+
 export type CopilotAnswer = {
   question: string;
   summary: string;
   insights: CopilotInsightCard[];
   sources: CopilotSourceReference[];
   warnings: string[];
+  recommendations: CopilotRecommendation[];
 };
 
 export type CopilotAskRequest = {

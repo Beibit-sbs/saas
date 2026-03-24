@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Bot, Send } from "lucide-react";
+import { Bot, Send, Lightbulb } from "lucide-react";
 
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { Badge } from "@/shared/ui/badge";
@@ -115,6 +115,53 @@ export default function AICopilotPage() {
                     </Badge>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {ask.data.recommendations && ask.data.recommendations.length > 0 && (
+              <div className="space-y-3" data-testid="copilot-recommendations">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">Recommendations</p>
+                </div>
+                {ask.data.recommendations.map((rec) => (
+                  <div
+                    key={rec.recommendation_type}
+                    className="rounded border p-3 space-y-2"
+                    data-testid={`copilot-recommendation-${rec.recommendation_type}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          rec.priority === "high"
+                            ? "destructive"
+                            : rec.priority === "medium"
+                              ? "default"
+                              : "outline"
+                        }
+                        data-testid="copilot-rec-priority-badge"
+                      >
+                        {rec.priority}
+                      </Badge>
+                      <p className="text-sm font-medium">{rec.title}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{rec.reason}</p>
+                    {rec.suggested_actions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {rec.suggested_actions.map((action) => (
+                          <a
+                            key={action.label}
+                            href={action.target ?? "#"}
+                            className="text-xs underline text-primary hover:opacity-80"
+                            data-testid="copilot-rec-action-link"
+                          >
+                            {action.label}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
