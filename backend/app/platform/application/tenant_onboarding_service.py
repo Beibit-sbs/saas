@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.modules.audit.service import log_admin_action
+from app.platform.events.publisher import EventPublisher
 from app.platform.idempotency.service import IdempotencyService
 from app.platform.uow import UnitOfWork
 
@@ -32,6 +33,20 @@ class TenantOnboardingService:
         def _execute(uow: UnitOfWork) -> dict[str, Any]:
             tenant = uow.tenant_repository.create_tenant(slug, name, conn=uow.conn)
             tenant_id = int(tenant["tenant_id"])
+            EventPublisher(uow=uow).publish_event(
+                tenant_id=tenant_id,
+                event_type="tenant.created",
+                aggregate_type="tenant",
+                aggregate_id=tenant_id,
+                payload_json={
+                    "tenant_id": tenant_id,
+                    "slug": str(tenant["slug"]),
+                    "name": str(tenant["name"]),
+                    "status": str(tenant["status"]),
+                    "actor": actor,
+                },
+                causation_id=idempotency_key,
+            )
             if fail_step == "tenant_create":
                 raise RuntimeError("injected tenant create failure")
 

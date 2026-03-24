@@ -2,12 +2,36 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.platform.events.publisher import EventPublisher
 from app.platform.uow import UnitOfWork
 
 
-def create_tenant(slug: str, name: str) -> dict[str, Any]:
+def create_tenant(
+    slug: str,
+    name: str,
+    *,
+    actor: str | None = None,
+    correlation_id: str | None = None,
+    causation_id: str | None = None,
+) -> dict[str, Any]:
     with UnitOfWork() as uow:
-        return uow.tenant_repository.create_tenant(slug, name, conn=uow.conn)
+        tenant = uow.tenant_repository.create_tenant(slug, name, conn=uow.conn)
+        EventPublisher(uow=uow).publish_event(
+            tenant_id=int(tenant["tenant_id"]),
+            event_type="tenant.created",
+            aggregate_type="tenant",
+            aggregate_id=int(tenant["tenant_id"]),
+            payload_json={
+                "tenant_id": int(tenant["tenant_id"]),
+                "slug": str(tenant["slug"]),
+                "name": str(tenant["name"]),
+                "status": str(tenant["status"]),
+                "actor": actor,
+            },
+            correlation_id=correlation_id,
+            causation_id=causation_id,
+        )
+        return tenant
 
 
 def get_tenant_profile(tenant_id: int) -> dict[str, Any]:
