@@ -26,6 +26,7 @@ from app.modules.students.models import (
     StudentProfileModel,
     StudentStatus,
 )
+from app.platform.events.models import OutboxEventModel
 
 
 class ScalarListResult:
@@ -81,12 +82,17 @@ def db_session() -> MagicMock:
             defaults = {
                 "GradeSubmissionModel": 7001,
                 "GradeHistoryModel": 8001,
+                "OutboxEventModel": 9001,
             }
             instance.id = defaults.get(instance.__class__.__name__, 1)
         if hasattr(instance, "submitted_at") and getattr(instance, "submitted_at", None) is None:
             instance.submitted_at = now
         if hasattr(instance, "changed_at") and getattr(instance, "changed_at", None) is None:
             instance.changed_at = now
+        if hasattr(instance, "available_at") and getattr(instance, "available_at", None) is None:
+            instance.available_at = now
+        if hasattr(instance, "created_at") and getattr(instance, "created_at", None) is None:
+            instance.created_at = now
         if hasattr(instance, "version") and getattr(instance, "version", None) is None:
             instance.version = 1
 
@@ -238,6 +244,8 @@ class TestGradeSubmission:
         assert result.grade_points == Decimal("4.00")
         assert enrollment.grade_code == "A"
         assert enrollment.grade_points == Decimal("4.00")
+        added_instances = [call.args[0] for call in db_session.add.call_args_list]
+        assert any(isinstance(item, OutboxEventModel) for item in added_instances)
         db_session.commit.assert_called_once()
         audit_mock.assert_called_once()
 

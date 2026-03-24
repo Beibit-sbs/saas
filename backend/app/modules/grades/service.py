@@ -34,6 +34,7 @@ from app.modules.grades.schemas import (
     TranscriptItemSchema,
 )
 from app.modules.students.models import StudentProfileModel
+from app.platform.events.publisher import EventPublisher
 
 
 def _utc_now() -> datetime:
@@ -256,6 +257,21 @@ class GradeLifecycleService:
 
         self.db.flush()
         self.db.refresh(submission)
+
+        EventPublisher(db_session=self.db).publish_event(
+            tenant_id=tenant_id,
+            event_type="grade.submitted",
+            aggregate_type="grade_submission",
+            aggregate_id=submission.id,
+            payload_json={
+                "submission_id": submission.id,
+                "enrollment_id": submission.enrollment_id,
+                "student_profile_id": enrollment.student_profile_id,
+                "grade_code": submission.grade_code,
+                "grade_points": str(resolved_points),
+                "submitted_by": actor_id,
+            },
+        )
 
         _audit(
             actor=actor_id,

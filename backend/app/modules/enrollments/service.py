@@ -37,6 +37,7 @@ from app.modules.university_core.service import (
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+from app.platform.events.publisher import EventPublisher
 
 
 def _utc_now() -> datetime:
@@ -255,6 +256,21 @@ class EnrollmentLifecycleService:
 
         self.db.flush()
         self.db.refresh(enrollment)
+
+        EventPublisher(db_session=self.db).publish_event(
+            tenant_id=tenant_id,
+            event_type="enrollment.created",
+            aggregate_type="enrollment",
+            aggregate_id=enrollment.id,
+            payload_json={
+                "enrollment_id": enrollment.id,
+                "student_profile_id": enrollment.student_profile_id,
+                "course_id": enrollment.course_id,
+                "term_id": enrollment.term_id,
+                "enrollment_status": enrollment.enrollment_status.value,
+                "created_by": actor_id,
+            },
+        )
 
         _audit(
             actor=actor_id,

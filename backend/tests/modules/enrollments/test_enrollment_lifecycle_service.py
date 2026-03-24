@@ -30,6 +30,7 @@ from app.modules.students.models import (
     StudentProfileModel,
     StudentStatus,
 )
+from app.platform.events.models import OutboxEventModel
 
 
 class ScalarListResult:
@@ -80,6 +81,7 @@ def db_session() -> MagicMock:
             defaults = {
                 "EnrollmentModel": 4001,
                 "EnrollmentStatusHistoryModel": 5001,
+                "OutboxEventModel": 6001,
             }
             instance.id = defaults.get(instance.__class__.__name__, 1)
         if hasattr(instance, "created_at") and getattr(instance, "created_at", None) is None:
@@ -90,6 +92,8 @@ def db_session() -> MagicMock:
             instance.changed_at = now
         if hasattr(instance, "enrolled_at") and getattr(instance, "enrolled_at", None) is None:
             instance.enrolled_at = now
+        if hasattr(instance, "available_at") and getattr(instance, "available_at", None) is None:
+            instance.available_at = now
         if hasattr(instance, "version") and getattr(instance, "version", None) is None:
             instance.version = 1
 
@@ -213,6 +217,8 @@ class TestEnrollStudent:
         assert result.course_id == 701
         assert result.term_id == 1
         assert result.enrollment_status == EnrollmentStatus.ENROLLED
+        added_instances = [call.args[0] for call in db_session.add.call_args_list]
+        assert any(isinstance(item, OutboxEventModel) for item in added_instances)
         db_session.commit.assert_called_once()
         audit_mock.assert_called_once()
 
