@@ -5,7 +5,7 @@ import logging
 from typing import Sequence
 
 from app.modules.audit.service import log_admin_action
-from app.platform.events.handlers import AnalyticsEventHandler, EventHandler, NotificationEventHandler, WebhookEventHandler
+from app.platform.events.handlers import AnalyticsEventHandler, AutomationEventHandler, ContextProjectionHandler, EventHandler, NotificationEventHandler, WebhookEventHandler
 from app.platform.events.schemas import OutboxEventRead
 from app.platform.uow import UnitOfWork
 
@@ -30,6 +30,8 @@ class OutboxEventWorker:
             NotificationEventHandler(),
             WebhookEventHandler(),
             AnalyticsEventHandler(),
+            AutomationEventHandler(),
+            ContextProjectionHandler(),
         ])
         self._batch_size = max(1, int(batch_size))
         self._max_retry_count = max(1, int(max_retry_count))

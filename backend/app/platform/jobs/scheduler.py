@@ -8,6 +8,7 @@ from typing import Callable
 
 from app.platform.application.notification_dispatch_service import NotificationDispatchService
 from app.platform.application.subscription_rollover_service import SubscriptionRolloverService
+from app.platform.context import service as context_service
 from app.platform.events.worker import outbox_worker
 from app.platform.jobs.worker import worker
 from app.platform.kpi import service as kpi_service
@@ -43,6 +44,7 @@ class PlatformWorkerScheduler:
         self.register_task("outbox_event_dispatch", interval_seconds=60, task=self._outbox_event_dispatch)
         self.register_task("webhook_retry_dispatch", interval_seconds=2 * 60, task=self._webhook_retry_dispatch)
         self.register_task("kpi_metrics_refresh", interval_seconds=24 * 60 * 60, task=self._kpi_metrics_refresh)
+        self.register_task("context_rebuild", interval_seconds=24 * 60 * 60, task=self._context_rebuild)
 
     def register_task(self, name: str, *, interval_seconds: int, task: SchedulerTask) -> None:
         normalized = name.strip().lower()
@@ -107,6 +109,21 @@ class PlatformWorkerScheduler:
     def _kpi_metrics_refresh(self) -> dict[str, int]:
         with UnitOfWork() as uow:
             return kpi_service.refresh_all_tenants(uow=uow)
+
+    def _context_rebuild(self) -> dict[str, object]:
+        tenants = []
+        with UnitOfWork() as uow:
+            try:
+                tenants = list(uow.tenant_repository.list_tenants(conn=uow.conn) or [])
+            except Exception:
+                pass
+        rebuilt = 0
+        for tenant in tenants:
+            tid = int(tenant.get("tenant_id") or tenant.get("id") or 0)
+            if tid:
+                context_service.rebuild_context_for_tenant(tenant_id=tid)
+                rebuilt += 1
+        return {"tenants_processed": rebuilt}
 
 
 scheduler = PlatformWorkerScheduler()

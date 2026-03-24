@@ -4,6 +4,10 @@ from app.platform.analytics import service as analytics_service
 from app.platform.analytics.schemas import TenantKpiSnapshotRead
 from app.platform.kpi import service as kpi_service
 from app.platform.kpi.schemas import RectorDashboardReadSchema
+from app.platform.automation import service as automation_service
+from app.platform.context import service as context_service
+from app.platform.context.schemas import StudentProfileRead
+from app.platform.events.schemas import OutboxEventRead
 import os
 
 from fastapi import APIRouter, Header, HTTPException
@@ -96,3 +100,35 @@ def refresh_tenant_kpi(tenant_id: int, authorization: str | None = Header(defaul
         kpi_service.refresh_tenant_metrics(tenant_id=tenant_id, uow=uow)
         dashboard = kpi_service.refresh_tenant_dashboard_snapshot(tenant_id=tenant_id, uow=uow)
     return RectorDashboardReadSchema.model_validate(dashboard.get("snapshot_json") or {})
+
+
+@router.post("/platform/automation/evaluate")
+def evaluate_automation_event(
+    body: OutboxEventRead,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Manually trigger automation rule evaluation for a given event payload."""
+    _require_internal_token(authorization)
+    with UnitOfWork() as uow:
+        return automation_service.evaluate_event(body, uow=uow)
+
+
+# ------------------------------------------------------------------ #
+#  Context Layer                                                        #
+# ------------------------------------------------------------------ #
+
+@router.get("/context/student/{student_id}", response_model=StudentProfileRead)
+def get_student_context_internal(
+    student_id: str,
+    tenant_id: int,
+    authorization: str | None = Header(default=None),
+) -> StudentProfileRead:
+    """Return the full semantic profile for a student (internal-scoped)."""
+    _require_internal_token(authorization)
+    with UnitOfWork() as uow:
+        profile = context_service.build_student_profile(
+            student_id=student_id,
+            tenant_id=tenant_id,
+            conn=uow.conn,
+        )
+    return StudentProfileRead.model_validate(profile)

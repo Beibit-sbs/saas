@@ -38,6 +38,9 @@ from app.modules.usage import service as usage_service
 from app.modules.university_core import service as university_core_service
 from app.platform.analytics import service as analytics_service
 from app.platform.kpi import service as kpi_service
+from app.platform.automation import service as automation_service
+from app.platform.context import service as context_service
+from app.platform.uow import UnitOfWork
 from app.platform.webhooks import service as webhook_service
 
 
@@ -136,6 +139,11 @@ def _reset_template_state() -> None:
     university_core_service.clear_university_state()
     analytics_service.clear_analytics_state()
     kpi_service.clear_kpi_state()
+    automation_service.clear_automation_state()
+    context_service.clear_context_state()
+    with UnitOfWork() as uow:
+        uow.outbox_event_repository.clear_state(conn=uow.conn)
+        uow.analytics_repository.clear_state()
     webhook_service.clear_webhook_state()
     tenant_service.clear_tenant_state()
     plans_service.clear_plans_state()

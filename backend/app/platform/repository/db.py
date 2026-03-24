@@ -337,3 +337,102 @@ def ensure_platform_core_schema(conn: object) -> None:
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS ix_platform_dashboard_snapshots_tenant_date ON app_platform_tenant_dashboard_snapshots (tenant_id, snapshot_date DESC)"
             )
+
+            # ---- Automation / Workflow Engine v1 --------------------------------
+
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_automation_rules (
+                    id          BIGSERIAL PRIMARY KEY,
+                    tenant_id   BIGINT NOT NULL,
+                    name        VARCHAR(255) NOT NULL,
+                    description TEXT NOT NULL DEFAULT '',
+                    event_type  VARCHAR(128) NOT NULL,
+                    condition_json  JSONB NOT NULL DEFAULT '{}',
+                    actions_json    JSONB NOT NULL DEFAULT '[]',
+                    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    version     INTEGER NOT NULL DEFAULT 1
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_automation_executions (
+                    id              BIGSERIAL PRIMARY KEY,
+                    tenant_id       BIGINT NOT NULL,
+                    rule_id         BIGINT NOT NULL,
+                    event_id        BIGINT NOT NULL,
+                    status          VARCHAR(32) NOT NULL DEFAULT 'pending',
+                    result_json     JSONB NOT NULL DEFAULT '{}',
+                    error_message   TEXT,
+                    executed_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_automation_rules_tenant ON app_platform_automation_rules (tenant_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_automation_rules_event_type ON app_platform_automation_rules (tenant_id, event_type)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_automation_executions_tenant ON app_platform_automation_executions (tenant_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_automation_executions_rule ON app_platform_automation_executions (rule_id)"
+            )
+
+            # ---- Semantic Context Layer v1 -----------------------------------
+
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_context_entities (
+                    id          BIGSERIAL PRIMARY KEY,
+                    tenant_id   BIGINT NOT NULL,
+                    entity_type VARCHAR(64) NOT NULL,
+                    entity_id   VARCHAR(128) NOT NULL,
+                    data_json   JSONB NOT NULL DEFAULT '{}',
+                    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (tenant_id, entity_type, entity_id)
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_context_relations (
+                    id                  BIGSERIAL PRIMARY KEY,
+                    tenant_id           BIGINT NOT NULL,
+                    source_entity_type  VARCHAR(64) NOT NULL,
+                    source_entity_id    VARCHAR(128) NOT NULL,
+                    relation_type       VARCHAR(64) NOT NULL,
+                    target_entity_type  VARCHAR(64) NOT NULL,
+                    target_entity_id    VARCHAR(128) NOT NULL,
+                    metadata_json       JSONB NOT NULL DEFAULT '{}',
+                    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (tenant_id, source_entity_type, source_entity_id,
+                            relation_type, target_entity_type, target_entity_id)
+                )
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_context_entities_tenant ON app_platform_context_entities (tenant_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_context_entities_type_id ON app_platform_context_entities (tenant_id, entity_type, entity_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_context_relations_tenant ON app_platform_context_relations (tenant_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_context_relations_source ON app_platform_context_relations (tenant_id, source_entity_type, source_entity_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_context_relations_target ON app_platform_context_relations (tenant_id, target_entity_type, target_entity_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_context_relations_type ON app_platform_context_relations (tenant_id, relation_type)"
+            )

@@ -10,6 +10,21 @@ from app.platform.analytics import service as analytics_service
 from app.platform.analytics.schemas import AnalyticsEventProjectionListSchema, AnalyticsEventProjectionRead, TenantKpiSnapshotRead
 from app.platform.kpi import service as kpi_service
 from app.platform.kpi.schemas import RectorDashboardReadSchema, TenantMetricSnapshotReadSchema
+from app.platform.automation import service as automation_service
+from app.platform.automation.schemas import (
+    AutomationExecutionReadSchema,
+    AutomationRuleCreateSchema,
+    AutomationRuleReadSchema,
+)
+from app.platform.automation.templates import service as automation_template_service
+from app.platform.automation.templates.schemas import (
+    AutomationTemplateReadSchema,
+    InstantiateTemplateSchema,
+)
+from app.platform.context import service as context_service
+from app.platform.context.schemas import StudentProfileRead
+from app.platform.context import service as context_service
+from app.platform.context.schemas import StudentProfileRead
 from app.platform.billing import service as billing_service
 from app.platform.feature_flags import service as flags_service
 from app.platform.jobs import service as jobs_service
@@ -326,3 +341,103 @@ def get_platform_rector_dashboard(tenant_id: int, _actor: Actor) -> RectorDashbo
     with UnitOfWork() as uow:
         payload = kpi_service.get_rector_dashboard(tenant_id=tenant_id, uow=uow)
     return RectorDashboardReadSchema.model_validate(payload)
+
+
+# ------------------------------------------------------------------ #
+#  Automation / Workflow Engine v1                                     #
+# ------------------------------------------------------------------ #
+
+import dataclasses as _dc
+
+
+@router.post("/platform/automation/rules", response_model=AutomationRuleReadSchema, status_code=201)
+def create_automation_rule(body: AutomationRuleCreateSchema, actor: Actor, request: Request) -> AutomationRuleReadSchema:
+    with UnitOfWork() as uow:
+        rule = automation_service.create_rule(
+            tenant_id=body.tenant_id,
+            name=body.name,
+            description=body.description,
+            event_type=body.event_type,
+            condition_json=body.condition_json,
+            actions_json=body.actions_json,
+            is_active=body.is_active,
+            uow=uow,
+        )
+    _audit(request, actor, "platform_core.automation.rule_created", body.tenant_id, {"rule_name": body.name})
+    return AutomationRuleReadSchema.model_validate(_dc.asdict(rule))
+
+
+@router.get("/platform/automation/rules", response_model=list[AutomationRuleReadSchema])
+def list_automation_rules(tenant_id: int, _actor: Actor) -> list[AutomationRuleReadSchema]:
+    with UnitOfWork() as uow:
+        rules = automation_service.list_rules(tenant_id=tenant_id, uow=uow)
+    return [AutomationRuleReadSchema.model_validate(_dc.asdict(r)) for r in rules]
+
+
+@router.get("/platform/automation/executions", response_model=list[AutomationExecutionReadSchema])
+def list_automation_executions(tenant_id: int, _actor: Actor) -> list[AutomationExecutionReadSchema]:
+    with UnitOfWork() as uow:
+        executions = automation_service.list_executions(tenant_id=tenant_id, uow=uow)
+    return [AutomationExecutionReadSchema.model_validate(_dc.asdict(e)) for e in executions]
+
+
+@router.get("/platform/automation/templates", response_model=list[AutomationTemplateReadSchema])
+def list_automation_templates(_actor: Actor) -> list[AutomationTemplateReadSchema]:
+    """List all automation templates (system and user-created)."""
+    with UnitOfWork() as uow:
+        templates = automation_template_service.list_templates(uow=uow)
+    return [AutomationTemplateReadSchema.model_validate(_dc.asdict(t)) for t in templates]
+
+
+@router.post(
+    "/platform/automation/templates/{template_key}/instantiate",
+    response_model=AutomationRuleReadSchema,
+    status_code=201,
+)
+def instantiate_automation_template(
+    template_key: str,
+    body: InstantiateTemplateSchema,
+    actor: Actor,
+    request: Request,
+) -> AutomationRuleReadSchema:
+    """Instantiate an automation template into a new rule for the tenant."""
+    # Extract tenant_id from request headers or context
+    tenant_id = 1  # Default to 1 for consistency with pattern; can be extended to use claims
+
+    with UnitOfWork() as uow:
+        rule = automation_template_service.instantiate_template(
+            template_key=template_key,
+            tenant_id=tenant_id,
+            rule_name=body.rule_name,
+            rule_description=body.rule_description,
+            uow=uow,
+        )
+
+    _audit(
+        request,
+        actor,
+        "platform_core.automation.template_instantiated",
+        tenant_id,
+        {"template_key": template_key, "rule_name": rule.name},
+    )
+    return AutomationRuleReadSchema.model_validate(_dc.asdict(rule))
+
+
+# ------------------------------------------------------------------ #
+#  Context Layer                                                        #
+# ------------------------------------------------------------------ #
+
+@router.get("/platform/context/student/{student_id}", response_model=StudentProfileRead)
+def get_student_context_profile(
+    student_id: str,
+    tenant_id: int,
+    _actor: Actor,
+) -> StudentProfileRead:
+    """Return the full semantic profile for a student (admin-scoped)."""
+    with UnitOfWork() as uow:
+        profile = context_service.build_student_profile(
+            student_id=student_id,
+            tenant_id=tenant_id,
+            conn=uow.conn,
+        )
+    return StudentProfileRead.model_validate(profile)

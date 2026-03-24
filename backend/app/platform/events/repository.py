@@ -49,6 +49,21 @@ class OutboxEventRepository:
             "causation_id": row[13],
         }
 
+    def clear_state(self, *, conn: object | None = None) -> None:
+        if conn is None:
+            with transaction() as tx:
+                self.clear_state(conn=tx)
+                return
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM app_platform_outbox_events")
+            return
+
+        with self._lock:
+            self._rows.clear()
+            self._counter = 0
+
     def enqueue(
         self,
         *,
