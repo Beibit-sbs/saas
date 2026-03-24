@@ -259,3 +259,41 @@ def ensure_platform_core_schema(conn: object) -> None:
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS ix_platform_webhook_deliveries_subscription_event ON app_platform_webhook_deliveries (subscription_id, outbox_event_id, id)"
             )
+
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_analytics_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    outbox_event_id BIGINT NOT NULL REFERENCES app_platform_outbox_events(id) ON DELETE CASCADE,
+                    event_type TEXT NOT NULL,
+                    aggregate_type TEXT NOT NULL,
+                    aggregate_id TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_analytics_events_outbox_event_id UNIQUE (outbox_event_id)
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_tenant_kpi_snapshots (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    snapshot_date DATE NOT NULL,
+                    event_counts_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    total_events BIGINT NOT NULL DEFAULT 0,
+                    version INTEGER NOT NULL DEFAULT 1,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_kpi_snapshots_tenant_date UNIQUE (tenant_id, snapshot_date)
+                )
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_analytics_events_tenant_type ON app_platform_analytics_events (tenant_id, event_type, id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_analytics_events_tenant_created ON app_platform_analytics_events (tenant_id, created_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_kpi_snapshots_tenant_date ON app_platform_tenant_kpi_snapshots (tenant_id, snapshot_date DESC)"
+            )

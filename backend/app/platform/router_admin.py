@@ -6,11 +6,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.modules.audit.service import log_admin_action
 from app.modules.rbac.security import get_actor
+from app.platform.analytics import service as analytics_service
+from app.platform.analytics.schemas import AnalyticsEventProjectionListSchema, AnalyticsEventProjectionRead, TenantKpiSnapshotRead
 from app.platform.billing import service as billing_service
 from app.platform.feature_flags import service as flags_service
 from app.platform.jobs import service as jobs_service
 from app.platform.notifications import service as notifications_service
 from app.platform.webhooks import service as webhooks_service
+from app.platform.uow import UnitOfWork
 from app.platform.schemas import (
     FeatureFlagRead,
     FeatureFlagSetRequest,
@@ -272,3 +275,36 @@ def list_webhook_deliveries(tenant_id: int, _actor: Actor) -> WebhookDeliveryLis
         total=len(rows),
         items=[WebhookDeliveryReadSchema.model_validate(item) for item in rows],
     )
+
+
+@router.get("/tenants/{tenant_id}/analytics/events", response_model=AnalyticsEventProjectionListSchema)
+def list_analytics_events(
+    _actor: Actor,
+    tenant_id: int,
+    event_type: str | None = None,
+    limit: int = 100,
+) -> AnalyticsEventProjectionListSchema:
+    with UnitOfWork() as uow:
+        items = analytics_service.list_event_projections(
+            tenant_id=tenant_id,
+            event_type=event_type or None,
+            limit=max(1, min(limit, 500)),
+            uow=uow,
+        )
+    return AnalyticsEventProjectionListSchema(
+        tenant_id=tenant_id,
+        total=len(items),
+        items=[AnalyticsEventProjectionRead.model_validate(item) for item in items],
+    )
+
+
+@router.get("/tenants/{tenant_id}/analytics/kpis/latest", response_model=TenantKpiSnapshotRead)
+def get_latest_analytics_kpis(
+    tenant_id: int,
+    _actor: Actor,
+) -> TenantKpiSnapshotRead:
+    with UnitOfWork() as uow:
+        snap = analytics_service.get_latest_tenant_kpis(tenant_id=tenant_id, uow=uow)
+    if snap is None:
+        raise HTTPException(status_code=404, detail="No KPI snapshot found for this tenant")
+    return TenantKpiSnapshotRead.model_validate(snap)

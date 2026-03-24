@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.platform.analytics import service as analytics_service
+from app.platform.analytics.schemas import TenantKpiSnapshotRead
 import os
 
 from fastapi import APIRouter, Header, HTTPException
@@ -64,3 +66,15 @@ def retry_failed_webhooks(limit: int = 100, authorization: str | None = Header(d
     _require_internal_token(authorization)
     result = webhook_dispatcher.retry_failed_deliveries(limit=max(1, min(int(limit), 500)), actor="platform-internal")
     return WebhookRetryResponseSchema.model_validate(result)
+
+
+@router.post("/analytics/tenants/{tenant_id}/kpis/refresh", response_model=TenantKpiSnapshotRead)
+def refresh_tenant_kpis(
+    tenant_id: int,
+    authorization: str | None = Header(default=None),
+) -> TenantKpiSnapshotRead:
+    _require_internal_token(authorization)
+    from app.platform.uow import UnitOfWork  # noqa: PLC0415
+    with UnitOfWork() as uow:
+        snap = analytics_service.refresh_tenant_kpis(tenant_id=tenant_id, uow=uow)
+    return TenantKpiSnapshotRead.model_validate(snap)

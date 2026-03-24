@@ -36,6 +36,7 @@ from app.modules.security import rate_limit as rate_limit_service
 from app.modules.tenants import service as tenant_service
 from app.modules.usage import service as usage_service
 from app.modules.university_core import service as university_core_service
+from app.platform.analytics import service as analytics_service
 from app.platform.webhooks import service as webhook_service
 
 
@@ -132,6 +133,7 @@ def _reset_template_state() -> None:
     integrations_service._settings.clear()
     integrations_service._fernet.cache_clear()
     university_core_service.clear_university_state()
+    analytics_service.clear_analytics_state()
     webhook_service.clear_webhook_state()
     tenant_service.clear_tenant_state()
     plans_service.clear_plans_state()
