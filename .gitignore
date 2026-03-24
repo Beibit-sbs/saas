@@ -18,6 +18,7 @@ node_modules/
 
 # Logs
 *.log
+*.exit
 
 # OS/IDE
 .DS_Store
@@ -28,6 +29,11 @@ dist/
 build/
 coverage/
 *.tsbuildinfo
+test-results/
+**/test-results/
+
+# Local runtime artifacts
+backups/
 
 # Local archives
 ai-platform-backup.tar.gz
