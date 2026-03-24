@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlparse
 
 
 def is_enabled(value: str | None) -> bool:
@@ -169,3 +170,44 @@ def get_metrics_token() -> str | None:
     """
     raw = os.getenv("METRICS_TOKEN", "").strip()
     return raw or None
+
+
+def get_required_runtime_config() -> dict[str, str]:
+    return {
+        "DATABASE_URL": os.getenv("DATABASE_URL", "").strip(),
+        "REDIS_URL": os.getenv("REDIS_URL", "").strip(),
+        "JWT_SECRET": os.getenv("JWT_SECRET", "").strip(),
+        "API_BASE_URL": os.getenv("API_BASE_URL", "").strip(),
+        "ADMIN_PANEL_URL": os.getenv("ADMIN_PANEL_URL", "").strip(),
+        "INTERNAL_API_TOKEN": os.getenv("INTERNAL_API_TOKEN", "").strip(),
+    }
+
+
+def _is_https_url(value: str) -> bool:
+    parsed = urlparse(value)
+    return parsed.scheme == "https" and bool(parsed.netloc)
+
+
+def _is_postgres_dsn(value: str) -> bool:
+    return value.startswith("postgresql://") or value.startswith("postgresql+psycopg://")
+
+
+def _is_redis_dsn(value: str) -> bool:
+    return value.startswith("redis://") or value.startswith("rediss://")
+
+
+def validate_required_environment() -> None:
+    config = get_required_runtime_config()
+    missing = [name for name, value in config.items() if not value]
+    if missing:
+        raise RuntimeError(f"missing required environment variables: {', '.join(sorted(missing))}")
+    if len(config["JWT_SECRET"]) < 32:
+        raise RuntimeError("JWT_SECRET must be at least 32 characters long")
+    if not _is_postgres_dsn(config["DATABASE_URL"]):
+        raise RuntimeError("DATABASE_URL must be a PostgreSQL DSN")
+    if not _is_redis_dsn(config["REDIS_URL"]):
+        raise RuntimeError("REDIS_URL must be a Redis DSN")
+    if not _is_https_url(config["API_BASE_URL"]):
+        raise RuntimeError("API_BASE_URL must be an HTTPS URL")
+    if not _is_https_url(config["ADMIN_PANEL_URL"]):
+        raise RuntimeError("ADMIN_PANEL_URL must be an HTTPS URL")

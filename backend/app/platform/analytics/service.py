@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import datetime, timezone
 from typing import Any
 
 from app.platform.analytics.repository import AnalyticsRepository
@@ -32,7 +32,7 @@ def record_event_projection(event: OutboxEventRead, *, uow: "Any") -> dict[str, 
     # Always increment KPI, even if projection was a duplicate — no, only when
     # projection was actually inserted (non-None means new row).
     if projection is not None:
-        today = date.today().isoformat()
+        today = datetime.now(timezone.utc).date().isoformat()
         repo.increment_kpi_snapshot(
             tenant_id=event.tenant_id,
             snapshot_date=today,
@@ -46,7 +46,7 @@ def refresh_tenant_kpis(*, tenant_id: int, uow: "Any") -> dict[str, Any]:
     """Recompute KPI snapshot for today from the projections table."""
     repo: AnalyticsRepository = uow.analytics_repository
     conn = getattr(uow, "conn", None)
-    today = date.today().isoformat()
+    today = datetime.now(timezone.utc).date().isoformat()
     return repo.recompute_kpi_snapshot(
         tenant_id=tenant_id,
         snapshot_date=today,

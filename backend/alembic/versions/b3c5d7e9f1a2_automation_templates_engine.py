@@ -4,6 +4,13 @@ from alembic import op
 import sqlalchemy as sa
 
 
+# revision identifiers, used by Alembic.
+revision = "b3c5d7e9f1a2"
+down_revision = "a7f9c3d1e2b4"
+branch_labels = None
+depends_on = None
+
+
 def upgrade() -> None:
     """Create app_platform_automation_templates table."""
     op.create_table(

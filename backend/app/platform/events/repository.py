@@ -259,6 +259,26 @@ class OutboxEventRepository:
         rows.sort(key=lambda item: (str(item["available_at"]), str(item["created_at"]), int(item["id"])))
         return rows[:normalized_limit]
 
+    def count_backlog(self, *, conn: object | None = None) -> int:
+        if conn is None:
+            with transaction() as tx:
+                return self.count_backlog(conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM app_platform_outbox_events
+                    WHERE status IN ('pending', 'failed', 'processing')
+                    """
+                )
+                row = cur.fetchone()
+            return int(row[0]) if row else 0
+
+        with self._lock:
+            return sum(1 for row in self._rows.values() if str(row.get("status")) in {"pending", "failed", "processing"})
+
     def mark_processing(self, event_id: int, *, conn: object | None = None) -> dict[str, Any] | None:
         normalized_event_id = int(event_id)
         if conn is None:

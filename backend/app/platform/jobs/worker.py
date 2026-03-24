@@ -6,6 +6,7 @@ import time
 from typing import Callable
 
 from app.modules.audit.service import log_admin_action
+from app.platform.runtime_state import record_worker_heartbeat
 from app.platform.jobs import service as jobs_service
 
 logger = logging.getLogger("app.platform.worker")
@@ -26,6 +27,7 @@ class PlatformJobWorker:
         return self._handlers.get(job_type, lambda payload: {"ok": True, "echo": payload})
 
     def run_once(self) -> dict[str, int]:
+        record_worker_heartbeat()
         queued = jobs_service.fetch_queued_jobs(limit=self._batch_size)
         processed = 0
         succeeded = 0
@@ -93,6 +95,7 @@ class PlatformJobWorker:
     def run_forever(self, stop_event: threading.Event | None = None) -> None:
         event = stop_event or threading.Event()
         while not event.is_set():
+            record_worker_heartbeat()
             self.run_once()
             time.sleep(self._poll_interval_seconds)
 

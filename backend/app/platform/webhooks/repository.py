@@ -502,3 +502,103 @@ class WebhookRepository:
 
         rows.sort(key=lambda item: (str(item.get("next_retry_at")), int(item["id"])))
         return rows[:normalized_limit]
+
+    def has_delivered_event(
+        self,
+        *,
+        subscription_id: int,
+        outbox_event_id: int,
+        conn: object | None = None,
+    ) -> bool:
+        normalized_subscription_id = int(subscription_id)
+        normalized_outbox_event_id = int(outbox_event_id)
+        if conn is None:
+            with transaction() as tx:
+                return self.has_delivered_event(
+                    subscription_id=normalized_subscription_id,
+                    outbox_event_id=normalized_outbox_event_id,
+                    conn=tx,
+                )
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT 1
+                    FROM app_platform_webhook_deliveries
+                    WHERE subscription_id = %s
+                      AND outbox_event_id = %s
+                      AND delivery_status = 'delivered'
+                    LIMIT 1
+                    """,
+                    (normalized_subscription_id, normalized_outbox_event_id),
+                )
+                row = cur.fetchone()
+            return row is not None
+
+        with self._lock:
+            return any(
+                int(item.get("subscription_id", 0)) == normalized_subscription_id
+                and int(item.get("outbox_event_id", 0)) == normalized_outbox_event_id
+                and str(item.get("delivery_status", "")).lower() == "delivered"
+                for item in self._deliveries.values()
+            )
+
+    def count_failed_deliveries(self, *, conn: object | None = None) -> int:
+        if conn is None:
+            with transaction() as tx:
+                return self.count_failed_deliveries(conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT COUNT(*) FROM app_platform_webhook_deliveries WHERE delivery_status = 'failed'"
+                )
+                row = cur.fetchone()
+            return int(row[0]) if row else 0
+
+        with self._lock:
+            return sum(1 for item in self._deliveries.values() if str(item.get("delivery_status", "")).lower() == "failed")
+
+    def count_dead_deliveries(self, *, conn: object | None = None) -> int:
+        if conn is None:
+            with transaction() as tx:
+                return self.count_dead_deliveries(conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT COUNT(*) FROM app_platform_webhook_deliveries WHERE delivery_status = 'failed' AND next_retry_at IS NULL"
+                )
+                row = cur.fetchone()
+            return int(row[0]) if row else 0
+
+        with self._lock:
+            return sum(
+                1
+                for item in self._deliveries.values()
+                if str(item.get("delivery_status", "")).lower() == "failed"
+                and item.get("next_retry_at") is None
+            )
+
+    def count_retry_backlog(self, *, conn: object | None = None) -> int:
+        if conn is None:
+            with transaction() as tx:
+                return self.count_retry_backlog(conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT COUNT(*) FROM app_platform_webhook_deliveries WHERE delivery_status = 'failed' AND next_retry_at IS NOT NULL"
+                )
+                row = cur.fetchone()
+            return int(row[0]) if row else 0
+
+        with self._lock:
+            return sum(
+                1 for item in self._deliveries.values()
+                if str(item.get("delivery_status", "")).lower() == "failed" and item.get("next_retry_at") is not None
+            )
+
+
+SHARED_WEBHOOK_REPOSITORY = WebhookRepository()

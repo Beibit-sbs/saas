@@ -151,6 +151,24 @@ def evaluate_event(event: OutboxEventRead, *, uow: UnitOfWork) -> dict[str, Any]
     action_results: list[dict[str, Any]] = []
 
     for rule in rules:
+        existing_execution = uow.automation_repository.get_execution_by_rule_event(
+            tenant_id=event.tenant_id,
+            rule_id=rule.id,
+            event_id=event.id,
+            conn=uow.conn,
+        )
+        if existing_execution is not None and existing_execution.status in {"pending", "completed"}:
+            action_results.append({
+                "rule_id": rule.id,
+                "rule_name": rule.name,
+                "execution_id": existing_execution.id,
+                "status": existing_execution.status,
+                "actions_count": len(existing_execution.result_json.get("actions", [])),
+                "error": existing_execution.error_message,
+                "idempotent_replay": True,
+            })
+            continue
+
         matched_condition = _evaluate_condition(rule.condition_json, event.payload_json)
         if not matched_condition:
             skipped += 1

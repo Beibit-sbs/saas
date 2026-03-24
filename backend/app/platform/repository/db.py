@@ -338,6 +338,86 @@ def ensure_platform_core_schema(conn: object) -> None:
                 "CREATE INDEX IF NOT EXISTS ix_platform_dashboard_snapshots_tenant_date ON app_platform_tenant_dashboard_snapshots (tenant_id, snapshot_date DESC)"
             )
 
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_developer_apps (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    name TEXT NOT NULL,
+                    app_key TEXT NOT NULL UNIQUE,
+                    app_secret_hash TEXT NOT NULL,
+                    description TEXT NOT NULL DEFAULT '',
+                    owner_email TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    webhook_url TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_developer_app_scopes (
+                    id BIGSERIAL PRIMARY KEY,
+                    app_id BIGINT NOT NULL REFERENCES app_platform_developer_apps(id) ON DELETE CASCADE,
+                    scope TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (app_id, scope)
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_developer_app_installations (
+                    id BIGSERIAL PRIMARY KEY,
+                    app_id BIGINT NOT NULL REFERENCES app_platform_developer_apps(id) ON DELETE CASCADE,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    installed_by TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (app_id, tenant_id)
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_developer_api_logs (
+                    id BIGSERIAL PRIMARY KEY,
+                    app_id BIGINT NOT NULL REFERENCES app_platform_developer_apps(id) ON DELETE CASCADE,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    endpoint TEXT NOT NULL,
+                    status_code INTEGER NOT NULL,
+                    latency_ms DOUBLE PRECISION NOT NULL DEFAULT 0,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_app_event_subscriptions (
+                    id BIGSERIAL PRIMARY KEY,
+                    app_id BIGINT NOT NULL REFERENCES app_platform_developer_apps(id) ON DELETE CASCADE,
+                    event_type TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                "ALTER TABLE app_platform_developer_apps ADD COLUMN IF NOT EXISTS tenant_id BIGINT REFERENCES app_tenants(id) ON DELETE CASCADE"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_developer_apps_status ON app_platform_developer_apps (status, created_at DESC)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_developer_installations_tenant ON app_platform_developer_app_installations (tenant_id, status)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_developer_api_logs_app_created ON app_platform_developer_api_logs (app_id, created_at DESC)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_developer_event_subscriptions_event ON app_platform_app_event_subscriptions (event_type, app_id)"
+            )
+
             # ---- Automation / Workflow Engine v1 --------------------------------
 
             cur.execute(

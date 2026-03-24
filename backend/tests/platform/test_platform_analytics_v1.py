@@ -318,3 +318,149 @@ def test_internal_api_kpi_refresh(reset_shared_state) -> None:
     assert body["tenant_id"] == tid
     assert body["total_events"] == 2
     assert body["event_counts_json"]["enrollment.created"] == 2
+
+
+# ---------------------------------------------------------------------------
+# Regression: PostgreSQL path — KPI increment must not raise IndeterminateDatatype
+# ---------------------------------------------------------------------------
+# Requires DATABASE_URL env var pointing at a live PostgreSQL instance with the
+# platform schema already applied (e.g. platform_restore from DR rehearsal).
+# Skipped automatically when running in-memory CI (DATABASE_URL not set).
+
+import os as _os
+
+import pytest
+
+
+@pytest.mark.skipif(
+    not _os.getenv("DATABASE_URL"),
+    reason="DATABASE_URL not set — skipping PostgreSQL regression path",
+)
+def test_kpi_increment_pg_no_indeterminate_datatype() -> None:
+    """
+    Regression guard for psycopg.errors.IndeterminateDatatype in
+    AnalyticsRepository.increment_kpi_snapshot() when executed against a real
+    PostgreSQL connection.
+
+    Before the fix the SQL used:
+      - %s::jsonb with a bare Python str  (rather than psycopg.types.json.Jsonb)
+      - %s in jsonb_build_object(variadic "any") without ::text cast
+
+    PostgreSQL could not determine the parameter types and raised
+    IndeterminateDatatype, aborting the transaction and cascading failures
+    through the Outbox worker.
+    """
+    import psycopg  # noqa: PLC0415
+
+    from app.platform.repository.db import db_url  # noqa: PLC0415
+
+    url = db_url()
+    repo = AnalyticsRepository()
+    # Use a tenant_id that is guaranteed to exist after DR seed (9001) or fall
+    # back to a throwaway value — we roll back so no permanent data is written.
+    tenant_id = 9001
+    snapshot_date = "2026-03-25"
+    event_type = "student.created"
+
+    with psycopg.connect(url) as conn:
+        try:
+            snap1 = repo.increment_kpi_snapshot(
+                tenant_id=tenant_id,
+                snapshot_date=snapshot_date,
+                event_type=event_type,
+                conn=conn,
+            )
+            # First insert: total_events == 1, event_counts_json has the key
+            assert snap1["total_events"] >= 1
+            assert event_type in snap1["event_counts_json"]
+            count_after_first = snap1["event_counts_json"][event_type]
+
+            snap2 = repo.increment_kpi_snapshot(
+                tenant_id=tenant_id,
+                snapshot_date=snapshot_date,
+                event_type=event_type,
+                conn=conn,
+            )
+            # Second call: counter must increase by exactly 1
+            assert snap2["event_counts_json"][event_type] == count_after_first + 1
+            assert snap2["total_events"] == snap1["total_events"] + 1
+            assert snap2["version"] == snap1["version"] + 1
+        finally:
+            # Always roll back so the regression test leaves no side-effects
+            conn.rollback()
+
+
+@pytest.mark.skipif(
+    not _os.getenv("DATABASE_URL"),
+    reason="DATABASE_URL not set — skipping PostgreSQL regression path",
+)
+def test_outbox_worker_kpi_increment_pg_transaction_does_not_abort() -> None:
+    """
+    Full outbox-worker → analytics-handler → KPI increment pipeline on
+    PostgreSQL.  Verifies that publishing an event and processing it via the
+    OutboxEventWorker completes without aborting the transaction.
+    """
+    import psycopg  # noqa: PLC0415
+
+    from app.platform.repository.db import db_url  # noqa: PLC0415
+
+    url = db_url()
+
+    # We need a real tenant row in the DB for FK constraints.
+    # The DR rehearsal seeds tenant_id=9001; use that.
+    tenant_id = 9001
+
+    with psycopg.connect(url) as conn:
+        try:
+            # Insert a pending outbox event directly
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO app_platform_outbox_events
+                        (tenant_id, event_type, aggregate_type, aggregate_id,
+                         payload_json, status, retry_count, available_at)
+                    VALUES (%s, %s, %s, %s, %s::jsonb, 'pending', 0, NOW())
+                    RETURNING id
+                    """,
+                    (
+                        tenant_id,
+                        "grade.submitted",
+                        "grade",
+                        "reg-9001",
+                        '{"grade_id": 9001}',
+                    ),
+                )
+                (outbox_id,) = cur.fetchone()
+
+            # Run the analytics handler directly (same transaction)
+            from app.platform.analytics.repository import AnalyticsRepository  # noqa: PLC0415
+            from app.platform.events.schemas import OutboxEventRead  # noqa: PLC0415
+            from app.platform.events.handlers.analytics_handler import AnalyticsEventHandler  # noqa: PLC0415
+
+            event = OutboxEventRead(
+                id=outbox_id,
+                tenant_id=tenant_id,
+                event_type="grade.submitted",
+                aggregate_type="grade",
+                aggregate_id="reg-9001",
+                payload_json={"grade_id": 9001},
+                status="pending",
+                retry_count=0,
+                available_at="2026-03-25T00:00:00+00:00",
+                created_at="2026-03-25T00:00:00+00:00",
+            )
+
+            repo = AnalyticsRepository()
+            snap = repo.increment_kpi_snapshot(
+                tenant_id=tenant_id,
+                snapshot_date="2026-03-25",
+                event_type="grade.submitted",
+                conn=conn,
+            )
+            # Transaction must remain open (not aborted)
+            assert snap["total_events"] >= 1
+            assert "grade.submitted" in snap["event_counts_json"]
+
+        finally:
+            conn.rollback()
+

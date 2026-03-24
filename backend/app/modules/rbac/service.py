@@ -52,6 +52,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "workflows.write",
         "federation.read",
         "federation.write",
+        "developer_platform.read",
+        "developer_platform.write",
     },
     "admin": {
         "admin.dashboard.read",
@@ -93,6 +95,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "workflows.write",
         "federation.read",
         "federation.write",
+        "developer_platform.read",
+        "developer_platform.write",
     },
     "auditor": {
         "admin.audit.read",
@@ -110,6 +114,7 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "profiles.read",
         "workflows.read",
         "federation.read",
+        "developer_platform.read",
     },
 }
 

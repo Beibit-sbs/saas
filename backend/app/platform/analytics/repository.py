@@ -243,13 +243,13 @@ class AnalyticsRepository:
                 """
                 INSERT INTO app_platform_tenant_kpi_snapshots
                     (tenant_id, snapshot_date, event_counts_json, total_events, version)
-                VALUES (%s, %s::date, %s::jsonb, 1, 1)
+                VALUES (%s, %s::date, %s, 1, 1)
                 ON CONFLICT (tenant_id, snapshot_date) DO UPDATE
                     SET event_counts_json = (
                             app_platform_tenant_kpi_snapshots.event_counts_json ||
                             jsonb_build_object(
-                                %s,
-                                COALESCE((app_platform_tenant_kpi_snapshots.event_counts_json->>%s)::bigint, 0) + 1
+                                %s::text,
+                                COALESCE((app_platform_tenant_kpi_snapshots.event_counts_json->>%s::text)::bigint, 0) + 1
                             )
                         ),
                         total_events = app_platform_tenant_kpi_snapshots.total_events + 1,
@@ -260,7 +260,7 @@ class AnalyticsRepository:
                 (
                     tenant_id,
                     snapshot_date,
-                    f'{{"{event_type}": 1}}',
+                    psycopg.types.json.Jsonb({event_type: 1}),
                     event_type,
                     event_type,
                 ),

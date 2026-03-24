@@ -76,6 +76,46 @@ def retry_failed_webhooks(limit: int = 100, authorization: str | None = Header(d
     return WebhookRetryResponseSchema.model_validate(result)
 
 
+@router.get("/webhooks/failed-deliveries")
+def list_failed_deliveries(
+    limit: int = 50,
+    tenant_id: int | None = None,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """List failed/stuck webhook deliveries for operational visibility."""
+    _require_internal_token(authorization)
+    from datetime import datetime, timezone
+    with UnitOfWork() as uow:
+        # Get failed deliveries from repository
+        deliveries = uow.webhook_repository.fetch_retryable_deliveries(
+            as_of=datetime.now(timezone.utc),
+            limit=max(1, min(int(limit), 500)),
+            max_retry_count=5,
+            conn=uow.conn,
+        )
+        # Filter by tenant if specified
+        if tenant_id:
+            deliveries = [d for d in deliveries if d.get("tenant_id") == int(tenant_id)]
+        return {
+            "failed_deliveries_count": len(deliveries),
+            "deliveries": [
+                {
+                    "id": d.get("id"),
+                    "tenant_id": d.get("tenant_id"),
+                    "subscription_id": d.get("subscription_id"),
+                    "outbox_event_id": d.get("outbox_event_id"),
+                    "target_url": d.get("target_url"),
+                    "event_type": d.get("event_type"),
+                    "retry_count": d.get("retry_count"),
+                    "last_error": d.get("last_error"),
+                    "next_retry_at": d.get("next_retry_at"),
+                    "created_at": d.get("created_at"),
+                }
+                for d in deliveries
+            ],
+        }
+
+
 @router.post("/analytics/tenants/{tenant_id}/kpis/refresh", response_model=TenantKpiSnapshotRead)
 def refresh_tenant_kpis(
     tenant_id: int,

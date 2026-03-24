@@ -406,3 +406,62 @@ class AutomationRepository:
             rows = [e for e in self._executions.values() if e.tenant_id == tenant_id]
             rows.sort(key=lambda e: e.id, reverse=True)
             return rows[:limit]
+
+    def get_execution_by_rule_event(
+        self,
+        *,
+        tenant_id: int,
+        rule_id: int,
+        event_id: int,
+        conn: object | None = None,
+    ) -> AutomationExecutionModel | None:
+        if conn is None:
+            with transaction() as tx:
+                return self.get_execution_by_rule_event(
+                    tenant_id=tenant_id,
+                    rule_id=rule_id,
+                    event_id=event_id,
+                    conn=tx,
+                )
+
+        if db_available() and psycopg is not None and conn is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id, tenant_id, rule_id, event_id, status,
+                           result_json, error_message, executed_at, created_at
+                    FROM app_platform_automation_executions
+                    WHERE tenant_id = %s AND rule_id = %s AND event_id = %s
+                    ORDER BY id DESC
+                    LIMIT 1
+                    """,
+                    (int(tenant_id), int(rule_id), int(event_id)),
+                )
+                row = cur.fetchone()
+            return _exec_row_to_model(row) if row else None
+
+        with self._lock:
+            candidates = [
+                execution for execution in self._executions.values()
+                if execution.tenant_id == int(tenant_id)
+                and execution.rule_id == int(rule_id)
+                and execution.event_id == int(event_id)
+            ]
+        candidates.sort(key=lambda item: item.id, reverse=True)
+        return candidates[0] if candidates else None
+
+    def count_failed_executions(self, *, conn: object | None = None) -> int:
+        if conn is None:
+            with transaction() as tx:
+                return self.count_failed_executions(conn=tx)
+
+        if db_available() and psycopg is not None and conn is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT COUNT(*) FROM app_platform_automation_executions WHERE status = 'failed'"
+                )
+                row = cur.fetchone()
+            return int(row[0]) if row else 0
+
+        with self._lock:
+            return sum(1 for execution in self._executions.values() if execution.status == "failed")

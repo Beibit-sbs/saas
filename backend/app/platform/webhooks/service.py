@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import json
+import logging
 from typing import Any, Callable
 from urllib import request as urllib_request
 from urllib.error import HTTPError, URLError
@@ -9,8 +10,11 @@ from urllib.error import HTTPError, URLError
 from app.modules.audit.service import log_admin_action
 from app.platform.events.schemas import OutboxEventRead
 from app.platform.uow import UnitOfWork
-from app.platform.webhooks.repository import WebhookRepository
+from app.platform.webhooks.repository import SHARED_WEBHOOK_REPOSITORY, WebhookRepository
 from app.platform.webhooks.signer import build_webhook_signature, canonical_json_bytes
+
+
+logger = logging.getLogger("app.platform.webhooks")
 
 
 def _utc_now() -> datetime:
@@ -34,7 +38,7 @@ class WebhookService:
         max_retry_count: int = 5,
         base_retry_seconds: int = 30,
     ) -> None:
-        self._repository = repository or WebhookRepository()
+        self._repository = repository or SHARED_WEBHOOK_REPOSITORY
         self._sender: HttpSender = sender or self._default_sender
         self._request_timeout_seconds = max(0.1, float(request_timeout_seconds))
         self._max_retry_count = max(1, int(max_retry_count))
@@ -156,6 +160,21 @@ class WebhookService:
         retry_count: int,
         uow: UnitOfWork,
     ) -> dict[str, Any]:
+        if self._repository.has_delivered_event(
+            subscription_id=int(subscription["id"]),
+            outbox_event_id=int(event.id),
+            conn=uow.conn,
+        ):
+            return {
+                "tenant_id": int(subscription["tenant_id"]),
+                "subscription_id": int(subscription["id"]),
+                "outbox_event_id": int(event.id),
+                "delivery_status": "delivered",
+                "response_status_code": 208,
+                "response_body": "duplicate delivery suppressed",
+                "retry_count": int(retry_count),
+            }
+
         payload = self._build_outbox_payload(event)
         payload_bytes = canonical_json_bytes(payload)
         headers = build_webhook_signature(payload_bytes, signing_secret=str(subscription["signing_secret"]))
@@ -210,6 +229,34 @@ class WebhookService:
         )
         if finalized is None:
             raise RuntimeError("webhook delivery finalization failed")
+        
+        # Log retry exhaustion or success
+        if str(status) == "delivered":
+            logger.info(
+                "webhook_delivery_succeeded",
+                extra={
+                    "subscription_id": subscription.get("id"),
+                    "event_id": event.id,
+                    "event_type": event.event_type,
+                    "target_url": subscription.get("target_url"),
+                    "retry_count": int(retry_count),
+                },
+            )
+        elif next_retry_at is None and str(status) == "failed":
+            logger.error(
+                "webhook_delivery_exhausted",
+                extra={
+                    "subscription_id": subscription.get("id"),
+                    "event_id": event.id,
+                    "event_type": event.event_type,
+                    "target_url": subscription.get("target_url"),
+                    "retry_count": int(retry_count),
+                    "max_retries": self._max_retry_count,
+                    "last_error": last_error,
+                    "last_status_code": status_code,
+                },
+            )
+        
         return finalized
 
     def dispatch_event_to_subscriptions(

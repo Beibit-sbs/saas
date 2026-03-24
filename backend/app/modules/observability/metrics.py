@@ -5,7 +5,9 @@ No external library required. Emits text/plain exposition format.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections import deque
 from threading import Lock
+import time
 
 from app.modules.observability.security_signals import snapshot_security_metrics
 
@@ -27,6 +29,7 @@ _req_status_class_total: dict[tuple[str, str, str], int] = defaultdict(int)
 _workflow_executions_total = 0
 _grade_submissions_total = 0
 _scheduling_conflicts_total = 0
+_recent_request_samples: deque[tuple[float, int, float]] = deque(maxlen=5000)
 
 _LATENCY_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
 
@@ -50,10 +53,38 @@ def record_request(method: str, path: str, status: int, duration: float) -> None
         old_count, old_sum = _req_duration[key_dur]
         _req_duration[key_dur] = (old_count + 1, old_sum + duration)
         _req_status_class_total[status_key] += 1
+        _recent_request_samples.append((time.time(), int(status), float(duration)))
         for bound in _LATENCY_BUCKETS:
             if duration <= bound:
                 _req_duration_bucket[(method.upper(), path, _bucket_label(bound))] += 1
         _req_duration_bucket[(method.upper(), path, "+Inf")] += 1
+
+
+def _percentile(sorted_values: list[float], percentile: float) -> float:
+    if not sorted_values:
+        return 0.0
+    if len(sorted_values) == 1:
+        return sorted_values[0]
+    index = max(0, min(len(sorted_values) - 1, round((len(sorted_values) - 1) * percentile)))
+    return sorted_values[index]
+
+
+def snapshot_latency_metrics() -> dict[str, float | int]:
+    now = time.time()
+    with _lock:
+        samples = list(_recent_request_samples)
+    recent_minute = [item for item in samples if now - item[0] <= 60]
+    durations_ms = sorted(round(item[2] * 1000, 2) for item in recent_minute)
+    count_4xx = sum(1 for _, status, _ in recent_minute if 400 <= status < 500)
+    count_5xx = sum(1 for _, status, _ in recent_minute if 500 <= status < 600)
+    return {
+        "p50_latency_ms": round(_percentile(durations_ms, 0.50), 2),
+        "p95_latency_ms": round(_percentile(durations_ms, 0.95), 2),
+        "p99_latency_ms": round(_percentile(durations_ms, 0.99), 2),
+        "requests_per_minute": len(recent_minute),
+        "http_4xx_count": count_4xx,
+        "http_5xx_count": count_5xx,
+    }
 
 
 def observe_workflow_execution() -> None:

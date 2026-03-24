@@ -5,6 +5,15 @@ import os
 import sys
 from pathlib import Path
 
+# Provide minimal env so optional modules don't crash on import.
+# DATABASE_URL is intentionally NOT set here so db_available() returns False
+# and all platform repositories fall back to their in-memory stores.
+os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault("JWT_SECRET", "test-secret-not-for-production-use-only-32ch")
+os.environ.setdefault("API_BASE_URL", "https://api.example.test")
+os.environ.setdefault("ADMIN_PANEL_URL", "https://admin.example.test")
+os.environ.setdefault("INTERNAL_API_TOKEN", "internal-token-for-tests-only")
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -39,6 +48,7 @@ from app.modules.university_core import service as university_core_service
 from app.platform.analytics import service as analytics_service
 from app.platform.ai import service as platform_ai_service
 from app.platform.ai.recommendations import service as platform_ai_rec_service
+from app.platform.developer import service as developer_service
 from app.platform.federation import service as federation_service
 from app.platform.kpi import service as kpi_service
 from app.platform.automation import service as automation_service
@@ -143,6 +153,7 @@ def _reset_template_state() -> None:
     analytics_service.clear_analytics_state()
     platform_ai_service.clear_ai_state()
     platform_ai_rec_service.clear_recommendation_state()
+    developer_service.clear_developer_state()
     federation_service.clear_federation_state()
     kpi_service.clear_kpi_state()
     automation_service.clear_automation_state()

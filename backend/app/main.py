@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 import hmac
 import logging
+import os
 import time
 import uuid
 
@@ -17,6 +18,7 @@ from app.core.config import (
     get_metrics_allowed_ips,
     get_metrics_token,
     is_production_mode,
+    validate_required_environment,
 )
 
 from app.modules.admin.router import router as admin_router
@@ -70,11 +72,16 @@ from app.core.db import build_engine, make_session_factory
 from app.modules.observability.logging import (
     actor_id_var,
     configure_json_logging,
+    institution_id_var,
     request_id_var,
     tenant_id_var,
+    trace_id_var,
 )
-from app.modules.observability.metrics import record_request, render_metrics
+from app.modules.observability.trace import generate_trace_id
+from app.modules.observability.metrics import record_request, render_metrics, snapshot_latency_metrics
 from app.modules.observability.security_signals import record_security_signal
+from app.platform.runtime_state import get_scheduler_last_run, get_worker_heartbeat
+from app.platform.uow import UnitOfWork
 from app.modules.security.rate_limit import (
     check_request_rate_limit,
     get_rate_limit_audit_metadata,
@@ -91,6 +98,10 @@ async def lifespan(fastapi_app: FastAPI):
     # Re-apply on process startup so third-party logger setup doesn't override JSON handlers.
     configure_json_logging()
     validate_token_signing_config()
+    # Skip in pytest runs (PYTEST_CURRENT_TEST is set by pytest automatically).
+    # Tests use in-memory stores; env validation is verified by a dedicated test.
+    if not os.getenv("PYTEST_CURRENT_TEST"):
+        validate_required_environment()
 
     # Wire the admissions SQLAlchemy session factory.
     # build_engine() raises RuntimeError when DATABASE_URL is absent; we catch it
@@ -175,6 +186,44 @@ SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 _DEFAULT_TENANT_ID = 1
 
 
+def _safe_metric_int(loader) -> int | None:
+    try:
+        value = loader()
+    except Exception:
+        return None
+    return int(value)
+
+
+def _collect_ops_metrics() -> dict[str, int | str | None]:
+    with UnitOfWork() as uow:
+        return {
+            "event_queue_size": _safe_metric_int(lambda: uow.outbox_event_repository.count_backlog(conn=uow.conn)),
+            "failed_webhooks": _safe_metric_int(lambda: uow.webhook_repository.count_failed_deliveries(conn=uow.conn)),
+            "dead_webhooks": _safe_metric_int(lambda: uow.webhook_repository.count_dead_deliveries(conn=uow.conn)),
+            "failed_automation_executions": _safe_metric_int(
+                lambda: uow.automation_repository.count_failed_executions(conn=uow.conn)
+            ),
+            "dead_automation_executions": _safe_metric_int(
+                lambda: uow.automation_repository.count_failed_executions(conn=uow.conn)
+            ),
+            "failed_jobs": _safe_metric_int(lambda: uow.job_repository.count_by_status("failed", conn=uow.conn)),
+            "dead_jobs": _safe_metric_int(lambda: uow.job_repository.count_dead_jobs(conn=uow.conn)),
+            "worker_last_heartbeat": get_worker_heartbeat(),
+            "scheduler_last_run": get_scheduler_last_run(),
+            "retry_backlog": _safe_metric_int(lambda: uow.webhook_repository.count_retry_backlog(conn=uow.conn)),
+        }
+
+
+def _collect_latency_metrics() -> dict[str, float | int | None]:
+    metrics: dict[str, float | int | None] = dict(snapshot_latency_metrics())
+    try:
+        with UnitOfWork() as uow:
+            metrics["developer_api_error_count"] = int(uow.developer_repository.count_error_logs(conn=uow.conn))
+    except Exception:
+        metrics["developer_api_error_count"] = None
+    return metrics
+
+
 def _has_bearer_auth(request: Request) -> bool:
     authorization = request.headers.get("authorization", "")
     return authorization.startswith("Bearer ")
@@ -217,6 +266,11 @@ def _resolve_request_actor_id(request: Request) -> str | None:
 
     fallback_actor = request.headers.get("x-actor-id", "").strip()
     return fallback_actor or None
+
+
+def _resolve_request_institution_id(request: Request) -> str | None:
+    raw = request.headers.get("x-institution-id", "").strip()
+    return raw or None
 
 
 def _resolve_client_ip(request: Request) -> str:
@@ -328,13 +382,18 @@ async def enforce_csrf(request: Request, call_next):
 @app.middleware("http")
 async def add_request_id(request: Request, call_next):
     request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
+    trace_id = request.headers.get("x-trace-id", generate_trace_id())
     tenant_id = _resolve_request_tenant_id(request)
     actor_id = _resolve_request_actor_id(request)
+    institution_id = _resolve_request_institution_id(request)
     request.state.request_id = request_id
+    request.state.trace_id = trace_id
     # Propagate into logging context
     request_token = request_id_var.set(request_id)
+    trace_log_token = trace_id_var.set(trace_id)
     tenant_log_token = tenant_id_var.set(str(tenant_id))
     actor_log_token = actor_id_var.set(actor_id or "-")
+    institution_log_token = institution_id_var.set(institution_id or "-")
     tenant_token = set_request_tenant_id(tenant_id)
     start = time.monotonic()
     response = None
@@ -343,6 +402,10 @@ async def add_request_id(request: Request, call_next):
         response = await call_next(request)
         status_code = int(getattr(response, "status_code", 500))
         response.headers["x-request-id"] = request_id
+        response.headers["x-trace-id"] = trace_id
+        response.headers.setdefault("x-content-type-options", "nosniff")
+        response.headers.setdefault("x-frame-options", "DENY")
+        response.headers.setdefault("referrer-policy", "strict-origin-when-cross-origin")
         return response
     except Exception:
         duration = time.monotonic() - start
@@ -352,11 +415,14 @@ async def add_request_id(request: Request, call_next):
             extra={
                 "method": request.method,
                 "path": request.url.path,
+                "endpoint": request.url.path,
                 "status_code": status_code,
                 "duration_ms": round(duration * 1000, 2),
                 "tenant_id": str(tenant_id),
                 "actor_id": actor_id or "-",
+                "institution_id": institution_id or "-",
                 "request_id": request_id,
+                "trace_id": trace_id,
             },
         )
         raise
@@ -370,22 +436,27 @@ async def add_request_id(request: Request, call_next):
                 extra={
                     "method": request.method,
                     "path": raw_path,
+                    "endpoint": raw_path,
                     "status_code": status_code,
                     "duration_ms": round(duration * 1000, 2),
                     "tenant_id": str(tenant_id),
                     "actor_id": actor_id or "-",
+                    "institution_id": institution_id or "-",
                     "request_id": request_id,
+                    "trace_id": trace_id,
                 },
             )
         reset_request_tenant_id(tenant_token)
+        institution_id_var.reset(institution_log_token)
         actor_id_var.reset(actor_log_token)
         tenant_id_var.reset(tenant_log_token)
+        trace_id_var.reset(trace_log_token)
         request_id_var.reset(request_token)
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "service": "api"}
 
 
 @app.get("/api/health")
@@ -407,6 +478,82 @@ def health_db(request: Request):
         return JSONResponse(status_code=503, content={"status": "error", "database": "unreachable"})
 
     return {"status": "ok", "database": "reachable"}
+
+
+@app.get("/health/worker", response_model=None)
+def health_worker() -> JSONResponse | dict[str, str]:
+    heartbeat = get_worker_heartbeat()
+    if not heartbeat:
+        return JSONResponse(status_code=503, content={"status": "error", "worker": "unreachable"})
+    return {"status": "ok", "worker": "reachable", "heartbeat_at": heartbeat}
+
+
+@app.get("/metrics/ops")
+def metrics_ops() -> dict[str, object]:
+    return _collect_ops_metrics()
+
+
+@app.get("/metrics/latency")
+def metrics_latency() -> dict[str, float | int]:
+    return _collect_latency_metrics()
+
+
+@app.get("/health/comprehensive")
+def health_comprehensive() -> dict[str, object]:
+    """Comprehensive health check with operational status."""
+    db_status = "reachable"
+    worker_status = "reachable"
+    scheduler_status = "reachable"
+    issues: list[str] = []
+    
+    # Database health
+    session_factory = getattr(app.state, "admissions_session_factory", None)
+    if session_factory is None:
+        db_status = "unreachable"
+        issues.append("database_not_configured")
+    else:
+        try:
+            with session_factory() as session:
+                session.execute(text("SELECT 1"))
+        except Exception as e:
+            db_status = "unreachable"
+            issues.append(f"database_error: {str(e)[:50]}")
+    
+    # Worker status
+    heartbeat = get_worker_heartbeat()
+    if not heartbeat:
+        worker_status = "unreachable"
+        issues.append("worker_not_running")
+
+    # Scheduler status
+    scheduler_last_run = get_scheduler_last_run()
+    if not scheduler_last_run:
+        scheduler_status = "unreachable"
+        issues.append("scheduler_not_running")
+    
+    # Operational metrics
+    ops_metrics = {}
+    try:
+        ops_metrics = _collect_ops_metrics()
+    except Exception as e:
+        ops_metrics["error"] = f"Failed to get metrics: {str(e)[:50]}"
+    
+    # Determine overall status
+    overall_status = "healthy" if len(issues) == 0 else ("degraded" if len(issues) <= 2 else "unhealthy")
+    
+    return {
+        "status": overall_status,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "components": {
+            "database": db_status,
+            "worker": worker_status,
+            "scheduler": scheduler_status,
+        },
+        "metrics": ops_metrics,
+        "worker_heartbeat": heartbeat,
+        "scheduler_last_run": scheduler_last_run,
+        "issues": issues,
+    }
 
 
 @app.get("/metrics", response_class=PlainTextResponse, include_in_schema=False)

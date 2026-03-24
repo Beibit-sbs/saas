@@ -10,6 +10,17 @@ from app.platform.analytics import service as analytics_service
 from app.platform.analytics.schemas import AnalyticsEventProjectionListSchema, AnalyticsEventProjectionRead, TenantKpiSnapshotRead
 from app.platform.ai import service as ai_service
 from app.platform.ai.schemas import CopilotAnswerReadSchema, CopilotQuestionRequestSchema, CopilotQueryLogReadSchema
+from app.platform.developer import service as developer_service
+from app.platform.developer.schemas import (
+    DeveloperApiLogReadSchema,
+    DeveloperAppCreateSchema,
+    DeveloperAppEventSubscriptionCreateSchema,
+    DeveloperAppEventSubscriptionReadSchema,
+    DeveloperAppInstallSchema,
+    DeveloperAppInstallationReadSchema,
+    DeveloperAppReadSchema,
+    DeveloperAppSecretReadSchema,
+)
 from app.platform.federation import service as federation_service
 from app.platform.federation.schemas import (
     InstitutionCreateSchema,
@@ -271,7 +282,10 @@ def create_webhook_subscription(payload: WebhookSubscriptionCreateSchema, reques
 
 
 @router.get("/tenants/{tenant_id}/webhooks/subscriptions", response_model=list[WebhookSubscriptionReadSchema])
-def list_webhook_subscriptions(tenant_id: int, _actor: Actor) -> list[WebhookSubscriptionReadSchema]:
+def list_webhook_subscriptions(tenant_id: int, request: Request, _actor: Actor) -> list[WebhookSubscriptionReadSchema]:
+    request_tenant = request.headers.get("x-tenant-id")
+    if request_tenant is not None and int(request_tenant) != int(tenant_id):
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
     rows = webhooks_service.webhook_service.list_subscriptions(tenant_id=tenant_id, limit=200)
     return [WebhookSubscriptionReadSchema.model_validate(item) for item in rows]
 
@@ -305,10 +319,15 @@ def list_webhook_deliveries(tenant_id: int, _actor: Actor) -> WebhookDeliveryLis
 @router.get("/tenants/{tenant_id}/analytics/events", response_model=AnalyticsEventProjectionListSchema)
 def list_analytics_events(
     _actor: Actor,
+    request: Request,
     tenant_id: int,
     event_type: str | None = None,
     limit: int = 100,
 ) -> AnalyticsEventProjectionListSchema:
+    request_tenant = request.headers.get("x-tenant-id")
+    if request_tenant is not None and int(request_tenant) != int(tenant_id):
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+
     with UnitOfWork() as uow:
         items = analytics_service.list_event_projections(
             tenant_id=tenant_id,
@@ -565,3 +584,111 @@ def get_institution_overview(institution_id: int, _actor: Actor) -> InstitutionO
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return InstitutionOverviewSchema.model_validate(overview)
+
+
+@router.post("/platform/developer/apps", response_model=DeveloperAppSecretReadSchema, status_code=201)
+def create_developer_app(
+    body: DeveloperAppCreateSchema,
+    actor: Actor,
+    request: Request,
+) -> DeveloperAppSecretReadSchema:
+    tenant_id_header = request.headers.get("x-tenant-id", "1")
+    try:
+        tenant_id = int(tenant_id_header)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="invalid tenant header") from exc
+
+    try:
+        app = developer_service.developer_service.create_app(
+            tenant_id=tenant_id,
+            name=body.name,
+            description=body.description,
+            owner_email=body.owner_email,
+            scopes=body.scopes,
+            webhook_url=body.webhook_url,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    _audit(request, actor, "platform_core.developer_app.create", 1, {"app_key": app["app_key"]})
+    return DeveloperAppSecretReadSchema.model_validate(app)
+
+
+@router.get("/platform/developer/apps", response_model=list[DeveloperAppReadSchema])
+def list_developer_apps(request: Request, _actor: Actor) -> list[DeveloperAppReadSchema]:
+    tenant_id = int(request.headers.get("x-tenant-id", 1))
+    return [DeveloperAppReadSchema.model_validate(item) for item in developer_service.developer_service.list_apps(tenant_id=tenant_id)]
+
+
+@router.post("/platform/developer/apps/{app_id}/rotate-secret", response_model=DeveloperAppSecretReadSchema)
+def rotate_developer_app_secret(app_id: int, actor: Actor, request: Request) -> DeveloperAppSecretReadSchema:
+    try:
+        row = developer_service.developer_service.rotate_secret(app_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    _audit(request, actor, "platform_core.developer_app.rotate_secret", 1, {"app_id": app_id})
+    return DeveloperAppSecretReadSchema.model_validate(row)
+
+
+@router.post(
+    "/platform/developer/apps/{app_id}/installations",
+    response_model=DeveloperAppInstallationReadSchema,
+    status_code=201,
+)
+def install_developer_app(
+    app_id: int,
+    body: DeveloperAppInstallSchema,
+    actor: Actor,
+    request: Request,
+) -> DeveloperAppInstallationReadSchema:
+    tenant_id_header = request.headers.get("x-tenant-id", "1")
+    try:
+        request_tenant_id = int(tenant_id_header)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="invalid tenant header") from exc
+    if request_tenant_id != int(body.tenant_id):
+        raise HTTPException(status_code=403, detail="cross-tenant installation denied")
+
+    try:
+        row = developer_service.developer_service.install_app(app_id=app_id, tenant_id=body.tenant_id, installed_by=actor)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    _audit(request, actor, "platform_core.developer_app.install", body.tenant_id, {"app_id": app_id})
+    return DeveloperAppInstallationReadSchema.model_validate(row)
+
+
+@router.get(
+    "/platform/developer/apps/{app_id}/installations",
+    response_model=list[DeveloperAppInstallationReadSchema],
+)
+def list_developer_app_installations(app_id: int, _actor: Actor) -> list[DeveloperAppInstallationReadSchema]:
+    return [
+        DeveloperAppInstallationReadSchema.model_validate(item)
+        for item in developer_service.developer_service.list_installations(app_id)
+    ]
+
+
+@router.get("/platform/developer/apps/{app_id}/logs", response_model=list[DeveloperApiLogReadSchema])
+def list_developer_app_logs(app_id: int, _actor: Actor, limit: int = 100) -> list[DeveloperApiLogReadSchema]:
+    return [
+        DeveloperApiLogReadSchema.model_validate(item)
+        for item in developer_service.developer_service.list_api_logs(app_id, limit=limit)
+    ]
+
+
+@router.post(
+    "/platform/developer/apps/{app_id}/subscriptions",
+    response_model=DeveloperAppEventSubscriptionReadSchema,
+    status_code=201,
+)
+def subscribe_developer_app_to_event(
+    app_id: int,
+    body: DeveloperAppEventSubscriptionCreateSchema,
+    actor: Actor,
+    request: Request,
+) -> DeveloperAppEventSubscriptionReadSchema:
+    try:
+        row = developer_service.developer_service.subscribe_to_event(app_id=app_id, event_type=body.event_type)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    _audit(request, actor, "platform_core.developer_app.subscribe", 1, {"app_id": app_id, "event_type": body.event_type})
+    return DeveloperAppEventSubscriptionReadSchema.model_validate(row)

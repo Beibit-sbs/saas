@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.modules.observability.trace import inject_trace_context
 from app.platform.events.models import OutboxEventModel
 from app.platform.events.repository import OutboxEventRepository
 from app.platform.uow import UnitOfWork
@@ -63,6 +64,9 @@ class EventPublisher:
     ) -> dict[str, Any]:
         normalized_tenant_id = int(tenant_id)
         normalized_available_at = _normalize_datetime(available_at)
+        
+        # Inject trace context (request_id, trace_id) into payload
+        enriched_payload = inject_trace_context(payload_json)
 
         if self._uow is not None:
             return self._repository.enqueue(
@@ -70,7 +74,7 @@ class EventPublisher:
                 event_type=event_type,
                 aggregate_type=aggregate_type,
                 aggregate_id=str(aggregate_id),
-                payload_json=payload_json,
+                payload_json=enriched_payload,
                 available_at=normalized_available_at,
                 correlation_id=correlation_id,
                 causation_id=causation_id,
@@ -83,7 +87,7 @@ class EventPublisher:
                 event_type=event_type.strip().lower(),
                 aggregate_type=aggregate_type.strip().lower(),
                 aggregate_id=str(aggregate_id).strip(),
-                payload_json=dict(payload_json),
+                payload_json=dict(enriched_payload),
                 status="pending",
                 retry_count=0,
                 available_at=normalized_available_at,
@@ -101,7 +105,7 @@ class EventPublisher:
                 event_type=event_type,
                 aggregate_type=aggregate_type,
                 aggregate_id=str(aggregate_id),
-                payload_json=payload_json,
+                payload_json=enriched_payload,
                 available_at=normalized_available_at,
                 correlation_id=correlation_id,
                 causation_id=causation_id,

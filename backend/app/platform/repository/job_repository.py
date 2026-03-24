@@ -167,6 +167,45 @@ class JobRepository:
         rows.sort(key=lambda item: str(item["created_at"]))
         return rows[:normalized_limit]
 
+    def count_by_status(self, status: str, *, conn: object | None = None) -> int:
+        normalized_status = str(status or "").strip().lower()
+        if conn is None:
+            with transaction() as tx:
+                return self.count_by_status(normalized_status, conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT COUNT(*) FROM app_platform_jobs WHERE status = %s",
+                    (normalized_status,),
+                )
+                row = cur.fetchone()
+            return int(row[0]) if row else 0
+
+        with self._lock:
+            return sum(1 for row in self._rows.values() if str(row.get("status", "")).lower() == normalized_status)
+
+    def count_dead_jobs(self, *, conn: object | None = None) -> int:
+        if conn is None:
+            with transaction() as tx:
+                return self.count_dead_jobs(conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT COUNT(*) FROM app_platform_jobs WHERE status = 'failed' AND retry_count >= max_retries"
+                )
+                row = cur.fetchone()
+            return int(row[0]) if row else 0
+
+        with self._lock:
+            return sum(
+                1
+                for row in self._rows.values()
+                if str(row.get("status", "")).lower() == "failed"
+                and int(row.get("retry_count", 0)) >= int(row.get("max_retries", 0))
+            )
+
     def mark_running(self, job_id: int, *, conn: object | None = None) -> dict[str, Any] | None:
         return self._transition(job_id, from_statuses=["queued"], to_status="running", conn=conn)
 
