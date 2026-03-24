@@ -1,0 +1,25 @@
+from __future__ import annotations
+
+from typing import Any, Protocol
+
+from app.platform.events.schemas import OutboxEventRead
+from app.platform.uow import UnitOfWork
+
+
+class EventHandler(Protocol):
+    name: str
+
+    def handle(self, event: OutboxEventRead, *, uow: UnitOfWork) -> dict[str, Any]:
+        ...
+
+
+from app.platform.events.handlers.analytics_handler import AnalyticsEventHandler
+from app.platform.events.handlers.notification_handler import NotificationEventHandler
+from app.platform.events.handlers.webhook_handler import WebhookEventHandler
+
+__all__ = [
+    "AnalyticsEventHandler",
+    "EventHandler",
+    "NotificationEventHandler",
+    "WebhookEventHandler",
+]
