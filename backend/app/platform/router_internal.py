@@ -9,6 +9,8 @@ from app.platform.jobs.scheduler import scheduler
 from app.platform.jobs.worker import worker
 from app.platform.notifications import service as notifications_service
 from app.platform.schemas import JobRead, JobRunRequest, NotificationRead
+from app.platform.webhooks.dispatcher import webhook_dispatcher
+from app.platform.webhooks.schemas import WebhookRetryResponseSchema
 
 router = APIRouter(prefix="/api/v1/internal", tags=["platform-core-internal"])
 
@@ -55,3 +57,10 @@ def list_notifications(tenant_id: int, authorization: str | None = Header(defaul
     _require_internal_token(authorization)
     rows = notifications_service.list_notifications(tenant_id)
     return [NotificationRead.model_validate(item) for item in rows]
+
+
+@router.post("/webhooks/retry-failed", response_model=WebhookRetryResponseSchema)
+def retry_failed_webhooks(limit: int = 100, authorization: str | None = Header(default=None)) -> WebhookRetryResponseSchema:
+    _require_internal_token(authorization)
+    result = webhook_dispatcher.retry_failed_deliveries(limit=max(1, min(int(limit), 500)), actor="platform-internal")
+    return WebhookRetryResponseSchema.model_validate(result)

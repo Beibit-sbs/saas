@@ -10,6 +10,7 @@ from app.platform.billing import service as billing_service
 from app.platform.feature_flags import service as flags_service
 from app.platform.jobs import service as jobs_service
 from app.platform.notifications import service as notifications_service
+from app.platform.webhooks import service as webhooks_service
 from app.platform.schemas import (
     FeatureFlagRead,
     FeatureFlagSetRequest,
@@ -30,6 +31,12 @@ from app.platform.schemas import (
     UsageCounterRead,
 )
 from app.platform.tenant import service as tenant_service
+from app.platform.webhooks.schemas import (
+    WebhookDeliveryListSchema,
+    WebhookDeliveryReadSchema,
+    WebhookSubscriptionCreateSchema,
+    WebhookSubscriptionReadSchema,
+)
 
 router = APIRouter(prefix="/api/v1/admin", tags=["platform-core-admin"])
 
@@ -54,7 +61,13 @@ def _audit(request: Request, actor: str, action: str, tenant_id: int, metadata: 
 @router.post("/tenants", response_model=TenantPlatformRead, status_code=201)
 def create_tenant(request: Request, payload: TenantCreateRequest, actor: Actor) -> TenantPlatformRead:
     try:
-        row = tenant_service.create_tenant(payload.slug, payload.name)
+        row = tenant_service.create_tenant(
+            payload.slug,
+            payload.name,
+            actor=actor,
+            correlation_id=getattr(request.state, "request_id", None),
+            causation_id="platform.admin.create_tenant",
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.tenant.create", int(row["tenant_id"]), {"slug": payload.slug})
@@ -205,3 +218,57 @@ def dispatch_notification(payload: NotificationRequest, request: Request, actor:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.notification.dispatch", payload.tenant_id, {"channel": payload.channel})
     return NotificationRead.model_validate(row)
+
+
+@router.post("/webhooks/subscriptions", response_model=WebhookSubscriptionReadSchema, status_code=201)
+def create_webhook_subscription(payload: WebhookSubscriptionCreateSchema, request: Request, actor: Actor) -> WebhookSubscriptionReadSchema:
+    try:
+        row = webhooks_service.webhook_service.create_subscription(
+            tenant_id=payload.tenant_id,
+            event_type=payload.event_type,
+            target_url=payload.target_url,
+            signing_secret=payload.signing_secret,
+            actor=actor,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    _audit(
+        request,
+        actor,
+        "platform_core.webhook.subscription.create",
+        payload.tenant_id,
+        {"event_type": payload.event_type},
+    )
+    return WebhookSubscriptionReadSchema.model_validate(row)
+
+
+@router.get("/tenants/{tenant_id}/webhooks/subscriptions", response_model=list[WebhookSubscriptionReadSchema])
+def list_webhook_subscriptions(tenant_id: int, _actor: Actor) -> list[WebhookSubscriptionReadSchema]:
+    rows = webhooks_service.webhook_service.list_subscriptions(tenant_id=tenant_id, limit=200)
+    return [WebhookSubscriptionReadSchema.model_validate(item) for item in rows]
+
+
+@router.post("/webhooks/subscriptions/{subscription_id}/deactivate", response_model=WebhookSubscriptionReadSchema)
+def deactivate_webhook_subscription(subscription_id: int, request: Request, actor: Actor) -> WebhookSubscriptionReadSchema:
+    try:
+        row = webhooks_service.webhook_service.deactivate_subscription(subscription_id=subscription_id, actor=actor)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    _audit(
+        request,
+        actor,
+        "platform_core.webhook.subscription.deactivate",
+        int(row["tenant_id"]),
+        {"subscription_id": subscription_id},
+    )
+    return WebhookSubscriptionReadSchema.model_validate(row)
+
+
+@router.get("/tenants/{tenant_id}/webhooks/deliveries", response_model=WebhookDeliveryListSchema)
+def list_webhook_deliveries(tenant_id: int, _actor: Actor) -> WebhookDeliveryListSchema:
+    rows = webhooks_service.webhook_service.list_deliveries(tenant_id=tenant_id, limit=200)
+    return WebhookDeliveryListSchema(
+        tenant_id=tenant_id,
+        total=len(rows),
+        items=[WebhookDeliveryReadSchema.model_validate(item) for item in rows],
+    )

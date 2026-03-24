@@ -147,6 +147,63 @@ def ensure_platform_core_schema(conn: object) -> None:
                 )
                 """
             )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_outbox_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    event_type TEXT NOT NULL,
+                    aggregate_type TEXT NOT NULL,
+                    aggregate_id TEXT NOT NULL,
+                    payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    retry_count INTEGER NOT NULL DEFAULT 0,
+                    available_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    processed_at TIMESTAMPTZ,
+                    last_error TEXT,
+                    correlation_id TEXT,
+                    causation_id TEXT
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_webhook_subscriptions (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    event_type TEXT NOT NULL,
+                    target_url TEXT NOT NULL,
+                    signing_secret TEXT NOT NULL,
+                    is_active BOOLEAN NOT NULL DEFAULT true,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    version INTEGER NOT NULL DEFAULT 1
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_webhook_deliveries (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    subscription_id BIGINT NOT NULL REFERENCES app_platform_webhook_subscriptions(id) ON DELETE CASCADE,
+                    outbox_event_id BIGINT NOT NULL REFERENCES app_platform_outbox_events(id) ON DELETE CASCADE,
+                    event_type TEXT NOT NULL,
+                    target_url TEXT NOT NULL,
+                    request_payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    response_status_code INTEGER,
+                    response_body TEXT,
+                    delivery_status TEXT NOT NULL DEFAULT 'pending',
+                    retry_count INTEGER NOT NULL DEFAULT 0,
+                    next_retry_at TIMESTAMPTZ,
+                    last_error TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    delivered_at TIMESTAMPTZ,
+                    CONSTRAINT ck_platform_webhook_delivery_status CHECK (delivery_status IN ('pending', 'delivered', 'failed'))
+                )
+                """
+            )
             cur.execute("ALTER TABLE app_platform_notifications ADD COLUMN IF NOT EXISTS retry_count INTEGER NOT NULL DEFAULT 0")
             cur.execute("ALTER TABLE app_platform_notifications ADD COLUMN IF NOT EXISTS last_error TEXT")
 
@@ -177,4 +234,28 @@ def ensure_platform_core_schema(conn: object) -> None:
             )
             cur.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS ux_platform_idempotency_tenant_key_operation ON platform_idempotency_keys (tenant_id, key, operation)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_outbox_status_available ON app_platform_outbox_events (status, available_at, created_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_outbox_tenant_created ON app_platform_outbox_events (tenant_id, created_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_outbox_aggregate ON app_platform_outbox_events (tenant_id, aggregate_type, aggregate_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_webhook_subscriptions_tenant_event ON app_platform_webhook_subscriptions (tenant_id, event_type, is_active)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_webhook_subscriptions_tenant_created ON app_platform_webhook_subscriptions (tenant_id, created_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_webhook_deliveries_tenant_created ON app_platform_webhook_deliveries (tenant_id, created_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_webhook_deliveries_status_retry ON app_platform_webhook_deliveries (delivery_status, next_retry_at, created_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_webhook_deliveries_subscription_event ON app_platform_webhook_deliveries (subscription_id, outbox_event_id, id)"
             )

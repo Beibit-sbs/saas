@@ -30,3 +30,5 @@ def test_scheduler_registers_application_service_tasks() -> None:
     assert "daily_usage_aggregation" in task_names
     assert "subscription_rollover" in task_names
     assert "notification_retry_dispatch" in task_names
+    assert "outbox_event_dispatch" in task_names
+    assert "webhook_retry_dispatch" in task_names

@@ -8,7 +8,9 @@ from typing import Callable
 
 from app.platform.application.notification_dispatch_service import NotificationDispatchService
 from app.platform.application.subscription_rollover_service import SubscriptionRolloverService
+from app.platform.events.worker import outbox_worker
 from app.platform.jobs.worker import worker
+from app.platform.webhooks.dispatcher import webhook_dispatcher
 
 
 SchedulerTask = Callable[[], dict[str, object] | None]
@@ -36,6 +38,8 @@ class PlatformWorkerScheduler:
         self.register_task("daily_usage_aggregation", interval_seconds=24 * 60 * 60, task=self._daily_usage_aggregation)
         self.register_task("subscription_rollover", interval_seconds=60 * 60, task=self._subscription_rollover)
         self.register_task("notification_retry_dispatch", interval_seconds=10 * 60, task=self._notification_retry_dispatch)
+        self.register_task("outbox_event_dispatch", interval_seconds=60, task=self._outbox_event_dispatch)
+        self.register_task("webhook_retry_dispatch", interval_seconds=2 * 60, task=self._webhook_retry_dispatch)
 
     def register_task(self, name: str, *, interval_seconds: int, task: SchedulerTask) -> None:
         normalized = name.strip().lower()
@@ -90,6 +94,12 @@ class PlatformWorkerScheduler:
 
     def _notification_retry_dispatch(self) -> dict[str, object]:
         return self._notification_dispatch_service.retry_failed_deliveries(actor="platform-scheduler")
+
+    def _outbox_event_dispatch(self) -> dict[str, object]:
+        return outbox_worker.run_once()
+
+    def _webhook_retry_dispatch(self) -> dict[str, object]:
+        return webhook_dispatcher.retry_failed_deliveries(limit=100, actor="platform-scheduler")
 
 
 scheduler = PlatformWorkerScheduler()

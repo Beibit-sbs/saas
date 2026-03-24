@@ -5,11 +5,13 @@ from dataclasses import dataclass
 from app.platform.repository.billing_repository import BillingRepository
 from app.platform.repository.db import db_available, db_url, ensure_platform_core_schema
 from app.platform.repository.feature_flag_repository import FeatureFlagRepository
+from app.platform.events.repository import OutboxEventRepository
 from app.platform.idempotency.repository import IdempotencyRepository
 from app.platform.repository.job_repository import JobRepository
 from app.platform.repository.notification_repository import NotificationRepository
 from app.platform.repository.tenant_repository import TenantRepository
 from app.platform.repository.usage_repository import UsageRepository
+from app.platform.webhooks.repository import WebhookRepository
 
 try:
     import psycopg
@@ -25,6 +27,8 @@ _SHARED_USAGE_REPOSITORY = UsageRepository()
 _SHARED_JOB_REPOSITORY = JobRepository()
 _SHARED_NOTIFICATION_REPOSITORY = NotificationRepository()
 _SHARED_IDEMPOTENCY_REPOSITORY = IdempotencyRepository()
+_SHARED_OUTBOX_EVENT_REPOSITORY = OutboxEventRepository()
+_SHARED_WEBHOOK_REPOSITORY = WebhookRepository()
 
 
 @dataclass
@@ -36,6 +40,8 @@ class UnitOfWork:
     job_repository: JobRepository = _SHARED_JOB_REPOSITORY
     notification_repository: NotificationRepository = _SHARED_NOTIFICATION_REPOSITORY
     idempotency_repository: IdempotencyRepository = _SHARED_IDEMPOTENCY_REPOSITORY
+    outbox_event_repository: OutboxEventRepository = _SHARED_OUTBOX_EVENT_REPOSITORY
+    webhook_repository: WebhookRepository = _SHARED_WEBHOOK_REPOSITORY
 
     def __post_init__(self) -> None:
         self.conn: object | None = None
