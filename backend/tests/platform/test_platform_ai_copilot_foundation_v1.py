@@ -176,9 +176,10 @@ def test_admin_api_response_shape(reset_shared_state) -> None:
     )
     assert ask.status_code == 200, ask.text
     body = ask.json()
-    assert set(body.keys()) == {"question", "summary", "insights", "sources", "warnings"}
+    assert {"question", "summary", "insights", "sources", "warnings", "recommendations"}.issubset(body.keys())
     assert isinstance(body["insights"], list)
     assert isinstance(body["sources"], list)
+    assert isinstance(body["recommendations"], list)
 
     logs = client.get(
         "/api/v1/admin/platform/ai/copilot/logs",
