@@ -297,3 +297,43 @@ def ensure_platform_core_schema(conn: object) -> None:
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS ix_platform_kpi_snapshots_tenant_date ON app_platform_tenant_kpi_snapshots (tenant_id, snapshot_date DESC)"
             )
+
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_tenant_metric_snapshots (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    metric_key TEXT NOT NULL,
+                    metric_value BIGINT NOT NULL DEFAULT 0,
+                    snapshot_date DATE NOT NULL,
+                    metadata_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    version INTEGER NOT NULL DEFAULT 1,
+                    CONSTRAINT uq_metric_snapshots_tenant_metric_date UNIQUE (tenant_id, metric_key, snapshot_date)
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_tenant_dashboard_snapshots (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    snapshot_date DATE NOT NULL,
+                    snapshot_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    version INTEGER NOT NULL DEFAULT 1,
+                    CONSTRAINT uq_dashboard_snapshots_tenant_date UNIQUE (tenant_id, snapshot_date)
+                )
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_metric_snapshots_tenant_date ON app_platform_tenant_metric_snapshots (tenant_id, snapshot_date DESC)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_metric_snapshots_tenant_key_date ON app_platform_tenant_metric_snapshots (tenant_id, metric_key, snapshot_date DESC)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_dashboard_snapshots_tenant_date ON app_platform_tenant_dashboard_snapshots (tenant_id, snapshot_date DESC)"
+            )

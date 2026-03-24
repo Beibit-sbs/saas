@@ -8,6 +8,8 @@ from app.modules.audit.service import log_admin_action
 from app.modules.rbac.security import get_actor
 from app.platform.analytics import service as analytics_service
 from app.platform.analytics.schemas import AnalyticsEventProjectionListSchema, AnalyticsEventProjectionRead, TenantKpiSnapshotRead
+from app.platform.kpi import service as kpi_service
+from app.platform.kpi.schemas import RectorDashboardReadSchema, TenantMetricSnapshotReadSchema
 from app.platform.billing import service as billing_service
 from app.platform.feature_flags import service as flags_service
 from app.platform.jobs import service as jobs_service
@@ -308,3 +310,19 @@ def get_latest_analytics_kpis(
     if snap is None:
         raise HTTPException(status_code=404, detail="No KPI snapshot found for this tenant")
     return TenantKpiSnapshotRead.model_validate(snap)
+
+
+@router.get("/platform/kpi/metrics", response_model=list[TenantMetricSnapshotReadSchema])
+def get_platform_kpi_metrics(tenant_id: int, _actor: Actor) -> list[TenantMetricSnapshotReadSchema]:
+    with UnitOfWork() as uow:
+        rows = kpi_service.get_latest_tenant_metrics(tenant_id=tenant_id, uow=uow)
+        if not rows:
+            rows = kpi_service.refresh_tenant_metrics(tenant_id=tenant_id, uow=uow)
+    return [TenantMetricSnapshotReadSchema.model_validate(item) for item in rows]
+
+
+@router.get("/platform/kpi/dashboard", response_model=RectorDashboardReadSchema)
+def get_platform_rector_dashboard(tenant_id: int, _actor: Actor) -> RectorDashboardReadSchema:
+    with UnitOfWork() as uow:
+        payload = kpi_service.get_rector_dashboard(tenant_id=tenant_id, uow=uow)
+    return RectorDashboardReadSchema.model_validate(payload)

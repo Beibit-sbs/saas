@@ -10,6 +10,8 @@ from app.platform.application.notification_dispatch_service import NotificationD
 from app.platform.application.subscription_rollover_service import SubscriptionRolloverService
 from app.platform.events.worker import outbox_worker
 from app.platform.jobs.worker import worker
+from app.platform.kpi import service as kpi_service
+from app.platform.uow import UnitOfWork
 from app.platform.webhooks.dispatcher import webhook_dispatcher
 
 
@@ -40,6 +42,7 @@ class PlatformWorkerScheduler:
         self.register_task("notification_retry_dispatch", interval_seconds=10 * 60, task=self._notification_retry_dispatch)
         self.register_task("outbox_event_dispatch", interval_seconds=60, task=self._outbox_event_dispatch)
         self.register_task("webhook_retry_dispatch", interval_seconds=2 * 60, task=self._webhook_retry_dispatch)
+        self.register_task("kpi_metrics_refresh", interval_seconds=24 * 60 * 60, task=self._kpi_metrics_refresh)
 
     def register_task(self, name: str, *, interval_seconds: int, task: SchedulerTask) -> None:
         normalized = name.strip().lower()
@@ -100,6 +103,10 @@ class PlatformWorkerScheduler:
 
     def _webhook_retry_dispatch(self) -> dict[str, object]:
         return webhook_dispatcher.retry_failed_deliveries(limit=100, actor="platform-scheduler")
+
+    def _kpi_metrics_refresh(self) -> dict[str, int]:
+        with UnitOfWork() as uow:
+            return kpi_service.refresh_all_tenants(uow=uow)
 
 
 scheduler = PlatformWorkerScheduler()

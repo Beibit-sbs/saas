@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from app.platform.analytics import service as analytics_service
 from app.platform.analytics.schemas import TenantKpiSnapshotRead
+from app.platform.kpi import service as kpi_service
+from app.platform.kpi.schemas import RectorDashboardReadSchema
 import os
 
 from fastapi import APIRouter, Header, HTTPException
@@ -11,6 +13,7 @@ from app.platform.jobs.scheduler import scheduler
 from app.platform.jobs.worker import worker
 from app.platform.notifications import service as notifications_service
 from app.platform.schemas import JobRead, JobRunRequest, NotificationRead
+from app.platform.uow import UnitOfWork
 from app.platform.webhooks.dispatcher import webhook_dispatcher
 from app.platform.webhooks.schemas import WebhookRetryResponseSchema
 
@@ -74,7 +77,22 @@ def refresh_tenant_kpis(
     authorization: str | None = Header(default=None),
 ) -> TenantKpiSnapshotRead:
     _require_internal_token(authorization)
-    from app.platform.uow import UnitOfWork  # noqa: PLC0415
     with UnitOfWork() as uow:
         snap = analytics_service.refresh_tenant_kpis(tenant_id=tenant_id, uow=uow)
     return TenantKpiSnapshotRead.model_validate(snap)
+
+
+@router.post("/platform/kpi/refresh")
+def refresh_all_tenant_kpi(authorization: str | None = Header(default=None)) -> dict[str, int]:
+    _require_internal_token(authorization)
+    with UnitOfWork() as uow:
+        return kpi_service.refresh_all_tenants(uow=uow)
+
+
+@router.post("/platform/kpi/refresh/{tenant_id}", response_model=RectorDashboardReadSchema)
+def refresh_tenant_kpi(tenant_id: int, authorization: str | None = Header(default=None)) -> RectorDashboardReadSchema:
+    _require_internal_token(authorization)
+    with UnitOfWork() as uow:
+        kpi_service.refresh_tenant_metrics(tenant_id=tenant_id, uow=uow)
+        dashboard = kpi_service.refresh_tenant_dashboard_snapshot(tenant_id=tenant_id, uow=uow)
+    return RectorDashboardReadSchema.model_validate(dashboard.get("snapshot_json") or {})
