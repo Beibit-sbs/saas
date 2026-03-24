@@ -1,5 +1,7 @@
 // Automation Templates - Frontend Types
 
+import type { AutomationAction } from "../types"
+
 export interface AutomationTemplate {
   id: string
   template_key: string
@@ -8,7 +10,7 @@ export interface AutomationTemplate {
   category: string
   event_type: string
   condition_json: Record<string, unknown>
-  actions_json: Record<string, unknown>[]
+  actions_json: AutomationAction[]
   is_system_template: boolean
   created_at: string
   updated_at: string

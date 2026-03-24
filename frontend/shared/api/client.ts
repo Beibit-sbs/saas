@@ -16,7 +16,8 @@ function mapToBffPath(path: string): string {
   if (path.startsWith("/api/bff/")) return path;
   if (path.startsWith("/api/v1/admin/")) return `/api/bff/${path.slice("/api/".length)}`;
   if (path.startsWith("/api/admin/")) return `/api/bff/${path.slice("/api/".length)}`;
-  if (path === "/health" || path === "/metrics") return `/api/bff${path}`;
+  if (path === "/health" || path.startsWith("/health/")) return `/api/bff${path}`;
+  if (path === "/metrics" || path.startsWith("/metrics/")) return `/api/bff${path}`;
   return path;
 }
 

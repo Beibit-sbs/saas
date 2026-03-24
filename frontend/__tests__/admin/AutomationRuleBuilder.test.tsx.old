@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import AutomationRuleNewPage from "@/app/(admin)/console/automation/new/page";
@@ -24,7 +24,6 @@ describe("AutomationRuleNewPage", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockMutate.mockReset();
 
     (navigationModule.useRouter as any).mockReturnValue({
       push: mockPush,
@@ -51,12 +50,11 @@ describe("AutomationRuleNewPage", () => {
 
     // Check condition fields
     expect(screen.getByText("Condition (Optional)")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Field/).parentElement?.querySelector('input')).toBeInTheDocument();
 
     // Check actions section
     expect(screen.getByText("Actions")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /^Add Action$/i })
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Add Action/)).toBeInTheDocument();
 
     // Check JSON preview
     expect(screen.getByText("JSON Preview")).toBeInTheDocument();
@@ -76,7 +74,7 @@ describe("AutomationRuleNewPage", () => {
     ).toBeInTheDocument();
 
     // Click "Add Action"
-    const addActionBtn = screen.getByRole("button", { name: /^Add Action$/i });
+    const addActionBtn = screen.getByText(/Add Action/);
     await user.click(addActionBtn);
 
     // Action should appear
@@ -92,11 +90,11 @@ describe("AutomationRuleNewPage", () => {
       expect(screen.getByText("Action 2")).toBeInTheDocument();
     });
 
-    // Remove first action via scoped header button (stable, role-based)
-    const actionHeader = screen.getByText("Action 1").parentElement;
-    expect(actionHeader).toBeTruthy();
-    const removeButton = within(actionHeader as HTMLElement).getByRole("button");
-    await user.click(removeButton);
+    // Remove first action
+    const trashButtons = screen.getAllByRole("button").filter((btn) =>
+      btn.querySelector("svg")?.className?.includes("trash")
+    );
+    await user.click(trashButtons[0]);
 
     // Should only have Action 1 (which was previously Action 2)
     await waitFor(() => {
@@ -126,9 +124,7 @@ describe("AutomationRuleNewPage", () => {
     // Click event type dropdown and select first option
     await user.click(eventTypeSelect);
 
-    const firstEventOption = await screen.findByRole("option", {
-      name: "tenant.created",
-    });
+    const firstEventOption = await screen.findByText("tenant.created");
     await user.click(firstEventOption);
 
     // Preview should include event_type
@@ -143,19 +139,17 @@ describe("AutomationRuleNewPage", () => {
     render(<AutomationRuleNewPage />);
 
     // Fill in name
-    const nameInput = screen.getByLabelText(/Rule Name/);
+    const nameInput = screen.getByLabelText(/Rule Name/) as HTMLInputElement;
     await user.type(nameInput, "Test Automation");
 
     // Fill in description
-    const descInput = screen.getByLabelText(/Description/);
+    const descInput = screen.getByLabelText(/Description/) as HTMLInputElement;
     await user.type(descInput, "This is a test rule");
 
     // Select event type
     const eventTypeSelect = screen.getByLabelText(/Event Type/);
     await user.click(eventTypeSelect);
-    const eventOption = await screen.findByRole("option", {
-      name: "student.created",
-    });
+    const eventOption = await screen.findByText("student.created");
     await user.click(eventOption);
 
     // Fill in condition
@@ -166,7 +160,7 @@ describe("AutomationRuleNewPage", () => {
     await user.type(conditionValueInput, "2.0");
 
     // Add an action
-    const addActionBtn = screen.getByRole("button", { name: /^Add Action$/i });
+    const addActionBtn = screen.getByText(/Add Action/);
     await user.click(addActionBtn);
 
     await waitFor(() => {
@@ -174,12 +168,9 @@ describe("AutomationRuleNewPage", () => {
     });
 
     // Select action type
-    const actionTypeSelect = document.getElementById("action-type-0");
-    expect(actionTypeSelect).toBeTruthy();
-    await user.click(actionTypeSelect!);
-    const actionOption = await screen.findByRole("option", {
-      name: "Send Notification",
-    });
+    const actionTypeSelects = screen.getAllByDisplayValue("Select action type");
+    await user.click(actionTypeSelects[0]);
+    const actionOption = await screen.findByText("Send Notification");
     await user.click(actionOption);
 
     // Wait for conditional fields to appear and fill them
@@ -210,7 +201,7 @@ describe("AutomationRuleNewPage", () => {
     );
 
     // Should navigate to rules list
-    expect(mockPush).toHaveBeenCalledWith("/console/automation");
+    expect(mockPushHaveBeenCalledWith("/console/automation");
   });
 
   it("builds correct condition_json when condition fields are filled", async () => {
@@ -225,20 +216,16 @@ describe("AutomationRuleNewPage", () => {
 
     const eventTypeSelect = screen.getByLabelText(/Event Type/);
     await user.click(eventTypeSelect);
-    const eventOption = await screen.findByRole("option", {
-      name: "grade.submitted",
-    });
+    const eventOption = await screen.findByText("grade.submitted");
     await user.click(eventOption);
 
     // Fill condition fields
     const conditionFieldInput = screen.getByPlaceholderText(/e.g., gpa/);
     await user.type(conditionFieldInput, "score");
 
-    const operatorSelect = screen.getByRole("combobox", { name: /operator/i });
+    const operatorSelect = screen.getByDisplayValue("==");
     await user.click(operatorSelect);
-    const operatorOption = await screen.findByRole("option", {
-      name: "greater than (>)",
-    });
+    const operatorOption = await screen.findByText(">");
     await user.click(operatorOption);
 
     const conditionValueInput = screen.getByPlaceholderText(/e.g., 3.5/);
@@ -254,7 +241,7 @@ describe("AutomationRuleNewPage", () => {
           condition_json: expect.objectContaining({
             field: "score",
             operator: ">",
-            value: 85,
+            value: 85, // Should be parsed as number
           }),
         })
       );
@@ -273,9 +260,7 @@ describe("AutomationRuleNewPage", () => {
 
     const eventTypeSelect = screen.getByLabelText(/Event Type/);
     await user.click(eventTypeSelect);
-    const eventOption = await screen.findByRole("option", {
-      name: "tenant.created",
-    });
+    const eventOption = await screen.findByText("tenant.created");
     await user.click(eventOption);
 
     // Leave condition fields empty
@@ -286,7 +271,7 @@ describe("AutomationRuleNewPage", () => {
     await waitFor(() => {
       expect(mockMutate).toHaveBeenCalledWith(
         expect.objectContaining({
-          condition_json: {},
+          condition_json: {}, // Empty object = always match
         })
       );
     });
@@ -305,9 +290,7 @@ describe("AutomationRuleNewPage", () => {
 
     const eventTypeSelect = screen.getByLabelText(/Event Type/);
     await user.click(eventTypeSelect);
-    const eventOption = await screen.findByRole("option", {
-      name: "student.created",
-    });
+    const eventOption = await screen.findByText("student.created");
     await user.click(eventOption);
 
     // Submit
@@ -325,10 +308,7 @@ describe("AutomationRuleNewPage", () => {
     });
 
     // Should NOT navigate
-    expect(mockPush).not.toHaveBeenCalled();
-  });
-
-  it("disables submit button when form is invalid", async () => {
+    expect(mockPushnot.toHaveBeenCalled();
     render(<AutomationRuleNewPage />);
 
     const submitBtn = screen.getByText("Create Rule") as HTMLButtonElement;
@@ -350,12 +330,12 @@ describe("AutomationRuleNewPage", () => {
     render(<AutomationRuleNewPage />);
 
     const cancelBtn = screen.getByText("Cancel");
-    await user.click(cancelBtn);
+    await user.PushncelBtn);
 
-    expect(mockPush).toHaveBeenCalledWith("/console/automation");
-  });
+    expect(mockNavigate).toHaveBeenCalledWith("/console/automation");
+  });click(cancelBtn);
 
-  it("transforms actions correctly based on action type", async () => {
+    expect(mockPushrrectly based on action type", async () => {
     const user = userEvent.setup();
     mockMutate.mockResolvedValueOnce({ id: 123 });
 
@@ -367,44 +347,36 @@ describe("AutomationRuleNewPage", () => {
 
     const eventTypeSelect = screen.getByLabelText(/Event Type/);
     await user.click(eventTypeSelect);
-    const eventOption = await screen.findByRole("option", {
-      name: "enrollment.created",
-    });
+    const eventOption = await screen.findByText("enrollment.created");
     await user.click(eventOption);
 
     // Add first action: send_notification
-    let addActionBtn = screen.getByRole("button", { name: /^Add Action$/i });
+    let addActionBtn = screen.getByText(/Add Action/);
     await user.click(addActionBtn);
 
     await waitFor(() => {
       expect(screen.getByText("Action 1")).toBeInTheDocument();
     });
 
-    let actionTypeSelect = document.getElementById("action-type-0");
-    expect(actionTypeSelect).toBeTruthy();
-    await user.click(actionTypeSelect!);
-    let actionOption = await screen.findByRole("option", {
-      name: "Send Notification",
-    });
+    let actionTypeSelects = screen.getAllByDisplayValue("Select action type");
+    await user.click(actionTypeSelects[0]);
+    let actionOption = await screen.findByText("Send Notification");
     await user.click(actionOption);
 
     let templateInput = await screen.findByPlaceholderText(/Template name/);
     await user.type(templateInput, "notify_template");
 
     // Add second action: create_task
-    addActionBtn = screen.getByRole("button", { name: /^Add Action$/i });
+    addActionBtn = screen.getByText(/Add Action/);
     await user.click(addActionBtn);
 
     await waitFor(() => {
       expect(screen.getByText("Action 2")).toBeInTheDocument();
     });
 
-    actionTypeSelect = document.getElementById("action-type-1");
-    expect(actionTypeSelect).toBeTruthy();
-    await user.click(actionTypeSelect!);
-    actionOption = await screen.findByRole("option", {
-      name: "Create Task",
-    });
+    actionTypeSelects = screen.getAllByDisplayValue("Select action type");
+    await user.click(actionTypeSelects[1]);
+    actionOption = await screen.findByText("Create Task");
     await user.click(actionOption);
 
     let jobTypeInput = await screen.findByPlaceholderText(/Job type/);

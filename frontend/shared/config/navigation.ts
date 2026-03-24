@@ -13,6 +13,7 @@ import {
   FileText,
   CalendarDays,
   Network,
+  Code2,
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS, type Permission } from "./permissions";
@@ -75,6 +76,12 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.HEALTH_READ,
       },
       {
+        label: "Platform Ops",
+        href: "/console/ops",
+        icon: HeartPulse,
+        permission: PERMISSIONS.OPS_READ,
+      },
+      {
         label: "Automation",
         href: "/console/automation",
         icon: Bot,
@@ -103,6 +110,12 @@ export const NAVIGATION: NavGroup[] = [
         href: "/console/federation",
         icon: Network,
         permission: PERMISSIONS.FEDERATION_READ,
+      },
+      {
+        label: "Developer Apps",
+        href: "/console/developer/apps",
+        icon: Code2,
+        permission: PERMISSIONS.DEVELOPER_PLATFORM_READ,
       },
     ],
   },

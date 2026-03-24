@@ -19,7 +19,12 @@ const HOP_BY_HOP_HEADERS = new Set([
 
 function toUpstreamPath(pathParts: string[]): string {
   const normalized = pathParts.join("/");
-  if (normalized === "health" || normalized === "metrics") {
+  if (
+    normalized === "health"
+    || normalized.startsWith("health/")
+    || normalized === "metrics"
+    || normalized.startsWith("metrics/")
+  ) {
     return `/${normalized}`;
   }
   return `/api/${normalized}`;

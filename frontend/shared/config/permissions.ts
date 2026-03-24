@@ -25,6 +25,10 @@ export const PERMISSIONS = {
   HEALTH_READ: "health.read",
   METRICS_READ: "metrics.read",
 
+  // Platform Ops Console
+  OPS_READ: "ops.read",
+  OPS_WRITE: "ops.write",
+
   // RBAC
   RBAC_READ: "rbac.read",
   RBAC_WRITE: "rbac.write",
@@ -69,6 +73,10 @@ export const PERMISSIONS = {
   // Federation Layer v1
   FEDERATION_READ: "federation.read",
   FEDERATION_WRITE: "federation.write",
+
+  // Developer Platform v1
+  DEVELOPER_PLATFORM_READ: "developer_platform.read",
+  DEVELOPER_PLATFORM_WRITE: "developer_platform.write",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -84,6 +92,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.NOTIFICATIONS_READ,
     PERMISSIONS.HEALTH_READ,
     PERMISSIONS.METRICS_READ,
+    PERMISSIONS.OPS_READ,
     PERMISSIONS.AI_COPILOT_READ,
     PERMISSIONS.STUDENTS_READ,
     PERMISSIONS.ENROLLMENTS_READ,
@@ -92,6 +101,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.SCHEDULING_READ,
     PERMISSIONS.AUTOMATION_READ,
     PERMISSIONS.FEDERATION_READ,
+    PERMISSIONS.DEVELOPER_PLATFORM_READ,
   ],
   viewer: [
     PERMISSIONS.TENANTS_READ,
