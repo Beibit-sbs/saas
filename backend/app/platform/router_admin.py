@@ -8,6 +8,8 @@ from app.modules.audit.service import log_admin_action
 from app.modules.rbac.security import get_actor
 from app.platform.analytics import service as analytics_service
 from app.platform.analytics.schemas import AnalyticsEventProjectionListSchema, AnalyticsEventProjectionRead, TenantKpiSnapshotRead
+from app.platform.ai import service as ai_service
+from app.platform.ai.schemas import CopilotAnswerReadSchema, CopilotQuestionRequestSchema, CopilotQueryLogReadSchema
 from app.platform.kpi import service as kpi_service
 from app.platform.kpi.schemas import RectorDashboardReadSchema, TenantMetricSnapshotReadSchema
 from app.platform.automation import service as automation_service
@@ -21,8 +23,6 @@ from app.platform.automation.templates.schemas import (
     AutomationTemplateReadSchema,
     InstantiateTemplateSchema,
 )
-from app.platform.context import service as context_service
-from app.platform.context.schemas import StudentProfileRead
 from app.platform.context import service as context_service
 from app.platform.context.schemas import StudentProfileRead
 from app.platform.billing import service as billing_service
@@ -441,3 +441,40 @@ def get_student_context_profile(
             conn=uow.conn,
         )
     return StudentProfileRead.model_validate(profile)
+
+
+# ------------------------------------------------------------------ #
+#  AI Copilot Foundation v1 (read-only)                               #
+# ------------------------------------------------------------------ #
+
+
+@router.post("/platform/ai/copilot/ask", response_model=CopilotAnswerReadSchema)
+def ask_copilot(
+    body: CopilotQuestionRequestSchema,
+    actor: Actor,
+    request: Request,
+) -> CopilotAnswerReadSchema:
+    answer = ai_service.answer_question(
+        tenant_id=body.tenant_id,
+        actor_id=actor,
+        question=body.question,
+        context=body.context,
+    )
+    _audit(
+        request,
+        actor,
+        "platform_core.ai.copilot.ask",
+        int(body.tenant_id),
+        {"query_length": len(body.question)},
+    )
+    return CopilotAnswerReadSchema.model_validate(answer)
+
+
+@router.get("/platform/ai/copilot/logs", response_model=list[CopilotQueryLogReadSchema])
+def list_copilot_logs(
+    tenant_id: int,
+    _actor: Actor,
+    limit: int = 100,
+) -> list[CopilotQueryLogReadSchema]:
+    items = ai_service.list_logs(tenant_id=tenant_id, limit=max(1, min(limit, 500)))
+    return [CopilotQueryLogReadSchema.model_validate(item) for item in items]

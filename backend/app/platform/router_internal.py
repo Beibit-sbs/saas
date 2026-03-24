@@ -8,6 +8,7 @@ from app.platform.automation import service as automation_service
 from app.platform.context import service as context_service
 from app.platform.context.schemas import StudentProfileRead
 from app.platform.events.schemas import OutboxEventRead
+from app.platform.ai import service as ai_service
 import os
 
 from fastapi import APIRouter, Header, HTTPException
@@ -132,3 +133,10 @@ def get_student_context_internal(
             conn=uow.conn,
         )
     return StudentProfileRead.model_validate(profile)
+
+
+@router.post("/platform/ai/copilot/rebuild-cache")
+def rebuild_ai_copilot_cache(authorization: str | None = Header(default=None)) -> dict[str, object]:
+    """Placeholder for future cache/materialization rebuild hooks."""
+    _require_internal_token(authorization)
+    return {"status": "noop", "component": "ai_copilot_foundation_v1", "read_only": True}

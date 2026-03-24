@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.platform.analytics.repository import AnalyticsRepository
+from app.platform.ai.repository import AiCopilotRepository
 from app.platform.automation.repository import AutomationRepository
 from app.platform.automation.templates.repository import AutomationTemplateRepository
 from app.platform.context.repository import ContextRepository
@@ -33,6 +34,7 @@ _SHARED_JOB_REPOSITORY = JobRepository()
 _SHARED_NOTIFICATION_REPOSITORY = NotificationRepository()
 _SHARED_IDEMPOTENCY_REPOSITORY = IdempotencyRepository()
 _SHARED_ANALYTICS_REPOSITORY = AnalyticsRepository()
+_SHARED_AI_COPILOT_REPOSITORY = AiCopilotRepository()
 _SHARED_AUTOMATION_REPOSITORY = AutomationRepository()
 _SHARED_AUTOMATION_TEMPLATE_REPOSITORY = AutomationTemplateRepository()
 _SHARED_CONTEXT_REPOSITORY = ContextRepository()
@@ -51,6 +53,7 @@ class UnitOfWork:
     notification_repository: NotificationRepository = _SHARED_NOTIFICATION_REPOSITORY
     idempotency_repository: IdempotencyRepository = _SHARED_IDEMPOTENCY_REPOSITORY
     analytics_repository: AnalyticsRepository = _SHARED_ANALYTICS_REPOSITORY
+    ai_copilot_repository: AiCopilotRepository = _SHARED_AI_COPILOT_REPOSITORY
     automation_repository: AutomationRepository = _SHARED_AUTOMATION_REPOSITORY
     automation_template_repository: AutomationTemplateRepository = _SHARED_AUTOMATION_TEMPLATE_REPOSITORY
     context_repository: ContextRepository = _SHARED_CONTEXT_REPOSITORY

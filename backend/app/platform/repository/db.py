@@ -436,3 +436,26 @@ def ensure_platform_core_schema(conn: object) -> None:
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS ix_platform_context_relations_type ON app_platform_context_relations (tenant_id, relation_type)"
             )
+
+            # ---- AI Copilot Foundation v1 -------------------------------------
+
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_ai_copilot_query_logs (
+                    id                      BIGSERIAL PRIMARY KEY,
+                    tenant_id               BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    actor_id                VARCHAR(255) NOT NULL,
+                    question                TEXT NOT NULL,
+                    query_type              VARCHAR(64) NOT NULL,
+                    retrieved_sources_json  JSONB NOT NULL DEFAULT '[]'::jsonb,
+                    answer_json             JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_ai_copilot_logs_tenant ON app_platform_ai_copilot_query_logs (tenant_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_ai_copilot_logs_created_at ON app_platform_ai_copilot_query_logs (created_at DESC)"
+            )
