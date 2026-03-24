@@ -6,6 +6,7 @@ from app.platform.analytics.repository import AnalyticsRepository
 from app.platform.ai.repository import AiCopilotRepository
 from app.platform.ai.recommendations.repository import AiRecommendationRepository
 from app.platform.automation.repository import AutomationRepository
+from app.platform.federation.repository import FederationRepository
 from app.platform.automation.templates.repository import AutomationTemplateRepository
 from app.platform.context.repository import ContextRepository
 from app.platform.kpi.repository import KpiRepository
@@ -38,6 +39,7 @@ _SHARED_ANALYTICS_REPOSITORY = AnalyticsRepository()
 _SHARED_AI_COPILOT_REPOSITORY = AiCopilotRepository()
 _SHARED_AI_RECOMMENDATION_REPOSITORY = AiRecommendationRepository()
 _SHARED_AUTOMATION_REPOSITORY = AutomationRepository()
+_SHARED_FEDERATION_REPOSITORY = FederationRepository()
 _SHARED_AUTOMATION_TEMPLATE_REPOSITORY = AutomationTemplateRepository()
 _SHARED_CONTEXT_REPOSITORY = ContextRepository()
 _SHARED_KPI_REPOSITORY = KpiRepository()
@@ -58,6 +60,7 @@ class UnitOfWork:
     ai_copilot_repository: AiCopilotRepository = _SHARED_AI_COPILOT_REPOSITORY
     ai_recommendation_repository: AiRecommendationRepository = _SHARED_AI_RECOMMENDATION_REPOSITORY
     automation_repository: AutomationRepository = _SHARED_AUTOMATION_REPOSITORY
+    federation_repository: FederationRepository = _SHARED_FEDERATION_REPOSITORY
     automation_template_repository: AutomationTemplateRepository = _SHARED_AUTOMATION_TEMPLATE_REPOSITORY
     context_repository: ContextRepository = _SHARED_CONTEXT_REPOSITORY
     kpi_repository: KpiRepository = _SHARED_KPI_REPOSITORY

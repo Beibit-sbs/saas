@@ -10,6 +10,14 @@ from app.platform.analytics import service as analytics_service
 from app.platform.analytics.schemas import AnalyticsEventProjectionListSchema, AnalyticsEventProjectionRead, TenantKpiSnapshotRead
 from app.platform.ai import service as ai_service
 from app.platform.ai.schemas import CopilotAnswerReadSchema, CopilotQuestionRequestSchema, CopilotQueryLogReadSchema
+from app.platform.federation import service as federation_service
+from app.platform.federation.schemas import (
+    InstitutionCreateSchema,
+    InstitutionOverviewSchema,
+    InstitutionReadSchema,
+    LinkTenantSchema,
+    FederationMemberReadSchema,
+)
 from app.platform.kpi import service as kpi_service
 from app.platform.kpi.schemas import RectorDashboardReadSchema, TenantMetricSnapshotReadSchema
 from app.platform.automation import service as automation_service
@@ -478,3 +486,82 @@ def list_copilot_logs(
 ) -> list[CopilotQueryLogReadSchema]:
     items = ai_service.list_logs(tenant_id=tenant_id, limit=max(1, min(limit, 500)))
     return [CopilotQueryLogReadSchema.model_validate(item) for item in items]
+
+
+# ------------------------------------------------------------------ #
+#  Federation Layer v1                                                #
+# ------------------------------------------------------------------ #
+
+
+@router.post("/platform/federation/institutions", response_model=InstitutionReadSchema, status_code=201)
+def create_institution(
+    body: InstitutionCreateSchema,
+    actor: Actor,
+    request: Request,
+) -> InstitutionReadSchema:
+    try:
+        institution = federation_service.create_institution(
+            name=body.name,
+            code=body.code,
+            country=body.country,
+            inst_type=body.type,
+            metadata=body.metadata,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    _audit(request, actor, "platform_core.federation.institution.create", 1, {"code": body.code})
+    return InstitutionReadSchema.model_validate(institution)
+
+
+@router.get("/platform/federation/institutions", response_model=list[InstitutionReadSchema])
+def list_institutions(_actor: Actor) -> list[InstitutionReadSchema]:
+    institutions = federation_service.list_institutions()
+    return [InstitutionReadSchema.model_validate(i) for i in institutions]
+
+
+@router.get("/platform/federation/institutions/{institution_id}", response_model=InstitutionReadSchema)
+def get_institution(institution_id: int, _actor: Actor) -> InstitutionReadSchema:
+    institution = federation_service.get_institution(institution_id)
+    if institution is None:
+        raise HTTPException(status_code=404, detail=f"Institution {institution_id} not found")
+    return InstitutionReadSchema.model_validate(institution)
+
+
+@router.post(
+    "/platform/federation/institutions/{institution_id}/tenants",
+    response_model=FederationMemberReadSchema,
+    status_code=201,
+)
+def link_tenant_to_institution(
+    institution_id: int,
+    body: LinkTenantSchema,
+    actor: Actor,
+    request: Request,
+) -> FederationMemberReadSchema:
+    try:
+        member = federation_service.register_tenant_under_institution(
+            institution_id=institution_id,
+            tenant_id=body.tenant_id,
+            role=body.role,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    _audit(
+        request, actor,
+        "platform_core.federation.tenant.link",
+        int(body.tenant_id),
+        {"institution_id": institution_id, "role": body.role},
+    )
+    return FederationMemberReadSchema.model_validate(member)
+
+
+@router.get(
+    "/platform/federation/institutions/{institution_id}/overview",
+    response_model=InstitutionOverviewSchema,
+)
+def get_institution_overview(institution_id: int, _actor: Actor) -> InstitutionOverviewSchema:
+    try:
+        overview = federation_service.list_institution_overview(institution_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return InstitutionOverviewSchema.model_validate(overview)

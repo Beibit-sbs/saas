@@ -485,3 +485,58 @@ def ensure_platform_core_schema(conn: object) -> None:
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS ix_platform_ai_rec_logs_created_at ON app_platform_ai_copilot_recommendation_logs (created_at DESC)"
             )
+
+            # ---- Federation Layer v1 --------------------------------------
+
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_institutions (
+                    id              BIGSERIAL PRIMARY KEY,
+                    name            VARCHAR(255) NOT NULL,
+                    code            VARCHAR(64) NOT NULL UNIQUE,
+                    country         VARCHAR(128) NOT NULL,
+                    type            VARCHAR(64) NOT NULL DEFAULT 'university',
+                    status          VARCHAR(32) NOT NULL DEFAULT 'active',
+                    metadata_json   JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_institutions_code ON app_platform_institutions (code)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_institutions_status ON app_platform_institutions (status)"
+            )
+
+            # Add institution_id to app_tenants (additive, nullable — safe for existing rows)
+            cur.execute(
+                """
+                ALTER TABLE app_tenants
+                ADD COLUMN IF NOT EXISTS institution_id BIGINT
+                    REFERENCES app_platform_institutions(id) ON DELETE SET NULL
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_tenants_institution_id ON app_tenants (institution_id)"
+            )
+
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_federation_members (
+                    id              BIGSERIAL PRIMARY KEY,
+                    institution_id  BIGINT NOT NULL REFERENCES app_platform_institutions(id) ON DELETE CASCADE,
+                    tenant_id       BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    role            VARCHAR(64) NOT NULL DEFAULT 'institution_admin',
+                    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (institution_id, tenant_id)
+                )
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_federation_members_institution ON app_platform_federation_members (institution_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_federation_members_tenant ON app_platform_federation_members (tenant_id)"
+            )
