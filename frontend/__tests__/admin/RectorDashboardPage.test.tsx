@@ -12,7 +12,12 @@ vi.mock("../../modules/platform/kpi/use-dashboard", () => ({
 
 vi.mock("../../shared/ui/permission-gate", () => ({
   RequirePermission: ({ children }: { children: ReactNode }) => <>{children}</>,
+  PermissionGate: ({ children }: { children: ReactNode }) => <>{children}</>,
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
+}));
+
+vi.mock("../../modules/platform/automation/automation-overview-widget", () => ({
+  AutomationOverviewWidget: () => <div data-testid="automation-overview-widget" />,
 }));
 
 describe("RectorDashboardPage", () => {

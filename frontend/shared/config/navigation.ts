@@ -5,6 +5,7 @@ import {
   Briefcase,
   Bell,
   HeartPulse,
+  Bot,
   GraduationCap,
   BookOpen,
   ClipboardList,
@@ -71,6 +72,24 @@ export const NAVIGATION: NavGroup[] = [
         href: "/console/health",
         icon: HeartPulse,
         permission: PERMISSIONS.HEALTH_READ,
+      },
+      {
+        label: "Automation",
+        href: "/console/automation",
+        icon: Bot,
+        permission: PERMISSIONS.AUTOMATION_READ,
+        children: [
+          {
+            label: "Rules",
+            href: "/console/automation",
+            icon: Bot,
+          },
+          {
+            label: "Executions",
+            href: "/console/automation/executions",
+            icon: ClipboardList,
+          },
+        ],
       },
     ],
   },

@@ -12,6 +12,7 @@ import { PERMISSIONS } from "@/shared/config/permissions";
 import { LayoutDashboard, RefreshCw } from "lucide-react";
 import { KpiCard } from "@/modules/platform/kpi/kpi-card";
 import { useRectorDashboard } from "@/modules/platform/kpi/use-dashboard";
+import { AutomationOverviewWidget } from "@/modules/platform/automation/automation-overview-widget";
 
 function DashboardSkeletonGrid() {
   return (
@@ -108,6 +109,8 @@ export default function RectorDashboardPage() {
             ))}
           </div>
         )}
+
+          <AutomationOverviewWidget tenantId={tenantId} />
       </div>
     </RequirePermission>
   );

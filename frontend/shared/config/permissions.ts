@@ -58,6 +58,10 @@ export const PERMISSIONS = {
   // Admissions
   ADMISSIONS_READ: "admissions.read",
   ADMISSIONS_WRITE: "admissions.write",
+
+    // Automation / Workflow Engine
+    AUTOMATION_READ: "automation.read",
+    AUTOMATION_WRITE: "automation.write",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -78,6 +82,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.GRADES_READ,
     PERMISSIONS.TRANSCRIPTS_READ,
     PERMISSIONS.SCHEDULING_READ,
+      PERMISSIONS.AUTOMATION_READ,
   ],
   viewer: [
     PERMISSIONS.TENANTS_READ,
