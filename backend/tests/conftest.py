@@ -38,6 +38,7 @@ from app.modules.usage import service as usage_service
 from app.modules.university_core import service as university_core_service
 from app.platform.analytics import service as analytics_service
 from app.platform.ai import service as platform_ai_service
+from app.platform.ai.recommendations import service as platform_ai_rec_service
 from app.platform.kpi import service as kpi_service
 from app.platform.automation import service as automation_service
 from app.platform.context import service as context_service
@@ -140,6 +141,7 @@ def _reset_template_state() -> None:
     university_core_service.clear_university_state()
     analytics_service.clear_analytics_state()
     platform_ai_service.clear_ai_state()
+    platform_ai_rec_service.clear_recommendation_state()
     kpi_service.clear_kpi_state()
     automation_service.clear_automation_state()
     context_service.clear_context_state()

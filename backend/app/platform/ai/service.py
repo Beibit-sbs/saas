@@ -5,6 +5,7 @@ from typing import Any
 from app.platform.ai.query_types import AiCopilotQueryType
 from app.platform.ai.repository import AiCopilotRepository
 from app.platform.ai import retrieval
+from app.platform.ai.recommendations.service import AiRecommendationService
 from app.platform.uow import UnitOfWork
 
 
@@ -12,11 +13,17 @@ _SHARED_AI_COPILOT_REPOSITORY = AiCopilotRepository()
 
 
 class AiCopilotService:
-    def __init__(self, repository: AiCopilotRepository | None = None) -> None:
+    def __init__(
+        self,
+        repository: AiCopilotRepository | None = None,
+        recommendation_service: AiRecommendationService | None = None,
+    ) -> None:
         self._repository = repository or _SHARED_AI_COPILOT_REPOSITORY
+        self._recommendation_service = recommendation_service or AiRecommendationService()
 
     def clear_ai_state(self) -> None:
         self._repository.clear_state()
+        self._recommendation_service.clear_state()
 
     def classify_question(self, question: str) -> str:
         q = str(question or "").strip().lower()
@@ -110,6 +117,7 @@ class AiCopilotService:
                     "insights": [],
                     "sources": [],
                     "warnings": ["missing_student_id"],
+                    "recommendations": [],
                 }
             data = retrieval.retrieve_student_context(tenant_id=tenant_id, student_id=student_id, uow=uow)
         else:
@@ -119,7 +127,17 @@ class AiCopilotService:
                 "insights": [],
                 "sources": [],
                 "warnings": ["unsupported_query_type"],
+                "recommendations": [],
             }
+
+        recommendations = self._recommendation_service.generate_recommendations(
+            tenant_id=tenant_id,
+            actor_id="system",
+            question=question,
+            query_type=query_type,
+            retrieved_context=dict(data),
+            uow=uow,
+        )
 
         return {
             "question": question,
@@ -127,6 +145,7 @@ class AiCopilotService:
             "insights": list(data.get("insights") or []),
             "sources": list(data.get("sources") or []),
             "warnings": list(data.get("warnings") or []),
+            "recommendations": [r.model_dump() for r in recommendations],
         }
 
 

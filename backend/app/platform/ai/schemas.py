@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.platform.ai.recommendations.schemas import CopilotRecommendationSchema  # noqa: F401 re-export
+
 
 class CopilotSourceReferenceSchema(BaseModel):
     source_type: str
@@ -28,6 +30,7 @@ class CopilotAnswerReadSchema(BaseModel):
     insights: list[CopilotInsightCardSchema]
     sources: list[CopilotSourceReferenceSchema]
     warnings: list[str]
+    recommendations: list[CopilotRecommendationSchema] = []
 
 
 class CopilotQueryLogReadSchema(BaseModel):
