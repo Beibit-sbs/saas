@@ -8,6 +8,7 @@ import uuid
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.responses import PlainTextResponse
+from sqlalchemy import text
 
 from app.core.config import (
     get_auth_cookie_name,
@@ -28,11 +29,16 @@ from app.modules.audit.router import router as audit_router
 from app.modules.audit.service import log_admin_action, reset_request_tenant_id, set_request_tenant_id
 from app.modules.backup.router import router as backup_router
 from app.modules.courses.router import router as courses_router
+from app.modules.enrollments.router import legacy_router as legacy_enrollments_router
 from app.modules.enrollments.router import router as enrollments_router
 from app.modules.example_notes.router import router as example_notes_router
 from app.modules.example_slice.router import router as example_slice_router
 from app.modules.faculty.router import router as faculty_router
 from app.modules.feature_flags.router import router as feature_flags_router
+from app.modules.grades.router import router as grades_router
+from app.modules.scheduling.router import router as scheduling_router
+from app.modules.transcripts.router import router as transcripts_router
+from app.modules.degree_progress.router import router as degree_progress_router
 from app.modules.auth.router import router as auth_router
 from app.modules.auth.token_service import (
     TokenValidationError,
@@ -48,16 +54,25 @@ from app.modules.ldap.router import router as ldap_router
 from app.modules.jobs.router import router as jobs_router
 from app.modules.programs.router import router as programs_router
 from app.modules.platform.router import router as platform_router
+from app.platform.router_admin import router as platform_v1_admin_router
+from app.platform.router_public import router as platform_v1_public_router
+from app.platform.router_internal import router as platform_v1_internal_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.workflows.router import router as workflows_router
 from app.modules.rbac.router import router as rbac_router
 from app.modules.rbac.security import get_actor
 from app.modules.rbac.security import resolve_current_user_claims
+from app.modules.students.router import legacy_router as legacy_students_router
 from app.modules.students.router import router as students_router
 from app.modules.service_accounts.router import router as service_accounts_router
 from app.modules.tenants.router import router as tenants_router
 from app.core.db import build_engine, make_session_factory
-from app.modules.observability.logging import configure_json_logging, request_id_var
+from app.modules.observability.logging import (
+    actor_id_var,
+    configure_json_logging,
+    request_id_var,
+    tenant_id_var,
+)
 from app.modules.observability.metrics import record_request, render_metrics
 from app.modules.observability.security_signals import record_security_signal
 from app.modules.security.rate_limit import (
@@ -138,14 +153,23 @@ app.include_router(feature_flags_router)
 app.include_router(example_notes_router)
 app.include_router(example_slice_router)
 app.include_router(students_router)
+app.include_router(legacy_students_router)
 app.include_router(service_accounts_router)
 app.include_router(faculty_router)
 app.include_router(programs_router)
 app.include_router(courses_router)
 app.include_router(enrollments_router)
+app.include_router(legacy_enrollments_router)
+app.include_router(grades_router)
+app.include_router(scheduling_router)
+app.include_router(transcripts_router)
+app.include_router(degree_progress_router)
 app.include_router(academic_records_router)
 app.include_router(tenants_router)
 app.include_router(platform_router)
+app.include_router(platform_v1_admin_router)
+app.include_router(platform_v1_public_router)
+app.include_router(platform_v1_internal_router)
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 _DEFAULT_TENANT_ID = 1
@@ -181,6 +205,18 @@ def _resolve_request_tenant_id(request: Request) -> int:
     if claims is not None and int(claims.tenant_id) > 0:
         return int(claims.tenant_id)
     return _DEFAULT_TENANT_ID
+
+
+def _resolve_request_actor_id(request: Request) -> str | None:
+    try:
+        claims = parse_access_token_from_request(request, request.headers.get("authorization"))
+    except TokenValidationError:
+        claims = None
+    if claims is not None and claims.user_id:
+        return claims.user_id
+
+    fallback_actor = request.headers.get("x-actor-id", "").strip()
+    return fallback_actor or None
 
 
 def _resolve_client_ip(request: Request) -> str:
@@ -292,32 +328,59 @@ async def enforce_csrf(request: Request, call_next):
 @app.middleware("http")
 async def add_request_id(request: Request, call_next):
     request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
+    tenant_id = _resolve_request_tenant_id(request)
+    actor_id = _resolve_request_actor_id(request)
     request.state.request_id = request_id
     # Propagate into logging context
-    token = request_id_var.set(request_id)
-    tenant_token = set_request_tenant_id(_resolve_request_tenant_id(request))
+    request_token = request_id_var.set(request_id)
+    tenant_log_token = tenant_id_var.set(str(tenant_id))
+    actor_log_token = actor_id_var.set(actor_id or "-")
+    tenant_token = set_request_tenant_id(tenant_id)
     start = time.monotonic()
     response = None
+    status_code = 500
     try:
         response = await call_next(request)
-    finally:
+        status_code = int(getattr(response, "status_code", 500))
+        response.headers["x-request-id"] = request_id
+        return response
+    except Exception:
         duration = time.monotonic() - start
-        status = getattr(response, "status_code", 0)
-        raw_path = request.url.path
-        record_request(request.method, raw_path, status, duration)
-        request_logger.info(
-            "http_request",
+        record_request(request.method, request.url.path, status_code, duration)
+        request_logger.exception(
+            "http_request_error",
             extra={
                 "method": request.method,
-                "path": raw_path,
-                "status": status,
+                "path": request.url.path,
+                "status_code": status_code,
                 "duration_ms": round(duration * 1000, 2),
+                "tenant_id": str(tenant_id),
+                "actor_id": actor_id or "-",
+                "request_id": request_id,
             },
         )
+        raise
+    finally:
+        if response is not None:
+            duration = time.monotonic() - start
+            raw_path = request.url.path
+            record_request(request.method, raw_path, status_code, duration)
+            request_logger.info(
+                "http_request",
+                extra={
+                    "method": request.method,
+                    "path": raw_path,
+                    "status_code": status_code,
+                    "duration_ms": round(duration * 1000, 2),
+                    "tenant_id": str(tenant_id),
+                    "actor_id": actor_id or "-",
+                    "request_id": request_id,
+                },
+            )
         reset_request_tenant_id(tenant_token)
-        request_id_var.reset(token)
-    response.headers["x-request-id"] = request_id
-    return response
+        actor_id_var.reset(actor_log_token)
+        tenant_id_var.reset(tenant_log_token)
+        request_id_var.reset(request_token)
 
 
 @app.get("/health")
@@ -328,6 +391,22 @@ def health() -> dict[str, str]:
 @app.get("/api/health")
 def api_health() -> dict[str, str]:
     return health()
+
+
+@app.get("/health/db")
+def health_db(request: Request):
+    session_factory = getattr(request.app.state, "admissions_session_factory", None)
+    if session_factory is None:
+        return JSONResponse(status_code=503, content={"status": "error", "database": "unreachable"})
+
+    try:
+        with session_factory() as session:
+            session.execute(text("SELECT 1"))
+    except Exception:
+        logger.warning("db_healthcheck_failed")
+        return JSONResponse(status_code=503, content={"status": "error", "database": "unreachable"})
+
+    return {"status": "ok", "database": "reachable"}
 
 
 @app.get("/metrics", response_class=PlainTextResponse, include_in_schema=False)

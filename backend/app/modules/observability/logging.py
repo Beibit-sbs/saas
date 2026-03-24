@@ -7,6 +7,8 @@ from contextvars import ContextVar
 
 # Stores the current request_id for the running async/sync context.
 request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
+tenant_id_var: ContextVar[str] = ContextVar("tenant_id", default="-")
+actor_id_var: ContextVar[str] = ContextVar("actor_id", default="-")
 
 
 class _JsonFormatter(logging.Formatter):
@@ -19,8 +21,10 @@ class _JsonFormatter(logging.Formatter):
             "logger": record.name,
             "msg": record.getMessage(),
             "request_id": request_id_var.get("-"),
+            "tenant_id": tenant_id_var.get("-"),
+            "actor_id": actor_id_var.get("-"),
         }
-        for key in ("method", "path", "status", "duration_ms"):
+        for key in ("method", "path", "status_code", "duration_ms"):
             value = getattr(record, key, None)
             if value is not None:
                 payload[key] = value
@@ -30,10 +34,12 @@ class _JsonFormatter(logging.Formatter):
 
 
 class _RequestIdFilter(logging.Filter):
-    """Inject request_id from context into every log record."""
+    """Inject request context from ContextVar into every log record."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         record.request_id = request_id_var.get("-")
+        record.tenant_id = tenant_id_var.get("-")
+        record.actor_id = actor_id_var.get("-")
         return True
 
 
