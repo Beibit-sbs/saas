@@ -1,0 +1,50 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { PageHeader } from "@/shared/ui/page-header";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
+import { Button } from "@/shared/ui/button";
+import { FileText, Search } from "lucide-react";
+
+export default function TranscriptsPage() {
+  const router = useRouter();
+  const [studentId, setStudentId] = useState("");
+
+  function openTranscript() {
+    if (!studentId.trim()) return;
+    router.push(`/console/students/${studentId.trim()}/transcript`);
+  }
+
+  return (
+    <div className="space-y-4 max-w-2xl">
+      <PageHeader
+        title="Transcripts"
+        description="Open transcript by student ID"
+        icon={FileText}
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Lookup</CardTitle>
+          <CardDescription>Enter a student UUID and open the transcript view.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex gap-2">
+          <Input
+            placeholder="Student ID (UUID)"
+            value={studentId}
+            onChange={(e) => setStudentId(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") openTranscript();
+            }}
+          />
+          <Button onClick={openTranscript}>
+            <Search className="h-4 w-4 mr-1" />
+            Open
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -1,228 +1,93 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import { useToast } from "@/shared/ui/use-toast";
+import { GraduationCap, Loader2 } from "lucide-react";
 
-import { useAuth } from "../components/AuthProvider";
-import { useLanguage } from "../components/LanguageProvider";
+const schema = z.object({
+  username: z.string().min(1, "Required"),
+  password: z.string().min(1, "Required"),
+});
 
-type DemoUser = {
-  user_id: string;
-  display_name: string;
-  roles: string[];
-  default_language: string;
-};
-
-type AuthModesResponse = {
-  modes: {
-    local: boolean;
-    ldap: boolean;
-    api_keys: boolean;
-  };
-};
+type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginDemo, loginWithCredentials, loginWithLdap, user } = useAuth();
-  const { language } = useLanguage();
-  const [users, setUsers] = useState<DemoUser[]>([]);
-  const [authModes, setAuthModes] = useState<AuthModesResponse["modes"] | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [loginValue, setLoginValue] = useState("admin");
-  const [password, setPassword] = useState("admin123");
-  const [status, setStatus] = useState<string | null>(null);
-  const uiLang = language === "kk" || language === "en" ? language : "ru";
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
-  const labels = {
-    kk: {
-      loadUsersError: "Пайдаланушыларды жүктеу қатесі",
-      pickUser: "Пайдаланушыны таңда.",
-      loginError: "Кіру қатесі",
-      title: "Демо кіру",
-      subtitle: "Жеке тіл мен рөлдердің интерфейсте қалай жұмыс істейтінін көру үшін тест пайдаланушысын таңда немесе mock login/password қолдан.",
-      byDemo: "Demo-пайдаланушы арқылы кіру",
-      login: "Кіру",
-      byCredentials: "Mock login/password",
-      byLdap: "LDAP/AD арқылы кіру",
-      loginPlaceholder: "login",
-      passwordPlaceholder: "password",
-      loginByCredentials: "Логин/құпия сөзбен кіру",
-      loginByLdap: "LDAP/AD арқылы кіру",
-      testPairs: "Тест жұптары: admin/admin123, teacher/teacher123, student/student123",
-    },
-    ru: {
-      loadUsersError: "Ошибка загрузки пользователей",
-      pickUser: "Выбери пользователя.",
-      loginError: "Ошибка входа",
-      title: "Демо-вход",
-      subtitle: "Выбери тестового пользователя или выполни mock login/password, чтобы посмотреть персональный язык и роли в интерфейсе.",
-      byDemo: "Вход по demo-пользователю",
-      login: "Войти",
-      byCredentials: "Mock login/password",
-      byLdap: "Вход через LDAP/AD",
-      loginPlaceholder: "login",
-      passwordPlaceholder: "password",
-      loginByCredentials: "Войти по логину/паролю",
-      loginByLdap: "Войти через LDAP/AD",
-      testPairs: "Тестовые пары: admin/admin123, teacher/teacher123, student/student123",
-    },
-    en: {
-      loadUsersError: "Failed to load users",
-      pickUser: "Select a user.",
-      loginError: "Login error",
-      title: "Demo Login",
-      subtitle: "Select a test user or use mock login/password to see personal language and roles in the UI.",
-      byDemo: "Login by demo user",
-      login: "Login",
-      byCredentials: "Mock login/password",
-      byLdap: "LDAP/AD login",
-      loginPlaceholder: "login",
-      passwordPlaceholder: "password",
-      loginByCredentials: "Login with credentials",
-      loginByLdap: "Login via LDAP/AD",
-      testPairs: "Test pairs: admin/admin123, teacher/teacher123, student/student123",
-    },
-  }[uiLang];
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({ resolver: zodResolver(schema) });
 
-  useEffect(() => {
-    if (user) {
-      router.push("/");
-      return;
-    }
+  async function onSubmit(data: FormData) {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: data.username, password: data.password }),
+      });
 
-    const loadUsers = async () => {
-      try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-        const [usersRes, modesRes] = await Promise.all([
-          fetch(`${baseUrl}/auth/demo-users`, { cache: "no-store" }),
-          fetch(`${baseUrl}/auth/modes`, { cache: "no-store" }),
-        ]);
-        if (!usersRes.ok) {
-          setStatus(`${labels.loadUsersError}: ${usersRes.status}`);
-          return;
-        }
-        const json = (await usersRes.json()) as { users: DemoUser[] };
-        setUsers(json.users);
-        if (json.users.length > 0) {
-          setSelectedUserId(json.users[0].user_id);
-        }
-
-        if (modesRes.ok) {
-          const modesJson = (await modesRes.json()) as AuthModesResponse;
-          setAuthModes(modesJson.modes);
-        }
-      } catch (error) {
-        setStatus(String(error));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail ?? "Login failed");
       }
-    };
 
-    void loadUsers();
-  }, [router, user, labels.loadUsersError]);
-
-  const loginByDemoUser = async () => {
-    if (!selectedUserId) {
-      setStatus(labels.pickUser);
-      return;
+      const next = searchParams.get("next") ?? "/console";
+      router.push(next);
+      router.refresh();
+    } catch (err: unknown) {
+      toast({
+        variant: "destructive",
+        title: "Login failed",
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    const result = await loginDemo(selectedUserId);
-    if (!result.ok) {
-      setStatus(result.error || labels.loginError);
-      return;
-    }
-
-    router.push("/");
-    router.refresh();
-  };
-
-  const loginByCredentials = async () => {
-    setStatus(null);
-    const result = await loginWithCredentials(loginValue, password);
-    if (!result.ok) {
-      setStatus(result.error || labels.loginError);
-      return;
-    }
-
-    router.push("/");
-    router.refresh();
-  };
-
-  const loginByLdap = async () => {
-    setStatus(null);
-    const result = await loginWithLdap(loginValue, password);
-    if (!result.ok) {
-      setStatus(result.error || labels.loginError);
-      return;
-    }
-
-    router.push("/");
-    router.refresh();
-  };
+  }
 
   return (
-    <main style={{ fontFamily: "sans-serif", padding: 24, maxWidth: 720, margin: "0 auto" }}>
-      <h1>{labels.title}</h1>
-      <p>{labels.subtitle}</p>
-
-      <div style={{ display: "grid", gap: 24, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
-        <section style={{ border: "1px solid #eceef3", borderRadius: 12, padding: 16 }}>
-          <h2 style={{ marginTop: 0 }}>{labels.byDemo}</h2>
-          <div style={{ display: "grid", gap: 10 }}>
-            <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-              {users.map((item) => (
-                <option key={item.user_id} value={item.user_id}>
-                  {item.display_name} ({item.user_id}) - {item.default_language}
-                </option>
-              ))}
-            </select>
-
-            <button
-              type="button"
-              onClick={loginByDemoUser}
-              style={{ width: 180, borderRadius: 8, border: "none", padding: "8px 12px", background: "#111827", color: "#fff" }}
-            >
-              {labels.login}
-            </button>
+    <main className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-2">
+            <GraduationCap className="h-8 w-8 text-primary" />
           </div>
-        </section>
-
-        <section style={{ border: "1px solid #eceef3", borderRadius: 12, padding: 16 }}>
-          <h2 style={{ marginTop: 0 }}>{labels.byCredentials}</h2>
-          <div style={{ display: "grid", gap: 10 }}>
-            <input value={loginValue} onChange={(e) => setLoginValue(e.target.value)} placeholder={labels.loginPlaceholder} />
-            <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder={labels.passwordPlaceholder} type="password" />
-            <button
-              type="button"
-              onClick={loginByCredentials}
-              style={{ width: 220, borderRadius: 8, border: "none", padding: "8px 12px", background: "#111827", color: "#fff" }}
-            >
-              {labels.loginByCredentials}
-            </button>
-            <div style={{ fontSize: 13, color: "#555" }}>
-              {labels.testPairs}
+          <CardTitle>EduAdmin Console</CardTitle>
+          <CardDescription>Sign in to continue</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="username">Username</Label>
+              <Input id="username" autoComplete="username" {...register("username")} />
+              {errors.username && <p className="text-xs text-destructive">{errors.username.message}</p>}
             </div>
-          </div>
-        </section>
-
-        {authModes?.ldap ? (
-          <section style={{ border: "1px solid #eceef3", borderRadius: 12, padding: 16 }}>
-            <h2 style={{ marginTop: 0 }}>{labels.byLdap}</h2>
-            <div style={{ display: "grid", gap: 10 }}>
-              <input value={loginValue} onChange={(e) => setLoginValue(e.target.value)} placeholder={labels.loginPlaceholder} />
-              <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder={labels.passwordPlaceholder} type="password" />
-              <button
-                type="button"
-                onClick={loginByLdap}
-                style={{ width: 220, borderRadius: 8, border: "none", padding: "8px 12px", background: "#0f766e", color: "#fff" }}
-              >
-                {labels.loginByLdap}
-              </button>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" autoComplete="current-password" {...register("password")} />
+              {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
-          </section>
-        ) : null}
-      </div>
-
-      {status ? <p style={{ marginTop: 16 }}>{status}</p> : null}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Sign in
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </main>
   );
 }

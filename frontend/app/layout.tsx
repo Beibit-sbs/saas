@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "./admin-console.css";
 
 import { AuthProvider } from "./components/AuthProvider";
 import HelpAssistant from "./components/HelpAssistant";
