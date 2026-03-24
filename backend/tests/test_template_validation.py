@@ -40,7 +40,11 @@ REQUIRED_MODULE_PATHS = [
 
 REQUIRED_ROUTE_PATHS = {
     "/health",
+    "/health/db",
     "/api/health",
+    "/api/v1/admin/tenants",
+    "/api/v1/public/tenants/{tenant_id}",
+    "/api/v1/internal/jobs/{job_id}/run",
     "/api/auth/modes",
     "/api/admin/dashboard",
     "/api/admin/local-users",

@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "d1f3c7a9b4e8"
-down_revision = "7c2e9a4b1d0f"
+down_revision = "c2e4a6f8b0d3"
 branch_labels = None
 depends_on = None
 
@@ -26,6 +26,7 @@ student_status = postgresql.ENUM(
     "graduated",
     "withdrawn",
     name="student_status",
+    create_type=False,
 )
 student_academic_level = postgresql.ENUM(
     "undergraduate",
@@ -34,6 +35,7 @@ student_academic_level = postgresql.ENUM(
     "non_degree",
     "certificate",
     name="student_academic_level",
+    create_type=False,
 )
 student_admission_source = postgresql.ENUM(
     "admissions_workflow",
@@ -41,11 +43,13 @@ student_admission_source = postgresql.ENUM(
     "external_sync",
     "migration",
     name="student_admission_source",
+    create_type=False,
 )
 student_program_binding_state = postgresql.ENUM(
     "active",
     "inactive",
     name="student_program_binding_state",
+    create_type=False,
 )
 
 
@@ -61,24 +65,24 @@ def upgrade() -> None:
 
     op.create_table(
         "app_students_profiles",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("person_id", sa.BigInteger(), nullable=False),
         sa.Column("student_number", sa.String(length=64), nullable=False),
         sa.Column("cohort_year", sa.SmallInteger(), nullable=False),
         sa.Column("academic_level", student_academic_level, nullable=True),
-        sa.Column("current_status", student_status, nullable=False, server_default="'admitted'"),
+        sa.Column("current_status", student_status, nullable=False, server_default=sa.text("'admitted'")),
         sa.Column(
             "admission_source",
             student_admission_source,
             nullable=False,
-            server_default="'admissions_workflow'",
+            server_default=sa.text("'admissions_workflow'"),
         ),
         sa.Column(
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("version", sa.BigInteger(), nullable=False, server_default="1"),
         sa.Column("created_by", sa.String(length=255), nullable=False),
@@ -123,7 +127,7 @@ def upgrade() -> None:
 
     op.create_table(
         "app_students_status_history",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("student_profile_id", sa.BigInteger(), nullable=False),
         sa.Column("from_status", student_status, nullable=True),
@@ -135,7 +139,7 @@ def upgrade() -> None:
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.CheckConstraint(
             "from_status IS NULL OR from_status <> to_status",
@@ -163,7 +167,7 @@ def upgrade() -> None:
 
     op.create_table(
         "app_students_program_bindings",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("student_profile_id", sa.BigInteger(), nullable=False),
         sa.Column("program_id", sa.BigInteger(), nullable=False),
@@ -172,7 +176,7 @@ def upgrade() -> None:
             "binding_state",
             student_program_binding_state,
             nullable=False,
-            server_default="'active'",
+            server_default=sa.text("'active'"),
         ),
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
         sa.Column("ended_at", sa.DateTime(timezone=True), nullable=True),
@@ -180,7 +184,7 @@ def upgrade() -> None:
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("version", sa.BigInteger(), nullable=False, server_default="1"),
         sa.Column("created_by", sa.String(length=255), nullable=False),

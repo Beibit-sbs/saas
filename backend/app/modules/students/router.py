@@ -23,17 +23,29 @@ from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.students.dependencies import get_students_db
 from app.modules.students.models import StudentStatus
 from app.modules.students.schemas import (
+    StudentCreatePayload,
+    StudentDeleteResponse,
+    StudentItemResponse,
+    StudentListResponse,
     StudentProfileCreateSchema,
     StudentProfileListResponseSchema,
     StudentProfileReadSchema,
     StudentProgramBindingCreateSchema,
     StudentProgramBindingReadSchema,
     StudentStatusChangeSchema,
+    StudentUpdatePayload,
 )
-from app.modules.students.service import StudentLifecycleService
+from app.modules.students.service import (
+    StudentLifecycleService,
+    create_student,
+    delete_student,
+    list_students,
+    update_student,
+)
 
 
 router = APIRouter(prefix="/api/admin/students", tags=["students"])
+legacy_router = APIRouter(prefix="/api/admin/university/students", tags=["students"])
 
 
 class ErrorDetailResponse(BaseModel):
@@ -59,6 +71,12 @@ def _raise_students_http_error(exc: Exception) -> HTTPException:
     if isinstance(exc, ValueError):
         return validation_error_to_http(exc)
     raise HTTPException(status_code=400, detail=str(exc))
+
+
+def _raise_legacy_students_http_error(exc: ValueError) -> HTTPException:
+    if "not found" in str(exc).lower():
+        return HTTPException(status_code=404, detail=str(exc))
+    return _raise_students_http_error(exc)
 
 
 TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
@@ -225,3 +243,72 @@ async def get_active_primary_program_endpoint(
         )
     except (PermissionError, ValueError, TenantResourceNotFoundError) as exc:
         raise _raise_students_http_error(exc) from exc
+
+
+@legacy_router.get(
+    "",
+    response_model=StudentListResponse,
+    responses={403: {"model": ErrorDetailResponse}},
+)
+async def legacy_list_students_endpoint(
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("admin.students.read"))] = None,
+    tenant: TrustedTenant = None,
+) -> StudentListResponse:
+    return StudentListResponse(students=list_students(int(tenant["id"])))
+
+
+@legacy_router.post(
+    "",
+    response_model=StudentItemResponse,
+    responses={400: {"model": ErrorDetailResponse}, 403: {"model": ErrorDetailResponse}},
+)
+async def legacy_create_student_endpoint(
+    payload: dict[str, Any] = Body(...),
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("admin.students.write"))] = None,
+    tenant: TrustedTenant = None,
+) -> StudentItemResponse:
+    request_model = _parse_payload(StudentCreatePayload, payload)
+    return StudentItemResponse(student=create_student(request_model.model_dump(), int(tenant["id"])))
+
+
+@legacy_router.put(
+    "/{student_id}",
+    response_model=StudentItemResponse,
+    responses={400: {"model": ErrorDetailResponse}, 403: {"model": ErrorDetailResponse}, 404: {"model": ErrorDetailResponse}},
+)
+async def legacy_update_student_endpoint(
+    student_id: int,
+    payload: dict[str, Any] = Body(...),
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("admin.students.write"))] = None,
+    tenant: TrustedTenant = None,
+) -> StudentItemResponse:
+    request_model = _parse_payload(StudentUpdatePayload, payload)
+    try:
+        return StudentItemResponse(
+            student=update_student(student_id, request_model.model_dump(), int(tenant["id"]))
+        )
+    except ValueError as exc:
+        raise _raise_legacy_students_http_error(exc) from exc
+
+
+@legacy_router.delete(
+    "/{student_id}",
+    response_model=StudentDeleteResponse,
+    responses={403: {"model": ErrorDetailResponse}, 404: {"model": ErrorDetailResponse}},
+)
+async def legacy_delete_student_endpoint(
+    student_id: int,
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("admin.students.write"))] = None,
+    tenant: TrustedTenant = None,
+) -> StudentDeleteResponse:
+    try:
+        return StudentDeleteResponse(
+            deleted=True,
+            student=delete_student(student_id, int(tenant["id"])),
+        )
+    except ValueError as exc:
+        raise _raise_legacy_students_http_error(exc) from exc

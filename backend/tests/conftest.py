@@ -50,7 +50,42 @@ DEFAULT_FLAGS_BY_TENANT = {
 DEFAULT_LANGUAGES = copy.deepcopy(i18n_service.languages)
 
 
+def _sync_user_roles_for_tests(user_id: str, roles: list[str], tenant_id: int = 1) -> dict[str, object]:
+    normalized_user_id = str(user_id or "").strip()
+    if not normalized_user_id:
+        raise ValueError("user_id is required")
+
+    normalized_tenant_id = int(tenant_id)
+    desired_roles = sorted({str(role).strip() for role in roles if str(role).strip()})
+    current_roles = set(rbac_service.get_user_roles_for_tenant(normalized_user_id, normalized_tenant_id))
+
+    for role in sorted(current_roles - set(desired_roles)):
+        rbac_service.revoke_role_for_tenant(normalized_tenant_id, normalized_user_id, role)
+
+    for role in desired_roles:
+        try:
+            rbac_service.assign_role_to_user(normalized_tenant_id, normalized_user_id, role)
+        except ValueError as exc:
+            # Some tests intentionally rely on non-platform role labels.
+            if "unknown role" not in str(exc):
+                raise
+
+    synced_roles = rbac_service.get_user_roles_for_tenant(normalized_user_id, normalized_tenant_id)
+    return {"user_id": normalized_user_id, "roles": sorted(synced_roles)}
+
+
 def _auth_headers(user_id: str, roles: list[str]) -> dict[str, str]:
+    # Keep RBAC resolution consistent between in-memory and DB-backed test paths.
+    # In DB mode, permission checks read assignments from app_user_roles, so we
+    # mirror test token roles into trusted role assignments.
+    for role in roles:
+        try:
+            rbac_service.assign_role_to_user(tenant_id=1, user_id=user_id, role=role)
+        except ValueError as exc:
+            # Some tests intentionally use non-platform roles (e.g. "student")
+            # to validate permission denial paths.
+            if "unknown role" not in str(exc):
+                raise
     token = create_access_token(user_id=user_id, roles=roles, auth_source="test")
     return {"Authorization": f"Bearer {token}"}
 
@@ -121,6 +156,8 @@ def _reset_template_state() -> None:
 def reset_shared_state(monkeypatch):
     monkeypatch.setenv("AUTH_DEV_DEMO_COMPATIBILITY", "true")
     monkeypatch.setenv("RBAC_ALLOW_DEV_FALLBACK", "true")
+    monkeypatch.setattr("app.modules.auth.router.sync_user_roles_from_trusted_source", _sync_user_roles_for_tests)
+    monkeypatch.setattr("app.modules.admin.local_users_router.sync_user_roles_from_trusted_source", _sync_user_roles_for_tests)
     _reset_template_state()
     yield
     _reset_template_state()

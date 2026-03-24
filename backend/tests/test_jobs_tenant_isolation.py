@@ -25,6 +25,7 @@ def _create_tenant_b() -> int:
 def test_tenant_b_cannot_see_tenant_a_jobs() -> None:
     jobs_service.clear_jobs_state()
     tenant_b_id = _create_tenant_b()
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
 
     created = client.post(
         "/api/admin/jobs",
@@ -34,11 +35,17 @@ def test_tenant_b_cannot_see_tenant_a_jobs() -> None:
     assert created.status_code == 200, created.text
     job_id = int(created.json()["job"]["id"])
 
-    list_tenant_b = client.get("/api/admin/jobs", headers=_tenant_headers(tenant_b_id))
+    list_tenant_b = client.get(
+        "/api/admin/jobs",
+        headers=_tenant_headers(tenant_b_id, platform_headers),
+    )
     assert list_tenant_b.status_code == 200, list_tenant_b.text
     assert all(int(item["tenant_id"]) == tenant_b_id for item in list_tenant_b.json()["jobs"])
 
-    get_cross = client.get(f"/api/admin/jobs/{job_id}", headers=_tenant_headers(tenant_b_id))
+    get_cross = client.get(
+        f"/api/admin/jobs/{job_id}",
+        headers=_tenant_headers(tenant_b_id, platform_headers),
+    )
     assert get_cross.status_code == 404
 
 

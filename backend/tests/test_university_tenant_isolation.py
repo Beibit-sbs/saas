@@ -3,7 +3,7 @@
 Verifies that each tenant only sees its own data and cannot
 read, update, or delete another tenant's records.
 """
-from tests.conftest import ADMIN_HEADERS, client
+from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -37,8 +37,8 @@ def _create_extra_tenant() -> dict:
     return resp.json()["tenant"]
 
 
-def _tenant_headers(tenant_id: int) -> dict:
-    return {**ADMIN_HEADERS, "X-Tenant-ID": str(tenant_id)}
+def _tenant_headers(tenant_id: int, base_headers: dict[str, str] | None = None) -> dict[str, str]:
+    return {**(base_headers or ADMIN_HEADERS), "X-Tenant-ID": str(tenant_id)}
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +82,8 @@ def test_tenant_a_sees_only_own_rows() -> None:
 
     # Create tenant B and fetch its students
     tenant_b = _create_extra_tenant()
-    b_headers = _tenant_headers(int(tenant_b["id"]))
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
+    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
 
     list_resp = client.get("/api/admin/university/students", headers=b_headers)
     assert list_resp.status_code == 200
@@ -92,7 +93,8 @@ def test_tenant_a_sees_only_own_rows() -> None:
 def test_default_tenant_sees_only_own_rows() -> None:
     """The default tenant cannot see rows created by tenant B."""
     tenant_b = _create_extra_tenant()
-    b_headers = _tenant_headers(int(tenant_b["id"]))
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
+    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
 
     # Create a student under tenant B
     resp = client.post(
@@ -122,7 +124,8 @@ def test_cross_tenant_update_returns_404() -> None:
 
     # Tenant B tries to update it
     tenant_b = _create_extra_tenant()
-    b_headers = _tenant_headers(int(tenant_b["id"]))
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
+    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
 
     update_resp = client.put(
         f"/api/admin/university/students/{student_id}",
@@ -143,7 +146,8 @@ def test_cross_tenant_delete_returns_404() -> None:
     student_id = create_resp.json()["student"]["id"]
 
     tenant_b = _create_extra_tenant()
-    b_headers = _tenant_headers(int(tenant_b["id"]))
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
+    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
 
     delete_resp = client.delete(
         f"/api/admin/university/students/{student_id}",
@@ -160,7 +164,8 @@ def test_cross_tenant_delete_returns_404() -> None:
 def test_both_tenants_independent_counters() -> None:
     """Each tenant maintains independent data sets."""
     tenant_b = _create_extra_tenant()
-    b_headers = _tenant_headers(int(tenant_b["id"]))
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
+    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
 
     # Create 2 students under default tenant
     for i in range(2):
@@ -210,6 +215,7 @@ def test_tenant_own_update_succeeds() -> None:
 def test_inactive_tenant_is_rejected() -> None:
     """A request with X-Tenant-ID pointing to an inactive tenant gets 403."""
     tenant_b = _create_extra_tenant()
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
 
     # Deactivate tenant B
     deactivate_resp = client.delete(
@@ -218,13 +224,14 @@ def test_inactive_tenant_is_rejected() -> None:
     )
     assert deactivate_resp.status_code == 200
 
-    b_headers = _tenant_headers(int(tenant_b["id"]))
+    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
     resp = client.get("/api/admin/university/students", headers=b_headers)
     assert resp.status_code == 403
 
 
 def test_nonexistent_tenant_is_rejected() -> None:
     """A request with X-Tenant-ID pointing to a non-existent tenant gets 404."""
-    headers = _tenant_headers(99999)
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
+    headers = _tenant_headers(99999, platform_headers)
     resp = client.get("/api/admin/university/students", headers=headers)
     assert resp.status_code == 404

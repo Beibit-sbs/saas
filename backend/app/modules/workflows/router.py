@@ -19,6 +19,7 @@ from app.core.module_helpers.service_validation import (
 )
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
+from app.modules.observability.metrics import observe_workflow_execution
 from app.modules.workflows.dependencies import get_workflows_db
 from app.modules.workflows.schemas import (
     WorkflowInstanceListResponseSchema,
@@ -91,6 +92,7 @@ async def start_workflow_endpoint(
             metadata_json=request_model.metadata_json,
             workflow_version_no=request_model.workflow_version_no,
         )
+        observe_workflow_execution()
         return WorkflowInstanceReadSchema.model_validate(instance)
     except (PermissionError, ValueError, IntegrityError, TenantResourceNotFoundError) as exc:
         raise _raise_workflow_http_error(exc) from exc

@@ -1,6 +1,7 @@
 from tests.conftest import ADMIN_HEADERS, client
 from app.modules.auth.token_service import create_access_token
 from app.modules.rbac import service as rbac_service
+from uuid import uuid4
 
 
 def test_rbac_roles_endpoint() -> None:
@@ -173,11 +174,13 @@ def test_new_admin_endpoints_require_permissions() -> None:
     low_priv_headers = {
         "Authorization": f"Bearer {create_access_token('student.002', ['student'], 'test')}",
     }
+    suffix = uuid4().hex[:8]
+    login = f"local.permission.case.{suffix}"
 
     create_response = client.post(
         "/api/admin/local-users",
         json={
-            "login": "local.permission.case",
+            "login": login,
             "password": "permit12345",
             "display_name": "Permission Case",
             "roles": ["auditor"],

@@ -1,6 +1,7 @@
 from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 from app.modules.auth.token_service import create_access_token
 from app.modules.rbac import service as rbac_service
+from uuid import uuid4
 
 
 def _tenant_headers(tenant_id: int, base_headers: dict[str, str] | None = None) -> dict[str, str]:
@@ -10,11 +11,12 @@ def _tenant_headers(tenant_id: int, base_headers: dict[str, str] | None = None) 
 
 
 def _create_tenant_b() -> int:
+    suffix = uuid4().hex[:8]
     response = client.post(
         "/api/admin/tenants",
         headers=ADMIN_HEADERS,
         json={
-            "slug": "tenant-b-rbac",
+            "slug": f"tenant-b-rbac-{suffix}",
             "name": "Tenant B RBAC",
             "status": "active",
         },
@@ -63,12 +65,14 @@ def test_tenant_b_cannot_assign_tenant_a_role() -> None:
 
 def test_cross_tenant_assignment_returns_403() -> None:
     tenant_b_id = _create_tenant_b()
+    suffix = uuid4().hex[:8]
+    login = f"tenant-a-user-{suffix}"
 
     create_user_a = client.post(
         "/api/admin/local-users",
         headers=ADMIN_HEADERS,
         json={
-            "login": "tenant-a-user",
+            "login": login,
             "password": "tenantApass123",
             "display_name": "Tenant A User",
             "roles": ["student"],

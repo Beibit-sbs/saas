@@ -22,9 +22,17 @@ Constraints:
 - Documents store safe references only (s3 keys, not filesystem paths)
 """
 
+from typing import Sequence, Union
+
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+# revision identifiers, used by Alembic.
+revision: str = 'a1b2c3d4e5f6'
+down_revision: Union[str, None] = 'f6a2d1e9b3c4'
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
@@ -35,7 +43,7 @@ def upgrade() -> None:
     # ============================================================================
     op.create_table(
         "app_admissions_applicants",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("email", sa.String(255), nullable=False),
         sa.Column("first_name", sa.String(128), nullable=False),
@@ -43,13 +51,13 @@ def upgrade() -> None:
         sa.Column("phone", sa.String(20), nullable=True),
         sa.Column("program_id", sa.BigInteger(), nullable=False),
         sa.Column("application_year", sa.SmallInteger(), nullable=False),
-        sa.Column("status", sa.String(64), nullable=False, server_default="'active'"),
+        sa.Column("status", sa.String(64), nullable=False, server_default=sa.text("'active'")),
         sa.Column("external_id", sa.String(128), nullable=True),
         sa.Column(
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("created_by", sa.String(255), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
@@ -77,11 +85,11 @@ def upgrade() -> None:
     # ============================================================================
     op.create_table(
         "app_admissions_applications",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("applicant_id", sa.BigInteger(), nullable=False),
         sa.Column("program_id", sa.BigInteger(), nullable=False),
-        sa.Column("stage", sa.String(64), nullable=False, server_default="'new'"),
+        sa.Column("stage", sa.String(64), nullable=False, server_default=sa.text("'new'")),
         sa.Column("conclusion_type", sa.String(64), nullable=True),
         sa.Column("received_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("decision_at", sa.DateTime(timezone=True), nullable=True),
@@ -90,7 +98,7 @@ def upgrade() -> None:
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("created_by", sa.String(255), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
@@ -114,7 +122,7 @@ def upgrade() -> None:
     # ============================================================================
     op.create_table(
         "app_admissions_documents",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("application_id", sa.BigInteger(), nullable=False),
         sa.Column("document_type", sa.String(64), nullable=False),
@@ -122,12 +130,12 @@ def upgrade() -> None:
         sa.Column("file_name", sa.String(255), nullable=False),
         sa.Column("file_size_bytes", sa.BigInteger(), nullable=True),
         sa.Column("mime_type", sa.String(128), nullable=True),
-        sa.Column("status", sa.String(64), nullable=False, server_default="'received'"),
+        sa.Column("status", sa.String(64), nullable=False, server_default=sa.text("'received'")),
         sa.Column(
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("created_by", sa.String(255), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
@@ -146,7 +154,7 @@ def upgrade() -> None:
     # ============================================================================
     op.create_table(
         "app_admissions_stage_history",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("application_id", sa.BigInteger(), nullable=False),
         sa.Column("from_stage", sa.String(64), nullable=False),
@@ -158,7 +166,7 @@ def upgrade() -> None:
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
         sa.ForeignKeyConstraint(["tenant_id"], ["app_tenants.id"], ondelete="CASCADE"),
@@ -188,7 +196,7 @@ def upgrade() -> None:
     # ============================================================================
     op.create_table(
         "app_admissions_decisions",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("application_id", sa.BigInteger(), nullable=False, unique=True),
         sa.Column("decision_type", sa.String(64), nullable=False),
@@ -199,7 +207,7 @@ def upgrade() -> None:
             "conditions_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("version", sa.BigInteger(), nullable=False, server_default="1"),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),

@@ -28,8 +28,12 @@ def _create_tenant_b() -> int:
 def test_tenant_b_events_are_not_visible_in_tenant_a_view() -> None:
     audit_service.clear_audit_events()
     tenant_b_id = _create_tenant_b()
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
 
-    create_event = client.post("/api/admin/audit-test", headers=_tenant_headers(tenant_b_id))
+    create_event = client.post(
+        "/api/admin/audit-test",
+        headers=_tenant_headers(tenant_b_id, platform_headers),
+    )
     assert create_event.status_code == 200, create_event.text
 
     list_default = client.get("/api/admin/audit/events?action=audit_test", headers=ADMIN_HEADERS)
@@ -38,7 +42,7 @@ def test_tenant_b_events_are_not_visible_in_tenant_a_view() -> None:
 
     list_tenant_b = client.get(
         "/api/admin/audit/events?action=audit_test",
-        headers=_tenant_headers(tenant_b_id),
+        headers=_tenant_headers(tenant_b_id, platform_headers),
     )
     assert list_tenant_b.status_code == 200, list_tenant_b.text
     assert len(list_tenant_b.json()["events"]) >= 1
@@ -50,7 +54,10 @@ def test_platform_admin_can_query_target_tenant_events() -> None:
     tenant_b_id = _create_tenant_b()
     platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
 
-    create_event = client.post("/api/admin/audit-test", headers=_tenant_headers(tenant_b_id))
+    create_event = client.post(
+        "/api/admin/audit-test",
+        headers=_tenant_headers(tenant_b_id, platform_headers),
+    )
     assert create_event.status_code == 200, create_event.text
 
     list_tenant_b = client.get(

@@ -23,18 +23,21 @@ def upgrade() -> None:
         "active",
         "archived",
         name="workflow_definition_status",
+        create_type=False,
     )
     workflow_definition_version_status = postgresql.ENUM(
         "draft",
         "active",
         "retired",
         name="workflow_definition_version_status",
+        create_type=False,
     )
     workflow_trigger_mode = postgresql.ENUM(
         "manual",
         "event",
         "api",
         name="workflow_trigger_mode",
+        create_type=False,
     )
     workflow_step_type = postgresql.ENUM(
         "start",
@@ -43,6 +46,7 @@ def upgrade() -> None:
         "end",
         "gateway",
         name="workflow_step_type",
+        create_type=False,
     )
     workflow_assignee_type = postgresql.ENUM(
         "user",
@@ -50,6 +54,7 @@ def upgrade() -> None:
         "group",
         "service_account",
         name="workflow_assignee_type",
+        create_type=False,
     )
     workflow_instance_status = postgresql.ENUM(
         "pending",
@@ -59,6 +64,7 @@ def upgrade() -> None:
         "cancelled",
         "completed",
         name="workflow_instance_status",
+        create_type=False,
     )
     workflow_task_status = postgresql.ENUM(
         "open",
@@ -70,17 +76,20 @@ def upgrade() -> None:
         "completed",
         "cancelled",
         name="workflow_task_status",
+        create_type=False,
     )
     workflow_comment_type = postgresql.ENUM(
         "note",
         "system",
         "escalation",
         name="workflow_comment_type",
+        create_type=False,
     )
     workflow_comment_visibility = postgresql.ENUM(
         "internal",
         "requester_visible",
         name="workflow_comment_visibility",
+        create_type=False,
     )
     workflow_approval_action = postgresql.ENUM(
         "approved",
@@ -89,6 +98,7 @@ def upgrade() -> None:
         "cancelled",
         "delegated",
         name="workflow_approval_action",
+        create_type=False,
     )
 
     enum_types = [
@@ -108,18 +118,18 @@ def upgrade() -> None:
 
     op.create_table(
         "app_workflows_definitions",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("key", sa.String(length=128), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("status", workflow_definition_status, nullable=False, server_default="'draft'"),
+        sa.Column("status", workflow_definition_status, nullable=False, server_default=sa.text("'draft'")),
         sa.Column("active_version_no", sa.Integer(), nullable=True),
         sa.Column(
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("version", sa.Integer(), nullable=False, server_default="1"),
         sa.Column("created_by", sa.String(length=255), nullable=False),
@@ -140,7 +150,7 @@ def upgrade() -> None:
 
     op.create_table(
         "app_workflows_definition_versions",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("workflow_definition_id", sa.BigInteger(), nullable=False),
         sa.Column("version_no", sa.Integer(), nullable=False),
@@ -148,21 +158,21 @@ def upgrade() -> None:
             "status",
             workflow_definition_version_status,
             nullable=False,
-            server_default="'draft'",
+            server_default=sa.text("'draft'"),
         ),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("false")),
-        sa.Column("trigger_mode", workflow_trigger_mode, nullable=False, server_default="'manual'"),
+        sa.Column("trigger_mode", workflow_trigger_mode, nullable=False, server_default=sa.text("'manual'")),
         sa.Column(
             "definition_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column(
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("published_by", sa.String(length=255), nullable=True),
         sa.Column("published_at", sa.DateTime(timezone=True), nullable=True),
@@ -208,7 +218,7 @@ def upgrade() -> None:
 
     op.create_table(
         "app_workflows_steps",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("workflow_definition_version_id", sa.BigInteger(), nullable=False),
         sa.Column("step_key", sa.String(length=128), nullable=False),
@@ -224,13 +234,13 @@ def upgrade() -> None:
             "config_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column(
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("version", sa.Integer(), nullable=False, server_default="1"),
         sa.Column("created_by", sa.String(length=255), nullable=False),
@@ -266,7 +276,7 @@ def upgrade() -> None:
 
     op.create_table(
         "app_workflows_transitions",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("workflow_definition_version_id", sa.BigInteger(), nullable=False),
         sa.Column("from_step_id", sa.BigInteger(), nullable=False),
@@ -277,14 +287,14 @@ def upgrade() -> None:
             "condition_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("is_default", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column(
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("version", sa.Integer(), nullable=False, server_default="1"),
         sa.Column("created_by", sa.String(length=255), nullable=False),
@@ -327,13 +337,13 @@ def upgrade() -> None:
 
     op.create_table(
         "app_workflows_instances",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("workflow_definition_id", sa.BigInteger(), nullable=False),
         sa.Column("workflow_definition_version_id", sa.BigInteger(), nullable=False),
         sa.Column("entity_type", sa.String(length=128), nullable=False),
         sa.Column("entity_id", sa.BigInteger(), nullable=False),
-        sa.Column("status", workflow_instance_status, nullable=False, server_default="'pending'"),
+        sa.Column("status", workflow_instance_status, nullable=False, server_default=sa.text("'pending'")),
         sa.Column("current_step_id", sa.BigInteger(), nullable=True),
         sa.Column("initiated_by", sa.String(length=255), nullable=False),
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
@@ -344,7 +354,7 @@ def upgrade() -> None:
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("version", sa.Integer(), nullable=False, server_default="1"),
         sa.Column("created_by", sa.String(length=255), nullable=False),
@@ -390,12 +400,12 @@ def upgrade() -> None:
 
     op.create_table(
         "app_workflows_tasks",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("workflow_instance_id", sa.BigInteger(), nullable=False),
         sa.Column("workflow_step_id", sa.BigInteger(), nullable=True),
         sa.Column("task_type", sa.String(length=64), nullable=False),
-        sa.Column("status", workflow_task_status, nullable=False, server_default="'open'"),
+        sa.Column("status", workflow_task_status, nullable=False, server_default=sa.text("'open'")),
         sa.Column("assignee_type", workflow_assignee_type, nullable=False),
         sa.Column("assignee_ref", sa.String(length=255), nullable=False),
         sa.Column("title", sa.String(length=255), nullable=False),
@@ -409,7 +419,7 @@ def upgrade() -> None:
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("version", sa.Integer(), nullable=False, server_default="1"),
         sa.Column("created_by", sa.String(length=255), nullable=False),
@@ -451,23 +461,23 @@ def upgrade() -> None:
 
     op.create_table(
         "app_workflows_task_comments",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("workflow_task_id", sa.BigInteger(), nullable=False),
-        sa.Column("comment_type", workflow_comment_type, nullable=False, server_default="'note'"),
-        sa.Column("visibility", workflow_comment_visibility, nullable=False, server_default="'internal'"),
+        sa.Column("comment_type", workflow_comment_type, nullable=False, server_default=sa.text("'note'")),
+        sa.Column("visibility", workflow_comment_visibility, nullable=False, server_default=sa.text("'internal'")),
         sa.Column("body", sa.Text(), nullable=False),
         sa.Column(
             "attachments_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'[]'::jsonb",
+            server_default=sa.text("'[]'::jsonb"),
         ),
         sa.Column(
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("created_by", sa.String(length=255), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
@@ -487,7 +497,7 @@ def upgrade() -> None:
 
     op.create_table(
         "app_workflows_approvals",
-        sa.Column("id", postgresql.BIGSERIAL(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.BigInteger(), nullable=False),
         sa.Column("workflow_instance_id", sa.BigInteger(), nullable=False),
         sa.Column("workflow_task_id", sa.BigInteger(), nullable=True),
@@ -502,13 +512,13 @@ def upgrade() -> None:
             "decision_payload_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column(
             "metadata_json",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
-            server_default="'{}'::jsonb",
+            server_default=sa.text("'{}'::jsonb"),
         ),
         sa.Column("created_by", sa.String(length=255), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("NOW()")),
