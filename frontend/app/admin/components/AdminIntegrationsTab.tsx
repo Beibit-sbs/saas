@@ -70,7 +70,7 @@ export function AdminIntegrationsTab({
           <span className="badge">{ldapStatus?.configured ? l.configured : l.notConfigured}</span>
           {integrationsLoading ? <span className="badge badgeInfo">{tx("loading")}</span> : null}
         </div>
-        <div className="rowButtons" style={{ marginTop: 8 }}>
+        <div className="rowButtons mt-2">
           <button type="button" className="ghost" onClick={() => void onReloadIntegrations(true)} disabled={integrationsLoading}>
             {integrationsLoading ? tx("loading") : tx("refreshList")}
           </button>

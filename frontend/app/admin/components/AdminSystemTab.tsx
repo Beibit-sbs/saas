@@ -44,7 +44,7 @@ export function AdminSystemTab({
             {feedback.message}
           </p>
         ) : null}
-        <div className="statusGrid" style={{ marginTop: 12 }}>
+        <div className="statusGrid mt-3">
           <div className="statusItem">
             <span>Status</span>
             <span className={`badge ${(systemHealth?.status || "").toLowerCase() === "ok" ? "badgeOk" : "badgeWarn"}`}>
@@ -60,7 +60,7 @@ export function AdminSystemTab({
             </div>
           ))}
         </div>
-        <div className="rowButtons" style={{ marginTop: 12 }}>
+        <div className="rowButtons mt-3">
           <button type="button" className="ghost" onClick={() => void onRefresh()} disabled={loading}>
             {loading ? "Loading..." : "Refresh"}
           </button>

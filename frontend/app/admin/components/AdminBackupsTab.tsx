@@ -80,7 +80,7 @@ export function AdminBackupsTab({
           </p>
         ) : null}
 
-        <div className="rowButtons" style={{ marginBottom: 8 }}>
+        <div className="rowButtons mb-2">
           <button type="button" className="ghost" onClick={() => void onLoadBackupStatus(true)} disabled={backupActionsBusy}>
             {backupListLoading ? tx("backupLoading") : tx("backupReload")}
           </button>
@@ -101,7 +101,7 @@ export function AdminBackupsTab({
               <div className="formGrid compactFormGrid">
                 <input value={profile.id} onChange={(e) => onUpdateBackupProfile(index, "id", e.target.value)} placeholder={tx("profileId")} />
                 <input value={profile.label} onChange={(e) => onUpdateBackupProfile(index, "label", e.target.value)} placeholder={tx("profileLabel")} />
-                <input value={profile.path} onChange={(e) => onUpdateBackupProfile(index, "path", e.target.value)} placeholder={tx("profilePath")} style={{ gridColumn: "1 / -1" }} />
+                <input value={profile.path} onChange={(e) => onUpdateBackupProfile(index, "path", e.target.value)} placeholder={tx("profilePath")} className="col-span-2" />
               </div>
               <div className="providerActions">
                 <span className="badge">{profile.id === backupActiveProfile ? tx("activeBackupProfile") : tx("planned")}</span>
@@ -152,7 +152,7 @@ export function AdminBackupsTab({
           <button type="button" className="primary" onClick={() => void onRunRestore(true)} disabled={backupActionsBusy}>{tx("restoreDryRun")}</button>
           <button type="button" className="ghost danger" onClick={() => void onRunRestore(false)} disabled={backupActionsBusy}>{tx("restoreNow")}</button>
         </div>
-        <h3 style={{ marginTop: 14 }}>{tx("restoreCandidatesList")}</h3>
+        <h3 className="mt-3.5">{tx("restoreCandidatesList")}</h3>
         {restoreCandidates.length === 0 ? (
           <p className="subText">{tx("noRestoreCandidates")}</p>
         ) : (

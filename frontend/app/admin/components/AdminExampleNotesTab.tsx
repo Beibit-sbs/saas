@@ -39,7 +39,7 @@ export function AdminExampleNotesTab({ buildAuthHeaders, tx }: AdminExampleNotes
             {feedback.message}
           </p>
         ) : null}
-        <div className="formGrid" style={{ marginTop: 12 }}>
+        <div className="formGrid mt-3">
           <label>
             {tx("exampleNotesFieldTitle", "Title")}
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tx("exampleNotesTitlePlaceholder", "Example note title")} />
@@ -48,7 +48,7 @@ export function AdminExampleNotesTab({ buildAuthHeaders, tx }: AdminExampleNotes
             {tx("exampleNotesFieldSummary", "Summary")}
             <textarea value={summary} onChange={(e) => setSummary(e.target.value)} placeholder={tx("exampleNotesSummaryPlaceholder", "Short example summary")} rows={4} />
           </label>
-          <label className="checkboxRow" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <label className="checkboxRow flex items-center gap-2">
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
             <span>{tx("exampleNotesFieldIsActive", "Active")}</span>
           </label>
@@ -77,7 +77,7 @@ export function AdminExampleNotesTab({ buildAuthHeaders, tx }: AdminExampleNotes
         ) : (
           <ul className="plainList">
             {notes.map((note) => (
-              <li key={note.id} style={{ marginBottom: 12 }}>
+              <li key={note.id} className="mb-3">
                 <b>{note.title}</b>
                 <div className="subText">{note.summary || tx("exampleNotesNoSummary", "No summary")}</div>
                 <div className="subText">

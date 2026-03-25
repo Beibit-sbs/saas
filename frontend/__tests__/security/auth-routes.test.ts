@@ -6,6 +6,9 @@ import { POST as logoutPost } from "@/app/api/auth/logout/route";
 import { GET as meGet } from "@/app/api/auth/me/route";
 import { middleware } from "@/middleware";
 
+const API_BASE =
+  process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
 function makeJwt(payload: Record<string, unknown>) {
   const p = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `header.${p}.signature`;
@@ -106,7 +109,7 @@ describe("auth routes hardening", () => {
     const fetchCalls = fetchMock.mock.calls;
     expect(fetchCalls).toHaveLength(1);
     const [url, init] = fetchCalls[0] as [string, RequestInit];
-    expect(String(url)).toBe("http://localhost:8000/api/auth/me/profile");
+    expect(String(url)).toBe(`${API_BASE}/api/auth/me/profile`);
     const headers = new Headers(init.headers as HeadersInit);
     expect(headers.get("authorization")).toBe("Bearer session-token");
     expect(headers.get("x-request-id")).toBe("req-me-1");

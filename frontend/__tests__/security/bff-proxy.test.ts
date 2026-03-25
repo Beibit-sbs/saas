@@ -3,6 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GET as bffGet, POST as bffPost } from "@/app/api/bff/[...path]/route";
 
+const API_BASE =
+  process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -40,7 +43,7 @@ describe("bff proxy route", () => {
 
     expect(fetchMock).toHaveBeenCalledOnce();
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(String(url)).toBe("http://localhost:8000/api/admin/students?page=1");
+    expect(String(url)).toBe(`${API_BASE}/api/admin/students?page=1`);
 
     const headers = new Headers(init.headers as HeadersInit);
     expect(headers.get("authorization")).toBe("Bearer session-token");

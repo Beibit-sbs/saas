@@ -6,10 +6,12 @@ import { Code2, KeyRound, PlugZap, Activity } from "lucide-react";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { EmptyState } from "@/shared/ui/empty-state";
 import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
 import { PageHeader } from "@/shared/ui/page-header";
 import { RequirePermission } from "@/shared/ui/permission-gate";
+import { Skeleton } from "@/shared/ui/skeleton";
 import {
   useCreateDeveloperApp,
   useDeveloperAppInstallations,
@@ -82,12 +84,20 @@ export default function DeveloperAppsPage() {
           <div className="rounded-lg border bg-card p-4 space-y-3 lg:col-span-2">
             <p className="text-sm font-medium">Registered Apps</p>
 
-            {apps.isError && <ErrorState title="Failed to load developer apps" />}
-            {apps.isLoading && <p className="text-sm text-muted-foreground">Loading apps…</p>}
-
             <div className="space-y-2" data-testid="developer-app-list">
-              {(apps.data ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No developer apps registered yet.</p>
+              {apps.isLoading ? (
+                <div className="space-y-2" aria-label="Loading apps">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              ) : apps.isError ? (
+                <ErrorState title="Failed to load developer apps" onRetry={() => void apps.refetch()} />
+              ) : (apps.data ?? []).length === 0 ? (
+                <EmptyState
+                  title="No developer apps yet"
+                  description="Create the first developer app to start external integrations."
+                />
               ) : (
                 (apps.data ?? []).map((app) => (
                   <button
@@ -126,11 +136,19 @@ export default function DeveloperAppsPage() {
                 ))}
               </div>
               {installations.isLoading ? (
-                <p className="text-sm text-muted-foreground">Loading installations…</p>
+                <div className="space-y-2" aria-label="Loading installations">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : installations.isError ? (
+                <ErrorState title="Failed to load installations" onRetry={() => void installations.refetch()} />
               ) : (
                 <div className="space-y-2" data-testid="developer-app-installations">
                   {(installations.data ?? []).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No installations found.</p>
+                    <EmptyState
+                      title="No installations"
+                      description="This app has not been installed into any tenant yet."
+                    />
                   ) : (
                     (installations.data ?? []).map((item) => (
                       <div key={item.id} className="rounded border p-3 text-sm">
@@ -149,11 +167,19 @@ export default function DeveloperAppsPage() {
                 <p className="font-medium">API Usage Logs</p>
               </div>
               {logs.isLoading ? (
-                <p className="text-sm text-muted-foreground">Loading API logs…</p>
+                <div className="space-y-2" aria-label="Loading logs">
+                  <Skeleton className="h-14 w-full" />
+                  <Skeleton className="h-14 w-full" />
+                </div>
+              ) : logs.isError ? (
+                <ErrorState title="Failed to load API logs" onRetry={() => void logs.refetch()} />
               ) : (
                 <div className="space-y-2" data-testid="developer-app-logs">
                   {(logs.data ?? []).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No API usage logs yet.</p>
+                    <EmptyState
+                      title="No API usage logs"
+                      description="Usage records will appear after the first API calls from this app."
+                    />
                   ) : (
                     (logs.data ?? []).map((item) => (
                       <div key={item.id} className="rounded border p-3 text-sm">

@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation"
 import { PageHeader } from "@/shared/ui/page-header"
 import { Card } from "@/shared/ui/card"
 import { Button } from "@/shared/ui/button"
+import { EmptyState } from "@/shared/ui/empty-state"
+import { ErrorState } from "@/shared/ui/error-state"
+import { Skeleton } from "@/shared/ui/skeleton"
 import { useToast } from "@/shared/ui/use-toast"
 import { RequirePermission } from "@/shared/ui/permission-gate"
 import { 
@@ -143,9 +146,11 @@ export default function AutomationTemplatesPage() {
           description="Create automation rules from predefined templates."
           icon={Zap}
         />
-        <Card className="p-6">
-          <p className="text-sm text-destructive">Failed to load templates.</p>
-        </Card>
+        <ErrorState
+          title="Failed to load templates"
+          message="Template catalog is temporarily unavailable."
+          onRetry={() => window.location.reload()}
+        />
       </div>
     )
   }
@@ -182,11 +187,16 @@ export default function AutomationTemplatesPage() {
 
         {/* Templates Grid */}
         {isLoading ? (
-          <Card className="p-12">
-            <div className="flex items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Card key={index} className="p-5 space-y-4">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-4/5" />
+                <Skeleton className="h-8 w-full" />
+              </Card>
+            ))}
+          </div>
         ) : filteredTemplates && filteredTemplates.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTemplates.map((template) => (
@@ -202,12 +212,15 @@ export default function AutomationTemplatesPage() {
             ))}
           </div>
         ) : (
-          <Card className="p-12">
-            <div className="text-center text-muted-foreground">
-              {selectedCategory
-                ? `No templates in the ${selectedCategory} category.`
-                : "No templates available."}
-            </div>
+          <Card className="p-6">
+            <EmptyState
+              title={selectedCategory ? "No templates in this category" : "No templates available"}
+              description={
+                selectedCategory
+                  ? `No templates in the ${selectedCategory} category.`
+                  : "Template catalog is empty."
+              }
+            />
           </Card>
         )}
 

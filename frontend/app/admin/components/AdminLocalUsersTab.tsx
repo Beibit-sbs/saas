@@ -130,7 +130,7 @@ export function AdminLocalUsersTab(props: AdminLocalUsersTabProps) {
         </div>
       </div>
 
-      <div className="formGrid compactFormGrid" style={{ marginTop: 12 }}>
+      <div className="formGrid compactFormGrid mt-3">
         <input value={localSearch} onChange={(e) => onLocalSearchChange(e.target.value)} placeholder={tx("localSearch")} />
         <input value={localRoleFilter} onChange={(e) => onLocalRoleFilterChange(e.target.value)} placeholder={tx("localRoleFilter")} />
         <select value={localLanguageFilter} onChange={(e) => onLocalLanguageFilterChange(e.target.value)}>
@@ -147,7 +147,7 @@ export function AdminLocalUsersTab(props: AdminLocalUsersTabProps) {
       <div className="rowMeta">
         <span className="subText">{tx("localResultCount")}: {localUsers.length}</span>
         {localFilterBadges.length > 0 ? (
-          <div className="badgeRow" style={{ marginTop: 0 }}>
+          <div className="badgeRow mt-0">
             {localFilterBadges.map((item) => (
               <span key={item} className="badge badgeInfo">{item}</span>
             ))}
@@ -187,7 +187,7 @@ export function AdminLocalUsersTab(props: AdminLocalUsersTabProps) {
       )}
 
       {localUsers.length > 0 ? (
-        <article className="panelCard" style={{ marginTop: 16 }}>
+        <article className="panelCard mt-4">
           <h3>{tx("localUserOps")}</h3>
           <p className="subText">
             {tx("localSelectedUser")}: {selectedLocalUser ? `${selectedLocalUser.display_name} (${selectedLocalUser.login}) [${selectedLocalUser.user_id}]` : "-"}
@@ -217,7 +217,7 @@ export function AdminLocalUsersTab(props: AdminLocalUsersTabProps) {
               </button>
             </div>
           </div>
-          <div className="formGrid compactFormGrid" style={{ marginTop: 8 }}>
+          <div className="formGrid compactFormGrid mt-2">
             <input type="password" value={editLocalPassword} onChange={(e) => onEditLocalPasswordChange(e.target.value)} placeholder={tx("localSetPassword")} />
             <input type="password" value={editLocalPasswordConfirm} onChange={(e) => onEditLocalPasswordConfirmChange(e.target.value)} placeholder={tx("localConfirmPassword")} />
             <div className="rowButtons">

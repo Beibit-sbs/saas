@@ -35,7 +35,7 @@ export default function LanguageSwitcher() {
       <select
         value={pendingLanguage}
         onChange={(e) => setPendingLanguage(e.target.value)}
-        style={{ borderRadius: 6, border: "1px solid #c7ccd6", padding: "2px 6px" }}
+        className="rounded-md border border-border px-1.5 py-0.5"
       >
         {supportedLanguages.filter((lang) => selectableUiLanguages.has(lang.code)).map((lang) => (
           <option key={lang.code} value={lang.code}>

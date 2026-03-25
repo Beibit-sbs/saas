@@ -36,7 +36,7 @@ describe("DeveloperAppsPage", () => {
     render(<DeveloperAppsPage />);
 
     expect(screen.getByTestId("developer-apps-page")).toBeInTheDocument();
-    expect(screen.getByText(/no developer apps registered/i)).toBeInTheDocument();
+    expect(screen.getByText(/no developer apps yet/i)).toBeInTheDocument();
   });
 
   it("renders apps and selected detail", () => {

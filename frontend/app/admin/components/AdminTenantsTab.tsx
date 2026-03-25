@@ -68,7 +68,7 @@ export function AdminTenantsTab({
           </p>
         ) : null}
 
-        <div className="rowButtons" style={{ marginTop: 12 }}>
+        <div className="rowButtons mt-3">
           <button type="button" className="ghost" onClick={() => void onRefresh()} disabled={loading || mutating}>
             {loading ? "Loading..." : "Refresh"}
           </button>
@@ -82,7 +82,7 @@ export function AdminTenantsTab({
       <article className="panelCard">
         <h2>Create Tenant</h2>
         <div className="formGrid compactFormGrid">
-          <label style={{ display: "grid", gap: 4 }}>
+          <label className="grid gap-1">
             <span className="subText">Slug</span>
             <input
               type="text"
@@ -91,7 +91,7 @@ export function AdminTenantsTab({
               placeholder="e.g. acme-corp"
             />
           </label>
-          <label style={{ display: "grid", gap: 4 }}>
+          <label className="grid gap-1">
             <span className="subText">Name</span>
             <input
               type="text"
@@ -100,7 +100,7 @@ export function AdminTenantsTab({
               placeholder="Organization name"
             />
           </label>
-          <label style={{ display: "grid", gap: 4 }}>
+          <label className="grid gap-1">
             <span className="subText">Status</span>
             <select
               value={createForm.status}
@@ -113,7 +113,7 @@ export function AdminTenantsTab({
           </label>
         </div>
 
-        <div className="rowButtons" style={{ marginTop: 12 }}>
+        <div className="rowButtons mt-3">
           <button
             type="button"
             className="primary"
@@ -133,7 +133,7 @@ export function AdminTenantsTab({
         </div>
       </article>
 
-      <article className="panelCard" style={{ gridColumn: "1 / -1" }}>
+      <article className="panelCard col-span-2">
         <h2>Tenants Table</h2>
         {tenants.length === 0 ? (
           <p className="subText">No tenants yet.</p>
@@ -162,7 +162,7 @@ export function AdminTenantsTab({
                           type="text"
                           value={editForm.name}
                           onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                          style={{ width: "100%" }}
+                          className="w-full"
                         />
                       ) : (
                         tenant.name

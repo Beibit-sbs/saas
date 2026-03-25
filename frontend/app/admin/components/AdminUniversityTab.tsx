@@ -217,7 +217,7 @@ export function AdminUniversityTab({
           </p>
         ) : null}
 
-        <div className="badgeRow" style={{ marginTop: 10 }}>
+        <div className="badgeRow mt-2.5">
           {UNIVERSITY_ENTITIES.map((entity) => (
             <button
               key={entity}
@@ -233,7 +233,7 @@ export function AdminUniversityTab({
           ))}
         </div>
 
-        <div className="rowButtons" style={{ marginTop: 12 }}>
+        <div className="rowButtons mt-3">
           <button type="button" className="ghost" onClick={() => void onRefresh(activeEntity)} disabled={loading || mutating}>
             {loading ? "Loading..." : "Refresh"}
           </button>
@@ -246,7 +246,7 @@ export function AdminUniversityTab({
         <h2>{config.label} CRUD</h2>
         <div className="formGrid compactFormGrid">
           {config.fields.map((field) => (
-            <label key={field.name} style={{ display: "grid", gap: 4 }}>
+            <label key={field.name} className="grid gap-1">
               <span className="subText">{field.label}</span>
               <input
                 type={field.numeric ? "number" : "text"}
@@ -258,7 +258,7 @@ export function AdminUniversityTab({
           ))}
         </div>
 
-        <div className="rowButtons" style={{ marginTop: 12 }}>
+        <div className="rowButtons mt-3">
           <button
             type="button"
             className="primary"
@@ -289,7 +289,7 @@ export function AdminUniversityTab({
         </div>
       </article>
 
-      <article className="panelCard" style={{ gridColumn: "1 / -1" }}>
+      <article className="panelCard col-span-2">
         <h2>{config.label} Table</h2>
         {items.length === 0 ? (
           <p className="subText">No rows yet.</p>
