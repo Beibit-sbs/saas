@@ -11,6 +11,7 @@ from app.platform.analytics.schemas import AnalyticsEventProjectionListSchema, A
 from app.platform.ai import service as ai_service
 from app.platform.ai.schemas import CopilotAnswerReadSchema, CopilotQuestionRequestSchema, CopilotQueryLogReadSchema
 from app.platform.developer import service as developer_service
+from app.platform.education_graph import service as education_graph_service
 from app.platform.developer.schemas import (
     DeveloperApiLogReadSchema,
     DeveloperAppCreateSchema,
@@ -20,6 +21,13 @@ from app.platform.developer.schemas import (
     DeveloperAppInstallationReadSchema,
     DeveloperAppReadSchema,
     DeveloperAppSecretReadSchema,
+)
+from app.platform.education_graph.schemas import (
+    CourseSkillCreateSchema,
+    CourseSkillReadSchema,
+    SkillCreateSchema,
+    SkillReadSchema,
+    StudentSkillReadSchema,
 )
 from app.platform.federation import service as federation_service
 from app.platform.federation.schemas import (
@@ -352,6 +360,106 @@ def get_latest_analytics_kpis(
     if snap is None:
         raise HTTPException(status_code=404, detail="No KPI snapshot found for this tenant")
     return TenantKpiSnapshotRead.model_validate(snap)
+
+
+@router.get("/skills", response_model=list[SkillReadSchema])
+def list_skills(tenant_id: int, request: Request, _actor: Actor) -> list[SkillReadSchema]:
+    request_tenant = request.headers.get("x-tenant-id")
+    if request_tenant is not None and int(request_tenant) != int(tenant_id):
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    with UnitOfWork() as uow:
+        rows = education_graph_service.list_skills(tenant_id=tenant_id, uow=uow)
+    return [SkillReadSchema.model_validate(item) for item in rows]
+
+
+@router.post("/skills", response_model=SkillReadSchema, status_code=201)
+def create_skill(body: SkillCreateSchema, actor: Actor, request: Request) -> SkillReadSchema:
+    request_tenant = request.headers.get("x-tenant-id")
+    if request_tenant is not None and int(request_tenant) != int(body.tenant_id):
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    with UnitOfWork() as uow:
+        row = education_graph_service.create_skill(
+            tenant_id=body.tenant_id,
+            skill_key=body.skill_key,
+            name=body.name,
+            description=body.description,
+            category=body.category,
+            level=body.level,
+            uow=uow,
+        )
+    _audit(
+        request,
+        actor,
+        "platform_core.education_graph.skill.create",
+        int(body.tenant_id),
+        {"skill_key": body.skill_key, "category": body.category},
+    )
+    return SkillReadSchema.model_validate(row)
+
+
+@router.get("/course-skills", response_model=list[CourseSkillReadSchema])
+def list_course_skills(
+    tenant_id: int,
+    request: Request,
+    _actor: Actor,
+    course_id: str | None = None,
+) -> list[CourseSkillReadSchema]:
+    request_tenant = request.headers.get("x-tenant-id")
+    if request_tenant is not None and int(request_tenant) != int(tenant_id):
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    with UnitOfWork() as uow:
+        rows = education_graph_service.list_course_skills(
+            tenant_id=tenant_id,
+            course_id=course_id,
+            uow=uow,
+        )
+    return [CourseSkillReadSchema.model_validate(item) for item in rows]
+
+
+@router.post("/course-skills", response_model=CourseSkillReadSchema, status_code=201)
+def create_course_skill(body: CourseSkillCreateSchema, actor: Actor, request: Request) -> CourseSkillReadSchema:
+    request_tenant = request.headers.get("x-tenant-id")
+    if request_tenant is not None and int(request_tenant) != int(body.tenant_id):
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    try:
+        with UnitOfWork() as uow:
+            row = education_graph_service.map_course_skill(
+                tenant_id=body.tenant_id,
+                course_id=body.course_id,
+                skill_id=body.skill_id,
+                weight=body.weight,
+                uow=uow,
+            )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    _audit(
+        request,
+        actor,
+        "platform_core.education_graph.course_skill.create",
+        int(body.tenant_id),
+        {"course_id": body.course_id, "skill_id": body.skill_id, "weight": body.weight},
+    )
+    return CourseSkillReadSchema.model_validate(row)
+
+
+@router.get("/student-skills", response_model=list[StudentSkillReadSchema])
+def list_student_skills(
+    tenant_id: int,
+    request: Request,
+    _actor: Actor,
+    student_id: str | None = None,
+) -> list[StudentSkillReadSchema]:
+    request_tenant = request.headers.get("x-tenant-id")
+    if request_tenant is not None and int(request_tenant) != int(tenant_id):
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    with UnitOfWork() as uow:
+        rows = education_graph_service.list_student_skills(
+            tenant_id=tenant_id,
+            student_id=student_id,
+            uow=uow,
+        )
+    return [StudentSkillReadSchema.model_validate(item) for item in rows]
 
 
 @router.get("/platform/kpi/metrics", response_model=list[TenantMetricSnapshotReadSchema])

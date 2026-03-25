@@ -3,12 +3,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from app.platform.context.repository import ContextRepository
+from app.platform.context.repository import SHARED_CONTEXT_REPOSITORY, ContextRepository
 
 logger = logging.getLogger("app.platform.context")
 
 # Module-level shared repository instance (mirrors the uow.py pattern).
-_SHARED_CONTEXT_REPOSITORY = ContextRepository()
+_SHARED_CONTEXT_REPOSITORY = SHARED_CONTEXT_REPOSITORY
 
 
 class ContextService:

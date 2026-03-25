@@ -49,6 +49,7 @@ from app.platform.analytics import service as analytics_service
 from app.platform.ai import service as platform_ai_service
 from app.platform.ai.recommendations import service as platform_ai_rec_service
 from app.platform.developer import service as developer_service
+from app.platform.education_graph import service as education_graph_service
 from app.platform.federation import service as federation_service
 from app.platform.kpi import service as kpi_service
 from app.platform.automation import service as automation_service
@@ -154,6 +155,7 @@ def _reset_template_state() -> None:
     platform_ai_service.clear_ai_state()
     platform_ai_rec_service.clear_recommendation_state()
     developer_service.clear_developer_state()
+    education_graph_service.clear_state()
     federation_service.clear_federation_state()
     kpi_service.clear_kpi_state()
     automation_service.clear_automation_state()

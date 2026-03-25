@@ -211,6 +211,13 @@ def _collect_ops_metrics() -> dict[str, int | str | None]:
             "worker_last_heartbeat": get_worker_heartbeat(),
             "scheduler_last_run": get_scheduler_last_run(),
             "retry_backlog": _safe_metric_int(lambda: uow.webhook_repository.count_retry_backlog(conn=uow.conn)),
+            "skills_total": _safe_metric_int(lambda: uow.education_graph_repository.count_skills(conn=uow.conn)),
+            "course_skill_edges": _safe_metric_int(
+                lambda: uow.education_graph_repository.count_course_skill_edges(conn=uow.conn)
+            ),
+            "student_skill_edges": _safe_metric_int(
+                lambda: uow.education_graph_repository.count_student_skill_edges(conn=uow.conn)
+            ),
         }
 
 

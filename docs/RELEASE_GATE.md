@@ -8,6 +8,7 @@ Release Gate v1 blocks unsafe merges and deploys by enforcing deterministic chec
 
 The CI workflow defines separate required gates:
 
+- `architecture-governance-gate`
 - `tenant-safety-gate`
 - `platform-regression-gate`
 - `frontend-safety-gate`
@@ -20,13 +21,15 @@ A change is merge-ready only if all required jobs pass.
 
 1. Tenant safety audit passes:
    - `pytest -q tests/platform/test_platform_tenant_safety_audit_v1.py`
-2. Platform regression gate passes:
+2. Architecture governance guardrails pass:
+   - `pytest -q tests/platform/test_platform_architecture_guardrails_v1.py`
+3. Platform regression gate passes:
    - `pytest -q tests/platform/`
    - `pytest -q -m security_regression`
-3. Frontend safety gate passes:
+4. Frontend safety gate passes:
    - `npm run type-check`
    - `npm run test:frontend`
-4. Template validation passes:
+5. Template validation passes:
    - `pytest -q tests/test_template_validation.py`
 
 ## Required Checks Before Deploy
@@ -75,6 +78,7 @@ Blocking rule:
 Release is blocked when any of these occur:
 
 - tenant safety audit fails
+- architecture governance guardrails fail
 - platform regression suite fails
 - security regression marker suite fails
 - TypeScript type-check fails

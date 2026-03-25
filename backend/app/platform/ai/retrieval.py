@@ -7,6 +7,7 @@ from typing import Any
 from app.platform.analytics import service as analytics_service
 from app.platform.automation import service as automation_service
 from app.platform.context import service as context_service
+from app.platform.education_graph import service as education_graph_service
 from app.platform.kpi import service as kpi_service
 
 
@@ -232,6 +233,142 @@ def retrieve_academic_risk(*, tenant_id: int, uow: Any) -> dict[str, Any]:
             {"source_type": "context", "reference": "relations:has_grade + grades<60"},
         ],
         "warnings": [] if at_risk else ["no_academic_risk_detected"],
+    }
+
+
+def retrieve_student_skills_profile(
+    *,
+    tenant_id: int,
+    question: str,
+    context: dict[str, Any] | None,
+    uow: Any,
+) -> dict[str, Any]:
+    student_id = extract_student_id(question, context)
+    if not student_id:
+        return {
+            "summary": "Student id is required for student skills profile queries.",
+            "insights": [],
+            "sources": [],
+            "warnings": ["missing_student_id"],
+        }
+
+    skills = education_graph_service.list_student_skills(
+        tenant_id=tenant_id,
+        student_id=student_id,
+        uow=uow,
+    )
+    top = skills[:8]
+    insights = [
+        {
+            "title": str(item.get("skill_name") or item.get("skill_key") or "skill"),
+            "value": f"{float(item.get('proficiency_level') or 0):.2f}",
+            "explanation": f"Source: {item.get('source', 'unknown')}",
+        }
+        for item in top
+    ]
+
+    return {
+        "summary": f"Loaded {len(skills)} inferred skill edge(s) for student {student_id}.",
+        "insights": insights,
+        "sources": [{"source_type": "education_graph", "reference": f"student_skills:{student_id}"}],
+        "warnings": [] if skills else ["no_student_skills_found"],
+    }
+
+
+def retrieve_missing_skills_for_program(
+    *,
+    tenant_id: int,
+    question: str,
+    context: dict[str, Any] | None,
+    uow: Any,
+) -> dict[str, Any]:
+    student_id = extract_student_id(question, context)
+    if not student_id:
+        return {
+            "summary": "Student id is required for missing skills queries.",
+            "insights": [],
+            "sources": [],
+            "warnings": ["missing_student_id"],
+        }
+
+    student_skills = education_graph_service.list_student_skills(
+        tenant_id=tenant_id,
+        student_id=student_id,
+        uow=uow,
+    )
+    current_keys = {str(item.get("skill_key") or "") for item in student_skills}
+
+    course_skills = education_graph_service.list_course_skills(
+        tenant_id=tenant_id,
+        course_id=None,
+        uow=uow,
+    )
+    universe = sorted({str(item.get("skill_key") or "") for item in course_skills if str(item.get("skill_key") or "")})
+    missing = [key for key in universe if key not in current_keys]
+
+    return {
+        "summary": f"Identified {len(missing)} missing skill(s) for student {student_id} based on mapped course graph.",
+        "insights": [
+            {
+                "title": "Missing Skills",
+                "value": ", ".join(missing[:10]) if missing else "none",
+                "explanation": "Derived from Course -> Skill mappings not present in student skill edges.",
+            }
+        ],
+        "sources": [{"source_type": "education_graph", "reference": "course_skills:all"}],
+        "warnings": [] if missing else ["no_missing_skills_detected"],
+    }
+
+
+def retrieve_recommended_courses(
+    *,
+    tenant_id: int,
+    question: str,
+    context: dict[str, Any] | None,
+    uow: Any,
+) -> dict[str, Any]:
+    student_id = extract_student_id(question, context)
+    if not student_id:
+        return {
+            "summary": "Student id is required for recommended course queries.",
+            "insights": [],
+            "sources": [],
+            "warnings": ["missing_student_id"],
+        }
+
+    student_skills = education_graph_service.list_student_skills(
+        tenant_id=tenant_id,
+        student_id=student_id,
+        uow=uow,
+    )
+    owned = {str(item.get("skill_key") or "") for item in student_skills}
+    edges = education_graph_service.list_course_skills(tenant_id=tenant_id, course_id=None, uow=uow)
+
+    course_to_missing: dict[str, set[str]] = {}
+    for edge in edges:
+        course_id = str(edge.get("course_id") or "")
+        skill_key = str(edge.get("skill_key") or "")
+        if not course_id or not skill_key:
+            continue
+        if skill_key in owned:
+            continue
+        course_to_missing.setdefault(course_id, set()).add(skill_key)
+
+    ranked = sorted(course_to_missing.items(), key=lambda item: len(item[1]), reverse=True)
+    insights = [
+        {
+            "title": f"Course {course_id}",
+            "value": ", ".join(sorted(missing_skills)[:6]),
+            "explanation": f"Covers {len(missing_skills)} currently missing skill(s).",
+        }
+        for course_id, missing_skills in ranked[:5]
+    ]
+
+    return {
+        "summary": f"Generated {len(insights)} recommended course candidate(s) for student {student_id}.",
+        "insights": insights,
+        "sources": [{"source_type": "education_graph", "reference": "course_skill_mappings"}],
+        "warnings": [] if insights else ["no_recommendations_available"],
     }
 
 

@@ -30,6 +30,12 @@ class AiCopilotService:
 
         if not q:
             return AiCopilotQueryType.UNSUPPORTED.value
+        if "student skills" in q or "skills profile" in q:
+            return AiCopilotQueryType.STUDENT_SKILLS.value
+        if "missing skills" in q and "program" in q:
+            return AiCopilotQueryType.MISSING_SKILLS.value
+        if "recommended courses" in q or "recommend courses" in q:
+            return AiCopilotQueryType.RECOMMENDED_COURSES.value
         if "student context" in q or "student profile" in q or "student " in q:
             return AiCopilotQueryType.STUDENT_CONTEXT.value
         if "kpi" in q or "summary" in q:
@@ -120,6 +126,27 @@ class AiCopilotService:
                     "recommendations": [],
                 }
             data = retrieval.retrieve_student_context(tenant_id=tenant_id, student_id=student_id, uow=uow)
+        elif query_type == AiCopilotQueryType.STUDENT_SKILLS.value:
+            data = retrieval.retrieve_student_skills_profile(
+                tenant_id=tenant_id,
+                question=question,
+                context=context,
+                uow=uow,
+            )
+        elif query_type == AiCopilotQueryType.MISSING_SKILLS.value:
+            data = retrieval.retrieve_missing_skills_for_program(
+                tenant_id=tenant_id,
+                question=question,
+                context=context,
+                uow=uow,
+            )
+        elif query_type == AiCopilotQueryType.RECOMMENDED_COURSES.value:
+            data = retrieval.retrieve_recommended_courses(
+                tenant_id=tenant_id,
+                question=question,
+                context=context,
+                uow=uow,
+            )
         else:
             return {
                 "question": question,

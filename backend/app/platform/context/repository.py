@@ -562,3 +562,6 @@ class ContextRepository:
             if entity is not None:
                 students.append(entity)
         return students
+
+
+SHARED_CONTEXT_REPOSITORY = ContextRepository()

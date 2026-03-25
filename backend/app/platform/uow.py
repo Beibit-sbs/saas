@@ -7,9 +7,10 @@ from app.platform.ai.repository import AiCopilotRepository
 from app.platform.ai.recommendations.repository import AiRecommendationRepository
 from app.platform.automation.repository import AutomationRepository
 from app.platform.developer.repository import DeveloperRepository
+from app.platform.education_graph.repository import SHARED_EDUCATION_GRAPH_REPOSITORY, EducationGraphRepository
 from app.platform.federation.repository import FederationRepository
 from app.platform.automation.templates.repository import AutomationTemplateRepository
-from app.platform.context.repository import ContextRepository
+from app.platform.context.repository import SHARED_CONTEXT_REPOSITORY, ContextRepository
 from app.platform.kpi.repository import KpiRepository
 from app.platform.repository.billing_repository import BillingRepository
 from app.platform.repository.db import db_available, db_url, ensure_platform_core_schema
@@ -41,9 +42,10 @@ _SHARED_AI_COPILOT_REPOSITORY = AiCopilotRepository()
 _SHARED_AI_RECOMMENDATION_REPOSITORY = AiRecommendationRepository()
 _SHARED_AUTOMATION_REPOSITORY = AutomationRepository()
 _SHARED_DEVELOPER_REPOSITORY = DeveloperRepository()
+_SHARED_EDUCATION_GRAPH_REPOSITORY = SHARED_EDUCATION_GRAPH_REPOSITORY
 _SHARED_FEDERATION_REPOSITORY = FederationRepository()
 _SHARED_AUTOMATION_TEMPLATE_REPOSITORY = AutomationTemplateRepository()
-_SHARED_CONTEXT_REPOSITORY = ContextRepository()
+_SHARED_CONTEXT_REPOSITORY = SHARED_CONTEXT_REPOSITORY
 _SHARED_KPI_REPOSITORY = KpiRepository()
 _SHARED_OUTBOX_EVENT_REPOSITORY = OutboxEventRepository()
 _SHARED_WEBHOOK_REPOSITORY = SHARED_WEBHOOK_REPOSITORY
@@ -63,6 +65,7 @@ class UnitOfWork:
     ai_recommendation_repository: AiRecommendationRepository = _SHARED_AI_RECOMMENDATION_REPOSITORY
     automation_repository: AutomationRepository = _SHARED_AUTOMATION_REPOSITORY
     developer_repository: DeveloperRepository = _SHARED_DEVELOPER_REPOSITORY
+    education_graph_repository: EducationGraphRepository = _SHARED_EDUCATION_GRAPH_REPOSITORY
     federation_repository: FederationRepository = _SHARED_FEDERATION_REPOSITORY
     automation_template_repository: AutomationTemplateRepository = _SHARED_AUTOMATION_TEMPLATE_REPOSITORY
     context_repository: ContextRepository = _SHARED_CONTEXT_REPOSITORY

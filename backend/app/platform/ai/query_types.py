@@ -9,4 +9,7 @@ class AiCopilotQueryType(StrEnum):
     AUTOMATION_HEALTH = "automation_health"
     PLATFORM_HEALTH = "platform_health"
     STUDENT_CONTEXT = "student_context"
+    STUDENT_SKILLS = "student_skills"
+    MISSING_SKILLS = "missing_skills"
+    RECOMMENDED_COURSES = "recommended_courses"
     UNSUPPORTED = "unsupported"

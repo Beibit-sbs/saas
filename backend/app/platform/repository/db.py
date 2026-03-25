@@ -517,6 +517,81 @@ def ensure_platform_core_schema(conn: object) -> None:
                 "CREATE INDEX IF NOT EXISTS ix_platform_context_relations_type ON app_platform_context_relations (tenant_id, relation_type)"
             )
 
+            # ---- Education Data Graph Layer v1 -------------------------------
+
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_graph_skills (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    skill_key TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    description TEXT NOT NULL DEFAULT '',
+                    category TEXT NOT NULL,
+                    level TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_platform_graph_skills_tenant_key UNIQUE (tenant_id, skill_key)
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_graph_competencies (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    competency_key TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    description TEXT NOT NULL DEFAULT '',
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_platform_graph_competencies_tenant_key UNIQUE (tenant_id, competency_key)
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_graph_course_skills (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    course_id TEXT NOT NULL,
+                    skill_id BIGINT NOT NULL REFERENCES app_platform_graph_skills(id) ON DELETE CASCADE,
+                    weight DOUBLE PRECISION NOT NULL DEFAULT 1,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_platform_graph_course_skill UNIQUE (tenant_id, course_id, skill_id)
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_graph_student_skills (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    student_id TEXT NOT NULL,
+                    skill_id BIGINT NOT NULL REFERENCES app_platform_graph_skills(id) ON DELETE CASCADE,
+                    proficiency_level DOUBLE PRECISION NOT NULL DEFAULT 0,
+                    source TEXT NOT NULL DEFAULT 'course',
+                    last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_platform_graph_student_skill UNIQUE (tenant_id, student_id, skill_id)
+                )
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_graph_skills_tenant_category ON app_platform_graph_skills (tenant_id, category, name)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_graph_competencies_tenant_name ON app_platform_graph_competencies (tenant_id, name)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_graph_course_skills_tenant_course ON app_platform_graph_course_skills (tenant_id, course_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_graph_student_skills_tenant_student ON app_platform_graph_student_skills (tenant_id, student_id)"
+            )
+
             # ---- AI Copilot Foundation v1 -------------------------------------
 
             cur.execute(

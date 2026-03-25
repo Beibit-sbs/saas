@@ -7,6 +7,25 @@ on:
     branches: [main]
 
 jobs:
+  architecture-governance-gate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      JWT_SECRET: test-suite-secret-not-for-prod-1234567890
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Architecture governance guardrails gate
+        run: pytest -q tests/platform/test_platform_architecture_guardrails_v1.py
+
   tenant-safety-gate:
     runs-on: ubuntu-latest
     defaults:

@@ -7,7 +7,7 @@ from typing import Sequence
 
 from app.modules.audit.service import log_admin_action
 from app.modules.observability.logging import bind_log_context, reset_log_context
-from app.platform.events.handlers import AnalyticsEventHandler, AutomationEventHandler, ContextProjectionHandler, EventHandler, NotificationEventHandler, WebhookEventHandler
+from app.platform.events.handlers import AnalyticsEventHandler, AutomationEventHandler, ContextProjectionHandler, EducationGraphInferenceHandler, EventHandler, NotificationEventHandler, WebhookEventHandler
 from app.platform.events.schemas import OutboxEventRead
 from app.platform.uow import UnitOfWork
 
@@ -32,6 +32,7 @@ class OutboxEventWorker:
             NotificationEventHandler(),
             WebhookEventHandler(),
             AnalyticsEventHandler(),
+            EducationGraphInferenceHandler(),
             AutomationEventHandler(),
             ContextProjectionHandler(),
         ])
