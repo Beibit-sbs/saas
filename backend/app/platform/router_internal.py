@@ -9,10 +9,11 @@ from app.platform.context import service as context_service
 from app.platform.context.schemas import StudentProfileRead
 from app.platform.events.schemas import OutboxEventRead
 from app.platform.ai import service as ai_service
-import os
+import hmac
 
 from fastapi import APIRouter, Header, HTTPException
 
+from app.core.config import get_internal_api_token
 from app.platform.jobs import service as jobs_service
 from app.platform.jobs.scheduler import scheduler
 from app.platform.jobs.worker import worker
@@ -26,13 +27,11 @@ router = APIRouter(prefix="/api/v1/internal", tags=["platform-core-internal"])
 
 
 def _require_internal_token(authorization: str | None) -> None:
-    configured = os.getenv("PLATFORM_INTERNAL_TOKEN", "").strip()
-    if not configured:
-        return
+    configured = get_internal_api_token()
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="internal token required")
     provided = authorization[len("Bearer ") :].strip()
-    if provided != configured:
+    if not hmac.compare_digest(provided.encode(), configured.encode()):
         raise HTTPException(status_code=403, detail="invalid internal token")
 
 

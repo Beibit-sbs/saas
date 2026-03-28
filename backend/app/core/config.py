@@ -1,5 +1,7 @@
 import os
+import json
 from urllib.parse import urlparse
+import hmac
 
 
 def is_enabled(value: str | None) -> bool:
@@ -183,6 +185,19 @@ def get_required_runtime_config() -> dict[str, str]:
     }
 
 
+def get_internal_api_token() -> str:
+    canonical = os.getenv("INTERNAL_API_TOKEN", "").strip()
+    legacy = os.getenv("PLATFORM_INTERNAL_TOKEN", "").strip()
+
+    if canonical and legacy and not hmac.compare_digest(canonical, legacy):
+        raise RuntimeError("INTERNAL_API_TOKEN and PLATFORM_INTERNAL_TOKEN must match when both are set")
+
+    token = canonical or legacy
+    if not token:
+        raise RuntimeError("INTERNAL_API_TOKEN must be configured")
+    return token
+
+
 def _is_https_url(value: str) -> bool:
     parsed = urlparse(value)
     return parsed.scheme == "https" and bool(parsed.netloc)
@@ -211,3 +226,4 @@ def validate_required_environment() -> None:
         raise RuntimeError("API_BASE_URL must be an HTTPS URL")
     if not _is_https_url(config["ADMIN_PANEL_URL"]):
         raise RuntimeError("ADMIN_PANEL_URL must be an HTTPS URL")
+    get_internal_api_token()
