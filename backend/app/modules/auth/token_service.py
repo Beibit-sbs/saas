@@ -166,9 +166,10 @@ def create_access_token(
     user_id: str,
     roles: list[str],
     auth_source: str,
-    tenant_id: int = 1,
+    tenant_id: int,
     *,
     session_id: str | None = None,
+    permissions: list[str] | None = None,
 ) -> str:
     now = int(time.time())
     ttl_seconds = get_auth_access_token_ttl_minutes() * 60
@@ -176,11 +177,13 @@ def create_access_token(
     if normalized_tenant_id <= 0:
         raise ValueError("tenant_id must be positive")
 
+    normalized_permissions = sorted({str(item).strip() for item in (permissions or []) if str(item).strip()})
+
     header = {"alg": "HS256", "typ": "JWT"}
     payload = {
         "sub": user_id,
         "roles": roles,
-        "scp": [],
+        "scp": normalized_permissions,
         "src": auth_source,
         "tid": normalized_tenant_id,
         "jti": str(uuid4()),
@@ -205,7 +208,7 @@ def create_refresh_token(
     user_id: str,
     roles: list[str],
     auth_source: str,
-    tenant_id: int = 1,
+    tenant_id: int,
     *,
     session_id: str,
 ) -> str:
@@ -389,7 +392,7 @@ def _verify_token_payload(token: str, *, expected_token_type: set[str]) -> dict[
         raise TokenValidationError("invalid token jti")
     normalized_jti = jti_raw.strip()
 
-    tenant_raw = payload.get("tid", 1)
+    tenant_raw = payload.get("tid")
     if not isinstance(tenant_raw, int) or tenant_raw <= 0:
         raise TokenValidationError("invalid token tenant")
 
@@ -428,9 +431,8 @@ def _verify_token_payload(token: str, *, expected_token_type: set[str]) -> dict[
                 raise TokenValidationError("session revoked")
         except TokenValidationError:
             raise
-        except Exception:
-            # Session subsystem should not break token validation path in degraded mode.
-            pass
+        except Exception as exc:
+            raise TokenValidationError("session store unavailable") from exc
 
     return {
         "user_id": sub,

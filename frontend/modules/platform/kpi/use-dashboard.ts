@@ -5,7 +5,7 @@ import type { RectorDashboard, TenantMetricSnapshot } from "./types";
 export const PLATFORM_KPI_DASHBOARD_KEY = "platform-kpi-dashboard";
 export const PLATFORM_KPI_METRICS_KEY = "platform-kpi-metrics";
 
-export function useRectorDashboard(tenantId: number = 1) {
+export function useRectorDashboard(tenantId: number) {
   return useQuery({
     queryKey: [PLATFORM_KPI_DASHBOARD_KEY, tenantId],
     queryFn: () =>
@@ -17,7 +17,7 @@ export function useRectorDashboard(tenantId: number = 1) {
   });
 }
 
-export function useTenantKpiMetrics(tenantId: number = 1) {
+export function useTenantKpiMetrics(tenantId: number) {
   return useQuery({
     queryKey: [PLATFORM_KPI_METRICS_KEY, tenantId],
     queryFn: () =>

@@ -9,10 +9,12 @@ import { Button } from "@/shared/ui/button";
 import { ErrorState } from "@/shared/ui/error-state";
 import { PageHeader } from "@/shared/ui/page-header";
 import { RequirePermission } from "@/shared/ui/permission-gate";
+import { useAdminAuth } from "@/shared/auth/context";
 import { useAskCopilot } from "@/modules/platform/ai/use-copilot";
 
 export default function AICopilotPage() {
-  const tenantId = 1;
+  const { user } = useAdminAuth();
+  const tenantId = user?.tenantId ?? 0;
   const [question, setQuestion] = useState("");
   const ask = useAskCopilot();
 

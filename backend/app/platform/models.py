@@ -26,7 +26,7 @@ class PlatformFeatureFlagModel(Base):
     __tablename__ = "app_platform_feature_flags"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("app_tenants.id", ondelete="CASCADE"), nullable=True)
+    tenant_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("app_tenants.id", ondelete="CASCADE"), nullable=False)
     scope: Mapped[str] = mapped_column(String(32), nullable=False, default="platform")
     module: Mapped[str] = mapped_column(String(128), nullable=False)
     key: Mapped[str] = mapped_column(String(128), nullable=False)

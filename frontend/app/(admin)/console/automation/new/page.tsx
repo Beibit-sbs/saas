@@ -21,6 +21,7 @@ import {
 } from "@/shared/ui/select";
 import { RequirePermission } from "@/shared/ui/permission-gate";
 import { useToast } from "@/shared/ui/use-toast";
+import { useAdminAuth } from "@/shared/auth/context";
 import { useCreateAutomationRule } from "@/modules/platform/automation/create-rule";
 import {
   KNOWN_EVENT_TYPES,
@@ -248,6 +249,8 @@ function ActionRow({
 export default function AutomationRuleNewPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAdminAuth();
+  const tenantId = user?.tenantId ?? 0;
   const [submitting, setSubmitting] = useState(false);
 
   const createRuleMutation = useCreateAutomationRule();
@@ -286,11 +289,20 @@ export default function AutomationRuleNewPage() {
   };
 
   async function onSubmit(values: RuleFormValues) {
+    if (tenantId <= 0) {
+      toast({
+        title: "Failed to create rule",
+        description: "Tenant context is missing in current session.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
 
       const payload: CreateAutomationRuleRequest = {
-        tenant_id: 1,
+        tenant_id: tenantId,
         name: values.name,
         description: values.description,
         event_type: values.event_type,

@@ -135,7 +135,7 @@ function AutomationOverviewWidgetInner({ tenantId }: { tenantId: number }) {
   );
 }
 
-export function AutomationOverviewWidget({ tenantId = 1 }: { tenantId?: number }) {
+export function AutomationOverviewWidget({ tenantId }: { tenantId: number }) {
   return (
     <PermissionGate permission={PERMISSIONS.AUTOMATION_READ}>
       <AutomationOverviewWidgetInner tenantId={tenantId} />

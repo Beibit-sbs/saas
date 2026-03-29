@@ -4,7 +4,7 @@ import type { AutomationRule } from "./types";
 
 export const AUTOMATION_RULES_KEY = "platform-automation-rules";
 
-export function useAutomationRules(tenantId: number = 1) {
+export function useAutomationRules(tenantId: number) {
   return useQuery({
     queryKey: [AUTOMATION_RULES_KEY, tenantId],
     queryFn: () =>

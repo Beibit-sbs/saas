@@ -11,6 +11,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { RequirePermission } from "@/shared/ui/permission-gate";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { formatDate } from "@/shared/utils/format";
+import { useAdminAuth } from "@/shared/auth/context";
 
 import { useAutomationExecutions } from "@/modules/platform/automation/use-executions";
 import type { AutomationExecution, AutomationExecutionStatus } from "@/modules/platform/automation/types";
@@ -118,7 +119,8 @@ const COLUMNS: Column<AutomationExecution>[] = [
 // ---------------------------------------------------------------------------
 
 export default function AutomationExecutionsPage() {
-  const tenantId = 1;
+  const { user } = useAdminAuth();
+  const tenantId = user?.tenantId ?? 0;
   const { data, isLoading, isError, refetch } = useAutomationExecutions(tenantId);
   const [statusFilter, setStatusFilter] = useState("");
 

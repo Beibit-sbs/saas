@@ -1,5 +1,3 @@
-import { ROLE_PERMISSIONS, type Permission } from "@/shared/config/permissions";
-
 export interface SafeAdminUser {
   sub: string;
   displayName: string;
@@ -26,7 +24,9 @@ interface JwtPayload {
   display_name?: string;
   roles?: string[];
   permissions?: string[];
+  scp?: string[];
   tenant_id?: number;
+  tid?: number;
   exp?: number;
 }
 
@@ -50,14 +50,16 @@ export function toSafeSession(token: string): SessionResponse | null {
   const payload = decodeJwtPayload(token);
   if (!payload?.sub) return null;
 
+  const permissions = normalizePermissions(payload.permissions ?? payload.scp);
+
   return {
     authenticated: true,
     user: {
       sub: payload.sub,
       displayName: payload.display_name ?? payload.sub,
       roles: payload.roles ?? [],
-      permissions: payload.permissions ?? [],
-      tenantId: payload.tenant_id,
+      permissions,
+      tenantId: payload.tenant_id ?? payload.tid,
     },
   };
 }
@@ -71,12 +73,13 @@ function normalizeRoles(input: unknown): string[] {
     .filter((value) => value.length > 0);
 }
 
-function normalizePermissions(input: unknown, roles: string[]): string[] {
-  const rolePermissions = roles.flatMap((role) => ROLE_PERMISSIONS[role] ?? []);
-  const explicitPermissions = Array.isArray(input)
-    ? input.map((value) => String(value).trim()).filter((value) => value.length > 0)
-    : [];
-  return Array.from(new Set<Permission | string>([...rolePermissions, ...explicitPermissions]));
+function normalizePermissions(input: unknown): string[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+  return Array.from(
+    new Set(input.map((value) => String(value).trim()).filter((value) => value.length > 0)),
+  );
 }
 
 export function toSafeSessionFromProfile(profile: unknown): SessionResponse | null {
@@ -91,7 +94,7 @@ export function toSafeSessionFromProfile(profile: unknown): SessionResponse | nu
   }
 
   const roles = normalizeRoles(payload.roles);
-  const permissions = normalizePermissions(payload.permissions, roles);
+  const permissions = normalizePermissions(payload.permissions);
 
   return {
     authenticated: true,

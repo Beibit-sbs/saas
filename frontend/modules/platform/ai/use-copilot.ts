@@ -16,7 +16,7 @@ export function useAskCopilot() {
   });
 }
 
-export function useCopilotLogs(tenantId: number = 1) {
+export function useCopilotLogs(tenantId: number) {
   return useQuery({
     queryKey: [COPILOT_LOGS_KEY, tenantId],
     queryFn: () =>

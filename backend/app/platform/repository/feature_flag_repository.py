@@ -11,10 +11,25 @@ except ImportError:  # pragma: no cover
     psycopg = None
 
 
+_PLATFORM_TENANT_ID = 1
+
+
+def _normalize_tenant_for_scope(*, scope: str, tenant_id: int | None) -> int:
+    normalized_scope = str(scope).strip().lower()
+    if normalized_scope == "platform":
+        return _PLATFORM_TENANT_ID
+    if tenant_id is None:
+        raise ValueError("tenant_id is required for tenant-scoped feature flags")
+    normalized_tenant = int(tenant_id)
+    if normalized_tenant <= 0:
+        raise ValueError("tenant_id must be positive for feature flags")
+    return normalized_tenant
+
+
 class FeatureFlagRepository:
     def __init__(self) -> None:
         self._lock = Lock()
-        self._memory: dict[tuple[str, int | None, str, str], dict[str, object]] = {}
+        self._memory: dict[tuple[str, int, str, str], dict[str, object]] = {}
 
     def _now_iso(self) -> str:
         return datetime.now(timezone.utc).isoformat()
@@ -32,7 +47,7 @@ class FeatureFlagRepository:
         normalized_scope = scope.strip().lower()
         normalized_module = module.strip().lower()
         normalized_key = key.strip().lower()
-        normalized_tenant = int(tenant_id) if tenant_id is not None else None
+        normalized_tenant = _normalize_tenant_for_scope(scope=normalized_scope, tenant_id=tenant_id)
 
         if conn is None:
             with transaction() as tx:
@@ -47,26 +62,15 @@ class FeatureFlagRepository:
 
         if conn is not None and db_available() and psycopg is not None:
             with conn.cursor() as cur:
-                if normalized_tenant is None:
-                    cur.execute(
-                        """
-                        SELECT id FROM app_platform_feature_flags
-                        WHERE scope = %s AND module = %s AND key = %s
-                          AND tenant_id IS NULL
-                        LIMIT 1
-                        """,
-                        (normalized_scope, normalized_module, normalized_key),
-                    )
-                else:
-                    cur.execute(
-                        """
-                        SELECT id FROM app_platform_feature_flags
-                        WHERE scope = %s AND module = %s AND key = %s
-                          AND tenant_id = %s
-                        LIMIT 1
-                        """,
-                        (normalized_scope, normalized_module, normalized_key, normalized_tenant),
-                    )
+                cur.execute(
+                    """
+                    SELECT id FROM app_platform_feature_flags
+                    WHERE scope = %s AND module = %s AND key = %s
+                      AND tenant_id = %s
+                    LIMIT 1
+                    """,
+                    (normalized_scope, normalized_module, normalized_key, normalized_tenant),
+                )
                 existing = cur.fetchone()
                 if existing is None:
                     cur.execute(
@@ -115,6 +119,9 @@ class FeatureFlagRepository:
 
     def list_tenant_flags(self, tenant_id: int, *, conn: object | None = None) -> list[dict[str, object]]:
         normalized_tenant_id = int(tenant_id)
+        if normalized_tenant_id <= 0:
+            raise ValueError("tenant_id must be positive for feature flags")
+
         if conn is None:
             with transaction() as tx:
                 return self.list_tenant_flags(normalized_tenant_id, conn=tx)
@@ -125,17 +132,17 @@ class FeatureFlagRepository:
                     """
                     SELECT scope, tenant_id, module, key, enabled, updated_at
                     FROM app_platform_feature_flags
-                    WHERE (scope = 'platform' AND tenant_id IS NULL)
+                    WHERE (scope = 'platform' AND tenant_id = %s)
                        OR (scope = 'tenant' AND tenant_id = %s)
                     ORDER BY scope, module, key
                     """,
-                    (normalized_tenant_id,),
+                    (_PLATFORM_TENANT_ID, normalized_tenant_id),
                 )
                 rows = cur.fetchall()
             return [
                 {
                     "scope": str(row[0]),
-                    "tenant_id": int(row[1]) if row[1] is not None else None,
+                    "tenant_id": int(row[1]),
                     "module": str(row[2]),
                     "key": str(row[3]),
                     "enabled": bool(row[4]),
@@ -148,7 +155,7 @@ class FeatureFlagRepository:
             rows = [
                 dict(item)
                 for item in self._memory.values()
-                if (str(item["scope"]) == "platform" and item.get("tenant_id") is None)
+                if (str(item["scope"]) == "platform" and int(item.get("tenant_id") or 0) == _PLATFORM_TENANT_ID)
                 or (str(item["scope"]) == "tenant" and int(item.get("tenant_id") or 0) == normalized_tenant_id)
             ]
         rows.sort(key=lambda item: (str(item["scope"]), str(item["module"]), str(item["key"])))

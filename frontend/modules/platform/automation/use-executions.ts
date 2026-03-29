@@ -4,7 +4,7 @@ import type { AutomationExecution } from "./types";
 
 export const AUTOMATION_EXECUTIONS_KEY = "platform-automation-executions";
 
-export function useAutomationExecutions(tenantId: number = 1) {
+export function useAutomationExecutions(tenantId: number) {
   return useQuery({
     queryKey: [AUTOMATION_EXECUTIONS_KEY, tenantId],
     queryFn: () =>

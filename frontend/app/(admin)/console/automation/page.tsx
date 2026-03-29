@@ -14,6 +14,7 @@ import { Switch } from "@/shared/ui/switch";
 import { useToast } from "@/shared/ui/use-toast";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { formatDate } from "@/shared/utils/format";
+import { useAdminAuth } from "@/shared/auth/context";
 
 import { CreateRuleDialog } from "@/modules/platform/automation/create-rule-dialog";
 import { useAutomationRules, useUpdateAutomationRule } from "@/modules/platform/automation/use-rules";
@@ -118,7 +119,8 @@ function createColumns(
 // ---------------------------------------------------------------------------
 
 export default function AutomationRulesPage() {
-  const tenantId = 1;
+  const { user } = useAdminAuth();
+  const tenantId = user?.tenantId ?? 0;
   const { data, isLoading, isError, refetch } = useAutomationRules(tenantId);
   const { toast } = useToast();
   const updateRule = useUpdateAutomationRule();

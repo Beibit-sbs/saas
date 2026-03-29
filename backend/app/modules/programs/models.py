@@ -13,4 +13,4 @@ class ProgramModel(Base):
     degree_type: Mapped[str] = mapped_column(String(64), nullable=False)
     faculty: Mapped[str] = mapped_column(String(128), nullable=False)
     status: Mapped[str] = mapped_column(String(64), nullable=False)
-    tenant_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), nullable=False)

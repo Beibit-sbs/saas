@@ -13,4 +13,4 @@ class CourseModel(Base):
     credits: Mapped[int] = mapped_column(Integer, nullable=False)
     program_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("university_programs.id", ondelete="CASCADE"), nullable=False)
     status: Mapped[str] = mapped_column(String(64), nullable=False)
-    tenant_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), nullable=False)
