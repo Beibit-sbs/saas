@@ -41,3 +41,8 @@ backups/
 
 # Local archives
 ai-platform-backup.tar.gz
+
+# TLS private keys/certs (must never be versioned)
+infra/nginx/certs/*.key
+infra/nginx/certs/*.pem
+infra/nginx/certs/*.p12
