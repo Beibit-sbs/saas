@@ -67,7 +67,7 @@ def ensure_platform_core_schema(conn: object) -> None:
                 """
                 CREATE TABLE IF NOT EXISTS app_platform_feature_flags (
                     id BIGSERIAL PRIMARY KEY,
-                    tenant_id BIGINT REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
                     scope TEXT NOT NULL,
                     module TEXT NOT NULL,
                     key TEXT NOT NULL,
@@ -111,6 +111,22 @@ def ensure_platform_core_schema(conn: object) -> None:
                     period_key TEXT NOT NULL,
                     value BIGINT NOT NULL DEFAULT 0,
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_platform_invoices (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    period_key TEXT NOT NULL,
+                    plan_code TEXT NOT NULL,
+                    base_amount_cents INTEGER NOT NULL DEFAULT 0,
+                    usage_amount_cents INTEGER NOT NULL DEFAULT 0,
+                    total_amount_cents INTEGER NOT NULL DEFAULT 0,
+                    currency TEXT NOT NULL DEFAULT 'USD',
+                    breakdown_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
                 """
             )
@@ -225,6 +241,9 @@ def ensure_platform_core_schema(conn: object) -> None:
 
             cur.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS ux_platform_usage_tenant_metric_period ON app_platform_usage_counters (tenant_id, metric, period_key)"
+            )
+            cur.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_platform_invoices_tenant_period ON app_platform_invoices (tenant_id, period_key)"
             )
             cur.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS ux_platform_feature_flags_scope_tenant_module_key ON app_platform_feature_flags (scope, tenant_id, module, key)"
@@ -342,7 +361,7 @@ def ensure_platform_core_schema(conn: object) -> None:
                 """
                 CREATE TABLE IF NOT EXISTS app_platform_developer_apps (
                     id BIGSERIAL PRIMARY KEY,
-                    tenant_id BIGINT REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
                     name TEXT NOT NULL,
                     app_key TEXT NOT NULL UNIQUE,
                     app_secret_hash TEXT NOT NULL,
@@ -405,6 +424,18 @@ def ensure_platform_core_schema(conn: object) -> None:
             cur.execute(
                 "ALTER TABLE app_platform_developer_apps ADD COLUMN IF NOT EXISTS tenant_id BIGINT REFERENCES app_tenants(id) ON DELETE CASCADE"
             )
+            cur.execute(
+                """
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM app_platform_developer_apps WHERE tenant_id IS NULL) THEN
+                        RAISE EXCEPTION 'developer apps remediation required: tenant_id is NULL';
+                    END IF;
+                END
+                $$;
+                """
+            )
+            cur.execute("ALTER TABLE app_platform_developer_apps ALTER COLUMN tenant_id SET NOT NULL")
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS ix_platform_developer_apps_status ON app_platform_developer_apps (status, created_at DESC)"
             )

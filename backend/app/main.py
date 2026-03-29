@@ -5,6 +5,7 @@ import logging
 import os
 import time
 import uuid
+from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -33,8 +34,6 @@ from app.modules.backup.router import router as backup_router
 from app.modules.courses.router import router as courses_router
 from app.modules.enrollments.router import legacy_router as legacy_enrollments_router
 from app.modules.enrollments.router import router as enrollments_router
-from app.modules.example_notes.router import router as example_notes_router
-from app.modules.example_slice.router import router as example_slice_router
 from app.modules.faculty.router import router as faculty_router
 from app.modules.feature_flags.router import router as feature_flags_router
 from app.modules.grades.router import router as grades_router
@@ -52,18 +51,22 @@ from app.modules.i18n.router import admin_router as i18n_admin_router
 from app.modules.i18n.router import public_router as i18n_public_router
 from app.modules.integrations.router import router as integrations_router
 from app.modules.identity.router import router as identity_router
+from app.modules.identity.phase1_router import router as identity_phase1_router
 from app.modules.ldap.router import router as ldap_router
 from app.modules.jobs.router import router as jobs_router
 from app.modules.programs.router import router as programs_router
 from app.modules.platform.router import router as platform_router
 from app.platform.router_admin import router as platform_v1_admin_router
 from app.platform.router_public import router as platform_v1_public_router
+from app.platform.router_developer_api import router as platform_developer_api_router
 from app.platform.router_internal import router as platform_v1_internal_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.workflows.router import router as workflows_router
 from app.modules.rbac.router import router as rbac_router
 from app.modules.rbac.security import get_actor
+from app.modules.rbac.security import permission_dependency
 from app.modules.rbac.security import resolve_current_user_claims
+from app.modules.rbac.service import resolve_permissions_for_tenant
 from app.modules.students.router import legacy_router as legacy_students_router
 from app.modules.students.router import router as students_router
 from app.modules.service_accounts.router import router as service_accounts_router
@@ -76,6 +79,17 @@ from app.modules.observability.logging import (
     request_id_var,
     tenant_id_var,
     trace_id_var,
+)
+from app.modules.observability.health import deep_payload, live_payload, readiness_payload
+from app.modules.observability.perf_profile import (
+    begin_request_profile,
+    finish_request_profile,
+    get_perf_profile_summary,
+    install_redis_profiler,
+    install_sqlalchemy_profiler,
+    is_perf_profile_enabled,
+    perf_segment,
+    reset_perf_profile,
 )
 from app.modules.observability.trace import generate_trace_id
 from app.modules.observability.metrics import record_request, render_metrics, snapshot_latency_metrics
@@ -110,12 +124,21 @@ async def lifespan(fastapi_app: FastAPI):
     _admissions_engine = None
     try:
         _admissions_engine = build_engine()
+        if is_perf_profile_enabled():
+            install_sqlalchemy_profiler(_admissions_engine)
+            install_redis_profiler()
+        fastapi_app.state.admissions_engine = _admissions_engine
         fastapi_app.state.admissions_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.profiles_session_factory = make_session_factory(_admissions_engine)
+        fastapi_app.state.students_session_factory = make_session_factory(_admissions_engine)
+        fastapi_app.state.grades_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.workflows_session_factory = make_session_factory(_admissions_engine)
         logger.info("admissions database engine initialised (pool_size=5, max_overflow=10)")
     except RuntimeError as exc:
+        fastapi_app.state.admissions_engine = None
         fastapi_app.state.profiles_session_factory = None
+        fastapi_app.state.students_session_factory = None
+        fastapi_app.state.grades_session_factory = None
         fastapi_app.state.workflows_session_factory = None
         logger.warning(
             "admissions database not configured — admissions endpoints will return HTTP 503. "
@@ -157,12 +180,11 @@ app.include_router(i18n_public_router)
 app.include_router(i18n_admin_router)
 app.include_router(integrations_router)
 app.include_router(identity_router)
+app.include_router(identity_phase1_router)
 app.include_router(ldap_router)
 app.include_router(backup_router)
 app.include_router(jobs_router)
 app.include_router(feature_flags_router)
-app.include_router(example_notes_router)
-app.include_router(example_slice_router)
 app.include_router(students_router)
 app.include_router(legacy_students_router)
 app.include_router(service_accounts_router)
@@ -180,9 +202,22 @@ app.include_router(tenants_router)
 app.include_router(platform_router)
 app.include_router(platform_v1_admin_router)
 app.include_router(platform_v1_public_router)
+app.include_router(platform_developer_api_router)
 app.include_router(platform_v1_internal_router)
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+
+
+def _basic_database_reachable(app: FastAPI) -> bool:
+    session_factory = getattr(app.state, "admissions_session_factory", None)
+    if session_factory is None:
+        return False
+    try:
+        with session_factory() as session:
+            session.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
 _DEFAULT_TENANT_ID = 1
 
 
@@ -292,12 +327,48 @@ def _resolve_client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def _authorize_observability_permission(request: Request, permission: str) -> None:
+    claims = resolve_current_user_claims(request, request.headers.get("authorization"))
+    granted_scopes = {str(item).strip() for item in getattr(claims, "permissions", []) if str(item).strip()}
+    if granted_scopes:
+        if permission not in granted_scopes:
+            raise HTTPException(status_code=403, detail=f"missing permission: {permission}")
+        return
+
+    if "superadmin" in {str(role).strip() for role in claims.roles if str(role).strip()}:
+        return
+
+    tenant_id = int(claims.tenant_id) if int(claims.tenant_id) > 0 else _DEFAULT_TENANT_ID
+    granted = resolve_permissions_for_tenant(list(claims.roles), tenant_id)
+    if permission not in granted:
+        raise HTTPException(status_code=403, detail=f"missing permission: {permission}")
+
+
 def _is_security_scoped_path(path: str) -> bool:
     return path.startswith("/api/") or path == "/platform" or path.startswith("/platform/")
 
 
 def _is_admin_scoped_path(path: str) -> bool:
     return path.startswith("/api/admin/") or path == "/platform" or path.startswith("/platform/")
+
+
+def _extract_error_code_from_response(response) -> str | None:
+    body = getattr(response, "body", None)
+    if not body:
+        return None
+    try:
+        import json
+
+        parsed = json.loads(body.decode("utf-8"))
+    except Exception:
+        return None
+    if isinstance(parsed, dict):
+        detail = parsed.get("detail")
+        if isinstance(detail, dict) and isinstance(detail.get("code"), str):
+            return str(detail.get("code"))
+        if isinstance(parsed.get("code"), str):
+            return str(parsed.get("code"))
+    return None
 
 
 @app.middleware("http")
@@ -310,7 +381,8 @@ async def enforce_rate_limit(request: Request, call_next):
     if _is_admin_scoped_path(request.url.path):
         actor = _resolve_rate_limit_actor(request)
 
-    decision = check_request_rate_limit(request, actor=actor, body=body)
+    with perf_segment("middleware.rate_limit"):
+        decision = check_request_rate_limit(request, actor=actor, body=body)
     if decision is not None:
         record_security_signal(
             signal="rate_limit.blocked",
@@ -338,52 +410,54 @@ async def enforce_rate_limit(request: Request, call_next):
             headers={"Retry-After": str(decision.retry_after)},
         )
 
-    return await call_next(request)
+    with perf_segment("middleware.rate_limit.call_next"):
+        return await call_next(request)
 
 
 @app.middleware("http")
 async def enforce_csrf(request: Request, call_next):
-    if not is_csrf_protection_enabled():
+    with perf_segment("middleware.csrf"):
+        if not is_csrf_protection_enabled():
+            return await call_next(request)
+
+        if request.method in SAFE_METHODS:
+            return await call_next(request)
+
+        if not _is_security_scoped_path(request.url.path):
+            return await call_next(request)
+
+        auth_cookie = request.cookies.get(get_auth_cookie_name())
+        if not auth_cookie:
+            return await call_next(request)
+
+        # CSRF protection is scoped to cookie-authenticated requests only.
+        if _has_bearer_auth(request):
+            return await call_next(request)
+
+        csrf_cookie = request.cookies.get(get_auth_csrf_cookie_name(), "")
+        csrf_header = request.headers.get("x-csrf-token", "")
+        if not csrf_cookie or not csrf_header:
+            record_security_signal(
+                signal="auth.csrf.failed",
+                outcome="denied",
+                actor=_resolve_rate_limit_actor(request),
+                client_ip=_resolve_client_ip(request),
+                path=request.url.path,
+                tenant_id=_resolve_request_tenant_id(request),
+            )
+            return JSONResponse(status_code=403, content={"detail": "csrf token required"})
+        if not hmac.compare_digest(csrf_cookie, csrf_header):
+            record_security_signal(
+                signal="auth.csrf.failed",
+                outcome="denied",
+                actor=_resolve_rate_limit_actor(request),
+                client_ip=_resolve_client_ip(request),
+                path=request.url.path,
+                tenant_id=_resolve_request_tenant_id(request),
+            )
+            return JSONResponse(status_code=403, content={"detail": "invalid csrf token"})
+
         return await call_next(request)
-
-    if request.method in SAFE_METHODS:
-        return await call_next(request)
-
-    if not _is_security_scoped_path(request.url.path):
-        return await call_next(request)
-
-    auth_cookie = request.cookies.get(get_auth_cookie_name())
-    if not auth_cookie:
-        return await call_next(request)
-
-    # CSRF protection is scoped to cookie-authenticated requests only.
-    if _has_bearer_auth(request):
-        return await call_next(request)
-
-    csrf_cookie = request.cookies.get(get_auth_csrf_cookie_name(), "")
-    csrf_header = request.headers.get("x-csrf-token", "")
-    if not csrf_cookie or not csrf_header:
-        record_security_signal(
-            signal="auth.csrf.failed",
-            outcome="denied",
-            actor=_resolve_rate_limit_actor(request),
-            client_ip=_resolve_client_ip(request),
-            path=request.url.path,
-            tenant_id=_resolve_request_tenant_id(request),
-        )
-        return JSONResponse(status_code=403, content={"detail": "csrf token required"})
-    if not hmac.compare_digest(csrf_cookie, csrf_header):
-        record_security_signal(
-            signal="auth.csrf.failed",
-            outcome="denied",
-            actor=_resolve_rate_limit_actor(request),
-            client_ip=_resolve_client_ip(request),
-            path=request.url.path,
-            tenant_id=_resolve_request_tenant_id(request),
-        )
-        return JSONResponse(status_code=403, content={"detail": "invalid csrf token"})
-
-    return await call_next(request)
 
 
 @app.middleware("http")
@@ -395,6 +469,8 @@ async def add_request_id(request: Request, call_next):
     institution_id = _resolve_request_institution_id(request)
     request.state.request_id = request_id
     request.state.trace_id = trace_id
+    request.state.correlation_id = request_id
+    request.state.error_code = None
     # Propagate into logging context
     request_token = request_id_var.set(request_id)
     trace_log_token = trace_id_var.set(trace_id)
@@ -403,20 +479,24 @@ async def add_request_id(request: Request, call_next):
     institution_log_token = institution_id_var.set(institution_id or "-")
     tenant_token = set_request_tenant_id(tenant_id)
     start = time.monotonic()
+    begin_request_profile(request.method, request.url.path)
     response = None
     status_code = 500
     try:
-        response = await call_next(request)
+        with perf_segment("middleware.call_next"):
+            response = await call_next(request)
         status_code = int(getattr(response, "status_code", 500))
         response.headers["x-request-id"] = request_id
         response.headers["x-trace-id"] = trace_id
+        response.headers["x-correlation-id"] = request_id
         response.headers.setdefault("x-content-type-options", "nosniff")
         response.headers.setdefault("x-frame-options", "DENY")
         response.headers.setdefault("referrer-policy", "strict-origin-when-cross-origin")
         return response
     except Exception:
         duration = time.monotonic() - start
-        record_request(request.method, request.url.path, status_code, duration)
+        with perf_segment("metrics.record_request"):
+            record_request(request.method, request.url.path, status_code, duration, tenant_id)
         request_logger.exception(
             "http_request_error",
             extra={
@@ -430,29 +510,38 @@ async def add_request_id(request: Request, call_next):
                 "institution_id": institution_id or "-",
                 "request_id": request_id,
                 "trace_id": trace_id,
+                "error_code": getattr(request.state, "error_code", None) or "internal_error",
             },
         )
+        finish_request_profile(status_code, duration * 1000.0)
         raise
     finally:
         if response is not None:
             duration = time.monotonic() - start
             raw_path = request.url.path
-            record_request(request.method, raw_path, status_code, duration)
-            request_logger.info(
-                "http_request",
-                extra={
-                    "method": request.method,
-                    "path": raw_path,
-                    "endpoint": raw_path,
-                    "status_code": status_code,
-                    "duration_ms": round(duration * 1000, 2),
-                    "tenant_id": str(tenant_id),
-                    "actor_id": actor_id or "-",
-                    "institution_id": institution_id or "-",
-                    "request_id": request_id,
-                    "trace_id": trace_id,
-                },
-            )
+            with perf_segment("metrics.record_request"):
+                record_request(request.method, raw_path, status_code, duration, tenant_id)
+            error_code = _extract_error_code_from_response(response)
+            request.state.error_code = error_code
+            with perf_segment("logging.request_log"):
+                request_logger.info(
+                    "http_request",
+                    extra={
+                        "method": request.method,
+                        "path": raw_path,
+                        "endpoint": raw_path,
+                        "status_code": status_code,
+                        "duration_ms": round(duration * 1000, 2),
+                        "tenant_id": str(tenant_id),
+                        "actor_id": actor_id or "-",
+                        "user_id": actor_id or "-",
+                        "institution_id": institution_id or "-",
+                        "request_id": request_id,
+                        "trace_id": trace_id,
+                        "error_code": error_code,
+                    },
+                )
+            finish_request_profile(status_code, duration * 1000.0)
         reset_request_tenant_id(tenant_token)
         institution_id_var.reset(institution_log_token)
         actor_id_var.reset(actor_log_token)
@@ -462,105 +551,155 @@ async def add_request_id(request: Request, call_next):
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok", "service": "api"}
+def health(
+    __: None = Depends(permission_dependency("health.read")),
+) -> JSONResponse:
+    request_logger.warning(
+        "deprecated_endpoint_used use /health/live,/health/ready,/health/deep",
+        extra={
+            "path": "/health",
+            "method": "GET",
+            "status_code": 200,
+            "error_code": "deprecated_endpoint",
+        },
+    )
+    return JSONResponse(
+        status_code=200,
+        content={"status": "ok", "service": "api"},
+        headers={"X-Deprecated": "true"},
+    )
+
+
+@app.get("/health/live")
+def health_live() -> dict[str, Any]:
+    return live_payload()
 
 
 @app.get("/api/health")
-def api_health() -> dict[str, str]:
-    return health()
+def api_health() -> dict[str, Any]:
+    return live_payload()
 
 
 @app.get("/health/db")
-def health_db(request: Request):
-    session_factory = getattr(request.app.state, "admissions_session_factory", None)
-    if session_factory is None:
-        return JSONResponse(status_code=503, content={"status": "error", "database": "unreachable"})
+def health_db(
+    request: Request,
+    __: None = Depends(permission_dependency("health.read")),
+):
+    request_logger.warning(
+        "deprecated_endpoint_used use /health/live,/health/ready,/health/deep",
+        extra={
+            "path": "/health/db",
+            "method": "GET",
+            "status_code": 200,
+            "error_code": "deprecated_endpoint",
+        },
+    )
+    if not _basic_database_reachable(request.app):
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "database": "unreachable"},
+            headers={"X-Deprecated": "true"},
+        )
+    return JSONResponse(
+        status_code=200,
+        content={"status": "ok", "database": "reachable"},
+        headers={"X-Deprecated": "true"},
+    )
 
-    try:
-        with session_factory() as session:
-            session.execute(text("SELECT 1"))
-    except Exception:
-        logger.warning("db_healthcheck_failed")
-        return JSONResponse(status_code=503, content={"status": "error", "database": "unreachable"})
 
-    return {"status": "ok", "database": "reachable"}
+@app.get("/health/ready")
+def health_ready(request: Request):
+    payload = readiness_payload(request.app)
+    if not payload["ready"]:
+        return JSONResponse(status_code=503, content=payload)
+    return payload
 
 
 @app.get("/health/worker", response_model=None)
-def health_worker() -> JSONResponse | dict[str, str]:
-    heartbeat = get_worker_heartbeat()
-    if not heartbeat:
-        return JSONResponse(status_code=503, content={"status": "error", "worker": "unreachable"})
-    return {"status": "ok", "worker": "reachable", "heartbeat_at": heartbeat}
+def health_worker(
+    __: None = Depends(permission_dependency("health.read")),
+) -> JSONResponse | dict[str, str]:
+    payload = deep_payload(app)
+    worker = payload["dependencies"]["worker"]
+    if not worker["healthy"]:
+        return JSONResponse(status_code=503, content={"status": "error", "worker": "unreachable", "details": worker["details"]})
+    return {"status": "ok", "worker": "reachable", **worker["details"]}
 
 
 @app.get("/metrics/ops")
-def metrics_ops() -> dict[str, object]:
+def metrics_ops(
+    __: None = Depends(permission_dependency("metrics.read")),
+) -> dict[str, object]:
     return _collect_ops_metrics()
 
 
+@app.get("/metrics/perf-profile")
+def metrics_perf_profile(
+    reset: bool = False,
+    top_n: int = 5,
+    __: None = Depends(permission_dependency("metrics.read")),
+) -> dict[str, object]:
+    summary = get_perf_profile_summary(top_n=max(1, min(int(top_n), 20)))
+    if reset:
+        reset_perf_profile()
+    return summary
+
+
 @app.get("/metrics/latency")
-def metrics_latency() -> dict[str, float | int]:
+def metrics_latency(
+    __: None = Depends(permission_dependency("metrics.read")),
+) -> dict[str, float | int]:
     return _collect_latency_metrics()
 
 
 @app.get("/health/comprehensive")
-def health_comprehensive() -> dict[str, object]:
-    """Comprehensive health check with operational status."""
-    db_status = "reachable"
-    worker_status = "reachable"
-    scheduler_status = "reachable"
-    issues: list[str] = []
-    
-    # Database health
-    session_factory = getattr(app.state, "admissions_session_factory", None)
-    if session_factory is None:
-        db_status = "unreachable"
-        issues.append("database_not_configured")
-    else:
-        try:
-            with session_factory() as session:
-                session.execute(text("SELECT 1"))
-        except Exception as e:
-            db_status = "unreachable"
-            issues.append(f"database_error: {str(e)[:50]}")
-    
-    # Worker status
-    heartbeat = get_worker_heartbeat()
-    if not heartbeat:
-        worker_status = "unreachable"
-        issues.append("worker_not_running")
-
-    # Scheduler status
-    scheduler_last_run = get_scheduler_last_run()
-    if not scheduler_last_run:
-        scheduler_status = "unreachable"
-        issues.append("scheduler_not_running")
-    
-    # Operational metrics
-    ops_metrics = {}
-    try:
-        ops_metrics = _collect_ops_metrics()
-    except Exception as e:
-        ops_metrics["error"] = f"Failed to get metrics: {str(e)[:50]}"
-    
-    # Determine overall status
-    overall_status = "healthy" if len(issues) == 0 else ("degraded" if len(issues) <= 2 else "unhealthy")
-    
-    return {
-        "status": overall_status,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "components": {
-            "database": db_status,
-            "worker": worker_status,
-            "scheduler": scheduler_status,
+def health_comprehensive(
+    __: None = Depends(permission_dependency("health.read")),
+) -> JSONResponse:
+    request_logger.warning(
+        "deprecated_endpoint_used use /health/live,/health/ready,/health/deep",
+        extra={
+            "path": "/health/comprehensive",
+            "method": "GET",
+            "status_code": 200,
+            "error_code": "deprecated_endpoint",
         },
-        "metrics": ops_metrics,
-        "worker_heartbeat": heartbeat,
-        "scheduler_last_run": scheduler_last_run,
-        "issues": issues,
+    )
+    payload = deep_payload(app)
+    ops_metrics = _collect_ops_metrics()
+    latency_metrics = _collect_latency_metrics()
+    payload["metrics"] = {**ops_metrics, **latency_metrics}
+    payload["metrics_detail"] = {
+        "ops": ops_metrics,
+        "latency": latency_metrics,
     }
+    db_reachable = _basic_database_reachable(app)
+    payload["components"] = {
+        "database": "reachable" if db_reachable else "unreachable",
+        "worker": "reachable" if payload["dependencies"]["worker"]["healthy"] else "unreachable",
+        "scheduler": "reachable" if payload["dependencies"]["scheduler"]["healthy"] else "unreachable",
+    }
+    issues: list[str] = []
+    if not db_reachable:
+        issues.append("database_unreachable")
+    if not payload["dependencies"]["worker"]["healthy"]:
+        issues.append("worker_not_running")
+    if not payload["dependencies"]["scheduler"]["healthy"]:
+        issues.append("scheduler_not_running")
+    payload["issues"] = issues
+    payload["status"] = "healthy" if not issues else "degraded"
+    return JSONResponse(status_code=200, content=payload, headers={"X-Deprecated": "true"})
+
+
+@app.get("/health/deep")
+def health_deep(
+    request: Request,
+    __: None = Depends(permission_dependency("health.read")),
+):
+    payload = deep_payload(request.app)
+    if not payload["deep"]:
+        return JSONResponse(status_code=503, content=payload)
+    return payload
 
 
 @app.get("/metrics", response_class=PlainTextResponse, include_in_schema=False)
@@ -601,14 +740,19 @@ def metrics(request: Request) -> str:
             raise HTTPException(status_code=401, detail="metrics authentication required")
         provided = auth_header[len("Bearer "):]
         if not hmac.compare_digest(provided.encode(), token.encode()):
-            record_security_signal(
-                signal="metrics.access.denied",
-                outcome="denied",
-                client_ip=_resolve_client_ip(request),
-                path=request.url.path,
-                tenant_id=_resolve_request_tenant_id(request),
-            )
-            raise HTTPException(status_code=403, detail="invalid metrics token")
+            try:
+                _authorize_observability_permission(request, "metrics.read")
+            except HTTPException:
+                record_security_signal(
+                    signal="metrics.access.denied",
+                    outcome="denied",
+                    client_ip=_resolve_client_ip(request),
+                    path=request.url.path,
+                    tenant_id=_resolve_request_tenant_id(request),
+                )
+                raise HTTPException(status_code=403, detail="invalid metrics token")
+    else:
+        _authorize_observability_permission(request, "metrics.read")
     return render_metrics()
 
 

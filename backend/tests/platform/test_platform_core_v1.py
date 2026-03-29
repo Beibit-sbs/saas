@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from tests.conftest import ADMIN_HEADERS, client
+from tests.conftest import ADMIN_HEADERS, INTERNAL_HEADERS, client
 
 
 def test_platform_core_v1_end_to_end_flow() -> None:
@@ -100,6 +100,7 @@ def test_platform_core_v1_end_to_end_flow() -> None:
 
     run = client.post(
         f"/api/v1/internal/jobs/{job_id}/run",
+        headers=INTERNAL_HEADERS,
         json={"succeed": True, "result": {"rolled_up": True}},
     )
     assert run.status_code == 200, run.text
@@ -118,7 +119,7 @@ def test_platform_core_v1_end_to_end_flow() -> None:
     )
     assert notify.status_code == 201, notify.text
 
-    notifications = client.get(f"/api/v1/internal/tenants/{tenant_id}/notifications")
+    notifications = client.get(f"/api/v1/internal/tenants/{tenant_id}/notifications", headers=INTERNAL_HEADERS)
     assert notifications.status_code == 200, notifications.text
     assert len(notifications.json()) >= 1
 
@@ -137,4 +138,11 @@ def test_platform_core_v1_end_to_end_flow() -> None:
 
 def test_platform_core_v1_admin_requires_auth() -> None:
     response = client.post("/api/v1/admin/tenants", json={"slug": "x1", "name": "X1"})
+    assert response.status_code == 401
+
+
+def test_platform_core_v1_internal_requires_token() -> None:
+    response = client.post(
+        "/api/v1/internal/worker/run-once",
+    )
     assert response.status_code == 401

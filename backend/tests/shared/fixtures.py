@@ -14,7 +14,7 @@ def auth_headers_factory() -> Callable[[str, list[str]], dict[str, str]]:
     """Build Authorization headers for test users with explicit role sets."""
 
     def _factory(user_id: str, roles: list[str]) -> dict[str, str]:
-        token = create_access_token(user_id=user_id, roles=roles, auth_source="test")
+        token = create_access_token(user_id=user_id, roles=roles, auth_source="test", tenant_id=1)
         return {"Authorization": f"Bearer {token}"}
 
     return _factory

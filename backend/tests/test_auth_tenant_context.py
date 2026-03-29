@@ -46,8 +46,9 @@ def test_local_cookie_session_inherits_user_tenant_without_header() -> None:
 
     client.cookies.clear()
     login = client.post(
-        "/api/auth/mock-login",
+        "/api/auth/login",
         json={"login": tenant_b_login, "password": "TenantBpass123"},
+        headers={"X-Tenant-ID": str(tenant_b_id)},
     )
     assert login.status_code == 200, login.text
 
@@ -77,8 +78,9 @@ def test_local_session_cannot_override_tenant_header() -> None:
 
     client.cookies.clear()
     login = client.post(
-        "/api/auth/mock-login",
+        "/api/auth/login",
         json={"login": tenant_b_override_login, "password": "TenantBpass123"},
+        headers={"X-Tenant-ID": str(tenant_b_id)},
     )
     assert login.status_code == 200, login.text
 

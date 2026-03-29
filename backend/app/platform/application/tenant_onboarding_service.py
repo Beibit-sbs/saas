@@ -8,6 +8,9 @@ from app.platform.idempotency.service import IdempotencyService
 from app.platform.uow import UnitOfWork
 
 
+PLATFORM_TENANT_ID = 1
+
+
 class TenantOnboardingService:
     def __init__(self) -> None:
         self._idempotency = IdempotencyService()
@@ -106,7 +109,7 @@ class TenantOnboardingService:
             notification = uow.notification_repository.dispatch(
                 tenant_id=tenant_id,
                 channel="email",
-                target="owner@example.com",
+                target=actor,
                 subject="Tenant onboarding started",
                 payload={"tenant_id": tenant_id, "slug": slug},
                 conn=uow.conn,
@@ -143,7 +146,7 @@ class TenantOnboardingService:
             }
 
         result = self._idempotency.execute(
-            tenant_id=1,
+            tenant_id=PLATFORM_TENANT_ID,
             key=idempotency_key,
             operation="tenant_onboarding",
             request_payload=request_payload,

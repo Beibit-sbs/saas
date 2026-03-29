@@ -32,7 +32,6 @@ from app.modules.auth.mfa_service import clear_mfa_state
 from app.modules.auth.session_service import clear_sessions_state
 from app.modules.auth.token_service import create_access_token
 from app.modules.backup import service as backup_service
-from app.modules.example_notes import service as example_notes_service
 from app.modules.feature_flags import service as feature_flags_service
 from app.modules.i18n import service as i18n_service
 from app.modules.integrations import service as integrations_service
@@ -41,6 +40,8 @@ from app.modules.plans import service as plans_service
 from app.modules.quotas import service as quotas_service
 from app.modules.rbac import service as rbac_service
 from app.modules.observability.security_signals import clear_security_signal_state
+from app.modules.observability.alerts import clear_alert_state
+from app.modules.observability.metrics import clear_metrics_state
 from app.modules.security import rate_limit as rate_limit_service
 from app.modules.tenants import service as tenant_service
 from app.modules.usage import service as usage_service
@@ -59,7 +60,6 @@ from app.platform.webhooks import service as webhook_service
 
 
 client = TestClient(app)
-os.environ.setdefault("AUTH_DEV_DEMO_COMPATIBILITY", "true")
 os.environ.setdefault("RBAC_ALLOW_DEV_FALLBACK", "true")
 
 DEFAULT_FLAGS = copy.deepcopy(feature_flags_service._flags)
@@ -68,9 +68,10 @@ DEFAULT_FLAGS_BY_TENANT = {
     for tenant_id, store in feature_flags_service._flags_by_tenant.items()
 }
 DEFAULT_LANGUAGES = copy.deepcopy(i18n_service.languages)
+TEST_PLATFORM_TENANT_ID = 1
 
 
-def _sync_user_roles_for_tests(user_id: str, roles: list[str], tenant_id: int = 1) -> dict[str, object]:
+def _sync_user_roles_for_tests(user_id: str, roles: list[str], tenant_id: int) -> dict[str, object]:
     normalized_user_id = str(user_id or "").strip()
     if not normalized_user_id:
         raise ValueError("user_id is required")
@@ -94,24 +95,29 @@ def _sync_user_roles_for_tests(user_id: str, roles: list[str], tenant_id: int = 
     return {"user_id": normalized_user_id, "roles": sorted(synced_roles)}
 
 
-def _auth_headers(user_id: str, roles: list[str]) -> dict[str, str]:
+def _auth_headers(user_id: str, roles: list[str], tenant_id: int = TEST_PLATFORM_TENANT_ID) -> dict[str, str]:
     # Keep RBAC resolution consistent between in-memory and DB-backed test paths.
     # In DB mode, permission checks read assignments from app_user_roles, so we
     # mirror test token roles into trusted role assignments.
     for role in roles:
         try:
-            rbac_service.assign_role_to_user(tenant_id=1, user_id=user_id, role=role)
+            rbac_service.assign_role_to_user(tenant_id=int(tenant_id), user_id=user_id, role=role)
         except ValueError as exc:
             # Some tests intentionally use non-platform roles (e.g. "student")
             # to validate permission denial paths.
             if "unknown role" not in str(exc):
                 raise
-    token = create_access_token(user_id=user_id, roles=roles, auth_source="test")
+    token = create_access_token(
+        user_id=user_id,
+        roles=roles,
+        auth_source="test",
+        tenant_id=int(tenant_id),
+        permissions=sorted(rbac_service.resolve_permissions_for_tenant(roles, tenant_id=int(tenant_id))),
+    )
     return {"Authorization": f"Bearer {token}"}
 
 
 def _configure_db_only_role_resolution(monkeypatch, assignments: dict[str, list[str]]) -> None:
-    monkeypatch.setenv("AUTH_DEV_DEMO_COMPATIBILITY", "true")
     monkeypatch.setenv("RBAC_ALLOW_DEV_FALLBACK", "false")
     monkeypatch.setattr(
         rbac_service,
@@ -128,7 +134,8 @@ def _configure_db_only_role_resolution(monkeypatch, assignments: dict[str, list[
     monkeypatch.setattr(rbac_service, "_resolve_permissions_db", fake_resolve)
 
 
-ADMIN_HEADERS = _auth_headers("owner@example.com", ["admin"])
+ADMIN_HEADERS = _auth_headers("owner@example.com", ["admin"], tenant_id=TEST_PLATFORM_TENANT_ID)
+INTERNAL_HEADERS = {"Authorization": f"Bearer {os.environ['INTERNAL_API_TOKEN']}"}
 
 
 def _reset_local_user_store() -> None:
@@ -140,6 +147,8 @@ def _reset_local_user_store() -> None:
 
 def _reset_template_state() -> None:
     client.cookies.clear()
+    clear_alert_state()
+    clear_metrics_state()
     clear_security_signal_state()
     rate_limit_service.clear_rate_limit_state()
     ai_service.clear_ai_gateway_state()
@@ -147,7 +156,6 @@ def _reset_template_state() -> None:
     backup_service._backup_history.clear()
     jobs_service.clear_jobs_state()
     usage_service.clear_usage_state()
-    example_notes_service.clear_example_notes()
     integrations_service._settings.clear()
     integrations_service._fernet.cache_clear()
     university_core_service.clear_university_state()
@@ -163,6 +171,7 @@ def _reset_template_state() -> None:
     with UnitOfWork() as uow:
         uow.outbox_event_repository.clear_state(conn=uow.conn)
         uow.analytics_repository.clear_state()
+        uow.invoice_repository.clear_state(conn=uow.conn)
     webhook_service.clear_webhook_state()
     tenant_service.clear_tenant_state()
     plans_service.clear_plans_state()
@@ -187,7 +196,6 @@ def _reset_template_state() -> None:
 
 @pytest.fixture(autouse=True)
 def reset_shared_state(monkeypatch):
-    monkeypatch.setenv("AUTH_DEV_DEMO_COMPATIBILITY", "true")
     monkeypatch.setenv("RBAC_ALLOW_DEV_FALLBACK", "true")
     monkeypatch.setattr("app.modules.auth.router.sync_user_roles_from_trusted_source", _sync_user_roles_for_tests)
     monkeypatch.setattr("app.modules.admin.local_users_router.sync_user_roles_from_trusted_source", _sync_user_roles_for_tests)

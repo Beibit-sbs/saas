@@ -157,25 +157,51 @@ class WebhookRepository:
                 )
 
         if conn is not None and db_available() and psycopg is not None:
-            where_clauses = ["tenant_id = %s"]
-            params: list[Any] = [normalized_tenant_id]
-            if normalized_event_type is not None:
-                where_clauses.append("event_type = %s")
-                params.append(normalized_event_type)
-            if active_only:
-                where_clauses.append("is_active = true")
-            where_sql = " AND ".join(where_clauses)
             with conn.cursor() as cur:
-                cur.execute(
-                    f"""
-                    SELECT id, tenant_id, event_type, target_url, signing_secret, is_active, created_at, updated_at, version
-                    FROM app_platform_webhook_subscriptions
-                    WHERE {where_sql}
-                    ORDER BY created_at DESC, id DESC
-                    LIMIT %s
-                    """,
-                    (*params, normalized_limit),
-                )
+                if normalized_event_type is not None and active_only:
+                    cur.execute(
+                        """
+                        SELECT id, tenant_id, event_type, target_url, signing_secret, is_active, created_at, updated_at, version
+                        FROM app_platform_webhook_subscriptions
+                        WHERE tenant_id = %s AND event_type = %s AND is_active = true
+                        ORDER BY created_at DESC, id DESC
+                        LIMIT %s
+                        """,
+                        (normalized_tenant_id, normalized_event_type, normalized_limit),
+                    )
+                elif normalized_event_type is not None:
+                    cur.execute(
+                        """
+                        SELECT id, tenant_id, event_type, target_url, signing_secret, is_active, created_at, updated_at, version
+                        FROM app_platform_webhook_subscriptions
+                        WHERE tenant_id = %s AND event_type = %s
+                        ORDER BY created_at DESC, id DESC
+                        LIMIT %s
+                        """,
+                        (normalized_tenant_id, normalized_event_type, normalized_limit),
+                    )
+                elif active_only:
+                    cur.execute(
+                        """
+                        SELECT id, tenant_id, event_type, target_url, signing_secret, is_active, created_at, updated_at, version
+                        FROM app_platform_webhook_subscriptions
+                        WHERE tenant_id = %s AND is_active = true
+                        ORDER BY created_at DESC, id DESC
+                        LIMIT %s
+                        """,
+                        (normalized_tenant_id, normalized_limit),
+                    )
+                else:
+                    cur.execute(
+                        """
+                        SELECT id, tenant_id, event_type, target_url, signing_secret, is_active, created_at, updated_at, version
+                        FROM app_platform_webhook_subscriptions
+                        WHERE tenant_id = %s
+                        ORDER BY created_at DESC, id DESC
+                        LIMIT %s
+                        """,
+                        (normalized_tenant_id, normalized_limit),
+                    )
                 rows = cur.fetchall()
             return [self._subscription_row_to_api(row) for row in rows]
 

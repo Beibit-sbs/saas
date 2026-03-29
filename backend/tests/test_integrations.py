@@ -106,7 +106,7 @@ def test_ldap_admin_can_access_all_protected_ldap_ai_integrations_endpoints(monk
     assert login_response.status_code == 200
     assert assignments.get("ad.bob") == ["admin"]
 
-    token = create_access_token(user_id="ad.bob", roles=["admin"], auth_source="test")
+    token = create_access_token(user_id="ad.bob", roles=["admin"], auth_source="test", tenant_id=1)
     auth = {"Authorization": f"Bearer {token}"}
 
     r = client.get("/api/admin/ldap/status", headers=auth)

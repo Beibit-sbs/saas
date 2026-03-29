@@ -25,6 +25,11 @@ def get_ai_provider_status() -> dict[str, bool]:
     }
 
 
+def is_runtime_schema_bootstrap_enabled() -> bool:
+    # Operational default: schema is managed only by Alembic migrations.
+    return is_enabled(os.getenv("RUNTIME_SCHEMA_BOOTSTRAP_ENABLED", "false"))
+
+
 def get_auth_access_token_ttl_minutes() -> int:
     raw = os.getenv("AUTH_ACCESS_TOKEN_TTL_MINUTES", "15").strip()
     try:
@@ -77,25 +82,15 @@ def get_auth_csrf_cookie_same_site() -> str:
     return get_auth_cookie_same_site()
 
 
-def is_dev_demo_compatibility_mode() -> bool:
-    # Explicit switch for temporary compatibility behavior in dev/demo only.
-    return is_enabled(os.getenv("AUTH_DEV_DEMO_COMPATIBILITY", "false"))
-
-
 def allow_legacy_header_auth() -> bool:
-    # Legacy identity headers are disabled by default and can only be enabled
-    # when explicit dev/demo compatibility mode is turned on.
-    return is_dev_demo_compatibility_mode() and is_enabled(
-        os.getenv("AUTH_ALLOW_LEGACY_HEADERS", "false")
-    )
+    # Legacy identity headers are disabled by default and require explicit opt-in.
+    return is_enabled(os.getenv("AUTH_ALLOW_LEGACY_HEADERS", "false"))
 
 
 def allow_rbac_dev_fallback() -> bool:
     # Security default: in operational mode authorization must not trust client roles
     # when DB-backed RBAC is unavailable.
-    return is_dev_demo_compatibility_mode() and is_enabled(
-        os.getenv("RBAC_ALLOW_DEV_FALLBACK", "false")
-    )
+    return is_enabled(os.getenv("RBAC_ALLOW_DEV_FALLBACK", "false"))
 
 
 def get_auth_revocation_redis_url() -> str | None:
@@ -130,6 +125,22 @@ def get_rate_limit_login_identifier_limit() -> int:
     return _int_env("RATE_LIMIT_LOGIN_IDENTIFIER_LIMIT", 5, minimum=0, maximum=10000)
 
 
+def get_auth_lockout_threshold() -> int:
+    return _int_env("AUTH_LOGIN_LOCKOUT_THRESHOLD", 5, minimum=1, maximum=1000)
+
+
+def get_auth_lockout_base_seconds() -> int:
+    return _int_env("AUTH_LOGIN_LOCKOUT_BASE_SECONDS", 2, minimum=1, maximum=3600)
+
+
+def get_auth_lockout_max_seconds() -> int:
+    return _int_env("AUTH_LOGIN_LOCKOUT_MAX_SECONDS", 900, minimum=1, maximum=86400)
+
+
+def get_auth_lockout_reset_window_seconds() -> int:
+    return _int_env("AUTH_LOGIN_LOCKOUT_RESET_WINDOW_SECONDS", 1800, minimum=1, maximum=86400)
+
+
 def get_rate_limit_sensitive_admin_window_seconds() -> int:
     return _int_env("RATE_LIMIT_SENSITIVE_ADMIN_WINDOW_SECONDS", 60, minimum=1, maximum=3600)
 
@@ -149,6 +160,121 @@ def get_rate_limit_general_limit() -> int:
 def get_rate_limit_redis_url() -> str | None:
     raw = os.getenv("RATE_LIMIT_REDIS_URL", os.getenv("REDIS_URL", "")).strip()
     return raw or None
+
+
+def is_rate_limit_service_bypass_enabled() -> bool:
+    return is_enabled(os.getenv("RATE_LIMIT_SERVICE_BYPASS", "false"))
+
+
+def _rate_limit_class_window_env_name(traffic_class: str) -> str:
+    return f"RATE_LIMIT_{str(traffic_class).strip().upper()}_WINDOW_SECONDS"
+
+
+def _rate_limit_class_limit_env_name(traffic_class: str) -> str:
+    return f"RATE_LIMIT_{str(traffic_class).strip().upper()}_LIMIT"
+
+
+def _rate_limit_class_burst_limit_env_name(traffic_class: str) -> str:
+    return f"RATE_LIMIT_{str(traffic_class).strip().upper()}_BURST_LIMIT"
+
+
+def _rate_limit_class_burst_window_env_name(traffic_class: str) -> str:
+    return f"RATE_LIMIT_{str(traffic_class).strip().upper()}_BURST_WINDOW_SECONDS"
+
+
+def _rate_limit_class_defaults(traffic_class: str) -> tuple[int, int, int, int]:
+    normalized = str(traffic_class).strip().lower()
+    if normalized == "read":
+        return (60, 12000, 5, 2500)
+    if normalized == "write":
+        return (60, 8000, 5, 1800)
+    if normalized == "jobs":
+        return (60, 4000, 5, 1200)
+    if normalized == "auth":
+        return (60, 300, 10, 120)
+    if normalized == "internal":
+        return (60, 30000, 5, 5000)
+    # Backward compatibility fallback for unknown class.
+    return (get_rate_limit_general_window_seconds(), get_rate_limit_general_limit(), 5, 1000)
+
+
+def get_rate_limit_class_window_seconds(traffic_class: str) -> int:
+    default_window, _, _, _ = _rate_limit_class_defaults(traffic_class)
+    return _int_env(
+        _rate_limit_class_window_env_name(traffic_class),
+        default_window,
+        minimum=1,
+        maximum=3600,
+    )
+
+
+def get_rate_limit_class_limit(traffic_class: str) -> int:
+    _, default_limit, _, _ = _rate_limit_class_defaults(traffic_class)
+    return _int_env(
+        _rate_limit_class_limit_env_name(traffic_class),
+        default_limit,
+        minimum=0,
+        maximum=500000,
+    )
+
+
+def get_rate_limit_class_burst_window_seconds(traffic_class: str) -> int:
+    _, _, default_window, _ = _rate_limit_class_defaults(traffic_class)
+    return _int_env(
+        _rate_limit_class_burst_window_env_name(traffic_class),
+        default_window,
+        minimum=1,
+        maximum=120,
+    )
+
+
+def get_rate_limit_class_burst_limit(traffic_class: str) -> int:
+    _, _, _, default_limit = _rate_limit_class_defaults(traffic_class)
+    return _int_env(
+        _rate_limit_class_burst_limit_env_name(traffic_class),
+        default_limit,
+        minimum=0,
+        maximum=500000,
+    )
+
+
+def get_rate_limit_endpoint_overrides() -> list[dict[str, object]]:
+    raw = os.getenv("RATE_LIMIT_ENDPOINT_OVERRIDES_JSON", "").strip()
+    if not raw:
+        return []
+    try:
+        payload = json.loads(raw)
+    except Exception:
+        return []
+    if not isinstance(payload, list):
+        return []
+
+    normalized: list[dict[str, object]] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        path_pattern = str(item.get("path_pattern", "")).strip()
+        if not path_pattern:
+            continue
+        traffic_class = str(item.get("class", "")).strip().lower()
+        if traffic_class not in {"read", "write", "jobs", "auth", "internal"}:
+            continue
+        method = str(item.get("method", "*")).strip().upper() or "*"
+        normalized_item: dict[str, object] = {
+            "path_pattern": path_pattern,
+            "class": traffic_class,
+            "method": method,
+        }
+        if isinstance(item.get("limit"), int):
+            normalized_item["limit"] = int(item["limit"])
+        if isinstance(item.get("window_seconds"), int):
+            normalized_item["window_seconds"] = int(item["window_seconds"])
+        if isinstance(item.get("burst_limit"), int):
+            normalized_item["burst_limit"] = int(item["burst_limit"])
+        if isinstance(item.get("burst_window_seconds"), int):
+            normalized_item["burst_window_seconds"] = int(item["burst_window_seconds"])
+        normalized.append(normalized_item)
+    return normalized
 
 
 def get_metrics_allowed_ips() -> set[str]:
@@ -172,6 +298,43 @@ def get_metrics_token() -> str | None:
     """
     raw = os.getenv("METRICS_TOKEN", "").strip()
     return raw or None
+
+
+def get_ops_alert_webhook_url() -> str | None:
+    raw = os.getenv("OPS_ALERT_WEBHOOK_URL", "").strip()
+    return raw or None
+
+
+def get_ops_alert_cooldown_seconds() -> int:
+    return _int_env("OPS_ALERT_COOLDOWN_SECONDS", 300, minimum=30, maximum=3600)
+
+
+def get_ops_login_failure_spike_threshold() -> int:
+    return _int_env("OPS_LOGIN_FAILURE_SPIKE_THRESHOLD", 5, minimum=1, maximum=10000)
+
+
+def get_ops_jobs_failure_spike_threshold() -> int:
+    return _int_env("OPS_JOBS_FAILURE_SPIKE_THRESHOLD", 5, minimum=1, maximum=10000)
+
+
+def get_ops_latency_p95_threshold_ms() -> int:
+    return _int_env("OPS_LATENCY_P95_THRESHOLD_MS", 1000, minimum=50, maximum=60000)
+
+
+def get_ops_latency_p99_threshold_ms() -> int:
+    return _int_env("OPS_LATENCY_P99_THRESHOLD_MS", 2500, minimum=50, maximum=120000)
+
+
+def get_ops_worker_stale_seconds() -> int:
+    return _int_env("OPS_WORKER_STALE_SECONDS", 180, minimum=10, maximum=3600)
+
+
+def get_ops_scheduler_stale_seconds() -> int:
+    return _int_env("OPS_SCHEDULER_STALE_SECONDS", 300, minimum=10, maximum=7200)
+
+
+def get_ops_probe_timeout_seconds() -> int:
+    return _int_env("OPS_PROBE_TIMEOUT_SECONDS", 2, minimum=1, maximum=15)
 
 
 def get_required_runtime_config() -> dict[str, str]:

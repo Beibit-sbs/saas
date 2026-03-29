@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from tests.conftest import ADMIN_HEADERS, client
+from tests.conftest import ADMIN_HEADERS, INTERNAL_HEADERS, client
 
 from app.platform.context import service as context_service
 from app.platform.context.repository import ContextRepository
@@ -525,6 +525,7 @@ def test_internal_context_student_endpoint_returns_profile(reset_shared_state) -
 
     resp = client.get(
         f"/api/v1/internal/context/student/int-stu-1?tenant_id={tenant_id}",
+        headers=INTERNAL_HEADERS,
     )
     assert resp.status_code == 200
     body = resp.json()

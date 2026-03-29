@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
+import threading
+from typing import Generator
 
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 logger = logging.getLogger(__name__)
-
 
 class Base(DeclarativeBase):
     pass
@@ -65,3 +67,61 @@ def make_session_factory(engine: Engine) -> sessionmaker:
     default used by the SQLAlchemy docs and most FastAPI patterns.
     """
     return sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+
+# ---------------------------------------------------------------------------
+# Process-level singleton engine & raw-connection pool
+# ---------------------------------------------------------------------------
+_engine_lock = threading.Lock()
+_shared_engine: Engine | None = None
+
+
+def _get_shared_engine() -> Engine | None:
+    global _shared_engine
+    if _shared_engine is not None:
+        return _shared_engine
+    with _engine_lock:
+        if _shared_engine is not None:
+            return _shared_engine
+        url = os.environ.get("DATABASE_URL", "").strip()
+        if not url:
+            return None
+        try:
+            _shared_engine = build_engine(pool_size=10, max_overflow=20)
+        except Exception:
+            return None
+    return _shared_engine
+
+
+@contextlib.contextmanager
+def get_raw_conn() -> Generator:
+    """Yield a native psycopg connection borrowed from the process-level pool.
+
+    Usage matches ``psycopg.connect()`` — the connection supports
+    ``conn.cursor()``, ``conn.commit()``, ``conn.rollback()``.
+    Commits/rollbacks are the caller's responsibility; the context manager
+    only returns the connection to the pool on exit.
+
+    Falls back to ``None`` when ``DATABASE_URL`` is absent (test isolation).
+    """
+    engine = _get_shared_engine()
+    if engine is None:
+        yield None
+        return
+    raw = engine.raw_connection()
+    try:
+        yield raw
+    except Exception:
+        try:
+            raw.rollback()
+        except Exception:
+            pass
+        raise
+    finally:
+        # Always rollback before returning to pool to clean up any
+        # uncommitted state (especially from read-only callers that never commit).
+        try:
+            raw.rollback()
+        except Exception:
+            pass
+        raw.close()  # returns to pool, does NOT drop the physical connection

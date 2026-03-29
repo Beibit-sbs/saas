@@ -10,6 +10,7 @@ from app.modules.rbac.service import is_platform_admin
 
 public_router = APIRouter(prefix="/api/i18n", tags=["i18n"])
 admin_router = APIRouter(prefix="/api/admin/i18n", tags=["i18n-admin"])
+PLATFORM_TENANT_ID = 1
 
 
 def _require_platform_tenant_context(
@@ -18,7 +19,7 @@ def _require_platform_tenant_context(
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
     claims = resolve_current_user_claims(request, authorization)
-    if int(claims.tenant_id) == 1:
+    if int(claims.tenant_id) == PLATFORM_TENANT_ID:
         return actor
     if is_platform_admin(actor):
         return actor
@@ -67,7 +68,7 @@ def create_language(
 
     log_admin_action(
         actor=actor,
-        tenant_id=1,
+        tenant_id=PLATFORM_TENANT_ID,
         action="i18n.languages.create",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -94,7 +95,7 @@ def update_language_status(
 
     log_admin_action(
         actor=actor,
-        tenant_id=1,
+        tenant_id=PLATFORM_TENANT_ID,
         action="i18n.languages.update",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -120,7 +121,7 @@ def remove_language(
 
     log_admin_action(
         actor=actor,
-        tenant_id=1,
+        tenant_id=PLATFORM_TENANT_ID,
         action="i18n.languages.delete",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",

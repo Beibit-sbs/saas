@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from tests.conftest import ADMIN_HEADERS, client
+from tests.conftest import ADMIN_HEADERS, INTERNAL_HEADERS, client
 
 from app.platform.billing import service as billing_service
 from app.platform.events.handlers.analytics_handler import AnalyticsEventHandler
@@ -152,12 +152,12 @@ def test_internal_kpi_refresh_endpoints(reset_shared_state) -> None:
     tenant_id = _create_tenant("kpi-internal")
     _emit_analytics_event(tenant_id=tenant_id, event_type="student.created", event_id=6001)
 
-    single = client.post(f"/api/v1/internal/platform/kpi/refresh/{tenant_id}")
+    single = client.post(f"/api/v1/internal/platform/kpi/refresh/{tenant_id}", headers=INTERNAL_HEADERS)
     assert single.status_code == 200, single.text
     one = single.json()
     assert one["tenant_id"] == tenant_id
 
-    bulk = client.post("/api/v1/internal/platform/kpi/refresh")
+    bulk = client.post("/api/v1/internal/platform/kpi/refresh", headers=INTERNAL_HEADERS)
     assert bulk.status_code == 200, bulk.text
     all_res = bulk.json()
     assert all_res["tenants_total"] >= 1

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from app.core.db import get_raw_conn
+from app.core.config import is_runtime_schema_bootstrap_enabled
+
 from collections import deque
 from contextvars import ContextVar, Token
 from datetime import datetime, timezone
@@ -20,6 +23,8 @@ logger = logging.getLogger("app.audit")
 _MAX_AUDIT_EVENTS = 1000
 _audit_events: deque[dict[str, Any]] = deque(maxlen=_MAX_AUDIT_EVENTS)
 _audit_lock = Lock()
+_audit_schema_lock = Lock()
+_audit_schema_ready = False
 _request_tenant_id_var: ContextVar[int | None] = ContextVar("audit_request_tenant_id", default=None)
 
 
@@ -96,6 +101,8 @@ def _parse_timestamp(value: str) -> datetime:
 
 
 def _ensure_table(conn) -> None:
+    if not is_runtime_schema_bootstrap_enabled():
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -109,7 +116,7 @@ def _ensure_table(conn) -> None:
                 ip TEXT NOT NULL,
                 result TEXT NOT NULL,
                 correlation_id TEXT NOT NULL,
-                tenant_id BIGINT NOT NULL DEFAULT 1 REFERENCES app_tenants(id),
+                tenant_id BIGINT NOT NULL REFERENCES app_tenants(id),
                 metadata JSONB NOT NULL DEFAULT '{}'::jsonb
             )
             """
@@ -118,8 +125,18 @@ def _ensure_table(conn) -> None:
             "ALTER TABLE app_audit_events ADD COLUMN IF NOT EXISTS tenant_id BIGINT"
         )
         cur.execute(
-            # Backfill legacy rows created before tenant-aware writes were enforced.
-            "UPDATE app_audit_events SET tenant_id = 1 WHERE tenant_id IS NULL"
+            "ALTER TABLE app_audit_events ALTER COLUMN tenant_id DROP DEFAULT"
+        )
+        cur.execute(
+            """
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM app_audit_events WHERE tenant_id IS NULL) THEN
+                    RAISE EXCEPTION 'audit tenant remediation required: app_audit_events has NULL tenant_id rows';
+                END IF;
+            END
+            $$;
+            """
         )
         cur.execute(
             "ALTER TABLE app_audit_events ALTER COLUMN tenant_id SET NOT NULL"
@@ -152,6 +169,17 @@ def _ensure_table(conn) -> None:
 def _append_memory(event: dict[str, Any]) -> None:
     with _audit_lock:
         _audit_events.appendleft(event)
+
+
+def _ensure_table_once(conn) -> None:
+    global _audit_schema_ready
+    if _audit_schema_ready:
+        return
+    with _audit_schema_lock:
+        if _audit_schema_ready:
+            return
+        _ensure_table(conn)
+        _audit_schema_ready = True
 
 
 def _list_memory(
@@ -227,8 +255,8 @@ def _insert_db(event: dict[str, Any]) -> None:
     if not db_url or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(db_url) as conn:
-        _ensure_table(conn)
+    with get_raw_conn() as conn:
+        _ensure_table_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -304,8 +332,8 @@ def _list_db(
 
     where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
 
-    with psycopg.connect(db_url) as conn:
-        _ensure_table(conn)
+    with get_raw_conn() as conn:
+        _ensure_table_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 f"""
@@ -327,8 +355,8 @@ def _clear_db() -> None:
     if not db_url or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(db_url) as conn:
-        _ensure_table(conn)
+    with get_raw_conn() as conn:
+        _ensure_table_once(conn)
         with conn.cursor() as cur:
             cur.execute("DELETE FROM app_audit_events")
         conn.commit()

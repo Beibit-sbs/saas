@@ -1,3 +1,5 @@
+from app.core.db import get_raw_conn
+from app.core.config import is_runtime_schema_bootstrap_enabled
 import re
 import os
 from dataclasses import dataclass
@@ -55,6 +57,8 @@ def _use_database() -> bool:
 
 
 def _ensure_schema_and_seed(conn) -> None:
+    if not is_runtime_schema_bootstrap_enabled():
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -89,7 +93,7 @@ def _list_languages_from_db(enabled_only: bool) -> list[dict[str, str | bool]]:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url()) as conn:
+    with get_raw_conn() as conn:
         _ensure_schema_and_seed(conn)
         with conn.cursor() as cur:
             if enabled_only:
@@ -128,7 +132,7 @@ def _add_language_to_db(code: str, name: str, native_name: str) -> dict[str, str
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url()) as conn:
+    with get_raw_conn() as conn:
         _ensure_schema_and_seed(conn)
         with conn.cursor() as cur:
             cur.execute("SELECT 1 FROM app_languages WHERE code = %s", (code,))
@@ -158,7 +162,7 @@ def _set_language_enabled_db(code: str, enabled: bool) -> dict[str, str | bool]:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url()) as conn:
+    with get_raw_conn() as conn:
         _ensure_schema_and_seed(conn)
         with conn.cursor() as cur:
             cur.execute(
@@ -194,7 +198,7 @@ def _delete_language_db(code: str) -> None:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url()) as conn:
+    with get_raw_conn() as conn:
         _ensure_schema_and_seed(conn)
         with conn.cursor() as cur:
             cur.execute("SELECT system FROM app_languages WHERE code = %s", (code,))

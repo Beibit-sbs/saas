@@ -15,6 +15,7 @@ from app.platform.webhooks.signer import build_webhook_signature, canonical_json
 
 
 logger = logging.getLogger("app.platform.webhooks")
+PLATFORM_TENANT_ID = 1
 
 
 def _utc_now() -> datetime:
@@ -353,7 +354,7 @@ class WebhookService:
 
         log_admin_action(
             actor=actor,
-            tenant_id=1,
+            tenant_id=PLATFORM_TENANT_ID,
             action="platform_core.webhook.delivery.retry",
             path="/api/v1/internal/webhooks/retry-failed",
             client_ip="application-service",

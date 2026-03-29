@@ -8,6 +8,9 @@ from app.platform.idempotency.service import IdempotencyService
 from app.platform.uow import UnitOfWork
 
 
+PLATFORM_TENANT_ID = 1
+
+
 class NotificationDispatchService:
     def __init__(self) -> None:
         self._idempotency = IdempotencyService()
@@ -169,7 +172,7 @@ class NotificationDispatchService:
 
         log_admin_action(
             actor=actor,
-            tenant_id=1,
+            tenant_id=PLATFORM_TENANT_ID,
             action="platform_core.notification.retry",
             path="/api/v1/internal/scheduler/run-once",
             client_ip="application-service",

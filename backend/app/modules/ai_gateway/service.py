@@ -1,4 +1,6 @@
 from __future__ import annotations
+from app.core.db import get_raw_conn
+from app.core.config import is_runtime_schema_bootstrap_enabled
 
 import json
 import os
@@ -248,11 +250,13 @@ def enforce_rate_limit(provider: str, actor: str, roles: list[str]) -> dict[str,
 
 
 def _ensure_ai_gateway_tables(conn) -> None:
+    if not is_runtime_schema_bootstrap_enabled():
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS app_ai_models (
-                tenant_id BIGINT NOT NULL DEFAULT 1,
+                tenant_id BIGINT NOT NULL,
                 model_key TEXT NOT NULL,
                 provider TEXT NOT NULL,
                 provider_model_id TEXT NOT NULL,
@@ -267,7 +271,18 @@ def _ensure_ai_gateway_tables(conn) -> None:
             """
         )
         cur.execute("ALTER TABLE app_ai_models ADD COLUMN IF NOT EXISTS tenant_id BIGINT")
-        cur.execute("UPDATE app_ai_models SET tenant_id = 1 WHERE tenant_id IS NULL")
+        cur.execute("ALTER TABLE app_ai_models ALTER COLUMN tenant_id DROP DEFAULT")
+        cur.execute(
+            """
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM app_ai_models WHERE tenant_id IS NULL) THEN
+                    RAISE EXCEPTION 'ai gateway remediation required: app_ai_models has NULL tenant_id rows';
+                END IF;
+            END
+            $$;
+            """
+        )
         cur.execute("ALTER TABLE app_ai_models ALTER COLUMN tenant_id SET NOT NULL")
         cur.execute(
             """
@@ -307,7 +322,7 @@ def _ensure_ai_gateway_tables(conn) -> None:
             """
             CREATE TABLE IF NOT EXISTS app_ai_usage_logs (
                 id BIGSERIAL PRIMARY KEY,
-                tenant_id BIGINT NOT NULL DEFAULT 1,
+                tenant_id BIGINT NOT NULL,
                 timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 actor TEXT NOT NULL,
                 provider TEXT NOT NULL,
@@ -324,7 +339,18 @@ def _ensure_ai_gateway_tables(conn) -> None:
             """
         )
         cur.execute("ALTER TABLE app_ai_usage_logs ADD COLUMN IF NOT EXISTS tenant_id BIGINT")
-        cur.execute("UPDATE app_ai_usage_logs SET tenant_id = 1 WHERE tenant_id IS NULL")
+        cur.execute("ALTER TABLE app_ai_usage_logs ALTER COLUMN tenant_id DROP DEFAULT")
+        cur.execute(
+            """
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM app_ai_usage_logs WHERE tenant_id IS NULL) THEN
+                    RAISE EXCEPTION 'ai gateway remediation required: app_ai_usage_logs has NULL tenant_id rows';
+                END IF;
+            END
+            $$;
+            """
+        )
         cur.execute("ALTER TABLE app_ai_usage_logs ALTER COLUMN tenant_id SET NOT NULL")
         cur.execute(
             "CREATE INDEX IF NOT EXISTS ix_app_ai_usage_logs_tenant_timestamp ON app_ai_usage_logs (tenant_id, timestamp DESC)"
@@ -465,7 +491,7 @@ def _list_models_db(*, include_disabled: bool = True, tenant_id: int) -> list[di
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=tenant_id)
         _seed_default_models_db(conn, tenant_id)
@@ -497,7 +523,7 @@ def _upsert_model_db(entry: dict[str, object], *, tenant_id: int) -> dict[str, o
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=tenant_id)
         with conn.cursor() as cur:
@@ -539,7 +565,7 @@ def _set_model_enabled_db(model_key: str, enabled: bool, *, tenant_id: int) -> d
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=tenant_id)
         with conn.cursor() as cur:
@@ -565,7 +591,7 @@ def _resolve_model_db(model_key: str, *, tenant_id: int) -> dict[str, object] | 
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=tenant_id)
         _seed_default_models_db(conn, tenant_id)
@@ -589,7 +615,7 @@ def _insert_usage_log_db(entry: dict[str, object]) -> None:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=int(entry["tenant_id"]))
         with conn.cursor() as cur:
@@ -636,7 +662,7 @@ def _list_usage_logs_db(limit: int, *, tenant_id: int) -> list[dict[str, object]
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=tenant_id)
         with conn.cursor() as cur:

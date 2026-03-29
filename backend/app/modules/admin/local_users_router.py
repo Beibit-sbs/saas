@@ -79,6 +79,7 @@ def create_local_user(
     sync_user_roles_from_trusted_source(
         str(created["user_id"]),
         [str(value) for value in created.get("roles", [])],
+        tenant_id=int(tenant["id"]),
     )
     log_admin_action(
         actor=actor,
@@ -113,6 +114,7 @@ def update_local_user(
     sync_user_roles_from_trusted_source(
         str(updated["user_id"]),
         [str(value) for value in updated.get("roles", [])],
+        tenant_id=int(tenant["id"]),
     )
     log_admin_action(
         actor=actor,
@@ -137,7 +139,7 @@ def delete_local_user(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
     local_user_store.delete_user(user_id, tenant_id=int(tenant["id"]))
-    clear_user_roles_for_user(user_id)
+    clear_user_roles_for_user(user_id, tenant_id=int(tenant["id"]))
     log_admin_action(
         actor=actor,
         tenant_id=int(tenant["id"]),

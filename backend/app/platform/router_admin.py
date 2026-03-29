@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.modules.audit.service import log_admin_action
-from app.modules.rbac.security import get_actor
+from app.modules.rbac.security import get_actor, resolve_current_user_claims
 from app.platform.analytics import service as analytics_service
 from app.platform.analytics.schemas import AnalyticsEventProjectionListSchema, AnalyticsEventProjectionRead, TenantKpiSnapshotRead
 from app.platform.ai import service as ai_service
@@ -89,6 +89,14 @@ router = APIRouter(prefix="/api/v1/admin", tags=["platform-core-admin"])
 
 
 Actor = Annotated[str, Depends(get_actor)]
+
+
+def _require_request_tenant_id(request: Request) -> int:
+    claims = resolve_current_user_claims(request, request.headers.get("authorization"))
+    tenant_id = int(claims.tenant_id)
+    if tenant_id <= 0:
+        raise HTTPException(status_code=403, detail="invalid tenant context")
+    return tenant_id
 
 
 def _audit(request: Request, actor: str, action: str, tenant_id: int, metadata: dict[str, object] | None = None) -> None:
@@ -536,8 +544,7 @@ def instantiate_automation_template(
     request: Request,
 ) -> AutomationRuleReadSchema:
     """Instantiate an automation template into a new rule for the tenant."""
-    # Extract tenant_id from request headers or context
-    tenant_id = 1  # Default to 1 for consistency with pattern; can be extended to use claims
+    tenant_id = _require_request_tenant_id(request)
 
     with UnitOfWork() as uow:
         rule = automation_template_service.instantiate_template(
@@ -700,11 +707,7 @@ def create_developer_app(
     actor: Actor,
     request: Request,
 ) -> DeveloperAppSecretReadSchema:
-    tenant_id_header = request.headers.get("x-tenant-id", "1")
-    try:
-        tenant_id = int(tenant_id_header)
-    except (TypeError, ValueError) as exc:
-        raise HTTPException(status_code=400, detail="invalid tenant header") from exc
+    tenant_id = _require_request_tenant_id(request)
 
     try:
         app = developer_service.developer_service.create_app(
@@ -717,13 +720,13 @@ def create_developer_app(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    _audit(request, actor, "platform_core.developer_app.create", 1, {"app_key": app["app_key"]})
+    _audit(request, actor, "platform_core.developer_app.create", tenant_id, {"app_key": app["app_key"]})
     return DeveloperAppSecretReadSchema.model_validate(app)
 
 
 @router.get("/platform/developer/apps", response_model=list[DeveloperAppReadSchema])
 def list_developer_apps(request: Request, _actor: Actor) -> list[DeveloperAppReadSchema]:
-    tenant_id = int(request.headers.get("x-tenant-id", 1))
+    tenant_id = _require_request_tenant_id(request)
     return [DeveloperAppReadSchema.model_validate(item) for item in developer_service.developer_service.list_apps(tenant_id=tenant_id)]
 
 
@@ -748,11 +751,7 @@ def install_developer_app(
     actor: Actor,
     request: Request,
 ) -> DeveloperAppInstallationReadSchema:
-    tenant_id_header = request.headers.get("x-tenant-id", "1")
-    try:
-        request_tenant_id = int(tenant_id_header)
-    except (TypeError, ValueError) as exc:
-        raise HTTPException(status_code=400, detail="invalid tenant header") from exc
+    request_tenant_id = _require_request_tenant_id(request)
     if request_tenant_id != int(body.tenant_id):
         raise HTTPException(status_code=403, detail="cross-tenant installation denied")
 

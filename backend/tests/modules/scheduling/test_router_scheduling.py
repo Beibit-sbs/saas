@@ -29,7 +29,7 @@ def _enable_scheduling_permissions_for_admin(monkeypatch: pytest.MonkeyPatch):
         monkeypatch,
         {
             "owner@example.com": ["admin"],
-            "student.no.scheduling@example.com": ["student"],
+            "student.no.scheduling@example.com": [],
         },
     )
 
@@ -51,7 +51,7 @@ def admin_headers() -> dict[str, str]:
 
 @pytest.fixture
 def student_headers() -> dict[str, str]:
-    return _auth_headers("student.no.scheduling@example.com", ["student"])
+    return _auth_headers("student.no.scheduling@example.com", [])
 
 
 def _section_schema() -> CourseSectionReadSchema:
@@ -149,7 +149,10 @@ def test_detect_conflicts_success(
     assert payload["room_conflict_section_id"] == 2209
 
 
-def test_get_student_schedule_requires_read_permission(student_headers: dict[str, str]) -> None:
+def test_get_student_schedule_requires_read_permission(
+    override_scheduling_db: MagicMock,
+    student_headers: dict[str, str],
+) -> None:
     response = client.get("/api/admin/scheduling/schedules/students/501", headers=student_headers)
     assert response.status_code == 403, response.text
 

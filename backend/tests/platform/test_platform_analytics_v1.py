@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from uuid import uuid4
 
-from tests.conftest import ADMIN_HEADERS, client
+from tests.conftest import ADMIN_HEADERS, INTERNAL_HEADERS, client
 
 from app.platform.analytics import service as analytics_service
 from app.platform.analytics.repository import AnalyticsRepository
@@ -312,6 +312,7 @@ def test_internal_api_kpi_refresh(reset_shared_state) -> None:
 
     resp = client.post(
         f"/api/v1/internal/analytics/tenants/{tid}/kpis/refresh",
+        headers=INTERNAL_HEADERS,
     )
     assert resp.status_code == 200, resp.text
     body = resp.json()

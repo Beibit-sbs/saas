@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.core.db import get_raw_conn
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import os
@@ -91,7 +93,7 @@ def _row_to_dict(row: object) -> dict[str, object]:
 def _list_tenants_db() -> list[dict[str, object]]:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
+    with get_raw_conn() as conn:
         rows = conn.execute(
             "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants ORDER BY id"
         ).fetchall()
@@ -101,7 +103,7 @@ def _list_tenants_db() -> list[dict[str, object]]:
 def _create_tenant_db(payload: dict[str, object]) -> dict[str, object]:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
+    with get_raw_conn() as conn:
         row = conn.execute(
             """
             INSERT INTO app_tenants (slug, name, status, plan_id, created_at, updated_at)
@@ -122,7 +124,7 @@ def _create_tenant_db(payload: dict[str, object]) -> dict[str, object]:
 def _update_tenant_db(tenant_id: int, payload: dict[str, object]) -> dict[str, object]:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
+    with get_raw_conn() as conn:
         existing = conn.execute(
             "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants WHERE id = %s",
             (tenant_id,),
@@ -147,7 +149,7 @@ def _update_tenant_db(tenant_id: int, payload: dict[str, object]) -> dict[str, o
 def _delete_tenant_db(tenant_id: int) -> dict[str, object]:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
+    with get_raw_conn() as conn:
         row = conn.execute(
             """
             UPDATE app_tenants SET status = 'inactive', updated_at = NOW()
@@ -165,7 +167,7 @@ def _delete_tenant_db(tenant_id: int) -> dict[str, object]:
 def _get_tenant_db(tenant_id: int) -> dict[str, object] | None:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
+    with get_raw_conn() as conn:
         row = conn.execute(
             "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants WHERE id = %s",
             (tenant_id,),
@@ -176,7 +178,7 @@ def _get_tenant_db(tenant_id: int) -> dict[str, object] | None:
 def _get_tenant_by_slug_db(slug: str) -> dict[str, object] | None:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
+    with get_raw_conn() as conn:
         row = conn.execute(
             "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants WHERE slug = %s",
             (slug,),
@@ -337,7 +339,7 @@ def force_delete_tenant(tenant_id: int) -> bool:
         try:
             url = _db_url()
             assert url
-            with psycopg.connect(url) as conn:
+            with get_raw_conn() as conn:
                 with conn.cursor() as cur:
                     cur.execute("DELETE FROM app_user_roles WHERE tenant_id = %s", (normalized_tenant_id,))
                     cur.execute("DELETE FROM app_role_permissions WHERE tenant_id = %s", (normalized_tenant_id,))

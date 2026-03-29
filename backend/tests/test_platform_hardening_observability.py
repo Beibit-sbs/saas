@@ -4,12 +4,15 @@ import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from app.main import app
+from app.modules.auth.token_service import create_access_token
 from app.platform.events.publisher import EventPublisher
 from app.platform.runtime_state import clear_runtime_state, record_scheduler_run, record_worker_heartbeat
 from app.platform.uow import UnitOfWork
 from app.platform.webhooks.service import webhook_service
-from tests.conftest import client
+from tests.conftest import ADMIN_HEADERS, client
 
 
 class _RecordCollector(logging.Handler):
@@ -21,8 +24,25 @@ class _RecordCollector(logging.Handler):
         self.records.append(record)
 
 
+class _FakeRedisRuntimeClient:
+    def __init__(self) -> None:
+        self._store: dict[str, str] = {}
+
+    def ping(self) -> bool:
+        return True
+
+    def set(self, key: str, value: str) -> None:
+        self._store[key] = value
+
+    def get(self, key: str) -> str | None:
+        return self._store.get(key)
+
+    def delete(self, key: str) -> None:
+        self._store.pop(key, None)
+
+
 def test_request_id_is_generated_and_echoed() -> None:
-    response = client.get("/health")
+    response = client.get("/health", headers=ADMIN_HEADERS)
 
     assert response.status_code == 200
     request_id = response.headers.get("x-request-id")
@@ -33,14 +53,14 @@ def test_request_id_is_generated_and_echoed() -> None:
 def test_request_id_reuses_incoming_header() -> None:
     incoming_request_id = "req-integration-123"
 
-    response = client.get("/health", headers={"X-Request-ID": incoming_request_id})
+    response = client.get("/health", headers={**ADMIN_HEADERS, "X-Request-ID": incoming_request_id})
 
     assert response.status_code == 200
     assert response.headers.get("x-request-id") == incoming_request_id
 
 
 def test_health_endpoint_returns_ok_payload() -> None:
-    response = client.get("/health")
+    response = client.get("/health", headers=ADMIN_HEADERS)
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "service": "api"}
@@ -50,7 +70,7 @@ def test_health_db_returns_unreachable_when_session_factory_is_missing() -> None
     original_factory = getattr(app.state, "admissions_session_factory", None)
     app.state.admissions_session_factory = None
     try:
-        response = client.get("/health/db")
+        response = client.get("/health/db", headers=ADMIN_HEADERS)
     finally:
         app.state.admissions_session_factory = original_factory
 
@@ -76,7 +96,7 @@ def test_health_db_returns_ok_when_database_is_reachable() -> None:
     original_factory = getattr(app.state, "admissions_session_factory", None)
     app.state.admissions_session_factory = _FakeSessionFactory()
     try:
-        response = client.get("/health/db")
+        response = client.get("/health/db", headers=ADMIN_HEADERS)
     finally:
         app.state.admissions_session_factory = original_factory
 
@@ -86,10 +106,10 @@ def test_health_db_returns_ok_when_database_is_reachable() -> None:
 
 def test_metrics_endpoint_is_available_and_contains_http_metrics() -> None:
     # Make at least one request so counters are populated.
-    health_response = client.get("/health")
+    health_response = client.get("/health", headers=ADMIN_HEADERS)
     assert health_response.status_code == 200
 
-    response = client.get("/metrics")
+    response = client.get("/metrics", headers=ADMIN_HEADERS)
 
     assert response.status_code == 200
     assert "http_requests_total" in response.text
@@ -178,7 +198,7 @@ def test_ops_and_latency_metrics_are_normalized() -> None:
             conn=uow.conn,
         )
 
-    ops_response = client.get("/metrics/ops")
+    ops_response = client.get("/metrics/ops", headers=ADMIN_HEADERS)
     assert ops_response.status_code == 200
     ops_payload = ops_response.json()
     assert ops_payload["failed_webhooks"] >= 1
@@ -191,7 +211,7 @@ def test_ops_and_latency_metrics_are_normalized() -> None:
     assert "worker_last_heartbeat" in ops_payload
     assert "scheduler_last_run" in ops_payload
 
-    latency_response = client.get("/metrics/latency")
+    latency_response = client.get("/metrics/latency", headers=ADMIN_HEADERS)
     assert latency_response.status_code == 200
     latency_payload = latency_response.json()
     assert "developer_api_error_count" in latency_payload
@@ -202,13 +222,17 @@ def test_request_log_contains_structured_fields() -> None:
     collector = _RecordCollector()
     request_logger = logging.getLogger("app.request")
     request_logger.addHandler(collector)
+    superadmin_headers = {
+        "Authorization": f"Bearer {create_access_token('platform.owner@example.com', ['superadmin'], 'test', tenant_id=1)}",
+    }
 
     try:
         response = client.get(
             "/health",
             headers={
+                **superadmin_headers,
                 "X-Request-ID": "req-log-123",
-                "X-Tenant-ID": "42",
+                "X-Tenant-ID": "1",
                 "X-Actor-ID": "actor-xyz",
             },
         )
@@ -222,15 +246,15 @@ def test_request_log_contains_structured_fields() -> None:
 
     record = http_records[-1]
     assert getattr(record, "request_id", None) == "req-log-123"
-    assert getattr(record, "tenant_id", None) == "42"
-    assert getattr(record, "actor_id", None) == "actor-xyz"
+    assert getattr(record, "tenant_id", None) == "1"
+    assert getattr(record, "actor_id", None) == "platform.owner@example.com"
     assert getattr(record, "method", None) == "GET"
     assert getattr(record, "path", None) == "/health"
     assert getattr(record, "status_code", None) == 200
     assert isinstance(getattr(record, "duration_ms", None), float)
 
 
-def test_health_comprehensive_reports_degraded_when_worker_and_scheduler_missing() -> None:
+def test_health_comprehensive_reports_degraded_when_worker_and_scheduler_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     class _FakeSession:
         def __enter__(self):
             return self
@@ -245,11 +269,22 @@ def test_health_comprehensive_reports_degraded_when_worker_and_scheduler_missing
         def __call__(self):
             return _FakeSession()
 
+    fake_runtime_redis = _FakeRedisRuntimeClient()
+    monkeypatch.setattr("app.platform.runtime_state._redis_client", lambda: fake_runtime_redis)
+    monkeypatch.setattr(
+        "app.modules.observability.health._redis_dependency",
+        lambda: {"name": "redis", "status": "up", "healthy": True, "critical": True, "details": {}},
+    )
+    monkeypatch.setattr(
+        "app.modules.observability.health._ldap_dependency",
+        lambda _app: {"name": "ldap", "status": "up", "healthy": True, "critical": True, "details": {}},
+    )
+
     original_factory = getattr(app.state, "admissions_session_factory", None)
     app.state.admissions_session_factory = _FakeSessionFactory()
     clear_runtime_state()
     try:
-        response = client.get("/health/comprehensive")
+        response = client.get("/health/comprehensive", headers=ADMIN_HEADERS)
     finally:
         app.state.admissions_session_factory = original_factory
         clear_runtime_state()
@@ -264,7 +299,7 @@ def test_health_comprehensive_reports_degraded_when_worker_and_scheduler_missing
     assert "scheduler_not_running" in payload["issues"]
 
 
-def test_health_comprehensive_reports_healthy_when_all_components_are_running() -> None:
+def test_health_comprehensive_reports_healthy_when_all_components_are_running(monkeypatch: pytest.MonkeyPatch) -> None:
     class _FakeSession:
         def __enter__(self):
             return self
@@ -279,13 +314,24 @@ def test_health_comprehensive_reports_healthy_when_all_components_are_running() 
         def __call__(self):
             return _FakeSession()
 
+    fake_runtime_redis = _FakeRedisRuntimeClient()
+    monkeypatch.setattr("app.platform.runtime_state._redis_client", lambda: fake_runtime_redis)
+    monkeypatch.setattr(
+        "app.modules.observability.health._redis_dependency",
+        lambda: {"name": "redis", "status": "up", "healthy": True, "critical": True, "details": {}},
+    )
+    monkeypatch.setattr(
+        "app.modules.observability.health._ldap_dependency",
+        lambda _app: {"name": "ldap", "status": "up", "healthy": True, "critical": True, "details": {}},
+    )
+
     original_factory = getattr(app.state, "admissions_session_factory", None)
     app.state.admissions_session_factory = _FakeSessionFactory()
     clear_runtime_state()
     record_worker_heartbeat()
     record_scheduler_run("test")
     try:
-        response = client.get("/health/comprehensive")
+        response = client.get("/health/comprehensive", headers=ADMIN_HEADERS)
     finally:
         app.state.admissions_session_factory = original_factory
         clear_runtime_state()

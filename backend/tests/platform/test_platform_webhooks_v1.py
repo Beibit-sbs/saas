@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from tests.conftest import ADMIN_HEADERS, client
+from tests.conftest import ADMIN_HEADERS, INTERNAL_HEADERS, client
 
 from app.platform.events.handlers.webhook_handler import WebhookEventHandler
 from app.platform.events.publisher import EventPublisher
@@ -343,7 +343,7 @@ def test_internal_retry_failed_webhooks_endpoint(monkeypatch) -> None:
         return 200, "ok"
 
     monkeypatch.setattr(webhook_service, "_sender", ok_sender)
-    retried = client.post("/api/v1/internal/webhooks/retry-failed")
+    retried = client.post("/api/v1/internal/webhooks/retry-failed", headers=INTERNAL_HEADERS)
     assert retried.status_code == 200, retried.text
     payload = retried.json()
     assert payload["attempted"] >= 1

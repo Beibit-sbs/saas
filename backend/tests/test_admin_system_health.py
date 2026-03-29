@@ -11,7 +11,7 @@ def test_admin_system_health_requires_permission() -> None:
     response = client.get(
         "/api/admin/system/health",
         headers={
-            "Authorization": f"Bearer {create_access_token('student.001', ['student'], 'test')}",
+            "Authorization": f"Bearer {create_access_token('student.001', ['student'], 'test', tenant_id=1)}",
             "x-user-roles": "admin",
         },
     )

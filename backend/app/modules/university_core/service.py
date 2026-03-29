@@ -1,8 +1,10 @@
 from __future__ import annotations
+from app.core.db import get_raw_conn
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import os
+import re
 from threading import Lock
 from typing import Any
 
@@ -68,6 +70,7 @@ _state = UniversityMemoryState(
     data={name: {} for name in ENTITY_CONFIGS},
     counters={name: 0 for name in ENTITY_CONFIGS},
 )
+_SQL_IDENTIFIER_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 
 
 def clear_university_state() -> None:
@@ -170,9 +173,25 @@ def _row_to_dict(row: tuple[Any, ...], fields: tuple[str, ...], include_created_
     return result
 
 
+def _sql_identifier(name: str):
+    if psycopg is None:
+        raise RuntimeError("database unavailable")
+    normalized = str(name or "").strip()
+    if not _SQL_IDENTIFIER_RE.fullmatch(normalized):
+        raise ValueError(f"unsafe SQL identifier: {normalized}")
+    return psycopg.sql.Identifier(normalized)
+
+
+def _sql_identifier_list(names: list[str] | tuple[str, ...]):
+    if psycopg is None:
+        raise RuntimeError("database unavailable")
+    return psycopg.sql.SQL(", ").join(_sql_identifier(name) for name in names)
+
+
 def _db_fetch_exists(conn, table: str, item_id: int) -> bool:
     with conn.cursor() as cur:
-        cur.execute(f"SELECT 1 FROM {table} WHERE id = %s", (item_id,))
+        query = psycopg.sql.SQL("SELECT 1 FROM {} WHERE id = %s").format(_sql_identifier(table))
+        cur.execute(query, (item_id,))
         return cur.fetchone() is not None
 
 
@@ -206,11 +225,13 @@ def _list_entities_db(entity_name: str) -> list[dict[str, object]]:
         selected_columns.append("created_at")
     selected_columns.extend(config.fields)
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                f"SELECT {', '.join(selected_columns)} FROM {config.table} ORDER BY id ASC"
+            query = psycopg.sql.SQL("SELECT {} FROM {} ORDER BY id ASC").format(
+                _sql_identifier_list(selected_columns),
+                _sql_identifier(config.table),
             )
+            cur.execute(query)
             rows = cur.fetchall()
 
     return [_row_to_dict(row, config.fields, include_created_at) for row in rows]
@@ -227,16 +248,18 @@ def _create_entity_db(entity_name: str, payload: dict[str, object]) -> dict[str,
         returning_columns.append("created_at")
     returning_columns.extend(config.fields)
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _validate_foreign_keys_db(conn, entity_name, payload)
         with conn.cursor() as cur:
             columns = list(config.fields)
-            placeholders = ["%s" for _ in columns]
             values = [payload[column] for column in columns]
-            cur.execute(
-                f"INSERT INTO {config.table} ({', '.join(columns)}) VALUES ({', '.join(placeholders)}) RETURNING {', '.join(returning_columns)}",
-                values,
+            query = psycopg.sql.SQL("INSERT INTO {} ({}) VALUES ({}) RETURNING {}").format(
+                _sql_identifier(config.table),
+                _sql_identifier_list(columns),
+                psycopg.sql.SQL(", ").join(psycopg.sql.Placeholder() for _ in columns),
+                _sql_identifier_list(returning_columns),
             )
+            cur.execute(query, values)
             row = cur.fetchone()
         conn.commit()
 
@@ -256,16 +279,21 @@ def _update_entity_db(entity_name: str, item_id: int, payload: dict[str, object]
         returning_columns.append("created_at")
     returning_columns.extend(config.fields)
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _validate_foreign_keys_db(conn, entity_name, payload)
         with conn.cursor() as cur:
-            assignments = [f"{column} = %s" for column in config.fields]
+            assignments = [
+                psycopg.sql.SQL("{} = %s").format(_sql_identifier(column))
+                for column in config.fields
+            ]
             values = [payload[column] for column in config.fields]
             values.append(item_id)
-            cur.execute(
-                f"UPDATE {config.table} SET {', '.join(assignments)} WHERE id = %s RETURNING {', '.join(returning_columns)}",
-                values,
+            query = psycopg.sql.SQL("UPDATE {} SET {} WHERE id = %s RETURNING {}").format(
+                _sql_identifier(config.table),
+                psycopg.sql.SQL(", ").join(assignments),
+                _sql_identifier_list(returning_columns),
             )
+            cur.execute(query, values)
             row = cur.fetchone()
         conn.commit()
 
@@ -285,12 +313,13 @@ def _delete_entity_db(entity_name: str, item_id: int) -> dict[str, object]:
         returning_columns.append("created_at")
     returning_columns.extend(config.fields)
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                f"DELETE FROM {config.table} WHERE id = %s RETURNING {', '.join(returning_columns)}",
-                (item_id,),
+            query = psycopg.sql.SQL("DELETE FROM {} WHERE id = %s RETURNING {}").format(
+                _sql_identifier(config.table),
+                _sql_identifier_list(returning_columns),
             )
+            cur.execute(query, (item_id,))
             row = cur.fetchone()
         conn.commit()
 
@@ -413,13 +442,13 @@ def _list_entities_for_tenant_db(entity_name: str, tenant_id: int) -> list[dict[
         selected_columns.append("created_at")
     selected_columns.extend(config.fields)
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                f"SELECT {', '.join(selected_columns)} FROM {config.table}"
-                f" WHERE tenant_id = %s ORDER BY id ASC",
-                (str(tenant_id),),
+            query = psycopg.sql.SQL("SELECT {} FROM {} WHERE tenant_id = %s ORDER BY id ASC").format(
+                _sql_identifier_list(selected_columns),
+                _sql_identifier(config.table),
             )
+            cur.execute(query, (str(tenant_id),))
             rows = cur.fetchall()
 
     return [_row_to_dict(row, config.fields, include_created_at) for row in rows]
@@ -438,18 +467,23 @@ def _update_entity_for_tenant_db(
         returning_columns.append("created_at")
     returning_columns.extend(config.fields)
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _validate_foreign_keys_db(conn, entity_name, payload)
         with conn.cursor() as cur:
-            assignments = [f"{column} = %s" for column in config.fields]
+            assignments = [
+                psycopg.sql.SQL("{} = %s").format(_sql_identifier(column))
+                for column in config.fields
+            ]
             values: list[Any] = [payload[column] for column in config.fields]
             values.extend([item_id, str(tenant_id)])
-            cur.execute(
-                f"UPDATE {config.table} SET {', '.join(assignments)}"
-                f" WHERE id = %s AND tenant_id = %s"
-                f" RETURNING {', '.join(returning_columns)}",
-                values,
+            query = psycopg.sql.SQL(
+                "UPDATE {} SET {} WHERE id = %s AND tenant_id = %s RETURNING {}"
+            ).format(
+                _sql_identifier(config.table),
+                psycopg.sql.SQL(", ").join(assignments),
+                _sql_identifier_list(returning_columns),
             )
+            cur.execute(query, values)
             row = cur.fetchone()
         conn.commit()
 
@@ -471,13 +505,13 @@ def _delete_entity_for_tenant_db(
         returning_columns.append("created_at")
     returning_columns.extend(config.fields)
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                f"DELETE FROM {config.table} WHERE id = %s AND tenant_id = %s"
-                f" RETURNING {', '.join(returning_columns)}",
-                (item_id, str(tenant_id)),
+            query = psycopg.sql.SQL("DELETE FROM {} WHERE id = %s AND tenant_id = %s RETURNING {}").format(
+                _sql_identifier(config.table),
+                _sql_identifier_list(returning_columns),
             )
+            cur.execute(query, (item_id, str(tenant_id)))
             row = cur.fetchone()
         conn.commit()
 

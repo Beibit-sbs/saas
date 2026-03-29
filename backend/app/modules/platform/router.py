@@ -16,6 +16,7 @@ from app.modules.rbac.service import is_platform_admin
 from app.modules.tenants.provisioning_service import TenantProvisioningService
 
 router = APIRouter(prefix="/platform", tags=["platform"])
+PLATFORM_TENANT_ID = 1
 
 
 def _require_platform_admin(
@@ -59,7 +60,7 @@ def create_platform_plan(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     log_admin_action(
         actor=actor,
-        tenant_id=1,
+        tenant_id=PLATFORM_TENANT_ID,
         action="platform.plans.create",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -86,7 +87,7 @@ def update_platform_plan(
         raise HTTPException(status_code=status_code, detail=detail) from exc
     log_admin_action(
         actor=actor,
-        tenant_id=1,
+        tenant_id=PLATFORM_TENANT_ID,
         action="platform.plans.update",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -120,7 +121,7 @@ def put_platform_quotas(
         raise HTTPException(status_code=status_code, detail=detail) from exc
     log_admin_action(
         actor=actor,
-        tenant_id=1,
+        tenant_id=PLATFORM_TENANT_ID,
         action="platform.quotas.update",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",
@@ -162,9 +163,11 @@ def create_platform_tenant(
     invite_token = secrets.token_urlsafe(24)
     tenant_data = result.get("tenant") if isinstance(result.get("tenant"), dict) else {}
     created_tenant_id = tenant_data.get("id") if isinstance(tenant_data, dict) else None
+    if created_tenant_id is None:
+        raise HTTPException(status_code=500, detail="tenant provisioning returned no tenant id")
     log_admin_action(
         actor=actor,
-        tenant_id=int(created_tenant_id) if created_tenant_id is not None else 1,
+        tenant_id=int(created_tenant_id),
         action="platform.tenants.create",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",

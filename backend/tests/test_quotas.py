@@ -7,7 +7,7 @@ from conftest import client
 
 
 def _platform_headers() -> dict[str, str]:
-    token = create_access_token(user_id="platform.owner@example.com", roles=["superadmin"], auth_source="test")
+    token = create_access_token(user_id="platform.owner@example.com", roles=["superadmin"], auth_source="test", tenant_id=1)
     return {"Authorization": f"Bearer {token}"}
 
 

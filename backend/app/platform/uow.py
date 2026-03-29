@@ -17,6 +17,7 @@ from app.platform.repository.db import db_available, db_url, ensure_platform_cor
 from app.platform.repository.feature_flag_repository import FeatureFlagRepository
 from app.platform.events.repository import OutboxEventRepository
 from app.platform.idempotency.repository import IdempotencyRepository
+from app.platform.repository.invoice_repository import InvoiceRepository
 from app.platform.repository.job_repository import JobRepository
 from app.platform.repository.notification_repository import NotificationRepository
 from app.platform.repository.tenant_repository import TenantRepository
@@ -34,6 +35,7 @@ _SHARED_TENANT_REPOSITORY = TenantRepository()
 _SHARED_FEATURE_FLAG_REPOSITORY = FeatureFlagRepository()
 _SHARED_BILLING_REPOSITORY = BillingRepository()
 _SHARED_USAGE_REPOSITORY = UsageRepository()
+_SHARED_INVOICE_REPOSITORY = InvoiceRepository()
 _SHARED_JOB_REPOSITORY = JobRepository()
 _SHARED_NOTIFICATION_REPOSITORY = NotificationRepository()
 _SHARED_IDEMPOTENCY_REPOSITORY = IdempotencyRepository()
@@ -57,6 +59,7 @@ class UnitOfWork:
     feature_flag_repository: FeatureFlagRepository = _SHARED_FEATURE_FLAG_REPOSITORY
     billing_repository: BillingRepository = _SHARED_BILLING_REPOSITORY
     usage_repository: UsageRepository = _SHARED_USAGE_REPOSITORY
+    invoice_repository: InvoiceRepository = _SHARED_INVOICE_REPOSITORY
     job_repository: JobRepository = _SHARED_JOB_REPOSITORY
     notification_repository: NotificationRepository = _SHARED_NOTIFICATION_REPOSITORY
     idempotency_repository: IdempotencyRepository = _SHARED_IDEMPOTENCY_REPOSITORY

@@ -66,6 +66,7 @@ def get_log_context() -> dict[str, str | int]:
         "request_id": request_id_var.get(),
         "trace_id": trace_id_var.get(),
         "actor_id": actor_id_var.get(),
+        "user_id": actor_id_var.get(),
         "tenant_id": tenant_id_var.get(),
         "institution_id": institution_id_var.get(),
     }
@@ -84,16 +85,18 @@ class _JsonFormatter(logging.Formatter):
             "request_id": request_id_var.get("-"),
             "trace_id": trace_id_var.get("-"),
             "actor_id": actor_id_var.get("-"),
+            "user_id": actor_id_var.get("-"),
             "tenant_id": tenant_id_var.get("-"),
             "institution_id": institution_id_var.get("-"),
             "logger": record.name,
             "message": record.getMessage(),
         }
-        
+
         # Endpoint info
         endpoint = getattr(record, "endpoint", None) or getattr(record, "path", None)
         if endpoint:
             payload["endpoint"] = endpoint
+            payload["path"] = endpoint
         
         # HTTP info
         for key in ("method", "status_code", "duration_ms"):
@@ -122,6 +125,7 @@ class _RequestIdFilter(logging.Filter):
         record.trace_id = trace_id_var.get("-")
         record.tenant_id = tenant_id_var.get("-")
         record.actor_id = actor_id_var.get("-")
+        record.user_id = actor_id_var.get("-")
         record.institution_id = institution_id_var.get("-")
         return True
 
