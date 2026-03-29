@@ -26,6 +26,27 @@ def _actor_is_platform_admin(actor: str) -> bool:
     return is_platform_admin(actor)
 
 
+def _enforce_role_mutation_guard(
+    *,
+    actor: str,
+    target_user_id: str | None,
+    role_name: str,
+    target_tenant_id: int,
+) -> None:
+    normalized_actor = str(actor or "").strip()
+    normalized_target_user = str(target_user_id or "").strip()
+    normalized_role = str(role_name or "").strip().lower()
+
+    if normalized_actor and normalized_target_user and normalized_actor == normalized_target_user:
+        raise HTTPException(status_code=403, detail="self-role modification forbidden")
+
+    if normalized_role in _PLATFORM_ONLY_ROLES:
+        if target_tenant_id != _PLATFORM_TENANT_ID:
+            raise HTTPException(status_code=403, detail="role 'superadmin' is reserved for the platform tenant")
+        if not _actor_is_platform_admin(actor):
+            raise HTTPException(status_code=403, detail="platform-only role management requires platform admin")
+
+
 class RolePayload(BaseModel):
     name: str = Field(min_length=2, max_length=64)
     permissions: List[str] = Field(default_factory=list)
@@ -65,6 +86,12 @@ def upsert_role(
         raise HTTPException(status_code=403, detail="cross-tenant role management requires platform admin")
     target_tenant_id = payload.tenant_id if payload.tenant_id is not None and actor_is_platform_admin else current_tenant_id
     normalized_role_name = payload.name.strip().lower()
+    _enforce_role_mutation_guard(
+        actor=actor,
+        target_user_id=None,
+        role_name=normalized_role_name,
+        target_tenant_id=target_tenant_id,
+    )
     if normalized_role_name in _PLATFORM_ONLY_ROLES and target_tenant_id != _PLATFORM_TENANT_ID:
         raise HTTPException(status_code=403, detail="role 'superadmin' is reserved for the platform tenant")
     try:
@@ -97,6 +124,12 @@ def assign_user_role(
 ) -> dict[str, object]:
     current_tenant_id = int(tenant["id"])
     target_tenant_id = payload.tenant_id if payload.tenant_id is not None and _actor_is_platform_admin(actor) else current_tenant_id
+    _enforce_role_mutation_guard(
+        actor=actor,
+        target_user_id=payload.user_id,
+        role_name=payload.role,
+        target_tenant_id=target_tenant_id,
+    )
     try:
         assigned = assign_role_to_user(target_tenant_id, payload.user_id, payload.role)
     except PermissionError as exc:
@@ -150,6 +183,12 @@ def delete_role_assignment(
 ) -> dict[str, object]:
     current_tenant_id = int(tenant["id"])
     target_tenant_id = tenant_id if tenant_id is not None and _actor_is_platform_admin(actor) else current_tenant_id
+    _enforce_role_mutation_guard(
+        actor=actor,
+        target_user_id=user_id,
+        role_name=role,
+        target_tenant_id=target_tenant_id,
+    )
     try:
         result = revoke_role_for_tenant(tenant_id=target_tenant_id, user_id=user_id, role=role)
         log_admin_action(

@@ -13,17 +13,14 @@ def require_developer_scope(scope: str) -> Callable:
         x_app_secret: str | None = Header(default=None, alias="X-App-Secret"),
         x_tenant_id: str | None = Header(default=None, alias="X-Tenant-Id"),
     ) -> dict[str, object]:
-        if not x_app_key or not x_app_secret or not x_tenant_id:
+        if not x_app_key or not x_app_secret:
             raise HTTPException(status_code=401, detail="developer app credentials are required")
-        try:
-            tenant_id = int(x_tenant_id)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail="invalid tenant header") from exc
+        if x_tenant_id is not None:
+            raise HTTPException(status_code=400, detail="manual tenant override is forbidden for developer API")
         try:
             return developer_service.validate_credentials(
                 app_key=x_app_key,
                 app_secret=x_app_secret,
-                tenant_id=tenant_id,
                 required_scope=scope,
             )
         except ValueError as exc:

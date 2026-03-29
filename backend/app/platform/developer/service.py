@@ -102,7 +102,6 @@ class DeveloperPlatformService:
         *,
         app_key: str,
         app_secret: str,
-        tenant_id: int,
         required_scope: str,
     ) -> dict[str, Any]:
         app = self._repository.get_app_by_key(app_key)
@@ -112,7 +111,14 @@ class DeveloperPlatformService:
             raise ValueError("developer app inactive")
         if not _verify_password(str(app_secret or ""), str(app.get("app_secret_hash", ""))):
             raise ValueError("invalid developer app secret")
-        installation = self._repository.get_installation(app_id=int(app["id"]), tenant_id=int(tenant_id))
+        resolved_tenant_id_raw = app.get("tenant_id")
+        if resolved_tenant_id_raw is None:
+            raise ValueError("developer app tenant is not configured")
+        resolved_tenant_id = int(resolved_tenant_id_raw)
+        if resolved_tenant_id <= 0:
+            raise ValueError("developer app tenant is invalid")
+
+        installation = self._repository.get_installation(app_id=int(app["id"]), tenant_id=resolved_tenant_id)
         if installation is None or str(installation.get("status", "")).lower() != DeveloperInstallationStatus.ACTIVE.value:
             raise ValueError("developer app not installed for tenant")
         scopes = list(app.get("scopes", []))
@@ -122,7 +128,7 @@ class DeveloperPlatformService:
         return {
             "app_id": int(app["id"]),
             "app_key": str(app["app_key"]),
-            "tenant_id": int(tenant_id),
+            "tenant_id": resolved_tenant_id,
             "scopes": scopes,
             "installation_id": int(installation["id"]),
         }

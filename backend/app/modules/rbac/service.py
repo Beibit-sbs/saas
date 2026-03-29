@@ -1,15 +1,72 @@
+from app.core.db import get_raw_conn
+from app.core.config import is_runtime_schema_bootstrap_enabled
+from app.modules.auth.local_users_service import local_user_store
 import os
 from dataclasses import dataclass, field
 from threading import Lock
 from typing import Dict, List, Set
 
-from app.modules.auth.local_users_service import local_user_store
+_rbac_schema_ready = False
+_rbac_schema_lock = Lock()
 
 try:
     import psycopg
 except ImportError:  # pragma: no cover
     psycopg = None
 
+
+_CANONICAL_PLATFORM_ADMIN_PERMISSIONS: Set[str] = {
+    "health.read",
+    "metrics.read",
+    "ops.read",
+    "ops.write",
+    "jobs.read",
+    "jobs.write",
+    "audit.read",
+    "rbac.read",
+    "rbac.write",
+    "tenants.read",
+    "tenants.write",
+    "students.read",
+    "students.write",
+    "faculty.read",
+    "faculty.write",
+    "programs.read",
+    "programs.write",
+    "courses.read",
+    "courses.write",
+    "enrollments.read",
+    "enrollments.write",
+    "records.read",
+    "records.write",
+    "grades.read",
+    "grades.write",
+    "transcripts.read",
+    "transcripts.write",
+    "scheduling.read",
+    "scheduling.write",
+    "degree_progress.read",
+}
+
+_CANONICAL_AUDITOR_PERMISSIONS: Set[str] = {
+    "health.read",
+    "metrics.read",
+    "ops.read",
+    "jobs.read",
+    "audit.read",
+    "rbac.read",
+    "tenants.read",
+    "students.read",
+    "faculty.read",
+    "programs.read",
+    "courses.read",
+    "enrollments.read",
+    "records.read",
+    "grades.read",
+    "transcripts.read",
+    "scheduling.read",
+    "degree_progress.read",
+}
 
 BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     "superadmin": {
@@ -25,8 +82,6 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.backup.manage",
         "admin.jobs.read",
         "admin.jobs.write",
-        "example.notes.read",
-        "example.notes.manage",
         "admin.students.read",
         "admin.students.write",
         "admin.faculty.read",
@@ -54,7 +109,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "federation.write",
         "developer_platform.read",
         "developer_platform.write",
-    },
+    }
+    | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS,
     "admin": {
         "admin.dashboard.read",
         "admin.roles.manage",
@@ -68,8 +124,6 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.backup.manage",
         "admin.jobs.read",
         "admin.jobs.write",
-        "example.notes.read",
-        "example.notes.manage",
         "admin.students.read",
         "admin.students.write",
         "admin.faculty.read",
@@ -97,11 +151,11 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "federation.write",
         "developer_platform.read",
         "developer_platform.write",
-    },
+    }
+    | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS,
     "auditor": {
         "admin.audit.read",
         "admin.dashboard.read",
-        "example.notes.read",
         "admin.students.read",
         "admin.faculty.read",
         "admin.programs.read",
@@ -115,15 +169,40 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "workflows.read",
         "federation.read",
         "developer_platform.read",
+    }
+    | _CANONICAL_AUDITOR_PERMISSIONS,
+    "student": {
+        "profiles.read",
+        "enrollments.read",
+        "grades.read",
+        "transcripts.read",
+        "scheduling.read",
+        "degree_progress.read",
+    },
+    "teacher": {
+        "profiles.read",
+        "students.read",
+        "enrollments.read",
+        "grades.read",
+        "grades.write",
+        "transcripts.read",
+        "scheduling.read",
+    },
+    "dean": {
+        "profiles.read",
+        "students.read",
+        "enrollments.read",
+        "grades.read",
+        "transcripts.read",
+        "scheduling.read",
+        "degree_progress.read",
+        "admissions.read",
+        "health.read",
+        "metrics.read",
+        "ops.read",
+        "jobs.read",
     },
 }
-
-TRUSTED_DEMO_ROLE_MAP: Dict[str, List[str]] = {
-    "admin.001": ["admin"],
-    "teacher.001": ["auditor"],
-    "student.001": [],
-}
-
 
 @dataclass
 class RbacState:
@@ -190,7 +269,10 @@ def _seed_baseline_data(conn) -> None:
             VALUES
                 ('superadmin', 'Full platform access', 1),
                 ('admin', 'Platform administration access', 1),
-                ('auditor', 'Read-only audit and dashboard access', 1)
+                ('auditor', 'Read-only audit and dashboard access', 1),
+                ('student', 'Student self-service access', 1),
+                ('teacher', 'Teacher instructional access', 1),
+                ('dean', 'Dean academic oversight access', 1)
             ON CONFLICT (tenant_id, name) DO NOTHING
             """
         )
@@ -220,6 +302,8 @@ def _seed_baseline_data(conn) -> None:
 
 
 def _ensure_schema_and_seed(conn) -> None:
+    if not is_runtime_schema_bootstrap_enabled():
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -227,7 +311,7 @@ def _ensure_schema_and_seed(conn) -> None:
                 id BIGSERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 description TEXT NOT NULL DEFAULT '',
-                tenant_id BIGINT NOT NULL DEFAULT 1,
+                tenant_id BIGINT NOT NULL,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 UNIQUE (tenant_id, name)
@@ -250,7 +334,7 @@ def _ensure_schema_and_seed(conn) -> None:
             CREATE TABLE IF NOT EXISTS app_role_permissions (
                 role_id BIGINT NOT NULL REFERENCES app_roles(id) ON DELETE CASCADE,
                 permission_id BIGINT NOT NULL REFERENCES app_permissions(id) ON DELETE CASCADE,
-                tenant_id BIGINT NOT NULL DEFAULT 1,
+                tenant_id BIGINT NOT NULL,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 PRIMARY KEY (role_id, permission_id)
             )
@@ -261,10 +345,30 @@ def _ensure_schema_and_seed(conn) -> None:
             CREATE TABLE IF NOT EXISTS app_user_roles (
                 user_id TEXT NOT NULL,
                 role_id BIGINT NOT NULL REFERENCES app_roles(id) ON DELETE CASCADE,
-                tenant_id BIGINT NOT NULL DEFAULT 1,
+                tenant_id BIGINT NOT NULL,
                 assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 PRIMARY KEY (user_id, role_id)
             )
+            """
+        )
+        cur.execute("ALTER TABLE app_roles ALTER COLUMN tenant_id DROP DEFAULT")
+        cur.execute("ALTER TABLE app_role_permissions ALTER COLUMN tenant_id DROP DEFAULT")
+        cur.execute("ALTER TABLE app_user_roles ALTER COLUMN tenant_id DROP DEFAULT")
+        cur.execute(
+            """
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM app_roles WHERE tenant_id IS NULL) THEN
+                    RAISE EXCEPTION 'rbac remediation required: app_roles has NULL tenant_id rows';
+                END IF;
+                IF EXISTS (SELECT 1 FROM app_role_permissions WHERE tenant_id IS NULL) THEN
+                    RAISE EXCEPTION 'rbac remediation required: app_role_permissions has NULL tenant_id rows';
+                END IF;
+                IF EXISTS (SELECT 1 FROM app_user_roles WHERE tenant_id IS NULL) THEN
+                    RAISE EXCEPTION 'rbac remediation required: app_user_roles has NULL tenant_id rows';
+                END IF;
+            END
+            $$;
             """
         )
         cur.execute(
@@ -281,12 +385,22 @@ def _ensure_schema_and_seed(conn) -> None:
     conn.commit()
 
 
+def _ensure_schema_and_seed_once(conn) -> None:
+    global _rbac_schema_ready
+    if _rbac_schema_ready:
+        return
+    with _rbac_schema_lock:
+        if _rbac_schema_ready:
+            return
+        _ensure_schema_and_seed(conn)
+        _rbac_schema_ready = True
+
 def _list_roles_db() -> Dict[str, List[str]]:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -311,8 +425,8 @@ def _add_or_update_role_db(name: str, permissions: Set[str]) -> Dict[str, List[s
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -363,8 +477,8 @@ def _assign_role_db(user_id: str, role: str) -> Dict[str, List[str]]:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute("SELECT id FROM app_roles WHERE name = %s", (role,))
             role_row = cur.fetchone()
@@ -403,8 +517,8 @@ def _sync_user_roles_db(user_id: str, roles: List[str]) -> Dict[str, List[str]]:
 
     normalized_roles = sorted({role.strip() for role in roles if role.strip()})
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute("DELETE FROM app_user_roles WHERE user_id = %s", (user_id,))
 
@@ -441,8 +555,8 @@ def _get_user_roles_db(user_id: str) -> List[str]:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -472,8 +586,8 @@ def _list_user_role_assignments_db(user_id: str | None = None, role: str | None 
 
     where_clause = f"WHERE {' AND '.join(clauses)}" if clauses else ""
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 f"""
@@ -502,8 +616,8 @@ def _revoke_role_db(user_id: str, role: str) -> Dict[str, object]:
         raise RuntimeError("database unavailable")
 
     removed = False
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT id FROM app_roles WHERE name = %s",
@@ -540,8 +654,8 @@ def _resolve_permissions_db(roles: List[str]) -> Set[str]:
     if not roles:
         return set()
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -615,7 +729,7 @@ def assign_role(user_id: str, role: str) -> Dict[str, List[str]]:
 def sync_user_roles_from_trusted_source(
     user_id: str,
     roles: List[str],
-    tenant_id: int = _DEFAULT_TENANT_ID,
+    tenant_id: int,
 ) -> Dict[str, List[str]]:
     normalized_user_id = user_id.strip()
     if not normalized_user_id:
@@ -647,7 +761,7 @@ def sync_user_roles_from_trusted_source(
     return {"user_id": normalized_user_id, "roles": normalized_roles}
 
 
-def clear_user_roles_for_user(user_id: str, tenant_id: int = _DEFAULT_TENANT_ID) -> Dict[str, object]:
+def clear_user_roles_for_user(user_id: str, tenant_id: int) -> Dict[str, object]:
     normalized_user_id = user_id.strip()
     if not normalized_user_id:
         raise ValueError("user_id is required")
@@ -661,29 +775,30 @@ def clear_user_roles_for_user(user_id: str, tenant_id: int = _DEFAULT_TENANT_ID)
     }
 
 
-def get_trusted_demo_roles(user_id: str) -> List[str]:
-    return list(TRUSTED_DEMO_ROLE_MAP.get(user_id, []))
-
-
-def get_user_roles(user_id: str) -> List[str]:
+def get_user_roles(user_id: str, tenant_id: int) -> List[str]:
     normalized_user_id = user_id.strip()
     if not normalized_user_id:
         return []
+
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
 
     if _use_database():
         try:
-            return _get_user_roles_db(normalized_user_id)
+            if normalized_tenant_id == _DEFAULT_TENANT_ID:
+                return _get_user_roles_db(normalized_user_id)
+            return _get_user_roles_for_tenant_db(normalized_user_id, normalized_tenant_id)
         except Exception as exc:
             if not _should_fallback_to_memory(exc):
                 raise
-    return get_user_roles_for_tenant(normalized_user_id, _DEFAULT_TENANT_ID)
+    return get_user_roles_for_tenant(normalized_user_id, normalized_tenant_id)
 
 
-def get_user_roles_db_source(user_id: str) -> List[str]:
+def get_user_roles_db_source(user_id: str, tenant_id: int) -> List[str]:
     normalized_user_id = user_id.strip()
     if not normalized_user_id:
         return []
-    return _get_user_roles_for_tenant_db(normalized_user_id, _DEFAULT_TENANT_ID)
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    return _get_user_roles_for_tenant_db(normalized_user_id, normalized_tenant_id)
 
 
 def resolve_permissions(roles: List[str]) -> Set[str]:
@@ -796,8 +911,8 @@ def _list_roles_for_tenant_db(tenant_id: int) -> Dict[str, List[str]]:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -828,8 +943,8 @@ def _add_or_update_role_for_tenant_db(
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -884,8 +999,8 @@ def _is_platform_admin_db(user_id: str) -> bool:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -911,8 +1026,8 @@ def _get_user_roles_for_tenant_db(
         raise RuntimeError("database unavailable")
 
     roles: set[str] = set()
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -948,8 +1063,8 @@ def _resolve_permissions_for_tenant_db(roles: List[str], tenant_id: int) -> Set[
     if _PLATFORM_ADMIN_ROLE in roles:
         return set(BASELINE_ROLE_PERMISSIONS.get(_PLATFORM_ADMIN_ROLE, set()))
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -968,7 +1083,10 @@ def _assert_user_tenant_match(user_id: str, tenant_id: int) -> None:
     local_user = local_user_store.get_user(user_id)
     if local_user is None:
         return
-    user_tenant = int(local_user.get("tenant_id", _DEFAULT_TENANT_ID))
+    local_user_tenant = local_user.get("tenant_id")
+    if local_user_tenant is None:
+        raise PermissionError("user tenant context is missing")
+    user_tenant = int(local_user_tenant)
     if user_tenant != tenant_id:
         raise PermissionError("cross-tenant role assignment is forbidden")
 
@@ -979,8 +1097,8 @@ def _assign_role_for_tenant_db(user_id: str, role: str, tenant_id: int) -> Dict[
 
     _assert_user_tenant_match(user_id, tenant_id)
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT id FROM app_roles WHERE tenant_id = %s AND name = %s",
@@ -1026,30 +1144,53 @@ def _list_user_role_assignments_for_tenant_db(
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    clauses: list[str] = ["ur.tenant_id = %s", "r.tenant_id = %s"]
-    params: list[object] = [tenant_id, tenant_id]
-    if user_id:
-        clauses.append("ur.user_id = %s")
-        params.append(user_id)
-    if role:
-        clauses.append("r.name = %s")
-        params.append(role)
-
-    where_clause = " AND ".join(clauses)
-
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
-            cur.execute(
-                f"""
-                SELECT ur.user_id, r.name
-                FROM app_user_roles ur
-                JOIN app_roles r ON r.id = ur.role_id
-                WHERE {where_clause}
-                ORDER BY ur.user_id, r.name
-                """,
-                params,
-            )
+            if user_id and role:
+                cur.execute(
+                    """
+                    SELECT ur.user_id, r.name
+                    FROM app_user_roles ur
+                    JOIN app_roles r ON r.id = ur.role_id
+                    WHERE ur.tenant_id = %s AND r.tenant_id = %s AND ur.user_id = %s AND r.name = %s
+                    ORDER BY ur.user_id, r.name
+                    """,
+                    (tenant_id, tenant_id, user_id, role),
+                )
+            elif user_id:
+                cur.execute(
+                    """
+                    SELECT ur.user_id, r.name
+                    FROM app_user_roles ur
+                    JOIN app_roles r ON r.id = ur.role_id
+                    WHERE ur.tenant_id = %s AND r.tenant_id = %s AND ur.user_id = %s
+                    ORDER BY ur.user_id, r.name
+                    """,
+                    (tenant_id, tenant_id, user_id),
+                )
+            elif role:
+                cur.execute(
+                    """
+                    SELECT ur.user_id, r.name
+                    FROM app_user_roles ur
+                    JOIN app_roles r ON r.id = ur.role_id
+                    WHERE ur.tenant_id = %s AND r.tenant_id = %s AND r.name = %s
+                    ORDER BY ur.user_id, r.name
+                    """,
+                    (tenant_id, tenant_id, role),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT ur.user_id, r.name
+                    FROM app_user_roles ur
+                    JOIN app_roles r ON r.id = ur.role_id
+                    WHERE ur.tenant_id = %s AND r.tenant_id = %s
+                    ORDER BY ur.user_id, r.name
+                    """,
+                    (tenant_id, tenant_id),
+                )
             rows = cur.fetchall()
 
     assignments: Dict[str, List[str]] = {}
@@ -1067,8 +1208,8 @@ def _revoke_role_for_tenant_db(user_id: str, role: str, tenant_id: int) -> Dict[
         raise RuntimeError("database unavailable")
 
     removed = False
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema_and_seed(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT id FROM app_roles WHERE tenant_id = %s AND name = %s",
