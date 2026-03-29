@@ -24,7 +24,7 @@ describe("auth routes hardening", () => {
       sub: "owner@example.com",
       display_name: "Owner",
       roles: ["admin"],
-      permissions: ["students.read"],
+      scp: ["students.read"],
       tenant_id: 1,
       exp: Math.floor(Date.now() / 1000) + 3600,
     });
@@ -52,6 +52,11 @@ describe("auth routes hardening", () => {
     expect(body.token).toBeUndefined();
     expect(body.access_token).toBeUndefined();
 
+    const fetchCalls = vi.mocked(global.fetch).mock.calls;
+    expect(fetchCalls).toHaveLength(1);
+    const [, init] = fetchCalls[0] as [string, RequestInit];
+    expect(init.body).toBe(JSON.stringify({ username: "owner@example.com", password: "secret", login: "owner@example.com" }));
+
     const setCookie = response.headers.get("set-cookie") ?? "";
     expect(setCookie).toContain("admin_token=");
     expect(setCookie).toContain("HttpOnly");
@@ -75,6 +80,7 @@ describe("auth routes hardening", () => {
           user_id: "owner@example.com",
           display_name: "Owner",
           roles: ["admin"],
+          permissions: ["students.read"],
           tenant_id: 7,
           auth_source: "local",
         }),
@@ -168,6 +174,35 @@ describe("auth routes hardening", () => {
     const body = await response.json();
     expect(body.authenticated).toBe(false);
     expect(body.user).toBeNull();
+  });
+
+  it("me does not synthesize permissions from roles when profile omits them", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          user_id: "owner@example.com",
+          display_name: "Owner",
+          roles: ["admin"],
+          tenant_id: 7,
+          auth_source: "local",
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        },
+      ),
+    );
+
+    const request = new NextRequest("http://localhost/api/auth/me", {
+      headers: { cookie: "admin_token=session-token" },
+    });
+
+    const response = await meGet(request);
+    expect(response.status).toBe(200);
+
+    const body = await response.json();
+    expect(body.authenticated).toBe(true);
+    expect(body.user.permissions).toEqual([]);
   });
 
   it("me returns 401 when no session cookie", async () => {

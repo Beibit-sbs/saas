@@ -14,6 +14,18 @@ _LOCAL_USERS_SETTINGS_KEY = "auth.local_users_json"
 _PBKDF2_ITERATIONS = 200_000
 
 
+def _require_tenant_id(value: int | str | None, *, operation: str) -> int:
+    if value is None:
+        raise HTTPException(status_code=400, detail=f"tenant_id is required for {operation}")
+    try:
+        tenant_id = int(value)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=f"tenant_id is required for {operation}") from exc
+    if tenant_id <= 0:
+        raise HTTPException(status_code=400, detail=f"tenant_id is required for {operation}")
+    return tenant_id
+
+
 def _hash_password(password: str) -> str:
     salt = secrets.token_hex(16)
     digest = hashlib.pbkdf2_hmac(
@@ -86,7 +98,8 @@ class LocalUserStore:
                 continue
 
             if "tenant_id" not in item:
-                item["tenant_id"] = 1
+                # Fail-closed: legacy rows without tenant must be remediated explicitly.
+                raise HTTPException(status_code=500, detail="local user tenant remediation required")
 
             self._users_by_id[user_id] = item
             self._users_by_login[login] = user_id
@@ -100,13 +113,14 @@ class LocalUserStore:
         self._counter = max(max_id, int(stored_counter) if isinstance(stored_counter, int) else 0)
 
     def _public_user(self, item: dict[str, object]) -> dict[str, object]:
+        tenant_id = _require_tenant_id(item.get("tenant_id"), operation="local_user_public_projection")
         return {
             "user_id": item["user_id"],
             "login": item["login"],
             "display_name": item["display_name"],
             "roles": item["roles"],
             "default_language": item["default_language"],
-            "tenant_id": int(item.get("tenant_id", 1)),
+            "tenant_id": tenant_id,
             "auth_source": "local",
             "sync_with_ad": False,
         }
@@ -125,7 +139,8 @@ class LocalUserStore:
 
         result: List[dict[str, object]] = []
         for item in self._users_by_id.values():
-            if tenant_id is not None and int(item.get("tenant_id", 1)) != int(tenant_id):
+            item_tenant_id = _require_tenant_id(item.get("tenant_id"), operation="local_user_list")
+            if tenant_id is not None and item_tenant_id != int(tenant_id):
                 continue
 
             if normalized_search:
@@ -162,9 +177,10 @@ class LocalUserStore:
         display_name: str,
         roles: List[str],
         default_language: str,
-        tenant_id: int = 1,
+        tenant_id: int,
     ) -> dict[str, object]:
         self._load_once()
+        normalized_tenant_id = _require_tenant_id(tenant_id, operation="local_user_create")
         normalized_login = login.strip().lower()
         if not normalized_login:
             raise HTTPException(status_code=400, detail="login is required")
@@ -175,7 +191,7 @@ class LocalUserStore:
         try:
             from app.modules.quotas.service import check_quota
 
-            check_quota(int(tenant_id), "users")
+            check_quota(normalized_tenant_id, "users")
         except Exception:
             # Quotas are soft-enforced in this phase and must never block.
             pass
@@ -189,7 +205,7 @@ class LocalUserStore:
             "display_name": display_name.strip(),
             "roles": [r.strip() for r in roles if r.strip()] or ["student"],
             "default_language": default_language,
-            "tenant_id": int(tenant_id),
+            "tenant_id": normalized_tenant_id,
             "auth_source": "local",
             "sync_with_ad": False,
         }
@@ -201,7 +217,7 @@ class LocalUserStore:
         try:
             from app.modules.usage.service import record_usage_event
 
-            record_usage_event(int(tenant_id), "users_created", 1)
+            record_usage_event(normalized_tenant_id, "users_created", 1)
         except Exception:
             pass
 
@@ -220,7 +236,8 @@ class LocalUserStore:
         user = self._users_by_id.get(normalized_user_id)
         if user is None:
             raise HTTPException(status_code=404, detail="local user not found")
-        if int(user.get("tenant_id", 1)) != int(tenant_id):
+        user_tenant_id = _require_tenant_id(user.get("tenant_id"), operation="local_user_update")
+        if user_tenant_id != int(tenant_id):
             raise HTTPException(status_code=404, detail="local user not found")
 
         changed = False
@@ -254,7 +271,8 @@ class LocalUserStore:
         user = self._users_by_id.get(normalized_user_id)
         if user is None:
             raise HTTPException(status_code=404, detail="local user not found")
-        if int(user.get("tenant_id", 1)) != int(tenant_id):
+        user_tenant_id = _require_tenant_id(user.get("tenant_id"), operation="local_user_delete")
+        if user_tenant_id != int(tenant_id):
             raise HTTPException(status_code=404, detail="local user not found")
 
         user = self._users_by_id.pop(normalized_user_id, None)
@@ -273,7 +291,8 @@ class LocalUserStore:
         user = self._users_by_id.get(normalized_user_id)
         if user is None:
             raise HTTPException(status_code=404, detail="local user not found")
-        if int(user.get("tenant_id", 1)) != int(tenant_id):
+        user_tenant_id = _require_tenant_id(user.get("tenant_id"), operation="local_user_password_set")
+        if user_tenant_id != int(tenant_id):
             raise HTTPException(status_code=404, detail="local user not found")
 
         normalized_password = password.strip()

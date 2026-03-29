@@ -13,7 +13,6 @@ export type SessionUser = {
 
 type AuthContextValue = {
   user: SessionUser | null;
-  loginDemo: (userId: string) => Promise<{ ok: boolean; error?: string }>;
   loginWithCredentials: (login: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   loginWithLdap: (login: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
@@ -59,36 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const loginDemo = useCallback(async (userId: string) => {
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/auth/demo-login`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", ...csrfHeaders },
-        body: JSON.stringify({ user_id: userId }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        return { ok: false, error: String(err.detail || res.status) };
-      }
-
-      const json = (await res.json()) as SessionUser;
-      persistSession(json);
-      await ensureCsrfToken(baseUrl);
-      return { ok: true };
-    } catch (error) {
-      return { ok: false, error: String(error) };
-    }
-  }, [persistSession]);
-
   const loginWithCredentials = useCallback(async (login: string, password: string) => {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
       const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/auth/mock-login`, {
+      const res = await fetch(`${baseUrl}/auth/login`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json", ...csrfHeaders },
@@ -155,8 +129,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, loginDemo, loginWithCredentials, loginWithLdap, logout }),
-    [user, loginDemo, loginWithCredentials, loginWithLdap, logout],
+    () => ({ user, loginWithCredentials, loginWithLdap, logout }),
+    [user, loginWithCredentials, loginWithLdap, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

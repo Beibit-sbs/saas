@@ -68,7 +68,7 @@ describe("AuthProvider", () => {
       if (url.endsWith("/api/auth/me/profile")) {
         return Promise.resolve(new Response(JSON.stringify({ detail: "unauthorized" }), { status: 401 }));
       }
-      if (url.endsWith("/api/auth/mock-login")) {
+      if (url.endsWith("/api/auth/login")) {
         expect(init).toEqual(
           expect.objectContaining({
             method: "POST",
