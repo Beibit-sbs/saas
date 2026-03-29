@@ -6,6 +6,7 @@ import threading
 import time
 from typing import Callable
 
+from app.modules.observability.metrics import observe_job_execution
 from app.platform.application.notification_dispatch_service import NotificationDispatchService
 from app.platform.application.subscription_rollover_service import SubscriptionRolloverService
 from app.platform.context import service as context_service
@@ -78,8 +79,10 @@ class PlatformWorkerScheduler:
             try:
                 item.task()
                 succeeded += 1
+                observe_job_execution(outcome="success")
             except Exception:
                 failed += 1
+                observe_job_execution(outcome="failed")
             finally:
                 item.last_run_at = now
                 record_scheduler_run(item.name)

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import logging
 import os
-from threading import Lock
 from typing import Any
 
 
@@ -13,11 +13,7 @@ except ImportError:  # pragma: no cover
     redis = None
 
 
-_lock = Lock()
-_state: dict[str, Any] = {
-    "worker_heartbeat_at": None,
-    "scheduler_last_run_at": None,
-}
+logger = logging.getLogger("app.platform.runtime")
 
 
 def _now_iso() -> str:
@@ -29,34 +25,35 @@ def _redis_client():
     if not url or redis is None:
         return None
     try:
-        return redis.Redis.from_url(url, decode_responses=True, socket_timeout=1)
+        client = redis.Redis.from_url(url, decode_responses=True, socket_timeout=1)
+        client.ping()
+        return client
     except Exception:
         return None
 
 
 def _write_state(key: str, value: Any) -> None:
     client = _redis_client()
-    if client is not None:
-        try:
-            client.set(f"platform:runtime:{key}", json.dumps(value))
-            return
-        except Exception:
-            pass
-    with _lock:
-        _state[key] = value
+    if client is None:
+        logger.warning("runtime_state_write_skipped", extra={"event_type": "runtime_state", "error_code": "redis_unavailable"})
+        return
+    try:
+        client.set(f"platform:runtime:{key}", json.dumps(value))
+    except Exception:
+        logger.warning("runtime_state_write_failed", extra={"event_type": "runtime_state", "error_code": "redis_write_failed"})
 
 
 def _read_state(key: str) -> Any:
     client = _redis_client()
-    if client is not None:
-        try:
-            raw = client.get(f"platform:runtime:{key}")
-            if raw:
-                return json.loads(raw)
-        except Exception:
-            pass
-    with _lock:
-        return _state.get(key)
+    if client is None:
+        return None
+    try:
+        raw = client.get(f"platform:runtime:{key}")
+        if raw:
+            return json.loads(raw)
+    except Exception:
+        return None
+    return None
 
 
 def record_worker_heartbeat() -> str:
@@ -85,6 +82,11 @@ def get_scheduler_last_run() -> dict[str, Any] | None:
 
 
 def clear_runtime_state() -> None:
-    with _lock:
-        _state["worker_heartbeat_at"] = None
-        _state["scheduler_last_run_at"] = None
+    client = _redis_client()
+    if client is None:
+        return
+    for key in ("worker_heartbeat_at", "scheduler_last_run_at"):
+        try:
+            client.delete(f"platform:runtime:{key}")
+        except Exception:
+            continue
