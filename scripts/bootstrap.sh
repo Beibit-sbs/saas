@@ -26,6 +26,14 @@ if [[ -d "backend" ]]; then
   source backend/.venv/bin/activate
   pip install --upgrade pip
   pip install -r backend/requirements.txt
+  if [[ -n "${DATABASE_URL:-}" ]]; then
+    (
+      cd backend
+      alembic upgrade head
+    )
+  else
+    echo "DATABASE_URL not set; skipping backend migrations."
+  fi
   deactivate
 fi
 

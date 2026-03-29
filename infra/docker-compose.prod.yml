@@ -6,6 +6,8 @@ services:
 
   frontend:
     restart: always
+    image: nginx:1.27-alpine
+    build: null
     environment:
       NODE_ENV: production
 
@@ -13,3 +15,4 @@ services:
     restart: always
     volumes:
       - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro,Z
+      - ./nginx/certs:/etc/nginx/certs:ro,Z
