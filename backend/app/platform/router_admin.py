@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.modules.audit.service import log_admin_action
 from app.modules.rbac.security import get_actor, resolve_current_user_claims
+from app.modules.tenants.service import get_tenant
 from app.platform.analytics import service as analytics_service
 from app.platform.analytics.schemas import AnalyticsEventProjectionListSchema, AnalyticsEventProjectionRead, TenantKpiSnapshotRead
 from app.platform.ai import service as ai_service
@@ -93,6 +94,21 @@ Actor = Annotated[str, Depends(get_actor)]
 
 def _require_request_tenant_id(request: Request) -> int:
     claims = resolve_current_user_claims(request, request.headers.get("authorization"))
+    header_tenant_id = request.headers.get("x-tenant-id")
+    if header_tenant_id is not None:
+        try:
+            tenant_id = int(str(header_tenant_id).strip())
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="invalid tenant header") from exc
+        if tenant_id <= 0:
+            raise HTTPException(status_code=400, detail="invalid tenant header")
+        tenant = get_tenant(tenant_id)
+        if tenant is None:
+            raise HTTPException(status_code=404, detail=f"Tenant {tenant_id} not found")
+        if tenant.get("status") != "active":
+            raise HTTPException(status_code=403, detail=f"Tenant {tenant_id} is not active")
+        return tenant_id
+
     tenant_id = int(claims.tenant_id)
     if tenant_id <= 0:
         raise HTTPException(status_code=403, detail="invalid tenant context")
@@ -730,13 +746,23 @@ def list_developer_apps(request: Request, _actor: Actor) -> list[DeveloperAppRea
     return [DeveloperAppReadSchema.model_validate(item) for item in developer_service.developer_service.list_apps(tenant_id=tenant_id)]
 
 
+@router.get("/platform/developer/apps/{app_id}", response_model=DeveloperAppReadSchema)
+def get_developer_app(app_id: int, request: Request, _actor: Actor) -> DeveloperAppReadSchema:
+    tenant_id = _require_request_tenant_id(request)
+    row = developer_service.developer_service.get_app(app_id, tenant_id=tenant_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"developer app {app_id} not found")
+    return DeveloperAppReadSchema.model_validate(row)
+
+
 @router.post("/platform/developer/apps/{app_id}/rotate-secret", response_model=DeveloperAppSecretReadSchema)
 def rotate_developer_app_secret(app_id: int, actor: Actor, request: Request) -> DeveloperAppSecretReadSchema:
+    tenant_id = _require_request_tenant_id(request)
     try:
-        row = developer_service.developer_service.rotate_secret(app_id)
+        row = developer_service.developer_service.rotate_secret(app_id, tenant_id=tenant_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    _audit(request, actor, "platform_core.developer_app.rotate_secret", 1, {"app_id": app_id})
+    _audit(request, actor, "platform_core.developer_app.rotate_secret", tenant_id, {"app_id": app_id})
     return DeveloperAppSecretReadSchema.model_validate(row)
 
 
@@ -767,18 +793,26 @@ def install_developer_app(
     "/platform/developer/apps/{app_id}/installations",
     response_model=list[DeveloperAppInstallationReadSchema],
 )
-def list_developer_app_installations(app_id: int, _actor: Actor) -> list[DeveloperAppInstallationReadSchema]:
+def list_developer_app_installations(app_id: int, request: Request, _actor: Actor) -> list[DeveloperAppInstallationReadSchema]:
+    tenant_id = _require_request_tenant_id(request)
+    items = developer_service.developer_service.list_installations(app_id, tenant_id=tenant_id)
+    if not items and developer_service.developer_service.get_app(app_id, tenant_id=tenant_id) is None:
+        raise HTTPException(status_code=404, detail=f"developer app {app_id} not found")
     return [
         DeveloperAppInstallationReadSchema.model_validate(item)
-        for item in developer_service.developer_service.list_installations(app_id)
+        for item in items
     ]
 
 
 @router.get("/platform/developer/apps/{app_id}/logs", response_model=list[DeveloperApiLogReadSchema])
-def list_developer_app_logs(app_id: int, _actor: Actor, limit: int = 100) -> list[DeveloperApiLogReadSchema]:
+def list_developer_app_logs(app_id: int, request: Request, _actor: Actor, limit: int = 100) -> list[DeveloperApiLogReadSchema]:
+    tenant_id = _require_request_tenant_id(request)
+    items = developer_service.developer_service.list_api_logs(app_id, tenant_id=tenant_id, limit=limit)
+    if not items and developer_service.developer_service.get_app(app_id, tenant_id=tenant_id) is None:
+        raise HTTPException(status_code=404, detail=f"developer app {app_id} not found")
     return [
         DeveloperApiLogReadSchema.model_validate(item)
-        for item in developer_service.developer_service.list_api_logs(app_id, limit=limit)
+        for item in items
     ]
 
 
@@ -793,9 +827,14 @@ def subscribe_developer_app_to_event(
     actor: Actor,
     request: Request,
 ) -> DeveloperAppEventSubscriptionReadSchema:
+    tenant_id = _require_request_tenant_id(request)
     try:
-        row = developer_service.developer_service.subscribe_to_event(app_id=app_id, event_type=body.event_type)
+        row = developer_service.developer_service.subscribe_to_event(
+            app_id=app_id,
+            event_type=body.event_type,
+            tenant_id=tenant_id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    _audit(request, actor, "platform_core.developer_app.subscribe", 1, {"app_id": app_id, "event_type": body.event_type})
+    _audit(request, actor, "platform_core.developer_app.subscribe", tenant_id, {"app_id": app_id, "event_type": body.event_type})
     return DeveloperAppEventSubscriptionReadSchema.model_validate(row)

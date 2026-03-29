@@ -14,6 +14,7 @@ const useAutomationExecutionsMock = vi.fn();
 const useCreateAutomationRuleMock = vi.fn();
 const useUpdateAutomationRuleMock = vi.fn();
 const useToastMock = vi.fn();
+const useAdminAuthMock = vi.fn();
 
 vi.mock("../../modules/platform/automation/use-rules", () => ({
   useAutomationRules: (...args: unknown[]) => useAutomationRulesMock(...args),
@@ -30,6 +31,10 @@ vi.mock("../../modules/platform/automation/create-rule", () => ({
 
 vi.mock("../../shared/ui/use-toast", () => ({
   useToast: (...args: unknown[]) => useToastMock(...args),
+}));
+
+vi.mock("../../shared/auth/context", () => ({
+  useAdminAuth: (...args: unknown[]) => useAdminAuthMock(...args),
 }));
 
 vi.mock("../../shared/ui/permission-gate", () => ({
@@ -104,6 +109,15 @@ describe("AutomationRulesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    useAdminAuthMock.mockReturnValue({
+      user: { tenantId: 1, roles: ["admin"], permissions: [] },
+      isLoading: false,
+      isAuthenticated: true,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: vi.fn(() => true),
+      hasAnyPermission: vi.fn(() => true),
+    });
     useCreateAutomationRuleMock.mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,

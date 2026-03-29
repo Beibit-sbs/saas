@@ -55,11 +55,16 @@ class DeveloperPlatformService:
     def list_apps(self, *, tenant_id: int | None = None) -> list[dict[str, Any]]:
         return self._repository.list_apps(tenant_id=tenant_id)
 
-    def get_app(self, app_id: int) -> dict[str, Any] | None:
-        return self._repository.get_app(int(app_id))
-
-    def rotate_secret(self, app_id: int) -> dict[str, Any]:
+    def get_app(self, app_id: int, *, tenant_id: int | None = None) -> dict[str, Any] | None:
         app = self._repository.get_app(int(app_id))
+        if app is None:
+            return None
+        if tenant_id is not None and int(app.get("tenant_id") or 0) != int(tenant_id):
+            return None
+        return app
+
+    def rotate_secret(self, app_id: int, *, tenant_id: int | None = None) -> dict[str, Any]:
+        app = self.get_app(int(app_id), tenant_id=tenant_id)
         if app is None:
             raise ValueError(f"developer app {app_id} not found")
         app_secret = secrets.token_urlsafe(32)
@@ -69,11 +74,8 @@ class DeveloperPlatformService:
         return {**updated, "app_secret": app_secret}
 
     def install_app(self, *, app_id: int, tenant_id: int, installed_by: str) -> dict[str, Any]:
-        app = self._repository.get_app(int(app_id))
+        app = self.get_app(int(app_id), tenant_id=tenant_id)
         if app is None:
-            raise ValueError(f"developer app {app_id} not found")
-        app_tenant_id = app.get("tenant_id")
-        if app_tenant_id is not None and int(app_tenant_id) != int(tenant_id):
             raise ValueError(f"developer app {app_id} not found")
         return self._repository.create_installation(
             app_id=int(app_id),
@@ -82,14 +84,18 @@ class DeveloperPlatformService:
             installed_by=str(installed_by or "platform-admin"),
         )
 
-    def list_installations(self, app_id: int) -> list[dict[str, Any]]:
+    def list_installations(self, app_id: int, *, tenant_id: int | None = None) -> list[dict[str, Any]]:
+        if self.get_app(int(app_id), tenant_id=tenant_id) is None:
+            return []
         return self._repository.list_installations(int(app_id))
 
-    def list_api_logs(self, app_id: int, *, limit: int = 100) -> list[dict[str, Any]]:
+    def list_api_logs(self, app_id: int, *, tenant_id: int | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        if self.get_app(int(app_id), tenant_id=tenant_id) is None:
+            return []
         return self._repository.list_api_logs(int(app_id), limit=limit)
 
-    def subscribe_to_event(self, *, app_id: int, event_type: str) -> dict[str, Any]:
-        app = self._repository.get_app(int(app_id))
+    def subscribe_to_event(self, *, app_id: int, event_type: str, tenant_id: int | None = None) -> dict[str, Any]:
+        app = self.get_app(int(app_id), tenant_id=tenant_id)
         if app is None:
             raise ValueError(f"developer app {app_id} not found")
         return self._repository.create_event_subscription(app_id=int(app_id), event_type=event_type)
@@ -102,6 +108,7 @@ class DeveloperPlatformService:
         *,
         app_key: str,
         app_secret: str,
+        tenant_id: int | None = None,
         required_scope: str,
     ) -> dict[str, Any]:
         app = self._repository.get_app_by_key(app_key)
@@ -117,6 +124,8 @@ class DeveloperPlatformService:
         resolved_tenant_id = int(resolved_tenant_id_raw)
         if resolved_tenant_id <= 0:
             raise ValueError("developer app tenant is invalid")
+        if tenant_id is not None and int(tenant_id) != resolved_tenant_id:
+            raise ValueError("developer app not installed for tenant")
 
         installation = self._repository.get_installation(app_id=int(app["id"]), tenant_id=resolved_tenant_id)
         if installation is None or str(installation.get("status", "")).lower() != DeveloperInstallationStatus.ACTIVE.value:

@@ -53,6 +53,7 @@ from app.modules.rbac.service import (
 from app.modules.rbac.security import resolve_current_user_claims
 from app.modules.security.rate_limit import clear_auth_failures, get_auth_lockout_decision, record_auth_failure
 from app.modules.tenants.service import get_tenant
+from app.modules.tenants.service import list_tenants
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 identity_logger = logging.getLogger("app.identity.events")
@@ -73,6 +74,15 @@ def _require_tenant_id(value: int | str | None, *, operation: str) -> int:
 def _resolve_tenant_for_auth_entrypoint(
     x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
 ) -> dict[str, object]:
+    if x_tenant_id is None:
+        active_tenants = [item for item in list_tenants() if str(item.get("status", "")).strip().lower() == "active"]
+        default_tenant = next((item for item in active_tenants if int(item.get("id", 0)) == 1), None)
+        if default_tenant is not None:
+            return default_tenant
+        if len(active_tenants) == 1:
+            return active_tenants[0]
+        raise HTTPException(status_code=400, detail="tenant_id is required for auth_entrypoint")
+
     tenant_id = _require_tenant_id(x_tenant_id, operation="auth_entrypoint")
     tenant = get_tenant(tenant_id)
     if tenant is None:

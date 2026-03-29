@@ -5,9 +5,14 @@ import type { ReactNode } from "react";
 import RectorDashboardPage from "../../app/(admin)/console/dashboard/page";
 
 const useRectorDashboardMock = vi.fn();
+const useAdminAuthMock = vi.fn();
 
 vi.mock("../../modules/platform/kpi/use-dashboard", () => ({
   useRectorDashboard: (...args: unknown[]) => useRectorDashboardMock(...args),
+}));
+
+vi.mock("../../shared/auth/context", () => ({
+  useAdminAuth: (...args: unknown[]) => useAdminAuthMock(...args),
 }));
 
 vi.mock("../../shared/ui/permission-gate", () => ({
@@ -23,6 +28,15 @@ vi.mock("../../modules/platform/automation/automation-overview-widget", () => ({
 describe("RectorDashboardPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useAdminAuthMock.mockReturnValue({
+      user: { tenantId: 1, roles: ["admin"], permissions: [] },
+      isLoading: false,
+      isAuthenticated: true,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: vi.fn(() => true),
+      hasAnyPermission: vi.fn(() => true),
+    });
   });
 
   it("renders dashboard header and metadata", () => {
@@ -42,8 +56,8 @@ describe("RectorDashboardPage", () => {
     render(<RectorDashboardPage />);
 
     expect(screen.getByText("University Executive Dashboard")).toBeInTheDocument();
-    expect(screen.getByTestId("dashboard-meta")).toHaveTextContent("Tenant: 1");
-    expect(screen.getByTestId("dashboard-meta")).toHaveTextContent("Snapshot Date: 2026-03-24");
+    expect(screen.getByText(/Data date:/)).toHaveTextContent("24 Mar 2026");
+    expect(screen.getByText(/Generated:/)).toBeInTheDocument();
   });
 
   it("renders KPI cards from dashboard payload", () => {

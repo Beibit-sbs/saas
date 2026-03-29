@@ -34,6 +34,11 @@ class PlatformJobWorker:
         }
 
     @staticmethod
+    def _claims_job(job_type: str) -> bool:
+        normalized_job_type = str(job_type or "").strip().lower()
+        return normalized_job_type.startswith("billing.") or normalized_job_type.startswith("platform.")
+
+    @staticmethod
     def _metric_token(metric: str) -> str:
         return str(metric or "").strip().lower().replace(".", "_")
 
@@ -194,10 +199,14 @@ class PlatformJobWorker:
         failed = 0
 
         for job in queued:
-            processed += 1
             job_id = int(job["id"])
             tenant_id = int(job["tenant_id"])
             job_type = str(job["job_type"]).strip().lower()
+
+            if not self._claims_job(job_type):
+                continue
+
+            processed += 1
 
             started = jobs_service.mark_job_running(job_id)
             if started is None:

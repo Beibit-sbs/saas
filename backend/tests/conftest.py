@@ -172,6 +172,8 @@ def _reset_template_state() -> None:
         uow.outbox_event_repository.clear_state(conn=uow.conn)
         uow.analytics_repository.clear_state()
         uow.invoice_repository.clear_state(conn=uow.conn)
+        uow.job_repository.clear_state(conn=uow.conn)
+        uow.idempotency_repository.clear_state(conn=uow.conn)
     webhook_service.clear_webhook_state()
     tenant_service.clear_tenant_state()
     plans_service.clear_plans_state()

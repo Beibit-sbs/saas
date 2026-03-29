@@ -89,7 +89,7 @@ def test_platform_admin_router_keeps_actor_dependency_guard_pattern() -> None:
     assert "Actor = Annotated[str, Depends(get_actor)]" in source
 
 
-def test_public_router_uses_developer_scope_guards_for_public_data_endpoints() -> None:
-    source = _read("backend/app/platform/router_public.py")
+def test_developer_router_uses_developer_scope_guards_for_data_endpoints() -> None:
+    source = _read("backend/app/platform/router_developer_api.py")
     # students, enrollments, grades, analytics/kpi
     assert source.count("Depends(require_developer_scope(") >= 4

@@ -124,16 +124,13 @@ def test_platform_core_v1_end_to_end_flow() -> None:
     assert len(notifications.json()) >= 1
 
     public_tenant = client.get(f"/api/v1/public/tenants/{tenant_id}")
-    assert public_tenant.status_code == 200, public_tenant.text
-    assert public_tenant.json()["slug"] == slug
+    assert public_tenant.status_code == 404, public_tenant.text
 
     public_features = client.get(f"/api/v1/public/tenants/{tenant_id}/features")
-    assert public_features.status_code == 200, public_features.text
-    assert any(item["module"] == "admissions" and item["key"] == "advanced_review" for item in public_features.json())
+    assert public_features.status_code == 404, public_features.text
 
     public_subscription = client.get(f"/api/v1/public/tenants/{tenant_id}/subscription")
-    assert public_subscription.status_code == 200, public_subscription.text
-    assert public_subscription.json()["plan_code"] == plan_code
+    assert public_subscription.status_code == 404, public_subscription.text
 
 
 def test_platform_core_v1_admin_requires_auth() -> None:

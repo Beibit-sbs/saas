@@ -63,7 +63,7 @@ describe("DeveloperAppsPage", () => {
       isError: false,
     });
     useDeveloperAppLogsMock.mockReturnValue({
-      data: [{ id: 1, app_id: 1, tenant_id: 7, endpoint: "/api/v1/public/students", status_code: 200, latency_ms: 12.5, created_at: "2026-01-01T00:00:00Z" }],
+      data: [{ id: 1, app_id: 1, tenant_id: 7, endpoint: "/api/dev/students", status_code: 200, latency_ms: 12.5, created_at: "2026-01-01T00:00:00Z" }],
       isLoading: false,
       isError: false,
     });

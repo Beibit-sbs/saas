@@ -79,3 +79,8 @@ def fetch_queued_jobs(limit: int = 50) -> list[dict[str, Any]]:
 def requeue_job(job_id: int, error: str) -> dict[str, Any] | None:
     with UnitOfWork() as uow:
         return uow.job_repository.requeue_for_retry(int(job_id), error, conn=uow.conn)
+
+
+def clear_jobs_state() -> None:
+    with UnitOfWork() as uow:
+        uow.job_repository.clear_state(conn=uow.conn)

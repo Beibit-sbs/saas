@@ -23,6 +23,20 @@ class IdempotencyRepository:
     def _now_iso(self) -> str:
         return self._now().isoformat()
 
+    def clear_state(self, *, conn: object | None = None) -> None:
+        if conn is None:
+            with transaction() as tx:
+                self.clear_state(conn=tx)
+                return
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM platform_idempotency_keys")
+            return
+
+        with self._lock:
+            self._memory.clear()
+
     def get(self, tenant_id: int, key: str, operation: str, *, conn: object | None = None) -> dict[str, Any] | None:
         normalized_tenant_id = int(tenant_id)
         normalized_key = key.strip()

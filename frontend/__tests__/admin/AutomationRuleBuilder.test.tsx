@@ -7,10 +7,15 @@ import * as createRuleModule from "@/modules/platform/automation/create-rule";
 import * as useToastModule from "@/shared/ui/use-toast";
 import * as navigationModule from "next/navigation";
 
+const useAdminAuthMock = vi.fn();
+
 // Mock dependencies
 vi.mock("@/modules/platform/automation/create-rule");
 vi.mock("@/shared/ui/use-toast");
 vi.mock("next/navigation");
+vi.mock("@/shared/auth/context", () => ({
+  useAdminAuth: (...args: unknown[]) => useAdminAuthMock(...args),
+}));
 vi.mock("@/shared/ui/permission-gate", () => ({
   RequirePermission: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
@@ -25,6 +30,15 @@ describe("AutomationRuleNewPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockMutate.mockReset();
+    useAdminAuthMock.mockReturnValue({
+      user: { tenantId: 1, roles: ["admin"], permissions: [] },
+      isLoading: false,
+      isAuthenticated: true,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: vi.fn(() => true),
+      hasAnyPermission: vi.fn(() => true),
+    });
 
     (navigationModule.useRouter as any).mockReturnValue({
       push: mockPush,

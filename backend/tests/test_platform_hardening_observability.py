@@ -192,7 +192,7 @@ def test_ops_and_latency_metrics_are_normalized() -> None:
         uow.developer_repository.log_api_call(
             app_id=int(app_row["id"]),
             tenant_id=tenant_id,
-            endpoint="/api/v1/public/students",
+            endpoint="/api/dev/students",
             status_code=503,
             latency_ms=12.5,
             conn=uow.conn,

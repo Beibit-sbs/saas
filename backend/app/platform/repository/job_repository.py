@@ -36,6 +36,21 @@ class JobRepository:
             "updated_at": row[10].isoformat() if hasattr(row[10], "isoformat") else str(row[10]),
         }
 
+    def clear_state(self, *, conn: object | None = None) -> None:
+        if conn is None:
+            with transaction() as tx:
+                self.clear_state(conn=tx)
+                return
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM app_platform_jobs")
+            return
+
+        with self._lock:
+            self._rows.clear()
+            self._counter = 0
+
     def enqueue(self, tenant_id: int, job_type: str, payload: dict[str, Any], max_retries: int, *, conn: object | None = None) -> dict[str, Any]:
         normalized_tenant_id = int(tenant_id)
         normalized_job_type = job_type.strip().lower()

@@ -17,10 +17,10 @@ def _tenant(prefix: str = "dev-app") -> int:
 
 
 def _developer_headers(app_key: str, app_secret: str, tenant_id: int) -> dict[str, str]:
+    del tenant_id
     return {
         "X-App-Key": app_key,
         "X-App-Secret": app_secret,
-        "X-Tenant-Id": str(tenant_id),
     }
 
 
@@ -148,7 +148,7 @@ def test_admin_api_create_install_subscribe_and_list_logs(reset_shared_state) ->
     assert logs_resp.json() == []
 
 
-def test_public_students_endpoint_enforces_credentials_and_logs_usage(reset_shared_state) -> None:
+def test_developer_students_endpoint_enforces_credentials_and_logs_usage(reset_shared_state) -> None:
     tenant_id = 1
     create_resp = client.post(
         "/api/v1/admin/platform/developer/apps",
@@ -180,11 +180,11 @@ def test_public_students_endpoint_enforces_credentials_and_logs_usage(reset_shar
         tenant_id,
     )
 
-    unauthorized_resp = client.get("/api/v1/public/students")
+    unauthorized_resp = client.get("/api/dev/students")
     assert unauthorized_resp.status_code == 401, unauthorized_resp.text
 
     authorized_resp = client.get(
-        "/api/v1/public/students",
+        "/api/dev/students",
         headers=_developer_headers(app["app_key"], app["app_secret"], tenant_id),
     )
     assert authorized_resp.status_code == 200, authorized_resp.text
@@ -199,12 +199,11 @@ def test_public_students_endpoint_enforces_credentials_and_logs_usage(reset_shar
     assert logs_resp.status_code == 200, logs_resp.text
     logs = logs_resp.json()
     assert len(logs) >= 1
-    assert any(item["endpoint"] == "/api/v1/public/students" and item["status_code"] == 200 for item in logs)
+    assert any(item["endpoint"] == "/api/dev/students" and item["status_code"] == 200 for item in logs)
 
 
-def test_public_api_scope_and_tenant_isolation(reset_shared_state) -> None:
+def test_developer_api_scope_and_tenant_isolation(reset_shared_state) -> None:
     tenant_id = 1
-    other_tenant_id = _tenant("iso-public")
 
     create_resp = client.post(
         "/api/v1/admin/platform/developer/apps",
@@ -226,20 +225,14 @@ def test_public_api_scope_and_tenant_isolation(reset_shared_state) -> None:
     assert install_resp.status_code == 201, install_resp.text
 
     forbidden_resp = client.get(
-        "/api/v1/public/students",
+        "/api/dev/students",
         headers=_developer_headers(app["app_key"], app["app_secret"], tenant_id),
     )
     assert forbidden_resp.status_code == 403, forbidden_resp.text
 
-    wrong_tenant_resp = client.get(
-        "/api/v1/public/analytics/kpi",
-        headers=_developer_headers(app["app_key"], app["app_secret"], other_tenant_id),
-    )
-    assert wrong_tenant_resp.status_code == 401, wrong_tenant_resp.text
-
     ok_resp = client.get(
-        "/api/v1/public/analytics/kpi",
+        "/api/dev/analytics/kpi",
         headers=_developer_headers(app["app_key"], app["app_secret"], tenant_id),
     )
     assert ok_resp.status_code == 200, ok_resp.text
-    assert "tenant_id" in ok_resp.json()
+    assert ok_resp.json()["tenant_id"] == tenant_id

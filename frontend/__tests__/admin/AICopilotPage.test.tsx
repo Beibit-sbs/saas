@@ -5,9 +5,14 @@ import type { ReactNode } from "react";
 import AICopilotPage from "../../app/(admin)/console/ai/copilot/page";
 
 const useAskCopilotMock = vi.fn();
+const useAdminAuthMock = vi.fn();
 
 vi.mock("../../modules/platform/ai/use-copilot", () => ({
   useAskCopilot: (...args: unknown[]) => useAskCopilotMock(...args),
+}));
+
+vi.mock("../../shared/auth/context", () => ({
+  useAdminAuth: (...args: unknown[]) => useAdminAuthMock(...args),
 }));
 
 vi.mock("../../shared/ui/permission-gate", () => ({
@@ -19,6 +24,15 @@ vi.mock("../../shared/ui/permission-gate", () => ({
 describe("AICopilotPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useAdminAuthMock.mockReturnValue({
+      user: { tenantId: 1, roles: ["admin"], permissions: [] },
+      isLoading: false,
+      isAuthenticated: true,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: vi.fn(() => true),
+      hasAnyPermission: vi.fn(() => true),
+    });
   });
 
   it("renders input and submit button", () => {
