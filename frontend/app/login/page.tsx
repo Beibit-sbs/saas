@@ -66,7 +66,7 @@ export default function LoginPage() {
           <div className="flex justify-center mb-2">
             <GraduationCap className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle>EduAdmin Console</CardTitle>
+          <CardTitle>AI University Platform</CardTitle>
           <CardDescription>Sign in to continue</CardDescription>
         </CardHeader>
         <CardContent>

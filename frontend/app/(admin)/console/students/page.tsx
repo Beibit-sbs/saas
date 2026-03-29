@@ -15,6 +15,9 @@ import { useStudents } from "@/modules/students/hooks";
 import { Student } from "@/modules/students/types";
 import { formatDate } from "@/shared/utils/format";
 import { GraduationCap } from "lucide-react";
+import { usePermissions } from "@/shared/hooks/use-permissions";
+import { PERMISSIONS } from "@/shared/config/permissions";
+import { AccessDenied } from "@/shared/ui/permission-gate";
 
 const FILTER_FIELDS = [
   { key: "search", label: "Search", type: "text" as const, placeholder: "Name or email…" },
@@ -32,6 +35,7 @@ const FILTER_FIELDS = [
 ];
 
 export default function StudentsPage() {
+  const { hasPermission } = usePermissions();
   const router = useRouter();
   const table = useTableQueryState({ filterKeys: ["search", "status"] as const, defaultPageSize: 20, defaultSort: { key: "created", direction: "desc" } });
   const detail = useDetailDrawer({ paramKey: "student" });
@@ -43,6 +47,8 @@ export default function StudentsPage() {
     status: table.filters.status,
   });
   const selectedStudent = data?.items.find((item) => item.id === detail.selectedId) ?? null;
+
+  if (!hasPermission(PERMISSIONS.STUDENTS_READ)) return <AccessDenied />;
 
   if (error) {
     return <ErrorState title="Failed to load students" onRetry={refetch} />;

@@ -5,7 +5,6 @@ import "./admin-legacy.css";
 import { useLanguage } from "../components/LanguageProvider";
 import { AdminAuditTab } from "./components/AdminAuditTab";
 import { AdminBackupsTab } from "./components/AdminBackupsTab";
-import { AdminExampleNotesTab } from "./components/AdminExampleNotesTab";
 import { AdminFeatureFlagsTab } from "./components/AdminFeatureFlagsTab";
 import { AdminIntegrationsTab } from "./components/AdminIntegrationsTab";
 import { AdminJobsTab } from "./components/AdminJobsTab";
@@ -88,7 +87,6 @@ export default function AdminPage() {
     dashboardLoading,
     overviewFeedback,
     dashboardSnapshot,
-    exampleReferenceItems,
     dashboardStamp,
     enabledLanguageCodes,
     loadDashboard,
@@ -393,7 +391,6 @@ export default function AdminPage() {
     { id: "jobs", label: "Jobs", icon: "◔" },
     { id: "audit", label: l.audit, icon: "◌" },
     { id: "feature-flags", label: tx("featureFlags"), icon: "✦" },
-    { id: "example-notes", label: tx("exampleNotesTab", "Example Notes"), icon: "▤" },
     { id: "system", label: "System", icon: "◍" },
     { id: "university", label: "University", icon: "◬" },
     { id: "tenants", label: "Tenants", icon: "⬡" },
@@ -459,7 +456,6 @@ export default function AdminPage() {
             overviewFeedback={overviewFeedback}
             dashboardSnapshot={dashboardSnapshot}
             enabledLanguageCodes={enabledLanguageCodes}
-            exampleReferenceItems={exampleReferenceItems}
             onRefresh={loadDashboard}
           />
         ) : null}
@@ -659,12 +655,6 @@ export default function AdminPage() {
           />
         ) : null}
 
-        {activeTab === "example-notes" ? (
-          <AdminExampleNotesTab
-            buildAuthHeaders={buildAuthHeaders}
-            tx={tx}
-          />
-        ) : null}
         {activeTab === "system" ? (
           <AdminSystemTab
             systemHealth={systemHealth}

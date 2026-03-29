@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { ShieldOff } from "lucide-react";
 import { useAdminAuth } from "@/shared/auth/context";
 import type { Permission } from "@/shared/config/permissions";
@@ -19,6 +20,12 @@ export function AccessDenied({ message = "You don't have permission to view this
       <ShieldOff className="h-12 w-12 text-muted-foreground/40 mb-4" />
       <h3 className="font-medium text-muted-foreground">Access Denied</h3>
       <p className="text-sm text-muted-foreground/70 mt-1 max-w-xs">{message}</p>
+      <Link
+        href="/console"
+        className="mt-4 text-sm text-primary underline-offset-4 hover:underline"
+      >
+        Go to Dashboard
+      </Link>
     </div>
   );
 }

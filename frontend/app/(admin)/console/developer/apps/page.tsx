@@ -50,7 +50,7 @@ export default function DeveloperAppsPage() {
           <div className="rounded-lg border bg-card p-4 space-y-3 lg:col-span-1" data-testid="developer-app-create-panel">
             <p className="text-sm font-medium">Create Developer App</p>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="App name" />
-            <Input value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} placeholder="owner@example.com" />
+            <Input value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} placeholder="owner@company.com" />
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" />
             <Input value={scopes} onChange={(e) => setScopes(e.target.value)} placeholder="students.read,analytics.read" />
             <Button

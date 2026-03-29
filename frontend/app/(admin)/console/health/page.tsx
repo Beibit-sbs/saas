@@ -5,13 +5,18 @@ import { MetricCard } from "@/shared/ui/metric-card";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { ErrorState } from "@/shared/ui/error-state";
+import { AccessDenied } from "@/shared/ui/permission-gate";
+import { usePermissions } from "@/shared/hooks/use-permissions";
+import { PERMISSIONS } from "@/shared/config/permissions";
 import { useHealthStatus, useMetrics } from "@/modules/platform/health/hooks";
 import { Activity, Zap, Clock, AlertCircle } from "lucide-react";
 
 export default function HealthPage() {
+  const { hasPermission } = usePermissions();
   const { data: health, isLoading: healthLoading, error, refetch } = useHealthStatus();
   const { data: metrics, isLoading: metricsLoading } = useMetrics();
 
+  if (!hasPermission(PERMISSIONS.HEALTH_READ)) return <AccessDenied />;
   if (error) return <ErrorState title="Failed to load health data" onRetry={refetch} />;
 
   return (
@@ -27,7 +32,7 @@ export default function HealthPage() {
         />
         <MetricCard
           label="Avg Response"
-          value={metrics ? `${metrics.avg_response_ms}ms` : undefined}
+          value={metrics?.avg_response_ms != null ? `${metrics.avg_response_ms}ms` : undefined}
           icon={Clock}
           loading={metricsLoading}
         />

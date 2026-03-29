@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AdminTranslationKey } from "../../../i18n/admin";
-import type { AdminTab, DashboardSnapshot, ExampleReferenceItem, InlineFeedback, SupportedLanguage } from "../types";
+import type { AdminTab, DashboardSnapshot, InlineFeedback, SupportedLanguage } from "../types";
 
 type UseAdminOverviewParams = {
   activeTab: AdminTab;
@@ -14,7 +14,6 @@ type UseAdminOverviewResult = {
   dashboardLoading: boolean;
   overviewFeedback: InlineFeedback | null;
   dashboardSnapshot: DashboardSnapshot | null;
-  exampleReferenceItems: ExampleReferenceItem[];
   dashboardStamp: string;
   enabledLanguageCodes: string;
   loadDashboard: () => Promise<void>;
@@ -31,7 +30,6 @@ export function useAdminOverview({
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [overviewFeedback, setOverviewFeedback] = useState<InlineFeedback | null>(null);
   const [dashboardSnapshot, setDashboardSnapshot] = useState<DashboardSnapshot | null>(null);
-  const [exampleReferenceItems, setExampleReferenceItems] = useState<ExampleReferenceItem[]>([]);
   const [dashboardStamp, setDashboardStamp] = useState(() => new Date().toLocaleString());
 
   const enabledLanguageCodes = useMemo(
@@ -66,16 +64,6 @@ export function useAdminOverview({
       setDashboardSnapshot(json);
       setDashboardStamp(new Date(json.generated_at).toLocaleString());
 
-      const exampleRes = await fetch(`${baseUrl}/admin/example-slice/reference-items`, {
-        headers: buildAuthHeaders(),
-        credentials: "include",
-        cache: "no-store",
-      });
-      if (exampleRes.ok) {
-        const exampleJson = (await exampleRes.json()) as { items?: ExampleReferenceItem[] };
-        setExampleReferenceItems(exampleJson.items || []);
-      }
-
       setOverviewFeedback({ tone: "success", message: tx("overviewRefreshed") });
     } catch (error) {
       setOverviewFeedback({ tone: "error", message: String(error) });
@@ -99,7 +87,6 @@ export function useAdminOverview({
     dashboardLoading,
     overviewFeedback,
     dashboardSnapshot,
-    exampleReferenceItems,
     dashboardStamp,
     enabledLanguageCodes,
     loadDashboard,

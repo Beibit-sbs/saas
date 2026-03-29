@@ -11,6 +11,7 @@ from fastapi.routing import APIRoute  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.main import app  # noqa: E402
+from tests.conftest import ADMIN_HEADERS  # noqa: E402
 
 REQUIRED_DOCS = [
     ROOT_DIR / "README.md",
@@ -31,7 +32,6 @@ REQUIRED_MODULE_PATHS = [
     ROOT_DIR / "backend/app/modules/integrations",
     ROOT_DIR / "backend/app/modules/ai_gateway",
     ROOT_DIR / "backend/app/modules/feature_flags",
-    ROOT_DIR / "backend/app/modules/example_notes",
     ROOT_DIR / "backend/app/modules/backup",
     ROOT_DIR / "backend/app/modules/i18n",
     ROOT_DIR / "backend/app/modules/observability",
@@ -43,7 +43,6 @@ REQUIRED_ROUTE_PATHS = {
     "/health/db",
     "/api/health",
     "/api/v1/admin/tenants",
-    "/api/v1/public/tenants/{tenant_id}",
     "/api/v1/internal/jobs/{job_id}/run",
     "/api/auth/modes",
     "/api/admin/dashboard",
@@ -54,7 +53,6 @@ REQUIRED_ROUTE_PATHS = {
     "/api/admin/ai/models",
     "/api/ai/chat",
     "/api/admin/feature-flags",
-    "/api/admin/example-notes",
     "/api/admin/backups/settings",
     "/api/admin/audit/events",
     "/api/i18n/languages",
@@ -93,10 +91,10 @@ def test_required_routes_exist() -> None:
 def test_minimal_health_checks_pass() -> None:
     client = TestClient(app)
 
-    response = client.get("/health")
+    response = client.get("/health", headers=ADMIN_HEADERS)
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
     api_response = client.get("/api/health")
     assert api_response.status_code == 200
-    assert api_response.json()["status"] == "ok"
+    assert api_response.json()["live"] is True

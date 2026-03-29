@@ -93,7 +93,8 @@ describe("AdminPage shell integration", () => {
     expect(screen.getAllByText("Platform Admin").length).toBeGreaterThan(0);
     expect(screen.getByTestId("sidebar-section-overview")).toBeInTheDocument();
     expect(screen.getByTestId("sidebar-section-languages")).toBeInTheDocument();
-    expect(screen.getByTestId("sidebar-section-example-notes")).toBeInTheDocument();
+    expect(screen.queryByTestId("sidebar-section-example-notes")).not.toBeInTheDocument();
+    expect(screen.queryByText(/example notes/i)).not.toBeInTheDocument();
 
     await user.click(screen.getByTestId("sidebar-section-languages"));
 

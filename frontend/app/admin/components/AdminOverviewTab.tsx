@@ -1,4 +1,4 @@
-import type { AdminCopy, DashboardSnapshot, ExampleReferenceItem, InlineFeedback, TxFn } from "../types";
+import type { AdminCopy, DashboardSnapshot, InlineFeedback, TxFn } from "../types";
 
 type AdminOverviewTabProps = {
   l: AdminCopy;
@@ -8,7 +8,6 @@ type AdminOverviewTabProps = {
   overviewFeedback: InlineFeedback | null;
   dashboardSnapshot: DashboardSnapshot | null;
   enabledLanguageCodes: string;
-  exampleReferenceItems: ExampleReferenceItem[];
   onRefresh: () => void | Promise<void>;
 };
 
@@ -20,7 +19,6 @@ export function AdminOverviewTab({
   overviewFeedback,
   dashboardSnapshot,
   enabledLanguageCodes,
-  exampleReferenceItems,
   onRefresh,
 }: AdminOverviewTabProps) {
   return (
@@ -124,23 +122,6 @@ export function AdminOverviewTab({
           <li>{l.controlledExceptions}</li>
           <li>{l.documentActions}</li>
         </ul>
-      </article>
-      <article className="panelCard">
-        <h2>{tx("exampleSliceTitle")}</h2>
-        <p className="subText">{tx("exampleSliceHelp")}</p>
-        {exampleReferenceItems.length === 0 ? (
-          <p className="subText">{tx("exampleSliceEmpty")}</p>
-        ) : (
-          <ul className="plainList">
-            {exampleReferenceItems.map((item) => (
-              <li key={item.key}>
-                <b>{item.title}</b> ({item.key})
-                <br />
-                {tx("exampleSlicePermission")}: {item.required_permission} | {tx("exampleSliceAudit")}: {item.audit_action}
-              </li>
-            ))}
-          </ul>
-        )}
       </article>
     </div>
   );

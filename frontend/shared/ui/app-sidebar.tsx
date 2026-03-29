@@ -2,24 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAVIGATION } from "@/shared/config/navigation";
+import { getNavigationForRoles } from "@/shared/config/navigation";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { cn } from "@/shared/utils/cn";
 import { GraduationCap } from "lucide-react";
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, roles } = usePermissions();
+  const navigation = getNavigationForRoles(roles);
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r bg-sidebar">
       <div className="flex h-14 items-center gap-2 border-b px-4">
         <GraduationCap className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-sm">EduAdmin</span>
+        <span className="font-semibold text-sm">AI University</span>
       </div>
 
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-        {NAVIGATION.map((group) => {
+        {navigation.map((group) => {
           const visibleItems = group.items.filter((item) => (item.permission ? hasPermission(item.permission) : true));
           if (visibleItems.length === 0) return null;
           return (

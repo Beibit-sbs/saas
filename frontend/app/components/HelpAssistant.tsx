@@ -52,7 +52,7 @@ export default function HelpAssistant() {
       openAria: "Open AI help",
       title: "AI help",
       serverError: "Server error",
-      fieldPlaceholder: "for example, ldap_bind_dn",
+      fieldPlaceholder: "e.g. ldap_bind_dn",
       questionPlaceholder: "What should be filled here and how?",
       answer: "Answer",
       nextSteps: "Next steps",

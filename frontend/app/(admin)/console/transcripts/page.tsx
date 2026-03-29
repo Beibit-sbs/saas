@@ -7,10 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { FileText, Search } from "lucide-react";
+import { usePermissions } from "@/shared/hooks/use-permissions";
+import { PERMISSIONS } from "@/shared/config/permissions";
+import { AccessDenied } from "@/shared/ui/permission-gate";
 
 export default function TranscriptsPage() {
+  const { hasPermission } = usePermissions();
   const router = useRouter();
   const [studentId, setStudentId] = useState("");
+  if (!hasPermission(PERMISSIONS.TRANSCRIPTS_READ)) return <AccessDenied />;
 
   function openTranscript() {
     if (!studentId.trim()) return;

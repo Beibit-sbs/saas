@@ -1,6 +1,6 @@
 import type { AdminTranslationDictionary, AdminTranslationKey } from "../../i18n/admin";
 
-export type AdminTab = "overview" | "languages" | "local-users" | "rbac" | "integrations" | "backups" | "jobs" | "audit" | "feature-flags" | "example-notes" | "system" | "university" | "tenants";
+export type AdminTab = "overview" | "languages" | "local-users" | "rbac" | "integrations" | "backups" | "jobs" | "audit" | "feature-flags" | "system" | "university" | "tenants";
 export type UiLang = "ru" | "en" | "kk";
 export type CatalogLanguage = { code: string; name: string; native_name: string };
 
@@ -91,13 +91,6 @@ export type FeatureFlag = {
   last_changed_at?: string;
   last_changed_by?: string;
   metadata?: Record<string, unknown>;
-};
-
-export type ExampleReferenceItem = {
-  key: string;
-  title: string;
-  required_permission: string;
-  audit_action: string;
 };
 
 export type RbacRoleEntry = {

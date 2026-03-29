@@ -9,6 +9,9 @@ import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
 import { useSections } from "@/modules/scheduling/hooks";
 import { CourseSection } from "@/modules/scheduling/types";
 import { Calendar } from "lucide-react";
+import { usePermissions } from "@/shared/hooks/use-permissions";
+import { PERMISSIONS } from "@/shared/config/permissions";
+import { AccessDenied } from "@/shared/ui/permission-gate";
 
 const FILTER_FIELDS = [
   { key: "semester", label: "Semester", type: "text" as const, placeholder: "e.g. 2024-spring" },
@@ -25,6 +28,7 @@ const FILTER_FIELDS = [
 ];
 
 export default function SchedulingPage() {
+  const { hasPermission } = usePermissions();
   const table = useTableQueryState({ filterKeys: ["semester", "status"] as const, defaultPageSize: 20, defaultSort: { key: "semester", direction: "desc" } });
 
   const { data, isLoading, error, refetch } = useSections({
@@ -33,6 +37,8 @@ export default function SchedulingPage() {
     semester: table.filters.semester,
     status: table.filters.status,
   });
+
+  if (!hasPermission(PERMISSIONS.SCHEDULING_READ)) return <AccessDenied />;
 
   if (error) {
     return <ErrorState title="Failed to load sections" onRetry={refetch} />;
