@@ -122,3 +122,49 @@ class UsageRepository:
             current["updated_at"] = self._now_iso()
             self._memory[key] = current
             return dict(current)
+
+    def list_for_tenant_period(
+        self,
+        tenant_id: int,
+        *,
+        period_key: str,
+        conn: object | None = None,
+    ) -> list[dict[str, Any]]:
+        normalized_tenant_id = int(tenant_id)
+        normalized_period_key = str(period_key or "").strip().lower() or "current"
+
+        if conn is None:
+            with transaction() as tx:
+                return self.list_for_tenant_period(normalized_tenant_id, period_key=normalized_period_key, conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT tenant_id, metric, period_key, value, updated_at
+                    FROM app_platform_usage_counters
+                    WHERE tenant_id = %s AND period_key = %s
+                    ORDER BY metric ASC
+                    """,
+                    (normalized_tenant_id, normalized_period_key),
+                )
+                rows = cur.fetchall()
+            return [
+                {
+                    "tenant_id": int(row[0]),
+                    "metric": str(row[1]),
+                    "period_key": str(row[2]),
+                    "value": int(row[3]),
+                    "updated_at": row[4].isoformat() if hasattr(row[4], "isoformat") else str(row[4]),
+                }
+                for row in rows
+            ]
+
+        with self._lock:
+            rows = [
+                dict(item)
+                for item in self._memory.values()
+                if int(item.get("tenant_id", 0)) == normalized_tenant_id and str(item.get("period_key", "")) == normalized_period_key
+            ]
+        rows.sort(key=lambda item: str(item.get("metric", "")))
+        return rows

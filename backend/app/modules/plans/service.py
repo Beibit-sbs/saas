@@ -1,4 +1,6 @@
 from __future__ import annotations
+from app.core.db import get_raw_conn
+from app.core.config import is_runtime_schema_bootstrap_enabled
 
 from dataclasses import dataclass, field
 import os
@@ -92,6 +94,8 @@ def _ensure_memory_seeded() -> None:
 
 
 def _ensure_db(conn) -> None:
+    if not is_runtime_schema_bootstrap_enabled():
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -123,7 +127,7 @@ def _ensure_db(conn) -> None:
 
 def _list_db(include_inactive: bool) -> list[dict[str, object]]:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_db(conn)
         where_sql = "" if include_inactive else "WHERE active = TRUE"
         with conn.cursor() as cur:
@@ -150,7 +154,7 @@ def _list_db(include_inactive: bool) -> list[dict[str, object]]:
 
 def _create_db(payload: dict[str, object]) -> dict[str, object]:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_db(conn)
         with conn.cursor() as cur:
             cur.execute(
@@ -179,7 +183,7 @@ def _create_db(payload: dict[str, object]) -> dict[str, object]:
 
 def _update_db(plan_id: int, payload: dict[str, object]) -> dict[str, object]:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_db(conn)
         with conn.cursor() as cur:
             cur.execute(

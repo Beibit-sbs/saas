@@ -1,4 +1,6 @@
 from __future__ import annotations
+from app.core.db import get_raw_conn
+from app.core.config import is_runtime_schema_bootstrap_enabled
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -61,6 +63,8 @@ def _use_database() -> bool:
 
 
 def _ensure_db(conn) -> None:
+    if not is_runtime_schema_bootstrap_enabled():
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -116,7 +120,7 @@ def list_quotas(plan_id: int | None = None) -> list[dict[str, object]]:
     if _use_database():
         try:
             assert _db_url() and psycopg is not None
-            with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+            with get_raw_conn() as conn:
                 _ensure_db(conn)
                 _ensure_seeded_db(conn)
                 with conn.cursor() as cur:
@@ -193,7 +197,7 @@ def update_plan_quotas(plan_id: int, quotas: dict[str, int]) -> list[dict[str, o
     if _use_database():
         try:
             assert _db_url() and psycopg is not None
-            with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+            with get_raw_conn() as conn:
                 _ensure_db(conn)
                 _ensure_seeded_db(conn)
                 with conn.cursor() as cur:

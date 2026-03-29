@@ -130,6 +130,44 @@ class BillingRepository:
         rows.sort(key=lambda item: int(item["id"]))
         return rows
 
+    def get_plan(self, code: str, *, conn: object | None = None) -> dict[str, Any] | None:
+        normalized_code = str(code or "").strip().lower()
+        if not normalized_code:
+            return None
+
+        if conn is None:
+            with transaction() as tx:
+                return self.get_plan(normalized_code, conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id, code, name, price_cents, features_json, limits_json, active, created_at
+                    FROM app_platform_plans
+                    WHERE code = %s
+                    LIMIT 1
+                    """,
+                    (normalized_code,),
+                )
+                row = cur.fetchone()
+            if row is None:
+                return None
+            return {
+                "id": int(row[0]),
+                "code": str(row[1]),
+                "name": str(row[2]),
+                "price_cents": int(row[3]),
+                "features": dict(row[4] or {}),
+                "limits": {str(k): int(v) for k, v in dict(row[5] or {}).items()},
+                "active": bool(row[6]),
+                "created_at": row[7].isoformat() if hasattr(row[7], "isoformat") else str(row[7]),
+            }
+
+        with self._lock:
+            match = next((item for item in self._plans.values() if str(item.get("code", "")) == normalized_code), None)
+        return dict(match) if match is not None else None
+
     def assign_subscription(self, tenant_id: int, plan_code: str, *, conn: object | None = None) -> dict[str, Any]:
         normalized_tenant_id = int(tenant_id)
         normalized_plan_code = plan_code.strip().lower()

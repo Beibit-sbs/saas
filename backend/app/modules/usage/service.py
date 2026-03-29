@@ -1,9 +1,14 @@
 from __future__ import annotations
+from app.core.db import get_raw_conn
+from app.core.config import is_runtime_schema_bootstrap_enabled
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import os
 from threading import Lock
+
+_usage_table_ready = False
+_usage_table_lock = Lock()
 from typing import Any
 
 try:
@@ -35,6 +40,8 @@ def _now_iso() -> str:
 
 
 def _ensure_table(conn) -> None:
+    if not is_runtime_schema_bootstrap_enabled():
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -53,6 +60,18 @@ def _ensure_table(conn) -> None:
     conn.commit()
 
 
+
+def _ensure_table_once(conn) -> None:
+    global _usage_table_ready
+    if _usage_table_ready:
+        return
+    with _usage_table_lock:
+        if _usage_table_ready:
+            return
+        _ensure_table(conn)
+        _usage_table_ready = True
+
+
 def record_usage_event(tenant_id: int, metric: str, value: int = 1) -> dict[str, object]:
     normalized_tenant_id = int(tenant_id)
     if normalized_tenant_id <= 0:
@@ -67,8 +86,8 @@ def record_usage_event(tenant_id: int, metric: str, value: int = 1) -> dict[str,
     if _use_database():
         try:
             assert _db_url() and psycopg is not None
-            with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-                _ensure_table(conn)
+            with get_raw_conn() as conn:
+                _ensure_table_once(conn)
                 with conn.cursor() as cur:
                     cur.execute(
                         """
@@ -115,8 +134,8 @@ def list_usage_events(
     if _use_database():
         try:
             assert _db_url() and psycopg is not None
-            with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-                _ensure_table(conn)
+            with get_raw_conn() as conn:
+                _ensure_table_once(conn)
                 with conn.cursor() as cur:
                     if normalized_metric:
                         cur.execute(
@@ -188,8 +207,8 @@ def clear_usage_state() -> None:
     if _use_database():
         try:
             assert _db_url() and psycopg is not None
-            with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-                _ensure_table(conn)
+            with get_raw_conn() as conn:
+                _ensure_table_once(conn)
                 with conn.cursor() as cur:
                     cur.execute("DELETE FROM app_usage_events")
                 conn.commit()
