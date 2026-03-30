@@ -102,7 +102,7 @@ async def fetch_admin_token(client: httpx.AsyncClient) -> str:
     )
 
 
-def build_profile_operations(profile: str) -> list[Operation]:
+def build_profile_operations(profile: str, include_sync_jobs: bool = False) -> list[Operation]:
     if profile == "baseline_http":
         return [
             Operation("health_live", "GET", "/health/live", 35),
@@ -162,7 +162,7 @@ def build_profile_operations(profile: str) -> list[Operation]:
         ]
 
     if profile == "mixed":
-        return [
+        operations = [
             Operation("dashboard", "GET", "/api/admin/dashboard", 15),
             Operation("students_list", "GET", "/api/admin/students?page=1&page_size=20", 15),
             Operation("health_live", "GET", "/health/live", 10),
@@ -176,15 +176,21 @@ def build_profile_operations(profile: str) -> list[Operation]:
                 body_builder=build_admissions_create_payload,
                 expected_statuses=(201,),
             ),
-            Operation(
-                "jobs_enqueue",
-                "POST",
-                path="/api/admin/jobs",
-                weight=10,
-                body={"job_type": "sync", "payload": {"source": "mixed"}, "max_retries": 1},
-                expected_statuses=(200, 201),
-            ),
         ]
+
+        # Safety default: mixed profile does not enqueue sync jobs unless explicitly requested.
+        if include_sync_jobs:
+            operations.append(
+                Operation(
+                    "jobs_enqueue",
+                    "POST",
+                    path="/api/admin/jobs",
+                    weight=10,
+                    body={"job_type": "sync", "payload": {"source": "mixed"}, "max_retries": 1},
+                    expected_statuses=(200, 201),
+                )
+            )
+        return operations
 
     raise ValueError(f"Unknown profile: {profile}")
 
@@ -242,8 +248,9 @@ async def run_profile_tier(
     duration_s: int,
     warmup_s: int,
     seed: int,
+    include_sync_jobs: bool,
 ) -> dict[str, Any]:
-    operations = build_profile_operations(profile)
+    operations = build_profile_operations(profile, include_sync_jobs=include_sync_jobs)
     weights = [op.weight for op in operations]
 
     await client.get("/metrics/perf-profile", params={"reset": "true", "top_n": 10})
@@ -505,6 +512,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Persist a checkpoint report after each completed tier",
     )
+    parser.add_argument(
+        "--include-sync-jobs",
+        action="store_true",
+        help="Opt-in: allow mixed profile to enqueue sync jobs (disabled by default for safety)",
+    )
     return parser.parse_args()
 
 
@@ -530,6 +542,7 @@ async def main() -> int:
                     duration_s=args.duration,
                     warmup_s=args.warmup,
                     seed=args.seed,
+                    include_sync_jobs=args.include_sync_jobs,
                 )
                 results_by_profile[profile].append(summary)
                 print(

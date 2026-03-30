@@ -4,6 +4,7 @@ from app.core.config import is_runtime_schema_bootstrap_enabled
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+import hashlib
 import json
 import logging
 import os
@@ -23,6 +24,7 @@ except ImportError:  # pragma: no cover
 
 
 VALID_JOB_STATUSES = {"queued", "running", "succeeded", "failed", "cancelled"}
+ACTIVE_JOB_STATUSES = ("queued", "running")
 DEFAULT_MAX_RETRIES = 3
 
 
@@ -96,6 +98,22 @@ def _to_json_safe(value: Any) -> dict[str, Any]:
     if not isinstance(parsed, dict):
         return {"value": parsed}
     return parsed
+
+
+def _payload_hash(payload: dict[str, Any]) -> str:
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _build_dedup_key(tenant_id: int, job_type: str, payload_hash: str) -> str:
+    return f"{tenant_id}:{job_type}:{payload_hash}:active"
+
+
+def _mark_deduplicated(row: dict[str, Any], dedup_key: str) -> dict[str, Any]:
+    payload = dict(row)
+    payload["deduplicated"] = True
+    payload["dedup_key"] = dedup_key
+    return payload
 
 
 def _ensure_tenant_exists(tenant_id: int) -> None:
@@ -182,9 +200,34 @@ def _enqueue_job_db(
     max_retries: int,
 ) -> dict[str, Any]:
     assert _db_url() and psycopg is not None
+    payload_json = json.dumps(payload, ensure_ascii=False)
+    payload_hash = _payload_hash(payload)
+    dedup_key = _build_dedup_key(tenant_id, job_type, payload_hash)
+
     with get_raw_conn() as conn:
         _ensure_schema_once(conn)
         with conn.cursor() as cur:
+            # Serialize same-key enqueues to avoid race duplicates without schema changes.
+            cur.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (dedup_key,))
+            cur.execute(
+                """
+                SELECT id, tenant_id, job_type, status, payload_json, result_json, error_message,
+                       retry_count, max_retries, created_at, started_at, finished_at, created_by
+                FROM app_jobs
+                WHERE tenant_id = %s
+                  AND job_type = %s
+                  AND status = ANY(%s)
+                                    AND payload_json::jsonb = %s::jsonb
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (tenant_id, job_type, list(ACTIVE_JOB_STATUSES), payload_json),
+            )
+            duplicate = cur.fetchone()
+            if duplicate:
+                conn.commit()
+                return _mark_deduplicated(_row_to_job(duplicate), dedup_key)
+
             cur.execute(
                 """
                 INSERT INTO app_jobs (tenant_id, job_type, status, payload_json, retry_count, max_retries, created_by)
@@ -192,7 +235,7 @@ def _enqueue_job_db(
                 RETURNING id, tenant_id, job_type, status, payload_json, result_json, error_message,
                           retry_count, max_retries, created_at, started_at, finished_at, created_by
                 """,
-                (tenant_id, job_type, json.dumps(payload, ensure_ascii=False), max_retries, created_by),
+                (tenant_id, job_type, payload_json, max_retries, created_by),
             )
             row = cur.fetchone()
         conn.commit()
@@ -448,6 +491,7 @@ def enqueue_job(
     normalized_job_type = _normalize_job_type(job_type)
     safe_payload = _to_json_safe(payload)
     normalized_max_retries = max(0, min(int(max_retries), 20))
+    dedup_key = _build_dedup_key(normalized_tenant_id, normalized_job_type, _payload_hash(safe_payload))
 
     if _use_database():
         db_started = time.perf_counter()
@@ -458,6 +502,17 @@ def enqueue_job(
             pass
 
     with _jobs_lock:
+        for existing in _jobs_state.rows.values():
+            if int(existing["tenant_id"]) != normalized_tenant_id:
+                continue
+            if str(existing["job_type"]) != normalized_job_type:
+                continue
+            if str(existing["status"]) not in ACTIVE_JOB_STATUSES:
+                continue
+            if _payload_hash(_to_json_safe(existing.get("payload_json") or {})) != _payload_hash(safe_payload):
+                continue
+            return _mark_deduplicated(dict(existing), dedup_key)
+
         _jobs_state.counter += 1
         job_id = _jobs_state.counter
         row = {
