@@ -486,12 +486,10 @@ def apply_retention_policy(
 def run_backup_now(actor: str, tenant_id: int | None = None) -> dict[str, Any]:
     tenant = _require_tenant_id(tenant_id, operation="run_backup_now")
 
-    try:
-        from app.modules.quotas.service import check_quota
+    from app.modules.billing.service import assert_billing_write_allowed, assert_quota_with_increment
 
-        check_quota(tenant, "backup_storage_mb")
-    except Exception:
-        pass
+    assert_billing_write_allowed(tenant, action="backup.run_now")
+    assert_quota_with_increment(tenant, "backup_storage_mb", increment=0)
 
     settings = get_backup_settings_for_admin(tenant_id=tenant)
     active_profile = str(settings.get("active_profile", ""))

@@ -19,25 +19,49 @@ except ImportError:  # pragma: no cover
 DEFAULT_QUOTAS_BY_PLAN: dict[str, dict[str, int]] = {
     "free": {
         "users": 10,
+        "users_count": 10,
         "jobs_per_day": 100,
+        "api_requests": 5000,
         "backup_storage_mb": 1024,
+        "storage_mb": 1024,
         "ai_requests_per_day": 200,
+        "ai_credits": 200,
         "feature_flags": 20,
         "integrations": 3,
     },
+    "basic": {
+        "users": 25,
+        "users_count": 25,
+        "jobs_per_day": 300,
+        "api_requests": 20000,
+        "backup_storage_mb": 4096,
+        "storage_mb": 4096,
+        "ai_requests_per_day": 1000,
+        "ai_credits": 1000,
+        "feature_flags": 50,
+        "integrations": 8,
+    },
     "pro": {
         "users": 100,
+        "users_count": 100,
         "jobs_per_day": 1000,
+        "api_requests": 100000,
         "backup_storage_mb": 10240,
+        "storage_mb": 10240,
         "ai_requests_per_day": 5000,
+        "ai_credits": 5000,
         "feature_flags": 200,
         "integrations": 20,
     },
     "enterprise": {
         "users": 100000,
+        "users_count": 100000,
         "jobs_per_day": 100000,
+        "api_requests": 10000000,
         "backup_storage_mb": 1048576,
+        "storage_mb": 1048576,
         "ai_requests_per_day": 1000000,
+        "ai_credits": 1000000,
         "feature_flags": 10000,
         "integrations": 1000,
     },
@@ -237,6 +261,11 @@ def _current_value(tenant_id: int, quota_key: str) -> int:
 
         return len(local_user_store.list_users(tenant_id=tenant_id))
 
+    if key == "users_count":
+        from app.modules.auth.local_users_service import local_user_store
+
+        return len(local_user_store.list_users(tenant_id=tenant_id))
+
     if key == "jobs_per_day":
         from app.modules.jobs.service import list_jobs_for_tenant
 
@@ -256,6 +285,16 @@ def _current_value(tenant_id: int, quota_key: str) -> int:
 
         return get_usage_sum(tenant_id=tenant_id, metric="ai_requests", since_iso=_day_start_iso())
 
+    if key == "ai_credits":
+        from app.modules.usage.service import get_usage_sum
+
+        return get_usage_sum(tenant_id=tenant_id, metric="ai_requests", since_iso=_day_start_iso())
+
+    if key == "api_requests":
+        from app.modules.usage.service import get_usage_sum
+
+        return get_usage_sum(tenant_id=tenant_id, metric="api_calls", since_iso=_day_start_iso())
+
     if key == "feature_flags":
         from app.modules.feature_flags.service import list_flags
 
@@ -269,6 +308,13 @@ def _current_value(tenant_id: int, quota_key: str) -> int:
         ldap_count = 1 if bool(ldap.get("enabled")) else 0
         ai_count = sum(1 for item in ai if item.get("configured"))
         return ldap_count + ai_count
+
+    if key == "storage_mb":
+        from app.modules.backup.service import list_backup_history
+
+        rows = list_backup_history(tenant_id=tenant_id)
+        total_bytes = sum(max(0, int(item.get("size_bytes") or 0)) for item in rows)
+        return int(total_bytes / (1024 * 1024))
 
     return 0
 

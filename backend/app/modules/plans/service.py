@@ -20,6 +20,12 @@ DEFAULT_PLANS: tuple[dict[str, object], ...] = (
         "active": True,
     },
     {
+        "code": "basic",
+        "name": "Basic",
+        "description": "Entry commercial plan",
+        "active": True,
+    },
+    {
         "code": "pro",
         "name": "Pro",
         "description": "Professional plan",

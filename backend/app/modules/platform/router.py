@@ -6,6 +6,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from app.modules.audit.service import log_admin_action
+from app.modules.billing.service import (
+    change_subscription_plan,
+    get_tenant_billing_state,
+    transition_subscription_status,
+)
 from app.modules.observability.security_signals import record_security_signal
 from app.modules.plans.schemas import PlanCreatePayload, PlanItemResponse, PlanListResponse, PlanUpdatePayload
 from app.modules.plans.service import create_plan, list_plans, update_plan
@@ -184,6 +189,112 @@ def create_platform_tenant(
     return {
         "tenant": result["tenant"],
         "plan": result["plan"],
+        "subscription": get_tenant_billing_state(int(created_tenant_id)).get("subscription"),
+        "billing_state": get_tenant_billing_state(int(created_tenant_id)).get("billing_state"),
         "admin_email": admin_email,
         "invite_token": invite_token,
+    }
+
+
+@router.get("/tenants/{tenant_id}/billing")
+def get_platform_tenant_billing_state(
+    tenant_id: int,
+    _: Annotated[str, Depends(_require_platform_admin)],
+) -> dict[str, object]:
+    try:
+        return get_tenant_billing_state(tenant_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/tenants/{tenant_id}/billing/subscription/transition")
+def transition_platform_tenant_subscription(
+    tenant_id: int,
+    payload: dict[str, str],
+    request: Request,
+    actor: Annotated[str, Depends(_require_platform_admin)],
+) -> dict[str, object]:
+    target_status = str(payload.get("status", "")).strip().lower()
+    if not target_status:
+        raise HTTPException(status_code=400, detail="status is required")
+
+    try:
+        subscription = transition_subscription_status(
+            tenant_id,
+            target_status,
+            actor=actor,
+            reason="platform_admin_transition",
+        )
+    except ValueError as exc:
+        detail = str(exc)
+        status_code = 400
+        if "not found" in detail:
+            status_code = 404
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+
+    log_admin_action(
+        actor=actor,
+        tenant_id=int(tenant_id),
+        action="platform.billing.subscription.transition",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="platform",
+        result="success",
+        metadata={"tenant_id": int(tenant_id), "target_status": target_status},
+    )
+    return {
+        "subscription": subscription,
+        "billing_state": get_tenant_billing_state(tenant_id).get("billing_state"),
+    }
+
+
+@router.post("/tenants/{tenant_id}/billing/subscription/plan-change")
+def change_platform_tenant_subscription_plan(
+    tenant_id: int,
+    payload: dict[str, str],
+    request: Request,
+    actor: Annotated[str, Depends(_require_platform_admin)],
+) -> dict[str, object]:
+    plan_code = str(payload.get("plan_code", "")).strip().lower()
+    if not plan_code:
+        raise HTTPException(status_code=400, detail="plan_code is required")
+
+    effective = str(payload.get("effective", "auto")).strip().lower() or "auto"
+
+    try:
+        changed = change_subscription_plan(
+            tenant_id,
+            plan_code,
+            effective=effective,
+            actor=actor,
+            reason="platform_admin_plan_change",
+        )
+    except ValueError as exc:
+        detail = str(exc)
+        status_code = 400
+        if "not found" in detail:
+            status_code = 404
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+
+    log_admin_action(
+        actor=actor,
+        tenant_id=int(tenant_id),
+        action="platform.billing.subscription.plan_change",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="platform",
+        result="success",
+        metadata={
+            "tenant_id": int(tenant_id),
+            "old_plan": changed.get("old_plan"),
+            "new_plan": changed.get("new_plan"),
+            "effective": changed.get("effective"),
+        },
+    )
+    return {
+        "subscription": changed.get("subscription"),
+        "effective": changed.get("effective"),
+        "billing_state": get_tenant_billing_state(tenant_id).get("billing_state"),
     }
