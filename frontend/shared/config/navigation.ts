@@ -264,24 +264,72 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
     ],
   },
   {
-    label: "Identity & Access",
+    label: "Platform Management",
     items: [
       {
-        label: "Users & Roles",
-        href: "/console/tenants",
+        label: "Control Plane",
+        href: "/console/platform",
+        icon: LayoutDashboard,
+      },
+      {
+        label: "Languages",
+        href: "/console/platform/languages",
+        icon: Flag,
+      },
+      {
+        label: "Local Users",
+        href: "/console/platform/local-users",
         icon: UserCog,
-        permission: PERMISSIONS.TENANTS_READ,
+      },
+      {
+        label: "RBAC",
+        href: "/console/platform/rbac",
+        icon: ShieldCheck,
+      },
+      {
+        label: "Integrations",
+        href: "/console/platform/integrations",
+        icon: Network,
+      },
+      {
+        label: "Backups",
+        href: "/console/platform/backups",
+        icon: Briefcase,
       },
       {
         label: "Feature Flags",
-        href: "/console/feature-flags",
+        href: "/console/platform/feature-flags",
         icon: Flag,
-        permission: PERMISSIONS.FEATURE_FLAGS_READ,
+      },
+      {
+        label: "Jobs",
+        href: "/console/platform/jobs",
+        icon: Briefcase,
+      },
+      {
+        label: "Audit",
+        href: "/console/platform/audit",
+        icon: ClipboardCheck,
+      },
+      {
+        label: "System",
+        href: "/console/platform/system",
+        icon: HeartPulse,
+      },
+      {
+        label: "University",
+        href: "/console/platform/university",
+        icon: GraduationCap,
+      },
+      {
+        label: "Tenants",
+        href: "/console/platform/tenants",
+        icon: Building2,
       },
       {
         label: "Federation",
         href: "/console/federation",
-        icon: ShieldCheck,
+        icon: Network,
         permission: PERMISSIONS.FEDERATION_READ,
       },
     ],
@@ -342,12 +390,12 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
 
 /**
  * Returns the navigation config appropriate for the user's primary role.
- * Priority: student > teacher > dean > admin (superadmin nav) > platform nav.
+ * Priority: superadmin/admin > student > teacher > dean > platform nav.
  */
 export function getNavigationForRoles(roles: string[]): NavGroup[] {
+  if (roles.includes("superadmin") || roles.includes("admin")) return SUPERADMIN_NAVIGATION;
   if (roles.includes("student")) return STUDENT_NAVIGATION;
   if (roles.includes("teacher")) return TEACHER_NAVIGATION;
   if (roles.includes("dean")) return DEAN_NAVIGATION;
-  if (roles.includes("admin")) return SUPERADMIN_NAVIGATION;
   return NAVIGATION;
 }

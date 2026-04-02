@@ -15,6 +15,10 @@ const HEADER_STYLE_CSS = `
   backdrop-filter: blur(8px);
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
 }
+.admin-header.executive {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 255, 0.96));
+}
 .admin-header-content {
   display: flex;
   justify-content: space-between;
@@ -50,16 +54,50 @@ const HEADER_STYLE_CSS = `
   align-items: center;
   min-width: 0;
 }
+.admin-presentation-toggle {
+  border: 1px solid #b7cae5;
+  background: #ffffff;
+  color: #143355;
+  border-radius: 999px;
+  padding: 0.34rem 0.72rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.admin-presentation-toggle:hover {
+  background: #eef4ff;
+  border-color: #9bbbe3;
+  color: #102d4e;
+}
+.admin-presentation-toggle[aria-pressed="true"] {
+  background: #dcecff;
+  border-color: #8fb5e4;
+  color: #0f2d52;
+}
+.admin-presentation-toggle:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.32);
+  outline-offset: 2px;
+}
+.admin-presentation-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 `;
 
 export interface AdminHeaderProps {
   platformName?: string;
   rightContent?: ReactNode;
+  presentationMode?: boolean;
+  adminSubtitle?: string;
+  executiveSubtitle?: string;
 }
 
 export function AdminHeader({
   platformName = "Platform",
   rightContent,
+  presentationMode = false,
+  adminSubtitle = "Admin Console",
+  executiveSubtitle = "Executive Briefing",
 }: AdminHeaderProps) {
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -71,11 +109,13 @@ export function AdminHeader({
   }, []);
 
   return (
-    <header className="admin-header">
+    <header className={`admin-header ${presentationMode ? "executive" : ""}`}>
       <div className="admin-header-content">
         <div className="admin-header-left">
           <h1 className="admin-header-title">{platformName}</h1>
-          <span className="admin-header-subtitle">Admin Console</span>
+          <span className="admin-header-subtitle">
+            {presentationMode ? executiveSubtitle : adminSubtitle}
+          </span>
         </div>
         <div className="admin-header-right">{rightContent}</div>
       </div>

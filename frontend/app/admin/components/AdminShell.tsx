@@ -15,6 +15,11 @@ const SHELL_STYLE_CSS = `
   height: 100vh;
   background: #f6f8fb;
 }
+.admin-shell-layout.executive {
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 32%),
+    linear-gradient(180deg, #f8fafe 0%, #f2f6fc 100%);
+}
 .admin-shell-container {
   display: flex;
   flex: 1;
@@ -26,6 +31,24 @@ const SHELL_STYLE_CSS = `
   overflow-y: auto;
   background: #f8fafc;
 }
+.admin-shell-layout.executive .admin-shell-main {
+  background: linear-gradient(180deg, #fbfdff 0%, #f4f8fe 100%);
+}
+.admin-shell-layout.executive .admin-sidebar-item:not(.active) {
+  opacity: 1;
+  color: #2f4563;
+}
+.admin-shell-layout.executive .admin-sidebar-item.active {
+  background: #d7e9ff;
+  border-color: #8bb2e2;
+  color: #0f2d52;
+  box-shadow: inset 4px 0 0 #2563eb;
+}
+.admin-shell-layout.executive .admin-sidebar-item:hover:not(.active) {
+  background: #edf4ff;
+  border-color: #bed2ec;
+  color: #1c385b;
+}
 `;
 
 export interface AdminShellProps {
@@ -35,6 +58,9 @@ export interface AdminShellProps {
   sections: AdminSection[];
   platformName?: string;
   headerControls?: React.ReactNode;
+  presentationMode?: boolean;
+  adminSubtitle?: string;
+  executiveSubtitle?: string;
 }
 
 export function AdminShell({
@@ -44,6 +70,9 @@ export function AdminShell({
   sections,
   platformName = "Platform",
   headerControls,
+  presentationMode = false,
+  adminSubtitle,
+  executiveSubtitle,
 }: AdminShellProps) {
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -55,8 +84,14 @@ export function AdminShell({
   }, []);
 
   return (
-    <div className="admin-shell-layout">
-      <AdminHeader platformName={platformName} rightContent={headerControls} />
+    <div className={`admin-shell-layout ${presentationMode ? "executive" : ""}`}>
+      <AdminHeader
+        platformName={platformName}
+        rightContent={headerControls}
+        presentationMode={presentationMode}
+        adminSubtitle={adminSubtitle}
+        executiveSubtitle={executiveSubtitle}
+      />
       <div className="admin-shell-container">
         <AdminSidebar
           sections={sections}

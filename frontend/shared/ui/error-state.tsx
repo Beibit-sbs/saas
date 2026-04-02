@@ -5,12 +5,16 @@ interface ErrorStateProps {
   title?: string;
   message?: string;
   onRetry?: () => void;
+  retryLabel?: string;
+  retrying?: boolean;
 }
 
 export function ErrorState({
   title = "Something went wrong",
   message = "An error occurred while loading data.",
   onRetry,
+  retryLabel = "Retry",
+  retrying = false,
 }: ErrorStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
@@ -18,8 +22,8 @@ export function ErrorState({
       <h3 className="font-medium text-foreground">{title}</h3>
       <p className="text-sm text-muted-foreground mt-1 max-w-sm">{message}</p>
       {onRetry && (
-        <Button variant="outline" size="sm" onClick={onRetry} className="mt-4">
-          Retry
+        <Button variant="outline" size="sm" onClick={onRetry} className="mt-4" disabled={retrying}>
+          {retrying ? `${retryLabel}...` : retryLabel}
         </Button>
       )}
     </div>

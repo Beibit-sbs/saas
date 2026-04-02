@@ -4,6 +4,7 @@ import { Input } from "./input";
 import { Button } from "./button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 import { X } from "lucide-react";
+import { useLanguage } from "@/app/components/LanguageProvider";
 
 interface FilterOption {
   label: string;
@@ -26,6 +27,7 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ fields, values, onChange, onReset }: FilterBarProps) {
+  const { t } = useLanguage();
   const hasValues = Object.values(values).some(Boolean);
 
   return (
@@ -37,7 +39,7 @@ export function FilterBar({ fields, values, onChange, onReset }: FilterBarProps)
               <SelectValue placeholder={f.label} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All {f.label}</SelectItem>
+              <SelectItem value="all">{t("filter.allFor").replace("{label}", f.label)}</SelectItem>
               {f.options?.map((o) => (
                 <SelectItem key={o.value} value={o.value}>
                   {o.label}
@@ -48,7 +50,7 @@ export function FilterBar({ fields, values, onChange, onReset }: FilterBarProps)
         ) : (
           <Input
             key={f.key}
-            placeholder={f.placeholder ?? `Filter ${f.label}…`}
+            placeholder={f.placeholder ?? t("filter.byLabel").replace("{label}", f.label)}
             value={values[f.key] ?? ""}
             onChange={(e) => onChange(f.key, e.target.value)}
             className="h-9 w-[200px]"
@@ -58,7 +60,7 @@ export function FilterBar({ fields, values, onChange, onReset }: FilterBarProps)
       {hasValues && onReset && (
         <Button variant="ghost" size="sm" onClick={onReset} className="h-9 px-2">
           <X className="h-4 w-4 mr-1" />
-          Reset
+          {t("filter.reset")}
         </Button>
       )}
     </div>

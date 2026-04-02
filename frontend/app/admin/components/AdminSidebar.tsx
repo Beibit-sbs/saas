@@ -38,16 +38,28 @@ const SIDEBAR_STYLE_CSS = `
   font-weight: 500;
 }
 .admin-sidebar-item:hover {
-  background-color: #eef3f9;
-  border-color: #dce4ef;
-  color: #17212f;
+  background-color: #eef4ff;
+  border-color: #c9d9ef;
+  color: #16263f;
 }
 .admin-sidebar-item.active {
-  background-color: #e9f0fb;
-  border-color: #cddbf0;
-  color: #1f3250;
-  box-shadow: inset 2px 0 0 #3b82f6;
+  background-color: #dcecff;
+  border-color: #9fc0e8;
+  color: #0f2d52;
+  box-shadow: inset 4px 0 0 #2563eb;
   font-weight: 600;
+}
+.admin-sidebar-item.active:hover {
+  background-color: #d5e8ff;
+  border-color: #8fb5e4;
+}
+.admin-sidebar-item:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.32);
+  outline-offset: 2px;
+}
+.admin-sidebar-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .admin-sidebar-icon {
   width: 1.2rem;
@@ -114,6 +126,7 @@ export function AdminSidebar({
             className={`admin-sidebar-item ${
               activeSection === section.id ? "active" : ""
             }`}
+            aria-current={activeSection === section.id ? "page" : undefined}
             data-testid={`sidebar-section-${section.id}`}
           >
             {section.icon && <span className="admin-sidebar-icon">{section.icon}</span>}

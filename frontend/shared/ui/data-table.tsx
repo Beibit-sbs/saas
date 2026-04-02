@@ -8,6 +8,7 @@ import { EmptyState } from "./empty-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import type { TableSortState } from "@/shared/hooks/use-table-query-state";
+import { useLanguage } from "@/app/components/LanguageProvider";
 
 export interface Column<T> {
   key: string;
@@ -51,11 +52,14 @@ export function DataTable<T>({
   onPageSizeChange,
   sort,
   onSortChange,
-  emptyTitle = "No results",
-  emptyDescription = "Nothing found.",
+  emptyTitle,
+  emptyDescription,
   emptyAction,
   onRowClick,
 }: DataTableProps<T>) {
+  const { t } = useLanguage();
+  const resolvedEmptyTitle = emptyTitle ?? t("table.emptyTitle");
+  const resolvedEmptyDescription = emptyDescription ?? t("table.emptyDescription");
   const skeletonRows = pagination?.pageSize ?? 10;
   const sortedData = useMemo(() => {
     if (!sort) return data;
@@ -118,7 +122,7 @@ export function DataTable<T>({
             ) : sortedData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length}>
-                  <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} className="py-10" />
+                  <EmptyState title={resolvedEmptyTitle} description={resolvedEmptyDescription} action={emptyAction} className="py-10" />
                 </TableCell>
               </TableRow>
             ) : (
@@ -142,12 +146,14 @@ export function DataTable<T>({
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-3">
             <span>
-              Showing {Math.min((pagination.page - 1) * pagination.pageSize + 1, pagination.total)}–
-              {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total}
+              {t("table.showingRange")
+                .replace("{from}", String(Math.min((pagination.page - 1) * pagination.pageSize + 1, pagination.total)))
+                .replace("{to}", String(Math.min(pagination.page * pagination.pageSize, pagination.total)))
+                .replace("{total}", String(pagination.total))}
             </span>
             {pageSizeOptions && onPageSizeChange ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs uppercase tracking-wide">Rows</span>
+                <span className="text-xs uppercase tracking-wide">{t("table.rows")}</span>
                 <Select value={String(pagination.pageSize)} onValueChange={(value) => onPageSizeChange(Number(value))}>
                   <SelectTrigger className="h-8 w-[88px]">
                     <SelectValue />
