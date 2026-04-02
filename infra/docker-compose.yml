@@ -33,6 +33,11 @@ services:
       ADMIN_PANEL_URL: ${ADMIN_PANEL_URL}
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
       INTEGRATIONS_ENCRYPTION_KEY: ${INTEGRATIONS_ENCRYPTION_KEY}
+      PLATFORM_ADMIN_LOGIN: ${PLATFORM_ADMIN_LOGIN}
+      PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD}
+      PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL}
+      PLATFORM_ADMIN_UPDATE_PASSWORD: ${PLATFORM_ADMIN_UPDATE_PASSWORD:-true}
+      PLATFORM_ADMIN_FORCE_PASSWORD_CHANGE: ${PLATFORM_ADMIN_FORCE_PASSWORD_CHANGE:-false}
       BACKUP_DEFAULT_PROFILE: "${BACKUP_DEFAULT_PROFILE:-local}"
       BACKUP_ALLOWED_ROOTS: "${BACKUP_ALLOWED_ROOTS:-/tmp/app-backups,/var/backups/app}"
       BACKUP_PROFILES_JSON: "${BACKUP_PROFILES_JSON:-[{\"id\":\"local\",\"label\":\"Local backup volume\",\"path\":\"/tmp/app-backups/local\"}]}"
@@ -44,6 +49,7 @@ services:
       OPS_JOBS_FAILURE_SPIKE_THRESHOLD: ${OPS_JOBS_FAILURE_SPIKE_THRESHOLD:-5}
       RBAC_ALLOW_DEV_FALLBACK: "${RBAC_ALLOW_DEV_FALLBACK:-false}"
       AUTH_CSRF_PROTECTION_ENABLED: "${AUTH_CSRF_PROTECTION_ENABLED:-true}"
+      TRUSTED_HOSTS: "${TRUSTED_HOSTS:-localhost,127.0.0.1,backend,nginx}"
     ports:
       - "${BACKEND_PORT}:8000"
     volumes:
@@ -148,6 +154,7 @@ services:
     build:
       context: ../frontend
       args:
+        API_BASE_URL: ${API_BASE_URL}
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
     environment:
       NODE_ENV: production
@@ -159,11 +166,23 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/ || exit 1"]
+      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/api/internal/ready || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 8
       start_period: 30s
+
+  frontend-tests:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.test
+    environment:
+      CI: "1"
+      API_BASE_URL: http://backend:8000
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+    depends_on:
+      backend:
+        condition: service_healthy
 
   nginx:
     image: nginx:1.27-alpine
@@ -178,6 +197,12 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-check-certificate -qO /dev/null https://127.0.0.1/health/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   prometheus:
     image: prom/prometheus:v2.52.0

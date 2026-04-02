@@ -11,6 +11,7 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.responses import PlainTextResponse
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy import text
 
 from app.core.config import (
@@ -19,6 +20,7 @@ from app.core.config import (
     is_csrf_protection_enabled,
     get_metrics_allowed_ips,
     get_metrics_token,
+    get_trusted_hosts,
     is_production_mode,
     is_worker_health_required,
     validate_required_environment,
@@ -187,6 +189,7 @@ async def lifespan(fastapi_app: FastAPI):
 
 
 app = FastAPI(title="AI Engineering Backend", version="0.1.0", lifespan=lifespan)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=get_trusted_hosts())
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(admin_local_users_router)

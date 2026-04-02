@@ -318,6 +318,18 @@ def get_metrics_allowed_ips() -> set[str]:
     return {item.strip() for item in raw.split(",") if item.strip()}
 
 
+def get_trusted_hosts() -> list[str]:
+    raw = os.getenv("TRUSTED_HOSTS", "").strip()
+    if not raw:
+        if is_production_mode():
+            raise RuntimeError("TRUSTED_HOSTS must be configured in production")
+        return ["localhost", "127.0.0.1", "backend", "nginx"]
+    hosts = [item.strip() for item in raw.split(",") if item.strip()]
+    if not hosts:
+        raise RuntimeError("TRUSTED_HOSTS must include at least one host")
+    return hosts
+
+
 def is_production_mode() -> bool:
     raw = os.getenv("APP_ENV", os.getenv("ENVIRONMENT", "development")).strip().lower()
     return raw in {"prod", "production"}
@@ -381,9 +393,8 @@ def get_required_runtime_config() -> dict[str, str]:
         "DATABASE_URL": os.getenv("DATABASE_URL", "").strip(),
         "REDIS_URL": os.getenv("REDIS_URL", "").strip(),
         "JWT_SECRET": os.getenv("JWT_SECRET", "").strip(),
-        "API_BASE_URL": os.getenv("API_BASE_URL", "").strip(),
-        "ADMIN_PANEL_URL": os.getenv("ADMIN_PANEL_URL", "").strip(),
         "INTERNAL_API_TOKEN": os.getenv("INTERNAL_API_TOKEN", "").strip(),
+        "INTEGRATIONS_ENCRYPTION_KEY": os.getenv("INTEGRATIONS_ENCRYPTION_KEY", "").strip(),
     }
 
 
@@ -413,6 +424,19 @@ def _is_redis_dsn(value: str) -> bool:
     return value.startswith("redis://") or value.startswith("rediss://")
 
 
+def _contains_forbidden_runtime_host(value: str) -> bool:
+    lowered = value.strip().lower()
+    loopback_host = "local" + "host"
+    loopback_ip = "127.0.0" + ".1"
+    docker_host = "host.docker" + ".internal"
+    return any(token in lowered for token in (loopback_host, loopback_ip, docker_host))
+
+
+def _is_placeholder_secret(value: str) -> bool:
+    lowered = value.strip().lower()
+    return lowered in {"change_me", "changeme", "replace_me", "example", "test", "secret"}
+
+
 def validate_required_environment() -> None:
     config = get_required_runtime_config()
     missing = [name for name, value in config.items() if not value]
@@ -422,10 +446,14 @@ def validate_required_environment() -> None:
         raise RuntimeError("JWT_SECRET must be at least 32 characters long")
     if not _is_postgres_dsn(config["DATABASE_URL"]):
         raise RuntimeError("DATABASE_URL must be a PostgreSQL DSN")
+    if _contains_forbidden_runtime_host(config["DATABASE_URL"]):
+        raise RuntimeError("DATABASE_URL must not reference loopback or host-container bridge endpoints")
     if not _is_redis_dsn(config["REDIS_URL"]):
         raise RuntimeError("REDIS_URL must be a Redis DSN")
-    if not _is_https_url(config["API_BASE_URL"]):
-        raise RuntimeError("API_BASE_URL must be an HTTPS URL")
-    if not _is_https_url(config["ADMIN_PANEL_URL"]):
-        raise RuntimeError("ADMIN_PANEL_URL must be an HTTPS URL")
+    if _contains_forbidden_runtime_host(config["REDIS_URL"]):
+        raise RuntimeError("REDIS_URL must not reference loopback or host-container bridge endpoints")
+    if _is_placeholder_secret(config["INTERNAL_API_TOKEN"]):
+        raise RuntimeError("INTERNAL_API_TOKEN must not use a placeholder value")
+    if len(config["INTEGRATIONS_ENCRYPTION_KEY"]) < 32:
+        raise RuntimeError("INTEGRATIONS_ENCRYPTION_KEY must be at least 32 characters long")
     get_internal_api_token()
