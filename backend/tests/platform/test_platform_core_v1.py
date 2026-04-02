@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+from app.modules.auth.token_service import create_access_token
 from tests.conftest import ADMIN_HEADERS, INTERNAL_HEADERS, client
 
 
@@ -138,8 +139,46 @@ def test_platform_core_v1_admin_requires_auth() -> None:
     assert response.status_code == 401
 
 
+def test_platform_core_v1_admin_forbids_non_admin_user() -> None:
+    token = create_access_token(
+        user_id="student.001",
+        roles=["student"],
+        auth_source="test",
+        tenant_id=1,
+        permissions=[],
+    )
+    response = client.post(
+        "/api/v1/admin/tenants",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"slug": "x2", "name": "X2"},
+    )
+    assert response.status_code == 403
+
+
 def test_platform_core_v1_internal_requires_token() -> None:
     response = client.post(
         "/api/v1/internal/worker/run-once",
     )
     assert response.status_code == 401
+
+
+def test_platform_core_v1_internal_rejects_wrong_token() -> None:
+    response = client.post(
+        "/api/v1/internal/worker/run-once",
+        headers={"Authorization": "Bearer wrong-token"},
+    )
+    assert response.status_code == 403
+
+
+def test_platform_core_v1_internal_rejects_user_jwt() -> None:
+    user_token = create_access_token(
+        user_id="owner@example.com",
+        roles=["admin"],
+        auth_source="test",
+        tenant_id=1,
+    )
+    response = client.post(
+        "/api/v1/internal/worker/run-once",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 403

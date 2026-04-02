@@ -188,6 +188,7 @@ class LocalUserStore:
         roles: List[str],
         default_language: str,
         tenant_id: int,
+        email: str | None = None,
     ) -> dict[str, object]:
         self._load_once()
         normalized_tenant_id = _require_tenant_id(tenant_id, operation="local_user_create")
@@ -195,8 +196,17 @@ class LocalUserStore:
         if not normalized_login:
             raise HTTPException(status_code=400, detail="login is required")
 
+        normalized_email = str(email or "").strip().lower()
+        if normalized_email and "@" not in normalized_email:
+            raise HTTPException(status_code=400, detail="email is invalid")
+
         if normalized_login in self._users_by_login:
             raise HTTPException(status_code=409, detail="login already exists")
+
+        if normalized_email:
+            existing_by_email = self.find_user_by_email(normalized_email)
+            if existing_by_email is not None:
+                raise HTTPException(status_code=409, detail="email already exists")
 
         from app.modules.billing.service import assert_billing_write_allowed, assert_quota_with_increment
 
@@ -216,6 +226,8 @@ class LocalUserStore:
             "auth_source": "local",
             "sync_with_ad": False,
         }
+        if normalized_email:
+            payload["email"] = normalized_email
 
         self._users_by_id[user_id] = payload
         self._users_by_login[normalized_login] = user_id
