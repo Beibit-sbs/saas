@@ -15,6 +15,7 @@ from app.core.module_helpers.service_validation import (
     validate_version_match,
 )
 from app.modules.audit.service import log_admin_action
+from app.modules.audit.service import log_data_access_event
 from app.modules.courses.models import CourseModel
 from app.modules.enrollments.business_rules import EnrollmentLifecycleRules
 from app.modules.enrollments.models import (
@@ -175,6 +176,7 @@ class EnrollmentLifecycleService:
         student_profile_id: int,
         course_id: int,
         term_id: int,
+        actor_id: str | None = None,
     ) -> EnrollmentReadSchema | None:
         tenant_id = validate_tenant_id_provided(tenant_id)
 
@@ -196,6 +198,15 @@ class EnrollmentLifecycleService:
 
         if enrollment is None:
             return None
+        if actor_id:
+            log_data_access_event(
+                actor_id=actor_id,
+                tenant_id=tenant_id,
+                resource="enrollment",
+                resource_id=enrollment.id,
+                action="read",
+                result="success",
+            )
         return EnrollmentReadSchema.model_validate(enrollment)
 
     async def enroll_student(
@@ -286,6 +297,14 @@ class EnrollmentLifecycleService:
             },
             tenant_id=tenant_id,
         )
+        log_data_access_event(
+            actor_id=actor_id,
+            tenant_id=tenant_id,
+            resource="enrollment",
+            resource_id=enrollment.id,
+            action="write",
+            result="success",
+        )
 
         try:
             self.db.commit()
@@ -301,9 +320,19 @@ class EnrollmentLifecycleService:
         self,
         tenant_id: int,
         enrollment_id: int,
+        actor_id: str | None = None,
     ) -> EnrollmentReadSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
         enrollment = self._load_enrollment(tenant_id, enrollment_id)
+        if actor_id:
+            log_data_access_event(
+                actor_id=actor_id,
+                tenant_id=tenant_id,
+                resource="enrollment",
+                resource_id=enrollment.id,
+                action="read",
+                result="success",
+            )
         return EnrollmentReadSchema.model_validate(enrollment)
 
     async def list_student_enrollments(
@@ -311,6 +340,7 @@ class EnrollmentLifecycleService:
         tenant_id: int,
         *,
         student_profile_id: int,
+        actor_id: str | None = None,
         page: int = 1,
         page_size: int = 20,
         status: EnrollmentStatus | None = None,
@@ -338,6 +368,15 @@ class EnrollmentLifecycleService:
             .offset((page - 1) * page_size)
             .limit(page_size)
         ).scalars().all()
+        if actor_id:
+            log_data_access_event(
+                actor_id=actor_id,
+                tenant_id=tenant_id,
+                resource="enrollment",
+                resource_id=student_profile_id,
+                action="read",
+                result="success",
+            )
 
         return EnrollmentListResponseSchema(
             total=total,
@@ -352,6 +391,7 @@ class EnrollmentLifecycleService:
         *,
         course_id: int,
         term_id: int,
+        actor_id: str | None = None,
         page: int = 1,
         page_size: int = 50,
         status: EnrollmentStatus | None = None,
@@ -377,6 +417,15 @@ class EnrollmentLifecycleService:
             .offset((page - 1) * page_size)
             .limit(page_size)
         ).scalars().all()
+        if actor_id:
+            log_data_access_event(
+                actor_id=actor_id,
+                tenant_id=tenant_id,
+                resource="enrollment",
+                resource_id=course_id,
+                action="read",
+                result="success",
+            )
 
         return EnrollmentListResponseSchema(
             total=total,
@@ -432,6 +481,14 @@ class EnrollmentLifecycleService:
                 "version": enrollment.version,
             },
             tenant_id=tenant_id,
+        )
+        log_data_access_event(
+            actor_id=actor_id,
+            tenant_id=tenant_id,
+            resource="enrollment",
+            resource_id=enrollment.id,
+            action="update",
+            result="success",
         )
 
         try:
@@ -493,6 +550,14 @@ class EnrollmentLifecycleService:
                 "version": enrollment.version,
             },
             tenant_id=tenant_id,
+        )
+        log_data_access_event(
+            actor_id=actor_id,
+            tenant_id=tenant_id,
+            resource="enrollment",
+            resource_id=enrollment.id,
+            action="delete",
+            result="success",
         )
 
         try:

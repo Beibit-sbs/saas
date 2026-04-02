@@ -16,6 +16,7 @@ from app.core.module_helpers.service_validation import (
     validate_version_match,
 )
 from app.modules.audit.service import log_admin_action
+from app.modules.audit.service import log_data_access_event
 from app.modules.courses.models import CourseModel
 from app.modules.enrollments.models import AcademicTermModel, EnrollmentModel
 from app.modules.grades.business_rules import GradeLifecycleRules
@@ -301,6 +302,14 @@ class GradeLifecycleService:
             },
             tenant_id=tenant_id,
         )
+        log_data_access_event(
+            actor_id=actor_id,
+            tenant_id=tenant_id,
+            resource="grade",
+            resource_id=submission.id,
+            action="write",
+            result="success",
+        )
 
         try:
             self.db.commit()
@@ -397,6 +406,14 @@ class GradeLifecycleService:
             },
             tenant_id=tenant_id,
         )
+        log_data_access_event(
+            actor_id=actor_id,
+            tenant_id=tenant_id,
+            resource="grade",
+            resource_id=submission.id,
+            action="update",
+            result="success",
+        )
 
         try:
             self.db.commit()
@@ -406,13 +423,27 @@ class GradeLifecycleService:
 
         return GradeReadSchema.model_validate(submission)
 
-    async def get_enrollment_grade(self, tenant_id: int, enrollment_id: int) -> GradeReadSchema | None:
+    async def get_enrollment_grade(
+        self,
+        tenant_id: int,
+        enrollment_id: int,
+        actor_id: str | None = None,
+    ) -> GradeReadSchema | None:
         tenant_id = validate_tenant_id_provided(tenant_id)
         self._load_enrollment(tenant_id, enrollment_id)
 
         grade = self._load_grade_submission(tenant_id, enrollment_id)
         if grade is None:
             return None
+        if actor_id:
+            log_data_access_event(
+                actor_id=actor_id,
+                tenant_id=tenant_id,
+                resource="grade",
+                resource_id=grade.id,
+                action="read",
+                result="success",
+            )
         return GradeReadSchema.model_validate(grade)
 
     async def list_course_grades(
@@ -473,6 +504,16 @@ class GradeLifecycleService:
             .offset((page - 1) * page_size)
             .limit(page_size)
         ).scalars().all()
+
+        if actor_id:
+            log_data_access_event(
+                actor_id=actor_id,
+                tenant_id=tenant_id,
+                resource="grade",
+                resource_id=course_id,
+                action="read",
+                result="success",
+            )
 
         return GradeListResponseSchema(
             total=total,

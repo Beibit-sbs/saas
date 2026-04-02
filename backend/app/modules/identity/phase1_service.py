@@ -71,7 +71,12 @@ def _raw_encryption_secret() -> str:
     explicit = os.getenv("INTEGRATIONS_ENCRYPTION_KEY", "").strip()
     if explicit:
         return explicit
-    return os.getenv("JWT_SECRET", "change_me_jwt_secret")
+    jwt_secret = os.getenv("JWT_SECRET", "").strip()
+    if not jwt_secret:
+        raise RuntimeError(
+            "INTEGRATIONS_ENCRYPTION_KEY or JWT_SECRET must be configured"
+        )
+    return jwt_secret
 
 
 def _encrypt_secret(value: str) -> str:

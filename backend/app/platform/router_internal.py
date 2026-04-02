@@ -8,7 +8,6 @@ from app.platform.automation import service as automation_service
 from app.platform.context import service as context_service
 from app.platform.context.schemas import StudentProfileRead
 from app.platform.events.schemas import OutboxEventRead
-from app.platform.ai import service as ai_service
 import hmac
 
 from fastapi import APIRouter, Header, HTTPException
@@ -26,6 +25,24 @@ from app.platform.webhooks.schemas import WebhookRetryResponseSchema
 router = APIRouter(prefix="/api/v1/internal", tags=["platform-core-internal"])
 
 
+def _legacy_job_read(row: dict[str, object]) -> JobRead:
+    return JobRead.model_validate(
+        {
+            "id": int(row.get("id") or 0),
+            "tenant_id": int(row.get("tenant_id") or 0),
+            "job_type": str(row.get("job_type") or ""),
+            "status": str(row.get("status") or ""),
+            "retry_count": int(row.get("retry_count") or 0),
+            "max_retries": int(row.get("max_retries") or 0),
+            "payload": dict(row.get("payload") or row.get("payload_json") or {}),
+            "result": row.get("result") or row.get("result_json"),
+            "error": row.get("error") or row.get("error_message"),
+            "created_at": str(row.get("created_at") or ""),
+            "updated_at": str(row.get("updated_at") or row.get("finished_at") or row.get("started_at") or row.get("created_at") or ""),
+        }
+    )
+
+
 def _require_internal_token(authorization: str | None) -> None:
     configured = get_internal_api_token()
     if not authorization or not authorization.startswith("Bearer "):
@@ -39,14 +56,14 @@ def _require_internal_token(authorization: str | None) -> None:
 def run_job(job_id: int, payload: JobRunRequest, authorization: str | None = Header(default=None)) -> JobRead:
     _require_internal_token(authorization)
     row = jobs_service.run_job(job_id, succeed=payload.succeed, result=payload.result, error=payload.error)
-    return JobRead.model_validate(row)
+    return _legacy_job_read(row)
 
 
 @router.post("/jobs/{job_id}/retry", response_model=JobRead)
 def retry_job(job_id: int, authorization: str | None = Header(default=None)) -> JobRead:
     _require_internal_token(authorization)
     row = jobs_service.retry_job(job_id)
-    return JobRead.model_validate(row)
+    return _legacy_job_read(row)
 
 
 @router.post("/worker/run-once")

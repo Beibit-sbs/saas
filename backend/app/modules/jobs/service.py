@@ -10,12 +10,12 @@ import logging
 import os
 import time
 from threading import Lock
-
-_jobs_schema_ready = False
-_jobs_schema_lock = Lock()
 from typing import Any
 
 from app.modules.tenants.service import get_tenant
+
+_jobs_schema_ready = False
+_jobs_schema_lock = Lock()
 
 try:
     import psycopg

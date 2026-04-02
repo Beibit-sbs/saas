@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Annotated
+import dataclasses as _dc
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -86,6 +87,10 @@ from app.platform.webhooks.schemas import (
     WebhookSubscriptionReadSchema,
 )
 
+LEGACY_BILLING_DETAIL = (
+    "platform-core billing is legacy; canonical billing source of truth is /platform backed by app.modules.billing"
+)
+
 router = APIRouter(prefix="/api/v1/admin", tags=["platform-core-admin"])
 
 
@@ -151,6 +156,24 @@ def _audit(request: Request, actor: str, action: str, tenant_id: int, metadata: 
         entity="platform-core",
         result="success",
         metadata=metadata or {},
+    )
+
+
+def _legacy_job_read(row: dict[str, object]) -> JobRead:
+    return JobRead.model_validate(
+        {
+            "id": int(row.get("id") or 0),
+            "tenant_id": int(row.get("tenant_id") or 0),
+            "job_type": str(row.get("job_type") or ""),
+            "status": str(row.get("status") or ""),
+            "retry_count": int(row.get("retry_count") or 0),
+            "max_retries": int(row.get("max_retries") or 0),
+            "payload": dict(row.get("payload_json") or {}),
+            "result": row.get("result_json"),
+            "error": row.get("error_message"),
+            "created_at": str(row.get("created_at") or ""),
+            "updated_at": str(row.get("finished_at") or row.get("started_at") or row.get("created_at") or ""),
+        }
     )
 
 
@@ -254,6 +277,8 @@ def set_tenant_feature(
 def create_plan(payload: PlanCreateRequest, request: Request, actor: Actor) -> PlanRead:
     try:
         row = billing_service.create_plan(payload.code, payload.name, payload.price_cents, payload.features, payload.limits)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=410, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.billing.plan.create", 1, {"code": payload.code})
@@ -297,7 +322,7 @@ def increment_usage(
 def enqueue_job(payload: JobEnqueueRequest, request: Request, actor: Actor) -> JobRead:
     row = jobs_service.enqueue_job(payload.tenant_id, payload.job_type, payload.payload, max_retries=payload.max_retries)
     _audit(request, actor, "platform_core.jobs.enqueue", payload.tenant_id, {"job_type": payload.job_type})
-    return JobRead.model_validate(row)
+    return _legacy_job_read(row)
 
 
 @router.post("/notifications", response_model=NotificationRead, status_code=201)
@@ -487,9 +512,7 @@ def list_student_skills(
     _actor: Actor,
     student_id: str | None = None,
 ) -> list[StudentSkillReadSchema]:
-    request_tenant = request.headers.get("x-tenant-id")
-    if request_tenant is not None and int(request_tenant) != int(tenant_id):
-        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    _enforce_target_tenant_match(request, tenant_id)
     with UnitOfWork() as uow:
         rows = education_graph_service.list_student_skills(
             tenant_id=tenant_id,
@@ -518,8 +541,6 @@ def get_platform_rector_dashboard(tenant_id: int, _actor: Actor) -> RectorDashbo
 # ------------------------------------------------------------------ #
 #  Automation / Workflow Engine v1                                     #
 # ------------------------------------------------------------------ #
-
-import dataclasses as _dc
 
 
 @router.post("/platform/automation/rules", response_model=AutomationRuleReadSchema, status_code=201)

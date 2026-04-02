@@ -5,8 +5,8 @@ Validates cross-tenant isolation across: developer apps, webhooks, events, autom
 from __future__ import annotations
 
 import pytest
-from tests.conftest import ADMIN_HEADERS, _auth_headers, client
-from app.platform.uow import UnitOfWork
+from tests.conftest import ADMIN_HEADERS, client
+from app.modules.auth.token_service import create_access_token
 
 
 def _tenant_headers(tenant_id: int, base_headers: dict[str, str] | None = None) -> dict[str, str]:
@@ -14,6 +14,16 @@ def _tenant_headers(tenant_id: int, base_headers: dict[str, str] | None = None) 
     headers = dict(base_headers or ADMIN_HEADERS)
     headers["X-Tenant-ID"] = str(tenant_id)
     return headers
+
+
+def _tenant_token_headers(tenant_id: int, user_id: str, roles: list[str] | None = None) -> dict[str, str]:
+    token = create_access_token(
+        user_id=user_id,
+        roles=roles or ["admin"],
+        auth_source="test",
+        tenant_id=int(tenant_id),
+    )
+    return {"Authorization": f"Bearer {token}"}
 
 
 def _create_tenant(slug: str) -> int:
@@ -43,7 +53,7 @@ def test_tenant_a_cannot_list_tenant_b_developer_apps() -> None:
     # Create developer app in tenant B
     response_b = client.post(
         "/api/v1/admin/platform/developer/apps",
-        headers=_tenant_headers(tenant_b_id, _auth_headers("admin-b@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_b_id, _tenant_token_headers(tenant_b_id, "admin-b@example.com")),
         json={
             "name": "Tenant B App",
             "owner_email": "owner-b@example.com",
@@ -55,7 +65,7 @@ def test_tenant_a_cannot_list_tenant_b_developer_apps() -> None:
     # Try to list tenant B apps as tenant A
     response_a = client.get(
         "/api/v1/admin/platform/developer/apps",
-        headers=_tenant_headers(tenant_a_id, _auth_headers("admin-a@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_a_id, _tenant_token_headers(tenant_a_id, "admin-a@example.com")),
     )
     assert response_a.status_code == 200
     apps_a = response_a.json()
@@ -71,7 +81,7 @@ def test_tenant_a_cannot_get_tenant_b_developer_app_details() -> None:
     # Create developer app in tenant B
     response_b = client.post(
         "/api/v1/admin/platform/developer/apps",
-        headers=_tenant_headers(tenant_b_id, _auth_headers("admin-b@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_b_id, _tenant_token_headers(tenant_b_id, "admin-b@example.com")),
         json={
             "name": "Tenant B App",
             "owner_email": "owner-b@example.com",
@@ -83,7 +93,7 @@ def test_tenant_a_cannot_get_tenant_b_developer_app_details() -> None:
     # Try to get tenant B app as tenant A
     response_a = client.get(
         f"/api/v1/admin/platform/developer/apps/{app_b_id}",
-        headers=_tenant_headers(tenant_a_id, _auth_headers("admin-a@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_a_id, _tenant_token_headers(tenant_a_id, "admin-a@example.com")),
     )
     # Should be 404 or 403 - app doesn't exist in tenant A's context
     assert response_a.status_code in (403, 404), f"Expected 403 or 404, got {response_a.status_code}"
@@ -97,7 +107,7 @@ def test_tenant_a_cannot_install_tenant_b_developer_app() -> None:
     # Create developer app in tenant B
     response_b = client.post(
         "/api/v1/admin/platform/developer/apps",
-        headers=_tenant_headers(tenant_b_id, _auth_headers("admin-b@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_b_id, _tenant_token_headers(tenant_b_id, "admin-b@example.com")),
         json={
             "name": "Tenant B App",
             "owner_email": "owner-b@example.com",
@@ -109,7 +119,7 @@ def test_tenant_a_cannot_install_tenant_b_developer_app() -> None:
     # Try to install as tenant A (should fail)
     response_a = client.post(
         f"/api/v1/admin/platform/developer/apps/{app_b_id}/installations",
-        headers=_tenant_headers(tenant_a_id, _auth_headers("admin-a@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_a_id, _tenant_token_headers(tenant_a_id, "admin-a@example.com")),
         json={"tenant_id": tenant_a_id},
     )
     assert response_a.status_code in (403, 404), f"Expected 403 or 404, got {response_a.status_code}"
@@ -127,7 +137,7 @@ def test_tenant_a_cannot_list_tenant_b_webhook_subscriptions() -> None:
     # Create webhook subscription in tenant B
     response_b = client.post(
         "/api/v1/admin/webhooks/subscriptions",
-        headers=_tenant_headers(tenant_b_id, _auth_headers("admin-b@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_b_id, _tenant_token_headers(tenant_b_id, "admin-b@example.com")),
         json={
             "tenant_id": tenant_b_id,
             "event_type": "student.created",
@@ -136,12 +146,11 @@ def test_tenant_a_cannot_list_tenant_b_webhook_subscriptions() -> None:
         },
     )
     assert response_b.status_code == 201, response_b.text
-    subscription_b_id = response_b.json()["id"]
     
     # Try to list tenant B subscriptions as tenant A
     response_a = client.get(
         f"/api/v1/admin/tenants/{tenant_b_id}/webhooks/subscriptions",
-        headers=_tenant_headers(tenant_a_id, _auth_headers("admin-a@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_a_id, _tenant_token_headers(tenant_a_id, "admin-a@example.com")),
     )
     assert response_a.status_code in (403, 404), f"Expected 403 or 404, got {response_a.status_code}"
 
@@ -158,7 +167,7 @@ def test_tenant_a_cannot_see_tenant_b_analytics_events() -> None:
     # List tenant B analytics events as tenant B (should create some record)
     response = client.get(
         f"/api/v1/admin/tenants/{tenant_b_id}/analytics/events",
-        headers=_tenant_headers(tenant_b_id, _auth_headers("admin-b@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_b_id, _tenant_token_headers(tenant_b_id, "admin-b@example.com")),
     )
     assert response.status_code == 200
     # The endpoint might not exist or return empty - that's fine for isolation test
@@ -166,7 +175,7 @@ def test_tenant_a_cannot_see_tenant_b_analytics_events() -> None:
     # List as tenant A - should not see tenant B's events
     response_a = client.get(
         f"/api/v1/admin/tenants/{tenant_b_id}/analytics/events",
-        headers=_tenant_headers(tenant_a_id, _auth_headers("admin-a@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_a_id, _tenant_token_headers(tenant_a_id, "admin-a@example.com")),
     )
     # Should be 403 or 404 - not allowed to query another tenant
     assert response_a.status_code in (403, 404, 400), f"Got {response_a.status_code}"
@@ -184,7 +193,7 @@ def test_cross_tenant_access_attempt_is_logged() -> None:
     # Create developer app in tenant B
     response_b = client.post(
         "/api/v1/admin/platform/developer/apps",
-        headers=_tenant_headers(tenant_b_id, _auth_headers("admin-b@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_b_id, _tenant_token_headers(tenant_b_id, "admin-b@example.com")),
         json={
             "name": "Protected App",
             "owner_email": "owner-b@example.com",
@@ -196,7 +205,7 @@ def test_cross_tenant_access_attempt_is_logged() -> None:
     # Attempt cross-tenant access as tenant A
     _response = client.get(
         f"/api/v1/admin/platform/developer/apps/{app_b_id}",
-        headers=_tenant_headers(tenant_a_id, _auth_headers("admin-a@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_a_id, _tenant_token_headers(tenant_a_id, "admin-a@example.com")),
     )
     
     # Should be denied (403 or 404)
@@ -215,7 +224,7 @@ def test_uow_respects_tenant_context_in_queries() -> None:
     tenant_b_id = _create_tenant("uow-isolation-b")
     
     # Publish event in tenant A (via API)
-    headers_a = _tenant_headers(tenant_a_id, _auth_headers("admin-a@example.com", ["admin"]))
+    headers_a = _tenant_headers(tenant_a_id, _tenant_token_headers(tenant_a_id, "admin-a@example.com"))
     _response_a = client.post(
         "/api/v1/admin/platform/developer/apps",
         headers=headers_a,
@@ -226,7 +235,7 @@ def test_uow_respects_tenant_context_in_queries() -> None:
     )
     
     # Publish event in tenant B (via API)
-    headers_b = _tenant_headers(tenant_b_id, _auth_headers("admin-b@example.com", ["admin"]))
+    headers_b = _tenant_headers(tenant_b_id, _tenant_token_headers(tenant_b_id, "admin-b@example.com"))
     _response_b = client.post(
         "/api/v1/admin/platform/developer/apps",
         headers=headers_b,
@@ -251,7 +260,7 @@ def test_tenant_context_includes_institution_id() -> None:
     # Make a request with explicit tenant_id
     response = client.get(
         "/api/v1/admin/platform/developer/apps",
-        headers=_tenant_headers(tenant_id, _auth_headers("admin@example.com", ["admin"])),
+        headers=_tenant_headers(tenant_id, _tenant_token_headers(tenant_id, "admin@example.com")),
     )
     assert response.status_code == 200
     # Verify response contains only this tenant's data

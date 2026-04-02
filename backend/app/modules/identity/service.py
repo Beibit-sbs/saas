@@ -9,6 +9,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 from app.modules.integrations.service import get_setting, save_setting
+from app.modules.security.url_validation import validate_external_https_url
 
 
 _IDP_CONFIG_KEY = "identity.providers_json"
@@ -74,6 +75,9 @@ def upsert_identity_provider(*, tenant_id: int, payload: dict[str, Any]) -> dict
         "tenant_scope": str(payload.get("tenant_scope", "tenant")).strip().lower() or "tenant",
     }
 
+    if provider_type == "oidc" and row["issuer"]:
+        row["issuer"] = validate_external_https_url(row["issuer"]).rstrip("/")
+
     rows = _load_provider_rows(tenant_id=tenant_id)
     replaced = False
     for index, existing in enumerate(rows):
@@ -107,7 +111,7 @@ def create_oidc_login_challenge(*, tenant_id: int, provider: str) -> dict[str, A
     if not bool(config.get("enabled", False)):
         raise ValueError("identity provider is disabled")
 
-    issuer = str(config.get("issuer", "")).strip().rstrip("/")
+    issuer = validate_external_https_url(str(config.get("issuer", "")).strip()).rstrip("/")
     client_id = str(config.get("client_id", "")).strip()
     redirect_uri = str(config.get("redirect_uri", "")).strip()
     scopes = list(config.get("scopes") or ["openid", "profile", "email"])

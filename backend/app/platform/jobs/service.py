@@ -2,15 +2,22 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.modules.jobs import service as module_jobs_service
 from app.platform.uow import UnitOfWork
 
 
 def enqueue_job(tenant_id: int, job_type: str, payload: dict[str, Any], max_retries: int = 3) -> dict[str, Any]:
-    with UnitOfWork() as uow:
-        return uow.job_repository.enqueue(int(tenant_id), job_type, payload, int(max_retries), conn=uow.conn)
+    return module_jobs_service.enqueue_job(int(tenant_id), job_type, payload, max_retries=int(max_retries))
+
+
+def _canonical_job(job_id: int) -> dict[str, Any] | None:
+    return module_jobs_service.get_job_by_id(int(job_id))
 
 
 def get_job(job_id: int) -> dict[str, Any] | None:
+    row = _canonical_job(job_id)
+    if row is not None:
+        return row
     with UnitOfWork() as uow:
         return uow.job_repository.get(int(job_id), conn=uow.conn)
 
@@ -21,6 +28,23 @@ def list_tenant_jobs(tenant_id: int, status: str | None = None, limit: int = 100
 
 
 def run_job(job_id: int, succeed: bool, result: dict[str, Any] | None = None, error: str | None = None) -> dict[str, Any]:
+    canonical = _canonical_job(job_id)
+    if canonical is not None:
+        running = module_jobs_service.mark_job_running(int(job_id))
+        if running is None:
+            raise ValueError(f"Job {job_id} not found or not runnable")
+
+        if succeed:
+            completed = module_jobs_service.mark_job_succeeded(int(job_id), result or {"status": "ok"})
+            if completed is None:
+                raise ValueError(f"Job {job_id} could not be completed")
+            return completed
+
+        failed = module_jobs_service.mark_job_failed(int(job_id), error or "job execution failed")
+        if failed is None:
+            raise ValueError(f"Job {job_id} could not be failed")
+        return failed
+
     with UnitOfWork() as uow:
         running = uow.job_repository.mark_running(int(job_id), conn=uow.conn)
     if running is None:
@@ -41,21 +65,36 @@ def run_job(job_id: int, succeed: bool, result: dict[str, Any] | None = None, er
 
 
 def mark_job_running(job_id: int) -> dict[str, Any] | None:
+    canonical = _canonical_job(job_id)
+    if canonical is not None:
+        return module_jobs_service.mark_job_running(int(job_id))
     with UnitOfWork() as uow:
         return uow.job_repository.mark_running(int(job_id), conn=uow.conn)
 
 
 def mark_job_succeeded(job_id: int, result: dict[str, Any]) -> dict[str, Any] | None:
+    canonical = _canonical_job(job_id)
+    if canonical is not None:
+        return module_jobs_service.mark_job_succeeded(int(job_id), result)
     with UnitOfWork() as uow:
         return uow.job_repository.mark_succeeded(int(job_id), result, conn=uow.conn)
 
 
 def mark_job_failed(job_id: int, error: str) -> dict[str, Any] | None:
+    canonical = _canonical_job(job_id)
+    if canonical is not None:
+        return module_jobs_service.mark_job_failed(int(job_id), error)
     with UnitOfWork() as uow:
         return uow.job_repository.mark_failed(int(job_id), error, conn=uow.conn)
 
 
 def retry_job(job_id: int) -> dict[str, Any]:
+    canonical = _canonical_job(job_id)
+    if canonical is not None:
+        retried = module_jobs_service.retry_job(int(job_id))
+        if retried is None:
+            raise ValueError(f"Job {job_id} cannot be retried")
+        return retried
     with UnitOfWork() as uow:
         retried = uow.job_repository.requeue_for_retry(int(job_id), "manual retry", conn=uow.conn)
     if retried is None:
@@ -64,6 +103,12 @@ def retry_job(job_id: int) -> dict[str, Any]:
 
 
 def cancel_job(job_id: int) -> dict[str, Any]:
+    canonical = _canonical_job(job_id)
+    if canonical is not None:
+        cancelled = module_jobs_service.cancel_job(int(job_id))
+        if cancelled is None:
+            raise ValueError(f"Job {job_id} cannot be cancelled")
+        return cancelled
     with UnitOfWork() as uow:
         cancelled = uow.job_repository.cancel(int(job_id), conn=uow.conn)
     if cancelled is None:

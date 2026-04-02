@@ -52,8 +52,43 @@ def test_public_languages_endpoint() -> None:
     assert response.status_code == 200
     body = response.json()
     assert "languages" in body
+    assert body["default_language"] in {"ru", "kk", "en"}
     codes = {item["code"] for item in body["languages"]}
     assert {"kk", "ru", "en"}.issubset(codes)
+
+
+def test_admin_update_default_language_endpoint() -> None:
+    response = client.patch(
+        "/api/admin/i18n/default-language",
+        json={"code": "en"},
+        headers=ADMIN_HEADERS,
+    )
+    assert response.status_code == 200
+    assert response.json()["default_language"] == "en"
+
+    public_response = client.get("/api/i18n/languages")
+    assert public_response.status_code == 200
+    assert public_response.json()["default_language"] == "en"
+
+
+def test_admin_cannot_set_disabled_language_as_default() -> None:
+    client.post(
+        "/api/admin/i18n/languages",
+        json={"code": "hi", "name": "Hindi", "native_name": "हिन्दी"},
+        headers=ADMIN_HEADERS,
+    )
+    client.patch(
+        "/api/admin/i18n/languages/hi",
+        json={"enabled": False},
+        headers=ADMIN_HEADERS,
+    )
+
+    response = client.patch(
+        "/api/admin/i18n/default-language",
+        json={"code": "hi"},
+        headers=ADMIN_HEADERS,
+    )
+    assert response.status_code == 400
 
 
 def test_public_language_catalog_endpoint() -> None:

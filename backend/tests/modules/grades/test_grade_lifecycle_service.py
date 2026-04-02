@@ -107,6 +107,16 @@ def audit_mock(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     return mock
 
 
+@pytest.fixture(autouse=True)
+def _bypass_abac_validators(monkeypatch: pytest.MonkeyPatch):
+    async def _allow(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr("app.modules.grades.service.validate_grade_submission", _allow)
+    monkeypatch.setattr("app.modules.grades.service.validate_grade_modification", _allow)
+    monkeypatch.setattr("app.modules.grades.service.validate_grade_ownership", _allow)
+
+
 @pytest.fixture
 def student_profile_factory():
     def factory(**overrides) -> StudentProfileModel:
@@ -232,6 +242,7 @@ class TestGradeSubmission:
 
         db_session.execute.side_effect = [
             ExecuteResult(scalar_one_or_none=enrollment),
+            ExecuteResult(scalar_one_or_none=type("CourseStub", (), {"tenant_id": 1})()),
             ExecuteResult(scalar_one_or_none=None),
             ExecuteResult(scalar_one_or_none=scale_factory(id=9001, tenant_id=1, is_active=True)),
             ExecuteResult(scalars=[scale_item_factory(scale_id=9001, grade_code="A", grade_points=Decimal("4.00"))]),

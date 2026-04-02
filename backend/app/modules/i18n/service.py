@@ -28,6 +28,8 @@ languages: dict[str, LanguageEntry] = {
     "en": LanguageEntry(code="en", name="English", native_name="English", enabled=True, system=True),
 }
 
+default_language: str = "ru"
+
 LANGUAGE_CATALOG: list[dict[str, str]] = [
     {"code": "ar", "name": "Arabic", "native_name": "العربية"},
     {"code": "de", "name": "German", "native_name": "Deutsch"},
@@ -84,6 +86,23 @@ def _ensure_schema_and_seed(conn) -> None:
                 ("ru", "Russian", "Русский", True, True),
                 ("en", "English", "English", True, True),
             ],
+        )
+
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS app_i18n_settings (
+                id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+                default_language TEXT NOT NULL DEFAULT 'ru',
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        cur.execute(
+            """
+            INSERT INTO app_i18n_settings(id, default_language)
+            VALUES (1, 'ru')
+            ON CONFLICT (id) DO NOTHING
+            """
         )
 
     conn.commit()
@@ -220,6 +239,74 @@ def normalize_code(code: str) -> str:
     return normalized
 
 
+def _resolve_default_candidate(enabled_codes: list[str], preferred: str | None = None) -> str:
+    enabled = [normalize_code(item) for item in enabled_codes if str(item or "").strip()]
+    if preferred:
+        normalized_preferred = normalize_code(preferred)
+        if normalized_preferred in enabled:
+            return normalized_preferred
+    for candidate in ("ru", "en"):
+        if candidate in enabled:
+            return candidate
+    return enabled[0] if enabled else "ru"
+
+
+def _get_enabled_codes_db(conn) -> list[str]:
+    with conn.cursor() as cur:
+        cur.execute("SELECT code FROM app_languages WHERE enabled = TRUE ORDER BY code")
+        rows = cur.fetchall()
+    return [str(row[0]) for row in rows]
+
+
+def _get_default_language_db() -> str:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed(conn)
+        with conn.cursor() as cur:
+            cur.execute("SELECT default_language FROM app_i18n_settings WHERE id = 1")
+            row = cur.fetchone()
+
+        enabled_codes = _get_enabled_codes_db(conn)
+        current = normalize_code(row[0]) if row and row[0] else "ru"
+        resolved = _resolve_default_candidate(enabled_codes, current)
+
+        if resolved != current:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE app_i18n_settings SET default_language = %s, updated_at = NOW() WHERE id = 1",
+                    (resolved,),
+                )
+            conn.commit()
+
+    return resolved
+
+
+def _set_default_language_db(code: str) -> str:
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+
+    with get_raw_conn() as conn:
+        _ensure_schema_and_seed(conn)
+        with conn.cursor() as cur:
+            cur.execute("SELECT enabled FROM app_languages WHERE code = %s", (code,))
+            row = cur.fetchone()
+            if row is None:
+                raise ValueError("language not found")
+            if not bool(row[0]):
+                raise ValueError("default language must be enabled")
+
+            cur.execute(
+                "UPDATE app_i18n_settings SET default_language = %s, updated_at = NOW() WHERE id = 1",
+                (code,),
+            )
+
+        conn.commit()
+
+    return code
+
+
 def list_languages(enabled_only: bool = False) -> list[dict[str, str | bool]]:
     if _use_database():
         return _list_languages_from_db(enabled_only)
@@ -236,6 +323,34 @@ def list_languages(enabled_only: bool = False) -> list[dict[str, str | bool]]:
         }
         for item in items
     ]
+
+
+def get_default_language() -> str:
+    global default_language
+
+    if _use_database():
+        return _get_default_language_db()
+
+    enabled_codes = [entry.code for entry in languages.values() if entry.enabled]
+    default_language = _resolve_default_candidate(enabled_codes, default_language)
+    return default_language
+
+
+def set_default_language(code: str) -> str:
+    global default_language
+
+    normalized_code = normalize_code(code)
+    if _use_database():
+        return _set_default_language_db(normalized_code)
+
+    entry = languages.get(normalized_code)
+    if entry is None:
+        raise ValueError("language not found")
+    if not entry.enabled:
+        raise ValueError("default language must be enabled")
+
+    default_language = normalized_code
+    return default_language
 
 
 def list_language_catalog() -> list[dict[str, str]]:
@@ -278,7 +393,10 @@ def set_language_enabled(code: str, enabled: bool) -> dict[str, str | bool]:
     normalized_code = normalize_code(code)
 
     if _use_database():
-        return _set_language_enabled_db(normalized_code, enabled)
+        result = _set_language_enabled_db(normalized_code, enabled)
+        # Keep runtime default always valid after language status mutations.
+        get_default_language()
+        return result
 
     entry = languages.get(normalized_code)
     if entry is None:
@@ -287,6 +405,8 @@ def set_language_enabled(code: str, enabled: bool) -> dict[str, str | bool]:
         raise ValueError("system language cannot be disabled")
 
     entry.enabled = enabled
+    # Keep runtime default always valid after language status mutations.
+    get_default_language()
     return {
         "code": entry.code,
         "name": entry.name,
@@ -301,6 +421,7 @@ def delete_language(code: str) -> None:
 
     if _use_database():
         _delete_language_db(normalized_code)
+        get_default_language()
         return
 
     entry = languages.get(normalized_code)
@@ -310,3 +431,4 @@ def delete_language(code: str) -> None:
         raise ValueError("system language cannot be deleted")
 
     del languages[normalized_code]
+    get_default_language()

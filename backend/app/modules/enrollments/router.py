@@ -198,6 +198,7 @@ async def get_active_enrollment_endpoint(
             student_profile_id=student_profile_id,
             course_id=course_id,
             term_id=term_id,
+            actor_id=actor,
         )
     except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
         raise _raise_enrollments_http_error(exc) from exc
@@ -235,6 +236,7 @@ async def get_enrollment_endpoint(
         return await service.get_enrollment(
             tenant_id=tenant_id,
             enrollment_id=enrollment_id,
+            actor_id=actor,
         )
     except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
         raise _raise_enrollments_http_error(exc) from exc
@@ -277,6 +279,7 @@ async def list_student_enrollments_endpoint(
         return await service.list_student_enrollments(
             tenant_id=tenant_id,
             student_profile_id=student_id,
+            actor_id=actor,
             page=page,
             page_size=page_size,
             status=status,
@@ -324,6 +327,7 @@ async def list_course_roster_endpoint(
             tenant_id=tenant_id,
             course_id=course_id,
             term_id=term_id,
+            actor_id=actor,
             page=page,
             page_size=page_size,
             status=status,

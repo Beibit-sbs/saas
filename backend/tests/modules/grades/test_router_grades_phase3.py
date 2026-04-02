@@ -147,10 +147,19 @@ def test_list_course_grades_success(
     override_grades_db: MagicMock,
     admin_headers: dict[str, str],
 ) -> None:
-    async def fake_list_course_grades(self, tenant_id: int, course_id: int, term_id: int | None, page: int, page_size: int):
+    async def fake_list_course_grades(
+        self,
+        tenant_id: int,
+        course_id: int,
+        term_id: int | None,
+        page: int,
+        page_size: int,
+        actor_id: str | None = None,
+    ):
         assert course_id == 701
         assert page == 1
         assert page_size == 20
+        assert actor_id == "owner@example.com"
         return GradeListResponseSchema(total=1, page=1, page_size=20, items=[_grade_schema()])
 
     monkeypatch.setattr(grades_service.GradeLifecycleService, "list_course_grades", fake_list_course_grades)

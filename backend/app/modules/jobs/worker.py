@@ -47,6 +47,7 @@ def _execute_placeholder(job: dict[str, Any]) -> dict[str, Any]:
 
 
 _JOB_HANDLERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
+    "sync": _execute_placeholder,
     "backup.run": _execute_backup_run,
     "audit.export": _execute_audit_export,
     "ldap.sync": _execute_placeholder,

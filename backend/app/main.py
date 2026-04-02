@@ -59,6 +59,7 @@ from app.modules.ldap.router import router as ldap_router
 from app.modules.jobs.router import router as jobs_router
 from app.modules.programs.router import router as programs_router
 from app.modules.platform.router import router as platform_router
+from app.modules.platform.self_service_router import router as platform_self_service_router
 from app.platform.router_admin import router as platform_v1_admin_router
 from app.platform.router_public import router as platform_v1_public_router
 from app.platform.router_developer_api import router as platform_developer_api_router
@@ -222,6 +223,7 @@ app.include_router(academic_records_router)
 app.include_router(tenants_router)
 app.include_router(tenants_public_router)
 app.include_router(platform_router)
+app.include_router(platform_self_service_router)
 app.include_router(platform_v1_admin_router)
 app.include_router(platform_v1_public_router)
 app.include_router(platform_developer_api_router)
