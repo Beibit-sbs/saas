@@ -363,6 +363,11 @@ def get_ops_worker_stale_seconds() -> int:
     return _int_env("OPS_WORKER_STALE_SECONDS", 180, minimum=10, maximum=3600)
 
 
+def is_worker_health_required() -> bool:
+    default = "true" if is_production_mode() else "false"
+    return is_enabled(os.getenv("OPS_REQUIRE_WORKER_HEALTH", default))
+
+
 def get_ops_scheduler_stale_seconds() -> int:
     return _int_env("OPS_SCHEDULER_STALE_SECONDS", 300, minimum=10, maximum=7200)
 

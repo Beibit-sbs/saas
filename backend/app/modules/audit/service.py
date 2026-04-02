@@ -430,6 +430,61 @@ def log_admin_action(
     )
 
 
+def _sanitize_data_access_reason(reason: str | None) -> str | None:
+    if reason is None:
+        return None
+    cleaned = reason.strip()
+    if not cleaned:
+        return None
+    return cleaned[:120]
+
+
+def log_data_access_event(
+    *,
+    actor_id: str,
+    tenant_id: int,
+    resource: str,
+    resource_id: str | int,
+    action: str,
+    result: str,
+    reason: str | None = None,
+) -> None:
+    """Emit data-level audit record without sensitive payload fields."""
+    normalized_action = action.strip().lower()
+    if normalized_action not in {"read", "write", "update", "delete"}:
+        normalized_action = "read"
+
+    normalized_result = result.strip().lower()
+    if normalized_result not in {"success", "denied"}:
+        normalized_result = "denied"
+
+    normalized_resource = (resource or "unknown").strip().lower()[:64]
+    normalized_resource_id = str(resource_id).strip()[:128] if resource_id is not None else "unknown"
+
+    payload = {
+        "event": "data.access",
+        "actor_id": actor_id,
+        "tenant_id": str(tenant_id),
+        "resource": normalized_resource,
+        "resource_id": normalized_resource_id,
+        "action": normalized_action,
+        "result": normalized_result,
+        "reason": _sanitize_data_access_reason(reason),
+        "timestamp": _now_iso(),
+    }
+
+    log_admin_action(
+        actor=actor_id,
+        action="data.access",
+        path=f"/internal/data/{normalized_resource}/{normalized_resource_id}",
+        client_ip="service",
+        entity=normalized_resource,
+        result=normalized_result,
+        metadata=payload,
+        tenant_id=tenant_id,
+    )
+
+
 def list_admin_actions(
     actor: str | None = None,
     action: str | None = None,

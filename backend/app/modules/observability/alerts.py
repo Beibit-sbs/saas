@@ -17,6 +17,7 @@ from app.core.config import (
     get_ops_latency_p95_threshold_ms,
     get_ops_latency_p99_threshold_ms,
 )
+from app.modules.security.url_validation import validate_external_https_url
 
 
 logger = logging.getLogger("app.ops.alerting")
@@ -35,6 +36,7 @@ def _send_webhook(payload: dict[str, Any]) -> None:
     webhook_url = get_ops_alert_webhook_url()
     if not webhook_url:
         return
+    webhook_url = validate_external_https_url(webhook_url)
 
     request = Request(
         webhook_url,

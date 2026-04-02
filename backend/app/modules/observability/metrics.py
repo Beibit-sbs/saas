@@ -6,9 +6,11 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections import deque
+from datetime import datetime, timezone
 from threading import Lock
 import time
 
+from app.platform.runtime_state import get_scheduler_last_run, get_worker_heartbeat
 from app.modules.observability.security_signals import snapshot_security_metrics
 from app.modules.observability.alerts import observe_latency_spike
 
@@ -35,12 +37,29 @@ _auth_login_attempts_total: dict[tuple[str, str, str], int] = defaultdict(int)
 _auth_login_failures_total: dict[tuple[str, str, str], int] = defaultdict(int)
 _jobs_executed_total: int = 0
 _jobs_failed_total: int = 0
+_jobs_queue_size: int = 0
 _invoices_created_total: int = 0
 _billing_failures_total: int = 0
 _db_connections_active: int | None = None
 _redis_latency_seconds: float | None = None
 
 _LATENCY_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
+
+
+def _parse_iso(raw: str | None) -> datetime | None:
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(str(raw))
+    except Exception:
+        return None
+
+
+def _age_seconds_from_iso(raw: str | None) -> float:
+    parsed = _parse_iso(raw)
+    if parsed is None:
+        return -1.0
+    return max(0.0, (datetime.now(timezone.utc) - parsed).total_seconds())
 
 
 def _status_class(status: int) -> str:
@@ -144,6 +163,12 @@ def observe_job_execution(*, outcome: str) -> None:
             _jobs_failed_total += 1
 
 
+def set_jobs_queue_size(value: int) -> None:
+    with _lock:
+        global _jobs_queue_size
+        _jobs_queue_size = max(0, int(value))
+
+
 def observe_invoice_created() -> None:
     global _invoices_created_total
     with _lock:
@@ -178,13 +203,14 @@ def clear_metrics_state() -> None:
         _auth_login_attempts_total.clear()
         _auth_login_failures_total.clear()
         global _workflow_executions_total, _grade_submissions_total, _scheduling_conflicts_total
-        global _jobs_executed_total, _jobs_failed_total, _invoices_created_total, _billing_failures_total
+        global _jobs_executed_total, _jobs_failed_total, _jobs_queue_size, _invoices_created_total, _billing_failures_total
         global _db_connections_active, _redis_latency_seconds
         _workflow_executions_total = 0
         _grade_submissions_total = 0
         _scheduling_conflicts_total = 0
         _jobs_executed_total = 0
         _jobs_failed_total = 0
+        _jobs_queue_size = 0
         _invoices_created_total = 0
         _billing_failures_total = 0
         _db_connections_active = None
@@ -213,6 +239,7 @@ def render_metrics() -> str:
         auth_login_failures_total = dict(_auth_login_failures_total)
         jobs_executed_total = _jobs_executed_total
         jobs_failed_total = _jobs_failed_total
+        jobs_queue_size = _jobs_queue_size
         invoices_created_total = _invoices_created_total
         billing_failures_total = _billing_failures_total
         db_connections_active = _db_connections_active
@@ -291,6 +318,10 @@ def render_metrics() -> str:
     lines.append("# TYPE jobs_failed_total counter")
     lines.append(f"jobs_failed_total {jobs_failed_total}")
 
+    lines.append("# HELP jobs_queue_size Current number of queued (pending) jobs.")
+    lines.append("# TYPE jobs_queue_size gauge")
+    lines.append(f"jobs_queue_size {jobs_queue_size}")
+
     lines.append("# HELP invoices_created_total Total created invoices.")
     lines.append("# TYPE invoices_created_total counter")
     lines.append(f"invoices_created_total {invoices_created_total}")
@@ -319,6 +350,20 @@ def render_metrics() -> str:
     for signal, count in sorted(security_anomalies.items()):
         labels = f'signal="{_escape(signal)}"'
         lines.append(f"security_anomalies_total{{{labels}}} {count}")
+
+    worker_age_seconds = _age_seconds_from_iso(get_worker_heartbeat())
+    scheduler_last_run = get_scheduler_last_run()
+    scheduler_age_seconds = _age_seconds_from_iso(
+        str(scheduler_last_run.get("at")) if isinstance(scheduler_last_run, dict) and scheduler_last_run.get("at") else None
+    )
+
+    lines.append("# HELP worker_heartbeat_age_seconds Age of the last worker heartbeat in seconds (-1 if missing).")
+    lines.append("# TYPE worker_heartbeat_age_seconds gauge")
+    lines.append(f"worker_heartbeat_age_seconds {worker_age_seconds:.3f}")
+
+    lines.append("# HELP scheduler_last_run_age_seconds Age of the last scheduler run in seconds (-1 if missing).")
+    lines.append("# TYPE scheduler_last_run_age_seconds gauge")
+    lines.append(f"scheduler_last_run_age_seconds {scheduler_age_seconds:.3f}")
 
     lines.append("")
     return "\n".join(lines)

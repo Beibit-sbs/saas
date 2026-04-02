@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 import hmac
@@ -19,6 +20,7 @@ from app.core.config import (
     get_metrics_allowed_ips,
     get_metrics_token,
     is_production_mode,
+    is_worker_health_required,
     validate_required_environment,
 )
 from app.core.runtime_schema import bootstrap_runtime_schema
@@ -107,6 +109,21 @@ from app.modules.security.rate_limit import (
 configure_json_logging()
 logger = logging.getLogger("app.audit")
 request_logger = logging.getLogger("app.request")
+
+
+def _schedule_usage_event(tenant_id: int) -> None:
+    async def _record() -> None:
+        try:
+            from app.modules.usage.service import record_usage_event
+
+            await asyncio.to_thread(record_usage_event, int(tenant_id), "api_calls", 1)
+        except Exception:
+            pass
+
+    try:
+        asyncio.get_running_loop().create_task(_record())
+    except RuntimeError:
+        pass
 
 
 @asynccontextmanager
@@ -518,6 +535,8 @@ async def add_request_id(request: Request, call_next):
             raw_path = request.url.path
             with perf_segment("metrics.record_request"):
                 record_request(request.method, raw_path, status_code, duration, tenant_id)
+            if raw_path.startswith("/api/") and int(tenant_id) > 0:
+                _schedule_usage_event(int(tenant_id))
             error_code = _extract_error_code_from_response(response)
             request.state.error_code = error_code
             with perf_segment("logging.request_log"):
@@ -615,10 +634,17 @@ def health_ready(request: Request):
 @app.get("/health/worker", response_model=None)
 def health_worker(
     __: None = Depends(permission_dependency("health.read")),
-) -> JSONResponse | dict[str, str]:
+) -> JSONResponse | dict[str, Any]:
     payload = deep_payload(app)
     worker = payload["dependencies"]["worker"]
     if not worker["healthy"]:
+        if not is_worker_health_required():
+            return {
+                "status": "skipped",
+                "worker": "out_of_scope",
+                "required": "false",
+                **worker["details"],
+            }
         return JSONResponse(status_code=503, content={"status": "error", "worker": "unreachable", "details": worker["details"]})
     return {"status": "ok", "worker": "reachable", **worker["details"]}
 
