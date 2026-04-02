@@ -115,7 +115,7 @@ class LocalUserStore:
 
     def _public_user(self, item: dict[str, object]) -> dict[str, object]:
         tenant_id = _require_tenant_id(item.get("tenant_id"), operation="local_user_public_projection")
-        return {
+        projection: dict[str, object] = {
             "user_id": item["user_id"],
             "login": item["login"],
             "display_name": item["display_name"],
@@ -125,6 +125,15 @@ class LocalUserStore:
             "auth_source": "local",
             "sync_with_ad": False,
         }
+        if "account_scope" in item:
+            projection["account_scope"] = item["account_scope"]
+        if "is_platform_user" in item:
+            projection["is_platform_user"] = bool(item.get("is_platform_user"))
+        if "email" in item and str(item.get("email", "")).strip():
+            projection["email"] = str(item.get("email", "")).strip().lower()
+        if bool(item.get("force_password_change", False)):
+            projection["force_password_change"] = True
+        return projection
 
     def list_users(
         self,

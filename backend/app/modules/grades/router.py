@@ -159,7 +159,7 @@ async def change_grade_endpoint(
 )
 async def list_course_grades_endpoint(
     course_id: int = Path(..., gt=0),
-    _: Actor = None,
+    actor: Actor = None,
     __: Annotated[None, Depends(permission_dependency("grades.read"))] = None,
     tenant: TrustedTenant = None,
     db: GradesDb = None,
@@ -175,6 +175,7 @@ async def list_course_grades_endpoint(
             term_id=term_id,
             page=page,
             page_size=page_size,
+            actor_id=actor,
         )
     except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
         raise _raise_grades_http_error(exc) from exc

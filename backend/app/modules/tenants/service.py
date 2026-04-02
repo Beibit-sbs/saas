@@ -103,21 +103,37 @@ def _list_tenants_db() -> list[dict[str, object]]:
 def _create_tenant_db(payload: dict[str, object]) -> dict[str, object]:
     url = _db_url()
     assert url
+    slug = str(payload.get("slug", "")).strip()
+    if not slug:
+        raise ValueError("slug is required")
+
+    existing = _get_tenant_by_slug_db(slug)
+    if existing is not None:
+        raise ValueError(f"Tenant with slug '{slug}' already exists")
+
     with get_raw_conn() as conn:
-        row = conn.execute(
-            """
-            INSERT INTO app_tenants (slug, name, status, plan_id, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, NOW(), NOW())
-            RETURNING id, slug, name, status, plan_id, created_at, updated_at
-            """,
-            (
-                payload["slug"],
-                payload["name"],
-                payload.get("status", "active"),
-                int(payload.get("plan_id") or 1),
-            ),
-        ).fetchone()
-        conn.commit()
+        try:
+            row = conn.execute(
+                """
+                INSERT INTO app_tenants (slug, name, status, plan_id, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, NOW(), NOW())
+                RETURNING id, slug, name, status, plan_id, created_at, updated_at
+                """,
+                (
+                    slug,
+                    payload["name"],
+                    payload.get("status", "active"),
+                    int(payload.get("plan_id") or 1),
+                ),
+            ).fetchone()
+            conn.commit()
+        except Exception as exc:
+            message = str(exc).lower()
+            if "duplicate key" in message and "slug" in message:
+                raise ValueError(f"Tenant with slug '{slug}' already exists") from exc
+            if "foreign key" in message and "plan_id" in message:
+                raise ValueError("plan_id is invalid") from exc
+            raise
     return _row_to_dict(row)
 
 

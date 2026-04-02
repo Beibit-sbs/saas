@@ -16,6 +16,8 @@ except ImportError:  # pragma: no cover
 
 
 _CANONICAL_PLATFORM_ADMIN_PERMISSIONS: Set[str] = {
+    "platform.admin.read",
+    "platform.admin.write",
     "health.read",
     "metrics.read",
     "ops.read",
@@ -220,6 +222,17 @@ _cache_lock = Lock()
 
 _DEFAULT_TENANT_ID = 1
 _PLATFORM_ADMIN_ROLE = "superadmin"
+
+# Role hierarchy: higher number = higher privilege
+# Used to prevent privilege escalation (e.g., admin can't assign superadmin)
+ROLE_HIERARCHY: Dict[str, int] = {
+    "superadmin": 100,
+    "admin": 50,
+    "dean": 40,
+    "teacher": 20,
+    "auditor": 10,
+    "student": 0,
+}
 
 # Tenant-aware in-memory stores used by tenant-scoped APIs.
 _tenant_roles_state: dict[int, dict[str, set[str]]] = {
@@ -511,7 +524,7 @@ def _assign_role_db(user_id: str, role: str) -> Dict[str, List[str]]:
     return {"user_id": user_id, "roles": roles}
 
 
-def _sync_user_roles_db(user_id: str, roles: List[str]) -> Dict[str, List[str]]:
+def _sync_user_roles_db(user_id: str, roles: List[str], tenant_id: int) -> Dict[str, List[str]]:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
@@ -520,18 +533,24 @@ def _sync_user_roles_db(user_id: str, roles: List[str]) -> Dict[str, List[str]]:
     with get_raw_conn() as conn:
         _ensure_schema_and_seed_once(conn)
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM app_user_roles WHERE user_id = %s", (user_id,))
+            cur.execute(
+                "DELETE FROM app_user_roles WHERE user_id = %s AND tenant_id = %s",
+                (user_id, tenant_id),
+            )
 
             if normalized_roles:
                 cur.executemany(
                     """
-                    INSERT INTO app_user_roles (user_id, role_id)
-                    SELECT %s, r.id
+                    INSERT INTO app_user_roles (user_id, role_id, tenant_id)
+                    SELECT %s, r.id, %s
                     FROM app_roles r
-                    WHERE r.name = %s
+                    WHERE r.name = %s AND r.tenant_id = %s
                     ON CONFLICT (user_id, role_id) DO NOTHING
                     """,
-                    [(user_id, role_name) for role_name in normalized_roles],
+                    [
+                        (user_id, tenant_id, role_name, tenant_id)
+                        for role_name in normalized_roles
+                    ],
                 )
 
             cur.execute(
@@ -540,9 +559,11 @@ def _sync_user_roles_db(user_id: str, roles: List[str]) -> Dict[str, List[str]]:
                 FROM app_user_roles ur
                 JOIN app_roles r ON r.id = ur.role_id
                 WHERE ur.user_id = %s
+                                    AND ur.tenant_id = %s
+                                    AND r.tenant_id = %s
                 ORDER BY r.name
                 """,
-                (user_id,),
+                                (user_id, tenant_id, tenant_id),
             )
             resolved_roles = [row[0] for row in cur.fetchall()]
 
@@ -740,7 +761,7 @@ def sync_user_roles_from_trusted_source(
 
     if normalized_tenant_id == _DEFAULT_TENANT_ID and _use_database():
         try:
-            synced = _sync_user_roles_db(normalized_user_id, normalized_roles)
+            synced = _sync_user_roles_db(normalized_user_id, normalized_roles, normalized_tenant_id)
             _clear_permission_cache()
             return synced
         except Exception as exc:
@@ -1257,6 +1278,31 @@ def is_platform_admin(user_id: str) -> bool:
     # Memory fallback: platform admin role is valid ONLY in the platform tenant.
     platform_tenant_roles = _tenant_user_roles_state.get(_DEFAULT_TENANT_ID, {})
     return _PLATFORM_ADMIN_ROLE in platform_tenant_roles.get(normalized_user_id, set())
+
+
+def get_role_hierarchy_level(role: str) -> int:
+    """
+    Get privilege level of a role.
+    Higher number = higher privilege.
+    Unknown roles return -1 (lowest privilege).
+    
+    Hierarchy:
+        superadmin: 100
+        admin:      50
+        dean:       40
+        teacher:    20
+        auditor:    10
+        student:    0
+    """
+    normalized_role = role.strip().lower()
+    return ROLE_HIERARCHY.get(normalized_role, -1)
+
+
+def get_highest_role_level(roles: List[str]) -> int:
+    """Get the highest privilege level from the given roles."""
+    if not roles:
+        return -1
+    return max(get_role_hierarchy_level(role) for role in roles)
 
 
 def list_roles_for_tenant(tenant_id: int) -> Dict[str, List[str]]:

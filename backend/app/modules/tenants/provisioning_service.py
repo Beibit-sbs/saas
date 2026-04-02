@@ -40,12 +40,21 @@ class ProvisioningResult:
 
 class TenantProvisioningService:
     @staticmethod
+    def derive_tenant_slug(tenant_name: str) -> str:
+        normalized_name = tenant_name.strip()
+        if not normalized_name:
+            raise ValueError("tenant_name is required")
+        return _slugify(normalized_name)
+
+    @staticmethod
     def create_tenant_with_defaults(
         *,
         tenant_name: str,
         admin_email: str,
         plan_code: str,
         actor: str,
+        slug: str | None = None,
+        allow_existing_slug: bool = False,
     ) -> dict[str, object]:
         normalized_name = tenant_name.strip()
         normalized_email = admin_email.strip().lower()
@@ -60,21 +69,24 @@ class TenantProvisioningService:
         if plan is None:
             raise ValueError("plan not found")
 
-        base_slug = _slugify(normalized_name)
-        slug = base_slug
-        suffix = 1
-        while get_tenant_by_slug(slug) is not None:
-            suffix += 1
-            slug = f"{base_slug}-{suffix}"
+        normalized_slug = _slugify(str(slug or normalized_name))
+        existing_tenant = get_tenant_by_slug(normalized_slug)
+        created_new_tenant = False
 
-        tenant = create_tenant(
-            {
-                "slug": slug,
-                "name": normalized_name,
-                "status": "active",
-                "plan_id": int(plan["id"]),
-            }
-        )
+        if existing_tenant is not None:
+            if not allow_existing_slug:
+                raise ValueError(f"tenant slug '{normalized_slug}' already exists")
+            tenant = existing_tenant
+        else:
+            tenant = create_tenant(
+                {
+                    "slug": normalized_slug,
+                    "name": normalized_name,
+                    "status": "active",
+                    "plan_id": int(plan["id"]),
+                }
+            )
+            created_new_tenant = True
         tenant_id = int(tenant["id"])
 
         try:
@@ -124,7 +136,8 @@ class TenantProvisioningService:
                 },
             )
         except Exception:
-            force_delete_tenant(tenant_id)
+            if created_new_tenant:
+                force_delete_tenant(tenant_id)
             raise
 
         return {

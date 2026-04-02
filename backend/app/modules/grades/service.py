@@ -33,6 +33,11 @@ from app.modules.grades.schemas import (
     StudentTranscriptSchema,
     TranscriptItemSchema,
 )
+from app.modules.rbac.abac import (
+    validate_grade_submission,
+    validate_grade_modification,
+    validate_grade_ownership,
+)
 from app.modules.students.models import StudentProfileModel
 from app.platform.events.publisher import EventPublisher
 
@@ -205,6 +210,15 @@ class GradeLifecycleService:
     ) -> GradeReadSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
         enrollment = self._load_enrollment(tenant_id, request.enrollment_id)
+        
+        # ABAC: Verify actor is authorized to submit grades for this course
+        self._load_course(tenant_id, enrollment.course_id)
+        await validate_grade_submission(
+            actor_id=actor_id,
+            course_id=enrollment.course_id,
+            tenant_id=tenant_id,
+        )
+        
         GradeLifecycleRules.validate_grade_submission_allowed(enrollment)
 
         existing = self._load_grade_submission(tenant_id, request.enrollment_id)
@@ -315,6 +329,14 @@ class GradeLifecycleService:
             resource_name="Grade submission",
             resource_id=request.enrollment_id,
         )
+        
+        # ABAC: Only original submitter or admin can modify grade
+        await validate_grade_modification(
+            actor_id=actor_id,
+            grade_id=submission.id,
+            submitted_by=submission.submitted_by,
+            tenant_id=tenant_id,
+        )
 
         validate_version_match(submission.version, request.expected_version)
 
@@ -401,9 +423,21 @@ class GradeLifecycleService:
         term_id: int | None = None,
         page: int = 1,
         page_size: int = 20,
+        actor_id: str | None = None,
     ) -> GradeListResponseSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
         self._load_course(tenant_id, course_id)
+        
+        # ABAC: Verify actor is authorized to view grades for this course
+        if actor_id:
+            await validate_grade_ownership(
+                actor_id=actor_id,
+                grade_id=0,  # Not checking specific grade, just course access
+                course_id=course_id,
+                student_id="",
+                submitted_by="",
+                tenant_id=tenant_id,
+            )
 
         filters = [
             EnrollmentModel.tenant_id == tenant_id,
