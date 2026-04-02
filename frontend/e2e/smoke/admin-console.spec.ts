@@ -69,10 +69,10 @@ const emptyPage = { items: [], total: 0, page: 1, page_size: 20 };
 // ---------------------------------------------------------------------------
 
 test.describe("Auth", () => {
-  test("login page renders the EduAdmin Console sign-in form", async ({ page }) => {
+  test("login page renders the AI University Console sign-in form", async ({ page }) => {
     await page.goto("/login");
-    await expect(page).toHaveTitle(/EduAdmin|Admin/i);
-    await expect(page.getByRole("heading", { name: /EduAdmin Console/i })).toBeVisible();
+    await expect(page).toHaveTitle(/AI University Console|Admin/i);
+    await expect(page.getByRole("heading", { name: /AI University Console/i })).toBeVisible();
     await expect(page.getByLabel("Username")).toBeVisible();
     await expect(page.getByLabel("Password")).toBeVisible();
     await expect(page.getByRole("button", { name: /Sign in/i })).toBeVisible();
@@ -142,7 +142,7 @@ test.describe("Auth", () => {
     await expect(logoutBtn).toBeVisible({ timeout: 10_000 });
     await logoutBtn.dispatchEvent("click");
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByRole("heading", { name: /EduAdmin Console/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /AI University Console/i })).toBeVisible();
   });
 });
 
