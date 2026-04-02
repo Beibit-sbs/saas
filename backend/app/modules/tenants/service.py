@@ -375,3 +375,30 @@ def force_delete_tenant(tenant_id: int) -> bool:
     with _state_lock:
         existing = _state.data.pop(normalized_tenant_id, None)
     return existing is not None
+
+
+def list_login_directory_tenants() -> list[dict[str, object]]:
+    """
+    Public login directory: list of active tenants available for tenant-bound users.
+    Returns only essential fields: tenant_id, slug, name.
+    Filters out inactive, suspended, or non-login-allowed tenants.
+    Safe for unauthenticated access.
+    """
+    tenants = list_tenants()
+    
+    result = []
+    for tenant in tenants:
+        status = str(tenant.get("status", "")).lower()
+        # Only include active tenants for login UX
+        if status != "active":
+            continue
+        
+        result.append({
+            "tenant_id": int(tenant["id"]),
+            "slug": str(tenant["slug"]),
+            "name": str(tenant["name"]),
+        })
+    
+    # Sort by name for consistent UI ordering
+    result.sort(key=lambda t: t["name"])
+    return result

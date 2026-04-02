@@ -39,3 +39,15 @@ class TenantItemResponse(BaseModel):
 class TenantDeleteResponse(BaseModel):
     deleted: bool
     tenant: TenantResponse
+
+
+class LoginDirectoryTenant(BaseModel):
+    """Minimal tenant info for login UI (unauthenticated access)."""
+    tenant_id: int = Field(description="Tenant ID for login form")
+    slug: str = Field(description="URL-friendly tenant identifier")
+    name: str = Field(description="Display name for UI dropdown")
+
+
+class LoginDirectoryResponse(BaseModel):
+    """Public login directory: list of active tenants available for tenant-bound users."""
+    tenants: list[LoginDirectoryTenant]

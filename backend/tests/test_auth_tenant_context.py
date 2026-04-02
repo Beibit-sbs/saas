@@ -110,3 +110,88 @@ def test_non_local_auth_source_cannot_override_tenant_header() -> None:
     )
     assert response.status_code == 403
     assert response.json()["detail"] == "cross-tenant override forbidden"
+
+
+def test_tenant_user_with_matching_header_is_allowed() -> None:
+    tenant_b_id = _create_tenant_b()
+    suffix = uuid4().hex[:8]
+    tenant_b_login = f"tenant-b-match-{suffix}"
+    add_or_update_role_for_tenant(tenant_b_id, "admin", list(BASELINE_ROLE_PERMISSIONS["admin"]))
+    local_user_store.create_user(
+        login=tenant_b_login,
+        password="TenantBpass123",
+        display_name="Tenant B Match",
+        roles=["admin"],
+        default_language="ru",
+        tenant_id=tenant_b_id,
+    )
+
+    client.cookies.clear()
+    login = client.post(
+        "/api/auth/login",
+        json={"login": tenant_b_login, "password": "TenantBpass123"},
+        headers={"X-Tenant-ID": str(tenant_b_id)},
+    )
+    assert login.status_code == 200, login.text
+
+    ok = client.get(
+        "/api/admin/dashboard",
+        headers={"X-Tenant-ID": str(tenant_b_id)},
+    )
+    assert ok.status_code == 200, ok.text
+
+
+def test_platform_local_login_without_tenant_header_uses_platform_fallback() -> None:
+    suffix = uuid4().hex[:8]
+    platform_login = f"platform-default-{suffix}"
+    local_user_store.create_user(
+        login=platform_login,
+        password="PlatformDefaultPass123",
+        display_name="Platform Default",
+        roles=["admin"],
+        default_language="ru",
+        tenant_id=1,
+    )
+
+    client.cookies.clear()
+    login = client.post(
+        "/api/auth/login",
+        json={"login": platform_login, "password": "PlatformDefaultPass123"},
+    )
+    assert login.status_code == 200, login.text
+
+
+def test_tenant_local_login_requires_explicit_tenant_header() -> None:
+    tenant_b_id = _create_tenant_b()
+    suffix = uuid4().hex[:8]
+    tenant_b_login = f"tenant-b-explicit-{suffix}"
+    add_or_update_role_for_tenant(tenant_b_id, "admin", list(BASELINE_ROLE_PERMISSIONS["admin"]))
+    local_user_store.create_user(
+        login=tenant_b_login,
+        password="TenantBexplicit123",
+        display_name="Tenant B Explicit",
+        roles=["admin"],
+        default_language="ru",
+        tenant_id=tenant_b_id,
+    )
+
+    client.cookies.clear()
+    without_header = client.post(
+        "/api/auth/login",
+        json={"login": tenant_b_login, "password": "TenantBexplicit123"},
+    )
+    assert without_header.status_code in {401, 503}, without_header.text
+
+    with_wrong_header = client.post(
+        "/api/auth/login",
+        json={"login": tenant_b_login, "password": "TenantBexplicit123"},
+        headers={"X-Tenant-ID": "1"},
+    )
+    assert with_wrong_header.status_code in {401, 503}, with_wrong_header.text
+
+    with_correct_header = client.post(
+        "/api/auth/login",
+        json={"login": tenant_b_login, "password": "TenantBexplicit123"},
+        headers={"X-Tenant-ID": str(tenant_b_id)},
+    )
+    assert with_correct_header.status_code == 200, with_correct_header.text

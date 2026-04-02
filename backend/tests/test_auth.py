@@ -72,6 +72,40 @@ def test_login_endpoint_local_user_flow() -> None:
     assert refresh_claims.user_id == user["user_id"]
 
 
+def test_login_sets_secure_cookie_flags_under_https_proxy() -> None:
+    client.cookies.clear()
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    response = client.post(
+        "/api/auth/login",
+        json={"login": "admin", "password": "admin123"},
+        headers={"X-Tenant-ID": "1", "X-Forwarded-Proto": "https"},
+    )
+    assert response.status_code == 200
+
+    set_cookie_headers = response.headers.get_list("set-cookie")
+    access_cookie = next(item for item in set_cookie_headers if item.startswith("app_access_token="))
+    refresh_cookie = next(item for item in set_cookie_headers if item.startswith("app_refresh_token="))
+
+    access_lower = access_cookie.lower()
+    refresh_lower = refresh_cookie.lower()
+    assert "secure" in access_lower
+    assert "httponly" in access_lower
+    assert "samesite=lax" in access_lower or "samesite=strict" in access_lower
+
+    assert "secure" in refresh_lower
+    assert "httponly" in refresh_lower
+    assert "samesite=lax" in refresh_lower or "samesite=strict" in refresh_lower
+
+    csrf = client.get("/api/auth/csrf", headers={"X-Forwarded-Proto": "https"})
+    assert csrf.status_code == 200
+    csrf_set_cookie_headers = csrf.headers.get_list("set-cookie")
+    csrf_cookie = next(item for item in csrf_set_cookie_headers if item.startswith("app_csrf_token="))
+    csrf_lower = csrf_cookie.lower()
+
+    assert "secure" in csrf_lower
+    assert "httponly" not in csrf_lower
+
+
 def test_local_admin_login_syncs_db_roles_and_allows_admin_endpoints(monkeypatch) -> None:
     client.cookies.clear()
     _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")

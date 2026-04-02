@@ -72,6 +72,7 @@ from app.modules.students.router import legacy_router as legacy_students_router
 from app.modules.students.router import router as students_router
 from app.modules.service_accounts.router import router as service_accounts_router
 from app.modules.tenants.router import router as tenants_router
+from app.modules.tenants.public_router import router as tenants_public_router
 from app.core.db import build_engine, make_session_factory
 from app.modules.observability.logging import (
     actor_id_var,
@@ -202,6 +203,7 @@ app.include_router(transcripts_router)
 app.include_router(degree_progress_router)
 app.include_router(academic_records_router)
 app.include_router(tenants_router)
+app.include_router(tenants_public_router)
 app.include_router(platform_router)
 app.include_router(platform_v1_admin_router)
 app.include_router(platform_v1_public_router)

@@ -15,7 +15,6 @@ from app.core.config import (
     get_auth_modes,
 )
 from app.core.errors import DependencyUnavailableError, RevocationStoreUnavailable
-from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
 from app.modules.observability.security_signals import record_security_signal
 from app.modules.ldap.service import authenticate_ldap_user
@@ -53,7 +52,6 @@ from app.modules.rbac.service import (
 from app.modules.rbac.security import resolve_current_user_claims
 from app.modules.security.rate_limit import clear_auth_failures, get_auth_lockout_decision, record_auth_failure
 from app.modules.tenants.service import get_tenant
-from app.modules.tenants.service import list_tenants
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 identity_logger = logging.getLogger("app.identity.events")
@@ -74,14 +72,10 @@ def _require_tenant_id(value: int | str | None, *, operation: str) -> int:
 def _resolve_tenant_for_auth_entrypoint(
     x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
 ) -> dict[str, object]:
+    # SECURITY: Tenant must be explicitly provided — no automatic fallback or default assignment.
+    # Fail-closed behavior: require X-Tenant-ID header for all login operations.
     if x_tenant_id is None:
-        active_tenants = [item for item in list_tenants() if str(item.get("status", "")).strip().lower() == "active"]
-        default_tenant = next((item for item in active_tenants if int(item.get("id", 0)) == 1), None)
-        if default_tenant is not None:
-            return default_tenant
-        if len(active_tenants) == 1:
-            return active_tenants[0]
-        raise HTTPException(status_code=400, detail="tenant_id is required for auth_entrypoint")
+        raise HTTPException(status_code=400, detail="X-Tenant-ID header is required")
 
     tenant_id = _require_tenant_id(x_tenant_id, operation="auth_entrypoint")
     tenant = get_tenant(tenant_id)
@@ -90,6 +84,45 @@ def _resolve_tenant_for_auth_entrypoint(
     if tenant.get("status") != "active":
         raise HTTPException(status_code=403, detail=f"Tenant {tenant_id} is not active")
     return tenant
+
+
+def _validate_tenant_consistency(
+    claims: object,
+    x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
+    request: Request | None = None,
+) -> None:
+    """SECURITY: Prevent tenant spoofing by verifying X-Tenant-ID matches token tenant_id.
+    
+    If X-Tenant-ID header is provided, it MUST match the user's tenant in the token.
+    If it doesn't match, raise 403 Forbidden (cross-tenant override attempt).
+    """
+    if not hasattr(claims, 'tenant_id') or not hasattr(claims, 'user_id'):
+        return  # Not a user claim
+    
+    if x_tenant_id is None:
+        return  # Header not provided is ok
+    
+    try:
+        header_tenant = int(x_tenant_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="invalid X-Tenant-ID header format")
+    
+    token_tenant = int(claims.tenant_id)
+    
+    if header_tenant != token_tenant:
+        # Log security signal for tenant override attempt
+        record_security_signal(
+            signal="auth.tenant_override_attempt",
+            outcome="denied",
+            actor=claims.user_id,
+            client_ip=request.client.host if request and request.client else "unknown",
+            path=request.url.path if request else "unknown",
+            tenant_id=token_tenant,
+        )
+        raise HTTPException(
+            status_code=403,
+            detail="cross-tenant override forbidden - token tenant does not match header"
+        )
 
 class LanguagePreferencePayload(BaseModel):
     language: str
@@ -129,6 +162,32 @@ class MFADisablePayload(BaseModel):
     recovery_code: str | None = None
 
 
+def _extract_device_name_from_ua(user_agent: str) -> str:
+    """Extract device/browser name from user agent string."""
+    ua = str(user_agent or "").lower()
+    if "windows" in ua:
+        if "edg/" in ua:
+            return "Windows (Edge)"
+        elif "firefox" in ua:
+            return "Windows (Firefox)"
+        elif "chrome" in ua:
+            return "Windows (Chrome)"
+        else:
+            return "Windows"
+    elif "mac" in ua or "macintosh" in ua:
+        if "safari" in ua and "chrome" not in ua:
+            return "macOS (Safari)"
+        else:
+            return "macOS"
+    elif "linux" in ua:
+        return "Linux"
+    elif "iphone" in ua or "ipad" in ua:
+        return "iOS"
+    elif "android" in ua:
+        return "Android"
+    return "Unknown Device"
+
+
 def _log_auth_event(
     *,
     actor: str,
@@ -139,15 +198,12 @@ def _log_auth_event(
     result: str,
     metadata: dict[str, object] | None = None,
 ) -> None:
-    merged_metadata = {"auth_source": auth_source}
-    if metadata:
-        merged_metadata.update(metadata)
-    if action.startswith("auth.login"):
-        observe_auth_login_attempt(
-            auth_source=auth_source,
-            outcome="success" if result.lower() == "success" else str(merged_metadata.get("reason", "failed")),
-            tenant_id=tenant_id,
-        )
+    merged_metadata = {**(metadata or {}), "auth_source": auth_source}
+    observe_auth_login_attempt(
+        auth_source=auth_source,
+        outcome="success" if result.lower() == "success" else str(merged_metadata.get("reason", "failed")),
+        tenant_id=tenant_id,
+    )
     log_admin_action(
         actor=actor,
         tenant_id=tenant_id,
@@ -234,6 +290,8 @@ def _resolve_authoritative_permissions(*, claims, roles: list[str], tenant_id: i
 
 def _apply_auth_cookie(response: Response, access_token: str, request: Request) -> None:
     same_site = get_auth_cookie_same_site()
+    if same_site == "none":
+        same_site = "lax"
     # Honor proxy-forwarded scheme so TLS-terminated deployments still issue secure cookies.
     forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip().lower()
     secure = forwarded_proto == "https" if forwarded_proto else request.url.scheme == "https"
@@ -249,6 +307,8 @@ def _apply_auth_cookie(response: Response, access_token: str, request: Request) 
 
 def _apply_refresh_cookie(response: Response, refresh_token: str, request: Request) -> None:
     same_site = get_auth_cookie_same_site()
+    if same_site == "none":
+        same_site = "lax"
     forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip().lower()
     secure = forwarded_proto == "https" if forwarded_proto else request.url.scheme == "https"
     response.set_cookie(
@@ -402,6 +462,7 @@ def ldap_login(
         auth_source="ldap",
         client_ip=request.client.host if request.client else "unknown",
         user_agent=request.headers.get("user-agent", ""),
+        device_name=_extract_device_name_from_ua(request.headers.get("user-agent", "")),
     )
     access_token = create_access_token(
         user_id=str(user["user_id"]),
@@ -660,6 +721,72 @@ def refresh_session(request: Request, response: Response, payload: RefreshPayloa
     }
 
 
+@router.get("/me")
+def get_session(
+    request: Request,
+    authorization: Annotated[str | None, Header()] = None,
+    x_user_id: Annotated[str | None, Header()] = None,
+    x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
+) -> dict[str, object]:
+    """
+    Returns the current session with user info and roles.
+    Format matches frontend's SessionResponse interface.
+    """
+    resolved_user_id = _resolve_user_id_from_request(request, authorization, x_user_id)
+    claims = getattr(request.state, "auth_claims", None)
+    
+    # SECURITY: Validate tenant consistency to prevent tenant spoofing
+    _validate_tenant_consistency(claims, x_tenant_id, request)
+
+    if resolved_user_id is None or claims is None:
+        return {
+            "authenticated": False,
+            "user": None,
+        }
+
+    local_user = local_user_store.get_user(resolved_user_id)
+    if local_user is None:
+        if claims is not None and claims.auth_source == "ldap":
+            fallback_display_name = resolved_user_id
+            if resolved_user_id.startswith("ad.") and len(resolved_user_id) > 3:
+                fallback_display_name = resolved_user_id[3:]
+            roles = [r for r in claims.roles if str(r).strip()]
+            return {
+                "authenticated": True,
+                "user": {
+                    "sub": resolved_user_id,
+                    "displayName": fallback_display_name,
+                    "roles": roles,
+                    "permissions": _resolve_authoritative_permissions(
+                        claims=claims,
+                        roles=roles,
+                        tenant_id=_require_tenant_id(claims.tenant_id, operation="session_ldap_claims"),
+                    ),
+                    "tenantId": _require_tenant_id(claims.tenant_id, operation="session_ldap_claims"),
+                },
+            }
+        return {
+            "authenticated": False,
+            "user": None,
+        }
+
+    roles = list(local_user["roles"])
+    return {
+        "authenticated": True,
+        "user": {
+            "sub": local_user["user_id"],
+            "displayName": local_user["display_name"],
+            "roles": roles,
+            "permissions": _resolve_authoritative_permissions(
+                claims=claims,
+                roles=roles,
+                tenant_id=_require_tenant_id(local_user.get("tenant_id"), operation="session_local_user"),
+            ),
+            "tenantId": _require_tenant_id(local_user.get("tenant_id"), operation="session_local_user"),
+        },
+    }
+
+
 @router.get("/csrf")
 def issue_csrf(request: Request, response: Response) -> dict[str, str]:
     token = _issue_csrf_token(response, request)
@@ -855,8 +982,11 @@ def mfa_disable(
 def list_my_sessions(
     request: Request,
     authorization: Annotated[str | None, Header()] = None,
+    x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
 ) -> dict[str, list[dict[str, object]]]:
     claims = resolve_current_user_claims(request, authorization)
+    # SECURITY: Validate tenant consistency to prevent tenant spoofing
+    _validate_tenant_consistency(claims, x_tenant_id, request)
     sessions = list_sessions_for_user(user_id=claims.user_id, tenant_id=claims.tenant_id)
     sanitized = [
         {
@@ -874,12 +1004,49 @@ def list_my_sessions(
     return {"sessions": sanitized}
 
 
+@router.delete("/sessions/{session_id}")
+def revoke_session_by_id(
+    session_id: str,
+    request: Request,
+    authorization: Annotated[str | None, Header()] = None,
+    x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
+) -> dict[str, object]:
+    """Revoke a specific session by ID. User can only revoke their own sessions."""
+    claims = resolve_current_user_claims(request, authorization)
+    # SECURITY: Validate tenant consistency to prevent tenant spoofing
+    _validate_tenant_consistency(claims, x_tenant_id, request)
+    
+    # Verify that the session belongs to the current user
+    sessions = list_sessions_for_user(user_id=claims.user_id, tenant_id=claims.tenant_id)
+    session_exists = any(
+        str(s.get("session_id", "")).strip() == str(session_id).strip() 
+        for s in sessions
+    )
+    if not session_exists:
+        raise HTTPException(status_code=404, detail="session not found or not owned by user")
+    
+    revoked = revoke_session(session_id=str(session_id).strip())
+    _log_auth_event(
+        actor=claims.user_id,
+        tenant_id=claims.tenant_id,
+        auth_source=claims.auth_source,
+        action="auth.sessions.revoke_by_id",
+        request=request,
+        result="success" if revoked else "noop",
+        metadata={"session_id": session_id},
+    )
+    return {"revoked": bool(revoked), "session_id": session_id}
+
+
 @router.post("/sessions/revoke-current")
 def revoke_current_session(
     request: Request,
     authorization: Annotated[str | None, Header()] = None,
+    x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
 ) -> dict[str, object]:
     claims = resolve_current_user_claims(request, authorization)
+    # SECURITY: Validate tenant consistency to prevent tenant spoofing
+    _validate_tenant_consistency(claims, x_tenant_id, request)
     if not claims.session_id:
         raise HTTPException(status_code=400, detail="session id missing")
     revoked = revoke_session(session_id=claims.session_id)
@@ -903,8 +1070,11 @@ def revoke_current_session(
 def revoke_all_sessions(
     request: Request,
     authorization: Annotated[str | None, Header()] = None,
+    x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
 ) -> dict[str, object]:
     claims = resolve_current_user_claims(request, authorization)
+    # SECURITY: Validate tenant consistency to prevent tenant spoofing
+    _validate_tenant_consistency(claims, x_tenant_id, request)
     revoked_count = revoke_all_sessions_for_user(user_id=claims.user_id, tenant_id=claims.tenant_id)
     try:
         revoke_token(claims.jti, expires_at=claims.expires_at)
