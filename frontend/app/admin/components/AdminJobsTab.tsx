@@ -31,7 +31,9 @@ export function AdminJobsTab({
   return (
     <div className="grid2">
       <article className="panelCard">
-        <h2>{"Jobs"}</h2>
+        <div className="sectionHeader">
+          <h2>{"Jobs"}</h2>
+        </div>
         <p className="subText">{"Asynchronous job queue and execution state"}</p>
         {jobsFeedback ? (
           <p className={`inlineFeedback inlineFeedback${jobsFeedback.tone === "error" ? "Error" : jobsFeedback.tone === "success" ? "Success" : "Info"}`}>
@@ -39,7 +41,7 @@ export function AdminJobsTab({
           </p>
         ) : null}
 
-        <div className="formGrid compactFormGrid">
+        <div className="formGrid compactFormGrid filterGrid">
           <select value={jobsStatusFilter} onChange={(e) => onStatusFilterChange(e.target.value)}>
             <option value="">{"All"}</option>
             <option value="queued">queued</option>
@@ -64,7 +66,10 @@ export function AdminJobsTab({
       </article>
 
       <article className="panelCard">
-        <h2>{"Job history"}</h2>
+        <div className="sectionHeader">
+          <h2>{"Job history"}</h2>
+          <p className="subText">{`Rows: ${filteredJobs.length}`}</p>
+        </div>
         {filteredJobs.length === 0 ? (
           <p className="subText">{"No jobs"}</p>
         ) : (
@@ -92,7 +97,7 @@ export function AdminJobsTab({
                     <td>{formatAuditTimestamp(job.created_at)}</td>
                     <td>{job.retry_count}/{job.max_retries}</td>
                     <td>{job.error_message || "-"}</td>
-                    <td>
+                    <td className="actionCell">
                       <div className="rowButtons" style={{ gap: 6 }}>
                         <button
                           type="button"

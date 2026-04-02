@@ -52,7 +52,9 @@ export function AdminTenantsTab({
   return (
     <div className="grid2">
       <article className="panelCard">
-        <h2>Tenants</h2>
+        <div className="sectionHeader">
+          <h2>Tenants</h2>
+        </div>
         <p className="subText">Last refresh: {lastUpdated}{loading ? " · Loading..." : ""}</p>
         {feedback ? (
           <p
@@ -80,7 +82,10 @@ export function AdminTenantsTab({
       </article>
 
       <article className="panelCard">
-        <h2>Create Tenant</h2>
+        <div className="sectionHeader">
+          <h2>Create Tenant</h2>
+          <p className="subText">Configure identity and status before provisioning.</p>
+        </div>
         <div className="formGrid compactFormGrid">
           <label className="grid gap-1">
             <span className="subText">Slug</span>
@@ -134,7 +139,10 @@ export function AdminTenantsTab({
       </article>
 
       <article className="panelCard col-span-2">
-        <h2>Tenants Table</h2>
+        <div className="sectionHeader">
+          <h2>Tenants Table</h2>
+          <p className="subText">Review, edit, and deactivate tenant records.</p>
+        </div>
         {tenants.length === 0 ? (
           <p className="subText">No tenants yet.</p>
         ) : (
@@ -186,7 +194,7 @@ export function AdminTenantsTab({
                     </td>
                     <td>{tenant.created_at}</td>
                     <td>{tenant.updated_at}</td>
-                    <td>
+                    <td className="actionCell">
                       <div className="rowButtons">
                         {editId === tenant.id ? (
                           <>

@@ -26,6 +26,11 @@
   margin: 0;
 }
 
+.shellHeaderMeta .admin-presentation-toggle {
+  justify-self: end;
+  margin-bottom: 4px;
+}
+
 .hero,
 .statGrid,
 .tabs,
@@ -133,22 +138,37 @@ p {
 .tabButton {
   border: 1px solid var(--line);
   background: #ffffff;
-  color: var(--ink);
+  color: #22354f;
   border-radius: 999px;
   padding: 9px 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .tabButton:hover {
+  background: #eef4ff;
+  border-color: #bdd1ec;
+  color: #163357;
   transform: translateY(-1px);
 }
 
 .tabButtonActive {
-  background: var(--ink);
-  color: #fff;
-  border-color: var(--ink);
+  background: #dcecff;
+  color: #0f2d52;
+  border-color: #8fb5e4;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+.tabButton:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
+}
+
+.tabButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .panel {
@@ -174,8 +194,380 @@ p {
 .panelCard {
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 14px;
+  padding: 16px;
   background: #fff;
+}
+
+.panelCard h2,
+.panelCard h3 {
+  line-height: 1.25;
+}
+
+.panelSection {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e8eef7;
+}
+
+.sectionHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.sectionHeader h2,
+.sectionHeader h3,
+.sectionHeader p {
+  margin: 0;
+}
+
+.overviewControlCenter {
+  display: grid;
+  gap: 14px;
+}
+
+.overviewControlCenterExecutive {
+  gap: 18px;
+}
+
+.overviewHeroPanel {
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  overflow: hidden;
+}
+
+.overviewHeroBand {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.overviewHeroCopy {
+  max-width: 62ch;
+  color: var(--muted);
+}
+
+.overviewHeroMeta {
+  min-width: 210px;
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+  text-align: right;
+}
+
+.overviewHeroMeta p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.overviewExecutiveBrief {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.overviewExecutiveCard {
+  border: 1px solid #d9e3f1;
+  border-radius: 14px;
+  padding: 13px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  display: grid;
+  gap: 8px;
+}
+
+.overviewExecutiveCard strong {
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.overviewExecutiveCard p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.overviewExecutiveLabel {
+  margin: 0;
+  color: #466085;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.overviewSignalGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.overviewSignalCard,
+.overviewRouteCard,
+.overviewInsightCard {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 16px;
+  text-align: left;
+  color: var(--ink);
+  width: 100%;
+}
+
+.overviewSignalCard,
+.overviewRouteCard,
+.overviewInsightCard {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.overviewSignalCard:hover,
+.overviewRouteCard:hover,
+.overviewInsightCard:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(23, 33, 47, 0.08);
+  border-color: #bfd2ee;
+}
+
+.overviewSignalCard:disabled,
+.overviewRouteCard:disabled,
+.overviewInsightCard:disabled {
+  cursor: default;
+}
+
+.overviewSignalCard:focus-visible,
+.overviewRouteCard:focus-visible,
+.overviewInsightCard:focus-visible {
+  outline: 3px solid rgba(29, 78, 216, 0.16);
+  outline-offset: 2px;
+}
+
+.overviewSignalCard {
+  padding: 16px;
+  display: grid;
+  gap: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.98)),
+    #fff;
+}
+
+.overviewSignalLabel,
+.overviewRouteEyebrow {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.overviewSignalCard strong {
+  font-size: clamp(24px, 2.8vw, 34px);
+  line-height: 1;
+}
+
+.overviewSignalCard small,
+.overviewRouteCard small {
+  color: var(--muted);
+}
+
+.overviewSecondaryGrid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.overviewStack {
+  display: grid;
+  gap: 14px;
+}
+
+.overviewSectionCard {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  background: #fff;
+}
+
+.overviewSectionCardTechnicalToggle {
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+
+.overviewTechnicalDetails {
+  display: grid;
+  gap: 12px;
+}
+
+.overviewStateCard {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+}
+
+.overviewStateBody {
+  display: grid;
+  gap: 10px;
+  max-width: 540px;
+  text-align: center;
+}
+
+.overviewStateBody h3 {
+  margin: 0;
+}
+
+.overviewStateBody .rowButtons {
+  justify-content: center;
+}
+
+.overviewSectionCardAccent {
+  background:
+    linear-gradient(180deg, rgba(239, 246, 255, 0.9), rgba(255, 255, 255, 1));
+}
+
+.overviewSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.overviewSectionHeader h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.overviewSectionHeader p {
+  margin: 4px 0 0;
+}
+
+.overviewRouteGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.overviewRouteCard {
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.overviewRouteCard strong,
+.overviewInsightCard strong {
+  font-size: 16px;
+}
+
+.overviewInsightList {
+  display: grid;
+  gap: 10px;
+}
+
+.overviewInsightCard {
+  padding: 15px;
+  display: grid;
+  gap: 10px;
+  position: relative;
+}
+
+.overviewInsightMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.overviewInsightBody {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.overviewInsightAction {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid #e5e7eb;
+}
+
+.overviewInsightActionLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.overviewInsightFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 2px;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.overviewInsightFooterLabel {
+  font-size: 13px;
+}
+
+.overviewInsightArrow {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.overviewInsightCardSuccess {
+  background: linear-gradient(180deg, #f3fff9 0%, #ffffff 100%);
+}
+
+.overviewInsightCardError {
+  background: linear-gradient(180deg, #fff7f7 0%, #ffffff 100%);
+  border-color: #f5b2b2;
+  box-shadow: inset 4px 0 0 #dc2626;
+}
+
+.overviewInsightCardWarn {
+  background: linear-gradient(180deg, #fffaf2 0%, #ffffff 100%);
+  border-color: #f7c98a;
+  box-shadow: inset 4px 0 0 #ea580c;
+}
+
+.overviewInsightCardInfo {
+  background: linear-gradient(180deg, #f5f9ff 0%, #ffffff 100%);
+  border-color: #bfd2ee;
+  box-shadow: inset 4px 0 0 #2563eb;
+}
+
+.overviewActivityRail {
+  display: grid;
+  gap: 10px;
+}
+
+.overviewActivityItem {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: #fbfcff;
+}
+
+.overviewActivityItem strong,
+.overviewActivityItem p {
+  margin: 0;
+}
+
+.overviewActivityItem p {
+  margin-top: 4px;
+  color: var(--muted);
 }
 
 .integrationDetails {
@@ -196,7 +588,15 @@ p {
 }
 
 .compactFormGrid {
-  margin-top: 4px;
+  margin-top: 6px;
+}
+
+.filterGrid {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #e3eaf5;
+  border-radius: 12px;
+  background: #f9fbff;
 }
 
 .providerStack {
@@ -233,9 +633,9 @@ p {
 
 .formGrid {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .languagePickerGrid {
@@ -307,7 +707,7 @@ select {
   border: 1px solid var(--line);
   background: #fff;
   border-radius: 10px;
-  padding: 10px;
+  padding: 10px 11px;
   color: var(--ink);
 }
 
@@ -315,6 +715,7 @@ select {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .primary {
@@ -330,10 +731,29 @@ select {
 .ghost {
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 8px 10px;
+  padding: 8px 12px;
   background: #fff;
   color: var(--ink);
   cursor: pointer;
+}
+
+.subTabPills {
+  margin-top: 12px;
+  gap: 10px;
+}
+
+.subTabPill {
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.subTabPill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.14);
+}
+
+.subTabPillActive {
+  box-shadow: inset 0 0 0 1px rgba(4, 120, 87, 0.28);
 }
 
 .danger {
@@ -345,7 +765,7 @@ select {
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 12px;
-  margin-top: 14px;
+  margin-top: 16px;
   background: #fff;
 }
 
@@ -358,23 +778,35 @@ table {
 th,
 td {
   text-align: left;
-  padding: 10px;
+  padding: 11px 12px;
   border-bottom: 1px solid #ece6d4;
   vertical-align: top;
+  line-height: 1.4;
 }
 
 th {
-  background: #f8f4e8;
-  font-size: 13px;
+  background: #f4f8ff;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #495567;
+  font-weight: 700;
+}
+
+tbody tr:nth-child(even) {
+  background: #fcfdff;
+}
+
+tbody tr:hover {
+  background: #f7faff;
 }
 
 .actionCell {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 150px;
 }
 
 .badgeRow {
@@ -386,13 +818,15 @@ th {
 
 .badge {
   display: inline-flex;
+  align-items: center;
   padding: 5px 10px;
   border-radius: 999px;
   background: #eef2ff;
   color: #3730a3;
   border: 1px solid #c7d2fe;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .badgeOk {
@@ -590,6 +1024,31 @@ th {
     grid-template-columns: 1fr;
   }
 
+  .overviewHeroBand,
+  .overviewExecutiveBrief,
+  .overviewSecondaryGrid,
+  .overviewRouteGrid,
+  .overviewSignalGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .overviewHeroBand {
+    display: grid;
+  }
+
+  .overviewHeroMeta {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .overviewSectionCard {
+    padding: 14px;
+  }
+
+  .overviewInsightAction {
+    padding: 10px;
+  }
+
   .statGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -629,5 +1088,14 @@ th {
 
   .featureFlagActions {
     width: 100%;
+  }
+
+  .overviewInsightMeta,
+  .overviewInsightFooter {
+    align-items: flex-start;
+  }
+
+  .overviewActivityItem {
+    grid-template-columns: 1fr;
   }
 }

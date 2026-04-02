@@ -48,7 +48,7 @@ describe("useAdminUniversity", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/admin/university/students",
+      "/api/bff/admin/university/students",
       expect.objectContaining({
         credentials: "include",
         cache: "no-store",
@@ -139,15 +139,15 @@ describe("useAdminUniversity", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/admin/university/students",
+      "/api/bff/admin/university/students",
       expect.objectContaining({ method: "POST" }),
     );
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/admin/university/students/11",
+      "/api/bff/admin/university/students/11",
       expect.objectContaining({ method: "PUT" }),
     );
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/admin/university/students/11",
+      "/api/bff/admin/university/students/11",
       expect.objectContaining({ method: "DELETE" }),
     );
   });

@@ -152,7 +152,7 @@ export function AdminRbacTab({
           </button>
         </div>
 
-        <div className="formGrid compactFormGrid" style={{ marginTop: 10 }}>
+        <div className="formGrid compactFormGrid filterGrid">
           <input value={assignmentUserFilter} onChange={(e) => onAssignmentUserFilterChange(e.target.value)} placeholder={tx("rbacFilterUser")} />
           <input value={assignmentRoleFilter} onChange={(e) => onAssignmentRoleFilterChange(e.target.value)} placeholder={tx("rbacFilterRole")} />
         </div>

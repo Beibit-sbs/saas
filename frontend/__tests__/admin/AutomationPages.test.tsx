@@ -106,18 +106,21 @@ const MOCK_EXECUTIONS = [
 // ---------------------------------------------------------------------------
 
 describe("AutomationRulesPage", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    localStorage.clear();
+  const setPermissions = (permissions: string[]) => {
     useAdminAuthMock.mockReturnValue({
-      user: { tenantId: 1, roles: ["admin"], permissions: [] },
+      user: { tenantId: 1, roles: ["admin"], permissions },
       isLoading: false,
       isAuthenticated: true,
       refreshSession: vi.fn(),
       logout: vi.fn(),
-      hasPermission: vi.fn(() => true),
-      hasAnyPermission: vi.fn(() => true),
+      hasPermission: vi.fn((permission: string) => permissions.includes(permission)),
+      hasAnyPermission: vi.fn((requested: string[]) => requested.some((permission) => permissions.includes(permission))),
     });
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setPermissions(["automation.read", "automation.write"]);
     useCreateAutomationRuleMock.mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
@@ -168,7 +171,7 @@ describe("AutomationRulesPage", () => {
       isError: false,
       refetch: vi.fn(),
     });
-    localStorage.setItem("user_permissions", JSON.stringify(["automation.write"]));
+    setPermissions(["automation.read", "automation.write"]);
 
     render(<AutomationRulesPage />);
 
@@ -183,7 +186,7 @@ describe("AutomationRulesPage", () => {
       isError: false,
       refetch: vi.fn(),
     });
-    localStorage.setItem("user_permissions", JSON.stringify([]));
+    setPermissions(["automation.read"]);
 
     render(<AutomationRulesPage />);
 
@@ -198,7 +201,7 @@ describe("AutomationRulesPage", () => {
       isError: false,
       refetch: vi.fn(),
     });
-    localStorage.setItem("user_permissions", JSON.stringify(["automation.write"]));
+    setPermissions(["automation.read", "automation.write"]);
 
     render(<AutomationRulesPage />);
 
@@ -218,7 +221,7 @@ describe("AutomationRulesPage", () => {
       isError: false,
       refetch: vi.fn(),
     });
-    localStorage.setItem("user_permissions", JSON.stringify(["automation.write"]));
+    setPermissions(["automation.read", "automation.write"]);
 
     render(<AutomationRulesPage />);
 
@@ -252,7 +255,7 @@ describe("AutomationRulesPage", () => {
       isError: false,
       refetch: vi.fn(),
     });
-    localStorage.setItem("user_permissions", JSON.stringify(["automation.write"]));
+    setPermissions(["automation.read", "automation.write"]);
 
     render(<AutomationRulesPage />);
 

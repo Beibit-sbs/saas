@@ -130,7 +130,7 @@ export function AdminLocalUsersTab(props: AdminLocalUsersTabProps) {
         </div>
       </div>
 
-      <div className="formGrid compactFormGrid mt-3">
+      <div className="formGrid compactFormGrid filterGrid mt-3">
         <input value={localSearch} onChange={(e) => onLocalSearchChange(e.target.value)} placeholder={tx("localSearch")} />
         <input value={localRoleFilter} onChange={(e) => onLocalRoleFilterChange(e.target.value)} placeholder={tx("localRoleFilter")} />
         <select value={localLanguageFilter} onChange={(e) => onLocalLanguageFilterChange(e.target.value)}>
@@ -169,6 +169,7 @@ export function AdminLocalUsersTab(props: AdminLocalUsersTabProps) {
                 <th>{l.roles}</th>
                 <th>{l.languages}</th>
                 <th>{l.source}</th>
+                <th>{l.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -179,6 +180,11 @@ export function AdminLocalUsersTab(props: AdminLocalUsersTabProps) {
                   <td>{item.roles.join(", ")}</td>
                   <td>{item.default_language}</td>
                   <td>{item.auth_source} / {l.adSync}: {item.sync_with_ad ? l.on : l.off}</td>
+                  <td className="actionCell">
+                    <button type="button" className="ghost" onClick={() => onSelectLocalUser(item.user_id)}>
+                      {tx("localUserOps")}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

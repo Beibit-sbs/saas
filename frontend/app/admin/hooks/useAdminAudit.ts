@@ -2,6 +2,25 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { AdminCopy, AuditEvent, AuditExportBusy, InlineFeedback, TxFn } from "../types";
 
+const AUDIT_BFF_BASE = "/api/bff/admin/audit";
+
+function auditBffPath(path: string): string {
+  return `${AUDIT_BFF_BASE}/${path}`;
+}
+
+function extractErrorDetail(errorBody: unknown, fallbackStatus: number): string {
+  if (errorBody && typeof errorBody === "object") {
+    const body = errorBody as { detail?: unknown; error?: { detail?: unknown } };
+    if (typeof body.detail === "string" && body.detail.trim().length > 0) {
+      return body.detail;
+    }
+    if (typeof body.error?.detail === "string" && body.error.detail.trim().length > 0) {
+      return body.error.detail;
+    }
+  }
+  return String(fallbackStatus);
+}
+
 type UseAdminAuditParams = {
   activeTab: string;
   buildAuthHeaders: () => Record<string, string>;
@@ -93,7 +112,6 @@ export function useAdminAudit({
     setAuditFeedback(null);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
       const effectiveActor = overrides?.actor ?? auditActor;
       const effectiveAction = overrides?.action ?? auditAction;
       const effectiveEntity = overrides?.entity ?? auditEntity;
@@ -122,7 +140,7 @@ export function useAdminAudit({
       }
       params.set("limit", "200");
 
-      const res = await fetch(`${baseUrl}/admin/audit/events?${params.toString()}`, {
+      const res = await fetch(`${auditBffPath("events")}?${params.toString()}`, {
         headers: buildAuthHeaders(),
         credentials: "include",
         cache: "no-store",
@@ -132,7 +150,7 @@ export function useAdminAudit({
         const err = await res.json().catch(() => ({}));
         setAuditFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -156,7 +174,6 @@ export function useAdminAudit({
     setAuditExportBusy(format);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
       const params = new URLSearchParams();
       params.set("format", format);
       if (auditActor.trim()) {
@@ -178,7 +195,7 @@ export function useAdminAudit({
         params.set("since", auditSince.trim());
       }
 
-      const res = await fetch(`${baseUrl}/admin/audit/export?${params.toString()}`, {
+      const res = await fetch(`${auditBffPath("export")}?${params.toString()}`, {
         headers: buildAuthHeaders(),
         credentials: "include",
       });
@@ -187,7 +204,7 @@ export function useAdminAudit({
         const err = await res.json().catch(() => ({}));
         setAuditFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }

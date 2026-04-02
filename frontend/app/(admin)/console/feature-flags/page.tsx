@@ -9,9 +9,11 @@ import { usePermissions } from "@/shared/hooks/use-permissions";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { formatDate } from "@/shared/utils/format";
+import { useLanguage } from "@/app/components/LanguageProvider";
 import { ToggleLeft } from "lucide-react";
 
 export default function FeatureFlagsPage() {
+  const { t } = useLanguage();
   const { data: flags, isLoading, error, refetch } = useFeatureFlags();
   const update = useUpdateFeatureFlag();
   const { hasPermission } = usePermissions();
@@ -21,7 +23,7 @@ export default function FeatureFlagsPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Feature Flags" icon={ToggleLeft} />
+        <PageHeader title={t("nav.featureFlags")} icon={ToggleLeft} />
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-16 rounded-lg" />
         ))}
@@ -35,7 +37,7 @@ export default function FeatureFlagsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Feature Flags" description="Toggle platform-level features" icon={ToggleLeft} />
+      <PageHeader title={t("nav.featureFlags")} description={t("console.featureFlags.description")} icon={ToggleLeft} />
 
       <div className="rounded-lg border bg-card divide-y">
         {(flags ?? []).map((flag) => (

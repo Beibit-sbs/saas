@@ -19,6 +19,7 @@ import { useJobs, useRetryJob, useCancelJob, useTriggerJob } from "@/modules/pla
 import { Job } from "@/modules/platform/jobs/types";
 import { formatRelative } from "@/shared/utils/format";
 import { PERMISSIONS } from "@/shared/config/permissions";
+import { useLanguage } from "@/app/components/LanguageProvider";
 import { Cog } from "lucide-react";
 
 const FILTER_FIELDS = [
@@ -38,6 +39,7 @@ const FILTER_FIELDS = [
 ];
 
 export default function JobsPage() {
+  const { t } = useLanguage();
   const table = useTableQueryState({ filterKeys: ["status", "job_type"] as const, defaultPageSize: 20, defaultSort: { key: "created", direction: "desc" } });
   const detail = useDetailDrawer({ paramKey: "job" });
   const { getHandlers } = useMutationFeedback();
@@ -49,7 +51,8 @@ export default function JobsPage() {
   const retry = useRetryJob();
   const cancel = useCancelJob();
   const trigger = useTriggerJob();
-  const selectedJob = data?.items.find((item) => item.id === detail.selectedId) ?? null;
+  const rows = Array.isArray(data?.items) ? data.items : [];
+  const selectedJob = rows.find((item) => item.id === detail.selectedId) ?? null;
 
   if (error) {
     return <ErrorState title="Failed to load jobs" onRetry={refetch} />;
@@ -58,7 +61,7 @@ export default function JobsPage() {
   const columns: Column<Job>[] = [
     { key: "id", header: "ID", width: "100px", cell: (r) => <code className="text-xs">{r.id.slice(0, 8)}</code>, sortValue: (r) => r.id },
     { key: "type", header: "Type", cell: (r) => r.job_type, sortValue: (r) => r.job_type.toLowerCase() },
-    { key: "tenant", header: "Tenant", cell: (r) => r.tenant_id ?? "global", sortValue: (r) => r.tenant_id ?? "global" },
+    { key: "tenant", header: "University", cell: (r) => r.tenant_id ?? "global", sortValue: (r) => r.tenant_id ?? "global" },
     { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} />, sortValue: (r) => r.status },
     {
       key: "progress",
@@ -121,8 +124,8 @@ export default function JobsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Jobs"
-        description="Background job queue"
+        title={t("nav.jobs")}
+        description={t("console.jobs.description")}
         icon={Cog}
         actions={
           <PermissionGate permission={PERMISSIONS.JOBS_WRITE}>
@@ -142,7 +145,7 @@ export default function JobsPage() {
 
       <DataTable
         columns={columns}
-        data={data?.items ?? []}
+        data={rows}
         isLoading={isLoading}
         getRowKey={(r) => r.id}
         pagination={{ page: table.page, pageSize: table.pageSize, total: data?.total ?? 0 }}
@@ -166,7 +169,7 @@ export default function JobsPage() {
           <DetailList
             items={[
               { label: "Status", value: <StatusBadge status={selectedJob.status} /> },
-              { label: "Tenant", value: selectedJob.tenant_id ?? "global" },
+              { label: "University", value: selectedJob.tenant_id ?? "global" },
               { label: "Progress", value: selectedJob.progress !== null ? `${selectedJob.progress}%` : "—" },
               { label: "Created", value: formatRelative(selectedJob.created_at) },
               { label: "Started", value: selectedJob.started_at ? formatRelative(selectedJob.started_at) : "—" },

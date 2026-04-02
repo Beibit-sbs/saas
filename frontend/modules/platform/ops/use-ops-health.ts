@@ -8,19 +8,20 @@ import type {
   OpsStatus,
 } from "./types";
 
-function toOpsStatus(value: string | undefined | null): OpsStatus {
+export function toOpsStatus(value: string | undefined | null): OpsStatus {
   if (!value) return "unknown";
   const normalized = value.toLowerCase();
   if (normalized === "ok" || normalized === "healthy" || normalized === "reachable") return "healthy";
+  if (normalized === "skipped" || normalized === "not_required" || normalized === "out_of_scope") return "skipped";
   if (normalized === "degraded") return "degraded";
   if (normalized === "error" || normalized === "unhealthy" || normalized === "unreachable") return "critical";
   return "unknown";
 }
 
-function summarizeOverall(statuses: OpsStatus[]): OpsStatus {
+export function summarizeOverall(statuses: OpsStatus[]): OpsStatus {
   if (statuses.some((s) => s === "critical")) return "critical";
   if (statuses.some((s) => s === "degraded")) return "degraded";
-  if (statuses.every((s) => s === "healthy")) return "healthy";
+  if (statuses.every((s) => s === "healthy" || s === "skipped")) return "healthy";
   return "unknown";
 }
 

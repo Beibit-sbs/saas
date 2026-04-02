@@ -3,6 +3,25 @@ import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } 
 import { buildCsrfHeaders } from "../../components/csrf";
 import type { AdminCopy, AiProviderForm, AiProviderStatus, InlineFeedback, LdapConfigForm, LdapStatus, TxFn } from "../types";
 
+const INTEGRATIONS_BFF_BASE = "/api/bff/admin";
+
+function integrationsBffPath(path: string): string {
+  return `${INTEGRATIONS_BFF_BASE}${path}`;
+}
+
+function extractErrorDetail(errorBody: unknown, fallbackStatus: number): string {
+  if (errorBody && typeof errorBody === "object") {
+    const body = errorBody as { detail?: unknown; error?: { detail?: unknown } };
+    if (typeof body.detail === "string" && body.detail.trim().length > 0) {
+      return body.detail;
+    }
+    if (typeof body.error?.detail === "string" && body.error.detail.trim().length > 0) {
+      return body.error.detail;
+    }
+  }
+  return String(fallbackStatus);
+}
+
 type UseAdminIntegrationsParams = {
   activeTab: string;
   buildAuthHeaders: () => Record<string, string>;
@@ -79,19 +98,18 @@ export function useAdminIntegrations({
   const loadIntegrationStatus = useCallback(async (showFeedback = false) => {
     setIntegrationsLoading(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
       const [ldapRes, aiRes, settingsRes] = await Promise.all([
-        fetch(`${baseUrl}/admin/ldap/status`, {
+        fetch(integrationsBffPath("/ldap/status"), {
           headers: buildAuthHeaders(),
           credentials: "include",
           cache: "no-store",
         }),
-        fetch(`${baseUrl}/admin/ai/providers`, {
+        fetch(integrationsBffPath("/ai/providers"), {
           headers: buildAuthHeaders(),
           credentials: "include",
           cache: "no-store",
         }),
-        fetch(`${baseUrl}/admin/integrations/settings`, {
+        fetch(integrationsBffPath("/integrations/settings"), {
           headers: buildAuthHeaders(),
           credentials: "include",
           cache: "no-store",
@@ -192,9 +210,8 @@ export function useAdminIntegrations({
       setLdapTestServiceBusy(true);
     }
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/ldap/test-connection`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(integrationsBffPath("/ldap/test-connection"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -213,7 +230,7 @@ export function useAdminIntegrations({
         const err = await res.json().catch(() => ({}));
         setLdapFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -240,9 +257,8 @@ export function useAdminIntegrations({
     setAiProviderFeedback((current) => ({ ...current, [provider]: null }));
     setAiValidateBusyByProvider((current) => ({ ...current, [provider]: true }));
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/ai/providers/${provider}/validate`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(integrationsBffPath(`/ai/providers/${provider}/validate`), {
         method: "POST",
         headers: {
           ...buildAuthHeaders(),
@@ -257,7 +273,7 @@ export function useAdminIntegrations({
           ...current,
           [provider]: {
             tone: "error",
-            message: `${l.errorPrefix}: ${String(err.detail || res.status)}`,
+            message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
           },
         }));
         return;
@@ -286,8 +302,7 @@ export function useAdminIntegrations({
     setLdapFeedback(null);
     setLdapSaveBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
+      const csrfHeaders = await buildCsrfHeaders("/api");
       const ldapPayload: Record<string, unknown> = {
         ...ldapConfigForm,
         timeout_seconds: Number(ldapConfigForm.timeout_seconds || "5"),
@@ -295,7 +310,7 @@ export function useAdminIntegrations({
       if (!ldapConfigForm.bind_password.trim()) {
         delete ldapPayload.bind_password;
       }
-      const res = await fetch(`${baseUrl}/admin/integrations/ldap`, {
+      const res = await fetch(integrationsBffPath("/integrations/ldap"), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -309,7 +324,7 @@ export function useAdminIntegrations({
         const err = await res.json().catch(() => ({}));
         setLdapFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -328,15 +343,14 @@ export function useAdminIntegrations({
     setAiSaveBusyByProvider((current) => ({ ...current, [provider]: true }));
     const form = aiConfigForm[provider] || { apiKey: "", validationUrl: "" };
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
+      const csrfHeaders = await buildCsrfHeaders("/api");
       const providerPayload: Record<string, string> = {
         validation_url: form.validationUrl,
       };
       if (form.apiKey.trim()) {
         providerPayload.api_key = form.apiKey;
       }
-      const res = await fetch(`${baseUrl}/admin/integrations/ai/${provider}`, {
+      const res = await fetch(integrationsBffPath(`/integrations/ai/${provider}`), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -352,7 +366,7 @@ export function useAdminIntegrations({
           ...current,
           [provider]: {
             tone: "error",
-            message: `${l.errorPrefix}: ${err.detail || res.status}`,
+            message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
           },
         }));
         return;

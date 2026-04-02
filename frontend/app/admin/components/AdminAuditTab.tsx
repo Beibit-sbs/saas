@@ -57,9 +57,11 @@ export function AdminAuditTab({
   return (
     <div className="grid2">
       <article className="panelCard">
-        <h2>{l.auditVisibility}</h2>
+        <div className="sectionHeader">
+          <h2>{l.auditVisibility}</h2>
+        </div>
         <p className="subText">{l.auditHelp}</p>
-        <div className="formGrid compactFormGrid">
+        <div className="formGrid compactFormGrid filterGrid">
           <input value={auditActor} onChange={(e) => onAuditActorChange(e.target.value)} placeholder={tx("auditActorFilter")} />
           <input value={auditAction} onChange={(e) => onAuditActionChange(e.target.value)} placeholder={tx("auditActionFilter")} />
           <input value={auditEntity} onChange={(e) => onAuditEntityChange(e.target.value)} placeholder={tx("auditEntityFilter")} />
@@ -134,7 +136,9 @@ export function AdminAuditTab({
         )}
       </article>
       <article className="panelCard">
-        <h2>{l.securityPosture}</h2>
+        <div className="sectionHeader">
+          <h2>{l.securityPosture}</h2>
+        </div>
         <p className="subText">{l.securityHelp}</p>
         <div className="badgeRow"><span className="badge">{l.rbacEnforced}</span><span className="badge">{l.auditRequired}</span></div>
       </article>

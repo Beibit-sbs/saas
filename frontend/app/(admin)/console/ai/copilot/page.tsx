@@ -11,8 +11,10 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { RequirePermission } from "@/shared/ui/permission-gate";
 import { useAdminAuth } from "@/shared/auth/context";
 import { useAskCopilot } from "@/modules/platform/ai/use-copilot";
+import { useLanguage } from "@/app/components/LanguageProvider";
 
 export default function AICopilotPage() {
+  const { t } = useLanguage();
   const { user } = useAdminAuth();
   const tenantId = user?.tenantId ?? 0;
   const [question, setQuestion] = useState("");
@@ -23,24 +25,24 @@ export default function AICopilotPage() {
   return (
     <RequirePermission
       permission={PERMISSIONS.AI_COPILOT_READ}
-      message="You need AI Copilot read permission to access this panel."
+      message={t("aiCopilot.permissionDenied")}
     >
       <div className="space-y-6" data-testid="ai-copilot-page">
         <PageHeader
-          title="AI Copilot"
-          description="Read-only deterministic assistant powered by KPI, analytics, context, and automation signals."
+          title={t("aiCopilot.title")}
+          description={t("aiCopilot.description")}
           icon={Bot}
         />
 
         <div className="rounded-lg border bg-card p-4 space-y-3">
           <label htmlFor="copilot-question" className="text-sm font-medium">
-            Ask a platform question
+            {t("aiCopilot.askLabel")}
           </label>
           <textarea
             id="copilot-question"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="How many students do we currently have?"
+            placeholder={t("aiCopilot.placeholder")}
             className="w-full min-h-24 rounded-md border bg-background p-3 text-sm"
             data-testid="copilot-question-input"
           />
@@ -53,15 +55,15 @@ export default function AICopilotPage() {
               data-testid="copilot-submit-btn"
             >
               <Send className="mr-2 h-4 w-4" />
-              Ask
+              {t("aiCopilot.ask")}
             </Button>
           </div>
         </div>
 
         {ask.isError && (
           <ErrorState
-            title="Copilot request failed"
-            message="Could not retrieve a copilot answer."
+            title={t("aiCopilot.requestFailedTitle")}
+            message={t("aiCopilot.requestFailedMessage")}
             onRetry={() => {
               if (question.trim()) {
                 ask.mutate({ tenant_id: tenantId, question: question.trim(), context: {} });
@@ -73,19 +75,19 @@ export default function AICopilotPage() {
         {ask.data && (
           <div className="rounded-lg border bg-card p-4 space-y-4" data-testid="copilot-answer-panel">
             <div>
-              <p className="text-xs text-muted-foreground">Question</p>
+              <p className="text-xs text-muted-foreground">{t("aiCopilot.question")}</p>
               <p className="text-sm">{ask.data.question}</p>
             </div>
 
             <div>
-              <p className="text-xs text-muted-foreground">Summary</p>
+              <p className="text-xs text-muted-foreground">{t("aiCopilot.summary")}</p>
               <p className="text-sm font-medium">{ask.data.summary}</p>
             </div>
 
             <div className="space-y-2" data-testid="copilot-insights">
-              <p className="text-xs text-muted-foreground">Insights</p>
+              <p className="text-xs text-muted-foreground">{t("aiCopilot.insights")}</p>
               {ask.data.insights.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No insights returned.</p>
+                <p className="text-sm text-muted-foreground">{t("aiCopilot.noInsights")}</p>
               ) : (
                 ask.data.insights.map((item) => (
                   <div key={`${item.title}-${item.value}`} className="rounded border p-3">
@@ -97,7 +99,7 @@ export default function AICopilotPage() {
             </div>
 
             <div className="space-y-2" data-testid="copilot-sources">
-              <p className="text-xs text-muted-foreground">Sources</p>
+              <p className="text-xs text-muted-foreground">{t("aiCopilot.sources")}</p>
               <div className="flex flex-wrap gap-2">
                 {ask.data.sources.map((source) => (
                   <Badge key={`${source.source_type}:${source.reference}`} variant="outline">
@@ -109,7 +111,7 @@ export default function AICopilotPage() {
 
             {ask.data.warnings.length > 0 && (
               <div className="space-y-2" data-testid="copilot-warnings">
-                <p className="text-xs text-muted-foreground">Warnings</p>
+                <p className="text-xs text-muted-foreground">{t("aiCopilot.warnings")}</p>
                 <div className="flex flex-wrap gap-2">
                   {ask.data.warnings.map((warning) => (
                     <Badge key={warning} variant="secondary">
@@ -124,7 +126,7 @@ export default function AICopilotPage() {
               <div className="space-y-3" data-testid="copilot-recommendations">
                 <div className="flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">Recommendations</p>
+                  <p className="text-xs text-muted-foreground">{t("aiCopilot.recommendations")}</p>
                 </div>
                 {ask.data.recommendations.map((rec) => (
                   <div

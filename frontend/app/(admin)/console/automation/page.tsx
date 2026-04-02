@@ -15,6 +15,7 @@ import { useToast } from "@/shared/ui/use-toast";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { formatDate } from "@/shared/utils/format";
 import { useAdminAuth } from "@/shared/auth/context";
+import { useLanguage } from "@/app/components/LanguageProvider";
 
 import { CreateRuleDialog } from "@/modules/platform/automation/create-rule-dialog";
 import { useAutomationRules, useUpdateAutomationRule } from "@/modules/platform/automation/use-rules";
@@ -40,6 +41,7 @@ interface RuleRowState {
 // ---------------------------------------------------------------------------
 
 function createColumns(
+  t: (key: never) => string,
   onToggleClick: (rule: AutomationRule) => void,
   togglingRuleIds: Set<number>,
   hasWrite: boolean,
@@ -47,7 +49,7 @@ function createColumns(
   return [
     {
       key: "name",
-      header: "Name",
+      header: t("automation.columns.name" as never),
       cell: (row) => (
         <div>
           <div className="font-medium">{row.name}</div>
@@ -62,7 +64,7 @@ function createColumns(
     },
     {
       key: "event_type",
-      header: "Event Type",
+      header: t("automation.columns.eventType" as never),
       width: "160px",
       cell: (row) => (
         <Badge variant="outline" className="font-mono text-xs">
@@ -73,7 +75,7 @@ function createColumns(
     },
     {
       key: "condition",
-      header: "Condition",
+      header: t("automation.columns.condition" as never),
       width: "180px",
       cell: (row) => (
         <span className="font-mono text-xs text-muted-foreground">
@@ -83,7 +85,7 @@ function createColumns(
     },
     {
       key: "actions",
-      header: "Actions",
+      header: t("automation.columns.actions" as never),
       width: "200px",
       cell: (row) => (
         <span className="text-xs text-muted-foreground">{summarizeActions(row.actions_json)}</span>
@@ -91,7 +93,7 @@ function createColumns(
     },
     {
       key: "is_active",
-      header: "Active",
+      header: t("automation.columns.active" as never),
       width: "100px",
       cell: (row) => (
         <Switch
@@ -104,7 +106,7 @@ function createColumns(
     },
     {
       key: "updated_at",
-      header: "Updated At",
+      header: t("automation.columns.updatedAt" as never),
       width: "160px",
       cell: (row) => (
         <span className="text-xs text-muted-foreground">{formatDate(row.updated_at)}</span>
@@ -119,7 +121,8 @@ function createColumns(
 // ---------------------------------------------------------------------------
 
 export default function AutomationRulesPage() {
-  const { user } = useAdminAuth();
+  const { user, hasPermission } = useAdminAuth();
+  const { t } = useLanguage();
   const tenantId = user?.tenantId ?? 0;
   const { data, isLoading, isError, refetch } = useAutomationRules(tenantId);
   const { toast } = useToast();
@@ -128,13 +131,7 @@ export default function AutomationRulesPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [rowStates, setRowStates] = useState<Map<number, RuleRowState>>(new Map());
 
-  // Get the write permission check
-  const hasWrite =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("user_permissions") || "[]").includes(
-          PERMISSIONS.AUTOMATION_WRITE,
-        )
-      : false;
+  const hasWrite = hasPermission(PERMISSIONS.AUTOMATION_WRITE);
 
   const getRowState = useCallback((ruleId: number): RuleRowState => {
     return (
@@ -184,7 +181,7 @@ export default function AutomationRulesPage() {
 
         toast({
           variant: "success",
-          title: newActive ? "Rule activated" : "Rule deactivated",
+          title: newActive ? t("automation.ruleActivated") : t("automation.ruleDeactivated"),
         });
 
         // Clear optimistic state
@@ -195,11 +192,11 @@ export default function AutomationRulesPage() {
 
         toast({
           variant: "destructive",
-          title: "Failed to update rule",
+          title: t("automation.updateFailed"),
         });
       }
     },
-    [updateRule, toast, updateRowState],
+    [updateRule, toast, updateRowState, t],
   );
 
   const togglingRuleIds = new Set(
@@ -208,23 +205,23 @@ export default function AutomationRulesPage() {
       .map(([id]) => id),
   );
 
-  const columns = createColumns(handleToggleClick, togglingRuleIds, hasWrite);
+  const columns = createColumns(t as never, handleToggleClick, togglingRuleIds, hasWrite);
 
   return (
     <RequirePermission
       permission={PERMISSIONS.AUTOMATION_READ}
-      message="You need automation.read permission to view automation rules."
+      message={t("automation.permissionDenied")}
     >
       <div className="space-y-6" data-testid="automation-rules-page">
         <PageHeader
-          title="Automation Rules"
-          description="Manage event-driven rules that trigger automated actions."
+          title={t("automation.title")}
+          description={t("automation.description")}
           icon={Bot}
           actions={
             <PermissionGate permission={PERMISSIONS.AUTOMATION_WRITE}>
               <Button size="sm" onClick={() => setCreateOpen(true)} data-testid="create-rule-btn">
                 <Plus className="mr-2 h-4 w-4" />
-                Create Rule
+                {t("automation.createRule")}
               </Button>
             </PermissionGate>
           }
@@ -232,9 +229,10 @@ export default function AutomationRulesPage() {
 
         {isError && !isLoading && (
           <ErrorState
-            title="Failed to load automation rules"
-            message="Could not fetch automation rules."
+            title={t("automation.loadFailedTitle")}
+            message={t("automation.loadFailedMessage")}
             onRetry={() => void refetch()}
+            retryLabel={t("state.retry")}
           />
         )}
 
@@ -244,13 +242,13 @@ export default function AutomationRulesPage() {
             data={data ?? []}
             isLoading={isLoading}
             getRowKey={(row) => String(row.id)}
-            emptyTitle="No automation rules"
-            emptyDescription="Create your first rule to start automating event-driven workflows."
+            emptyTitle={t("automation.emptyTitle")}
+            emptyDescription={t("automation.emptyDescription")}
             emptyAction={
               <PermissionGate permission={PERMISSIONS.AUTOMATION_WRITE}>
                 <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Rule
+                  {t("automation.createRule")}
                 </Button>
               </PermissionGate>
             }
@@ -265,8 +263,8 @@ export default function AutomationRulesPage() {
               key={`toggle-dialog-${rule.id}`}
               open={state.dialogOpen}
               onOpenChange={(open) => updateRowState(rule.id, { dialogOpen: open })}
-              title="Change rule status?"
-              confirmLabel={!rule.is_active ? "Activate" : "Deactivate"}
+              title={t("automation.changeStatus")}
+              confirmLabel={!rule.is_active ? t("automation.activate") : t("automation.deactivate")}
               onConfirm={() => handleConfirmToggle(rule)}
               loading={state.toggling}
               data-testid={`confirm-toggle-${rule.id}`}

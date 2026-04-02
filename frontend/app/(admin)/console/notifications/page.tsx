@@ -20,6 +20,7 @@ import {
 import { Notification } from "@/modules/platform/notifications/types";
 import { formatRelative } from "@/shared/utils/format";
 import { PERMISSIONS } from "@/shared/config/permissions";
+import { useLanguage } from "@/app/components/LanguageProvider";
 import { Bell, CheckCheck } from "lucide-react";
 
 const FILTER_FIELDS = [
@@ -35,6 +36,7 @@ const FILTER_FIELDS = [
 ];
 
 export default function NotificationsPage() {
+  const { t } = useLanguage();
   const table = useTableQueryState({ filterKeys: ["read"] as const, defaultPageSize: 20, defaultSort: { key: "when", direction: "desc" } });
   const detail = useDetailDrawer({ paramKey: "notification" });
   const { getHandlers } = useMutationFeedback();
@@ -49,14 +51,20 @@ export default function NotificationsPage() {
   const selectedNotification = data?.items.find((item) => item.id === detail.selectedId) ?? null;
 
   if (error) {
-    return <ErrorState title="Failed to load notifications" onRetry={refetch} />;
+    return (
+      <ErrorState
+        title={t("notifications.loadFailedTitle")}
+        onRetry={() => void refetch()}
+        retryLabel={t("state.retry")}
+      />
+    );
   }
 
   const columns: Column<Notification>[] = [
     { key: "title", header: "Title", cell: (r) => <span className="font-medium">{r.title}</span>, sortValue: (r) => r.title.toLowerCase() },
     { key: "body", header: "Message", cell: (r) => <span className="text-muted-foreground">{r.body}</span> },
     { key: "severity", header: "Severity", cell: (r) => <StatusBadge status={r.severity} />, sortValue: (r) => r.severity },
-    { key: "tenant", header: "Tenant", cell: (r) => r.tenant_id ?? "global", sortValue: (r) => r.tenant_id ?? "global" },
+    { key: "tenant", header: "University", cell: (r) => r.tenant_id ?? "global", sortValue: (r) => r.tenant_id ?? "global" },
     { key: "when", header: "When", cell: (r) => formatRelative(r.created_at), sortValue: (r) => r.created_at },
     {
       key: "actions",
@@ -68,9 +76,12 @@ export default function NotificationsPage() {
             <Button
               variant="ghost"
               size="sm"
-              disabled={markRead.isPending}
+              disabled={markRead.isPending || markAll.isPending}
               onClick={(event) => {
                 event.stopPropagation();
+                if (markRead.isPending || markAll.isPending) {
+                  return;
+                }
                 markRead.mutate(r.id, getHandlers({ successTitle: "Notification marked read" }));
               }}
             >
@@ -84,16 +95,21 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Notifications"
-        description="System notifications and alerts"
+        title={t("nav.notifications")}
+        description={t("console.notifications.description")}
         icon={Bell}
         actions={
           <PermissionGate permission={PERMISSIONS.NOTIFICATIONS_WRITE}>
             <Button
               variant="outline"
               size="sm"
-              disabled={markAll.isPending}
-              onClick={() => markAll.mutate(undefined, getHandlers({ successTitle: "All notifications marked as read" }))}
+              disabled={markAll.isPending || markRead.isPending}
+              onClick={() => {
+                if (markAll.isPending || markRead.isPending) {
+                  return;
+                }
+                markAll.mutate(undefined, getHandlers({ successTitle: "All notifications marked as read" }));
+              }}
             >
               <CheckCheck className="h-4 w-4 mr-1" />
               Mark all read
@@ -116,7 +132,7 @@ export default function NotificationsPage() {
         sort={table.sort}
         onSortChange={table.setSort}
         onRowClick={(row) => detail.open(row.id)}
-        emptyTitle="No notifications"
+        emptyTitle={t("notifications.emptyTitle")}
       />
 
       <DrawerPanel
@@ -129,7 +145,7 @@ export default function NotificationsPage() {
           <DetailList
             items={[
               { label: "Severity", value: <StatusBadge status={selectedNotification.severity} /> },
-              { label: "Tenant", value: selectedNotification.tenant_id ?? "global" },
+              { label: "University", value: selectedNotification.tenant_id ?? "global" },
               { label: "Read", value: selectedNotification.read ? "Yes" : "No" },
               { label: "Created", value: formatRelative(selectedNotification.created_at) },
               { label: "Message", value: <p className="whitespace-pre-wrap">{selectedNotification.body}</p> },

@@ -15,6 +15,7 @@ import { AutomationOverviewWidget } from "@/modules/platform/automation/automati
 import Link from "next/link";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { useAdminAuth } from "@/shared/auth/context";
+import { useLanguage } from "@/app/components/LanguageProvider";
 
 function DashboardSkeletonGrid() {
   return (
@@ -32,35 +33,36 @@ function DashboardSkeletonGrid() {
 
 export default function RectorDashboardPage() {
   const { user } = useAdminAuth();
+  const { t } = useLanguage();
   const tenantId = user?.tenantId ?? 0;
   const { roles, hasPermission } = usePermissions();
   const { data, isLoading, isError, refetch } = useRectorDashboard(tenantId);
 
   const generatedLabel = useMemo(() => {
-    if (!data?.generated_at) return "n/a";
+    if (!data?.generated_at) return t("ui.na");
     return formatRelative(data.generated_at);
-  }, [data?.generated_at]);
+  }, [data?.generated_at, t]);
 
   // Student dashboard
   if (roles.includes("student")) {
     return (
       <div className="space-y-6" data-testid="student-dashboard">
-        <PageHeader title="Dashboard" icon={LayoutDashboard} />
+        <PageHeader title={t("nav.dashboard")} icon={LayoutDashboard} />
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           <Link href="/console/scheduling" className="rounded-lg border bg-card p-6 hover:bg-muted/40 transition-colors flex flex-col gap-2">
             <CalendarDays className="h-5 w-5 text-primary" />
-            <p className="font-medium text-sm">Schedule</p>
-            <p className="text-xs text-muted-foreground">View your course timetable</p>
+            <p className="font-medium text-sm">{t("dashboard.student.scheduleTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.student.scheduleDescription")}</p>
           </Link>
           <Link href="/console/grades" className="rounded-lg border bg-card p-6 hover:bg-muted/40 transition-colors flex flex-col gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            <p className="font-medium text-sm">Grades</p>
-            <p className="text-xs text-muted-foreground">Check your current grades</p>
+            <p className="font-medium text-sm">{t("dashboard.student.gradesTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.student.gradesDescription")}</p>
           </Link>
           <Link href="/console/transcripts" className="rounded-lg border bg-card p-6 hover:bg-muted/40 transition-colors flex flex-col gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <p className="font-medium text-sm">Transcript</p>
-            <p className="text-xs text-muted-foreground">View or download your transcript</p>
+            <p className="font-medium text-sm">{t("dashboard.student.transcriptTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.student.transcriptDescription")}</p>
           </Link>
         </div>
       </div>
@@ -71,22 +73,22 @@ export default function RectorDashboardPage() {
   if (roles.includes("teacher")) {
     return (
       <div className="space-y-6" data-testid="teacher-dashboard">
-        <PageHeader title="Dashboard" icon={LayoutDashboard} />
+        <PageHeader title={t("nav.dashboard")} icon={LayoutDashboard} />
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           <Link href="/console/students" className="rounded-lg border bg-card p-6 hover:bg-muted/40 transition-colors flex flex-col gap-2">
             <GraduationCap className="h-5 w-5 text-primary" />
-            <p className="font-medium text-sm">Students</p>
-            <p className="text-xs text-muted-foreground">Browse all enrolled students</p>
+            <p className="font-medium text-sm">{t("dashboard.teacher.studentsTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.teacher.studentsDescription")}</p>
           </Link>
           <Link href="/console/grades" className="rounded-lg border bg-card p-6 hover:bg-muted/40 transition-colors flex flex-col gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            <p className="font-medium text-sm">Grades</p>
-            <p className="text-xs text-muted-foreground">Enter and manage grades</p>
+            <p className="font-medium text-sm">{t("dashboard.teacher.gradesTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.teacher.gradesDescription")}</p>
           </Link>
           <Link href="/console/enrollments" className="rounded-lg border bg-card p-6 hover:bg-muted/40 transition-colors flex flex-col gap-2">
             <ClipboardCheck className="h-5 w-5 text-primary" />
-            <p className="font-medium text-sm">Requests</p>
-            <p className="text-xs text-muted-foreground">Pending enrollment requests</p>
+            <p className="font-medium text-sm">{t("dashboard.teacher.requestsTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.teacher.requestsDescription")}</p>
           </Link>
         </div>
       </div>
@@ -97,27 +99,27 @@ export default function RectorDashboardPage() {
   if (roles.includes("dean")) {
     return (
       <div className="space-y-6" data-testid="dean-dashboard">
-        <PageHeader title="Dashboard" icon={LayoutDashboard} />
+        <PageHeader title={t("nav.dashboard")} icon={LayoutDashboard} />
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Link href="/console/students" className="rounded-lg border bg-card p-6 hover:bg-muted/40 transition-colors flex flex-col gap-2">
             <GraduationCap className="h-5 w-5 text-primary" />
-            <p className="font-medium text-sm">Students</p>
-            <p className="text-xs text-muted-foreground">Student records & status</p>
+            <p className="font-medium text-sm">{t("dashboard.dean.studentsTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.dean.studentsDescription")}</p>
           </Link>
           <Link href="/console/enrollments" className="rounded-lg border bg-card p-6 hover:bg-muted/40 transition-colors flex flex-col gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
-            <p className="font-medium text-sm">Enrollments</p>
-            <p className="text-xs text-muted-foreground">Enrollment management</p>
+            <p className="font-medium text-sm">{t("dashboard.dean.enrollmentsTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.dean.enrollmentsDescription")}</p>
           </Link>
           <Link href="/console/grades" className="rounded-lg border bg-card p-6 hover:bg-muted/40 transition-colors flex flex-col gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            <p className="font-medium text-sm">Grades</p>
-            <p className="text-xs text-muted-foreground">Faculty grade summary</p>
+            <p className="font-medium text-sm">{t("dashboard.dean.gradesTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.dean.gradesDescription")}</p>
           </Link>
           <Link href="/console/scheduling" className="rounded-lg border bg-card p-6 hover:bg-muted/40 transition-colors flex flex-col gap-2">
             <CalendarDays className="h-5 w-5 text-primary" />
-            <p className="font-medium text-sm">Scheduling</p>
-            <p className="text-xs text-muted-foreground">Course sections & timetable</p>
+            <p className="font-medium text-sm">{t("dashboard.dean.schedulingTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.dean.schedulingDescription")}</p>
           </Link>
         </div>
         {hasPermission(PERMISSIONS.METRICS_READ) && (
@@ -140,8 +142,10 @@ export default function RectorDashboardPage() {
   return (
     <div className="space-y-6" data-testid="rector-dashboard-page">
       <PageHeader
-        title="University Executive Dashboard"
-        description={`Data date: ${data?.snapshot_date ? formatDate(data.snapshot_date) : "—"} | Generated: ${generatedLabel}`}
+        title={t("dashboard.executive.title")}
+        description={t("dashboard.executive.dataDate")
+          .replace("{date}", data?.snapshot_date ? formatDate(data.snapshot_date) : "-")
+          .replace("{generated}", generatedLabel)}
         icon={LayoutDashboard}
         actions={
           <Button
@@ -151,7 +155,7 @@ export default function RectorDashboardPage() {
             disabled={isLoading}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+            {t("dashboard.executive.refresh")}
           </Button>
         }
       />
@@ -160,19 +164,19 @@ export default function RectorDashboardPage() {
 
       {isError && !isLoading && (
         <ErrorState
-          title="Failed to load executive dashboard"
-          message="KPI data is temporarily unavailable."
+          title={t("dashboard.executive.loadFailedTitle")}
+          message={t("dashboard.executive.loadFailedMessage")}
           onRetry={() => { void refetch(); }}
         />
       )}
 
       {!isLoading && !isError && (!data || data.cards.length === 0) && (
         <EmptyState
-          title="No KPI data yet"
-          description="No dashboard cards are available for the selected data interval."
+          title={t("dashboard.executive.noDataTitle")}
+          description={t("dashboard.executive.noDataDescription")}
           action={
             <Button variant="outline" onClick={() => { void refetch(); }}>
-              Retry
+              {t("dashboard.executive.retry")}
             </Button>
           }
         />

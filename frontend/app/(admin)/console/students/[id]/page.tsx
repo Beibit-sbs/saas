@@ -65,7 +65,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
           { label: "Program", value: student.program ?? "—" },
           { label: "Status", value: <StatusBadge status={student.status} /> },
           { label: "Enrolled Year", value: student.enrollment_year ?? "—" },
-          { label: "Tenant", value: student.tenant_id },
+          { label: "University", value: student.tenant_id },
           { label: "Created", value: formatDate(student.created_at) },
         ].map((item) => (
           <div key={item.label} className="rounded-lg border bg-card p-4">

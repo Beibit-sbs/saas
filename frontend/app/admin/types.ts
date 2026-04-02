@@ -144,6 +144,33 @@ export type DashboardSnapshot = {
   };
 };
 
+export type SystemHealthResponse = {
+  status: string;
+  services: Record<string, string>;
+  metrics: Record<string, string | number | boolean | null>;
+  queues: Record<string, string | number | boolean | null>;
+  disk: {
+    path: string;
+    total_bytes: number;
+    used_bytes: number;
+    free_bytes: number;
+    usage_percent: number;
+  };
+};
+
+export type AdminInsightImpact = "high" | "medium" | "low";
+
+export type AdminInsight = {
+  id: string;
+  title: string;
+  explanation: string;
+  impact: AdminInsightImpact;
+  recommendedAction: string;
+  signal: string;
+  tab: AdminTab;
+  score: number;
+};
+
 export type InlineFeedback = {
   tone: "success" | "error" | "info";
   message: string;

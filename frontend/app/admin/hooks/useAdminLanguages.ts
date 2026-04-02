@@ -3,6 +3,21 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildCsrfHeaders } from "../../components/csrf";
 import type { AdminCopy, CatalogLanguage, SupportedLanguage } from "../types";
 
+const ADMIN_I18N_BFF_BASE = "/api/bff/admin/i18n";
+
+function extractErrorDetail(errorBody: unknown, fallbackStatus: number): string {
+  if (errorBody && typeof errorBody === "object") {
+    const body = errorBody as { detail?: unknown; error?: { detail?: unknown } };
+    if (typeof body.detail === "string" && body.detail.trim().length > 0) {
+      return body.detail;
+    }
+    if (typeof body.error?.detail === "string" && body.error.detail.trim().length > 0) {
+      return body.error.detail;
+    }
+  }
+  return String(fallbackStatus);
+}
+
 type UseAdminLanguagesParams = {
   buildAuthHeaders: () => Record<string, string>;
   l: AdminCopy;
@@ -12,6 +27,7 @@ type UseAdminLanguagesParams = {
 
 type UseAdminLanguagesResult = {
   supportedLanguages: SupportedLanguage[];
+  defaultLanguage: string;
   catalogQuery: string;
   availableCatalogLanguages: CatalogLanguage[];
   selectedCatalogCode: string;
@@ -19,6 +35,7 @@ type UseAdminLanguagesResult = {
   setCatalogQuery: (value: string) => void;
   setSelectedCatalogCode: (code: string) => void;
   addLanguage: () => Promise<void>;
+  setDefaultLanguage: (code: string) => Promise<void>;
   setLanguageEnabled: (codeToUpdate: string, enabled: boolean) => Promise<void>;
   deleteLanguage: (codeToDelete: string) => Promise<void>;
 };
@@ -33,6 +50,7 @@ export function useAdminLanguages({
   const [languageCatalog, setLanguageCatalog] = useState<CatalogLanguage[]>([]);
   const [selectedCatalogCode, setSelectedCatalogCode] = useState("");
   const [catalogQuery, setCatalogQuery] = useState("");
+  const [defaultLanguage, setDefaultLanguageState] = useState("ru");
 
   const availableCatalogLanguages = useMemo(() => languageCatalog.filter((item) => {
     const exists = supportedLanguages.some((lang) => lang.code === item.code);
@@ -55,8 +73,7 @@ export function useAdminLanguages({
 
   const loadLanguageCatalog = useCallback(async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const res = await fetch(`${baseUrl}/i18n/catalog`, { cache: "no-store" });
+      const res = await fetch("/api/i18n/catalog", { cache: "no-store", credentials: "include" });
       if (!res.ok) {
         return;
       }
@@ -72,8 +89,7 @@ export function useAdminLanguages({
 
   const reloadLanguages = useCallback(async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const res = await fetch(`${baseUrl}/admin/i18n/languages`, {
+      const res = await fetch(`${ADMIN_I18N_BFF_BASE}/languages`, {
         headers: buildAuthHeaders(),
         credentials: "include",
         cache: "no-store",
@@ -81,13 +97,20 @@ export function useAdminLanguages({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        onStatusChange(`${l.errorPrefix}: ${err.detail || res.status}`);
+        onStatusChange(`${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`);
         return;
       }
 
-      const json = (await res.json()) as { items?: SupportedLanguage[] };
-      const items = json.items || [];
+      const json = (await res.json()) as {
+        items?: SupportedLanguage[];
+        languages?: SupportedLanguage[];
+        default_language?: string;
+      };
+      const items = json.items || json.languages || [];
       setSupportedLanguages(items);
+      if (json.default_language) {
+        setDefaultLanguageState(String(json.default_language));
+      }
       onLanguagesReloaded?.(items);
     } catch (error) {
       onStatusChange(String(error));
@@ -103,9 +126,8 @@ export function useAdminLanguages({
     }
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/i18n/languages`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(`${ADMIN_I18N_BFF_BASE}/languages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -122,7 +144,7 @@ export function useAdminLanguages({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        onStatusChange(`${l.errorPrefix}: ${err.detail || res.status}`);
+        onStatusChange(`${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`);
         return;
       }
 
@@ -138,9 +160,8 @@ export function useAdminLanguages({
   const setLanguageEnabled = useCallback(async (codeToUpdate: string, enabled: boolean) => {
     onStatusChange(null);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/i18n/languages/${codeToUpdate}`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(`${ADMIN_I18N_BFF_BASE}/languages/${codeToUpdate}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -153,7 +174,7 @@ export function useAdminLanguages({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        onStatusChange(`${l.errorPrefix}: ${err.detail || res.status}`);
+        onStatusChange(`${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`);
         return;
       }
 
@@ -168,12 +189,45 @@ export function useAdminLanguages({
     }
   }, [buildAuthHeaders, l.errorPrefix, l.languageDisabledMsg, l.languageEnabledMsg, onStatusChange, reloadLanguages]);
 
+  const setDefaultLanguage = useCallback(async (code: string) => {
+    onStatusChange(null);
+
+    if (!code) {
+      onStatusChange(l.defaultLanguageRequired);
+      return;
+    }
+
+    try {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(`${ADMIN_I18N_BFF_BASE}/default-language`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...buildAuthHeaders(),
+          ...csrfHeaders,
+        },
+        credentials: "include",
+        body: JSON.stringify({ code }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        onStatusChange(`${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`);
+        return;
+      }
+
+      await reloadLanguages();
+      onStatusChange(l.defaultLanguageUpdatedMsg.replace("{code}", code));
+    } catch (error) {
+      onStatusChange(String(error));
+    }
+  }, [buildAuthHeaders, l.defaultLanguageRequired, l.defaultLanguageUpdatedMsg, l.errorPrefix, onStatusChange, reloadLanguages]);
+
   const deleteLanguage = useCallback(async (codeToDelete: string) => {
     onStatusChange(null);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/i18n/languages/${codeToDelete}`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(`${ADMIN_I18N_BFF_BASE}/languages/${codeToDelete}`, {
         method: "DELETE",
         headers: {
           ...buildAuthHeaders(),
@@ -184,7 +238,7 @@ export function useAdminLanguages({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        onStatusChange(`${l.errorPrefix}: ${err.detail || res.status}`);
+        onStatusChange(`${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`);
         return;
       }
 
@@ -216,6 +270,7 @@ export function useAdminLanguages({
 
   return {
     supportedLanguages,
+    defaultLanguage,
     catalogQuery,
     availableCatalogLanguages,
     selectedCatalogCode,
@@ -223,6 +278,7 @@ export function useAdminLanguages({
     setCatalogQuery,
     setSelectedCatalogCode,
     addLanguage,
+    setDefaultLanguage,
     setLanguageEnabled,
     deleteLanguage,
   };

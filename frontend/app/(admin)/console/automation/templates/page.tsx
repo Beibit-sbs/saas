@@ -25,16 +25,21 @@ import {
 } from "@/modules/platform/automation/types"
 import type { AutomationTemplate } from "@/modules/platform/automation/templates/types"
 import { Zap, Loader2 } from "lucide-react"
+import { useLanguage } from "@/app/components/LanguageProvider"
 
 // Template Card Component
 function TemplateCard({
   template,
   onInstantiate,
   isInstantiating,
+  isActionDisabled,
+  t,
 }: {
   template: AutomationTemplate
   onInstantiate: (template: AutomationTemplate) => void
   isInstantiating: boolean
+  isActionDisabled: boolean
+  t: (key: never) => string
 }) {
   return (
     <Card className="p-5 space-y-4 hover:shadow-md transition-shadow">
@@ -47,7 +52,7 @@ function TemplateCard({
               <h3 className="font-semibold text-sm">{template.title}</h3>
             </div>
             {template.is_system_template && (
-              <span className="text-xs text-muted-foreground mt-1">System Template</span>
+              <span className="text-xs text-muted-foreground mt-1">{t("automation.templates.systemTemplate" as never)}</span>
             )}
           </div>
         </div>
@@ -59,19 +64,19 @@ function TemplateCard({
       {/* Details */}
       <div className="space-y-2 text-xs">
         <div>
-          <span className="font-medium">Event:</span> {template.event_type}
+          <span className="font-medium">{t("automation.templates.eventLabel" as never)}:</span> {template.event_type}
         </div>
 
         {Object.keys(template.condition_json).length > 0 && (
           <div>
-            <span className="font-medium">Condition:</span>{" "}
+            <span className="font-medium">{t("automation.columns.condition" as never)}:</span>{" "}
             {summarizeCondition(template.condition_json)}
           </div>
         )}
 
         {template.actions_json.length > 0 && (
           <div>
-            <span className="font-medium">Actions:</span>{" "}
+            <span className="font-medium">{t("automation.columns.actions" as never)}:</span>{" "}
             {summarizeActions(template.actions_json)}
           </div>
         )}
@@ -80,17 +85,17 @@ function TemplateCard({
       {/* Action Button */}
       <Button
         onClick={() => onInstantiate(template)}
-        disabled={isInstantiating}
+        disabled={isActionDisabled}
         className="w-full"
         size="sm"
       >
         {isInstantiating ? (
           <>
             <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
-            Creating...
+            {t("automation.templates.creating" as never)}
           </>
         ) : (
-          "Create Rule"
+          t("automation.createRule" as never)
         )}
       </Button>
     </Card>
@@ -101,13 +106,19 @@ function TemplateCard({
 export default function AutomationTemplatesPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useLanguage()
   const [selectedTemplate, setSelectedTemplate] = useState<AutomationTemplate | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
-  const { data: templates, isLoading, error } = useAutomationTemplates()
+  const { data: templates, isLoading, isFetching, error, refetch } = useAutomationTemplates()
   const instantiateMutation = useInstantiateTemplate()
+  const isMutationBusy = instantiateMutation.isPending
 
   async function handleInstantiate(template: AutomationTemplate) {
+    if (isMutationBusy) {
+      return
+    }
+    setSelectedTemplate(template)
     try {
       const rule = await instantiateMutation.mutateAsync({
         template_key: template.template_key,
@@ -118,19 +129,23 @@ export default function AutomationTemplatesPage() {
       })
 
       toast({
-        title: "Rule created",
-        description: `Created rule "${rule.name}" from template "${template.title}".`,
+        title: t("automation.templates.ruleCreated"),
+        description: t("automation.templates.ruleCreatedDescription")
+          .replace("{rule}", rule.name)
+          .replace("{template}", template.title),
       })
 
       // Redirect to new rule
       router.push(`/console/automation?highlight=${rule.id}`)
     } catch (err) {
       toast({
-        title: "Failed to create rule",
+        title: t("automation.templates.createFailed"),
         description:
-          err instanceof Error ? err.message : "An unexpected error occurred.",
+          err instanceof Error ? err.message : t("automation.templates.unexpectedError"),
         variant: "destructive",
       })
+    } finally {
+      setSelectedTemplate(null)
     }
   }
 
@@ -142,14 +157,16 @@ export default function AutomationTemplatesPage() {
     return (
       <div className="space-y-6">
         <PageHeader
-          title="Automation Templates"
-          description="Create automation rules from predefined templates."
+          title={t("automation.templates.title")}
+          description={t("automation.templates.shortDescription")}
           icon={Zap}
         />
         <ErrorState
-          title="Failed to load templates"
-          message="Template catalog is temporarily unavailable."
-          onRetry={() => window.location.reload()}
+          title={t("automation.templates.loadFailedTitle")}
+          message={t("automation.templates.loadFailedMessage")}
+          onRetry={() => void refetch()}
+          retryLabel={t("state.retry" as never)}
+          retrying={isFetching}
         />
       </div>
     )
@@ -159,8 +176,8 @@ export default function AutomationTemplatesPage() {
     <RequirePermission permission="automation.write">
       <div className="space-y-6">
         <PageHeader
-          title="Automation Templates"
-          description="Create automation rules from predefined templates. Choose a template and customize it for your needs."
+          title={t("automation.templates.title")}
+          description={t("automation.templates.description")}
           icon={Zap}
         />
 
@@ -169,15 +186,17 @@ export default function AutomationTemplatesPage() {
           <Button
             variant={selectedCategory === null ? "default" : "outline"}
             size="sm"
+            disabled={isMutationBusy}
             onClick={() => setSelectedCategory(null)}
           >
-            All Templates
+            {t("automation.templates.allTemplates")}
           </Button>
           {TEMPLATE_CATEGORIES.map((category) => (
             <Button
               key={category}
               variant={selectedCategory === category ? "default" : "outline"}
               size="sm"
+              disabled={isMutationBusy}
               onClick={() => setSelectedCategory(category)}
             >
               {category}
@@ -204,8 +223,10 @@ export default function AutomationTemplatesPage() {
                 key={template.id}
                 template={template}
                 onInstantiate={handleInstantiate}
+                t={t as never}
+                isActionDisabled={isMutationBusy}
                 isInstantiating={
-                  instantiateMutation.isPending &&
+                  isMutationBusy &&
                   selectedTemplate?.id === template.id
                 }
               />
@@ -214,11 +235,11 @@ export default function AutomationTemplatesPage() {
         ) : (
           <Card className="p-6">
             <EmptyState
-              title={selectedCategory ? "No templates in this category" : "No templates available"}
+              title={selectedCategory ? t("automation.templates.emptyByCategoryTitle") : t("automation.templates.emptyTitle")}
               description={
                 selectedCategory
-                  ? `No templates in the ${selectedCategory} category.`
-                  : "Template catalog is empty."
+                  ? t("automation.templates.emptyByCategoryDescription").replace("{category}", selectedCategory)
+                  : t("automation.templates.emptyDescription")
               }
             />
           </Card>
@@ -228,9 +249,10 @@ export default function AutomationTemplatesPage() {
         <div className="flex justify-end">
           <Button
             variant="outline"
+            disabled={isMutationBusy}
             onClick={() => router.push("/console/automation")}
           >
-            Back to Rules
+            {t("automation.templates.backToRules")}
           </Button>
         </div>
       </div>

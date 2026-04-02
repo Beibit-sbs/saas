@@ -10,8 +10,10 @@ import { FileText, Search } from "lucide-react";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { AccessDenied } from "@/shared/ui/permission-gate";
+import { useLanguage } from "@/app/components/LanguageProvider";
 
 export default function TranscriptsPage() {
+  const { t } = useLanguage();
   const { hasPermission } = usePermissions();
   const router = useRouter();
   const [studentId, setStudentId] = useState("");
@@ -25,8 +27,8 @@ export default function TranscriptsPage() {
   return (
     <div className="space-y-4 max-w-2xl">
       <PageHeader
-        title="Transcripts"
-        description="Open transcript by student ID"
+        title={t("nav.transcripts")}
+        description={t("console.transcripts.description")}
         icon={FileText}
       />
 

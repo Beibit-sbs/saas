@@ -14,6 +14,7 @@ import {
   useInstitutionOverview,
 } from "@/modules/platform/federation/use-federation";
 import type { Institution } from "@/modules/platform/federation/types";
+import { useLanguage } from "@/app/components/LanguageProvider";
 
 function KpiCard({ title, value, icon: Icon }: { title: string; value: number; icon: React.ElementType }) {
   return (
@@ -54,7 +55,7 @@ function InstitutionOverviewPanel({ institution }: { institution: Institution })
           value={Number(data.automation_health?.automation_failures_total ?? 0)}
           icon={AlertTriangle}
         />
-        <KpiCard title="Tenants" value={data.tenant_count} icon={Building2} />
+        <KpiCard title="Universities" value={data.tenant_count} icon={Building2} />
       </div>
 
       {data.kpi_cards.length > 0 && (
@@ -115,6 +116,7 @@ function InstitutionRow({
 }
 
 export default function FederationPage() {
+  const { t } = useLanguage();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const institutions = useInstitutions();
 
@@ -130,8 +132,8 @@ export default function FederationPage() {
     >
       <div className="space-y-6" data-testid="federation-page">
         <PageHeader
-          title="Federation"
-          description="Multi-institution view. Manage universities, colleges and institutes sharing this platform."
+          title={t("nav.federation")}
+          description={t("console.federation.description")}
           icon={Network}
         />
 

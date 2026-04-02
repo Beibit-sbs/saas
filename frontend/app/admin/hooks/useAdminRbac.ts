@@ -3,6 +3,25 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildCsrfHeaders } from "../../components/csrf";
 import type { AdminCopy, InlineFeedback, RbacAssignmentEntry, RbacRoleEntry, TxFn } from "../types";
 
+const RBAC_BFF_BASE = "/api/bff/admin/rbac";
+
+function rbacBffPath(path: string): string {
+  return `${RBAC_BFF_BASE}/${path}`;
+}
+
+function extractErrorDetail(errorBody: unknown, fallbackStatus: number): string {
+  if (errorBody && typeof errorBody === "object") {
+    const body = errorBody as { detail?: unknown; error?: { detail?: unknown } };
+    if (typeof body.detail === "string" && body.detail.trim().length > 0) {
+      return body.detail;
+    }
+    if (typeof body.error?.detail === "string" && body.error.detail.trim().length > 0) {
+      return body.error.detail;
+    }
+  }
+  return String(fallbackStatus);
+}
+
 type UseAdminRbacParams = {
   activeTab: string;
   buildAuthHeaders: () => Record<string, string>;
@@ -90,12 +109,11 @@ export function useAdminRbac({
   const loadRbacRoles = useCallback(async () => {
     setRbacRolesBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
       const params = new URLSearchParams();
       if (tenantId && tenantId > 0) {
         params.set("tenant_id", String(tenantId));
       }
-      const endpoint = params.toString() ? `${baseUrl}/admin/rbac/roles?${params.toString()}` : `${baseUrl}/admin/rbac/roles`;
+      const endpoint = params.toString() ? `${rbacBffPath("roles")}?${params.toString()}` : rbacBffPath("roles");
       const res = await fetch(endpoint, {
         headers: buildRbacHeaders(),
         credentials: "include",
@@ -106,7 +124,7 @@ export function useAdminRbac({
         const err = await res.json().catch(() => ({}));
         setRbacFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -129,7 +147,6 @@ export function useAdminRbac({
   const loadRbacAssignments = useCallback(async () => {
     setRbacAssignmentsBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
       const params = new URLSearchParams();
       if (assignmentUserFilter.trim()) {
         params.set("user_id", assignmentUserFilter.trim());
@@ -142,7 +159,7 @@ export function useAdminRbac({
       }
 
       const query = params.toString();
-      const endpoint = query ? `${baseUrl}/admin/rbac/assignments?${query}` : `${baseUrl}/admin/rbac/assignments`;
+      const endpoint = query ? `${rbacBffPath("assignments")}?${query}` : rbacBffPath("assignments");
       const res = await fetch(endpoint, {
         headers: buildRbacHeaders(),
         credentials: "include",
@@ -153,7 +170,7 @@ export function useAdminRbac({
         const err = await res.json().catch(() => ({}));
         setRbacFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -177,9 +194,8 @@ export function useAdminRbac({
 
     setRbacRoleSaveBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/rbac/roles`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(rbacBffPath("roles"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -202,7 +218,7 @@ export function useAdminRbac({
         const err = await res.json().catch(() => ({}));
         setRbacFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -226,9 +242,8 @@ export function useAdminRbac({
 
     setRbacAssignBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/rbac/assign`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(rbacBffPath("assign"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -248,7 +263,7 @@ export function useAdminRbac({
         const err = await res.json().catch(() => ({}));
         setRbacFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -274,13 +289,12 @@ export function useAdminRbac({
 
     setRbacRevokeBusyKey(`${userId}:${role}`);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
+      const csrfHeaders = await buildCsrfHeaders("/api");
       const params = new URLSearchParams();
       if (tenantId && tenantId > 0) {
         params.set("tenant_id", String(tenantId));
       }
-      const endpoint = `${baseUrl}/admin/rbac/assignments/${encodeURIComponent(userId)}/${encodeURIComponent(role)}${params.toString() ? `?${params.toString()}` : ""}`;
+      const endpoint = `${rbacBffPath(`assignments/${encodeURIComponent(userId)}/${encodeURIComponent(role)}`)}${params.toString() ? `?${params.toString()}` : ""}`;
       const res = await fetch(
         endpoint,
         {
@@ -297,7 +311,7 @@ export function useAdminRbac({
         const err = await res.json().catch(() => ({}));
         setRbacFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -318,12 +332,11 @@ export function useAdminRbac({
     setRbacFeedback(null);
     setRbacAssignmentsBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
       const params = new URLSearchParams();
       if (tenantId && tenantId > 0) {
         params.set("tenant_id", String(tenantId));
       }
-      const endpoint = params.toString() ? `${baseUrl}/admin/rbac/assignments?${params.toString()}` : `${baseUrl}/admin/rbac/assignments`;
+      const endpoint = params.toString() ? `${rbacBffPath("assignments")}?${params.toString()}` : rbacBffPath("assignments");
       const res = await fetch(endpoint, {
         headers: buildRbacHeaders(),
         credentials: "include",
@@ -334,7 +347,7 @@ export function useAdminRbac({
         const err = await res.json().catch(() => ({}));
         setRbacFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }

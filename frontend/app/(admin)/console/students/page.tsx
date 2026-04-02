@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/shared/ui/page-header";
 import { DataTable, Column } from "@/shared/ui/data-table";
@@ -18,23 +19,10 @@ import { GraduationCap } from "lucide-react";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { AccessDenied } from "@/shared/ui/permission-gate";
-
-const FILTER_FIELDS = [
-  { key: "search", label: "Search", type: "text" as const, placeholder: "Name or email…" },
-  {
-    key: "status",
-    label: "Status",
-    type: "select" as const,
-    options: [
-      { label: "Active", value: "active" },
-      { label: "Inactive", value: "inactive" },
-      { label: "Graduated", value: "graduated" },
-      { label: "Suspended", value: "suspended" },
-    ],
-  },
-];
+import { useLanguage } from "@/app/components/LanguageProvider";
 
 export default function StudentsPage() {
+  const { t } = useLanguage();
   const { hasPermission } = usePermissions();
   const router = useRouter();
   const table = useTableQueryState({ filterKeys: ["search", "status"] as const, defaultPageSize: 20, defaultSort: { key: "created", direction: "desc" } });
@@ -48,17 +36,35 @@ export default function StudentsPage() {
   });
   const selectedStudent = data?.items.find((item) => item.id === detail.selectedId) ?? null;
 
+  const filterFields = useMemo(
+    () => [
+      { key: "search", label: t("students.filter.search"), type: "text" as const, placeholder: t("students.filter.searchPlaceholder") },
+      {
+        key: "status",
+        label: t("students.filter.status"),
+        type: "select" as const,
+        options: [
+          { label: t("students.status.active"), value: "active" },
+          { label: t("students.status.inactive"), value: "inactive" },
+          { label: t("students.status.graduated"), value: "graduated" },
+          { label: t("students.status.suspended"), value: "suspended" },
+        ],
+      },
+    ],
+    [t],
+  );
+
   if (!hasPermission(PERMISSIONS.STUDENTS_READ)) return <AccessDenied />;
 
   if (error) {
-    return <ErrorState title="Failed to load students" onRetry={refetch} />;
+    return <ErrorState title={t("students.loadFailed")} onRetry={refetch} />;
   }
 
   const columns: Column<Student>[] = [
     { key: "number", header: "#", width: "100px", cell: (r) => <code className="text-xs">{r.student_number}</code>, sortValue: (r) => r.student_number },
     {
       key: "name",
-      header: "Name",
+      header: t("students.columns.name"),
       cell: (r) => (
         <span className="font-medium">
           {r.first_name} {r.last_name}
@@ -66,10 +72,10 @@ export default function StudentsPage() {
       ),
       sortValue: (r) => `${r.first_name} ${r.last_name}`.toLowerCase(),
     },
-    { key: "email", header: "Email", cell: (r) => r.email, sortValue: (r) => r.email.toLowerCase() },
-    { key: "program", header: "Program", cell: (r) => r.program ?? "—", sortValue: (r) => r.program ?? "" },
-    { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} />, sortValue: (r) => r.status },
-    { key: "created", header: "Enrolled", cell: (r) => formatDate(r.created_at), sortValue: (r) => r.created_at },
+    { key: "email", header: t("students.columns.email"), cell: (r) => r.email, sortValue: (r) => r.email.toLowerCase() },
+    { key: "program", header: t("students.columns.program"), cell: (r) => r.program ?? "-", sortValue: (r) => r.program ?? "" },
+    { key: "status", header: t("students.columns.status"), cell: (r) => <StatusBadge status={r.status} />, sortValue: (r) => r.status },
+    { key: "created", header: t("students.columns.enrolled"), cell: (r) => formatDate(r.created_at), sortValue: (r) => r.created_at },
     {
       key: "actions",
       header: "",
@@ -83,7 +89,7 @@ export default function StudentsPage() {
             router.push(`/console/students/${r.id}`);
           }}
         >
-          View
+          {t("students.actions.view")}
         </Button>
       ),
     },
@@ -91,10 +97,10 @@ export default function StudentsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Students" description="Academic student records" icon={GraduationCap} />
+      <PageHeader title={t("nav.students")} description={t("console.students.description")} icon={GraduationCap} />
 
       <FilterBar
-        fields={FILTER_FIELDS}
+        fields={filterFields}
         values={table.filters}
         onChange={table.setFilter}
         onReset={table.resetFilters}
@@ -112,28 +118,28 @@ export default function StudentsPage() {
         sort={table.sort}
         onSortChange={table.setSort}
         onRowClick={(row) => detail.open(row.id)}
-        emptyTitle="No students found"
+        emptyTitle={t("students.emptyTitle")}
       />
 
       <DrawerPanel
         open={detail.isOpen}
         onClose={detail.close}
-        title={selectedStudent ? `${selectedStudent.first_name} ${selectedStudent.last_name}` : "Student summary"}
-        description={selectedStudent?.student_number ?? "Select a student from the table."}
+        title={selectedStudent ? `${selectedStudent.first_name} ${selectedStudent.last_name}` : t("students.summaryTitle")}
+        description={selectedStudent?.student_number ?? t("students.selectFromTable")}
       >
         {selectedStudent ? (
           <DetailList
             items={[
-              { label: "Email", value: selectedStudent.email },
-              { label: "Status", value: <StatusBadge status={selectedStudent.status} /> },
-              { label: "Program", value: selectedStudent.program ?? "—" },
-              { label: "Enrollment year", value: selectedStudent.enrollment_year ?? "—" },
-              { label: "Tenant", value: selectedStudent.tenant_id },
-              { label: "Created", value: formatDate(selectedStudent.created_at) },
+              { label: t("students.columns.email"), value: selectedStudent.email },
+              { label: t("students.columns.status"), value: <StatusBadge status={selectedStudent.status} /> },
+              { label: t("students.columns.program"), value: selectedStudent.program ?? "-" },
+              { label: t("students.columns.enrollmentYear"), value: selectedStudent.enrollment_year ?? "-" },
+              { label: t("students.columns.tenant"), value: selectedStudent.tenant_id },
+              { label: t("students.columns.created"), value: formatDate(selectedStudent.created_at) },
             ]}
           />
         ) : (
-          <ErrorState title="Student not found" message="The selected student is not present on this page of results." />
+          <ErrorState title={t("students.notFound")} message={t("students.notFoundDescription")} />
         )}
       </DrawerPanel>
     </div>

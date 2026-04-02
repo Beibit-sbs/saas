@@ -17,6 +17,7 @@ import { useGrades, useUpsertGrade } from "@/modules/grades/hooks";
 import { Grade } from "@/modules/grades/types";
 import { formatDate } from "@/shared/utils/format";
 import { PERMISSIONS } from "@/shared/config/permissions";
+import { useLanguage } from "@/app/components/LanguageProvider";
 import { BarChart2 } from "lucide-react";
 
 const FILTER_FIELDS = [
@@ -25,6 +26,7 @@ const FILTER_FIELDS = [
 ];
 
 export default function GradesPage() {
+  const { t } = useLanguage();
   const table = useTableQueryState({ filterKeys: ["student_id", "section_id"] as const, defaultPageSize: 20, defaultSort: { key: "graded", direction: "desc" } });
   const detail = useDetailDrawer({ paramKey: "grade" });
   const { getHandlers } = useMutationFeedback();
@@ -79,7 +81,7 @@ export default function GradesPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Grades" description="Student grades across all sections" icon={BarChart2} />
+      <PageHeader title={t("nav.grades")} description={t("console.grades.description")} icon={BarChart2} />
 
       <FilterBar
         fields={FILTER_FIELDS}

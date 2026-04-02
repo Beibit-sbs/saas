@@ -7,9 +7,11 @@ type AdminLanguagesTabProps = {
   selectedCatalogCode: string;
   selectedCatalogLanguage: CatalogLanguage | null;
   supportedLanguages: SupportedLanguage[];
+  defaultLanguage: string;
   onCatalogQueryChange: (value: string) => void;
   onSelectCatalogCode: (code: string) => void;
   onAddLanguage: () => void | Promise<void>;
+  onSetDefaultLanguage: (code: string) => void | Promise<void>;
   onToggleLanguageEnabled: (code: string, enabled: boolean) => void | Promise<void>;
   onDeleteLanguage: (code: string) => void | Promise<void>;
 };
@@ -21,12 +23,16 @@ export function AdminLanguagesTab({
   selectedCatalogCode,
   selectedCatalogLanguage,
   supportedLanguages,
+  defaultLanguage,
   onCatalogQueryChange,
   onSelectCatalogCode,
   onAddLanguage,
+  onSetDefaultLanguage,
   onToggleLanguageEnabled,
   onDeleteLanguage,
 }: AdminLanguagesTabProps) {
+  const enabledLanguages = supportedLanguages.filter((lang) => lang.enabled);
+
   return (
     <>
       <h2>{l.languageManagement}</h2>
@@ -83,6 +89,23 @@ export function AdminLanguagesTab({
           )}
         </article>
       </div>
+
+      <article className="catalogCard" style={{ marginTop: 12 }}>
+        <h3>{l.defaultLanguageTitle}</h3>
+        <p className="subText">{l.defaultLanguageHelp}</p>
+        <div className="inlineRow" style={{ gap: 10, alignItems: "center" }}>
+          <select value={defaultLanguage} onChange={(e) => void onSetDefaultLanguage(e.target.value)}>
+            {enabledLanguages.map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.native_name} ({lang.code})
+              </option>
+            ))}
+          </select>
+          <button type="button" className="ghost" onClick={() => void onSetDefaultLanguage(defaultLanguage)}>
+            {l.setDefaultLanguage}
+          </button>
+        </div>
+      </article>
 
       <div className="tableWrap">
         <table>

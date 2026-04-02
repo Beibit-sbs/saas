@@ -6,9 +6,10 @@ export interface ServiceHealth {
 }
 
 export interface HealthStatus {
-  status: "healthy" | "degraded" | "unhealthy";
-  services: ServiceHealth[];
-  checked_at: string;
+  status: "ok" | "healthy" | "degraded" | "unhealthy" | "unknown";
+  service?: string;
+  services?: ServiceHealth[];
+  checked_at?: string;
 }
 
 export interface Metrics {

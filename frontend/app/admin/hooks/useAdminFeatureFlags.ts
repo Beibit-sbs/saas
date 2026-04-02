@@ -4,6 +4,21 @@ import { buildCsrfHeaders } from "../../components/csrf";
 import { formatFeatureFlagLastChange } from "../utils";
 import type { AdminCopy, FeatureFlag, InlineFeedback, TxFn } from "../types";
 
+const FEATURE_FLAGS_BFF_PATH = "/api/bff/admin/feature-flags";
+
+function extractErrorDetail(errorBody: unknown, fallbackStatus: number): string {
+  if (errorBody && typeof errorBody === "object") {
+    const body = errorBody as { detail?: unknown; error?: { detail?: unknown } };
+    if (typeof body.detail === "string" && body.detail.trim().length > 0) {
+      return body.detail;
+    }
+    if (typeof body.error?.detail === "string" && body.error.detail.trim().length > 0) {
+      return body.error.detail;
+    }
+  }
+  return String(fallbackStatus);
+}
+
 type UseAdminFeatureFlagsParams = {
   activeTab: string;
   buildAuthHeaders: () => Record<string, string>;
@@ -84,8 +99,7 @@ export function useAdminFeatureFlags({
     }
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const res = await fetch(`${baseUrl}/admin/feature-flags`, {
+      const res = await fetch(FEATURE_FLAGS_BFF_PATH, {
         headers: buildAuthHeaders(),
         credentials: "include",
         cache: "no-store",
@@ -95,7 +109,7 @@ export function useAdminFeatureFlags({
         const err = await res.json().catch(() => ({}));
         setFeatureFlagsFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -124,9 +138,8 @@ export function useAdminFeatureFlags({
     setFeatureFlagUpdateBusy((prev) => ({ ...prev, [flag.key]: true }));
     setFeatureFlagsFeedback(null);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/feature-flags`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(FEATURE_FLAGS_BFF_PATH, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -146,7 +159,7 @@ export function useAdminFeatureFlags({
         const err = await res.json().catch(() => ({}));
         setFeatureFlagsFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }

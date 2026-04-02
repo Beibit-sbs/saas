@@ -1,5 +1,4 @@
-import type { InlineFeedback } from "../types";
-import type { SystemHealthResponse } from "../hooks/useAdminSystemHealth";
+import type { InlineFeedback, SystemHealthResponse } from "../types";
 
 type AdminSystemTabProps = {
   systemHealth: SystemHealthResponse | null;

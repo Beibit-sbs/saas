@@ -17,6 +17,7 @@ import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
 import { formatDate } from "@/shared/utils/format";
 import { PERMISSIONS } from "@/shared/config/permissions";
+import { useLanguage } from "@/app/components/LanguageProvider";
 import { BookOpen } from "lucide-react";
 
 const FILTER_FIELDS = [
@@ -34,6 +35,7 @@ const FILTER_FIELDS = [
 ];
 
 export default function EnrollmentsPage() {
+  const { t } = useLanguage();
   const table = useTableQueryState({ filterKeys: ["status"] as const, defaultPageSize: 20, defaultSort: { key: "enrolled", direction: "desc" } });
   const detail = useDetailDrawer({ paramKey: "enrollment" });
   const { getHandlers } = useMutationFeedback();
@@ -81,7 +83,7 @@ export default function EnrollmentsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Enrollments" description="Student course enrollments" icon={BookOpen} />
+      <PageHeader title={t("nav.enrollments")} description={t("console.enrollments.description")} icon={BookOpen} />
 
       <FilterBar
         fields={FILTER_FIELDS}
@@ -118,7 +120,7 @@ export default function EnrollmentsPage() {
               { label: "Status", value: <StatusBadge status={selectedEnrollment.status} /> },
               { label: "Student ID", value: selectedEnrollment.student_id },
               { label: "Section ID", value: selectedEnrollment.section_id },
-              { label: "Tenant", value: selectedEnrollment.tenant_id },
+              { label: "University", value: selectedEnrollment.tenant_id },
               { label: "Enrolled", value: formatDate(selectedEnrollment.enrolled_at) },
             ]}
           />

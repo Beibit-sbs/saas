@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Activity, RefreshCw, ServerCog } from "lucide-react";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { Button } from "@/shared/ui/button";
@@ -13,11 +14,12 @@ import { OpsSectionCard } from "@/modules/platform/ops/ops-section-card";
 import { OpsStatusBadge } from "@/modules/platform/ops/status-badge";
 import { useOpsHealth } from "@/modules/platform/ops/use-ops-health";
 import { useOpsMetrics } from "@/modules/platform/ops/use-ops-metrics";
+import { useLanguage } from "@/app/components/LanguageProvider";
 
-function formatDateTime(value: string | null): string {
-  if (!value) return "Unknown";
+function formatDateTime(value: string | null, unknownLabel: string): string {
+  if (!value) return unknownLabel;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
+  if (Number.isNaN(date.getTime())) return unknownLabel;
   return date.toLocaleString();
 }
 
@@ -26,11 +28,14 @@ function hasAnyNumber(values: Array<number | null>): boolean {
 }
 
 export default function OpsConsolePage() {
+  const { t } = useLanguage();
   const healthQuery = useOpsHealth();
   const metricsQuery = useOpsMetrics();
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
 
   const health = healthQuery.data;
   const metrics = metricsQuery.data;
+  const isRefreshing = healthQuery.isFetching || metricsQuery.isFetching;
 
   const isInitialLoading = !health && !metrics && (healthQuery.isLoading || metricsQuery.isLoading);
   const noHealthData = !health;
@@ -66,15 +71,44 @@ export default function OpsConsolePage() {
   const refreshAll = () => {
     void healthQuery.refetch();
     void metricsQuery.refetch();
+    setLoadingTimedOut(false);
   };
 
-  if (isInitialLoading) {
+  useEffect(() => {
+    if (!isInitialLoading) {
+      setLoadingTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setLoadingTimedOut(true), 12_000);
+    return () => clearTimeout(timer);
+  }, [isInitialLoading]);
+
+  if (isInitialLoading && !loadingTimedOut) {
     return (
       <div className="space-y-6" data-testid="ops-console-page">
-        <PageHeader title="Platform Ops Console" description="Operational visibility for platform reliability" icon={ServerCog} />
+        <PageHeader title={t("nav.platformOps")} description={t("console.ops.description")} icon={ServerCog} />
         <Skeleton className="h-36 w-full" />
         <Skeleton className="h-48 w-full" />
         <Skeleton className="h-48 w-full" />
+      </div>
+    );
+  }
+
+  if (loadingTimedOut && noHealthData && noMetricsData) {
+    return (
+      <div className="space-y-6" data-testid="ops-console-page">
+        <PageHeader
+          title={t("nav.platformOps")}
+          description={t("console.ops.description")}
+          icon={ServerCog}
+        />
+        <ErrorState
+          title={t("ops.loadingTimedOut")}
+          message={t("ops.loadingTimedOutMessage")}
+          onRetry={refreshAll}
+          retryLabel={t("state.retry")}
+          retrying={isRefreshing}
+        />
       </div>
     );
   }
@@ -83,14 +117,16 @@ export default function OpsConsolePage() {
     return (
       <div className="space-y-6" data-testid="ops-console-page">
         <PageHeader
-          title="Platform Ops Console"
-          description="Operational visibility for platform reliability"
+          title={t("nav.platformOps")}
+          description={t("console.ops.description")}
           icon={ServerCog}
         />
         <ErrorState
-          title="Unable to load ops signals"
-          message={errorMessages[0] ?? "Ops endpoints are currently unavailable."}
+          title={t("ops.unableToLoadSignals")}
+          message={errorMessages[0] ?? t("ops.endpointsUnavailable")}
           onRetry={refreshAll}
+          retryLabel={t("state.retry")}
+          retrying={isRefreshing}
         />
       </div>
     );
@@ -100,113 +136,134 @@ export default function OpsConsolePage() {
     <RequirePermission permission={PERMISSIONS.OPS_READ}>
       <div className="space-y-6" data-testid="ops-console-page">
         <PageHeader
-          title="Platform Ops Console"
-          description="Operational visibility for platform health, queues and API behavior"
+          title={t("nav.platformOps")}
+          description={t("console.ops.description")}
           icon={ServerCog}
           actions={(
-            <Button variant="outline" size="sm" onClick={refreshAll}>
+            <Button variant="outline" size="sm" onClick={refreshAll} disabled={isRefreshing}>
               <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
+              {t("ops.refresh")}
             </Button>
           )}
         />
 
         <OpsSectionCard
-          title="Health Overview"
-          description="Current status for core platform dependencies"
+          title={t("ops.healthOverview")}
+          description={t("ops.healthOverviewDescription")}
         >
           {health ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="ops-health-section">
               <div className="rounded-md border p-3">
-                <p className="text-xs text-muted-foreground">Overall Health</p>
+                <p className="text-xs text-muted-foreground">{t("ops.health.overallHealth")}</p>
                 <div className="mt-2"><OpsStatusBadge status={health.overall} /></div>
               </div>
               <div className="rounded-md border p-3">
-                <p className="text-xs text-muted-foreground">API</p>
+                <p className="text-xs text-muted-foreground">{t("ops.health.api")}</p>
                 <div className="mt-2"><OpsStatusBadge status={health.api} /></div>
               </div>
               <div className="rounded-md border p-3">
-                <p className="text-xs text-muted-foreground">Database</p>
+                <p className="text-xs text-muted-foreground">{t("ops.health.database")}</p>
                 <div className="mt-2"><OpsStatusBadge status={health.db} /></div>
               </div>
               <div className="rounded-md border p-3">
-                <p className="text-xs text-muted-foreground">Worker</p>
+                <p className="text-xs text-muted-foreground">{t("ops.health.worker")}</p>
                 <div className="mt-2"><OpsStatusBadge status={health.worker} /></div>
+                {health.worker === "skipped" ? (
+                  <p className="mt-1 text-xs text-muted-foreground">{t("ops.health.workerNotRequired")}</p>
+                ) : null}
               </div>
               <div className="rounded-md border p-3 sm:col-span-2 lg:col-span-4">
-                <p className="text-xs text-muted-foreground">Scheduler Last Run</p>
-                <p className="mt-1 text-sm font-medium">{formatDateTime(metrics?.queue.schedulerLastRun ?? null)}</p>
+                <p className="text-xs text-muted-foreground">{t("ops.health.schedulerLastRun")}</p>
+                <p className="mt-1 text-sm font-medium">{formatDateTime(metrics?.queue.schedulerLastRun ?? null, t("ops.unknown"))}</p>
               </div>
             </div>
           ) : (
-            <ErrorState title="Health endpoints unavailable" message="Could not read /health endpoints." onRetry={() => void healthQuery.refetch()} />
+            <ErrorState
+              title={t("ops.healthEndpointsUnavailable")}
+              message={t("ops.healthEndpointsUnavailableMessage")}
+              onRetry={() => void healthQuery.refetch()}
+              retryLabel={t("state.retry")}
+              retrying={healthQuery.isFetching}
+            />
           )}
         </OpsSectionCard>
 
         <OpsSectionCard
-          title="Queue / Retry Health"
-          description="Backlogs, failed deliveries and dead-state visibility"
+          title={t("ops.queueRetryHealth")}
+          description={t("ops.queueRetryHealthDescription")}
           actions={<OpsStatusBadge status={hasQueueData ? "healthy" : "unknown"} />}
         >
           {metrics ? (
             hasQueueData ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="ops-queue-section">
-                <MetricTile label="Outbox Backlog" value={metrics.queue.outboxBacklog} testId="metric-outbox-backlog" />
-                <MetricTile label="Event Queue Size" value={metrics.queue.eventQueueSize} testId="metric-event-queue" />
-                <MetricTile label="Failed Webhooks" value={metrics.queue.failedWebhooks} testId="metric-failed-webhooks" />
-                <MetricTile label="Dead Webhooks" value={metrics.queue.deadWebhooks} testId="metric-dead-webhooks" />
-                <MetricTile label="Failed Automation" value={metrics.queue.failedAutomationExecutions} testId="metric-failed-automation" />
-                <MetricTile label="Dead Automation" value={metrics.queue.deadAutomationExecutions} testId="metric-dead-automation" />
-                <MetricTile label="Failed Jobs" value={metrics.queue.failedJobs} testId="metric-failed-jobs" />
-                <MetricTile label="Dead Jobs" value={metrics.queue.deadJobs} testId="metric-dead-jobs" />
+                <MetricTile label={t("ops.queue.outboxBacklog")} value={metrics.queue.outboxBacklog} testId="metric-outbox-backlog" />
+                <MetricTile label={t("ops.queue.eventQueueSize")} value={metrics.queue.eventQueueSize} testId="metric-event-queue" />
+                <MetricTile label={t("ops.queue.failedWebhooks")} value={metrics.queue.failedWebhooks} testId="metric-failed-webhooks" />
+                <MetricTile label={t("ops.queue.deadWebhooks")} value={metrics.queue.deadWebhooks} testId="metric-dead-webhooks" />
+                <MetricTile label={t("ops.queue.failedAutomation")} value={metrics.queue.failedAutomationExecutions} testId="metric-failed-automation" />
+                <MetricTile label={t("ops.queue.deadAutomation")} value={metrics.queue.deadAutomationExecutions} testId="metric-dead-automation" />
+                <MetricTile label={t("ops.queue.failedJobs")} value={metrics.queue.failedJobs} testId="metric-failed-jobs" />
+                <MetricTile label={t("ops.queue.deadJobs")} value={metrics.queue.deadJobs} testId="metric-dead-jobs" />
               </div>
             ) : (
               <EmptyState
-                title="Queue metrics unavailable"
-                description="No queue/retry metrics were returned by /metrics/ops."
-                action={<Button variant="outline" size="sm" onClick={() => void metricsQuery.refetch()}>Retry</Button>}
+                title={t("ops.queueMetricsUnavailable")}
+                description={t("ops.queueMetricsUnavailableMessage")}
+                action={<Button variant="outline" size="sm" onClick={() => void metricsQuery.refetch()} disabled={metricsQuery.isFetching}>{t("state.retry")}</Button>}
               />
             )
           ) : (
-            <ErrorState title="Metrics endpoint unavailable" message="Could not read /metrics/ops." onRetry={() => void metricsQuery.refetch()} />
+            <ErrorState
+              title={t("ops.metricsEndpointUnavailable")}
+              message={t("ops.metricsEndpointUnavailableMessage")}
+              onRetry={() => void metricsQuery.refetch()}
+              retryLabel={t("state.retry")}
+              retrying={metricsQuery.isFetching}
+            />
           )}
         </OpsSectionCard>
 
         <OpsSectionCard
-          title="API / Traffic"
-          description="Latency and error-rate summary for recent requests"
+          title={t("ops.apiTraffic")}
+          description={t("ops.apiTrafficDescription")}
           actions={<Activity className="h-4 w-4 text-muted-foreground" />}
         >
           {metrics ? (
             hasTrafficData ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="ops-traffic-section">
-                <MetricTile label="Requests / Min" value={metrics.traffic.requestsPerMinute} testId="metric-rpm" />
-                <MetricTile label="P50 Latency" value={metrics.traffic.p50LatencyMs === null ? null : `${metrics.traffic.p50LatencyMs} ms`} testId="metric-p50" />
-                <MetricTile label="P95 Latency" value={metrics.traffic.p95LatencyMs === null ? null : `${metrics.traffic.p95LatencyMs} ms`} testId="metric-p95" />
-                <MetricTile label="P99 Latency" value={metrics.traffic.p99LatencyMs === null ? null : `${metrics.traffic.p99LatencyMs} ms`} testId="metric-p99" />
-                <MetricTile label="4xx Count" value={metrics.traffic.http4xxCount} testId="metric-4xx" />
-                <MetricTile label="5xx Count" value={metrics.traffic.http5xxCount} testId="metric-5xx" />
-                <MetricTile label="Developer API Errors" value={metrics.traffic.developerApiErrorCount} testId="metric-dev-errors" />
+                <MetricTile label={t("ops.traffic.requestsPerMin")} value={metrics.traffic.requestsPerMinute} testId="metric-rpm" />
+                <MetricTile label={t("ops.traffic.p50Latency")} value={metrics.traffic.p50LatencyMs === null ? null : `${metrics.traffic.p50LatencyMs} ms`} testId="metric-p50" />
+                <MetricTile label={t("ops.traffic.p95Latency")} value={metrics.traffic.p95LatencyMs === null ? null : `${metrics.traffic.p95LatencyMs} ms`} testId="metric-p95" />
+                <MetricTile label={t("ops.traffic.p99Latency")} value={metrics.traffic.p99LatencyMs === null ? null : `${metrics.traffic.p99LatencyMs} ms`} testId="metric-p99" />
+                <MetricTile label={t("ops.traffic.http4xxCount")} value={metrics.traffic.http4xxCount} testId="metric-4xx" />
+                <MetricTile label={t("ops.traffic.http5xxCount")} value={metrics.traffic.http5xxCount} testId="metric-5xx" />
+                <MetricTile label={t("ops.traffic.developerApiErrors")} value={metrics.traffic.developerApiErrorCount} testId="metric-dev-errors" />
               </div>
             ) : (
               <EmptyState
-                title="Traffic metrics unavailable"
-                description="No latency/traffic metrics were returned by /metrics/latency."
-                action={<Button variant="outline" size="sm" onClick={() => void metricsQuery.refetch()}>Retry</Button>}
+                title={t("ops.trafficMetricsUnavailable")}
+                description={t("ops.trafficMetricsUnavailableMessage")}
+                action={<Button variant="outline" size="sm" onClick={() => void metricsQuery.refetch()} disabled={metricsQuery.isFetching}>{t("state.retry")}</Button>}
               />
             )
           ) : (
-            <ErrorState title="Latency endpoint unavailable" message="Could not read /metrics/latency." onRetry={() => void metricsQuery.refetch()} />
+            <ErrorState
+              title={t("ops.latencyEndpointUnavailable")}
+              message={t("ops.latencyEndpointUnavailableMessage")}
+              onRetry={() => void metricsQuery.refetch()}
+              retryLabel={t("state.retry")}
+              retrying={metricsQuery.isFetching}
+            />
           )}
         </OpsSectionCard>
 
-        <OpsSectionCard title="Last Updated" description="Refresh status and endpoint warnings">
+        <OpsSectionCard title={t("ops.lastUpdated")} description={t("ops.lastUpdatedDescription")}>
           <div className="space-y-2" data-testid="ops-last-updated">
-            <p className="text-sm">Health: <span className="font-medium">{formatDateTime(health?.updatedAt ?? null)}</span></p>
-            <p className="text-sm">Metrics: <span className="font-medium">{formatDateTime(metrics?.updatedAt ?? null)}</span></p>
+            <p className="text-sm">{t("ops.healthLabel")}: <span className="font-medium">{formatDateTime(health?.updatedAt ?? null, t("ops.unknown"))}</span></p>
+            <p className="text-sm">{t("ops.metricsLabel")}: <span className="font-medium">{formatDateTime(metrics?.updatedAt ?? null, t("ops.unknown"))}</span></p>
             {errorMessages.length > 0 && (
               <div className="rounded-md border border-yellow-300 bg-yellow-50 p-2 text-xs text-yellow-900">
-                Partial data mode: {errorMessages.join(" | ")}
+                {t("ops.partialDataMode")}: {errorMessages.join(" | ")}
               </div>
             )}
           </div>

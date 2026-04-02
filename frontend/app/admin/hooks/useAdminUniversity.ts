@@ -3,6 +3,25 @@ import { useCallback, useEffect, useState } from "react";
 import { buildCsrfHeaders } from "../../components/csrf";
 import type { AdminTab, InlineFeedback } from "../types";
 
+const UNIVERSITY_BFF_BASE = "/api/bff/admin/university";
+
+function universityBffPath(path: string): string {
+  return `${UNIVERSITY_BFF_BASE}/${path}`;
+}
+
+function extractErrorDetail(errorBody: unknown, fallbackStatus: number): string {
+  if (errorBody && typeof errorBody === "object") {
+    const body = errorBody as { detail?: unknown; error?: { detail?: unknown } };
+    if (typeof body.detail === "string" && body.detail.trim().length > 0) {
+      return body.detail;
+    }
+    if (typeof body.error?.detail === "string" && body.error.detail.trim().length > 0) {
+      return body.error.detail;
+    }
+  }
+  return String(fallbackStatus);
+}
+
 export type UniversityEntity = "students" | "faculty" | "programs" | "courses" | "enrollments" | "records";
 
 const ENTITY_ENDPOINT: Record<UniversityEntity, string> = {
@@ -78,10 +97,9 @@ export function useAdminUniversity({
         setFeedback(null);
       }
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
         const endpoint = ENTITY_ENDPOINT[entity];
         const listKey = ENTITY_LIST_KEY[entity];
-        const res = await fetch(`${baseUrl}/admin/university/${endpoint}`, {
+        const res = await fetch(universityBffPath(endpoint), {
           headers: buildAuthHeaders(),
           credentials: "include",
           cache: "no-store",
@@ -91,7 +109,7 @@ export function useAdminUniversity({
           const err = await res.json().catch(() => ({}));
           setFeedback({
             tone: "error",
-            message: `Error: ${String(err.detail || res.status)}`,
+            message: `Error: ${extractErrorDetail(err, res.status)}`,
           });
           return;
         }
@@ -114,11 +132,10 @@ export function useAdminUniversity({
       setMutating(true);
       setFeedback(null);
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-        const csrfHeaders = await buildCsrfHeaders(baseUrl);
+        const csrfHeaders = await buildCsrfHeaders("/api");
         const endpoint = ENTITY_ENDPOINT[entity];
         const itemKey = ENTITY_ITEM_KEY[entity];
-        const res = await fetch(`${baseUrl}/admin/university/${endpoint}`, {
+        const res = await fetch(universityBffPath(endpoint), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -131,7 +148,7 @@ export function useAdminUniversity({
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          setFeedback({ tone: "error", message: `Error: ${String(err.detail || res.status)}` });
+          setFeedback({ tone: "error", message: `Error: ${extractErrorDetail(err, res.status)}` });
           return null;
         }
 
@@ -154,11 +171,10 @@ export function useAdminUniversity({
       setMutating(true);
       setFeedback(null);
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-        const csrfHeaders = await buildCsrfHeaders(baseUrl);
+        const csrfHeaders = await buildCsrfHeaders("/api");
         const endpoint = ENTITY_ENDPOINT[entity];
         const itemKey = ENTITY_ITEM_KEY[entity];
-        const res = await fetch(`${baseUrl}/admin/university/${endpoint}/${id}`, {
+        const res = await fetch(universityBffPath(`${endpoint}/${id}`), {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -171,7 +187,7 @@ export function useAdminUniversity({
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          setFeedback({ tone: "error", message: `Error: ${String(err.detail || res.status)}` });
+          setFeedback({ tone: "error", message: `Error: ${extractErrorDetail(err, res.status)}` });
           return null;
         }
 
@@ -194,10 +210,9 @@ export function useAdminUniversity({
       setMutating(true);
       setFeedback(null);
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-        const csrfHeaders = await buildCsrfHeaders(baseUrl);
+        const csrfHeaders = await buildCsrfHeaders("/api");
         const endpoint = ENTITY_ENDPOINT[entity];
-        const res = await fetch(`${baseUrl}/admin/university/${endpoint}/${id}`, {
+        const res = await fetch(universityBffPath(`${endpoint}/${id}`), {
           method: "DELETE",
           headers: {
             ...buildAuthHeaders(),
@@ -208,7 +223,7 @@ export function useAdminUniversity({
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          setFeedback({ tone: "error", message: `Error: ${String(err.detail || res.status)}` });
+          setFeedback({ tone: "error", message: `Error: ${extractErrorDetail(err, res.status)}` });
           return false;
         }
 

@@ -12,6 +12,7 @@ import { RequirePermission } from "@/shared/ui/permission-gate";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { formatDate } from "@/shared/utils/format";
 import { useAdminAuth } from "@/shared/auth/context";
+import { useLanguage } from "@/app/components/LanguageProvider";
 
 import { useAutomationExecutions } from "@/modules/platform/automation/use-executions";
 import type { AutomationExecution, AutomationExecutionStatus } from "@/modules/platform/automation/types";
@@ -20,109 +21,109 @@ import type { AutomationExecution, AutomationExecutionStatus } from "@/modules/p
 // Status badge helper
 // ---------------------------------------------------------------------------
 
-const STATUS_BADGE: Record<AutomationExecutionStatus, JSX.Element> = {
-  pending: <Badge variant="warning">Pending</Badge>,
-  completed: <Badge variant="success">Completed</Badge>,
-  failed: <Badge variant="destructive">Failed</Badge>,
-};
+function buildStatusBadge(t: (key: never) => string): Record<AutomationExecutionStatus, JSX.Element> {
+  return {
+    pending: <Badge variant="warning">{t("automation.executions.status.pending" as never)}</Badge>,
+    completed: <Badge variant="success">{t("automation.executions.status.completed" as never)}</Badge>,
+    failed: <Badge variant="destructive">{t("automation.executions.status.failed" as never)}</Badge>,
+  };
+}
 
-// ---------------------------------------------------------------------------
-// Filter fields
-// ---------------------------------------------------------------------------
-
-const FILTER_FIELDS = [
-  {
-    key: "status",
-    label: "Status",
-    type: "select" as const,
-    options: [
-      { label: "Pending", value: "pending" },
-      { label: "Completed", value: "completed" },
-      { label: "Failed", value: "failed" },
-    ],
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Columns
-// ---------------------------------------------------------------------------
-
-const COLUMNS: Column<AutomationExecution>[] = [
-  {
-    key: "id",
-    header: "ID",
-    width: "64px",
-    cell: (row) => <span className="tabular-nums text-xs text-muted-foreground">{row.id}</span>,
-    sortValue: (row) => row.id,
-  },
-  {
-    key: "rule_id",
-    header: "Rule ID",
-    width: "80px",
-    cell: (row) => <span className="tabular-nums text-xs">{row.rule_id}</span>,
-    sortValue: (row) => row.rule_id,
-  },
-  {
-    key: "event_id",
-    header: "Event ID",
-    width: "80px",
-    cell: (row) => <span className="tabular-nums text-xs">{row.event_id}</span>,
-    sortValue: (row) => row.event_id,
-  },
-  {
-    key: "status",
-    header: "Status",
-    width: "120px",
-    cell: (row) => STATUS_BADGE[row.status] ?? <Badge variant="outline">{row.status}</Badge>,
-    sortValue: (row) => row.status,
-  },
-  {
-    key: "executed_at",
-    header: "Executed At",
-    width: "160px",
-    cell: (row) => (
-      <span className="text-xs text-muted-foreground">{formatDate(row.executed_at)}</span>
-    ),
-    sortValue: (row) => row.executed_at,
-  },
-  {
-    key: "result",
-    header: "Result / Error",
-    cell: (row) => {
-      if (row.error_message) {
+function buildColumns(t: (key: never) => string): Column<AutomationExecution>[] {
+  const statusBadge = buildStatusBadge(t);
+  return [
+    {
+      key: "id",
+      header: "ID",
+      width: "64px",
+      cell: (row) => <span className="tabular-nums text-xs text-muted-foreground">{row.id}</span>,
+      sortValue: (row) => row.id,
+    },
+    {
+      key: "rule_id",
+      header: t("automation.executions.ruleId" as never),
+      width: "80px",
+      cell: (row) => <span className="tabular-nums text-xs">{row.rule_id}</span>,
+      sortValue: (row) => row.rule_id,
+    },
+    {
+      key: "event_id",
+      header: t("automation.executions.eventId" as never),
+      width: "80px",
+      cell: (row) => <span className="tabular-nums text-xs">{row.event_id}</span>,
+      sortValue: (row) => row.event_id,
+    },
+    {
+      key: "status",
+      header: t("students.filter.status" as never),
+      width: "120px",
+      cell: (row) => statusBadge[row.status] ?? <Badge variant="outline">{row.status}</Badge>,
+      sortValue: (row) => row.status,
+    },
+    {
+      key: "executed_at",
+      header: t("automation.executions.executedAt" as never),
+      width: "160px",
+      cell: (row) => (
+        <span className="text-xs text-muted-foreground">{formatDate(row.executed_at)}</span>
+      ),
+      sortValue: (row) => row.executed_at,
+    },
+    {
+      key: "result",
+      header: t("automation.executions.resultError" as never),
+      cell: (row) => {
+        if (row.error_message) {
+          return (
+            <span
+              className="text-xs text-destructive font-mono truncate max-w-xs block"
+              title={row.error_message}
+            >
+              {row.error_message}
+            </span>
+          );
+        }
+        const result = Object.keys(row.result_json ?? {}).length
+          ? JSON.stringify(row.result_json)
+          : "-";
         return (
           <span
-            className="text-xs text-destructive font-mono truncate max-w-xs block"
-            title={row.error_message}
+            className="text-xs text-muted-foreground font-mono truncate max-w-xs block"
+            title={result}
           >
-            {row.error_message}
+            {result}
           </span>
         );
-      }
-      const result = Object.keys(row.result_json ?? {}).length
-        ? JSON.stringify(row.result_json)
-        : "—";
-      return (
-        <span
-          className="text-xs text-muted-foreground font-mono truncate max-w-xs block"
-          title={result}
-        >
-          {result}
-        </span>
-      );
+      },
     },
-  },
-];
+  ];
+}
 
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 export default function AutomationExecutionsPage() {
+  const { t } = useLanguage();
   const { user } = useAdminAuth();
   const tenantId = user?.tenantId ?? 0;
   const { data, isLoading, isError, refetch } = useAutomationExecutions(tenantId);
   const [statusFilter, setStatusFilter] = useState("");
+
+  const filterFields = [
+    {
+      key: "status",
+      label: t("students.filter.status"),
+      type: "select" as const,
+      options: [
+        { label: t("automation.executions.status.pending"), value: "pending" },
+        { label: t("automation.executions.status.completed"), value: "completed" },
+        { label: t("automation.executions.status.failed"), value: "failed" },
+      ],
+    },
+  ];
+
+  const columns = buildColumns(t as never);
 
   const filtered =
     statusFilter && data ? data.filter((e) => e.status === statusFilter) : (data ?? []);
@@ -130,17 +131,17 @@ export default function AutomationExecutionsPage() {
   return (
     <RequirePermission
       permission={PERMISSIONS.AUTOMATION_READ}
-      message="You need automation.read permission to view execution logs."
+      message={t("automation.executions.permissionDenied")}
     >
       <div className="space-y-6" data-testid="automation-executions-page">
         <PageHeader
-          title="Execution Log"
-          description="Audit trail for all automation rule executions."
+          title={t("automation.executions.title")}
+          description={t("automation.executions.description")}
           icon={ClipboardList}
         />
 
         <FilterBar
-          fields={FILTER_FIELDS}
+          fields={filterFields}
           values={{ status: statusFilter }}
           onChange={(_key, value) => setStatusFilter(value)}
           onReset={() => setStatusFilter("")}
@@ -148,20 +149,20 @@ export default function AutomationExecutionsPage() {
 
         {isError && !isLoading && (
           <ErrorState
-            title="Failed to load execution log"
-            message="Could not fetch automation executions."
+            title={t("automation.executions.loadFailedTitle")}
+            message={t("automation.executions.loadFailedMessage")}
             onRetry={() => void refetch()}
           />
         )}
 
         {!isError && (
           <DataTable
-            columns={COLUMNS}
+            columns={columns}
             data={filtered}
             isLoading={isLoading}
             getRowKey={(row) => String(row.id)}
-            emptyTitle="No executions"
-            emptyDescription="Executions appear here once automation rules are triggered by events."
+            emptyTitle={t("automation.executions.emptyTitle")}
+            emptyDescription={t("automation.executions.emptyDescription")}
           />
         )}
       </div>

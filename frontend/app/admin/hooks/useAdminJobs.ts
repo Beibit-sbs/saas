@@ -3,6 +3,25 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildCsrfHeaders } from "../../components/csrf";
 import type { InlineFeedback, JobItem, TxFn } from "../types";
 
+const JOBS_BFF_BASE = "/api/bff/admin/jobs";
+
+function jobsBffPath(path = ""): string {
+  return `${JOBS_BFF_BASE}${path}`;
+}
+
+function extractErrorDetail(errorBody: unknown, fallbackStatus: number): string {
+  if (errorBody && typeof errorBody === "object") {
+    const body = errorBody as { detail?: unknown; error?: { detail?: unknown } };
+    if (typeof body.detail === "string" && body.detail.trim().length > 0) {
+      return body.detail;
+    }
+    if (typeof body.error?.detail === "string" && body.error.detail.trim().length > 0) {
+      return body.error.detail;
+    }
+  }
+  return String(fallbackStatus);
+}
+
 type UseAdminJobsParams = {
   activeTab: string;
   buildAuthHeaders: () => Record<string, string>;
@@ -37,9 +56,8 @@ export function useAdminJobs({
   const loadJobs = useCallback(async () => {
     setJobsLoading(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
       const query = jobsStatusFilter.trim() ? `?status=${encodeURIComponent(jobsStatusFilter.trim())}` : "";
-      const res = await fetch(`${baseUrl}/admin/jobs${query}`, {
+      const res = await fetch(`${jobsBffPath()}${query}`, {
         headers: buildAuthHeaders(),
         credentials: "include",
         cache: "no-store",
@@ -47,7 +65,7 @@ export function useAdminJobs({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setJobsFeedback({ tone: "error", message: `${tx("errorPrefix")}: ${err.detail || res.status}` });
+        setJobsFeedback({ tone: "error", message: `${tx("errorPrefix")}: ${extractErrorDetail(err, res.status)}` });
         return;
       }
 
@@ -65,9 +83,8 @@ export function useAdminJobs({
     setJobsMutating(true);
     setJobsFeedback(null);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/jobs`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(jobsBffPath(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -84,7 +101,7 @@ export function useAdminJobs({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setJobsFeedback({ tone: "error", message: `${tx("errorPrefix")}: ${err.detail || res.status}` });
+        setJobsFeedback({ tone: "error", message: `${tx("errorPrefix")}: ${extractErrorDetail(err, res.status)}` });
         return;
       }
 
@@ -101,9 +118,8 @@ export function useAdminJobs({
     setJobsMutating(true);
     setJobsFeedback(null);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/jobs/${jobId}/retry`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(jobsBffPath(`/${jobId}/retry`), {
         method: "POST",
         headers: {
           ...buildAuthHeaders(),
@@ -113,7 +129,7 @@ export function useAdminJobs({
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setJobsFeedback({ tone: "error", message: `${tx("errorPrefix")}: ${err.detail || res.status}` });
+        setJobsFeedback({ tone: "error", message: `${tx("errorPrefix")}: ${extractErrorDetail(err, res.status)}` });
         return;
       }
 
@@ -130,9 +146,8 @@ export function useAdminJobs({
     setJobsMutating(true);
     setJobsFeedback(null);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/jobs/${jobId}/cancel`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(jobsBffPath(`/${jobId}/cancel`), {
         method: "POST",
         headers: {
           ...buildAuthHeaders(),
@@ -142,7 +157,7 @@ export function useAdminJobs({
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setJobsFeedback({ tone: "error", message: `${tx("errorPrefix")}: ${err.detail || res.status}` });
+        setJobsFeedback({ tone: "error", message: `${tx("errorPrefix")}: ${extractErrorDetail(err, res.status)}` });
         return;
       }
 

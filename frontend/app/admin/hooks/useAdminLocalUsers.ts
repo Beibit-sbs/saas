@@ -3,6 +3,25 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildCsrfHeaders } from "../../components/csrf";
 import type { AdminCopy, InlineFeedback, LocalUser, SupportedLanguage, TxFn } from "../types";
 
+const LOCAL_USERS_BFF_BASE = "/api/bff/admin/local-users";
+
+function localUsersBffPath(path = ""): string {
+  return `${LOCAL_USERS_BFF_BASE}${path}`;
+}
+
+function extractErrorDetail(errorBody: unknown, fallbackStatus: number): string {
+  if (errorBody && typeof errorBody === "object") {
+    const body = errorBody as { detail?: unknown; error?: { detail?: unknown } };
+    if (typeof body.detail === "string" && body.detail.trim().length > 0) {
+      return body.detail;
+    }
+    if (typeof body.error?.detail === "string" && body.error.detail.trim().length > 0) {
+      return body.error.detail;
+    }
+  }
+  return String(fallbackStatus);
+}
+
 type LoadLocalUsersOverrides = {
   search?: string;
   role?: string;
@@ -150,7 +169,7 @@ export function useAdminLocalUsers({
       }
 
       const query = params.toString();
-      const endpoint = query ? `${baseUrl}/admin/local-users?${query}` : `${baseUrl}/admin/local-users`;
+      const endpoint = query ? `${localUsersBffPath()}?${query}` : localUsersBffPath();
       const res = await fetch(endpoint, {
         headers: buildAuthHeaders(),
         credentials: "include",
@@ -161,7 +180,7 @@ export function useAdminLocalUsers({
         const err = await res.json().catch(() => ({}));
         setLocalFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -184,9 +203,8 @@ export function useAdminLocalUsers({
 
     setLocalCreateBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/local-users`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(localUsersBffPath(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -210,7 +228,7 @@ export function useAdminLocalUsers({
         const err = await res.json().catch(() => ({}));
         setLocalFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -277,9 +295,8 @@ export function useAdminLocalUsers({
 
     setLocalUpdateBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/local-users/${encodeURIComponent(selectedLocalUserId)}`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(localUsersBffPath(`/${encodeURIComponent(selectedLocalUserId)}`), {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -301,7 +318,7 @@ export function useAdminLocalUsers({
         const err = await res.json().catch(() => ({}));
         setLocalFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -337,9 +354,8 @@ export function useAdminLocalUsers({
 
     setLocalPasswordBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/local-users/${encodeURIComponent(selectedLocalUserId)}/password`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(localUsersBffPath(`/${encodeURIComponent(selectedLocalUserId)}/password`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -354,7 +370,7 @@ export function useAdminLocalUsers({
         const err = await res.json().catch(() => ({}));
         setLocalFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }
@@ -388,9 +404,8 @@ export function useAdminLocalUsers({
 
     setLocalDeleteBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/local-users/${encodeURIComponent(selectedLocalUserId)}`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(localUsersBffPath(`/${encodeURIComponent(selectedLocalUserId)}`), {
         method: "DELETE",
         headers: {
           ...buildAuthHeaders(),
@@ -403,7 +418,7 @@ export function useAdminLocalUsers({
         const err = await res.json().catch(() => ({}));
         setLocalFeedback({
           tone: "error",
-          message: `${l.errorPrefix}: ${err.detail || res.status}`,
+          message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }

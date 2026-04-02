@@ -1,7 +1,7 @@
 export interface Job {
   id: string;
   job_type: string;
-  status: "queued" | "running" | "completed" | "failed" | "cancelled";
+  status: "queued" | "running" | "completed" | "succeeded" | "failed" | "cancelled";
   tenant_id: string | null;
   progress: number | null;
   error_message: string | null;

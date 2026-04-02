@@ -12,6 +12,7 @@ import { Calendar } from "lucide-react";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { AccessDenied } from "@/shared/ui/permission-gate";
+import { useLanguage } from "@/app/components/LanguageProvider";
 
 const FILTER_FIELDS = [
   { key: "semester", label: "Semester", type: "text" as const, placeholder: "e.g. 2024-spring" },
@@ -28,6 +29,7 @@ const FILTER_FIELDS = [
 ];
 
 export default function SchedulingPage() {
+  const { t } = useLanguage();
   const { hasPermission } = usePermissions();
   const table = useTableQueryState({ filterKeys: ["semester", "status"] as const, defaultPageSize: 20, defaultSort: { key: "semester", direction: "desc" } });
 
@@ -62,7 +64,7 @@ export default function SchedulingPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Scheduling" description="Course sections and schedules" icon={Calendar} />
+      <PageHeader title={t("nav.scheduling")} description={t("console.scheduling.description")} icon={Calendar} />
 
       <FilterBar
         fields={FILTER_FIELDS}

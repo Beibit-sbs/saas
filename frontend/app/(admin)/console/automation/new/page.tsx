@@ -289,6 +289,10 @@ export default function AutomationRuleNewPage() {
   };
 
   async function onSubmit(values: RuleFormValues) {
+    if (submitting || createRuleMutation.isPending) {
+      return;
+    }
+
     if (tenantId <= 0) {
       toast({
         title: "Failed to create rule",
@@ -490,6 +494,7 @@ export default function AutomationRuleNewPage() {
                     type="button"
                     variant="outline"
                     size="sm"
+                    disabled={submitting}
                     onClick={() =>
                       append({
                         type: "send_notification",
@@ -548,7 +553,7 @@ export default function AutomationRuleNewPage() {
             </Button>
             <Button
               type="submit"
-              disabled={submitting || !form.formState.isValid}
+              disabled={submitting || createRuleMutation.isPending || !form.formState.isValid}
             >
               {submitting ? "Creating..." : "Create Rule"}
             </Button>

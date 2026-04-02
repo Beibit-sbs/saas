@@ -209,7 +209,10 @@ export function AdminUniversityTab({
   return (
     <div className="grid2">
       <article className="panelCard">
-        <h2>University Core</h2>
+        <div className="sectionHeader">
+          <h2>University Core</h2>
+          <p className="subText">Switch entity, then manage records with contextual CRUD.</p>
+        </div>
         <p className="subText">Last refresh: {lastUpdated}{loading ? " · Loading..." : ""}</p>
         {feedback ? (
           <p className={`inlineFeedback inlineFeedback${feedback.tone === "error" ? "Error" : feedback.tone === "success" ? "Success" : "Info"}`}>
@@ -217,12 +220,12 @@ export function AdminUniversityTab({
           </p>
         ) : null}
 
-        <div className="badgeRow mt-2.5">
+        <div className="badgeRow subTabPills mt-2.5">
           {UNIVERSITY_ENTITIES.map((entity) => (
             <button
               key={entity}
               type="button"
-              className={`badge ${activeEntity === entity ? "badgeOk" : "badgeInfo"}`}
+              className={`badge subTabPill ${activeEntity === entity ? "badgeOk subTabPillActive" : "badgeInfo"}`}
               onClick={() => {
                 onEntityChange(entity);
                 setEditId(null);
@@ -243,7 +246,10 @@ export function AdminUniversityTab({
       </article>
 
       <article className="panelCard">
-        <h2>{config.label} CRUD</h2>
+        <div className="sectionHeader">
+          <h2>{config.label} CRUD</h2>
+          <p className="subText">{editId ? "Editing selected record" : "Create a new record"}</p>
+        </div>
         <div className="formGrid compactFormGrid">
           {config.fields.map((field) => (
             <label key={field.name} className="grid gap-1">
@@ -290,7 +296,10 @@ export function AdminUniversityTab({
       </article>
 
       <article className="panelCard col-span-2">
-        <h2>{config.label} Table</h2>
+        <div className="sectionHeader">
+          <h2>{config.label} Table</h2>
+          <p className="subText">Structured list with inline record actions.</p>
+        </div>
         {items.length === 0 ? (
           <p className="subText">No rows yet.</p>
         ) : (
@@ -310,7 +319,7 @@ export function AdminUniversityTab({
                     {visibleColumns.map((column) => (
                       <td key={column}>{String(item[column] ?? "-")}</td>
                     ))}
-                    <td>
+                    <td className="actionCell">
                       <div className="rowButtons">
                         <button type="button" className="ghost" onClick={() => startEdit(item)}>Edit</button>
                         <button

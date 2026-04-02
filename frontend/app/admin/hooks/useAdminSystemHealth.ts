@@ -1,20 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { AdminTab, InlineFeedback } from "../types";
+import type { AdminTab, InlineFeedback, SystemHealthResponse } from "../types";
 
-export type SystemHealthResponse = {
-  status: string;
-  services: Record<string, string>;
-  metrics: Record<string, string | number | boolean | null>;
-  queues: Record<string, string | number | boolean | null>;
-  disk: {
-    path: string;
-    total_bytes: number;
-    used_bytes: number;
-    free_bytes: number;
-    usage_percent: number;
-  };
-};
+function extractErrorDetail(errorBody: unknown, fallbackStatus: number): string {
+  if (errorBody && typeof errorBody === "object") {
+    const body = errorBody as { detail?: unknown; error?: { detail?: unknown } };
+    if (typeof body.detail === "string" && body.detail.trim().length > 0) {
+      return body.detail;
+    }
+    if (typeof body.error?.detail === "string" && body.error.detail.trim().length > 0) {
+      return body.error.detail;
+    }
+  }
+  return String(fallbackStatus);
+}
 
 type UseAdminSystemHealthParams = {
   activeTab: AdminTab;
@@ -42,8 +41,7 @@ export function useAdminSystemHealth({
     setLoading(true);
     setFeedback(null);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const res = await fetch(`${baseUrl}/admin/system/health`, {
+      const res = await fetch("/api/bff/admin/system/health", {
         headers: buildAuthHeaders(),
         credentials: "include",
         cache: "no-store",
@@ -53,7 +51,7 @@ export function useAdminSystemHealth({
         const err = await res.json().catch(() => ({}));
         setFeedback({
           tone: "error",
-          message: `Error: ${String(err.detail || res.status)}`,
+          message: `Error: ${extractErrorDetail(err, res.status)}`,
         });
         return;
       }

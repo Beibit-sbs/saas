@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { DataTable, Column } from "@/shared/ui/data-table";
 import { FilterBar } from "@/shared/ui/filter-bar";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { ConfirmActionDialog } from "@/shared/ui/confirm-action-dialog";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { DetailList } from "@/shared/ui/detail-list";
@@ -13,28 +16,23 @@ import { PermissionGate } from "@/shared/ui/permission-gate";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
-import { useTenants, useSuspendTenant, useActivateTenant } from "@/modules/platform/tenants/hooks";
+import { useTenants, useSuspendTenant, useActivateTenant, useCreateTenant } from "@/modules/platform/tenants/hooks";
 import { Tenant } from "@/modules/platform/tenants/types";
 import { formatDate, formatNumber } from "@/shared/utils/format";
+import { normalizeApiError } from "@/shared/utils/api-error";
 import { PERMISSIONS } from "@/shared/config/permissions";
+import { useLanguage } from "@/app/components/LanguageProvider";
 import { Building2, Plus } from "lucide-react";
 
-const FILTER_FIELDS = [
-  { key: "search", label: "Search", type: "text" as const, placeholder: "Name or slug…" },
-  {
-    key: "status",
-    label: "Status",
-    type: "select" as const,
-    options: [
-      { label: "Active", value: "active" },
-      { label: "Suspended", value: "suspended" },
-      { label: "Trial", value: "trial" },
-      { label: "Archived", value: "archived" },
-    ],
-  },
-];
-
 export default function TenantsPage() {
+  const { t } = useLanguage();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [slug, setSlug] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [plan, setPlan] = useState("1");
+  const [maxStudents, setMaxStudents] = useState("1000");
+  const [createError, setCreateError] = useState<string | null>(null);
+
   const table = useTableQueryState({ filterKeys: ["search", "status"] as const, defaultPageSize: 20, defaultSort: { key: "created", direction: "desc" } });
   const detail = useDetailDrawer({ paramKey: "tenant" });
   const { getHandlers } = useMutationFeedback();
@@ -48,24 +46,43 @@ export default function TenantsPage() {
 
   const suspend = useSuspendTenant();
   const activate = useActivateTenant();
-  const selectedTenant = data?.items.find((item) => item.id === detail.selectedId) ?? null;
+  const createTenant = useCreateTenant();
+  const rows = Array.isArray(data?.items) ? data.items : [];
+  const selectedTenant = rows.find((item) => item.id === detail.selectedId) ?? null;
+
+  const canCreate = slug.trim().length > 0 && displayName.trim().length > 0;
+
+  const filterFields = [
+    { key: "search", label: t("tenants.searchLabel"), type: "text" as const, placeholder: t("tenants.searchPlaceholder") },
+    {
+      key: "status",
+      label: t("tenants.statusLabel"),
+      type: "select" as const,
+      options: [
+        { label: t("tenants.status.active"), value: "active" },
+        { label: t("tenants.status.suspended"), value: "suspended" },
+        { label: t("tenants.status.trial"), value: "trial" },
+        { label: t("tenants.status.archived"), value: "archived" },
+      ],
+    },
+  ];
 
   if (error) {
-    return <ErrorState title="Failed to load tenants" onRetry={refetch} />;
+    return <ErrorState title={t("tenants.loadFailed")} onRetry={refetch} />;
   }
 
   const columns: Column<Tenant>[] = [
-    { key: "name", header: "Name", cell: (r) => <span className="font-medium">{r.display_name}</span>, sortValue: (r) => r.display_name.toLowerCase() },
-    { key: "slug", header: "Slug", cell: (r) => <code className="text-xs">{r.slug}</code>, sortValue: (r) => r.slug.toLowerCase() },
-    { key: "plan", header: "Plan", cell: (r) => r.plan, sortValue: (r) => r.plan.toLowerCase() },
-    { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} />, sortValue: (r) => r.status },
+    { key: "name", header: t("tenants.name"), cell: (r) => <span className="font-medium">{r.display_name}</span>, sortValue: (r) => r.display_name.toLowerCase() },
+    { key: "slug", header: t("tenants.slug"), cell: (r) => <code className="text-xs">{r.slug}</code>, sortValue: (r) => r.slug.toLowerCase() },
+    { key: "plan", header: t("tenants.plan"), cell: (r) => r.plan, sortValue: (r) => r.plan.toLowerCase() },
+    { key: "status", header: t("tenants.statusLabel"), cell: (r) => <StatusBadge status={r.status} />, sortValue: (r) => r.status },
     {
       key: "students",
-      header: "Students",
+      header: t("tenants.students"),
       cell: (r) => `${formatNumber(r.current_students)} / ${formatNumber(r.max_students)}`,
       sortValue: (r) => r.current_students,
     },
-    { key: "created", header: "Created", cell: (r) => formatDate(r.created_at), sortValue: (r) => r.created_at },
+    { key: "created", header: t("tenants.created"), cell: (r) => formatDate(r.created_at), sortValue: (r) => r.created_at },
     {
       key: "actions",
       header: "",
@@ -75,17 +92,17 @@ export default function TenantsPage() {
           <PermissionGate permission={PERMISSIONS.TENANTS_WRITE}>
             {r.status === "active" ? (
               <ConfirmActionDialog
-                title="Suspend tenant?"
-                description={`${r.display_name} will lose access immediately.`}
+                title={t("tenants.suspendConfirmTitle")}
+                description={t("tenants.suspendConfirmDescription").replace("{name}", r.display_name)}
                 variant="destructive"
                 onConfirm={() =>
                   suspend.mutate(r.id, {
-                    ...getHandlers({ successTitle: "Tenant suspended" }),
+                    ...getHandlers({ successTitle: t("tenants.suspended") }),
                   })
                 }
                 trigger={
                   <Button variant="outline" size="sm" disabled={suspend.isPending}>
-                    Suspend
+                    {t("tenants.suspend")}
                   </Button>
                 }
               />
@@ -96,11 +113,11 @@ export default function TenantsPage() {
                 disabled={activate.isPending}
                 onClick={() =>
                   activate.mutate(r.id, {
-                    ...getHandlers({ successTitle: "Tenant activated" }),
+                    ...getHandlers({ successTitle: t("tenants.activated") }),
                   })
                 }
               >
-                Activate
+                {t("tenants.activate")}
               </Button>
             )}
           </PermissionGate>
@@ -112,19 +129,27 @@ export default function TenantsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Tenants"
-        description="Manage platform tenants"
+        title={t("nav.tenants")}
+        description={t("console.tenants.description")}
         icon={Building2}
         actions={
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-1" />
-            New Tenant
-          </Button>
+          <PermissionGate permission={PERMISSIONS.TENANTS_WRITE}>
+            <Button
+              size="sm"
+              onClick={() => {
+                setCreateError(null);
+                setCreateOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              {t("tenants.new")}
+            </Button>
+          </PermissionGate>
         }
       />
 
       <FilterBar
-        fields={FILTER_FIELDS}
+        fields={filterFields}
         values={table.filters}
         onChange={table.setFilter}
         onReset={table.resetFilters}
@@ -132,7 +157,7 @@ export default function TenantsPage() {
 
       <DataTable
         columns={columns}
-        data={data?.items ?? []}
+        data={rows}
         isLoading={isLoading}
         getRowKey={(r) => r.id}
         pagination={{ page: table.page, pageSize: table.pageSize, total: data?.total ?? 0 }}
@@ -142,31 +167,131 @@ export default function TenantsPage() {
         sort={table.sort}
         onSortChange={table.setSort}
         onRowClick={(row) => detail.open(row.id)}
-        emptyTitle="No tenants found"
-        emptyDescription="Create the first tenant to get started."
+        emptyTitle={t("tenants.emptyTitle")}
+        emptyDescription={t("tenants.emptyDescription")}
       />
 
       <DrawerPanel
         open={detail.isOpen}
         onClose={detail.close}
-        title={selectedTenant?.display_name ?? "Tenant details"}
-        description={selectedTenant ? `Operational summary for ${selectedTenant.slug}` : "Select a tenant from the table."}
+        title={selectedTenant?.display_name ?? t("tenants.detailsTitle")}
+        description={selectedTenant ? t("tenants.operationalSummary").replace("{slug}", selectedTenant.slug) : t("tenants.selectFromTable")}
         width="md"
       >
         {selectedTenant ? (
           <DetailList
             items={[
-              { label: "Slug", value: <code className="text-xs">{selectedTenant.slug}</code> },
-              { label: "Status", value: <StatusBadge status={selectedTenant.status} /> },
-              { label: "Plan", value: selectedTenant.plan },
-              { label: "Student capacity", value: `${formatNumber(selectedTenant.current_students)} / ${formatNumber(selectedTenant.max_students)}` },
-              { label: "Created", value: formatDate(selectedTenant.created_at) },
-              { label: "Updated", value: formatDate(selectedTenant.updated_at) },
+              { label: t("tenants.slug"), value: <code className="text-xs">{selectedTenant.slug}</code> },
+              { label: t("tenants.statusLabel"), value: <StatusBadge status={selectedTenant.status} /> },
+              { label: t("tenants.plan"), value: selectedTenant.plan },
+              { label: t("tenants.studentCapacity"), value: `${formatNumber(selectedTenant.current_students)} / ${formatNumber(selectedTenant.max_students)}` },
+              { label: t("tenants.created"), value: formatDate(selectedTenant.created_at) },
+              { label: t("tenants.updated"), value: formatDate(selectedTenant.updated_at) },
             ]}
           />
         ) : (
-          <ErrorState title="Tenant not found" message="The selected tenant is not present on this page of results." />
+          <ErrorState title={t("tenants.notFound")} message={t("tenants.notFoundDescription")} />
         )}
+      </DrawerPanel>
+
+      <DrawerPanel
+        open={createOpen}
+        onClose={() => {
+          setCreateError(null);
+          setCreateOpen(false);
+        }}
+        title={t("tenants.createTitle")}
+        description={t("tenants.createDescription")}
+        width="md"
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="tenant-slug">{t("tenants.slug")}</Label>
+            <Input
+              id="tenant-slug"
+              value={slug}
+              onChange={(event) => {
+                setSlug(event.target.value);
+                if (createError) setCreateError(null);
+              }}
+              placeholder="new-tenant"
+            />
+            {createError && <p className="text-xs text-destructive">{createError}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="tenant-name">{t("tenants.displayName")}</Label>
+            <Input
+              id="tenant-name"
+              value={displayName}
+              onChange={(event) => {
+                setDisplayName(event.target.value);
+                if (createError) setCreateError(null);
+              }}
+              placeholder={t("tenants.new")}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="tenant-plan">{t("tenants.plan")}</Label>
+            <Input
+              id="tenant-plan"
+              value={plan}
+              onChange={(event) => {
+                setPlan(event.target.value);
+                if (createError) setCreateError(null);
+              }}
+              placeholder="1"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="tenant-max-students">{t("tenants.maxStudents")}</Label>
+            <Input
+              id="tenant-max-students"
+              value={maxStudents}
+              onChange={(event) => {
+                setMaxStudents(event.target.value);
+                if (createError) setCreateError(null);
+              }}
+              placeholder="1000"
+            />
+          </div>
+
+          <PermissionGate permission={PERMISSIONS.TENANTS_WRITE}>
+            <Button
+              disabled={!canCreate || createTenant.isPending}
+              onClick={() =>
+                createTenant.mutate(
+                  {
+                    slug: slug.trim(),
+                    display_name: displayName.trim(),
+                    plan: plan.trim() || "1",
+                    max_students: Number(maxStudents) || 1000,
+                  },
+                  {
+                    ...getHandlers({ successTitle: t("tenants.createdSuccess") }),
+                    onSuccess: () => {
+                      setCreateError(null);
+                      setCreateOpen(false);
+                      setSlug("");
+                      setDisplayName("");
+                      setPlan("1");
+                      setMaxStudents("1000");
+                    },
+                    onError: (error) => {
+                      getHandlers({ successTitle: t("tenants.createdSuccess") }).onError(error);
+                      const normalized = normalizeApiError(error);
+                      setCreateError(normalized.message);
+                    },
+                  },
+                )
+              }
+            >
+              {t("tenants.createAction")}
+            </Button>
+          </PermissionGate>
+        </div>
       </DrawerPanel>
     </div>
   );

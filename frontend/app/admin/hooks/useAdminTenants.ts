@@ -3,6 +3,25 @@ import { useCallback, useEffect, useState } from "react";
 import { buildCsrfHeaders } from "../../components/csrf";
 import type { AdminTab, InlineFeedback } from "../types";
 
+const TENANTS_BFF_BASE = "/api/bff/admin/tenants";
+
+function tenantsBffPath(path = ""): string {
+  return `${TENANTS_BFF_BASE}${path}`;
+}
+
+function extractErrorDetail(errorBody: unknown, fallbackStatus: number): string {
+  if (errorBody && typeof errorBody === "object") {
+    const body = errorBody as { detail?: unknown; error?: { detail?: unknown } };
+    if (typeof body.detail === "string" && body.detail.trim().length > 0) {
+      return body.detail;
+    }
+    if (typeof body.error?.detail === "string" && body.error.detail.trim().length > 0) {
+      return body.error.detail;
+    }
+  }
+  return String(fallbackStatus);
+}
+
 export type Tenant = {
   id: number;
   slug: string;
@@ -45,15 +64,14 @@ export function useAdminTenants({
       setFeedback(null);
     }
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const res = await fetch(`${baseUrl}/admin/tenants`, {
+      const res = await fetch(tenantsBffPath(), {
         headers: buildAuthHeaders(),
         credentials: "include",
         cache: "no-store",
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setFeedback({ tone: "error", message: `Error: ${String((err as Record<string, unknown>).detail || res.status)}` });
+        setFeedback({ tone: "error", message: `Error: ${extractErrorDetail(err, res.status)}` });
         return;
       }
       const json = (await res.json()) as { tenants: Tenant[] };
@@ -77,9 +95,8 @@ export function useAdminTenants({
       setMutating(true);
       setFeedback(null);
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-        const csrfHeaders = await buildCsrfHeaders(baseUrl);
-        const res = await fetch(`${baseUrl}/admin/tenants`, {
+        const csrfHeaders = await buildCsrfHeaders("/api");
+        const res = await fetch(tenantsBffPath(), {
           method: "POST",
           headers: { "Content-Type": "application/json", ...buildAuthHeaders(), ...csrfHeaders },
           credentials: "include",
@@ -87,7 +104,7 @@ export function useAdminTenants({
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          setFeedback({ tone: "error", message: `Error: ${String((err as Record<string, unknown>).detail || res.status)}` });
+          setFeedback({ tone: "error", message: `Error: ${extractErrorDetail(err, res.status)}` });
           return null;
         }
         const json = (await res.json()) as { tenant: Tenant };
@@ -109,9 +126,8 @@ export function useAdminTenants({
       setMutating(true);
       setFeedback(null);
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-        const csrfHeaders = await buildCsrfHeaders(baseUrl);
-        const res = await fetch(`${baseUrl}/admin/tenants/${id}`, {
+        const csrfHeaders = await buildCsrfHeaders("/api");
+        const res = await fetch(tenantsBffPath(`/${id}`), {
           method: "PUT",
           headers: { "Content-Type": "application/json", ...buildAuthHeaders(), ...csrfHeaders },
           credentials: "include",
@@ -119,7 +135,7 @@ export function useAdminTenants({
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          setFeedback({ tone: "error", message: `Error: ${String((err as Record<string, unknown>).detail || res.status)}` });
+          setFeedback({ tone: "error", message: `Error: ${extractErrorDetail(err, res.status)}` });
           return null;
         }
         const json = (await res.json()) as { tenant: Tenant };
@@ -141,16 +157,15 @@ export function useAdminTenants({
       setMutating(true);
       setFeedback(null);
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-        const csrfHeaders = await buildCsrfHeaders(baseUrl);
-        const res = await fetch(`${baseUrl}/admin/tenants/${id}`, {
+        const csrfHeaders = await buildCsrfHeaders("/api");
+        const res = await fetch(tenantsBffPath(`/${id}`), {
           method: "DELETE",
           headers: { ...buildAuthHeaders(), ...csrfHeaders },
           credentials: "include",
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          setFeedback({ tone: "error", message: `Error: ${String((err as Record<string, unknown>).detail || res.status)}` });
+          setFeedback({ tone: "error", message: `Error: ${extractErrorDetail(err, res.status)}` });
           return false;
         }
         setFeedback({ tone: "success", message: "Tenant deactivated" });

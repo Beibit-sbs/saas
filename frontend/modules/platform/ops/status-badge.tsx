@@ -9,6 +9,7 @@ const LABELS: Record<OpsStatus, string> = {
   healthy: "Healthy",
   degraded: "Degraded",
   critical: "Critical",
+  skipped: "Skipped",
   unknown: "Unknown",
 };
 
@@ -16,6 +17,7 @@ const VARIANTS: Record<OpsStatus, "success" | "warning" | "destructive" | "secon
   healthy: "success",
   degraded: "warning",
   critical: "destructive",
+  skipped: "secondary",
   unknown: "secondary",
 };
 

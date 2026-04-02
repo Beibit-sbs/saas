@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Code2, KeyRound, PlugZap, Activity } from "lucide-react";
+import { Code2, KeyRound, PlugZap, Activity, Loader2 } from "lucide-react";
 
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { Badge } from "@/shared/ui/badge";
@@ -12,6 +12,7 @@ import { Input } from "@/shared/ui/input";
 import { PageHeader } from "@/shared/ui/page-header";
 import { RequirePermission } from "@/shared/ui/permission-gate";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { useLanguage } from "@/app/components/LanguageProvider";
 import {
   useCreateDeveloperApp,
   useDeveloperAppInstallations,
@@ -20,6 +21,7 @@ import {
 } from "@/modules/platform/developer/use-developer";
 
 export default function DeveloperAppsPage() {
+  const { t } = useLanguage();
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
@@ -37,26 +39,29 @@ export default function DeveloperAppsPage() {
   return (
     <RequirePermission
       permission={PERMISSIONS.DEVELOPER_PLATFORM_READ}
-      message="You need developer platform read permission to access this panel."
+      message={t("developer.permissionDenied")}
     >
       <div className="space-y-6" data-testid="developer-apps-page">
         <PageHeader
-          title="Developer Apps"
-          description="Manage public API clients, installations, and usage visibility for external integrations."
+          title={t("developer.title")}
+          description={t("developer.description")}
           icon={Code2}
         />
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="rounded-lg border bg-card p-4 space-y-3 lg:col-span-1" data-testid="developer-app-create-panel">
-            <p className="text-sm font-medium">Create Developer App</p>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="App name" />
-            <Input value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} placeholder="owner@company.com" />
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" />
-            <Input value={scopes} onChange={(e) => setScopes(e.target.value)} placeholder="students.read,analytics.read" />
+            <p className="text-sm font-medium">{t("developer.createTitle")}</p>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("developer.appName")} disabled={createApp.isPending} />
+            <Input value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} placeholder="owner@company.com" disabled={createApp.isPending} />
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("developer.descriptionShort")} disabled={createApp.isPending} />
+            <Input value={scopes} onChange={(e) => setScopes(e.target.value)} placeholder="students.read,analytics.read" disabled={createApp.isPending} />
             <Button
               data-testid="developer-app-create-btn"
               disabled={!name.trim() || !ownerEmail.trim() || createApp.isPending}
               onClick={async () => {
+                if (createApp.isPending) {
+                  return;
+                }
                 const created = await createApp.mutateAsync({
                   name: name.trim(),
                   owner_email: ownerEmail.trim(),
@@ -70,19 +75,28 @@ export default function DeveloperAppsPage() {
                 setDescription("");
               }}
             >
-              <KeyRound className="mr-2 h-4 w-4" />
-              Create App
+              {createApp.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {`${t("developer.createAction")}...`}
+                </>
+              ) : (
+                <>
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  {t("developer.createAction")}
+                </>
+              )}
             </Button>
             {latestSecret && (
               <div className="rounded border p-3 text-xs" data-testid="developer-app-secret-box">
-                <p className="font-medium">Latest secret</p>
+                <p className="font-medium">{t("developer.latestSecret")}</p>
                 <p className="font-mono break-all mt-1">{latestSecret}</p>
               </div>
             )}
           </div>
 
           <div className="rounded-lg border bg-card p-4 space-y-3 lg:col-span-2">
-            <p className="text-sm font-medium">Registered Apps</p>
+            <p className="text-sm font-medium">{t("developer.registeredApps")}</p>
 
             <div className="space-y-2" data-testid="developer-app-list">
               {apps.isLoading ? (
@@ -92,11 +106,11 @@ export default function DeveloperAppsPage() {
                   <Skeleton className="h-16 w-full" />
                 </div>
               ) : apps.isError ? (
-                <ErrorState title="Failed to load developer apps" onRetry={() => void apps.refetch()} />
+                <ErrorState title={t("developer.loadAppsFailed")} onRetry={() => void apps.refetch()} />
               ) : (apps.data ?? []).length === 0 ? (
                 <EmptyState
-                  title="No developer apps yet"
-                  description="Create the first developer app to start external integrations."
+                  title={t("developer.emptyAppsTitle")}
+                  description={t("developer.emptyAppsDescription")}
                 />
               ) : (
                 (apps.data ?? []).map((app) => (
@@ -128,7 +142,7 @@ export default function DeveloperAppsPage() {
             <div className="rounded-lg border bg-card p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <PlugZap className="h-4 w-4 text-muted-foreground" />
-                <p className="font-medium">Installations</p>
+                <p className="font-medium">{t("developer.installations")}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {selectedApp.scopes.map((scope) => (
@@ -141,13 +155,13 @@ export default function DeveloperAppsPage() {
                   <Skeleton className="h-12 w-full" />
                 </div>
               ) : installations.isError ? (
-                <ErrorState title="Failed to load installations" onRetry={() => void installations.refetch()} />
+                <ErrorState title={t("developer.loadInstallationsFailed")} onRetry={() => void installations.refetch()} />
               ) : (
                 <div className="space-y-2" data-testid="developer-app-installations">
                   {(installations.data ?? []).length === 0 ? (
                     <EmptyState
-                      title="No installations"
-                      description="This app has not been installed into any tenant yet."
+                      title={t("developer.emptyInstallationsTitle")}
+                      description={t("developer.emptyInstallationsDescription")}
                     />
                   ) : (
                     (installations.data ?? []).map((item) => (
@@ -164,7 +178,7 @@ export default function DeveloperAppsPage() {
             <div className="rounded-lg border bg-card p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-muted-foreground" />
-                <p className="font-medium">API Usage Logs</p>
+                <p className="font-medium">{t("developer.apiUsageLogs")}</p>
               </div>
               {logs.isLoading ? (
                 <div className="space-y-2" aria-label="Loading logs">
@@ -172,13 +186,13 @@ export default function DeveloperAppsPage() {
                   <Skeleton className="h-14 w-full" />
                 </div>
               ) : logs.isError ? (
-                <ErrorState title="Failed to load API logs" onRetry={() => void logs.refetch()} />
+                <ErrorState title={t("developer.loadLogsFailed")} onRetry={() => void logs.refetch()} />
               ) : (
                 <div className="space-y-2" data-testid="developer-app-logs">
                   {(logs.data ?? []).length === 0 ? (
                     <EmptyState
-                      title="No API usage logs"
-                      description="Usage records will appear after the first API calls from this app."
+                      title={t("developer.emptyLogsTitle")}
+                      description={t("developer.emptyLogsDescription")}
                     />
                   ) : (
                     (logs.data ?? []).map((item) => (

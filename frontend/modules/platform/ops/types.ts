@@ -1,4 +1,4 @@
-export type OpsStatus = "healthy" | "degraded" | "critical" | "unknown";
+export type OpsStatus = "healthy" | "degraded" | "critical" | "skipped" | "unknown";
 
 export interface HealthApiResponse {
   status: string;

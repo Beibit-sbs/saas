@@ -22,6 +22,35 @@ vi.mock("../../shared/ui/permission-gate", () => ({
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
 }));
 
+vi.mock("../../app/components/LanguageProvider", () => ({
+  useLanguage: () => ({
+    t: (key: string) => {
+      const dict: Record<string, string> = {
+        "developer.title": "Developer Apps",
+        "developer.description": "Manage public API clients",
+        "developer.createTitle": "Create Developer App",
+        "developer.appName": "App name",
+        "developer.descriptionShort": "Description",
+        "developer.createAction": "Create App",
+        "developer.latestSecret": "Latest secret",
+        "developer.registeredApps": "Registered Apps",
+        "developer.loadAppsFailed": "Failed to load developer apps",
+        "developer.emptyAppsTitle": "No developer apps yet",
+        "developer.emptyAppsDescription": "Create the first developer app to start external integrations.",
+        "developer.installations": "Installations",
+        "developer.loadInstallationsFailed": "Failed to load installations",
+        "developer.emptyInstallationsTitle": "No installations",
+        "developer.emptyInstallationsDescription": "This app has not been installed into any tenant yet.",
+        "developer.apiUsageLogs": "API Usage Logs",
+        "developer.loadLogsFailed": "Failed to load API logs",
+        "developer.emptyLogsTitle": "No API usage logs",
+        "developer.emptyLogsDescription": "Usage records will appear after the first API calls from this app.",
+      };
+      return dict[key] ?? key;
+    },
+  }),
+}));
+
 describe("DeveloperAppsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();

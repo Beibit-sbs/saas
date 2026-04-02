@@ -9,19 +9,41 @@ import { AccessDenied } from "@/shared/ui/permission-gate";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { useHealthStatus, useMetrics } from "@/modules/platform/health/hooks";
+import { useLanguage } from "@/app/components/LanguageProvider";
 import { Activity, Zap, Clock, AlertCircle } from "lucide-react";
 
+type ServiceRow = {
+  name: string;
+  status: string;
+  latency_ms: number | null;
+  details: string | null;
+};
+
 export default function HealthPage() {
+  const { t } = useLanguage();
   const { hasPermission } = usePermissions();
   const { data: health, isLoading: healthLoading, error, refetch } = useHealthStatus();
   const { data: metrics, isLoading: metricsLoading } = useMetrics();
+
+  const services: ServiceRow[] = Array.isArray(health?.services)
+    ? health.services
+    : health
+      ? [
+        {
+          name: String(health.service ?? "api"),
+          status: String(health.status ?? "unknown"),
+          latency_ms: null,
+          details: null,
+        },
+      ]
+      : [];
 
   if (!hasPermission(PERMISSIONS.HEALTH_READ)) return <AccessDenied />;
   if (error) return <ErrorState title="Failed to load health data" onRetry={refetch} />;
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Health & Metrics" description="Platform operational status" icon={Activity} />
+      <PageHeader title={t("nav.healthMetrics")} description={t("console.health.description")} icon={Activity} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
@@ -58,9 +80,13 @@ export default function HealthPage() {
               <Skeleton key={i} className="h-14 rounded-lg" />
             ))}
           </div>
+        ) : services.length === 0 ? (
+          <div className="rounded-lg border bg-card px-4 py-6 text-sm text-muted-foreground">
+            No service health details are available.
+          </div>
         ) : (
           <div className="rounded-lg border bg-card divide-y">
-            {health?.services.map((svc) => (
+            {services.map((svc) => (
               <div key={svc.name} className="flex items-center justify-between px-4 py-3">
                 <div>
                   <p className="font-medium text-sm">{svc.name}</p>

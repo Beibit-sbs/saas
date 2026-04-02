@@ -71,7 +71,9 @@ export function AdminBackupsTab({
   return (
     <div className="grid2">
       <article className="panelCard">
-        <h2>{tx("backupPlan")}</h2>
+        <div className="sectionHeader">
+          <h2>{tx("backupPlan")}</h2>
+        </div>
         <p className="subText">{tx("backupHelp")}</p>
         <p className="subText"><b>{tx("allowedRoots")}:</b> {backupAllowedRoots.join(", ") || "-"}</p>
         {backupFeedback ? (
@@ -86,7 +88,7 @@ export function AdminBackupsTab({
           </button>
         </div>
 
-        <div className="formGrid compactFormGrid">
+        <div className="formGrid compactFormGrid filterGrid">
           <select value={backupActiveProfile} onChange={(e) => onBackupActiveProfileChange(e.target.value)}>
             {backupProfilesForm.map((profile) => (
               <option key={profile.id} value={profile.id}>{profile.label} ({profile.id})</option>
@@ -116,8 +118,10 @@ export function AdminBackupsTab({
           <button type="button" onClick={() => void onRunBackupNow()} className="ghost" disabled={backupActionsBusy}>{tx("runBackupNow")}</button>
         </div>
 
-        <hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "14px 0" }} />
-        <h3>{tx("retentionTitle")}</h3>
+        <div className="panelSection">
+          <div className="sectionHeader">
+            <h3>{tx("retentionTitle")}</h3>
+          </div>
         <p className="subText">{tx("retentionHelp")}</p>
         <div className="formGrid compactFormGrid">
           <input type="number" min={0} value={retentionDays} onChange={(e) => onRetentionDaysChange(e.target.value)} placeholder={tx("retentionDays")} />
@@ -127,9 +131,12 @@ export function AdminBackupsTab({
           <button type="button" className="ghost" onClick={() => void onApplyRetention(true)} disabled={backupActionsBusy}>{tx("retentionDryRun")}</button>
           <button type="button" className="ghost danger" onClick={() => void onApplyRetention(false)} disabled={backupActionsBusy}>{tx("retentionApply")}</button>
         </div>
+        </div>
 
-        <hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "14px 0" }} />
-        <h3>{tx("restoreTitle")}</h3>
+        <div className="panelSection">
+        <div className="sectionHeader">
+          <h3>{tx("restoreTitle")}</h3>
+        </div>
         <p className="subText">{tx("restoreHelp")}</p>
         <div className="formGrid compactFormGrid">
           <select value={restoreProfileId} onChange={(e) => onRestoreProfileIdChange(e.target.value)}>
@@ -172,7 +179,7 @@ export function AdminBackupsTab({
                     <td>{candidate.file_name}</td>
                     <td>{formatBytes(candidate.size_bytes)}</td>
                     <td>{formatAuditTimestamp(candidate.modified_at)}</td>
-                    <td>
+                    <td className="actionCell">
                       <button type="button" className="ghost" onClick={() => onRestoreFileNameChange(candidate.file_name)} disabled={backupActionsBusy}>{tx("backupSelectForRestore")}</button>
                     </td>
                   </tr>
@@ -181,10 +188,13 @@ export function AdminBackupsTab({
             </table>
           </div>
         )}
+        </div>
       </article>
 
       <article className="panelCard">
-        <h2>{tx("backupHistory")}</h2>
+        <div className="sectionHeader">
+          <h2>{tx("backupHistory")}</h2>
+        </div>
         <div className="rowMeta">
           <span className="subText">{tx("backupHistorySummaryAvailable").replace("{count}", String(backupSummaryCount))}</span>
           <span className="subText">{tx("backupHistorySummaryLatest").replace("{value}", formatAuditTimestamp(backupSummaryLatest))}</span>

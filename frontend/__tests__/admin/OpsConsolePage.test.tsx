@@ -25,6 +25,23 @@ vi.mock("../../shared/ui/permission-gate", () => ({
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
 }));
 
+vi.mock("../../app/components/LanguageProvider", () => ({
+  useLanguage: () => ({
+    t: (key: string) => {
+      const dict: Record<string, string> = {
+        "nav.platformOps": "Platform Ops Console",
+        "console.ops.description": "Live reliability and operations telemetry",
+        "ops.health.overallHealth": "Overall Health",
+        "ops.health.workerNotRequired": "Not required in this environment",
+        "ops.unableToLoadSignals": "Unable to load ops signals",
+        "ops.retry": "Retry",
+        "ops.partialDataMode": "Partial data mode",
+      };
+      return dict[key] ?? key;
+    },
+  }),
+}));
+
 const HEALTH_DATA = {
   overall: "healthy" as const,
   api: "healthy" as const,
@@ -161,5 +178,21 @@ describe("OpsConsolePage", () => {
     expect(screen.getByTestId("ops-health-section")).toBeInTheDocument();
     expect(screen.getByText(/partial data mode/i)).toBeInTheDocument();
     expect(screen.getByText(/latency: Request failed/i)).toBeInTheDocument();
+  });
+
+  it("renders skipped worker state with helper text", () => {
+    useOpsHealthMock.mockReturnValue({
+      data: {
+        ...HEALTH_DATA,
+        worker: "skipped" as const,
+      },
+      isLoading: false,
+      isFetching: false,
+      refetch: vi.fn(),
+    });
+
+    render(<OpsConsolePage />);
+    expect(screen.getByText("Skipped")).toBeInTheDocument();
+    expect(screen.getByText("Not required in this environment")).toBeInTheDocument();
   });
 });

@@ -1,6 +1,9 @@
 import type { ApiError } from "./types";
 import { emitBackendUnavailable, emitSessionInvalid } from "@/shared/auth/session-events";
 
+const REQUEST_TIMEOUT_MS = 10_000;
+const API_DEBUG = process.env.NEXT_PUBLIC_API_DEBUG === "1";
+
 export class ApiRequestError extends Error {
   status: number;
   code?: string;
@@ -28,7 +31,97 @@ function buildHeaders(extra?: Record<string, string>): Record<string, string> {
   };
 }
 
-async function parseResponse<T>(res: Response): Promise<T> {
+async function fetchWithTimeout(input: string, init: RequestInit, signal?: AbortSignal): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let onAbort: (() => void) | undefined;
+  if (signal) {
+    if (signal.aborted) {
+      clearTimeout(timeoutId);
+      controller.abort();
+    } else {
+      onAbort = () => controller.abort();
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
+  }
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`Request timeout after ${REQUEST_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+    if (signal && onAbort) {
+      signal.removeEventListener("abort", onAbort);
+    }
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function extractError(body: unknown, status: number): ApiError {
+  if (isRecord(body)) {
+    const detail = body.detail;
+    if (typeof detail === "string" && detail.trim().length > 0) {
+      return {
+        status,
+        detail,
+        code: typeof body.code === "string" ? body.code : undefined,
+      };
+    }
+
+    const nestedError = body.error;
+    if (isRecord(nestedError)) {
+      const nestedDetail = nestedError.detail;
+      if (typeof nestedDetail === "string" && nestedDetail.trim().length > 0) {
+        return {
+          status,
+          detail: nestedDetail,
+          code: typeof nestedError.code === "string" ? nestedError.code : undefined,
+        };
+      }
+    }
+  }
+
+  return {
+    status,
+    detail: `HTTP ${status}`,
+  };
+}
+
+function shouldEmitBackendUnavailable(path: string, status: number): boolean {
+  if (status !== 503) return false;
+  // Ops console regularly tolerates partial data; avoid global noisy toasts for these probes.
+  return !(
+    path.startsWith("/health")
+    || path.startsWith("/metrics")
+    || path.startsWith("/api/bff/health")
+    || path.startsWith("/api/bff/metrics")
+  );
+}
+
+function debugApiError(payload: {
+  requestPath: string;
+  status: number;
+  body: unknown;
+  mapped: ApiError;
+}) {
+  if (!API_DEBUG) return;
+  try {
+    // Temporary incident diagnostics: capture raw + mapped error payload in browser console.
+    console.error("[api-debug:error]", JSON.stringify(payload));
+  } catch {
+    console.error("[api-debug:error]", payload);
+  }
+}
+
+async function parseResponse<T>(res: Response, requestPath: string): Promise<T> {
   if (res.status === 204) return undefined as unknown as T;
 
   let body: unknown;
@@ -39,18 +132,20 @@ async function parseResponse<T>(res: Response): Promise<T> {
   }
 
   if (!res.ok) {
+    const mapped = extractError(body, res.status);
+    debugApiError({
+      requestPath,
+      status: res.status,
+      body,
+      mapped,
+    });
     if (res.status === 401) {
       emitSessionInvalid({ status: res.status });
     }
-    if (res.status === 503) {
+    if (shouldEmitBackendUnavailable(requestPath, res.status)) {
       emitBackendUnavailable({ status: res.status });
     }
-    const err = body as Partial<ApiError>;
-    throw new ApiRequestError({
-      status: res.status,
-      detail: err.detail ?? String(body),
-      code: err.code,
-    });
+    throw new ApiRequestError(mapped);
   }
 
   return body as T;
@@ -70,51 +165,49 @@ export async function apiGet<T>(
       }
     }
   }
-  const res = await fetch(url.pathname + url.search, {
+  const res = await fetchWithTimeout(url.pathname + url.search, {
     method: "GET",
     headers: buildHeaders(),
     credentials: "include",
-    signal,
-  });
-  return parseResponse<T>(res);
+  }, signal);
+  return parseResponse<T>(res, bffPath);
 }
 
 export async function apiPost<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(mapToBffPath(path), {
+  const res = await fetchWithTimeout(mapToBffPath(path), {
     method: "POST",
     headers: buildHeaders(),
     credentials: "include",
     body: body !== undefined ? JSON.stringify(body) : undefined,
-    signal,
-  });
-  return parseResponse<T>(res);
+  }, signal);
+  return parseResponse<T>(res, path);
 }
 
 export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(mapToBffPath(path), {
+  const res = await fetchWithTimeout(mapToBffPath(path), {
     method: "PUT",
     headers: buildHeaders(),
     credentials: "include",
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  return parseResponse<T>(res);
+  return parseResponse<T>(res, path);
 }
 
 export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(mapToBffPath(path), {
+  const res = await fetchWithTimeout(mapToBffPath(path), {
     method: "PATCH",
     headers: buildHeaders(),
     credentials: "include",
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  return parseResponse<T>(res);
+  return parseResponse<T>(res, path);
 }
 
 export async function apiDelete<T = void>(path: string): Promise<T> {
-  const res = await fetch(mapToBffPath(path), {
+  const res = await fetchWithTimeout(mapToBffPath(path), {
     method: "DELETE",
     headers: buildHeaders(),
     credentials: "include",
   });
-  return parseResponse<T>(res);
+  return parseResponse<T>(res, path);
 }

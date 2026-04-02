@@ -3,6 +3,25 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildCsrfHeaders } from "../../components/csrf";
 import type { AdminCopy, BackupJob, BackupProfile, InlineFeedback, RestoreCandidate, TxFn } from "../types";
 
+const BACKUPS_BFF_BASE = "/api/bff/admin/backups";
+
+function backupsBffPath(path = ""): string {
+  return `${BACKUPS_BFF_BASE}${path}`;
+}
+
+function extractErrorDetail(errorBody: unknown, fallbackStatus: number): string {
+  if (errorBody && typeof errorBody === "object") {
+    const body = errorBody as { detail?: unknown; error?: { detail?: unknown } };
+    if (typeof body.detail === "string" && body.detail.trim().length > 0) {
+      return body.detail;
+    }
+    if (typeof body.error?.detail === "string" && body.error.detail.trim().length > 0) {
+      return body.error.detail;
+    }
+  }
+  return String(fallbackStatus);
+}
+
 type UseAdminBackupsParams = {
   activeTab: string;
   buildAuthHeaders: () => Record<string, string>;
@@ -84,14 +103,13 @@ export function useAdminBackups({
       setBackupFeedback(null);
     }
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
       const [settingsRes, historyRes] = await Promise.all([
-        fetch(`${baseUrl}/admin/backups/settings`, {
+        fetch(backupsBffPath("/settings"), {
           headers: buildAuthHeaders(),
           credentials: "include",
           cache: "no-store",
         }),
-        fetch(`${baseUrl}/admin/backups/history`, {
+        fetch(backupsBffPath("/history"), {
           headers: buildAuthHeaders(),
           credentials: "include",
           cache: "no-store",
@@ -146,9 +164,8 @@ export function useAdminBackups({
     }
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
       const res = await fetch(
-        `${baseUrl}/admin/backups/restore-candidates?profile_id=${encodeURIComponent(targetProfile)}`,
+        `${backupsBffPath("/restore-candidates")}?profile_id=${encodeURIComponent(targetProfile)}`,
         {
           headers: buildAuthHeaders(),
           credentials: "include",
@@ -158,7 +175,7 @@ export function useAdminBackups({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setBackupFeedback({ tone: "error", message: `${l.errorPrefix}: ${err.detail || res.status}` });
+        setBackupFeedback({ tone: "error", message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}` });
         return;
       }
 
@@ -199,9 +216,8 @@ export function useAdminBackups({
 
     setBackupRestoreBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/backups/restore`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(backupsBffPath("/restore"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -219,7 +235,7 @@ export function useAdminBackups({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setBackupFeedback({ tone: "error", message: `${l.errorPrefix}: ${err.detail || res.status}` });
+        setBackupFeedback({ tone: "error", message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}` });
         return;
       }
 
@@ -261,9 +277,8 @@ export function useAdminBackups({
   const saveBackupProfiles = useCallback(async () => {
     setBackupFeedback(null);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/backups/settings`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(backupsBffPath("/settings"), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -280,7 +295,7 @@ export function useAdminBackups({
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setBackupFeedback({ tone: "error", message: `${l.errorPrefix}: ${err.detail || res.status}` });
+        setBackupFeedback({ tone: "error", message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}` });
         return;
       }
 
@@ -306,9 +321,8 @@ export function useAdminBackups({
 
     setBackupRetentionBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/backups/retention/apply`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(backupsBffPath("/retention/apply"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -324,7 +338,7 @@ export function useAdminBackups({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setBackupFeedback({ tone: "error", message: `${l.errorPrefix}: ${err.detail || res.status}` });
+        setBackupFeedback({ tone: "error", message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}` });
         return;
       }
 
@@ -353,9 +367,8 @@ export function useAdminBackups({
     setBackupFeedback(null);
     setBackupRunBusy(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      const csrfHeaders = await buildCsrfHeaders(baseUrl);
-      const res = await fetch(`${baseUrl}/admin/backups/run`, {
+      const csrfHeaders = await buildCsrfHeaders("/api");
+      const res = await fetch(backupsBffPath("/run"), {
         method: "POST",
         headers: {
           ...buildAuthHeaders(),
@@ -365,7 +378,7 @@ export function useAdminBackups({
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setBackupFeedback({ tone: "error", message: `${l.errorPrefix}: ${err.detail || res.status}` });
+        setBackupFeedback({ tone: "error", message: `${l.errorPrefix}: ${extractErrorDetail(err, res.status)}` });
         return;
       }
 
