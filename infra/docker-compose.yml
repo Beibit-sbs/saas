@@ -53,6 +53,50 @@ services:
       timeout: 5s
       retries: 10
 
+  scheduler:
+    build:
+      context: ../backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET}
+      API_BASE_URL: ${API_BASE_URL}
+      ADMIN_PANEL_URL: ${ADMIN_PANEL_URL}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+      INTEGRATIONS_ENCRYPTION_KEY: ${INTEGRATIONS_ENCRYPTION_KEY}
+      BACKUP_DEFAULT_PROFILE: "${BACKUP_DEFAULT_PROFILE:-local}"
+      BACKUP_ALLOWED_ROOTS: "${BACKUP_ALLOWED_ROOTS:-/tmp/app-backups,/var/backups/app}"
+      BACKUP_PROFILES_JSON: "${BACKUP_PROFILES_JSON:-[{\"id\":\"local\",\"label\":\"Local backup volume\",\"path\":\"/tmp/app-backups/local\"}]}"
+      RBAC_ALLOW_DEV_FALLBACK: "${RBAC_ALLOW_DEV_FALLBACK:-false}"
+      AUTH_CSRF_PROTECTION_ENABLED: "${AUTH_CSRF_PROTECTION_ENABLED:-true}"
+    command:
+      - sh
+      - -lc
+      - |
+        echo "scheduler loop started"
+        python -u -c "from app.platform.jobs.scheduler import scheduler; scheduler.run_forever(poll_interval_seconds=5.0)"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "from datetime import datetime, timezone; from app.core.config import get_ops_scheduler_stale_seconds; from app.platform.runtime_state import get_scheduler_last_run; s=get_scheduler_last_run(); at=(s or {}).get('at') if isinstance(s, dict) else None; dt=datetime.fromisoformat(at) if at else None; age=(datetime.now(timezone.utc)-dt).total_seconds() if dt else 1e9; raise SystemExit(0 if age <= get_ops_scheduler_stale_seconds() else 1)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    volumes:
+      - backup_data:/tmp/app-backups
+
   frontend:
     build:
       context: ../frontend

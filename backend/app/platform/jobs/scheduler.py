@@ -13,7 +13,7 @@ from app.platform.context import service as context_service
 from app.platform.events.worker import outbox_worker
 from app.platform.jobs.worker import worker
 from app.platform.kpi import service as kpi_service
-from app.platform.runtime_state import record_scheduler_run, record_worker_heartbeat
+from app.platform.runtime_state import record_scheduler_run
 from app.platform.uow import UnitOfWork
 from app.platform.webhooks.dispatcher import webhook_dispatcher
 
@@ -86,7 +86,6 @@ class PlatformWorkerScheduler:
             finally:
                 item.last_run_at = now
                 record_scheduler_run(item.name)
-                record_worker_heartbeat()
 
         return {"triggered": triggered, "succeeded": succeeded, "failed": failed}
 
