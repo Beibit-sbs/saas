@@ -32,6 +32,7 @@ from app.modules.auth.mfa_service import clear_mfa_state
 from app.modules.auth.session_service import clear_sessions_state
 from app.modules.auth.token_service import create_access_token
 from app.modules.backup import service as backup_service
+from app.modules.billing import service as billing_service
 from app.modules.feature_flags import service as feature_flags_service
 from app.modules.i18n import service as i18n_service
 from app.modules.integrations import service as integrations_service
@@ -154,6 +155,7 @@ def _reset_template_state() -> None:
     ai_service.clear_ai_gateway_state()
     audit_service.clear_audit_events()
     backup_service._backup_history.clear()
+    billing_service.clear_billing_state()
     jobs_service.clear_jobs_state()
     usage_service.clear_usage_state()
     integrations_service._settings.clear()

@@ -198,13 +198,10 @@ class LocalUserStore:
         if normalized_login in self._users_by_login:
             raise HTTPException(status_code=409, detail="login already exists")
 
-        try:
-            from app.modules.quotas.service import check_quota
+        from app.modules.billing.service import assert_billing_write_allowed, assert_quota_with_increment
 
-            check_quota(normalized_tenant_id, "users")
-        except Exception:
-            # Quotas are soft-enforced in this phase and must never block.
-            pass
+        assert_billing_write_allowed(normalized_tenant_id, action="local_users.create")
+        assert_quota_with_increment(normalized_tenant_id, "users", increment=1)
 
         self._counter += 1
         user_id = f"local.{self._counter:03d}"
@@ -242,6 +239,8 @@ class LocalUserStore:
         roles: List[str] | None = None,
     ) -> dict[str, object]:
         self._load_once()
+        from app.modules.billing.service import assert_billing_write_allowed
+
         normalized_user_id = user_id.strip()
         user = self._users_by_id.get(normalized_user_id)
         if user is None:
@@ -249,6 +248,8 @@ class LocalUserStore:
         user_tenant_id = _require_tenant_id(user.get("tenant_id"), operation="local_user_update")
         if user_tenant_id != int(tenant_id):
             raise HTTPException(status_code=404, detail="local user not found")
+
+        assert_billing_write_allowed(int(tenant_id), action="local_users.update")
 
         changed = False
         if display_name is not None:
@@ -277,6 +278,8 @@ class LocalUserStore:
 
     def delete_user(self, user_id: str, tenant_id: int) -> bool:
         self._load_once()
+        from app.modules.billing.service import assert_billing_write_allowed
+
         normalized_user_id = user_id.strip()
         user = self._users_by_id.get(normalized_user_id)
         if user is None:
@@ -284,6 +287,8 @@ class LocalUserStore:
         user_tenant_id = _require_tenant_id(user.get("tenant_id"), operation="local_user_delete")
         if user_tenant_id != int(tenant_id):
             raise HTTPException(status_code=404, detail="local user not found")
+
+        assert_billing_write_allowed(int(tenant_id), action="local_users.delete")
 
         user = self._users_by_id.pop(normalized_user_id, None)
         if user is None:
@@ -297,6 +302,8 @@ class LocalUserStore:
 
     def set_password(self, user_id: str, password: str, tenant_id: int) -> None:
         self._load_once()
+        from app.modules.billing.service import assert_billing_write_allowed
+
         normalized_user_id = user_id.strip()
         user = self._users_by_id.get(normalized_user_id)
         if user is None:
@@ -304,6 +311,8 @@ class LocalUserStore:
         user_tenant_id = _require_tenant_id(user.get("tenant_id"), operation="local_user_password_set")
         if user_tenant_id != int(tenant_id):
             raise HTTPException(status_code=404, detail="local user not found")
+
+        assert_billing_write_allowed(int(tenant_id), action="local_users.set_password")
 
         normalized_password = password.strip()
         if len(normalized_password) < 6:

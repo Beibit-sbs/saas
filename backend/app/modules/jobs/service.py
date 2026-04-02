@@ -481,12 +481,10 @@ def enqueue_job(
     normalized_tenant_id = _normalize_tenant_id(tenant_id)
     _ensure_tenant_exists(normalized_tenant_id)
 
-    try:
-        from app.modules.quotas.service import check_quota
+    from app.modules.billing.service import assert_billing_write_allowed, assert_quota_with_increment
 
-        check_quota(normalized_tenant_id, "jobs_per_day")
-    except Exception:
-        pass
+    assert_billing_write_allowed(normalized_tenant_id, action="jobs.enqueue")
+    assert_quota_with_increment(normalized_tenant_id, "jobs_per_day", increment=1)
 
     normalized_job_type = _normalize_job_type(job_type)
     safe_payload = _to_json_safe(payload)

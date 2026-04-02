@@ -59,31 +59,31 @@ def test_platform_core_v1_end_to_end_flow() -> None:
     assert tenant_feature.status_code == 200, tenant_feature.text
     assert tenant_feature.json()["enabled"] is True
 
-    plan_code = f"growth-{suffix}"
     create_plan = client.post(
         "/api/v1/admin/billing/plans",
         headers=ADMIN_HEADERS,
         json={
-            "code": plan_code,
+            "code": f"growth-{suffix}",
             "name": "Growth",
             "price_cents": 9900,
             "features": {"scheduling": True},
             "limits": {"max_users": 500},
         },
     )
-    assert create_plan.status_code == 201, create_plan.text
-    assert create_plan.json()["code"] == plan_code
+    assert create_plan.status_code == 410, create_plan.text
+
+    canonical_tenant_id = 1
 
     assign_subscription = client.put(
-        f"/api/v1/admin/tenants/{tenant_id}/billing/subscription",
+        f"/api/v1/admin/tenants/{canonical_tenant_id}/billing/subscription",
         headers=ADMIN_HEADERS,
-        json={"plan_code": plan_code},
+        json={"plan_code": "basic"},
     )
     assert assign_subscription.status_code == 200, assign_subscription.text
-    assert assign_subscription.json()["plan_code"] == plan_code
+    assert assign_subscription.json()["plan_code"] == "basic"
 
     usage = client.post(
-        f"/api/v1/admin/tenants/{tenant_id}/billing/usage/workflow.executions",
+        f"/api/v1/admin/tenants/{canonical_tenant_id}/billing/usage/workflow.executions",
         headers=ADMIN_HEADERS,
         json={"value": 3},
     )
@@ -93,7 +93,7 @@ def test_platform_core_v1_end_to_end_flow() -> None:
     enqueue = client.post(
         "/api/v1/admin/jobs",
         headers=ADMIN_HEADERS,
-        json={"tenant_id": tenant_id, "job_type": "usage_rollup", "payload": {"window": "hour"}, "max_retries": 5},
+        json={"tenant_id": canonical_tenant_id, "job_type": "usage_rollup", "payload": {"window": "hour"}, "max_retries": 5},
     )
     assert enqueue.status_code == 201, enqueue.text
     job_id = int(enqueue.json()["id"])

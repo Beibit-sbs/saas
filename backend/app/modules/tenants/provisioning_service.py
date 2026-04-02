@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.modules.audit.service import log_admin_action
+from app.modules.billing.service import ensure_tenant_subscription
 from app.modules.backup.service import save_backup_settings
 from app.modules.feature_flags.service import list_flags
 from app.modules.integrations.service import save_setting
@@ -118,6 +119,12 @@ class TenantProvisioningService:
                     "retention_min_files": 3,
                 },
                 tenant_id=tenant_id,
+            )
+
+            ensure_tenant_subscription(
+                tenant_id,
+                plan_code=str(plan.get("code", "free")),
+                status="trial",
             )
 
             log_admin_action(

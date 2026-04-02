@@ -12,6 +12,7 @@ from threading import Lock
 from typing import Any, Protocol
 
 import httpx
+from fastapi import HTTPException
 
 from app.modules.integrations.service import get_ai_provider_runtime_config
 from app.modules.integrations.service import get_global_runtime_value
@@ -1321,10 +1322,21 @@ def execute_chat(
     except ValueError as exc:
         raise AIGatewayError(status_code=400, detail=str(exc), audit_reason="invalid_payload") from exc
 
-    try:
-        from app.modules.quotas.service import check_quota
+    from app.modules.billing.service import (
+        assert_billing_write_allowed,
+        assert_quota_with_increment,
+    )
 
-        check_quota(normalized_tenant_id, "ai_requests_per_day")
+    try:
+        assert_billing_write_allowed(normalized_tenant_id, action="ai_gateway.execute_chat")
+        assert_quota_with_increment(normalized_tenant_id, "ai_requests_per_day", increment=1)
+    except HTTPException as exc:
+        raise AIGatewayError(status_code=exc.status_code, detail=str(exc.detail), audit_reason="quota_exceeded") from exc
+
+    try:
+        from app.modules.usage.service import record_usage_event
+
+        record_usage_event(normalized_tenant_id, "ai_requests", 1)
     except Exception:
         pass
 
@@ -1453,13 +1465,6 @@ def execute_chat(
         failure_reason=None,
         correlation_id=correlation_id,
     )
-
-    try:
-        from app.modules.usage.service import record_usage_event
-
-        record_usage_event(normalized_tenant_id, "ai_requests", 1)
-    except Exception:
-        pass
 
     return {
         "model": model_key,
