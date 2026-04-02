@@ -17,7 +17,6 @@ from datetime import UTC, datetime
 from typing import Any, Optional
 
 from sqlalchemy import and_, desc, func, select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.module_helpers.audit_helpers import build_audit_action
@@ -819,8 +818,8 @@ class StageTransitionService:
 
             if not decision:
                 raise ValueError(
-                    f"Cannot transition to CONCLUDED without a decision. "
-                    f"Create decision first via make_decision()."
+                    "Cannot transition to CONCLUDED without a decision. "
+                    "Create decision first via make_decision()."
                 )
 
         # Create history record (append-only)

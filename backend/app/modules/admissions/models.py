@@ -30,7 +30,6 @@ from sqlalchemy import (
     Index,
     String,
     SmallInteger,
-    Text,
     UniqueConstraint,
     text,
 )
@@ -38,7 +37,6 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
-from app.modules.tenants.models import TenantModel
 
 
 class ApplicantModel(Base):
