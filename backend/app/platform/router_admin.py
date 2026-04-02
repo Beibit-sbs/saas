@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.modules.audit.service import log_admin_action
-from app.modules.rbac.security import get_actor, resolve_current_user_claims
+from app.modules.rbac.security import get_actor, permission_dependency, resolve_current_user_claims
 from app.modules.tenants.service import get_tenant
 from app.platform.analytics import service as analytics_service
 from app.platform.analytics.schemas import AnalyticsEventProjectionListSchema, AnalyticsEventProjectionRead, TenantKpiSnapshotRead
@@ -90,10 +90,27 @@ router = APIRouter(prefix="/api/v1/admin", tags=["platform-core-admin"])
 
 
 Actor = Annotated[str, Depends(get_actor)]
+SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+
+_platform_admin_read_dependency = permission_dependency("platform.admin.read")
+_platform_admin_write_dependency = permission_dependency("platform.admin.write")
+
+
+async def _require_platform_admin_permissions(
+    request: Request,
+    _: Annotated[None, Depends(_platform_admin_read_dependency)],
+) -> None:
+    if request.method.upper() in SAFE_METHODS:
+        return
+    await _platform_admin_write_dependency(request)
 
 
 def _require_request_tenant_id(request: Request) -> int:
     claims = resolve_current_user_claims(request, request.headers.get("authorization"))
+    token_tenant_id = int(claims.tenant_id)
+    if token_tenant_id <= 0:
+        raise HTTPException(status_code=403, detail="invalid tenant context")
+
     header_tenant_id = request.headers.get("x-tenant-id")
     if header_tenant_id is not None:
         try:
@@ -102,17 +119,25 @@ def _require_request_tenant_id(request: Request) -> int:
             raise HTTPException(status_code=400, detail="invalid tenant header") from exc
         if tenant_id <= 0:
             raise HTTPException(status_code=400, detail="invalid tenant header")
-        tenant = get_tenant(tenant_id)
-        if tenant is None:
-            raise HTTPException(status_code=404, detail=f"Tenant {tenant_id} not found")
-        if tenant.get("status") != "active":
-            raise HTTPException(status_code=403, detail=f"Tenant {tenant_id} is not active")
-        return tenant_id
+        if tenant_id != token_tenant_id:
+            raise HTTPException(status_code=403, detail="cross-tenant override forbidden")
 
-    tenant_id = int(claims.tenant_id)
-    if tenant_id <= 0:
-        raise HTTPException(status_code=403, detail="invalid tenant context")
-    return tenant_id
+    tenant = get_tenant(token_tenant_id)
+    if tenant is None:
+        raise HTTPException(status_code=404, detail=f"Tenant {token_tenant_id} not found")
+    if tenant.get("status") != "active":
+        raise HTTPException(status_code=403, detail=f"Tenant {token_tenant_id} is not active")
+    return token_tenant_id
+
+
+router.dependencies.append(Depends(_require_platform_admin_permissions))
+router.dependencies.append(Depends(_require_request_tenant_id))
+
+
+def _enforce_target_tenant_match(request: Request, target_tenant_id: int) -> None:
+    request_tenant_id = _require_request_tenant_id(request)
+    if int(target_tenant_id) != int(request_tenant_id):
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
 
 
 def _audit(request: Request, actor: str, action: str, tenant_id: int, metadata: dict[str, object] | None = None) -> None:
@@ -315,9 +340,7 @@ def create_webhook_subscription(payload: WebhookSubscriptionCreateSchema, reques
 
 @router.get("/tenants/{tenant_id}/webhooks/subscriptions", response_model=list[WebhookSubscriptionReadSchema])
 def list_webhook_subscriptions(tenant_id: int, request: Request, _actor: Actor) -> list[WebhookSubscriptionReadSchema]:
-    request_tenant = request.headers.get("x-tenant-id")
-    if request_tenant is not None and int(request_tenant) != int(tenant_id):
-        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    _enforce_target_tenant_match(request, tenant_id)
     rows = webhooks_service.webhook_service.list_subscriptions(tenant_id=tenant_id, limit=200)
     return [WebhookSubscriptionReadSchema.model_validate(item) for item in rows]
 
@@ -356,9 +379,7 @@ def list_analytics_events(
     event_type: str | None = None,
     limit: int = 100,
 ) -> AnalyticsEventProjectionListSchema:
-    request_tenant = request.headers.get("x-tenant-id")
-    if request_tenant is not None and int(request_tenant) != int(tenant_id):
-        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    _enforce_target_tenant_match(request, tenant_id)
 
     with UnitOfWork() as uow:
         items = analytics_service.list_event_projections(
@@ -388,9 +409,7 @@ def get_latest_analytics_kpis(
 
 @router.get("/skills", response_model=list[SkillReadSchema])
 def list_skills(tenant_id: int, request: Request, _actor: Actor) -> list[SkillReadSchema]:
-    request_tenant = request.headers.get("x-tenant-id")
-    if request_tenant is not None and int(request_tenant) != int(tenant_id):
-        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    _enforce_target_tenant_match(request, tenant_id)
     with UnitOfWork() as uow:
         rows = education_graph_service.list_skills(tenant_id=tenant_id, uow=uow)
     return [SkillReadSchema.model_validate(item) for item in rows]
@@ -398,9 +417,7 @@ def list_skills(tenant_id: int, request: Request, _actor: Actor) -> list[SkillRe
 
 @router.post("/skills", response_model=SkillReadSchema, status_code=201)
 def create_skill(body: SkillCreateSchema, actor: Actor, request: Request) -> SkillReadSchema:
-    request_tenant = request.headers.get("x-tenant-id")
-    if request_tenant is not None and int(request_tenant) != int(body.tenant_id):
-        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    _enforce_target_tenant_match(request, int(body.tenant_id))
     with UnitOfWork() as uow:
         row = education_graph_service.create_skill(
             tenant_id=body.tenant_id,
@@ -428,9 +445,7 @@ def list_course_skills(
     _actor: Actor,
     course_id: str | None = None,
 ) -> list[CourseSkillReadSchema]:
-    request_tenant = request.headers.get("x-tenant-id")
-    if request_tenant is not None and int(request_tenant) != int(tenant_id):
-        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    _enforce_target_tenant_match(request, tenant_id)
     with UnitOfWork() as uow:
         rows = education_graph_service.list_course_skills(
             tenant_id=tenant_id,
@@ -442,9 +457,7 @@ def list_course_skills(
 
 @router.post("/course-skills", response_model=CourseSkillReadSchema, status_code=201)
 def create_course_skill(body: CourseSkillCreateSchema, actor: Actor, request: Request) -> CourseSkillReadSchema:
-    request_tenant = request.headers.get("x-tenant-id")
-    if request_tenant is not None and int(request_tenant) != int(body.tenant_id):
-        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+    _enforce_target_tenant_match(request, int(body.tenant_id))
     try:
         with UnitOfWork() as uow:
             row = education_graph_service.map_course_skill(
