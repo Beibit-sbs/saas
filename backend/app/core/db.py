@@ -9,6 +9,8 @@ from typing import Generator
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
+from app.core.config import get_db_connect_options
+
 logger = logging.getLogger(__name__)
 
 class Base(DeclarativeBase):
@@ -56,6 +58,7 @@ def build_engine(
         max_overflow=max_overflow,
         pool_pre_ping=True,
         pool_timeout=pool_timeout,
+        connect_args={"connect_timeout": 5, "options": get_db_connect_options()},
     )
 
 

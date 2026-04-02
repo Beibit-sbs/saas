@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.core.config import get_db_connect_options
 from app.platform.analytics.repository import AnalyticsRepository
 from app.platform.ai.repository import AiCopilotRepository
 from app.platform.ai.recommendations.repository import AiRecommendationRepository
@@ -13,7 +14,7 @@ from app.platform.automation.templates.repository import AutomationTemplateRepos
 from app.platform.context.repository import SHARED_CONTEXT_REPOSITORY, ContextRepository
 from app.platform.kpi.repository import KpiRepository
 from app.platform.repository.billing_repository import BillingRepository
-from app.platform.repository.db import db_available, db_url, ensure_platform_core_schema
+from app.platform.repository.db import db_available, db_url
 from app.platform.repository.feature_flag_repository import FeatureFlagRepository
 from app.platform.events.repository import OutboxEventRepository
 from app.platform.idempotency.repository import IdempotencyRepository
@@ -81,8 +82,7 @@ class UnitOfWork:
 
     def __enter__(self) -> UnitOfWork:
         if db_available() and db_url() and psycopg is not None:
-            self.conn = psycopg.connect(db_url(), connect_timeout=5)
-            ensure_platform_core_schema(self.conn)
+            self.conn = psycopg.connect(db_url(), connect_timeout=5, options=get_db_connect_options())
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:

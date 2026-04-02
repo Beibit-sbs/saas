@@ -21,6 +21,7 @@ from app.core.config import (
     is_production_mode,
     validate_required_environment,
 )
+from app.core.runtime_schema import bootstrap_runtime_schema
 
 from app.modules.admin.router import router as admin_router
 from app.modules.admin.local_users_router import router as admin_local_users_router
@@ -116,6 +117,8 @@ async def lifespan(fastapi_app: FastAPI):
     # Tests use in-memory stores; env validation is verified by a dedicated test.
     if not os.getenv("PYTEST_CURRENT_TEST"):
         validate_required_environment()
+
+    bootstrap_runtime_schema()
 
     # Wire the admissions SQLAlchemy session factory.
     # build_engine() raises RuntimeError when DATABASE_URL is absent; we catch it

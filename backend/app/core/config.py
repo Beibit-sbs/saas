@@ -1,7 +1,15 @@
 import os
 import json
+from contextlib import contextmanager
+from contextvars import ContextVar, Token
 from urllib.parse import urlparse
 import hmac
+
+
+_runtime_schema_bootstrap_scope: ContextVar[bool] = ContextVar(
+    "runtime_schema_bootstrap_scope",
+    default=False,
+)
 
 
 def is_enabled(value: str | None) -> bool:
@@ -26,8 +34,34 @@ def get_ai_provider_status() -> dict[str, bool]:
 
 
 def is_runtime_schema_bootstrap_enabled() -> bool:
-    # Operational default: schema is managed only by Alembic migrations.
-    return is_enabled(os.getenv("RUNTIME_SCHEMA_BOOTSTRAP_ENABLED", "false"))
+    # Runtime DDL is allowed only inside the explicit startup/bootstrap scope.
+    # Default stays enabled for startup compatibility until all bootstrap DDL is
+    # fully migrated to Alembic, but regular request paths never enter the scope.
+    return is_enabled(os.getenv("RUNTIME_SCHEMA_BOOTSTRAP_ENABLED", "true")) and _runtime_schema_bootstrap_scope.get()
+
+
+@contextmanager
+def runtime_schema_bootstrap_scope():
+    token: Token[bool] = _runtime_schema_bootstrap_scope.set(True)
+    try:
+        yield
+    finally:
+        _runtime_schema_bootstrap_scope.reset(token)
+
+
+def get_db_statement_timeout_ms() -> int:
+    return _int_env("DB_STATEMENT_TIMEOUT_MS", 30000, minimum=1000, maximum=300000)
+
+
+def get_db_idle_in_transaction_session_timeout_ms() -> int:
+    return _int_env("DB_IDLE_IN_TRANSACTION_SESSION_TIMEOUT_MS", 60000, minimum=1000, maximum=600000)
+
+
+def get_db_connect_options() -> str:
+    return (
+        f"-c statement_timeout={get_db_statement_timeout_ms()} "
+        f"-c idle_in_transaction_session_timeout={get_db_idle_in_transaction_session_timeout_ms()}"
+    )
 
 
 def get_auth_access_token_ttl_minutes() -> int:

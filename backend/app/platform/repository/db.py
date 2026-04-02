@@ -5,6 +5,8 @@ import os
 from threading import Lock
 from typing import Iterator
 
+from app.core.config import get_db_connect_options
+
 try:
     import psycopg
 except ImportError:  # pragma: no cover
@@ -35,9 +37,8 @@ def transaction() -> Iterator[object]:
         yield _MEMORY_TX
         return
 
-    with psycopg.connect(url, connect_timeout=5) as conn:
+    with psycopg.connect(url, connect_timeout=5, options=get_db_connect_options()) as conn:
         try:
-            ensure_platform_core_schema(conn)
             yield conn
             conn.commit()
         except Exception:
