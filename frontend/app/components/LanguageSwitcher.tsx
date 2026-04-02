@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 
 import { useLanguage } from "./LanguageProvider";
 
-const selectableUiLanguages = new Set(["kk", "ru", "en"]);
+type LanguageSwitcherProps = {
+  variant?: "overlay" | "inline";
+};
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ variant = "overlay" }: LanguageSwitcherProps) {
   const { language, setLanguage, supportedLanguages, t } = useLanguage();
   const [pendingLanguage, setPendingLanguage] = useState(language);
 
@@ -16,28 +18,35 @@ export default function LanguageSwitcher() {
 
   const hasChanges = pendingLanguage !== language;
 
+  const wrapperStyle = variant === "overlay"
+    ? {
+      position: "fixed" as const,
+      left: 20,
+      bottom: 20,
+      zIndex: 1000,
+      background: "white",
+      border: "1px solid #d8dbe2",
+      borderRadius: 10,
+      padding: "8px 10px",
+      boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+      fontSize: 13,
+    }
+    : {
+      display: "inline-flex" as const,
+      alignItems: "center" as const,
+      gap: 6,
+      fontSize: 13,
+    };
+
   return (
-    <label
-      style={{
-        position: "fixed",
-        left: 20,
-        bottom: 20,
-        zIndex: 1000,
-        background: "white",
-        border: "1px solid #d8dbe2",
-        borderRadius: 10,
-        padding: "8px 10px",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-        fontSize: 13,
-      }}
-    >
+    <label style={wrapperStyle}>
       {t("ui.language")}: {" "}
       <select
         value={pendingLanguage}
         onChange={(e) => setPendingLanguage(e.target.value)}
         className="rounded-md border border-border px-1.5 py-0.5"
       >
-        {supportedLanguages.filter((lang) => selectableUiLanguages.has(lang.code)).map((lang) => (
+        {supportedLanguages.filter((lang) => lang.enabled).map((lang) => (
           <option key={lang.code} value={lang.code}>
             {lang.native_name || lang.name || lang.code}
           </option>
