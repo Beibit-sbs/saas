@@ -29,15 +29,17 @@ describe("AuthProvider", () => {
   it("bootstraps current user from cookie-backed profile endpoint", async () => {
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.endsWith("/api/auth/me/profile")) {
+      if (url.endsWith("/api/auth/me")) {
         expect(init).toEqual(expect.objectContaining({ credentials: "include", cache: "no-store" }));
         return Promise.resolve(
           new Response(
             JSON.stringify({
-              user_id: "local.001",
-              display_name: "Cookie User",
-              roles: ["admin"],
-              language: "ru",
+              authenticated: true,
+              user: {
+                sub: "local.001",
+                displayName: "Cookie User",
+                roles: ["admin"],
+              },
             }),
             { status: 200 },
           ),
@@ -65,7 +67,7 @@ describe("AuthProvider", () => {
   it("logs in via cookie-first flow without persisting access token in localStorage", async () => {
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.endsWith("/api/auth/me/profile")) {
+      if (url.endsWith("/api/auth/me")) {
         return Promise.resolve(new Response(JSON.stringify({ detail: "unauthorized" }), { status: 401 }));
       }
       if (url.endsWith("/api/auth/login")) {

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 const API_BASE =
   process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+const UPSTREAM_TIMEOUT_MS = 8000;
+const BFF_DEBUG = process.env.BFF_DEBUG === "1";
 
 const HOP_BY_HOP_HEADERS = new Set([
   "connection",
@@ -27,6 +29,10 @@ function toUpstreamPath(pathParts: string[]): string {
   ) {
     return `/${normalized}`;
   }
+  // platform-core admin routes are under /api/v1/admin on the backend
+  if (normalized.startsWith("admin/platform/")) {
+    return `/api/v1/${normalized}`;
+  }
   return `/api/${normalized}`;
 }
 
@@ -41,10 +47,36 @@ function normalizeError(status: number, detail: string, requestId: string | null
   };
 }
 
+function bffDebugLog(payload: Record<string, unknown>) {
+  if (!BFF_DEBUG) return;
+  try {
+    // Temporary incident diagnostics for shared BFF failures across tabs.
+    console.error("[bff-debug]", JSON.stringify(payload));
+  } catch {
+    console.error("[bff-debug]", payload);
+  }
+}
+
 export async function proxyBffRequest(request: NextRequest, pathParts: string[]) {
   const token = request.cookies.get("admin_token")?.value;
+  const csrfHeader = request.headers.get("x-csrf-token");
+  const requestPath = `/${pathParts.join("/")}`;
+
+  bffDebugLog({
+    phase: "request",
+    method: request.method,
+    requestPath,
+    hasAdminTokenCookie: Boolean(token),
+    hasCsrfHeader: Boolean(csrfHeader),
+  });
 
   if (!token) {
+    bffDebugLog({
+      phase: "auth-reject",
+      method: request.method,
+      requestPath,
+      reason: "missing_admin_token_cookie",
+    });
     return NextResponse.json(
       normalizeError(401, "Authentication required", request.headers.get("x-request-id")),
       { status: 401 },
@@ -72,12 +104,36 @@ export async function proxyBffRequest(request: NextRequest, pathParts: string[])
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
   const body = hasBody ? await request.text() : undefined;
 
-  const upstream = await fetch(upstreamUrl, {
-    method: request.method,
-    headers,
-    body,
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(upstreamUrl, {
+      method: request.method,
+      headers,
+      body,
+      cache: "no-store",
+      signal: controller.signal,
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    const message = error instanceof Error && error.name === "AbortError"
+      ? `Upstream timeout after ${UPSTREAM_TIMEOUT_MS}ms`
+      : "Upstream unavailable";
+    bffDebugLog({
+      phase: "upstream-fetch-error",
+      method: request.method,
+      requestPath,
+      upstreamUrl: upstreamUrl.toString(),
+      message,
+    });
+    return NextResponse.json(
+      normalizeError(503, message, requestId),
+      { status: 503 },
+    );
+  }
+  clearTimeout(timeoutId);
 
   const contentType = upstream.headers.get("content-type") ?? "";
   const upstreamRequestId = upstream.headers.get("x-request-id") ?? requestId;
@@ -96,11 +152,28 @@ export async function proxyBffRequest(request: NextRequest, pathParts: string[])
       // Keep normalized fallback detail.
     }
 
+    bffDebugLog({
+      phase: "upstream-error",
+      method: request.method,
+      requestPath,
+      upstreamUrl: upstreamUrl.toString(),
+      upstreamStatus: upstream.status,
+      detail,
+    });
+
     return NextResponse.json(normalizeError(upstream.status, detail, upstreamRequestId), {
       status: upstream.status,
       headers: upstreamRequestId ? { "x-request-id": upstreamRequestId } : undefined,
     });
   }
+
+  bffDebugLog({
+    phase: "upstream-ok",
+    method: request.method,
+    requestPath,
+    upstreamUrl: upstreamUrl.toString(),
+    upstreamStatus: upstream.status,
+  });
 
   if (upstream.status === 204) {
     return new NextResponse(null, {

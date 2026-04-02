@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   const requestId = request.headers.get("x-request-id");
 
   try {
-    const upstream = await fetch(`${API_BASE}/api/auth/me/profile`, {
+    const sessionUpstream = await fetch(`${API_BASE}/api/auth/me`, {
       method: "GET",
       headers: {
         authorization: `Bearer ${token}`,
@@ -35,26 +35,82 @@ export async function GET(request: NextRequest) {
       cache: "no-store",
     });
 
-    const upstreamRequestId = upstream.headers.get("x-request-id") ?? requestId;
-    if (upstream.status === 401 || upstream.status === 403) {
+    const upstreamRequestId = sessionUpstream.headers.get("x-request-id") ?? requestId;
+    if (sessionUpstream.status === 401 || sessionUpstream.status === 403) {
       return unauthenticated(401, upstreamRequestId);
     }
 
-    if (!upstream.ok) {
+    if (sessionUpstream.ok) {
+      const payload = (await sessionUpstream.json().catch(() => null)) as
+        | {
+          authenticated?: boolean;
+          user?: {
+            sub?: string;
+            displayName?: string;
+            roles?: unknown;
+            permissions?: unknown;
+            tenantId?: number;
+            language?: string;
+          };
+        }
+        | null;
+      if (payload?.authenticated === true && payload.user?.sub) {
+        const normalized = {
+          authenticated: true,
+          user: {
+            sub: payload.user.sub,
+            displayName: payload.user.displayName ?? payload.user.sub,
+            roles: Array.isArray(payload.user.roles) ? payload.user.roles : [],
+            permissions: Array.isArray(payload.user.permissions) ? payload.user.permissions : [],
+            ...(typeof payload.user.tenantId === "number" ? { tenantId: payload.user.tenantId } : {}),
+            ...(typeof payload.user.language === "string" ? { language: payload.user.language } : {}),
+          },
+        };
+        return NextResponse.json(normalized, {
+          status: 200,
+          headers: {
+            "cache-control": "no-store",
+            ...(upstreamRequestId ? { "x-request-id": upstreamRequestId } : {}),
+          },
+        });
+      }
+      return unauthenticated(401, upstreamRequestId);
+    }
+
+    // Backward compatibility for environments that only expose /me/profile.
+    if (sessionUpstream.status !== 404) {
       return unauthenticated(503, upstreamRequestId);
     }
 
-    const profile = (await upstream.json()) as unknown;
+    const profileUpstream = await fetch(`${API_BASE}/api/auth/me/profile`, {
+      method: "GET",
+      headers: {
+        authorization: `Bearer ${token}`,
+        ...(requestId ? { "x-request-id": requestId } : {}),
+      },
+      cache: "no-store",
+    });
+
+    const profileRequestId = profileUpstream.headers.get("x-request-id") ?? requestId;
+    if (profileUpstream.status === 401 || profileUpstream.status === 403 || profileUpstream.status === 404) {
+      return unauthenticated(401, profileRequestId);
+    }
+
+    if (!profileUpstream.ok) {
+      return unauthenticated(503, profileRequestId);
+    }
+
+    const profile = (await profileUpstream.json()) as unknown;
     const session = toSafeSessionFromProfile(profile);
     if (!session) {
-      return unauthenticated(401, upstreamRequestId);
+      return unauthenticated(401, profileRequestId);
     }
 
     return NextResponse.json(session, {
       status: 200,
       headers: {
         "cache-control": "no-store",
-        ...(upstreamRequestId ? { "x-request-id": upstreamRequestId } : {}),
+        ...(profileRequestId ? { "x-request-id": profileRequestId } : {}),
       },
     });
   } catch {

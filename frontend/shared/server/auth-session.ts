@@ -4,6 +4,7 @@ export interface SafeAdminUser {
   roles: string[];
   permissions: string[];
   tenantId?: number;
+  language?: string;
 }
 
 export interface SessionResponse {
@@ -17,6 +18,7 @@ interface BackendProfilePayload {
   roles?: string[];
   permissions?: string[];
   tenant_id?: number;
+  language?: string;
 }
 
 interface JwtPayload {
@@ -28,6 +30,7 @@ interface JwtPayload {
   tenant_id?: number;
   tid?: number;
   exp?: number;
+  language?: string;
 }
 
 export function decodeJwtPayload(token: string): JwtPayload | null {
@@ -60,6 +63,7 @@ export function toSafeSession(token: string): SessionResponse | null {
       roles: payload.roles ?? [],
       permissions,
       tenantId: payload.tenant_id ?? payload.tid,
+      language: typeof payload.language === "string" ? payload.language : undefined,
     },
   };
 }
@@ -104,6 +108,7 @@ export function toSafeSessionFromProfile(profile: unknown): SessionResponse | nu
       roles,
       permissions,
       tenantId: typeof payload.tenant_id === "number" ? payload.tenant_id : undefined,
+      language: typeof payload.language === "string" ? payload.language : undefined,
     },
   };
 }

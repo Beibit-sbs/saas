@@ -8,6 +8,7 @@ import {
   TEACHER_NAVIGATION,
   DEAN_NAVIGATION,
   SUPERADMIN_NAVIGATION,
+  getNavigationForRoles,
 } from "../../shared/config/navigation";
 
 function collectHrefs(groups: Array<{ items: Array<{ href: string; children?: Array<{ href: string }> }> }>): string[] {
@@ -53,7 +54,25 @@ function routeFromPageFile(appRoot: string, filePath: string): string {
   return "/" + segments.join("/");
 }
 
+function routePatternToRegex(route: string): RegExp {
+  const escaped = route
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    .replace(/\\\[\.\.\.[^\]]+\\\]/g, ".+")
+    .replace(/\\\[[^\]]+\\\]/g, "[^/]+");
+  return new RegExp(`^${escaped}$`);
+}
+
 describe("navigation hardening", () => {
+  it("shows platform management only for superadmin role", () => {
+    const superadmin = getNavigationForRoles(["superadmin"]);
+    const legacyAdmin = getNavigationForRoles(["admin"]);
+    const tenantAdmin = getNavigationForRoles(["teacher"]);
+
+    expect(superadmin.some((group) => group.label === "Platform Management")).toBe(true);
+    expect(legacyAdmin.some((group) => group.label === "Platform Management")).toBe(true);
+    expect(tenantAdmin.some((group) => group.label === "Platform Management")).toBe(false);
+  });
+
   it("contains no demo/debug placeholder wording", () => {
     const labels = [
       ...NAVIGATION,
@@ -77,7 +96,8 @@ describe("navigation hardening", () => {
 
   it("does not contain dead links", () => {
     const appRoot = path.join(process.cwd(), "app");
-    const routeSet = new Set(collectPageFiles(appRoot).map((filePath) => routeFromPageFile(appRoot, filePath)));
+    const routes = collectPageFiles(appRoot).map((filePath) => routeFromPageFile(appRoot, filePath));
+    const routeRegexes = routes.map(routePatternToRegex);
     const hrefs = collectHrefs([
       ...NAVIGATION,
       ...STUDENT_NAVIGATION,
@@ -88,7 +108,7 @@ describe("navigation hardening", () => {
 
     for (const href of hrefs) {
       const candidates = toCandidatePaths(href);
-      expect(candidates.some((candidate) => routeSet.has("/" + candidate))).toBe(true);
+      expect(candidates.some((candidate) => routeRegexes.some((pattern) => pattern.test("/" + candidate)))).toBe(true);
     }
   });
 });

@@ -8,7 +8,7 @@ export type SessionUser = {
   user_id: string;
   display_name: string;
   roles: string[];
-  language: string;
+  language?: string;
 };
 
 type AuthContextValue = {
@@ -35,11 +35,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-
     void (async () => {
       try {
-        const res = await fetch(`${baseUrl}/auth/me/profile`, {
+        // Use the BFF route so the httpOnly admin_token cookie is read server-side.
+        const res = await fetch(`/api/auth/me`, {
           credentials: "include",
           cache: "no-store",
         });
@@ -49,8 +48,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const json = (await res.json()) as SessionUser;
-        setUser(json);
+        // BFF /api/auth/me returns SessionResponse: { authenticated, user: { sub, displayName, ... } }
+        const json = await res.json() as {
+          authenticated?: boolean;
+          user?: { sub?: string; displayName?: string; roles?: string[]; language?: string };
+        };
+        if (json.authenticated && json.user?.sub) {
+          setUser({
+            user_id: json.user.sub,
+            display_name: json.user.displayName ?? json.user.sub,
+            roles: json.user.roles ?? [],
+            language: json.user.language,
+          });
+        } else {
+          setUser(null);
+        }
         emitAuthChanged();
       } catch {
         setUser(null);

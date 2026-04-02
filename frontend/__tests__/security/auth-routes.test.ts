@@ -56,6 +56,8 @@ describe("auth routes hardening", () => {
     expect(fetchCalls).toHaveLength(1);
     const [, init] = fetchCalls[0] as [string, RequestInit];
     expect(init.body).toBe(JSON.stringify({ username: "owner@example.com", password: "secret", login: "owner@example.com" }));
+    const headers = new Headers(init.headers as HeadersInit);
+    expect(headers.get("x-tenant-id")).toBe("1");
 
     const setCookie = response.headers.get("set-cookie") ?? "";
     expect(setCookie).toContain("admin_token=");
@@ -73,16 +75,50 @@ describe("auth routes hardening", () => {
     expect(setCookie).toContain("HttpOnly");
   });
 
-  it("me validates session via backend profile and returns safe payload", async () => {
+  it("login forwards explicit tenant_id to backend", async () => {
+    const token = makeJwt({
+      sub: "tenant.user@example.com",
+      display_name: "Tenant User",
+      roles: ["admin"],
+      scp: ["students.read"],
+      tenant_id: 2,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ access_token: token, token_type: "bearer" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+
+    const response = await loginPost(
+      new Request("http://localhost/api/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username: "tenant.user@example.com", password: "secret", tenant_id: 2 }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(String(url)).toBe(`${API_BASE}/api/auth/login`);
+    const headers = new Headers(init.headers as HeadersInit);
+    expect(headers.get("x-tenant-id")).toBe("2");
+  });
+
+  it("me validates session via backend me endpoint and returns safe payload", async () => {
     const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue(
       new Response(
         JSON.stringify({
-          user_id: "owner@example.com",
-          display_name: "Owner",
-          roles: ["admin"],
-          permissions: ["students.read"],
-          tenant_id: 7,
-          auth_source: "local",
+          authenticated: true,
+          user: {
+            sub: "owner@example.com",
+            displayName: "Owner",
+            roles: ["admin"],
+            permissions: ["students.read"],
+            tenantId: 7,
+          },
         }),
         {
           status: 200,
@@ -115,7 +151,7 @@ describe("auth routes hardening", () => {
     const fetchCalls = fetchMock.mock.calls;
     expect(fetchCalls).toHaveLength(1);
     const [url, init] = fetchCalls[0] as [string, RequestInit];
-    expect(String(url)).toBe(`${API_BASE}/api/auth/me/profile`);
+    expect(String(url)).toBe(`${API_BASE}/api/auth/me`);
     const headers = new Headers(init.headers as HeadersInit);
     expect(headers.get("authorization")).toBe("Bearer session-token");
     expect(headers.get("x-request-id")).toBe("req-me-1");
@@ -176,15 +212,17 @@ describe("auth routes hardening", () => {
     expect(body.user).toBeNull();
   });
 
-  it("me does not synthesize permissions from roles when profile omits them", async () => {
+  it("me does not synthesize permissions from roles when backend omits them", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue(
       new Response(
         JSON.stringify({
-          user_id: "owner@example.com",
-          display_name: "Owner",
-          roles: ["admin"],
-          tenant_id: 7,
-          auth_source: "local",
+          authenticated: true,
+          user: {
+            sub: "owner@example.com",
+            displayName: "Owner",
+            roles: ["admin"],
+            tenantId: 7,
+          },
         }),
         {
           status: 200,
@@ -220,7 +258,7 @@ describe("auth routes hardening", () => {
     const middlewareRequest = new NextRequest("http://localhost/console/students", {
       headers: { cookie: `admin_token=${expiredToken}` },
     });
-    const middlewareResponse = middleware(middlewareRequest);
+    const middlewareResponse = await middleware(middlewareRequest);
     expect(middlewareResponse.status).toBe(307);
     expect(middlewareResponse.headers.get("location") ?? "").toContain("/login");
 
@@ -240,5 +278,29 @@ describe("auth routes hardening", () => {
     const meBody = await meResponse.json();
     expect(meBody.authenticated).toBe(false);
     expect(meBody.user).toBeNull();
+  });
+
+  it("middleware redirects authenticated user from /login to /console", async () => {
+    const validToken = makeJwt({ exp: Math.floor(Date.now() / 1000) + 3600 });
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ authenticated: true, user: { sub: "owner@example.com" } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+
+    const request = new NextRequest("http://localhost/login", {
+      headers: { cookie: `admin_token=${validToken}` },
+    });
+
+    const response = await middleware(request);
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location") ?? "").toContain("/console");
+  });
+
+  it("middleware keeps /login when no session cookie", async () => {
+    const request = new NextRequest("http://localhost/login");
+    const response = await middleware(request);
+    expect(response.status).toBe(200);
   });
 });

@@ -94,6 +94,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const hasPermission = useCallback(
     (permission: Permission) => {
       if (!user) return false;
+      if (user.roles.includes("superadmin")) return true;
       return user.permissions.includes(permission);
     },
     [user],
