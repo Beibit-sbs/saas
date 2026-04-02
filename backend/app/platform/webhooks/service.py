@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-import json
 import logging
 from typing import Any, Callable
 from urllib import request as urllib_request
 from urllib.error import HTTPError, URLError
 
 from app.modules.audit.service import log_admin_action
+from app.modules.security.url_validation import validate_external_https_url
 from app.platform.events.schemas import OutboxEventRead
 from app.platform.uow import UnitOfWork
 from app.platform.webhooks.repository import SHARED_WEBHOOK_REPOSITORY, WebhookRepository
@@ -47,7 +47,8 @@ class WebhookService:
 
     @staticmethod
     def _default_sender(url: str, headers: dict[str, str], body: bytes, timeout_seconds: float) -> tuple[int, str]:
-        req = urllib_request.Request(url=url, data=body, headers=headers, method="POST")
+        safe_url = validate_external_https_url(url)
+        req = urllib_request.Request(url=safe_url, data=body, headers=headers, method="POST")
         try:
             with urllib_request.urlopen(req, timeout=timeout_seconds) as response:
                 response_body = response.read().decode("utf-8", errors="replace")
@@ -82,11 +83,12 @@ class WebhookService:
         signing_secret: str,
         actor: str = "platform-admin",
     ) -> dict[str, Any]:
+        safe_target_url = validate_external_https_url(target_url)
         with UnitOfWork() as uow:
             row = self._repository.create_subscription(
                 tenant_id=int(tenant_id),
                 event_type=event_type,
-                target_url=target_url,
+                target_url=safe_target_url,
                 signing_secret=signing_secret,
                 conn=uow.conn,
             )

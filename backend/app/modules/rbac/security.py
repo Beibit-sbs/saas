@@ -31,31 +31,16 @@ def _resolve_tenant_id(request: Request, claims: AccessTokenClaims, x_tenant_id:
         if int(x_tenant_id) <= 0:
             raise HTTPException(status_code=400, detail="invalid tenant header")
         if x_tenant_id != claims.tenant_id:
-            if claims.token_type == "service":
-                if not bool(getattr(claims, "platform_global", False)):
-                    record_security_signal(
-                        signal="tenant.override.denied",
-                        outcome="denied",
-                        actor=claims.user_id,
-                        client_ip=request.client.host if request.client else "unknown",
-                        path=request.url.path,
-                        tenant_id=claims.tenant_id,
-                    )
-                    raise HTTPException(status_code=403, detail="cross-tenant override forbidden")
-            elif (
-                "superadmin" not in {role.strip() for role in claims.roles if role.strip()}
-                and not is_platform_admin(claims.user_id)
-            ):
-                record_security_signal(
-                    signal="tenant.override.denied",
-                    outcome="denied",
-                    actor=claims.user_id,
-                    client_ip=request.client.host if request.client else "unknown",
-                    path=request.url.path,
-                    tenant_id=claims.tenant_id,
-                )
-                raise HTTPException(status_code=403, detail="cross-tenant override forbidden")
-        tenant_id = x_tenant_id
+            record_security_signal(
+                signal="tenant.override.denied",
+                outcome="denied",
+                actor=claims.user_id,
+                client_ip=request.client.host if request.client else "unknown",
+                path=request.url.path,
+                tenant_id=claims.tenant_id,
+            )
+            raise HTTPException(status_code=403, detail="cross-tenant override forbidden")
+        tenant_id = int(claims.tenant_id)
     else:
         tenant_id = claims.tenant_id
     tenant = get_tenant(tenant_id)

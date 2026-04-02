@@ -9,10 +9,10 @@ from sqlalchemy import desc, select
 
 from app.modules.auth.local_users_service import _hash_password, _verify_password
 from app.modules.grades.models import GradeSubmissionModel
+from app.modules.security.url_validation import validate_external_https_url
 from app.platform.developer.models import DeveloperAppStatus, DeveloperInstallationStatus
 from app.platform.developer.repository import DeveloperRepository
 from app.platform.events.schemas import OutboxEventRead
-from app.platform.kpi import service as kpi_service
 from app.platform.uow import UnitOfWork
 
 
@@ -37,6 +37,9 @@ class DeveloperPlatformService:
         scopes: list[str],
         webhook_url: str | None = None,
     ) -> dict[str, Any]:
+        normalized_webhook_url = None
+        if webhook_url:
+            normalized_webhook_url = validate_external_https_url(str(webhook_url).strip())
         app_key = f"app_{secrets.token_hex(12)}"
         app_secret = secrets.token_urlsafe(32)
         row = self._repository.create_app(
@@ -47,7 +50,7 @@ class DeveloperPlatformService:
             description=str(description or "").strip(),
             owner_email=str(owner_email).strip().lower(),
             status=DeveloperAppStatus.ACTIVE.value,
-            webhook_url=str(webhook_url).strip() or None if webhook_url else None,
+            webhook_url=normalized_webhook_url,
             scopes=_normalize_scopes(scopes),
         )
         return {**row, "app_secret": app_secret}
@@ -182,6 +185,11 @@ class DeveloperPlatformService:
         for app in apps:
             webhook_url = str(app.get("webhook_url") or "").strip()
             if not webhook_url:
+                failed += 1
+                continue
+            try:
+                webhook_url = validate_external_https_url(webhook_url)
+            except ValueError:
                 failed += 1
                 continue
             payload = {

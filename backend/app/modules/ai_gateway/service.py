@@ -17,6 +17,7 @@ from app.modules.integrations.service import get_ai_provider_runtime_config
 from app.modules.integrations.service import get_global_runtime_value
 from app.modules.integrations.service import get_runtime_value
 from app.modules.security.db_tenant_context import set_db_tenant_context
+from app.modules.security.url_validation import validate_external_https_url
 
 try:
     import psycopg
@@ -950,8 +951,9 @@ def list_provider_status(tenant_id: int | None = None) -> list[dict[str, Any]]:
 
 
 def _request(method: str, url: str, headers: dict[str, str], params: dict[str, str] | None) -> httpx.Response:
+    safe_url = validate_external_https_url(url)
     with httpx.Client(timeout=_timeout(), follow_redirects=True) as client:
-        return client.request(method, url, headers=headers, params=params)
+        return client.request(method, safe_url, headers=headers, params=params)
 
 
 def _request_json(
@@ -962,9 +964,10 @@ def _request_json(
     params: dict[str, str] | None = None,
     payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    safe_url = validate_external_https_url(url)
     try:
         with httpx.Client(timeout=_timeout(), follow_redirects=True) as client:
-            response = client.request(method, url, headers=headers, params=params, json=payload)
+            response = client.request(method, safe_url, headers=headers, params=params, json=payload)
     except httpx.TimeoutException as exc:
         raise AIProviderTimeoutError("provider timeout") from exc
     except httpx.HTTPError as exc:

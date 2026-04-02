@@ -284,14 +284,6 @@ def _resolve_rate_limit_actor(request: Request) -> str | None:
 
 
 def _resolve_request_tenant_id(request: Request) -> int:
-    raw = request.headers.get("x-tenant-id")
-    if raw is not None:
-        try:
-            value = int(raw)
-        except (TypeError, ValueError):
-            value = _DEFAULT_TENANT_ID
-        return value if value > 0 else _DEFAULT_TENANT_ID
-
     try:
         claims = parse_access_token_from_request(request, request.headers.get("authorization"))
     except TokenValidationError:
