@@ -36,6 +36,12 @@ services:
       BACKUP_DEFAULT_PROFILE: "${BACKUP_DEFAULT_PROFILE:-local}"
       BACKUP_ALLOWED_ROOTS: "${BACKUP_ALLOWED_ROOTS:-/tmp/app-backups,/var/backups/app}"
       BACKUP_PROFILES_JSON: "${BACKUP_PROFILES_JSON:-[{\"id\":\"local\",\"label\":\"Local backup volume\",\"path\":\"/tmp/app-backups/local\"}]}"
+      METRICS_TOKEN: ${METRICS_TOKEN}
+      OPS_ALERT_WEBHOOK_URL: ${OPS_ALERT_WEBHOOK_URL:-}
+      OPS_ALERT_COOLDOWN_SECONDS: ${OPS_ALERT_COOLDOWN_SECONDS:-300}
+      OPS_LATENCY_P95_THRESHOLD_MS: ${OPS_LATENCY_P95_THRESHOLD_MS:-1000}
+      OPS_LATENCY_P99_THRESHOLD_MS: ${OPS_LATENCY_P99_THRESHOLD_MS:-2500}
+      OPS_JOBS_FAILURE_SPIKE_THRESHOLD: ${OPS_JOBS_FAILURE_SPIKE_THRESHOLD:-5}
       RBAC_ALLOW_DEV_FALLBACK: "${RBAC_ALLOW_DEV_FALLBACK:-false}"
       AUTH_CSRF_PROTECTION_ENABLED: "${AUTH_CSRF_PROTECTION_ENABLED:-true}"
     ports:
@@ -53,6 +59,41 @@ services:
       timeout: 5s
       retries: 10
 
+  worker:
+    build:
+      context: ../backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET}
+      API_BASE_URL: ${API_BASE_URL}
+      ADMIN_PANEL_URL: ${ADMIN_PANEL_URL}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+      INTEGRATIONS_ENCRYPTION_KEY: ${INTEGRATIONS_ENCRYPTION_KEY}
+      BACKUP_DEFAULT_PROFILE: "${BACKUP_DEFAULT_PROFILE:-local}"
+      BACKUP_ALLOWED_ROOTS: "${BACKUP_ALLOWED_ROOTS:-/tmp/app-backups,/var/backups/app}"
+      BACKUP_PROFILES_JSON: "${BACKUP_PROFILES_JSON:-[{\"id\":\"local\",\"label\":\"Local backup volume\",\"path\":\"/tmp/app-backups/local\"}]}"
+      RBAC_ALLOW_DEV_FALLBACK: "${RBAC_ALLOW_DEV_FALLBACK:-false}"
+      AUTH_CSRF_PROTECTION_ENABLED: "${AUTH_CSRF_PROTECTION_ENABLED:-true}"
+    command:
+      - sh
+      - -lc
+      - |
+        echo "worker loop started"
+        while true; do
+          python -u -c "from app.modules.jobs.worker import run_worker_loop; from app.platform.runtime_state import record_worker_heartbeat; record_worker_heartbeat(); run_worker_loop(iterations=200)"
+          sleep 1
+        done
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    volumes:
+      - backup_data:/tmp/app-backups
+
   scheduler:
     build:
       context: ../backend
@@ -67,6 +108,12 @@ services:
       BACKUP_DEFAULT_PROFILE: "${BACKUP_DEFAULT_PROFILE:-local}"
       BACKUP_ALLOWED_ROOTS: "${BACKUP_ALLOWED_ROOTS:-/tmp/app-backups,/var/backups/app}"
       BACKUP_PROFILES_JSON: "${BACKUP_PROFILES_JSON:-[{\"id\":\"local\",\"label\":\"Local backup volume\",\"path\":\"/tmp/app-backups/local\"}]}"
+      METRICS_TOKEN: ${METRICS_TOKEN}
+      OPS_ALERT_WEBHOOK_URL: ${OPS_ALERT_WEBHOOK_URL:-}
+      OPS_ALERT_COOLDOWN_SECONDS: ${OPS_ALERT_COOLDOWN_SECONDS:-300}
+      OPS_LATENCY_P95_THRESHOLD_MS: ${OPS_LATENCY_P95_THRESHOLD_MS:-1000}
+      OPS_LATENCY_P99_THRESHOLD_MS: ${OPS_LATENCY_P99_THRESHOLD_MS:-2500}
+      OPS_JOBS_FAILURE_SPIKE_THRESHOLD: ${OPS_JOBS_FAILURE_SPIKE_THRESHOLD:-5}
       RBAC_ALLOW_DEV_FALLBACK: "${RBAC_ALLOW_DEV_FALLBACK:-false}"
       AUTH_CSRF_PROTECTION_ENABLED: "${AUTH_CSRF_PROTECTION_ENABLED:-true}"
     command:
@@ -103,25 +150,56 @@ services:
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
     environment:
+      NODE_ENV: production
+      API_BASE_URL: http://backend:8000
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
     ports:
       - "${FRONTEND_PORT}:3000"
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
 
   nginx:
     image: nginx:1.27-alpine
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro,Z
+      - ./nginx/certs:/etc/nginx/certs:ro,Z
     ports:
       - "${NGINX_PORT}:80"
       - "${NGINX_TLS_PORT:-443}:443"
     depends_on:
-      - frontend
-      - backend
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro,Z
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro,Z
+      - ./prometheus/metrics_token:/etc/prometheus/metrics_token:ro,Z
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    ports:
+      - "9090:9090"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:
     name: ai_postgres_data
   backup_data:
+  prometheus_data:

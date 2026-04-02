@@ -16,6 +16,9 @@ node_modules/
 *.env
 !.env.example
 
+# Prometheus bearer token (runtime secret, never commit)
+infra/prometheus/metrics_token
+
 # Logs
 *.log
 *.exit

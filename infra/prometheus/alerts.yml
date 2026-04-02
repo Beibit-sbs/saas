@@ -1,0 +1,77 @@
+groups:
+  - name: backend-observability
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Backend target is down"
+          description: "Prometheus cannot scrape backend metrics target for more than 1 minute."
+
+      - alert: BackendHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_status_class_total{job="backend",status_class="5xx"}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total{job="backend"}[5m])), 0.001)
+          ) > 0.02
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High backend 5xx error rate"
+          description: "5xx ratio is above 2% over the last 5 minutes for at least 10 minutes."
+
+      - alert: BackendHighLatencyP95
+        expr: http_request_duration_seconds_quantile{job="backend",quantile="0.95"} > 1.0
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High backend latency p95"
+          description: "p95 latency is above 1 second for at least 10 minutes."
+
+      - alert: JobsFailedSpike
+        expr: increase(jobs_failed_total{job="backend"}[10m]) >= 5
+        for: 2m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Job failures spiked"
+          description: "jobs_failed_total increased by 5 or more during the last 10 minutes."
+
+      - alert: JobsQueueTooHigh
+        expr: jobs_queue_size{job="backend"} > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Jobs queue is too high"
+          description: "jobs_queue_size is above 100 for at least 10 minutes."
+
+      - alert: WorkerDown
+        expr: (worker_heartbeat_age_seconds{job="backend"} < 0) or (worker_heartbeat_age_seconds{job="backend"} > 180)
+        for: 5m
+        labels:
+          severity: critical
+          service: worker
+        annotations:
+          summary: "Worker heartbeat stale or missing"
+          description: "Worker heartbeat is missing or older than 180 seconds."
+
+      - alert: SchedulerDown
+        expr: (scheduler_last_run_age_seconds{job="backend"} < 0) or (scheduler_last_run_age_seconds{job="backend"} > 300)
+        for: 10m
+        labels:
+          severity: warning
+          service: scheduler
+        annotations:
+          summary: "Scheduler heartbeat stale or missing"
+          description: "Scheduler last run is missing or older than 300 seconds."
