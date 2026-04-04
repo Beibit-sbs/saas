@@ -4,7 +4,7 @@
 
 1. Остановить write-heavy worker/scheduler.
 2. Выполнить backup через `scripts/backup_db.sh`.
-3. Выполнить restore через `scripts/restore_db.sh`.
+3. Выполнить restore через `scripts/restore_db.sh --execute --confirm RESTORE` в изолированную target DB.
 4. Поднять backend.
 5. Проверить:
    - `/health/ready`
