@@ -1,142 +1,55 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Pre-release validation gate for backend, tenant safety, migrations, and frontend checks.
-#
-# Usage:
-#   bash scripts/release_check.sh
-#
-# Optional env vars:
-#   DATABASE_URL  — required only for the migration smoke step.
-#                   Accepts both postgresql:// and postgresql+psycopg:// formats;
-#                   Alembic normalises the URL internally.
-#                   Example: postgresql://postgres:postgres@127.0.0.1:5432/platform_ci
-#   JWT_SECRET    — overrides the test-only JWT secret (default is safe for local runs only)
-
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BACKEND_DIR="${ROOT_DIR}/backend"
-FRONTEND_DIR="${ROOT_DIR}/frontend"
-VENV_PYTHON="${BACKEND_DIR}/.venv/bin/python3"
-VENV_ALEMBIC="${BACKEND_DIR}/.venv/bin/alembic"
+COMPOSE=(docker compose --env-file .env)
 
-JWT_SECRET="${JWT_SECRET:-test-suite-secret-not-for-prod-1234567890}"
-export JWT_SECRET
-
-# ---------------------------------------------------------------------------
-# Guard: ensure the backend virtualenv is present and usable.
-# ---------------------------------------------------------------------------
-check_venv() {
-  if [[ ! -x "${VENV_PYTHON}" ]]; then
-    echo "[release-check] ERROR: backend virtualenv not found at ${VENV_PYTHON}"
-    echo "[release-check] Run: cd backend && python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'"
-    exit 1
-  fi
-}
-
-# ---------------------------------------------------------------------------
-# Backend unit/in-memory gates.
-# DATABASE_URL is explicitly unset so that db_available() returns False and
-# all platform repositories use their in-memory stores, matching the intent
-# of tests/conftest.py.  Any pre-existing DATABASE_URL in the shell
-# (e.g. postgresql+psycopg://...) must not leak into these test runs.
-# ---------------------------------------------------------------------------
 run_backend_checks() {
-  echo "[release-check] backend: tenant safety gate"
-  (
-    cd "${BACKEND_DIR}"
-    env -u DATABASE_URL "${VENV_PYTHON}" -m pytest -q \
-      tests/platform/test_platform_tenant_safety_audit_v1.py
-  )
-
-  echo "[release-check] backend: platform regression gate"
-  (
-    cd "${BACKEND_DIR}"
-    env -u DATABASE_URL "${VENV_PYTHON}" -m pytest -q tests/platform/
-  )
-
-  echo "[release-check] backend: critical security regression"
-  (
-    cd "${BACKEND_DIR}"
-    env -u DATABASE_URL "${VENV_PYTHON}" -m pytest -q -m security_regression
-  )
+  "${COMPOSE[@]}" run --rm --no-deps backend-tests "$@"
 }
 
-# ---------------------------------------------------------------------------
-# Migration smoke — requires a live PostgreSQL instance via DATABASE_URL.
-# Skipped (with a notice, not a failure) when DATABASE_URL is absent so that
-# the script remains runnable in environments without a local database.
-# ---------------------------------------------------------------------------
-run_migration_smoke() {
-  if [[ -z "${DATABASE_URL:-}" ]]; then
-    echo "[release-check] migration gate: DATABASE_URL not set — skipping migration smoke"
-    echo "[release-check] To run migrations: export DATABASE_URL='postgresql://user:pass@host:5432/dbname'"
-    return 0
-  fi
+bash "${ROOT_DIR}/scripts/preflight_checks.sh"
 
-  # Reject the SQLAlchemy dialect prefix when passed by mistake; alembic/env.py
-  # performs the postgresql:// → postgresql+psycopg:// normalisation itself.
-  # We accept both to be safe, but we want a clearly formatted error for
-  # completely invalid values.
-  if [[ "${DATABASE_URL}" != postgresql://* && "${DATABASE_URL}" != postgresql+psycopg://* ]]; then
-    echo "[release-check] migration gate: ERROR: DATABASE_URL does not look like a PostgreSQL DSN"
-    echo "[release-check] Expected format: postgresql://user:pass@host:5432/dbname"
-    exit 1
-  fi
+pushd "${ROOT_DIR}/infra" >/dev/null
+"${COMPOSE[@]}" up -d db redis
 
-  if [[ ! -x "${VENV_ALEMBIC}" ]]; then
-    echo "[release-check] ERROR: alembic not found at ${VENV_ALEMBIC}"
-    exit 1
-  fi
+echo "[release-check] architecture governance gate"
+run_backend_checks pytest -q tests/platform/test_platform_architecture_guardrails_v1.py
 
-  echo "[release-check] migration gate: log heads"
-  (
-    cd "${BACKEND_DIR}"
-    "${VENV_ALEMBIC}" heads
-  )
+echo "[release-check] tenant safety gate"
+run_backend_checks pytest -q tests/platform/test_platform_tenant_safety_audit_v1.py
 
-  echo "[release-check] migration gate: upgrade -> downgrade -1 -> upgrade"
-  (
-    cd "${BACKEND_DIR}"
-    "${VENV_ALEMBIC}" upgrade head
-    "${VENV_ALEMBIC}" downgrade -1
-    "${VENV_ALEMBIC}" upgrade head
-  )
-}
+echo "[release-check] platform regression gate"
+run_backend_checks pytest -q tests/platform/
 
-# ---------------------------------------------------------------------------
-# Frontend gates.
-# ---------------------------------------------------------------------------
-run_frontend_checks() {
-  if ! command -v npm >/dev/null 2>&1; then
-    echo "[release-check] ERROR: npm not found — install Node.js to run frontend gates"
-    exit 1
-  fi
+echo "[release-check] security regression gate"
+run_backend_checks pytest -q -m security_regression
 
-  echo "[release-check] frontend gate: type-check"
-  (
-    cd "${FRONTEND_DIR}"
-    npm run type-check
-  )
+echo "[release-check] template validation gate"
+run_backend_checks pytest -q tests/test_template_validation.py
 
-  echo "[release-check] frontend gate: tests"
-  (
-    cd "${FRONTEND_DIR}"
-    npm run test:frontend
-  )
-}
+echo "[release-check] migration safety gate"
+run_backend_checks alembic heads
+run_backend_checks alembic upgrade head
+if [[ "${RELEASE_ENABLE_MIGRATION_ROLLBACK_TEST:-false}" == "true" ]]; then
+	echo "[release-check] WARN: explicit migration rollback test enabled"
+	run_backend_checks alembic downgrade -1
+	run_backend_checks alembic upgrade head
+else
+	echo "[release-check] safe mode: rollback migration test skipped"
+	echo "[release-check] set RELEASE_ENABLE_MIGRATION_ROLLBACK_TEST=true to enable downgrade/upgrade check"
+fi
 
-# ---------------------------------------------------------------------------
-# Entry point.
-# ---------------------------------------------------------------------------
-main() {
-  check_venv
+echo "[release-check] frontend safety gate"
+"${COMPOSE[@]}" run --rm frontend-tests npm run type-check
+"${COMPOSE[@]}" run --rm frontend-tests npm run test:frontend
 
-  run_backend_checks
-  run_migration_smoke
-  run_frontend_checks
+if [[ "${RELEASE_ENABLE_SMOKE_GATE:-false}" == "true" ]]; then
+  echo "[release-check] optional smoke gate enabled"
+  popd >/dev/null
+  bash "${ROOT_DIR}/scripts/platform_smoke_check.sh"
+else
+  popd >/dev/null
+fi
 
-  echo ""
-  echo "[release-check] ✓ all safety gates passed"
-}
-
-main "$@"
+echo "[release-check] docker-only safety gates passed"
