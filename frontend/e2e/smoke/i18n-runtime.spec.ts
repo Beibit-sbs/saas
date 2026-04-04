@@ -2,8 +2,12 @@ import { expect, test } from "@playwright/test";
 
 test.describe("i18n runtime smoke", () => {
   test("login/console/admin locale flow is stable", async ({ page, context }) => {
-    const baseUrl = process.env.E2E_BASE_URL ?? "http://127.0.0.1:3001";
-    const creds = { username: "superadminsbs", password: "SuperAdmin2026!" };
+    const baseUrl = process.env.E2E_BASE_URL;
+    expect(baseUrl).toBeTruthy();
+    const creds = {
+      username: process.env.E2E_SMOKE_USERNAME || "smoke-admin",
+      password: process.env.E2E_SMOKE_PASSWORD || "change_me_smoke_password",
+    };
     const jsErrors: string[] = [];
     const consoleErrors: string[] = [];
 

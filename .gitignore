@@ -15,6 +15,11 @@ node_modules/
 .env.*
 *.env
 !.env.example
+.secrets
+.secrets.*
+*.secrets
+*.local.secret
+*.local.secrets
 
 # Prometheus bearer token (runtime secret, never commit)
 infra/prometheus/metrics_token
@@ -46,6 +51,8 @@ backups/
 ai-platform-backup.tar.gz
 
 # TLS private keys/certs (must never be versioned)
+infra/nginx/certs/*.csr
+infra/nginx/certs/*.srl
 infra/nginx/certs/*.key
 infra/nginx/certs/*.pem
 infra/nginx/certs/*.p12
