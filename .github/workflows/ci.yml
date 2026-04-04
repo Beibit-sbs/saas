@@ -9,142 +9,257 @@ on:
 jobs:
   architecture-governance-gate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    env:
-      JWT_SECRET: test-suite-secret-not-for-prod-1234567890
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install backend dependencies
+      - name: Create CI env file
+        working-directory: infra
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Architecture governance guardrails gate
-        run: pytest -q tests/platform/test_platform_architecture_guardrails_v1.py
+          cat > .env <<'EOF'
+          COMPOSE_PROJECT_NAME=ai
+          POSTGRES_DB=app
+          POSTGRES_USER=app
+          POSTGRES_PASSWORD=app
+          POSTGRES_PORT=5432
+          DATABASE_URL=postgresql://app:app@db:5432/app
+          REDIS_URL=redis://redis:6379/0
+          BACKEND_PORT=8000
+          FRONTEND_PORT=3000
+          NGINX_PORT=80
+          NGINX_TLS_PORT=443
+          NEXT_PUBLIC_API_BASE_URL=/api
+          API_BASE_URL=http://nginx
+          ADMIN_PANEL_URL=http://nginx
+          INTERNAL_API_TOKEN=test_internal_api_token_12345678901234567890
+          JWT_SECRET=test_suite_secret_not_for_prod_1234567890123456
+          INTEGRATIONS_ENCRYPTION_KEY=test_integration_key_1234567890123456
+          AUTH_CSRF_PROTECTION_ENABLED=true
+          RBAC_ALLOW_DEV_FALLBACK=false
+          METRICS_TOKEN=test_metrics_token_12345678901234567890
+          EOF
+      - name: Build backend test image
+        working-directory: infra
+        run: docker compose --env-file .env build backend-tests
+      - name: Start required services
+        working-directory: infra
+        run: docker compose --env-file .env up -d db redis backend
+      - name: Run architecture governance gate
+        working-directory: infra
+        run: docker compose --env-file .env run --rm --no-deps backend-tests pytest -q tests/platform/test_platform_architecture_guardrails_v1.py
+      - name: Stop stack
+        if: always()
+        working-directory: infra
+        run: docker compose --env-file .env down -v
 
   tenant-safety-gate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    env:
-      JWT_SECRET: test-suite-secret-not-for-prod-1234567890
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install backend dependencies
+      - name: Create CI env file
+        working-directory: infra
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Tenant safety audit gate
-        run: pytest -q tests/platform/test_platform_tenant_safety_audit_v1.py
+          cat > .env <<'EOF'
+          COMPOSE_PROJECT_NAME=ai
+          POSTGRES_DB=app
+          POSTGRES_USER=app
+          POSTGRES_PASSWORD=app
+          POSTGRES_PORT=5432
+          DATABASE_URL=postgresql://app:app@db:5432/app
+          REDIS_URL=redis://redis:6379/0
+          BACKEND_PORT=8000
+          FRONTEND_PORT=3000
+          NGINX_PORT=80
+          NGINX_TLS_PORT=443
+          NEXT_PUBLIC_API_BASE_URL=/api
+          API_BASE_URL=http://nginx
+          ADMIN_PANEL_URL=http://nginx
+          INTERNAL_API_TOKEN=test_internal_api_token_12345678901234567890
+          JWT_SECRET=test_suite_secret_not_for_prod_1234567890123456
+          INTEGRATIONS_ENCRYPTION_KEY=test_integration_key_1234567890123456
+          AUTH_CSRF_PROTECTION_ENABLED=true
+          RBAC_ALLOW_DEV_FALLBACK=false
+          METRICS_TOKEN=test_metrics_token_12345678901234567890
+          EOF
+      - name: Build backend test image
+        working-directory: infra
+        run: docker compose --env-file .env build backend-tests
+      - name: Start required services
+        working-directory: infra
+        run: docker compose --env-file .env up -d db redis backend
+      - name: Run tenant safety gate
+        working-directory: infra
+        run: docker compose --env-file .env run --rm --no-deps backend-tests pytest -q tests/platform/test_platform_tenant_safety_audit_v1.py
+      - name: Stop stack
+        if: always()
+        working-directory: infra
+        run: docker compose --env-file .env down -v
 
   platform-regression-gate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    env:
-      JWT_SECRET: test-suite-secret-not-for-prod-1234567890
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install backend dependencies
+      - name: Create CI env file
+        working-directory: infra
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Lint backend
-        run: ruff check .
-      - name: Platform regression suite
-        run: pytest -q tests/platform/
-      - name: Security regression (critical)
-        run: pytest -q -m security_regression
+          cat > .env <<'EOF'
+          COMPOSE_PROJECT_NAME=ai
+          POSTGRES_DB=app
+          POSTGRES_USER=app
+          POSTGRES_PASSWORD=app
+          POSTGRES_PORT=5432
+          DATABASE_URL=postgresql://app:app@db:5432/app
+          REDIS_URL=redis://redis:6379/0
+          BACKEND_PORT=8000
+          FRONTEND_PORT=3000
+          NGINX_PORT=80
+          NGINX_TLS_PORT=443
+          NEXT_PUBLIC_API_BASE_URL=/api
+          API_BASE_URL=http://nginx
+          ADMIN_PANEL_URL=http://nginx
+          INTERNAL_API_TOKEN=test_internal_api_token_12345678901234567890
+          JWT_SECRET=test_suite_secret_not_for_prod_1234567890123456
+          INTEGRATIONS_ENCRYPTION_KEY=test_integration_key_1234567890123456
+          AUTH_CSRF_PROTECTION_ENABLED=true
+          RBAC_ALLOW_DEV_FALLBACK=false
+          METRICS_TOKEN=test_metrics_token_12345678901234567890
+          EOF
+      - name: Build backend test image
+        working-directory: infra
+        run: docker compose --env-file .env build backend-tests
+      - name: Start required services
+        working-directory: infra
+        run: docker compose --env-file .env up -d db redis backend
+      - name: Run platform regression gate
+        working-directory: infra
+        run: docker compose --env-file .env run --rm --no-deps backend-tests pytest -q tests/platform/
+      - name: Stop stack
+        if: always()
+        working-directory: infra
+        run: docker compose --env-file .env down -v
 
   frontend-safety-gate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
-      - name: Install frontend dependencies
-        run: npm install
-      - name: TypeScript type-check
-        run: npm run type-check
-      - name: Check i18n parity
-        run: npm run i18n:check
-      - name: Lint frontend
-        run: npm run lint
-      - name: Frontend regression tests
-        run: npm run test:frontend
+      - name: Create CI env file
+        working-directory: infra
+        run: |
+          cat > .env <<'EOF'
+          COMPOSE_PROJECT_NAME=ai
+          POSTGRES_DB=app
+          POSTGRES_USER=app
+          POSTGRES_PASSWORD=app
+          POSTGRES_PORT=5432
+          DATABASE_URL=postgresql://app:app@db:5432/app
+          REDIS_URL=redis://redis:6379/0
+          BACKEND_PORT=8000
+          FRONTEND_PORT=3000
+          NGINX_PORT=80
+          NGINX_TLS_PORT=443
+          NEXT_PUBLIC_API_BASE_URL=/api
+          API_BASE_URL=http://nginx
+          ADMIN_PANEL_URL=http://nginx
+          INTERNAL_API_TOKEN=test_internal_api_token_12345678901234567890
+          JWT_SECRET=test_suite_secret_not_for_prod_1234567890123456
+          INTEGRATIONS_ENCRYPTION_KEY=test_integration_key_1234567890123456
+          AUTH_CSRF_PROTECTION_ENABLED=true
+          RBAC_ALLOW_DEV_FALLBACK=false
+          METRICS_TOKEN=test_metrics_token_12345678901234567890
+          EOF
+      - name: Build frontend test image
+        working-directory: infra
+        run: docker compose --env-file .env build frontend-tests
+      - name: Run frontend type-check
+        working-directory: infra
+        run: docker compose --env-file .env run --rm frontend-tests npm run type-check
+      - name: Run frontend tests
+        working-directory: infra
+        run: docker compose --env-file .env run --rm frontend-tests npm run test:frontend
 
   migration-safety-gate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    env:
-      JWT_SECRET: test-suite-secret-not-for-prod-1234567890
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/platform_ci
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: platform_ci
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d platform_ci"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install backend dependencies
+      - name: Create CI env file
+        working-directory: infra
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Log migration heads
-        run: alembic heads
-      - name: Migration smoke (upgrade -> downgrade -1 -> upgrade)
-        run: |
-          alembic upgrade head
-          alembic downgrade -1
-          alembic upgrade head
+          cat > .env <<'EOF'
+          COMPOSE_PROJECT_NAME=ai
+          POSTGRES_DB=app
+          POSTGRES_USER=app
+          POSTGRES_PASSWORD=app
+          POSTGRES_PORT=5432
+          DATABASE_URL=postgresql://app:app@db:5432/app
+          REDIS_URL=redis://redis:6379/0
+          BACKEND_PORT=8000
+          FRONTEND_PORT=3000
+          NGINX_PORT=80
+          NGINX_TLS_PORT=443
+          NEXT_PUBLIC_API_BASE_URL=/api
+          API_BASE_URL=http://nginx
+          ADMIN_PANEL_URL=http://nginx
+          INTERNAL_API_TOKEN=test_internal_api_token_12345678901234567890
+          JWT_SECRET=test_suite_secret_not_for_prod_1234567890123456
+          INTEGRATIONS_ENCRYPTION_KEY=test_integration_key_1234567890123456
+          AUTH_CSRF_PROTECTION_ENABLED=true
+          RBAC_ALLOW_DEV_FALLBACK=false
+          METRICS_TOKEN=test_metrics_token_12345678901234567890
+          EOF
+      - name: Build backend test image
+        working-directory: infra
+        run: docker compose --env-file .env build backend-tests
+      - name: Start required services
+        working-directory: infra
+        run: docker compose --env-file .env up -d db redis backend
+      - name: Run migration heads check
+        working-directory: infra
+        run: docker compose --env-file .env run --rm --no-deps backend-tests alembic heads
+      - name: Run migration upgrade check
+        working-directory: infra
+        run: docker compose --env-file .env run --rm --no-deps backend-tests alembic upgrade head
+      - name: Stop stack
+        if: always()
+        working-directory: infra
+        run: docker compose --env-file .env down -v
 
   template-validation:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    env:
-      JWT_SECRET: test-suite-secret-not-for-prod-1234567890
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install backend dependencies
+      - name: Create CI env file
+        working-directory: infra
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          cat > .env <<'EOF'
+          COMPOSE_PROJECT_NAME=ai
+          POSTGRES_DB=app
+          POSTGRES_USER=app
+          POSTGRES_PASSWORD=app
+          POSTGRES_PORT=5432
+          DATABASE_URL=postgresql://app:app@db:5432/app
+          REDIS_URL=redis://redis:6379/0
+          BACKEND_PORT=8000
+          FRONTEND_PORT=3000
+          NGINX_PORT=80
+          NGINX_TLS_PORT=443
+          NEXT_PUBLIC_API_BASE_URL=/api
+          API_BASE_URL=http://nginx
+          ADMIN_PANEL_URL=http://nginx
+          INTERNAL_API_TOKEN=test_internal_api_token_12345678901234567890
+          JWT_SECRET=test_suite_secret_not_for_prod_1234567890123456
+          INTEGRATIONS_ENCRYPTION_KEY=test_integration_key_1234567890123456
+          AUTH_CSRF_PROTECTION_ENABLED=true
+          RBAC_ALLOW_DEV_FALLBACK=false
+          METRICS_TOKEN=test_metrics_token_12345678901234567890
+          EOF
+      - name: Build backend test image
+        working-directory: infra
+        run: docker compose --env-file .env build backend-tests
+      - name: Start required services
+        working-directory: infra
+        run: docker compose --env-file .env up -d db redis backend
       - name: Run template validation
-        run: pytest -q tests/test_template_validation.py
+        working-directory: infra
+        run: docker compose --env-file .env run --rm --no-deps backend-tests pytest -q tests/test_template_validation.py
+      - name: Stop stack
+        if: always()
+        working-directory: infra
+        run: docker compose --env-file .env down -v

@@ -4,6 +4,10 @@
 
 Release Gate v1 blocks unsafe merges and deploys by enforcing deterministic checks for tenant isolation, platform regressions, frontend regressions, and migration safety.
 
+Canonical release checklist:
+
+- `docs/RELEASE_CHECKLIST.md`
+
 ## Mandatory CI Jobs
 
 The CI workflow defines separate required gates:
@@ -11,6 +15,7 @@ The CI workflow defines separate required gates:
 - `architecture-governance-gate`
 - `tenant-safety-gate`
 - `platform-regression-gate`
+- `security-regression-gate`
 - `frontend-safety-gate`
 - `migration-safety-gate`
 - `template-validation`
@@ -34,21 +39,30 @@ A change is merge-ready only if all required jobs pass.
 
 ## Required Checks Before Deploy
 
-Run local pre-release command:
+Run unified local pre-release command:
 
 ```bash
-bash scripts/release_check.sh
+bash scripts/release_gate.sh
 ```
 
-This script enforces:
+This command enforces:
 
 - backend tenant safety gate
+- backend architecture governance gate
 - backend platform regression gate
 - critical security regression tests
-- migration smoke (`upgrade -> downgrade -1 -> re-upgrade`)
+- template validation
+- migration safety (`alembic heads`, `alembic upgrade head`)
 - frontend type-check and tests
+- rollback readiness checks (latest backup artifact + restore tooling validation)
 
 Any failure returns non-zero and blocks release.
+
+Optional explicit modes:
+
+- `RELEASE_ENABLE_MIGRATION_ROLLBACK_TEST=true` to run `downgrade -1 -> re-upgrade`
+- `RELEASE_ENABLE_SMOKE_GATE=true` to include `scripts/platform_smoke_check.sh`
+- `ROLLBACK_ENABLE_RESTORE_DRILL=true` when isolated restore-rehearsal DB is provisioned
 
 ## Migration Safety Expectations
 

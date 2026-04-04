@@ -4,10 +4,12 @@
 
 This checklist is the final go-live gate for the university pilot.
 
+For canonical release discipline and evidence fields, use `docs/RELEASE_CHECKLIST.md` together with this pilot-specific checklist.
+
 ## Pre-Deployment
 
 1. Release artifact built and versioned.
-2. `bash scripts/release_check.sh` passes.
+2. `bash scripts/release_gate.sh` passes.
 3. `bash scripts/platform_smoke_check.sh` passes in the target environment or an equivalent pre-prod stack.
 4. Tenant safety and RBAC isolation tests are green.
 5. Backup created and backup file path recorded.
