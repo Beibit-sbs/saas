@@ -631,9 +631,12 @@ def health_db(
 @app.get("/health/ready")
 def health_ready(request: Request):
     payload = readiness_payload(request.app)
+    # Return only a slim public-safe response; infrastructure details are
+    # available exclusively via the authenticated /health/deep endpoint.
+    slim = {"status": payload["status"], "ready": payload["ready"], "timestamp": payload.get("timestamp")}
     if not payload["ready"]:
-        return JSONResponse(status_code=503, content=payload)
-    return payload
+        return JSONResponse(status_code=503, content=slim)
+    return slim
 
 
 @app.get("/health/worker", response_model=None)

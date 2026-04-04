@@ -66,3 +66,23 @@ def chat(
             },
         )
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+    except Exception as exc:
+        # Fail-closed: unexpected server errors surface as 503, not silent 200.
+        log_admin_action(
+            actor=actor,
+            action="ai.chat.execute",
+            path=str(request.url.path),
+            client_ip=request.client.host if request.client else "unknown",
+            correlation_id=getattr(request.state, "request_id", None),
+            entity="ai_gateway",
+            result="failed",
+            tenant_id=tenant_id,
+            metadata={
+                "reason": "unexpected_error",
+                "error": str(exc),
+            },
+        )
+        raise HTTPException(
+            status_code=503,
+            detail="Service temporarily unavailable",
+        ) from exc

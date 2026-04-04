@@ -124,7 +124,13 @@ def allow_legacy_header_auth() -> bool:
 def allow_rbac_dev_fallback() -> bool:
     # Security default: in operational mode authorization must not trust client roles
     # when DB-backed RBAC is unavailable.
-    return is_enabled(os.getenv("RBAC_ALLOW_DEV_FALLBACK", "false"))
+    enabled = is_enabled(os.getenv("RBAC_ALLOW_DEV_FALLBACK", "false"))
+    if enabled and is_production_mode():
+        raise RuntimeError(
+            "RBAC_ALLOW_DEV_FALLBACK must not be enabled in production: "
+            "set RBAC_ALLOW_DEV_FALLBACK=false or remove the variable"
+        )
+    return enabled
 
 
 def get_auth_revocation_redis_url() -> str | None:

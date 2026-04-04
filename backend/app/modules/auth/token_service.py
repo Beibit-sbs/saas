@@ -3,12 +3,15 @@ import binascii
 import hashlib
 import hmac
 import json
+import logging
 import os
 import time
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Optional
 from uuid import uuid4
+
+_logger = logging.getLogger(__name__)
 
 from fastapi import Request
 
@@ -114,7 +117,13 @@ def is_token_revoked(jti: str) -> bool:
         try:
             return bool(client.exists(_revoked_token_key(normalized_jti)))
         except Exception:
-            pass
+            # Redis is configured but unreachable: fail-closed to prevent accepting
+            # tokens that were revoked in Redis but absent from the in-memory store.
+            _logger.warning(
+                "token_revocation_redis_unavailable: treating token as revoked (fail-closed)",
+                extra={"jti": normalized_jti},
+            )
+            return True
 
     _prune_revoked_tokens_memory()
     return normalized_jti in _revoked_tokens_memory
