@@ -44,6 +44,45 @@ def test_self_service_provisioning_creates_tenant_admin_and_trial_subscription()
     assert body["billing_state"]["billing_state"] == "read_write"
 
 
+def test_self_service_disabled_by_default_in_production(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.delenv("PLATFORM_SELF_SERVICE_ENABLED", raising=False)
+
+    response = client.post(
+        "/api/platform/tenants",
+        headers=_idem("self-service-prod-disabled"),
+        json={
+            "tenant_name": "Prod Disabled University",
+            "admin_login": "prod.disabled.admin",
+            "admin_password": "StrongPass123!",
+            "plan_code": "free",
+        },
+    )
+
+    assert response.status_code == 403, response.text
+    assert response.json()["detail"] == "self-service tenant provisioning disabled"
+    assert get_tenant_by_slug("prod-disabled-university") is None
+
+
+def test_self_service_can_be_explicitly_enabled_in_production(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("PLATFORM_SELF_SERVICE_ENABLED", "true")
+
+    response = client.post(
+        "/api/platform/tenants",
+        headers=_idem("self-service-prod-enabled"),
+        json={
+            "tenant_name": "Prod Enabled University",
+            "admin_login": "prod.enabled.admin",
+            "admin_password": "StrongPass123!",
+            "plan_code": "free",
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    assert int(response.json()["tenant"]["id"]) > 1
+
+
 def test_subscription_suspended_switches_tenant_to_read_only() -> None:
     provision = client.post(
         "/api/platform/tenants",

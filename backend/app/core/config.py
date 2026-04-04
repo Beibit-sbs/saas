@@ -341,6 +341,13 @@ def is_production_mode() -> bool:
     return raw in {"prod", "production"}
 
 
+def is_platform_self_service_enabled() -> bool:
+    raw = os.getenv("PLATFORM_SELF_SERVICE_ENABLED", "").strip().lower()
+    if raw:
+        return is_enabled(raw)
+    return not is_production_mode()
+
+
 def get_metrics_token() -> str | None:
     """Optional static bearer token required to read /metrics.
 

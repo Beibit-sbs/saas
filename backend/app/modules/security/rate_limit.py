@@ -319,6 +319,8 @@ def _match_sensitive_admin_path(method: str, path: str) -> bool:
     normalized_method = method.upper()
     if (normalized_method, path) in _SENSITIVE_ADMIN_PATHS:
         return True
+    if normalized_method == "POST" and path == "/api/platform/tenants":
+        return True
     if normalized_method in {"POST", "PUT", "PATCH", "DELETE"} and (
         path == "/platform" or path.startswith("/platform/")
     ):
@@ -582,6 +584,7 @@ def should_audit_rate_limit(path: str) -> bool:
     return (
         path.startswith("/api/auth/")
         or path.startswith("/api/admin/")
+        or path.startswith("/api/platform/")
         or path == "/platform"
         or path.startswith("/platform/")
     )

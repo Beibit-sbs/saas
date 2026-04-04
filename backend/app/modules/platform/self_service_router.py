@@ -6,6 +6,7 @@ import json
 from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from app.core.config import is_platform_self_service_enabled
 from app.modules.audit.service import log_admin_action
 from app.modules.auth.local_users_service import local_user_store
 from app.modules.billing.service import ensure_tenant_subscription, get_tenant_billing_state
@@ -186,6 +187,9 @@ def create_platform_tenant_self_service(
     request: Request,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> dict[str, object]:
+    if not is_platform_self_service_enabled():
+        raise HTTPException(status_code=403, detail="self-service tenant provisioning disabled")
+
     normalized_key = str(idempotency_key or "").strip()
     if not normalized_key:
         raise HTTPException(status_code=400, detail="Idempotency-Key header is required")

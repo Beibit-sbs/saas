@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from tests.conftest import ADMIN_HEADERS, client
 from app.modules.audit import service as audit_service
 from app.modules.auth.token_service import create_service_token
@@ -61,6 +63,52 @@ def test_sensitive_admin_rate_limit_returns_429_and_audits(monkeypatch) -> None:
     assert abuse_events
     assert abuse_events[0]["actor"] == "owner@example.com"
     assert abuse_events[0]["metadata"]["path"] == "/api/admin/ldap/test-connection"
+    assert abuse_events[0]["metadata"]["scope"] == "sensitive_admin"
+
+
+def test_platform_self_service_rate_limit_returns_429_and_audits(monkeypatch) -> None:
+    audit_service.clear_audit_events()
+    rate_limit_service.clear_rate_limit_state()
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
+    monkeypatch.setenv("PLATFORM_SELF_SERVICE_ENABLED", "true")
+    monkeypatch.setenv("RATE_LIMIT_GENERAL_LIMIT", "0")
+    monkeypatch.setenv("RATE_LIMIT_SENSITIVE_ADMIN_WINDOW_SECONDS", "60")
+    monkeypatch.setenv("RATE_LIMIT_SENSITIVE_ADMIN_LIMIT", "1")
+
+    suffix = uuid4().hex[:8]
+    first = client.post(
+        "/api/platform/tenants",
+        headers={"Idempotency-Key": f"self-service-rl-{suffix}-1"},
+        json={
+            "tenant_name": f"Rate Limit University {suffix}",
+            "admin_login": f"rate.limit.{suffix}",
+            "admin_password": "StrongPass123!",
+            "admin_email": f"rate.limit.{suffix}@example.com",
+            "plan_code": "free",
+        },
+    )
+    second = client.post(
+        "/api/platform/tenants",
+        headers={"Idempotency-Key": f"self-service-rl-{suffix}-2"},
+        json={
+            "tenant_name": f"Rate Limit University Retry {suffix}",
+            "admin_login": f"rate.limit.retry.{suffix}",
+            "admin_password": "StrongPass123!",
+            "admin_email": f"rate.limit.retry.{suffix}@example.com",
+            "plan_code": "free",
+        },
+    )
+
+    assert first.status_code == 201, first.text
+    assert second.status_code == 429
+    assert int(second.headers["Retry-After"]) >= 59
+
+    events_response = client.get("/api/admin/audit/events", headers=ADMIN_HEADERS)
+    assert events_response.status_code == 200
+    abuse_events = [item for item in events_response.json()["events"] if item["action"] == "rate_limit_exceeded"]
+    assert abuse_events
+    assert abuse_events[0]["actor"] == "anonymous"
+    assert abuse_events[0]["metadata"]["path"] == "/api/platform/tenants"
     assert abuse_events[0]["metadata"]["scope"] == "sensitive_admin"
 
 
