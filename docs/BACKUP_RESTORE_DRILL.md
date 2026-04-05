@@ -99,7 +99,7 @@ export DATABASE_URL='postgresql+psycopg://postgres:postgres@127.0.0.1:55432/plat
 cd backend
 export DATABASE_URL='postgresql+psycopg://postgres:postgres@127.0.0.1:55432/platform_restore'
 export REDIS_URL='redis://127.0.0.1:6379/0'
-export JWT_SECRET='dr-rehearsal-secret-not-for-production-1234567890'
+export JWT_SECRET='change-me-in-dr-rehearsal-jwt'
 export API_BASE_URL='https://api.example.test'
 export ADMIN_PANEL_URL='https://admin.example.test'
 export INTERNAL_API_TOKEN='change-me-in-dr-rehearsal'
