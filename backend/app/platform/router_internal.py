@@ -12,7 +12,10 @@ import hmac
 
 from fastapi import APIRouter, Header, HTTPException
 
-from app.core.config import get_internal_api_token
+from app.core.rehydration import run_post_operation_rehydration
+from app.core.config import get_internal_api_allowed_scopes, get_internal_api_token
+from app.modules.jobs.worker import run_worker_loop
+from app.platform.events.worker import outbox_worker
 from app.platform.jobs import service as jobs_service
 from app.platform.jobs.scheduler import scheduler
 from app.platform.jobs.worker import worker
@@ -43,7 +46,7 @@ def _legacy_job_read(row: dict[str, object]) -> JobRead:
     )
 
 
-def _require_internal_token(authorization: str | None) -> None:
+def _require_internal_token(authorization: str | None, required_scope: str) -> None:
     configured = get_internal_api_token()
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="internal token required")
@@ -51,43 +54,71 @@ def _require_internal_token(authorization: str | None) -> None:
     if not hmac.compare_digest(provided.encode(), configured.encode()):
         raise HTTPException(status_code=403, detail="invalid internal token")
 
+    allowed_scopes = get_internal_api_allowed_scopes()
+    if "*" in allowed_scopes:
+        return
+    if required_scope not in allowed_scopes:
+        raise HTTPException(status_code=403, detail=f"internal scope denied: {required_scope}")
+
 
 @router.post("/jobs/{job_id}/run", response_model=JobRead)
 def run_job(job_id: int, payload: JobRunRequest, authorization: str | None = Header(default=None)) -> JobRead:
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "jobs.run")
     row = jobs_service.run_job(job_id, succeed=payload.succeed, result=payload.result, error=payload.error)
     return _legacy_job_read(row)
 
 
 @router.post("/jobs/{job_id}/retry", response_model=JobRead)
 def retry_job(job_id: int, authorization: str | None = Header(default=None)) -> JobRead:
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "jobs.retry")
     row = jobs_service.retry_job(job_id)
     return _legacy_job_read(row)
 
 
 @router.post("/worker/run-once")
 def run_worker_once(authorization: str | None = Header(default=None)) -> dict[str, int]:
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "worker.run_once")
     return worker.run_once()
+
+
+@router.post("/module-jobs/run-once")
+def run_module_jobs_once(authorization: str | None = Header(default=None)) -> dict[str, int]:
+    _require_internal_token(authorization, "module_jobs.run_once")
+    processed = run_worker_loop(iterations=1)
+    return {"processed": int(processed)}
+
+
+@router.post("/events/outbox/run-once")
+def run_outbox_worker_once(authorization: str | None = Header(default=None)) -> dict[str, int]:
+    _require_internal_token(authorization, "events.outbox.run_once")
+    return outbox_worker.run_once()
+
+
+@router.post("/runtime/rehydrate")
+def rehydrate_runtime_after_out_of_band_operation(
+    authorization: str | None = Header(default=None),
+    operation: str = "manual",
+) -> dict[str, object]:
+    _require_internal_token(authorization, "runtime.rehydrate")
+    return run_post_operation_rehydration(operation=operation)
 
 
 @router.post("/scheduler/run-once")
 def run_scheduler_once(authorization: str | None = Header(default=None)) -> dict[str, int]:
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "scheduler.run_once")
     return scheduler.run_due_tasks_once()
 
 
 @router.get("/tenants/{tenant_id}/notifications", response_model=list[NotificationRead])
 def list_notifications(tenant_id: int, authorization: str | None = Header(default=None)) -> list[NotificationRead]:
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "notifications.read")
     rows = notifications_service.list_notifications(tenant_id)
     return [NotificationRead.model_validate(item) for item in rows]
 
 
 @router.post("/webhooks/retry-failed", response_model=WebhookRetryResponseSchema)
 def retry_failed_webhooks(limit: int = 100, authorization: str | None = Header(default=None)) -> WebhookRetryResponseSchema:
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "webhooks.retry_failed")
     result = webhook_dispatcher.retry_failed_deliveries(limit=max(1, min(int(limit), 500)), actor="platform-internal")
     return WebhookRetryResponseSchema.model_validate(result)
 
@@ -99,7 +130,7 @@ def list_failed_deliveries(
     authorization: str | None = Header(default=None),
 ) -> dict[str, object]:
     """List failed/stuck webhook deliveries for operational visibility."""
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "webhooks.failed_deliveries.read")
     from datetime import datetime, timezone
     with UnitOfWork() as uow:
         # Get failed deliveries from repository
@@ -137,7 +168,7 @@ def refresh_tenant_kpis(
     tenant_id: int,
     authorization: str | None = Header(default=None),
 ) -> TenantKpiSnapshotRead:
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "analytics.kpis.refresh")
     with UnitOfWork() as uow:
         snap = analytics_service.refresh_tenant_kpis(tenant_id=tenant_id, uow=uow)
     return TenantKpiSnapshotRead.model_validate(snap)
@@ -145,14 +176,14 @@ def refresh_tenant_kpis(
 
 @router.post("/platform/kpi/refresh")
 def refresh_all_tenant_kpi(authorization: str | None = Header(default=None)) -> dict[str, int]:
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "platform.kpi.refresh_all")
     with UnitOfWork() as uow:
         return kpi_service.refresh_all_tenants(uow=uow)
 
 
 @router.post("/platform/kpi/refresh/{tenant_id}", response_model=RectorDashboardReadSchema)
 def refresh_tenant_kpi(tenant_id: int, authorization: str | None = Header(default=None)) -> RectorDashboardReadSchema:
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "platform.kpi.refresh_tenant")
     with UnitOfWork() as uow:
         kpi_service.refresh_tenant_metrics(tenant_id=tenant_id, uow=uow)
         dashboard = kpi_service.refresh_tenant_dashboard_snapshot(tenant_id=tenant_id, uow=uow)
@@ -165,7 +196,7 @@ def evaluate_automation_event(
     authorization: str | None = Header(default=None),
 ) -> dict[str, object]:
     """Manually trigger automation rule evaluation for a given event payload."""
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "platform.automation.evaluate")
     with UnitOfWork() as uow:
         return automation_service.evaluate_event(body, uow=uow)
 
@@ -181,7 +212,7 @@ def get_student_context_internal(
     authorization: str | None = Header(default=None),
 ) -> StudentProfileRead:
     """Return the full semantic profile for a student (internal-scoped)."""
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "context.student.read")
     with UnitOfWork() as uow:
         profile = context_service.build_student_profile(
             student_id=student_id,
@@ -194,5 +225,5 @@ def get_student_context_internal(
 @router.post("/platform/ai/copilot/rebuild-cache")
 def rebuild_ai_copilot_cache(authorization: str | None = Header(default=None)) -> dict[str, object]:
     """Placeholder for future cache/materialization rebuild hooks."""
-    _require_internal_token(authorization)
+    _require_internal_token(authorization, "platform.ai_copilot.rebuild_cache")
     return {"status": "noop", "component": "ai_copilot_foundation_v1", "read_only": True}

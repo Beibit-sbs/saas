@@ -423,6 +423,35 @@ def get_internal_api_token() -> str:
         raise RuntimeError("INTERNAL_API_TOKEN must be configured")
     return token
 
+_LEGACY_INTERNAL_API_FULL_SCOPES = {
+    "jobs.run",
+    "jobs.retry",
+    "worker.run_once",
+    "module_jobs.run_once",
+    "events.outbox.run_once",
+    "runtime.rehydrate",
+    "scheduler.run_once",
+    "notifications.read",
+    "webhooks.retry_failed",
+    "webhooks.failed_deliveries.read",
+    "analytics.kpis.refresh",
+    "platform.kpi.refresh_all",
+    "platform.kpi.refresh_tenant",
+    "platform.automation.evaluate",
+    "context.student.read",
+    "platform.ai_copilot.rebuild_cache",
+}
+
+
+def get_internal_api_allowed_scopes() -> set[str]:
+    raw = os.getenv("INTERNAL_API_ALLOWED_SCOPES", "").strip()
+    if not raw:
+        return set(_LEGACY_INTERNAL_API_FULL_SCOPES)
+    scopes = {item.strip() for item in raw.split(",") if item.strip()}
+    if "*" in scopes:
+        return {"*"}
+    return scopes
+
 
 def _is_https_url(value: str) -> bool:
     parsed = urlparse(value)
