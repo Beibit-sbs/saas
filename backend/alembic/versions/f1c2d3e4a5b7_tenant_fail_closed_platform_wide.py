@@ -8,8 +8,6 @@ Create Date: 2026-03-29 00:00:00.000000
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-
 from alembic import op
 
 
@@ -67,19 +65,17 @@ def upgrade() -> None:
         "app_roles",
         "app_role_permissions",
         "app_user_roles",
-        "app_platform_developer_apps",
         "app_platform_feature_flags",
     ):
         _assert_no_null_or_orphan(table)
 
     # 4) Enforce non-null tenant constraints where tenant context is mandatory.
-    op.execute("ALTER TABLE app_platform_developer_apps ALTER COLUMN tenant_id SET NOT NULL")
     op.execute("ALTER TABLE app_platform_feature_flags ALTER COLUMN tenant_id SET NOT NULL")
+    op.execute("ALTER TABLE app_platform_developer_apps ALTER COLUMN tenant_id SET NOT NULL")
 
 
 def downgrade() -> None:
     op.execute("ALTER TABLE app_platform_feature_flags ALTER COLUMN tenant_id DROP NOT NULL")
-    op.execute("ALTER TABLE app_platform_developer_apps ALTER COLUMN tenant_id DROP NOT NULL")
 
     op.execute("ALTER TABLE app_user_roles ALTER COLUMN tenant_id SET DEFAULT 1")
     op.execute("ALTER TABLE app_role_permissions ALTER COLUMN tenant_id SET DEFAULT 1")

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timezone
 from threading import Lock
 from typing import Any
 
@@ -121,15 +121,27 @@ class AnalyticsRepository:
         *,
         tenant_id: int,
         event_type: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        cursor_id_lt: int | None = None,
+        ordering: str = "created_at_desc",
         limit: int = 100,
         conn: object | None = None,
     ) -> list[dict[str, Any]]:
+        normalized_ordering = str(ordering).strip().lower() or "created_at_desc"
+        if normalized_ordering != "created_at_desc":
+            raise ValueError(f"unsupported ordering: {ordering}")
+
         if conn is None:
             if db_available():
                 with transaction() as tx:
                     return self.list_event_projections(
                         tenant_id=tenant_id,
                         event_type=event_type,
+                        date_from=date_from,
+                        date_to=date_to,
+                        cursor_id_lt=cursor_id_lt,
+                        ordering=normalized_ordering,
                         limit=limit,
                         conn=tx,
                     )
@@ -139,6 +151,12 @@ class AnalyticsRepository:
                     if r["tenant_id"] == tenant_id
                     and (event_type is None or r["event_type"] == event_type)
                 ]
+                if date_from is not None:
+                    rows = [r for r in rows if str(r.get("created_at", ""))[:10] >= date_from.isoformat()]
+                if date_to is not None:
+                    rows = [r for r in rows if str(r.get("created_at", ""))[:10] <= date_to.isoformat()]
+                if cursor_id_lt is not None:
+                    rows = [r for r in rows if int(r["id"]) < int(cursor_id_lt)]
                 rows.sort(key=lambda r: r["id"], reverse=True)
                 return rows[:limit]
 
@@ -148,29 +166,39 @@ class AnalyticsRepository:
             return self.list_event_projections(
                 tenant_id=tenant_id,
                 event_type=event_type,
+                date_from=date_from,
+                date_to=date_to,
+                cursor_id_lt=cursor_id_lt,
+                ordering=normalized_ordering,
                 limit=limit,
                 conn=None,
             )
 
+        where_clauses: list[str] = ["tenant_id = %s"]
+        params: list[Any] = [tenant_id]
         if event_type is not None:
-            sql = (
-                "SELECT id, tenant_id, outbox_event_id, event_type, aggregate_type, aggregate_id, created_at "
-                "FROM app_platform_analytics_events "
-                "WHERE tenant_id = %s AND event_type = %s "
-                "ORDER BY id DESC LIMIT %s"
-            )
-            params: tuple[Any, ...] = (tenant_id, event_type, limit)
-        else:
-            sql = (
-                "SELECT id, tenant_id, outbox_event_id, event_type, aggregate_type, aggregate_id, created_at "
-                "FROM app_platform_analytics_events "
-                "WHERE tenant_id = %s "
-                "ORDER BY id DESC LIMIT %s"
-            )
-            params = (tenant_id, limit)
+            where_clauses.append("event_type = %s")
+            params.append(event_type)
+        if date_from is not None:
+            where_clauses.append("created_at >= %s")
+            params.append(datetime.combine(date_from, time.min, tzinfo=timezone.utc))
+        if date_to is not None:
+            where_clauses.append("created_at <= %s")
+            params.append(datetime.combine(date_to, time.max, tzinfo=timezone.utc))
+        if cursor_id_lt is not None:
+            where_clauses.append("id < %s")
+            params.append(int(cursor_id_lt))
+
+        sql = (
+            "SELECT id, tenant_id, outbox_event_id, event_type, aggregate_type, aggregate_id, created_at "
+            "FROM app_platform_analytics_events "
+            f"WHERE {' AND '.join(where_clauses)} "
+            "ORDER BY created_at DESC, id DESC LIMIT %s"
+        )
+        params.append(limit)
 
         with conn.cursor() as cur:
-            cur.execute(sql, params)
+            cur.execute(sql, tuple(params))
             db_rows = cur.fetchall()
         return [
             {

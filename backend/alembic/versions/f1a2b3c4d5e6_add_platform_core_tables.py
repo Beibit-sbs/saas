@@ -1,7 +1,7 @@
 """add platform core tables
 
 Revision ID: f1a2b3c4d5e6
-Revises: e8b4c2d1f7a9
+Revises: d3e5f7a9b1c2
 Create Date: 2026-03-23 18:20:00.000000
 """
 
@@ -15,7 +15,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "f1a2b3c4d5e6"
-down_revision: Union[str, None] = "e8b4c2d1f7a9"
+down_revision: Union[str, None] = "d3e5f7a9b1c2"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

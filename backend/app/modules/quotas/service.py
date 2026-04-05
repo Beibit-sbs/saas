@@ -22,6 +22,10 @@ DEFAULT_QUOTAS_BY_PLAN: dict[str, dict[str, int]] = {
         "users_count": 10,
         "jobs_per_day": 100,
         "api_requests": 5000,
+        "analytics_queries": 500,
+        "grades_submitted": 1000,
+        "transcripts_generated": 500,
+        "transcripts_read": 5000,
         "backup_storage_mb": 1024,
         "storage_mb": 1024,
         "ai_requests_per_day": 200,
@@ -34,6 +38,10 @@ DEFAULT_QUOTAS_BY_PLAN: dict[str, dict[str, int]] = {
         "users_count": 25,
         "jobs_per_day": 300,
         "api_requests": 20000,
+        "analytics_queries": 5000,
+        "grades_submitted": 5000,
+        "transcripts_generated": 2500,
+        "transcripts_read": 25000,
         "backup_storage_mb": 4096,
         "storage_mb": 4096,
         "ai_requests_per_day": 1000,
@@ -46,6 +54,10 @@ DEFAULT_QUOTAS_BY_PLAN: dict[str, dict[str, int]] = {
         "users_count": 100,
         "jobs_per_day": 1000,
         "api_requests": 100000,
+        "analytics_queries": 25000,
+        "grades_submitted": 25000,
+        "transcripts_generated": 10000,
+        "transcripts_read": 100000,
         "backup_storage_mb": 10240,
         "storage_mb": 10240,
         "ai_requests_per_day": 5000,
@@ -58,6 +70,10 @@ DEFAULT_QUOTAS_BY_PLAN: dict[str, dict[str, int]] = {
         "users_count": 100000,
         "jobs_per_day": 100000,
         "api_requests": 10000000,
+        "analytics_queries": 1000000,
+        "grades_submitted": 1000000,
+        "transcripts_generated": 500000,
+        "transcripts_read": 5000000,
         "backup_storage_mb": 1048576,
         "storage_mb": 1048576,
         "ai_requests_per_day": 1000000,
@@ -294,6 +310,26 @@ def _current_value(tenant_id: int, quota_key: str) -> int:
         from app.modules.usage.service import get_usage_sum
 
         return get_usage_sum(tenant_id=tenant_id, metric="api_calls", since_iso=_day_start_iso())
+
+    if key == "analytics_queries":
+        from app.modules.usage.service import get_usage_sum
+
+        return get_usage_sum(tenant_id=tenant_id, metric="analytics_queries")
+
+    if key == "grades_submitted":
+        from app.modules.usage.service import get_usage_sum
+
+        return get_usage_sum(tenant_id=tenant_id, metric="grades_submitted")
+
+    if key == "transcripts_generated":
+        from app.modules.usage.service import get_usage_sum
+
+        return get_usage_sum(tenant_id=tenant_id, metric="transcripts_generated")
+
+    if key == "transcripts_read":
+        from app.modules.usage.service import get_usage_sum
+
+        return get_usage_sum(tenant_id=tenant_id, metric="transcripts_read")
 
     if key == "feature_flags":
         from app.modules.feature_flags.service import list_flags

@@ -16,7 +16,7 @@
         "@modelcontextprotocol/server-postgres"
       ],
       "env": {
-        "DATABASE_URL": "postgresql://readonly_user:change_me@localhost:5432/app"
+        "DATABASE_URL": "postgresql://readonly_user:change_me@db:5432/app"
       }
     }
   }

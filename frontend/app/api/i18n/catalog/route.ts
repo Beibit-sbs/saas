@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-
-const API_BASE = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { getServerApiBaseUrl } from "@/shared/server/runtime-env";
 
 export async function GET() {
+  const apiBase = getServerApiBaseUrl();
   try {
-    const upstream = await fetch(`${API_BASE}/api/i18n/catalog`, {
+    const upstream = await fetch(new URL("/api/i18n/catalog", apiBase), {
       method: "GET",
       cache: "no-store",
       headers: { "Content-Type": "application/json" },

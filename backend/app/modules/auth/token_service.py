@@ -11,8 +11,6 @@ from functools import lru_cache
 from typing import Optional
 from uuid import uuid4
 
-_logger = logging.getLogger(__name__)
-
 from fastapi import Request
 
 from app.core.config import (
@@ -22,6 +20,8 @@ from app.core.config import (
     get_auth_refresh_token_ttl_minutes,
     get_auth_revocation_redis_url,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -432,6 +432,16 @@ def _verify_token_payload(token: str, *, expected_token_type: set[str]) -> dict[
             tenant_id=tenant_raw,
         )
         raise TokenValidationError("token revoked")
+    if token_type == "service":
+        try:
+            from app.modules.service_accounts.service import is_service_account_active
+
+            if not is_service_account_active(tenant_id=tenant_raw, account_id=sub):
+                raise TokenValidationError("service account revoked")
+        except TokenValidationError:
+            raise
+        except Exception as exc:
+            raise TokenValidationError("service account store unavailable") from exc
     if normalized_session is not None and token_type != "service":
         try:
             from app.modules.auth.session_service import is_session_active

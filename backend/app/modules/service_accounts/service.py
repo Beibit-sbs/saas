@@ -64,6 +64,28 @@ def list_service_accounts(*, tenant_id: int) -> list[dict[str, Any]]:
     return result
 
 
+def get_service_account(*, tenant_id: int, account_id: str) -> dict[str, Any] | None:
+    account = _find_account(tenant_id=tenant_id, account_id=account_id)
+    if account is None:
+        return None
+    return {
+        "account_id": account.get("account_id"),
+        "name": account.get("name"),
+        "permissions": account.get("permissions", []),
+        "active": bool(account.get("active", False)),
+        "platform_global": bool(account.get("platform_global", False)),
+        "created_at": account.get("created_at"),
+        "updated_at": account.get("updated_at"),
+    }
+
+
+def is_service_account_active(*, tenant_id: int, account_id: str) -> bool:
+    account = _find_account(tenant_id=tenant_id, account_id=account_id)
+    if account is None:
+        return False
+    return bool(account.get("active", False))
+
+
 def create_service_account(
     *,
     tenant_id: int,

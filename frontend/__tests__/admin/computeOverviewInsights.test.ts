@@ -163,7 +163,7 @@ describe("computeOverviewInsights", () => {
           actor: "admin",
           action: "rbac.assign",
           path: "/api/bff/admin/rbac",
-          client_ip: "127.0.0.1",
+          client_ip: "10.0.0.1",
           correlation_id: "corr-1",
           result: "success",
         },

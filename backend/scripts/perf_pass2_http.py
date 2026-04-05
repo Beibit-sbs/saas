@@ -484,7 +484,7 @@ def compare_with_asgi(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Performance Pass 2 benchmark over real HTTP stack")
-    parser.add_argument("--base-url", type=str, default="http://127.0.0.1:8000", help="Target backend base URL")
+    parser.add_argument("--base-url", type=str, default="http://backend:8000", help="Target backend base URL")
     parser.add_argument("--duration", type=int, default=6, help="Measured duration per tier")
     parser.add_argument("--warmup", type=int, default=2, help="Warmup duration per tier")
     parser.add_argument("--tiers", type=str, default="1,4,8,16,32", help="Concurrency tiers")

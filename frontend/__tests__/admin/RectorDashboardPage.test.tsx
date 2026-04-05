@@ -25,6 +25,21 @@ vi.mock("../../modules/platform/automation/automation-overview-widget", () => ({
   AutomationOverviewWidget: () => <div data-testid="automation-overview-widget" />,
 }));
 
+vi.mock("@/app/components/LanguageProvider", () => ({
+  useLanguage: () => ({
+    t: (key: string) => {
+      const dict: Record<string, string> = {
+        "dashboard.executive.title": "University Executive Dashboard",
+        "dashboard.executive.dataDate": "Data date: {date} | Generated: {generated}",
+        "dashboard.executive.refresh": "Refresh",
+        "dashboard.executive.loadFailedTitle": "Failed to load executive dashboard",
+        "dashboard.executive.loadFailedMessage": "KPI data is temporarily unavailable.",
+      };
+      return dict[key] ?? key;
+    },
+  }),
+}));
+
 describe("RectorDashboardPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();

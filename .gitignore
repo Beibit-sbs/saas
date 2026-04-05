@@ -3,26 +3,27 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
-.venv/
+.[v]env/
 venv/
 
 # Node
 node_modules/
-.next/
+.[n]ext/
 
 # Env and secrets
 .env
 .env.*
 *.env
 !.env.example
+.env.[d]evelopment
+.env.production.[l]ocal
+.env.[l]ocal
+.[p]erf.env
 .secrets
 .secrets.*
 *.secrets
 *.local.secret
 *.local.secrets
-
-# Prometheus bearer token (runtime secret, never commit)
-infra/prometheus/metrics_token
 
 # Logs
 *.log
@@ -51,8 +52,12 @@ backups/
 ai-platform-backup.tar.gz
 
 # TLS private keys/certs (must never be versioned)
-infra/nginx/certs/*.csr
-infra/nginx/certs/*.srl
 infra/nginx/certs/*.key
+infra/nginx/certs/*.crt
 infra/nginx/certs/*.pem
 infra/nginx/certs/*.p12
+infra/nginx/certs/*.csr
+infra/nginx/certs/*.srl
+
+# Prometheus local auth material
+infra/prometheus/metrics_token

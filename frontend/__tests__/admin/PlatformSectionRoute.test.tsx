@@ -12,14 +12,14 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("../../app/(admin)/console/platform/platform-section-view", () => ({
-  PlatformSectionView: ({ tab }: { tab: string }) => <div>tab:{tab}</div>,
+  PlatformSectionView: ({ section }: { section: string }) => <div>section:{section}</div>,
 }));
 
 describe("PlatformSectionPage routing", () => {
   it("maps known section slug to control-plane tab", () => {
-    render(<PlatformSectionPage params={{ section: "jobs" }} />);
+    render(<PlatformSectionPage params={{ section: "tenants" }} />);
 
-    expect(screen.getByText("tab:jobs")).toBeInTheDocument();
+    expect(screen.getByText("section:tenants")).toBeInTheDocument();
   });
 
   it("calls notFound for unknown section slug", () => {

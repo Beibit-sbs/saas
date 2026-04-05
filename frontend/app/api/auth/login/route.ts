@@ -1,30 +1,8 @@
 import { NextResponse } from "next/server";
 import { isJwtExpired, toSafeSession } from "@/shared/server/auth-session";
+import { getServerApiBaseUrl, shouldUseSecureCookie } from "@/shared/server/runtime-env";
 
-const API_BASE = process.env.API_BASE_URL ?? "http://localhost:8000";
 const DEFAULT_LOGIN_TENANT_ID = process.env.AUTH_DEFAULT_TENANT_ID ?? "1";
-
-function shouldUseSecureCookie(request: Request): boolean {
-  const explicit = process.env.AUTH_COOKIE_SECURE;
-  if (explicit === "true") return true;
-  if (explicit === "false") return false;
-
-  try {
-    const url = new URL(request.url);
-    // Local HTTP runtime must keep non-secure cookie; otherwise browser omits it and /api/auth/me fails.
-    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return false;
-    if (url.protocol === "https:") return true;
-  } catch {
-    // Fall through to proxy/env heuristics.
-  }
-
-  const forwardedProto = request.headers.get("x-forwarded-proto");
-  if (forwardedProto && forwardedProto.toLowerCase().includes("https")) {
-    return true;
-  }
-
-  return process.env.NODE_ENV === "production";
-}
 
 function resolveTenantId(body: unknown, request: Request): string {
   if (body && typeof body === "object") {
@@ -56,11 +34,12 @@ function normalizeLogin(raw: unknown): string {
 }
 
 export async function POST(request: Request) {
+  const apiBase = getServerApiBaseUrl();
   const body = await request.json();
   const login = normalizeLogin(body?.login ?? body?.username);
   const tenantId = resolveTenantId(body, request);
 
-  const upstream = await fetch(`${API_BASE}/api/auth/login`, {
+  const upstream = await fetch(new URL("/api/auth/login", apiBase), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

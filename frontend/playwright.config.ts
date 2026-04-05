@@ -1,15 +1,20 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const e2eBaseUrl = process.env.E2E_BASE_URL?.trim();
+
+if (!e2eBaseUrl) {
+  throw new Error("E2E_BASE_URL is required");
+}
+
 /**
  * Playwright E2E configuration.
- * Smoke tests only – runs against a locally started dev server.
+ * Smoke tests only – runs against the nginx edge inside Docker Compose.
  *
  * To run:
- *   npx playwright test --project=chromium
+ *   docker compose --env-file .env run --rm frontend-tests npm run test:e2e
  *
  * Requires:
- *   API_BASE_URL env var (defaults to http://localhost:8000)
- *   Frontend served at http://localhost:3000 (started by webServer below)
+ *   E2E_BASE_URL env var set to the nginx edge URL
  */
 export default defineConfig({
   testDir: "./e2e",
@@ -19,7 +24,8 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
 
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: e2eBaseUrl,
+    ignoreHTTPSErrors: true,
     // Persist httpOnly cookies between requests in the same test
     // by using a storageState file for authenticated tests.
     headless: true,
@@ -37,11 +43,5 @@ export default defineConfig({
     },
   ],
 
-  // Uncomment to auto-start the dev server before tests:
-  // webServer: {
-  //   command: "npm run dev",
-  //   url: "http://localhost:3000",
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 60_000,
-  // },
+  webServer: undefined,
 });

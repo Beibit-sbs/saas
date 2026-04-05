@@ -38,6 +38,23 @@ class TestDeveloperAPIEndpoints:
         response = client.get("/api/dev/analytics/kpi")
         assert response.status_code == 401
 
+    def test_developer_analytics_events_endpoint_requires_auth(self) -> None:
+        """GET /api/dev/analytics/events returns 401 without developer credentials."""
+        response = client.get("/api/dev/analytics/events")
+        assert response.status_code == 401
+
+    def test_developer_analytics_events_endpoint_requires_auth_with_query_params(self) -> None:
+        """GET /api/dev/analytics/events with pagination/filter params still returns 401 without credentials."""
+        response = client.get(
+            "/api/dev/analytics/events?limit=10&cursor=eyJ2IjoxfQ==&event_type=student.created"
+        )
+        assert response.status_code == 401
+
+    def test_developer_analytics_kpis_latest_endpoint_requires_auth(self) -> None:
+        """GET /api/dev/analytics/kpis/latest returns 401 without developer credentials."""
+        response = client.get("/api/dev/analytics/kpis/latest")
+        assert response.status_code == 401
+
 
 class TestPublicAPIDoesNotHaveDeveloperEndpoints:
     """Verify Developer endpoints were removed from public API."""
@@ -152,6 +169,21 @@ class TestDeveloperAPIScopes:
     def test_analytics_read_scope_required(self) -> None:
         """analytics.read scope must be present for /analytics/kpi endpoint."""
         response = client.get("/api/dev/analytics/kpi")
+        assert response.status_code == 401
+
+    def test_analytics_read_scope_required_for_events(self) -> None:
+        """analytics.read scope must be present for /analytics/events endpoint."""
+        response = client.get("/api/dev/analytics/events")
+        assert response.status_code == 401
+
+    def test_analytics_read_scope_required_for_events_with_date_filters(self) -> None:
+        """analytics.read scope must still gate /analytics/events when date filters are provided."""
+        response = client.get("/api/dev/analytics/events?date_from=2026-01-01&date_to=2026-01-31")
+        assert response.status_code == 401
+
+    def test_analytics_read_scope_required_for_latest_snapshot(self) -> None:
+        """analytics.read scope must be present for /analytics/kpis/latest endpoint."""
+        response = client.get("/api/dev/analytics/kpis/latest")
         assert response.status_code == 401
 
 

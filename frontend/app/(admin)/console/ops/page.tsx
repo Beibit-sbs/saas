@@ -27,6 +27,16 @@ function hasAnyNumber(values: Array<number | null>): boolean {
   return values.some((value) => typeof value === "number");
 }
 
+function formatPercent(value: number | null): string | null {
+  if (value === null) return null;
+  return `${(value * 100).toFixed(2)}%`;
+}
+
+function toChartPercent(value: number | null, max: number): number {
+  if (value === null || max <= 0) return 0;
+  return Math.max(0, Math.min(100, (value / max) * 100));
+}
+
 export default function OpsConsolePage() {
   const { t } = useLanguage();
   const healthQuery = useOpsHealth();
@@ -48,6 +58,8 @@ export default function OpsConsolePage() {
       metrics.queue.failedWebhooks,
       metrics.queue.failedAutomationExecutions,
       metrics.queue.failedJobs,
+      metrics.queue.retryBacklog,
+      metrics.queue.deadCount,
     ]
     : [];
 
@@ -60,6 +72,7 @@ export default function OpsConsolePage() {
       metrics.traffic.http4xxCount,
       metrics.traffic.http5xxCount,
       metrics.traffic.developerApiErrorCount,
+      metrics.traffic.errorRate,
     ]
     : [];
 
@@ -238,6 +251,7 @@ export default function OpsConsolePage() {
                 <MetricTile label={t("ops.traffic.http4xxCount")} value={metrics.traffic.http4xxCount} testId="metric-4xx" />
                 <MetricTile label={t("ops.traffic.http5xxCount")} value={metrics.traffic.http5xxCount} testId="metric-5xx" />
                 <MetricTile label={t("ops.traffic.developerApiErrors")} value={metrics.traffic.developerApiErrorCount} testId="metric-dev-errors" />
+                <MetricTile label={t("ops.traffic.errorRate")} value={formatPercent(metrics.traffic.errorRate)} testId="metric-error-rate" />
               </div>
             ) : (
               <EmptyState
@@ -250,6 +264,97 @@ export default function OpsConsolePage() {
             <ErrorState
               title={t("ops.latencyEndpointUnavailable")}
               message={t("ops.latencyEndpointUnavailableMessage")}
+              onRetry={() => void metricsQuery.refetch()}
+              retryLabel={t("state.retry")}
+              retrying={metricsQuery.isFetching}
+            />
+          )}
+          {metrics && hasTrafficData ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2" data-testid="ops-traffic-chart">
+              <div className="rounded-md border bg-card p-3">
+                <p className="text-xs text-muted-foreground">{t("ops.latencyChart")}</p>
+                <div className="mt-3 space-y-2">
+                  {[
+                    [t("ops.traffic.p50Latency"), metrics.traffic.p50LatencyMs],
+                    [t("ops.traffic.p95Latency"), metrics.traffic.p95LatencyMs],
+                    [t("ops.traffic.p99Latency"), metrics.traffic.p99LatencyMs],
+                  ].map(([label, raw]) => (
+                    <div key={String(label)}>
+                      <div className="mb-1 flex items-center justify-between text-xs">
+                        <span>{label}</span>
+                        <span className="font-medium">{raw === null ? t("ops.unknown") : `${raw} ms`}</span>
+                      </div>
+                      <div className="h-2 rounded bg-muted">
+                        <div className="h-2 rounded bg-sky-500" style={{ width: `${toChartPercent(raw as number | null, 1000)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-md border bg-card p-3">
+                <p className="text-xs text-muted-foreground">{t("ops.errorChart")}</p>
+                <div className="mt-3 space-y-2">
+                  {[
+                    [t("ops.traffic.http4xxCount"), metrics.traffic.http4xxCount],
+                    [t("ops.traffic.http5xxCount"), metrics.traffic.http5xxCount],
+                    [t("ops.traffic.errorRate"), metrics.traffic.errorRate === null ? null : metrics.traffic.errorRate * 100],
+                  ].map(([label, raw]) => (
+                    <div key={String(label)}>
+                      <div className="mb-1 flex items-center justify-between text-xs">
+                        <span>{label}</span>
+                        <span className="font-medium">
+                          {label === t("ops.traffic.errorRate")
+                            ? (raw === null ? t("ops.unknown") : `${(raw as number).toFixed(2)}%`)
+                            : (raw ?? t("ops.unknown"))}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded bg-muted">
+                        <div className="h-2 rounded bg-rose-500" style={{ width: `${toChartPercent(raw as number | null, 100)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </OpsSectionCard>
+
+        <OpsSectionCard
+          title={t("ops.runtimeAndBackup")}
+          description={t("ops.runtimeAndBackupDescription")}
+        >
+          {metrics ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="ops-runtime-backup-section">
+              <MetricTile
+                label={t("ops.runtime.workerHeartbeatAge")}
+                value={metrics.runtime.workerHeartbeatAgeSeconds === null ? null : `${metrics.runtime.workerHeartbeatAgeSeconds}s`}
+                testId="metric-worker-heartbeat-age"
+              />
+              <MetricTile
+                label={t("ops.runtime.schedulerHeartbeatAge")}
+                value={metrics.runtime.schedulerHeartbeatAgeSeconds === null ? null : `${metrics.runtime.schedulerHeartbeatAgeSeconds}s`}
+                testId="metric-scheduler-heartbeat-age"
+              />
+              <MetricTile label={t("ops.queue.retryBacklog")} value={metrics.queue.retryBacklog} testId="metric-retry-backlog" />
+              <MetricTile label={t("ops.queue.deadCount")} value={metrics.queue.deadCount} testId="metric-dead-count" />
+              <div className="rounded-md border p-3 sm:col-span-2">
+                <p className="text-xs text-muted-foreground">{t("ops.backup.lastStatus")}</p>
+                <p className="mt-1 text-sm font-medium">{metrics.backup.lastStatus || t("ops.unknown")}</p>
+              </div>
+              <div className="rounded-md border p-3 sm:col-span-2">
+                <p className="text-xs text-muted-foreground">{t("ops.backup.lastFinishedAt")}</p>
+                <p className="mt-1 text-sm font-medium">{formatDateTime(metrics.backup.lastFinishedAt, t("ops.unknown"))}</p>
+              </div>
+              {metrics.backup.lastError ? (
+                <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-xs text-yellow-900 sm:col-span-2 lg:col-span-4">
+                  {t("ops.backup.lastError")}: {metrics.backup.lastError}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <ErrorState
+              title={t("ops.metricsEndpointUnavailable")}
+              message={t("ops.metricsEndpointUnavailableMessage")}
               onRetry={() => void metricsQuery.refetch()}
               retryLabel={t("state.retry")}
               retrying={metricsQuery.isFetching}

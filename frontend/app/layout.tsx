@@ -6,8 +6,7 @@ import { AuthProvider } from "./components/AuthProvider";
 import { LanguageProvider } from "./components/LanguageProvider";
 import RootLayoutOverlays from "./components/RootLayoutOverlays";
 import { normalizeLocale } from "@/shared/i18n/locale";
-
-const API_BASE = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { getServerApiBaseUrl } from "@/shared/server/runtime-env";
 
 type RuntimeLanguage = {
   code: string;
@@ -34,12 +33,13 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const apiBase = getServerApiBaseUrl();
   const localeCookie = cookies().get("app.locale")?.value;
 
   let initialLanguage = normalizeLocale(localeCookie, "ru");
 
   try {
-    const res = await fetch(`${API_BASE}/api/i18n/languages`, {
+    const res = await fetch(new URL("/api/i18n/languages", apiBase), {
       cache: "no-store",
       headers: { "Content-Type": "application/json" },
     });

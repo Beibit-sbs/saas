@@ -35,6 +35,7 @@ _scheduling_conflicts_total = 0
 _recent_request_samples: deque[tuple[float, int, float]] = deque(maxlen=5000)
 _auth_login_attempts_total: dict[tuple[str, str, str], int] = defaultdict(int)
 _auth_login_failures_total: dict[tuple[str, str, str], int] = defaultdict(int)
+_developer_analytics_contract_total: dict[tuple[str, str, str], int] = defaultdict(int)
 _jobs_executed_total: int = 0
 _jobs_failed_total: int = 0
 _jobs_queue_size: int = 0
@@ -153,6 +154,21 @@ def observe_auth_login_attempt(*, auth_source: str, outcome: str, tenant_id: str
             _auth_login_failures_total[(key[0], key[1], key[2])] += 1
 
 
+def observe_developer_analytics_contract(*, endpoint: str, outcome: str, reason: str) -> None:
+    key = (
+        str(endpoint).strip() or "unknown",
+        str(outcome).strip().lower() or "observed",
+        str(reason).strip().lower() or "unspecified",
+    )
+    with _lock:
+        _developer_analytics_contract_total[key] += 1
+
+
+def snapshot_developer_analytics_contract_metrics() -> dict[tuple[str, str, str], int]:
+    with _lock:
+        return dict(_developer_analytics_contract_total)
+
+
 def observe_job_execution(*, outcome: str) -> None:
     normalized = str(outcome).strip().lower()
     with _lock:
@@ -202,6 +218,7 @@ def clear_metrics_state() -> None:
         _recent_request_samples.clear()
         _auth_login_attempts_total.clear()
         _auth_login_failures_total.clear()
+        _developer_analytics_contract_total.clear()
         global _workflow_executions_total, _grade_submissions_total, _scheduling_conflicts_total
         global _jobs_executed_total, _jobs_failed_total, _jobs_queue_size, _invoices_created_total, _billing_failures_total
         global _db_connections_active, _redis_latency_seconds
@@ -237,6 +254,7 @@ def render_metrics() -> str:
         scheduling_conflicts_total = _scheduling_conflicts_total
         auth_login_attempts_total = dict(_auth_login_attempts_total)
         auth_login_failures_total = dict(_auth_login_failures_total)
+        developer_analytics_contract_total = dict(_developer_analytics_contract_total)
         jobs_executed_total = _jobs_executed_total
         jobs_failed_total = _jobs_failed_total
         jobs_queue_size = _jobs_queue_size
@@ -309,6 +327,12 @@ def render_metrics() -> str:
     for (tenant, auth_source, outcome), count in sorted(auth_login_failures_total.items()):
         labels = f'tenant_id="{_escape(tenant)}",auth_source="{_escape(auth_source)}",outcome="{_escape(outcome)}"'
         lines.append(f"auth_login_failures_total{{{labels}}} {count}")
+
+    lines.append("# HELP developer_analytics_contract_total Developer analytics contract outcomes.")
+    lines.append("# TYPE developer_analytics_contract_total counter")
+    for (endpoint, outcome, reason), count in sorted(developer_analytics_contract_total.items()):
+        labels = f'endpoint="{_escape(endpoint)}",outcome="{_escape(outcome)}",reason="{_escape(reason)}"'
+        lines.append(f"developer_analytics_contract_total{{{labels}}} {count}")
 
     lines.append("# HELP jobs_executed_total Total successfully executed jobs.")
     lines.append("# TYPE jobs_executed_total counter")

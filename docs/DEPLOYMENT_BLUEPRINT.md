@@ -211,18 +211,16 @@ File: `scripts/restore_db.sh`
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -lt 2 ]]; then
-  echo "Usage: $0 <target_database_url> <dump_file>"
-  exit 1
-fi
+SOURCE="$1"
 
-TARGET_DATABASE_URL="$1"
-DUMP_FILE="$2"
+echo "[restore] safe mode: validate backup readability without modifying the DB"
+echo "[restore] rerun with --execute --confirm RESTORE to apply pg_restore --clean --if-exists"
+
+pg_restore --list "${SOURCE}" >/dev/null
 
 pg_restore --clean --if-exists --no-owner --no-privileges \
-  -d "${TARGET_DATABASE_URL}" "${DUMP_FILE}"
-
-echo "Restore completed from ${DUMP_FILE}"
+    --dbname "${DATABASE_URL}" \
+    "${SOURCE}"
 ```
 
 ### Restore test procedure

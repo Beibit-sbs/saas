@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const API_BASE = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { getServerApiBaseUrl } from "@/shared/server/runtime-env";
 
 function unauthorized() {
   return NextResponse.json({ detail: "Authentication required" }, { status: 401 });
 }
 
 export async function PATCH(request: NextRequest) {
+  const apiBase = getServerApiBaseUrl();
   try {
     const token = request.cookies.get("admin_token")?.value;
     if (!token) return unauthorized();
 
-    const upstream = await fetch(new URL("/api/admin/i18n/default-language", API_BASE), {
+    const upstream = await fetch(new URL("/api/admin/i18n/default-language", apiBase), {
       method: "PATCH",
       headers: {
         authorization: `Bearer ${token}`,

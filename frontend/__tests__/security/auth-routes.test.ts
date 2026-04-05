@@ -6,8 +6,10 @@ import { POST as logoutPost } from "@/app/api/auth/logout/route";
 import { GET as meGet } from "@/app/api/auth/me/route";
 import { middleware } from "@/middleware";
 
-const API_BASE =
-  process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+process.env.API_BASE_URL = process.env.API_BASE_URL ?? "http://backend:8000";
+
+const API_BASE = process.env.API_BASE_URL;
+const EDGE_BASE = "https://edge.test";
 
 function makeJwt(payload: Record<string, unknown>) {
   const p = Buffer.from(JSON.stringify(payload)).toString("base64url");
@@ -37,7 +39,7 @@ describe("auth routes hardening", () => {
     );
 
     const response = await loginPost(
-      new Request("http://localhost/api/auth/login", {
+      new Request(`${EDGE_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ username: "owner@example.com", password: "secret" }),
@@ -93,7 +95,7 @@ describe("auth routes hardening", () => {
     );
 
     const response = await loginPost(
-      new Request("http://localhost/api/auth/login", {
+      new Request(`${EDGE_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ username: "tenant.user@example.com", password: "secret", tenant_id: 2 }),
@@ -130,7 +132,7 @@ describe("auth routes hardening", () => {
       ),
     );
 
-    const request = new NextRequest("http://localhost/api/auth/me", {
+    const request = new NextRequest(`${EDGE_BASE}/api/auth/me`, {
       headers: {
         cookie: "admin_token=session-token",
         "x-request-id": "req-me-1",
@@ -165,7 +167,7 @@ describe("auth routes hardening", () => {
       }),
     );
 
-    const request = new NextRequest("http://localhost/api/auth/me", {
+    const request = new NextRequest(`${EDGE_BASE}/api/auth/me`, {
       headers: { cookie: "admin_token=invalid-token" },
     });
 
@@ -185,7 +187,7 @@ describe("auth routes hardening", () => {
       }),
     );
 
-    const request = new NextRequest("http://localhost/api/auth/me", {
+    const request = new NextRequest(`${EDGE_BASE}/api/auth/me`, {
       headers: { cookie: "admin_token=expired-token" },
     });
 
@@ -200,7 +202,7 @@ describe("auth routes hardening", () => {
   it("me fails safely when backend profile endpoint is unavailable", async () => {
     vi.spyOn(global, "fetch").mockRejectedValue(new Error("upstream unavailable"));
 
-    const request = new NextRequest("http://localhost/api/auth/me", {
+    const request = new NextRequest(`${EDGE_BASE}/api/auth/me`, {
       headers: { cookie: "admin_token=session-token" },
     });
 
@@ -231,7 +233,7 @@ describe("auth routes hardening", () => {
       ),
     );
 
-    const request = new NextRequest("http://localhost/api/auth/me", {
+    const request = new NextRequest(`${EDGE_BASE}/api/auth/me`, {
       headers: { cookie: "admin_token=session-token" },
     });
 
@@ -244,7 +246,7 @@ describe("auth routes hardening", () => {
   });
 
   it("me returns 401 when no session cookie", async () => {
-    const request = new NextRequest("http://localhost/api/auth/me");
+    const request = new NextRequest(`${EDGE_BASE}/api/auth/me`);
     const response = await meGet(request);
 
     expect(response.status).toBe(401);
@@ -255,7 +257,7 @@ describe("auth routes hardening", () => {
 
   it("middleware and me stay consistent for expired session", async () => {
     const expiredToken = makeJwt({ exp: Math.floor(Date.now() / 1000) - 1 });
-    const middlewareRequest = new NextRequest("http://localhost/console/students", {
+    const middlewareRequest = new NextRequest(`${EDGE_BASE}/console/students`, {
       headers: { cookie: `admin_token=${expiredToken}` },
     });
     const middlewareResponse = await middleware(middlewareRequest);
@@ -269,7 +271,7 @@ describe("auth routes hardening", () => {
       }),
     );
 
-    const meRequest = new NextRequest("http://localhost/api/auth/me", {
+    const meRequest = new NextRequest(`${EDGE_BASE}/api/auth/me`, {
       headers: { cookie: `admin_token=${expiredToken}` },
     });
     const meResponse = await meGet(meRequest);
@@ -289,7 +291,7 @@ describe("auth routes hardening", () => {
       }),
     );
 
-    const request = new NextRequest("http://localhost/login", {
+    const request = new NextRequest(`${EDGE_BASE}/login`, {
       headers: { cookie: `admin_token=${validToken}` },
     });
 
@@ -299,7 +301,7 @@ describe("auth routes hardening", () => {
   });
 
   it("middleware keeps /login when no session cookie", async () => {
-    const request = new NextRequest("http://localhost/login");
+    const request = new NextRequest(`${EDGE_BASE}/login`);
     const response = await middleware(request);
     expect(response.status).toBe(200);
   });

@@ -71,6 +71,23 @@ def list_flags(tenant_id: int | None = None) -> List[dict[str, object]]:
     ]
 
 
+def is_flag_enabled(
+    key: str,
+    *,
+    tenant_id: int | None = None,
+    default: bool = False,
+) -> bool:
+    normalized_key = str(key or "").strip()
+    if not normalized_key:
+        return bool(default)
+
+    store = _tenant_store(_require_tenant_id(tenant_id, operation="is_flag_enabled"))
+    item = store.get(normalized_key)
+    if item is None:
+        return bool(default)
+    return bool(item.enabled)
+
+
 def set_flag(
     key: str,
     enabled: bool,

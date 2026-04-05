@@ -1,7 +1,8 @@
 from pathlib import Path
+import os
 import sys
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
+ROOT_DIR = Path(os.environ.get("PROJECT_ROOT", str(Path(__file__).resolve().parents[2])))
 BACKEND_DIR = ROOT_DIR / "backend"
 
 if str(BACKEND_DIR) not in sys.path:

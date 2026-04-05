@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from tests.conftest import ADMIN_HEADERS, INTERNAL_HEADERS, client
+from tests.conftest import ADMIN_HEADERS, INTERNAL_HEADERS, _auth_headers, client
 
 from app.platform.events.handlers.webhook_handler import WebhookEventHandler
 from app.platform.events.publisher import EventPublisher
@@ -20,9 +20,12 @@ def test_create_webhook_subscription_and_list_via_admin_api() -> None:
     tenant = tenant_service.create_tenant(f"wh-sub-{suffix}", f"Webhook {suffix}")
     tenant_id = int(tenant["tenant_id"])
 
+    # Use a token scoped to the new tenant - no cross-tenant override needed
+    tenant_admin_headers = _auth_headers("owner@example.com", ["admin"], tenant_id=tenant_id)
+
     created = client.post(
         "/api/v1/admin/webhooks/subscriptions",
-        headers=ADMIN_HEADERS,
+        headers=tenant_admin_headers,
         json={
             "tenant_id": tenant_id,
             "event_type": "student.created",
@@ -36,7 +39,7 @@ def test_create_webhook_subscription_and_list_via_admin_api() -> None:
     assert payload["event_type"] == "student.created"
     assert payload["is_active"] is True
 
-    listed = client.get(f"/api/v1/admin/tenants/{tenant_id}/webhooks/subscriptions", headers=ADMIN_HEADERS)
+    listed = client.get(f"/api/v1/admin/tenants/{tenant_id}/webhooks/subscriptions", headers=tenant_admin_headers)
     assert listed.status_code == 200, listed.text
     rows = listed.json()
     assert any(int(item["id"]) == int(payload["id"]) for item in rows)

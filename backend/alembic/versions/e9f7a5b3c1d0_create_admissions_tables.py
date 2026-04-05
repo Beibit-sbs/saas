@@ -1,6 +1,6 @@
 """Create Admissions module tables with tenant isolation.
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: e9f7a5b3c1d0
 Revises: f6a2d1e9b3c4
 Create Date: 2026-03-22 03:30:00+0500
 
@@ -29,7 +29,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'a1b2c3d4e5f6'
+revision: str = 'e9f7a5b3c1d0'
 down_revision: Union[str, None] = 'f6a2d1e9b3c4'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

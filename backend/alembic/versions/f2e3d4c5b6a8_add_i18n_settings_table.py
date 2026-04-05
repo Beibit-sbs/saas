@@ -8,8 +8,6 @@ Create Date: 2026-03-30 00:40:00.000000
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-
 from alembic import op
 
 

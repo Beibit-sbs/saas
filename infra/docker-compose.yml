@@ -26,6 +26,7 @@ services:
     build:
       context: ../backend
     environment:
+      PYTHONPATH: /app
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET}
@@ -64,6 +65,41 @@ services:
       interval: 15s
       timeout: 5s
       retries: 10
+
+  backend-tests:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.tests
+    working_dir: /app
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET}
+      API_BASE_URL: ${API_BASE_URL}
+      ADMIN_PANEL_URL: ${ADMIN_PANEL_URL}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+      INTEGRATIONS_ENCRYPTION_KEY: ${INTEGRATIONS_ENCRYPTION_KEY}
+      PLATFORM_ADMIN_LOGIN: ${PLATFORM_ADMIN_LOGIN}
+      PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD}
+      PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL}
+      RBAC_ALLOW_DEV_FALLBACK: "${RBAC_ALLOW_DEV_FALLBACK:-false}"
+      AUTH_CSRF_PROTECTION_ENABLED: "${AUTH_CSRF_PROTECTION_ENABLED:-true}"
+      TRUSTED_HOSTS: "${TRUSTED_HOSTS:-localhost,127.0.0.1,backend,backend-tests,nginx}"
+      PROJECT_ROOT: "/project"
+    volumes:
+      - ..:/project:ro,z
+      - backup_data:/tmp/app-backups
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    command:
+      - sh
+      - -lc
+      - pytest -q
 
   worker:
     build:
@@ -182,6 +218,10 @@ services:
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
     depends_on:
       backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+      nginx:
         condition: service_healthy
 
   nginx:

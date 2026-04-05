@@ -7,13 +7,15 @@ cd "$ROOT_DIR"
 mkdir -p test-results/soak_segments
 
 set -a
-. backend/.perf.env
+. infra/.env
 set +a
+
+COMPOSE=(docker compose --env-file infra/.env)
 
 for i in 1 2 3 4 5 6; do
   echo "[soak] segment ${i}/6 start"
-  backend/.venv/bin/python -u backend/scripts/perf_pass2_http.py \
-    --base-url http://127.0.0.1:8010 \
+    "${COMPOSE[@]}" exec -T backend python -u backend/scripts/perf_pass2_http.py \
+        --base-url http://backend:8000 \
     --profiles mixed \
     --tiers 16 \
     --duration 300 \
@@ -22,7 +24,7 @@ for i in 1 2 3 4 5 6; do
   echo "[soak] segment ${i}/6 done"
 done
 
-backend/.venv/bin/python - << 'PY'
+python3 - << 'PY'
 import json
 from pathlib import Path
 

@@ -8,11 +8,18 @@ from pathlib import Path
 # Provide minimal env so optional modules don't crash on import.
 # DATABASE_URL is intentionally NOT set here so db_available() returns False
 # and all platform repositories fall back to their in-memory stores.
-os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault("REDIS_URL", "redis://redis:6379/0")
 os.environ.setdefault("JWT_SECRET", "test-secret-not-for-production-use-only-32ch")
-os.environ.setdefault("API_BASE_URL", "https://api.example.test")
-os.environ.setdefault("ADMIN_PANEL_URL", "https://admin.example.test")
+os.environ.setdefault("API_BASE_URL", "http://backend:8000")
+os.environ.setdefault("ADMIN_PANEL_URL", "http://nginx")
 os.environ.setdefault("INTERNAL_API_TOKEN", "internal-token-for-tests-only")
+os.environ.setdefault("INTEGRATIONS_ENCRYPTION_KEY", "test-integration-key-not-for-production-123")
+
+_trusted_hosts_raw = os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1,backend,nginx")
+_trusted_hosts = [item.strip() for item in _trusted_hosts_raw.split(",") if item.strip()]
+if "testserver" not in _trusted_hosts:
+    _trusted_hosts.append("testserver")
+os.environ["TRUSTED_HOSTS"] = ",".join(_trusted_hosts)
 
 import pytest
 from fastapi.testclient import TestClient
@@ -44,6 +51,7 @@ from app.modules.observability.security_signals import clear_security_signal_sta
 from app.modules.observability.alerts import clear_alert_state
 from app.modules.observability.metrics import clear_metrics_state
 from app.modules.security import rate_limit as rate_limit_service
+from app.modules.identity.phase1_service import clear_identity_security_state
 from app.modules.tenants import service as tenant_service
 from app.modules.usage import service as usage_service
 from app.modules.university_core import service as university_core_service
@@ -56,6 +64,8 @@ from app.platform.federation import service as federation_service
 from app.platform.kpi import service as kpi_service
 from app.platform.automation import service as automation_service
 from app.platform.context import service as context_service
+from app.platform.event_ingestion import service as event_ingestion_service
+from app.platform.feature_flags import service as platform_feature_flags_service
 from app.platform.uow import UnitOfWork
 from app.platform.webhooks import service as webhook_service
 
@@ -147,11 +157,15 @@ def _reset_local_user_store() -> None:
 
 
 def _reset_template_state() -> None:
+    # Tests intentionally run against in-memory repositories unless explicitly opted in.
+    # Ensure temporary DATABASE_URL overrides from individual tests don't leak into teardown.
+    os.environ.pop("DATABASE_URL", None)
     client.cookies.clear()
     clear_alert_state()
     clear_metrics_state()
     clear_security_signal_state()
     rate_limit_service.clear_rate_limit_state()
+    clear_identity_security_state()
     ai_service.clear_ai_gateway_state()
     audit_service.clear_audit_events()
     backup_service._backup_history.clear()
@@ -170,12 +184,19 @@ def _reset_template_state() -> None:
     kpi_service.clear_kpi_state()
     automation_service.clear_automation_state()
     context_service.clear_context_state()
+    event_ingestion_service.clear_event_state()
     with UnitOfWork() as uow:
         uow.outbox_event_repository.clear_state(conn=uow.conn)
         uow.analytics_repository.clear_state()
+        uow.kpi_repository.clear_state()
+        uow.platform_event_repository.clear_state(conn=uow.conn)
+        uow.feature_flag_repository.clear_state(conn=uow.conn)
+        uow.billing_repository.clear_state(conn=uow.conn)
+        uow.usage_repository.clear_state(conn=uow.conn)
         uow.invoice_repository.clear_state(conn=uow.conn)
         uow.job_repository.clear_state(conn=uow.conn)
         uow.idempotency_repository.clear_state(conn=uow.conn)
+    platform_feature_flags_service.clear_feature_flag_cache()
     webhook_service.clear_webhook_state()
     tenant_service.clear_tenant_state()
     plans_service.clear_plans_state()

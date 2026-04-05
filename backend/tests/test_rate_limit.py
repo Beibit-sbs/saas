@@ -4,6 +4,7 @@ from tests.conftest import ADMIN_HEADERS, client
 from app.modules.audit import service as audit_service
 from app.modules.auth.token_service import create_service_token
 from app.modules.security import rate_limit as rate_limit_service
+from app.modules.service_accounts import service as service_accounts_service
 from starlette.requests import Request
 
 
@@ -160,7 +161,7 @@ def test_extract_client_ip_prefers_x_real_ip() -> None:
                 (b"x-real-ip", b"10.10.10.10"),
                 (b"x-forwarded-for", b"1.1.1.1, 2.2.2.2"),
             ],
-            "client": ("127.0.0.1", 12345),
+            "client": ("10.0.0.1", 12345),
         }
     )
 
@@ -174,7 +175,7 @@ def test_extract_client_ip_uses_rightmost_x_forwarded_for() -> None:
             "method": "GET",
             "path": "/api/meta",
             "headers": [(b"x-forwarded-for", b"1.1.1.1, 2.2.2.2, 3.3.3.3")],
-            "client": ("127.0.0.1", 12345),
+            "client": ("10.0.0.1", 12345),
         }
     )
 
@@ -283,6 +284,11 @@ def test_rate_limit_falls_back_to_memory_when_redis_unavailable(monkeypatch) -> 
 
 def test_read_rate_limit_does_not_block_jobs_channel(monkeypatch) -> None:
     rate_limit_service.clear_rate_limit_state()
+    monkeypatch.setattr(
+        service_accounts_service,
+        "is_service_account_active",
+        lambda *, tenant_id, account_id: True,
+    )
     monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
     monkeypatch.setenv("RATE_LIMIT_READ_WINDOW_SECONDS", "60")
     monkeypatch.setenv("RATE_LIMIT_READ_LIMIT", "1")
@@ -317,6 +323,11 @@ def test_read_rate_limit_does_not_block_jobs_channel(monkeypatch) -> None:
 
 def test_service_token_uses_internal_rate_limit_pool(monkeypatch) -> None:
     rate_limit_service.clear_rate_limit_state()
+    monkeypatch.setattr(
+        service_accounts_service,
+        "is_service_account_active",
+        lambda *, tenant_id, account_id: True,
+    )
     monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
     monkeypatch.setenv("RATE_LIMIT_READ_WINDOW_SECONDS", "60")
     monkeypatch.setenv("RATE_LIMIT_READ_LIMIT", "1")

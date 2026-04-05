@@ -8,10 +8,9 @@ import uuid
 from typing import TYPE_CHECKING, Any
 
 import psycopg
-from psycopg import sql
 
-from app.platform.repository.db import db_available, transaction
 from app.platform.automation.templates.models import AutomationTemplateModel
+from app.platform.repository.db import db_available, transaction
 
 if TYPE_CHECKING:
     pass

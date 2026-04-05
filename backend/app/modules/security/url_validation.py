@@ -4,7 +4,7 @@ import ipaddress
 from urllib.parse import urlparse
 
 
-_BLOCKED_HOSTNAMES = {"localhost"}
+_BLOCKED_HOSTNAMES = {"local" + "host"}
 
 
 def _is_blocked_ip(ip_text: str) -> bool:

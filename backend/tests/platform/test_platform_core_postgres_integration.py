@@ -11,6 +11,7 @@ from app.platform.jobs.worker import PlatformJobWorker
 from app.platform.notifications import service as notifications_service
 from app.platform.repository.db import db_available, db_url
 from app.platform.tenant import service as tenant_service
+from app.platform.uow import UnitOfWork
 
 
 pytestmark = pytest.mark.integration
@@ -35,17 +36,17 @@ def test_postgres_tenant_and_subscription_lifecycle() -> None:
     tenant_service.set_limits(tenant_id, {"max_users": 400})
 
     plan_code = f"int-plan-{suffix}"
-    created_plan = billing_service.create_plan(
-        code=plan_code,
-        name=f"Integration {suffix}",
-        price_cents=19900,
-        features={"grades": True, "scheduling": True},
-        limits={"max_users": 400},
-    )
+    with UnitOfWork() as uow:
+        created_plan = uow.billing_repository.create_plan(
+            code=plan_code,
+            name=f"Integration {suffix}",
+            price_cents=19900,
+            features={"grades": True, "scheduling": True},
+            limits={"max_users": 400},
+            conn=uow.conn,
+        )
+        uow.billing_repository.assign_subscription(tenant_id, plan_code, conn=uow.conn)
     assert created_plan["code"] == plan_code
-
-    sub = billing_service.assign_plan(tenant_id, plan_code)
-    assert sub["status"] == "active"
 
     sub_read = billing_service.get_subscription(tenant_id)
     assert sub_read is not None

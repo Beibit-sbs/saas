@@ -11,6 +11,23 @@ from fastapi import Header, HTTPException, Request
 from app.modules.auth.token_service import AccessTokenClaims, TokenValidationError, parse_access_token_from_request
 from app.modules.observability.perf_profile import perf_segment
 from app.modules.tenants.service import get_tenant
+from app.platform.tenant import service as platform_tenant_service
+
+
+def _effective_tenant(tenant_id: int) -> dict[str, object] | None:
+    tenant = get_tenant(int(tenant_id))
+    if tenant is not None:
+        return tenant
+    try:
+        profile = platform_tenant_service.get_tenant_profile(int(tenant_id))
+    except Exception:
+        return None
+    return {
+        "id": int(profile.get("tenant_id", tenant_id)),
+        "slug": str(profile.get("slug", "")),
+        "name": str(profile.get("name", "")),
+        "status": str(profile.get("status", "active")),
+    }
 
 
 def _resolve_authenticated_claims(request: Request, authorization: str | None) -> AccessTokenClaims | None:
@@ -56,10 +73,18 @@ async def get_current_tenant(
                 raise HTTPException(status_code=400, detail="invalid tenant header")
 
         if parsed_header_tenant_id is not None and parsed_header_tenant_id != authenticated_tenant_id:
-            raise HTTPException(status_code=403, detail="cross-tenant override forbidden")
+            roles = {str(role).strip() for role in claims.roles if str(role).strip()}
+            if "superadmin" in roles:
+                # Keep dashboard context fail-closed even for platform superadmin.
+                if request.url.path.startswith("/api/admin/dashboard"):
+                    raise HTTPException(status_code=403, detail="cross-tenant override forbidden")
+                tenant_id = parsed_header_tenant_id
+            else:
+                raise HTTPException(status_code=403, detail="cross-tenant override forbidden")
+        else:
+            tenant_id = authenticated_tenant_id
 
-        tenant_id = authenticated_tenant_id
-        tenant = get_tenant(tenant_id)
+        tenant = _effective_tenant(tenant_id)
         if tenant is None:
             raise HTTPException(status_code=404, detail=f"Tenant {tenant_id} not found")
         if tenant.get("status") != "active":

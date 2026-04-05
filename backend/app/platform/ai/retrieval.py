@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses as dc
 import re
 from typing import Any
 
@@ -107,6 +106,7 @@ def retrieve_automation_health(*, tenant_id: int, uow: Any) -> dict[str, Any]:
 
 
 def retrieve_platform_health(*, tenant_id: int, uow: Any) -> dict[str, Any]:
+    latest_kpis = analytics_service.get_latest_tenant_kpis(tenant_id=tenant_id, uow=uow) or {}
     failed_jobs = uow.job_repository.list_for_tenant(tenant_id, status="failed", limit=500, conn=uow.conn)
     notifications = uow.notification_repository.list_for_tenant(tenant_id, limit=500, conn=uow.conn)
     failed_notifications = [
@@ -130,6 +130,7 @@ def retrieve_platform_health(*, tenant_id: int, uow: Any) -> dict[str, Any]:
         "sources": [
             {"source_type": "analytics", "reference": "jobs:status=failed"},
             {"source_type": "analytics", "reference": "notifications:status=failed"},
+            {"source_type": "analytics", "reference": f"kpi_snapshot:{latest_kpis.get('snapshot_date') or 'latest'}"},
         ],
         "warnings": [],
     }

@@ -63,7 +63,8 @@ def test_health_ready_db_down_returns_not_ready(monkeypatch: pytest.MonkeyPatch)
     assert response.status_code == 503, response.text
     payload = response.json()
     assert payload["ready"] is False
-    assert payload["dependencies"]["postgresql"]["status"] == "down"
+    assert payload["status"] == "not_ready"
+    assert "dependencies" not in payload
 
 
 def test_health_ready_redis_down_returns_not_ready(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -107,7 +108,40 @@ def test_health_ready_redis_down_returns_not_ready(monkeypatch: pytest.MonkeyPat
     assert response.status_code == 503, response.text
     payload = response.json()
     assert payload["ready"] is False
-    assert payload["dependencies"]["redis"]["status"] == "down"
+    assert payload["status"] == "not_ready"
+    assert "dependencies" not in payload
+
+
+def test_health_deep_returns_503_when_any_component_is_down(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.modules.observability.health.readiness_payload",
+        lambda _app: {
+            "status": "ready",
+            "ready": True,
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "dependencies": {
+                "postgresql": _healthy_dependency("postgresql"),
+                "redis": _healthy_dependency("redis"),
+                "migrations": _healthy_dependency("migrations"),
+                "connection_pool": _healthy_dependency("connection_pool"),
+            },
+        },
+    )
+    monkeypatch.setattr("app.modules.observability.health._ldap_dependency", lambda _app: _healthy_dependency("ldap"))
+    monkeypatch.setattr("app.modules.observability.health._jobs_queue_dependency", lambda: _healthy_dependency("jobs_queue", critical=False))
+    monkeypatch.setattr("app.modules.observability.health._worker_dependency", lambda: _down_dependency("worker", critical=False, reason="stale"))
+    monkeypatch.setattr("app.modules.observability.health._scheduler_dependency", lambda: _healthy_dependency("scheduler", critical=False))
+    monkeypatch.setattr(
+        "app.modules.observability.health._optional_integrations_dependency",
+        lambda: _healthy_dependency("external_integrations", critical=False),
+    )
+
+    response = client.get("/health/deep", headers=ADMIN_HEADERS)
+
+    assert response.status_code == 503, response.text
+    payload = response.json()
+    assert payload["deep"] is False
+    assert payload["checks"]["worker"]["ok"] is False
 
 
 def test_metrics_endpoint_contains_sre_metrics() -> None:

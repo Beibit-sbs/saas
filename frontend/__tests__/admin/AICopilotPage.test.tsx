@@ -21,6 +21,18 @@ vi.mock("../../shared/ui/permission-gate", () => ({
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
 }));
 
+vi.mock("@/app/components/LanguageProvider", async () => {
+  const { en: commonEn } = await import("../../i18n/common/en");
+  const { en: adminEn } = await import("../../i18n/admin/en");
+  const dict = { ...commonEn, ...adminEn } as Record<string, string>;
+
+  return {
+    useLanguage: () => ({
+      t: (key: string) => dict[key] ?? key,
+    }),
+  };
+});
+
 describe("AICopilotPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();

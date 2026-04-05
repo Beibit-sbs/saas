@@ -49,14 +49,31 @@ export const NAVIGATION: NavGroup[] = [
     label: "Platform",
     items: [
       {
+        label: "Control Plane",
+        href: "/console/platform",
+        icon: LayoutDashboard,
+      },
+      {
         label: "Tenants",
-        href: "/console/tenants",
+        href: "/console/platform/tenants",
         icon: Building2,
         permission: PERMISSIONS.TENANTS_READ,
       },
       {
+        label: "Billing / Plans",
+        href: "/console/platform/billing-plans",
+        icon: Briefcase,
+        permission: PERMISSIONS.BILLING_READ,
+      },
+      {
+        label: "Usage / Quotas",
+        href: "/console/platform/usage-quotas",
+        icon: BarChart3,
+        permission: PERMISSIONS.BILLING_READ,
+      },
+      {
         label: "Feature Flags",
-        href: "/console/feature-flags",
+        href: "/console/platform/feature-flags",
         icon: Flag,
         permission: PERMISSIONS.FEATURE_FLAGS_READ,
       },
@@ -85,8 +102,14 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.OPS_READ,
       },
       {
+        label: "Integrations / Webhooks",
+        href: "/console/platform/integrations",
+        icon: Network,
+        permission: PERMISSIONS.DEVELOPER_PLATFORM_READ,
+      },
+      {
         label: "Automation",
-        href: "/console/automation",
+        href: "/console/platform/automation",
         icon: Bot,
         permission: PERMISSIONS.AUTOMATION_READ,
         children: [
@@ -101,6 +124,12 @@ export const NAVIGATION: NavGroup[] = [
             icon: ClipboardList,
           },
         ],
+      },
+      {
+        label: "Service Accounts",
+        href: "/console/platform/service-accounts",
+        icon: UserCog,
+        permission: PERMISSIONS.DEVELOPER_PLATFORM_READ,
       },
       {
         label: "AI Copilot",
@@ -272,29 +301,19 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
         icon: LayoutDashboard,
       },
       {
-        label: "Languages",
-        href: "/console/platform/languages",
-        icon: Flag,
+        label: "Tenants",
+        href: "/console/platform/tenants",
+        icon: Building2,
       },
       {
-        label: "Local Users",
-        href: "/console/platform/local-users",
-        icon: UserCog,
-      },
-      {
-        label: "RBAC",
-        href: "/console/platform/rbac",
-        icon: ShieldCheck,
-      },
-      {
-        label: "Integrations",
-        href: "/console/platform/integrations",
-        icon: Network,
-      },
-      {
-        label: "Backups",
-        href: "/console/platform/backups",
+        label: "Billing / Plans",
+        href: "/console/platform/billing-plans",
         icon: Briefcase,
+      },
+      {
+        label: "Usage / Quotas",
+        href: "/console/platform/usage-quotas",
+        icon: BarChart3,
       },
       {
         label: "Feature Flags",
@@ -302,35 +321,19 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
         icon: Flag,
       },
       {
-        label: "Jobs",
-        href: "/console/platform/jobs",
-        icon: Briefcase,
-      },
-      {
-        label: "Audit",
-        href: "/console/platform/audit",
-        icon: ClipboardCheck,
-      },
-      {
-        label: "System",
-        href: "/console/platform/system",
-        icon: HeartPulse,
-      },
-      {
-        label: "University",
-        href: "/console/platform/university",
-        icon: GraduationCap,
-      },
-      {
-        label: "Tenants",
-        href: "/console/platform/tenants",
-        icon: Building2,
-      },
-      {
-        label: "Federation",
-        href: "/console/federation",
+        label: "Integrations / Webhooks",
+        href: "/console/platform/integrations",
         icon: Network,
-        permission: PERMISSIONS.FEDERATION_READ,
+      },
+      {
+        label: "Automation",
+        href: "/console/platform/automation",
+        icon: Bot,
+      },
+      {
+        label: "Service Accounts",
+        href: "/console/platform/service-accounts",
+        icon: UserCog,
       },
     ],
   },

@@ -78,7 +78,7 @@ make up
 ```
 
 3. Open application:
-- `http://localhost`
+- nginx edge URL exposed by your deployment
 
 4. Stop stack:
 ```bash
@@ -107,14 +107,14 @@ Use this repository as the master template, not as a finished product.
 6. Review demo auth flows and remove, disable, or replace them before promising production readiness.
 7. Run template validation before feature work starts.
 
-Confirmed startup variables from `infra/.env.example` that must be reviewed before first local use:
+Confirmed startup variables from `infra/.env.example` that must be reviewed before first Docker start:
 - `POSTGRES_DB`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
 - `JWT_SECRET`
 - `NEXT_PUBLIC_API_BASE_URL`
 
-Variables that are strongly recommended for real deployments, but can stay empty in local bootstrap when the related module is unused:
+Variables that are strongly recommended for real deployments, but can stay empty during initial Docker bootstrap when the related module is unused:
 - `INTEGRATIONS_ENCRYPTION_KEY`
 - `LDAP_*`
 - `OPENAI_API_KEY`
@@ -159,18 +159,16 @@ make pipeline
 
 Backend only:
 ```bash
-cd /home/sbs/AI/backend
-source .venv/bin/activate
-ruff check .
-pytest -q
+cd infra
+docker compose --env-file .env exec -T backend ruff check .
+docker compose --env-file .env exec -T backend pytest -q
 ```
 
 Frontend only:
 ```bash
-cd /home/sbs/AI/frontend
-npm run i18n:check
-npm run lint
-npm run build
+cd infra
+docker compose --env-file .env run --rm frontend-tests npm run lint
+docker compose --env-file .env run --rm frontend-tests npm run test:frontend
 ```
 
 i18n guardrail for frontend UI dictionaries:

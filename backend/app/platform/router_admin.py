@@ -3,12 +3,17 @@ from __future__ import annotations
 from typing import Annotated
 import dataclasses as _dc
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.modules.audit.service import log_admin_action
+from app.modules.rbac.service import is_platform_admin
 from app.modules.rbac.security import get_actor, permission_dependency, resolve_current_user_claims
 from app.modules.tenants.service import get_tenant
 from app.platform.analytics import service as analytics_service
+from app.platform.analytics.entitlements import (
+    build_analytics_read_policy_state_read,
+    list_analytics_read_policy_state_reads,
+)
 from app.platform.analytics.schemas import AnalyticsEventProjectionListSchema, AnalyticsEventProjectionRead, TenantKpiSnapshotRead
 from app.platform.ai import service as ai_service
 from app.platform.ai.schemas import CopilotAnswerReadSchema, CopilotQuestionRequestSchema, CopilotQueryLogReadSchema
@@ -61,6 +66,8 @@ from app.platform.notifications import service as notifications_service
 from app.platform.webhooks import service as webhooks_service
 from app.platform.uow import UnitOfWork
 from app.platform.schemas import (
+    AnalyticsEntitlementRolloutSummaryListRead,
+    AnalyticsEntitlementRolloutStateRead,
     FeatureFlagRead,
     FeatureFlagSetRequest,
     JobEnqueueRequest,
@@ -87,15 +94,12 @@ from app.platform.webhooks.schemas import (
     WebhookSubscriptionReadSchema,
 )
 
-LEGACY_BILLING_DETAIL = (
-    "platform-core billing is legacy; canonical billing source of truth is /platform backed by app.modules.billing"
-)
-
 router = APIRouter(prefix="/api/v1/admin", tags=["platform-core-admin"])
 
 
 Actor = Annotated[str, Depends(get_actor)]
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+PLATFORM_TENANT_ID = 1
 
 _platform_admin_read_dependency = permission_dependency("platform.admin.read")
 _platform_admin_write_dependency = permission_dependency("platform.admin.write")
@@ -125,7 +129,11 @@ def _require_request_tenant_id(request: Request) -> int:
         if tenant_id <= 0:
             raise HTTPException(status_code=400, detail="invalid tenant header")
         if tenant_id != token_tenant_id:
-            raise HTTPException(status_code=403, detail="cross-tenant override forbidden")
+            claim_roles = {str(role).strip() for role in claims.roles if str(role).strip()}
+            platform_admin = "superadmin" in claim_roles or is_platform_admin(claims.user_id)
+            if not platform_admin:
+                raise HTTPException(status_code=403, detail="cross-tenant override forbidden")
+            token_tenant_id = tenant_id
 
     tenant = get_tenant(token_tenant_id)
     if tenant is None:
@@ -142,6 +150,12 @@ router.dependencies.append(Depends(_require_request_tenant_id))
 def _enforce_target_tenant_match(request: Request, target_tenant_id: int) -> None:
     request_tenant_id = _require_request_tenant_id(request)
     if int(target_tenant_id) != int(request_tenant_id):
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+
+
+def _require_platform_tenant_context(request: Request) -> None:
+    request_tenant_id = _require_request_tenant_id(request)
+    if int(request_tenant_id) != PLATFORM_TENANT_ID:
         raise HTTPException(status_code=403, detail="cross-tenant access denied")
 
 
@@ -191,6 +205,26 @@ def create_tenant(request: Request, payload: TenantCreateRequest, actor: Actor) 
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.tenant.create", int(row["tenant_id"]), {"slug": payload.slug})
     return TenantPlatformRead.model_validate(row)
+
+
+@router.get(
+    "/tenants/analytics/entitlement-rollout-summary",
+    response_model=AnalyticsEntitlementRolloutSummaryListRead,
+)
+def list_tenant_analytics_entitlement_rollout_summary(
+    request: Request,
+    _actor: Actor,
+    limit: int = Query(default=100, ge=1, le=200),
+) -> AnalyticsEntitlementRolloutSummaryListRead:
+    _require_platform_tenant_context(request)
+    items = list_analytics_read_policy_state_reads(limit=limit)
+    return AnalyticsEntitlementRolloutSummaryListRead.model_validate(
+        {
+            "limit": int(limit),
+            "count": len(items),
+            "items": items,
+        }
+    )
 
 
 @router.get("/tenants/{tenant_id}", response_model=TenantPlatformRead)
@@ -268,17 +302,34 @@ def set_tenant_feature(
     request: Request,
     actor: Actor,
 ) -> FeatureFlagRead:
+    _enforce_target_tenant_match(request, tenant_id)
     row = flags_service.set_tenant_feature(tenant_id, module, key, payload.enabled)
     _audit(request, actor, "platform_core.feature.tenant.set", tenant_id, {"module": module, "key": key})
     return FeatureFlagRead.model_validate(row)
+
+
+@router.get(
+    "/tenants/{tenant_id}/analytics/entitlement-rollout-state",
+    response_model=AnalyticsEntitlementRolloutStateRead,
+)
+def get_tenant_analytics_entitlement_rollout_state(
+    tenant_id: int,
+    request: Request,
+    _actor: Actor,
+) -> AnalyticsEntitlementRolloutStateRead:
+    _enforce_target_tenant_match(request, tenant_id)
+    try:
+        payload = build_analytics_read_policy_state_read(tenant_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    return AnalyticsEntitlementRolloutStateRead.model_validate(payload)
 
 
 @router.post("/billing/plans", response_model=PlanRead, status_code=201)
 def create_plan(payload: PlanCreateRequest, request: Request, actor: Actor) -> PlanRead:
     try:
         row = billing_service.create_plan(payload.code, payload.name, payload.price_cents, payload.features, payload.limits)
-    except RuntimeError as exc:
-        raise HTTPException(status_code=410, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.billing.plan.create", 1, {"code": payload.code})
@@ -322,7 +373,7 @@ def increment_usage(
 def enqueue_job(payload: JobEnqueueRequest, request: Request, actor: Actor) -> JobRead:
     row = jobs_service.enqueue_job(payload.tenant_id, payload.job_type, payload.payload, max_retries=payload.max_retries)
     _audit(request, actor, "platform_core.jobs.enqueue", payload.tenant_id, {"job_type": payload.job_type})
-    return _legacy_job_read(row)
+    return JobRead.model_validate(row)
 
 
 @router.post("/notifications", response_model=NotificationRead, status_code=201)

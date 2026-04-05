@@ -395,3 +395,22 @@ class BillingRepository:
             current["updated_at"] = self._now_iso()
             self._usage[key] = current
             return dict(current)
+
+    def clear_state(self, *, conn: object | None = None) -> None:
+        if conn is None:
+            with transaction() as tx:
+                self.clear_state(conn=tx)
+            return
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM app_platform_usage_counters")
+                cur.execute("DELETE FROM app_platform_subscriptions")
+                cur.execute("DELETE FROM app_platform_plans")
+            return
+
+        with self._lock:
+            self._plans.clear()
+            self._plan_counter = 0
+            self._subscriptions.clear()
+            self._usage.clear()

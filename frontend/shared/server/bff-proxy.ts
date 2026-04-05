@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerApiBaseUrl } from "@/shared/server/runtime-env";
 
-const API_BASE =
-  process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 const UPSTREAM_TIMEOUT_MS = 8000;
 const BFF_DEBUG = process.env.BFF_DEBUG === "1";
 
@@ -33,6 +32,10 @@ function toUpstreamPath(pathParts: string[]): string {
   if (normalized.startsWith("admin/platform/")) {
     return `/api/v1/${normalized}`;
   }
+  // platform management routes are mounted at /platform on the backend.
+  if (normalized === "platform" || normalized.startsWith("platform/")) {
+    return `/${normalized}`;
+  }
   return `/api/${normalized}`;
 }
 
@@ -58,6 +61,7 @@ function bffDebugLog(payload: Record<string, unknown>) {
 }
 
 export async function proxyBffRequest(request: NextRequest, pathParts: string[]) {
+  const apiBase = getServerApiBaseUrl();
   const token = request.cookies.get("admin_token")?.value;
   const csrfHeader = request.headers.get("x-csrf-token");
   const requestPath = `/${pathParts.join("/")}`;
@@ -83,7 +87,7 @@ export async function proxyBffRequest(request: NextRequest, pathParts: string[])
     );
   }
 
-  const upstreamUrl = new URL(toUpstreamPath(pathParts), API_BASE);
+  const upstreamUrl = new URL(toUpstreamPath(pathParts), apiBase);
   upstreamUrl.search = request.nextUrl.search;
 
   const headers = new Headers();

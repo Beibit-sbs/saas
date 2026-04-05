@@ -45,4 +45,7 @@ class RectorDashboardReadSchema(BaseModel):
     snapshot_date: str
     cards: list[RectorKpiCardSchema]
     generated_at: str | None = None
+    data_as_of: str | None = None
+    freshness_status: str | None = None
+    served_at: str | None = None
     source: str = "kpi_metrics_engine_v1"

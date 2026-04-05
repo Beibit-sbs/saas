@@ -171,9 +171,9 @@ Note:
 
 ### Confirmed Runtime Checks
 
-- `GET http://localhost:8000/health` -> `200`
-- `GET http://localhost/api/health` -> `200`
-- `GET http://localhost:8000/metrics` -> `200`
+- `GET http://nginx/health` -> `200`
+- `GET http://nginx/api/health` -> `200`
+- `GET http://nginx/metrics` -> `200`
 
 ### Infrastructure Gap
 
@@ -233,7 +233,7 @@ Detailed reusable contracts are tracked in `docs/templates/template-contracts.md
 ### Latest Confirmed Results
 
 - Backend tests:
-  - `cd /home/sbs/AI/backend && .venv/bin/pytest -q`
+  - `cd /home/sbs/AI/infra && docker compose --env-file .env exec -T backend pytest -q`
   - Result: passed (`101 passed`)
 - Backend lint:
   - `ruff check .`

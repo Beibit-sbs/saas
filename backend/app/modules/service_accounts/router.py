@@ -9,8 +9,10 @@ from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
 from app.modules.auth.token_service import create_service_token
 from app.modules.rbac.security import get_actor, permission_dependency
+from app.modules.rbac.service import is_platform_admin
 from app.modules.service_accounts.service import (
     create_service_account,
+    get_service_account,
     issue_service_token_material,
     list_service_accounts,
     revoke_service_account,
@@ -32,11 +34,14 @@ class ServiceAccountTokenPayload(BaseModel):
 
 @router.get("")
 def get_service_accounts(
-    _: Annotated[str, Depends(get_actor)],
+    actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, list[dict[str, object]]]:
-    return {"accounts": list_service_accounts(tenant_id=int(tenant["id"]))}
+    accounts = list_service_accounts(tenant_id=int(tenant["id"]))
+    if not is_platform_admin(actor):
+        accounts = [item for item in accounts if not bool(item.get("platform_global", False))]
+    return {"accounts": accounts}
 
 
 @router.post("")
@@ -47,6 +52,8 @@ def post_service_account(
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, dict[str, object]]:
+    if payload.platform_global and not is_platform_admin(actor):
+        raise HTTPException(status_code=403, detail="platform-global service account requires platform admin")
     try:
         account = create_service_account(
             tenant_id=int(tenant["id"]),
@@ -80,6 +87,11 @@ def post_service_account_token(
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, str]:
+    account = get_service_account(tenant_id=int(tenant["id"]), account_id=account_id)
+    if account is None:
+        raise HTTPException(status_code=404, detail="service account not found")
+    if bool(account.get("platform_global", False)) and not is_platform_admin(actor):
+        raise HTTPException(status_code=403, detail="platform-global service account requires platform admin")
     try:
         material = issue_service_token_material(
             tenant_id=int(tenant["id"]),
@@ -117,6 +129,11 @@ def post_service_account_revoke(
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict[str, object]:
+    account = get_service_account(tenant_id=int(tenant["id"]), account_id=account_id)
+    if account is None:
+        raise HTTPException(status_code=404, detail="service account not found or already revoked")
+    if bool(account.get("platform_global", False)) and not is_platform_admin(actor):
+        raise HTTPException(status_code=403, detail="platform-global service account requires platform admin")
     revoked = revoke_service_account(tenant_id=int(tenant["id"]), account_id=account_id)
     if not revoked:
         raise HTTPException(status_code=404, detail="service account not found or already revoked")

@@ -13,6 +13,146 @@ const useAdminAuthMock = vi.fn();
 vi.mock("@/modules/platform/automation/create-rule");
 vi.mock("@/shared/ui/use-toast");
 vi.mock("next/navigation");
+vi.mock("@radix-ui/react-select", async () => {
+  const ReactModule = await import("react");
+
+  type SelectContextValue = {
+    value?: string;
+    onValueChange?: (value: string) => void;
+    open: boolean;
+    setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  };
+
+  const SelectContext = ReactModule.createContext<SelectContextValue | null>(null);
+
+  function useSelectContext() {
+    const context = ReactModule.useContext(SelectContext);
+    if (!context) {
+      throw new Error("Select mock used outside provider");
+    }
+    return context;
+  }
+
+  function Select({
+    value,
+    onValueChange,
+    children,
+  }: {
+    value?: string;
+    onValueChange?: (value: string) => void;
+    children: React.ReactNode;
+  }) {
+    const [open, setOpen] = ReactModule.useState(false);
+
+    return (
+      <SelectContext.Provider value={{ value, onValueChange, open, setOpen }}>
+        {children}
+      </SelectContext.Provider>
+    );
+  }
+
+  const SelectTrigger = ReactModule.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+    ({ children, onClick, type, ...props }, ref) => {
+      const { open, setOpen } = useSelectContext();
+
+      return (
+        <button
+          {...props}
+          ref={ref}
+          type={type ?? "button"}
+          role="combobox"
+          aria-expanded={open}
+          onClick={(event) => {
+            onClick?.(event);
+            setOpen((current) => !current);
+          }}
+        >
+          {children}
+        </button>
+      );
+    },
+  );
+
+  function SelectValue({ placeholder }: { placeholder?: string }) {
+    const { value } = useSelectContext();
+    return <span>{value || placeholder || ""}</span>;
+  }
+
+  const SelectContent = ReactModule.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+    ({ children, ...props }, ref) => {
+      const { open } = useSelectContext();
+      if (!open) {
+        return null;
+      }
+      return (
+        <div {...props} ref={ref}>
+          {children}
+        </div>
+      );
+    },
+  );
+
+  function SelectPortal({ children }: { children: React.ReactNode }) {
+    return <>{children}</>;
+  }
+
+  function SelectViewport({ children }: { children: React.ReactNode }) {
+    return <div>{children}</div>;
+  }
+
+  function SelectIcon({ children }: { children: React.ReactNode }) {
+    return <>{children}</>;
+  }
+
+  function SelectItemIndicator({ children }: { children: React.ReactNode }) {
+    return <>{children}</>;
+  }
+
+  function SelectItemText({ children }: { children: React.ReactNode }) {
+    return <>{children}</>;
+  }
+
+  function SelectGroup({ children }: { children: React.ReactNode }) {
+    return <>{children}</>;
+  }
+
+  const SelectItem = ReactModule.forwardRef<
+    HTMLDivElement,
+    React.HTMLAttributes<HTMLDivElement> & { value: string }
+  >(({ children, onClick, value, ...props }, ref) => {
+    const { onValueChange, setOpen, value: currentValue } = useSelectContext();
+
+    return (
+      <div
+        {...props}
+        ref={ref}
+        role="option"
+        aria-selected={currentValue === value}
+        onClick={(event) => {
+          onClick?.(event);
+          onValueChange?.(value);
+          setOpen(false);
+        }}
+      >
+        {children}
+      </div>
+    );
+  });
+
+  return {
+    Root: Select,
+    Group: SelectGroup,
+    Value: SelectValue,
+    Trigger: SelectTrigger,
+    Icon: SelectIcon,
+    Portal: SelectPortal,
+    Content: SelectContent,
+    Viewport: SelectViewport,
+    Item: SelectItem,
+    ItemIndicator: SelectItemIndicator,
+    ItemText: SelectItemText,
+  };
+});
 vi.mock("@/shared/auth/context", () => ({
   useAdminAuth: (...args: unknown[]) => useAdminAuthMock(...args),
 }));

@@ -17,7 +17,9 @@ export class ApiRequestError extends Error {
 
 function mapToBffPath(path: string): string {
   if (path.startsWith("/api/bff/")) return path;
+  if (path.startsWith("/platform/")) return `/api/bff${path}`;
   if (path.startsWith("/api/v1/admin/")) return `/api/bff/${path.slice("/api/".length)}`;
+  if (path.startsWith("/api/v1/platform/")) return `/api/bff/${path.slice("/api/".length)}`;
   if (path.startsWith("/api/admin/")) return `/api/bff/${path.slice("/api/".length)}`;
   if (path === "/health" || path.startsWith("/health/")) return `/api/bff${path}`;
   if (path === "/metrics" || path.startsWith("/metrics/")) return `/api/bff${path}`;
@@ -157,15 +159,16 @@ export async function apiGet<T>(
   signal?: AbortSignal,
 ): Promise<T> {
   const bffPath = mapToBffPath(path);
-  const url = new URL(bffPath, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+  const query = new URLSearchParams();
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       if (v !== undefined && v !== null && v !== "") {
-        url.searchParams.set(k, String(v));
+        query.set(k, String(v));
       }
     }
   }
-  const res = await fetchWithTimeout(url.pathname + url.search, {
+  const requestPath = query.size > 0 ? `${bffPath}?${query.toString()}` : bffPath;
+  const res = await fetchWithTimeout(requestPath, {
     method: "GET",
     headers: buildHeaders(),
     credentials: "include",

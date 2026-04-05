@@ -48,6 +48,28 @@ class FeatureFlagRead(BaseModel):
     updated_at: str
 
 
+class AnalyticsEntitlementRolloutStateRead(BaseModel):
+    tenant_id: int
+    module: Literal["analytics"] = "analytics"
+    marker_key: Literal["developer_read_required"] = "developer_read_required"
+    marker_enabled: bool | None = None
+    feature_key: Literal["developer_read"] = "developer_read"
+    feature_enabled: bool | None = None
+    effective_state: Literal[
+        "legacy_compatible_allow",
+        "strict_required_missing",
+        "explicitly_enabled",
+        "explicitly_disabled",
+    ]
+    is_entitled: bool
+
+
+class AnalyticsEntitlementRolloutSummaryListRead(BaseModel):
+    limit: int
+    count: int
+    items: list[AnalyticsEntitlementRolloutStateRead]
+
+
 class PlanCreateRequest(BaseModel):
     code: str = Field(min_length=2, max_length=64)
     name: str = Field(min_length=2, max_length=255)

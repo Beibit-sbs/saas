@@ -118,6 +118,26 @@ def _bypass_abac_validators(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture
+def billing_usage_mocks(monkeypatch: pytest.MonkeyPatch) -> dict[str, MagicMock]:
+    billing_write = MagicMock(name="assert_billing_write_allowed")
+    quota_check = MagicMock(name="assert_quota_with_increment")
+    usage_record = MagicMock(name="record_usage_event")
+    monkeypatch.setattr("app.modules.grades.service.assert_billing_write_allowed", billing_write)
+    monkeypatch.setattr("app.modules.grades.service.assert_quota_with_increment", quota_check)
+    monkeypatch.setattr("app.modules.grades.service.record_usage_event", usage_record)
+    return {
+        "billing_write": billing_write,
+        "quota_check": quota_check,
+        "usage_record": usage_record,
+    }
+
+
+@pytest.fixture(autouse=True)
+def _apply_billing_usage_mocks(billing_usage_mocks: dict[str, MagicMock]) -> None:
+    _ = billing_usage_mocks
+
+
+@pytest.fixture
 def student_profile_factory():
     def factory(**overrides) -> StudentProfileModel:
         now = datetime(2026, 3, 23, 18, 0, 0, tzinfo=UTC)
@@ -227,6 +247,7 @@ class TestGradeSubmission:
         run_async,
         db_session,
         audit_mock,
+        billing_usage_mocks,
         enrollment_factory,
         scale_factory,
         scale_item_factory,
@@ -259,6 +280,13 @@ class TestGradeSubmission:
         assert any(isinstance(item, OutboxEventModel) for item in added_instances)
         db_session.commit.assert_called_once()
         audit_mock.assert_called_once()
+        billing_usage_mocks["billing_write"].assert_called_once_with(1, action="grades.submit")
+        billing_usage_mocks["quota_check"].assert_called_once_with(1, "grades_submitted", increment=1)
+        billing_usage_mocks["usage_record"].assert_called_once_with(
+            tenant_id=1,
+            metric="grades_submitted",
+            value=1,
+        )
 
     def test_submit_grade_tenant_isolation_not_found(self, run_async, db_session) -> None:
         service = GradeLifecycleService(db_session)
@@ -280,6 +308,7 @@ class TestGradeChange:
         run_async,
         db_session,
         audit_mock,
+        billing_usage_mocks,
         enrollment_factory,
         scale_factory,
         scale_item_factory,
@@ -322,6 +351,11 @@ class TestGradeChange:
         assert history_rows[0].version == 2
         db_session.commit.assert_called_once()
         audit_mock.assert_called_once()
+        billing_usage_mocks["usage_record"].assert_called_once_with(
+            tenant_id=1,
+            metric="grades_submitted",
+            value=1,
+        )
 
     def test_change_grade_optimistic_lock_conflict(
         self,

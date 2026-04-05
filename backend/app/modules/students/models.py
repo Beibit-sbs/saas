@@ -53,18 +53,29 @@ class StudentProgramBindingState(str, Enum):
     INACTIVE = "inactive"
 
 
-student_status_enum = SAEnum(StudentStatus, name="student_status")
+student_status_enum = SAEnum(
+    StudentStatus,
+    name="student_status",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
+)
 student_academic_level_enum = SAEnum(
     StudentAcademicLevel,
     name="student_academic_level",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
 )
 student_admission_source_enum = SAEnum(
     StudentAdmissionSource,
     name="student_admission_source",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
 )
 student_program_binding_state_enum = SAEnum(
     StudentProgramBindingState,
     name="student_program_binding_state",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
 )
 
 

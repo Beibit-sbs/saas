@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const API_BASE = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { getServerApiBaseUrl } from "@/shared/server/runtime-env";
 
 function unauthorized() {
   return NextResponse.json({ detail: "Authentication required" }, { status: 401 });
 }
 
 async function proxy(request: NextRequest, method: "GET" | "POST") {
+  const apiBase = getServerApiBaseUrl();
   const token = request.cookies.get("admin_token")?.value;
   if (!token) return unauthorized();
 
@@ -14,7 +14,7 @@ async function proxy(request: NextRequest, method: "GET" | "POST") {
   headers.set("authorization", `Bearer ${token}`);
   headers.set("content-type", "application/json");
 
-  const upstream = await fetch(new URL("/api/admin/i18n/languages", API_BASE), {
+  const upstream = await fetch(new URL("/api/admin/i18n/languages", apiBase), {
     method,
     headers,
     body: method === "POST" ? await request.text() : undefined,

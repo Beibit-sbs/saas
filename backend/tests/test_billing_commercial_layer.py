@@ -6,20 +6,30 @@ from fastapi import HTTPException
 
 from app.modules.auth.local_users_service import local_user_store
 from app.modules.billing.service import (
+    assert_quota_with_increment,
     change_subscription_plan,
     ensure_tenant_subscription,
     get_tenant_subscription,
     get_tenant_billing_state,
     transition_subscription_status,
 )
+from app.modules.quotas.service import get_plan_quotas, update_plan_quotas
 from app.modules.tenants.service import get_tenant_by_slug
 from app.modules.usage.service import clear_usage_state
 from app.modules.usage.service import get_usage_sum, record_usage_event
+import pytest
+
 from tests.conftest import ADMIN_HEADERS, client
 
 
 def _idem(key: str) -> dict[str, str]:
     return {"Idempotency-Key": key}
+
+
+@pytest.fixture(autouse=True)
+def _reset_client_cookies_for_billing() -> None:
+    """Clear client cookies before each test to prevent CSRF due to cookie pollution from prior tests."""
+    client.cookies.clear()
 
 
 def test_self_service_provisioning_creates_tenant_admin_and_trial_subscription() -> None:
@@ -202,6 +212,54 @@ def test_users_limit_is_hard_enforced() -> None:
     assert "quota exceeded" in str(blocked.detail)
 
 
+def test_flow2_grades_usage_growth_limit_block_and_recovery() -> None:
+    provision = client.post(
+        "/api/platform/tenants",
+        headers=_idem("self-service-flow2-grades-billing"),
+        json={
+            "tenant_name": "Flow2 Grades Billing Tenant",
+            "admin_login": "flow2.grades.admin",
+            "admin_password": "StrongPass123!",
+            "plan_code": "free",
+        },
+    )
+    assert provision.status_code == 201, provision.text
+
+    tenant_id = int(provision.json()["tenant"]["id"])
+    ensure_tenant_subscription(tenant_id, plan_code="free", status="active")
+
+    subscription = get_tenant_subscription(tenant_id)
+    plan_id = int(subscription["plan_id"])
+    original_limit = int(get_plan_quotas(plan_id).get("grades_submitted", 0))
+
+    try:
+        update_plan_quotas(plan_id, {"grades_submitted": 1})
+
+        before = get_usage_sum(tenant_id=tenant_id, metric="grades_submitted")
+        allowed = assert_quota_with_increment(tenant_id, "grades_submitted", increment=1)
+        assert allowed["within_limit"] is True
+
+        record_usage_event(tenant_id=tenant_id, metric="grades_submitted", value=1)
+        after = get_usage_sum(tenant_id=tenant_id, metric="grades_submitted")
+        assert after == before + 1
+
+        blocked = None
+        try:
+            assert_quota_with_increment(tenant_id, "grades_submitted", increment=1)
+        except HTTPException as exc:
+            blocked = exc
+
+        assert blocked is not None
+        assert blocked.status_code == 403
+        assert "billing_required" in str(blocked.detail)
+
+        update_plan_quotas(plan_id, {"grades_submitted": 2})
+        recovered = assert_quota_with_increment(tenant_id, "grades_submitted", increment=1)
+        assert recovered["within_limit"] is True
+    finally:
+        update_plan_quotas(plan_id, {"grades_submitted": original_limit})
+
+
 def test_api_usage_counter_is_recorded_for_tenant_requests() -> None:
     before = get_usage_sum(tenant_id=1, metric="api_calls")
 
@@ -295,6 +353,37 @@ def test_legacy_platform_job_enqueue_respects_billing_enforcement() -> None:
     assert provision.status_code == 201, provision.text
     tenant_id = int(provision.json()["tenant"]["id"])
     transition_subscription_status(tenant_id, "suspended")
+
+    response = client.post(
+        "/api/v1/admin/jobs",
+        headers=ADMIN_HEADERS,
+        json={
+            "tenant_id": tenant_id,
+            "job_type": "backup.run",
+            "payload": {"source": "legacy-admin"},
+            "max_retries": 3,
+        },
+    )
+
+    assert response.status_code == 403, response.text
+    assert "billing_required" in response.json()["detail"]
+
+
+def test_legacy_platform_job_enqueue_blocks_cancelled_subscription() -> None:
+    provision = client.post(
+        "/api/platform/tenants",
+        headers=_idem("self-service-legacy-job-cancelled"),
+        json={
+            "tenant_name": "Legacy Job Cancelled Tenant",
+            "admin_login": "legacy.cancelled.admin",
+            "admin_password": "StrongPass123!",
+            "plan_code": "free",
+        },
+    )
+    assert provision.status_code == 201, provision.text
+    tenant_id = int(provision.json()["tenant"]["id"])
+    transition_subscription_status(tenant_id, "active")
+    transition_subscription_status(tenant_id, "cancelled")
 
     response = client.post(
         "/api/v1/admin/jobs",

@@ -32,11 +32,11 @@
 
 ```
 BEFORE:
-  curl http://localhost:8000/api/v1/public/tenants/1
+  curl http://nginx/api/v1/public/tenants/1
   → 200 OK + {settings, quotas, limits, subscription}  ❌ VULNERABLE
 
 AFTER:
-  curl http://localhost:8000/api/v1/public/tenants/1
+  curl http://nginx/api/v1/public/tenants/1
   → 404 Not Found  ✅ BLOCKED
 ```
 

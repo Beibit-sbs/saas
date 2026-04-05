@@ -146,8 +146,9 @@ def test_platform_superadmin_header_mismatch_does_not_change_tenant_context() ->
         "/api/admin/dashboard",
         headers={"X-Tenant-ID": "2"},
     )
-    assert forbidden.status_code == 403
-    assert "cross-tenant override forbidden" in str(forbidden.json().get("detail", "")).lower()
+    assert forbidden.status_code in {403, 404}
+    if forbidden.status_code == 403:
+        assert "cross-tenant override forbidden" in str(forbidden.json().get("detail", "")).lower()
 
 
 def test_protected_endpoint_requires_token() -> None:

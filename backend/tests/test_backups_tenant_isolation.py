@@ -20,7 +20,7 @@ def _create_tenant_b() -> int:
 
 def test_backup_settings_and_history_are_isolated_per_tenant(monkeypatch, tmp_path) -> None:
     tenant_b_id = _create_tenant_b()
-    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"], tenant_id=tenant_b_id)
 
     monkeypatch.setenv("BACKUP_ALLOWED_ROOTS", str(tmp_path))
     monkeypatch.setattr(integrations_service, "_use_database", lambda: False)

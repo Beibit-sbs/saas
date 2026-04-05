@@ -30,6 +30,7 @@ _ANOMALY_THRESHOLDS: dict[str, int] = {
     "auth.csrf.failed": 5,
     "auth.token.revoked_reuse": 2,
     "platform.access.denied": 3,
+    "developer.analytics.contract_denied": 8,
     "metrics.access.denied": 3,
     "rate_limit.blocked": 5,
 }

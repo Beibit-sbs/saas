@@ -2,26 +2,23 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BACKEND_DIR="${ROOT_DIR}/backend"
-VENV_PYTHON="${BACKEND_DIR}/.venv/bin/python3"
+COMPOSE=(docker compose --env-file .env)
 
-if [[ ! -x "${VENV_PYTHON}" ]]; then
-  echo "[smoke] FAIL: backend virtualenv not found at ${VENV_PYTHON}"
-  echo "[smoke] Run: cd backend && python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'"
-  exit 1
-fi
+bash "${ROOT_DIR}/scripts/docker_only_guard.sh"
 
 export ROOT_DIR
-export BACKEND_DIR
-export REDIS_URL="${REDIS_URL:-redis://localhost:6379/0}"
+export BACKEND_DIR="${ROOT_DIR}/backend"
+export REDIS_URL="${REDIS_URL:-redis://redis:6379/0}"
 : "${JWT_SECRET:?set JWT_SECRET explicitly for smoke check}"
 export JWT_SECRET
-export API_BASE_URL="${API_BASE_URL:-https://api.example.test}"
-export ADMIN_PANEL_URL="${ADMIN_PANEL_URL:-https://admin.example.test}"
-export AUTH_DEV_DEMO_COMPATIBILITY="${AUTH_DEV_DEMO_COMPATIBILITY:-true}"
-export RBAC_ALLOW_DEV_FALLBACK="${RBAC_ALLOW_DEV_FALLBACK:-true}"
+export API_BASE_URL="${API_BASE_URL:-http://backend:8000}"
+export ADMIN_PANEL_URL="${ADMIN_PANEL_URL:-http://nginx}"
+export AUTH_DEV_DEMO_COMPATIBILITY="${AUTH_DEV_DEMO_COMPATIBILITY:-false}"
+export RBAC_ALLOW_DEV_FALLBACK="${RBAC_ALLOW_DEV_FALLBACK:-false}"
 
-"${VENV_PYTHON}" <<'PY'
+pushd "${ROOT_DIR}/infra" >/dev/null
+"${COMPOSE[@]}" up -d --build
+"${COMPOSE[@]}" exec -T backend python - <<'PY'
 from __future__ import annotations
 
 import os
@@ -390,3 +387,4 @@ print(f"\n[SUMMARY] passed={passed} failed={failed}")
 if failed:
     sys.exit(1)
 PY
+popd >/dev/null

@@ -1,54 +1,58 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { apiGet } from "@/shared/api/client";
-import type { LatencyMetricsResponse, OpsMetricsResponse, OpsMetricsSnapshot } from "./types";
+import type { OpsMetricsSnapshot, OpsSummaryResponse } from "./types";
 
 function errorText(err: unknown): string {
   if (err instanceof Error && err.message) return err.message;
   return "Request failed";
 }
 
-export function useOpsMetrics() {
-  return useQuery<OpsMetricsSnapshot>({
+export function useOpsMetrics(): UseQueryResult<OpsMetricsSnapshot, Error> {
+  return useQuery<OpsMetricsSnapshot, Error>({
     queryKey: ["ops", "metrics"],
     refetchInterval: 30_000,
     queryFn: async () => {
-      const [opsResult, latencyResult] = await Promise.allSettled([
-        apiGet<OpsMetricsResponse>("/metrics/ops"),
-        apiGet<LatencyMetricsResponse>("/metrics/latency"),
-      ]);
-
-      const errors: string[] = [];
-      const ops = opsResult.status === "fulfilled"
-        ? opsResult.value
-        : (errors.push(`ops: ${errorText(opsResult.reason)}`), undefined);
-      const latency = latencyResult.status === "fulfilled"
-        ? latencyResult.value
-        : (errors.push(`latency: ${errorText(latencyResult.reason)}`), undefined);
+      const summary = await apiGet<OpsSummaryResponse>("/api/v1/platform/ops/summary");
 
       return {
         queue: {
-          outboxBacklog: ops?.outbox_backlog ?? ops?.event_queue_size ?? null,
-          eventQueueSize: ops?.event_queue_size ?? null,
-          failedWebhooks: ops?.failed_webhooks ?? null,
-          deadWebhooks: ops?.dead_webhooks ?? null,
-          failedAutomationExecutions: ops?.failed_automation_executions ?? null,
-          deadAutomationExecutions: ops?.dead_automation_executions ?? null,
-          failedJobs: ops?.failed_jobs ?? null,
-          deadJobs: ops?.dead_jobs ?? null,
-          schedulerLastRun: ops?.scheduler_last_run ?? null,
+          outboxBacklog: summary.queues.outbox_backlog,
+          eventQueueSize: summary.queues.event_queue_size,
+          failedWebhooks: summary.queues.failed_webhooks,
+          deadWebhooks: summary.queues.dead_webhooks,
+          failedAutomationExecutions: summary.queues.failed_automation_executions,
+          deadAutomationExecutions: summary.queues.dead_automation_executions,
+          failedJobs: summary.queues.failed_jobs,
+          deadJobs: summary.queues.dead_jobs,
+          schedulerLastRun: summary.runtime.scheduler_heartbeat,
+          retryBacklog: summary.queues.retry_backlog,
+          deadCount: summary.queues.dead_count,
         },
         traffic: {
-          requestsPerMinute: latency?.requests_per_minute ?? null,
-          p50LatencyMs: latency?.p50_latency_ms ?? null,
-          p95LatencyMs: latency?.p95_latency_ms ?? null,
-          p99LatencyMs: latency?.p99_latency_ms ?? null,
-          http4xxCount: latency?.http_4xx_count ?? null,
-          http5xxCount: latency?.http_5xx_count ?? null,
-          developerApiErrorCount: latency?.developer_api_error_count ?? null,
+          requestsPerMinute: summary.traffic.requests_per_minute,
+          p50LatencyMs: summary.latency.p50_ms,
+          p95LatencyMs: summary.latency.p95_ms,
+          p99LatencyMs: summary.latency.p99_ms,
+          http4xxCount: summary.traffic.http_4xx_count,
+          http5xxCount: summary.traffic.http_5xx_count,
+          developerApiErrorCount: null,
+          errorRate: summary.traffic.error_rate,
         },
-        updatedAt: new Date().toISOString(),
-        errors,
+        runtime: {
+          workerHeartbeat: summary.runtime.worker_heartbeat,
+          workerHeartbeatAgeSeconds: summary.runtime.worker_heartbeat_age_seconds,
+          schedulerHeartbeatAgeSeconds: summary.runtime.scheduler_heartbeat_age_seconds,
+        },
+        backup: {
+          lastStatus: summary.backup.last_status,
+          lastStartedAt: summary.backup.last_started_at,
+          lastFinishedAt: summary.backup.last_finished_at,
+          lastError: summary.backup.last_error,
+        },
+        updatedAt: summary.updated_at,
+        errors: [],
       };
     },
+    retry: 1,
   });
 }

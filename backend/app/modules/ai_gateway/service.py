@@ -1309,6 +1309,31 @@ def validate_provider_runtime(
     return result
 
 
+def _degraded_fallback_result(
+    *,
+    model_key: str,
+    provider: str,
+    provider_model_id: str,
+    latency_ms: int,
+    degraded_reason: str,
+) -> dict[str, object]:
+    return {
+        "model": model_key,
+        "provider": provider,
+        "provider_model_id": provider_model_id,
+        "output_text": "AI provider is temporarily unavailable. Returned deterministic degraded fallback.",
+        "finish_reason": "degraded_fallback",
+        "usage": {
+            "input_tokens": None,
+            "output_tokens": None,
+            "total_tokens": None,
+        },
+        "latency_ms": latency_ms,
+        "degraded": True,
+        "degraded_reason": degraded_reason,
+    }
+
+
 def execute_chat(
     payload: dict[str, Any],
     *,
@@ -1403,7 +1428,7 @@ def execute_chat(
             max_tokens=payload.get("max_tokens"),
             runtime_config=runtime_config,
         )
-    except AIProviderTimeoutError as exc:
+    except AIProviderTimeoutError:
         latency_ms = max(1, int((time.monotonic() - started) * 1000))
         _record_usage_log(
             tenant_id=normalized_tenant_id,
@@ -1411,7 +1436,7 @@ def execute_chat(
             provider=provider,
             model_key=model_key,
             provider_model_id=provider_model_id,
-            outcome="timeout",
+            outcome="degraded",
             latency_ms=latency_ms,
             input_tokens=None,
             output_tokens=None,
@@ -1419,36 +1444,63 @@ def execute_chat(
             failure_reason="provider_timeout",
             correlation_id=correlation_id,
         )
-        raise AIGatewayError(
-            status_code=504,
-            detail="upstream AI provider timeout",
-            audit_reason="provider_timeout",
+        return _degraded_fallback_result(
+            model_key=model_key,
             provider=provider,
-            model=model_key,
-        ) from exc
+            provider_model_id=provider_model_id,
+            latency_ms=latency_ms,
+            degraded_reason="provider_timeout",
+        )
     except AIProviderExecutionError as exc:
         latency_ms = max(1, int((time.monotonic() - started) * 1000))
-        _record_usage_log(
-            tenant_id=normalized_tenant_id,
-            actor=actor,
-            provider=provider,
-            model_key=model_key,
-            provider_model_id=provider_model_id,
-            outcome="failed",
-            latency_ms=latency_ms,
-            input_tokens=None,
-            output_tokens=None,
-            total_tokens=None,
-            failure_reason=str(exc),
-            correlation_id=correlation_id,
-        )
-        raise AIGatewayError(
-            status_code=502,
-            detail="upstream AI provider error",
-            audit_reason="provider_error",
-            provider=provider,
-            model=model_key,
-        ) from exc
+        # If error has a status_code, it's a remote provider error → degrade gracefully (200)
+        # If error has no status_code, it's an internal error → surface as 502 failure
+        if exc.status_code is not None:
+            # Remote provider error: return degraded result
+            _record_usage_log(
+                tenant_id=normalized_tenant_id,
+                actor=actor,
+                provider=provider,
+                model_key=model_key,
+                provider_model_id=provider_model_id,
+                outcome="degraded",
+                latency_ms=latency_ms,
+                input_tokens=None,
+                output_tokens=None,
+                total_tokens=None,
+                failure_reason="provider_error",
+                correlation_id=correlation_id,
+            )
+            return _degraded_fallback_result(
+                model_key=model_key,
+                provider=provider,
+                provider_model_id=provider_model_id,
+                latency_ms=latency_ms,
+                degraded_reason="provider_error",
+            )
+        else:
+            # Internal error: record as failure and raise 502
+            _record_usage_log(
+                tenant_id=normalized_tenant_id,
+                actor=actor,
+                provider=provider,
+                model_key=model_key,
+                provider_model_id=provider_model_id,
+                outcome="failed",
+                latency_ms=latency_ms,
+                input_tokens=None,
+                output_tokens=None,
+                total_tokens=None,
+                failure_reason=str(exc),
+                correlation_id=correlation_id,
+            )
+            raise AIGatewayError(
+                status_code=502,
+                detail=str(exc) or "provider error",
+                audit_reason="provider_error",
+                provider=provider,
+                model=model_key,
+            ) from exc
 
     latency_ms = max(1, int((time.monotonic() - started) * 1000))
     _record_usage_log(

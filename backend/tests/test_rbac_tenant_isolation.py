@@ -62,6 +62,11 @@ def test_tenant_b_cannot_assign_tenant_a_role() -> None:
     assert assign_attempt.status_code == 403
     assert "cross-tenant override forbidden" in str(assign_attempt.json().get("detail", ""))
 
+    audit_events = client.get("/api/admin/audit/events", headers=ADMIN_HEADERS)
+    assert audit_events.status_code == 200, audit_events.text
+    denied_actions = [item.get("action") for item in audit_events.json().get("events", []) if item.get("result") == "denied"]
+    assert "security.cross_tenant.denied" in denied_actions
+
 
 def test_cross_tenant_assignment_returns_403() -> None:
     tenant_b_id = _create_tenant_b()

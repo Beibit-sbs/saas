@@ -1,11 +1,13 @@
 import json
 import os
 import subprocess
+import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.core.rehydration import rehydrate_after_restore
 from app.modules.integrations.service import get_runtime_value, save_setting
 
 _BACKUP_HISTORY_LIMIT = 100
@@ -254,20 +256,76 @@ def _run_pg_dump_command(db_url: str, output_path: str) -> None:
 
 
 def _run_pg_restore_command(db_url: str, input_path: str) -> None:
-    subprocess.run(
-        [
-            "pg_restore",
-            "--clean",
-            "--if-exists",
-            "--no-owner",
-            "--no-privileges",
-            f"--dbname={db_url}",
-            input_path,
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    base_command = [
+        "pg_restore",
+        "--clean",
+        "--if-exists",
+        "--no-owner",
+        "--no-privileges",
+        f"--dbname={db_url}",
+    ]
+
+    try:
+        subprocess.run(
+            [*base_command, input_path],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return
+    except subprocess.CalledProcessError as exc:
+        detail = f"{exc.stderr or ''}\n{exc.stdout or ''}".lower()
+        if "transaction_timeout" not in detail:
+            raise
+
+    # Fallback for dumps produced by newer PostgreSQL where transaction_timeout
+    # is not recognized by the current restore target.
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False, suffix=".sql") as plain_sql_file:
+        plain_sql_path = plain_sql_file.name
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False, suffix=".sql") as filtered_sql_file:
+        filtered_sql_path = filtered_sql_file.name
+
+    try:
+        subprocess.run(
+            [
+                "pg_restore",
+                "--clean",
+                "--if-exists",
+                "--no-owner",
+                "--no-privileges",
+                f"--file={plain_sql_path}",
+                input_path,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        with open(plain_sql_path, encoding="utf-8") as source, open(filtered_sql_path, "w", encoding="utf-8") as target:
+            for line in source:
+                if line.strip().lower().startswith("set transaction_timeout"):
+                    continue
+                target.write(line)
+
+        subprocess.run(
+            [
+                "psql",
+                f"--dbname={db_url}",
+                "--set",
+                "ON_ERROR_STOP=1",
+                "--single-transaction",
+                f"--file={filtered_sql_path}",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        for path in (plain_sql_path, filtered_sql_path):
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
 
 
 def _record_history(entry: dict[str, Any], tenant_id: int) -> None:
@@ -393,6 +451,7 @@ def run_restore_now(
 
     try:
         _run_pg_restore_command(database_url, str(restore_file))
+        rehydrate_after_restore()
         completed = {
             **base_result,
             "tenant_id": tenant,

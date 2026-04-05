@@ -160,3 +160,17 @@ class FeatureFlagRepository:
             ]
         rows.sort(key=lambda item: (str(item["scope"]), str(item["module"]), str(item["key"])))
         return rows
+
+    def clear_state(self, *, conn: object | None = None) -> None:
+        if conn is None:
+            with transaction() as tx:
+                self.clear_state(conn=tx)
+                return
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM app_platform_feature_flags")
+            return
+
+        with self._lock:
+            self._memory.clear()

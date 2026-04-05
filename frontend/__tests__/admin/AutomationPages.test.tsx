@@ -43,6 +43,29 @@ vi.mock("../../shared/ui/permission-gate", () => ({
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
 }));
 
+vi.mock("@/app/components/LanguageProvider", () => ({
+  useLanguage: () => ({
+    t: (key: string) => {
+      const dict: Record<string, string> = {
+        "automation.title": "Automation Rules",
+        "automation.loadFailedTitle": "Failed to load automation rules",
+        "automation.changeStatus": "Change rule status?",
+        "automation.activate": "Activate",
+        "automation.deactivate": "Deactivate",
+        "automation.ruleActivated": "Rule activated",
+        "automation.ruleDeactivated": "Rule deactivated",
+        "automation.executions.title": "Execution Log",
+        "automation.executions.status.completed": "Completed",
+        "automation.executions.status.failed": "Failed",
+        "automation.executions.loadFailedTitle": "Failed to load execution log",
+        "automation.executions.loadFailedMessage": "Could not fetch automation executions.",
+        "students.filter.status": "Status",
+      };
+      return dict[key] ?? key;
+    },
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------

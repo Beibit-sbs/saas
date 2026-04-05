@@ -16,6 +16,7 @@ from app.platform.kpi.repository import KpiRepository
 from app.platform.repository.billing_repository import BillingRepository
 from app.platform.repository.db import db_available, db_url
 from app.platform.repository.feature_flag_repository import FeatureFlagRepository
+from app.platform.event_ingestion.repository import PlatformEventRepository
 from app.platform.events.repository import OutboxEventRepository
 from app.platform.idempotency.repository import IdempotencyRepository
 from app.platform.repository.invoice_repository import InvoiceRepository
@@ -51,6 +52,7 @@ _SHARED_AUTOMATION_TEMPLATE_REPOSITORY = AutomationTemplateRepository()
 _SHARED_CONTEXT_REPOSITORY = SHARED_CONTEXT_REPOSITORY
 _SHARED_KPI_REPOSITORY = KpiRepository()
 _SHARED_OUTBOX_EVENT_REPOSITORY = OutboxEventRepository()
+_SHARED_PLATFORM_EVENT_REPOSITORY = PlatformEventRepository()
 _SHARED_WEBHOOK_REPOSITORY = SHARED_WEBHOOK_REPOSITORY
 
 
@@ -75,6 +77,7 @@ class UnitOfWork:
     context_repository: ContextRepository = _SHARED_CONTEXT_REPOSITORY
     kpi_repository: KpiRepository = _SHARED_KPI_REPOSITORY
     outbox_event_repository: OutboxEventRepository = _SHARED_OUTBOX_EVENT_REPOSITORY
+    platform_event_repository: PlatformEventRepository = _SHARED_PLATFORM_EVENT_REPOSITORY
     webhook_repository: WebhookRepository = _SHARED_WEBHOOK_REPOSITORY
 
     def __post_init__(self) -> None:

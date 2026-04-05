@@ -26,10 +26,12 @@ from app.core.config import (
     validate_required_environment,
 )
 from app.core.runtime_schema import bootstrap_runtime_schema
+from app.core.tenant import get_current_tenant
 
 from app.modules.admin.router import router as admin_router
 from app.modules.admin.local_users_router import router as admin_local_users_router
 from app.modules.academic_records.router import router as academic_records_router
+from app.modules.analytics.router import router as analytics_kpi_router
 from app.modules.admissions.router import router as admissions_router
 from app.modules.ai_gateway.router import router as ai_gateway_router
 from app.modules.ai_gateway.public_router import router as ai_gateway_public_router
@@ -64,6 +66,8 @@ from app.modules.platform.router import router as platform_router
 from app.modules.platform.self_service_router import router as platform_self_service_router
 from app.platform.router_admin import router as platform_v1_admin_router
 from app.platform.router_public import router as platform_v1_public_router
+from app.platform.router_ops import router as platform_v1_ops_router
+from app.platform.router_semantic import router as platform_v2_semantic_router
 from app.platform.router_developer_api import router as platform_developer_api_router
 from app.platform.router_internal import router as platform_v1_internal_router
 from app.modules.profiles.router import router as profiles_router
@@ -193,6 +197,7 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=get_trusted_hosts())
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(admin_local_users_router)
+app.include_router(analytics_kpi_router)
 app.include_router(admissions_router)
 app.include_router(ai_gateway_router)
 app.include_router(ai_gateway_public_router)
@@ -229,6 +234,8 @@ app.include_router(platform_router)
 app.include_router(platform_self_service_router)
 app.include_router(platform_v1_admin_router)
 app.include_router(platform_v1_public_router)
+app.include_router(platform_v1_ops_router)
+app.include_router(platform_v2_semantic_router)
 app.include_router(platform_developer_api_router)
 app.include_router(platform_v1_internal_router)
 
@@ -314,6 +321,14 @@ def _resolve_request_tenant_id(request: Request) -> int:
         claims = None
     if claims is not None and int(claims.tenant_id) > 0:
         return int(claims.tenant_id)
+    raw_header = request.headers.get("x-tenant-id", "").strip()
+    if raw_header:
+        try:
+            tid = int(raw_header)
+            if tid > 0:
+                return tid
+        except (ValueError, TypeError):
+            pass
     return _DEFAULT_TENANT_ID
 
 
@@ -324,9 +339,7 @@ def _resolve_request_actor_id(request: Request) -> str | None:
         claims = None
     if claims is not None and claims.user_id:
         return claims.user_id
-
-    fallback_actor = request.headers.get("x-actor-id", "").strip()
-    return fallback_actor or None
+    return None
 
 
 def _resolve_request_institution_id(request: Request) -> str | None:
@@ -800,9 +813,12 @@ def meta() -> dict[str, str]:
 def admin_audit_test(
     request: Request,
     actor: str = Depends(get_actor),
+    tenant: dict[str, object] = Depends(get_current_tenant),
+    __: None = Depends(permission_dependency("admin.audit.read")),
 ) -> dict[str, str]:
     log_admin_action(
         actor=actor,
+        tenant_id=int(tenant.get("id", 1)),
         action="audit_test",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",

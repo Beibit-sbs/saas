@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from app.core.tenant import get_current_tenant
 from app.modules.auth.local_users_service import local_user_store
 from app.modules.audit.service import log_admin_action
+from app.modules.feature_flags.service import is_flag_enabled
 from app.modules.i18n.service import list_languages, normalize_code
 from app.modules.rbac.service import clear_user_roles_for_user, sync_user_roles_from_trusted_source
 from app.modules.rbac.security import get_actor, permission_dependency
@@ -48,6 +49,9 @@ def get_local_users(
     role: str | None = Query(default=None),
     language: str | None = Query(default=None),
 ) -> dict[str, list[dict[str, object]]]:
+    if not is_flag_enabled("admin.local_users.tab", tenant_id=int(tenant["id"]), default=True):
+        raise HTTPException(status_code=403, detail="local users feature is disabled")
+
     return {
         "users": local_user_store.list_users(
             search=search,

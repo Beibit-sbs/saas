@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import uuid
-from contextvars import ContextVar
 from typing import Any
 
-from .logging import bind_log_context, get_log_context, trace_id_var
+from .logging import get_log_context
 
 __all__ = ["generate_request_id", "generate_trace_id", "inject_trace_context"]
 

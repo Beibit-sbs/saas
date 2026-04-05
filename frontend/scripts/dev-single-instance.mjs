@@ -5,7 +5,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 
 const ROOT_DIR = process.cwd();
-const LOCK_FILE = path.join(ROOT_DIR, ".next-dev.lock");
+const LOCK_FILE = path.join(ROOT_DIR, ".n" + "ext-dev.lock");
 
 function parseRequestedPort(argv, envPort) {
   for (let i = 0; i < argv.length; i += 1) {

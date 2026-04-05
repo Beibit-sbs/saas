@@ -37,6 +37,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
+from app.modules.tenants.models import TenantModel
 
 
 class ApplicantModel(Base):
@@ -112,7 +113,7 @@ class ApplicantModel(Base):
     )
     
     # Relationships
-    tenant = relationship("TenantModel", foreign_keys=[tenant_id], viewonly=True)
+    tenant = relationship(TenantModel, foreign_keys=[tenant_id], viewonly=True)
     applications = relationship(
         "ApplicationModel",
         back_populates="applicant",
@@ -220,7 +221,7 @@ class ApplicationModel(Base):
     )
     
     # Relationships
-    tenant = relationship("TenantModel", foreign_keys=[tenant_id], viewonly=True)
+    tenant = relationship(TenantModel, foreign_keys=[tenant_id], viewonly=True)
     applicant = relationship(
         "ApplicantModel",
         back_populates="applications",
@@ -329,7 +330,7 @@ class ApplicationDocumentModel(Base):
     verified_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
     
     # Relationships
-    tenant = relationship("TenantModel", foreign_keys=[tenant_id], viewonly=True)
+    tenant = relationship(TenantModel, foreign_keys=[tenant_id], viewonly=True)
     application = relationship(
         "ApplicationModel",
         back_populates="documents",
@@ -403,7 +404,7 @@ class ApplicationStageHistoryModel(Base):
     )
     
     # Relationships
-    tenant = relationship("TenantModel", foreign_keys=[tenant_id], viewonly=True)
+    tenant = relationship(TenantModel, foreign_keys=[tenant_id], viewonly=True)
     application = relationship(
         "ApplicationModel",
         back_populates="stage_history",
@@ -495,7 +496,7 @@ class ApplicationDecisionModel(Base):
     )
     
     # Relationships
-    tenant = relationship("TenantModel", foreign_keys=[tenant_id], viewonly=True)
+    tenant = relationship(TenantModel, foreign_keys=[tenant_id], viewonly=True)
     application = relationship(
         "ApplicationModel",
         back_populates="decision",

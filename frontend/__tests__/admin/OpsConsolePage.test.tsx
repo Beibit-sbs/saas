@@ -63,6 +63,8 @@ const METRICS_DATA = {
     failedJobs: 3,
     deadJobs: 1,
     schedulerLastRun: "2026-03-24T09:58:00Z",
+    retryBacklog: 4,
+    deadCount: 1,
   },
   traffic: {
     requestsPerMinute: 120,
@@ -72,6 +74,18 @@ const METRICS_DATA = {
     http4xxCount: 5,
     http5xxCount: 1,
     developerApiErrorCount: 2,
+    errorRate: 0.02,
+  },
+  runtime: {
+    workerHeartbeat: "2026-03-24T09:59:30Z",
+    workerHeartbeatAgeSeconds: 30,
+    schedulerHeartbeatAgeSeconds: 120,
+  },
+  backup: {
+    lastStatus: "ok",
+    lastStartedAt: "2026-03-24T09:00:00Z",
+    lastFinishedAt: "2026-03-24T09:01:00Z",
+    lastError: null,
   },
   updatedAt: "2026-03-24T10:00:00Z",
   errors: [],
@@ -108,6 +122,8 @@ describe("OpsConsolePage", () => {
     expect(screen.getByTestId("metric-outbox-backlog")).toBeInTheDocument();
     expect(screen.getByTestId("metric-rpm")).toBeInTheDocument();
     expect(screen.getByTestId("metric-p95")).toBeInTheDocument();
+    expect(screen.getByTestId("metric-error-rate")).toBeInTheDocument();
+    expect(screen.getByTestId("metric-retry-backlog")).toBeInTheDocument();
   });
 
   it("renders loading state", () => {
@@ -166,6 +182,7 @@ describe("OpsConsolePage", () => {
           http4xxCount: null,
           http5xxCount: null,
           developerApiErrorCount: null,
+          errorRate: null,
         },
         errors: ["latency: Request failed"],
       },

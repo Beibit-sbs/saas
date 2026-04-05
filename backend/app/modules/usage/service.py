@@ -1,15 +1,16 @@
 from __future__ import annotations
-from app.core.db import get_raw_conn
-from app.core.config import is_runtime_schema_bootstrap_enabled
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import os
 from threading import Lock
+from typing import Any
+
+from app.core.config import is_runtime_schema_bootstrap_enabled
+from app.core.db import get_raw_conn
 
 _usage_table_ready = False
 _usage_table_lock = Lock()
-from typing import Any
 
 try:
     import psycopg

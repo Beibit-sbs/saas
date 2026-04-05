@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { toSafeSessionFromProfile } from "@/shared/server/auth-session";
-
-const API_BASE =
-  process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { getServerApiBaseUrl } from "@/shared/server/runtime-env";
 
 function unauthenticated(status: number = 401, requestId?: string | null) {
   return NextResponse.json(
@@ -18,6 +16,7 @@ function unauthenticated(status: number = 401, requestId?: string | null) {
 }
 
 export async function GET(request: NextRequest) {
+  const apiBase = getServerApiBaseUrl();
   const token = request.cookies.get("admin_token")?.value;
   if (!token) {
     return unauthenticated(401, request.headers.get("x-request-id"));
@@ -26,7 +25,7 @@ export async function GET(request: NextRequest) {
   const requestId = request.headers.get("x-request-id");
 
   try {
-    const sessionUpstream = await fetch(`${API_BASE}/api/auth/me`, {
+    const sessionUpstream = await fetch(new URL("/api/auth/me", apiBase), {
       method: "GET",
       headers: {
         authorization: `Bearer ${token}`,
@@ -82,7 +81,7 @@ export async function GET(request: NextRequest) {
       return unauthenticated(503, upstreamRequestId);
     }
 
-    const profileUpstream = await fetch(`${API_BASE}/api/auth/me/profile`, {
+    const profileUpstream = await fetch(new URL("/api/auth/me/profile", apiBase), {
       method: "GET",
       headers: {
         authorization: `Bearer ${token}`,

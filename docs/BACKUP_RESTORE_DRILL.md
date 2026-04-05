@@ -47,8 +47,8 @@ docker exec ai-dr-postgres psql -U postgres -d postgres -c "CREATE DATABASE plat
 
 ```bash
 cd backend
-export DATABASE_URL='postgresql+psycopg://postgres:postgres@127.0.0.1:55432/platform_source'
-.venv/bin/alembic upgrade head
+export DATABASE_URL='postgresql+psycopg://postgres:postgres@db:5432/platform_source'
+docker compose --env-file ../infra/.env exec -T backend alembic -c /app/alembic.ini upgrade head
 ```
 
 3. Execute backup via repository script:
@@ -59,7 +59,7 @@ docker run --rm \
   --network container:ai-dr-postgres \
   -v /home/sbs/AI:/workspace:Z \
   -w /workspace \
-  -e DATABASE_URL='postgresql://postgres:postgres@localhost:5432/platform_source' \
+  -e DATABASE_URL='postgresql://postgres:postgres@ai-dr-postgres:5432/platform_source' \
   postgres:16 \
   bash scripts/backup_db.sh backups/dr_rehearsal_platform_source_20260325_020351.dump
 ```
@@ -79,31 +79,31 @@ docker run --rm \
   --network container:ai-dr-postgres \
   -v /home/sbs/AI:/workspace:Z \
   -w /workspace \
-  -e DATABASE_URL='postgresql://postgres:postgres@localhost:5432/platform_restore' \
+  -e DATABASE_URL='postgresql://postgres:postgres@ai-dr-postgres:5432/platform_restore' \
   postgres:16 \
-  bash scripts/restore_db.sh backups/dr_rehearsal_platform_source_20260325_020351.dump
+  bash scripts/restore_db.sh --execute --confirm RESTORE backups/dr_rehearsal_platform_source_20260325_020351.dump
 ```
 
 6. Migration-state check on restored DB:
 
 ```bash
 cd backend
-export DATABASE_URL='postgresql+psycopg://postgres:postgres@127.0.0.1:55432/platform_restore'
-.venv/bin/alembic heads
-.venv/bin/alembic upgrade head
+export DATABASE_URL='postgresql+psycopg://postgres:postgres@db:5432/platform_restore'
+docker compose --env-file ../infra/.env exec -T backend alembic -c /app/alembic.ini heads
+docker compose --env-file ../infra/.env exec -T backend alembic -c /app/alembic.ini upgrade head
 ```
 
 7. Application startup validation (restored DB):
 
 ```bash
 cd backend
-export DATABASE_URL='postgresql+psycopg://postgres:postgres@127.0.0.1:55432/platform_restore'
-export REDIS_URL='redis://127.0.0.1:6379/0'
+export DATABASE_URL='postgresql+psycopg://postgres:postgres@db:5432/platform_restore'
+export REDIS_URL='redis://redis:6379/0'
 export JWT_SECRET='change-me-in-dr-rehearsal-jwt'
 export API_BASE_URL='https://api.example.test'
 export ADMIN_PANEL_URL='https://admin.example.test'
 export INTERNAL_API_TOKEN='change-me-in-dr-rehearsal'
-.venv/bin/python - <<'PY'
+docker compose --env-file ../infra/.env exec -T backend python - <<'PY'
 from fastapi.testclient import TestClient
 from app.main import app
 client = TestClient(app)
@@ -128,8 +128,8 @@ docker exec ai-dr-postgres psql -U postgres -d platform_restore -At -c \
 
 ```bash
 cd /home/sbs/AI
-export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/platform_restore'
-export REDIS_URL='redis://127.0.0.1:6379/0'
+export DATABASE_URL='postgresql://postgres:postgres@db:5432/platform_restore'
+export REDIS_URL='redis://redis:6379/0'
 export INTERNAL_API_TOKEN='change-me-in-dr-rehearsal'
 bash scripts/platform_smoke_check.sh
 ```
@@ -256,8 +256,8 @@ OutboxEventWorker.run_once()
 
 **Command:**
 ```bash
-export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/platform_restore'
-export REDIS_URL='redis://127.0.0.1:6379/0'
+export DATABASE_URL='postgresql://postgres:postgres@db:5432/platform_restore'
+export REDIS_URL='redis://redis:6379/0'
 export INTERNAL_API_TOKEN='change-me-in-dr-rehearsal'
 bash scripts/platform_smoke_check.sh
 ```
@@ -340,6 +340,8 @@ createdb pilot_restore_validation
 
 ```bash
 bash scripts/restore_db.sh \
+  --execute \
+  --confirm RESTORE \
   'postgresql://user:pass@host:5432/pilot_restore_validation' \
   '/path/to/latest.dump'
 ```

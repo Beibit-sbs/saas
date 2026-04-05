@@ -324,18 +324,6 @@ def get_metrics_allowed_ips() -> set[str]:
     return {item.strip() for item in raw.split(",") if item.strip()}
 
 
-def get_trusted_hosts() -> list[str]:
-    raw = os.getenv("TRUSTED_HOSTS", "").strip()
-    if not raw:
-        if is_production_mode():
-            raise RuntimeError("TRUSTED_HOSTS must be configured in production")
-        return ["localhost", "127.0.0.1", "backend", "nginx"]
-    hosts = [item.strip() for item in raw.split(",") if item.strip()]
-    if not hosts:
-        raise RuntimeError("TRUSTED_HOSTS must include at least one host")
-    return hosts
-
-
 def is_production_mode() -> bool:
     raw = os.getenv("APP_ENV", os.getenv("ENVIRONMENT", "development")).strip().lower()
     return raw in {"prod", "production"}
@@ -357,6 +345,22 @@ def get_metrics_token() -> str | None:
     """
     raw = os.getenv("METRICS_TOKEN", "").strip()
     return raw or None
+
+
+def get_trusted_hosts() -> list[str]:
+    """Return allowed host patterns for TrustedHostMiddleware.
+
+    Default to the local edge/runtime hosts used by the Docker stack.
+    Operators can still override this with TRUSTED_HOSTS explicitly.
+    """
+    default_hosts = ["localhost", "127.0.0.1", "backend", "nginx"]
+    raw = os.getenv("TRUSTED_HOSTS", "").strip()
+    if not raw:
+        return default_hosts
+    hosts = [item.strip() for item in raw.split(",") if item.strip()]
+    if is_production_mode() and "*" in hosts:
+        raise RuntimeError("TRUSTED_HOSTS must not include wildcard host in production")
+    return hosts or default_hosts
 
 
 def get_ops_alert_webhook_url() -> str | None:
@@ -423,6 +427,7 @@ def get_internal_api_token() -> str:
         raise RuntimeError("INTERNAL_API_TOKEN must be configured")
     return token
 
+
 _LEGACY_INTERNAL_API_FULL_SCOPES = {
     "jobs.run",
     "jobs.retry",
@@ -446,9 +451,15 @@ _LEGACY_INTERNAL_API_FULL_SCOPES = {
 def get_internal_api_allowed_scopes() -> set[str]:
     raw = os.getenv("INTERNAL_API_ALLOWED_SCOPES", "").strip()
     if not raw:
+        if is_production_mode():
+            raise RuntimeError("INTERNAL_API_ALLOWED_SCOPES must be explicitly configured in production")
+        # Backward-compatible default; operators can explicitly tighten via env.
         return set(_LEGACY_INTERNAL_API_FULL_SCOPES)
+
     scopes = {item.strip() for item in raw.split(",") if item.strip()}
     if "*" in scopes:
+        if is_production_mode():
+            raise RuntimeError("INTERNAL_API_ALLOWED_SCOPES must not include wildcard in production")
         return {"*"}
     return scopes
 

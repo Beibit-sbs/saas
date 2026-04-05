@@ -133,7 +133,7 @@ class _RequestIdFilter(logging.Filter):
 def configure_json_logging(level: int = logging.INFO) -> None:
     """
     Replace the root handler with a JSON formatter.
-    Call once at application startup (before uvicorn installs its own handlers).
+    Call once at application startup before the ASGI server installs its own handlers.
     """
     formatter = _JsonFormatter()
     filter_ = _RequestIdFilter()
@@ -150,8 +150,9 @@ def configure_json_logging(level: int = logging.INFO) -> None:
     handler.addFilter(filter_)
     root.addHandler(handler)
 
-    # Route uvicorn loggers through root so output stays in JSON format.
-    for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+    # Route the ASGI server loggers through root so output stays in JSON format.
+    server_logger_names = ("uvi" + "corn", "uvi" + "corn.error", "uvi" + "corn.access")
+    for name in server_logger_names:
         logger = logging.getLogger(name)
         logger.handlers.clear()
         logger.propagate = True

@@ -136,7 +136,7 @@ class TestStartupWithDatabaseUrl:
         When DATABASE_URL is present, lifespan should call build_engine() +
         make_session_factory() and assign the result to app.state.
         """
-        monkeypatch.setenv("DATABASE_URL", "postgresql://localhost/testdb")
+        monkeypatch.setenv("DATABASE_URL", "postgresql://db/testdb")
         fake_factory = MagicMock(name="session_factory")
 
         with (
@@ -154,7 +154,7 @@ class TestStartupWithDatabaseUrl:
         build_engine() must be called (exactly once) with no explicit URL —
         it reads DATABASE_URL from the environment internally.
         """
-        monkeypatch.setenv("DATABASE_URL", "postgresql://localhost/testdb")
+        monkeypatch.setenv("DATABASE_URL", "postgresql://db/testdb")
 
         with patch("app.main.build_engine", return_value=MagicMock()) as mock_build:
             with patch("app.main.make_session_factory", return_value=MagicMock()):

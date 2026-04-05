@@ -1,6 +1,7 @@
 from __future__ import annotations
 from app.core.db import get_raw_conn
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from datetime import datetime, timezone
 from pathlib import Path
 import os
@@ -59,22 +60,39 @@ def _postgres_dependency(app: FastAPI) -> dict[str, Any]:
         observe_dependency_state(component="postgresql", healthy=False, details=dependency["details"])
         return dependency
 
-    try:
+    probe_timeout_seconds = get_ops_probe_timeout_seconds()
+
+    def _probe_postgres() -> dict[str, Any]:
         with session_factory() as session:
             session.execute(text("SELECT 1"))
         checked_out = int(engine.pool.checkedout()) if hasattr(engine.pool, "checkedout") else None
-        set_db_connections_active(checked_out)
         details: dict[str, Any] = {
             "pool_class": engine.pool.__class__.__name__,
             "pool_status": engine.pool.status() if hasattr(engine.pool, "status") else "unknown",
         }
         if checked_out is not None:
             details["checked_out"] = checked_out
+        details["probe_timeout_seconds"] = probe_timeout_seconds
+        if checked_out is not None:
+            set_db_connections_active(checked_out)
+        return details
+
+    try:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            details = executor.submit(_probe_postgres).result(timeout=probe_timeout_seconds)
         observe_dependency_state(component="postgresql", healthy=True, details=details)
         return _dependency_payload(name="postgresql", healthy=True, critical=True, details=details)
+    except FutureTimeoutError:
+        set_db_connections_active(None)
+        details = {
+            "reason": "postgres probe timeout",
+            "probe_timeout_seconds": probe_timeout_seconds,
+        }
+        observe_dependency_state(component="postgresql", healthy=False, details=details)
+        return _dependency_payload(name="postgresql", healthy=False, critical=True, details=details)
     except Exception as exc:
         set_db_connections_active(None)
-        details = {"reason": str(exc)}
+        details = {"reason": str(exc), "probe_timeout_seconds": probe_timeout_seconds}
         observe_dependency_state(component="postgresql", healthy=False, details=details)
         return _dependency_payload(name="postgresql", healthy=False, critical=True, details=details)
 
@@ -89,6 +107,7 @@ def _migrations_dependency(app: FastAPI) -> dict[str, Any]:
             details={"reason": "database session factory unavailable"},
         )
 
+    probe_timeout_seconds = get_ops_probe_timeout_seconds()
     current_version = None
     expected_head = None
     try:
@@ -107,9 +126,24 @@ def _migrations_dependency(app: FastAPI) -> dict[str, Any]:
             details={"reason": f"failed to resolve alembic head: {exc}"},
         )
 
-    try:
+    def _read_current_version() -> str | None:
         with session_factory() as session:
-            current_version = session.execute(text("SELECT version_num FROM alembic_version LIMIT 1")).scalar_one_or_none()
+            return session.execute(text("SELECT version_num FROM alembic_version LIMIT 1")).scalar_one_or_none()
+
+    try:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            current_version = executor.submit(_read_current_version).result(timeout=probe_timeout_seconds)
+    except FutureTimeoutError:
+        return _dependency_payload(
+            name="migrations",
+            healthy=False,
+            critical=True,
+            details={
+                "reason": "migrations probe timeout",
+                "expected_head": expected_head,
+                "probe_timeout_seconds": probe_timeout_seconds,
+            },
+        )
     except Exception as exc:
         return _dependency_payload(
             name="migrations",
@@ -245,16 +279,30 @@ def _scheduler_dependency() -> dict[str, Any]:
 
 
 def _jobs_queue_dependency() -> dict[str, Any]:
-    try:
+    probe_timeout_seconds = get_ops_probe_timeout_seconds()
+
+    def _read_queue_counts() -> dict[str, int]:
         with UnitOfWork() as uow:
             queued = int(uow.job_repository.count_by_status("queued", conn=uow.conn))
             failed = int(uow.job_repository.count_by_status("failed", conn=uow.conn))
             dead = int(uow.job_repository.count_dead_jobs(conn=uow.conn))
+        return {"queued": queued, "failed": failed, "dead": dead}
+
+    try:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            details = executor.submit(_read_queue_counts).result(timeout=probe_timeout_seconds)
         return _dependency_payload(
             name="jobs_queue",
             healthy=True,
             critical=False,
-            details={"queued": queued, "failed": failed, "dead": dead},
+            details=details,
+        )
+    except FutureTimeoutError:
+        return _dependency_payload(
+            name="jobs_queue",
+            healthy=False,
+            critical=False,
+            details={"reason": "jobs_queue probe timeout", "probe_timeout_seconds": probe_timeout_seconds},
         )
     except Exception as exc:
         return _dependency_payload(
@@ -278,7 +326,6 @@ def _ldap_dependency(app: FastAPI) -> dict[str, Any]:
     try:
         from app.modules.identity.phase1_service import _decrypt_secret, _provider_uri
         from ldap3 import Connection, Server
-        import psycopg
     except Exception as exc:
         details = {"reason": f"ldap probe dependencies unavailable: {exc}"}
         observe_dependency_state(component="ldap", healthy=False, details=details)
@@ -372,10 +419,25 @@ def deep_payload(app: FastAPI) -> dict[str, Any]:
     dependencies["worker"] = _worker_dependency()
     dependencies["scheduler"] = _scheduler_dependency()
     dependencies["external_integrations"] = _optional_integrations_dependency()
-    healthy = all(bool(item["healthy"]) for item in dependencies.values() if bool(item["critical"]))
+    checks = {
+        str(name): {"ok": bool(item.get("healthy", False))}
+        for name, item in dependencies.items()
+    }
+    # Fail closed for deep health: any non-OK component makes deep health unhealthy.
+    # Check critical components explicitly
+    critical_healthy = all(
+        bool(item.get("healthy", False))
+        for item in dependencies.values()
+        if item.get("critical", False)
+    )
+    # Also check non-critical important components
+    healthy = critical_healthy and all(
+        bool(item.get("healthy", False)) for item in dependencies.values()
+    )
     return {
         "status": "ok" if healthy else "degraded",
         "deep": healthy,
         "timestamp": _now_iso(),
         "dependencies": dependencies,
+        "checks": checks,
     }

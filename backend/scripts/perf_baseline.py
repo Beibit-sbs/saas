@@ -17,11 +17,12 @@ from pathlib import Path
 import httpx
 
 # Keep benchmark runtime self-contained and aligned with test defaults.
-os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault("REDIS_URL", "redis://redis:6379/0")
 os.environ.setdefault("JWT_SECRET", "test-secret-not-for-production-use-only-32ch")
-os.environ.setdefault("API_BASE_URL", "https://api.example.test")
-os.environ.setdefault("ADMIN_PANEL_URL", "https://admin.example.test")
+os.environ.setdefault("API_BASE_URL", "http://backend:8000")
+os.environ.setdefault("ADMIN_PANEL_URL", "http://nginx")
 os.environ.setdefault("INTERNAL_API_TOKEN", "internal-token-for-tests-only")
+os.environ.setdefault("INTEGRATIONS_ENCRYPTION_KEY", "test-integration-key-not-for-production-123")
 os.environ.setdefault("RBAC_ALLOW_DEV_FALLBACK", "true")
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 

@@ -98,7 +98,7 @@ def test_audit_event_always_contains_tenant_id() -> None:
         actor="tenant-check@example.com",
         action="tenant_id_presence_check",
         path="/test/tenant-id",
-        client_ip="127.0.0.1",
+        client_ip="10.0.0.1",
         tenant_id=1,
     )
 
@@ -116,7 +116,7 @@ def test_audit_event_without_tenant_context_fails_closed() -> None:
             actor="tenant-check@example.com",
             action="background_default_tenant",
             path="/workers/background-default",
-            client_ip="127.0.0.1",
+            client_ip="10.0.0.1",
         )
 
 
@@ -133,7 +133,7 @@ def test_background_thread_audit_event_honors_explicit_tenant_id() -> None:
             actor="bg-worker@example.com",
             action="background_explicit_tenant",
             path="/workers/background-explicit",
-            client_ip="127.0.0.1",
+            client_ip="10.0.0.1",
             tenant_id=2,
         )
 

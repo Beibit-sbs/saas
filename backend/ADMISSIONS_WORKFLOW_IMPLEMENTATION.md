@@ -1031,7 +1031,7 @@ echo "✓ Tenant $TENANT_ID initialized"
 ```bash
 # Test without permission: should fail with 403
 curl -X POST \
-  http://localhost:8000/api/admin/admissions/applications/123/submit \
+    http://nginx/api/admin/admissions/applications/123/submit \
   -H "Authorization: Bearer <JWT_WITHOUT_ADMISSIONS_WRITE>" \
   -H "Content-Type: application/json" \
   -d '{"expected_version": 1}'
@@ -1040,7 +1040,7 @@ curl -X POST \
 
 # Test with permission: should succeed
 curl -X POST \
-  http://localhost:8000/api/admin/admissions/applications/123/submit \
+    http://nginx/api/admin/admissions/applications/123/submit \
   -H "Authorization: Bearer <JWT_WITH_ADMISSIONS_WRITE>" \
   -H "Content-Type: application/json" \
   -d '{"expected_version": 1}'

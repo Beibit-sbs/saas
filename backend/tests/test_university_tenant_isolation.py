@@ -2,7 +2,12 @@
 
 Verifies that each tenant only sees its own data and cannot
 read, update, or delete another tenant's records.
+
+Security model: X-Tenant-ID header cannot override the authenticated tenant
+context — each test uses per-tenant tokens to simulate Tenant B access.
 """
+from uuid import uuid4
+
 from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 
 # ---------------------------------------------------------------------------
@@ -28,17 +33,19 @@ _STUDENT_UPDATE_PAYLOAD = {
 
 def _create_extra_tenant() -> dict:
     """Create a second (non-default) tenant and return the response dict."""
+    suffix = uuid4().hex[:8]
     resp = client.post(
         "/api/admin/tenants",
         headers=ADMIN_HEADERS,
-        json={"slug": "tenant-b", "name": "Tenant B", "status": "active"},
+        json={"slug": f"tenant-b-{suffix}", "name": "Tenant B", "status": "active"},
     )
     assert resp.status_code == 200, resp.text
     return resp.json()["tenant"]
 
 
-def _tenant_headers(tenant_id: int, base_headers: dict[str, str] | None = None) -> dict[str, str]:
-    return {**(base_headers or ADMIN_HEADERS), "X-Tenant-ID": str(tenant_id)}
+def _tenant_b_headers(tenant_b_id: int) -> dict[str, str]:
+    """Create auth headers for a Tenant B admin using a per-tenant token."""
+    return _auth_headers(f"admin@tenant-{tenant_b_id}.example.com", ["admin"], tenant_id=tenant_b_id)
 
 
 # ---------------------------------------------------------------------------
@@ -80,10 +87,9 @@ def test_tenant_a_sees_only_own_rows() -> None:
     )
     assert resp.status_code == 200, resp.text
 
-    # Create tenant B and fetch its students
+    # Create tenant B and list its students using a per-tenant token
     tenant_b = _create_extra_tenant()
-    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
-    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
+    b_headers = _tenant_b_headers(int(tenant_b["id"]))
 
     list_resp = client.get("/api/admin/university/students", headers=b_headers)
     assert list_resp.status_code == 200
@@ -93,10 +99,9 @@ def test_tenant_a_sees_only_own_rows() -> None:
 def test_default_tenant_sees_only_own_rows() -> None:
     """The default tenant cannot see rows created by tenant B."""
     tenant_b = _create_extra_tenant()
-    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
-    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
+    b_headers = _tenant_b_headers(int(tenant_b["id"]))
 
-    # Create a student under tenant B
+    # Create a student under tenant B using a per-tenant token
     resp = client.post(
         "/api/admin/university/students",
         headers=b_headers,
@@ -122,10 +127,9 @@ def test_cross_tenant_update_returns_404() -> None:
     assert create_resp.status_code == 200
     student_id = create_resp.json()["student"]["id"]
 
-    # Tenant B tries to update it
+    # Tenant B tries to update it using a per-tenant token
     tenant_b = _create_extra_tenant()
-    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
-    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
+    b_headers = _tenant_b_headers(int(tenant_b["id"]))
 
     update_resp = client.put(
         f"/api/admin/university/students/{student_id}",
@@ -145,9 +149,9 @@ def test_cross_tenant_delete_returns_404() -> None:
     assert create_resp.status_code == 200
     student_id = create_resp.json()["student"]["id"]
 
+    # Tenant B tries to delete it using a per-tenant token
     tenant_b = _create_extra_tenant()
-    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
-    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
+    b_headers = _tenant_b_headers(int(tenant_b["id"]))
 
     delete_resp = client.delete(
         f"/api/admin/university/students/{student_id}",
@@ -164,8 +168,7 @@ def test_cross_tenant_delete_returns_404() -> None:
 def test_both_tenants_independent_counters() -> None:
     """Each tenant maintains independent data sets."""
     tenant_b = _create_extra_tenant()
-    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
-    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
+    b_headers = _tenant_b_headers(int(tenant_b["id"]))
 
     # Create 2 students under default tenant
     for i in range(2):
@@ -176,7 +179,7 @@ def test_both_tenants_independent_counters() -> None:
         )
         assert r.status_code == 200
 
-    # Create 1 student under tenant B
+    # Create 1 student under tenant B using a per-tenant token
     r = client.post(
         "/api/admin/university/students",
         headers=b_headers,
@@ -213,9 +216,9 @@ def test_tenant_own_update_succeeds() -> None:
 
 
 def test_inactive_tenant_is_rejected() -> None:
-    """A request with X-Tenant-ID pointing to an inactive tenant gets 403."""
+    """A token for an inactive tenant gets 403 on any protected endpoint."""
     tenant_b = _create_extra_tenant()
-    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
+    b_headers = _tenant_b_headers(int(tenant_b["id"]))
 
     # Deactivate tenant B
     deactivate_resp = client.delete(
@@ -224,14 +227,12 @@ def test_inactive_tenant_is_rejected() -> None:
     )
     assert deactivate_resp.status_code == 200
 
-    b_headers = _tenant_headers(int(tenant_b["id"]), platform_headers)
     resp = client.get("/api/admin/university/students", headers=b_headers)
     assert resp.status_code == 403
 
 
 def test_nonexistent_tenant_is_rejected() -> None:
-    """A request with X-Tenant-ID pointing to a non-existent tenant gets 404."""
-    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
-    headers = _tenant_headers(99999, platform_headers)
+    """A token for a nonexistent tenant_id gets 404 on any protected endpoint."""
+    headers = _auth_headers("user@nonexistent.example.com", ["admin"], tenant_id=99999)
     resp = client.get("/api/admin/university/students", headers=headers)
     assert resp.status_code == 404

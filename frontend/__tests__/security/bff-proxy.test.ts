@@ -3,8 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GET as bffGet, POST as bffPost } from "@/app/api/bff/[...path]/route";
 
-const API_BASE =
-  process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+process.env.API_BASE_URL = process.env.API_BASE_URL ?? "http://backend:8000";
+
+const API_BASE = process.env.API_BASE_URL;
+const EDGE_BASE = "https://edge.test";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -12,7 +14,7 @@ afterEach(() => {
 
 describe("bff proxy route", () => {
   it("returns 401 for missing session cookie", async () => {
-    const req = new NextRequest("http://localhost/api/bff/admin/students");
+    const req = new NextRequest(`${EDGE_BASE}/api/bff/admin/students`);
     const res = await bffGet(req, { params: { path: ["admin", "students"] } });
 
     expect(res.status).toBe(401);
@@ -28,7 +30,7 @@ describe("bff proxy route", () => {
       }),
     );
 
-    const req = new NextRequest("http://localhost/api/bff/admin/students?page=1", {
+    const req = new NextRequest(`${EDGE_BASE}/api/bff/admin/students?page=1`, {
       headers: {
         cookie: "admin_token=session-token",
         "x-request-id": "req-123",
@@ -58,7 +60,7 @@ describe("bff proxy route", () => {
       }),
     );
 
-    const req = new NextRequest("http://localhost/api/bff/admin/enrollments", {
+    const req = new NextRequest(`${EDGE_BASE}/api/bff/admin/enrollments`, {
       headers: { cookie: "admin_token=session-token" },
     });
 
@@ -79,7 +81,7 @@ describe("bff proxy route", () => {
       }),
     );
 
-    const req = new NextRequest("http://localhost/api/bff/v1/admin/tenants", {
+    const req = new NextRequest(`${EDGE_BASE}/api/bff/v1/admin/tenants`, {
       method: "POST",
       headers: {
         cookie: "admin_token=session-token",

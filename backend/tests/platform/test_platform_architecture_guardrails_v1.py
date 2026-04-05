@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import os
 import ast
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+REPO_ROOT = Path(os.environ.get("PROJECT_ROOT", str(Path(__file__).resolve().parents[3])))
 
 
 def _read(path: str) -> str:

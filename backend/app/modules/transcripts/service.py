@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from decimal import Decimal
 
 from sqlalchemy import and_, select
 from sqlalchemy.exc import IntegrityError
@@ -16,6 +15,7 @@ from app.core.module_helpers.service_validation import (
     validate_version_match,
 )
 from app.modules.audit.service import log_admin_action
+from app.modules.billing.service import assert_billing_write_allowed, assert_quota_with_increment
 from app.modules.courses.models import CourseModel
 from app.modules.enrollments.models import AcademicTermModel, EnrollmentModel
 from app.modules.grades.service import GradeLifecycleService
@@ -27,6 +27,7 @@ from app.modules.transcripts.schemas import (
     TranscriptItemSchema,
     TranscriptSnapshotSchema,
 )
+from app.modules.usage.service import record_usage_event
 
 
 def _utc_now() -> datetime:
@@ -127,6 +128,8 @@ class TranscriptService:
         expected_record_version: int | None = None,
     ) -> StudentTranscriptSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
+        assert_billing_write_allowed(tenant_id, action="transcripts.generate")
+        assert_quota_with_increment(tenant_id, "transcripts_generated", increment=1)
         self._load_student(tenant_id, student_profile_id)
 
         enrollments = self._load_enrollments(tenant_id, student_profile_id)
@@ -197,6 +200,8 @@ class TranscriptService:
             self.db.rollback()
             raise DomainValidationError("Unable to generate transcript due to constraint violation") from exc
 
+        record_usage_event(tenant_id=tenant_id, metric="transcripts_generated", value=1)
+
         _audit(
             actor_id,
             build_audit_action("transcripts", "transcript", "generated"),
@@ -231,11 +236,13 @@ class TranscriptService:
         ).scalars().all()
 
         if not rows:
-            return await self.generate_transcript(
+            transcript = await self.generate_transcript(
                 tenant_id,
                 student_profile_id=student_profile_id,
                 actor_id="system@transcripts",
             )
+            record_usage_event(tenant_id=tenant_id, metric="transcripts_read", value=1)
+            return transcript
 
         items: list[TranscriptItemSchema] = []
         for record in rows:
@@ -261,6 +268,8 @@ class TranscriptService:
             tenant_id,
             student_profile_id=student_profile_id,
         )
+
+        record_usage_event(tenant_id=tenant_id, metric="transcripts_read", value=1)
 
         return StudentTranscriptSchema(
             student_profile_id=student_profile_id,

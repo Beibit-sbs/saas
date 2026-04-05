@@ -17,6 +17,12 @@ def _invalidate_cache(tenant_id: int, module: str, key: str) -> None:
         _tenant_list_cache.pop(int(tenant_id), None)
 
 
+def clear_feature_flag_cache() -> None:
+    with _cache_lock:
+        _flag_cache.clear()
+        _tenant_list_cache.clear()
+
+
 def set_platform_feature(module: str, key: str, enabled: bool) -> dict[str, object]:
     normalized_module = module.strip().lower()
     normalized_key = key.strip().lower()

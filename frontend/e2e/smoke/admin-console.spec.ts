@@ -12,6 +12,8 @@ import { test, expect, type Page } from "@playwright/test";
  * before any React code runs.  page.route() intercepts only client-side fetches.
  */
 async function stubAuthSession(page: Page, overrides: Record<string, unknown> = {}) {
+  const cookieUrl = process.env.E2E_BASE_URL ?? "https://nginx";
+  const secureCookie = new URL(cookieUrl).protocol === "https:";
   // Build a minimal non-expired JWT that satisfies middleware.ts isTokenExpired().
   const payloadJson = JSON.stringify({ sub: "test-user-id", exp: Math.floor(Date.now() / 1000) + 3600 });
   const payload = Buffer.from(payloadJson).toString("base64url");
@@ -20,15 +22,19 @@ async function stubAuthSession(page: Page, overrides: Record<string, unknown> = 
   await page.context().addCookies([{
     name: "admin_token",
     value: fakeToken,
-    domain: "localhost",
-    path: "/",
+    url: cookieUrl,
     httpOnly: true,
-    secure: false,
+    secure: secureCookie,
     sameSite: "Lax",
   }]);
 
+  const sessionCookies = await page.context().cookies(cookieUrl);
+  if (!sessionCookies.some((item) => item.name === "admin_token")) {
+    throw new Error("Failed to set admin_token cookie for test session");
+  }
+
   // Intercept the BFF session endpoint before any navigation.
-  await page.route("/api/auth/me", async (route) => {
+  await page.route("**/api/auth/me", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -53,7 +59,8 @@ async function stubAuthSession(page: Page, overrides: Record<string, unknown> = 
 
 /** Stub a JSON API route with static data. */
 async function stubApi(page: Page, path: string, body: unknown, status = 200) {
-  await page.route(path, async (route) => {
+  const pattern = path.startsWith("**/") ? path : `**${path}`;
+  await page.route(pattern, async (route) => {
     await route.fulfill({
       status,
       contentType: "application/json",
@@ -261,8 +268,13 @@ test.describe("Academic pages", () => {
       total: 1, page: 1, page_size: 20,
     });
 
+    const studentsResponse = page.waitForResponse((response) => {
+      return response.request().method() === "GET"
+        && response.url().includes("/api/bff/admin/students");
+    });
+
     await page.goto("/console/students");
-    await expect(page.getByRole("heading", { name: "Students" })).toBeVisible();
+    await studentsResponse;
     await expect(page.getByText("Jane Doe")).toBeVisible();
   });
 
@@ -276,9 +288,48 @@ test.describe("Academic pages", () => {
       total: 1, page: 1, page_size: 20,
     });
 
+    const gradesResponse = page.waitForResponse((response) => {
+      return response.request().method() === "GET"
+        && response.url().includes("/api/bff/admin/grades");
+    });
+
     await page.goto("/console/grades");
-    await expect(page.getByRole("heading", { name: "Grades" })).toBeVisible();
+    await gradesResponse;
     await expect(page.getByText("Jane Doe")).toBeVisible();
+  });
+
+  test("Transcript page renders student transcript", async ({ page }) => {
+    await stubAuthSession(page);
+    await stubApi(page, "/api/bff/admin/students/s1/transcript*", {
+      student_id: "s1",
+      student_name: "Jane Doe",
+      student_number: "STU-001",
+      program: "CS",
+      gpa: 3.9,
+      total_credits: 30,
+      entries: [
+        {
+          course_name: "Intro to CS",
+          section_code: "CS101-01",
+          credits: 3,
+          grade_value: "A",
+          numeric_value: 4.0,
+          semester: "2026 Spring",
+          completed: true,
+        },
+      ],
+      generated_at: "2026-04-03T00:00:00Z",
+    });
+
+    const transcriptResponse = page.waitForResponse((response) => {
+      return response.request().method() === "GET"
+        && response.url().includes("/api/bff/admin/students/s1/transcript");
+    });
+
+    await page.goto("/console/students/s1/transcript");
+    await transcriptResponse;
+    await expect(page.getByText("Jane Doe · STU-001")).toBeVisible();
+    await expect(page.getByText("Intro to CS")).toBeVisible();
   });
 
   test("Enrollments page renders enrollments table", async ({ page }) => {

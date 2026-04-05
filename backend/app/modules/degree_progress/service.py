@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from app.core.module_helpers.audit_helpers import build_audit_action
 from app.core.module_helpers.service_validation import (
-    DomainValidationError,
     TenantResourceNotFoundError,
     assert_resource_belongs_to_tenant,
     validate_tenant_id_provided,

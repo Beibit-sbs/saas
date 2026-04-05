@@ -17,6 +17,7 @@ from app.core.module_helpers.service_validation import (
 )
 from app.modules.audit.service import log_admin_action
 from app.modules.audit.service import log_data_access_event
+from app.modules.billing.service import assert_billing_write_allowed, assert_quota_with_increment
 from app.modules.courses.models import CourseModel
 from app.modules.enrollments.models import AcademicTermModel, EnrollmentModel
 from app.modules.grades.business_rules import GradeLifecycleRules
@@ -40,6 +41,7 @@ from app.modules.rbac.abac import (
     validate_grade_ownership,
 )
 from app.modules.students.models import StudentProfileModel
+from app.modules.usage.service import record_usage_event
 from app.platform.events.publisher import EventPublisher
 
 
@@ -210,6 +212,8 @@ class GradeLifecycleService:
         actor_id: str,
     ) -> GradeReadSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
+        assert_billing_write_allowed(tenant_id, action="grades.submit")
+        assert_quota_with_increment(tenant_id, "grades_submitted", increment=1)
         enrollment = self._load_enrollment(tenant_id, request.enrollment_id)
         
         # ABAC: Verify actor is authorized to submit grades for this course
@@ -317,6 +321,8 @@ class GradeLifecycleService:
             self.db.rollback()
             raise DomainValidationError("Unable to submit grade due to constraint violation") from exc
 
+        record_usage_event(tenant_id=tenant_id, metric="grades_submitted", value=1)
+
         return GradeReadSchema.model_validate(submission)
 
     async def change_grade(
@@ -420,6 +426,8 @@ class GradeLifecycleService:
         except IntegrityError as exc:
             self.db.rollback()
             raise DomainValidationError("Unable to change grade due to constraint violation") from exc
+
+        record_usage_event(tenant_id=tenant_id, metric="grades_submitted", value=1)
 
         return GradeReadSchema.model_validate(submission)
 

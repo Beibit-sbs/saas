@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerApiBaseUrl } from "@/shared/server/runtime-env";
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login"];
-const API_BASE = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 function isTokenExpired(token: string): boolean {
   try {
@@ -15,8 +15,9 @@ function isTokenExpired(token: string): boolean {
 }
 
 async function hasActiveSession(token: string, requestId: string | null): Promise<boolean> {
+  const apiBase = getServerApiBaseUrl();
   try {
-    const response = await fetch(`${API_BASE}/api/auth/me`, {
+    const response = await fetch(new URL("/api/auth/me", apiBase), {
       method: "GET",
       headers: {
         authorization: `Bearer ${token}`,
@@ -32,7 +33,7 @@ async function hasActiveSession(token: string, requestId: string | null): Promis
 
     // Backward compatibility for environments that only expose /me/profile.
     if (response.status === 404) {
-      const profileResponse = await fetch(`${API_BASE}/api/auth/me/profile`, {
+      const profileResponse = await fetch(new URL("/api/auth/me/profile", apiBase), {
         method: "GET",
         headers: {
           authorization: `Bearer ${token}`,

@@ -162,11 +162,11 @@ pytest tests/ -v
 
 ```bash
 # Verify endpoints are gone
-curl http://localhost:8000/api/v1/public/tenants/1   # Should be 404
-curl http://localhost:8000/api/v1/public/tenants-safe/1  # Should be 404
+curl http://nginx/api/v1/public/tenants/1   # Should be 404
+curl http://nginx/api/v1/public/tenants-safe/1  # Should be 404
 
 # Verify authenticated endpoints still work
-curl -H "X-App-Key: test" -H "X-App-Secret: test" http://localhost:8000/api/v1/public/students  # Should work or 403 (depends on auth)
+curl -H "X-App-Key: test" -H "X-App-Secret: test" http://nginx/api/v1/public/students  # Should work or 403 (depends on auth)
 
 # Run tests
 cd backend && pytest tests/test_public_endpoints_security.py::TestPublicEndpointsRemoved -v

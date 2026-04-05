@@ -318,20 +318,20 @@ return await service.submit_application(
 
 ```bash
 # Run Phase 5C router tests (20 tests)
-JWT_SECRET='...' .venv/bin/pytest \
+JWT_SECRET='...' docker compose --env-file ../infra/.env exec -T backend pytest \
   tests/modules/admissions/test_router_submit_phase_5c.py -v
 
 # Run all admissions tests (109 tests: 5A+5B+5C+existing)
-JWT_SECRET='...' .venv/bin/pytest tests/modules/admissions/ -q
+JWT_SECRET='...' docker compose --env-file ../infra/.env exec -T backend pytest tests/modules/admissions/ -q
 
 # Run all workflow + admissions tests
-JWT_SECRET='...' .venv/bin/pytest tests/modules/{admissions,workflows}/ -q
+JWT_SECRET='...' docker compose --env-file ../infra/.env exec -T backend pytest tests/modules/{admissions,workflows}/ -q
 ```
 
 ### HTTP Request Example
 
 ```bash
-curl -X POST http://localhost:8000/api/admin/admissions/applications/123/submit \
+curl -X POST http://nginx/api/admin/admissions/applications/123/submit \
   -H "Authorization: Bearer <JWT_TOKEN>" \
   -H "X-Tenant-ID: 1" \
   -H "Content-Type: application/json" \

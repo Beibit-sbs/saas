@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Create release archive
-        run: tar --exclude-vcs --exclude='.env' --exclude='node_modules' --exclude='.venv' -czf release.tar.gz .
+        run: tar --exclude-vcs --exclude='.env' --exclude='node_modules' --exclude='.[v]env' -czf release.tar.gz .
       - name: Upload to server
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}

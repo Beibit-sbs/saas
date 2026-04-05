@@ -88,10 +88,10 @@ Test Results:
 - TOTAL: 56/56 Phase 5 tests PASSING
 
 Command:
-JWT_SECRET='...' .venv/bin/pytest tests/modules/admissions/test_router_submit_phase_5c.py -v
+JWT_SECRET='...' docker compose --env-file ../infra/.env exec -T backend pytest tests/modules/admissions/test_router_submit_phase_5c.py -v
 
 All Admissions Tests:
-JWT_SECRET='...' .venv/bin/pytest tests/modules/admissions/ -q
+JWT_SECRET='...' docker compose --env-file ../infra/.env exec -T backend pytest tests/modules/admissions/ -q
 Result: 109 tests PASSING (no regressions)
 
 
@@ -153,7 +153,7 @@ Integration Tests:
 - Response model verification
 
 Command:
-.venv/bin/pytest tests/modules/admissions/test_router_submit_phase_5c.py -v
+docker compose --env-file ../infra/.env exec -T backend pytest tests/modules/admissions/test_router_submit_phase_5c.py -v
 Result: 20/20 PASSING ✅
 
 

@@ -307,6 +307,11 @@ def _invalidate_setting_cache(scoped_key: str) -> None:
         _read_cache.pop(scoped_key, None)
 
 
+def clear_settings_read_cache() -> None:
+    with _read_cache_lock:
+        _read_cache.clear()
+
+
 def get_setting(key: str, tenant_id: int | None = None) -> SettingEntry | None:
     normalized_key = key.strip()
     if not normalized_key:

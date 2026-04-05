@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from datetime import datetime, timezone
 from typing import Any
 
@@ -58,6 +59,10 @@ def list_event_projections(
     *,
     tenant_id: int,
     event_type: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    cursor_id_lt: int | None = None,
+    ordering: str = "created_at_desc",
     limit: int = 100,
     uow: "Any",
 ) -> list[dict[str, Any]]:
@@ -66,6 +71,10 @@ def list_event_projections(
     return repo.list_event_projections(
         tenant_id=tenant_id,
         event_type=event_type,
+        date_from=date_from,
+        date_to=date_to,
+        cursor_id_lt=cursor_id_lt,
+        ordering=ordering,
         limit=limit,
         conn=conn,
     )

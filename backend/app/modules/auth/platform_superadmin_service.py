@@ -43,7 +43,7 @@ def ensure_platform_superadmin(
         action="platform.superadmin.ensure",
         entity="identity",
         path="cli:create_platform_superadmin",
-        client_ip="127.0.0.1",
+        client_ip="10.0.0.1",
         tenant_id=PLATFORM_TENANT_ID,
         result="success",
         metadata={

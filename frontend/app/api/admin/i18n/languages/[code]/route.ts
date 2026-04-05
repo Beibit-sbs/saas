@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const API_BASE = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { getServerApiBaseUrl } from "@/shared/server/runtime-env";
 
 type Ctx = { params: { code: string } };
 
@@ -9,6 +8,7 @@ function unauthorized() {
 }
 
 async function proxy(request: NextRequest, context: Ctx, method: "PATCH" | "DELETE") {
+  const apiBase = getServerApiBaseUrl();
   const token = request.cookies.get("admin_token")?.value;
   if (!token) return unauthorized();
 
@@ -19,7 +19,7 @@ async function proxy(request: NextRequest, context: Ctx, method: "PATCH" | "DELE
     headers.set("content-type", "application/json");
   }
 
-  const upstream = await fetch(`${API_BASE}/api/admin/i18n/languages/${code}`, {
+  const upstream = await fetch(new URL(`/api/admin/i18n/languages/${code}`, apiBase), {
     method,
     headers,
     body: method === "PATCH" ? await request.text() : undefined,

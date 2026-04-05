@@ -240,3 +240,8 @@ def test_new_admin_endpoints_require_permissions() -> None:
         else:
             response = getattr(client, method)(path, json=payload, headers=low_priv_headers)
         assert response.status_code == 403
+
+    audit_events = client.get("/api/admin/audit/events", headers=ADMIN_HEADERS)
+    assert audit_events.status_code == 200, audit_events.text
+    denied_actions = [item.get("action") for item in audit_events.json().get("events", []) if item.get("result") == "denied"]
+    assert "security.access.denied" in denied_actions

@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 
 from app.platform.automation import service as automation_service
 from app.platform.automation.templates.models import AutomationTemplateModel
-from app.platform.automation.templates.repository import AutomationTemplateRepository
 
 if TYPE_CHECKING:
     from app.core.uow import UnitOfWork

@@ -113,6 +113,13 @@ class LocalUserStore:
         stored_counter = payload.get("counter") if isinstance(payload, dict) else None
         self._counter = max(max_id, int(stored_counter) if isinstance(stored_counter, int) else 0)
 
+    def reload_from_persistent_state(self) -> None:
+        self._users_by_id.clear()
+        self._users_by_login.clear()
+        self._counter = 0
+        self._loaded = False
+        self._load_once()
+
     def _public_user(self, item: dict[str, object]) -> dict[str, object]:
         tenant_id = _require_tenant_id(item.get("tenant_id"), operation="local_user_public_projection")
         projection: dict[str, object] = {

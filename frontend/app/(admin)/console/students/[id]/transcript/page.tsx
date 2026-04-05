@@ -1,6 +1,5 @@
 "use client";
 
-import { use } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -10,8 +9,8 @@ import { useTranscript } from "@/modules/transcripts/hooks";
 import { formatDate } from "@/shared/utils/format";
 import { FileText, ChevronLeft } from "lucide-react";
 
-export default function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function TranscriptPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const { data: transcript, isLoading, error, refetch } = useTranscript(id);
 
   if (isLoading) {

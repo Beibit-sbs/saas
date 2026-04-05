@@ -283,6 +283,36 @@ def test_access_token_is_rejected_when_session_store_is_unavailable(monkeypatch)
     assert "session store unavailable" in response.json()["detail"]
 
 
+def test_bound_access_token_is_rejected_when_session_store_is_unavailable_without_login(monkeypatch) -> None:
+    client.cookies.clear()
+    user = _ensure_local_user(
+        "session.fail.closed.direct",
+        "session123",
+        ["admin"],
+        "Session Fail Closed Direct",
+    )
+    access_token = create_access_token(
+        str(user["user_id"]),
+        ["admin"],
+        "test",
+        tenant_id=1,
+        session_id="session-fail-closed-direct",
+        permissions=["students.read"],
+    )
+
+    monkeypatch.setattr(
+        "app.modules.auth.session_service.is_session_active",
+        lambda session_id: (_ for _ in ()).throw(RuntimeError("session db offline")),
+    )
+
+    response = client.get(
+        "/api/auth/me/profile",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == 401
+    assert "session store unavailable" in response.json()["detail"]
+
+
 def test_login_endpoint_locks_after_repeated_failures(monkeypatch) -> None:
     client.cookies.clear()
     rate_limit_service.clear_rate_limit_state()
@@ -484,6 +514,26 @@ def test_legacy_headers_disabled_by_default(monkeypatch) -> None:
         headers={"x-user-id": "admin.001"},
     )
     assert response.status_code == 401
+
+
+def test_profile_rejects_x_user_id_mismatch_even_when_legacy_headers_enabled(monkeypatch) -> None:
+    client.cookies.clear()
+    monkeypatch.setenv("AUTH_ALLOW_LEGACY_HEADERS", "true")
+
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    login = _login_local("admin", "admin123")
+    assert login.status_code == 200
+
+    response = client.get(
+        "/api/auth/me/profile",
+        headers={
+            "Authorization": f"Bearer {login.json()['access_token']}",
+            "x-user-id": "other-user-id",
+            "X-Tenant-ID": "1",
+        },
+    )
+    assert response.status_code == 401
+    assert "header user mismatch" in str(response.json().get("detail", "")).lower()
 
 
 def test_csrf_endpoint_issues_token() -> None:

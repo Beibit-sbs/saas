@@ -174,12 +174,10 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     }
     | _CANONICAL_AUDITOR_PERMISSIONS,
     "student": {
-        "profiles.read",
         "enrollments.read",
         "grades.read",
         "transcripts.read",
         "scheduling.read",
-        "degree_progress.read",
     },
     "teacher": {
         "profiles.read",

@@ -1031,6 +1031,22 @@ def _security_key(prefix: str, tenant_id: int, value: str) -> str:
     return f"identity:{prefix}:{int(tenant_id)}:{value.strip().lower()}"
 
 
+def clear_identity_security_state() -> None:
+    """Clear all identity rate-limit and lockout keys from Redis.
+
+    Call this between tests to prevent rate-limit state from leaking
+    across test cases. Safe to call when Redis is not available.
+    """
+    client = _get_security_redis()
+    if client is None:
+        return
+    try:
+        for key in client.scan_iter("identity:*"):
+            client.delete(key)
+    except Exception:
+        pass
+
+
 def _check_rate_limit(*, tenant_id: int, ip: str, username: str) -> None:
     ip_limit, user_limit, window_seconds, _, _ = _security_limits()
     client = _get_security_redis()
