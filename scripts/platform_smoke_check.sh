@@ -14,7 +14,8 @@ fi
 export ROOT_DIR
 export BACKEND_DIR
 export REDIS_URL="${REDIS_URL:-redis://localhost:6379/0}"
-export JWT_SECRET="${JWT_SECRET:-pilot-smoke-secret-not-for-production-1234567890}"
+: "${JWT_SECRET:?set JWT_SECRET explicitly for smoke check}"
+export JWT_SECRET
 export API_BASE_URL="${API_BASE_URL:-https://api.example.test}"
 export ADMIN_PANEL_URL="${ADMIN_PANEL_URL:-https://admin.example.test}"
 export AUTH_DEV_DEMO_COMPATIBILITY="${AUTH_DEV_DEMO_COMPATIBILITY:-true}"
