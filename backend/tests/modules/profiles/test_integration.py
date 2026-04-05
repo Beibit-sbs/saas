@@ -29,8 +29,8 @@ Covered cases
 
 Validation commands
 -------------------
-- JWT_SECRET='test-only-very-strong-secret-1234567890' .venv/bin/pytest tests/modules/profiles/test_integration.py -q
-- JWT_SECRET='test-only-very-strong-secret-1234567890' .venv/bin/pytest tests/modules/profiles -q
+- JWT_SECRET='<set-test-jwt-secret>' .venv/bin/pytest tests/modules/profiles/test_integration.py -q
+- JWT_SECRET='<set-test-jwt-secret>' .venv/bin/pytest tests/modules/profiles -q
 """
 
 from __future__ import annotations
