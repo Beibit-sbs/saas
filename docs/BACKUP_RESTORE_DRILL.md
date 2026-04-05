@@ -102,7 +102,7 @@ export REDIS_URL='redis://127.0.0.1:6379/0'
 export JWT_SECRET='dr-rehearsal-secret-not-for-production-1234567890'
 export API_BASE_URL='https://api.example.test'
 export ADMIN_PANEL_URL='https://admin.example.test'
-export INTERNAL_API_TOKEN='dr-rehearsal-internal-token'
+export INTERNAL_API_TOKEN='change-me-in-dr-rehearsal'
 .venv/bin/python - <<'PY'
 from fastapi.testclient import TestClient
 from app.main import app
@@ -130,7 +130,7 @@ docker exec ai-dr-postgres psql -U postgres -d platform_restore -At -c \
 cd /home/sbs/AI
 export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/platform_restore'
 export REDIS_URL='redis://127.0.0.1:6379/0'
-export INTERNAL_API_TOKEN='dr-rehearsal-internal-token'
+export INTERNAL_API_TOKEN='change-me-in-dr-rehearsal'
 bash scripts/platform_smoke_check.sh
 ```
 
@@ -258,7 +258,7 @@ OutboxEventWorker.run_once()
 ```bash
 export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/platform_restore'
 export REDIS_URL='redis://127.0.0.1:6379/0'
-export INTERNAL_API_TOKEN='dr-rehearsal-internal-token'
+export INTERNAL_API_TOKEN='change-me-in-dr-rehearsal'
 bash scripts/platform_smoke_check.sh
 ```
 
