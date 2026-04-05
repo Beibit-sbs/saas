@@ -17,6 +17,12 @@ mkdir -p "$BACKUP_DIR"
 STAMP="$(date +%Y%m%d_%H%M%S)"
 TARGET="${1:-$BACKUP_DIR/ai_platform_${STAMP}.dump}"
 
+if [[ -f "$TARGET" && "${BACKUP_ALLOW_OVERWRITE:-false}" != "true" ]]; then
+  echo "Refusing to overwrite existing backup: $TARGET"
+  echo "Set BACKUP_ALLOW_OVERWRITE=true to replace it explicitly"
+  exit 1
+fi
+
 pg_dump \
   --format=custom \
   --no-owner \
