@@ -459,92 +459,25 @@ def delete_entity(entity_name: str, item_id: int) -> dict[str, object]:
 # ---------------------------------------------------------------------------
 
 def _list_entities_for_tenant_db(entity_name: str, tenant_id: int) -> list[dict[str, object]]:
-    if not _db_url() or psycopg is None:
-        raise RuntimeError("database unavailable")
+    from app.modules.university_core.tenant_entity_impl import _list_entities_for_tenant_db_impl
 
-    config = ENTITY_CONFIGS[entity_name]
-    include_created_at = entity_name == "students"
-    selected_columns = ["id"]
-    if include_created_at:
-        selected_columns.append("created_at")
-    selected_columns.extend(config.fields)
-
-    with get_raw_conn() as conn:
-        with conn.cursor() as cur:
-            query = psycopg.sql.SQL("SELECT {} FROM {} WHERE tenant_id = %s ORDER BY id ASC").format(
-                _sql_identifier_list(selected_columns),
-                _sql_identifier(config.table),
-            )
-            cur.execute(query, (str(tenant_id),))
-            rows = cur.fetchall()
-
-    return [_row_to_dict(row, config.fields, include_created_at) for row in rows]
+    return _list_entities_for_tenant_db_impl(entity_name, tenant_id)
 
 
 def _update_entity_for_tenant_db(
     entity_name: str, item_id: int, payload: dict[str, object], tenant_id: int
 ) -> dict[str, object]:
-    if not _db_url() or psycopg is None:
-        raise RuntimeError("database unavailable")
+    from app.modules.university_core.tenant_entity_impl import _update_entity_for_tenant_db_impl
 
-    config = ENTITY_CONFIGS[entity_name]
-    include_created_at = entity_name == "students"
-    returning_columns = ["id"]
-    if include_created_at:
-        returning_columns.append("created_at")
-    returning_columns.extend(config.fields)
-
-    with get_raw_conn() as conn:
-        _validate_foreign_keys_db(conn, entity_name, payload)
-        with conn.cursor() as cur:
-            assignments = [
-                psycopg.sql.SQL("{} = %s").format(_sql_identifier(column))
-                for column in config.fields
-            ]
-            values: list[Any] = [payload[column] for column in config.fields]
-            values.extend([item_id, str(tenant_id)])
-            query = psycopg.sql.SQL(
-                "UPDATE {} SET {} WHERE id = %s AND tenant_id = %s RETURNING {}"
-            ).format(
-                _sql_identifier(config.table),
-                psycopg.sql.SQL(", ").join(assignments),
-                _sql_identifier_list(returning_columns),
-            )
-            cur.execute(query, values)
-            row = cur.fetchone()
-        conn.commit()
-
-    if row is None:
-        raise ValueError(f"{entity_name.rstrip('s')} not found")
-    return _row_to_dict(row, config.fields, include_created_at)
+    return _update_entity_for_tenant_db_impl(entity_name, item_id, payload, tenant_id)
 
 
 def _delete_entity_for_tenant_db(
     entity_name: str, item_id: int, tenant_id: int
 ) -> dict[str, object]:
-    if not _db_url() or psycopg is None:
-        raise RuntimeError("database unavailable")
+    from app.modules.university_core.tenant_entity_impl import _delete_entity_for_tenant_db_impl
 
-    config = ENTITY_CONFIGS[entity_name]
-    include_created_at = entity_name == "students"
-    returning_columns = ["id"]
-    if include_created_at:
-        returning_columns.append("created_at")
-    returning_columns.extend(config.fields)
-
-    with get_raw_conn() as conn:
-        with conn.cursor() as cur:
-            query = psycopg.sql.SQL("DELETE FROM {} WHERE id = %s AND tenant_id = %s RETURNING {}").format(
-                _sql_identifier(config.table),
-                _sql_identifier_list(returning_columns),
-            )
-            cur.execute(query, (item_id, str(tenant_id)))
-            row = cur.fetchone()
-        conn.commit()
-
-    if row is None:
-        raise ValueError(f"{entity_name.rstrip('s')} not found")
-    return _row_to_dict(row, config.fields, include_created_at)
+    return _delete_entity_for_tenant_db_impl(entity_name, item_id, tenant_id)
 
 
 # ---------------------------------------------------------------------------
@@ -552,39 +485,25 @@ def _delete_entity_for_tenant_db(
 # ---------------------------------------------------------------------------
 
 def _list_entities_for_tenant_memory(entity_name: str, tenant_id: int) -> list[dict[str, object]]:
-    tid = str(tenant_id)
-    with _state_lock:
-        rows = [dict(r) for r in _state.data[entity_name].values() if str(r.get("tenant_id", "")) == tid]
-    rows.sort(key=lambda r: int(r["id"]))  # type: ignore[arg-type]
-    return rows
+    from app.modules.university_core.tenant_entity_impl import _list_entities_for_tenant_memory_impl
+
+    return _list_entities_for_tenant_memory_impl(entity_name, tenant_id)
 
 
 def _update_entity_for_tenant_memory(
     entity_name: str, item_id: int, payload: dict[str, object], tenant_id: int
 ) -> dict[str, object]:
-    tid = str(tenant_id)
-    with _state_lock:
-        _validate_foreign_keys_memory(entity_name, payload)
-        current = _state.data[entity_name].get(item_id)
-        if current is None or str(current.get("tenant_id", "")) != tid:
-            raise ValueError(f"{entity_name.rstrip('s')} not found")
-        updated: dict[str, object] = {"id": item_id, **payload}
-        if entity_name == "students":
-            updated["created_at"] = current.get("created_at") or _now_iso()
-        _state.data[entity_name][item_id] = updated
-        return dict(updated)
+    from app.modules.university_core.tenant_entity_impl import _update_entity_for_tenant_memory_impl
+
+    return _update_entity_for_tenant_memory_impl(entity_name, item_id, payload, tenant_id)
 
 
 def _delete_entity_for_tenant_memory(
     entity_name: str, item_id: int, tenant_id: int
 ) -> dict[str, object]:
-    tid = str(tenant_id)
-    with _state_lock:
-        current = _state.data[entity_name].get(item_id)
-        if current is None or str(current.get("tenant_id", "")) != tid:
-            raise ValueError(f"{entity_name.rstrip('s')} not found")
-        del _state.data[entity_name][item_id]
-        return dict(current)
+    from app.modules.university_core.tenant_entity_impl import _delete_entity_for_tenant_memory_impl
+
+    return _delete_entity_for_tenant_memory_impl(entity_name, item_id, tenant_id)
 
 
 # ---------------------------------------------------------------------------
