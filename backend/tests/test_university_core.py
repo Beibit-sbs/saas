@@ -1,6 +1,14 @@
 from tests.conftest import ADMIN_HEADERS, client
 
 
+LEGACY_NAMESPACE_WARNING = '299 - "Legacy API namespace under migration review: target /api/admin/org/*"'
+
+
+def _assert_legacy_namespace_headers(response) -> None:
+    assert response.headers["X-Legacy-Namespace"] == "true"
+    assert response.headers["Warning"] == LEGACY_NAMESPACE_WARNING
+
+
 def test_students_crud() -> None:
     list_response = client.get("/api/admin/university/students", headers=ADMIN_HEADERS)
     assert list_response.status_code == 200
@@ -60,6 +68,7 @@ def test_courses_crud() -> None:
         },
     )
     assert program_response.status_code == 200
+    _assert_legacy_namespace_headers(program_response)
     program_id = program_response.json()["program"]["id"]
 
     create_response = client.post(
@@ -75,6 +84,7 @@ def test_courses_crud() -> None:
         },
     )
     assert create_response.status_code == 200
+    _assert_legacy_namespace_headers(create_response)
     created = create_response.json()["course"]
     assert created["course_code"] == "CS101"
     assert created["credits"] == 5
@@ -92,13 +102,22 @@ def test_courses_crud() -> None:
         },
     )
     assert update_response.status_code == 200
+    _assert_legacy_namespace_headers(update_response)
     updated = update_response.json()["course"]
     assert updated["title"] == "Intro to Programming I"
     assert updated["credits"] == 6
 
     delete_response = client.delete(f"/api/admin/university/courses/{created['id']}", headers=ADMIN_HEADERS)
     assert delete_response.status_code == 200
+    _assert_legacy_namespace_headers(delete_response)
     assert delete_response.json()["deleted"] is True
+
+
+def test_faculty_legacy_namespace_headers() -> None:
+    list_response = client.get("/api/admin/university/faculty", headers=ADMIN_HEADERS)
+    assert list_response.status_code == 200
+    _assert_legacy_namespace_headers(list_response)
+    assert list_response.json()["faculty"] == []
 
 
 def test_enrollment_creation() -> None:
