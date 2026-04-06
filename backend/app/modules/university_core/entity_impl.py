@@ -7,6 +7,64 @@ from `university_core.service` as part of C-007 decomposition.
 from app.modules.university_core import service as university_service
 
 
+def _normalize_string_impl(name: str, value: object, max_len: int = 255) -> str:
+    normalized = str(value or "").strip()
+    if not normalized:
+        raise ValueError(f"{name} is required")
+    if len(normalized) > max_len:
+        raise ValueError(f"{name} must be at most {max_len} characters")
+    return normalized
+
+
+def _normalize_optional_tenant_impl(value: object) -> str | None:
+    normalized = str(value or "").strip()
+    return normalized or None
+
+
+def _normalize_payload_impl(entity_name: str, payload: dict[str, object]) -> dict[str, object]:
+    config = university_service.ENTITY_CONFIGS[entity_name]
+    normalized: dict[str, object] = {}
+
+    for field_name in config.required:
+        if field_name not in payload:
+            raise ValueError(f"{field_name} is required")
+
+    for field_name in config.fields:
+        raw_value = payload.get(field_name)
+
+        if field_name == "tenant_id":
+            normalized[field_name] = _normalize_optional_tenant_impl(raw_value)
+            continue
+
+        if field_name == "credits":
+            try:
+                credits = int(raw_value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("credits must be an integer") from exc
+            if credits < 0:
+                raise ValueError("credits must be non-negative")
+            normalized[field_name] = credits
+            continue
+
+        if field_name in {"program_id", "student_id", "course_id"} and field_name in config.fk_fields:
+            try:
+                fk_id = int(raw_value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"{field_name} must be an integer") from exc
+            if fk_id <= 0:
+                raise ValueError(f"{field_name} must be positive")
+            normalized[field_name] = fk_id
+            continue
+
+        normalized[field_name] = _normalize_string_impl(field_name, raw_value)
+
+    email_value = normalized.get("email")
+    if isinstance(email_value, str) and "@" not in email_value:
+        raise ValueError("email must contain @")
+
+    return normalized
+
+
 def _memory_fk_exists_impl(entity_name: str, item_id: int) -> bool:
     return item_id in university_service._state.data[entity_name]
 
@@ -186,7 +244,7 @@ def create_entity_impl(entity_name: str, payload: dict[str, object]) -> dict[str
     if entity_name not in university_service.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
-    normalized = university_service._normalize_payload(entity_name, payload)
+    normalized = _normalize_payload_impl(entity_name, payload)
 
     if university_service._use_database():
         try:
@@ -210,7 +268,7 @@ def update_entity_impl(entity_name: str, item_id: int, payload: dict[str, object
     if entity_name not in university_service.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
-    normalized = university_service._normalize_payload(entity_name, payload)
+    normalized = _normalize_payload_impl(entity_name, payload)
 
     if university_service._use_database():
         try:
@@ -251,6 +309,9 @@ def delete_entity_impl(entity_name: str, item_id: int) -> dict[str, object]:
 
 
 __all__ = [
+    "_normalize_string_impl",
+    "_normalize_optional_tenant_impl",
+    "_normalize_payload_impl",
     "_memory_fk_exists_impl",
     "_validate_foreign_keys_memory_impl",
     "_db_fetch_exists_impl",

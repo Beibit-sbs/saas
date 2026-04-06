@@ -124,61 +124,21 @@ def _now_iso() -> str:
 
 
 def _normalize_string(name: str, value: object, max_len: int = 255) -> str:
-    normalized = str(value or "").strip()
-    if not normalized:
-        raise ValueError(f"{name} is required")
-    if len(normalized) > max_len:
-        raise ValueError(f"{name} must be at most {max_len} characters")
-    return normalized
+    from app.modules.university_core.entity_impl import _normalize_string_impl
+
+    return _normalize_string_impl(name, value, max_len)
 
 
 def _normalize_optional_tenant(value: object) -> str | None:
-    normalized = str(value or "").strip()
-    return normalized or None
+    from app.modules.university_core.entity_impl import _normalize_optional_tenant_impl
+
+    return _normalize_optional_tenant_impl(value)
 
 
 def _normalize_payload(entity_name: str, payload: dict[str, object]) -> dict[str, object]:
-    config = ENTITY_CONFIGS[entity_name]
-    normalized: dict[str, object] = {}
+    from app.modules.university_core.entity_impl import _normalize_payload_impl
 
-    for field_name in config.required:
-        if field_name not in payload:
-            raise ValueError(f"{field_name} is required")
-
-    for field_name in config.fields:
-        raw_value = payload.get(field_name)
-
-        if field_name == "tenant_id":
-            normalized[field_name] = _normalize_optional_tenant(raw_value)
-            continue
-
-        if field_name == "credits":
-            try:
-                credits = int(raw_value)
-            except (TypeError, ValueError) as exc:
-                raise ValueError("credits must be an integer") from exc
-            if credits < 0:
-                raise ValueError("credits must be non-negative")
-            normalized[field_name] = credits
-            continue
-
-        if field_name in {"program_id", "student_id", "course_id"} and field_name in config.fk_fields:
-            try:
-                fk_id = int(raw_value)
-            except (TypeError, ValueError) as exc:
-                raise ValueError(f"{field_name} must be an integer") from exc
-            if fk_id <= 0:
-                raise ValueError(f"{field_name} must be positive")
-            normalized[field_name] = fk_id
-            continue
-
-        normalized[field_name] = _normalize_string(field_name, raw_value)
-
-    email_value = normalized.get("email")
-    if isinstance(email_value, str) and "@" not in email_value:
-        raise ValueError("email must contain @")
-
-    return normalized
+    return _normalize_payload_impl(entity_name, payload)
 
 
 def _row_to_dict(row: tuple[Any, ...], fields: tuple[str, ...], include_created_at: bool) -> dict[str, object]:
