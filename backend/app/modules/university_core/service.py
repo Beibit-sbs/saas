@@ -210,29 +210,15 @@ def _sql_identifier_list(names: list[str] | tuple[str, ...]):
 
 
 def _db_fetch_exists(conn, table: str, item_id: int) -> bool:
-    with conn.cursor() as cur:
-        query = psycopg.sql.SQL("SELECT 1 FROM {} WHERE id = %s").format(_sql_identifier(table))
-        cur.execute(query, (item_id,))
-        return cur.fetchone() is not None
+    from app.modules.university_core.entity_impl import _db_fetch_exists_impl
+
+    return _db_fetch_exists_impl(conn, table, item_id)
 
 
 def _validate_foreign_keys_db(conn, entity_name: str, payload: dict[str, object]) -> None:
-    config = ENTITY_CONFIGS[entity_name]
+    from app.modules.university_core.entity_impl import _validate_foreign_keys_db_impl
 
-    if "program_id" in config.fk_fields:
-        program_id = int(payload["program_id"])
-        if not _db_fetch_exists(conn, "university_programs", program_id):
-            raise ValueError("program_id references unknown program")
-
-    if "student_id" in config.fk_fields:
-        student_id = int(payload["student_id"])
-        if not _db_fetch_exists(conn, "university_students", student_id):
-            raise ValueError("student_id references unknown student")
-
-    if "course_id" in config.fk_fields:
-        course_id = int(payload["course_id"])
-        if not _db_fetch_exists(conn, "university_courses", course_id):
-            raise ValueError("course_id references unknown course")
+    return _validate_foreign_keys_db_impl(conn, entity_name, payload)
 
 
 def _list_entities_db(entity_name: str) -> list[dict[str, object]]:

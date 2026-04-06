@@ -21,6 +21,34 @@ def _validate_foreign_keys_memory_impl(entity_name: str, payload: dict[str, obje
         raise ValueError("course_id references unknown course")
 
 
+def _db_fetch_exists_impl(conn, table: str, item_id: int) -> bool:
+    with conn.cursor() as cur:
+        query = university_service.psycopg.sql.SQL("SELECT 1 FROM {} WHERE id = %s").format(
+            university_service._sql_identifier(table)
+        )
+        cur.execute(query, (item_id,))
+        return cur.fetchone() is not None
+
+
+def _validate_foreign_keys_db_impl(conn, entity_name: str, payload: dict[str, object]) -> None:
+    config = university_service.ENTITY_CONFIGS[entity_name]
+
+    if "program_id" in config.fk_fields:
+        program_id = int(payload["program_id"])
+        if not _db_fetch_exists_impl(conn, "university_programs", program_id):
+            raise ValueError("program_id references unknown program")
+
+    if "student_id" in config.fk_fields:
+        student_id = int(payload["student_id"])
+        if not _db_fetch_exists_impl(conn, "university_students", student_id):
+            raise ValueError("student_id references unknown student")
+
+    if "course_id" in config.fk_fields:
+        course_id = int(payload["course_id"])
+        if not _db_fetch_exists_impl(conn, "university_courses", course_id):
+            raise ValueError("course_id references unknown course")
+
+
 def _list_entities_db_impl(entity_name: str) -> list[dict[str, object]]:
     if not university_service._db_url() or university_service.psycopg is None:
         raise RuntimeError("database unavailable")
@@ -56,7 +84,7 @@ def _create_entity_db_impl(entity_name: str, payload: dict[str, object]) -> dict
     returning_columns.extend(config.fields)
 
     with university_service.get_raw_conn() as conn:
-        university_service._validate_foreign_keys_db(conn, entity_name, payload)
+        _validate_foreign_keys_db_impl(conn, entity_name, payload)
         with conn.cursor() as cur:
             columns = list(config.fields)
             values = [payload[column] for column in columns]
@@ -89,7 +117,7 @@ def _update_entity_db_impl(entity_name: str, item_id: int, payload: dict[str, ob
     returning_columns.extend(config.fields)
 
     with university_service.get_raw_conn() as conn:
-        university_service._validate_foreign_keys_db(conn, entity_name, payload)
+        _validate_foreign_keys_db_impl(conn, entity_name, payload)
         with conn.cursor() as cur:
             assignments = [
                 university_service.psycopg.sql.SQL("{} = %s").format(university_service._sql_identifier(column))
@@ -225,6 +253,8 @@ def delete_entity_impl(entity_name: str, item_id: int) -> dict[str, object]:
 __all__ = [
     "_memory_fk_exists_impl",
     "_validate_foreign_keys_memory_impl",
+    "_db_fetch_exists_impl",
+    "_validate_foreign_keys_db_impl",
     "_list_entities_db_impl",
     "_create_entity_db_impl",
     "_update_entity_db_impl",
