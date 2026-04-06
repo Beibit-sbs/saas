@@ -33,7 +33,7 @@
 | C-004 | University legacy routes | backend/app/modules/{faculty,programs,courses}/ | Старый namespace `/api/admin/university/*` | platform/admin API v1 | HOLD | Подтверждена миграция всех consumers |
 | C-005 | identity_phase1 naming/route | backend/app/modules/identity/phase1_router.py | Legacy naming и потенциальный дубль | identity/router.py | HOLD | Подтверждено отсутствие клиентов phase1 path |
 | C-006 | Job placeholder handlers | backend/app/modules/jobs/worker.py | 4 no-op handler-а (`sync`, `ldap.sync`, `ai.generate`, `report.generate`) | Заблокированы в production; явный denylist в config | READY | ✅ Option B зафиксирован: публичный enqueue для `sync`/`ldap.sync`/`ai.generate` отключен; backend tests green; `report.generate` оставлен как roadmap-кандидат |
-| C-007 | university_core service | backend/app/modules/university_core/service.py | Общий service-слой с широкими импортами; кандидат на управляемую декомпозицию | domain services split | HOLD | Code Refs (runtime `backend/app`) = 0, full backend regression green, smoke-check PASS, runtime observation window пройден (usage=0); остается Owner Sign-off |
+| C-007 | university_core service | backend/app/modules/university_core/service.py | Общий service-слой с широкими импортами; кандидат на управляемую декомпозицию | domain services split | READY | ✅ Все обязательные критерии выполнены; готово к cleanup-фазе удаления по отдельному change set |
 | C-008 | Legacy admin CSS | frontend/app/admin/admin-legacy.css | Останется сиротой после удаления legacy admin | Новый дизайн console | HOLD | C-001 == READY |
 | C-009 | Legacy admin hooks/types | frontend/app/admin/hooks/ + frontend/app/admin/types.ts | Параллельный слой API/типов | modules/* hooks/types | HOLD | C-001 == READY |
 
@@ -47,7 +47,7 @@
 | C-004 | Platform Architect | Утвердить целевой namespace для university routes | 2026-04-11 |
 | C-005 | Security Lead + Backend Lead | Согласовать strategy по `identity_phase1` и security review scope | 2026-04-11 |
 | C-006 | Product Owner + Platform Lead | ✅ Sign-off выполнен (Option B); подготовить отдельный RFC/epic для `report.generate` при подтвержденном приоритете | 2026-04-06 |
-| C-007 | Backend Lead | Подготовить decision package и получить Owner Sign-off для перевода HOLD -> READY | 2026-04-11 |
+| C-007 | Backend Lead | ✅ Owner Sign-off получен; запланировать cleanup-phase удаление отдельным change set (без выполнения в текущей фазе) | 2026-04-06 |
 | C-008 | Frontend Lead | Привязать удаление к C-001 readiness | 2026-04-12 |
 | C-009 | Frontend Lead | Привязать удаление к C-001 readiness | 2026-04-12 |
 
@@ -89,6 +89,7 @@
 | 2026-04-06 | C-007 | Пройден platform smoke-check для ключевых сценариев | Backend Lead | Команда: `bash ./scripts/platform_smoke_check.sh`; итог: 8 PASS (Health Surfaces, Outbox Event Processing, Automation Execution, Webhook Retry Behavior, KPI Refresh, AI Copilot Response, Developer Platform Auth Flow, Metrics Surfaces), `EXIT=0` |
 | 2026-04-06 | C-007 | Завершено runtime observation window по legacy usage | Backend Lead | По backend-логам после restart/smoke-window (`docker compose logs --since=90m backend`) отсутствуют события `university_core shared service used` и иные прямые признаки runtime-вызовов legacy service; наблюдаемое usage = 0 |
 | 2026-04-06 | C-007 | Подготовлен owner sign-off package (awaiting decision) | Backend Lead | Сформирован пакет подтверждения критериев и rollback-план: `C007_OWNER_SIGNOFF_PACKAGE.md`; статус C-007 остается HOLD до явного подтверждения владельца |
+| 2026-04-06 | C-007 | Owner Sign-off завершен; статус переведен HOLD -> READY | Backend Lead + Owner (session confirmation) | Подтверждено выполнение всех критериев перед удалением (Replacement Live, Code Refs=0 runtime, runtime observation window usage=0, backend regression green, smoke-check PASS, rollback plan в `C007_OWNER_SIGNOFF_PACKAGE.md`) |
 | 2026-04-06 | C-001..C-009 | Закрыт блокер тестовой стабилизации backend | in progress | Исправлен startup-mock в profiles integration (`tests/modules/profiles/test_integration.py`); повторный полный прогон backend в Docker: 1254 passed, 9 skipped, 2 warnings |
 | 2026-04-06 | C-001..C-009 | EOS audit: найден frontend blocker в tenant login UX | in progress | `frontend` full tests: 1 failed file / 3 failed tests (`__tests__/components/LoginTenantMode.test.tsx`); backend остается green: 1254 passed, 9 skipped; release gate блокируется до фикса login flow contract |
 | 2026-04-06 | C-001..C-009 | EOS audit update: frontend tenant login blocker снят | in progress | Обновлены тесты `frontend/__tests__/components/LoginTenantMode.test.tsx` под текущий CSRF/login flow; полный frontend прогон в Docker: 30 passed files, 147 passed tests (есть jsdom navigation stderr, без test failures) |

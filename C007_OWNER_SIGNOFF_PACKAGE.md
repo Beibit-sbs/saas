@@ -4,7 +4,7 @@ ID: C-007
 Candidate: university_core service
 Path: backend/app/modules/university_core/service.py
 Date prepared: 2026-04-06
-Status: READY FOR OWNER SIGN-OFF (technical criteria closed)
+Status: OWNER SIGN-OFF RECEIVED (approved for HOLD -> READY)
 
 ## 1) Scope And Decision
 
@@ -37,8 +37,8 @@ Reference commits:
   - Evidence: platform smoke check returned 8 PASS, EXIT=0.
 - [x] Rollback plan documented
   - See section 3 below.
-- [ ] Owner Sign-off
-  - Pending explicit confirmation from owner.
+- [x] Owner Sign-off
+  - Confirmed in current session; C-007 moved to READY in tracker.
 
 ## 3) Rollback Plan (<= 10 minutes)
 
@@ -74,11 +74,11 @@ Mitigation:
 ## 5) Owner Sign-off Block
 
 Owner: Backend Lead
-Date:
+Date: 2026-04-06
 Decision:
-- [ ] Approved: C-007 HOLD -> READY
+- [x] Approved: C-007 HOLD -> READY
 - [ ] Rejected: keep HOLD (reason below)
 
-Reason/Notes:
+Reason/Notes: All mandatory pre-removal criteria are satisfied; perform cleanup removal only in dedicated follow-up change set.
 
-Signature:
+Signature: Owner (session confirmation)
