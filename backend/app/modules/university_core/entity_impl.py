@@ -8,7 +8,7 @@ import os
 import re
 from datetime import datetime, timezone
 
-from app.modules.university_core import service as university_service
+from app.modules.university_core import shared as university_shared
 
 
 _SQL_IDENTIFIER_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
@@ -19,7 +19,7 @@ def _db_url_impl() -> str | None:
 
 
 def _use_database_impl() -> bool:
-    return bool(_db_url_impl()) and university_service.psycopg is not None
+    return bool(_db_url_impl()) and university_shared.psycopg is not None
 
 
 def _should_fallback_to_memory_impl(exc: Exception) -> bool:
@@ -27,8 +27,8 @@ def _should_fallback_to_memory_impl(exc: Exception) -> bool:
         return True
     if isinstance(exc, (ConnectionError, TimeoutError, OSError, ValueError)):
         return True
-    if university_service.psycopg is not None and isinstance(
-        exc, (university_service.psycopg.OperationalError, university_service.psycopg.InterfaceError)
+    if university_shared.psycopg is not None and isinstance(
+        exc, (university_shared.psycopg.OperationalError, university_shared.psycopg.InterfaceError)
     ):
         return True
     return False
@@ -53,7 +53,7 @@ def _normalize_optional_tenant_impl(value: object) -> str | None:
 
 
 def _normalize_payload_impl(entity_name: str, payload: dict[str, object]) -> dict[str, object]:
-    config = university_service.ENTITY_CONFIGS[entity_name]
+    config = university_shared.ENTITY_CONFIGS[entity_name]
     normalized: dict[str, object] = {}
 
     for field_name in config.required:
@@ -97,11 +97,11 @@ def _normalize_payload_impl(entity_name: str, payload: dict[str, object]) -> dic
 
 
 def _memory_fk_exists_impl(entity_name: str, item_id: int) -> bool:
-    return item_id in university_service._state.data[entity_name]
+    return item_id in university_shared._state.data[entity_name]
 
 
 def _validate_foreign_keys_memory_impl(entity_name: str, payload: dict[str, object]) -> None:
-    config = university_service.ENTITY_CONFIGS[entity_name]
+    config = university_shared.ENTITY_CONFIGS[entity_name]
     if "program_id" in config.fk_fields and not _memory_fk_exists_impl("programs", int(payload["program_id"])):
         raise ValueError("program_id references unknown program")
     if "student_id" in config.fk_fields and not _memory_fk_exists_impl("students", int(payload["student_id"])):
@@ -112,7 +112,7 @@ def _validate_foreign_keys_memory_impl(entity_name: str, payload: dict[str, obje
 
 def _db_fetch_exists_impl(conn, table: str, item_id: int) -> bool:
     with conn.cursor() as cur:
-        query = university_service.psycopg.sql.SQL("SELECT 1 FROM {} WHERE id = %s").format(
+        query = university_shared.psycopg.sql.SQL("SELECT 1 FROM {} WHERE id = %s").format(
             _sql_identifier_impl(table)
         )
         cur.execute(query, (item_id,))
@@ -120,7 +120,7 @@ def _db_fetch_exists_impl(conn, table: str, item_id: int) -> bool:
 
 
 def _validate_foreign_keys_db_impl(conn, entity_name: str, payload: dict[str, object]) -> None:
-    config = university_service.ENTITY_CONFIGS[entity_name]
+    config = university_shared.ENTITY_CONFIGS[entity_name]
 
     if "program_id" in config.fk_fields:
         program_id = int(payload["program_id"])
@@ -154,34 +154,34 @@ def _row_to_dict_impl(
 
 
 def _sql_identifier_impl(name: str):
-    if university_service.psycopg is None:
+    if university_shared.psycopg is None:
         raise RuntimeError("database unavailable")
     normalized = str(name or "").strip()
     if not _SQL_IDENTIFIER_RE.fullmatch(normalized):
         raise ValueError(f"unsafe SQL identifier: {normalized}")
-    return university_service.psycopg.sql.Identifier(normalized)
+    return university_shared.psycopg.sql.Identifier(normalized)
 
 
 def _sql_identifier_list_impl(names: list[str] | tuple[str, ...]):
-    if university_service.psycopg is None:
+    if university_shared.psycopg is None:
         raise RuntimeError("database unavailable")
-    return university_service.psycopg.sql.SQL(", ").join(_sql_identifier_impl(name) for name in names)
+    return university_shared.psycopg.sql.SQL(", ").join(_sql_identifier_impl(name) for name in names)
 
 
 def _list_entities_db_impl(entity_name: str) -> list[dict[str, object]]:
-    if not _db_url_impl() or university_service.psycopg is None:
+    if not _db_url_impl() or university_shared.psycopg is None:
         raise RuntimeError("database unavailable")
 
-    config = university_service.ENTITY_CONFIGS[entity_name]
+    config = university_shared.ENTITY_CONFIGS[entity_name]
     include_created_at = entity_name == "students"
     selected_columns = ["id"]
     if include_created_at:
         selected_columns.append("created_at")
     selected_columns.extend(config.fields)
 
-    with university_service.get_raw_conn() as conn:
+    with university_shared.get_raw_conn() as conn:
         with conn.cursor() as cur:
-            query = university_service.psycopg.sql.SQL("SELECT {} FROM {} ORDER BY id ASC").format(
+            query = university_shared.psycopg.sql.SQL("SELECT {} FROM {} ORDER BY id ASC").format(
                 _sql_identifier_list_impl(selected_columns),
                 _sql_identifier_impl(config.table),
             )
@@ -192,27 +192,27 @@ def _list_entities_db_impl(entity_name: str) -> list[dict[str, object]]:
 
 
 def _create_entity_db_impl(entity_name: str, payload: dict[str, object]) -> dict[str, object]:
-    if not _db_url_impl() or university_service.psycopg is None:
+    if not _db_url_impl() or university_shared.psycopg is None:
         raise RuntimeError("database unavailable")
 
-    config = university_service.ENTITY_CONFIGS[entity_name]
+    config = university_shared.ENTITY_CONFIGS[entity_name]
     include_created_at = entity_name == "students"
     returning_columns = ["id"]
     if include_created_at:
         returning_columns.append("created_at")
     returning_columns.extend(config.fields)
 
-    with university_service.get_raw_conn() as conn:
+    with university_shared.get_raw_conn() as conn:
         _validate_foreign_keys_db_impl(conn, entity_name, payload)
         with conn.cursor() as cur:
             columns = list(config.fields)
             values = [payload[column] for column in columns]
-            query = university_service.psycopg.sql.SQL(
+            query = university_shared.psycopg.sql.SQL(
                 "INSERT INTO {} ({}) VALUES ({}) RETURNING {}"
             ).format(
                 _sql_identifier_impl(config.table),
                 _sql_identifier_list_impl(columns),
-                university_service.psycopg.sql.SQL(", ").join(university_service.psycopg.sql.Placeholder() for _ in columns),
+                university_shared.psycopg.sql.SQL(", ").join(university_shared.psycopg.sql.Placeholder() for _ in columns),
                 _sql_identifier_list_impl(returning_columns),
             )
             cur.execute(query, values)
@@ -225,28 +225,28 @@ def _create_entity_db_impl(entity_name: str, payload: dict[str, object]) -> dict
 
 
 def _update_entity_db_impl(entity_name: str, item_id: int, payload: dict[str, object]) -> dict[str, object]:
-    if not _db_url_impl() or university_service.psycopg is None:
+    if not _db_url_impl() or university_shared.psycopg is None:
         raise RuntimeError("database unavailable")
 
-    config = university_service.ENTITY_CONFIGS[entity_name]
+    config = university_shared.ENTITY_CONFIGS[entity_name]
     include_created_at = entity_name == "students"
     returning_columns = ["id"]
     if include_created_at:
         returning_columns.append("created_at")
     returning_columns.extend(config.fields)
 
-    with university_service.get_raw_conn() as conn:
+    with university_shared.get_raw_conn() as conn:
         _validate_foreign_keys_db_impl(conn, entity_name, payload)
         with conn.cursor() as cur:
             assignments = [
-                university_service.psycopg.sql.SQL("{} = %s").format(_sql_identifier_impl(column))
+                university_shared.psycopg.sql.SQL("{} = %s").format(_sql_identifier_impl(column))
                 for column in config.fields
             ]
             values = [payload[column] for column in config.fields]
             values.append(item_id)
-            query = university_service.psycopg.sql.SQL("UPDATE {} SET {} WHERE id = %s RETURNING {}").format(
+            query = university_shared.psycopg.sql.SQL("UPDATE {} SET {} WHERE id = %s RETURNING {}").format(
                 _sql_identifier_impl(config.table),
-                university_service.psycopg.sql.SQL(", ").join(assignments),
+                university_shared.psycopg.sql.SQL(", ").join(assignments),
                 _sql_identifier_list_impl(returning_columns),
             )
             cur.execute(query, values)
@@ -259,19 +259,19 @@ def _update_entity_db_impl(entity_name: str, item_id: int, payload: dict[str, ob
 
 
 def _delete_entity_db_impl(entity_name: str, item_id: int) -> dict[str, object]:
-    if not _db_url_impl() or university_service.psycopg is None:
+    if not _db_url_impl() or university_shared.psycopg is None:
         raise RuntimeError("database unavailable")
 
-    config = university_service.ENTITY_CONFIGS[entity_name]
+    config = university_shared.ENTITY_CONFIGS[entity_name]
     include_created_at = entity_name == "students"
     returning_columns = ["id"]
     if include_created_at:
         returning_columns.append("created_at")
     returning_columns.extend(config.fields)
 
-    with university_service.get_raw_conn() as conn:
+    with university_shared.get_raw_conn() as conn:
         with conn.cursor() as cur:
-            query = university_service.psycopg.sql.SQL("DELETE FROM {} WHERE id = %s RETURNING {}").format(
+            query = university_shared.psycopg.sql.SQL("DELETE FROM {} WHERE id = %s RETURNING {}").format(
                 _sql_identifier_impl(config.table),
                 _sql_identifier_list_impl(returning_columns),
             )
@@ -285,7 +285,7 @@ def _delete_entity_db_impl(entity_name: str, item_id: int) -> dict[str, object]:
 
 
 def list_entities_impl(entity_name: str) -> list[dict[str, object]]:
-    if entity_name not in university_service.ENTITY_CONFIGS:
+    if entity_name not in university_shared.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
     if _use_database_impl():
@@ -295,14 +295,14 @@ def list_entities_impl(entity_name: str) -> list[dict[str, object]]:
             if not _should_fallback_to_memory_impl(exc):
                 raise
 
-    with university_service._state_lock:
-        rows = list(university_service._state.data[entity_name].values())
+    with university_shared._state_lock:
+        rows = list(university_shared._state.data[entity_name].values())
     rows.sort(key=lambda row: int(row["id"]))
     return rows
 
 
 def create_entity_impl(entity_name: str, payload: dict[str, object]) -> dict[str, object]:
-    if entity_name not in university_service.ENTITY_CONFIGS:
+    if entity_name not in university_shared.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
     normalized = _normalize_payload_impl(entity_name, payload)
@@ -314,19 +314,19 @@ def create_entity_impl(entity_name: str, payload: dict[str, object]) -> dict[str
             if not _should_fallback_to_memory_impl(exc):
                 raise
 
-    with university_service._state_lock:
+    with university_shared._state_lock:
         _validate_foreign_keys_memory_impl(entity_name, normalized)
-        university_service._state.counters[entity_name] += 1
-        item_id = university_service._state.counters[entity_name]
+        university_shared._state.counters[entity_name] += 1
+        item_id = university_shared._state.counters[entity_name]
         row: dict[str, object] = {"id": item_id, **normalized}
         if entity_name == "students":
             row["created_at"] = _now_iso_impl()
-        university_service._state.data[entity_name][item_id] = row
+        university_shared._state.data[entity_name][item_id] = row
         return row
 
 
 def update_entity_impl(entity_name: str, item_id: int, payload: dict[str, object]) -> dict[str, object]:
-    if entity_name not in university_service.ENTITY_CONFIGS:
+    if entity_name not in university_shared.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
     normalized = _normalize_payload_impl(entity_name, payload)
@@ -338,21 +338,21 @@ def update_entity_impl(entity_name: str, item_id: int, payload: dict[str, object
             if not _should_fallback_to_memory_impl(exc):
                 raise
 
-    with university_service._state_lock:
+    with university_shared._state_lock:
         _validate_foreign_keys_memory_impl(entity_name, normalized)
-        current = university_service._state.data[entity_name].get(item_id)
+        current = university_shared._state.data[entity_name].get(item_id)
         if current is None:
             raise ValueError(f"{entity_name.rstrip('s')} not found")
 
         updated = {"id": item_id, **normalized}
         if entity_name == "students":
             updated["created_at"] = current.get("created_at") or _now_iso_impl()
-        university_service._state.data[entity_name][item_id] = updated
+        university_shared._state.data[entity_name][item_id] = updated
         return updated
 
 
 def delete_entity_impl(entity_name: str, item_id: int) -> dict[str, object]:
-    if entity_name not in university_service.ENTITY_CONFIGS:
+    if entity_name not in university_shared.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
     if _use_database_impl():
@@ -362,8 +362,8 @@ def delete_entity_impl(entity_name: str, item_id: int) -> dict[str, object]:
             if not _should_fallback_to_memory_impl(exc):
                 raise
 
-    with university_service._state_lock:
-        current = university_service._state.data[entity_name].pop(item_id, None)
+    with university_shared._state_lock:
+        current = university_shared._state.data[entity_name].pop(item_id, None)
         if current is None:
             raise ValueError(f"{entity_name.rstrip('s')} not found")
         return current

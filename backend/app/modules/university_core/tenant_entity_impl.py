@@ -4,7 +4,7 @@ This module hosts the concrete tenant-scoped behavior extracted from
 `university_core.service` during C-007 phased decomposition.
 """
 
-from app.modules.university_core import service as university_service
+from app.modules.university_core import shared as university_shared
 from app.modules.university_core.entity_impl import (
     _create_entity_db_impl,
     _db_url_impl,
@@ -21,19 +21,19 @@ from app.modules.university_core.entity_impl import (
 
 
 def _list_entities_for_tenant_db_impl(entity_name: str, tenant_id: int) -> list[dict[str, object]]:
-    if not _db_url_impl() or university_service.psycopg is None:
+    if not _db_url_impl() or university_shared.psycopg is None:
         raise RuntimeError("database unavailable")
 
-    config = university_service.ENTITY_CONFIGS[entity_name]
+    config = university_shared.ENTITY_CONFIGS[entity_name]
     include_created_at = entity_name == "students"
     selected_columns = ["id"]
     if include_created_at:
         selected_columns.append("created_at")
     selected_columns.extend(config.fields)
 
-    with university_service.get_raw_conn() as conn:
+    with university_shared.get_raw_conn() as conn:
         with conn.cursor() as cur:
-            query = university_service.psycopg.sql.SQL("SELECT {} FROM {} WHERE tenant_id = %s ORDER BY id ASC").format(
+            query = university_shared.psycopg.sql.SQL("SELECT {} FROM {} WHERE tenant_id = %s ORDER BY id ASC").format(
                 _sql_identifier_list_impl(selected_columns),
                 _sql_identifier_impl(config.table),
             )
@@ -46,30 +46,30 @@ def _list_entities_for_tenant_db_impl(entity_name: str, tenant_id: int) -> list[
 def _update_entity_for_tenant_db_impl(
     entity_name: str, item_id: int, payload: dict[str, object], tenant_id: int
 ) -> dict[str, object]:
-    if not _db_url_impl() or university_service.psycopg is None:
+    if not _db_url_impl() or university_shared.psycopg is None:
         raise RuntimeError("database unavailable")
 
-    config = university_service.ENTITY_CONFIGS[entity_name]
+    config = university_shared.ENTITY_CONFIGS[entity_name]
     include_created_at = entity_name == "students"
     returning_columns = ["id"]
     if include_created_at:
         returning_columns.append("created_at")
     returning_columns.extend(config.fields)
 
-    with university_service.get_raw_conn() as conn:
+    with university_shared.get_raw_conn() as conn:
         _validate_foreign_keys_db_impl(conn, entity_name, payload)
         with conn.cursor() as cur:
             assignments = [
-                university_service.psycopg.sql.SQL("{} = %s").format(_sql_identifier_impl(column))
+                university_shared.psycopg.sql.SQL("{} = %s").format(_sql_identifier_impl(column))
                 for column in config.fields
             ]
             values: list[object] = [payload[column] for column in config.fields]
             values.extend([item_id, str(tenant_id)])
-            query = university_service.psycopg.sql.SQL(
+            query = university_shared.psycopg.sql.SQL(
                 "UPDATE {} SET {} WHERE id = %s AND tenant_id = %s RETURNING {}"
             ).format(
                 _sql_identifier_impl(config.table),
-                university_service.psycopg.sql.SQL(", ").join(assignments),
+                university_shared.psycopg.sql.SQL(", ").join(assignments),
                 _sql_identifier_list_impl(returning_columns),
             )
             cur.execute(query, values)
@@ -84,19 +84,19 @@ def _update_entity_for_tenant_db_impl(
 def _delete_entity_for_tenant_db_impl(
     entity_name: str, item_id: int, tenant_id: int
 ) -> dict[str, object]:
-    if not _db_url_impl() or university_service.psycopg is None:
+    if not _db_url_impl() or university_shared.psycopg is None:
         raise RuntimeError("database unavailable")
 
-    config = university_service.ENTITY_CONFIGS[entity_name]
+    config = university_shared.ENTITY_CONFIGS[entity_name]
     include_created_at = entity_name == "students"
     returning_columns = ["id"]
     if include_created_at:
         returning_columns.append("created_at")
     returning_columns.extend(config.fields)
 
-    with university_service.get_raw_conn() as conn:
+    with university_shared.get_raw_conn() as conn:
         with conn.cursor() as cur:
-            query = university_service.psycopg.sql.SQL(
+            query = university_shared.psycopg.sql.SQL(
                 "DELETE FROM {} WHERE id = %s AND tenant_id = %s RETURNING {}"
             ).format(
                 _sql_identifier_impl(config.table),
@@ -113,10 +113,10 @@ def _delete_entity_for_tenant_db_impl(
 
 def _list_entities_for_tenant_memory_impl(entity_name: str, tenant_id: int) -> list[dict[str, object]]:
     tid = str(tenant_id)
-    with university_service._state_lock:
+    with university_shared._state_lock:
         rows = [
             dict(r)
-            for r in university_service._state.data[entity_name].values()
+            for r in university_shared._state.data[entity_name].values()
             if str(r.get("tenant_id", "")) == tid
         ]
     rows.sort(key=lambda r: int(r["id"]))  # type: ignore[arg-type]
@@ -127,15 +127,15 @@ def _update_entity_for_tenant_memory_impl(
     entity_name: str, item_id: int, payload: dict[str, object], tenant_id: int
 ) -> dict[str, object]:
     tid = str(tenant_id)
-    with university_service._state_lock:
+    with university_shared._state_lock:
         _validate_foreign_keys_memory_impl(entity_name, payload)
-        current = university_service._state.data[entity_name].get(item_id)
+        current = university_shared._state.data[entity_name].get(item_id)
         if current is None or str(current.get("tenant_id", "")) != tid:
             raise ValueError(f"{entity_name.rstrip('s')} not found")
         updated: dict[str, object] = {"id": item_id, **payload}
         if entity_name == "students":
             updated["created_at"] = current.get("created_at") or _now_iso_impl()
-        university_service._state.data[entity_name][item_id] = updated
+        university_shared._state.data[entity_name][item_id] = updated
         return dict(updated)
 
 
@@ -143,17 +143,17 @@ def _delete_entity_for_tenant_memory_impl(
     entity_name: str, item_id: int, tenant_id: int
 ) -> dict[str, object]:
     tid = str(tenant_id)
-    with university_service._state_lock:
-        current = university_service._state.data[entity_name].get(item_id)
+    with university_shared._state_lock:
+        current = university_shared._state.data[entity_name].get(item_id)
         if current is None or str(current.get("tenant_id", "")) != tid:
             raise ValueError(f"{entity_name.rstrip('s')} not found")
-        del university_service._state.data[entity_name][item_id]
+        del university_shared._state.data[entity_name][item_id]
         return dict(current)
 
 
 def list_entities_for_tenant_impl(entity_name: str, tenant_id: int) -> list[dict[str, object]]:
     """List entities filtered by tenant_id."""
-    if entity_name not in university_service.ENTITY_CONFIGS:
+    if entity_name not in university_shared.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
     if _use_database_impl():
@@ -172,7 +172,7 @@ def create_entity_for_tenant_impl(
     tenant_id: int,
 ) -> dict[str, object]:
     """Create entity with tenant_id forced from context (ignores incoming tenant_id)."""
-    if entity_name not in university_service.ENTITY_CONFIGS:
+    if entity_name not in university_shared.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
     payload_with_tenant: dict[str, object] = {**payload, "tenant_id": str(tenant_id)}
@@ -185,14 +185,14 @@ def create_entity_for_tenant_impl(
             if not _should_fallback_to_memory_impl(exc):
                 raise
 
-    with university_service._state_lock:
+    with university_shared._state_lock:
         _validate_foreign_keys_memory_impl(entity_name, normalized)
-        university_service._state.counters[entity_name] += 1
-        item_id = university_service._state.counters[entity_name]
+        university_shared._state.counters[entity_name] += 1
+        item_id = university_shared._state.counters[entity_name]
         row: dict[str, object] = {"id": item_id, **normalized}
         if entity_name == "students":
             row["created_at"] = _now_iso_impl()
-        university_service._state.data[entity_name][item_id] = row
+        university_shared._state.data[entity_name][item_id] = row
         return dict(row)
 
 
@@ -203,7 +203,7 @@ def update_entity_for_tenant_impl(
     tenant_id: int,
 ) -> dict[str, object]:
     """Update entity, enforcing tenant ownership."""
-    if entity_name not in university_service.ENTITY_CONFIGS:
+    if entity_name not in university_shared.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
     payload_with_tenant: dict[str, object] = {**payload, "tenant_id": str(tenant_id)}
@@ -225,7 +225,7 @@ def delete_entity_for_tenant_impl(
     tenant_id: int,
 ) -> dict[str, object]:
     """Delete entity, enforcing tenant ownership."""
-    if entity_name not in university_service.ENTITY_CONFIGS:
+    if entity_name not in university_shared.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
     if _use_database_impl():
