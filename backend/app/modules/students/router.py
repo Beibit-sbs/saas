@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import logging
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Response, status
 from pydantic import BaseModel, ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -48,6 +49,9 @@ router = APIRouter(prefix="/api/admin/students", tags=["students"])
 legacy_router = APIRouter(prefix="/api/admin/university/students", tags=["students"])
 
 
+logger = logging.getLogger("app.students")
+
+
 class ErrorDetailResponse(BaseModel):
     detail: Any
 
@@ -82,6 +86,19 @@ def _raise_legacy_students_http_error(exc: ValueError) -> HTTPException:
 TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
 Actor = Annotated[str, Depends(get_actor)]
 StudentsDb = Annotated[Session, Depends(get_students_db)]
+
+
+def _mark_legacy_students_usage(response: Response, tenant: dict[str, object], actor: str | None) -> None:
+    # Expose explicit deprecation metadata so clients can migrate to /api/admin/students.
+    response.headers["Deprecation"] = "true"
+    response.headers["Sunset"] = "Fri, 31 Jul 2026 00:00:00 GMT"
+    response.headers["Link"] = '</api/admin/students>; rel="successor-version"'
+    response.headers["Warning"] = '299 - "Deprecated API: use /api/admin/students"'
+    logger.warning(
+        "legacy students endpoint used; tenant_id=%s actor=%s",
+        tenant.get("id"),
+        actor,
+    )
 
 
 @router.post(
@@ -251,10 +268,12 @@ async def get_active_primary_program_endpoint(
     responses={403: {"model": ErrorDetailResponse}},
 )
 async def legacy_list_students_endpoint(
+    response: Response,
     _: Actor = None,
     __: Annotated[None, Depends(permission_dependency("admin.students.read"))] = None,
     tenant: TrustedTenant = None,
 ) -> StudentListResponse:
+    _mark_legacy_students_usage(response, tenant, _)
     return StudentListResponse(students=list_students(int(tenant["id"])))
 
 
@@ -264,11 +283,13 @@ async def legacy_list_students_endpoint(
     responses={400: {"model": ErrorDetailResponse}, 403: {"model": ErrorDetailResponse}},
 )
 async def legacy_create_student_endpoint(
+    response: Response,
     payload: dict[str, Any] = Body(...),
     _: Actor = None,
     __: Annotated[None, Depends(permission_dependency("admin.students.write"))] = None,
     tenant: TrustedTenant = None,
 ) -> StudentItemResponse:
+    _mark_legacy_students_usage(response, tenant, _)
     request_model = _parse_payload(StudentCreatePayload, payload)
     return StudentItemResponse(student=create_student(request_model.model_dump(), int(tenant["id"])))
 
@@ -279,12 +300,14 @@ async def legacy_create_student_endpoint(
     responses={400: {"model": ErrorDetailResponse}, 403: {"model": ErrorDetailResponse}, 404: {"model": ErrorDetailResponse}},
 )
 async def legacy_update_student_endpoint(
+    response: Response,
     student_id: int,
     payload: dict[str, Any] = Body(...),
     _: Actor = None,
     __: Annotated[None, Depends(permission_dependency("admin.students.write"))] = None,
     tenant: TrustedTenant = None,
 ) -> StudentItemResponse:
+    _mark_legacy_students_usage(response, tenant, _)
     request_model = _parse_payload(StudentUpdatePayload, payload)
     try:
         return StudentItemResponse(
@@ -300,11 +323,13 @@ async def legacy_update_student_endpoint(
     responses={403: {"model": ErrorDetailResponse}, 404: {"model": ErrorDetailResponse}},
 )
 async def legacy_delete_student_endpoint(
+    response: Response,
     student_id: int,
     _: Actor = None,
     __: Annotated[None, Depends(permission_dependency("admin.students.write"))] = None,
     tenant: TrustedTenant = None,
 ) -> StudentDeleteResponse:
+    _mark_legacy_students_usage(response, tenant, _)
     try:
         return StudentDeleteResponse(
             deleted=True,
