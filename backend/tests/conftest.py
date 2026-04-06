@@ -54,7 +54,7 @@ from app.modules.security import rate_limit as rate_limit_service
 from app.modules.identity.phase1_service import clear_identity_security_state
 from app.modules.tenants import service as tenant_service
 from app.modules.usage import service as usage_service
-from app.modules.university_core import service as university_core_service
+from app.modules.university_core import clear_university_state
 from app.platform.analytics import service as analytics_service
 from app.platform.ai import service as platform_ai_service
 from app.platform.ai.recommendations import service as platform_ai_rec_service
@@ -174,7 +174,7 @@ def _reset_template_state() -> None:
     usage_service.clear_usage_state()
     integrations_service._settings.clear()
     integrations_service._fernet.cache_clear()
-    university_core_service.clear_university_state()
+    clear_university_state()
     analytics_service.clear_analytics_state()
     platform_ai_service.clear_ai_state()
     platform_ai_rec_service.clear_recommendation_state()

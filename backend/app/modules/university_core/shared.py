@@ -69,12 +69,20 @@ _state = UniversityMemoryState(
 )
 
 
+def clear_university_state() -> None:
+    with _state_lock:
+        for name in ENTITY_CONFIGS:
+            _state.data[name].clear()
+            _state.counters[name] = 0
+
+
 __all__ = [
     "EntityConfig",
     "ENTITY_CONFIGS",
     "UniversityMemoryState",
     "_state",
     "_state_lock",
+    "clear_university_state",
     "get_raw_conn",
     "psycopg",
 ]
