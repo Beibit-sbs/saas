@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import logging
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Request, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Request, Response, status
 from pydantic import BaseModel, ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -109,6 +110,22 @@ def _log_router_call(
 
 router = APIRouter(prefix="/api/admin", tags=["enrollments"])
 legacy_router = APIRouter(prefix="/api/admin/university/enrollments", tags=["enrollments"])
+
+
+logger = logging.getLogger("app.enrollments")
+
+
+def _mark_legacy_enrollments_usage(response: Response, tenant: dict[str, object], actor: str | None) -> None:
+    # Expose explicit deprecation metadata so clients can migrate to /api/admin/enrollments.
+    response.headers["Deprecation"] = "true"
+    response.headers["Sunset"] = "Fri, 31 Jul 2026 00:00:00 GMT"
+    response.headers["Link"] = '</api/admin/enrollments>; rel="successor-version"'
+    response.headers["Warning"] = '299 - "Deprecated API: use /api/admin/enrollments"'
+    logger.warning(
+        "legacy enrollments endpoint used; tenant_id=%s actor=%s",
+        tenant.get("id"),
+        actor,
+    )
 
 
 @router.post(
@@ -393,10 +410,12 @@ async def change_enrollment_status_endpoint(
     responses={403: {"model": ErrorDetailResponse}},
 )
 async def legacy_list_enrollments_endpoint(
+    response: Response,
     _: Actor = None,
     __: Annotated[None, Depends(permission_dependency("admin.enrollments.read"))] = None,
     tenant: TrustedTenant = None,
 ) -> EnrollmentListResponse:
+    _mark_legacy_enrollments_usage(response, tenant, _)
     return EnrollmentListResponse(enrollments=list_enrollments(int(tenant["id"])))
 
 
@@ -406,12 +425,14 @@ async def legacy_list_enrollments_endpoint(
     responses={400: {"model": ErrorDetailResponse}, 403: {"model": ErrorDetailResponse}},
 )
 async def legacy_create_enrollment_endpoint(
+    response: Response,
     payload: dict[str, Any] = Body(...),
     _: Actor = None,
     __: Annotated[None, Depends(permission_dependency("admin.enrollments.write"))] = None,
     tenant: TrustedTenant = None,
 ) -> EnrollmentItemResponse:
     request_model = _parse_payload(EnrollmentCreatePayload, payload)
+    _mark_legacy_enrollments_usage(response, tenant, _)
     return EnrollmentItemResponse(
         enrollment=create_enrollment(request_model.model_dump(), int(tenant["id"]))
     )
@@ -423,6 +444,7 @@ async def legacy_create_enrollment_endpoint(
     responses={400: {"model": ErrorDetailResponse}, 403: {"model": ErrorDetailResponse}, 404: {"model": ErrorDetailResponse}},
 )
 async def legacy_update_enrollment_endpoint(
+    response: Response,
     enrollment_id: int,
     payload: dict[str, Any] = Body(...),
     _: Actor = None,
@@ -431,6 +453,7 @@ async def legacy_update_enrollment_endpoint(
 ) -> EnrollmentItemResponse:
     request_model = _parse_payload(EnrollmentUpdatePayload, payload)
     try:
+        _mark_legacy_enrollments_usage(response, tenant, _)
         return EnrollmentItemResponse(
             enrollment=update_enrollment(enrollment_id, request_model.model_dump(), int(tenant["id"]))
         )
@@ -444,12 +467,14 @@ async def legacy_update_enrollment_endpoint(
     responses={403: {"model": ErrorDetailResponse}, 404: {"model": ErrorDetailResponse}},
 )
 async def legacy_delete_enrollment_endpoint(
+    response: Response,
     enrollment_id: int,
     _: Actor = None,
     __: Annotated[None, Depends(permission_dependency("admin.enrollments.write"))] = None,
     tenant: TrustedTenant = None,
 ) -> EnrollmentDeleteResponse:
     try:
+        _mark_legacy_enrollments_usage(response, tenant, _)
         return EnrollmentDeleteResponse(
             deleted=True,
             enrollment=delete_enrollment(enrollment_id, int(tenant["id"])),

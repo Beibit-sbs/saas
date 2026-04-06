@@ -159,6 +159,10 @@ def test_enrollment_creation() -> None:
         },
     )
     assert enrollment_response.status_code == 200
+    assert enrollment_response.headers["Deprecation"] == "true"
+    assert enrollment_response.headers["Sunset"] == "Fri, 31 Jul 2026 00:00:00 GMT"
+    assert enrollment_response.headers["Link"] == '</api/admin/enrollments>; rel="successor-version"'
+    assert enrollment_response.headers["Warning"] == '299 - "Deprecated API: use /api/admin/enrollments"'
     enrollment = enrollment_response.json()["enrollment"]
     assert enrollment["student_id"] == student_id
     assert enrollment["course_id"] == course_id
