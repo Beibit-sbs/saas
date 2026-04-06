@@ -5,7 +5,6 @@ from app.core.db import get_raw_conn
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import os
-import re
 from threading import Lock
 from typing import Any
 
@@ -71,7 +70,6 @@ _state = UniversityMemoryState(
     data={name: {} for name in ENTITY_CONFIGS},
     counters={name: 0 for name in ENTITY_CONFIGS},
 )
-_SQL_IDENTIFIER_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 logger = logging.getLogger("app.university_core")
 
 
@@ -142,31 +140,21 @@ def _normalize_payload(entity_name: str, payload: dict[str, object]) -> dict[str
 
 
 def _row_to_dict(row: tuple[Any, ...], fields: tuple[str, ...], include_created_at: bool) -> dict[str, object]:
-    result: dict[str, object] = {"id": int(row[0])}
-    offset = 1
-    if include_created_at:
-        created_at = row[offset]
-        result["created_at"] = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
-        offset += 1
+    from app.modules.university_core.entity_impl import _row_to_dict_impl
 
-    for index, field_name in enumerate(fields):
-        result[field_name] = row[offset + index]
-    return result
+    return _row_to_dict_impl(row, fields, include_created_at)
 
 
 def _sql_identifier(name: str):
-    if psycopg is None:
-        raise RuntimeError("database unavailable")
-    normalized = str(name or "").strip()
-    if not _SQL_IDENTIFIER_RE.fullmatch(normalized):
-        raise ValueError(f"unsafe SQL identifier: {normalized}")
-    return psycopg.sql.Identifier(normalized)
+    from app.modules.university_core.entity_impl import _sql_identifier_impl
+
+    return _sql_identifier_impl(name)
 
 
 def _sql_identifier_list(names: list[str] | tuple[str, ...]):
-    if psycopg is None:
-        raise RuntimeError("database unavailable")
-    return psycopg.sql.SQL(", ").join(_sql_identifier(name) for name in names)
+    from app.modules.university_core.entity_impl import _sql_identifier_list_impl
+
+    return _sql_identifier_list_impl(names)
 
 
 def _db_fetch_exists(conn, table: str, item_id: int) -> bool:

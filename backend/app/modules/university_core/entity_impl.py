@@ -4,7 +4,12 @@ This module hosts generic (non-tenant-scoped) CRUD behavior extracted
 from `university_core.service` as part of C-007 decomposition.
 """
 
+import re
+
 from app.modules.university_core import service as university_service
+
+
+_SQL_IDENTIFIER_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 
 
 def _normalize_string_impl(name: str, value: object, max_len: int = 255) -> str:
@@ -82,7 +87,7 @@ def _validate_foreign_keys_memory_impl(entity_name: str, payload: dict[str, obje
 def _db_fetch_exists_impl(conn, table: str, item_id: int) -> bool:
     with conn.cursor() as cur:
         query = university_service.psycopg.sql.SQL("SELECT 1 FROM {} WHERE id = %s").format(
-            university_service._sql_identifier(table)
+            _sql_identifier_impl(table)
         )
         cur.execute(query, (item_id,))
         return cur.fetchone() is not None
@@ -107,6 +112,36 @@ def _validate_foreign_keys_db_impl(conn, entity_name: str, payload: dict[str, ob
             raise ValueError("course_id references unknown course")
 
 
+def _row_to_dict_impl(
+    row: tuple[object, ...], fields: tuple[str, ...], include_created_at: bool
+) -> dict[str, object]:
+    result: dict[str, object] = {"id": int(row[0])}
+    offset = 1
+    if include_created_at:
+        created_at = row[offset]
+        result["created_at"] = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
+        offset += 1
+
+    for index, field_name in enumerate(fields):
+        result[field_name] = row[offset + index]
+    return result
+
+
+def _sql_identifier_impl(name: str):
+    if university_service.psycopg is None:
+        raise RuntimeError("database unavailable")
+    normalized = str(name or "").strip()
+    if not _SQL_IDENTIFIER_RE.fullmatch(normalized):
+        raise ValueError(f"unsafe SQL identifier: {normalized}")
+    return university_service.psycopg.sql.Identifier(normalized)
+
+
+def _sql_identifier_list_impl(names: list[str] | tuple[str, ...]):
+    if university_service.psycopg is None:
+        raise RuntimeError("database unavailable")
+    return university_service.psycopg.sql.SQL(", ").join(_sql_identifier_impl(name) for name in names)
+
+
 def _list_entities_db_impl(entity_name: str) -> list[dict[str, object]]:
     if not university_service._db_url() or university_service.psycopg is None:
         raise RuntimeError("database unavailable")
@@ -121,13 +156,13 @@ def _list_entities_db_impl(entity_name: str) -> list[dict[str, object]]:
     with university_service.get_raw_conn() as conn:
         with conn.cursor() as cur:
             query = university_service.psycopg.sql.SQL("SELECT {} FROM {} ORDER BY id ASC").format(
-                university_service._sql_identifier_list(selected_columns),
-                university_service._sql_identifier(config.table),
+                _sql_identifier_list_impl(selected_columns),
+                _sql_identifier_impl(config.table),
             )
             cur.execute(query)
             rows = cur.fetchall()
 
-    return [university_service._row_to_dict(row, config.fields, include_created_at) for row in rows]
+    return [_row_to_dict_impl(row, config.fields, include_created_at) for row in rows]
 
 
 def _create_entity_db_impl(entity_name: str, payload: dict[str, object]) -> dict[str, object]:
@@ -149,10 +184,10 @@ def _create_entity_db_impl(entity_name: str, payload: dict[str, object]) -> dict
             query = university_service.psycopg.sql.SQL(
                 "INSERT INTO {} ({}) VALUES ({}) RETURNING {}"
             ).format(
-                university_service._sql_identifier(config.table),
-                university_service._sql_identifier_list(columns),
+                _sql_identifier_impl(config.table),
+                _sql_identifier_list_impl(columns),
                 university_service.psycopg.sql.SQL(", ").join(university_service.psycopg.sql.Placeholder() for _ in columns),
-                university_service._sql_identifier_list(returning_columns),
+                _sql_identifier_list_impl(returning_columns),
             )
             cur.execute(query, values)
             row = cur.fetchone()
@@ -160,7 +195,7 @@ def _create_entity_db_impl(entity_name: str, payload: dict[str, object]) -> dict
 
     if row is None:
         raise RuntimeError(f"failed to create {entity_name}")
-    return university_service._row_to_dict(row, config.fields, include_created_at)
+    return _row_to_dict_impl(row, config.fields, include_created_at)
 
 
 def _update_entity_db_impl(entity_name: str, item_id: int, payload: dict[str, object]) -> dict[str, object]:
@@ -178,15 +213,15 @@ def _update_entity_db_impl(entity_name: str, item_id: int, payload: dict[str, ob
         _validate_foreign_keys_db_impl(conn, entity_name, payload)
         with conn.cursor() as cur:
             assignments = [
-                university_service.psycopg.sql.SQL("{} = %s").format(university_service._sql_identifier(column))
+                university_service.psycopg.sql.SQL("{} = %s").format(_sql_identifier_impl(column))
                 for column in config.fields
             ]
             values = [payload[column] for column in config.fields]
             values.append(item_id)
             query = university_service.psycopg.sql.SQL("UPDATE {} SET {} WHERE id = %s RETURNING {}").format(
-                university_service._sql_identifier(config.table),
+                _sql_identifier_impl(config.table),
                 university_service.psycopg.sql.SQL(", ").join(assignments),
-                university_service._sql_identifier_list(returning_columns),
+                _sql_identifier_list_impl(returning_columns),
             )
             cur.execute(query, values)
             row = cur.fetchone()
@@ -194,7 +229,7 @@ def _update_entity_db_impl(entity_name: str, item_id: int, payload: dict[str, ob
 
     if row is None:
         raise ValueError(f"{entity_name.rstrip('s')} not found")
-    return university_service._row_to_dict(row, config.fields, include_created_at)
+    return _row_to_dict_impl(row, config.fields, include_created_at)
 
 
 def _delete_entity_db_impl(entity_name: str, item_id: int) -> dict[str, object]:
@@ -211,8 +246,8 @@ def _delete_entity_db_impl(entity_name: str, item_id: int) -> dict[str, object]:
     with university_service.get_raw_conn() as conn:
         with conn.cursor() as cur:
             query = university_service.psycopg.sql.SQL("DELETE FROM {} WHERE id = %s RETURNING {}").format(
-                university_service._sql_identifier(config.table),
-                university_service._sql_identifier_list(returning_columns),
+                _sql_identifier_impl(config.table),
+                _sql_identifier_list_impl(returning_columns),
             )
             cur.execute(query, (item_id,))
             row = cur.fetchone()
@@ -220,7 +255,7 @@ def _delete_entity_db_impl(entity_name: str, item_id: int) -> dict[str, object]:
 
     if row is None:
         raise ValueError(f"{entity_name.rstrip('s')} not found")
-    return university_service._row_to_dict(row, config.fields, include_created_at)
+    return _row_to_dict_impl(row, config.fields, include_created_at)
 
 
 def list_entities_impl(entity_name: str) -> list[dict[str, object]]:
@@ -309,6 +344,9 @@ def delete_entity_impl(entity_name: str, item_id: int) -> dict[str, object]:
 
 
 __all__ = [
+    "_row_to_dict_impl",
+    "_sql_identifier_impl",
+    "_sql_identifier_list_impl",
     "_normalize_string_impl",
     "_normalize_optional_tenant_impl",
     "_normalize_payload_impl",
