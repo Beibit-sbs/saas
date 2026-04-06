@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 from app.core.db import get_raw_conn
 
 from dataclasses import dataclass, field
@@ -71,6 +72,26 @@ _state = UniversityMemoryState(
     counters={name: 0 for name in ENTITY_CONFIGS},
 )
 _SQL_IDENTIFIER_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
+logger = logging.getLogger("app.university_core")
+
+
+def _mark_university_core_usage(function_name: str, entity_name: str, tenant_id: int | None = None) -> None:
+    logger.warning(
+        "university_core shared service used; function=%s entity=%s tenant_id=%s",
+        function_name,
+        entity_name,
+        tenant_id,
+    )
+
+
+def _parse_tenant_id(value: object) -> int | None:
+    normalized = str(value or "").strip()
+    if not normalized:
+        return None
+    try:
+        return int(normalized)
+    except (TypeError, ValueError):
+        return None
 
 
 def clear_university_state() -> None:
@@ -345,6 +366,7 @@ def _validate_foreign_keys_memory(entity_name: str, payload: dict[str, object]) 
 def list_entities(entity_name: str) -> list[dict[str, object]]:
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
+    _mark_university_core_usage("list_entities", entity_name)
 
     if _use_database():
         try:
@@ -362,6 +384,8 @@ def list_entities(entity_name: str) -> list[dict[str, object]]:
 def create_entity(entity_name: str, payload: dict[str, object]) -> dict[str, object]:
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
+    tenant_id_int = _parse_tenant_id(payload.get("tenant_id"))
+    _mark_university_core_usage("create_entity", entity_name, tenant_id_int)
 
     normalized = _normalize_payload(entity_name, payload)
 
@@ -386,6 +410,8 @@ def create_entity(entity_name: str, payload: dict[str, object]) -> dict[str, obj
 def update_entity(entity_name: str, item_id: int, payload: dict[str, object]) -> dict[str, object]:
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
+    tenant_id_int = _parse_tenant_id(payload.get("tenant_id"))
+    _mark_university_core_usage("update_entity", entity_name, tenant_id_int)
 
     normalized = _normalize_payload(entity_name, payload)
 
@@ -412,6 +438,7 @@ def update_entity(entity_name: str, item_id: int, payload: dict[str, object]) ->
 def delete_entity(entity_name: str, item_id: int) -> dict[str, object]:
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
+    _mark_university_core_usage("delete_entity", entity_name)
 
     if _use_database():
         try:
@@ -568,6 +595,7 @@ def list_entities_for_tenant(entity_name: str, tenant_id: int) -> list[dict[str,
     """List entities filtered by tenant_id."""
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
+    _mark_university_core_usage("list_entities_for_tenant", entity_name, tenant_id)
 
     if _use_database():
         try:
@@ -585,6 +613,7 @@ def create_entity_for_tenant(
     """Create entity with tenant_id forced from context (ignores any incoming tenant_id)."""
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
+    _mark_university_core_usage("create_entity_for_tenant", entity_name, tenant_id)
 
     payload_with_tenant: dict[str, object] = {**payload, "tenant_id": str(tenant_id)}
     normalized = _normalize_payload(entity_name, payload_with_tenant)
@@ -613,6 +642,7 @@ def update_entity_for_tenant(
     """Update entity, enforcing tenant ownership. Returns 404 if not found or wrong tenant."""
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
+    _mark_university_core_usage("update_entity_for_tenant", entity_name, tenant_id)
 
     payload_with_tenant: dict[str, object] = {**payload, "tenant_id": str(tenant_id)}
     normalized = _normalize_payload(entity_name, payload_with_tenant)
@@ -633,6 +663,7 @@ def delete_entity_for_tenant(
     """Delete entity, enforcing tenant ownership. Returns 404 if not found or wrong tenant."""
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
+    _mark_university_core_usage("delete_entity_for_tenant", entity_name, tenant_id)
 
     if _use_database():
         try:
