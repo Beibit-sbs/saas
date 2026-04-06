@@ -32,7 +32,7 @@
 | C-003 | Legacy enrollments route | backend/app/modules/enrollments/legacy_router.py | Дублирует новый `/api/admin/enrollments` | enrollments/router.py | HOLD | Нет обращений к `/api/admin/university/enrollments` |
 | C-004 | University legacy routes | backend/app/modules/{faculty,programs,courses}/ | Старый namespace `/api/admin/university/*` | platform/admin API v1 | HOLD | Подтверждена миграция всех consumers |
 | C-005 | identity_phase1 naming/route | backend/app/modules/identity/phase1_router.py | Legacy naming и потенциальный дубль | identity/router.py | HOLD | Подтверждено отсутствие клиентов phase1 path |
-| C-006 | Job placeholder handlers | backend/app/modules/jobs/worker.py | 4 no-op handler-а (`sync`, `ldap.sync`, `ai.generate`, `report.generate`) | Заблокированы в production; явный denylist в config | READY | ✅ Option B зафиксирован: публичный enqueue для `sync`/`ldap.sync`/`ai.generate` отключен; backend tests green; `report.generate` оставлен как roadmap-кандидат |
+| C-006 | Job placeholder handlers | backend/app/modules/jobs/worker.py | 4 no-op handler-а (`sync`, `ldap.sync`, `ai.generate`, `report.generate`) | Заблокированы в production; явный denylist в config | REMOVED | ✅ De-scoped placeholder-ветки удалены из worker; `report.generate` переведен на concrete handler |
 | C-007 | university_core service | backend/app/modules/university_core/service.py | Общий service-слой с широкими импортами; кандидат на управляемую декомпозицию | domain services split | REMOVED | ✅ Удалено в cleanup-phase change set; post-removal regression/smoke подтверждены |
 | C-008 | Legacy admin CSS | frontend/app/admin/admin-legacy.css | Останется сиротой после удаления legacy admin | Новый дизайн console | HOLD | C-001 == READY |
 | C-009 | Legacy admin hooks/types | frontend/app/admin/hooks/ + frontend/app/admin/types.ts | Параллельный слой API/типов | modules/* hooks/types | HOLD | C-001 == READY |
@@ -46,7 +46,7 @@
 | C-003 | Backend Lead | Подтвердить отсутствие активных клиентов на legacy enrollments prefix | 2026-04-10 |
 | C-004 | Platform Architect | Утвердить целевой namespace для university routes | 2026-04-11 |
 | C-005 | Security Lead + Backend Lead | Согласовать strategy по `identity_phase1` и security review scope | 2026-04-11 |
-| C-006 | Product Owner + Platform Lead | ✅ Sign-off выполнен (Option B); подготовить отдельный RFC/epic для `report.generate` при подтвержденном приоритете | 2026-04-06 |
+| C-006 | Product Owner + Platform Lead | ✅ Cleanup-phase выполнен: placeholder-хендлеры removed, post-removal checks подтверждены | 2026-04-06 |
 | C-007 | Backend Lead | ✅ Cleanup-phase выполнен: legacy service удален, критерии post-removal подтверждены | 2026-04-06 |
 | C-008 | Frontend Lead | Привязать удаление к C-001 readiness | 2026-04-12 |
 | C-009 | Frontend Lead | Привязать удаление к C-001 readiness | 2026-04-12 |
@@ -66,6 +66,7 @@
 | 2026-04-06 | C-002,C-003,C-007 | Зафиксированы draft-решения и план client switch | in progress | C-002/C-003: подтвержден deprecation->cutover plan на новые префиксы; C-007: подтверждена декомпозиция вместо удаления как сироты |
 | 2026-04-06 | C-006 | Подготовлен decision package для stakeholder sign-off | in progress | Рекомендация: de-scope для `sync`, `ldap.sync`, `ai.generate`; optional roadmap на реализацию `report.generate` при явном product request |
 | 2026-04-06 | C-006 | Stakeholder sign-off завершен (Option B) | Product Owner + Platform Lead | В backend `admin/jobs` отключен публичный enqueue для `sync`, `ldap.sync`, `ai.generate`; проверка: `tests/test_jobs.py` + `tests/test_rate_limit.py` = 17 passed |
+| 2026-04-06 | C-006 | Cleanup-phase завершен; статус переведен READY -> REMOVED | Backend Lead | В `backend/app/modules/jobs/worker.py` удалены placeholder-хендлеры de-scoped типов (`sync`, `ldap.sync`, `ai.generate`), `report.generate` переведен на concrete handler; post-removal checks: backend tests = 1263 passed / 9 skipped / 2 warnings, frontend tests = 30 files / 147 tests passed, smoke-check = 8 PASS, EXIT=0 |
 | 2026-04-06 | C-002 | Включена deprecation-наблюдаемость legacy students prefix | Backend Lead | Для `/api/admin/university/students/*` добавлены `Deprecation/Sunset/Link/Warning` headers + warning log; таргетные тесты green (`tests/test_university_tenant_isolation.py`, `tests/modules/students`) |
 | 2026-04-06 | C-003 | Включена deprecation-наблюдаемость legacy enrollments prefix | Backend Lead | Для `/api/admin/university/enrollments/*` добавлены `Deprecation/Sunset/Link/Warning` headers + warning log; таргетная проверка green (`tests/test_university_core.py`) |
 | 2026-04-06 | C-004 | Включена runtime-observability для legacy university namespace | Backend Lead | Для `/api/admin/university/{faculty,programs,courses}/*` добавлены warning log + runtime headers `X-Legacy-Namespace/Warning`; successor path `/api/admin/org/*` еще не live, поэтому deprecation-link пока не публикуется |

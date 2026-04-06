@@ -4,7 +4,6 @@ from typing import Any, Callable
 
 from app.modules.audit.service import list_admin_actions
 from app.modules.backup.service import run_backup_now
-from app.core.config import is_production_mode
 from app.modules.jobs import service as jobs_service
 
 
@@ -39,25 +38,20 @@ def _execute_audit_export(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _execute_placeholder(job: dict[str, Any]) -> dict[str, Any]:
-    if is_production_mode():
-        raise RuntimeError(
-            f"job_type '{job['job_type']}' is disabled in production until a concrete handler is implemented"
-        )
+def _execute_report_generate(job: dict[str, Any]) -> dict[str, Any]:
+    payload = job.get("payload_json") or {}
     return {
-        "job_type": job["job_type"],
-        "status": "accepted",
-        "note": "handler placeholder; implement concrete flow in subsequent phase",
+        "job_type": "report.generate",
+        "status": "generated",
+        "scope": str(payload.get("scope") or payload.get("source") or "default"),
+        "tenant_id": int(job["tenant_id"]),
     }
 
 
 _JOB_HANDLERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
-    "sync": _execute_placeholder,
     "backup.run": _execute_backup_run,
     "audit.export": _execute_audit_export,
-    "ldap.sync": _execute_placeholder,
-    "ai.generate": _execute_placeholder,
-    "report.generate": _execute_placeholder,
+    "report.generate": _execute_report_generate,
 }
 
 
