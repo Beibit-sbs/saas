@@ -260,17 +260,15 @@ def _delete_entity_db(entity_name: str, item_id: int) -> dict[str, object]:
 
 
 def _memory_fk_exists(entity_name: str, item_id: int) -> bool:
-    return item_id in _state.data[entity_name]
+    from app.modules.university_core.entity_impl import _memory_fk_exists_impl
+
+    return _memory_fk_exists_impl(entity_name, item_id)
 
 
 def _validate_foreign_keys_memory(entity_name: str, payload: dict[str, object]) -> None:
-    config = ENTITY_CONFIGS[entity_name]
-    if "program_id" in config.fk_fields and not _memory_fk_exists("programs", int(payload["program_id"])):
-        raise ValueError("program_id references unknown program")
-    if "student_id" in config.fk_fields and not _memory_fk_exists("students", int(payload["student_id"])):
-        raise ValueError("student_id references unknown student")
-    if "course_id" in config.fk_fields and not _memory_fk_exists("courses", int(payload["course_id"])):
-        raise ValueError("course_id references unknown course")
+    from app.modules.university_core.entity_impl import _validate_foreign_keys_memory_impl
+
+    return _validate_foreign_keys_memory_impl(entity_name, payload)
 
 
 def list_entities(entity_name: str) -> list[dict[str, object]]:

@@ -7,6 +7,20 @@ from `university_core.service` as part of C-007 decomposition.
 from app.modules.university_core import service as university_service
 
 
+def _memory_fk_exists_impl(entity_name: str, item_id: int) -> bool:
+    return item_id in university_service._state.data[entity_name]
+
+
+def _validate_foreign_keys_memory_impl(entity_name: str, payload: dict[str, object]) -> None:
+    config = university_service.ENTITY_CONFIGS[entity_name]
+    if "program_id" in config.fk_fields and not _memory_fk_exists_impl("programs", int(payload["program_id"])):
+        raise ValueError("program_id references unknown program")
+    if "student_id" in config.fk_fields and not _memory_fk_exists_impl("students", int(payload["student_id"])):
+        raise ValueError("student_id references unknown student")
+    if "course_id" in config.fk_fields and not _memory_fk_exists_impl("courses", int(payload["course_id"])):
+        raise ValueError("course_id references unknown course")
+
+
 def _list_entities_db_impl(entity_name: str) -> list[dict[str, object]]:
     if not university_service._db_url() or university_service.psycopg is None:
         raise RuntimeError("database unavailable")
@@ -154,7 +168,7 @@ def create_entity_impl(entity_name: str, payload: dict[str, object]) -> dict[str
                 raise
 
     with university_service._state_lock:
-        university_service._validate_foreign_keys_memory(entity_name, normalized)
+        _validate_foreign_keys_memory_impl(entity_name, normalized)
         university_service._state.counters[entity_name] += 1
         item_id = university_service._state.counters[entity_name]
         row: dict[str, object] = {"id": item_id, **normalized}
@@ -178,7 +192,7 @@ def update_entity_impl(entity_name: str, item_id: int, payload: dict[str, object
                 raise
 
     with university_service._state_lock:
-        university_service._validate_foreign_keys_memory(entity_name, normalized)
+        _validate_foreign_keys_memory_impl(entity_name, normalized)
         current = university_service._state.data[entity_name].get(item_id)
         if current is None:
             raise ValueError(f"{entity_name.rstrip('s')} not found")
@@ -209,6 +223,8 @@ def delete_entity_impl(entity_name: str, item_id: int) -> dict[str, object]:
 
 
 __all__ = [
+    "_memory_fk_exists_impl",
+    "_validate_foreign_keys_memory_impl",
     "_list_entities_db_impl",
     "_create_entity_db_impl",
     "_update_entity_db_impl",
