@@ -9,21 +9,22 @@ For canonical release discipline and evidence fields, use `docs/RELEASE_CHECKLIS
 ## Pre-Deployment
 
 1. Release artifact built and versioned.
-2. `bash scripts/release_gate.sh` passes.
-3. `bash scripts/platform_smoke_check.sh` passes in the target environment or an equivalent pre-prod stack.
-4. Tenant safety and RBAC isolation tests are green.
-5. Backup created and backup file path recorded.
-6. Restore drill owner, target window, and recovery objective documented.
-7. Environment variables validated:
+2. `bash scripts/university_pilot_safe_gate.sh` passes (non-destructive preflight gate).
+3. `bash scripts/release_gate.sh` passes.
+4. `bash scripts/platform_smoke_check.sh` passes in the target environment or an equivalent pre-prod stack.
+5. Tenant safety and RBAC isolation tests are green.
+6. Backup created and backup file path recorded.
+7. Restore drill owner, target window, and recovery objective documented.
+8. Environment variables validated:
    - `DATABASE_URL`
    - `REDIS_URL`
    - `JWT_SECRET`
    - `API_BASE_URL`
    - `ADMIN_PANEL_URL`
    - `INTERNAL_API_TOKEN` or `PLATFORM_INTERNAL_TOKEN` according to deployment wiring
-8. Role mapping for `platform_admin`, `institution_admin`, `academic_admin`, `it_support`, `developer`, and `ops_engineer` approved.
-9. Feature flag matrix reviewed and per-tenant exceptions documented.
-10. Rollback release symlink or previous artifact confirmed available.
+9. Role mapping for `platform_admin`, `institution_admin`, `academic_admin`, `it_support`, `developer`, and `ops_engineer` approved.
+10. Feature flag matrix reviewed and per-tenant exceptions documented.
+11. Rollback release symlink or previous artifact confirmed available.
 
 ## Deployment Window
 
@@ -38,16 +39,17 @@ For canonical release discipline and evidence fields, use `docs/RELEASE_CHECKLIS
 
 ## Immediate Validation
 
-1. `GET /health` returns `200`.
-2. `GET /health/db` returns expected status for the environment.
+1. `GET /health/live` returns `200`.
+2. `GET /health/ready` returns `200` (or `503` with expected dependency details during controlled degraded tests).
 3. `GET /health/worker` returns reachable heartbeat.
-4. `GET /health/comprehensive` is `healthy` or approved `degraded`.
+4. `GET /health/deep` is accessible only to authorized roles and returns expected dependency state.
 5. `GET /metrics/ops` exposes:
    - `dead_webhooks`
    - `dead_automation_executions`
    - `dead_jobs`
 6. `GET /metrics/latency` exposes `developer_api_error_count`.
 7. `bash scripts/platform_smoke_check.sh` passes.
+8. If DB admin tooling is enabled in a derived environment, access is restricted to approved operational roles and never exposed publicly.
 
 ## Pilot Governance Validation
 
@@ -83,10 +85,16 @@ Rollback immediately if any of the following occur:
 
 ## Sign-Off
 
-| Checkpoint | Owner | Status |
-| --- | --- | --- |
-| Release gate | TBD | TBD |
-| Smoke gate | TBD | TBD |
-| Backup ready | TBD | TBD |
-| RBAC mapping approved | TBD | TBD |
-| Pilot business sign-off | TBD | TBD |
+| Checkpoint | Owner | Status | Evidence |
+| --- | --- | --- | --- |
+| Release gate (script run) | Copilot | ✅ PASS | `scripts/release_gate.sh` — 7/7 architecture governance tests passed; Phase B scheduling smoke integrated |
+| Phase B Scheduling gate | Copilot | ✅ PASS | `scripts/scheduling_phase_b_smoke_check.sh` — 4/4 checks green (lesson create/list, attendance upsert/list); Alembic single head f2d3e4a5b6c7 merged; enum fix applied |
+| Smoke gate (script run) | Copilot | ✅ PASS | `scripts/platform_smoke_check.sh` — 8/8 checks passed (health, outbox, automation, webhooks, KPI, AI copilot, developer auth, metrics) |
+| Safe gate (LDAP integration) | Copilot | ✅ PASS | `scripts/university_pilot_safe_gate.sh` — 62 total tests passed (8 tenant + 7 guardrails + 39 readiness + 7 frontend) |
+| Pilot launch execution | Copilot | ✅ STARTED | Start timestamp (UTC): `2026-04-05 16:06:47Z`; full stack up (backend/frontend/nginx/db/redis/worker/scheduler/ldap/prometheus); gates green before start (safe/release/smoke) |
+| Test suite health | Copilot | ✅ PASS | 1230 passed, 0 failed, 9 skipped; profiles test fixed (department unit_type=None resolved) |
+| LDAP Stack Ready | Copilot | ✅ OPERATIONAL | OpenLDAP + 6 groups + 6 test users configured; LDAP role mapping validated |
+| Backup ready | TBD | ⏳ Pending | Backup restore drill documented in `docs/BACKUP_RESTORE_DRILL.md` |
+| RBAC mapping approved | TBD | ✅ CONFIGURED | 6 roles mapped: platform_admin, institution_admin, academic_admin, it_support, developer, ops_engineer |
+| Operational contacts and escalation channels | TBD | 🟡 Ready to fill | Draft prepared: Section 13 structure is in `docs/UNIVERSITY_OPERATIONAL_MODEL.md`; fill incident bridge=<link>; P1 paging=<policy>; security escalation=<channel>; dry-run timestamp=<YYYY-MM-DD HH:MM TZ>; validated by=<name/role>; then mark ✅ PASS |
+| Pilot business sign-off | TBD | 🟡 Ready to fill | Approved by=<name/role>; approval channel=<meeting/minutes/ticket>; decision date=<YYYY-MM-DD>; scope approved=<tenants/features>; rollout window=<YYYY-MM-DD HH:MM TZ>; rollback owner confirmed=<name/role> |
