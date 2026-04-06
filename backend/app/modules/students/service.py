@@ -34,7 +34,7 @@ from app.modules.students.schemas import (
     StudentProgramBindingReadSchema,
     StudentStatusChangeSchema,
 )
-from app.modules.university_core.service import (
+from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     delete_entity_for_tenant,
     list_entities_for_tenant,
