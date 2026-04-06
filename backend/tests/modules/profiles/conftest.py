@@ -72,6 +72,7 @@ def department_factory(now_utc: datetime):
             tenant_id=1,
             code="CS",
             name="Computer Science",
+            unit_type="department",
             parent_department_id=None,
             status="active",
             metadata_json={},

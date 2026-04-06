@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from datetime import datetime, time
+from datetime import date, datetime, time
 from enum import Enum
 
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
+    Date,
     DateTime,
     Enum as SAEnum,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    JSON,
     String,
     UniqueConstraint,
     text,
@@ -47,10 +49,55 @@ class InstructorRole(str, Enum):
     ASSISTANT = "assistant"
 
 
-day_of_week_enum = SAEnum(DayOfWeek, name="scheduling_day_of_week")
-room_type_enum = SAEnum(RoomType, name="scheduling_room_type")
-section_status_enum = SAEnum(SectionStatus, name="scheduling_section_status")
-instructor_role_enum = SAEnum(InstructorRole, name="scheduling_instructor_role")
+class LessonStatus(str, Enum):
+    PLANNED = "planned"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class AttendanceStatus(str, Enum):
+    PRESENT = "present"
+    ABSENT = "absent"
+    LATE = "late"
+    EXCUSED = "excused"
+
+
+day_of_week_enum = SAEnum(
+    DayOfWeek,
+    name="scheduling_day_of_week",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
+)
+room_type_enum = SAEnum(
+    RoomType,
+    name="scheduling_room_type",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
+)
+section_status_enum = SAEnum(
+    SectionStatus,
+    name="scheduling_section_status",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
+)
+instructor_role_enum = SAEnum(
+    InstructorRole,
+    name="scheduling_instructor_role",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
+)
+lesson_status_enum = SAEnum(
+    LessonStatus,
+    name="scheduling_lesson_status",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
+)
+attendance_status_enum = SAEnum(
+    AttendanceStatus,
+    name="scheduling_attendance_status",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
+)
 
 
 class TimeSlotModel(Base):
@@ -259,4 +306,103 @@ class InstructorAssignmentModel(Base):
             name="fk_scheduling_instructor_assignments_section",
         ),
         Index("ix_scheduling_instructor_assignments_tenant_instructor", "tenant_id", "instructor_id"),
+    )
+
+
+class LessonInstanceModel(Base):
+    __tablename__ = "app_scheduling_lesson_instances"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("app_tenants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    section_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    scheduled_date: Mapped[date] = mapped_column(Date, nullable=False)
+    actual_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    topic_title: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[LessonStatus] = mapped_column(
+        lesson_status_enum,
+        nullable=False,
+        default=LessonStatus.PLANNED,
+        server_default=text("'planned'"),
+    )
+    notes: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    metadata_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default=text("'{}'::json"))
+    created_by: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("NOW()"),
+        onupdate=text("NOW()"),
+    )
+    version: Mapped[int] = mapped_column(BigInteger, nullable=False, default=1, server_default=text("1"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "id", name="ux_scheduling_lesson_instances_tenant_id_id"),
+        ForeignKeyConstraint(
+            ["tenant_id", "section_id"],
+            ["app_scheduling_course_sections.tenant_id", "app_scheduling_course_sections.id"],
+            ondelete="CASCADE",
+            name="fk_scheduling_lesson_instances_section",
+        ),
+        CheckConstraint("version >= 1", name="ck_scheduling_lesson_instances_version_positive"),
+        Index("ix_scheduling_lesson_instances_tenant_section_date", "tenant_id", "section_id", "scheduled_date"),
+        Index("ix_scheduling_lesson_instances_tenant_status", "tenant_id", "status"),
+    )
+
+
+class LessonAttendanceModel(Base):
+    __tablename__ = "app_scheduling_lesson_attendance"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("app_tenants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    lesson_instance_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    student_profile_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    attendance_status: Mapped[AttendanceStatus] = mapped_column(
+        attendance_status_enum,
+        nullable=False,
+        default=AttendanceStatus.PRESENT,
+        server_default=text("'present'"),
+    )
+    marked_by: Mapped[str] = mapped_column(String(255), nullable=False)
+    marked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("NOW()"),
+        onupdate=text("NOW()"),
+    )
+    version: Mapped[int] = mapped_column(BigInteger, nullable=False, default=1, server_default=text("1"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "id", name="ux_scheduling_lesson_attendance_tenant_id_id"),
+        UniqueConstraint(
+            "tenant_id",
+            "lesson_instance_id",
+            "student_profile_id",
+            name="ux_scheduling_lesson_attendance_one_row_per_student",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "lesson_instance_id"],
+            ["app_scheduling_lesson_instances.tenant_id", "app_scheduling_lesson_instances.id"],
+            ondelete="CASCADE",
+            name="fk_scheduling_lesson_attendance_lesson_instance",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "student_profile_id"],
+            ["app_students_profiles.tenant_id", "app_students_profiles.id"],
+            ondelete="CASCADE",
+            name="fk_scheduling_lesson_attendance_student_profile",
+        ),
+        CheckConstraint("version >= 1", name="ck_scheduling_lesson_attendance_version_positive"),
+        Index("ix_scheduling_lesson_attendance_tenant_lesson", "tenant_id", "lesson_instance_id"),
+        Index("ix_scheduling_lesson_attendance_tenant_student", "tenant_id", "student_profile_id"),
     )
