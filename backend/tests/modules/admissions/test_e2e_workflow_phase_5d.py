@@ -587,7 +587,6 @@ class TestAdmissionsWorkflowE2EPhase5D:
         assert tasks_res.status_code == 200, tasks_res.text
         open_tasks = tasks_res.json()["items"]
         assert len(open_tasks) == 1
-        task_id = open_tasks[0]["id"]
 
         # 6) simulate approval transitions (complete all approval tasks)
         sequence_groups = [

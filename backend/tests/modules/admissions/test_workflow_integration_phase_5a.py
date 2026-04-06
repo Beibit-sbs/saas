@@ -26,16 +26,13 @@ Production Patterns:
 
 import pytest
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch, call
-from sqlalchemy import and_
-
+from unittest.mock import AsyncMock, MagicMock, patch
 from app.modules.admissions.service import ApplicationService, DecisionService
 from app.modules.admissions.schemas import (
     ApplicationStage,
     ApplicationConclusionType,
     ApplicationReadSchema,
     ApplicationDecisionReadSchema,
-    StageTransitionAction,
 )
 
 
@@ -406,7 +403,6 @@ class TestSubmitApplicationErrors:
                 )
         
         # Verify query included tenant_id filter
-        call_args = mock_db_session.execute.call_args[0][0]
         # Assert call was made with query (can't easily inspect WHERE clause with MagicMock)
         assert mock_db_session.execute.called
 
@@ -560,7 +556,7 @@ class TestFinalizeDecisionHappyPath:
         decision_service = DecisionService(mock_db_session)
         
         # TEST: "approve" → "accepted"
-        result_approve = await decision_service.finalize_workflow_decision(
+        await decision_service.finalize_workflow_decision(
             tenant_id=1,
             application_id=123,
             workflow_instance_id=789,
@@ -577,7 +573,7 @@ class TestFinalizeDecisionHappyPath:
             None,
         ]
         
-        result_reject = await decision_service.finalize_workflow_decision(
+        await decision_service.finalize_workflow_decision(
             tenant_id=1,
             application_id=124,
             workflow_instance_id=790,
@@ -694,11 +690,7 @@ class TestFinalizeDecisionIdempotency:
         assert result.id == 201 or hasattr(result, "id")
         
         # Application should NOT be updated (idempotent, no second update)
-        updates_to_app = [
-            c for c in mock_db_session.add.call_args_list
-            if "MockDecision" not in str(c)
-        ]
-        # Only the existing decision returned, no new adds
+        # Only the existing decision returned, no extra writes expected.
         assert mock_db_session.flush.call_count <= 1
 
 
@@ -879,7 +871,7 @@ class TestStartAdmissionsWorkflowIntegration:
                 return_value=MagicMock(id=789)
             )
             
-            result = await app_service._start_admissions_workflow(
+            await app_service._start_admissions_workflow(
                 tenant_id=1,
                 application_id=123,
                 applicant_id=42,

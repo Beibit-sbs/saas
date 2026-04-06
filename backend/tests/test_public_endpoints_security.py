@@ -7,7 +7,6 @@ SECURITY REQUIREMENTS:
 - All developer endpoints require X-App-Key/X-App-Secret (strict auth)
 """
 
-import pytest
 from tests.conftest import client
 
 
@@ -137,71 +136,6 @@ class TestTenantMetadataNotExposed:
         """GET /api/v1/public/tenants-safe/{tenant_id}/subscription should NOT exist."""
         response = client.get("/api/v1/public/tenants-safe/1/subscription")
         assert response.status_code in [404, 401, 403]
-
-
-class TestEnumerationAttacksBlocked:
-    """Verify tenant enumeration is impossible."""
-
-    def test_cannot_enumerate_tenants_1_to_100(self) -> None:
-        """Attempting to enumerate tenant_id 1-100 should fail for all."""
-        for tenant_id in range(1, 11):  # Try first 10
-            response = client.get(f"/api/v1/public/tenants/{tenant_id}")
-            assert response.status_code in [404, 401, 403], (
-                f"Tenant {tenant_id}: Got {response.status_code}. "
-                "Public enumeration must be blocked."
-            )
-
-    def test_cannot_enumerate_safe_tenants(self) -> None:
-        """Even 'safe' endpoints should not allow enumeration."""
-        for tenant_id in range(1, 6):
-            response = client.get(f"/api/v1/public/tenants-safe/{tenant_id}")
-            assert response.status_code in [404, 401, 403], (
-                f"Safe tenant {tenant_id}: Got {response.status_code}. "
-                "All public tenant endpoints must be removed."
-            )
-
-
-class TestTenantMetadataNotExposed:
-    """Verify tenant business data (settings, quotas, limits) is never publicly accessible."""
-
-    def test_no_public_settings_leak(self) -> None:
-        """Verify settings dict is never exposed in public API."""
-        # Try all variations
-        endpoints = [
-            "/api/v1/public/tenants/1",
-            "/api/v1/public/tenants-safe/1",
-            "/api/v1/public/tenants/1/features",
-        ]
-        for endpoint in endpoints:
-            response = client.get(endpoint)
-            if response.status_code == 200:
-                data = response.json()
-                assert "settings" not in data, (
-                    f"{endpoint}: settings MUST NOT be exposed (got {list(data.keys())})"
-                )
-
-    def test_no_public_quotas_leak(self) -> None:
-        """Verify quotas dict is never exposed."""
-        endpoints = [
-            "/api/v1/public/tenants/1",
-            "/api/v1/public/tenants-safe/1",
-        ]
-        for endpoint in endpoints:
-            response = client.get(endpoint)
-            if response.status_code == 200:
-                data = response.json()
-                assert "quotas" not in data, (
-                    f"{endpoint}: quotas MUST NOT be exposed"
-                )
-
-    def test_no_public_limits_leak(self) -> None:
-        """Verify limits dict is never exposed."""
-        response = client.get("/api/v1/public/tenants/1")
-        if response.status_code == 200:
-            data = response.json()
-            assert "limits" not in data, (
-                "limits (business-critical) MUST NOT be exposed"
-            )
 
 
 class TestAuthenticatedEndpoints:
