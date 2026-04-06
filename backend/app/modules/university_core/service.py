@@ -596,15 +596,9 @@ def list_entities_for_tenant(entity_name: str, tenant_id: int) -> list[dict[str,
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
     _mark_university_core_usage("list_entities_for_tenant", entity_name, tenant_id)
+    from app.modules.university_core.tenant_entity_impl import list_entities_for_tenant_impl
 
-    if _use_database():
-        try:
-            return _list_entities_for_tenant_db(entity_name, tenant_id)
-        except Exception as exc:
-            if not _should_fallback_to_memory(exc):
-                raise
-
-    return _list_entities_for_tenant_memory(entity_name, tenant_id)
+    return list_entities_for_tenant_impl(entity_name, tenant_id)
 
 
 def create_entity_for_tenant(
@@ -614,26 +608,9 @@ def create_entity_for_tenant(
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
     _mark_university_core_usage("create_entity_for_tenant", entity_name, tenant_id)
+    from app.modules.university_core.tenant_entity_impl import create_entity_for_tenant_impl
 
-    payload_with_tenant: dict[str, object] = {**payload, "tenant_id": str(tenant_id)}
-    normalized = _normalize_payload(entity_name, payload_with_tenant)
-
-    if _use_database():
-        try:
-            return _create_entity_db(entity_name, normalized)
-        except Exception as exc:
-            if not _should_fallback_to_memory(exc):
-                raise
-
-    with _state_lock:
-        _validate_foreign_keys_memory(entity_name, normalized)
-        _state.counters[entity_name] += 1
-        item_id = _state.counters[entity_name]
-        row: dict[str, object] = {"id": item_id, **normalized}
-        if entity_name == "students":
-            row["created_at"] = _now_iso()
-        _state.data[entity_name][item_id] = row
-        return dict(row)
+    return create_entity_for_tenant_impl(entity_name, payload, tenant_id)
 
 
 def update_entity_for_tenant(
@@ -643,18 +620,9 @@ def update_entity_for_tenant(
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
     _mark_university_core_usage("update_entity_for_tenant", entity_name, tenant_id)
+    from app.modules.university_core.tenant_entity_impl import update_entity_for_tenant_impl
 
-    payload_with_tenant: dict[str, object] = {**payload, "tenant_id": str(tenant_id)}
-    normalized = _normalize_payload(entity_name, payload_with_tenant)
-
-    if _use_database():
-        try:
-            return _update_entity_for_tenant_db(entity_name, item_id, normalized, tenant_id)
-        except Exception as exc:
-            if not _should_fallback_to_memory(exc):
-                raise
-
-    return _update_entity_for_tenant_memory(entity_name, item_id, normalized, tenant_id)
+    return update_entity_for_tenant_impl(entity_name, item_id, payload, tenant_id)
 
 
 def delete_entity_for_tenant(
@@ -664,12 +632,6 @@ def delete_entity_for_tenant(
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
     _mark_university_core_usage("delete_entity_for_tenant", entity_name, tenant_id)
+    from app.modules.university_core.tenant_entity_impl import delete_entity_for_tenant_impl
 
-    if _use_database():
-        try:
-            return _delete_entity_for_tenant_db(entity_name, item_id, tenant_id)
-        except Exception as exc:
-            if not _should_fallback_to_memory(exc):
-                raise
-
-    return _delete_entity_for_tenant_memory(entity_name, item_id, tenant_id)
+    return delete_entity_for_tenant_impl(entity_name, item_id, tenant_id)

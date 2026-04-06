@@ -6,11 +6,16 @@ the phased decomposition of university_core.service (C-007).
 
 from typing import Any
 
+from app.modules.university_core.tenant_entity_impl import (
+    create_entity_for_tenant_impl,
+    delete_entity_for_tenant_impl,
+    list_entities_for_tenant_impl,
+    update_entity_for_tenant_impl,
+)
+
 
 def list_entities_for_tenant(entity_name: str, tenant_id: int) -> list[dict[str, object]]:
-    from app.modules.university_core import service
-
-    return service.list_entities_for_tenant(entity_name, tenant_id)
+    return list_entities_for_tenant_impl(entity_name, tenant_id)
 
 
 def create_entity_for_tenant(
@@ -18,9 +23,7 @@ def create_entity_for_tenant(
     payload: dict[str, Any],
     tenant_id: int,
 ) -> dict[str, object]:
-    from app.modules.university_core import service
-
-    return service.create_entity_for_tenant(entity_name, payload, tenant_id)
+    return create_entity_for_tenant_impl(entity_name, payload, tenant_id)
 
 
 def update_entity_for_tenant(
@@ -29,9 +32,7 @@ def update_entity_for_tenant(
     payload: dict[str, Any],
     tenant_id: int,
 ) -> dict[str, object]:
-    from app.modules.university_core import service
-
-    return service.update_entity_for_tenant(entity_name, item_id, payload, tenant_id)
+    return update_entity_for_tenant_impl(entity_name, item_id, payload, tenant_id)
 
 
 def delete_entity_for_tenant(
@@ -39,9 +40,7 @@ def delete_entity_for_tenant(
     item_id: int,
     tenant_id: int,
 ) -> dict[str, object]:
-    from app.modules.university_core import service
-
-    return service.delete_entity_for_tenant(entity_name, item_id, tenant_id)
+    return delete_entity_for_tenant_impl(entity_name, item_id, tenant_id)
 
 
 __all__ = [
