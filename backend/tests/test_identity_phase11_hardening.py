@@ -559,3 +559,37 @@ def test_legacy_migration_parses_tenant_scoped_legacy_keys() -> None:
     assert module._tenant_id_from_key("tenant:42:ldap.bind_dn") == 42
     assert module._tenant_id_from_key("tenant:0:ldap.bind_dn") is None
     assert module._tenant_id_from_key("tenant:1:oidc.client_id") is None
+
+
+# ---------------------------------------------------------------------------
+# C-005: phase1 legacy namespace observability headers
+# ---------------------------------------------------------------------------
+
+_PHASE1_LEGACY_WARNING = '299 - "Legacy identity namespace under migration review: target /api/admin/identity/*"'
+
+
+def _assert_phase1_legacy_headers(response: object) -> None:
+    assert response.headers["X-Legacy-Namespace"] == "true"
+    assert response.headers["Warning"] == _PHASE1_LEGACY_WARNING
+
+
+def test_phase1_get_providers_emits_legacy_namespace_headers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """GET /api/identity/providers must return legacy-namespace observability headers."""
+    monkeypatch.setattr(
+        "app.modules.identity.phase1_router.list_directory_providers",
+        lambda **_kw: [],
+    )
+    response = client.get("/api/identity/providers", headers=ADMIN_HEADERS)
+    assert response.status_code == 200, response.text
+    _assert_phase1_legacy_headers(response)
+
+
+def test_phase1_get_mappings_emits_legacy_namespace_headers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """GET /api/identity/mappings must return legacy-namespace observability headers."""
+    monkeypatch.setattr(
+        "app.modules.identity.phase1_router.list_identity_mappings",
+        lambda **_kw: [],
+    )
+    response = client.get("/api/identity/mappings", headers=ADMIN_HEADERS)
+    assert response.status_code == 200, response.text
+    _assert_phase1_legacy_headers(response)

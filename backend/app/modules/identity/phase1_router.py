@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import logging
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from app.core.errors import DependencyUnavailableError
@@ -25,9 +26,20 @@ from app.modules.rbac.security import get_actor, permission_dependency
 
 router = APIRouter(prefix="/api/identity", tags=["identity"])
 
+logger = logging.getLogger("app.identity_phase1")
+
 
 def _raise_identity_http(exc: IdentityError) -> None:
     raise HTTPException(status_code=int(exc.http_status), detail=exc.to_response())
+
+
+def _mark_phase1_usage(response: Response, tenant: dict[str, object], actor: str | None, resource: str) -> None:
+    response.headers["X-Legacy-Namespace"] = "true"
+    response.headers["Warning"] = '299 - "Legacy identity namespace under migration review: target /api/admin/identity/*"'
+    logger.warning(
+        "legacy identity phase1 endpoint used; resource=%s tenant_id=%s actor=%s",
+        resource, tenant.get("id"), actor,
+    )
 
 
 class IdentityMappingPayload(BaseModel):
@@ -107,7 +119,9 @@ def post_identity_provider(
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
+    response: Response,
 ) -> dict[str, dict[str, Any]]:
+    _mark_phase1_usage(response, tenant, actor, resource="providers")
     try:
         provider = create_directory_provider(
             tenant_id=int(tenant["id"]),
@@ -143,7 +157,9 @@ def get_identity_providers(
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
+    response: Response,
 ) -> dict[str, list[dict[str, Any]]]:
+    _mark_phase1_usage(response, tenant, _, resource="providers")
     try:
         rows = list_directory_providers(tenant_id=int(tenant["id"]))
     except DependencyUnavailableError as exc:
@@ -159,7 +175,9 @@ def put_identity_provider(
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
+    response: Response,
 ) -> dict[str, dict[str, Any]]:
+    _mark_phase1_usage(response, tenant, actor, resource="providers")
     update_payload = payload.model_dump(exclude_none=True)
     if "config" in update_payload:
         update_payload["config"] = payload.config.model_dump(exclude_none=True) if payload.config is not None else {}
@@ -201,7 +219,9 @@ def test_identity_provider(
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
+    response: Response,
 ) -> dict[str, dict[str, Any]]:
+    _mark_phase1_usage(response, tenant, actor, resource="providers")
     try:
         result = test_directory_provider(
             tenant_id=int(tenant["id"]),
@@ -236,7 +256,9 @@ def mapping_preview(
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
+    response: Response,
 ) -> dict[str, dict[str, Any]]:
+    _mark_phase1_usage(response, tenant, actor, resource="providers")
     try:
         result = preview_provider_mapping(
             tenant_id=int(tenant["id"]),
@@ -269,7 +291,9 @@ def post_mapping(
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
+    response: Response,
 ) -> dict[str, dict[str, Any]]:
+    _mark_phase1_usage(response, tenant, actor, resource="mappings")
     try:
         mapping = create_identity_mapping(
             tenant_id=int(tenant["id"]),
@@ -302,7 +326,10 @@ def get_mappings(
     _: Annotated[str, Depends(get_actor)] = None,
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))] = None,
     tenant: Annotated[dict, Depends(get_current_tenant)] = None,
+    response: Response = None,
 ) -> dict[str, list[dict[str, Any]]]:
+    if response is not None:
+        _mark_phase1_usage(response, tenant, _, resource="mappings")
     try:
         rows = list_identity_mappings(tenant_id=int(tenant["id"]), provider_id=provider_id)
     except DependencyUnavailableError as exc:
@@ -318,7 +345,9 @@ def put_mapping(
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
+    response: Response,
 ) -> dict[str, dict[str, Any]]:
+    _mark_phase1_usage(response, tenant, actor, resource="mappings")
     try:
         mapping = update_identity_mapping(
             tenant_id=int(tenant["id"]),
@@ -352,7 +381,9 @@ def remove_mapping(
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
+    response: Response,
 ) -> dict[str, bool]:
+    _mark_phase1_usage(response, tenant, actor, resource="mappings")
     try:
         deleted = delete_identity_mapping(tenant_id=int(tenant["id"]), mapping_id=int(mapping_id))
     except DependencyUnavailableError as exc:
