@@ -54,7 +54,6 @@ def get_ops_summary(
 
     with UnitOfWork() as uow:
         outbox_backlog = _safe_metric_int(lambda: uow.outbox_event_repository.count_backlog(conn=uow.conn))
-        event_queue_size = _safe_metric_int(lambda: uow.outbox_event_repository.count_backlog(conn=uow.conn))
         failed_webhooks = _safe_metric_int(lambda: uow.webhook_repository.count_failed_deliveries(conn=uow.conn))
         dead_webhooks = _safe_metric_int(lambda: uow.webhook_repository.count_dead_deliveries(conn=uow.conn))
         retry_backlog = _safe_metric_int(lambda: uow.webhook_repository.count_retry_backlog(conn=uow.conn))
@@ -62,6 +61,13 @@ def get_ops_summary(
         dead_jobs = _safe_metric_int(lambda: uow.job_repository.count_dead_jobs(conn=uow.conn))
         failed_automation = _safe_metric_int(lambda: uow.automation_repository.count_failed_executions(conn=uow.conn))
         dead_automation = _safe_metric_int(lambda: uow.automation_repository.count_failed_executions(conn=uow.conn))
+
+    # Keep `event_queue_size` for backward compatibility, but derive it from
+    # queue components so it is no longer a direct duplicate of `outbox_backlog`.
+    if outbox_backlog is not None and retry_backlog is not None:
+        event_queue_size = int(outbox_backlog) + int(retry_backlog)
+    else:
+        event_queue_size = outbox_backlog if outbox_backlog is not None else retry_backlog
 
     worker_heartbeat = get_worker_heartbeat()
     scheduler_state = get_scheduler_last_run() or {}

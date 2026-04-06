@@ -15,6 +15,7 @@ class CopilotRecommendationSchema(BaseModel):
     priority: str  # "high" | "medium" | "low"
     reason: str
     suggested_actions: list[CopilotRecommendationActionSchema]
+    created_intervention_case_id: int | None = None
 
 
 class CopilotRecommendationResponseSchema(BaseModel):

@@ -16,11 +16,9 @@ Covers:
 """
 from __future__ import annotations
 
-import pytest
 from uuid import uuid4
 
 from app.platform.ai.recommendations.rule_catalog import evaluate_rules
-from app.platform.ai.recommendations.schemas import CopilotRecommendationSchema
 from app.platform.ai.recommendations.repository import AiRecommendationRepository
 from app.platform.ai.recommendations.service import AiRecommendationService
 from app.platform.ai.service import AiCopilotService
@@ -59,6 +57,16 @@ class TestRuleCatalogAcademicRisk:
         recs = evaluate_rules({"at_risk_count": 0})
         types = [r.recommendation_type for r in recs]
         assert "academic_risk_followup" not in types
+
+    def test_expulsion_escalation_fires_when_severe_risk_positive(self) -> None:
+        recs = evaluate_rules({"at_risk_count": 3, "severe_at_risk_count": 1})
+        types = [r.recommendation_type for r in recs]
+        assert "expulsion_risk_escalation" in types
+
+    def test_expulsion_escalation_does_not_fire_when_no_severe_risk(self) -> None:
+        recs = evaluate_rules({"at_risk_count": 3, "severe_at_risk_count": 0})
+        types = [r.recommendation_type for r in recs]
+        assert "expulsion_risk_escalation" not in types
 
 
 class TestRuleCatalogAutomationHealth:
@@ -217,7 +225,7 @@ class TestAiRecommendationService:
         repo = AiRecommendationRepository()
         svc = AiRecommendationService(repository=repo)
         with UnitOfWork() as uow:
-            recs = svc.generate_recommendations(
+            recs, created_case_id = svc.generate_recommendations(
                 tenant_id=99,
                 actor_id="admin",
                 question="Platform health?",
@@ -228,10 +236,68 @@ class TestAiRecommendationService:
         types = [r.recommendation_type for r in recs]
         assert "failed_jobs_attention" in types
         assert "failed_notifications_attention" in types
+        # non-academic_risk query never creates a case
+        assert created_case_id is None
 
         with UnitOfWork() as uow:
             logged = repo.list_for_tenant(tenant_id=99, conn=uow.conn)
         assert len(logged) >= 2
+
+    def test_returns_tuple_not_list(self) -> None:
+        """generate_recommendations must return a 2-tuple."""
+        repo = AiRecommendationRepository()
+        svc = AiRecommendationService(repository=repo)
+        with UnitOfWork() as uow:
+            result = svc.generate_recommendations(
+                tenant_id=100,
+                actor_id="admin",
+                question="Any issues?",
+                query_type="platform_health",
+                retrieved_context={},
+                uow=uow,
+            )
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        recs, case_id = result
+        assert isinstance(recs, list)
+        assert case_id is None
+
+    def test_academic_risk_without_expulsion_returns_no_case_id(self) -> None:
+        """academic_risk query type with at_risk_count only — no expulsion rule → case_id None."""
+        repo = AiRecommendationRepository()
+        svc = AiRecommendationService(repository=repo)
+        with UnitOfWork() as uow:
+            recs, case_id = svc.generate_recommendations(
+                tenant_id=101,
+                actor_id="admin",
+                question="Risk check",
+                query_type="academic_risk",
+                # at_risk_count>0 fires academic_risk_followup but NOT expulsion_risk_escalation
+                retrieved_context={"at_risk_count": 3, "severe_at_risk_count": 0},
+                uow=uow,
+            )
+        types = [r.recommendation_type for r in recs]
+        assert "academic_risk_followup" in types
+        assert "expulsion_risk_escalation" not in types
+        assert case_id is None
+
+    def test_non_academic_risk_query_with_expulsion_context_returns_no_case_id(self) -> None:
+        """expulsion_risk_escalation rule fires but query_type != academic_risk → no case."""
+        repo = AiRecommendationRepository()
+        svc = AiRecommendationService(repository=repo)
+        with UnitOfWork() as uow:
+            recs, case_id = svc.generate_recommendations(
+                tenant_id=102,
+                actor_id="admin",
+                question="Health?",
+                query_type="platform_health",  # wrong type — case NOT created
+                retrieved_context={"at_risk_count": 5, "severe_at_risk_count": 2},
+                uow=uow,
+            )
+        types = [r.recommendation_type for r in recs]
+        assert "expulsion_risk_escalation" in types
+        # case not created because query_type != academic_risk
+        assert case_id is None
 
 
 # ---------------------------------------------------------------------------
@@ -306,3 +372,31 @@ def test_api_ask_recommendations_schema_shape(reset_shared_state) -> None:
         for action in rec["suggested_actions"]:
             assert "action_type" in action
             assert "label" in action
+
+
+def test_api_ask_returns_created_intervention_case_id_field(reset_shared_state) -> None:
+    """API response must always include created_intervention_case_id (None or int)."""
+    tenant_id = _tenant("ai-rec-case-field")
+    resp = client.post(
+        "/api/v1/admin/platform/ai/copilot/ask",
+        json={"tenant_id": tenant_id, "question": "What is the KPI summary?"},
+        headers=ADMIN_HEADERS,
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    # Field must exist; value should be None when no academic-risk escalation triggered
+    assert "created_intervention_case_id" in body
+    assert body["created_intervention_case_id"] is None
+
+
+def test_api_ask_created_case_id_is_none_for_non_risk_question(reset_shared_state) -> None:
+    """Non-academic-risk questions must never create an intervention case."""
+    tenant_id = _tenant("ai-rec-no-case")
+    resp = client.post(
+        "/api/v1/admin/platform/ai/copilot/ask",
+        json={"tenant_id": tenant_id, "question": "Are there any failed automation jobs?"},
+        headers=ADMIN_HEADERS,
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body.get("created_intervention_case_id") is None

@@ -4,6 +4,7 @@ import {
   Flag,
   Briefcase,
   Bell,
+  AlertTriangle,
   HeartPulse,
   Bot,
   GraduationCap,
@@ -81,6 +82,12 @@ export const NAVIGATION: NavGroup[] = [
         label: "Jobs",
         href: "/console/jobs",
         icon: Briefcase,
+        permission: PERMISSIONS.JOBS_READ,
+      },
+      {
+        label: "Interventions",
+        href: "/console/interventions",
+        icon: AlertTriangle,
         permission: PERMISSIONS.JOBS_READ,
       },
       {
@@ -183,6 +190,12 @@ export const NAVIGATION: NavGroup[] = [
         href: "/console/scheduling",
         icon: CalendarDays,
         permission: PERMISSIONS.SCHEDULING_READ,
+      },
+      {
+        label: "Admissions",
+        href: "/console/admissions",
+        icon: ClipboardCheck,
+        permission: PERMISSIONS.ADMISSIONS_READ,
       },
     ],
   },
@@ -344,6 +357,12 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
         label: "Jobs",
         href: "/console/jobs",
         icon: Briefcase,
+        permission: PERMISSIONS.JOBS_READ,
+      },
+      {
+        label: "Interventions",
+        href: "/console/interventions",
+        icon: AlertTriangle,
         permission: PERMISSIONS.JOBS_READ,
       },
       {

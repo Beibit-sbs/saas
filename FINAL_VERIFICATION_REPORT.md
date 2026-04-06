@@ -3,7 +3,26 @@
 
 **Report Date:** April 2, 2026  
 **Assessment Mode:** FINAL VERIFICATION  
-**Status:** CODE CHANGES VERIFIED ✓ | RUNTIME UNREACHABLE ⚠  
+**Status:** HISTORICAL CODE-ASSESSMENT REPORT | SUPERSEDED BY 2026-04-06 GREEN RUNTIME VALIDATION ✓  
+
+---
+
+## 2026-04-06 ADDENDUM
+
+This report remains useful as a historical record of the original code-level SaaS blocker review, but its runtime warning is no longer current.
+
+Validated after this report:
+
+- `bash scripts/release_gate.sh` — PASS
+- `bash scripts/platform_smoke_check.sh` — PASS (`[SUMMARY] passed=8 failed=0`)
+- Extended academic-chain regression — PASS (`53 passed, 2 warnings`)
+- Alembic target DB migration — PASS to head `d4c5e6f7a8b9`
+
+Current canonical operational status is tracked in:
+
+- [PILOT_READINESS_SUMMARY.md](PILOT_READINESS_SUMMARY.md)
+- [docs/PILOT_DEPLOYMENT_CHECKLIST.md](docs/PILOT_DEPLOYMENT_CHECKLIST.md)
+- [docs/UNIVERSITY_OPERATIONAL_MODEL.md](docs/UNIVERSITY_OPERATIONAL_MODEL.md)
 
 ---
 

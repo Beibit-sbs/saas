@@ -57,6 +57,9 @@ from app.modules.help.router import router as help_router
 from app.modules.i18n.router import admin_router as i18n_admin_router
 from app.modules.i18n.router import public_router as i18n_public_router
 from app.modules.integrations.router import router as integrations_router
+from app.modules.interventions.router import router as interventions_router
+from app.modules.interventions.risk_router import router as interventions_risk_router
+from app.modules.org_structure.router import router as org_structure_router
 from app.modules.identity.router import router as identity_router
 from app.modules.identity.phase1_router import router as identity_phase1_router
 from app.modules.ldap.router import router as ldap_router
@@ -70,6 +73,7 @@ from app.platform.router_ops import router as platform_v1_ops_router
 from app.platform.router_semantic import router as platform_v2_semantic_router
 from app.platform.router_developer_api import router as platform_developer_api_router
 from app.platform.router_internal import router as platform_v1_internal_router
+from app.platform.router_mcp import router as platform_v1_mcp_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.workflows.router import router as workflows_router
 from app.modules.rbac.router import router as rbac_router
@@ -92,6 +96,7 @@ from app.modules.observability.logging import (
     trace_id_var,
 )
 from app.modules.observability.health import deep_payload, live_payload, readiness_payload
+from app.modules.observability.otel import setup_otel, teardown_otel
 from app.modules.observability.perf_profile import (
     begin_request_profile,
     finish_request_profile,
@@ -145,6 +150,9 @@ async def lifespan(fastapi_app: FastAPI):
 
     bootstrap_runtime_schema()
 
+    # OpenTelemetry — no-op if OTEL_EXPORTER_OTLP_ENDPOINT is not set.
+    setup_otel(fastapi_app)
+
     # Wire the admissions SQLAlchemy session factory.
     # build_engine() raises RuntimeError when DATABASE_URL is absent; we catch it
     # and log a warning so that the server still starts (endpoints return 503).
@@ -161,6 +169,8 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.students_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.grades_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.workflows_session_factory = make_session_factory(_admissions_engine)
+        fastapi_app.state.interventions_session_factory = make_session_factory(_admissions_engine)
+        fastapi_app.state.org_structure_session_factory = make_session_factory(_admissions_engine)
         logger.info("admissions database engine initialised (pool_size=5, max_overflow=10)")
     except RuntimeError as exc:
         fastapi_app.state.admissions_engine = None
@@ -168,6 +178,8 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.students_session_factory = None
         fastapi_app.state.grades_session_factory = None
         fastapi_app.state.workflows_session_factory = None
+        fastapi_app.state.interventions_session_factory = None
+        fastapi_app.state.org_structure_session_factory = None
         logger.warning(
             "admissions database not configured — admissions endpoints will return HTTP 503. "
             "Reason: %s",
@@ -191,6 +203,8 @@ async def lifespan(fastapi_app: FastAPI):
         _admissions_engine.dispose()
         logger.info("admissions database engine disposed")
 
+    teardown_otel()
+
 
 app = FastAPI(title="AI Engineering Backend", version="0.1.0", lifespan=lifespan)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=get_trusted_hosts())
@@ -209,6 +223,8 @@ app.include_router(help_router)
 app.include_router(i18n_public_router)
 app.include_router(i18n_admin_router)
 app.include_router(integrations_router)
+app.include_router(interventions_router)
+app.include_router(interventions_risk_router)
 app.include_router(identity_router)
 app.include_router(identity_phase1_router)
 app.include_router(ldap_router)
@@ -225,6 +241,7 @@ app.include_router(enrollments_router)
 app.include_router(legacy_enrollments_router)
 app.include_router(grades_router)
 app.include_router(scheduling_router)
+app.include_router(org_structure_router)
 app.include_router(transcripts_router)
 app.include_router(degree_progress_router)
 app.include_router(academic_records_router)
@@ -238,6 +255,7 @@ app.include_router(platform_v1_ops_router)
 app.include_router(platform_v2_semantic_router)
 app.include_router(platform_developer_api_router)
 app.include_router(platform_v1_internal_router)
+app.include_router(platform_v1_mcp_router)
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 

@@ -16,10 +16,10 @@ This runbook defines the operational response flow for production incidents in t
 
 Use these endpoints as the primary signal source:
 
-- `GET /health`
-- `GET /health/db`
+- `GET /health/live`
+- `GET /health/ready`
 - `GET /health/worker`
-- `GET /health/comprehensive`
+- `GET /health/deep`
 - `GET /metrics/ops`
 - `GET /metrics/latency`
 - `GET /api/v1/internal/webhooks/failed-deliveries`
@@ -65,10 +65,10 @@ systemctl status platform-scheduler.service --no-pager
 Health checks:
 
 ```bash
-curl -fsS https://<host>/health
-curl -fsS https://<host>/health/db
+curl -fsS https://<host>/health/live
+curl -fsS https://<host>/health/ready
 curl -fsS https://<host>/health/worker
-curl -fsS https://<host>/health/comprehensive
+curl -fsS https://<host>/health/deep
 ```
 
 Operational metrics:
@@ -85,8 +85,7 @@ curl -fsS -H "Authorization: Bearer <METRICS_TOKEN>" https://<host>/metrics
 
 Detection:
 
-- `/health/db` returns `503`
-- `/health/comprehensive` shows `components.database=unreachable`
+- `/health/deep` returns `503` or `dependencies.postgresql.healthy=false`
 - API `5xx` rate increases
 
 Actions:
@@ -95,7 +94,7 @@ Actions:
 2. Verify disk and WAL health.
 3. If needed, temporarily stop worker and scheduler to reduce write pressure.
 4. Recover DB service.
-5. Re-check `/health/db` and `/health/comprehensive`.
+5. Re-check `/health/deep` and `/health/worker`.
 6. Start worker and scheduler in controlled order.
 
 Exit criteria:
@@ -188,7 +187,7 @@ Exit criteria:
 
 Detection:
 
-- `/health/comprehensive` shows `components.scheduler=unreachable`
+- `/health/deep` shows `dependencies.scheduler.healthy=false`
 - `/metrics/ops.scheduler_last_run` is stale
 
 Actions:
@@ -244,7 +243,7 @@ Exit criteria:
 
 Detection:
 
-- `/health/db` flaps between `200` and `503`
+- `/health/deep` flips between healthy/degraded with `dependencies.postgresql.healthy=false`
 - request latency percentiles rise while API process stays healthy
 - post-deploy failures begin after schema change or migration window
 
@@ -282,8 +281,8 @@ Exit criteria:
 
 ## Recovery Validation Checklist
 
-- `/health`, `/health/db`, `/health/worker` are green
-- `/health/comprehensive.status` is `healthy` or known `degraded` with accepted cause
+- `/health/live`, `/health/ready`, `/health/worker` are green
+- `/health/deep.status` is `ok` or known `degraded` with accepted cause
 - `/metrics/ops` backlog and failures are not increasing abnormally
 - `bash scripts/platform_smoke_check.sh` passes on the deployed release or equivalent environment
 - critical smoke tests pass

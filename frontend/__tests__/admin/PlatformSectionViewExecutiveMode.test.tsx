@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { PlatformSectionView } from "../../app/(admin)/console/platform/platform-section-view";
@@ -51,7 +51,7 @@ describe("PlatformSectionView executive mode in canonical flow", () => {
     render(<PlatformSectionView section={"overview" as any} />);
 
     const toggle = screen.getByTestId("canonical-executive-mode-toggle");
-    await user.click(toggle);
+    await act(async () => { await user.click(toggle); });
 
     expect(window.localStorage.getItem("admin.executiveMode")).toBe("1");
     expect(toggle).toHaveAttribute("aria-pressed", "true");

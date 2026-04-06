@@ -38,6 +38,8 @@ const FILTER_FIELDS = [
   { key: "job_type", label: "Type", type: "text" as const, placeholder: "Filter type…" },
 ];
 
+const DE_SCOPED_MANUAL_JOB_TYPES = new Set(["sync", "ldap.sync", "ai.generate"]);
+
 export default function JobsPage() {
   const { t } = useLanguage();
   const table = useTableQueryState({ filterKeys: ["status", "job_type"] as const, defaultPageSize: 20, defaultSort: { key: "created", direction: "desc" } });
@@ -51,6 +53,8 @@ export default function JobsPage() {
   const retry = useRetryJob();
   const cancel = useCancelJob();
   const trigger = useTriggerJob();
+  const normalizedJobType = jobType.trim().toLowerCase();
+  const isDeScopedJobType = DE_SCOPED_MANUAL_JOB_TYPES.has(normalizedJobType);
   const rows = Array.isArray(data?.items) ? data.items : [];
   const selectedJob = rows.find((item) => item.id === detail.selectedId) ?? null;
 
@@ -192,7 +196,12 @@ export default function JobsPage() {
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="job-type">Job type</Label>
-            <Input id="job-type" value={jobType} onChange={(event) => setJobType(event.target.value)} placeholder="sync_grades" />
+            <Input id="job-type" value={jobType} onChange={(event) => setJobType(event.target.value)} placeholder="backup.run" />
+            {isDeScopedJobType && (
+              <p className="text-xs text-danger">
+                This job type is de-scoped and cannot be enqueued manually.
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="tenant-id">Tenant ID</Label>
@@ -200,7 +209,7 @@ export default function JobsPage() {
           </div>
           <PermissionGate permission={PERMISSIONS.JOBS_WRITE}>
             <Button
-              disabled={!jobType.trim() || trigger.isPending}
+              disabled={!jobType.trim() || isDeScopedJobType || trigger.isPending}
               onClick={() =>
                 trigger.mutate(
                   { job_type: jobType.trim(), tenant_id: tenantId.trim() || undefined },

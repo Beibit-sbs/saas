@@ -37,3 +37,13 @@ class StudentProfileRead(BaseModel):
     grades: list[dict[str, Any]]
     department: dict[str, Any] | None
     automation_flags: dict[str, Any]
+
+
+class FacultyProfileRead(BaseModel):
+    """Full semantic profile of faculty/advisor entity for AI reasoning."""
+
+    faculty: dict[str, Any] | None
+    advised_students: list[dict[str, Any]]
+    advised_programs: list[dict[str, Any]]
+    departments: list[dict[str, Any]]
+    automation_flags: dict[str, Any]

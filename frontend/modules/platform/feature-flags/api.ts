@@ -1,14 +1,11 @@
-import { apiGet, apiPatch, apiPost } from "@/shared/api/client";
-import type { FeatureFlag, TenantFlagOverridePayload, UpdateFlagPayload } from "./types";
+import { apiGet, apiPost } from "@/shared/api/client";
+import type { FeatureFlag, UpsertFlagPayload } from "./types";
 
-const BASE = "/api/v1/admin/features";
+const BASE = "/api/admin/feature-flags";
 
 export const featureFlagsApi = {
-  list: () => apiGet<FeatureFlag[]>(BASE),
+  list: () => apiGet<{ flags: FeatureFlag[] }>(BASE).then((r) => r.flags),
 
-  update: (key: string, payload: UpdateFlagPayload) =>
-    apiPatch<FeatureFlag>(`${BASE}/${key}`, payload),
-
-  setTenantOverride: (key: string, payload: TenantFlagOverridePayload) =>
-    apiPost<FeatureFlag>(`${BASE}/${key}/overrides`, payload),
+  upsert: (payload: UpsertFlagPayload) =>
+    apiPost<{ flag: FeatureFlag }>(BASE, payload).then((r) => r.flag),
 };

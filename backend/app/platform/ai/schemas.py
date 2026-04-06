@@ -31,6 +31,7 @@ class CopilotAnswerReadSchema(BaseModel):
     sources: list[CopilotSourceReferenceSchema]
     warnings: list[str]
     recommendations: list[CopilotRecommendationSchema] = []
+    created_intervention_case_id: int | None = None
 
 
 class CopilotQueryLogReadSchema(BaseModel):

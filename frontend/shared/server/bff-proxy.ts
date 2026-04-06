@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerApiBaseUrl } from "@/shared/server/runtime-env";
 
+function readAuthToken(request: NextRequest): string | undefined {
+  return request.cookies.get("app_access_token")?.value ?? request.cookies.get("admin_token")?.value;
+}
+
 const UPSTREAM_TIMEOUT_MS = 8000;
 const BFF_DEBUG = process.env.BFF_DEBUG === "1";
 
@@ -62,7 +66,7 @@ function bffDebugLog(payload: Record<string, unknown>) {
 
 export async function proxyBffRequest(request: NextRequest, pathParts: string[]) {
   const apiBase = getServerApiBaseUrl();
-  const token = request.cookies.get("admin_token")?.value;
+  const token = readAuthToken(request);
   const csrfHeader = request.headers.get("x-csrf-token");
   const requestPath = `/${pathParts.join("/")}`;
 

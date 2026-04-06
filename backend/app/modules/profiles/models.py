@@ -92,7 +92,17 @@ class DepartmentModel(Base):
     )
     code: Mapped[str] = mapped_column(String(32), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    unit_type: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        default="department",
+        server_default=text("'department'"),
+    )
     parent_department_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    head_person_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    location: Mapped[str | None] = mapped_column(String(500), nullable=True)
     status: Mapped[str] = mapped_column(
         String(64),
         nullable=False,
@@ -132,8 +142,15 @@ class DepartmentModel(Base):
             ["app_profiles_departments.tenant_id", "app_profiles_departments.id"],
             ondelete="RESTRICT",
         ),
+        ForeignKeyConstraint(
+            ["tenant_id", "head_person_id"],
+            ["app_profiles_people.tenant_id", "app_profiles_people.id"],
+            ondelete="RESTRICT",
+        ),
         Index("ix_profiles_departments_tenant_name", "tenant_id", "name"),
         Index("ix_profiles_departments_tenant_parent", "tenant_id", "parent_department_id"),
+        Index("ix_profiles_departments_tenant_type", "tenant_id", "unit_type"),
+        Index("ix_profiles_departments_tenant_head", "tenant_id", "head_person_id"),
         Index("ix_profiles_departments_tenant_status", "tenant_id", "status"),
     )
 

@@ -9,6 +9,7 @@ from app.modules.audit.service import log_admin_action
 from app.modules.rbac.service import is_platform_admin
 from app.modules.rbac.security import get_actor, permission_dependency, resolve_current_user_claims
 from app.modules.tenants.service import get_tenant
+from app.modules.integrations.service import get_runtime_value, save_setting
 from app.platform.analytics import service as analytics_service
 from app.platform.analytics.entitlements import (
     build_analytics_read_policy_state_read,
@@ -58,7 +59,7 @@ from app.platform.automation.templates.schemas import (
     InstantiateTemplateSchema,
 )
 from app.platform.context import service as context_service
-from app.platform.context.schemas import StudentProfileRead
+from app.platform.context.schemas import FacultyProfileRead, StudentProfileRead
 from app.platform.billing import service as billing_service
 from app.platform.feature_flags import service as flags_service
 from app.platform.jobs import service as jobs_service
@@ -66,6 +67,8 @@ from app.platform.notifications import service as notifications_service
 from app.platform.webhooks import service as webhooks_service
 from app.platform.uow import UnitOfWork
 from app.platform.schemas import (
+    AcademicRiskThresholdsRead,
+    AcademicRiskThresholdsPutRequest,
     AnalyticsEntitlementRolloutSummaryListRead,
     AnalyticsEntitlementRolloutStateRead,
     FeatureFlagRead,
@@ -286,11 +289,24 @@ def set_tenant_suspension(
     return TenantPlatformRead.model_validate(row)
 
 
+@router.get("/features", response_model=list[FeatureFlagRead])
+def list_platform_features(_actor: Actor) -> list[FeatureFlagRead]:
+    rows = flags_service.list_tenant_features(PLATFORM_TENANT_ID)
+    return [FeatureFlagRead.model_validate(row) for row in rows]
+
+
 @router.put("/features/{module}/{key}", response_model=FeatureFlagRead)
 def set_platform_feature(module: str, key: str, payload: FeatureFlagSetRequest, request: Request, actor: Actor) -> FeatureFlagRead:
-    row = flags_service.set_platform_feature(module, key, payload.enabled)
+    row = flags_service.set_platform_feature(module, key, payload.enabled, payload.rollout_percentage)
     _audit(request, actor, "platform_core.feature.platform.set", 1, {"module": module, "key": key})
     return FeatureFlagRead.model_validate(row)
+
+
+@router.get("/tenants/{tenant_id}/features", response_model=list[FeatureFlagRead])
+def list_tenant_features(tenant_id: int, request: Request, _actor: Actor) -> list[FeatureFlagRead]:
+    _enforce_target_tenant_match(request, tenant_id)
+    rows = flags_service.list_tenant_features(tenant_id)
+    return [FeatureFlagRead.model_validate(row) for row in rows]
 
 
 @router.put("/tenants/{tenant_id}/features/{module}/{key}", response_model=FeatureFlagRead)
@@ -303,7 +319,7 @@ def set_tenant_feature(
     actor: Actor,
 ) -> FeatureFlagRead:
     _enforce_target_tenant_match(request, tenant_id)
-    row = flags_service.set_tenant_feature(tenant_id, module, key, payload.enabled)
+    row = flags_service.set_tenant_feature(tenant_id, module, key, payload.enabled, payload.rollout_percentage)
     _audit(request, actor, "platform_core.feature.tenant.set", tenant_id, {"module": module, "key": key})
     return FeatureFlagRead.model_validate(row)
 
@@ -686,6 +702,22 @@ def get_student_context_profile(
     return StudentProfileRead.model_validate(profile)
 
 
+@router.get("/platform/context/faculty/{faculty_id}", response_model=FacultyProfileRead)
+def get_faculty_context_profile(
+    faculty_id: str,
+    tenant_id: int,
+    _actor: Actor,
+) -> FacultyProfileRead:
+    """Return the full semantic profile for a faculty/advisor entity (admin-scoped)."""
+    with UnitOfWork() as uow:
+        profile = context_service.build_faculty_profile(
+            faculty_id=faculty_id,
+            tenant_id=tenant_id,
+            conn=uow.conn,
+        )
+    return FacultyProfileRead.model_validate(profile)
+
+
 # ------------------------------------------------------------------ #
 #  AI Copilot Foundation v1 (read-only)                               #
 # ------------------------------------------------------------------ #
@@ -923,3 +955,72 @@ def subscribe_developer_app_to_event(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.developer_app.subscribe", tenant_id, {"app_id": app_id, "event_type": body.event_type})
     return DeveloperAppEventSubscriptionReadSchema.model_validate(row)
+
+
+# ------------------------------------------------------------------ #
+#  AI Policy: per-tenant academic risk thresholds                     #
+# ------------------------------------------------------------------ #
+
+
+@router.get("/platform/ai/risk-thresholds", response_model=AcademicRiskThresholdsRead)
+def get_ai_risk_thresholds(
+    tenant_id: int,
+    _actor: Actor,
+) -> AcademicRiskThresholdsRead:
+    """Return the effective academic risk grade thresholds for a tenant."""
+    risk = int(
+        get_runtime_value(
+            "academic.risk_grade_threshold",
+            "ACADEMIC_RISK_GRADE_THRESHOLD",
+            "60",
+            tenant_id=tenant_id,
+        )
+    )
+    severe = int(
+        get_runtime_value(
+            "academic.severe_risk_grade_threshold",
+            "ACADEMIC_SEVERE_RISK_GRADE_THRESHOLD",
+            "50",
+            tenant_id=tenant_id,
+        )
+    )
+    return AcademicRiskThresholdsRead(
+        tenant_id=tenant_id,
+        risk_grade_threshold=risk,
+        severe_risk_grade_threshold=severe,
+    )
+
+
+@router.put("/platform/ai/risk-thresholds", response_model=AcademicRiskThresholdsRead)
+def set_ai_risk_thresholds(
+    body: AcademicRiskThresholdsPutRequest,
+    request: Request,
+    actor: Actor,
+) -> AcademicRiskThresholdsRead:
+    """Override academic risk grade thresholds for a specific tenant."""
+    tenant_id = _require_request_tenant_id(request)
+    save_setting(
+        "academic.risk_grade_threshold",
+        str(body.risk_grade_threshold),
+        tenant_id=tenant_id,
+    )
+    save_setting(
+        "academic.severe_risk_grade_threshold",
+        str(body.severe_risk_grade_threshold),
+        tenant_id=tenant_id,
+    )
+    _audit(
+        request,
+        actor,
+        "platform_core.ai.risk_thresholds.update",
+        tenant_id,
+        {
+            "risk_grade_threshold": body.risk_grade_threshold,
+            "severe_risk_grade_threshold": body.severe_risk_grade_threshold,
+        },
+    )
+    return AcademicRiskThresholdsRead(
+        tenant_id=tenant_id,
+        risk_grade_threshold=body.risk_grade_threshold,
+        severe_risk_grade_threshold=body.severe_risk_grade_threshold,
+    )

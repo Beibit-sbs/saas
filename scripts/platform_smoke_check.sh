@@ -9,7 +9,13 @@ bash "${ROOT_DIR}/scripts/docker_only_guard.sh"
 export ROOT_DIR
 export BACKEND_DIR="${ROOT_DIR}/backend"
 export REDIS_URL="${REDIS_URL:-redis://redis:6379/0}"
-: "${JWT_SECRET:?set JWT_SECRET explicitly for smoke check}"
+
+# Load JWT_SECRET from .env if not already set in environment
+if [[ -z "${JWT_SECRET:-}" && -f "${ROOT_DIR}/infra/.env" ]]; then
+  source <(grep '^JWT_SECRET=' "${ROOT_DIR}/infra/.env")
+fi
+
+: "${JWT_SECRET:?JWT_SECRET not found. Set JWT_SECRET in environment or ${ROOT_DIR}/infra/.env}"
 export JWT_SECRET
 export API_BASE_URL="${API_BASE_URL:-http://backend:8000}"
 export ADMIN_PANEL_URL="${ADMIN_PANEL_URL:-http://nginx}"
@@ -18,7 +24,7 @@ export RBAC_ALLOW_DEV_FALLBACK="${RBAC_ALLOW_DEV_FALLBACK:-false}"
 
 pushd "${ROOT_DIR}/infra" >/dev/null
 "${COMPOSE[@]}" up -d --build
-"${COMPOSE[@]}" exec -T backend python - <<'PY'
+"${COMPOSE[@]}" exec -T backend sh -c "ROOT_DIR='${ROOT_DIR}' BACKEND_DIR='${BACKEND_DIR}' REDIS_URL='${REDIS_URL}' API_BASE_URL='${API_BASE_URL}' ADMIN_PANEL_URL='${ADMIN_PANEL_URL}' python -" <<'PY'
 from __future__ import annotations
 
 import os
@@ -47,6 +53,7 @@ from app.platform.developer import service as developer_service
 from app.platform.events.handlers.analytics_handler import AnalyticsEventHandler
 from app.platform.events.handlers.context_projection_handler import ContextProjectionHandler
 from app.platform.events.handlers.webhook_handler import WebhookEventHandler
+from app.platform.event_ingestion import service as event_ingestion_service
 from app.platform.events.publisher import EventPublisher
 from app.platform.events.schemas import OutboxEventRead
 from app.platform.events.worker import OutboxEventWorker
@@ -57,7 +64,15 @@ from app.platform.uow import UnitOfWork
 import app.platform.webhooks.service as webhook_service_module
 
 
-client = TestClient(app)
+SMOKE_ADMIN_PERMISSIONS = [
+    "platform.admin.read",
+    "platform.admin.write",
+    "health.read",
+    "metrics.read",
+]
+
+client = TestClient(app, base_url=os.environ["API_BASE_URL"], raise_server_exceptions=False)
+client.__enter__()
 results: list[tuple[str, bool, str]] = []
 
 
@@ -82,13 +97,13 @@ def run_check(name: str, callback) -> None:
 
 
 def auth_headers(user_id: str, roles: list[str], tenant_id: int) -> dict[str, str]:
-    for role in roles:
-        try:
-            rbac_service.assign_role_to_user(tenant_id=tenant_id, user_id=user_id, role=role)
-        except ValueError as exc:
-            if "unknown role" not in str(exc):
-                raise
-    token = create_access_token(user_id=user_id, roles=roles, auth_source="smoke")
+    token = create_access_token(
+        user_id=user_id,
+        roles=roles,
+        auth_source="smoke",
+        tenant_id=tenant_id,
+        permissions=SMOKE_ADMIN_PERMISSIONS,
+    )
     return {
         "Authorization": f"Bearer {token}",
         "X-Tenant-ID": str(tenant_id),
@@ -96,7 +111,7 @@ def auth_headers(user_id: str, roles: list[str], tenant_id: int) -> dict[str, st
 
 
 def internal_headers() -> dict[str, str]:
-    token = os.getenv("PLATFORM_INTERNAL_TOKEN", "").strip()
+    token = os.getenv("INTERNAL_API_TOKEN", "").strip() or os.getenv("PLATFORM_INTERNAL_TOKEN", "").strip()
     return {"Authorization": f"Bearer {token}"} if token else {}
 
 
@@ -112,6 +127,7 @@ def reset_state() -> None:
     with UnitOfWork() as uow:
         uow.outbox_event_repository.clear_state(conn=uow.conn)
         uow.analytics_repository.clear_state()
+        uow.platform_event_repository.clear_state(conn=uow.conn)
 
 
 reset_state()
@@ -119,7 +135,7 @@ reset_state()
 suffix = uuid.uuid4().hex[:8]
 tenant = tenant_service.create_tenant(f"pilot-smoke-{suffix}", f"Pilot Smoke {suffix}")
 tenant_id = int(tenant["tenant_id"])
-admin_headers = auth_headers("pilot.ops@example.com", ["admin"], tenant_id)
+admin_headers = auth_headers("pilot.ops@example.com", ["institution_admin"], tenant_id)
 internal_auth_headers = internal_headers()
 
 with UnitOfWork() as uow:
@@ -138,9 +154,13 @@ students_service.create_student(
 
 
 def health_check() -> str:
-    ready = client.get("/health")
-    ensure(ready.status_code == 200, f"/health returned {ready.status_code}")
-    ensure(ready.json() == {"status": "ok", "service": "api"}, "unexpected /health payload")
+    live = client.get("/health/live")
+    ensure(live.status_code == 200, f"/health/live returned {live.status_code}")
+    ensure(live.json().get("live") is True, "unexpected /health/live payload")
+
+    ready = client.get("/health/ready")
+    ensure(ready.status_code == 200, f"/health/ready returned {ready.status_code}")
+    ensure(ready.json().get("ready") is True, "unexpected /health/ready payload")
 
     worker_run = client.post("/api/v1/internal/worker/run-once", headers=internal_auth_headers)
     ensure(worker_run.status_code == 200, f"worker run-once returned {worker_run.status_code}")
@@ -148,15 +168,18 @@ def health_check() -> str:
     scheduler_run = client.post("/api/v1/internal/scheduler/run-once", headers=internal_auth_headers)
     ensure(scheduler_run.status_code == 200, f"scheduler run-once returned {scheduler_run.status_code}")
 
-    db = client.get("/health/db")
-    ensure(db.status_code in {200, 503}, f"/health/db returned {db.status_code}")
-    db_payload = db.json()
-    ensure(db_payload.get("database") in {"reachable", "unreachable"}, "unexpected /health/db payload")
+    deep = client.get("/health/deep", headers=admin_headers)
+    ensure(deep.status_code in {200, 503}, f"/health/deep returned {deep.status_code}")
+    deep_payload = deep.json()
+    dependencies = deep_payload.get("dependencies", {})
+    postgres = dependencies.get("postgresql", {})
+    ensure(isinstance(postgres, dict), "unexpected /health/deep postgresql payload")
+    db_status = "reachable" if postgres.get("healthy") is True else "unreachable"
 
-    worker = client.get("/health/worker")
+    worker = client.get("/health/worker", headers=admin_headers)
     ensure(worker.status_code == 200, f"/health/worker returned {worker.status_code}")
     ensure(worker.json().get("worker") == "reachable", "worker heartbeat missing")
-    return f"api=ok db={db_payload['database']} worker=reachable scheduler=ran"
+    return f"live=ok ready=ok db={db_status} worker=reachable scheduler=ran"
 
 
 def outbox_processing_check() -> str:
@@ -276,6 +299,11 @@ def webhook_retry_check() -> str:
 
 
 def kpi_refresh_check() -> str:
+    event_ingestion_service.record_event(
+        tenant_id=tenant_id,
+        event_type="student.created",
+        payload={"student_id": f"SMOKE-{suffix.upper()}"},
+    )
     response = client.post(f"/api/v1/internal/platform/kpi/refresh/{tenant_id}", headers=internal_auth_headers)
     ensure(response.status_code == 200, f"kpi refresh returned {response.status_code}")
     payload = response.json()
@@ -321,15 +349,14 @@ def developer_auth_flow_check() -> str:
     )
     ensure(install_resp.status_code == 201, f"developer install returned {install_resp.status_code}")
 
-    unauthorized = client.get("/api/v1/public/students")
+    unauthorized = client.get("/api/dev/students")
     ensure(unauthorized.status_code == 401, f"unauthorized public request returned {unauthorized.status_code}")
 
     authorized = client.get(
-        "/api/v1/public/students",
+        "/api/dev/students",
         headers={
             "X-App-Key": app_payload["app_key"],
             "X-App-Secret": app_payload["app_secret"],
-            "X-Tenant-Id": str(tenant_id),
         },
     )
     ensure(authorized.status_code == 200, f"authorized public request returned {authorized.status_code}")
@@ -345,7 +372,7 @@ def developer_auth_flow_check() -> str:
 
 
 def metrics_check() -> str:
-    ops = client.get("/metrics/ops")
+    ops = client.get("/metrics/ops", headers=admin_headers)
     ensure(ops.status_code == 200, f"/metrics/ops returned {ops.status_code}")
     ops_payload = ops.json()
     for key in (
@@ -360,7 +387,7 @@ def metrics_check() -> str:
     ):
         ensure(key in ops_payload, f"missing ops metric: {key}")
 
-    latency = client.get("/metrics/latency")
+    latency = client.get("/metrics/latency", headers=admin_headers)
     ensure(latency.status_code == 200, f"/metrics/latency returned {latency.status_code}")
     latency_payload = latency.json()
     ensure("developer_api_error_count" in latency_payload, "missing developer_api_error_count")

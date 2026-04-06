@@ -1,5 +1,6 @@
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import AutomationRulesPage from "../../app/(admin)/console/automation/page";
@@ -124,6 +125,12 @@ const MOCK_EXECUTIONS = [
   },
 ];
 
+async function clickWithAct(user: ReturnType<typeof userEvent.setup>, element: Element) {
+  await act(async () => {
+    await user.click(element);
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Automation Rules Page
 // ---------------------------------------------------------------------------
@@ -228,8 +235,12 @@ describe("AutomationRulesPage", () => {
 
     render(<AutomationRulesPage />);
 
-    fireEvent.click(screen.getByTestId("toggle-rule-1"));
-    expect(screen.getByText("Change rule status?")).toBeInTheDocument();
+    const user = userEvent.setup();
+
+    return (async () => {
+      await clickWithAct(user, screen.getByTestId("toggle-rule-1"));
+      expect(screen.getByText("Change rule status?")).toBeInTheDocument();
+    })();
   });
 
   it("mutation succeeds and calls mutateAsync with correct params", async () => {
@@ -248,19 +259,20 @@ describe("AutomationRulesPage", () => {
 
     render(<AutomationRulesPage />);
 
-    fireEvent.click(screen.getByTestId("toggle-rule-1"));
+    const user = userEvent.setup();
+
+    await clickWithAct(user, screen.getByTestId("toggle-rule-1"));
 
     // Get the button that appears in the dialog (the confirm button)
     const buttons = screen.queryAllByRole("button");
     const confirmButton = buttons.find((btn) => btn.textContent === "Deactivate");
     if (confirmButton) {
-      fireEvent.click(confirmButton);
+      await clickWithAct(user, confirmButton);
     }
 
-    // Wait for async mutation
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    expect(mutateStub).toHaveBeenCalledWith({ id: 1, is_active: false });
+    await waitFor(() => {
+      expect(mutateStub).toHaveBeenCalledWith({ id: 1, is_active: false });
+    });
   });
 
   it("shows success toast message on rule activation", async () => {
@@ -282,24 +294,25 @@ describe("AutomationRulesPage", () => {
 
     render(<AutomationRulesPage />);
 
-    fireEvent.click(screen.getByTestId("toggle-rule-1"));
+    const user = userEvent.setup();
+
+    await clickWithAct(user, screen.getByTestId("toggle-rule-1"));
 
     // Find and click the confirm button in the dialog
     const buttons = screen.queryAllByRole("button");
     const confirmButton = buttons.find((btn) => btn.textContent === "Deactivate");
     if (confirmButton) {
-      fireEvent.click(confirmButton);
+      await clickWithAct(user, confirmButton);
     }
 
-    // Wait a bit for async mutation to complete
-    await new Promise((resolve) => setTimeout(resolve, 150));
-
-    expect(toastFn).toHaveBeenCalledWith(
-      expect.objectContaining({
-        variant: "success",
-        title: "Rule deactivated",
-      }),
-    );
+    await waitFor(() => {
+      expect(toastFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variant: "success",
+          title: "Rule deactivated",
+        }),
+      );
+    });
   });
 
   it("shows loading skeleton while query is pending", () => {
@@ -317,7 +330,7 @@ describe("AutomationRulesPage", () => {
     expect(screen.queryByText("Alert on Failed Grade")).not.toBeInTheDocument();
   });
 
-  it("shows error state when query fails and retries", () => {
+  it("shows error state when query fails and retries", async () => {
     const refetch = vi.fn();
     useAutomationRulesMock.mockReturnValue({
       data: undefined,
@@ -328,12 +341,14 @@ describe("AutomationRulesPage", () => {
 
     render(<AutomationRulesPage />);
 
+    const user = userEvent.setup();
+
     expect(screen.getByText("Failed to load automation rules")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /retry/i }));
+    await clickWithAct(user, screen.getByRole("button", { name: /retry/i }));
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 
-  it("opens create rule dialog when Create Rule button is clicked", () => {
+  it("opens create rule dialog when Create Rule button is clicked", async () => {
     useAutomationRulesMock.mockReturnValue({
       data: MOCK_RULES,
       isLoading: false,
@@ -343,7 +358,9 @@ describe("AutomationRulesPage", () => {
 
     render(<AutomationRulesPage />);
 
-    fireEvent.click(screen.getByTestId("create-rule-btn"));
+    const user = userEvent.setup();
+
+    await clickWithAct(user, screen.getByTestId("create-rule-btn"));
     expect(screen.getByTestId("create-rule-form")).toBeInTheDocument();
   });
 });
@@ -414,7 +431,7 @@ describe("AutomationExecutionsPage", () => {
     expect(screen.queryByText("10")).not.toBeInTheDocument();
   });
 
-  it("shows error state when query fails", () => {
+  it("shows error state when query fails", async () => {
     const refetch = vi.fn();
     useAutomationExecutionsMock.mockReturnValue({
       data: undefined,
@@ -425,8 +442,10 @@ describe("AutomationExecutionsPage", () => {
 
     render(<AutomationExecutionsPage />);
 
+    const user = userEvent.setup();
+
     expect(screen.getByText("Failed to load execution log")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /retry/i }));
+    await clickWithAct(user, screen.getByRole("button", { name: /retry/i }));
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 });

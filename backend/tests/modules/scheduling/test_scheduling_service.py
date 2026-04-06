@@ -13,17 +13,31 @@ from app.core.module_helpers.service_validation import (
     TenantResourceNotFoundError,
 )
 from app.modules.scheduling.models import (
+    AttendanceStatus,
     ClassroomModel,
     CourseSectionModel,
     DayOfWeek,
+    DisciplineModel,
+    LessonAttendanceModel,
+    LessonInstanceModel,
+    LessonTopicModel,
+    LessonStatus,
     SectionScheduleModel,
     SectionStatus,
+    StudentTopicProgressModel,
     TimeSlotModel,
+    TopicDifficultyLevel,
+    TopicProgressStatus,
 )
 from app.modules.scheduling.schemas import (
     CourseSectionCreateSchema,
+    DisciplineCreateSchema,
+    LessonAttendanceUpsertSchema,
+    LessonInstanceCreateSchema,
+    LessonTopicCreateSchema,
     SectionRescheduleSchema,
     SectionScheduleCreateSchema,
+    StudentTopicProgressUpsertSchema,
 )
 from app.modules.scheduling.service import SchedulingService
 
@@ -44,6 +58,19 @@ class ExecuteResult:
     def all(self) -> list[object]:
         return list(self._rows)
 
+    def scalar_one(self) -> object:
+        return self._scalar_one_or_none
+
+    def scalars(self):
+        class _ScalarRows:
+            def __init__(self, rows: list[object]):
+                self._rows = rows
+
+            def all(self) -> list[object]:
+                return list(self._rows)
+
+        return _ScalarRows(self._rows)
+
 
 @pytest.fixture
 def run_async():
@@ -60,6 +87,8 @@ def db_session() -> MagicMock:
             defaults = {
                 "CourseSectionModel": 1101,
                 "SectionScheduleModel": 2201,
+                "LessonInstanceModel": 9001,
+                "LessonAttendanceModel": 9101,
             }
             instance.id = defaults.get(instance.__class__.__name__, 1)
         if hasattr(instance, "created_at") and getattr(instance, "created_at", None) is None:
@@ -344,3 +373,402 @@ def test_get_room_schedule_rejects_cross_tenant_classroom(run_async, db_session)
 
     with pytest.raises(TenantResourceNotFoundError):
         run_async(service.get_room_schedule(tenant_id=1, classroom_id=999))
+
+
+def test_create_lesson_instance_success(run_async, db_session, audit_mock) -> None:
+    service = SchedulingService(db_session)
+    section = CourseSectionModel(
+        id=1101,
+        tenant_id=1,
+        course_id=701,
+        term_id=1,
+        section_code="A-01",
+        instructor_id="inst@example.com",
+        max_capacity=30,
+        status=SectionStatus.SCHEDULED,
+        version=1,
+        created_at=datetime(2026, 3, 24, 15, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2026, 3, 24, 15, 0, 0, tzinfo=UTC),
+    )
+    db_session.execute.return_value = ExecuteResult(scalar_one_or_none=section)
+
+    request = LessonInstanceCreateSchema(
+        scheduled_date=datetime(2026, 4, 5, tzinfo=UTC).date(),
+        topic_title="Linear equations",
+        notes="chapter 1",
+    )
+
+    result = run_async(
+        service.create_lesson_instance(
+            tenant_id=1,
+            section_id=1101,
+            request=request,
+            actor_id="owner@example.com",
+        )
+    )
+
+    assert result.section_id == 1101
+    assert result.topic_title == "Linear equations"
+    assert result.status == LessonStatus.PLANNED
+    db_session.commit.assert_called_once()
+    audit_mock.assert_called_once()
+
+
+def test_upsert_lesson_attendance_success(run_async, db_session, audit_mock) -> None:
+    service = SchedulingService(db_session)
+    lesson = LessonInstanceModel(
+        id=9001,
+        tenant_id=1,
+        section_id=1101,
+        scheduled_date=datetime(2026, 4, 5, tzinfo=UTC).date(),
+        actual_date=None,
+        topic_title="Linear equations",
+        status=LessonStatus.PLANNED,
+        notes=None,
+        metadata_json={},
+        created_by="owner@example.com",
+        created_at=datetime(2026, 4, 5, 8, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2026, 4, 5, 8, 0, 0, tzinfo=UTC),
+        version=1,
+    )
+    student = MagicMock(id=501, tenant_id=1)
+
+    db_session.execute.side_effect = [
+        ExecuteResult(scalar_one_or_none=lesson),
+        ExecuteResult(scalar_one_or_none=student),
+        ExecuteResult(scalar_one_or_none=None),
+    ]
+
+    request = LessonAttendanceUpsertSchema(
+        student_profile_id=501,
+        attendance_status=AttendanceStatus.PRESENT,
+    )
+
+    result = run_async(
+        service.upsert_lesson_attendance(
+            tenant_id=1,
+            lesson_instance_id=9001,
+            request=request,
+            actor_id="owner@example.com",
+        )
+    )
+
+    assert result.lesson_instance_id == 9001
+    assert result.student_profile_id == 501
+    assert result.attendance_status == AttendanceStatus.PRESENT
+    assert lesson.status == LessonStatus.COMPLETED
+    db_session.commit.assert_called_once()
+    audit_mock.assert_called_once()
+
+
+def test_list_lesson_instances_pagination(run_async, db_session) -> None:
+    service = SchedulingService(db_session)
+    section = CourseSectionModel(
+        id=1101,
+        tenant_id=1,
+        course_id=701,
+        term_id=1,
+        section_code="A-01",
+        instructor_id="inst@example.com",
+        max_capacity=30,
+        status=SectionStatus.SCHEDULED,
+        version=1,
+        created_at=datetime(2026, 3, 24, 15, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2026, 3, 24, 15, 0, 0, tzinfo=UTC),
+    )
+    lesson = LessonInstanceModel(
+        id=9001,
+        tenant_id=1,
+        section_id=1101,
+        scheduled_date=datetime(2026, 4, 5, tzinfo=UTC).date(),
+        actual_date=None,
+        topic_title="Linear equations",
+        status=LessonStatus.PLANNED,
+        notes=None,
+        metadata_json={},
+        created_by="owner@example.com",
+        created_at=datetime(2026, 4, 5, 8, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2026, 4, 5, 8, 0, 0, tzinfo=UTC),
+        version=1,
+    )
+
+    db_session.execute.side_effect = [
+        ExecuteResult(scalar_one_or_none=section),
+        ExecuteResult(scalar_one_or_none=1),
+        ExecuteResult(rows=[lesson]),
+    ]
+
+    result = run_async(
+        service.list_lesson_instances(
+            tenant_id=1,
+            section_id=1101,
+            page=1,
+            page_size=20,
+            status=None,
+        )
+    )
+
+    assert result.total == 1
+    assert len(result.items) == 1
+    assert result.items[0].id == 9001
+
+
+def test_list_lesson_attendance_returns_rows(run_async, db_session) -> None:
+    service = SchedulingService(db_session)
+    lesson = LessonInstanceModel(
+        id=9001,
+        tenant_id=1,
+        section_id=1101,
+        scheduled_date=datetime(2026, 4, 5, tzinfo=UTC).date(),
+        actual_date=datetime(2026, 4, 5, tzinfo=UTC).date(),
+        topic_title="Linear equations",
+        status=LessonStatus.COMPLETED,
+        notes=None,
+        metadata_json={},
+        created_by="owner@example.com",
+        created_at=datetime(2026, 4, 5, 8, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2026, 4, 5, 8, 0, 0, tzinfo=UTC),
+        version=2,
+    )
+    attendance = LessonAttendanceModel(
+        id=9101,
+        tenant_id=1,
+        lesson_instance_id=9001,
+        student_profile_id=501,
+        attendance_status=AttendanceStatus.PRESENT,
+        marked_by="owner@example.com",
+        marked_at=datetime(2026, 4, 5, 8, 5, 0, tzinfo=UTC),
+        created_at=datetime(2026, 4, 5, 8, 5, 0, tzinfo=UTC),
+        updated_at=datetime(2026, 4, 5, 8, 5, 0, tzinfo=UTC),
+        version=1,
+    )
+
+    db_session.execute.side_effect = [
+        ExecuteResult(scalar_one_or_none=lesson),
+        ExecuteResult(rows=[attendance]),
+    ]
+
+    result = run_async(service.list_lesson_attendance(tenant_id=1, lesson_instance_id=9001))
+
+    assert result.total == 1
+    assert result.items[0].student_profile_id == 501
+
+
+def test_create_discipline_success(run_async, db_session, audit_mock) -> None:
+    service = SchedulingService(db_session)
+    request = DisciplineCreateSchema(
+        unique_code="CS-101",
+        title="Introduction to Programming",
+        description="Core programming discipline",
+        credits=5,
+        prerequisites_json={},
+        learning_outcomes_json=["variables"],
+    )
+
+    result = run_async(service.create_discipline(tenant_id=1, request=request, actor_id="owner@example.com"))
+
+    assert result.unique_code == "CS-101"
+    assert result.title == "Introduction to Programming"
+    db_session.commit.assert_called_once()
+    audit_mock.assert_called_once()
+
+
+def test_create_lesson_topic_success(run_async, db_session, audit_mock) -> None:
+    service = SchedulingService(db_session)
+    discipline = DisciplineModel(
+        id=301,
+        tenant_id=1,
+        unique_code="CS-101",
+        title="Introduction to Programming",
+        description=None,
+        credits=5,
+        prerequisites_json={},
+        learning_outcomes_json=[],
+        is_active=True,
+        version=1,
+    )
+    db_session.execute.return_value = ExecuteResult(scalar_one_or_none=discipline)
+
+    request = LessonTopicCreateSchema(
+        module_num=1,
+        topic_num=1,
+        title="Variables",
+        description="Basics",
+        difficulty_level=TopicDifficultyLevel.BEGINNER,
+        recommended_materials_json=["material-1"],
+    )
+
+    result = run_async(
+        service.create_lesson_topic(
+            tenant_id=1,
+            discipline_id=301,
+            request=request,
+            actor_id="owner@example.com",
+        )
+    )
+
+    assert result.discipline_id == 301
+    assert result.module_num == 1
+    assert result.topic_num == 1
+    db_session.commit.assert_called_once()
+    audit_mock.assert_called_once()
+
+
+def test_upsert_student_topic_progress_success(run_async, db_session, audit_mock) -> None:
+    service = SchedulingService(db_session)
+    lesson = LessonTopicModel(
+        id=401,
+        tenant_id=1,
+        discipline_id=301,
+        module_num=1,
+        topic_num=1,
+        title="Variables",
+        description=None,
+        difficulty_level=TopicDifficultyLevel.BEGINNER,
+        recommended_materials_json=[],
+        version=1,
+    )
+    discipline = DisciplineModel(
+        id=301,
+        tenant_id=1,
+        unique_code="CS-101",
+        title="Introduction to Programming",
+        description=None,
+        credits=5,
+        prerequisites_json={},
+        learning_outcomes_json=[],
+        is_active=True,
+        version=1,
+    )
+    student = MagicMock(id=777, tenant_id=1)
+
+    db_session.execute.side_effect = [
+        ExecuteResult(scalar_one_or_none=student),
+        ExecuteResult(scalar_one_or_none=lesson),
+        ExecuteResult(scalar_one_or_none=discipline),
+        ExecuteResult(scalar_one_or_none=None),
+    ]
+
+    request = StudentTopicProgressUpsertSchema(
+        discipline_id=301,
+        first_seen_date=datetime(2026, 4, 1, tzinfo=UTC).date(),
+        last_reviewed_date=datetime(2026, 4, 6, tzinfo=UTC).date(),
+        status=TopicProgressStatus.IN_PROGRESS,
+        materials_opened=4,
+        materials_completed=2,
+        quiz_attempts=1,
+        quiz_best_score=78.5,
+    )
+
+    result = run_async(
+        service.upsert_student_topic_progress(
+            tenant_id=1,
+            topic_id=401,
+            student_profile_id=777,
+            request=request,
+            actor_id="owner@example.com",
+        )
+    )
+
+    assert result.student_profile_id == 777
+    assert result.topic_id == 401
+    assert result.status == TopicProgressStatus.IN_PROGRESS
+    db_session.commit.assert_called_once()
+    audit_mock.assert_called_once()
+
+
+def test_upsert_student_topic_progress_rejects_discipline_mismatch(run_async, db_session) -> None:
+    service = SchedulingService(db_session)
+    lesson = LessonTopicModel(
+        id=401,
+        tenant_id=1,
+        discipline_id=999,
+        module_num=1,
+        topic_num=1,
+        title="Variables",
+        description=None,
+        difficulty_level=TopicDifficultyLevel.BEGINNER,
+        recommended_materials_json=[],
+        version=1,
+    )
+    student = MagicMock(id=777, tenant_id=1)
+
+    db_session.execute.side_effect = [
+        ExecuteResult(scalar_one_or_none=student),
+        ExecuteResult(scalar_one_or_none=lesson),
+    ]
+
+    request = StudentTopicProgressUpsertSchema(
+        discipline_id=301,
+        first_seen_date=None,
+        last_reviewed_date=None,
+        status=TopicProgressStatus.NOT_STARTED,
+        materials_opened=0,
+        materials_completed=0,
+        quiz_attempts=0,
+        quiz_best_score=None,
+    )
+
+    with pytest.raises(DomainValidationError):
+        run_async(
+            service.upsert_student_topic_progress(
+                tenant_id=1,
+                topic_id=401,
+                student_profile_id=777,
+                request=request,
+                actor_id="owner@example.com",
+            )
+        )
+
+
+def test_list_student_topic_progress_success(run_async, db_session) -> None:
+    service = SchedulingService(db_session)
+    now = datetime(2026, 4, 6, 10, 0, 0, tzinfo=UTC)
+    student = MagicMock(id=777, tenant_id=1)
+    discipline = DisciplineModel(
+        id=301,
+        tenant_id=1,
+        unique_code="CS-101",
+        title="Introduction to Programming",
+        description=None,
+        credits=5,
+        prerequisites_json={},
+        learning_outcomes_json=[],
+        is_active=True,
+        version=1,
+    )
+    row = StudentTopicProgressModel(
+        id=501,
+        tenant_id=1,
+        student_profile_id=777,
+        topic_id=401,
+        discipline_id=301,
+        first_seen_date=datetime(2026, 4, 1, tzinfo=UTC).date(),
+        last_reviewed_date=datetime(2026, 4, 6, tzinfo=UTC).date(),
+        status=TopicProgressStatus.IN_PROGRESS,
+        materials_opened=4,
+        materials_completed=2,
+        quiz_attempts=1,
+        quiz_best_score=78.5,
+        version=1,
+        created_at=now,
+        updated_at=now,
+    )
+
+    db_session.execute.side_effect = [
+        ExecuteResult(scalar_one_or_none=student),
+        ExecuteResult(scalar_one_or_none=discipline),
+        ExecuteResult(rows=[row]),
+    ]
+
+    result = run_async(
+        service.list_student_topic_progress(
+            tenant_id=1,
+            student_profile_id=777,
+            discipline_id=301,
+        )
+    )
+
+    assert result.total == 1
+    assert result.items[0].student_profile_id == 777
+    assert result.items[0].topic_id == 401

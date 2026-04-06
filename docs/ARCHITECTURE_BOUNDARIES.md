@@ -130,7 +130,7 @@ Disallowed direction examples:
 ## Public vs Internal Contracts
 
 Public contracts:
-- `/api/v1/public/*`
+- `/api/dev/*`
 - stable frontend hooks/services in `frontend/modules/platform/*`
 
 Internal contracts:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from app.modules.integrations.service import get_runtime_value
 from app.platform.analytics import service as analytics_service
 from app.platform.automation import service as automation_service
 from app.platform.context import service as context_service
@@ -173,8 +174,57 @@ def retrieve_student_context(*, tenant_id: int, student_id: str, uow: Any) -> di
     }
 
 
+def retrieve_faculty_context(*, tenant_id: int, faculty_id: str, uow: Any) -> dict[str, Any]:
+    profile = context_service.build_faculty_profile(faculty_id=faculty_id, tenant_id=tenant_id, conn=uow.conn)
+    faculty = profile.get("faculty") or {}
+
+    faculty_name = str((faculty.get("data_json") or {}).get("name") or faculty.get("entity_id") or faculty_id)
+    return {
+        "summary": f"Faculty context loaded for {faculty_name}.",
+        "insights": [
+            {
+                "title": "Advised Students",
+                "value": str(len(profile.get("advised_students") or [])),
+                "explanation": "Students currently linked via advised_by relation.",
+            },
+            {
+                "title": "Advised Programs",
+                "value": str(len(profile.get("advised_programs") or [])),
+                "explanation": "Distinct programs represented by advised students.",
+            },
+            {
+                "title": "Departments",
+                "value": str(len(profile.get("departments") or [])),
+                "explanation": "Distinct departments of advised students.",
+            },
+        ],
+        "sources": [
+            {"source_type": "context", "reference": f"faculty_profile:{faculty_id}"},
+        ],
+        "warnings": [] if faculty else ["faculty_not_found"],
+        "profile": profile,
+    }
+
+
 def retrieve_academic_risk(*, tenant_id: int, uow: Any) -> dict[str, Any]:
     at_risk: list[str] = []
+    severe_at_risk: list[str] = []
+    risk_threshold = int(
+        get_runtime_value(
+            "academic.risk_grade_threshold",
+            "ACADEMIC_RISK_GRADE_THRESHOLD",
+            "60",
+            tenant_id=tenant_id,
+        )
+    )
+    severe_risk_threshold = int(
+        get_runtime_value(
+            "academic.severe_risk_grade_threshold",
+            "ACADEMIC_SEVERE_RISK_GRADE_THRESHOLD",
+            "50",
+            tenant_id=tenant_id,
+        )
+    )
 
     if uow.conn is not None:
         with uow.conn.cursor() as cur:
@@ -188,12 +238,29 @@ def retrieve_academic_risk(*, tenant_id: int, uow: Any) -> dict[str, Any]:
                  AND g.entity_id = r.target_entity_id
                 WHERE r.tenant_id = %s
                   AND r.relation_type = 'has_grade'
-                  AND COALESCE((g.data_json ->> 'grade_value')::numeric, 0) < 60
+                                    AND COALESCE((g.data_json ->> 'grade_value')::numeric, 0) < %s
                 ORDER BY r.source_entity_id
                 """,
-                (tenant_id,),
+                                (tenant_id, risk_threshold),
             )
             at_risk = [str(row[0]) for row in cur.fetchall()]
+
+            cur.execute(
+                """
+                SELECT DISTINCT r.source_entity_id
+                FROM app_platform_context_relations r
+                JOIN app_platform_context_entities g
+                  ON g.tenant_id = r.tenant_id
+                 AND g.entity_type = r.target_entity_type
+                 AND g.entity_id = r.target_entity_id
+                WHERE r.tenant_id = %s
+                  AND r.relation_type = 'has_grade'
+                                    AND COALESCE((g.data_json ->> 'grade_value')::numeric, 0) < %s
+                ORDER BY r.source_entity_id
+                """,
+                                (tenant_id, severe_risk_threshold),
+            )
+            severe_at_risk = [str(row[0]) for row in cur.fetchall()]
     else:
         # In-memory fallback for tests: inspect context repository state.
         repo = uow.context_repository
@@ -210,19 +277,38 @@ def retrieve_academic_risk(*, tenant_id: int, uow: Any) -> dict[str, Any]:
             )
             grade_value = (grade_entity or {}).get("data_json", {}).get("grade_value")
             try:
-                if float(grade_value) < 60:
+                if float(grade_value) < risk_threshold:
                     at_risk.append(str(rel.get("source_entity_id")))
+                if float(grade_value) < severe_risk_threshold:
+                    severe_at_risk.append(str(rel.get("source_entity_id")))
             except (TypeError, ValueError):
                 continue
         at_risk = sorted(set(at_risk))
+        severe_at_risk = sorted(set(severe_at_risk))
+
+    at_risk_count = len(at_risk)
+    severe_at_risk_count = len(severe_at_risk)
+    if severe_at_risk_count > 0:
+        risk_severity = "high"
+    elif at_risk_count > 0:
+        risk_severity = "medium"
+    else:
+        risk_severity = "low"
 
     return {
-        "summary": f"Identified {len(at_risk)} student(s) at academic risk.",
+        "summary": f"Identified {at_risk_count} student(s) at academic risk.",
         "insights": [
             {
                 "title": "At-Risk Students",
-                "value": str(len(at_risk)),
-                "explanation": "Students linked to grades below 60 in semantic context.",
+                "value": str(at_risk_count),
+                "explanation": f"Students linked to grades below {risk_threshold} in semantic context.",
+            },
+            {
+                "title": "High Expulsion Risk Students",
+                "value": str(severe_at_risk_count),
+                "explanation": (
+                    f"Students linked to grades below {severe_risk_threshold} in semantic context."
+                ),
             },
             {
                 "title": "Student IDs",
@@ -231,9 +317,21 @@ def retrieve_academic_risk(*, tenant_id: int, uow: Any) -> dict[str, Any]:
             },
         ],
         "sources": [
-            {"source_type": "context", "reference": "relations:has_grade + grades<60"},
+            {
+                "source_type": "context",
+                "reference": f"relations:has_grade + grades<{risk_threshold}",
+            },
         ],
-        "warnings": [] if at_risk else ["no_academic_risk_detected"],
+        "warnings": (
+            ["expulsion_risk_detected"]
+            if severe_at_risk_count > 0
+            else ([] if at_risk_count > 0 else ["no_academic_risk_detected"])
+        ),
+        "at_risk_count": at_risk_count,
+        "severe_at_risk_count": severe_at_risk_count,
+        "at_risk_student_ids": at_risk,
+        "severe_at_risk_student_ids": severe_at_risk,
+        "risk_severity": risk_severity,
     }
 
 
@@ -382,4 +480,37 @@ def extract_student_id(question: str, context: dict[str, Any] | None = None) -> 
     m = re.search(r"student\s+([a-zA-Z0-9_-]+)", question, flags=re.IGNORECASE)
     if m:
         return str(m.group(1)).strip()
+
+    m = re.search(r"студент\s+([a-zA-Z0-9_-]+)", question, flags=re.IGNORECASE)
+    if m:
+        return str(m.group(1)).strip()
+
+    m = re.search(r"оқушы\s+([a-zA-Z0-9_-]+)", question, flags=re.IGNORECASE)
+    if m:
+        return str(m.group(1)).strip()
+
+    return None
+
+
+def extract_faculty_id(question: str, context: dict[str, Any] | None = None) -> str | None:
+    if isinstance(context, dict):
+        from_context = str(
+            context.get("faculty_id") or context.get("advisor_id") or context.get("teacher_id") or ""
+        ).strip()
+        if from_context:
+            return from_context
+
+    patterns = [
+        r"faculty\s+([a-zA-Z0-9_-]+)",
+        r"advisor\s+([a-zA-Z0-9_-]+)",
+        r"teacher\s+([a-zA-Z0-9_-]+)",
+        r"преподавател[ьяюе]\s+([a-zA-Z0-9_-]+)",
+        r"куратор[ауое]?\s+([a-zA-Z0-9_-]+)",
+        r"оқытушы\s+([a-zA-Z0-9_-]+)",
+        r"мұғалім\s+([a-zA-Z0-9_-]+)",
+    ]
+    for pattern in patterns:
+        m = re.search(pattern, question, flags=re.IGNORECASE)
+        if m:
+            return str(m.group(1)).strip()
     return None

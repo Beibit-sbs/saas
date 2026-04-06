@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from collections.abc import Generator
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,12 +10,22 @@ from app.main import app
 from app.modules.rbac import service as rbac_service
 from app.modules.scheduling import service as scheduling_service
 from app.modules.scheduling.dependencies import get_scheduling_db
-from app.modules.scheduling.models import DayOfWeek, SectionStatus
+from app.modules.scheduling.models import AttendanceStatus, DayOfWeek, LessonStatus, SectionStatus
 from app.modules.scheduling.schemas import (
     ConflictReportSchema,
     CourseSectionReadSchema,
+    DisciplineListResponseSchema,
+    DisciplineReadSchema,
     InstructorScheduleItemSchema,
+    LessonAttendanceListResponseSchema,
+    LessonAttendanceReadSchema,
+    LessonInstanceListResponseSchema,
+    LessonInstanceReadSchema,
+    LessonTopicListResponseSchema,
+    LessonTopicReadSchema,
     RoomScheduleItemSchema,
+    StudentTopicProgressListResponseSchema,
+    StudentTopicProgressReadSchema,
     StudentScheduleItemSchema,
 )
 from tests.conftest import ADMIN_HEADERS, _auth_headers, _configure_db_only_role_resolution, client
@@ -35,7 +46,7 @@ def _enable_scheduling_permissions_for_admin(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture
-def override_scheduling_db() -> MagicMock:
+def override_scheduling_db() -> Generator[MagicMock, None, None]:
     session = MagicMock()
     app.dependency_overrides[get_scheduling_db] = lambda: session
     try:
@@ -65,6 +76,82 @@ def _section_schema() -> CourseSectionReadSchema:
         instructor_id="inst@example.com",
         max_capacity=30,
         status=SectionStatus.PLANNED,
+        created_at=now,
+        updated_at=now,
+        version=1,
+    )
+
+
+def _lesson_schema() -> LessonInstanceReadSchema:
+    now = datetime(2026, 4, 5, 8, 0, 0, tzinfo=UTC)
+    return LessonInstanceReadSchema(
+        id=9001,
+        tenant_id=1,
+        section_id=1101,
+        scheduled_date=datetime(2026, 4, 5, tzinfo=UTC).date(),
+        actual_date=None,
+        topic_title="Linear equations",
+        status=LessonStatus.PLANNED,
+        notes=None,
+        metadata_json={},
+        created_by="owner@example.com",
+        created_at=now,
+        updated_at=now,
+        version=1,
+    )
+
+
+def _discipline_schema() -> DisciplineReadSchema:
+    now = datetime(2026, 4, 6, 8, 0, 0, tzinfo=UTC)
+    return DisciplineReadSchema(
+        id=301,
+        tenant_id=1,
+        unique_code="CS-101",
+        title="Introduction to Programming",
+        description="Core programming discipline",
+        credits=5,
+        prerequisites_json={},
+        learning_outcomes_json=["variables", "loops"],
+        is_active=True,
+        created_at=now,
+        updated_at=now,
+        version=1,
+    )
+
+
+def _topic_schema() -> LessonTopicReadSchema:
+    now = datetime(2026, 4, 6, 8, 5, 0, tzinfo=UTC)
+    return LessonTopicReadSchema(
+        id=401,
+        tenant_id=1,
+        discipline_id=301,
+        module_num=1,
+        topic_num=1,
+        title="Variables and Data Types",
+        description="Basics",
+        difficulty_level="beginner",
+        recommended_materials_json=["material-1"],
+        created_at=now,
+        updated_at=now,
+        version=1,
+    )
+
+
+def _progress_schema() -> StudentTopicProgressReadSchema:
+    now = datetime(2026, 4, 6, 9, 0, 0, tzinfo=UTC)
+    return StudentTopicProgressReadSchema(
+        id=501,
+        tenant_id=1,
+        student_profile_id=777,
+        topic_id=401,
+        discipline_id=301,
+        first_seen_date=datetime(2026, 4, 1, tzinfo=UTC).date(),
+        last_reviewed_date=datetime(2026, 4, 6, tzinfo=UTC).date(),
+        status="in_progress",
+        materials_opened=4,
+        materials_completed=2,
+        quiz_attempts=1,
+        quiz_best_score=78.5,
         created_at=now,
         updated_at=now,
         version=1,
@@ -251,3 +338,288 @@ def test_get_room_schedule_success(
 
     assert response.status_code == 200, response.text
     assert response.json()[0]["classroom_id"] == 401
+
+
+def test_create_lesson_instance_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_scheduling_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_create_lesson_instance(self, tenant_id: int, *, section_id: int, request, actor_id: str):
+        assert tenant_id == 1
+        assert section_id == 1101
+        assert actor_id == "owner@example.com"
+        return _lesson_schema()
+
+    monkeypatch.setattr(scheduling_service.SchedulingService, "create_lesson_instance", fake_create_lesson_instance)
+
+    response = client.post(
+        "/api/admin/scheduling/sections/1101/lessons",
+        headers=admin_headers,
+        json={
+            "scheduled_date": "2026-04-05",
+            "topic_title": "Linear equations",
+            "notes": "chapter 1",
+            "metadata_json": {},
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["id"] == 9001
+
+
+def test_list_lesson_instances_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_scheduling_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_list_lesson_instances(self, tenant_id: int, *, section_id: int, page: int, page_size: int, status):
+        assert tenant_id == 1
+        assert section_id == 1101
+        assert page == 1
+        assert page_size == 20
+        return LessonInstanceListResponseSchema(total=1, page=1, page_size=20, items=[_lesson_schema()])
+
+    monkeypatch.setattr(scheduling_service.SchedulingService, "list_lesson_instances", fake_list_lesson_instances)
+
+    response = client.get("/api/admin/scheduling/sections/1101/lessons", headers=admin_headers)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["total"] == 1
+    assert response.json()["items"][0]["id"] == 9001
+
+
+def test_upsert_lesson_attendance_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_scheduling_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_upsert_lesson_attendance(self, tenant_id: int, *, lesson_instance_id: int, request, actor_id: str):
+        assert tenant_id == 1
+        assert lesson_instance_id == 9001
+        assert request.student_profile_id == 501
+        assert actor_id == "owner@example.com"
+        now = datetime(2026, 4, 5, 8, 5, 0, tzinfo=UTC)
+        return LessonAttendanceReadSchema(
+            id=9101,
+            tenant_id=1,
+            lesson_instance_id=9001,
+            student_profile_id=501,
+            attendance_status=AttendanceStatus.PRESENT,
+            marked_by="owner@example.com",
+            marked_at=now,
+            created_at=now,
+            updated_at=now,
+            version=1,
+        )
+
+    monkeypatch.setattr(scheduling_service.SchedulingService, "upsert_lesson_attendance", fake_upsert_lesson_attendance)
+
+    response = client.put(
+        "/api/admin/scheduling/lessons/9001/attendance",
+        headers=admin_headers,
+        json={"student_profile_id": 501, "attendance_status": "present"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["student_profile_id"] == 501
+
+
+def test_list_lesson_attendance_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_scheduling_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_list_lesson_attendance(self, tenant_id: int, *, lesson_instance_id: int):
+        assert tenant_id == 1
+        assert lesson_instance_id == 9001
+        now = datetime(2026, 4, 5, 8, 5, 0, tzinfo=UTC)
+        return LessonAttendanceListResponseSchema(
+            total=1,
+            items=[
+                LessonAttendanceReadSchema(
+                    id=9101,
+                    tenant_id=1,
+                    lesson_instance_id=9001,
+                    student_profile_id=501,
+                    attendance_status=AttendanceStatus.PRESENT,
+                    marked_by="owner@example.com",
+                    marked_at=now,
+                    created_at=now,
+                    updated_at=now,
+                    version=1,
+                )
+            ],
+        )
+
+    monkeypatch.setattr(scheduling_service.SchedulingService, "list_lesson_attendance", fake_list_lesson_attendance)
+
+    response = client.get("/api/admin/scheduling/lessons/9001/attendance", headers=admin_headers)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["total"] == 1
+    assert response.json()["items"][0]["student_profile_id"] == 501
+
+
+def test_create_discipline_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_scheduling_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_create_discipline(self, tenant_id: int, *, request, actor_id: str):
+        assert tenant_id == 1
+        assert actor_id == "owner@example.com"
+        assert request.unique_code == "CS-101"
+        return _discipline_schema()
+
+    monkeypatch.setattr(scheduling_service.SchedulingService, "create_discipline", fake_create_discipline)
+
+    response = client.post(
+        "/api/admin/scheduling/disciplines",
+        headers=admin_headers,
+        json={
+            "unique_code": "CS-101",
+            "title": "Introduction to Programming",
+            "description": "Core programming discipline",
+            "credits": 5,
+            "prerequisites_json": {},
+            "learning_outcomes_json": ["variables", "loops"],
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["id"] == 301
+
+
+def test_list_disciplines_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_scheduling_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_list_disciplines(self, tenant_id: int, *, include_inactive: bool):
+        assert tenant_id == 1
+        assert include_inactive is False
+        return DisciplineListResponseSchema(total=1, items=[_discipline_schema()])
+
+    monkeypatch.setattr(scheduling_service.SchedulingService, "list_disciplines", fake_list_disciplines)
+
+    response = client.get("/api/admin/scheduling/disciplines", headers=admin_headers)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["total"] == 1
+    assert response.json()["items"][0]["unique_code"] == "CS-101"
+
+
+def test_create_lesson_topic_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_scheduling_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_create_lesson_topic(self, tenant_id: int, *, discipline_id: int, request, actor_id: str):
+        assert tenant_id == 1
+        assert discipline_id == 301
+        assert actor_id == "owner@example.com"
+        assert request.module_num == 1
+        return _topic_schema()
+
+    monkeypatch.setattr(scheduling_service.SchedulingService, "create_lesson_topic", fake_create_lesson_topic)
+
+    response = client.post(
+        "/api/admin/scheduling/disciplines/301/topics",
+        headers=admin_headers,
+        json={
+            "module_num": 1,
+            "topic_num": 1,
+            "title": "Variables and Data Types",
+            "description": "Basics",
+            "difficulty_level": "beginner",
+            "recommended_materials_json": ["material-1"],
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["id"] == 401
+
+
+def test_list_lesson_topics_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_scheduling_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_list_lesson_topics(self, tenant_id: int, *, discipline_id: int):
+        assert tenant_id == 1
+        assert discipline_id == 301
+        return LessonTopicListResponseSchema(total=1, items=[_topic_schema()])
+
+    monkeypatch.setattr(scheduling_service.SchedulingService, "list_lesson_topics", fake_list_lesson_topics)
+
+    response = client.get("/api/admin/scheduling/disciplines/301/topics", headers=admin_headers)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["total"] == 1
+    assert response.json()["items"][0]["title"] == "Variables and Data Types"
+
+
+def test_upsert_student_topic_progress_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_scheduling_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_upsert_student_topic_progress(self, tenant_id: int, *, topic_id: int, student_profile_id: int, request, actor_id: str):
+        assert tenant_id == 1
+        assert topic_id == 401
+        assert student_profile_id == 777
+        assert actor_id == "owner@example.com"
+        assert request.discipline_id == 301
+        return _progress_schema()
+
+    monkeypatch.setattr(
+        scheduling_service.SchedulingService,
+        "upsert_student_topic_progress",
+        fake_upsert_student_topic_progress,
+    )
+
+    response = client.put(
+        "/api/admin/scheduling/topics/401/progress/777",
+        headers=admin_headers,
+        json={
+            "discipline_id": 301,
+            "first_seen_date": "2026-04-01",
+            "last_reviewed_date": "2026-04-06",
+            "status": "in_progress",
+            "materials_opened": 4,
+            "materials_completed": 2,
+            "quiz_attempts": 1,
+            "quiz_best_score": 78.5,
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["student_profile_id"] == 777
+
+
+def test_list_student_topic_progress_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_scheduling_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_list_student_topic_progress(self, tenant_id: int, *, student_profile_id: int, discipline_id: int | None):
+        assert tenant_id == 1
+        assert student_profile_id == 777
+        assert discipline_id == 301
+        return StudentTopicProgressListResponseSchema(total=1, items=[_progress_schema()])
+
+    monkeypatch.setattr(
+        scheduling_service.SchedulingService,
+        "list_student_topic_progress",
+        fake_list_student_topic_progress,
+    )
+
+    response = client.get(
+        "/api/admin/scheduling/students/777/topic-progress?discipline_id=301",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["total"] == 1
+    assert response.json()["items"][0]["topic_id"] == 401

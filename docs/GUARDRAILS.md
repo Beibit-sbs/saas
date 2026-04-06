@@ -43,7 +43,7 @@ Policy:
 ### Developer Platform Contracts
 
 Allowed:
-- developer integrations consume `/api/v1/public/*` routes and scope-checked credentials
+- developer integrations consume `/api/dev/*` routes and scope-checked credentials
 - backend developer auth validates app key/secret + tenant + scope
 
 Forbidden shortcuts:

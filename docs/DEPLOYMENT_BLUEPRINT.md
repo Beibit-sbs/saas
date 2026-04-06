@@ -236,22 +236,26 @@ pg_restore --clean --if-exists --no-owner --no-privileges \
 
 The platform must expose the following health endpoints:
 
-- `GET /health`
-- `GET /health/db`
+- `GET /health/live`
+- `GET /health/ready`
+- `GET /health/deep`
 - `GET /health/worker`
 
 ### Expected behavior
 
-`GET /health`
+`GET /health/live`
 
 - returns `200` when the API process is healthy
-- returns version, environment, and dependency summary
 
-`GET /health/db`
+`GET /health/ready`
 
-- performs a lightweight database probe such as `SELECT 1`
-- returns `200` when PostgreSQL is healthy
-- returns `503` when PostgreSQL is unavailable
+- returns `200` when critical dependencies are ready
+- returns `503` when readiness dependencies are unavailable
+
+`GET /health/deep`
+
+- returns full dependency breakdown for privileged operational checks
+- exposes dependency health in `dependencies.*.healthy`
 
 `GET /health/worker`
 
@@ -321,7 +325,8 @@ This endpoint should expose:
 - `systemctl restart platform-api.service`
 - `systemctl restart platform-worker.service`
 - `systemctl restart platform-scheduler.service`
-- `curl -fsS https://<host>/health`
+- `curl -fsS https://<host>/health/live`
+- `curl -fsS https://<host>/health/ready`
 
 ## 9. Rollback Procedure
 
@@ -417,7 +422,7 @@ Detailed operational procedures and triage playbooks are documented in `docs/INC
 
 Indicators:
 
-- `GET /health/db` returns `503`
+- `GET /health/deep` indicates `dependencies.postgresql.healthy=false`
 - API requests fail with `5xx`
 - worker backlog increases
 
@@ -427,7 +432,7 @@ Response:
 2. verify disk space, active connections, and database logs
 3. pause scheduler and worker if they intensify the outage
 4. restore database service
-5. validate `GET /health/db`
+5. validate `GET /health/deep`
 6. restart worker and scheduler in a controlled order
 
 ### Worker crash
@@ -494,8 +499,9 @@ After deployment, run the following validation sequence.
 
 ### API health
 
-- `GET /health` returns `200`
-- `GET /health/db` returns `200`
+- `GET /health/live` returns `200`
+- `GET /health/ready` returns `200`
+- `GET /health/deep` indicates `dependencies.postgresql.healthy=true`
 - `GET /health/worker` returns `200`
 - admin login succeeds
 - tenant-scoped endpoints do not permit cross-tenant access

@@ -3,16 +3,16 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "node ./scripts/dev-single-instance.mjs",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "i18n:check": "node ./i18n/check/i18n-check.mjs",
-    "test:frontend": "vitest run",
-    "test:frontend:watch": "vitest",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "type-check": "tsc --noEmit"
+    "dev": "node -e \"console.error('[docker-only] npm run dev is disabled. Use docker compose services instead.'); process.exit(1)\"",
+    "build": "node ./scripts/docker-only-run.mjs build",
+    "start": "node ./scripts/docker-only-run.mjs start",
+    "lint": "node ./scripts/docker-only-run.mjs lint",
+    "i18n:check": "node ./scripts/docker-only-run.mjs i18n:check",
+    "test:frontend": "node ./scripts/docker-only-run.mjs test:frontend",
+    "test:frontend:watch": "node ./scripts/docker-only-run.mjs test:frontend:watch",
+    "test:e2e": "node ./scripts/docker-only-run.mjs test:e2e",
+    "test:e2e:ui": "node ./scripts/docker-only-run.mjs test:e2e:ui",
+    "type-check": "node ./scripts/docker-only-run.mjs type-check"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

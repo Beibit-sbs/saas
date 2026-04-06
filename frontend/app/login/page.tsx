@@ -29,7 +29,8 @@ type FormData = {
 };
 
 function isPlatformAdminUsername(value: string): boolean {
-  return value.trim().toLowerCase().startsWith("local/");
+  const normalized = value.trim().toLowerCase();
+  return normalized.startsWith("local/") || normalized === "platform_admin";
 }
 
 function extractLoginDomain(value: string): string | null {
@@ -67,7 +68,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
+  const [checkingSession, setCheckingSession] = useState(false);
   const [tenantDirectoryState, setTenantDirectoryState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [tenantOptions, setTenantOptions] = useState<LoginTenantOption[]>([]);
   const [domainAutoDetectEnabled, setDomainAutoDetectEnabled] = useState(false);
@@ -275,6 +276,25 @@ export default function LoginPage() {
     };
   }, [router, searchParams]);
 
+  async function fetchCsrfToken(): Promise<string> {
+    const csrfRes = await fetch("/api/auth/csrf", {
+      method: "GET",
+      cache: "no-store",
+      credentials: "include",
+    });
+
+    if (!csrfRes.ok) {
+      throw new Error(t("auth.loginFailed"));
+    }
+
+    const csrfPayload = (await csrfRes.json().catch(() => ({}))) as { csrf_token?: unknown };
+    const csrfToken = String(csrfPayload.csrf_token ?? "").trim();
+    if (!csrfToken) {
+      throw new Error(t("auth.loginFailed"));
+    }
+    return csrfToken;
+  }
+
   async function onSubmit(data: FormData) {
     const platformAdminLogin = isPlatformAdminUsername(data.username);
     const selectedFormTenantId = String(data.tenantId ?? "").trim();
@@ -297,6 +317,8 @@ export default function LoginPage() {
     setTenantError(null);
     setLoading(true);
     try {
+      const csrfToken = await fetchCsrfToken();
+
       const payload: Record<string, unknown> = {
         username: data.username,
         password: data.password,
@@ -308,7 +330,11 @@ export default function LoginPage() {
 
       const res = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
@@ -318,6 +344,11 @@ export default function LoginPage() {
       }
 
       const next = searchParams.get("next") ?? "/console";
+      // Hard navigation avoids client-router race conditions while auth cookie is being persisted.
+      if (typeof window !== "undefined") {
+        window.location.assign(next);
+        return;
+      }
       router.replace(next);
       router.refresh();
     } catch (err: unknown) {
@@ -329,19 +360,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  }
-
-  if (checkingSession) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-        <Card className="w-full max-w-sm">
-          <CardContent className="py-10 flex flex-col items-center justify-center gap-2 text-center">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <p className="text-xs text-muted-foreground">{t("auth.sessionChecking")}</p>
-          </CardContent>
-        </Card>
-      </main>
-    );
   }
 
   return (

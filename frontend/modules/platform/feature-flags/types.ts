@@ -1,17 +1,16 @@
 export interface FeatureFlag {
   key: string;
-  display_name: string;
   description: string;
-  global_enabled: boolean;
-  tenant_overrides: Record<string, boolean>;
+  enabled: boolean;
+  scope: string;
+  rollout_percentage: number;
   updated_at: string;
 }
 
-export interface UpdateFlagPayload {
-  global_enabled?: boolean;
-}
-
-export interface TenantFlagOverridePayload {
-  tenant_id: string;
+export interface UpsertFlagPayload {
+  key: string;
   enabled: boolean;
+  rollout_percentage?: number;
+  description?: string;
+  scope?: string;
 }

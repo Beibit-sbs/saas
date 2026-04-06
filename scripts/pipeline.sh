@@ -17,12 +17,12 @@ else
 fi
 "${COMPOSE[@]}" up -d --build
 "${COMPOSE[@]}" exec -T backend ruff check .
-"${COMPOSE[@]}" exec -T backend pytest -q
-"${COMPOSE[@]}" exec -T backend pytest -q tests/test_template_validation.py
+"${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q
+"${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q tests/test_template_validation.py
 "${COMPOSE[@]}" run --rm frontend-tests npm run lint
 "${COMPOSE[@]}" run --rm frontend-tests npm run test:frontend
-"${COMPOSE[@]}" exec -T nginx wget -qO /dev/null http://127.0.0.1/health/live
-"${COMPOSE[@]}" exec -T nginx wget -qO /dev/null http://127.0.0.1/
+"${COMPOSE[@]}" exec -T nginx wget --no-check-certificate -qO /dev/null https://127.0.0.1/health/live
+"${COMPOSE[@]}" exec -T nginx wget --no-check-certificate -qO /dev/null https://127.0.0.1/
 popd >/dev/null
 
 echo "Pipeline OK: docker-only build, tests, and edge health checks passed."

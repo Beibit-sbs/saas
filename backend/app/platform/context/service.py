@@ -175,6 +175,101 @@ class ContextService:
             "automation_flags": {},
         }
 
+    def build_faculty_profile(
+        self,
+        *,
+        faculty_id: str,
+        tenant_id: int,
+        conn: object | None = None,
+    ) -> dict[str, Any]:
+        fid = str(faculty_id).strip()
+        tid = int(tenant_id)
+
+        faculty = self._repository.get_entity(
+            tenant_id=tid,
+            entity_type="advisor",
+            entity_id=fid,
+            conn=conn,
+        )
+
+        advised_rels = self._repository.get_relations_by_target(
+            tenant_id=tid,
+            target_entity_type="advisor",
+            target_entity_id=fid,
+            relation_type="advised_by",
+            conn=conn,
+        )
+
+        advised_students: list[dict[str, Any]] = []
+        for rel in advised_rels:
+            if str(rel.get("source_entity_type") or "") != "student":
+                continue
+            student = self._repository.get_entity(
+                tenant_id=tid,
+                entity_type="student",
+                entity_id=str(rel.get("source_entity_id") or ""),
+                conn=conn,
+            )
+            if student is not None:
+                advised_students.append(student)
+
+        programs: dict[tuple[str, str], dict[str, Any]] = {}
+        departments: dict[tuple[str, str], dict[str, Any]] = {}
+        for student in advised_students:
+            student_id = str(student.get("entity_id") or "")
+            if not student_id:
+                continue
+
+            enrollment_rels = self._repository.get_relations_by_source(
+                tenant_id=tid,
+                source_entity_type="student",
+                source_entity_id=student_id,
+                relation_type="enrolled_in",
+                conn=conn,
+            )
+            for rel in enrollment_rels:
+                entity_type = str(rel.get("target_entity_type") or "")
+                entity_id = str(rel.get("target_entity_id") or "")
+                if not entity_type or not entity_id:
+                    continue
+                program = self._repository.get_entity(
+                    tenant_id=tid,
+                    entity_type=entity_type,
+                    entity_id=entity_id,
+                    conn=conn,
+                )
+                if program is not None:
+                    programs[(entity_type, entity_id)] = program
+
+            dept_rels = self._repository.get_relations_by_target(
+                tenant_id=tid,
+                target_entity_type="student",
+                target_entity_id=student_id,
+                relation_type="has_student",
+                conn=conn,
+            )
+            for rel in dept_rels:
+                entity_type = str(rel.get("source_entity_type") or "")
+                entity_id = str(rel.get("source_entity_id") or "")
+                if not entity_type or not entity_id:
+                    continue
+                department = self._repository.get_entity(
+                    tenant_id=tid,
+                    entity_type=entity_type,
+                    entity_id=entity_id,
+                    conn=conn,
+                )
+                if department is not None:
+                    departments[(entity_type, entity_id)] = department
+
+        return {
+            "faculty": faculty,
+            "advised_students": advised_students,
+            "advised_programs": list(programs.values()),
+            "departments": list(departments.values()),
+            "automation_flags": {},
+        }
+
     # ------------------------------------------------------------------ #
     #  Scheduler rebuild stub                                              #
     # ------------------------------------------------------------------ #
@@ -252,6 +347,19 @@ def build_student_profile(
 ) -> dict[str, Any]:
     return context_service.build_student_profile(
         student_id=student_id,
+        tenant_id=tenant_id,
+        conn=conn,
+    )
+
+
+def build_faculty_profile(
+    *,
+    faculty_id: str,
+    tenant_id: int,
+    conn: object | None = None,
+) -> dict[str, Any]:
+    return context_service.build_faculty_profile(
+        faculty_id=faculty_id,
         tenant_id=tenant_id,
         conn=conn,
     )

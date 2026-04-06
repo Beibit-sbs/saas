@@ -25,7 +25,21 @@ if [[ "${DOCKER_ONLY_GUARD_SKIP_PROCESS_CHECK:-0}" == "1" ]]; then
 fi
 
 PROHIBITED_REGEX='(uvicorn|hypercorn|gunicorn .*app\.main|next dev|vite( |$)|webpack-dev-server|npm run dev|pnpm dev|yarn dev)'
-HOST_DEV_PROCS="$(ps -eo pid=,args= | rg -i "${PROHIBITED_REGEX}" | rg -vi "docker|container|guard|rg -i|grep -E" || true)"
+RAW_PROCS="$(ps -eo pid=,args= | rg -i "${PROHIBITED_REGEX}" | rg -vi "docker|container|guard|rg -i|grep -E" || true)"
+
+# Filter out processes that are running inside Docker/container cgroups (they appear
+# on the host as root-owned processes but are NOT host-native dev servers).
+HOST_DEV_PROCS=""
+while IFS= read -r line; do
+  [[ -z "${line}" ]] && continue
+  pid="${line%% *}"
+  cgroup="$(cat "/proc/${pid}/cgroup" 2>/dev/null || true)"
+  if echo "${cgroup}" | grep -qE "docker-|kubepods|lxc"; then
+    continue  # container process — not a host dev server
+  fi
+  HOST_DEV_PROCS="${HOST_DEV_PROCS}${line}"$'\n'
+done <<< "${RAW_PROCS}"
+HOST_DEV_PROCS="${HOST_DEV_PROCS%$'\n'}"
 
 if [[ -n "${HOST_DEV_PROCS}" ]]; then
   echo "[guard] FAIL: host dev processes detected (mixed mode is forbidden):"

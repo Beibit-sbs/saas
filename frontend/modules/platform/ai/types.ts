@@ -21,6 +21,7 @@ export type CopilotRecommendation = {
   priority: "high" | "medium" | "low";
   reason: string;
   suggested_actions: CopilotRecommendationAction[];
+  created_intervention_case_id?: number | null;
 };
 
 export type CopilotAnswer = {
@@ -30,6 +31,7 @@ export type CopilotAnswer = {
   sources: CopilotSourceReference[];
   warnings: string[];
   recommendations: CopilotRecommendation[];
+  created_intervention_case_id?: number | null;
 };
 
 export type CopilotAskRequest = {

@@ -1,0 +1,11 @@
+{
+  "cn=platform_admin,ou=Groups,dc=example,dc=local": "platform_admin",
+  "cn=institution_admin,ou=Groups,dc=example,dc=local": "institution_admin",
+  "cn=academic_admin,ou=Groups,dc=example,dc=local": "academic_admin",
+  "cn=it_support,ou=Groups,dc=example,dc=local": "it_support",
+  "cn=developer,ou=Groups,dc=example,dc=local": "developer",
+  "cn=ops_engineer,ou=Groups,dc=example,dc=local": "ops_engineer",
+  "cn=dean,ou=Groups,dc=example,dc=local": "dean",
+  "cn=teacher,ou=Groups,dc=example,dc=local": "teacher",
+  "cn=student,ou=Groups,dc=example,dc=local": "student"
+}

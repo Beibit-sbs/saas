@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { toSafeSessionFromProfile } from "@/shared/server/auth-session";
 import { getServerApiBaseUrl } from "@/shared/server/runtime-env";
 
+function readAuthToken(request: NextRequest): string | undefined {
+  return request.cookies.get("app_access_token")?.value ?? request.cookies.get("admin_token")?.value;
+}
+
 function unauthenticated(status: number = 401, requestId?: string | null) {
   return NextResponse.json(
     { authenticated: false, user: null },
@@ -17,7 +21,7 @@ function unauthenticated(status: number = 401, requestId?: string | null) {
 
 export async function GET(request: NextRequest) {
   const apiBase = getServerApiBaseUrl();
-  const token = request.cookies.get("admin_token")?.value;
+  const token = readAuthToken(request);
   if (!token) {
     return unauthenticated(401, request.headers.get("x-request-id"));
   }

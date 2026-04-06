@@ -13,6 +13,7 @@ from app.modules.integrations.service import save_setting
 from app.modules.plans.service import get_plan_by_code
 from app.modules.rbac.service import BASELINE_ROLE_PERMISSIONS, add_or_update_role_for_tenant
 from app.modules.tenants.service import create_tenant, force_delete_tenant, get_tenant_by_slug
+from app.core.db import get_raw_conn
 
 try:
     import psycopg
@@ -127,6 +128,9 @@ class TenantProvisioningService:
                 status="trial",
             )
 
+            # Bootstrap root OrgUnit for the new tenant (idempotent).
+            _bootstrap_org_unit_root(tenant_id, normalized_name)
+
             log_admin_action(
                 tenant_id=tenant_id,
                 actor=actor,
@@ -151,3 +155,31 @@ class TenantProvisioningService:
             "tenant": tenant,
             "plan": plan,
         }
+
+
+def _bootstrap_org_unit_root(tenant_id: int, tenant_name: str) -> None:
+    """Insert the root 'university' OrgUnit for a new tenant. Idempotent."""
+    with get_raw_conn() as conn:
+        if conn is None:
+            return
+        existing = conn.execute(
+            """
+            SELECT id FROM app_org_org_units
+            WHERE tenant_id = %s AND unit_type = 'university' AND parent_unit_id IS NULL
+            LIMIT 1
+            """,
+            (tenant_id,),
+        ).fetchone()
+        if existing:
+            conn.commit()
+            return
+        conn.execute(
+            """
+            INSERT INTO app_org_org_units
+                (tenant_id, name, code, unit_type, parent_unit_id, active, created_at, updated_at)
+            VALUES
+                (%s, %s, 'ROOT', 'university', NULL, true, NOW(), NOW())
+            """,
+            (tenant_id, tenant_name),
+        )
+        conn.commit()

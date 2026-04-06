@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from unittest.mock import MagicMock
 
 import pytest
@@ -24,7 +25,7 @@ from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 
 
 @pytest.fixture
-def override_profiles_db() -> MagicMock:
+def override_profiles_db() -> Generator[MagicMock, None, None]:
     session = MagicMock()
     app.dependency_overrides[get_profiles_db] = lambda: session
     try:
@@ -163,6 +164,44 @@ def test_create_faculty_endpoint_uses_profiles_write_permission(monkeypatch: pyt
     )
 
     assert response.status_code == 201, response.text
+
+
+def test_list_departments_endpoint_uses_profiles_read_permission(monkeypatch: pytest.MonkeyPatch, override_profiles_db: MagicMock) -> None:
+    async def fake_list_departments(self, tenant_id: int, page: int = 1, page_size: int = 50, unit_type: str | None = None):
+        return {
+            "total": 1,
+            "page": page,
+            "page_size": page_size,
+            "items": [
+                {
+                    "id": 201,
+                    "tenant_id": tenant_id,
+                    "code": "ENG",
+                    "name": "Engineering",
+                    "unit_type": "department",
+                    "parent_department_id": None,
+                    "head_person_id": None,
+                    "email": None,
+                    "phone": None,
+                    "location": None,
+                    "status": "active",
+                    "metadata_json": {},
+                    "version": 1,
+                    "created_by": "owner@example.com",
+                    "created_at": "2026-03-22T12:00:00Z",
+                    "updated_at": "2026-03-22T12:00:00Z",
+                }
+            ],
+        }
+
+    monkeypatch.setattr(profiles_service.DepartmentService, "list_departments", fake_list_departments)
+
+    student_headers = _auth_headers("student.example", ["student"])
+    allowed = client.get("/api/admin/profiles/departments", headers=ADMIN_HEADERS)
+    denied = client.get("/api/admin/profiles/departments", headers=student_headers)
+
+    assert allowed.status_code == 200, allowed.text
+    assert denied.status_code == 403, denied.text
 
 
 def test_profiles_db_dependency_fails_closed_with_503() -> None:

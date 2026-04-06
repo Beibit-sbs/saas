@@ -30,27 +30,84 @@ class AiCopilotService:
 
         if not q:
             return AiCopilotQueryType.UNSUPPORTED.value
-        if "student skills" in q or "skills profile" in q:
+        if "student skills" in q or "skills profile" in q or "навыки студента" in q or "студент дағд" in q:
             return AiCopilotQueryType.STUDENT_SKILLS.value
-        if "missing skills" in q and "program" in q:
+        if ("missing skills" in q and "program" in q) or ("не хватает навыков" in q and "программ" in q):
             return AiCopilotQueryType.MISSING_SKILLS.value
-        if "recommended courses" in q or "recommend courses" in q:
+        if (
+            "recommended courses" in q
+            or "recommend courses" in q
+            or "рекоменду" in q and "курс" in q
+            or "ұсын" in q and "курс" in q
+        ):
             return AiCopilotQueryType.RECOMMENDED_COURSES.value
-        if "student context" in q or "student profile" in q or "student " in q:
+        if (
+            "faculty context" in q
+            or "faculty profile" in q
+            or "advisor profile" in q
+            or "teacher profile" in q
+            or "контекст преподавателя" in q
+            or "профиль преподавателя" in q
+            or "контекст куратора" in q
+            or "оқытушы контекст" in q
+            or "мұғалім профил" in q
+            or "faculty " in q
+            or "advisor " in q
+            or "teacher " in q
+            or "преподавател" in q
+            or "куратор " in q
+            or "оқытушы " in q
+            or "мұғалім " in q
+        ):
+            return AiCopilotQueryType.FACULTY_CONTEXT.value
+        if (
+            "student context" in q
+            or "student profile" in q
+            or "student " in q
+            or "контекст студента" in q
+            or "профиль студента" in q
+            or "студент " in q
+            or "оқушы " in q
+        ) and not (
+            "риск отчислен" in q
+            or "на грани отчислен" in q
+            or "expulsion risk" in q
+            or "dropout risk" in q
+            or "academic risk" in q
+        ):
             return AiCopilotQueryType.STUDENT_CONTEXT.value
-        if "kpi" in q or "summary" in q:
+        if "kpi" in q or "summary" in q or "сводк" in q or "қорытынды" in q:
             return AiCopilotQueryType.KPI_OVERVIEW.value
-        if "how many students" in q or "currently have" in q:
+        if "how many students" in q or "currently have" in q or "сколько студентов" in q or "қанша студент" in q:
             return AiCopilotQueryType.KPI_OVERVIEW.value
-        if "how many enrollments" in q or "enrollments were created" in q:
+        if (
+            "how many enrollments" in q
+            or "enrollments were created" in q
+            or "сколько зачислен" in q
+            or "қанша тіркел" in q
+        ):
             return AiCopilotQueryType.KPI_OVERVIEW.value
-        if "how many grades" in q or "grades were submitted" in q:
+        if "how many grades" in q or "grades were submitted" in q or "сколько оцен" in q or "қанша баға" in q:
             return AiCopilotQueryType.KPI_OVERVIEW.value
-        if "automation" in q and ("failing" in q or "failed" in q):
+        if ("automation" in q and ("failing" in q or "failed" in q)) or ("автоматизац" in q and "ошиб" in q):
             return AiCopilotQueryType.AUTOMATION_HEALTH.value
-        if "academic risk" in q or "at academic risk" in q:
+        if (
+            "academic risk" in q
+            or "at academic risk" in q
+            or "академическ" in q and "риск" in q
+            or "риск отчислен" in q
+            or "на грани отчислен" in q
+            or "expulsion risk" in q
+            or "dropout risk" in q
+        ):
             return AiCopilotQueryType.ACADEMIC_RISK.value
-        if "failed jobs" in q or "notifications failing" in q or "platform health" in q:
+        if (
+            "failed jobs" in q
+            or "notifications failing" in q
+            or "platform health" in q
+            or "ошибки платформ" in q
+            or "платформа" in q and "здоров" in q
+        ):
             return AiCopilotQueryType.PLATFORM_HEALTH.value
 
         return AiCopilotQueryType.UNSUPPORTED.value
@@ -126,6 +183,18 @@ class AiCopilotService:
                     "recommendations": [],
                 }
             data = retrieval.retrieve_student_context(tenant_id=tenant_id, student_id=student_id, uow=uow)
+        elif query_type == AiCopilotQueryType.FACULTY_CONTEXT.value:
+            faculty_id = retrieval.extract_faculty_id(question, context)
+            if not faculty_id:
+                return {
+                    "question": question,
+                    "summary": "Faculty id is required for faculty context queries.",
+                    "insights": [],
+                    "sources": [],
+                    "warnings": ["missing_faculty_id"],
+                    "recommendations": [],
+                }
+            data = retrieval.retrieve_faculty_context(tenant_id=tenant_id, faculty_id=faculty_id, uow=uow)
         elif query_type == AiCopilotQueryType.STUDENT_SKILLS.value:
             data = retrieval.retrieve_student_skills_profile(
                 tenant_id=tenant_id,
@@ -157,7 +226,7 @@ class AiCopilotService:
                 "recommendations": [],
             }
 
-        recommendations = self._recommendation_service.generate_recommendations(
+        recommendations, created_case_id = self._recommendation_service.generate_recommendations(
             tenant_id=tenant_id,
             actor_id="system",
             question=question,
@@ -173,6 +242,7 @@ class AiCopilotService:
             "sources": list(data.get("sources") or []),
             "warnings": list(data.get("warnings") or []),
             "recommendations": [r.model_dump() for r in recommendations],
+            "created_intervention_case_id": created_case_id,
         }
 
 

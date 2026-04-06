@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Bot, Send, Lightbulb } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Bot, Send, Lightbulb, CheckCircle, AlertCircle } from "lucide-react";
 
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { Badge } from "@/shared/ui/badge";
@@ -12,15 +13,30 @@ import { RequirePermission } from "@/shared/ui/permission-gate";
 import { useAdminAuth } from "@/shared/auth/context";
 import { useAskCopilot } from "@/modules/platform/ai/use-copilot";
 import { useLanguage } from "@/app/components/LanguageProvider";
+import { useToast } from "@/shared/ui/use-toast";
 
 export default function AICopilotPage() {
   const { t } = useLanguage();
   const { user } = useAdminAuth();
+  const router = useRouter();
+  const { toast } = useToast();
   const tenantId = user?.tenantId ?? 0;
   const [question, setQuestion] = useState("");
   const ask = useAskCopilot();
 
   const canSubmit = useMemo(() => question.trim().length > 0 && !ask.isPending, [question, ask.isPending]);
+
+  // Show notification when intervention case is created
+  useEffect(() => {
+    if (ask.data?.created_intervention_case_id) {
+      const caseId = ask.data.created_intervention_case_id;
+      toast({
+        title: t("aiCopilot.caseCreatedTitle") || "Intervention Case Created",
+        description: `${t("aiCopilot.caseCreatedMessage") || "Case"}#${caseId} ${t("aiCopilot.caseCreatedSuffix") || "has been created"}`,
+        variant: "success",
+      });
+    }
+  }, [ask.data?.created_intervention_case_id, toast, t]);
 
   return (
     <RequirePermission
@@ -119,6 +135,29 @@ export default function AICopilotPage() {
                     </Badge>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {ask.data.created_intervention_case_id && (
+              <div className="rounded border border-green-200 bg-green-50 p-3 space-y-2" data-testid="copilot-case-created">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <p className="text-sm font-medium text-green-900">
+                    {t("aiCopilot.caseCreatedTitle") || "Intervention Case Created"}
+                  </p>
+                </div>
+                <p className="text-xs text-green-800">
+                  {t("aiCopilot.caseCreatedMessage") || "Case"} #{ask.data.created_intervention_case_id} {t("aiCopilot.caseCreatedSuffix") || "created"}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => router.push(`/console/interventions?case=${ask.data.created_intervention_case_id}`)}
+                  className="border-green-600 text-green-600 hover:bg-green-50"
+                  data-testid="copilot-open-case-btn"
+                >
+                  {t("aiCopilot.openCase") || "Open Case"}
+                </Button>
               </div>
             )}
 

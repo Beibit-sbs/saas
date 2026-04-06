@@ -21,6 +21,7 @@ from app.core.tenant import get_current_tenant
 from app.modules.profiles.dependencies import get_profiles_db
 from app.modules.profiles.schemas import (
     DepartmentCreateSchema,
+    DepartmentListResponseSchema,
     DepartmentReadSchema,
     FacultyCreateSchema,
     FacultyReadSchema,
@@ -177,6 +178,29 @@ async def create_department_endpoint(
         return await service.create_department(int(tenant["id"]), request_model, actor)
     except (PermissionError, ValueError, IntegrityError) as exc:
         raise _raise_profile_http_error(exc) from exc
+
+
+@router.get(
+    "/departments",
+    response_model=DepartmentListResponseSchema,
+    responses={403: {"model": ErrorDetailResponse}},
+)
+async def list_departments_endpoint(
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("profiles.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: ProfilesDb = None,
+    page: int = 1,
+    page_size: int = 50,
+    unit_type: str | None = None,
+) -> DepartmentListResponseSchema:
+    service = DepartmentService(db)
+    return await service.list_departments(
+        tenant_id=int(tenant["id"]),
+        page=page,
+        page_size=page_size,
+        unit_type=unit_type,
+    )
 
 
 @router.post(

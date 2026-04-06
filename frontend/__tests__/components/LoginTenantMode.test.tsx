@@ -3,6 +3,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import LoginPage from "../../app/login/page";
 
+function getRequestUrl(input: RequestInfo | URL): string {
+  if (typeof input === "string") {
+    return input;
+  }
+  if (input instanceof URL) {
+    return input.toString();
+  }
+  if (input instanceof Request) {
+    return input.url;
+  }
+  return String(input);
+}
+
 const replaceMock = vi.fn();
 const refreshMock = vi.fn();
 const toastMock = vi.fn();
@@ -91,9 +104,12 @@ describe("LoginPage tenant UX", () => {
 
   it("omits tenant_id for local/ platform admin login", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
+      const url = getRequestUrl(input);
       if (url.endsWith("/api/auth/me")) {
         return new Response(JSON.stringify({ authenticated: false }), { status: 401 });
+      }
+      if (url.endsWith("/api/auth/csrf")) {
+        return new Response(JSON.stringify({ csrf_token: "test-csrf-token" }), { status: 200 });
       }
       if (url.endsWith("/api/auth/login")) {
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
@@ -117,10 +133,10 @@ describe("LoginPage tenant UX", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => String(input).endsWith("/api/auth/login"))).toBe(true);
+      expect(fetchMock.mock.calls.some(([input]) => getRequestUrl(input).endsWith("/api/auth/login"))).toBe(true);
     });
 
-    const loginCall = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/api/auth/login"));
+    const loginCall = fetchMock.mock.calls.find(([input]) => getRequestUrl(input).endsWith("/api/auth/login"));
     expect(loginCall).toBeDefined();
     const [, init] = loginCall as [RequestInfo | URL, RequestInit];
     expect(JSON.parse(String(init.body))).toEqual({ username: "local/root", password: "secret" });
@@ -128,9 +144,12 @@ describe("LoginPage tenant UX", () => {
 
   it("loads directory and submits selected university", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
+      const url = getRequestUrl(input);
       if (url.endsWith("/api/auth/me")) {
         return new Response(JSON.stringify({ authenticated: false }), { status: 401 });
+      }
+      if (url.endsWith("/api/auth/csrf")) {
+        return new Response(JSON.stringify({ csrf_token: "test-csrf-token" }), { status: 200 });
       }
       if (url.endsWith("/api/auth/login")) {
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
@@ -156,10 +175,10 @@ describe("LoginPage tenant UX", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => String(input).endsWith("/api/auth/login"))).toBe(true);
+      expect(fetchMock.mock.calls.some(([input]) => getRequestUrl(input).endsWith("/api/auth/login"))).toBe(true);
     });
 
-    const loginCall = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/api/auth/login"));
+    const loginCall = fetchMock.mock.calls.find(([input]) => getRequestUrl(input).endsWith("/api/auth/login"));
     expect(loginCall).toBeDefined();
     const [, init] = loginCall as [RequestInfo | URL, RequestInit];
     expect(JSON.parse(String(init.body))).toEqual({
@@ -173,9 +192,12 @@ describe("LoginPage tenant UX", () => {
     window.localStorage.setItem("login.lastTenantId", "3");
 
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
+      const url = getRequestUrl(input);
       if (url.endsWith("/api/auth/me")) {
         return new Response(JSON.stringify({ authenticated: false }), { status: 401 });
+      }
+      if (url.endsWith("/api/auth/csrf")) {
+        return new Response(JSON.stringify({ csrf_token: "test-csrf-token" }), { status: 200 });
       }
       if (url.endsWith("/api/auth/login")) {
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
@@ -199,10 +221,10 @@ describe("LoginPage tenant UX", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => String(input).endsWith("/api/auth/login"))).toBe(true);
+      expect(fetchMock.mock.calls.some(([input]) => getRequestUrl(input).endsWith("/api/auth/login"))).toBe(true);
     });
 
-    const loginCall = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/api/auth/login"));
+    const loginCall = fetchMock.mock.calls.find(([input]) => getRequestUrl(input).endsWith("/api/auth/login"));
     expect(loginCall).toBeDefined();
     const [, init] = loginCall as [RequestInfo | URL, RequestInit];
     expect(JSON.parse(String(init.body))).toEqual({

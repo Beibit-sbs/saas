@@ -23,6 +23,7 @@ router = APIRouter(prefix="/api/admin/jobs", tags=["jobs"])
 _VALID_JOB_STATUSES = {"queued", "running", "succeeded", "failed", "cancelled"}
 _QUEUE_DEFAULT_STATUSES = ("queued", "running")
 _HISTORY_DEFAULT_STATUSES = ("succeeded", "failed", "cancelled")
+_DISABLED_PUBLIC_JOB_TYPES = {"sync", "ldap.sync", "ai.generate"}
 
 
 def _is_platform_admin_request(request: Request, actor: str) -> bool:
@@ -88,6 +89,16 @@ def _statuses_from_queue_path(queue_path: str | None) -> tuple[str, ...]:
     if head in _VALID_JOB_STATUSES:
         return (head,)
     raise HTTPException(status_code=404, detail=f"unsupported queue view: {queue_path}")
+
+
+def _validate_public_job_type(job_type: str) -> str:
+    normalized = str(job_type or "").strip().lower()
+    if normalized in _DISABLED_PUBLIC_JOB_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"job_type '{normalized}' is de-scoped and unavailable for manual enqueue",
+        )
+    return normalized
 
 
 @router.get("", response_model=JobListResponse)
@@ -171,10 +182,11 @@ def create_job(
     tenant_id: int | None = Query(default=None, gt=0),
 ) -> JobResultResponse:
     target_tenant_id = _resolve_target_tenant_id(request, actor, tenant, tenant_id)
+    normalized_job_type = _validate_public_job_type(payload.job_type)
     try:
         row = enqueue_job(
             tenant_id=target_tenant_id,
-            job_type=payload.job_type,
+            job_type=normalized_job_type,
             payload=payload.payload,
             created_by=actor,
             max_retries=payload.max_retries,

@@ -42,12 +42,14 @@ class FeatureFlagRepository:
         key: str,
         enabled: bool,
         tenant_id: int | None,
+        rollout_percentage: int = 100,
         conn: object | None = None,
     ) -> dict[str, object]:
         normalized_scope = scope.strip().lower()
         normalized_module = module.strip().lower()
         normalized_key = key.strip().lower()
         normalized_tenant = _normalize_tenant_for_scope(scope=normalized_scope, tenant_id=tenant_id)
+        normalized_rollout = max(0, min(100, int(rollout_percentage)))
 
         if conn is None:
             with transaction() as tx:
@@ -57,6 +59,7 @@ class FeatureFlagRepository:
                     key=normalized_key,
                     enabled=enabled,
                     tenant_id=normalized_tenant,
+                    rollout_percentage=normalized_rollout,
                     conn=tx,
                 )
 
@@ -75,11 +78,12 @@ class FeatureFlagRepository:
                 if existing is None:
                     cur.execute(
                         """
-                        INSERT INTO app_platform_feature_flags (tenant_id, scope, module, key, enabled, updated_at)
-                        VALUES (%s, %s, %s, %s, %s, NOW())
+                        INSERT INTO app_platform_feature_flags
+                            (tenant_id, scope, module, key, enabled, rollout_percentage, updated_at)
+                        VALUES (%s, %s, %s, %s, %s, %s, NOW())
                         RETURNING updated_at
                         """,
-                        (normalized_tenant, normalized_scope, normalized_module, normalized_key, bool(enabled)),
+                        (normalized_tenant, normalized_scope, normalized_module, normalized_key, bool(enabled), normalized_rollout),
                     )
                     updated_at = cur.fetchone()[0]
                 else:
@@ -87,11 +91,12 @@ class FeatureFlagRepository:
                         """
                         UPDATE app_platform_feature_flags
                         SET enabled = %s,
+                            rollout_percentage = %s,
                             updated_at = NOW()
                         WHERE id = %s
                         RETURNING updated_at
                         """,
-                        (bool(enabled), int(existing[0])),
+                        (bool(enabled), normalized_rollout, int(existing[0])),
                     )
                     updated_at = cur.fetchone()[0]
 
@@ -101,6 +106,7 @@ class FeatureFlagRepository:
                 "module": normalized_module,
                 "key": normalized_key,
                 "enabled": bool(enabled),
+                "rollout_percentage": normalized_rollout,
                 "updated_at": updated_at.isoformat() if hasattr(updated_at, "isoformat") else str(updated_at),
             }
 
@@ -112,6 +118,7 @@ class FeatureFlagRepository:
                 "module": normalized_module,
                 "key": normalized_key,
                 "enabled": bool(enabled),
+                "rollout_percentage": normalized_rollout,
                 "updated_at": self._now_iso(),
             }
             self._memory[store_key] = row
@@ -130,7 +137,7 @@ class FeatureFlagRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT scope, tenant_id, module, key, enabled, updated_at
+                    SELECT scope, tenant_id, module, key, enabled, rollout_percentage, updated_at
                     FROM app_platform_feature_flags
                     WHERE (scope = 'platform' AND tenant_id = %s)
                        OR (scope = 'tenant' AND tenant_id = %s)
@@ -146,7 +153,8 @@ class FeatureFlagRepository:
                     "module": str(row[2]),
                     "key": str(row[3]),
                     "enabled": bool(row[4]),
-                    "updated_at": row[5].isoformat() if hasattr(row[5], "isoformat") else str(row[5]),
+                    "rollout_percentage": int(row[5]),
+                    "updated_at": row[6].isoformat() if hasattr(row[6], "isoformat") else str(row[6]),
                 }
                 for row in rows
             ]

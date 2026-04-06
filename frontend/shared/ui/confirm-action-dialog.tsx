@@ -43,6 +43,7 @@ export function ConfirmActionDialog({
   const [innerOpen, setInnerOpen] = useState(false);
   const resolvedOpen = open ?? innerOpen;
   const resolvedOnOpenChange = onOpenChange ?? setInnerOpen;
+  const resolvedDescription = description ?? "Review this action and confirm to continue.";
 
   return (
     <AlertDialog open={resolvedOpen} onOpenChange={resolvedOnOpenChange}>
@@ -50,7 +51,7 @@ export function ConfirmActionDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
-          {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
+          <AlertDialogDescription>{resolvedDescription}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>{cancelLabel}</AlertDialogCancel>

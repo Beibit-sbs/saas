@@ -50,6 +50,8 @@ const NAV_LABEL_KEY: Record<string, string> = {
   "Schedule": "nav.schedule",
   "Transcript": "nav.transcript",
   "Requests": "nav.requests",
+  "Admissions": "nav.admissions",
+  "Interventions": "nav.interventions",
 };
 
 function normalizePath(path: string): string {

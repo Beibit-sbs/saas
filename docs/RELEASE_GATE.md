@@ -4,6 +4,15 @@
 
 Release Gate v1 blocks unsafe merges and deploys by enforcing deterministic checks for tenant isolation, platform regressions, frontend regressions, and migration safety.
 
+Current validated baseline snapshot (2026-04-06):
+- Architecture governance gate: 7 passed
+- Tenant safety gate: 8 passed
+- Platform regression gate: 439 passed, 9 skipped
+- Security regression gate: 42 passed
+- Template validation gate: 5 passed
+- Frontend safety gate: 147 passed
+- Migration safety gate: head `d4c5e6f7a8b9`
+
 Canonical release checklist:
 
 - `docs/RELEASE_CHECKLIST.md`
@@ -39,7 +48,7 @@ A change is merge-ready only if all required jobs pass.
 
 ## Required Checks Before Deploy
 
-Run unified local pre-release command:
+Run unified Docker pre-release command:
 
 ```bash
 bash scripts/release_gate.sh
@@ -111,5 +120,14 @@ Current split keeps execution simple and readable:
 - deeper safety gates:
   - `platform-regression-gate`
   - `migration-safety-gate`
+   - `test-evidence-artifacts`
+   - `frontend-role-zones-e2e-gate`
+- release aggregate gate:
+   - `release-readiness-gate` (fails if any required gate failed)
 
 No additional CI infrastructure is introduced in v1.
+
+## Scope Notes
+
+- Admin console quality is currently higher than role-specific end-user portals.
+- Student/faculty full UX journeys are tracked as productization work and should be explicitly validated in pilot release criteria for derived projects.

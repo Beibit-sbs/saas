@@ -47,6 +47,15 @@ class DepartmentRules:
         if department_id is not None and parent_department_id == department_id:
             raise ValueError("department cannot be its own parent")
 
+    @classmethod
+    def validate_head_belongs_to_tenant(cls, person: Any, tenant_id: int) -> None:
+        TenantIsolationRules.assert_resource_belongs_to_tenant(
+            person,
+            tenant_id,
+            resource_name="Person",
+            resource_id=getattr(person, "id", None),
+        )
+
 
 class ProgramRules:
     @classmethod

@@ -347,6 +347,86 @@ def test_build_student_profile_missing_student_returns_none_fields(reset_shared_
     assert profile["department"] is None
 
 
+def test_build_faculty_profile_returns_full_profile(reset_shared_state) -> None:
+    tenant_id = _create_tenant()
+    repo = ContextRepository()
+    svc = ContextService(repository=repo)
+
+    repo.upsert_entity(
+        tenant_id=tenant_id,
+        entity_type="advisor",
+        entity_id="adv-1",
+        data_json={"name": "Dr. Mentor"},
+    )
+    repo.upsert_entity(
+        tenant_id=tenant_id,
+        entity_type="student",
+        entity_id="s1",
+        data_json={"name": "Alice"},
+    )
+    repo.upsert_entity(
+        tenant_id=tenant_id,
+        entity_type="program",
+        entity_id="p1",
+        data_json={"name": "CS"},
+    )
+    repo.upsert_entity(
+        tenant_id=tenant_id,
+        entity_type="department",
+        entity_id="d1",
+        data_json={"name": "Computer Science"},
+    )
+
+    repo.upsert_relation(
+        tenant_id=tenant_id,
+        source_entity_type="student",
+        source_entity_id="s1",
+        relation_type="advised_by",
+        target_entity_type="advisor",
+        target_entity_id="adv-1",
+    )
+    repo.upsert_relation(
+        tenant_id=tenant_id,
+        source_entity_type="student",
+        source_entity_id="s1",
+        relation_type="enrolled_in",
+        target_entity_type="program",
+        target_entity_id="p1",
+    )
+    repo.upsert_relation(
+        tenant_id=tenant_id,
+        source_entity_type="department",
+        source_entity_id="d1",
+        relation_type="has_student",
+        target_entity_type="student",
+        target_entity_id="s1",
+    )
+
+    profile = svc.build_faculty_profile(faculty_id="adv-1", tenant_id=tenant_id)
+
+    assert profile["faculty"] is not None
+    assert profile["faculty"]["data_json"]["name"] == "Dr. Mentor"
+    assert len(profile["advised_students"]) == 1
+    assert profile["advised_students"][0]["entity_id"] == "s1"
+    assert len(profile["advised_programs"]) == 1
+    assert profile["advised_programs"][0]["entity_id"] == "p1"
+    assert len(profile["departments"]) == 1
+    assert profile["departments"][0]["entity_id"] == "d1"
+
+
+def test_build_faculty_profile_missing_faculty_returns_empty_profile(reset_shared_state) -> None:
+    tenant_id = _create_tenant()
+    repo = ContextRepository()
+    svc = ContextService(repository=repo)
+
+    profile = svc.build_faculty_profile(faculty_id="nonexistent", tenant_id=tenant_id)
+
+    assert profile["faculty"] is None
+    assert profile["advised_students"] == []
+    assert profile["advised_programs"] == []
+    assert profile["departments"] == []
+
+
 # ------------------------------------------------------------------ #
 #  4. Tenant isolation                                                 #
 # ------------------------------------------------------------------ #
@@ -410,7 +490,7 @@ def test_upsert_relation_is_idempotent(reset_shared_state) -> None:
     tenant_id = _create_tenant()
 
     for _ in range(3):
-        rel = context_service.upsert_relation(
+        context_service.upsert_relation(
             tenant_id=tenant_id,
             source_entity_type="student",
             source_entity_id="s1",
@@ -510,6 +590,43 @@ def test_admin_context_student_endpoint_returns_profile(reset_shared_state) -> N
     assert body["student"]["data_json"]["name"] == "Frank"
     assert "enrollments" in body
     assert "grades" in body
+    assert "automation_flags" in body
+
+
+def test_admin_context_faculty_endpoint_returns_profile(reset_shared_state) -> None:
+    tenant_id = _create_tenant()
+
+    context_service.upsert_entity(
+        tenant_id=tenant_id,
+        entity_type="advisor",
+        entity_id="api-adv-1",
+        data_json={"name": "Dr. Faculty"},
+    )
+    context_service.upsert_entity(
+        tenant_id=tenant_id,
+        entity_type="student",
+        entity_id="api-stu-2",
+        data_json={"name": "Helen"},
+    )
+    context_service.upsert_relation(
+        tenant_id=tenant_id,
+        source_entity_type="student",
+        source_entity_id="api-stu-2",
+        relation_type="advised_by",
+        target_entity_type="advisor",
+        target_entity_id="api-adv-1",
+    )
+
+    resp = client.get(
+        f"/api/v1/admin/platform/context/faculty/api-adv-1?tenant_id={tenant_id}",
+        headers=ADMIN_HEADERS,
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["faculty"] is not None
+    assert body["faculty"]["data_json"]["name"] == "Dr. Faculty"
+    assert len(body["advised_students"]) == 1
+    assert body["advised_students"][0]["entity_id"] == "api-stu-2"
     assert "automation_flags" in body
 
 

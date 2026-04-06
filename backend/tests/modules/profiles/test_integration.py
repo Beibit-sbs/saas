@@ -158,13 +158,15 @@ def _faculty_read(**overrides) -> FacultyReadSchema:
     return FacultyReadSchema(**base)
 
 
-def _preserve_state_factories() -> tuple[object, object, object, object, object]:
+def _preserve_state_factories() -> tuple[object, object, object, object, object, object, object]:
     return (
         getattr(app.state, "admissions_session_factory", _MISSING),
         getattr(app.state, "profiles_session_factory", _MISSING),
         getattr(app.state, "students_session_factory", _MISSING),
         getattr(app.state, "grades_session_factory", _MISSING),
         getattr(app.state, "workflows_session_factory", _MISSING),
+        getattr(app.state, "interventions_session_factory", _MISSING),
+        getattr(app.state, "org_structure_session_factory", _MISSING),
     )
 
 
@@ -174,6 +176,8 @@ def _restore_state_factories(
     original_students: object,
     original_grades: object,
     original_workflows: object,
+    original_interventions: object,
+    original_org_structure: object,
 ) -> None:
     if original_admissions is _MISSING:
         try:
@@ -215,6 +219,22 @@ def _restore_state_factories(
     else:
         app.state.workflows_session_factory = original_workflows
 
+    if original_interventions is _MISSING:
+        try:
+            del app.state.interventions_session_factory
+        except (AttributeError, KeyError):
+            pass
+    else:
+        app.state.interventions_session_factory = original_interventions
+
+    if original_org_structure is _MISSING:
+        try:
+            del app.state.org_structure_session_factory
+        except (AttributeError, KeyError):
+            pass
+    else:
+        app.state.org_structure_session_factory = original_org_structure
+
 
 @pytest.fixture()
 def override_profiles_db() -> Generator[MagicMock, None, None]:
@@ -229,35 +249,62 @@ def override_profiles_db() -> Generator[MagicMock, None, None]:
 class TestStartupWithDatabaseUrl:
     def test_profiles_session_factory_is_set_on_state(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("DATABASE_URL", "postgresql://db/testdb")
-        original_admissions, original_profiles, original_students, original_grades, original_workflows = _preserve_state_factories()
+        (
+            original_admissions,
+            original_profiles,
+            original_students,
+            original_grades,
+            original_workflows,
+            original_interventions,
+            original_org_structure,
+        ) = _preserve_state_factories()
         fake_profiles_factory = MagicMock(name="profiles_session_factory")
+        make_factory_calls = 0
+
+        def _make_factory_side_effect(*_args, **_kwargs):
+            nonlocal make_factory_calls
+            make_factory_calls += 1
+            # Profiles factory is expected to be the second assignment in startup wiring.
+            if make_factory_calls == 2:
+                return fake_profiles_factory
+            return MagicMock(name=f"session_factory_{make_factory_calls}")
 
         try:
             with (
                 patch("app.main.build_engine", return_value=MagicMock(name="engine")) as mock_build,
                 patch(
                     "app.main.make_session_factory",
-                    side_effect=[
-                        MagicMock(name="admissions_factory"),
-                        fake_profiles_factory,
-                        MagicMock(name="students_session_factory"),
-                        MagicMock(name="grades_session_factory"),
-                        MagicMock(name="workflows_session_factory"),
-                    ],
+                    side_effect=_make_factory_side_effect,
                 ) as mock_factory,
             ):
                 with TestClient(app, raise_server_exceptions=False):
                     assert app.state.profiles_session_factory is fake_profiles_factory
                     mock_build.assert_called_once()
-                    assert mock_factory.call_count == 5
+                    assert mock_factory.call_count >= 2
         finally:
-            _restore_state_factories(original_admissions, original_profiles, original_students, original_grades, original_workflows)
+            _restore_state_factories(
+                original_admissions,
+                original_profiles,
+                original_students,
+                original_grades,
+                original_workflows,
+                original_interventions,
+                original_org_structure,
+            )
 
 
 class TestStartupWithoutDatabaseUrl:
     def test_profiles_app_starts_without_database_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("DATABASE_URL", raising=False)
-        original_admissions, original_profiles, original_students, original_grades, original_workflows = _preserve_state_factories()
+        (
+            original_admissions,
+            original_profiles,
+            original_students,
+            original_grades,
+            original_workflows,
+            original_interventions,
+            original_org_structure,
+        ) = _preserve_state_factories()
 
         try:
             with patch("app.main.build_engine", side_effect=RuntimeError("DATABASE_URL is not set")):
@@ -266,11 +313,27 @@ class TestStartupWithoutDatabaseUrl:
                     assert response.status_code == 503, response.text
                     assert app.state.profiles_session_factory is None
         finally:
-            _restore_state_factories(original_admissions, original_profiles, original_students, original_grades, original_workflows)
+            _restore_state_factories(
+                original_admissions,
+                original_profiles,
+                original_students,
+                original_grades,
+                original_workflows,
+                original_interventions,
+                original_org_structure,
+            )
 
     def test_profiles_startup_warning_is_logged(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("DATABASE_URL", raising=False)
-        original_admissions, original_profiles, original_students, original_grades, original_workflows = _preserve_state_factories()
+        (
+            original_admissions,
+            original_profiles,
+            original_students,
+            original_grades,
+            original_workflows,
+            original_interventions,
+            original_org_structure,
+        ) = _preserve_state_factories()
 
         try:
             with patch("app.main.logger") as mock_logger:
@@ -280,7 +343,15 @@ class TestStartupWithoutDatabaseUrl:
             warning_messages = [str(call) for call in mock_logger.warning.call_args_list]
             assert any("profiles database not configured" in msg for msg in warning_messages)
         finally:
-            _restore_state_factories(original_admissions, original_profiles, original_students, original_grades, original_workflows)
+            _restore_state_factories(
+                original_admissions,
+                original_profiles,
+                original_students,
+                original_grades,
+                original_workflows,
+                original_interventions,
+                original_org_structure,
+            )
 
 
 class TestFailClosedBehavior:

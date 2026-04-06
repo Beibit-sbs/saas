@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     JSON,
+    Float,
     String,
     UniqueConstraint,
     text,
@@ -62,6 +63,18 @@ class AttendanceStatus(str, Enum):
     EXCUSED = "excused"
 
 
+class TopicDifficultyLevel(str, Enum):
+    BEGINNER = "beginner"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+
+
+class TopicProgressStatus(str, Enum):
+    NOT_STARTED = "not_started"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+
+
 day_of_week_enum = SAEnum(
     DayOfWeek,
     name="scheduling_day_of_week",
@@ -95,6 +108,18 @@ lesson_status_enum = SAEnum(
 attendance_status_enum = SAEnum(
     AttendanceStatus,
     name="scheduling_attendance_status",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
+)
+topic_difficulty_level_enum = SAEnum(
+    TopicDifficultyLevel,
+    name="scheduling_topic_difficulty_level",
+    values_callable=lambda enum_cls: [item.value for item in enum_cls],
+    validate_strings=True,
+)
+topic_progress_status_enum = SAEnum(
+    TopicProgressStatus,
+    name="scheduling_topic_progress_status",
     values_callable=lambda enum_cls: [item.value for item in enum_cls],
     validate_strings=True,
 )
@@ -405,4 +430,172 @@ class LessonAttendanceModel(Base):
         CheckConstraint("version >= 1", name="ck_scheduling_lesson_attendance_version_positive"),
         Index("ix_scheduling_lesson_attendance_tenant_lesson", "tenant_id", "lesson_instance_id"),
         Index("ix_scheduling_lesson_attendance_tenant_student", "tenant_id", "student_profile_id"),
+    )
+
+
+class DisciplineModel(Base):
+    __tablename__ = "app_scheduling_disciplines"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("app_tenants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    unique_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    credits: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    prerequisites_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default=text("'{}'::json"))
+    learning_outcomes_json: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default=text("'[]'::json"))
+    is_active: Mapped[bool] = mapped_column(nullable=False, default=True, server_default=text("true"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("NOW()"),
+        onupdate=text("NOW()"),
+    )
+    version: Mapped[int] = mapped_column(BigInteger, nullable=False, default=1, server_default=text("1"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "id", name="ux_scheduling_disciplines_tenant_id_id"),
+        UniqueConstraint("tenant_id", "unique_code", name="ux_scheduling_disciplines_tenant_code"),
+        CheckConstraint("credits IS NULL OR credits >= 0", name="ck_scheduling_disciplines_credits_non_negative"),
+        CheckConstraint("version >= 1", name="ck_scheduling_disciplines_version_positive"),
+        Index("ix_scheduling_disciplines_tenant_active", "tenant_id", "is_active"),
+    )
+
+
+class LessonTopicModel(Base):
+    __tablename__ = "app_scheduling_lesson_topics"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("app_tenants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    discipline_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    module_num: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    topic_num: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    difficulty_level: Mapped[TopicDifficultyLevel] = mapped_column(
+        topic_difficulty_level_enum,
+        nullable=False,
+        default=TopicDifficultyLevel.BEGINNER,
+        server_default=text("'beginner'"),
+    )
+    recommended_materials_json: Mapped[list] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'::json"),
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("NOW()"),
+        onupdate=text("NOW()"),
+    )
+    version: Mapped[int] = mapped_column(BigInteger, nullable=False, default=1, server_default=text("1"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "id", name="ux_scheduling_lesson_topics_tenant_id_id"),
+        UniqueConstraint(
+            "tenant_id",
+            "discipline_id",
+            "module_num",
+            "topic_num",
+            name="ux_scheduling_lesson_topics_tenant_discipline_module_topic",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "discipline_id"],
+            ["app_scheduling_disciplines.tenant_id", "app_scheduling_disciplines.id"],
+            ondelete="CASCADE",
+            name="fk_scheduling_lesson_topics_discipline",
+        ),
+        CheckConstraint("module_num >= 1", name="ck_scheduling_lesson_topics_module_num_positive"),
+        CheckConstraint("topic_num >= 1", name="ck_scheduling_lesson_topics_topic_num_positive"),
+        CheckConstraint("version >= 1", name="ck_scheduling_lesson_topics_version_positive"),
+        Index("ix_scheduling_lesson_topics_tenant_discipline", "tenant_id", "discipline_id"),
+        Index("ix_scheduling_lesson_topics_tenant_difficulty", "tenant_id", "difficulty_level"),
+    )
+
+
+class StudentTopicProgressModel(Base):
+    __tablename__ = "app_scheduling_student_topic_progress"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("app_tenants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    student_profile_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    topic_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    discipline_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    first_seen_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    last_reviewed_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    status: Mapped[TopicProgressStatus] = mapped_column(
+        topic_progress_status_enum,
+        nullable=False,
+        default=TopicProgressStatus.NOT_STARTED,
+        server_default=text("'not_started'"),
+    )
+    materials_opened: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
+    materials_completed: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
+    quiz_attempts: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
+    quiz_best_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("NOW()"),
+        onupdate=text("NOW()"),
+    )
+    version: Mapped[int] = mapped_column(BigInteger, nullable=False, default=1, server_default=text("1"))
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "id", name="ux_scheduling_student_topic_progress_tenant_id_id"),
+        UniqueConstraint(
+            "tenant_id",
+            "student_profile_id",
+            "topic_id",
+            name="ux_scheduling_student_topic_progress_student_topic",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "student_profile_id"],
+            ["app_students_profiles.tenant_id", "app_students_profiles.id"],
+            ondelete="CASCADE",
+            name="fk_scheduling_student_topic_progress_student_profile",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "topic_id"],
+            ["app_scheduling_lesson_topics.tenant_id", "app_scheduling_lesson_topics.id"],
+            ondelete="CASCADE",
+            name="fk_scheduling_student_topic_progress_topic",
+        ),
+        ForeignKeyConstraint(
+            ["tenant_id", "discipline_id"],
+            ["app_scheduling_disciplines.tenant_id", "app_scheduling_disciplines.id"],
+            ondelete="CASCADE",
+            name="fk_scheduling_student_topic_progress_discipline",
+        ),
+        CheckConstraint("materials_opened >= 0", name="ck_sched_stp_mat_open_ge0"),
+        CheckConstraint(
+            "materials_completed >= 0",
+            name="ck_sched_stp_mat_done_ge0",
+        ),
+        CheckConstraint("quiz_attempts >= 0", name="ck_sched_stp_quiz_attempts_ge0"),
+        CheckConstraint(
+            "quiz_best_score IS NULL OR (quiz_best_score >= 0 AND quiz_best_score <= 100)",
+            name="ck_sched_stp_quiz_score_range",
+        ),
+        CheckConstraint("version >= 1", name="ck_sched_stp_ver_ge1"),
+        Index("ix_scheduling_student_topic_progress_tenant_student", "tenant_id", "student_profile_id"),
+        Index("ix_scheduling_student_topic_progress_tenant_topic", "tenant_id", "topic_id"),
+        Index("ix_scheduling_student_topic_progress_tenant_status", "tenant_id", "status"),
     )

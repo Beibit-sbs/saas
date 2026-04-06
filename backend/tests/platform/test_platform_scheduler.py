@@ -32,3 +32,4 @@ def test_scheduler_registers_application_service_tasks() -> None:
     assert "notification_retry_dispatch" in task_names
     assert "outbox_event_dispatch" in task_names
     assert "webhook_retry_dispatch" in task_names
+    assert "academic_risk_detection" in task_names

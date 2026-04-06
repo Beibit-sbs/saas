@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 
 const useLanguageMock = vi.fn();
 const useAdminAuthMock = vi.fn();
@@ -16,6 +17,30 @@ vi.mock("../../shared/auth/hooks", () => ({
 
 vi.mock("../../shared/ui/use-toast", () => ({
   useToast: (...args: unknown[]) => useToastMock(...args),
+}));
+
+vi.mock("../../shared/ui/select", () => ({
+  Select: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  SelectTrigger: ({ children, id, className }: { children: ReactNode; id?: string; className?: string }) => (
+    <button id={id} className={className} type="button" role="combobox" aria-expanded="false">
+      {children}
+    </button>
+  ),
+  SelectValue: ({ placeholder }: { placeholder?: string }) => <span>{placeholder ?? ""}</span>,
+  SelectContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  SelectItem: ({ children }: { children: ReactNode }) => <div role="option">{children}</div>,
+}));
+
+vi.mock("../../shared/ui/switch", () => ({
+  Switch: ({ checked, onCheckedChange, ...props }: { checked?: boolean; onCheckedChange?: (checked: boolean) => void } & Record<string, unknown>) => (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked ? "true" : "false"}
+      onClick={() => onCheckedChange?.(!checked)}
+      {...props}
+    />
+  ),
 }));
 
 import ProfilePage from "../../app/(admin)/console/profile/page";
@@ -96,6 +121,22 @@ function t(key: string) {
   return defaultLanguageDict[key] ?? key;
 }
 
+async function clickWithAct(user: ReturnType<typeof userEvent.setup>, element: Element) {
+  await act(async () => {
+    await user.click(element);
+  });
+}
+
+async function typeWithAct(
+  user: ReturnType<typeof userEvent.setup>,
+  element: Element,
+  text: string,
+) {
+  await act(async () => {
+    await user.type(element as HTMLElement, text);
+  });
+}
+
 describe("User console UX stability", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -145,7 +186,7 @@ describe("User console UX stability", () => {
     const user = userEvent.setup();
     render(<SecurityPage />);
 
-    await user.click(screen.getByRole("button", { name: "Update password" }));
+    await clickWithAct(user, screen.getByRole("button", { name: "Update password" }));
 
     expect(screen.getByText("All password fields are required.")).toBeInTheDocument();
   });
@@ -154,11 +195,11 @@ describe("User console UX stability", () => {
     const user = userEvent.setup();
     render(<SecurityPage />);
 
-    fireEvent.change(screen.getByLabelText("Current password"), { target: { value: "Current12" } });
-    fireEvent.change(screen.getByLabelText("New password"), { target: { value: "NewPassword9" } });
-    fireEvent.change(screen.getByLabelText("Confirm new password"), { target: { value: "NewPassword8" } });
+    await typeWithAct(user, screen.getByLabelText("Current password"), "Current12");
+    await typeWithAct(user, screen.getByLabelText("New password"), "NewPassword9");
+    await typeWithAct(user, screen.getByLabelText("Confirm new password"), "NewPassword8");
 
-    await user.click(screen.getByRole("button", { name: "Update password" }));
+    await clickWithAct(user, screen.getByRole("button", { name: "Update password" }));
 
     expect(screen.getByText("Password confirmation does not match.")).toBeInTheDocument();
   });
@@ -171,7 +212,7 @@ describe("User console UX stability", () => {
 
     expect(document.documentElement.classList.contains("dark")).toBe(true);
 
-    await user.click(screen.getByRole("switch", { name: "Toggle dark mode" }));
+    await clickWithAct(user, screen.getByRole("switch", { name: "Toggle dark mode" }));
 
     expect(window.localStorage.getItem("console.theme")).toBe("light");
     expect(document.documentElement.classList.contains("dark")).toBe(false);

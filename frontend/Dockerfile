@@ -1,10 +1,12 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
+ENV RUNNING_IN_DOCKER=1
 COPY package.json package-lock.json ./
 RUN npm ci
 
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV RUNNING_IN_DOCKER=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG API_BASE_URL
@@ -19,6 +21,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+ENV RUNNING_IN_DOCKER=1
 # Standalone bundle already contains all runtime dependencies
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static

@@ -1,47 +1,85 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "docker-up",
-      "type": "shell",
-      "command": "docker compose --env-file .env up -d --build",
-      "options": { "cwd": "${workspaceFolder}/infra" }
-    },
-    {
-      "label": "docker-down",
-      "type": "shell",
-      "command": "docker compose --env-file .env down",
-      "options": { "cwd": "${workspaceFolder}/infra" }
-    },
-    {
-      "label": "test-backend",
-      "type": "shell",
-      "command": "docker compose --env-file .env run --rm backend-tests pytest -q",
-      "options": { "cwd": "${workspaceFolder}/infra" }
-    },
-    {
-      "label": "lint-backend",
-      "type": "shell",
-      "command": "docker compose --env-file .env exec -T backend ruff check .",
-      "options": { "cwd": "${workspaceFolder}/infra" }
-    },
-    {
-      "label": "lint-frontend",
-      "type": "shell",
-      "command": "docker compose --env-file .env run --rm frontend-tests npm run lint",
-      "options": { "cwd": "${workspaceFolder}/infra" }
-    },
-    {
-      "label": "test-frontend",
-      "type": "shell",
-      "command": "docker compose --env-file .env run --rm frontend-tests npm run test:frontend",
-      "options": { "cwd": "${workspaceFolder}/infra" }
-    },
-    {
-      "label": "docker-logs",
-      "type": "shell",
-      "command": "docker compose --env-file .env logs -f --tail=100",
-      "options": { "cwd": "${workspaceFolder}/infra" }
-    }
-  ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "docker-up",
+			"type": "shell",
+			"command": "docker compose --env-file .env up -d --build",
+			"options": {
+				"cwd": "${workspaceFolder}/infra"
+			}
+		},
+		{
+			"label": "docker-down",
+			"type": "shell",
+			"command": "docker compose --env-file .env down",
+			"options": {
+				"cwd": "${workspaceFolder}/infra"
+			}
+		},
+		{
+			"label": "test-backend",
+			"type": "shell",
+			"command": "docker compose --env-file .env run --rm backend-tests pytest -q",
+			"options": {
+				"cwd": "${workspaceFolder}/infra"
+			}
+		},
+		{
+			"label": "lint-backend",
+			"type": "shell",
+			"command": "docker compose --env-file .env exec -T backend ruff check .",
+			"options": {
+				"cwd": "${workspaceFolder}/infra"
+			}
+		},
+		{
+			"label": "lint-frontend",
+			"type": "shell",
+			"command": "docker compose --env-file .env run --rm frontend-tests npm run lint",
+			"options": {
+				"cwd": "${workspaceFolder}/infra"
+			}
+		},
+		{
+			"label": "test-frontend",
+			"type": "shell",
+			"command": "docker compose --env-file .env run --rm frontend-tests npm run test:frontend",
+			"options": {
+				"cwd": "${workspaceFolder}/infra"
+			}
+		},
+		{
+			"label": "docker-logs",
+			"type": "shell",
+			"command": "docker compose --env-file .env logs -f --tail=100",
+			"options": {
+				"cwd": "${workspaceFolder}/infra"
+			}
+		},
+		{
+			"label": "safe-gate-once",
+			"type": "shell",
+			"command": "bash scripts/university_pilot_safe_gate.sh",
+			"isBackground": false
+		},
+		{
+			"label": "smoke-gate-once",
+			"type": "shell",
+			"command": "bash scripts/platform_smoke_check.sh",
+			"isBackground": false
+		},
+		{
+			"label": "release-gate-once",
+			"type": "shell",
+			"command": "bash scripts/release_gate.sh",
+			"isBackground": false
+		},
+		{
+			"label": "safe-gate-once-2",
+			"type": "shell",
+			"command": "bash scripts/university_pilot_safe_gate.sh",
+			"isBackground": false
+		}
+	]
 }

@@ -41,7 +41,10 @@ jobs:
         run: docker compose --env-file .env up -d --build
       - name: Run backend security regression gate
         working-directory: infra
-        run: docker compose --env-file .env exec -T backend pytest -q -m security_regression
+        run: docker compose --env-file .env run --rm --no-deps backend-tests pytest -q -m security_regression
+      - name: Verify demo auth endpoints are absent in runtime
+        working-directory: infra
+        run: docker compose --env-file .env run --rm --no-deps backend-tests pytest -q tests/test_product_hardening_runtime.py::test_demo_endpoints_removed_from_runtime
       - name: Stop stack
         if: always()
         working-directory: infra

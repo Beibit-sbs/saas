@@ -1,5 +1,6 @@
+import type React from "react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { AppTopbar } from "../../shared/ui/app-topbar";
@@ -26,6 +27,108 @@ vi.mock("../../app/login/tenant-directory", () => ({
   findTenantById: (...args: unknown[]) => findTenantByIdMock(...args),
 }));
 
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
+vi.mock("../../shared/ui/dropdown-menu", async () => {
+  const React = await import("react");
+
+  type ClickableChildProps = {
+    onClick?: (event: React.MouseEvent) => void | Promise<void>;
+    className?: string;
+    role?: string;
+  };
+
+  type DropdownMenuContextValue = {
+    open: boolean;
+    setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  };
+
+  const DropdownMenuContext = React.createContext<DropdownMenuContextValue | null>(null);
+
+  function useDropdownMenuContext() {
+    const context = React.useContext(DropdownMenuContext);
+    if (!context) {
+      throw new Error("Dropdown menu mock used outside provider");
+    }
+    return context;
+  }
+
+  function DropdownMenu({ children }: { children: React.ReactNode }) {
+    const [open, setOpen] = React.useState(false);
+    return <DropdownMenuContext.Provider value={{ open, setOpen }}>{children}</DropdownMenuContext.Provider>;
+  }
+
+  function DropdownMenuTrigger({ children, asChild }: { children: React.ReactElement; asChild?: boolean }) {
+    const { open, setOpen } = useDropdownMenuContext();
+    if (asChild && React.isValidElement(children)) {
+      const child = children as React.ReactElement<ClickableChildProps>;
+      return React.cloneElement(child, {
+        onClick: async (event: React.MouseEvent) => {
+          await child.props.onClick?.(event);
+          setOpen(!open);
+        },
+      });
+    }
+    return <button onClick={() => setOpen(!open)}>{children}</button>;
+  }
+
+  function DropdownMenuContent({ children }: { children: React.ReactNode }) {
+    const { open } = useDropdownMenuContext();
+    if (!open) {
+      return null;
+    }
+    return <div role="menu">{children}</div>;
+  }
+
+  function DropdownMenuItem({ children, asChild, onSelect, className }: { children: React.ReactElement | React.ReactNode; asChild?: boolean; onSelect?: () => void; className?: string }) {
+    const { setOpen } = useDropdownMenuContext();
+
+    if (asChild && React.isValidElement(children)) {
+      const child = children as React.ReactElement<ClickableChildProps>;
+      return React.cloneElement(child, {
+        role: "menuitem",
+        className,
+        onClick: async (event: React.MouseEvent) => {
+          await child.props.onClick?.(event);
+          onSelect?.();
+          setOpen(false);
+        },
+      });
+    }
+
+    return (
+      <button
+        role="menuitem"
+        className={className}
+        onClick={() => {
+          onSelect?.();
+          setOpen(false);
+        }}
+      >
+        {children}
+      </button>
+    );
+  }
+
+  function DropdownMenuSeparator() {
+    return <hr />;
+  }
+
+  return {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+  };
+});
+
 describe("AppTopbar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -45,6 +148,12 @@ describe("AppTopbar", () => {
     loadLoginTenantDirectoryMock.mockResolvedValue({ state: "ready", tenants: [] });
     findTenantByIdMock.mockReturnValue(null);
   });
+
+  async function clickWithAct(user: ReturnType<typeof userEvent.setup>, element: Element) {
+    await act(async () => {
+      await user.click(element);
+    });
+  }
 
   it("renders user identity trigger", async () => {
     useAdminAuthMock.mockReturnValue({
@@ -111,7 +220,7 @@ describe("AppTopbar", () => {
 
     render(<AppTopbar />);
 
-    await user.click(screen.getByRole("button", { name: /alice admin/i }));
+    await clickWithAct(user, screen.getByRole("button", { name: /alice admin/i }));
 
     expect(screen.getByRole("menuitem", { name: "Profile" })).toHaveAttribute("href", "/console/profile");
     expect(screen.getByRole("menuitem", { name: "Preferences" })).toHaveAttribute("href", "/console/preferences");
@@ -132,8 +241,8 @@ describe("AppTopbar", () => {
 
     render(<AppTopbar />);
 
-    await user.click(screen.getByRole("button", { name: /alice admin/i }));
-    await user.click(screen.getByRole("menuitem", { name: "Sign out" }));
+    await clickWithAct(user, screen.getByRole("button", { name: /alice admin/i }));
+    await clickWithAct(user, screen.getByRole("menuitem", { name: "Sign out" }));
 
     expect(logout).toHaveBeenCalledTimes(1);
   });

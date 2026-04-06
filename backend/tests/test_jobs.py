@@ -131,14 +131,14 @@ def test_enqueue_job_deduplicates_active_same_payload() -> None:
     first = client.post(
         "/api/admin/jobs",
         headers=ADMIN_HEADERS,
-        json={"job_type": "sync", "payload": {"source": "dedup-test"}, "max_retries": 1},
+        json={"job_type": "backup.run", "payload": {"source": "dedup-test"}, "max_retries": 1},
     )
     assert first.status_code == 200, first.text
 
     second = client.post(
         "/api/admin/jobs",
         headers=ADMIN_HEADERS,
-        json={"job_type": "sync", "payload": {"source": "dedup-test"}, "max_retries": 1},
+        json={"job_type": "backup.run", "payload": {"source": "dedup-test"}, "max_retries": 1},
     )
     assert second.status_code == 200, second.text
 
@@ -158,7 +158,7 @@ def test_enqueue_job_allows_same_payload_after_terminal_status() -> None:
     first = client.post(
         "/api/admin/jobs",
         headers=ADMIN_HEADERS,
-        json={"job_type": "sync", "payload": {"source": "dedup-terminal"}, "max_retries": 1},
+        json={"job_type": "report.generate", "payload": {"source": "dedup-terminal"}, "max_retries": 1},
     )
     assert first.status_code == 200, first.text
     first_id = int(first.json()["job"]["id"])
@@ -171,8 +171,21 @@ def test_enqueue_job_allows_same_payload_after_terminal_status() -> None:
     second = client.post(
         "/api/admin/jobs",
         headers=ADMIN_HEADERS,
-        json={"job_type": "sync", "payload": {"source": "dedup-terminal"}, "max_retries": 1},
+        json={"job_type": "report.generate", "payload": {"source": "dedup-terminal"}, "max_retries": 1},
     )
     assert second.status_code == 200, second.text
     second_id = int(second.json()["job"]["id"])
     assert second_id != first_id
+
+
+def test_create_job_rejects_de_scoped_job_types() -> None:
+    jobs_service.clear_jobs_state()
+
+    for job_type in ("sync", "ldap.sync", "ai.generate"):
+        response = client.post(
+            "/api/admin/jobs",
+            headers=ADMIN_HEADERS,
+            json={"job_type": job_type, "payload": {}, "max_retries": 1},
+        )
+        assert response.status_code == 400, response.text
+        assert "de-scoped" in response.json()["detail"]

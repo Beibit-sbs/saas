@@ -21,6 +21,19 @@ class DegreeType(str, Enum):
     OTHER = "other"
 
 
+class OrgUnitType(str, Enum):
+    UNIVERSITY = "university"
+    SCHOOL = "school"
+    FACULTY = "faculty"
+    DEPARTMENT = "department"
+    UMO = "umo"
+    REGISTRAR_OFFICE = "registrar_office"
+    DEANS_OFFICE = "deans_office"
+    ADVISORY_UNIT = "advisory_unit"
+    ACADEMIC_COMMITTEE = "academic_committee"
+    ACADEMIC_COMMISSION = "academic_commission"
+
+
 class PersonBaseSchema(BaseModel):
     email: str = Field(..., min_length=5, max_length=255)
     first_name: str = Field(..., min_length=1, max_length=128)
@@ -102,7 +115,12 @@ class PersonListResponseSchema(BaseModel):
 class DepartmentBaseSchema(BaseModel):
     code: str = Field(..., min_length=1, max_length=32)
     name: str = Field(..., min_length=1, max_length=255)
+    unit_type: OrgUnitType = Field(OrgUnitType.DEPARTMENT)
     parent_department_id: int | None = Field(None, gt=0)
+    head_person_id: int | None = Field(None, gt=0)
+    email: str | None = Field(None, max_length=255)
+    phone: str | None = Field(None, max_length=32)
+    location: str | None = Field(None, max_length=500)
     status: ProfileStatus = Field(ProfileStatus.ACTIVE)
     metadata_json: dict = Field(default_factory=dict)
 
@@ -122,6 +140,26 @@ class DepartmentBaseSchema(BaseModel):
             raise ValueError("name is required")
         return normalized
 
+    @field_validator("email")
+    @classmethod
+    def validate_department_email(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().lower()
+        if not normalized:
+            return None
+        if "@" not in normalized or normalized.startswith("@") or normalized.endswith("@"):
+            raise ValueError("email must be a valid address")
+        return normalized
+
+    @field_validator("phone", "location")
+    @classmethod
+    def normalize_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
 
 class DepartmentCreateSchema(DepartmentBaseSchema):
     pass
@@ -136,6 +174,13 @@ class DepartmentReadSchema(DepartmentBaseSchema):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class DepartmentListResponseSchema(BaseModel):
+    total: int = Field(..., ge=0)
+    page: int = Field(..., ge=1)
+    page_size: int = Field(..., ge=1)
+    items: list[DepartmentReadSchema]
 
 
 class ProgramBaseSchema(BaseModel):

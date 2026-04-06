@@ -4,6 +4,7 @@ from typing import Any, Callable
 
 from app.modules.audit.service import list_admin_actions
 from app.modules.backup.service import run_backup_now
+from app.core.config import is_production_mode
 from app.modules.jobs import service as jobs_service
 
 
@@ -39,6 +40,10 @@ def _execute_audit_export(job: dict[str, Any]) -> dict[str, Any]:
 
 
 def _execute_placeholder(job: dict[str, Any]) -> dict[str, Any]:
+    if is_production_mode():
+        raise RuntimeError(
+            f"job_type '{job['job_type']}' is disabled in production until a concrete handler is implemented"
+        )
     return {
         "job_type": job["job_type"],
         "status": "accepted",

@@ -42,6 +42,36 @@ def _rule_academic_risk_followup(
     )
 
 
+def _rule_expulsion_risk_escalation(
+    context: dict[str, Any],
+) -> CopilotRecommendationSchema | None:
+    """Fires when severe academic-risk students are detected (grade below 50)."""
+    severe_at_risk_count = int(context.get("severe_at_risk_count") or 0)
+    if severe_at_risk_count <= 0:
+        return None
+    return CopilotRecommendationSchema(
+        recommendation_type="expulsion_risk_escalation",
+        title="Escalate students at high expulsion risk",
+        priority="high",
+        reason=(
+            f"{severe_at_risk_count} student(s) are in severe academic risk zone "
+            "and require immediate intervention with registrar and advisors."
+        ),
+        suggested_actions=[
+            CopilotRecommendationActionSchema(
+                action_type="navigate",
+                label="Open Academic Risk Queue",
+                target="/console/analytics/academic-risk",
+            ),
+            CopilotRecommendationActionSchema(
+                action_type="review",
+                label="Start Retention Intervention",
+                target="/console/students",
+            ),
+        ],
+    )
+
+
 def _rule_automation_rule_health_review(
     context: dict[str, Any],
 ) -> CopilotRecommendationSchema | None:
@@ -165,6 +195,7 @@ def _rule_low_activity_attention(
 # Ordered catalog — rules are evaluated top-to-bottom, all matching rules fire.
 RULE_CATALOG = [
     _rule_academic_risk_followup,
+    _rule_expulsion_risk_escalation,
     _rule_automation_rule_health_review,
     _rule_failed_jobs_attention,
     _rule_failed_notifications_attention,

@@ -1,5 +1,7 @@
 # Blocker #1: Tenant Metadata Leak - FINAL REMEDIATION SUMMARY
 
+> Historical context: endpoint names in this report describe the original incident timeline. Current developer integration routes are `/api/dev/*`.
+
 ## ✅ COMPLETE - Secure-by-Default Implementation
 
 **Decision**: Remove ALL public endpoint access to tenant data via URL parameters.

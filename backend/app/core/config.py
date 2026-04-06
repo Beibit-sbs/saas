@@ -202,6 +202,16 @@ def get_rate_limit_redis_url() -> str | None:
     return raw or None
 
 
+def get_academic_risk_grade_threshold() -> int:
+    """Grade threshold below which a student is considered academically at risk."""
+    return _int_env("ACADEMIC_RISK_GRADE_THRESHOLD", 60, minimum=1, maximum=100)
+
+
+def get_academic_severe_risk_grade_threshold() -> int:
+    """Grade threshold below which a student is considered at high expulsion risk."""
+    return _int_env("ACADEMIC_SEVERE_RISK_GRADE_THRESHOLD", 50, minimum=1, maximum=100)
+
+
 def is_rate_limit_service_bypass_enabled() -> bool:
     return is_enabled(os.getenv("RATE_LIMIT_SERVICE_BYPASS", "false"))
 

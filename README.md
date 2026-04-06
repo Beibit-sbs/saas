@@ -2,6 +2,22 @@
 
 Platform template for browser-based systems with a reusable platform core (higher education is one supported example vertical).
 
+Last updated: 2026-04-05
+
+## Current Delivery Snapshot
+
+This repository currently delivers a strong platform-core baseline with an admin control plane.
+
+Verified on recent Docker validation:
+- Backend tests: 1161 passed, 9 skipped
+- Frontend tests: 138 passed
+- Backend lint: `ruff check .` passed
+- Frontend lint: `next lint` passed
+
+Important scope note:
+- This repository is still a platform template baseline, not a fully finished end-user product.
+- Admin console coverage is significantly deeper than role-specific end-user portals.
+
 ## Supported Vertical Profiles
 
 This platform template is domain-neutral and can be adapted to multiple domains.
@@ -65,6 +81,20 @@ Operational highlights:
 - Example notes CRUD tab showing DB-backed entity, migration, RBAC, audit, frontend usage, and i18n wiring in one removable example module.
 - System observability tab with authenticated health snapshot (`/api/admin/system/health`) and periodic refresh while active.
 
+## Current Frontend Scope
+
+What is mature now:
+- Admin control plane and operational workflows under `/admin` and `/(admin)/console/*`.
+- Initial role-based zones are now available:
+	- `/student`
+	- `/faculty`
+	- `/registrar`
+
+What is not yet a complete product surface:
+- No full student portal UX journey (end-to-end production-grade pages and flows).
+- No full faculty portal UX journey (end-to-end production-grade pages and flows).
+- Domain frontend modules exist for several areas, but not all are exposed as complete role-specific product pages.
+
 ## Quick Start
 
 1. Prepare environment file:
@@ -85,9 +115,32 @@ make up
 make down
 ```
 
+## Optional DevTools (Read-Only Data Explorer for Ops)
+
+You can enable pgAdmin in dev/stage profile:
+
+```bash
+cd infra
+docker compose --env-file .env --profile devtools up -d pgadmin
+```
+
+Host loopback URL when the Docker port is published:
+- `http://localhost:5050`
+
+Credentials are configured via:
+- `PGADMIN_DEFAULT_EMAIL`
+- `PGADMIN_DEFAULT_PASSWORD`
+- `PGADMIN_BIND_ADDRESS` (defaults to `127.0.0.1`)
+- `PGADMIN_PORT`
+
+Use read-only DB users for operational exploration.
+
+Read-only user bootstrap template:
+- `infra/sql/create_readonly_user.sql`
+
 ## Demo Auth Warning
 
-- Demo users and demo login paths exist only for local/template/demo use.
+- Demo users and demo login paths exist only for template/demo bootstrap use.
 - They are not a production baseline and must be disabled, removed, or replaced before production launch.
 - Every derived project must explicitly review `/api/auth/demo-users`, `/api/auth/demo-login`, and any mock/demo credential flow before go-live.
 
@@ -125,7 +178,7 @@ Variables that are strongly recommended for real deployments, but can stay empty
 
 Platform baseline vs scaffold summary:
 - Baseline for derived systems: auth, RBAC, audit, i18n, admin console shell, LDAP/AI integration settings, backup workflows.
-- Scaffold or partial modules that require explicit review before production reuse: feature flags, observability depth, base infra TLS.
+- Scaffold or partial modules that require explicit review before production reuse: feature flags and observability depth.
 - Example-only educational modules: `example_notes` is the canonical small CRUD reference slice; `example_slice` remains a lightweight reference-only wiring example.
 - Detailed maturity status is tracked in `docs/templates/platform-maturity-matrix.md`.
 
@@ -135,7 +188,7 @@ Production review areas before launch:
 - Decide whether LDAP/AD is required and validate role mapping.
 - Review AI provider policy, rate limits, and provider key handling.
 - Confirm backup roots, retention, and restore procedures.
-- Add TLS termination for production deployment.
+- Confirm TLS certificate lifecycle and rotation policy for production deployment.
 - Re-run template validation plus normal backend/frontend checks.
 
 Expected derived-project changes:
@@ -150,18 +203,20 @@ Template validation entrypoint:
 make template-validate
 ```
 
-## Local Validation Commands
+## Docker Validation Commands
 
 Full pipeline:
 ```bash
 make pipeline
 ```
 
+Host-native frontend npm scripts are intentionally blocked. Run all validation through Docker Compose.
+
 Backend only:
 ```bash
 cd infra
 docker compose --env-file .env exec -T backend ruff check .
-docker compose --env-file .env exec -T backend pytest -q
+docker compose --env-file .env run --rm --no-deps backend-tests pytest -q
 ```
 
 Frontend only:
@@ -200,8 +255,10 @@ make template-validate
 ## Known Gaps
 
 - Feature flags are scaffold-level (in-memory) and not yet productionized.
-- Base Nginx profile is HTTP-only (no default TLS termination).
+- TLS is enabled by default at nginx edge, but certificate lifecycle/rotation policy must be finalized per environment.
 - AI Gateway v1 is request/response only in this phase: no streaming, no embeddings, no tools/function-calling orchestration, no RAG/vector DB, no billing/quota subsystem.
+- No built-in database admin UI (for example pgAdmin/Adminer) is included in the default stack.
+- Student and faculty role-based frontend portals are not fully productized yet; admin UX is currently the primary interface.
 - Demo auth paths are intentionally present for local/template use and require explicit removal or replacement in derived production projects.
 - `example_notes` is example-only and removable; it exists to teach patterns, not to act as a production business subsystem.
 - `example_slice` remains a lightweight reference-only slice for wiring patterns.

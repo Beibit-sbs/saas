@@ -1,5 +1,7 @@
 # API Architecture Refactoring: Separate Developer/Partner API
 
+> Historical context: this file documents the migration from `/api/v1/public/*` to `/api/dev/*` and intentionally keeps old endpoint references for change traceability.
+
 ## Status
 ✅ **COMPLETE** — Developer integration API separated from public API into proper trust zones.
 
@@ -26,7 +28,7 @@
 ```
 ZONE 1: Truly Public (/api/v1/public/)
   └─ (No authentication required; minimal surface)
-  └─ Reserved for: health checks, status, public docs
+  └─ Reserved for future public docs/status only
 
 ZONE 2: Developer/Partner API (/api/dev)  ← NEW
   ├─ /students
@@ -34,7 +36,7 @@ ZONE 2: Developer/Partner API (/api/dev)  ← NEW
   ├─ /grades
   └─ /analytics/kpi
   Authentication: X-App-Key + X-App-Secret (developer credentials)
-  Tenant: From app_key validation only
+  Tenant: From backend-authenticated app installation context
   Scopes: Required per endpoint (students.read, enrollments.read, etc.)
 
 ZONE 3: Internal (/api/v1/internal/)
@@ -99,7 +101,6 @@ ZONE 4: Admin (/api/v1/admin/)
 ```bash
 curl -H "X-App-Key: <your_app_key>" \
      -H "X-App-Secret: <your_app_secret>" \
-     -H "X-Tenant-Id: <tenant_id>" \
      https://api.example.com/api/dev/students
 ```
 
@@ -120,14 +121,14 @@ curl -H "X-App-Key: <your_app_key>" \
 | `GET /api/dev/analytics/kpi` | `analytics.read` | Get KPI dashboard for tenant |
 
 **Tenant Isolation:**
-- tenant_id determined from X-App-Secret validation
-- X-Tenant-Id header is REQUIRED (part of credential validation)
+- tenant_id resolved from backend-authenticated app installation context
+- request-scoped tenant context is not accepted from URL parameters
 - URL has NO {tenant_id} parameter (prevents enumeration/override)
 
 ### Public API (`/api/v1/public`)
 
 **Endpoints:**
-- None currently (reserved for truly public operations like health checks)
+- None currently (reserved for future public operations)
 
 **Removed Endpoints:**
 - ❌ `GET /api/v1/public/tenants/{tenant_id}` (security fix - Blocker #1)
@@ -166,7 +167,6 @@ curl https://api.example.com/api/v1/public/students?tenant_id=1
 ```bash
 curl -H "X-App-Key: <key>" \
      -H "X-App-Secret: <secret>" \
-     -H "X-Tenant-Id: 1" \
      https://api.example.com/api/dev/students
 ```
 

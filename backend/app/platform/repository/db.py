@@ -186,6 +186,17 @@ def ensure_platform_core_schema(conn: object) -> None:
             )
             cur.execute(
                 """
+                CREATE TABLE IF NOT EXISTS platform_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
+                    event_type TEXT NOT NULL,
+                    payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                """
                 CREATE TABLE IF NOT EXISTS app_platform_webhook_subscriptions (
                     id BIGSERIAL PRIMARY KEY,
                     tenant_id BIGINT NOT NULL REFERENCES app_tenants(id) ON DELETE CASCADE,
@@ -263,6 +274,12 @@ def ensure_platform_core_schema(conn: object) -> None:
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS ix_platform_outbox_aggregate ON app_platform_outbox_events (tenant_id, aggregate_type, aggregate_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_events_tenant_created ON platform_events (tenant_id, created_at DESC)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS ix_platform_events_tenant_type ON platform_events (tenant_id, event_type)"
             )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS ix_platform_webhook_subscriptions_tenant_event ON app_platform_webhook_subscriptions (tenant_id, event_type, is_active)"

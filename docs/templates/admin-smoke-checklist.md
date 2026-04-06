@@ -1,12 +1,12 @@
 # Admin Smoke Checklist
 
 ## Goal
-Quick confidence check that the admin platform core is working after local changes or before a release.
+Quick confidence check that the admin platform core is working after Docker-side changes or before a release.
 
 ## Preconditions
 - App stack is running (`make up`) and opens at `http://nginx`.
 - Admin session is available (`admin/admin123` in demo mode).
-- Backend and frontend checks are green (`pytest`, `npm run lint`).
+- Backend and frontend checks are green through Docker Compose validation commands.
 
 ## Smoke Steps
 1. Open `/admin` and confirm tabs load without console/network errors.

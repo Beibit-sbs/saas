@@ -11,6 +11,17 @@ class TenantCreateRequest(BaseModel):
     name: str = Field(min_length=2, max_length=255)
 
 
+class AcademicRiskThresholdsRead(BaseModel):
+    risk_grade_threshold: int
+    severe_risk_grade_threshold: int
+    tenant_id: int
+
+
+class AcademicRiskThresholdsPutRequest(BaseModel):
+    risk_grade_threshold: int = Field(ge=1, le=100)
+    severe_risk_grade_threshold: int = Field(ge=1, le=100)
+
+
 class TenantSettingsPatchRequest(BaseModel):
     settings: dict[str, Any] = Field(default_factory=dict)
 
@@ -37,6 +48,7 @@ class TenantPlatformRead(BaseModel):
 
 class FeatureFlagSetRequest(BaseModel):
     enabled: bool
+    rollout_percentage: int = Field(default=100, ge=0, le=100)
 
 
 class FeatureFlagRead(BaseModel):
@@ -45,6 +57,7 @@ class FeatureFlagRead(BaseModel):
     module: str
     key: str
     enabled: bool
+    rollout_percentage: int = 100
     updated_at: str
 
 

@@ -3,6 +3,8 @@ import { isJwtExpired, toSafeSession } from "@/shared/server/auth-session";
 import { getServerApiBaseUrl, shouldUseSecureCookie } from "@/shared/server/runtime-env";
 
 const DEFAULT_LOGIN_TENANT_ID = process.env.AUTH_DEFAULT_TENANT_ID ?? "1";
+const PRIMARY_AUTH_COOKIE = "app_access_token";
+const LEGACY_AUTH_COOKIE = "admin_token";
 
 function resolveTenantId(body: unknown, request: Request): string {
   if (body && typeof body === "object") {
@@ -33,11 +35,15 @@ function normalizeLogin(raw: unknown): string {
   return value;
 }
 
+function isPlatformAdminLogin(login: string): boolean {
+  return login.trim().toLowerCase() === "platform_admin";
+}
+
 export async function POST(request: Request) {
   const apiBase = getServerApiBaseUrl();
   const body = await request.json();
   const login = normalizeLogin(body?.login ?? body?.username);
-  const tenantId = resolveTenantId(body, request);
+  const tenantId = isPlatformAdminLogin(login) ? "1" : resolveTenantId(body, request);
 
   const upstream = await fetch(new URL("/api/auth/login", apiBase), {
     method: "POST",
@@ -67,12 +73,15 @@ export async function POST(request: Request) {
   const response = NextResponse.json({ ok: true, ...session });
   response.headers.set("cache-control", "no-store");
 
-  response.cookies.set("admin_token", token, {
+  const cookieOptions = {
     httpOnly: true,
     secure: shouldUseSecureCookie(request),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 8, // 8 hours
-  });
+  } as const;
+
+  response.cookies.set(PRIMARY_AUTH_COOKIE, token, cookieOptions);
+  response.cookies.set(LEGACY_AUTH_COOKIE, token, cookieOptions);
   return response;
 }

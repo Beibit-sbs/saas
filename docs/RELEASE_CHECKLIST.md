@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This is the canonical release checklist for local release readiness, deployment approval, and rollback evidence.
+This is the canonical release checklist for Docker release readiness, deployment approval, and rollback evidence.
 
 Use this checklist together with:
 
@@ -34,7 +34,7 @@ Evidence to record:
 - CI run URL
 - failed gate name if blocked
 
-## 2. Local Release Gate
+## 2. Docker Release Gate
 
 Before deploy, run:
 
@@ -74,8 +74,9 @@ Confirm before deployment starts:
 
 Validate after deploy:
 
-- `/health` returns `200`
-- `/health/db` returns expected status
+- `/health/live` returns `200`
+- `/health/ready` returns `200`
+- `/health/deep` shows `dependencies.postgresql.healthy=true`
 - `/health/worker` reports reachable heartbeat
 - smoke validation passes in target environment
 - no tenant isolation anomaly is observed
@@ -116,7 +117,7 @@ Record final sign-off with:
 Do not continue release if any of these are true:
 
 - any required CI gate is red
-- local `scripts/release_gate.sh` fails
+- docker `scripts/release_gate.sh` fails
 - backup artifact is missing or unreadable
 - rollback target is unknown
 - smoke validation fails

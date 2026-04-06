@@ -1,11 +1,13 @@
 # Remediation: Tenant Metadata Leak - COMPLETED
 
+> Historical context: this remediation report preserves the original endpoint names used during incident closure. Current developer integration routes are `/api/dev/*`.
+
 ## Status
 ✅ **COMPLETE** — All public tenant endpoints removed. Attack surface eliminated.
 
 ## Vulnerability Summary
 - **Issue**: Unauthenticated public endpoints exposed sensitive tenant metadata
-- **Root Cause**: `/api/v1/public/tenants/{tenant_id}` allowed direct URL access without JWT validation
+- **Root Cause**: `/api/v1/public/tenants/{tenant_id}` allowed direct URL access without authenticated tenant context validation
 - **Risk**: 🔴 **CRITICAL** — Tenant enumeration + commercial intelligence leakage
 - **Resolution**: ✅ **ELIMINATED** — All endpoints requiring tenant_id from URL completely removed
 
@@ -13,7 +15,7 @@
 
 ### Decision: REMOVE ALL PUBLIC TENANT METADATA ENDPOINTS
 **Rationale:**
-- Tenant_id must ONLY come from JWT token, never from URL parameters
+- Tenant context must ONLY come from authenticated app/session context, never from URL parameters
 - No public access to settings, quotas, limits, subscription data
 - Eliminates enumeration attack surface entirely
 - Forces all tenant access through authenticated channels
@@ -26,8 +28,8 @@
 5. ❌ `GET /api/v1/public/tenants-safe/{tenant_id}/subscription` — Safe subscription
 
 ### What Remains: Authenticated-Only Access
-✅ `GET /api/v1/public/students` — Requires X-App-Key/X-App-Secret (tenant_id from auth)
-✅ `GET /api/v1/public/enrollments` — Requires X-App-Key/X-App-Secret (tenant_id from auth)
+✅ `GET /api/dev/students` — Requires X-App-Key/X-App-Secret (tenant_id from auth)
+✅ `GET /api/dev/enrollments` — Requires X-App-Key/X-App-Secret (tenant_id from auth)
 
 ## Code Changes
 
@@ -38,8 +40,8 @@
 - Option B endpoints (safe metadata whitelist)
 
 **Kept:**
-- `/students` — Requires `require_developer_scope` (tenant_id extracted from JWT)
-- `/enrollments` — Requires `require_developer_scope` (tenant_id extracted from JWT)
+- `/students` — Requires `require_developer_scope` (tenant context resolved from authenticated app/session)
+- `/enrollments` — Requires `require_developer_scope` (tenant context resolved from authenticated app/session)
 
 ### 2. [app/platform/schemas.py](app/platform/schemas.py)
 **Removed:**
@@ -78,7 +80,7 @@
 - ✅ **2) Delete safe schemas** — TenantPublicSafeRead + SubscriptionPublicSafeRead deleted
 - ✅ **3) Delete related tests** — Option B tests removed, replaced with verification tests
 - ✅ **4) Keep authenticated access** — `/students` and `/enrollments` still require auth
-- ✅ **5) Verify JWT-only tenant_id** — tenant_id only comes from `auth["tenant_id"]` in `require_developer_scope`
+- ✅ **5) Verify auth-context-only tenant_id** — tenant_id only comes from backend auth context in `require_developer_scope`
 - ✅ **6) All public endpoints return 401/404** — Test suite validates this
 - ✅ **7) No URL-based tenant override** — No endpoint accepts `{tenant_id}` from path anymore
 
@@ -87,7 +89,7 @@
 ### Secure-by-Default Philosophy
 - **Denied by default**: No public endpoints at all (safest possible default)
 - **Explicit auth**: All access requires cryptographic proof (X-App-Key + X-App-Secret)
-- **Token-based tenancy**: tenant_id from JWT claims, not URL
+- **Auth-context tenancy**: tenant_id from backend-authenticated context, not URL
 - **Zero-leakage**: No metadata, settings, quotas, or pricing exposed
 
 ### Comparison
@@ -127,7 +129,7 @@ pytest tests/ -v
 ### Blocker #2: Default Tenant Fallback (Priority: HIGH)
 - [ ] Remove `_DEFAULT_TENANT_ID = 1` from [core/tenant.py](app/core/tenant.py)
 - [ ] Make missing tenant context fail-closed (403) instead of silent fallback
-- [ ] Update tests to verify 403 on missing X-Tenant-ID
+- [ ] Update tests to verify 403 on missing authenticated tenant context
 
 ### Blocker #3: Template/Example Surface (Priority: MEDIUM)
 - [ ] Remove `example_notes_router` from [main.py](app/main.py)
@@ -166,7 +168,7 @@ curl http://nginx/api/v1/public/tenants/1   # Should be 404
 curl http://nginx/api/v1/public/tenants-safe/1  # Should be 404
 
 # Verify authenticated endpoints still work
-curl -H "X-App-Key: test" -H "X-App-Secret: test" http://nginx/api/v1/public/students  # Should work or 403 (depends on auth)
+curl -H "X-App-Key: test" -H "X-App-Secret: test" http://nginx/api/dev/students  # Should work or 403 (depends on auth)
 
 # Run tests
 cd backend && pytest tests/test_public_endpoints_security.py::TestPublicEndpointsRemoved -v

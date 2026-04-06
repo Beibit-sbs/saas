@@ -27,6 +27,7 @@ from app.modules.profiles.models import (
 )
 from app.modules.profiles.schemas import (
     DepartmentCreateSchema,
+    DepartmentListResponseSchema,
     DepartmentReadSchema,
     FacultyCreateSchema,
     FacultyReadSchema,
@@ -244,11 +245,27 @@ class DepartmentService:
                 resource_id=request.parent_department_id,
             )
 
+        if request.head_person_id is not None:
+            head_person = self.db.execute(
+                select(PersonModel).where(
+                    and_(
+                        PersonModel.id == request.head_person_id,
+                        PersonModel.tenant_id == tenant_id,
+                    )
+                )
+            ).scalar_one_or_none()
+            DepartmentRules.validate_head_belongs_to_tenant(head_person, tenant_id)
+
         department = DepartmentModel(
             tenant_id=tenant_id,
             code=request.code,
             name=request.name,
+            unit_type=request.unit_type.value,
             parent_department_id=request.parent_department_id,
+            head_person_id=request.head_person_id,
+            email=request.email,
+            phone=request.phone,
+            location=request.location,
             status=request.status.value,
             metadata_json=request.metadata_json,
             created_by=created_by,
@@ -273,6 +290,39 @@ class DepartmentService:
 
         self.db.commit()
         return DepartmentReadSchema.model_validate(department)
+
+    async def list_departments(
+        self,
+        tenant_id: int,
+        *,
+        page: int = 1,
+        page_size: int = 50,
+        unit_type: str | None = None,
+    ) -> DepartmentListResponseSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        filters = [DepartmentModel.tenant_id == tenant_id]
+        if unit_type:
+            filters.append(DepartmentModel.unit_type == unit_type)
+
+        total = self.db.execute(
+            select(func.count()).select_from(DepartmentModel).where(and_(*filters))
+        ).scalar_one()
+
+        rows = self.db.execute(
+            select(DepartmentModel)
+            .where(and_(*filters))
+            .order_by(DepartmentModel.name.asc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        ).scalars().all()
+
+        return DepartmentListResponseSchema(
+            total=total,
+            page=page,
+            page_size=page_size,
+            items=[DepartmentReadSchema.model_validate(item) for item in rows],
+        )
 
 
 class ProgramService:

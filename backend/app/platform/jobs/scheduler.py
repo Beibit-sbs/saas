@@ -7,6 +7,8 @@ import time
 from typing import Callable
 
 from app.modules.observability.metrics import observe_job_execution
+from app.core.db import build_engine, make_session_factory
+from app.modules.interventions.risk_service import run_daily_detection_for_all_tenants
 from app.platform.application.notification_dispatch_service import NotificationDispatchService
 from app.platform.application.subscription_rollover_service import SubscriptionRolloverService
 from app.platform.context import service as context_service
@@ -47,6 +49,7 @@ class PlatformWorkerScheduler:
         self.register_task("webhook_retry_dispatch", interval_seconds=2 * 60, task=self._webhook_retry_dispatch)
         self.register_task("kpi_metrics_refresh", interval_seconds=24 * 60 * 60, task=self._kpi_metrics_refresh)
         self.register_task("context_rebuild", interval_seconds=24 * 60 * 60, task=self._context_rebuild)
+        self.register_task("academic_risk_detection", interval_seconds=24 * 60 * 60, task=self._academic_risk_detection)
 
     def register_task(self, name: str, *, interval_seconds: int, task: SchedulerTask) -> None:
         normalized = name.strip().lower()
@@ -129,6 +132,15 @@ class PlatformWorkerScheduler:
                 context_service.rebuild_context_for_tenant(tenant_id=tid)
                 rebuilt += 1
         return {"tenants_processed": rebuilt}
+
+    def _academic_risk_detection(self) -> dict[str, int]:
+        engine = build_engine()
+        session_factory = make_session_factory(engine)
+        try:
+            with session_factory() as session:
+                return run_daily_detection_for_all_tenants(db_session=session, actor="risk-engine")
+        finally:
+            engine.dispose()
 
 
 scheduler = PlatformWorkerScheduler()

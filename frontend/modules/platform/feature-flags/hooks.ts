@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { featureFlagsApi } from "./api";
-import type { TenantFlagOverridePayload, UpdateFlagPayload } from "./types";
+import type { UpsertFlagPayload } from "./types";
 
 export const FLAGS_KEY = "feature-flags";
 
@@ -11,20 +11,10 @@ export function useFeatureFlags() {
   });
 }
 
-export function useUpdateFeatureFlag() {
+export function useUpsertFeatureFlag() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ key, payload }: { key: string; payload: UpdateFlagPayload }) =>
-      featureFlagsApi.update(key, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [FLAGS_KEY] }),
-  });
-}
-
-export function useSetTenantFlagOverride() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ key, payload }: { key: string; payload: TenantFlagOverridePayload }) =>
-      featureFlagsApi.setTenantOverride(key, payload),
+    mutationFn: (payload: UpsertFlagPayload) => featureFlagsApi.upsert(payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: [FLAGS_KEY] }),
   });
 }

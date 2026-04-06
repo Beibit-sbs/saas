@@ -18,6 +18,13 @@ from app.modules.profiles.schemas import (
     ProgramCreateSchema,
     StudentCreateSchema,
 )
+from app.modules.profiles.service import (
+    DepartmentService,
+    FacultyService,
+    PersonService,
+    ProgramService,
+    StudentService,
+)
 
 
 def make_execute_result(*, scalar_one_or_none=None, scalar_one=None, scalars_all=None):
@@ -30,13 +37,6 @@ def make_execute_result(*, scalar_one_or_none=None, scalar_one=None, scalars_all
         scalars.all.return_value = scalars_all
         result.scalars.return_value = scalars
     return result
-from app.modules.profiles.service import (
-    DepartmentService,
-    FacultyService,
-    PersonService,
-    ProgramService,
-    StudentService,
-)
 
 
 def _run(coro):
@@ -151,6 +151,18 @@ class TestDepartmentService:
 
         with pytest.raises(TenantResourceNotFoundError):
             _run(service.create_department(tenant_id=1, request=request, created_by="owner@example.com"))
+
+    def test_list_departments_returns_paginated_items(self, db_session: MagicMock, department_factory) -> None:
+        service = DepartmentService(db_session)
+        db_session.execute.side_effect = [
+            make_execute_result(scalar_one=2),
+            make_execute_result(scalars_all=[department_factory(id=201), department_factory(id=202)]),
+        ]
+
+        result = _run(service.list_departments(tenant_id=1, page=1, page_size=20))
+
+        assert result.total == 2
+        assert len(result.items) == 2
 
 
 class TestProgramService:

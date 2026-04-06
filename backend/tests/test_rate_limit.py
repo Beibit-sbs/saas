@@ -313,7 +313,7 @@ def test_read_rate_limit_does_not_block_jobs_channel(monkeypatch) -> None:
     enqueue = client.post(
         "/api/admin/jobs",
         headers=service_headers,
-        json={"job_type": "sync", "payload": {"source": "rate-limit-test"}, "max_retries": 1},
+        json={"job_type": "backup.run", "payload": {"source": "rate-limit-test"}, "max_retries": 1},
     )
 
     assert read_first.status_code == 200
