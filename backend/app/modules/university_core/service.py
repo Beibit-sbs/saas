@@ -236,117 +236,27 @@ def _validate_foreign_keys_db(conn, entity_name: str, payload: dict[str, object]
 
 
 def _list_entities_db(entity_name: str) -> list[dict[str, object]]:
-    if not _db_url() or psycopg is None:
-        raise RuntimeError("database unavailable")
+    from app.modules.university_core.entity_impl import _list_entities_db_impl
 
-    config = ENTITY_CONFIGS[entity_name]
-    include_created_at = entity_name == "students"
-    selected_columns = ["id"]
-    if include_created_at:
-        selected_columns.append("created_at")
-    selected_columns.extend(config.fields)
-
-    with get_raw_conn() as conn:
-        with conn.cursor() as cur:
-            query = psycopg.sql.SQL("SELECT {} FROM {} ORDER BY id ASC").format(
-                _sql_identifier_list(selected_columns),
-                _sql_identifier(config.table),
-            )
-            cur.execute(query)
-            rows = cur.fetchall()
-
-    return [_row_to_dict(row, config.fields, include_created_at) for row in rows]
+    return _list_entities_db_impl(entity_name)
 
 
 def _create_entity_db(entity_name: str, payload: dict[str, object]) -> dict[str, object]:
-    if not _db_url() or psycopg is None:
-        raise RuntimeError("database unavailable")
+    from app.modules.university_core.entity_impl import _create_entity_db_impl
 
-    config = ENTITY_CONFIGS[entity_name]
-    include_created_at = entity_name == "students"
-    returning_columns = ["id"]
-    if include_created_at:
-        returning_columns.append("created_at")
-    returning_columns.extend(config.fields)
-
-    with get_raw_conn() as conn:
-        _validate_foreign_keys_db(conn, entity_name, payload)
-        with conn.cursor() as cur:
-            columns = list(config.fields)
-            values = [payload[column] for column in columns]
-            query = psycopg.sql.SQL("INSERT INTO {} ({}) VALUES ({}) RETURNING {}").format(
-                _sql_identifier(config.table),
-                _sql_identifier_list(columns),
-                psycopg.sql.SQL(", ").join(psycopg.sql.Placeholder() for _ in columns),
-                _sql_identifier_list(returning_columns),
-            )
-            cur.execute(query, values)
-            row = cur.fetchone()
-        conn.commit()
-
-    if row is None:
-        raise RuntimeError(f"failed to create {entity_name}")
-    return _row_to_dict(row, config.fields, include_created_at)
+    return _create_entity_db_impl(entity_name, payload)
 
 
 def _update_entity_db(entity_name: str, item_id: int, payload: dict[str, object]) -> dict[str, object]:
-    if not _db_url() or psycopg is None:
-        raise RuntimeError("database unavailable")
+    from app.modules.university_core.entity_impl import _update_entity_db_impl
 
-    config = ENTITY_CONFIGS[entity_name]
-    include_created_at = entity_name == "students"
-    returning_columns = ["id"]
-    if include_created_at:
-        returning_columns.append("created_at")
-    returning_columns.extend(config.fields)
-
-    with get_raw_conn() as conn:
-        _validate_foreign_keys_db(conn, entity_name, payload)
-        with conn.cursor() as cur:
-            assignments = [
-                psycopg.sql.SQL("{} = %s").format(_sql_identifier(column))
-                for column in config.fields
-            ]
-            values = [payload[column] for column in config.fields]
-            values.append(item_id)
-            query = psycopg.sql.SQL("UPDATE {} SET {} WHERE id = %s RETURNING {}").format(
-                _sql_identifier(config.table),
-                psycopg.sql.SQL(", ").join(assignments),
-                _sql_identifier_list(returning_columns),
-            )
-            cur.execute(query, values)
-            row = cur.fetchone()
-        conn.commit()
-
-    if row is None:
-        raise ValueError(f"{entity_name.rstrip('s')} not found")
-    return _row_to_dict(row, config.fields, include_created_at)
+    return _update_entity_db_impl(entity_name, item_id, payload)
 
 
 def _delete_entity_db(entity_name: str, item_id: int) -> dict[str, object]:
-    if not _db_url() or psycopg is None:
-        raise RuntimeError("database unavailable")
+    from app.modules.university_core.entity_impl import _delete_entity_db_impl
 
-    config = ENTITY_CONFIGS[entity_name]
-    include_created_at = entity_name == "students"
-    returning_columns = ["id"]
-    if include_created_at:
-        returning_columns.append("created_at")
-    returning_columns.extend(config.fields)
-
-    with get_raw_conn() as conn:
-        with conn.cursor() as cur:
-            query = psycopg.sql.SQL("DELETE FROM {} WHERE id = %s RETURNING {}").format(
-                _sql_identifier(config.table),
-                _sql_identifier_list(returning_columns),
-            )
-            cur.execute(query, (item_id,))
-            row = cur.fetchone()
-        conn.commit()
-
-    if row is None:
-        raise ValueError(f"{entity_name.rstrip('s')} not found")
-    return _row_to_dict(row, config.fields, include_created_at)
+    return _delete_entity_db_impl(entity_name, item_id)
 
 
 def _memory_fk_exists(entity_name: str, item_id: int) -> bool:
@@ -367,18 +277,9 @@ def list_entities(entity_name: str) -> list[dict[str, object]]:
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
     _mark_university_core_usage("list_entities", entity_name)
+    from app.modules.university_core.entity_impl import list_entities_impl
 
-    if _use_database():
-        try:
-            return _list_entities_db(entity_name)
-        except Exception as exc:
-            if not _should_fallback_to_memory(exc):
-                raise
-
-    with _state_lock:
-        rows = list(_state.data[entity_name].values())
-    rows.sort(key=lambda row: int(row["id"]))
-    return rows
+    return list_entities_impl(entity_name)
 
 
 def create_entity(entity_name: str, payload: dict[str, object]) -> dict[str, object]:
@@ -386,25 +287,9 @@ def create_entity(entity_name: str, payload: dict[str, object]) -> dict[str, obj
         raise ValueError("unknown entity")
     tenant_id_int = _parse_tenant_id(payload.get("tenant_id"))
     _mark_university_core_usage("create_entity", entity_name, tenant_id_int)
+    from app.modules.university_core.entity_impl import create_entity_impl
 
-    normalized = _normalize_payload(entity_name, payload)
-
-    if _use_database():
-        try:
-            return _create_entity_db(entity_name, normalized)
-        except Exception as exc:
-            if not _should_fallback_to_memory(exc):
-                raise
-
-    with _state_lock:
-        _validate_foreign_keys_memory(entity_name, normalized)
-        _state.counters[entity_name] += 1
-        item_id = _state.counters[entity_name]
-        row: dict[str, object] = {"id": item_id, **normalized}
-        if entity_name == "students":
-            row["created_at"] = _now_iso()
-        _state.data[entity_name][item_id] = row
-        return row
+    return create_entity_impl(entity_name, payload)
 
 
 def update_entity(entity_name: str, item_id: int, payload: dict[str, object]) -> dict[str, object]:
@@ -412,46 +297,18 @@ def update_entity(entity_name: str, item_id: int, payload: dict[str, object]) ->
         raise ValueError("unknown entity")
     tenant_id_int = _parse_tenant_id(payload.get("tenant_id"))
     _mark_university_core_usage("update_entity", entity_name, tenant_id_int)
+    from app.modules.university_core.entity_impl import update_entity_impl
 
-    normalized = _normalize_payload(entity_name, payload)
-
-    if _use_database():
-        try:
-            return _update_entity_db(entity_name, item_id, normalized)
-        except Exception as exc:
-            if not _should_fallback_to_memory(exc):
-                raise
-
-    with _state_lock:
-        _validate_foreign_keys_memory(entity_name, normalized)
-        current = _state.data[entity_name].get(item_id)
-        if current is None:
-            raise ValueError(f"{entity_name.rstrip('s')} not found")
-
-        updated = {"id": item_id, **normalized}
-        if entity_name == "students":
-            updated["created_at"] = current.get("created_at") or _now_iso()
-        _state.data[entity_name][item_id] = updated
-        return updated
+    return update_entity_impl(entity_name, item_id, payload)
 
 
 def delete_entity(entity_name: str, item_id: int) -> dict[str, object]:
     if entity_name not in ENTITY_CONFIGS:
         raise ValueError("unknown entity")
     _mark_university_core_usage("delete_entity", entity_name)
+    from app.modules.university_core.entity_impl import delete_entity_impl
 
-    if _use_database():
-        try:
-            return _delete_entity_db(entity_name, item_id)
-        except Exception as exc:
-            if not _should_fallback_to_memory(exc):
-                raise
-
-    with _state_lock:
-        current = _state.data[entity_name].pop(item_id, None)
-        if current is None:
-            raise ValueError(f"{entity_name.rstrip('s')} not found")
-        return current
+    return delete_entity_impl(entity_name, item_id)
 
 
 # ---------------------------------------------------------------------------
