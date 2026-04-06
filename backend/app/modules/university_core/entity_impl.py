@@ -4,12 +4,38 @@ This module hosts generic (non-tenant-scoped) CRUD behavior extracted
 from `university_core.service` as part of C-007 decomposition.
 """
 
+import os
 import re
+from datetime import datetime, timezone
 
 from app.modules.university_core import service as university_service
 
 
 _SQL_IDENTIFIER_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
+
+
+def _db_url_impl() -> str | None:
+    return os.getenv("DATABASE_URL")
+
+
+def _use_database_impl() -> bool:
+    return bool(_db_url_impl()) and university_service.psycopg is not None
+
+
+def _should_fallback_to_memory_impl(exc: Exception) -> bool:
+    if isinstance(exc, RuntimeError) and str(exc) == "database unavailable":
+        return True
+    if isinstance(exc, (ConnectionError, TimeoutError, OSError, ValueError)):
+        return True
+    if university_service.psycopg is not None and isinstance(
+        exc, (university_service.psycopg.OperationalError, university_service.psycopg.InterfaceError)
+    ):
+        return True
+    return False
+
+
+def _now_iso_impl() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _normalize_string_impl(name: str, value: object, max_len: int = 255) -> str:
@@ -143,7 +169,7 @@ def _sql_identifier_list_impl(names: list[str] | tuple[str, ...]):
 
 
 def _list_entities_db_impl(entity_name: str) -> list[dict[str, object]]:
-    if not university_service._db_url() or university_service.psycopg is None:
+    if not _db_url_impl() or university_service.psycopg is None:
         raise RuntimeError("database unavailable")
 
     config = university_service.ENTITY_CONFIGS[entity_name]
@@ -166,7 +192,7 @@ def _list_entities_db_impl(entity_name: str) -> list[dict[str, object]]:
 
 
 def _create_entity_db_impl(entity_name: str, payload: dict[str, object]) -> dict[str, object]:
-    if not university_service._db_url() or university_service.psycopg is None:
+    if not _db_url_impl() or university_service.psycopg is None:
         raise RuntimeError("database unavailable")
 
     config = university_service.ENTITY_CONFIGS[entity_name]
@@ -199,7 +225,7 @@ def _create_entity_db_impl(entity_name: str, payload: dict[str, object]) -> dict
 
 
 def _update_entity_db_impl(entity_name: str, item_id: int, payload: dict[str, object]) -> dict[str, object]:
-    if not university_service._db_url() or university_service.psycopg is None:
+    if not _db_url_impl() or university_service.psycopg is None:
         raise RuntimeError("database unavailable")
 
     config = university_service.ENTITY_CONFIGS[entity_name]
@@ -233,7 +259,7 @@ def _update_entity_db_impl(entity_name: str, item_id: int, payload: dict[str, ob
 
 
 def _delete_entity_db_impl(entity_name: str, item_id: int) -> dict[str, object]:
-    if not university_service._db_url() or university_service.psycopg is None:
+    if not _db_url_impl() or university_service.psycopg is None:
         raise RuntimeError("database unavailable")
 
     config = university_service.ENTITY_CONFIGS[entity_name]
@@ -262,11 +288,11 @@ def list_entities_impl(entity_name: str) -> list[dict[str, object]]:
     if entity_name not in university_service.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
-    if university_service._use_database():
+    if _use_database_impl():
         try:
             return _list_entities_db_impl(entity_name)
         except Exception as exc:
-            if not university_service._should_fallback_to_memory(exc):
+            if not _should_fallback_to_memory_impl(exc):
                 raise
 
     with university_service._state_lock:
@@ -281,11 +307,11 @@ def create_entity_impl(entity_name: str, payload: dict[str, object]) -> dict[str
 
     normalized = _normalize_payload_impl(entity_name, payload)
 
-    if university_service._use_database():
+    if _use_database_impl():
         try:
             return _create_entity_db_impl(entity_name, normalized)
         except Exception as exc:
-            if not university_service._should_fallback_to_memory(exc):
+            if not _should_fallback_to_memory_impl(exc):
                 raise
 
     with university_service._state_lock:
@@ -294,7 +320,7 @@ def create_entity_impl(entity_name: str, payload: dict[str, object]) -> dict[str
         item_id = university_service._state.counters[entity_name]
         row: dict[str, object] = {"id": item_id, **normalized}
         if entity_name == "students":
-            row["created_at"] = university_service._now_iso()
+            row["created_at"] = _now_iso_impl()
         university_service._state.data[entity_name][item_id] = row
         return row
 
@@ -305,11 +331,11 @@ def update_entity_impl(entity_name: str, item_id: int, payload: dict[str, object
 
     normalized = _normalize_payload_impl(entity_name, payload)
 
-    if university_service._use_database():
+    if _use_database_impl():
         try:
             return _update_entity_db_impl(entity_name, item_id, normalized)
         except Exception as exc:
-            if not university_service._should_fallback_to_memory(exc):
+            if not _should_fallback_to_memory_impl(exc):
                 raise
 
     with university_service._state_lock:
@@ -320,7 +346,7 @@ def update_entity_impl(entity_name: str, item_id: int, payload: dict[str, object
 
         updated = {"id": item_id, **normalized}
         if entity_name == "students":
-            updated["created_at"] = current.get("created_at") or university_service._now_iso()
+            updated["created_at"] = current.get("created_at") or _now_iso_impl()
         university_service._state.data[entity_name][item_id] = updated
         return updated
 
@@ -329,11 +355,11 @@ def delete_entity_impl(entity_name: str, item_id: int) -> dict[str, object]:
     if entity_name not in university_service.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
-    if university_service._use_database():
+    if _use_database_impl():
         try:
             return _delete_entity_db_impl(entity_name, item_id)
         except Exception as exc:
-            if not university_service._should_fallback_to_memory(exc):
+            if not _should_fallback_to_memory_impl(exc):
                 raise
 
     with university_service._state_lock:
@@ -344,6 +370,10 @@ def delete_entity_impl(entity_name: str, item_id: int) -> dict[str, object]:
 
 
 __all__ = [
+    "_db_url_impl",
+    "_use_database_impl",
+    "_should_fallback_to_memory_impl",
+    "_now_iso_impl",
     "_row_to_dict_impl",
     "_sql_identifier_impl",
     "_sql_identifier_list_impl",

@@ -1,10 +1,7 @@
 from __future__ import annotations
 import logging
-from app.core.db import get_raw_conn
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-import os
 from threading import Lock
 from typing import Any
 
@@ -100,25 +97,27 @@ def clear_university_state() -> None:
 
 
 def _db_url() -> str | None:
-    return os.getenv("DATABASE_URL")
+    from app.modules.university_core.entity_impl import _db_url_impl
+
+    return _db_url_impl()
 
 
 def _use_database() -> bool:
-    return bool(_db_url()) and psycopg is not None
+    from app.modules.university_core.entity_impl import _use_database_impl
+
+    return _use_database_impl()
 
 
 def _should_fallback_to_memory(exc: Exception) -> bool:
-    if isinstance(exc, RuntimeError) and str(exc) == "database unavailable":
-        return True
-    if isinstance(exc, (ConnectionError, TimeoutError, OSError, ValueError)):
-        return True
-    if psycopg is not None and isinstance(exc, (psycopg.OperationalError, psycopg.InterfaceError)):
-        return True
-    return False
+    from app.modules.university_core.entity_impl import _should_fallback_to_memory_impl
+
+    return _should_fallback_to_memory_impl(exc)
 
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    from app.modules.university_core.entity_impl import _now_iso_impl
+
+    return _now_iso_impl()
 
 
 def _normalize_string(name: str, value: object, max_len: int = 255) -> str:
