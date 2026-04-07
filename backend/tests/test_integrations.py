@@ -106,7 +106,7 @@ def test_ldap_admin_can_access_all_protected_ldap_ai_integrations_endpoints(monk
     assert login_response.status_code == 200
     assert assignments.get("ad.bob") == ["admin"]
 
-    token = create_access_token(user_id="ad.bob", roles=["admin"], auth_source="test")
+    token = create_access_token(user_id="ad.bob", roles=["admin"], auth_source="test", tenant_id=1)
     auth = {"Authorization": f"Bearer {token}"}
 
     r = client.get("/api/admin/ldap/status", headers=auth)
@@ -114,7 +114,7 @@ def test_ldap_admin_can_access_all_protected_ldap_ai_integrations_endpoints(monk
 
     r = client.post(
         "/api/admin/ldap/test-connection",
-        json={"host": "127.0.0.1", "port": 9, "base_dn": "dc=test,dc=local", "bind_dn": "cn=a,dc=test,dc=local", "bind_password": "x"},
+        json={"host": "10.0.0.9", "port": 9, "base_dn": "dc=test,dc=local", "bind_dn": "cn=a,dc=test,dc=local", "bind_password": "x"},
         headers=auth,
     )
     assert r.status_code != 403
@@ -139,7 +139,7 @@ def test_ldap_admin_can_access_all_protected_ldap_ai_integrations_endpoints(monk
 
     r = client.put(
         "/api/admin/integrations/ldap",
-        json={"server_uri": "ldap://127.0.0.1:389", "bind_dn": "cn=x,dc=t,dc=l", "bind_password": "s", "base_dn": "dc=t,dc=l"},
+        json={"server_uri": "ldap://ldap.internal:389", "bind_dn": "cn=x,dc=t,dc=l", "bind_password": "s", "base_dn": "dc=t,dc=l"},
         headers=auth,
     )
     assert r.status_code == 200

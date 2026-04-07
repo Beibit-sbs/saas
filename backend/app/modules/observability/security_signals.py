@@ -5,6 +5,9 @@ import time
 from collections import defaultdict, deque
 from threading import Lock
 
+from app.core.config import get_ops_login_failure_spike_threshold
+from app.modules.observability.alerts import emit_alert
+
 
 logger = logging.getLogger("app.security")
 
@@ -22,11 +25,12 @@ _recent_events: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 _ANOMALY_WINDOW_SECONDS = 10 * 60
 _ANOMALY_THRESHOLDS: dict[str, int] = {
     "tenant.override.denied": 3,
-    "auth.login.failed": 5,
+    "auth.login.failed": get_ops_login_failure_spike_threshold(),
     "auth.refresh.failed": 4,
     "auth.csrf.failed": 5,
     "auth.token.revoked_reuse": 2,
     "platform.access.denied": 3,
+    "developer.analytics.contract_denied": 8,
     "metrics.access.denied": 3,
     "rate_limit.blocked": 5,
 }
@@ -79,6 +83,21 @@ def record_security_signal(
             return
 
         _security_anomalies_total[normalized_signal] += 1
+
+    if normalized_signal == "auth.login.failed":
+        emit_alert(
+            alert_type="auth.login.failed.spike",
+            severity="warning",
+            summary="Login failure spike detected",
+            details={
+                "signal": normalized_signal,
+                "threshold": threshold,
+                "bucket": bucket_id,
+                "path": path or "",
+                "tenant_id": tenant_id,
+            },
+            dedupe_key="security:auth.login.failed",
+        )
 
     logger.warning(
         "security_anomaly signal=%s bucket=%s count=%s window_seconds=%s path=%s tenant_id=%s",

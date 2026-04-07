@@ -1,7 +1,11 @@
 from pathlib import Path
+import os
 import sys
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
+import pytest
+
+_HAS_REPO_ROOT = bool(os.environ.get("PROJECT_ROOT"))
+ROOT_DIR = Path(os.environ.get("PROJECT_ROOT", str(Path(__file__).resolve().parents[2])))
 BACKEND_DIR = ROOT_DIR / "backend"
 
 if str(BACKEND_DIR) not in sys.path:
@@ -11,6 +15,7 @@ from fastapi.routing import APIRoute  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.main import app  # noqa: E402
+from tests.conftest import ADMIN_HEADERS  # noqa: E402
 
 REQUIRED_DOCS = [
     ROOT_DIR / "README.md",
@@ -31,16 +36,18 @@ REQUIRED_MODULE_PATHS = [
     ROOT_DIR / "backend/app/modules/integrations",
     ROOT_DIR / "backend/app/modules/ai_gateway",
     ROOT_DIR / "backend/app/modules/feature_flags",
-    ROOT_DIR / "backend/app/modules/example_notes",
     ROOT_DIR / "backend/app/modules/backup",
     ROOT_DIR / "backend/app/modules/i18n",
     ROOT_DIR / "backend/app/modules/observability",
-    ROOT_DIR / "frontend/app/admin/page.tsx",
+    ROOT_DIR / "frontend/app/(admin)/console/platform/page.tsx",
 ]
 
 REQUIRED_ROUTE_PATHS = {
     "/health",
+    "/health/db",
     "/api/health",
+    "/api/v1/admin/tenants",
+    "/api/v1/internal/jobs/{job_id}/run",
     "/api/auth/modes",
     "/api/admin/dashboard",
     "/api/admin/local-users",
@@ -50,23 +57,25 @@ REQUIRED_ROUTE_PATHS = {
     "/api/admin/ai/models",
     "/api/ai/chat",
     "/api/admin/feature-flags",
-    "/api/admin/example-notes",
     "/api/admin/backups/settings",
     "/api/admin/audit/events",
     "/api/i18n/languages",
 }
 
 
+@pytest.mark.skipif(not _HAS_REPO_ROOT, reason="requires PROJECT_ROOT (backend-tests service)")
 def test_required_template_docs_exist() -> None:
     missing = [str(path.relative_to(ROOT_DIR)) for path in REQUIRED_DOCS if not path.exists()]
     assert not missing, f"missing required template docs: {missing}"
 
 
+@pytest.mark.skipif(not _HAS_REPO_ROOT, reason="requires PROJECT_ROOT (backend-tests service)")
 def test_required_template_modules_exist() -> None:
     missing = [str(path.relative_to(ROOT_DIR)) for path in REQUIRED_MODULE_PATHS if not path.exists()]
     assert not missing, f"missing required template modules: {missing}"
 
 
+@pytest.mark.skipif(not _HAS_REPO_ROOT, reason="requires PROJECT_ROOT (backend-tests service)")
 def test_bootstrap_instructions_exist() -> None:
     readme_text = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
     playbook_text = (ROOT_DIR / "docs/templates/template-sync-playbook.md").read_text(encoding="utf-8")
@@ -89,10 +98,10 @@ def test_required_routes_exist() -> None:
 def test_minimal_health_checks_pass() -> None:
     client = TestClient(app)
 
-    response = client.get("/health")
+    response = client.get("/health", headers=ADMIN_HEADERS)
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
     api_response = client.get("/api/health")
     assert api_response.status_code == 200
-    assert api_response.json()["status"] == "ok"
+    assert api_response.json()["live"] is True

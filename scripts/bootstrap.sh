@@ -1,39 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# User-space bootstrap only: installs project dependencies without sudo.
+# Docker-only bootstrap: build images and materialize the stack.
 
-ensure_npm() {
-  if command -v npm >/dev/null 2>&1; then
-    return
-  fi
+bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/docker_only_guard.sh"
 
-  if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
-    # Load nvm for shells where Node is installed in user-space only.
-    # shellcheck disable=SC1090
-    source "$HOME/.nvm/nvm.sh"
-    nvm use --lts >/dev/null || true
-  fi
-
-  if ! command -v npm >/dev/null 2>&1; then
-    echo "npm not found. Install Node.js/npm (system) or nvm (user-space)."
-    exit 1
-  fi
-}
-
-if [[ -d "backend" ]]; then
-  python3 -m venv backend/.venv
-  source backend/.venv/bin/activate
-  pip install --upgrade pip
-  pip install -r backend/requirements.txt
-  deactivate
+if [[ ! -f "infra/.env" ]]; then
+  echo "infra/.env not found. Copy infra/.env.example first."
+  exit 1
 fi
 
-if [[ -d "frontend" ]]; then
-  ensure_npm
-  cd frontend
-  npm install
-  cd - >/dev/null
-fi
+(
+  cd infra
+  docker compose --env-file .env build
+)
 
-echo "Bootstrap complete."
+echo "Bootstrap complete: Docker images are built. Use docker compose --env-file infra/.env up -d --build to start the stack."

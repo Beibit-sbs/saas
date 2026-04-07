@@ -1,0 +1,463 @@
+{
+  "analysis_metadata": {
+    "timestamp": "2026-04-06",
+    "source_workspace": "/home/sbs/AI",
+    "analysis_method": "systematic_file_verification + grep_reference_count + endpoint_mapping",
+    "total_candidates": 6,
+    "verification_status": "complete"
+  },
+  "migration_candidates": [
+    {
+      "candidate_id": "C-001",
+      "category": "frontend_zone_migration",
+      "legacy_path": "frontend/app/admin/",
+      "replacement_path": "frontend/app/(admin)/console/",
+      "status": "both_exist_partial_mapping",
+      "reference_count": 8,
+      "references": [
+        "frontend/app/admin/hooks/useAdminUniversity.ts (1 export)",
+        "frontend/app/admin/components/AdminControlPlaneContent.tsx (2 imports)",
+        "frontend/app/admin/components/AdminUniversityTab.tsx (1 import)",
+        "frontend/shared/api/client.ts (BFF proxy routing)",
+        "BFF layer transformations (4 rules)"
+      ],
+      "endpoints": {
+        "count": null,
+        "description": "Not a router; UI zone with 33 TS/TSX files"
+      },
+      "files": {
+        "legacy_count": 33,
+        "legacy_structure": [
+          "frontend/app/admin/components/ (7 files)",
+          "frontend/app/admin/hooks/ (8 files: useAdminUniversity, useAdminJobs, useAdminRbac, etc.)",
+          "frontend/app/admin/page.tsx",
+          "frontend/app/admin/types.ts",
+          "frontend/app/admin/utils.ts",
+          "frontend/app/admin/admin-legacy.css"
+        ],
+        "replacement_structure": [
+          "frontend/app/(admin)/console/ (distributed sections: admissions, ai, audit, etc.)"
+        ]
+      },
+      "complexity": "HIGH",
+      "complexity_factors": [
+        "No direct 1:1 route mapping",
+        "Console restructures information architecture",
+        "Component tree requires complete rewrite",
+        "useAdminUniversity uses legacy BFF paths"
+      ],
+      "dataflow": {
+        "old_flow": "frontend/app/admin → useAdminUniversity → /api/bff/admin/university/* → BFF proxy → backend API",
+        "new_flow": "frontend/app/(admin)/console/* → modules/* hooks → /api/bff/admin/* → backend API",
+        "breaking_changes": [
+          "BFF proxy rewrite required",
+          "API path transformation logic must be updated",
+          "Client-side routing structure reorganization"
+        ]
+      },
+      "dependencies": {
+        "client_count": 8,
+        "blocking_issues": [
+          "BFF proxy (/api/bff/admin/university/*) must be updated",
+          "useAdminUniversity hook assumes legacy namespace"
+        ]
+      },
+      "replacement_status": "partial_only",
+      "replacement_notes": "frontend/app/(admin)/console exists but IA differs; no 1:1 migration path"
+    },
+    {
+      "candidate_id": "C-002",
+      "category": "backend_router_migration",
+      "legacy_path": "backend/app/modules/students/legacy_router",
+      "replacement_path": "backend/app/modules/students/router",
+      "status": "replacement_live_extended",
+      "reference_count": 2,
+      "references": [
+        "backend/app/main.py:84 (import as legacy_students_router)",
+        "backend/app/main.py:228 (include_router(legacy_students_router))"
+      ],
+      "endpoints": {
+        "legacy_count": 4,
+        "legacy_endpoints": [
+          "GET /api/admin/university/students",
+          "POST /api/admin/university/students",
+          "PUT /api/admin/university/students/{student_id}",
+          "DELETE /api/admin/university/students/{student_id}"
+        ],
+        "replacement_count": 6,
+        "replacement_endpoints": [
+          "POST /api/admin/students (create)",
+          "GET /api/admin/students (list)",
+          "GET /api/admin/students/{student_id} (read)",
+          "PATCH /api/admin/students/{student_id}/status",
+          "POST /api/admin/students/{student_id}/program-bindings",
+          "GET /api/admin/students/{student_id}/program"
+        ],
+        "endpoint_compatibility": "legacy_subset_of_replacement"
+      },
+      "file_locations": {
+        "legacy": "backend/app/modules/students/router.py:48",
+        "replacement": "backend/app/modules/students/router.py:47",
+        "both_in_same_file": true,
+        "lines_of_code": 314
+      },
+      "complexity": "MEDIUM",
+      "complexity_factors": [
+        "Same function signatures (copy-paste similarity)",
+        "Ready replacement with extended functionality",
+        "Old endpoints lack program-binding operations"
+      ],
+      "dataflow": {
+        "change_type": "prefix_rename",
+        "old": "/api/admin/university/students → handler",
+        "new": "/api/admin/students → handler",
+        "backward_compatibility": "false (prefix change requires client migration)"
+      },
+      "dependencies": {
+        "service_imports": [
+          "app.modules.admissions.service (StudentLifecycleService)",
+          "app.modules.rbac.security (permission checks)"
+        ],
+        "database_sessions": "students_session_factory"
+      },
+      "migration_path": "direct_prefix_swap",
+      "migration_steps": [
+        "1. Validate all clients use BFF proxy (/api/bff/admin/students)",
+        "2. Remove legacy_router definition",
+        "3. Update main.py include_router call (line 228)",
+        "4. Test all 4 legacy endpoints via proxy",
+        "5. Confirm no direct /api/admin/university/students usage"
+      ],
+      "replacement_status": "ready",
+      "replacement_tests": "backend/tests/test_students.py (if exists)"
+    },
+    {
+      "candidate_id": "C-003",
+      "category": "backend_router_migration",
+      "legacy_path": "backend/app/modules/enrollments/legacy_router",
+      "replacement_path": "backend/app/modules/enrollments/router",
+      "status": "replacement_live_extended",
+      "reference_count": 2,
+      "references": [
+        "backend/app/main.py:42 (import as legacy_enrollments_router)",
+        "backend/app/main.py:231 (include_router(legacy_enrollments_router))"
+      ],
+      "endpoints": {
+        "legacy_count": 4,
+        "legacy_endpoints": [
+          "GET /api/admin/university/enrollments",
+          "POST /api/admin/university/enrollments",
+          "PUT /api/admin/university/enrollments/{enrollment_id}",
+          "DELETE /api/admin/university/enrollments/{enrollment_id}"
+        ],
+        "replacement_count": 8,
+        "replacement_endpoints": [
+          "POST /api/admin/enrollments (create)",
+          "GET /api/admin/enrollments (list)",
+          "GET /api/admin/enrollments/{enrollment_id} (read)",
+          "PATCH /api/admin/enrollments/{enrollment_id}/status",
+          "GET /api/admin/courses/{course_id}/roster",
+          "GET /api/admin/courses/{course_id}/term/{term_id}/roster (advanced filtering)"
+        ],
+        "endpoint_compatibility": "legacy_subset_of_replacement"
+      },
+      "file_locations": {
+        "legacy": "backend/app/modules/enrollments/router.py:111",
+        "replacement": "backend/app/modules/enrollments/router.py:110",
+        "both_in_same_file": true,
+        "lines_of_code": 511
+      },
+      "complexity": "MEDIUM",
+      "complexity_factors": [
+        "Endpoint signatures compatible",
+        "New router extends functionality",
+        "Missing course roster aggregation in legacy"
+      ],
+      "dataflow": {
+        "change_type": "prefix_rename_with_extended_paths",
+        "old": "/api/admin/university/enrollments → handler",
+        "new": "/api/admin/enrollments → handler + /api/admin/courses/{course_id}/roster",
+        "backward_compatibility": "false (prefix change + new routing context)"
+      },
+      "dependencies": {
+        "service_imports": [
+          "app.modules.rbac.security (permission checks)",
+          "app.modules.audit.service (logging)"
+        ],
+        "database_sessions": "enrollments_session_factory",
+        "cross_module_deps": [
+          "grades.service (uses enrollments.models)",
+          "transcripts.service (uses enrollments.models)",
+          "scheduling.service (uses enrollments.models)"
+        ]
+      },
+      "migration_path": "prefix_swap_plus_roster_endpoint_awareness",
+      "migration_steps": [
+        "1. Validate clients use BFF proxy (/api/bff/admin/enrollments)",
+        "2. Identify roster aggregation consumers",
+        "3. Remove legacy_router definition",
+        "4. Update main.py include_router (line 231)",
+        "5. Migrate roster endpoint consumers to /api/admin/courses/{course_id}/roster",
+        "6. Run grades + transcripts + scheduling integration tests"
+      ],
+      "replacement_status": "ready",
+      "replacement_tests": "backend/tests/test_enrollments.py (if exists)"
+    },
+    {
+      "candidate_id": "C-004",
+      "category": "backend_router_multiple_migration",
+      "modules": [
+        {
+          "name": "faculty",
+          "legacy_path": "backend/app/modules/faculty/router.py",
+          "prefix": "/api/admin/university/faculty",
+          "endpoints": ["GET /", "POST /", "PUT /{id}", "DELETE /{id}"]
+        },
+        {
+          "name": "programs",
+          "legacy_path": "backend/app/modules/programs/router.py",
+          "prefix": "/api/admin/university/programs",
+          "endpoints": ["GET /", "POST /", "PUT /{id}", "DELETE /{id}"]
+        },
+        {
+          "name": "courses",
+          "legacy_path": "backend/app/modules/courses/router.py",
+          "prefix": "/api/admin/university/courses",
+          "endpoints": ["GET /", "POST /", "PUT /{id}", "DELETE /{id}"]
+        }
+      ],
+      "replacement_path": "platform/admin API v1 (incomplete)",
+      "status": "replacement_not_architected",
+      "reference_count": 3,
+      "references": [
+        "backend/app/main.py:237 (include_router(faculty_router))",
+        "backend/app/main.py:238 (include_router(programs_router))",
+        "backend/app/main.py:239 (include_router(courses_router))"
+      ],
+      "total_endpoints": 12,
+      "complexity": "HIGH",
+      "complexity_factors": [
+        "No direct replacement exists",
+        "platform/admin router exists but doesn't cover university entities",
+        "Architecture gap: university domain not yet migrated to platform namespace",
+        "Shared university_core dependency (C-007)"
+      ],
+      "dataflow": {
+        "current": "/api/admin/university/{faculty,programs,courses} → handler → university_core.service",
+        "blocked_replacement": "No target namespace architected",
+        "options": [
+          "/api/platform/admin/university/{entity}",
+          "/api/v1/admin/university/{entity}",
+          "Keep /api/admin/university/{entity} (status quo)"
+        ]
+      },
+      "dependencies": {
+        "service_imports": [
+          "app.modules.faculty.service → university_core.service",
+          "app.modules.programs.service → university_core.service",
+          "app.modules.courses.service → university_core.service"
+        ],
+        "shared_config": "university_core.EntityConfig (students, faculty, programs, courses, enrollments)"
+      },
+      "migration_path": "blocked_requires_architecture",
+      "migration_blockers": [
+        "❌ No target namespace decided",
+        "❌ No replacement routes architected",
+        "⏳ C-007 (university_core) must be resolved first",
+        "⏳ Architecture Board decision required"
+      ],
+      "replacement_status": "none",
+      "replacement_notes": "Requires architecture decision on university domain API namespace"
+    },
+    {
+      "candidate_id": "C-005",
+      "category": "backend_router_dual_layer",
+      "legacy_path": "backend/app/modules/identity/phase1_router.py",
+      "replacement_path": "backend/app/modules/identity/router.py",
+      "status": "dual_authority_different_paths",
+      "reference_count": 8,
+      "references": [
+        "backend/app/main.py:64 (import as identity_phase1_router)",
+        "backend/app/main.py:229 (include_router(identity_phase1_router))",
+        "backend/app/modules/auth/router.py:43 (authenticate_tenant_login)",
+        "backend/app/modules/observability/health.py:327 (_decrypt_secret, _provider_uri)",
+        "backend/tests/test_identity_phase11_hardening.py:122,139,428 (monkeypatch mocking)"
+      ],
+      "endpoints": {
+        "phase1_count": 10,
+        "phase1_path": "/api/identity",
+        "phase1_endpoints": [
+          "POST /api/identity/providers",
+          "GET /api/identity/providers",
+          "PUT /api/identity/providers/{provider_id}",
+          "POST /api/identity/providers/{provider_id}/test",
+          "POST /api/identity/providers/{provider_id}/mapping/preview",
+          "POST /api/identity/mappings",
+          "GET /api/identity/mappings",
+          "PUT /api/identity/mappings/{mapping_id}",
+          "DELETE /api/identity/mappings/{mapping_id}",
+          "+ diagnostics endpoints"
+        ],
+        "router_count": 2,
+        "router_path": "/api/admin/identity",
+        "router_endpoints": [
+          "GET /api/admin/identity/providers",
+          "PUT /api/admin/identity/providers/{provider}"
+        ]
+      },
+      "file_locations": {
+        "phase1": "backend/app/modules/identity/phase1_router.py (372 lines)",
+        "router": "backend/app/modules/identity/router.py (50 lines)",
+        "both_exist": true,
+        "different_scopes": true
+      },
+      "complexity": "HIGH",
+      "complexity_factors": [
+        "Dual authority: phase1 handles provider setup, router handles admin integration",
+        "Tests explicitly mock phase1_router for hardening",
+        "Login flow uses phase1_service.authenticate_tenant_login (critical path)",
+        "Both routers handle identity with different permission contexts"
+      ],
+      "dataflow": {
+        "phase1_flow": "LDAP/OAuth provider registration + hardened authentication path",
+        "router_flow": "Admin identity integration controls",
+        "issue": "Two separate entry points for same domain",
+        "auth_path_dependency": "Login uses phase1_service → cannot remove without breaking auth"
+      },
+      "dependencies": {
+        "auth_critical_path": [
+          "app.modules.auth.router imports phase1_service.authenticate_tenant_login",
+          "tests/test_identity_phase11_hardening.py monkeypatches phase1_router"
+        ],
+        "hardening_tests": [
+          "LDAP injection attack resistance",
+          "Directory provider test validation",
+          "Identity mapping preview security"
+        ]
+      },
+      "migration_path": "requires_unified_identity_endpoint",
+      "migration_blockers": [
+        "❌ Login flow hardening depends on phase1_router",
+        "❌ No unified identity endpoint yet",
+        "❌ Tests require phase1 router for security mocking",
+        "⚠️  OAuth vs LDAP handling not yet unified"
+      ],
+      "replacement_status": "not_ready",
+      "replacement_notes": "Requires auth/auth flow unification before phase1_router can be deprecated"
+    },
+    {
+      "candidate_id": "C-007",
+      "category": "orphaned_data_layer",
+      "legacy_path": "backend/app/modules/university_core/service.py",
+      "replacement_path": null,
+      "status": "shared_config_no_router",
+      "reference_count": 8,
+      "references": [
+        "backend/app/modules/academic_records/service.py:1 (import)",
+        "backend/app/modules/programs/service.py:1 (import)",
+        "backend/app/modules/students/service.py:37 (import)",
+        "backend/app/modules/enrollments/service.py:35 (import)",
+        "backend/app/modules/faculty/service.py:1 (import)",
+        "backend/app/modules/courses/service.py:1 (import)",
+        "backend/app/modules/grades/business_rules.py:6 (indirect)",
+        "backend/tests/ (no dedicated tests)"
+      ],
+      "type": "data_structure_registry_not_router",
+      "purpose": "Central registry of database table configurations for university domain entities",
+      "content_summary": {
+        "entity_configs": [
+          "students (table: university_students)",
+          "faculty (table: university_faculty)",
+          "programs (table: university_programs)",
+          "courses (table: university_courses)",
+          "enrollments (table: university_enrollments)"
+        ],
+        "config_fields": [
+          "table: database table name",
+          "fields: tuple of column names",
+          "required: tuple of mandatory fields",
+          "fk_fields: foreign key columns"
+        ]
+      },
+      "complexity": "MEDIUM",
+      "complexity_factors": [
+        "Self-contained; no external dependencies",
+        "Pure data structure (no business logic)",
+        "6 modules depend on this configuration",
+        "No tests; no direct usage patterns"
+      ],
+      "file_info": {
+        "path": "backend/app/modules/university_core/service.py",
+        "lines": 50,
+        "style": "frozen dataclass + module-level dict"
+      },
+      "dataflow": {
+        "current": "university_core.service.ENTITY_CONFIGS → imported by 6 services for field validation",
+        "issue": "Centralized config makes it harder to evolve each entity independently"
+      },
+      "dependencies": {
+        "dependents_count": 6,
+        "dependents": [
+          "academic_records/service.py",
+          "programs/service.py",
+          "students/service.py",
+          "enrollments/service.py",
+          "faculty/service.py",
+          "courses/service.py"
+        ]
+      },
+      "migration_path": "distribute_or_relocate",
+      "migration_options": [
+        "Option 1: Distribute EntityConfig to each module (6 copies)",
+        "Option 2: Keep as shared utility but reorganize import path",
+        "Option 3: Migrate to ORM-level metadata (SQLAlchemy TableArgs)"
+      ],
+      "migration_blockers": [
+        "⏳ C-004 must be resolved first (faculty/programs/courses namespace)",
+        "⚠️  Requires decision on config distribution strategy"
+      ],
+      "replacement_status": "none_required_but_reorganization_needed",
+      "replacement_notes": "Not a router; is a data layer utility. Removal decision depends on module architecture."
+    }
+  ],
+  "summary": {
+    "total_candidates": 6,
+    "breakdown_by_status": {
+      "replacement_live": 2,
+      "replacement_partial": 1,
+      "replacement_blocked": 2,
+      "replacement_none": 1
+    },
+    "breakdown_by_complexity": {
+      "high": 3,
+      "medium": 3,
+      "low": 0
+    },
+    "recommended_migration_phases": {
+      "phase_1": {
+        "name": "Prerequisite (BFF Proxy Architecture)",
+        "candidates": ["C-001"],
+        "timeline": "2-3 weeks",
+        "blocker": "C-002/C-003 cannot proceed without BFF redesign"
+      },
+      "phase_2": {
+        "name": "Ready Migrations (After BFF)",
+        "candidates": ["C-002", "C-003"],
+        "timeline": "2-3 days each",
+        "dependency": "C-001 complete"
+      },
+      "phase_3": {
+        "name": "Architecture Decision Required",
+        "candidates": ["C-004", "C-005", "C-007"],
+        "timeline": "4-6 weeks + decision",
+        "dependency": "Architecture Board sign-off"
+      }
+    },
+    "critical_blockers": [
+      "C-001: BFF proxy layer needs redesign (affects C-002, C-003)",
+      "C-004: No target namespace architected (3 routers blocked)",
+      "C-005: Login flow hardening depends on phase1_router (security critical)",
+      "C-007: Shared config requires distribution strategy"
+    ]
+  }
+}

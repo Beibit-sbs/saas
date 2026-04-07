@@ -7,7 +7,8 @@ import time
 import pytest
 
 from app.modules.auth.token_service import create_access_token
-from tests.conftest import ADMIN_HEADERS, client
+from app.modules.auth.local_users_service import local_user_store
+from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 
 
 pytestmark = pytest.mark.security_regression
@@ -41,6 +42,19 @@ def _csrf_headers() -> dict[str, str]:
     return {"X-CSRF-Token": str(csrf.json()["csrf_token"])}
 
 
+def _ensure_local_user(login: str, password: str, roles: list[str], display_name: str) -> None:
+    if local_user_store.find_user_by_login(login) is not None:
+        return
+    local_user_store.create_user(
+        login=login,
+        password=password,
+        display_name=display_name,
+        roles=roles,
+        default_language="ru",
+        tenant_id=1,
+    )
+
+
 def test_mfa_enable_and_login_enforcement() -> None:
     create_local = client.post(
         "/api/admin/local-users",
@@ -56,9 +70,11 @@ def test_mfa_enable_and_login_enforcement() -> None:
     assert create_local.status_code == 200, create_local.text
 
     client.cookies.clear()
+    _ensure_local_user("mfa.local.user", "mfa12345", ["auditor"], "MFA Local User")
     login = client.post(
-        "/api/auth/mock-login",
+        "/api/auth/login",
         json={"login": "mfa.local.user", "password": "mfa12345"},
+        headers={"X-Tenant-ID": "1"},
     )
     assert login.status_code == 200, login.text
 
@@ -77,23 +93,27 @@ def test_mfa_enable_and_login_enforcement() -> None:
     client.post("/api/auth/logout", headers=_csrf_headers())
 
     denied_login = client.post(
-        "/api/auth/mock-login",
+        "/api/auth/login",
         json={"login": "mfa.local.user", "password": "mfa12345"},
+        headers={"X-Tenant-ID": "1"},
     )
     assert denied_login.status_code == 401, denied_login.text
 
     allowed_login = client.post(
-        "/api/auth/mock-login",
+        "/api/auth/login",
         json={"login": "mfa.local.user", "password": "mfa12345", "mfa_code": _totp(secret)},
+        headers={"X-Tenant-ID": "1"},
     )
     assert allowed_login.status_code == 200, allowed_login.text
 
 
 def test_revoke_current_session_invalidates_access_token() -> None:
     client.cookies.clear()
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
     login = client.post(
-        "/api/auth/mock-login",
+        "/api/auth/login",
         json={"login": "admin", "password": "admin123"},
+        headers={"X-Tenant-ID": "1"},
     )
     assert login.status_code == 200, login.text
     access_token = str(login.json()["access_token"])
@@ -114,12 +134,13 @@ def test_revoke_current_session_invalidates_access_token() -> None:
 
 def test_revoke_all_sessions_invalidates_other_sessions() -> None:
     client.cookies.clear()
-    login_1 = client.post("/api/auth/mock-login", json={"login": "admin", "password": "admin123"})
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    login_1 = client.post("/api/auth/login", json={"login": "admin", "password": "admin123"}, headers={"X-Tenant-ID": "1"})
     assert login_1.status_code == 200, login_1.text
     token_1 = str(login_1.json()["access_token"])
 
     client.cookies.clear()
-    login_2 = client.post("/api/auth/mock-login", json={"login": "admin", "password": "admin123"})
+    login_2 = client.post("/api/auth/login", json={"login": "admin", "password": "admin123"}, headers={"X-Tenant-ID": "1"})
     assert login_2.status_code == 200, login_2.text
     token_2 = str(login_2.json()["access_token"])
 
@@ -163,6 +184,98 @@ def test_service_token_cannot_access_browser_profile() -> None:
         headers={"Authorization": f"Bearer {service_token}"},
     )
     assert denied.status_code == 403, denied.text
+
+
+def test_revoked_service_account_token_is_rejected() -> None:
+    create_account = client.post(
+        "/api/admin/service-accounts",
+        headers=ADMIN_HEADERS,
+        json={
+            "name": "revoked-agent",
+            "permissions": ["admin.integrations.manage"],
+            "platform_global": False,
+        },
+    )
+    assert create_account.status_code == 200, create_account.text
+    account = create_account.json()["account"]
+
+    issue_token = client.post(
+        f"/api/admin/service-accounts/{account['account_id']}/token",
+        headers=ADMIN_HEADERS,
+        json={"secret": account["secret"]},
+    )
+    assert issue_token.status_code == 200, issue_token.text
+    service_token = str(issue_token.json()["token"])
+
+    allowed = client.get(
+        "/api/admin/service-accounts",
+        headers={"Authorization": f"Bearer {service_token}"},
+    )
+    assert allowed.status_code == 200, allowed.text
+
+    revoke_account = client.post(
+        f"/api/admin/service-accounts/{account['account_id']}/revoke",
+        headers=ADMIN_HEADERS,
+    )
+    assert revoke_account.status_code == 200, revoke_account.text
+
+    denied = client.get(
+        "/api/admin/service-accounts",
+        headers={"Authorization": f"Bearer {service_token}"},
+    )
+    assert denied.status_code == 401, denied.text
+    assert "service account revoked" in str(denied.json().get("detail", ""))
+
+
+def test_platform_global_service_account_requires_platform_admin() -> None:
+    denied_create = client.post(
+        "/api/admin/service-accounts",
+        headers=ADMIN_HEADERS,
+        json={
+            "name": "platform-agent-denied",
+            "permissions": ["admin.integrations.manage"],
+            "platform_global": True,
+        },
+    )
+    assert denied_create.status_code == 403, denied_create.text
+    assert "platform-global service account requires platform admin" in str(denied_create.json().get("detail", ""))
+
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"], tenant_id=1)
+    create_account = client.post(
+        "/api/admin/service-accounts",
+        headers=platform_headers,
+        json={
+            "name": "platform-agent-allowed",
+            "permissions": ["admin.integrations.manage"],
+            "platform_global": True,
+        },
+    )
+    assert create_account.status_code == 200, create_account.text
+    account = create_account.json()["account"]
+    assert account["platform_global"] is True
+
+    non_platform_list = client.get(
+        "/api/admin/service-accounts",
+        headers=ADMIN_HEADERS,
+    )
+    assert non_platform_list.status_code == 200, non_platform_list.text
+    visible_ids = {item["account_id"] for item in non_platform_list.json().get("accounts", [])}
+    assert account["account_id"] not in visible_ids
+
+    denied_issue = client.post(
+        f"/api/admin/service-accounts/{account['account_id']}/token",
+        headers=ADMIN_HEADERS,
+        json={"secret": account["secret"]},
+    )
+    assert denied_issue.status_code == 403, denied_issue.text
+    assert "platform-global service account requires platform admin" in str(denied_issue.json().get("detail", ""))
+
+    denied_revoke = client.post(
+        f"/api/admin/service-accounts/{account['account_id']}/revoke",
+        headers=ADMIN_HEADERS,
+    )
+    assert denied_revoke.status_code == 403, denied_revoke.text
+    assert "platform-global service account requires platform admin" in str(denied_revoke.json().get("detail", ""))
 
 
 def test_oidc_callback_mapping_does_not_grant_platform_authority(monkeypatch) -> None:
@@ -221,7 +334,8 @@ def test_oidc_callback_mapping_does_not_grant_platform_authority(monkeypatch) ->
 
 def test_auth_lifecycle_and_service_account_events_are_audited() -> None:
     client.cookies.clear()
-    login = client.post("/api/auth/mock-login", json={"login": "admin", "password": "admin123"})
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    login = client.post("/api/auth/login", json={"login": "admin", "password": "admin123"}, headers={"X-Tenant-ID": "1"})
     assert login.status_code == 200, login.text
 
     csrf = client.get("/api/auth/csrf")

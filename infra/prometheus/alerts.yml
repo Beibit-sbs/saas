@@ -1,0 +1,173 @@
+groups:
+  - name: backend-observability
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Backend target is down"
+          description: "Prometheus cannot scrape backend metrics target for more than 1 minute."
+
+      - alert: BackendHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_status_class_total{job="backend",status_class="5xx"}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total{job="backend"}[5m])), 0.001)
+          ) > 0.02
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High backend 5xx error rate"
+          description: "5xx ratio is above 2% over the last 5 minutes for at least 10 minutes."
+
+      - alert: BackendHighLatencyP95
+        expr: http_request_duration_seconds_quantile{job="backend",quantile="0.95"} > 1.0
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High backend latency p95"
+          description: "p95 latency is above 1 second for at least 10 minutes."
+
+      - alert: JobsFailedSpike
+        expr: increase(jobs_failed_total{job="backend"}[10m]) >= 5
+        for: 2m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Job failures spiked"
+          description: "jobs_failed_total increased by 5 or more during the last 10 minutes."
+
+      - alert: JobsQueueTooHigh
+        expr: jobs_queue_size{job="backend"} > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Jobs queue is too high"
+          description: "jobs_queue_size is above 100 for at least 10 minutes."
+
+      - alert: WorkerDown
+        expr: (worker_heartbeat_age_seconds{job="backend"} < 0) or (worker_heartbeat_age_seconds{job="backend"} > 180)
+        for: 5m
+        labels:
+          severity: critical
+          service: worker
+        annotations:
+          summary: "Worker heartbeat stale or missing"
+          description: "Worker heartbeat is missing or older than 180 seconds."
+
+      - alert: SchedulerDown
+        expr: (scheduler_last_run_age_seconds{job="backend"} < 0) or (scheduler_last_run_age_seconds{job="backend"} > 300)
+        for: 10m
+        labels:
+          severity: warning
+          service: scheduler
+        annotations:
+          summary: "Scheduler heartbeat stale or missing"
+          description: "Scheduler last run is missing or older than 300 seconds."
+
+  - name: webhook-and-automation
+    rules:
+      - alert: WebhookDeadQueueGrowing
+        expr: increase(dead_webhooks_total{job="backend"}[15m]) >= 3
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Dead webhook queue is growing"
+          description: "3 or more webhooks exhausted retry budget in the last 15 minutes."
+
+      - alert: AutomationExecutionFailureSpike
+        expr: increase(automation_execution_failed_total{job="backend"}[10m]) >= 5
+        for: 2m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Automation execution failure spike"
+          description: "automation_execution_failed_total increased by 5+ in the last 10 minutes."
+
+      - alert: DeveloperApiErrorRateHigh
+        expr: developer_api_error_count{job="backend"} > 50
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Developer API error count elevated"
+          description: "developer_api_error_count is above 50 for 5 minutes — check auth flows or proxy config."
+
+  - name: security
+    rules:
+      - alert: AuthFailureSpike
+        expr: increase(http_requests_status_class_total{job="backend",status_class="4xx"}[5m]) > 200
+        for: 3m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High 4xx rate — possible credential stuffing or misconfiguration"
+          description: "4xx responses exceeded 200 in 5 minutes for 3 consecutive minutes."
+
+      - alert: TLSCertExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry{job="backend"} - time() < 30 * 86400
+        for: 1h
+        labels:
+          severity: warning
+          service: infra
+        annotations:
+          summary: "TLS certificate expiring within 30 days"
+          description: "The edge TLS certificate expires in less than 30 days. Rotate per docs/runbooks/TLS_CERTIFICATE_LIFECYCLE.md."
+
+      - alert: TLSCertExpiryCritical
+        expr: probe_ssl_earliest_cert_expiry{job="backend"} - time() < 7 * 86400
+        for: 30m
+        labels:
+          severity: critical
+          service: infra
+        annotations:
+          summary: "TLS certificate expiring within 7 days"
+          description: "URGENT: TLS certificate expires in less than 7 days. Rotate immediately."
+
+  - name: tenant-health
+    rules:
+      - alert: TenantProvisioningFailure
+        expr: increase(tenant_provisioning_failed_total{job="backend"}[10m]) >= 1
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Tenant provisioning failure"
+          description: "A tenant provisioning operation failed. Check tenant_provisioning_failed_total and backend logs."
+
+      - alert: EventQueueBacklogHigh
+        expr: event_queue_size{job="backend"} > 500
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Event queue backlog is high"
+          description: "event_queue_size exceeded 500 for 10 minutes — check worker health and throughput."
+
+      - alert: RetryBacklogHigh
+        expr: retry_backlog{job="backend"} > 200
+        for: 15m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Retry backlog elevated"
+          description: "retry_backlog above 200 for 15 minutes — downstream systems may be degraded."

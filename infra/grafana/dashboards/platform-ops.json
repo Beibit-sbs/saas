@@ -1,0 +1,123 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" },
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "" },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "" }
+  ],
+  "annotations": { "list": [] },
+  "description": "Platform operational overview — HTTP traffic, latency, errors, jobs.",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "value", "colorMode": "background", "graphMode": "area" },
+      "title": "HTTP Requests / min",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum(rate(http_requests_total[1m])) * 60", "legendFormat": "req/min", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqpm", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 2000 }] } } }
+    },
+    {
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "value", "colorMode": "background", "graphMode": "none" },
+      "title": "Error Rate (5xx)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_status_class_total{status_class=\"5xx\"}[5m])) / sum(rate(http_requests_status_class_total[5m]))",
+          "legendFormat": "error %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "yellow", "value": 0.01 }, { "color": "red", "value": 0.05 }] } } }
+    },
+    {
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "value", "colorMode": "background", "graphMode": "none" },
+      "title": "P95 Latency",
+      "type": "stat",
+      "targets": [
+        { "expr": "http_request_duration_seconds_quantile{quantile=\"0.95\"} * 1000", "legendFormat": "p95 ms", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 1000 }] } } }
+    },
+    {
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "value", "colorMode": "background", "graphMode": "none" },
+      "title": "Jobs Failed",
+      "type": "stat",
+      "targets": [
+        { "expr": "jobs_failed_total", "legendFormat": "failed", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 10 }] } } }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 5,
+      "title": "HTTP Request Rate by Status Class",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum by (status_class) (rate(http_requests_status_class_total[1m]))", "legendFormat": "{{status_class}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 6,
+      "title": "Request Latency Quantiles",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "http_request_duration_seconds_quantile{quantile=\"0.5\"} * 1000", "legendFormat": "p50", "refId": "A" },
+        { "expr": "http_request_duration_seconds_quantile{quantile=\"0.95\"} * 1000", "legendFormat": "p95", "refId": "B" },
+        { "expr": "http_request_duration_seconds_quantile{quantile=\"0.99\"} * 1000", "legendFormat": "p99", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 7,
+      "title": "Auth Login Attempts vs Failures",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(auth_login_attempts_total[5m]))", "legendFormat": "attempts/s", "refId": "A" },
+        { "expr": "sum(rate(auth_login_failures_total[5m]))", "legendFormat": "failures/s", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 8,
+      "title": "Job Execution Rate",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(jobs_executed_total[5m])", "legendFormat": "executed/s", "refId": "A" },
+        { "expr": "rate(jobs_failed_total[5m])", "legendFormat": "failed/s", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["platform", "operations"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Platform — Operations Overview",
+  "uid": "platform-ops-v1",
+  "version": 1
+}

@@ -14,11 +14,12 @@ from app.modules.courses.service import create_course, delete_course, list_cours
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 
-router = APIRouter(prefix="/api/admin/university/courses", tags=["university-courses"])
+router = APIRouter(prefix="/api/admin/org/courses", tags=["org-courses"])
 
 
 @router.get("", response_model=CourseListResponse)
 def get_courses(
+    request: Request,
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.courses.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],

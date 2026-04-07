@@ -1,0 +1,119 @@
+# LDAP directory initialization for University Operational Model
+# 6 test groups for all pilot roles
+
+# Base domain
+dn: dc=example,dc=local
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: University
+dc: example
+
+# Groups organizational unit
+dn: ou=Groups,dc=example,dc=local
+objectClass: top
+objectClass: organizationalUnit
+ou: Groups
+
+# Users organizational unit  
+dn: ou=Users,dc=example,dc=local
+objectClass: top
+objectClass: organizationalUnit
+ou: Users
+
+# 1. platform_admin group
+dn: cn=platform_admin,ou=Groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: platform_admin
+description: Platform administrators (cross-tenant)
+member: cn=admin_user,ou=Users,dc=example,dc=local
+
+# 2. institution_admin group
+dn: cn=institution_admin,ou=Groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: institution_admin
+description: Institution administrators (single tenant)
+member: cn=inst_admin,ou=Users,dc=example,dc=local
+
+# 3. academic_admin group
+dn: cn=academic_admin,ou=Groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: academic_admin
+description: Academic administrators (academic data only)
+member: cn=acad_admin,ou=Users,dc=example,dc=local
+
+# 4. it_support group
+dn: cn=it_support,ou=Groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: it_support
+description: IT support team (incident handling, jobs, backups)
+member: cn=support_user,ou=Users,dc=example,dc=local
+
+# 5. developer group
+dn: cn=developer,ou=Groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: developer
+description: Developer team (developer apps, public APIs)
+member: cn=dev_user,ou=Users,dc=example,dc=local
+
+# 6. ops_engineer group
+dn: cn=ops_engineer,ou=Groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: ops_engineer
+description: Operations engineers (observability, ops console)
+member: cn=ops_user,ou=Users,dc=example,dc=local
+
+# Test users (members of groups)
+dn: cn=admin_user,ou=Users,dc=example,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: admin_user
+sn: User
+mail: admin@example.local
+userPassword: password123
+
+dn: cn=inst_admin,ou=Users,dc=example,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: inst_admin
+sn: User
+mail: inst_admin@example.local
+userPassword: password123
+
+dn: cn=acad_admin,ou=Users,dc=example,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: acad_admin
+sn: User
+mail: acad_admin@example.local
+userPassword: password123
+
+dn: cn=support_user,ou=Users,dc=example,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: support_user
+sn: User
+mail: support@example.local
+userPassword: password123
+
+dn: cn=dev_user,ou=Users,dc=example,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: dev_user
+sn: User
+mail: dev@example.local
+userPassword: password123
+
+dn: cn=ops_user,ou=Users,dc=example,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: ops_user
+sn: User
+mail: ops@example.local
+userPassword: password123

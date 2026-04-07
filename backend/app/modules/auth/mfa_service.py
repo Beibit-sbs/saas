@@ -3,21 +3,20 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
-import json
 import secrets
 import struct
 import time
 from datetime import datetime, timezone
+import json
 from threading import Lock
 from typing import Any
 
-from app.modules.integrations.service import get_global_setting, save_global_setting
+from app.core.config import is_runtime_schema_bootstrap_enabled
+from app.core.db import get_raw_conn
 
-
-_MFA_SETTINGS_KEY = "auth.mfa_state_json"
 
 _state_lock = Lock()
-_loaded = False
+_db_ready = False
 _state: dict[str, dict[str, Any]] = {}
 
 
@@ -29,30 +28,63 @@ def _state_key(user_id: str, tenant_id: int) -> str:
     return f"{int(tenant_id)}:{str(user_id).strip()}"
 
 
-def _load_once() -> None:
-    global _loaded
-    if _loaded:
-        return
-    _loaded = True
-    raw = get_global_setting(_MFA_SETTINGS_KEY)
-    if raw is None or not raw.value:
-        return
-    try:
-        payload = json.loads(raw.value)
-    except json.JSONDecodeError:
-        return
-    if not isinstance(payload, dict):
-        return
-    rows = payload.get("rows")
-    if not isinstance(rows, dict):
-        return
-    for key, value in rows.items():
-        if isinstance(key, str) and isinstance(value, dict):
-            _state[key] = value
+def _ensure_mfa_table(conn) -> bool:
+    global _db_ready
+    if conn is None:
+        return False
+    if _db_ready:
+        return True
+    if not is_runtime_schema_bootstrap_enabled():
+        return False
+
+    with _state_lock:
+        if _db_ready:
+            return True
+        if not is_runtime_schema_bootstrap_enabled():
+            return False
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS app_mfa_state (
+                    user_id TEXT NOT NULL,
+                    tenant_id BIGINT NOT NULL,
+                    secret_encrypted TEXT,
+                    pending_secret_encrypted TEXT,
+                    recovery_codes JSONB NOT NULL DEFAULT '[]'::jsonb,
+                    enabled BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    PRIMARY KEY (user_id, tenant_id)
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_mfa_tenant_enabled
+                ON app_mfa_state (tenant_id, enabled)
+                """
+            )
+        conn.commit()
+        _db_ready = True
+    return True
 
 
-def _persist() -> None:
-    save_global_setting(_MFA_SETTINGS_KEY, json.dumps({"rows": _state}), is_secret=True)
+def _parse_recovery_codes(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if isinstance(value, tuple):
+        return [str(item) for item in value]
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return []
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, list):
+                return [str(item) for item in parsed]
+        except json.JSONDecodeError:
+            return []
+    return []
 
 
 def _generate_secret() -> str:
@@ -97,34 +129,111 @@ def _generate_recovery_codes(count: int = 8) -> list[str]:
 
 
 def initiate_mfa_enrollment(*, user_id: str, tenant_id: int, issuer: str = "ai-saas") -> dict[str, Any]:
-    _load_once()
-    key = _state_key(user_id, tenant_id)
+    normalized_user_id = str(user_id).strip()
+    normalized_tenant_id = int(tenant_id)
     secret = _generate_secret()
     recovery_codes = _generate_recovery_codes()
+    hashes = [_hash_recovery_code(item) for item in recovery_codes]
+
+    with get_raw_conn() as conn:
+        if _ensure_mfa_table(conn):
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO app_mfa_state (
+                        user_id,
+                        tenant_id,
+                        secret_encrypted,
+                        pending_secret_encrypted,
+                        recovery_codes,
+                        enabled,
+                        created_at,
+                        updated_at
+                    )
+                    VALUES (%s, %s, NULL, %s, %s::jsonb, FALSE, NOW(), NOW())
+                    ON CONFLICT (user_id, tenant_id)
+                    DO UPDATE SET
+                        secret_encrypted = NULL,
+                        pending_secret_encrypted = EXCLUDED.pending_secret_encrypted,
+                        recovery_codes = EXCLUDED.recovery_codes,
+                        enabled = FALSE,
+                        updated_at = NOW()
+                    """,
+                    (
+                        normalized_user_id,
+                        normalized_tenant_id,
+                        secret,
+                        json.dumps(hashes),
+                    ),
+                )
+            conn.commit()
+            return {
+                "status": "pending",
+                "secret": secret,
+                "otpauth_uri": f"otpauth://totp/{issuer}:{normalized_user_id}?secret={secret}&issuer={issuer}",
+                "recovery_codes": recovery_codes,
+            }
+
+    key = _state_key(normalized_user_id, normalized_tenant_id)
     row = {
-        "user_id": str(user_id),
-        "tenant_id": int(tenant_id),
+        "user_id": normalized_user_id,
+        "tenant_id": normalized_tenant_id,
         "enabled": False,
         "secret": None,
         "pending_secret": secret,
-        "recovery_code_hashes": [_hash_recovery_code(item) for item in recovery_codes],
+        "recovery_code_hashes": hashes,
         "updated_at": _now_iso(),
         "created_at": _now_iso(),
     }
     with _state_lock:
         _state[key] = row
-        _persist()
     return {
         "status": "pending",
         "secret": secret,
-        "otpauth_uri": f"otpauth://totp/{issuer}:{user_id}?secret={secret}&issuer={issuer}",
+        "otpauth_uri": f"otpauth://totp/{issuer}:{normalized_user_id}?secret={secret}&issuer={issuer}",
         "recovery_codes": recovery_codes,
     }
 
 
 def enable_mfa(*, user_id: str, tenant_id: int, code: str) -> bool:
-    _load_once()
-    key = _state_key(user_id, tenant_id)
+    normalized_user_id = str(user_id).strip()
+    normalized_tenant_id = int(tenant_id)
+
+    with get_raw_conn() as conn:
+        if _ensure_mfa_table(conn):
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT pending_secret_encrypted
+                    FROM app_mfa_state
+                    WHERE user_id = %s AND tenant_id = %s
+                    FOR UPDATE
+                    """,
+                    (normalized_user_id, normalized_tenant_id),
+                )
+                row = cur.fetchone()
+                if row is None:
+                    conn.rollback()
+                    return False
+                pending = str(row[0] or "").strip()
+                if not pending or not verify_totp_code(pending, code):
+                    conn.rollback()
+                    return False
+                cur.execute(
+                    """
+                    UPDATE app_mfa_state
+                    SET enabled = TRUE,
+                        secret_encrypted = %s,
+                        pending_secret_encrypted = NULL,
+                        updated_at = NOW()
+                    WHERE user_id = %s AND tenant_id = %s
+                    """,
+                    (pending, normalized_user_id, normalized_tenant_id),
+                )
+            conn.commit()
+            return True
+
+    key = _state_key(normalized_user_id, normalized_tenant_id)
     with _state_lock:
         row = _state.get(key)
         if row is None:
@@ -138,21 +247,81 @@ def enable_mfa(*, user_id: str, tenant_id: int, code: str) -> bool:
         row["secret"] = pending
         row["pending_secret"] = None
         row["updated_at"] = _now_iso()
-        _persist()
         return True
 
 
 def is_mfa_enabled(*, user_id: str, tenant_id: int) -> bool:
-    _load_once()
-    key = _state_key(user_id, tenant_id)
+    normalized_user_id = str(user_id).strip()
+    normalized_tenant_id = int(tenant_id)
+
+    with get_raw_conn() as conn:
+        if _ensure_mfa_table(conn):
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT enabled
+                    FROM app_mfa_state
+                    WHERE user_id = %s AND tenant_id = %s
+                    LIMIT 1
+                    """,
+                    (normalized_user_id, normalized_tenant_id),
+                )
+                row = cur.fetchone()
+            return bool(row and row[0])
+
+    key = _state_key(normalized_user_id, normalized_tenant_id)
     with _state_lock:
         row = _state.get(key)
         return bool(row and row.get("enabled", False))
 
 
 def verify_mfa(*, user_id: str, tenant_id: int, code: str | None = None, recovery_code: str | None = None) -> bool:
-    _load_once()
-    key = _state_key(user_id, tenant_id)
+    normalized_user_id = str(user_id).strip()
+    normalized_tenant_id = int(tenant_id)
+
+    with get_raw_conn() as conn:
+        if _ensure_mfa_table(conn):
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT enabled, secret_encrypted, recovery_codes
+                    FROM app_mfa_state
+                    WHERE user_id = %s AND tenant_id = %s
+                    FOR UPDATE
+                    """,
+                    (normalized_user_id, normalized_tenant_id),
+                )
+                row = cur.fetchone()
+                if row is None or not bool(row[0]):
+                    conn.rollback()
+                    return False
+
+                secret = str(row[1] or "").strip()
+                if code is not None and secret and verify_totp_code(secret, code):
+                    conn.rollback()
+                    return True
+
+                if recovery_code is not None:
+                    candidate = _hash_recovery_code(str(recovery_code).strip())
+                    hashes = _parse_recovery_codes(row[2])
+                    if candidate in hashes:
+                        hashes.remove(candidate)
+                        cur.execute(
+                            """
+                            UPDATE app_mfa_state
+                            SET recovery_codes = %s::jsonb,
+                                updated_at = NOW()
+                            WHERE user_id = %s AND tenant_id = %s
+                            """,
+                            (json.dumps(hashes), normalized_user_id, normalized_tenant_id),
+                        )
+                        conn.commit()
+                        return True
+
+                conn.rollback()
+                return False
+
+    key = _state_key(normalized_user_id, normalized_tenant_id)
     with _state_lock:
         row = _state.get(key)
         if row is None:
@@ -169,14 +338,36 @@ def verify_mfa(*, user_id: str, tenant_id: int, code: str | None = None, recover
                 hashes.remove(candidate)
                 row["recovery_code_hashes"] = hashes
                 row["updated_at"] = _now_iso()
-                _persist()
                 return True
     return False
 
 
 def disable_mfa(*, user_id: str, tenant_id: int) -> bool:
-    _load_once()
-    key = _state_key(user_id, tenant_id)
+    normalized_user_id = str(user_id).strip()
+    normalized_tenant_id = int(tenant_id)
+
+    with get_raw_conn() as conn:
+        if _ensure_mfa_table(conn):
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE app_mfa_state
+                    SET enabled = FALSE,
+                        secret_encrypted = NULL,
+                        pending_secret_encrypted = NULL,
+                        recovery_codes = '[]'::jsonb,
+                        updated_at = NOW()
+                    WHERE user_id = %s
+                      AND tenant_id = %s
+                      AND (enabled = TRUE OR pending_secret_encrypted IS NOT NULL)
+                    """,
+                    (normalized_user_id, normalized_tenant_id),
+                )
+                updated = int(cur.rowcount)
+            conn.commit()
+            return updated > 0
+
+    key = _state_key(normalized_user_id, normalized_tenant_id)
     with _state_lock:
         row = _state.get(key)
         if row is None:
@@ -188,13 +379,18 @@ def disable_mfa(*, user_id: str, tenant_id: int) -> bool:
         row["pending_secret"] = None
         row["recovery_code_hashes"] = []
         row["updated_at"] = _now_iso()
-        _persist()
         return True
 
 
 def clear_mfa_state() -> None:
-    global _loaded
+    global _db_ready
+
+    with get_raw_conn() as conn:
+        if _ensure_mfa_table(conn):
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM app_mfa_state")
+            conn.commit()
+
     with _state_lock:
         _state.clear()
-        _loaded = False
-        save_global_setting(_MFA_SETTINGS_KEY, json.dumps({"rows": {}}), is_secret=True)
+        _db_ready = False

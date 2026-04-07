@@ -1,9 +1,9 @@
-from tests.conftest import ADMIN_HEADERS, client
+from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 from app.modules.integrations import service as integrations_service
 
 
-def _tenant_headers(tenant_id: int) -> dict[str, str]:
-    headers = dict(ADMIN_HEADERS)
+def _tenant_headers(tenant_id: int, base_headers: dict[str, str] | None = None) -> dict[str, str]:
+    headers = dict(base_headers or ADMIN_HEADERS)
     headers["X-Tenant-ID"] = str(tenant_id)
     return headers
 
@@ -20,6 +20,7 @@ def _create_tenant_b() -> int:
 
 def test_backup_settings_and_history_are_isolated_per_tenant(monkeypatch, tmp_path) -> None:
     tenant_b_id = _create_tenant_b()
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"], tenant_id=tenant_b_id)
 
     monkeypatch.setenv("BACKUP_ALLOWED_ROOTS", str(tmp_path))
     monkeypatch.setattr(integrations_service, "_use_database", lambda: False)
@@ -46,7 +47,7 @@ def test_backup_settings_and_history_are_isolated_per_tenant(monkeypatch, tmp_pa
     tenant_a_save = client.put("/api/admin/backups/settings", headers=ADMIN_HEADERS, json=tenant_a_payload)
     tenant_b_save = client.put(
         "/api/admin/backups/settings",
-        headers=_tenant_headers(tenant_b_id),
+        headers=_tenant_headers(tenant_b_id, platform_headers),
         json=tenant_b_payload,
     )
     assert tenant_a_save.status_code == 200, tenant_a_save.text
@@ -54,7 +55,7 @@ def test_backup_settings_and_history_are_isolated_per_tenant(monkeypatch, tmp_pa
 
     tenant_b_retention_plan = client.post(
         "/api/admin/backups/retention/apply",
-        headers=_tenant_headers(tenant_b_id),
+        headers=_tenant_headers(tenant_b_id, platform_headers),
         json={
             "profile_id": "tenantb",
             "dry_run": True,
@@ -63,14 +64,20 @@ def test_backup_settings_and_history_are_isolated_per_tenant(monkeypatch, tmp_pa
     assert tenant_b_retention_plan.status_code == 200, tenant_b_retention_plan.text
 
     tenant_a_settings = client.get("/api/admin/backups/settings", headers=ADMIN_HEADERS)
-    tenant_b_settings = client.get("/api/admin/backups/settings", headers=_tenant_headers(tenant_b_id))
+    tenant_b_settings = client.get(
+        "/api/admin/backups/settings",
+        headers=_tenant_headers(tenant_b_id, platform_headers),
+    )
     assert tenant_a_settings.status_code == 200, tenant_a_settings.text
     assert tenant_b_settings.status_code == 200, tenant_b_settings.text
     assert tenant_a_settings.json()["active_profile"] == "tenanta"
     assert tenant_b_settings.json()["active_profile"] == "tenantb"
 
     tenant_a_history = client.get("/api/admin/backups/history", headers=ADMIN_HEADERS)
-    tenant_b_history = client.get("/api/admin/backups/history", headers=_tenant_headers(tenant_b_id))
+    tenant_b_history = client.get(
+        "/api/admin/backups/history",
+        headers=_tenant_headers(tenant_b_id, platform_headers),
+    )
     assert tenant_a_history.status_code == 200, tenant_a_history.text
     assert tenant_b_history.status_code == 200, tenant_b_history.text
     assert tenant_a_history.json()["jobs"] == []

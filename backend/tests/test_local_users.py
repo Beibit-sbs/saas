@@ -27,7 +27,7 @@ def test_admin_create_and_list_local_user() -> None:
     assert any(item["login"] == "local.registrar" for item in users)
 
 
-def test_local_user_can_login_via_mock_login() -> None:
+def test_local_user_can_login_via_login_endpoint() -> None:
     client.cookies.clear()
     client.post(
         "/api/admin/local-users",
@@ -42,8 +42,9 @@ def test_local_user_can_login_via_mock_login() -> None:
     )
 
     response = client.post(
-        "/api/auth/mock-login",
+        "/api/auth/login",
         json={"login": "local.teacher", "password": "teach12345"},
+        headers={"X-Tenant-ID": "1"},
     )
     assert response.status_code == 200
     body = response.json()
@@ -80,13 +81,15 @@ def test_local_user_login_syncs_server_roles_and_is_idempotent(monkeypatch) -> N
     monkeypatch.setattr("app.modules.auth.router.sync_user_roles_from_trusted_source", fake_sync)
 
     first_login = client.post(
-        "/api/auth/mock-login",
+        "/api/auth/login",
         json={"login": "local.sync.case", "password": "sync12345"},
+        headers={"X-Tenant-ID": "1"},
     )
     client.cookies.clear()
     second_login = client.post(
-        "/api/auth/mock-login",
+        "/api/auth/login",
         json={"login": "local.sync.case", "password": "sync12345"},
+        headers={"X-Tenant-ID": "1"},
     )
 
     assert first_login.status_code == 200
@@ -121,8 +124,9 @@ def test_local_user_password_is_hashed_in_store() -> None:
     assert str(raw.get("password_hash", "")).startswith("pbkdf2_sha256$")
 
     login_response = client.post(
-        "/api/auth/mock-login",
+        "/api/auth/login",
         json={"login": "local.secure", "password": "secure12345"},
+        headers={"X-Tenant-ID": "1"},
     )
     assert login_response.status_code == 200
 
@@ -351,7 +355,8 @@ def test_local_user_delete_cleans_up_rbac_assignments(monkeypatch) -> None:
 
     assignments = {user_id: ["auditor"]}
 
-    def fake_clear(current_user_id: str) -> dict[str, object]:
+    def fake_clear(current_user_id: str, tenant_id: int) -> dict[str, object]:
+        assert tenant_id > 0
         had_roles = bool(assignments.pop(current_user_id, []))
         return {"user_id": current_user_id, "removed": had_roles, "roles": []}
 

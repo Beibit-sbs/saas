@@ -14,11 +14,12 @@ from app.modules.programs.service import create_program, delete_program, list_pr
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 
-router = APIRouter(prefix="/api/admin/university/programs", tags=["university-programs"])
+router = APIRouter(prefix="/api/admin/org/programs", tags=["org-programs"])
 
 
 @router.get("", response_model=ProgramListResponse)
 def get_programs(
+    request: Request,
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.programs.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],

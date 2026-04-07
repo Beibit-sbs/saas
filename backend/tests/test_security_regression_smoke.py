@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.modules.auth.local_users_service import local_user_store
 from app.modules.auth.token_service import create_access_token
 
 
@@ -29,6 +30,7 @@ def test_platform_path_is_covered_by_csrf_perimeter() -> None:
         user_id="platform.owner@example.com",
         roles=["superadmin"],
         auth_source="test",
+        tenant_id=1,
     )
 
     with TestClient(app) as local_client:
@@ -113,10 +115,20 @@ def test_metrics_ip_allowlist_allows_configured_ip_in_production(monkeypatch: py
 
 
 def test_logout_invalidates_previous_access_and_refresh_tokens() -> None:
+    if local_user_store.find_user_by_login("admin") is None:
+        local_user_store.create_user(
+            login="admin",
+            password="admin123",
+            display_name="Admin Local",
+            roles=["admin"],
+            default_language="ru",
+            tenant_id=1,
+        )
     with TestClient(app) as local_client:
         login = local_client.post(
-            "/api/auth/mock-login",
+            "/api/auth/login",
             json={"login": "admin", "password": "admin123"},
+            headers={"X-Tenant-ID": "1"},
         )
         assert login.status_code == 200
         old_access = login.json().get("access_token")

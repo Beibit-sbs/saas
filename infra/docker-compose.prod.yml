@@ -13,3 +13,4 @@ services:
     restart: always
     volumes:
       - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro,Z
+      - ./nginx/certs:/etc/nginx/certs:ro,Z

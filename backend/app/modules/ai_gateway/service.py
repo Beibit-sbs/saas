@@ -1,4 +1,6 @@
 from __future__ import annotations
+from app.core.db import get_raw_conn
+from app.core.config import is_runtime_schema_bootstrap_enabled
 
 import json
 import os
@@ -10,11 +12,13 @@ from threading import Lock
 from typing import Any, Protocol
 
 import httpx
+from fastapi import HTTPException
 
 from app.modules.integrations.service import get_ai_provider_runtime_config
 from app.modules.integrations.service import get_global_runtime_value
 from app.modules.integrations.service import get_runtime_value
 from app.modules.security.db_tenant_context import set_db_tenant_context
+from app.modules.security.url_validation import validate_external_https_url
 
 try:
     import psycopg
@@ -248,11 +252,13 @@ def enforce_rate_limit(provider: str, actor: str, roles: list[str]) -> dict[str,
 
 
 def _ensure_ai_gateway_tables(conn) -> None:
+    if not is_runtime_schema_bootstrap_enabled():
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS app_ai_models (
-                tenant_id BIGINT NOT NULL DEFAULT 1,
+                tenant_id BIGINT NOT NULL,
                 model_key TEXT NOT NULL,
                 provider TEXT NOT NULL,
                 provider_model_id TEXT NOT NULL,
@@ -267,7 +273,18 @@ def _ensure_ai_gateway_tables(conn) -> None:
             """
         )
         cur.execute("ALTER TABLE app_ai_models ADD COLUMN IF NOT EXISTS tenant_id BIGINT")
-        cur.execute("UPDATE app_ai_models SET tenant_id = 1 WHERE tenant_id IS NULL")
+        cur.execute("ALTER TABLE app_ai_models ALTER COLUMN tenant_id DROP DEFAULT")
+        cur.execute(
+            """
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM app_ai_models WHERE tenant_id IS NULL) THEN
+                    RAISE EXCEPTION 'ai gateway remediation required: app_ai_models has NULL tenant_id rows';
+                END IF;
+            END
+            $$;
+            """
+        )
         cur.execute("ALTER TABLE app_ai_models ALTER COLUMN tenant_id SET NOT NULL")
         cur.execute(
             """
@@ -307,7 +324,7 @@ def _ensure_ai_gateway_tables(conn) -> None:
             """
             CREATE TABLE IF NOT EXISTS app_ai_usage_logs (
                 id BIGSERIAL PRIMARY KEY,
-                tenant_id BIGINT NOT NULL DEFAULT 1,
+                tenant_id BIGINT NOT NULL,
                 timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 actor TEXT NOT NULL,
                 provider TEXT NOT NULL,
@@ -324,7 +341,18 @@ def _ensure_ai_gateway_tables(conn) -> None:
             """
         )
         cur.execute("ALTER TABLE app_ai_usage_logs ADD COLUMN IF NOT EXISTS tenant_id BIGINT")
-        cur.execute("UPDATE app_ai_usage_logs SET tenant_id = 1 WHERE tenant_id IS NULL")
+        cur.execute("ALTER TABLE app_ai_usage_logs ALTER COLUMN tenant_id DROP DEFAULT")
+        cur.execute(
+            """
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM app_ai_usage_logs WHERE tenant_id IS NULL) THEN
+                    RAISE EXCEPTION 'ai gateway remediation required: app_ai_usage_logs has NULL tenant_id rows';
+                END IF;
+            END
+            $$;
+            """
+        )
         cur.execute("ALTER TABLE app_ai_usage_logs ALTER COLUMN tenant_id SET NOT NULL")
         cur.execute(
             "CREATE INDEX IF NOT EXISTS ix_app_ai_usage_logs_tenant_timestamp ON app_ai_usage_logs (tenant_id, timestamp DESC)"
@@ -465,7 +493,7 @@ def _list_models_db(*, include_disabled: bool = True, tenant_id: int) -> list[di
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=tenant_id)
         _seed_default_models_db(conn, tenant_id)
@@ -497,7 +525,7 @@ def _upsert_model_db(entry: dict[str, object], *, tenant_id: int) -> dict[str, o
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=tenant_id)
         with conn.cursor() as cur:
@@ -539,7 +567,7 @@ def _set_model_enabled_db(model_key: str, enabled: bool, *, tenant_id: int) -> d
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=tenant_id)
         with conn.cursor() as cur:
@@ -565,7 +593,7 @@ def _resolve_model_db(model_key: str, *, tenant_id: int) -> dict[str, object] | 
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=tenant_id)
         _seed_default_models_db(conn, tenant_id)
@@ -589,7 +617,7 @@ def _insert_usage_log_db(entry: dict[str, object]) -> None:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=int(entry["tenant_id"]))
         with conn.cursor() as cur:
@@ -636,7 +664,7 @@ def _list_usage_logs_db(limit: int, *, tenant_id: int) -> list[dict[str, object]
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
+    with get_raw_conn() as conn:
         _ensure_ai_gateway_tables(conn)
         set_db_tenant_context(conn, tenant_id=tenant_id)
         with conn.cursor() as cur:
@@ -924,8 +952,9 @@ def list_provider_status(tenant_id: int | None = None) -> list[dict[str, Any]]:
 
 
 def _request(method: str, url: str, headers: dict[str, str], params: dict[str, str] | None) -> httpx.Response:
+    safe_url = validate_external_https_url(url)
     with httpx.Client(timeout=_timeout(), follow_redirects=True) as client:
-        return client.request(method, url, headers=headers, params=params)
+        return client.request(method, safe_url, headers=headers, params=params)
 
 
 def _request_json(
@@ -936,9 +965,10 @@ def _request_json(
     params: dict[str, str] | None = None,
     payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    safe_url = validate_external_https_url(url)
     try:
         with httpx.Client(timeout=_timeout(), follow_redirects=True) as client:
-            response = client.request(method, url, headers=headers, params=params, json=payload)
+            response = client.request(method, safe_url, headers=headers, params=params, json=payload)
     except httpx.TimeoutException as exc:
         raise AIProviderTimeoutError("provider timeout") from exc
     except httpx.HTTPError as exc:
@@ -1279,6 +1309,31 @@ def validate_provider_runtime(
     return result
 
 
+def _degraded_fallback_result(
+    *,
+    model_key: str,
+    provider: str,
+    provider_model_id: str,
+    latency_ms: int,
+    degraded_reason: str,
+) -> dict[str, object]:
+    return {
+        "model": model_key,
+        "provider": provider,
+        "provider_model_id": provider_model_id,
+        "output_text": "AI provider is temporarily unavailable. Returned deterministic degraded fallback.",
+        "finish_reason": "degraded_fallback",
+        "usage": {
+            "input_tokens": None,
+            "output_tokens": None,
+            "total_tokens": None,
+        },
+        "latency_ms": latency_ms,
+        "degraded": True,
+        "degraded_reason": degraded_reason,
+    }
+
+
 def execute_chat(
     payload: dict[str, Any],
     *,
@@ -1292,10 +1347,21 @@ def execute_chat(
     except ValueError as exc:
         raise AIGatewayError(status_code=400, detail=str(exc), audit_reason="invalid_payload") from exc
 
-    try:
-        from app.modules.quotas.service import check_quota
+    from app.modules.billing.service import (
+        assert_billing_write_allowed,
+        assert_quota_with_increment,
+    )
 
-        check_quota(normalized_tenant_id, "ai_requests_per_day")
+    try:
+        assert_billing_write_allowed(normalized_tenant_id, action="ai_gateway.execute_chat")
+        assert_quota_with_increment(normalized_tenant_id, "ai_requests_per_day", increment=1)
+    except HTTPException as exc:
+        raise AIGatewayError(status_code=exc.status_code, detail=str(exc.detail), audit_reason="quota_exceeded") from exc
+
+    try:
+        from app.modules.usage.service import record_usage_event
+
+        record_usage_event(normalized_tenant_id, "ai_requests", 1)
     except Exception:
         pass
 
@@ -1362,7 +1428,7 @@ def execute_chat(
             max_tokens=payload.get("max_tokens"),
             runtime_config=runtime_config,
         )
-    except AIProviderTimeoutError as exc:
+    except AIProviderTimeoutError:
         latency_ms = max(1, int((time.monotonic() - started) * 1000))
         _record_usage_log(
             tenant_id=normalized_tenant_id,
@@ -1370,7 +1436,7 @@ def execute_chat(
             provider=provider,
             model_key=model_key,
             provider_model_id=provider_model_id,
-            outcome="timeout",
+            outcome="degraded",
             latency_ms=latency_ms,
             input_tokens=None,
             output_tokens=None,
@@ -1378,36 +1444,63 @@ def execute_chat(
             failure_reason="provider_timeout",
             correlation_id=correlation_id,
         )
-        raise AIGatewayError(
-            status_code=504,
-            detail="upstream AI provider timeout",
-            audit_reason="provider_timeout",
+        return _degraded_fallback_result(
+            model_key=model_key,
             provider=provider,
-            model=model_key,
-        ) from exc
+            provider_model_id=provider_model_id,
+            latency_ms=latency_ms,
+            degraded_reason="provider_timeout",
+        )
     except AIProviderExecutionError as exc:
         latency_ms = max(1, int((time.monotonic() - started) * 1000))
-        _record_usage_log(
-            tenant_id=normalized_tenant_id,
-            actor=actor,
-            provider=provider,
-            model_key=model_key,
-            provider_model_id=provider_model_id,
-            outcome="failed",
-            latency_ms=latency_ms,
-            input_tokens=None,
-            output_tokens=None,
-            total_tokens=None,
-            failure_reason=str(exc),
-            correlation_id=correlation_id,
-        )
-        raise AIGatewayError(
-            status_code=502,
-            detail="upstream AI provider error",
-            audit_reason="provider_error",
-            provider=provider,
-            model=model_key,
-        ) from exc
+        # If error has a status_code, it's a remote provider error → degrade gracefully (200)
+        # If error has no status_code, it's an internal error → surface as 502 failure
+        if exc.status_code is not None:
+            # Remote provider error: return degraded result
+            _record_usage_log(
+                tenant_id=normalized_tenant_id,
+                actor=actor,
+                provider=provider,
+                model_key=model_key,
+                provider_model_id=provider_model_id,
+                outcome="degraded",
+                latency_ms=latency_ms,
+                input_tokens=None,
+                output_tokens=None,
+                total_tokens=None,
+                failure_reason="provider_error",
+                correlation_id=correlation_id,
+            )
+            return _degraded_fallback_result(
+                model_key=model_key,
+                provider=provider,
+                provider_model_id=provider_model_id,
+                latency_ms=latency_ms,
+                degraded_reason="provider_error",
+            )
+        else:
+            # Internal error: record as failure and raise 502
+            _record_usage_log(
+                tenant_id=normalized_tenant_id,
+                actor=actor,
+                provider=provider,
+                model_key=model_key,
+                provider_model_id=provider_model_id,
+                outcome="failed",
+                latency_ms=latency_ms,
+                input_tokens=None,
+                output_tokens=None,
+                total_tokens=None,
+                failure_reason=str(exc),
+                correlation_id=correlation_id,
+            )
+            raise AIGatewayError(
+                status_code=502,
+                detail=str(exc) or "provider error",
+                audit_reason="provider_error",
+                provider=provider,
+                model=model_key,
+            ) from exc
 
     latency_ms = max(1, int((time.monotonic() - started) * 1000))
     _record_usage_log(
@@ -1424,13 +1517,6 @@ def execute_chat(
         failure_reason=None,
         correlation_id=correlation_id,
     )
-
-    try:
-        from app.modules.usage.service import record_usage_event
-
-        record_usage_event(normalized_tenant_id, "ai_requests", 1)
-    except Exception:
-        pass
 
     return {
         "model": model_key,

@@ -1,0 +1,125 @@
+{
+  "definition": {
+    "key": "faculty.hiring.workflow",
+    "name": "Faculty Hiring Workflow",
+    "description": "Approval workflow for faculty hiring requests.",
+    "status": "active",
+    "metadata_json": {
+      "domain": "faculty_operations",
+      "template_version": 1
+    }
+  },
+  "version": {
+    "version_no": 1,
+    "status": "active",
+    "is_active": true,
+    "trigger_mode": "manual",
+    "definition_json": {
+      "type": "linear",
+      "supports_parallel": false
+    },
+    "metadata_json": {
+      "seeded": true
+    }
+  },
+  "steps": [
+    {
+      "step_key": "submit",
+      "name": "Submit Hiring Request",
+      "step_type": "start",
+      "task_type": null,
+      "assignee_type": null,
+      "assignee_ref": null,
+      "is_blocking": true,
+      "sequence_hint": 1,
+      "config_json": {},
+      "metadata_json": {}
+    },
+    {
+      "step_key": "review_documents",
+      "name": "Review Candidate Packet",
+      "step_type": "task",
+      "task_type": "candidate_packet_review",
+      "assignee_type": "role",
+      "assignee_ref": "hr_reviewer",
+      "is_blocking": true,
+      "sequence_hint": 2,
+      "config_json": {},
+      "metadata_json": {}
+    },
+    {
+      "step_key": "department_approval",
+      "name": "Department Committee Approval",
+      "step_type": "approval",
+      "task_type": "department_committee_approval",
+      "assignee_type": "role",
+      "assignee_ref": "department_chair",
+      "is_blocking": true,
+      "sequence_hint": 3,
+      "config_json": {},
+      "metadata_json": {}
+    },
+    {
+      "step_key": "dean_approval",
+      "name": "Dean Approval",
+      "step_type": "approval",
+      "task_type": "dean_approval",
+      "assignee_type": "role",
+      "assignee_ref": "dean",
+      "is_blocking": true,
+      "sequence_hint": 4,
+      "config_json": {},
+      "metadata_json": {}
+    },
+    {
+      "step_key": "final_decision",
+      "name": "Final Hiring Decision",
+      "step_type": "end",
+      "task_type": null,
+      "assignee_type": null,
+      "assignee_ref": null,
+      "is_blocking": true,
+      "sequence_hint": 5,
+      "config_json": {},
+      "metadata_json": {}
+    }
+  ],
+  "transitions": [
+    {
+      "from_step_key": "submit",
+      "to_step_key": "review_documents",
+      "action_key": "start",
+      "name": "Begin Hiring Review",
+      "is_default": true,
+      "condition_json": {},
+      "metadata_json": {}
+    },
+    {
+      "from_step_key": "review_documents",
+      "to_step_key": "department_approval",
+      "action_key": "complete",
+      "name": "Packet Verified",
+      "is_default": true,
+      "condition_json": {},
+      "metadata_json": {}
+    },
+    {
+      "from_step_key": "department_approval",
+      "to_step_key": "dean_approval",
+      "action_key": "approve",
+      "name": "Committee Approved",
+      "is_default": true,
+      "condition_json": {},
+      "metadata_json": {}
+    },
+    {
+      "from_step_key": "dean_approval",
+      "to_step_key": "final_decision",
+      "action_key": "approve",
+      "name": "Dean Approved",
+      "is_default": true,
+      "condition_json": {},
+      "metadata_json": {}
+    }
+  ]
+}

@@ -4,7 +4,7 @@ from app.modules.auth.token_service import create_access_token
 
 
 def test_health() -> None:
-    response = client.get("/health")
+    response = client.get("/health", headers=ADMIN_HEADERS)
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
@@ -79,7 +79,7 @@ def test_admin_audit_uses_database_storage_when_available(monkeypatch) -> None:
         actor="db-admin@example.com",
         action="db_audit_test",
         path="/api/admin/audit-test",
-        client_ip="127.0.0.1",
+        client_ip="10.0.0.1",
         entity="audit",
         result="success",
         tenant_id=1,
@@ -121,7 +121,7 @@ def test_admin_audit_falls_back_to_memory_when_database_unavailable(monkeypatch)
         actor="fallback@example.com",
         action="fallback_audit_test",
         path="/api/admin/audit-test",
-        client_ip="127.0.0.1",
+        client_ip="10.0.0.1",
         entity="audit",
         result="success",
         tenant_id=1,
@@ -136,7 +136,7 @@ def test_admin_dashboard_requires_permission() -> None:
     response = client.get(
         "/api/admin/dashboard",
         headers={
-            "Authorization": f"Bearer {create_access_token('student.001', ['student'], 'test')}",
+            "Authorization": f"Bearer {create_access_token('student.001', ['student'], 'test', tenant_id=1)}",
             "x-user-roles": "admin",
         },
     )
@@ -147,7 +147,7 @@ def test_admin_dashboard_rejects_spoofed_actor_header() -> None:
     response = client.get(
         "/api/admin/dashboard",
         headers={
-            "Authorization": f"Bearer {create_access_token('owner@example.com', ['admin'], 'test')}",
+            "Authorization": f"Bearer {create_access_token('owner@example.com', ['admin'], 'test', tenant_id=1)}",
             "x-admin-user": "attacker@example.com",
         },
     )

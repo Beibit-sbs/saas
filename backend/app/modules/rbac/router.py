@@ -13,6 +13,9 @@ from app.modules.rbac.service import (
     list_roles_for_tenant,
     list_user_role_assignments_for_tenant,
     revoke_role_for_tenant,
+    get_role_hierarchy_level,
+    get_highest_role_level,
+    get_user_roles_for_tenant,
 )
 
 router = APIRouter(prefix="/api/admin/rbac", tags=["rbac"])
@@ -24,6 +27,52 @@ def _actor_is_platform_admin(actor: str) -> bool:
     # Deliberately does NOT check JWT claim roles — those are tenant-scoped.
     # A tenant superadmin MUST NOT gain platform control-plane access.
     return is_platform_admin(actor)
+
+
+def _enforce_role_mutation_guard(
+    *,
+    actor: str,
+    target_user_id: str | None,
+    role_name: str,
+    target_tenant_id: int,
+) -> None:
+    normalized_actor = str(actor or "").strip()
+    normalized_target_user = str(target_user_id or "").strip()
+    normalized_role = str(role_name or "").strip().lower()
+
+    # GOVERNANCE.1: Prevent self-escalation
+    if normalized_actor and normalized_target_user and normalized_actor == normalized_target_user:
+        raise HTTPException(status_code=403, detail="self-role modification forbidden")
+
+    # GOVERNANCE.2: Platform-only roles (superadmin) can only be assigned in platform tenant
+    # and only by platform admins
+    if normalized_role in _PLATFORM_ONLY_ROLES:
+        if target_tenant_id != _PLATFORM_TENANT_ID:
+            raise HTTPException(status_code=403, detail="role 'superadmin' is reserved for the platform tenant")
+        if not _actor_is_platform_admin(actor):
+            raise HTTPException(status_code=403, detail="platform-only role management requires platform admin")
+        return  # Platform admin can assign any role
+
+    # GOVERNANCE.3: Role hierarchy validation
+    # Prevent users from assigning roles higher or equal to their own level
+    # Exception: platform admins can assign any role
+    if _actor_is_platform_admin(actor):
+        return  # Platform admin bypass
+    
+    # Get actor's current roles in target tenant
+    actor_roles = get_user_roles_for_tenant(normalized_actor, target_tenant_id)
+    actor_max_level = get_highest_role_level(actor_roles)
+    
+    # Get target role's privilege level
+    target_role_level = get_role_hierarchy_level(normalized_role)
+    
+    # Actor can only assign roles with lower privilege than their highest role
+    if target_role_level >= actor_max_level:
+        raise HTTPException(
+            status_code=403,
+            detail=f"cannot assign role '{normalized_role}' (level {target_role_level}): "
+                   f"your maximum privilege level is {actor_max_level}"
+        )
 
 
 class RolePayload(BaseModel):
@@ -65,6 +114,12 @@ def upsert_role(
         raise HTTPException(status_code=403, detail="cross-tenant role management requires platform admin")
     target_tenant_id = payload.tenant_id if payload.tenant_id is not None and actor_is_platform_admin else current_tenant_id
     normalized_role_name = payload.name.strip().lower()
+    _enforce_role_mutation_guard(
+        actor=actor,
+        target_user_id=None,
+        role_name=normalized_role_name,
+        target_tenant_id=target_tenant_id,
+    )
     if normalized_role_name in _PLATFORM_ONLY_ROLES and target_tenant_id != _PLATFORM_TENANT_ID:
         raise HTTPException(status_code=403, detail="role 'superadmin' is reserved for the platform tenant")
     try:
@@ -97,24 +152,70 @@ def assign_user_role(
 ) -> dict[str, object]:
     current_tenant_id = int(tenant["id"])
     target_tenant_id = payload.tenant_id if payload.tenant_id is not None and _actor_is_platform_admin(actor) else current_tenant_id
+    
     try:
+        # Governance validation — role hierarchy, self-escalation checks
+        _enforce_role_mutation_guard(
+            actor=actor,
+            target_user_id=payload.user_id,
+            role_name=payload.role,
+            target_tenant_id=target_tenant_id,
+        )
+        
+        # Service call
         assigned = assign_role_to_user(target_tenant_id, payload.user_id, payload.role)
-    except PermissionError as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
-    except ValueError as exc:
+        
+        # Log success
+        log_admin_action(
+            actor=actor,
+            action="rbac.assignment.create",
+            path=str(request.url.path),
+            client_ip=request.client.host if request.client else "unknown",
+            correlation_id=getattr(request.state, "request_id", None),
+            entity="rbac_assignments",
+            result="success",
+            metadata={"user_id": payload.user_id, "role": payload.role},
+            tenant_id=target_tenant_id,
+        )
+        return assigned
+    except HTTPException as exc:
+        # Log governance denials (403, 400, etc)
+        log_admin_action(
+            actor=actor,
+            action="rbac.assignment.create",
+            path=str(request.url.path),
+            client_ip=request.client.host if request.client else "unknown",
+            correlation_id=getattr(request.state, "request_id", None),
+            entity="rbac_assignments",
+            result="denied",
+            metadata={
+                "user_id": payload.user_id, 
+                "role": payload.role,
+                "reason": exc.detail,
+            },
+            tenant_id=target_tenant_id,
+        )
+        raise
+    except (PermissionError, ValueError) as exc:
+        # Log service-layer errors
+        log_admin_action(
+            actor=actor,
+            action="rbac.assignment.create",
+            path=str(request.url.path),
+            client_ip=request.client.host if request.client else "unknown",
+            correlation_id=getattr(request.state, "request_id", None),
+            entity="rbac_assignments",
+            result="error",
+            metadata={
+                "user_id": payload.user_id, 
+                "role": payload.role,
+                "error": str(exc),
+            },
+            tenant_id=target_tenant_id,
+        )
+        if isinstance(exc, PermissionError):
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    log_admin_action(
-        actor=actor,
-        action="rbac.assignment.create",
-        path=str(request.url.path),
-        client_ip=request.client.host if request.client else "unknown",
-        correlation_id=getattr(request.state, "request_id", None),
-        entity="rbac_assignments",
-        result="success",
-        metadata={"user_id": payload.user_id, "role": payload.role},
-        tenant_id=target_tenant_id,
-    )
-    return assigned
 
 
 @router.get("/assignments")
@@ -150,6 +251,12 @@ def delete_role_assignment(
 ) -> dict[str, object]:
     current_tenant_id = int(tenant["id"])
     target_tenant_id = tenant_id if tenant_id is not None and _actor_is_platform_admin(actor) else current_tenant_id
+    _enforce_role_mutation_guard(
+        actor=actor,
+        target_user_id=user_id,
+        role_name=role,
+        target_tenant_id=target_tenant_id,
+    )
     try:
         result = revoke_role_for_tenant(tenant_id=target_tenant_id, user_id=user_id, role=role)
         log_admin_action(

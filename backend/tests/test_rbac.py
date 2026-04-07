@@ -1,6 +1,7 @@
 from tests.conftest import ADMIN_HEADERS, client
 from app.modules.auth.token_service import create_access_token
 from app.modules.rbac import service as rbac_service
+from uuid import uuid4
 
 
 def test_rbac_roles_endpoint() -> None:
@@ -74,12 +75,11 @@ def test_rbac_user_role_assignment_uses_database(monkeypatch) -> None:
     assert assigned["user_id"] == "student.001"
     assert assigned["roles"] == ["auditor"]
 
-    roles = rbac_service.get_user_roles("student.001")
+    roles = rbac_service.get_user_roles("student.001", tenant_id=1)
     assert roles == ["auditor"]
 
 
 def test_authorization_resolution_from_db_roles(monkeypatch) -> None:
-    monkeypatch.setenv("AUTH_DEV_DEMO_COMPATIBILITY", "true")
     monkeypatch.setenv("RBAC_ALLOW_DEV_FALLBACK", "false")
     monkeypatch.setattr(
         rbac_service,
@@ -100,12 +100,14 @@ def test_authorization_resolution_from_db_roles(monkeypatch) -> None:
 
     monkeypatch.setattr(rbac_service, "_resolve_permissions_db", fake_resolve)
 
-    response = client.get("/api/admin/rbac/roles", headers=ADMIN_HEADERS)
+    response = client.get(
+        "/api/admin/rbac/roles",
+        headers={"Authorization": f"Bearer {create_access_token('owner@example.com', ['admin'], 'test', tenant_id=1)}"},
+    )
     assert response.status_code == 403
 
 
 def test_authorization_dev_fallback_allows_token_roles_when_db_unavailable(monkeypatch) -> None:
-    monkeypatch.setenv("AUTH_DEV_DEMO_COMPATIBILITY", "true")
     monkeypatch.setenv("RBAC_ALLOW_DEV_FALLBACK", "true")
     monkeypatch.setattr(
         rbac_service,
@@ -118,12 +120,14 @@ def test_authorization_dev_fallback_allows_token_roles_when_db_unavailable(monke
         lambda roles: (_ for _ in ()).throw(RuntimeError("db offline")),
     )
 
-    response = client.get("/api/admin/rbac/roles", headers=ADMIN_HEADERS)
+    response = client.get(
+        "/api/admin/rbac/roles",
+        headers={"Authorization": f"Bearer {create_access_token('owner@example.com', ['admin'], 'test', tenant_id=1)}"},
+    )
     assert response.status_code == 200
 
 
 def test_authorization_denies_when_db_unavailable_in_operational_mode(monkeypatch) -> None:
-    monkeypatch.setenv("AUTH_DEV_DEMO_COMPATIBILITY", "true")
     monkeypatch.setenv("RBAC_ALLOW_DEV_FALLBACK", "false")
     monkeypatch.setattr(
         rbac_service,
@@ -131,7 +135,10 @@ def test_authorization_denies_when_db_unavailable_in_operational_mode(monkeypatc
         lambda user_id: (_ for _ in ()).throw(RuntimeError("db offline")),
     )
 
-    response = client.get("/api/admin/rbac/roles", headers=ADMIN_HEADERS)
+    response = client.get(
+        "/api/admin/rbac/roles",
+        headers={"Authorization": f"Bearer {create_access_token('owner@example.com', ['admin'], 'test', tenant_id=1)}"},
+    )
     assert response.status_code == 503
     assert response.json()["detail"] == "rbac database unavailable"
 
@@ -169,15 +176,46 @@ def test_rbac_assignments_list_and_revoke() -> None:
     assert revoke_again_response.json()["roles"] == []
 
 
+def test_rbac_forbids_self_role_assignment() -> None:
+    response = client.post(
+        "/api/admin/rbac/assign",
+        json={"user_id": "owner@example.com", "role": "auditor"},
+        headers=ADMIN_HEADERS,
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "self-role modification forbidden"
+
+
+def test_rbac_forbids_self_role_revoke() -> None:
+    response = client.delete(
+        "/api/admin/rbac/assignments/owner@example.com/admin",
+        headers=ADMIN_HEADERS,
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "self-role modification forbidden"
+
+
+def test_rbac_forbids_platform_role_assignment_by_non_platform_admin() -> None:
+    response = client.post(
+        "/api/admin/rbac/assign",
+        json={"user_id": "other.admin@example.com", "role": "superadmin"},
+        headers=ADMIN_HEADERS,
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "platform-only role management requires platform admin"
+
+
 def test_new_admin_endpoints_require_permissions() -> None:
     low_priv_headers = {
-        "Authorization": f"Bearer {create_access_token('student.002', ['student'], 'test')}",
+        "Authorization": f"Bearer {create_access_token('student.002', ['student'], 'test', tenant_id=1)}",
     }
+    suffix = uuid4().hex[:8]
+    login = f"local.permission.case.{suffix}"
 
     create_response = client.post(
         "/api/admin/local-users",
         json={
-            "login": "local.permission.case",
+            "login": login,
             "password": "permit12345",
             "display_name": "Permission Case",
             "roles": ["auditor"],
@@ -202,3 +240,8 @@ def test_new_admin_endpoints_require_permissions() -> None:
         else:
             response = getattr(client, method)(path, json=payload, headers=low_priv_headers)
         assert response.status_code == 403
+
+    audit_events = client.get("/api/admin/audit/events", headers=ADMIN_HEADERS)
+    assert audit_events.status_code == 200, audit_events.text
+    denied_actions = [item.get("action") for item in audit_events.json().get("events", []) if item.get("result") == "denied"]
+    assert "security.access.denied" in denied_actions

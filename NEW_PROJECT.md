@@ -27,7 +27,7 @@ cp infra/.env.example infra/.env
 ```
 
 Важно:
-- demo users и demo auth paths в шаблоне предназначены только для local/template/demo использования;
+- demo users и demo auth paths в шаблоне предназначены только для template/demo использования;
 - перед production launch их нужно отключить, удалить или заменить;
 - это обязательная проверка для каждого производного проекта.
 
@@ -58,6 +58,8 @@ make pipeline
 - frontend lint/build проходят,
 - docker-стек поднимается,
 - health endpoint доступен.
+
+Важно: host-native npm/python dev workflow не используется; baseline проверяется только через Docker.
 
 Считай baseline корректным, если `make pipeline` завершился без ошибок (`EXIT:0`).
 

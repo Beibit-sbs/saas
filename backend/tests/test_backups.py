@@ -61,7 +61,7 @@ def test_backup_settings_and_run_success(monkeypatch, tmp_path) -> None:
     assert save_response.status_code == 200
     assert save_response.json()["active_profile"] == "localtest"
 
-    monkeypatch.setenv("DATABASE_URL", "postgresql://app:change_me@127.0.0.1:1/app")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://app:change_me@db:5432/app")
 
     run_response = client.post("/api/admin/backups/run", headers=ADMIN_HEADERS)
     assert run_response.status_code == 200

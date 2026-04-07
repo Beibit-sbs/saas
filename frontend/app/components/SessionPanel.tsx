@@ -64,22 +64,22 @@ export default function SessionPanel() {
       {user ? (
         <>
           <div><b>{user.display_name}</b></div>
-          <div style={{ color: "#555", marginTop: 2 }}>{user.user_id}</div>
-          <div style={{ color: "#555", marginTop: 2 }}>{labels.roles}: {user.roles.join(", ")}</div>
-          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <Link href="/admin">{labels.admin}</Link>
+          <div className="mt-0.5 text-[#555]">{user.user_id}</div>
+          <div className="mt-0.5 text-[#555]">{labels.roles}: {user.roles.join(", ")}</div>
+          <div className="mt-2 flex gap-2">
+            <Link href="/console/platform">{labels.admin}</Link>
             <Link href="/profile">{labels.profile}</Link>
             <button
               type="button"
               onClick={handleLogout}
-              style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0 }}
+              className="cursor-pointer border-none bg-transparent p-0"
             >
               {labels.logout}
             </button>
           </div>
         </>
       ) : (
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+        <div className="flex justify-between gap-3">
           <span>{labels.notLoggedIn}</span>
           <Link href="/login">{labels.login}</Link>
         </div>

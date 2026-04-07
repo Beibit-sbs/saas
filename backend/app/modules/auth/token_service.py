@@ -3,6 +3,7 @@ import binascii
 import hashlib
 import hmac
 import json
+import logging
 import os
 import time
 from dataclasses import dataclass
@@ -19,6 +20,8 @@ from app.core.config import (
     get_auth_refresh_token_ttl_minutes,
     get_auth_revocation_redis_url,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -114,7 +117,13 @@ def is_token_revoked(jti: str) -> bool:
         try:
             return bool(client.exists(_revoked_token_key(normalized_jti)))
         except Exception:
-            pass
+            # Redis is configured but unreachable: fail-closed to prevent accepting
+            # tokens that were revoked in Redis but absent from the in-memory store.
+            _logger.warning(
+                "token_revocation_redis_unavailable: treating token as revoked (fail-closed)",
+                extra={"jti": normalized_jti},
+            )
+            return True
 
     _prune_revoked_tokens_memory()
     return normalized_jti in _revoked_tokens_memory
@@ -166,9 +175,10 @@ def create_access_token(
     user_id: str,
     roles: list[str],
     auth_source: str,
-    tenant_id: int = 1,
+    tenant_id: int,
     *,
     session_id: str | None = None,
+    permissions: list[str] | None = None,
 ) -> str:
     now = int(time.time())
     ttl_seconds = get_auth_access_token_ttl_minutes() * 60
@@ -176,11 +186,13 @@ def create_access_token(
     if normalized_tenant_id <= 0:
         raise ValueError("tenant_id must be positive")
 
+    normalized_permissions = sorted({str(item).strip() for item in (permissions or []) if str(item).strip()})
+
     header = {"alg": "HS256", "typ": "JWT"}
     payload = {
         "sub": user_id,
         "roles": roles,
-        "scp": [],
+        "scp": normalized_permissions,
         "src": auth_source,
         "tid": normalized_tenant_id,
         "jti": str(uuid4()),
@@ -205,7 +217,7 @@ def create_refresh_token(
     user_id: str,
     roles: list[str],
     auth_source: str,
-    tenant_id: int = 1,
+    tenant_id: int,
     *,
     session_id: str,
 ) -> str:
@@ -389,7 +401,7 @@ def _verify_token_payload(token: str, *, expected_token_type: set[str]) -> dict[
         raise TokenValidationError("invalid token jti")
     normalized_jti = jti_raw.strip()
 
-    tenant_raw = payload.get("tid", 1)
+    tenant_raw = payload.get("tid")
     if not isinstance(tenant_raw, int) or tenant_raw <= 0:
         raise TokenValidationError("invalid token tenant")
 
@@ -420,6 +432,16 @@ def _verify_token_payload(token: str, *, expected_token_type: set[str]) -> dict[
             tenant_id=tenant_raw,
         )
         raise TokenValidationError("token revoked")
+    if token_type == "service":
+        try:
+            from app.modules.service_accounts.service import is_service_account_active
+
+            if not is_service_account_active(tenant_id=tenant_raw, account_id=sub):
+                raise TokenValidationError("service account revoked")
+        except TokenValidationError:
+            raise
+        except Exception as exc:
+            raise TokenValidationError("service account store unavailable") from exc
     if normalized_session is not None and token_type != "service":
         try:
             from app.modules.auth.session_service import is_session_active
@@ -428,9 +450,8 @@ def _verify_token_payload(token: str, *, expected_token_type: set[str]) -> dict[
                 raise TokenValidationError("session revoked")
         except TokenValidationError:
             raise
-        except Exception:
-            # Session subsystem should not break token validation path in degraded mode.
-            pass
+        except Exception as exc:
+            raise TokenValidationError("session store unavailable") from exc
 
     return {
         "user_id": sub,

@@ -1,0 +1,8 @@
+{
+  "CN=AI-Platform-Admins,OU=Groups,DC=example,DC=local": "platform_admin",
+  "CN=AI-Institution-Admins,OU=Groups,DC=example,DC=local": "institution_admin",
+  "CN=AI-Academic-Admins,OU=Groups,DC=example,DC=local": "academic_admin",
+  "CN=AI-IT-Support,OU=Groups,DC=example,DC=local": "it_support",
+  "CN=AI-Developers,OU=Groups,DC=example,DC=local": "developer",
+  "CN=AI-Ops-Engineers,OU=Groups,DC=example,DC=local": "ops_engineer"
+}

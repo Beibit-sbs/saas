@@ -5,7 +5,32 @@ from app.modules.auth.token_service import (
     verify_access_token,
     verify_refresh_token,
 )
+from app.modules.auth.local_users_service import local_user_store
+from app.modules.identity.identity_errors import IdentityInvalidCredentials
 from app.modules.ldap import service as ldap_service
+from app.modules.security import rate_limit as rate_limit_service
+
+
+def _ensure_local_user(login: str, password: str, roles: list[str], display_name: str) -> dict[str, object]:
+    existing = local_user_store.find_user_by_login(login)
+    if existing is not None:
+        return existing
+    return local_user_store.create_user(
+        login=login,
+        password=password,
+        display_name=display_name,
+        roles=roles,
+        default_language="ru",
+        tenant_id=1,
+    )
+
+
+def _login_local(login: str, password: str, **extra_payload):
+    return client.post(
+        "/api/auth/login",
+        json={"login": login, "password": password, **extra_payload},
+        headers={"X-Tenant-ID": "1"},
+    )
 
 
 def test_auth_modes_endpoint() -> None:
@@ -16,32 +41,23 @@ def test_auth_modes_endpoint() -> None:
     assert "local" in body["modes"]
 
 
-def test_demo_users_endpoint() -> None:
-    response = client.get("/api/auth/demo-users")
-    assert response.status_code == 200
-    body = response.json()
-    assert "users" in body
-    assert len(body["users"]) >= 1
-
-
-def test_demo_login_endpoint() -> None:
+def test_demo_routes_are_removed_from_runtime() -> None:
     client.cookies.clear()
-    response = client.post("/api/auth/demo-login", json={"user_id": "student.001"})
-    assert response.status_code == 200
-    body = response.json()
-    assert body["user_id"] == "student.001"
-    assert "language" in body
+    response_users = client.get("/api/auth/demo-users")
+    response_demo_login = client.post("/api/auth/demo-login", json={"user_id": "student.001"})
+    response_mock_login = client.post("/api/auth/mock-login", json={"login": "admin", "password": "admin123"})
+    assert response_users.status_code == 404
+    assert response_demo_login.status_code == 404
+    assert response_mock_login.status_code == 404
 
 
-def test_mock_login_endpoint() -> None:
+def test_login_endpoint_local_user_flow() -> None:
     client.cookies.clear()
-    response = client.post(
-        "/api/auth/mock-login",
-        json={"login": "admin", "password": "admin123"},
-    )
+    user = _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    response = _login_local("admin", "admin123")
     assert response.status_code == 200
     body = response.json()
-    assert body["user_id"] == "admin.001"
+    assert body["user_id"] == user["user_id"]
     assert isinstance(body.get("access_token"), str)
     assert isinstance(body.get("refresh_token"), str)
     token = response.cookies.get("app_access_token")
@@ -50,14 +66,49 @@ def test_mock_login_endpoint() -> None:
     assert isinstance(refresh, str)
     claims = verify_access_token(token)
     refresh_claims = verify_refresh_token(refresh)
-    assert claims.user_id == "admin.001"
+    assert claims.user_id == user["user_id"]
     assert "admin" in claims.roles
     assert claims.tenant_id == 1
-    assert refresh_claims.user_id == "admin.001"
+    assert refresh_claims.user_id == user["user_id"]
 
 
-def test_demo_admin_login_syncs_db_roles_and_allows_admin_endpoints(monkeypatch) -> None:
+def test_login_sets_secure_cookie_flags_under_https_proxy() -> None:
     client.cookies.clear()
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    response = client.post(
+        "/api/auth/login",
+        json={"login": "admin", "password": "admin123"},
+        headers={"X-Tenant-ID": "1", "X-Forwarded-Proto": "https"},
+    )
+    assert response.status_code == 200
+
+    set_cookie_headers = response.headers.get_list("set-cookie")
+    access_cookie = next(item for item in set_cookie_headers if item.startswith("app_access_token="))
+    refresh_cookie = next(item for item in set_cookie_headers if item.startswith("app_refresh_token="))
+
+    access_lower = access_cookie.lower()
+    refresh_lower = refresh_cookie.lower()
+    assert "secure" in access_lower
+    assert "httponly" in access_lower
+    assert "samesite=lax" in access_lower or "samesite=strict" in access_lower
+
+    assert "secure" in refresh_lower
+    assert "httponly" in refresh_lower
+    assert "samesite=lax" in refresh_lower or "samesite=strict" in refresh_lower
+
+    csrf = client.get("/api/auth/csrf", headers={"X-Forwarded-Proto": "https"})
+    assert csrf.status_code == 200
+    csrf_set_cookie_headers = csrf.headers.get_list("set-cookie")
+    csrf_cookie = next(item for item in csrf_set_cookie_headers if item.startswith("app_csrf_token="))
+    csrf_lower = csrf_cookie.lower()
+
+    assert "secure" in csrf_lower
+    assert "httponly" not in csrf_lower
+
+
+def test_local_admin_login_syncs_db_roles_and_allows_admin_endpoints(monkeypatch) -> None:
+    client.cookies.clear()
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
     assignments: dict[str, list[str]] = {}
     _configure_db_only_role_resolution(monkeypatch, assignments)
 
@@ -67,22 +118,20 @@ def test_demo_admin_login_syncs_db_roles_and_allows_admin_endpoints(monkeypatch)
         return {"user_id": user_id, "roles": assignments[user_id]}
 
     monkeypatch.setattr("app.modules.auth.router.sync_user_roles_from_trusted_source", fake_sync)
-    monkeypatch.setattr("app.modules.auth.router.local_user_store.authenticate", lambda login, password: None)
 
-    login_response = client.post(
-        "/api/auth/mock-login",
-        json={"login": "admin", "password": "admin123"},
-    )
+    login_response = _login_local("admin", "admin123")
     assert login_response.status_code == 200
-    assert assignments.get("admin.001") == ["admin"]
+    assert assignments
     dashboard_response = client.get(
         "/api/admin/dashboard",
     )
     assert dashboard_response.status_code == 200
 
 
-def test_demo_teacher_and_student_have_expected_limited_or_no_admin_access(monkeypatch) -> None:
+def test_local_teacher_and_student_have_expected_limited_or_no_admin_access(monkeypatch) -> None:
     client.cookies.clear()
+    _ensure_local_user("teacher", "teacher123", ["teacher"], "Teacher Local")
+    _ensure_local_user("student", "student123", ["student"], "Student Local")
     assignments: dict[str, list[str]] = {}
     _configure_db_only_role_resolution(monkeypatch, assignments)
 
@@ -92,19 +141,15 @@ def test_demo_teacher_and_student_have_expected_limited_or_no_admin_access(monke
         return {"user_id": user_id, "roles": assignments[user_id]}
 
     monkeypatch.setattr("app.modules.auth.router.sync_user_roles_from_trusted_source", fake_sync)
-    monkeypatch.setattr("app.modules.auth.router.local_user_store.authenticate", lambda login, password: None)
 
-    teacher_login = client.post(
-        "/api/auth/mock-login",
-        json={"login": "teacher", "password": "teacher123"},
-    )
+    teacher_login = _login_local("teacher", "teacher123")
     assert teacher_login.status_code == 200
-    assert assignments.get("teacher.001") == ["auditor"]
+    assert any("teacher" in roles for roles in assignments.values())
 
     teacher_dashboard = client.get(
         "/api/admin/dashboard",
     )
-    assert teacher_dashboard.status_code == 200
+    assert teacher_dashboard.status_code == 403
 
     teacher_rbac = client.get(
         "/api/admin/rbac/roles",
@@ -112,12 +157,9 @@ def test_demo_teacher_and_student_have_expected_limited_or_no_admin_access(monke
     assert teacher_rbac.status_code == 403
 
     client.cookies.clear()
-    student_login = client.post(
-        "/api/auth/mock-login",
-        json={"login": "student", "password": "student123"},
-    )
+    student_login = _login_local("student", "student123")
     assert student_login.status_code == 200
-    assert assignments.get("student.001", []) == []
+    assert any("student" in roles for roles in assignments.values())
 
     student_dashboard = client.get(
         "/api/admin/dashboard",
@@ -126,22 +168,61 @@ def test_demo_teacher_and_student_have_expected_limited_or_no_admin_access(monke
 
 
 def test_me_profile_endpoint() -> None:
+    user = _ensure_local_user("profile.admin", "profile123", ["admin"], "Profile Admin")
     headers = {
-        "Authorization": f"Bearer {create_access_token('admin.001', ['admin'], 'test')}",
+        "Authorization": f"Bearer {create_access_token(str(user['user_id']), ['admin'], 'test', tenant_id=1)}",
     }
     response = client.get("/api/auth/me/profile", headers=headers)
     assert response.status_code == 200
     body = response.json()
-    assert body["user_id"] == "admin.001"
+    assert body["user_id"] == user["user_id"]
     assert "roles" in body
+    assert "permissions" in body
+    assert "students.read" in body["permissions"]
+
+
+def test_primary_login_returns_provider_unavailable_without_identity_provider() -> None:
+    client.cookies.clear()
+    response = client.post(
+        "/api/auth/login",
+        json={"username": "admin", "password": "admin123"},
+        headers={"X-Tenant-ID": "1"},
+    )
+
+    assert response.status_code == 503, response.text
+    detail = response.json().get("detail", {})
+    assert detail.get("code") == "IDENTITY_PROVIDER_UNAVAILABLE"
+
+
+def test_primary_login_local_user_survives_identity_db_unavailable(monkeypatch) -> None:
+    client.cookies.clear()
+    local_user_store.create_user(
+        login="pilot-local",
+        password="pilot-secret",
+        display_name="Pilot Local",
+        roles=["dean"],
+        default_language="ru",
+        tenant_id=1,
+    )
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+
+    response = client.post(
+        "/api/auth/login",
+        json={"login": "pilot-local", "password": "pilot-secret"},
+        headers={"X-Tenant-ID": "1"},
+    )
+
+    assert response.status_code == 200, response.text
+    claims = verify_access_token(response.json()["access_token"])
+    assert claims.user_id.startswith("local.")
+    assert "dean" in claims.roles
+    assert "metrics.read" in claims.permissions
 
 
 def test_login_sets_signed_auth_cookie() -> None:
     client.cookies.clear()
-    response = client.post(
-        "/api/auth/mock-login",
-        json={"login": "admin", "password": "admin123"},
-    )
+    user = _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    response = _login_local("admin", "admin123")
     assert response.status_code == 200
     assert isinstance(response.json().get("access_token"), str)
     assert isinstance(response.json().get("refresh_token"), str)
@@ -150,13 +231,13 @@ def test_login_sets_signed_auth_cookie() -> None:
     assert isinstance(token, str)
     assert isinstance(refresh, str)
     claims = verify_access_token(token)
-    assert claims.user_id == "admin.001"
+    assert claims.user_id == user["user_id"]
     assert "admin" in claims.roles
     assert claims.tenant_id == 1
 
 
 def test_revoked_access_token_is_rejected() -> None:
-    token = create_access_token("admin.001", ["admin"], "test")
+    token = create_access_token("admin.001", ["admin"], "test", tenant_id=1)
     claims = verify_access_token(token)
     revoke_token(claims.jti, expires_at=claims.expires_at)
 
@@ -168,12 +249,110 @@ def test_revoked_access_token_is_rejected() -> None:
     assert "revoked" in response.json()["detail"]
 
 
+def test_revoked_access_token_is_rejected_when_redis_is_unavailable(monkeypatch) -> None:
+    monkeypatch.setattr("app.modules.auth.token_service._get_redis_client", lambda: None)
+    token = create_access_token("admin.redis.offline", ["admin"], "test", tenant_id=1)
+    claims = verify_access_token(token)
+    revoke_token(claims.jti, expires_at=claims.expires_at)
+
+    response = client.get(
+        "/api/auth/me/profile",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 401
+    assert "revoked" in response.json()["detail"]
+
+
+def test_access_token_is_rejected_when_session_store_is_unavailable(monkeypatch) -> None:
+    client.cookies.clear()
+    _ensure_local_user("session.fail.closed", "session123", ["admin"], "Session Fail Closed")
+    login = _login_local("session.fail.closed", "session123")
+    assert login.status_code == 200
+    access_token = login.json()["access_token"]
+
+    monkeypatch.setattr(
+        "app.modules.auth.session_service.is_session_active",
+        lambda session_id: (_ for _ in ()).throw(RuntimeError("session db offline")),
+    )
+
+    response = client.get(
+        "/api/auth/me/profile",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == 401
+    assert "session store unavailable" in response.json()["detail"]
+
+
+def test_bound_access_token_is_rejected_when_session_store_is_unavailable_without_login(monkeypatch) -> None:
+    client.cookies.clear()
+    user = _ensure_local_user(
+        "session.fail.closed.direct",
+        "session123",
+        ["admin"],
+        "Session Fail Closed Direct",
+    )
+    access_token = create_access_token(
+        str(user["user_id"]),
+        ["admin"],
+        "test",
+        tenant_id=1,
+        session_id="session-fail-closed-direct",
+        permissions=["students.read"],
+    )
+
+    monkeypatch.setattr(
+        "app.modules.auth.session_service.is_session_active",
+        lambda session_id: (_ for _ in ()).throw(RuntimeError("session db offline")),
+    )
+
+    response = client.get(
+        "/api/auth/me/profile",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == 401
+    assert "session store unavailable" in response.json()["detail"]
+
+
+def test_login_endpoint_locks_after_repeated_failures(monkeypatch) -> None:
+    client.cookies.clear()
+    rate_limit_service.clear_rate_limit_state()
+    monkeypatch.setattr(
+        "app.modules.auth.router.authenticate_tenant_login",
+        lambda **kwargs: (_ for _ in ()).throw(IdentityInvalidCredentials()),
+    )
+    monkeypatch.setattr(rate_limit_service, "get_auth_lockout_threshold", lambda: 2)
+    monkeypatch.setattr(rate_limit_service, "get_auth_lockout_base_seconds", lambda: 4)
+    monkeypatch.setattr(rate_limit_service, "get_auth_lockout_max_seconds", lambda: 60)
+    monkeypatch.setattr(rate_limit_service, "get_auth_lockout_reset_window_seconds", lambda: 3600)
+
+    first = client.post(
+        "/api/auth/login",
+        json={"login": "blocked.user", "password": "wrong-pass"},
+        headers={"X-Tenant-ID": "1"},
+    )
+    second = client.post(
+        "/api/auth/login",
+        json={"login": "blocked.user", "password": "wrong-pass"},
+        headers={"X-Tenant-ID": "1"},
+    )
+    third = client.post(
+        "/api/auth/login",
+        json={"login": "blocked.user", "password": "wrong-pass"},
+        headers={"X-Tenant-ID": "1"},
+    )
+
+    assert first.status_code == 401
+    assert second.status_code == 401
+    assert third.status_code == 429
+    assert third.headers.get("Retry-After") == "4"
+    detail = third.json()["detail"]
+    assert detail["code"] == "IDENTITY_RATE_LIMITED"
+
+
 def test_refresh_flow_rotates_tokens_and_issues_new_access() -> None:
     client.cookies.clear()
-    login = client.post(
-        "/api/auth/mock-login",
-        json={"login": "admin", "password": "admin123"},
-    )
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    login = _login_local("admin", "admin123")
     assert login.status_code == 200
     old_access = client.cookies.get("app_access_token")
     old_refresh = client.cookies.get("app_refresh_token")
@@ -196,10 +375,8 @@ def test_refresh_flow_rotates_tokens_and_issues_new_access() -> None:
 
 def test_revoked_refresh_token_is_rejected() -> None:
     client.cookies.clear()
-    login = client.post(
-        "/api/auth/mock-login",
-        json={"login": "admin", "password": "admin123"},
-    )
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    login = _login_local("admin", "admin123")
     assert login.status_code == 200
     refresh_token = client.cookies.get("app_refresh_token")
     assert isinstance(refresh_token, str)
@@ -219,7 +396,11 @@ def test_revoked_refresh_token_is_rejected() -> None:
 def test_ldap_login_requires_enabled_config(monkeypatch) -> None:
     client.cookies.clear()
     monkeypatch.delenv("AUTH_LDAP_ENABLED", raising=False)
-    response = client.post("/api/auth/ldap-login", json={"login": "alice", "password": "secret"})
+    response = client.post(
+        "/api/auth/ldap-login",
+        json={"login": "alice", "password": "secret"},
+        headers={"X-Tenant-ID": "1"},
+    )
     assert response.status_code == 400
 
 
@@ -240,7 +421,11 @@ def test_ldap_login_success(monkeypatch) -> None:
     monkeypatch.setattr(ldap_service, "authenticate_ldap_user", fake_authenticate)
     monkeypatch.setattr("app.modules.auth.router.authenticate_ldap_user", fake_authenticate)
 
-    response = client.post("/api/auth/ldap-login", json={"login": "alice", "password": "secret"})
+    response = client.post(
+        "/api/auth/ldap-login",
+        json={"login": "alice", "password": "secret"},
+        headers={"X-Tenant-ID": "1"},
+    )
     assert response.status_code == 200
     assert response.json()["auth_source"] == "ldap"
 
@@ -260,7 +445,11 @@ def test_ldap_user_can_read_me_profile(monkeypatch) -> None:
     monkeypatch.setattr(ldap_service, "authenticate_ldap_user", fake_authenticate)
     monkeypatch.setattr("app.modules.auth.router.authenticate_ldap_user", fake_authenticate)
 
-    login = client.post("/api/auth/ldap-login", json={"login": "alice", "password": "secret"})
+    login = client.post(
+        "/api/auth/ldap-login",
+        json={"login": "alice", "password": "secret"},
+        headers={"X-Tenant-ID": "1"},
+    )
     assert login.status_code == 200
 
     profile = client.get("/api/auth/me/profile")
@@ -291,7 +480,11 @@ def test_ldap_login_syncs_roles_to_db(monkeypatch) -> None:
     monkeypatch.setattr("app.modules.auth.router.authenticate_ldap_user", fake_authenticate)
     monkeypatch.setattr("app.modules.auth.router.sync_user_roles_from_trusted_source", fake_sync)
 
-    response = client.post("/api/auth/ldap-login", json={"login": "alice", "password": "secret"})
+    response = client.post(
+        "/api/auth/ldap-login",
+        json={"login": "alice", "password": "secret"},
+        headers={"X-Tenant-ID": "1"},
+    )
     assert response.status_code == 200
     assert response.json()["auth_source"] == "ldap"
     assert synced.get("ad.alice") == ["admin"]
@@ -299,10 +492,8 @@ def test_ldap_login_syncs_roles_to_db(monkeypatch) -> None:
 
 def test_profile_is_resolved_from_auth_cookie() -> None:
     client.cookies.clear()
-    login = client.post(
-        "/api/auth/mock-login",
-        json={"login": "admin", "password": "admin123"},
-    )
+    login_user = _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    login = _login_local("admin", "admin123")
     assert login.status_code == 200
 
     cookie_name = "app_access_token"
@@ -311,12 +502,11 @@ def test_profile_is_resolved_from_auth_cookie() -> None:
     client.cookies.set(cookie_name, login.cookies[cookie_name])
     me = client.get("/api/auth/me/profile")
     assert me.status_code == 200
-    assert me.json()["user_id"] == "admin.001"
+    assert me.json()["user_id"] == login_user["user_id"]
 
 
 def test_legacy_headers_disabled_by_default(monkeypatch) -> None:
     client.cookies.clear()
-    monkeypatch.delenv("AUTH_DEV_DEMO_COMPATIBILITY", raising=False)
     monkeypatch.delenv("AUTH_ALLOW_LEGACY_HEADERS", raising=False)
 
     response = client.get(
@@ -324,6 +514,26 @@ def test_legacy_headers_disabled_by_default(monkeypatch) -> None:
         headers={"x-user-id": "admin.001"},
     )
     assert response.status_code == 401
+
+
+def test_profile_rejects_x_user_id_mismatch_even_when_legacy_headers_enabled(monkeypatch) -> None:
+    client.cookies.clear()
+    monkeypatch.setenv("AUTH_ALLOW_LEGACY_HEADERS", "true")
+
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    login = _login_local("admin", "admin123")
+    assert login.status_code == 200
+
+    response = client.get(
+        "/api/auth/me/profile",
+        headers={
+            "Authorization": f"Bearer {login.json()['access_token']}",
+            "x-user-id": "other-user-id",
+            "X-Tenant-ID": "1",
+        },
+    )
+    assert response.status_code == 401
+    assert "header user mismatch" in str(response.json().get("detail", "")).lower()
 
 
 def test_csrf_endpoint_issues_token() -> None:
@@ -339,10 +549,8 @@ def test_csrf_endpoint_issues_token() -> None:
 
 def test_cookie_auth_mutation_without_csrf_token_is_rejected() -> None:
     client.cookies.clear()
-    login = client.post(
-        "/api/auth/mock-login",
-        json={"login": "admin", "password": "admin123"},
-    )
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    login = _login_local("admin", "admin123")
     assert login.status_code == 200
 
     response = client.put(
@@ -354,10 +562,8 @@ def test_cookie_auth_mutation_without_csrf_token_is_rejected() -> None:
 
 def test_cookie_auth_mutation_with_valid_csrf_token_succeeds() -> None:
     client.cookies.clear()
-    login = client.post(
-        "/api/auth/mock-login",
-        json={"login": "admin", "password": "admin123"},
-    )
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    login = _login_local("admin", "admin123")
     assert login.status_code == 200
 
     csrf = client.get("/api/auth/csrf")
@@ -375,10 +581,8 @@ def test_cookie_auth_mutation_with_valid_csrf_token_succeeds() -> None:
 
 def test_cookie_auth_mutation_with_invalid_csrf_token_is_rejected() -> None:
     client.cookies.clear()
-    login = client.post(
-        "/api/auth/mock-login",
-        json={"login": "admin", "password": "admin123"},
-    )
+    _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")
+    login = _login_local("admin", "admin123")
     assert login.status_code == 200
 
     response = client.put(

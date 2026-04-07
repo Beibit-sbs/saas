@@ -19,11 +19,12 @@ from app.modules.faculty.service import (
 )
 from app.modules.rbac.security import get_actor, permission_dependency
 
-router = APIRouter(prefix="/api/admin/university/faculty", tags=["university-faculty"])
+router = APIRouter(prefix="/api/admin/org/faculty", tags=["org-faculty"])
 
 
 @router.get("", response_model=FacultyListResponse)
 def get_faculty(
+    request: Request,
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],

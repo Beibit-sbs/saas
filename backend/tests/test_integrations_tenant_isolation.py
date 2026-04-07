@@ -1,8 +1,8 @@
-from tests.conftest import ADMIN_HEADERS, client
+from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 
 
-def _tenant_headers(tenant_id: int) -> dict[str, str]:
-    headers = dict(ADMIN_HEADERS)
+def _tenant_headers(tenant_id: int, base_headers: dict[str, str] | None = None) -> dict[str, str]:
+    headers = dict(base_headers or ADMIN_HEADERS)
     headers["X-Tenant-ID"] = str(tenant_id)
     return headers
 
@@ -19,17 +19,18 @@ def _create_tenant_b() -> int:
 
 def test_integrations_settings_are_isolated_per_tenant() -> None:
     tenant_b_id = _create_tenant_b()
+    platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
 
     response = client.put(
         "/api/admin/integrations/ldap",
-        headers=_tenant_headers(tenant_b_id),
+        headers=_tenant_headers(tenant_b_id, platform_headers),
         json={"enabled": True, "server_uri": "ldap://tenant-b.example.local:389"},
     )
     assert response.status_code == 200, response.text
 
     response = client.put(
         "/api/admin/integrations/ai/openai",
-        headers=_tenant_headers(tenant_b_id),
+        headers=_tenant_headers(tenant_b_id, platform_headers),
         json={"api_key": "tenant-b-openai-key", "validation_url": "https://tenant-b.example.local/models"},
     )
     assert response.status_code == 200, response.text
@@ -38,7 +39,10 @@ def test_integrations_settings_are_isolated_per_tenant() -> None:
     assert tenant_a_settings.status_code == 200, tenant_a_settings.text
     assert tenant_a_settings.json()["ldap"]["server_uri"] != "ldap://tenant-b.example.local:389"
 
-    tenant_b_settings = client.get("/api/admin/integrations/settings", headers=_tenant_headers(tenant_b_id))
+    tenant_b_settings = client.get(
+        "/api/admin/integrations/settings",
+        headers=_tenant_headers(tenant_b_id, platform_headers),
+    )
     assert tenant_b_settings.status_code == 200, tenant_b_settings.text
     assert tenant_b_settings.json()["ldap"]["server_uri"] == "ldap://tenant-b.example.local:389"
 

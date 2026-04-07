@@ -1,0 +1,125 @@
+{
+  "definition": {
+    "key": "admissions.workflow",
+    "name": "Admissions Workflow",
+    "description": "Multi-stage admissions review and decision workflow.",
+    "status": "active",
+    "metadata_json": {
+      "domain": "admissions",
+      "template_version": 1
+    }
+  },
+  "version": {
+    "version_no": 1,
+    "status": "active",
+    "is_active": true,
+    "trigger_mode": "manual",
+    "definition_json": {
+      "type": "linear",
+      "supports_parallel": false
+    },
+    "metadata_json": {
+      "seeded": true
+    }
+  },
+  "steps": [
+    {
+      "step_key": "submit",
+      "name": "Submit Application",
+      "step_type": "start",
+      "task_type": null,
+      "assignee_type": null,
+      "assignee_ref": null,
+      "is_blocking": true,
+      "sequence_hint": 1,
+      "config_json": {},
+      "metadata_json": {}
+    },
+    {
+      "step_key": "review_documents",
+      "name": "Review Documents",
+      "step_type": "task",
+      "task_type": "document_review",
+      "assignee_type": "role",
+      "assignee_ref": "admissions_officer",
+      "is_blocking": true,
+      "sequence_hint": 2,
+      "config_json": {},
+      "metadata_json": {}
+    },
+    {
+      "step_key": "department_approval",
+      "name": "Department Approval",
+      "step_type": "approval",
+      "task_type": "department_approval",
+      "assignee_type": "role",
+      "assignee_ref": "department_reviewer",
+      "is_blocking": true,
+      "sequence_hint": 3,
+      "config_json": {},
+      "metadata_json": {}
+    },
+    {
+      "step_key": "dean_approval",
+      "name": "Dean Approval",
+      "step_type": "approval",
+      "task_type": "dean_approval",
+      "assignee_type": "role",
+      "assignee_ref": "dean",
+      "is_blocking": true,
+      "sequence_hint": 4,
+      "config_json": {},
+      "metadata_json": {}
+    },
+    {
+      "step_key": "final_decision",
+      "name": "Final Decision",
+      "step_type": "end",
+      "task_type": null,
+      "assignee_type": null,
+      "assignee_ref": null,
+      "is_blocking": true,
+      "sequence_hint": 5,
+      "config_json": {},
+      "metadata_json": {}
+    }
+  ],
+  "transitions": [
+    {
+      "from_step_key": "submit",
+      "to_step_key": "review_documents",
+      "action_key": "start",
+      "name": "Start Review",
+      "is_default": true,
+      "condition_json": {},
+      "metadata_json": {}
+    },
+    {
+      "from_step_key": "review_documents",
+      "to_step_key": "department_approval",
+      "action_key": "complete",
+      "name": "Documents Verified",
+      "is_default": true,
+      "condition_json": {},
+      "metadata_json": {}
+    },
+    {
+      "from_step_key": "department_approval",
+      "to_step_key": "dean_approval",
+      "action_key": "approve",
+      "name": "Department Approved",
+      "is_default": true,
+      "condition_json": {},
+      "metadata_json": {}
+    },
+    {
+      "from_step_key": "dean_approval",
+      "to_step_key": "final_decision",
+      "action_key": "approve",
+      "name": "Dean Approved",
+      "is_default": true,
+      "condition_json": {},
+      "metadata_json": {}
+    }
+  ]
+}

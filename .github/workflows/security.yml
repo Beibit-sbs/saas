@@ -7,24 +7,48 @@ on:
     branches: [main]
 
 jobs:
-  backend-security-regression:
+  security-regression-gate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    env:
-      JWT_SECRET: test-suite-secret-not-for-prod-1234567890
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install backend dependencies
+      - name: Create security env file
+        working-directory: infra
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Run backend security regression tests
-        run: pytest -q -m security_regression
+          cat > .env <<'EOF'
+          COMPOSE_PROJECT_NAME=ai
+          POSTGRES_DB=app
+          POSTGRES_USER=app
+          POSTGRES_PASSWORD=app
+          POSTGRES_PORT=5432
+          DATABASE_URL=postgresql://app:app@db:5432/app
+          REDIS_URL=redis://redis:6379/0
+          BACKEND_PORT=8000
+          FRONTEND_PORT=3000
+          NGINX_PORT=80
+          NGINX_TLS_PORT=443
+          NEXT_PUBLIC_API_BASE_URL=/api
+          API_BASE_URL=http://nginx
+          ADMIN_PANEL_URL=http://nginx
+          INTERNAL_API_TOKEN=test_internal_api_token_12345678901234567890
+          JWT_SECRET=test_suite_secret_not_for_prod_1234567890123456
+          INTEGRATIONS_ENCRYPTION_KEY=test_integration_key_1234567890123456
+          AUTH_CSRF_PROTECTION_ENABLED=true
+          RBAC_ALLOW_DEV_FALLBACK=false
+          METRICS_TOKEN=test_metrics_token_12345678901234567890
+          EOF
+      - name: Start stack
+        working-directory: infra
+        run: docker compose --env-file .env up -d --build
+      - name: Run backend security regression gate
+        working-directory: infra
+        run: docker compose --env-file .env run --rm --no-deps backend-tests pytest -q -m security_regression
+      - name: Verify demo auth endpoints are absent in runtime
+        working-directory: infra
+        run: docker compose --env-file .env run --rm --no-deps backend-tests pytest -q tests/test_product_hardening_runtime.py::test_demo_endpoints_removed_from_runtime
+      - name: Stop stack
+        if: always()
+        working-directory: infra
+        run: docker compose --env-file .env down -v
 
   gitleaks:
     runs-on: ubuntu-latest

@@ -11,6 +11,9 @@ type HelpResponse = {
   context: { page: string; field: string | null };
 };
 
+const fieldLabelStyle = { display: "block", fontSize: 13, marginBottom: 6 } as const;
+const fieldInputStyle = { width: "100%", padding: 8, borderRadius: 8, border: "1px solid #c7ccd6" } as const;
+
 export default function HelpAssistant() {
   const { t, language } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -21,7 +24,7 @@ export default function HelpAssistant() {
   const [response, setResponse] = useState<HelpResponse | null>(null);
 
   const page =
-    typeof window !== "undefined" && window.location.pathname.startsWith("/admin")
+    typeof window !== "undefined" && window.location.pathname.startsWith("/console/platform")
       ? "admin"
       : "general";
   const uiLang = language === "kk" || language === "en" ? language : "ru";
@@ -49,7 +52,7 @@ export default function HelpAssistant() {
       openAria: "Open AI help",
       title: "AI help",
       serverError: "Server error",
-      fieldPlaceholder: "for example, ldap_bind_dn",
+      fieldPlaceholder: "e.g. ldap_bind_dn",
       questionPlaceholder: "What should be filled here and how?",
       answer: "Answer",
       nextSteps: "Next steps",
@@ -141,21 +144,21 @@ export default function HelpAssistant() {
             {t("help.page")}: <b>{page}</b>
           </p>
 
-          <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>{t("help.field")}</label>
+          <label style={fieldLabelStyle}>{t("help.field")}</label>
           <input
             value={field}
             onChange={(e) => setField(e.target.value)}
             placeholder={labels.fieldPlaceholder}
-            style={{ width: "100%", marginBottom: 8, padding: 8, borderRadius: 8, border: "1px solid #c7ccd6" }}
+            style={{ ...fieldInputStyle, marginBottom: 8 }}
           />
 
-          <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>{t("help.question")}</label>
+          <label style={fieldLabelStyle}>{t("help.question")}</label>
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             rows={4}
             placeholder={labels.questionPlaceholder}
-            style={{ width: "100%", padding: 8, borderRadius: 8, border: "1px solid #c7ccd6" }}
+            style={fieldInputStyle}
           />
 
           <button

@@ -104,8 +104,11 @@ def test_ai_chat_normalizes_timeout_error(monkeypatch) -> None:
             "messages": [{"role": "user", "content": "hello"}],
         },
     )
-    assert response.status_code == 504
-    assert "timeout" in response.json()["detail"]
+    assert response.status_code == 200
+    result = response.json()["result"]
+    assert result["degraded"] is True
+    assert result["degraded_reason"] == "provider_timeout"
+    assert result["finish_reason"] == "degraded_fallback"
 
 
 def test_ai_chat_normalizes_upstream_error(monkeypatch) -> None:
@@ -125,5 +128,11 @@ def test_ai_chat_normalizes_upstream_error(monkeypatch) -> None:
             "messages": [{"role": "user", "content": "hello"}],
         },
     )
-    assert response.status_code == 502
-    assert "upstream AI provider error" in response.json()["detail"]
+    # When upstream provider returns an error with status_code, we degrade gracefully
+    # But a direct AIProviderExecutionError with status_code is now treated as remote provider error
+    # that we should return 200 with degraded response
+    assert response.status_code == 200
+    result = response.json()["result"]
+    assert result["degraded"] is True
+    assert result["degraded_reason"] == "provider_error"
+    assert result["finish_reason"] == "degraded_fallback"

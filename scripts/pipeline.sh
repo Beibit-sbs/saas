@@ -1,49 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# End-to-end local pipeline: install deps, lint, test, build, run stack, check health.
+# Docker-only pipeline: build, run, verify, and stop through compose.
 
-if [[ ! -f "infra/.env" ]]; then
-  echo "infra/.env not found. Copy infra/.env.example first."
-  exit 1
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+COMPOSE=(docker compose --env-file .env)
+
+bash "${ROOT_DIR}/scripts/preflight_checks.sh"
+
+pushd "${ROOT_DIR}/infra" >/dev/null
+if [[ "${PIPELINE_ALLOW_DATA_RESET:-false}" == "true" ]]; then
+  echo "[pipeline] WARN: explicit data reset mode enabled (down -v)"
+  "${COMPOSE[@]}" down -v || true
+else
+  echo "[pipeline] safe mode: preserving docker volumes (set PIPELINE_ALLOW_DATA_RESET=true to allow reset)"
 fi
-
-if ! command -v npm >/dev/null 2>&1; then
-  if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
-    # shellcheck disable=SC1090
-    source "$HOME/.nvm/nvm.sh"
-    nvm use --lts >/dev/null || true
-  fi
-fi
-
-if ! command -v npm >/dev/null 2>&1; then
-  echo "npm not found. Install Node.js/npm or configure nvm."
-  exit 1
-fi
-
-./scripts/bootstrap.sh
-
-pushd backend >/dev/null
-source .venv/bin/activate
-ruff check .
-pytest -q
-pytest -q tests/test_template_validation.py
-deactivate
+"${COMPOSE[@]}" up -d --build
+"${COMPOSE[@]}" exec -T backend ruff check .
+"${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q
+"${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q tests/test_template_validation.py
+"${COMPOSE[@]}" run --rm frontend-tests npm run lint
+"${COMPOSE[@]}" run --rm frontend-tests npm run test:frontend
+"${COMPOSE[@]}" exec -T nginx wget --no-check-certificate -qO /dev/null https://127.0.0.1/health/live
+"${COMPOSE[@]}" exec -T nginx wget --no-check-certificate -qO /dev/null https://127.0.0.1/
 popd >/dev/null
 
-pushd frontend >/dev/null
-npm run i18n:check
-npm run lint
-npm run build
-npm run test:frontend
-popd >/dev/null
-
-pushd infra >/dev/null
-docker compose --env-file .env up -d --build
-popd >/dev/null
-
-sleep 5
-curl -fsS http://localhost:8000/health >/dev/null
-curl -fsS http://localhost/api/health >/dev/null
-
-echo "Pipeline OK: services are up and backend health is reachable."
+echo "Pipeline OK: docker-only build, tests, and edge health checks passed."

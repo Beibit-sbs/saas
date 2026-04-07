@@ -1,6 +1,7 @@
 from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 from app.modules.auth.token_service import create_access_token
 from app.modules.rbac import service as rbac_service
+from uuid import uuid4
 
 
 def _tenant_headers(tenant_id: int, base_headers: dict[str, str] | None = None) -> dict[str, str]:
@@ -10,11 +11,12 @@ def _tenant_headers(tenant_id: int, base_headers: dict[str, str] | None = None) 
 
 
 def _create_tenant_b() -> int:
+    suffix = uuid4().hex[:8]
     response = client.post(
         "/api/admin/tenants",
         headers=ADMIN_HEADERS,
         json={
-            "slug": "tenant-b-rbac",
+            "slug": f"tenant-b-rbac-{suffix}",
             "name": "Tenant B RBAC",
             "status": "active",
         },
@@ -60,15 +62,22 @@ def test_tenant_b_cannot_assign_tenant_a_role() -> None:
     assert assign_attempt.status_code == 403
     assert "cross-tenant override forbidden" in str(assign_attempt.json().get("detail", ""))
 
+    audit_events = client.get("/api/admin/audit/events", headers=ADMIN_HEADERS)
+    assert audit_events.status_code == 200, audit_events.text
+    denied_actions = [item.get("action") for item in audit_events.json().get("events", []) if item.get("result") == "denied"]
+    assert "security.cross_tenant.denied" in denied_actions
+
 
 def test_cross_tenant_assignment_returns_403() -> None:
     tenant_b_id = _create_tenant_b()
+    suffix = uuid4().hex[:8]
+    login = f"tenant-a-user-{suffix}"
 
     create_user_a = client.post(
         "/api/admin/local-users",
         headers=ADMIN_HEADERS,
         json={
-            "login": "tenant-a-user",
+            "login": login,
             "password": "tenantApass123",
             "display_name": "Tenant A User",
             "roles": ["student"],
@@ -86,22 +95,20 @@ def test_cross_tenant_assignment_returns_403() -> None:
     assert assign_cross.status_code == 403
 
 
-def test_platform_admin_can_access_roles_of_any_tenant(monkeypatch) -> None:
+def test_platform_admin_cannot_override_tenant_via_header() -> None:
     tenant_b_id = _create_tenant_b()
     platform_headers = _auth_headers("platform.root@example.com", ["superadmin"])
-    monkeypatch.setattr("app.modules.rbac.security.is_platform_admin", lambda actor: actor == "platform.root@example.com")
-    monkeypatch.setattr("app.modules.rbac.router.is_platform_admin", lambda actor: actor == "platform.root@example.com")
 
     create_role_b = client.post(
         "/api/admin/rbac/roles",
         headers=_tenant_headers(tenant_b_id, platform_headers),
         json={"name": "tenant_b_visible", "permissions": ["admin.dashboard.read"]},
     )
-    assert create_role_b.status_code == 200, create_role_b.text
+    assert create_role_b.status_code == 403, create_role_b.text
+    assert "cross-tenant override forbidden" in str(create_role_b.json().get("detail", ""))
 
-    list_b = client.get("/api/admin/rbac/roles", headers=_tenant_headers(tenant_b_id, platform_headers))
-    assert list_b.status_code == 200, list_b.text
-    assert "tenant_b_visible" in list_b.json()["roles"]
+    list_platform = client.get("/api/admin/rbac/roles", headers=platform_headers)
+    assert list_platform.status_code == 200, list_platform.text
 
 
 def test_tenant_admin_cannot_create_platform_role_superadmin() -> None:

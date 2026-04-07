@@ -1,23 +1,31 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY package.json ./
-RUN npm install
+ENV RUNNING_IN_DOCKER=1
+COPY package.json package-lock.json ./
+RUN npm ci
 
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV RUNNING_IN_DOCKER=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ARG API_BASE_URL
 ARG NEXT_PUBLIC_API_BASE_URL
+ENV API_BASE_URL=${API_BASE_URL}
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 RUN npm run build
 
+# next.config.mjs uses output: "standalone" — use the minimal standalone image
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/.next ./.next
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+ENV RUNNING_IN_DOCKER=1
+# Standalone bundle already contains all runtime dependencies
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+# public/ is intentionally empty; create to satisfy Next.js expectations
 RUN mkdir -p ./public
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/next.config.mjs ./next.config.mjs
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+CMD ["node", "server.js"]

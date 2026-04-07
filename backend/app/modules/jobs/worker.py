@@ -38,20 +38,20 @@ def _execute_audit_export(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _execute_placeholder(job: dict[str, Any]) -> dict[str, Any]:
+def _execute_report_generate(job: dict[str, Any]) -> dict[str, Any]:
+    payload = job.get("payload_json") or {}
     return {
-        "job_type": job["job_type"],
-        "status": "accepted",
-        "note": "handler placeholder; implement concrete flow in subsequent phase",
+        "job_type": "report.generate",
+        "status": "generated",
+        "scope": str(payload.get("scope") or payload.get("source") or "default"),
+        "tenant_id": int(job["tenant_id"]),
     }
 
 
 _JOB_HANDLERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "backup.run": _execute_backup_run,
     "audit.export": _execute_audit_export,
-    "ldap.sync": _execute_placeholder,
-    "ai.generate": _execute_placeholder,
-    "report.generate": _execute_placeholder,
+    "report.generate": _execute_report_generate,
 }
 
 

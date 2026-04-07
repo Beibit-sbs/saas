@@ -1,13 +1,21 @@
 from __future__ import annotations
+from app.core.db import get_raw_conn
+from app.core.config import is_runtime_schema_bootstrap_enabled
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+import hashlib
 import json
+import logging
 import os
+import time
 from threading import Lock
 from typing import Any
 
 from app.modules.tenants.service import get_tenant
+
+_jobs_schema_ready = False
+_jobs_schema_lock = Lock()
 
 try:
     import psycopg
@@ -16,6 +24,7 @@ except ImportError:  # pragma: no cover
 
 
 VALID_JOB_STATUSES = {"queued", "running", "succeeded", "failed", "cancelled"}
+ACTIVE_JOB_STATUSES = ("queued", "running")
 DEFAULT_MAX_RETRIES = 3
 
 
@@ -27,6 +36,19 @@ class JobsMemoryState:
 
 _jobs_lock = Lock()
 _jobs_state = JobsMemoryState()
+_logger = logging.getLogger("app.dependency")
+
+
+def _log_jobs_db_fallback(operation: str, started_at: float, exc: Exception) -> None:
+    _logger.warning(
+        "dependency_fallback",
+        extra={
+            "dependency": "jobs_db",
+            "operation": operation,
+            "reason": str(exc),
+            "timing_ms": round((time.perf_counter() - started_at) * 1000.0, 2),
+        },
+    )
 
 
 def _db_url() -> str | None:
@@ -78,6 +100,22 @@ def _to_json_safe(value: Any) -> dict[str, Any]:
     return parsed
 
 
+def _payload_hash(payload: dict[str, Any]) -> str:
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _build_dedup_key(tenant_id: int, job_type: str, payload_hash: str) -> str:
+    return f"{tenant_id}:{job_type}:{payload_hash}:active"
+
+
+def _mark_deduplicated(row: dict[str, Any], dedup_key: str) -> dict[str, Any]:
+    payload = dict(row)
+    payload["deduplicated"] = True
+    payload["dedup_key"] = dedup_key
+    return payload
+
+
 def _ensure_tenant_exists(tenant_id: int) -> None:
     tenant = get_tenant(tenant_id)
     if tenant is None:
@@ -111,6 +149,8 @@ def _row_to_job(row: tuple[Any, ...]) -> dict[str, Any]:
 
 
 def _ensure_schema(conn) -> None:
+    if not is_runtime_schema_bootstrap_enabled():
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -140,6 +180,18 @@ def _ensure_schema(conn) -> None:
     conn.commit()
 
 
+
+def _ensure_schema_once(conn) -> None:
+    global _jobs_schema_ready
+    if _jobs_schema_ready:
+        return
+    with _jobs_schema_lock:
+        if _jobs_schema_ready:
+            return
+        _ensure_schema(conn)
+        _jobs_schema_ready = True
+
+
 def _enqueue_job_db(
     tenant_id: int,
     job_type: str,
@@ -148,9 +200,34 @@ def _enqueue_job_db(
     max_retries: int,
 ) -> dict[str, Any]:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema(conn)
+    payload_json = json.dumps(payload, ensure_ascii=False)
+    payload_hash = _payload_hash(payload)
+    dedup_key = _build_dedup_key(tenant_id, job_type, payload_hash)
+
+    with get_raw_conn() as conn:
+        _ensure_schema_once(conn)
         with conn.cursor() as cur:
+            # Serialize same-key enqueues to avoid race duplicates without schema changes.
+            cur.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (dedup_key,))
+            cur.execute(
+                """
+                SELECT id, tenant_id, job_type, status, payload_json, result_json, error_message,
+                       retry_count, max_retries, created_at, started_at, finished_at, created_by
+                FROM app_jobs
+                WHERE tenant_id = %s
+                  AND job_type = %s
+                  AND status = ANY(%s)
+                                    AND payload_json::jsonb = %s::jsonb
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (tenant_id, job_type, list(ACTIVE_JOB_STATUSES), payload_json),
+            )
+            duplicate = cur.fetchone()
+            if duplicate:
+                conn.commit()
+                return _mark_deduplicated(_row_to_job(duplicate), dedup_key)
+
             cur.execute(
                 """
                 INSERT INTO app_jobs (tenant_id, job_type, status, payload_json, retry_count, max_retries, created_by)
@@ -158,7 +235,7 @@ def _enqueue_job_db(
                 RETURNING id, tenant_id, job_type, status, payload_json, result_json, error_message,
                           retry_count, max_retries, created_at, started_at, finished_at, created_by
                 """,
-                (tenant_id, job_type, json.dumps(payload, ensure_ascii=False), max_retries, created_by),
+                (tenant_id, job_type, payload_json, max_retries, created_by),
             )
             row = cur.fetchone()
         conn.commit()
@@ -167,36 +244,41 @@ def _enqueue_job_db(
 
 def _list_jobs_for_tenant_db(tenant_id: int, status: str | None, limit: int) -> list[dict[str, Any]]:
     assert _db_url() and psycopg is not None
-    clauses = ["tenant_id = %s"]
-    params: list[Any] = [tenant_id]
-
-    if status:
-        clauses.append("status = %s")
-        params.append(status)
-
-    where_sql = " AND ".join(clauses)
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_once(conn)
         with conn.cursor() as cur:
-            cur.execute(
-                f"""
-                SELECT id, tenant_id, job_type, status, payload_json, result_json, error_message,
-                       retry_count, max_retries, created_at, started_at, finished_at, created_by
-                FROM app_jobs
-                WHERE {where_sql}
-                ORDER BY created_at DESC
-                LIMIT %s
-                """,
-                [*params, limit],
-            )
+            if status:
+                cur.execute(
+                    """
+                    SELECT id, tenant_id, job_type, status, payload_json, result_json, error_message,
+                           retry_count, max_retries, created_at, started_at, finished_at, created_by
+                    FROM app_jobs
+                    WHERE tenant_id = %s AND status = %s
+                    ORDER BY created_at DESC
+                    LIMIT %s
+                    """,
+                    (tenant_id, status, limit),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT id, tenant_id, job_type, status, payload_json, result_json, error_message,
+                           retry_count, max_retries, created_at, started_at, finished_at, created_by
+                    FROM app_jobs
+                    WHERE tenant_id = %s
+                    ORDER BY created_at DESC
+                    LIMIT %s
+                    """,
+                    (tenant_id, limit),
+                )
             rows = cur.fetchall()
     return [_row_to_job(row) for row in rows]
 
 
 def _get_job_for_tenant_db(tenant_id: int, job_id: int) -> dict[str, Any] | None:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -213,8 +295,8 @@ def _get_job_for_tenant_db(tenant_id: int, job_id: int) -> dict[str, Any] | None
 
 def _get_job_by_id_db(job_id: int) -> dict[str, Any] | None:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -231,8 +313,8 @@ def _get_job_by_id_db(job_id: int) -> dict[str, Any] | None:
 
 def _update_status_db(job_id: int, from_statuses: list[str], to_status: str) -> dict[str, Any] | None:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -254,8 +336,8 @@ def _update_status_db(job_id: int, from_statuses: list[str], to_status: str) -> 
 
 def _mark_succeeded_db(job_id: int, result_json: dict[str, Any]) -> dict[str, Any] | None:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -274,8 +356,8 @@ def _mark_succeeded_db(job_id: int, result_json: dict[str, Any]) -> dict[str, An
 
 def _mark_failed_db(job_id: int, error_message: str) -> dict[str, Any] | None:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -294,8 +376,8 @@ def _mark_failed_db(job_id: int, error_message: str) -> dict[str, Any] | None:
 
 def _retry_job_db(job_id: int) -> dict[str, Any] | None:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -321,8 +403,8 @@ def _retry_job_db(job_id: int) -> dict[str, Any] | None:
 
 def _count_jobs_for_tenant_db(tenant_id: int) -> dict[str, int]:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -345,8 +427,8 @@ def _count_jobs_for_tenant_db(tenant_id: int) -> dict[str, int]:
 
 def _acquire_next_queued_job_db() -> dict[str, Any] | None:
     assert _db_url() and psycopg is not None
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_schema(conn)
+    with get_raw_conn() as conn:
+        _ensure_schema_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -376,8 +458,8 @@ def clear_jobs_state() -> None:
     if _use_database():
         try:
             assert _db_url() and psycopg is not None
-            with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-                _ensure_schema(conn)
+            with get_raw_conn() as conn:
+                _ensure_schema_once(conn)
                 with conn.cursor() as cur:
                     cur.execute("DELETE FROM app_jobs")
                 conn.commit()
@@ -399,24 +481,36 @@ def enqueue_job(
     normalized_tenant_id = _normalize_tenant_id(tenant_id)
     _ensure_tenant_exists(normalized_tenant_id)
 
-    try:
-        from app.modules.quotas.service import check_quota
+    from app.modules.billing.service import assert_billing_write_allowed, assert_quota_with_increment
 
-        check_quota(normalized_tenant_id, "jobs_per_day")
-    except Exception:
-        pass
+    assert_billing_write_allowed(normalized_tenant_id, action="jobs.enqueue")
+    assert_quota_with_increment(normalized_tenant_id, "jobs_per_day", increment=1)
 
     normalized_job_type = _normalize_job_type(job_type)
     safe_payload = _to_json_safe(payload)
     normalized_max_retries = max(0, min(int(max_retries), 20))
+    dedup_key = _build_dedup_key(normalized_tenant_id, normalized_job_type, _payload_hash(safe_payload))
 
     if _use_database():
+        db_started = time.perf_counter()
         try:
             return _enqueue_job_db(normalized_tenant_id, normalized_job_type, safe_payload, created_by, normalized_max_retries)
-        except Exception:
+        except Exception as exc:
+            _log_jobs_db_fallback("enqueue", db_started, exc)
             pass
 
     with _jobs_lock:
+        for existing in _jobs_state.rows.values():
+            if int(existing["tenant_id"]) != normalized_tenant_id:
+                continue
+            if str(existing["job_type"]) != normalized_job_type:
+                continue
+            if str(existing["status"]) not in ACTIVE_JOB_STATUSES:
+                continue
+            if _payload_hash(_to_json_safe(existing.get("payload_json") or {})) != _payload_hash(safe_payload):
+                continue
+            return _mark_deduplicated(dict(existing), dedup_key)
+
         _jobs_state.counter += 1
         job_id = _jobs_state.counter
         row = {
@@ -454,9 +548,11 @@ def list_jobs_for_tenant(tenant_id: int, status: str | None = None, limit: int =
     normalized_status = _normalize_status(status) if status else None
 
     if _use_database():
+        db_started = time.perf_counter()
         try:
             return _list_jobs_for_tenant_db(normalized_tenant_id, normalized_status, normalized_limit)
-        except Exception:
+        except Exception as exc:
+            _log_jobs_db_fallback("list", db_started, exc)
             pass
 
     with _jobs_lock:
@@ -473,9 +569,11 @@ def get_job_for_tenant(tenant_id: int, job_id: int) -> dict[str, Any] | None:
     normalized_job_id = int(job_id)
 
     if _use_database():
+        db_started = time.perf_counter()
         try:
             return _get_job_for_tenant_db(normalized_tenant_id, normalized_job_id)
-        except Exception:
+        except Exception as exc:
+            _log_jobs_db_fallback("get", db_started, exc)
             pass
 
     with _jobs_lock:
@@ -613,9 +711,11 @@ def count_jobs_for_tenant(tenant_id: int) -> dict[str, int]:
     normalized_tenant_id = _normalize_tenant_id(tenant_id)
 
     if _use_database():
+        db_started = time.perf_counter()
         try:
             return _count_jobs_for_tenant_db(normalized_tenant_id)
-        except Exception:
+        except Exception as exc:
+            _log_jobs_db_fallback("count", db_started, exc)
             pass
 
     summary = {"queued": 0, "running": 0, "failed": 0}
@@ -631,9 +731,11 @@ def count_jobs_for_tenant(tenant_id: int) -> dict[str, int]:
 
 def acquire_next_queued_job() -> dict[str, Any] | None:
     if _use_database():
+        db_started = time.perf_counter()
         try:
             return _acquire_next_queued_job_db()
-        except Exception:
+        except Exception as exc:
+            _log_jobs_db_fallback("acquire", db_started, exc)
             pass
 
     with _jobs_lock:

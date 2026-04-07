@@ -1,8 +1,12 @@
+from app.core.db import get_raw_conn
+from app.core.config import is_runtime_schema_bootstrap_enabled
 import os
+import time
 from base64 import urlsafe_b64encode
 from dataclasses import dataclass
 from functools import lru_cache
 from hashlib import sha256
+from threading import Lock
 
 from cryptography.fernet import Fernet, InvalidToken
 
@@ -21,6 +25,13 @@ class SettingEntry:
 
 _settings: dict[str, SettingEntry] = {}
 _SECRET_PREFIX = "enc:v1:"
+_settings_schema_lock = Lock()
+_settings_schema_ready = False
+# Short-lived read-through cache to avoid one DB connection per setting read on hot paths.
+# TTL is conservative (10 s) so runtime updates propagate quickly.
+_READ_CACHE_TTL_S: float = 10.0
+_read_cache: dict[str, tuple[float, SettingEntry | None]] = {}
+_read_cache_lock = Lock()
 
 
 def _normalize_tenant_id(tenant_id: int | None) -> int | None:
@@ -68,8 +79,12 @@ def _raw_encryption_secret() -> str:
     explicit = os.getenv("INTEGRATIONS_ENCRYPTION_KEY", "").strip()
     if explicit:
         return explicit
-    # Reuse JWT secret in local/dev if dedicated encryption secret is not set.
-    return os.getenv("JWT_SECRET", "change_me_jwt_secret")
+    jwt_secret = os.getenv("JWT_SECRET", "").strip()
+    if not jwt_secret:
+        raise RuntimeError(
+            "INTEGRATIONS_ENCRYPTION_KEY or JWT_SECRET must be configured"
+        )
+    return jwt_secret
 
 
 def _derive_fernet_key(secret: str) -> bytes:
@@ -119,6 +134,8 @@ def _should_fallback_to_memory(exc: Exception) -> bool:
 
 
 def _ensure_table(conn) -> None:
+    if not is_runtime_schema_bootstrap_enabled():
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -133,12 +150,23 @@ def _ensure_table(conn) -> None:
     conn.commit()
 
 
+def _ensure_table_once(conn) -> None:
+    global _settings_schema_ready
+    if _settings_schema_ready:
+        return
+    with _settings_schema_lock:
+        if _settings_schema_ready:
+            return
+        _ensure_table(conn)
+        _settings_schema_ready = True
+
+
 def _save_db(key: str, value: str, is_secret: bool) -> None:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_table(conn)
+    with get_raw_conn() as conn:
+        _ensure_table_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -156,8 +184,8 @@ def _get_db(key: str) -> SettingEntry | None:
     if not _db_url() or psycopg is None:
         raise RuntimeError("database unavailable")
 
-    with psycopg.connect(_db_url(), connect_timeout=5) as conn:
-        _ensure_table(conn)
+    with get_raw_conn() as conn:
+        _ensure_table_once(conn)
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT key, value, is_secret FROM app_integration_settings WHERE key = %s",
@@ -167,6 +195,61 @@ def _get_db(key: str) -> SettingEntry | None:
             if row is None:
                 return None
             return SettingEntry(key=row[0], value=row[1], is_secret=row[2])
+
+
+def _get_db_batch(keys: list[str]) -> dict[str, SettingEntry]:
+    """Fetch multiple settings in a single DB round-trip and populate read cache."""
+    if not _db_url() or psycopg is None:
+        raise RuntimeError("database unavailable")
+    if not keys:
+        return {}
+
+    with get_raw_conn() as conn:
+        _ensure_table_once(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT key, value, is_secret FROM app_integration_settings WHERE key = ANY(%s)",
+                (keys,),
+            )
+            rows = cur.fetchall()
+
+    result: dict[str, SettingEntry] = {}
+    now = time.monotonic()
+    for row in rows:
+        entry = SettingEntry(key=row[0], value=row[1], is_secret=row[2])
+        result[row[0]] = entry
+        with _read_cache_lock:
+            _read_cache[row[0]] = (now, entry)
+
+    # Cache misses (key not in DB) — cache None so we don't re-query
+    for key in keys:
+        if key not in result:
+            with _read_cache_lock:
+                _read_cache[key] = (now, None)
+    return result
+
+
+def prefetch_settings(keys: list[str], tenant_id: int | None = None) -> None:
+    """Warm the read cache for a list of setting keys in one DB round-trip.
+    Safe to call before any per-key get_setting(); does nothing if DB unavailable.
+    """
+    if not _use_database():
+        return
+    scoped_keys = [_scoped_setting_key(k, tenant_id) for k in keys if k.strip()]
+    now = time.monotonic()
+    fresh = []
+    for sk in scoped_keys:
+        with _read_cache_lock:
+            cached = _read_cache.get(sk)
+        if cached is not None and now - cached[0] < _READ_CACHE_TTL_S:
+            continue
+        fresh.append(sk)
+    if not fresh:
+        return
+    try:
+        _get_db_batch(fresh)
+    except Exception:
+        pass
 
 
 def save_setting(key: str, value: str, is_secret: bool = False, tenant_id: int | None = None) -> None:
@@ -181,6 +264,7 @@ def save_setting(key: str, value: str, is_secret: bool = False, tenant_id: int |
     if _use_database():
         try:
             _save_db(scoped_key, value_to_store, is_secret)
+            _invalidate_setting_cache(scoped_key)
             return
         except Exception as exc:
             # Keep admin/runtime settings usable when DATABASE_URL points to an
@@ -193,6 +277,39 @@ def save_setting(key: str, value: str, is_secret: bool = False, tenant_id: int |
         value=value_to_store,
         is_secret=is_secret,
     )
+    _invalidate_setting_cache(scoped_key)
+
+
+def _get_setting_cached(scoped_key: str) -> SettingEntry | None:
+    """Return cached entry if fresh, else fetch from DB and cache result."""
+    now = time.monotonic()
+    with _read_cache_lock:
+        cached = _read_cache.get(scoped_key)
+    if cached is not None:
+        cached_at, entry = cached
+        if now - cached_at < _READ_CACHE_TTL_S:
+            return entry
+
+    try:
+        entry = _get_db(scoped_key)
+    except Exception as exc:
+        if not _should_fallback_to_memory(exc):
+            raise
+        entry = _settings.get(scoped_key)
+
+    with _read_cache_lock:
+        _read_cache[scoped_key] = (now, entry)
+    return entry
+
+
+def _invalidate_setting_cache(scoped_key: str) -> None:
+    with _read_cache_lock:
+        _read_cache.pop(scoped_key, None)
+
+
+def clear_settings_read_cache() -> None:
+    with _read_cache_lock:
+        _read_cache.clear()
 
 
 def get_setting(key: str, tenant_id: int | None = None) -> SettingEntry | None:
@@ -203,12 +320,7 @@ def get_setting(key: str, tenant_id: int | None = None) -> SettingEntry | None:
     scoped_key = _scoped_setting_key(normalized_key, tenant_id)
 
     if _use_database():
-        try:
-            entry = _get_db(scoped_key)
-        except Exception as exc:
-            if not _should_fallback_to_memory(exc):
-                raise
-            entry = _settings.get(scoped_key)
+        entry = _get_setting_cached(scoped_key)
     else:
         entry = _settings.get(scoped_key)
 
@@ -264,6 +376,15 @@ def get_ldap_config_for_admin(tenant_id: int | None = None) -> dict[str, object]
 
 def get_ldap_runtime_config(tenant_id: int | None = None) -> dict[str, str]:
     normalized_tenant_id = _require_tenant_id(tenant_id, operation="get_ldap_runtime_config")
+    prefetch_settings(
+        [
+            "ldap.enabled", "ldap.server_uri", "ldap.bind_dn", "ldap.bind_password",
+            "ldap.base_dn", "ldap.user_filter", "ldap.display_name_attribute",
+            "ldap.login_attribute", "ldap.group_attribute", "ldap.group_role_map_json",
+            "ldap.default_role", "ldap.timeout_seconds",
+        ],
+        tenant_id=normalized_tenant_id,
+    )
     return {
         "enabled": get_runtime_value("ldap.enabled", "AUTH_LDAP_ENABLED", "false", tenant_id=normalized_tenant_id),
         "server_uri": get_runtime_value("ldap.server_uri", "LDAP_SERVER_URI", "", tenant_id=normalized_tenant_id),
@@ -368,4 +489,13 @@ def save_ai_provider_config(
 def list_ai_provider_config_for_admin(tenant_id: int | None = None) -> list[dict[str, object]]:
     normalized_tenant_id = _require_tenant_id(tenant_id, operation="list_ai_provider_config_for_admin")
     providers = ["openai", "gemini", "anthropic", "custom"]
+    prefetch_settings(
+        [
+            "ai.openai.api_key", "ai.openai.validation_url",
+            "ai.gemini.api_key", "ai.gemini.validation_url",
+            "ai.anthropic.api_key", "ai.anthropic.validation_url",
+            "ai.custom.api_key", "ai.custom.validation_url",
+        ],
+        tenant_id=normalized_tenant_id,
+    )
     return [get_ai_provider_config_for_admin(provider, tenant_id=normalized_tenant_id) for provider in providers]

@@ -6,12 +6,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.modules.audit.service import log_admin_action
+from app.modules.billing.service import ensure_tenant_subscription
 from app.modules.backup.service import save_backup_settings
 from app.modules.feature_flags.service import list_flags
 from app.modules.integrations.service import save_setting
 from app.modules.plans.service import get_plan_by_code
 from app.modules.rbac.service import BASELINE_ROLE_PERMISSIONS, add_or_update_role_for_tenant
 from app.modules.tenants.service import create_tenant, force_delete_tenant, get_tenant_by_slug
+from app.core.db import get_raw_conn
 
 try:
     import psycopg
@@ -40,12 +42,21 @@ class ProvisioningResult:
 
 class TenantProvisioningService:
     @staticmethod
+    def derive_tenant_slug(tenant_name: str) -> str:
+        normalized_name = tenant_name.strip()
+        if not normalized_name:
+            raise ValueError("tenant_name is required")
+        return _slugify(normalized_name)
+
+    @staticmethod
     def create_tenant_with_defaults(
         *,
         tenant_name: str,
         admin_email: str,
         plan_code: str,
         actor: str,
+        slug: str | None = None,
+        allow_existing_slug: bool = False,
     ) -> dict[str, object]:
         normalized_name = tenant_name.strip()
         normalized_email = admin_email.strip().lower()
@@ -60,21 +71,24 @@ class TenantProvisioningService:
         if plan is None:
             raise ValueError("plan not found")
 
-        base_slug = _slugify(normalized_name)
-        slug = base_slug
-        suffix = 1
-        while get_tenant_by_slug(slug) is not None:
-            suffix += 1
-            slug = f"{base_slug}-{suffix}"
+        normalized_slug = _slugify(str(slug or normalized_name))
+        existing_tenant = get_tenant_by_slug(normalized_slug)
+        created_new_tenant = False
 
-        tenant = create_tenant(
-            {
-                "slug": slug,
-                "name": normalized_name,
-                "status": "active",
-                "plan_id": int(plan["id"]),
-            }
-        )
+        if existing_tenant is not None:
+            if not allow_existing_slug:
+                raise ValueError(f"tenant slug '{normalized_slug}' already exists")
+            tenant = existing_tenant
+        else:
+            tenant = create_tenant(
+                {
+                    "slug": normalized_slug,
+                    "name": normalized_name,
+                    "status": "active",
+                    "plan_id": int(plan["id"]),
+                }
+            )
+            created_new_tenant = True
         tenant_id = int(tenant["id"])
 
         try:
@@ -108,6 +122,15 @@ class TenantProvisioningService:
                 tenant_id=tenant_id,
             )
 
+            ensure_tenant_subscription(
+                tenant_id,
+                plan_code=str(plan.get("code", "free")),
+                status="trial",
+            )
+
+            # Bootstrap root OrgUnit for the new tenant (idempotent).
+            _bootstrap_org_unit_root(tenant_id, normalized_name)
+
             log_admin_action(
                 tenant_id=tenant_id,
                 actor=actor,
@@ -124,10 +147,39 @@ class TenantProvisioningService:
                 },
             )
         except Exception:
-            force_delete_tenant(tenant_id)
+            if created_new_tenant:
+                force_delete_tenant(tenant_id)
             raise
 
         return {
             "tenant": tenant,
             "plan": plan,
         }
+
+
+def _bootstrap_org_unit_root(tenant_id: int, tenant_name: str) -> None:
+    """Insert the root 'university' OrgUnit for a new tenant. Idempotent."""
+    with get_raw_conn() as conn:
+        if conn is None:
+            return
+        existing = conn.execute(
+            """
+            SELECT id FROM app_org_org_units
+            WHERE tenant_id = %s AND unit_type = 'university' AND parent_unit_id IS NULL
+            LIMIT 1
+            """,
+            (tenant_id,),
+        ).fetchone()
+        if existing:
+            conn.commit()
+            return
+        conn.execute(
+            """
+            INSERT INTO app_org_org_units
+                (tenant_id, name, code, unit_type, parent_unit_id, active, created_at, updated_at)
+            VALUES
+                (%s, %s, 'ROOT', 'university', NULL, true, NOW(), NOW())
+            """,
+            (tenant_id, tenant_name),
+        )
+        conn.commit()

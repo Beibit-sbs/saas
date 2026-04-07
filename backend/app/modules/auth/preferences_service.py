@@ -1,3 +1,5 @@
+from app.core.db import get_raw_conn
+from app.core.config import is_runtime_schema_bootstrap_enabled
 import os
 
 try:
@@ -18,6 +20,8 @@ def _use_database() -> bool:
 
 
 def _ensure_preferences_table(conn) -> None:
+    if not is_runtime_schema_bootstrap_enabled():
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -33,7 +37,7 @@ def _ensure_preferences_table(conn) -> None:
 
 def get_user_language(user_id: str) -> str | None:
     if _use_database():
-        with psycopg.connect(_db_url()) as conn:
+        with get_raw_conn() as conn:
             _ensure_preferences_table(conn)
             with conn.cursor() as cur:
                 cur.execute(
@@ -48,7 +52,7 @@ def get_user_language(user_id: str) -> str | None:
 
 def set_user_language(user_id: str, language_code: str) -> str:
     if _use_database():
-        with psycopg.connect(_db_url()) as conn:
+        with get_raw_conn() as conn:
             _ensure_preferences_table(conn)
             with conn.cursor() as cur:
                 cur.execute(

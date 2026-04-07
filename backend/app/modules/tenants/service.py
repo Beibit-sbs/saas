@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.core.db import get_raw_conn
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import os
@@ -91,7 +93,7 @@ def _row_to_dict(row: object) -> dict[str, object]:
 def _list_tenants_db() -> list[dict[str, object]]:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
+    with get_raw_conn() as conn:
         rows = conn.execute(
             "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants ORDER BY id"
         ).fetchall()
@@ -101,28 +103,44 @@ def _list_tenants_db() -> list[dict[str, object]]:
 def _create_tenant_db(payload: dict[str, object]) -> dict[str, object]:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
-        row = conn.execute(
-            """
-            INSERT INTO app_tenants (slug, name, status, plan_id, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, NOW(), NOW())
-            RETURNING id, slug, name, status, plan_id, created_at, updated_at
-            """,
-            (
-                payload["slug"],
-                payload["name"],
-                payload.get("status", "active"),
-                int(payload.get("plan_id") or 1),
-            ),
-        ).fetchone()
-        conn.commit()
+    slug = str(payload.get("slug", "")).strip()
+    if not slug:
+        raise ValueError("slug is required")
+
+    existing = _get_tenant_by_slug_db(slug)
+    if existing is not None:
+        raise ValueError(f"Tenant with slug '{slug}' already exists")
+
+    with get_raw_conn() as conn:
+        try:
+            row = conn.execute(
+                """
+                INSERT INTO app_tenants (slug, name, status, plan_id, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, NOW(), NOW())
+                RETURNING id, slug, name, status, plan_id, created_at, updated_at
+                """,
+                (
+                    slug,
+                    payload["name"],
+                    payload.get("status", "active"),
+                    int(payload.get("plan_id") or 1),
+                ),
+            ).fetchone()
+            conn.commit()
+        except Exception as exc:
+            message = str(exc).lower()
+            if "duplicate key" in message and "slug" in message:
+                raise ValueError(f"Tenant with slug '{slug}' already exists") from exc
+            if "foreign key" in message and "plan_id" in message:
+                raise ValueError("plan_id is invalid") from exc
+            raise
     return _row_to_dict(row)
 
 
 def _update_tenant_db(tenant_id: int, payload: dict[str, object]) -> dict[str, object]:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
+    with get_raw_conn() as conn:
         existing = conn.execute(
             "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants WHERE id = %s",
             (tenant_id,),
@@ -147,7 +165,7 @@ def _update_tenant_db(tenant_id: int, payload: dict[str, object]) -> dict[str, o
 def _delete_tenant_db(tenant_id: int) -> dict[str, object]:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
+    with get_raw_conn() as conn:
         row = conn.execute(
             """
             UPDATE app_tenants SET status = 'inactive', updated_at = NOW()
@@ -165,7 +183,7 @@ def _delete_tenant_db(tenant_id: int) -> dict[str, object]:
 def _get_tenant_db(tenant_id: int) -> dict[str, object] | None:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
+    with get_raw_conn() as conn:
         row = conn.execute(
             "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants WHERE id = %s",
             (tenant_id,),
@@ -176,7 +194,7 @@ def _get_tenant_db(tenant_id: int) -> dict[str, object] | None:
 def _get_tenant_by_slug_db(slug: str) -> dict[str, object] | None:
     url = _db_url()
     assert url
-    with psycopg.connect(url) as conn:
+    with get_raw_conn() as conn:
         row = conn.execute(
             "SELECT id, slug, name, status, plan_id, created_at, updated_at FROM app_tenants WHERE slug = %s",
             (slug,),
@@ -314,7 +332,28 @@ def get_tenant(tenant_id: int) -> dict[str, object] | None:
         except Exception as exc:
             if not _should_fallback_to_memory(exc):
                 raise
-    return _get_tenant_memory(tenant_id)
+    tenant = _get_tenant_memory(tenant_id)
+    if tenant is not None:
+        return tenant
+
+    # Bridge platform tenant in-memory repository when module tenant memory store
+    # is empty in tests (DATABASE_URL cleared by reset fixture).
+    try:
+        from app.platform.tenant import service as platform_tenant_service
+
+        profile = platform_tenant_service.get_tenant_profile(int(tenant_id))
+    except Exception:
+        return None
+
+    return {
+        "id": int(profile.get("tenant_id", tenant_id)),
+        "slug": str(profile.get("slug", "")),
+        "name": str(profile.get("name", "")),
+        "status": str(profile.get("status", "active")),
+        "plan_id": 1,
+        "created_at": profile.get("updated_at", _now_iso()),
+        "updated_at": profile.get("updated_at", _now_iso()),
+    }
 
 
 def get_tenant_by_slug(slug: str) -> dict[str, object] | None:
@@ -337,7 +376,7 @@ def force_delete_tenant(tenant_id: int) -> bool:
         try:
             url = _db_url()
             assert url
-            with psycopg.connect(url) as conn:
+            with get_raw_conn() as conn:
                 with conn.cursor() as cur:
                     cur.execute("DELETE FROM app_user_roles WHERE tenant_id = %s", (normalized_tenant_id,))
                     cur.execute("DELETE FROM app_role_permissions WHERE tenant_id = %s", (normalized_tenant_id,))
@@ -357,3 +396,30 @@ def force_delete_tenant(tenant_id: int) -> bool:
     with _state_lock:
         existing = _state.data.pop(normalized_tenant_id, None)
     return existing is not None
+
+
+def list_login_directory_tenants() -> list[dict[str, object]]:
+    """
+    Public login directory: list of active tenants available for tenant-bound users.
+    Returns only essential fields: tenant_id, slug, name.
+    Filters out inactive, suspended, or non-login-allowed tenants.
+    Safe for unauthenticated access.
+    """
+    tenants = list_tenants()
+    
+    result = []
+    for tenant in tenants:
+        status = str(tenant.get("status", "")).lower()
+        # Only include active tenants for login UX
+        if status != "active":
+            continue
+        
+        result.append({
+            "tenant_id": int(tenant["id"]),
+            "slug": str(tenant["slug"]),
+            "name": str(tenant["name"]),
+        })
+    
+    # Sort by name for consistent UI ordering
+    result.sort(key=lambda t: t["name"])
+    return result

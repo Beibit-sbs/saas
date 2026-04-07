@@ -1,6 +1,6 @@
 # Project Status Report
 
-**Date:** 2026-03-16
+**Date:** 2026-04-05
 **Workspace:** `/home/sbs/AI`
 **Name:** AI Engineering Center
 
@@ -94,7 +94,7 @@ Note:
 
 ### Partially Implemented
 
-- `feature_flags` backend module is currently scaffold/in-memory and not productionized.
+- `feature_flags` backend module is DB-backed (table `app_platform_feature_flags`, migrations `f1a2b3c4d5e6` + `ff01a2b3c4d5`), supports per-tenant scope, rollout_percentage, caching, and audit logging. Admin UI tab is wired to the platform service layer.
 
 ### Example Slice Status
 
@@ -146,6 +146,7 @@ Note:
 ### Frontend Gap
 
 - Frontend tests exist and run, but coverage is still concentrated on shell-level flows and selected component paths.
+- Student and faculty role-based portals are not yet fully productized as end-to-end UX journeys.
 
 ### Frontend i18n Baseline
 
@@ -171,13 +172,20 @@ Note:
 
 ### Confirmed Runtime Checks
 
-- `GET http://localhost:8000/health` -> `200`
-- `GET http://localhost/api/health` -> `200`
-- `GET http://localhost:8000/metrics` -> `200`
+- `GET http://nginx/health` -> `200`
+- `GET http://nginx/api/health` -> `200`
+- `GET http://nginx/metrics` -> `200`
+
+### TLS
+
+- Dev/staging: `infra/nginx/nginx.conf` serves TLS on 443 with `infra/nginx/certs/tls.crt` + `tls.key`.
+- Production: `infra/nginx/nginx.prod.conf` uses `edge.crt` + `edge.key`, stricter cipher suite, `server_tokens off`, `Permissions-Policy` header.
+- Certificate lifecycle is documented in `docs/runbooks/TLS_CERTIFICATE_LIFECYCLE.md`.
 
 ### Infrastructure Gap
 
-- Base Nginx template remains HTTP-only (no default TLS termination).
+- No built-in database admin UI (for example pgAdmin/Adminer) is included in the default compose stack (intentional).
+- HA/DR for PostgreSQL is an operator responsibility; backup/restore rehearsal tooling is present.
 
 ---
 
@@ -198,12 +206,12 @@ Current module maturity from the repository:
 | audit | production_baseline | Admin action logging, filters, export, DB or memory fallback. |
 | integrations | usable | LDAP and AI provider admin settings work, but broader lifecycle/governance is still light. |
 | ai_gateway | usable | Provider status/validation plus AI Gateway v1 exist: model registry, provider adapter boundary, unified `/api/ai/chat`, usage logging, and audit hooks. |
-| feature_flags | scaffold | Admin tab and API exist, persistence/rollout maturity is not productionized. |
+| feature_flags | usable | DB-backed persistence with rollout_percentage, per-tenant scope, in-memory fallback, and tenant isolation tests. |
 | example_notes | usable | Example-only CRUD reference slice with migration, RBAC, audit, frontend usage, i18n, and tests. |
 | backups | usable | Profiles, retention, run/restore flows exist, but no HA/DR baseline. |
 | i18n | production_baseline | Registry, protected system languages, profile preference, admin management. |
-| observability | usable | Structured logs, request IDs, and metrics exist, but operational depth is still limited. |
-| infra/tls | scaffold | Base deployment is HTTP-only; production TLS must be added by derived systems. |
+| observability | usable | Prometheus alerts (backend-observability, webhook-and-automation, security, tenant-health groups), structured logs, request IDs. Alertmanager routing requires operator setup. |
+| infra/tls | usable | Dev nginx.conf and prod nginx.prod.conf both terminate TLS. Lifecycle documented in docs/runbooks/TLS_CERTIFICATE_LIFECYCLE.md. |
 | example_slice | scaffold | Demonstrates namespacing, RBAC guard, and audit wiring only; kept as a lightweight reference alongside `example_notes`. |
 
 Detailed reusable contracts are tracked in `docs/templates/template-contracts.md`.
@@ -221,10 +229,15 @@ Detailed reusable contracts are tracked in `docs/templates/template-contracts.md
 - Encrypted secret storage for integration settings
 - Backup path allowlist enforcement
 
+### Security Runbooks
+
+- `docs/runbooks/SECRETS_ROTATION.md` — step-by-step rotation for JWT_SECRET, Fernet key, INTERNAL_API_TOKEN, metrics token, DB and Redis credentials.
+- `docs/runbooks/TLS_CERTIFICATE_LIFECYCLE.md` — certificate procurement (Let's Encrypt / institutional CA / self-signed), deployment, automated renewal, expiry checks.
+
 ### Remaining Security Gaps
 
-- Production-grade secrets lifecycle/rotation governance is not fully documented in this repo.
-- TLS is not enabled in base compose profile.
+- Production-grade secrets rotation must be wired into an external secrets manager (Vault, AWS Secrets Manager, etc.) for fully automated rotation — the runbook covers manual procedures.
+- TLS certificate procurement is environment-specific and not scripted (by design); the CA choice is left to the operator.
 
 ---
 
@@ -233,17 +246,17 @@ Detailed reusable contracts are tracked in `docs/templates/template-contracts.md
 ### Latest Confirmed Results
 
 - Backend tests:
-  - `cd /home/sbs/AI/backend && .venv/bin/pytest -q`
-  - Result: passed (`101 passed`)
+  - `cd /home/sbs/AI/infra && docker compose --env-file .env exec -T backend pytest -q`
+  - Result: passed (`1220 passed, 9 skipped`)
 - Backend lint:
-  - `ruff check .`
+  - `ruff check .` (via Docker)
   - Result: passed
 - Frontend validation:
-  - `npm run i18n:check && npm run lint && npm run build`
+  - `npm run lint` (via Docker)
   - Result: passed
 - Frontend tests:
-  - `npm run test:frontend`
-  - Result: passed (`3 files, 11 tests`)
+  - `npm run test:frontend` (via Docker)
+  - Result: passed (`30 files, 147 tests`)
 - Template validation:
   - `make template-validate`
   - Result: passed
@@ -253,7 +266,7 @@ Detailed reusable contracts are tracked in `docs/templates/template-contracts.md
 
 ### Notes on Historical Noise in Logs
 
-- Some historical local runs were interrupted (`KeyboardInterrupt`, killed processes, wrong venv path from repo root).
+- Some historical host-side runs were interrupted (`KeyboardInterrupt`, killed processes, wrong venv path from repo root).
 - Final verification runs were completed successfully with clean pass status.
 
 ---
@@ -263,17 +276,19 @@ Detailed reusable contracts are tracked in `docs/templates/template-contracts.md
 ### Implemented
 
 - GitHub workflows present (`ci.yml`, `security.yml`)
-- Local end-to-end pipeline script wired to `make pipeline`
+- Docker-only end-to-end pipeline script wired to `make pipeline`
 
 ### Current Validation Statement
 
-- Local pipeline completed successfully with `EXIT:0` and service health checks passing.
+- Docker pipeline is the authoritative validation path for this repository.
+- Host-side `npm` and `python` execution is blocked by `frontend/scripts/docker-only-run.mjs` and `scripts/docker_only_guard.sh`.
 
 ---
 
 ## 9. Known Gaps and Next Priorities
 
-1. Productionize feature flags (persistence, rollout strategy, auditability).
-2. Add TLS-enabled production profile and certificate handling documentation.
-3. Keep `example_notes` intentionally small and example-only as derived projects replace it with real domain modules.
-4. Continue test decomposition and expand operational observability around privileged admin actions.
+1. Student and faculty role-based portals (UX journeys not yet productized end-to-end).
+2. Frontend test coverage expansion beyond shell-level and selected component paths.
+3. External secrets manager integration for fully automated secret rotation (JWT_SECRET, Fernet key).
+4. Alertmanager routing configuration for production notifications (alert rules defined, routing not configured).
+5. Keep `example_notes` intentionally small and example-only as derived projects replace it with real domain modules.

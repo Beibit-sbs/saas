@@ -12,6 +12,19 @@ from app.modules.integrations.service import get_global_setting, save_global_set
 
 _LOCAL_USERS_SETTINGS_KEY = "auth.local_users_json"
 _PBKDF2_ITERATIONS = 200_000
+_PLATFORM_SUPERADMIN_ROLE = "superadmin"
+
+
+def _require_tenant_id(value: int | str | None, *, operation: str) -> int:
+    if value is None:
+        raise HTTPException(status_code=400, detail=f"tenant_id is required for {operation}")
+    try:
+        tenant_id = int(value)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=f"tenant_id is required for {operation}") from exc
+    if tenant_id <= 0:
+        raise HTTPException(status_code=400, detail=f"tenant_id is required for {operation}")
+    return tenant_id
 
 
 def _hash_password(password: str) -> str:
@@ -86,7 +99,8 @@ class LocalUserStore:
                 continue
 
             if "tenant_id" not in item:
-                item["tenant_id"] = 1
+                # Fail-closed: legacy rows without tenant must be remediated explicitly.
+                raise HTTPException(status_code=500, detail="local user tenant remediation required")
 
             self._users_by_id[user_id] = item
             self._users_by_login[login] = user_id
@@ -99,17 +113,34 @@ class LocalUserStore:
         stored_counter = payload.get("counter") if isinstance(payload, dict) else None
         self._counter = max(max_id, int(stored_counter) if isinstance(stored_counter, int) else 0)
 
+    def reload_from_persistent_state(self) -> None:
+        self._users_by_id.clear()
+        self._users_by_login.clear()
+        self._counter = 0
+        self._loaded = False
+        self._load_once()
+
     def _public_user(self, item: dict[str, object]) -> dict[str, object]:
-        return {
+        tenant_id = _require_tenant_id(item.get("tenant_id"), operation="local_user_public_projection")
+        projection: dict[str, object] = {
             "user_id": item["user_id"],
             "login": item["login"],
             "display_name": item["display_name"],
             "roles": item["roles"],
             "default_language": item["default_language"],
-            "tenant_id": int(item.get("tenant_id", 1)),
+            "tenant_id": tenant_id,
             "auth_source": "local",
             "sync_with_ad": False,
         }
+        if "account_scope" in item:
+            projection["account_scope"] = item["account_scope"]
+        if "is_platform_user" in item:
+            projection["is_platform_user"] = bool(item.get("is_platform_user"))
+        if "email" in item and str(item.get("email", "")).strip():
+            projection["email"] = str(item.get("email", "")).strip().lower()
+        if bool(item.get("force_password_change", False)):
+            projection["force_password_change"] = True
+        return projection
 
     def list_users(
         self,
@@ -125,7 +156,8 @@ class LocalUserStore:
 
         result: List[dict[str, object]] = []
         for item in self._users_by_id.values():
-            if tenant_id is not None and int(item.get("tenant_id", 1)) != int(tenant_id):
+            item_tenant_id = _require_tenant_id(item.get("tenant_id"), operation="local_user_list")
+            if tenant_id is not None and item_tenant_id != int(tenant_id):
                 continue
 
             if normalized_search:
@@ -162,23 +194,31 @@ class LocalUserStore:
         display_name: str,
         roles: List[str],
         default_language: str,
-        tenant_id: int = 1,
+        tenant_id: int,
+        email: str | None = None,
     ) -> dict[str, object]:
         self._load_once()
+        normalized_tenant_id = _require_tenant_id(tenant_id, operation="local_user_create")
         normalized_login = login.strip().lower()
         if not normalized_login:
             raise HTTPException(status_code=400, detail="login is required")
 
+        normalized_email = str(email or "").strip().lower()
+        if normalized_email and "@" not in normalized_email:
+            raise HTTPException(status_code=400, detail="email is invalid")
+
         if normalized_login in self._users_by_login:
             raise HTTPException(status_code=409, detail="login already exists")
 
-        try:
-            from app.modules.quotas.service import check_quota
+        if normalized_email:
+            existing_by_email = self.find_user_by_email(normalized_email)
+            if existing_by_email is not None:
+                raise HTTPException(status_code=409, detail="email already exists")
 
-            check_quota(int(tenant_id), "users")
-        except Exception:
-            # Quotas are soft-enforced in this phase and must never block.
-            pass
+        from app.modules.billing.service import assert_billing_write_allowed, assert_quota_with_increment
+
+        assert_billing_write_allowed(normalized_tenant_id, action="local_users.create")
+        assert_quota_with_increment(normalized_tenant_id, "users", increment=1)
 
         self._counter += 1
         user_id = f"local.{self._counter:03d}"
@@ -189,10 +229,12 @@ class LocalUserStore:
             "display_name": display_name.strip(),
             "roles": [r.strip() for r in roles if r.strip()] or ["student"],
             "default_language": default_language,
-            "tenant_id": int(tenant_id),
+            "tenant_id": normalized_tenant_id,
             "auth_source": "local",
             "sync_with_ad": False,
         }
+        if normalized_email:
+            payload["email"] = normalized_email
 
         self._users_by_id[user_id] = payload
         self._users_by_login[normalized_login] = user_id
@@ -201,7 +243,7 @@ class LocalUserStore:
         try:
             from app.modules.usage.service import record_usage_event
 
-            record_usage_event(int(tenant_id), "users_created", 1)
+            record_usage_event(normalized_tenant_id, "users_created", 1)
         except Exception:
             pass
 
@@ -216,12 +258,17 @@ class LocalUserStore:
         roles: List[str] | None = None,
     ) -> dict[str, object]:
         self._load_once()
+        from app.modules.billing.service import assert_billing_write_allowed
+
         normalized_user_id = user_id.strip()
         user = self._users_by_id.get(normalized_user_id)
         if user is None:
             raise HTTPException(status_code=404, detail="local user not found")
-        if int(user.get("tenant_id", 1)) != int(tenant_id):
+        user_tenant_id = _require_tenant_id(user.get("tenant_id"), operation="local_user_update")
+        if user_tenant_id != int(tenant_id):
             raise HTTPException(status_code=404, detail="local user not found")
+
+        assert_billing_write_allowed(int(tenant_id), action="local_users.update")
 
         changed = False
         if display_name is not None:
@@ -250,12 +297,17 @@ class LocalUserStore:
 
     def delete_user(self, user_id: str, tenant_id: int) -> bool:
         self._load_once()
+        from app.modules.billing.service import assert_billing_write_allowed
+
         normalized_user_id = user_id.strip()
         user = self._users_by_id.get(normalized_user_id)
         if user is None:
             raise HTTPException(status_code=404, detail="local user not found")
-        if int(user.get("tenant_id", 1)) != int(tenant_id):
+        user_tenant_id = _require_tenant_id(user.get("tenant_id"), operation="local_user_delete")
+        if user_tenant_id != int(tenant_id):
             raise HTTPException(status_code=404, detail="local user not found")
+
+        assert_billing_write_allowed(int(tenant_id), action="local_users.delete")
 
         user = self._users_by_id.pop(normalized_user_id, None)
         if user is None:
@@ -269,12 +321,17 @@ class LocalUserStore:
 
     def set_password(self, user_id: str, password: str, tenant_id: int) -> None:
         self._load_once()
+        from app.modules.billing.service import assert_billing_write_allowed
+
         normalized_user_id = user_id.strip()
         user = self._users_by_id.get(normalized_user_id)
         if user is None:
             raise HTTPException(status_code=404, detail="local user not found")
-        if int(user.get("tenant_id", 1)) != int(tenant_id):
+        user_tenant_id = _require_tenant_id(user.get("tenant_id"), operation="local_user_password_set")
+        if user_tenant_id != int(tenant_id):
             raise HTTPException(status_code=404, detail="local user not found")
+
+        assert_billing_write_allowed(int(tenant_id), action="local_users.set_password")
 
         normalized_password = password.strip()
         if len(normalized_password) < 6:
@@ -325,6 +382,115 @@ class LocalUserStore:
         if not user_id:
             return None
         return self._users_by_id.get(user_id)
+
+    def find_user_by_email(self, email: str) -> dict[str, object] | None:
+        self._load_once()
+        normalized_email = str(email or "").strip().lower()
+        if not normalized_email:
+            return None
+        for item in self._users_by_id.values():
+            if str(item.get("email", "")).strip().lower() == normalized_email:
+                return item
+        return None
+
+    def get_public_user(self, user_id: str) -> dict[str, object] | None:
+        self._load_once()
+        normalized_user_id = str(user_id or "").strip()
+        if not normalized_user_id:
+            return None
+        row = self._users_by_id.get(normalized_user_id)
+        if row is None:
+            return None
+        return self._public_user(row)
+
+    def upsert_platform_superadmin(
+        self,
+        *,
+        login: str,
+        password: str,
+        platform_tenant_id: int,
+        email: str | None = None,
+        update_password: bool = False,
+        force_password_change: bool = False,
+    ) -> dict[str, object]:
+        self._load_once()
+        tenant_id = _require_tenant_id(platform_tenant_id, operation="platform_superadmin_upsert")
+        normalized_login = str(login).strip().lower()
+        if not normalized_login:
+            raise HTTPException(status_code=400, detail="login is required")
+
+        normalized_password = str(password).strip()
+        if len(normalized_password) < 12:
+            raise HTTPException(status_code=400, detail="platform superadmin password must be at least 12 characters")
+
+        normalized_email = str(email or "").strip().lower()
+        if normalized_email and "@" not in normalized_email:
+            raise HTTPException(status_code=400, detail="email is invalid")
+
+        existing = self.find_user_by_login(normalized_login)
+        if existing is None:
+            created = self.create_user(
+                login=normalized_login,
+                password=normalized_password,
+                display_name="Platform Superadmin",
+                roles=[_PLATFORM_SUPERADMIN_ROLE],
+                default_language="ru",
+                tenant_id=tenant_id,
+            )
+            raw = self._users_by_id[str(created["user_id"])]
+            raw["roles"] = [_PLATFORM_SUPERADMIN_ROLE]
+            raw["account_scope"] = "platform"
+            raw["is_platform_user"] = True
+            raw["force_password_change"] = bool(force_password_change)
+            if normalized_email:
+                raw["email"] = normalized_email
+            self._persist()
+            return {
+                "operation": "created",
+                "user": self._public_user(raw),
+            }
+
+        user_tenant_id = _require_tenant_id(existing.get("tenant_id"), operation="platform_superadmin_existing_user")
+        if user_tenant_id != tenant_id:
+            raise HTTPException(
+                status_code=409,
+                detail="login belongs to another tenant; cannot repurpose as platform superadmin",
+            )
+
+        changed = False
+        user_roles = [str(role).strip() for role in existing.get("roles", []) if str(role).strip()]
+        if user_roles != [_PLATFORM_SUPERADMIN_ROLE]:
+            existing["roles"] = [_PLATFORM_SUPERADMIN_ROLE]
+            changed = True
+
+        if existing.get("account_scope") != "platform":
+            existing["account_scope"] = "platform"
+            changed = True
+
+        if not bool(existing.get("is_platform_user", False)):
+            existing["is_platform_user"] = True
+            changed = True
+
+        current_force_password_change = bool(existing.get("force_password_change", False))
+        if current_force_password_change != bool(force_password_change):
+            existing["force_password_change"] = bool(force_password_change)
+            changed = True
+
+        if normalized_email and str(existing.get("email", "")).strip().lower() != normalized_email:
+            existing["email"] = normalized_email
+            changed = True
+
+        if update_password:
+            self.set_password(str(existing.get("user_id", "")), normalized_password, tenant_id=tenant_id)
+            changed = True
+
+        if changed:
+            self._persist()
+
+        return {
+            "operation": "updated" if changed else "noop",
+            "user": self._public_user(existing),
+        }
 
 
 local_user_store = LocalUserStore()
