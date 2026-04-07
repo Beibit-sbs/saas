@@ -24,7 +24,7 @@ export default function HelpAssistant() {
   const [response, setResponse] = useState<HelpResponse | null>(null);
 
   const page =
-    typeof window !== "undefined" && window.location.pathname.startsWith("/admin")
+    typeof window !== "undefined" && window.location.pathname.startsWith("/console/platform")
       ? "admin"
       : "general";
   const uiLang = language === "kk" || language === "en" ? language : "ru";

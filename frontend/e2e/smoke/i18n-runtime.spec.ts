@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("i18n runtime smoke", () => {
-  test("login/console/admin locale flow is stable", async ({ page, context }) => {
+  test("login/console/platform locale flow is stable", async ({ page, context }) => {
     const baseUrl = process.env.E2E_BASE_URL;
     expect(baseUrl).toBeTruthy();
     const creds = {
@@ -77,8 +77,8 @@ test.describe("i18n runtime smoke", () => {
     expect(cookieAfterReload).toBe("kk");
     expect(storageAfterReload).toBe("kk");
 
-    // C. Tenants / Jobs / Admin pages have no broken placeholders
-    for (const path of ["/console/tenants", "/console/jobs", "/admin"]) {
+    // C. Tenants / Jobs / Platform pages have no broken placeholders
+    for (const path of ["/console/tenants", "/console/jobs", "/console/platform"]) {
       await page.goto(`${baseUrl}${path}`);
       await page.waitForTimeout(400);
       const bodyText = await page.locator("body").innerText();

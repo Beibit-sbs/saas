@@ -89,7 +89,7 @@ test.describe("Copilot → Interventions E2E flow", () => {
             {
               action_type: "review",
               label: "View full risk report",
-              target: "/admin/analytics/expulsion-risk",
+              target: "/console/platform/analytics/expulsion-risk",
             },
           ],
         },

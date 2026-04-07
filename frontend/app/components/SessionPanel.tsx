@@ -67,7 +67,7 @@ export default function SessionPanel() {
           <div className="mt-0.5 text-[#555]">{user.user_id}</div>
           <div className="mt-0.5 text-[#555]">{labels.roles}: {user.roles.join(", ")}</div>
           <div className="mt-2 flex gap-2">
-            <Link href="/admin">{labels.admin}</Link>
+            <Link href="/console/platform">{labels.admin}</Link>
             <Link href="/profile">{labels.profile}</Link>
             <button
               type="button"
