@@ -80,6 +80,12 @@
 			"type": "shell",
 			"command": "bash scripts/university_pilot_safe_gate.sh",
 			"isBackground": false
+		},
+		{
+			"label": "c005-tests",
+			"type": "shell",
+			"command": "docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_identity_phase11_hardening.py::test_phase1_get_providers_emits_legacy_namespace_headers tests/test_identity_phase11_hardening.py::test_phase1_get_mappings_emits_legacy_namespace_headers",
+			"isBackground": false
 		}
 	]
 }
