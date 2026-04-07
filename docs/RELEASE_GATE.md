@@ -4,13 +4,13 @@
 
 Release Gate v1 blocks unsafe merges and deploys by enforcing deterministic checks for tenant isolation, platform regressions, frontend regressions, and migration safety.
 
-Current validated baseline snapshot (2026-04-06):
+Current validated baseline snapshot (2026-04-07):
 - Architecture governance gate: 7 passed
 - Tenant safety gate: 8 passed
 - Platform regression gate: 439 passed, 9 skipped
 - Security regression gate: 42 passed
 - Template validation gate: 5 passed
-- Frontend safety gate: 147 passed
+- Frontend safety gate: type-check ✅, 123 tests passed (legacy admin ui removed)
 - Migration safety gate: head `d4c5e6f7a8b9`
 
 Canonical release checklist:
