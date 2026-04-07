@@ -2,6 +2,9 @@ from pathlib import Path
 import os
 import sys
 
+import pytest
+
+_HAS_REPO_ROOT = bool(os.environ.get("PROJECT_ROOT"))
 ROOT_DIR = Path(os.environ.get("PROJECT_ROOT", str(Path(__file__).resolve().parents[2])))
 BACKEND_DIR = ROOT_DIR / "backend"
 
@@ -60,16 +63,19 @@ REQUIRED_ROUTE_PATHS = {
 }
 
 
+@pytest.mark.skipif(not _HAS_REPO_ROOT, reason="requires PROJECT_ROOT (backend-tests service)")
 def test_required_template_docs_exist() -> None:
     missing = [str(path.relative_to(ROOT_DIR)) for path in REQUIRED_DOCS if not path.exists()]
     assert not missing, f"missing required template docs: {missing}"
 
 
+@pytest.mark.skipif(not _HAS_REPO_ROOT, reason="requires PROJECT_ROOT (backend-tests service)")
 def test_required_template_modules_exist() -> None:
     missing = [str(path.relative_to(ROOT_DIR)) for path in REQUIRED_MODULE_PATHS if not path.exists()]
     assert not missing, f"missing required template modules: {missing}"
 
 
+@pytest.mark.skipif(not _HAS_REPO_ROOT, reason="requires PROJECT_ROOT (backend-tests service)")
 def test_bootstrap_instructions_exist() -> None:
     readme_text = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
     playbook_text = (ROOT_DIR / "docs/templates/template-sync-playbook.md").read_text(encoding="utf-8")

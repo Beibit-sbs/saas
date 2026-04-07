@@ -4,10 +4,25 @@ import os
 import ast
 from pathlib import Path
 
-REPO_ROOT = Path(os.environ.get("PROJECT_ROOT", str(Path(__file__).resolve().parents[3])))
+_PROJECT_ROOT_ENV = os.environ.get("PROJECT_ROOT")
+if _PROJECT_ROOT_ENV:
+    REPO_ROOT = Path(_PROJECT_ROOT_ENV)
+    _STRIP_PREFIX = ""
+else:
+    # backend-tests container sets PROJECT_ROOT=/project with full repo mounted.
+    # Plain backend container has code at /app/app/... (no "backend/" subdirectory).
+    _parent2 = Path(__file__).resolve().parents[2]  # /app inside container
+    if (_parent2 / "app" / "platform").is_dir():
+        REPO_ROOT = _parent2
+        _STRIP_PREFIX = "backend/"  # strip repo-relative prefix
+    else:
+        REPO_ROOT = Path(__file__).resolve().parents[3]
+        _STRIP_PREFIX = ""
 
 
 def _read(path: str) -> str:
+    if _STRIP_PREFIX and path.startswith(_STRIP_PREFIX):
+        path = path[len(_STRIP_PREFIX):]
     return (REPO_ROOT / path).read_text(encoding="utf-8")
 
 
