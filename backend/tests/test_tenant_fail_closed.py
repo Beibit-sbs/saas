@@ -47,7 +47,7 @@ def _mint_custom_access_token(*, include_tid: bool, tid_value: int | None = None
 def test_missing_tenant_claim_fails_closed_for_read_path() -> None:
     token = _mint_custom_access_token(include_tid=False)
     response = client.get(
-        "/api/admin/university/students",
+        "/api/admin/students",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 401
@@ -57,7 +57,7 @@ def test_missing_tenant_claim_fails_closed_for_read_path() -> None:
 def test_invalid_tenant_claim_fails_closed() -> None:
     token = _mint_custom_access_token(include_tid=True, tid_value=0)
     response = client.get(
-        "/api/admin/university/students",
+        "/api/admin/students",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 401
@@ -76,7 +76,7 @@ def test_write_without_valid_tenant_context_fails_closed() -> None:
 
 
 def test_read_without_authentication_fails_closed() -> None:
-    response = client.get("/api/admin/university/students")
+    response = client.get("/api/admin/students")
     assert response.status_code == 401
 
 

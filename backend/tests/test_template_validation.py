@@ -36,7 +36,7 @@ REQUIRED_MODULE_PATHS = [
     ROOT_DIR / "backend/app/modules/backup",
     ROOT_DIR / "backend/app/modules/i18n",
     ROOT_DIR / "backend/app/modules/observability",
-    ROOT_DIR / "frontend/app/admin/page.tsx",
+    ROOT_DIR / "frontend/app/(admin)/console/platform/page.tsx",
 ]
 
 REQUIRED_ROUTE_PATHS = {

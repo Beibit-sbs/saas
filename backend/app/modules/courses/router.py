@@ -1,7 +1,6 @@
-import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.modules.audit.service import log_admin_action
 from app.modules.courses.schemas import (
@@ -15,37 +14,21 @@ from app.modules.courses.service import create_course, delete_course, list_cours
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 
-router = APIRouter(prefix="/api/admin/university/courses", tags=["university-courses"])
-
-
-logger = logging.getLogger("app.university_namespace")
-
-
-def _mark_legacy_namespace_usage(response: Response, tenant: dict[str, object], actor: str | None, resource: str) -> None:
-    response.headers["X-Legacy-Namespace"] = "true"
-    response.headers["Warning"] = '299 - "Legacy API namespace under migration review: target /api/admin/org/*"'
-    logger.warning(
-        "legacy university namespace endpoint used; resource=%s tenant_id=%s actor=%s",
-        resource,
-        tenant.get("id"),
-        actor,
-    )
+router = APIRouter(prefix="/api/admin/org/courses", tags=["org-courses"])
 
 
 @router.get("", response_model=CourseListResponse)
 def get_courses(
-    response: Response,
+    request: Request,
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.courses.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> CourseListResponse:
-    _mark_legacy_namespace_usage(response, tenant, None, "courses")
     return {"courses": list_courses(int(tenant["id"]))}
 
 
 @router.post("", response_model=CourseItemResponse)
 def create_course_endpoint(
-    response: Response,
     payload: CourseCreatePayload,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
@@ -56,8 +39,6 @@ def create_course_endpoint(
         course = create_course(payload.model_dump(), int(tenant["id"]))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    _mark_legacy_namespace_usage(response, tenant, actor, "courses")
 
     log_admin_action(
         actor=actor,
@@ -76,7 +57,6 @@ def create_course_endpoint(
 @router.put("/{course_id}", response_model=CourseItemResponse)
 def update_course_endpoint(
     course_id: int,
-    response: Response,
     payload: CourseUpdatePayload,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
@@ -89,8 +69,6 @@ def update_course_endpoint(
         detail = str(exc)
         status = 404 if "not found" in detail else 400
         raise HTTPException(status_code=status, detail=detail) from exc
-
-    _mark_legacy_namespace_usage(response, tenant, actor, "courses")
 
     log_admin_action(
         actor=actor,
@@ -109,7 +87,6 @@ def update_course_endpoint(
 @router.delete("/{course_id}", response_model=CourseDeleteResponse)
 def delete_course_endpoint(
     course_id: int,
-    response: Response,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     _: Annotated[None, Depends(permission_dependency("admin.courses.write"))],
@@ -121,8 +98,6 @@ def delete_course_endpoint(
         detail = str(exc)
         status = 404 if "not found" in detail else 400
         raise HTTPException(status_code=status, detail=detail) from exc
-
-    _mark_legacy_namespace_usage(response, tenant, actor, "courses")
 
     log_admin_action(
         actor=actor,

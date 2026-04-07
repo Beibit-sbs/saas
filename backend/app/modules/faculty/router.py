@@ -1,7 +1,6 @@
-import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
@@ -20,37 +19,21 @@ from app.modules.faculty.service import (
 )
 from app.modules.rbac.security import get_actor, permission_dependency
 
-router = APIRouter(prefix="/api/admin/university/faculty", tags=["university-faculty"])
-
-
-logger = logging.getLogger("app.university_namespace")
-
-
-def _mark_legacy_namespace_usage(response: Response, tenant: dict[str, object], actor: str | None, resource: str) -> None:
-    response.headers["X-Legacy-Namespace"] = "true"
-    response.headers["Warning"] = '299 - "Legacy API namespace under migration review: target /api/admin/org/*"'
-    logger.warning(
-        "legacy university namespace endpoint used; resource=%s tenant_id=%s actor=%s",
-        resource,
-        tenant.get("id"),
-        actor,
-    )
+router = APIRouter(prefix="/api/admin/org/faculty", tags=["org-faculty"])
 
 
 @router.get("", response_model=FacultyListResponse)
 def get_faculty(
-    response: Response,
+    request: Request,
     _: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> FacultyListResponse:
-    _mark_legacy_namespace_usage(response, tenant, None, "faculty")
     return {"faculty": list_faculty(int(tenant["id"]))}
 
 
 @router.post("", response_model=FacultyItemResponse)
 def create_faculty_endpoint(
-    response: Response,
     payload: FacultyCreatePayload,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
@@ -61,8 +44,6 @@ def create_faculty_endpoint(
         faculty_entry = create_faculty_member(payload.model_dump(), int(tenant["id"]))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    _mark_legacy_namespace_usage(response, tenant, actor, "faculty")
 
     log_admin_action(
         actor=actor,
@@ -81,7 +62,6 @@ def create_faculty_endpoint(
 @router.put("/{faculty_row_id}", response_model=FacultyItemResponse)
 def update_faculty_endpoint(
     faculty_row_id: int,
-    response: Response,
     payload: FacultyUpdatePayload,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
@@ -94,8 +74,6 @@ def update_faculty_endpoint(
         detail = str(exc)
         status = 404 if "not found" in detail else 400
         raise HTTPException(status_code=status, detail=detail) from exc
-
-    _mark_legacy_namespace_usage(response, tenant, actor, "faculty")
 
     log_admin_action(
         actor=actor,
@@ -114,7 +92,6 @@ def update_faculty_endpoint(
 @router.delete("/{faculty_row_id}", response_model=FacultyDeleteResponse)
 def delete_faculty_endpoint(
     faculty_row_id: int,
-    response: Response,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     _: Annotated[None, Depends(permission_dependency("admin.faculty.write"))],
@@ -126,8 +103,6 @@ def delete_faculty_endpoint(
         detail = str(exc)
         status = 404 if "not found" in detail else 400
         raise HTTPException(status_code=status, detail=detail) from exc
-
-    _mark_legacy_namespace_usage(response, tenant, actor, "faculty")
 
     log_admin_action(
         actor=actor,

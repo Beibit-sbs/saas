@@ -39,7 +39,6 @@ from app.modules.audit.router import router as audit_router
 from app.modules.audit.service import log_admin_action, reset_request_tenant_id, set_request_tenant_id
 from app.modules.backup.router import router as backup_router
 from app.modules.courses.router import router as courses_router
-from app.modules.enrollments.router import legacy_router as legacy_enrollments_router
 from app.modules.enrollments.router import router as enrollments_router
 from app.modules.faculty.router import router as faculty_router
 from app.modules.feature_flags.router import router as feature_flags_router
@@ -61,7 +60,6 @@ from app.modules.interventions.router import router as interventions_router
 from app.modules.interventions.risk_router import router as interventions_risk_router
 from app.modules.org_structure.router import router as org_structure_router
 from app.modules.identity.router import router as identity_router
-from app.modules.identity.phase1_router import router as identity_phase1_router
 from app.modules.ldap.router import router as ldap_router
 from app.modules.jobs.router import router as jobs_router
 from app.modules.programs.router import router as programs_router
@@ -81,7 +79,6 @@ from app.modules.rbac.security import get_actor
 from app.modules.rbac.security import permission_dependency
 from app.modules.rbac.security import resolve_current_user_claims
 from app.modules.rbac.service import resolve_permissions_for_tenant
-from app.modules.students.router import legacy_router as legacy_students_router
 from app.modules.students.router import router as students_router
 from app.modules.service_accounts.router import router as service_accounts_router
 from app.modules.tenants.router import router as tenants_router
@@ -226,19 +223,16 @@ app.include_router(integrations_router)
 app.include_router(interventions_router)
 app.include_router(interventions_risk_router)
 app.include_router(identity_router)
-app.include_router(identity_phase1_router)
 app.include_router(ldap_router)
 app.include_router(backup_router)
 app.include_router(jobs_router)
 app.include_router(feature_flags_router)
 app.include_router(students_router)
-app.include_router(legacy_students_router)
 app.include_router(service_accounts_router)
 app.include_router(faculty_router)
 app.include_router(programs_router)
 app.include_router(courses_router)
 app.include_router(enrollments_router)
-app.include_router(legacy_enrollments_router)
 app.include_router(grades_router)
 app.include_router(scheduling_router)
 app.include_router(org_structure_router)

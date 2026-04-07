@@ -1,9 +1,7 @@
 from __future__ import annotations
-
-import logging
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Request, Response, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Request, status
 from pydantic import BaseModel, ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -24,23 +22,14 @@ from app.modules.audit.service import log_admin_action
 from app.modules.enrollments.dependencies import get_enrollments_db
 from app.modules.enrollments.models import EnrollmentStatus
 from app.modules.enrollments.schemas import (
-    EnrollmentCreatePayload,
-    EnrollmentDeleteResponse,
-    EnrollmentItemResponse,
-    EnrollmentListResponse,
     EnrollmentCreateSchema,
     EnrollmentDropSchema,
     EnrollmentListResponseSchema,
     EnrollmentReadSchema,
     EnrollmentStatusChangeSchema,
-    EnrollmentUpdatePayload,
 )
 from app.modules.enrollments.service import (
     EnrollmentLifecycleService,
-    create_enrollment,
-    delete_enrollment,
-    list_enrollments,
-    update_enrollment,
 )
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -74,12 +63,6 @@ def _raise_enrollments_http_error(exc: Exception) -> HTTPException:
     raise HTTPException(status_code=400, detail=str(exc))
 
 
-def _raise_legacy_enrollments_http_error(exc: ValueError) -> HTTPException:
-    if "not found" in str(exc).lower():
-        return HTTPException(status_code=404, detail=str(exc))
-    return _raise_enrollments_http_error(exc)
-
-
 def _log_router_call(
     request: Request,
     *,
@@ -109,23 +92,6 @@ def _log_router_call(
 
 
 router = APIRouter(prefix="/api/admin", tags=["enrollments"])
-legacy_router = APIRouter(prefix="/api/admin/university/enrollments", tags=["enrollments"])
-
-
-logger = logging.getLogger("app.enrollments")
-
-
-def _mark_legacy_enrollments_usage(response: Response, tenant: dict[str, object], actor: str | None) -> None:
-    # Expose explicit deprecation metadata so clients can migrate to /api/admin/enrollments.
-    response.headers["Deprecation"] = "true"
-    response.headers["Sunset"] = "Fri, 31 Jul 2026 00:00:00 GMT"
-    response.headers["Link"] = '</api/admin/enrollments>; rel="successor-version"'
-    response.headers["Warning"] = '299 - "Deprecated API: use /api/admin/enrollments"'
-    logger.warning(
-        "legacy enrollments endpoint used; tenant_id=%s actor=%s",
-        tenant.get("id"),
-        actor,
-    )
 
 
 @router.post(
@@ -179,10 +145,6 @@ async def create_enrollment_endpoint(
 
 @router.get(
     "/enrollments/active",
-    summary="Get active enrollment by student/course/term",
-    description="Returns the active enrollment for the provided student profile, course, and academic term.",
-    tags=["enrollments"],
-    response_model=EnrollmentReadSchema | None,
     status_code=status.HTTP_200_OK,
     responses={
         400: {"model": ErrorDetailResponse},
@@ -402,85 +364,6 @@ async def change_enrollment_status_endpoint(
         OptimisticLockConflictError,
     ) as exc:
         raise _raise_enrollments_http_error(exc) from exc
-
-
-@legacy_router.get(
-    "",
-    response_model=EnrollmentListResponse,
-    responses={403: {"model": ErrorDetailResponse}},
-)
-async def legacy_list_enrollments_endpoint(
-    response: Response,
-    _: Actor = None,
-    __: Annotated[None, Depends(permission_dependency("admin.enrollments.read"))] = None,
-    tenant: TrustedTenant = None,
-) -> EnrollmentListResponse:
-    _mark_legacy_enrollments_usage(response, tenant, _)
-    return EnrollmentListResponse(enrollments=list_enrollments(int(tenant["id"])))
-
-
-@legacy_router.post(
-    "",
-    response_model=EnrollmentItemResponse,
-    responses={400: {"model": ErrorDetailResponse}, 403: {"model": ErrorDetailResponse}},
-)
-async def legacy_create_enrollment_endpoint(
-    response: Response,
-    payload: dict[str, Any] = Body(...),
-    _: Actor = None,
-    __: Annotated[None, Depends(permission_dependency("admin.enrollments.write"))] = None,
-    tenant: TrustedTenant = None,
-) -> EnrollmentItemResponse:
-    request_model = _parse_payload(EnrollmentCreatePayload, payload)
-    _mark_legacy_enrollments_usage(response, tenant, _)
-    return EnrollmentItemResponse(
-        enrollment=create_enrollment(request_model.model_dump(), int(tenant["id"]))
-    )
-
-
-@legacy_router.put(
-    "/{enrollment_id}",
-    response_model=EnrollmentItemResponse,
-    responses={400: {"model": ErrorDetailResponse}, 403: {"model": ErrorDetailResponse}, 404: {"model": ErrorDetailResponse}},
-)
-async def legacy_update_enrollment_endpoint(
-    response: Response,
-    enrollment_id: int,
-    payload: dict[str, Any] = Body(...),
-    _: Actor = None,
-    __: Annotated[None, Depends(permission_dependency("admin.enrollments.write"))] = None,
-    tenant: TrustedTenant = None,
-) -> EnrollmentItemResponse:
-    request_model = _parse_payload(EnrollmentUpdatePayload, payload)
-    try:
-        _mark_legacy_enrollments_usage(response, tenant, _)
-        return EnrollmentItemResponse(
-            enrollment=update_enrollment(enrollment_id, request_model.model_dump(), int(tenant["id"]))
-        )
-    except ValueError as exc:
-        raise _raise_legacy_enrollments_http_error(exc) from exc
-
-
-@legacy_router.delete(
-    "/{enrollment_id}",
-    response_model=EnrollmentDeleteResponse,
-    responses={403: {"model": ErrorDetailResponse}, 404: {"model": ErrorDetailResponse}},
-)
-async def legacy_delete_enrollment_endpoint(
-    response: Response,
-    enrollment_id: int,
-    _: Actor = None,
-    __: Annotated[None, Depends(permission_dependency("admin.enrollments.write"))] = None,
-    tenant: TrustedTenant = None,
-) -> EnrollmentDeleteResponse:
-    try:
-        _mark_legacy_enrollments_usage(response, tenant, _)
-        return EnrollmentDeleteResponse(
-            deleted=True,
-            enrollment=delete_enrollment(enrollment_id, int(tenant["id"])),
-        )
-    except ValueError as exc:
-        raise _raise_legacy_enrollments_http_error(exc) from exc
 
 
 @router.post(

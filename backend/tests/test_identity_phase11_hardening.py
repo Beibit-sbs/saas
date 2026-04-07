@@ -119,10 +119,10 @@ def test_identity_provider_test_maps_typed_identity_errors(monkeypatch: pytest.M
     def _raise(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
         raise raised
 
-    monkeypatch.setattr("app.modules.identity.phase1_router.test_directory_provider", _raise)
+    monkeypatch.setattr("app.modules.identity.router.test_directory_provider", _raise)
 
     response = client.post(
-        "/api/identity/providers/9/test",
+        "/api/admin/identity/directory-providers/9/test",
         json={"login": "u", "password": "p"},
         headers=ADMIN_HEADERS,
     )
@@ -136,10 +136,59 @@ def test_identity_provider_test_maps_dependency_unavailable(monkeypatch: pytest.
     def _raise(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
         raise DependencyUnavailableError("identity backend unavailable")
 
-    monkeypatch.setattr("app.modules.identity.phase1_router.test_directory_provider", _raise)
+    monkeypatch.setattr("app.modules.identity.router.test_directory_provider", _raise)
 
     response = client.post(
-        "/api/identity/providers/9/test",
+        "/api/admin/identity/directory-providers/9/test",
+        json={"login": "u", "password": "p"},
+        headers=ADMIN_HEADERS,
+    )
+
+    assert response.status_code == 503, response.text
+    assert response.json()["detail"] == {
+        "code": "IDENTITY_PROVIDER_UNAVAILABLE",
+        "message": "identity backend unavailable",
+    }
+
+
+@pytest.mark.parametrize(
+    ("raised", "expected_status", "expected_code"),
+    [
+        (IdentityProviderNotFound(), 404, "IDENTITY_PROVIDER_NOT_FOUND"),
+        (IdentityProviderDisabled(), 403, "IDENTITY_PROVIDER_DISABLED"),
+        (IdentityLdapConnectFailed(), 503, "IDENTITY_LDAP_CONNECT_FAILED"),
+        (IdentityLdapBindFailed(), 401, "IDENTITY_LDAP_BIND_FAILED"),
+        (IdentityInvalidCredentials(), 401, "IDENTITY_INVALID_CREDENTIALS"),
+        (IdentityGroupFetchFailed(), 503, "IDENTITY_GROUP_FETCH_FAILED"),
+        (IdentityMappingEmpty(), 403, "IDENTITY_MAPPING_EMPTY"),
+        (IdentityProviderUnavailable(), 503, "IDENTITY_PROVIDER_UNAVAILABLE"),
+    ],
+)
+def test_admin_identity_provider_test_maps_typed_identity_errors(monkeypatch: pytest.MonkeyPatch, raised: Exception, expected_status: int, expected_code: str) -> None:
+    def _raise(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+        raise raised
+
+    monkeypatch.setattr("app.modules.identity.router.test_directory_provider", _raise)
+
+    response = client.post(
+        "/api/admin/identity/directory-providers/9/test",
+        json={"login": "u", "password": "p"},
+        headers=ADMIN_HEADERS,
+    )
+
+    assert response.status_code == expected_status, response.text
+    assert response.json()["detail"]["code"] == expected_code
+    assert "message" in response.json()["detail"]
+
+
+def test_admin_identity_provider_test_maps_dependency_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+        raise DependencyUnavailableError("identity backend unavailable")
+
+    monkeypatch.setattr("app.modules.identity.router.test_directory_provider", _raise)
+
+    response = client.post(
+        "/api/admin/identity/directory-providers/9/test",
         json={"login": "u", "password": "p"},
         headers=ADMIN_HEADERS,
     )
@@ -425,32 +474,94 @@ def test_mapping_api_crud_flow(monkeypatch: pytest.MonkeyPatch) -> None:
         del state[mapping_id]
         return True
 
-    monkeypatch.setattr("app.modules.identity.phase1_router.create_identity_mapping", _create)
-    monkeypatch.setattr("app.modules.identity.phase1_router.list_identity_mappings", _list)
-    monkeypatch.setattr("app.modules.identity.phase1_router.update_identity_mapping", _update)
-    monkeypatch.setattr("app.modules.identity.phase1_router.delete_identity_mapping", _delete)
+    monkeypatch.setattr("app.modules.identity.router.create_identity_mapping", _create)
+    monkeypatch.setattr("app.modules.identity.router.list_identity_mappings", _list)
+    monkeypatch.setattr("app.modules.identity.router.update_identity_mapping", _update)
+    monkeypatch.setattr("app.modules.identity.router.delete_identity_mapping", _delete)
 
     create_response = client.post(
-        "/api/identity/mappings",
+        "/api/admin/identity/mappings",
         headers=ADMIN_HEADERS,
         json={"provider_id": 7, "external_group": "CN=Finance", "platform_role": "auditor"},
     )
     assert create_response.status_code == 200, create_response.text
     assert create_response.json()["mapping"]["external_group"] == "CN=Finance"
 
-    list_response = client.get("/api/identity/mappings?provider_id=7", headers=ADMIN_HEADERS)
+    list_response = client.get("/api/admin/identity/mappings?provider_id=7", headers=ADMIN_HEADERS)
     assert list_response.status_code == 200, list_response.text
     assert len(list_response.json()["mappings"]) == 1
 
     update_response = client.put(
-        "/api/identity/mappings/1",
+        "/api/admin/identity/mappings/1",
         headers=ADMIN_HEADERS,
         json={"external_group": "CN=Finance-Updated", "platform_role": "admin"},
     )
     assert update_response.status_code == 200, update_response.text
     assert update_response.json()["mapping"]["platform_role"] == "admin"
 
-    delete_response = client.delete("/api/identity/mappings/1", headers=ADMIN_HEADERS)
+    delete_response = client.delete("/api/admin/identity/mappings/1", headers=ADMIN_HEADERS)
+    assert delete_response.status_code == 200, delete_response.text
+    assert delete_response.json()["deleted"] is True
+
+
+def test_admin_mapping_api_crud_flow(monkeypatch: pytest.MonkeyPatch) -> None:
+    state: dict[int, dict[str, Any]] = {}
+
+    def _create(*, tenant_id: int, provider_id: int, external_group: str, platform_role: str) -> dict[str, Any]:
+        mapping = {
+            "id": 1,
+            "tenant_id": tenant_id,
+            "provider_id": provider_id,
+            "external_group": external_group,
+            "platform_role": platform_role,
+        }
+        state[1] = mapping
+        return mapping
+
+    def _list(*, tenant_id: int, provider_id: int | None = None) -> list[dict[str, Any]]:
+        return [row for row in state.values() if row["tenant_id"] == tenant_id and (provider_id is None or row["provider_id"] == provider_id)]
+
+    def _update(*, tenant_id: int, mapping_id: int, external_group: str, platform_role: str) -> dict[str, Any]:
+        row = dict(state[mapping_id])
+        row["tenant_id"] = tenant_id
+        row["external_group"] = external_group
+        row["platform_role"] = platform_role
+        state[mapping_id] = row
+        return row
+
+    def _delete(*, tenant_id: int, mapping_id: int) -> bool:
+        row = state.get(mapping_id)
+        if row is None or row["tenant_id"] != tenant_id:
+            return False
+        del state[mapping_id]
+        return True
+
+    monkeypatch.setattr("app.modules.identity.router.create_identity_mapping", _create)
+    monkeypatch.setattr("app.modules.identity.router.list_identity_mappings", _list)
+    monkeypatch.setattr("app.modules.identity.router.update_identity_mapping", _update)
+    monkeypatch.setattr("app.modules.identity.router.delete_identity_mapping", _delete)
+
+    create_response = client.post(
+        "/api/admin/identity/mappings",
+        headers=ADMIN_HEADERS,
+        json={"provider_id": 7, "external_group": "CN=Finance", "platform_role": "auditor"},
+    )
+    assert create_response.status_code == 200, create_response.text
+    assert create_response.json()["mapping"]["external_group"] == "CN=Finance"
+
+    list_response = client.get("/api/admin/identity/mappings?provider_id=7", headers=ADMIN_HEADERS)
+    assert list_response.status_code == 200, list_response.text
+    assert len(list_response.json()["mappings"]) == 1
+
+    update_response = client.put(
+        "/api/admin/identity/mappings/1",
+        headers=ADMIN_HEADERS,
+        json={"external_group": "CN=Finance-Updated", "platform_role": "admin"},
+    )
+    assert update_response.status_code == 200, update_response.text
+    assert update_response.json()["mapping"]["platform_role"] == "admin"
+
+    delete_response = client.delete("/api/admin/identity/mappings/1", headers=ADMIN_HEADERS)
     assert delete_response.status_code == 200, delete_response.text
     assert delete_response.json()["deleted"] is True
 
@@ -463,9 +574,25 @@ def test_mapping_api_enforces_tenant_isolation(monkeypatch: pytest.MonkeyPatch) 
         seen["tenant_id"] = tenant_id
         return []
 
-    monkeypatch.setattr("app.modules.identity.phase1_router.list_identity_mappings", _list)
+    monkeypatch.setattr("app.modules.identity.router.list_identity_mappings", _list)
 
-    response = client.get("/api/identity/mappings", headers=_tenant_admin_headers(tenant_id))
+    response = client.get("/api/admin/identity/mappings", headers=_tenant_admin_headers(tenant_id))
+
+    assert response.status_code == 200, response.text
+    assert seen["tenant_id"] == tenant_id
+
+
+def test_admin_mapping_api_enforces_tenant_isolation(monkeypatch: pytest.MonkeyPatch) -> None:
+    tenant_id = _create_tenant("tenant-phase11-admin")
+    seen: dict[str, int] = {}
+
+    def _list(*, tenant_id: int, provider_id: int | None = None) -> list[dict[str, Any]]:
+        seen["tenant_id"] = tenant_id
+        return []
+
+    monkeypatch.setattr("app.modules.identity.router.list_identity_mappings", _list)
+
+    response = client.get("/api/admin/identity/mappings", headers=_tenant_admin_headers(tenant_id))
 
     assert response.status_code == 200, response.text
     assert seen["tenant_id"] == tenant_id
@@ -473,7 +600,7 @@ def test_mapping_api_enforces_tenant_isolation(monkeypatch: pytest.MonkeyPatch) 
 
 def test_mapping_preview_shows_expected_roles(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "app.modules.identity.phase1_router.preview_provider_mapping",
+        "app.modules.identity.router.preview_provider_mapping",
         lambda **_kwargs: {
             "provider_id": 7,
             "username": "corp.user",
@@ -487,7 +614,34 @@ def test_mapping_preview_shows_expected_roles(monkeypatch: pytest.MonkeyPatch) -
     )
 
     response = client.post(
-        "/api/identity/providers/7/mapping/preview",
+        "/api/admin/identity/directory-providers/7/mapping/preview",
+        headers=ADMIN_HEADERS,
+        json={"username": "corp.user"},
+    )
+
+    assert response.status_code == 200, response.text
+    preview = response.json()["preview"]
+    assert preview["mapped_roles"] == ["auditor"]
+    assert preview["mapping_empty"] is False
+
+
+def test_admin_mapping_preview_shows_expected_roles(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.modules.identity.router.preview_provider_mapping",
+        lambda **_kwargs: {
+            "provider_id": 7,
+            "username": "corp.user",
+            "display_name": "Corp User",
+            "external_user_id": "ext-1",
+            "email": "corp@example.com",
+            "groups": ["CN=Finance"],
+            "mapped_roles": ["auditor"],
+            "mapping_empty": False,
+        },
+    )
+
+    response = client.post(
+        "/api/admin/identity/directory-providers/7/mapping/preview",
         headers=ADMIN_HEADERS,
         json={"username": "corp.user"},
     )
@@ -502,10 +656,29 @@ def test_mapping_preview_provider_unavailable_returns_typed_503(monkeypatch: pyt
     def _raise(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
         raise DependencyUnavailableError("preview backend unavailable")
 
-    monkeypatch.setattr("app.modules.identity.phase1_router.preview_provider_mapping", _raise)
+    monkeypatch.setattr("app.modules.identity.router.preview_provider_mapping", _raise)
 
     response = client.post(
-        "/api/identity/providers/7/mapping/preview",
+        "/api/admin/identity/directory-providers/7/mapping/preview",
+        headers=ADMIN_HEADERS,
+        json={"username": "corp.user"},
+    )
+
+    assert response.status_code == 503, response.text
+    assert response.json()["detail"] == {
+        "code": "IDENTITY_PROVIDER_UNAVAILABLE",
+        "message": "preview backend unavailable",
+    }
+
+
+def test_admin_mapping_preview_provider_unavailable_returns_typed_503(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+        raise DependencyUnavailableError("preview backend unavailable")
+
+    monkeypatch.setattr("app.modules.identity.router.preview_provider_mapping", _raise)
+
+    response = client.post(
+        "/api/admin/identity/directory-providers/7/mapping/preview",
         headers=ADMIN_HEADERS,
         json={"username": "corp.user"},
     )
@@ -561,35 +734,3 @@ def test_legacy_migration_parses_tenant_scoped_legacy_keys() -> None:
     assert module._tenant_id_from_key("tenant:1:oidc.client_id") is None
 
 
-# ---------------------------------------------------------------------------
-# C-005: phase1 legacy namespace observability headers
-# ---------------------------------------------------------------------------
-
-_PHASE1_LEGACY_WARNING = '299 - "Legacy identity namespace under migration review: target /api/admin/identity/*"'
-
-
-def _assert_phase1_legacy_headers(response: object) -> None:
-    assert response.headers["X-Legacy-Namespace"] == "true"
-    assert response.headers["Warning"] == _PHASE1_LEGACY_WARNING
-
-
-def test_phase1_get_providers_emits_legacy_namespace_headers(monkeypatch: pytest.MonkeyPatch) -> None:
-    """GET /api/identity/providers must return legacy-namespace observability headers."""
-    monkeypatch.setattr(
-        "app.modules.identity.phase1_router.list_directory_providers",
-        lambda **_kw: [],
-    )
-    response = client.get("/api/identity/providers", headers=ADMIN_HEADERS)
-    assert response.status_code == 200, response.text
-    _assert_phase1_legacy_headers(response)
-
-
-def test_phase1_get_mappings_emits_legacy_namespace_headers(monkeypatch: pytest.MonkeyPatch) -> None:
-    """GET /api/identity/mappings must return legacy-namespace observability headers."""
-    monkeypatch.setattr(
-        "app.modules.identity.phase1_router.list_identity_mappings",
-        lambda **_kw: [],
-    )
-    response = client.get("/api/identity/mappings", headers=ADMIN_HEADERS)
-    assert response.status_code == 200, response.text
-    _assert_phase1_legacy_headers(response)

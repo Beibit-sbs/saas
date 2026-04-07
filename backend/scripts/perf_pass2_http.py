@@ -410,7 +410,7 @@ async def discover_program_id(client: httpx.AsyncClient, token: str) -> int:
         "X-Tenant-ID": "1",
     }
     try:
-        response = await client.get("/api/admin/university/programs", headers=headers)
+        response = await client.get("/api/admin/org/programs", headers=headers)
         if int(response.status_code) == 200:
             programs = response.json().get("programs", [])
             if programs:
@@ -428,7 +428,7 @@ async def discover_program_id(client: httpx.AsyncClient, token: str) -> int:
         "status": "active",
     }
     try:
-        response = await client.post("/api/admin/university/programs", headers=headers, json=create_payload)
+        response = await client.post("/api/admin/org/programs", headers=headers, json=create_payload)
         if int(response.status_code) in {200, 201}:
             program = response.json().get("program", {})
             candidate = int(program.get("id"))
