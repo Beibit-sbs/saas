@@ -1,5 +1,8 @@
 # Legacy Cleanup Migration Strategy
 
+> Historical Snapshot (2026-04-06): этот документ отражает план до cleanup-phase.
+> Текущий источник истины по статусам C-001/C-004/C-008/C-009: CLEANUP_ENDGAME_TRACKER.md.
+
 **Document**: Phase-by-phase plan for safe legacy route/module retirement  
 **Version**: 1.0  
 **Date**: 2026-04-06  

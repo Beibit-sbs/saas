@@ -1,5 +1,8 @@
 # Migration Candidates — Code References Index
 
+> Historical Snapshot (2026-04-06): этот документ отражает состояние до cleanup-phase.
+> Текущий источник истины по статусам C-001/C-004/C-008/C-009: CLEANUP_ENDGAME_TRACKER.md.
+
 Quick-reference guide to exact file locations and line numbers for each candidate.
 
 ---

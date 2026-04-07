@@ -1,5 +1,8 @@
 # Migration Analysis — Conclusions & Recommendations
 
+> Historical Snapshot (2026-04-06): этот документ отражает состояние до cleanup-phase.
+> Текущий источник истины по статусам C-001/C-004/C-008/C-009: CLEANUP_ENDGAME_TRACKER.md.
+
 **Analysis Date**: 6 апреля 2026  
 **Analyst**: Automated codebase scan + manual verification  
 **Status**: ✅ COMPLETE & ACTIONABLE
