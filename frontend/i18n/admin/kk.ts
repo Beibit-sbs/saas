@@ -395,5 +395,16 @@ export const kk = {
   "programStatus": "Күйі",
   "programCreated": "Бағдарлама жасалды",
   "programUpdated": "Бағдарлама жаңартылды",
-  "programDeleted": "Бағдарлама жойылды"
+  "programDeleted": "Бағдарлама жойылды",
+  "coursesHelp": "Курс каталогын және бағдарламаларға байланысын басқару.",
+  "addCourse": "Курс қосу",
+  "noCourses": "Курстар табылмады.",
+  "courseCode": "Курс коды",
+  "courseTitle": "Атауы",
+  "courseCredits": "Кредиттер",
+  "courseProgramId": "Бағдарлама ID",
+  "courseStatus": "Күйі",
+  "courseCreated": "Курс жасалды",
+  "courseUpdated": "Курс жаңартылды",
+  "courseDeleted": "Курс жойылды"
 } as const;

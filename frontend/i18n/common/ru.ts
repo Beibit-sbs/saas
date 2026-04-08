@@ -48,6 +48,7 @@ export const ru = {
   "nav.system": "Система",
   "nav.university": "Университет",
   "nav.programs": "Программы",
+  "nav.courses": "Курсы",
   "nav.rules": "Правила",
   "nav.executions": "Запуски",
   "nav.schedule": "Расписание",

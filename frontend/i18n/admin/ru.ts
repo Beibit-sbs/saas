@@ -395,5 +395,16 @@ export const ru = {
   "programStatus": "Статус",
   "programCreated": "Программа создана",
   "programUpdated": "Программа обновлена",
-  "programDeleted": "Программа удалена"
+  "programDeleted": "Программа удалена",
+  "coursesHelp": "Управление каталогом курсов и связью с программами.",
+  "addCourse": "Добавить курс",
+  "noCourses": "Курсы не найдены.",
+  "courseCode": "Код курса",
+  "courseTitle": "Название",
+  "courseCredits": "Кредиты",
+  "courseProgramId": "ID программы",
+  "courseStatus": "Статус",
+  "courseCreated": "Курс создан",
+  "courseUpdated": "Курс обновлён",
+  "courseDeleted": "Курс удалён"
 } as const;

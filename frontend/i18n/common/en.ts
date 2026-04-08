@@ -48,6 +48,7 @@ export const en = {
   "nav.system": "System",
   "nav.university": "University",
   "nav.programs": "Programs",
+  "nav.courses": "Courses",
   "nav.rules": "Rules",
   "nav.executions": "Executions",
   "nav.schedule": "Schedule",

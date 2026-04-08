@@ -48,6 +48,10 @@ export const PERMISSIONS = {
       PROGRAMS_READ: "admin.programs.read",
       PROGRAMS_WRITE: "admin.programs.write",
 
+      // Courses
+      COURSES_READ: "admin.courses.read",
+      COURSES_WRITE: "admin.courses.write",
+
   // Audit
   AUDIT_READ: "admin.audit.read",
 

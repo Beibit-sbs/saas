@@ -395,5 +395,16 @@ export const en = {
   "programStatus": "Status",
   "programCreated": "Program created",
   "programUpdated": "Program updated",
-  "programDeleted": "Program deleted"
+  "programDeleted": "Program deleted",
+  "coursesHelp": "Manage course catalog linked to programs.",
+  "addCourse": "Add course",
+  "noCourses": "No courses found.",
+  "courseCode": "Course code",
+  "courseTitle": "Title",
+  "courseCredits": "Credits",
+  "courseProgramId": "Program ID",
+  "courseStatus": "Status",
+  "courseCreated": "Course created",
+  "courseUpdated": "Course updated",
+  "courseDeleted": "Course deleted"
 } as const;
