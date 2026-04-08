@@ -36,16 +36,18 @@ function KpiCard({ title, value, icon: Icon }: { title: string; value: number; i
 }
 
 function InstitutionOverviewPanel({ institution }: { institution: Institution }) {
+  const { t } = useLanguage();
+  const tAny = (key: string) => t(key as never);
   const overview = useInstitutionOverview(institution.id);
 
   if (overview.isError) {
     return (
-      <ErrorState title="Failed to load overview" message="Could not retrieve institution overview." />
+      <ErrorState title={tAny("federation.overviewLoadFailedTitle")} message={tAny("federation.overviewLoadFailedMessage")} />
     );
   }
 
   if (!overview.data) {
-    return <p className="text-sm text-muted-foreground">Loading overview…</p>;
+    return <p className="text-sm text-muted-foreground">{tAny("federation.loadingOverview")}</p>;
   }
 
   const data = overview.data;
@@ -53,19 +55,19 @@ function InstitutionOverviewPanel({ institution }: { institution: Institution })
   return (
     <div className="space-y-4" data-testid={`institution-overview-${institution.id}`}>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard title="Total Students" value={data.students_total} icon={Users} />
-        <KpiCard title="Total Enrollments" value={data.enrollments_total} icon={TrendingUp} />
+        <KpiCard title={tAny("federation.kpi.totalStudents")} value={data.students_total} icon={Users} />
+        <KpiCard title={tAny("federation.kpi.totalEnrollments")} value={data.enrollments_total} icon={TrendingUp} />
         <KpiCard
-          title="Automation Failures"
+          title={tAny("federation.kpi.automationFailures")}
           value={Number(data.automation_health?.automation_failures_total ?? 0)}
           icon={AlertTriangle}
         />
-        <KpiCard title="Universities" value={data.tenant_count} icon={Building2} />
+        <KpiCard title={tAny("federation.kpi.universities")} value={data.tenant_count} icon={Building2} />
       </div>
 
       {data.kpi_cards.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground font-medium">All KPI Metrics</p>
+          <p className="text-xs text-muted-foreground font-medium">{tAny("federation.kpi.allMetrics")}</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {data.kpi_cards.map((card) => (
               <div
@@ -122,6 +124,7 @@ function InstitutionRow({
 
 export default function FederationPage() {
   const { t } = useLanguage();
+  const tAny = (key: string) => t(key as never);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [newName, setNewName] = useState("");
   const [newCode, setNewCode] = useState("");
@@ -167,7 +170,7 @@ export default function FederationPage() {
                       type: newType.trim() || "university",
                     },
                     {
-                      ...getHandlers({ successTitle: "Institution created" }),
+                      ...getHandlers({ successTitle: tAny("federation.institutionCreated") }),
                       onSuccess: () => {
                         setNewName("");
                         setNewCode("");
@@ -178,7 +181,7 @@ export default function FederationPage() {
                   )
                 }
               >
-                Create institution
+                {tAny("federation.createInstitution")}
               </Button>
             </PermissionGate>
           }
@@ -186,22 +189,22 @@ export default function FederationPage() {
 
         <PermissionGate permission={PERMISSIONS.FEDERATION_WRITE}>
           <div className="rounded-lg border bg-card p-4 space-y-3" data-testid="federation-create-panel">
-            <p className="text-sm font-medium">New institution</p>
+            <p className="text-sm font-medium">{tAny("federation.newInstitution")}</p>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-1.5">
-                <Label htmlFor="federation-name">Name</Label>
+                <Label htmlFor="federation-name">{tAny("federation.form.name")}</Label>
                 <Input id="federation-name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Northwind University" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="federation-code">Code</Label>
+                <Label htmlFor="federation-code">{tAny("federation.form.code")}</Label>
                 <Input id="federation-code" value={newCode} onChange={(e) => setNewCode(e.target.value)} placeholder="NORTHWIND" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="federation-country">Country</Label>
+                <Label htmlFor="federation-country">{tAny("federation.form.country")}</Label>
                 <Input id="federation-country" value={newCountry} onChange={(e) => setNewCountry(e.target.value)} placeholder="Kazakhstan" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="federation-type">Type</Label>
+                <Label htmlFor="federation-type">{tAny("federation.form.type")}</Label>
                 <Input id="federation-type" value={newType} onChange={(e) => setNewType(e.target.value)} placeholder="university" />
               </div>
             </div>
@@ -210,13 +213,13 @@ export default function FederationPage() {
 
         {institutions.isError && (
           <ErrorState
-            title="Failed to load institutions"
-            message="Could not retrieve institution list."
+            title={tAny("federation.loadFailedTitle")}
+            message={tAny("federation.loadFailedMessage")}
           />
         )}
 
         {institutions.isLoading && (
-          <p className="text-sm text-muted-foreground">Loading institutions…</p>
+          <p className="text-sm text-muted-foreground">{tAny("federation.loadingInstitutions")}</p>
         )}
 
         {institutions.data && (
@@ -224,7 +227,7 @@ export default function FederationPage() {
             {/* Institution list */}
             <div className="space-y-2 lg:col-span-1" data-testid="institution-list">
               {institutions.data.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No institutions registered yet.</p>
+                <p className="text-sm text-muted-foreground">{tAny("federation.emptyInstitutions")}</p>
               ) : (
                 institutions.data.map((inst) => (
                   <InstitutionRow
@@ -249,10 +252,10 @@ export default function FederationPage() {
 
                   <PermissionGate permission={PERMISSIONS.FEDERATION_WRITE}>
                     <div className="rounded border p-3 space-y-3" data-testid="federation-link-panel">
-                      <p className="text-sm font-medium">Link tenant</p>
+                      <p className="text-sm font-medium">{tAny("federation.linkTenant")}</p>
                       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                         <div className="space-y-1.5">
-                          <Label htmlFor="federation-link-tenant-id">Tenant ID</Label>
+                          <Label htmlFor="federation-link-tenant-id">{tAny("federation.form.tenantId")}</Label>
                           <Input
                             id="federation-link-tenant-id"
                             value={linkTenantId}
@@ -261,7 +264,7 @@ export default function FederationPage() {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label htmlFor="federation-link-role">Role</Label>
+                          <Label htmlFor="federation-link-role">{tAny("federation.form.role")}</Label>
                           <Input
                             id="federation-link-role"
                             value={linkRole}
@@ -280,7 +283,7 @@ export default function FederationPage() {
                                   role: linkRole.trim() || "institution_admin",
                                 },
                                 {
-                                  ...getHandlers({ successTitle: "Tenant linked" }),
+                                  ...getHandlers({ successTitle: tAny("federation.tenantLinked") }),
                                   onSuccess: () => {
                                     setLinkTenantId("");
                                     setLinkRole("institution_admin");
@@ -289,7 +292,7 @@ export default function FederationPage() {
                               )
                             }
                           >
-                            Link tenant
+                            {tAny("federation.linkTenant")}
                           </Button>
                         </div>
                       </div>
@@ -300,7 +303,7 @@ export default function FederationPage() {
                 <div className="rounded-lg border bg-muted/20 p-8 text-center">
                   <Network className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">
-                    Select an institution to view its overview.
+                    {tAny("federation.selectInstitution")}
                   </p>
                 </div>
               )}
