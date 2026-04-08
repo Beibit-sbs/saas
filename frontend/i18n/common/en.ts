@@ -43,6 +43,7 @@ export const en = {
   "nav.localUsers": "Local Users",
   "nav.rbac": "RBAC",
   "nav.integrations": "Integrations",
+  "nav.ldap": "LDAP",
   "nav.backups": "Backups",
   "nav.audit": "Audit",
   "nav.system": "System",

@@ -43,6 +43,7 @@ export const kk = {
   "nav.localUsers": "Жергілікті пайдаланушылар",
   "nav.rbac": "RBAC",
   "nav.integrations": "Интеграциялар",
+  "nav.ldap": "LDAP",
   "nav.backups": "Резервтік көшірмелер",
   "nav.audit": "Аудит",
   "nav.system": "Жүйе",

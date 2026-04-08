@@ -43,6 +43,7 @@ export const ru = {
   "nav.localUsers": "Локальные пользователи",
   "nav.rbac": "RBAC",
   "nav.integrations": "Интеграции",
+  "nav.ldap": "LDAP",
   "nav.backups": "Резервные копии",
   "nav.audit": "Аудит",
   "nav.system": "Система",
