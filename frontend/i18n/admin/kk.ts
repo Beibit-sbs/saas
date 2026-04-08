@@ -384,5 +384,16 @@ export const kk = {
   "serviceAccountCreated": "Сервистік аккаунт жасалды",
   "serviceAccountIssueToken": "Токен беру",
   "serviceAccountTokenIssued": "Токен берілді — қазір көшіріңіз",
-  "serviceAccountTokenSecret": "Қол қою құпиясы"
+  "serviceAccountTokenSecret": "Қол қою құпиясы",
+  "programsHelp": "Білім беру бағдарламаларын және академиялық метадеректерін басқару.",
+  "addProgram": "Бағдарлама қосу",
+  "noPrograms": "Бағдарламалар табылмады.",
+  "programCode": "Бағдарлама коды",
+  "programTitle": "Атауы",
+  "programDegreeType": "Дәреже түрі",
+  "programFaculty": "Факультет",
+  "programStatus": "Күйі",
+  "programCreated": "Бағдарлама жасалды",
+  "programUpdated": "Бағдарлама жаңартылды",
+  "programDeleted": "Бағдарлама жойылды"
 } as const;

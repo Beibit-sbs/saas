@@ -384,5 +384,16 @@ export const en = {
   "serviceAccountCreated": "Service account created",
   "serviceAccountIssueToken": "Issue token",
   "serviceAccountTokenIssued": "Token issued — copy it now",
-  "serviceAccountTokenSecret": "Signing secret"
+  "serviceAccountTokenSecret": "Signing secret",
+  "programsHelp": "Manage university programs and their academic metadata.",
+  "addProgram": "Add program",
+  "noPrograms": "No programs found.",
+  "programCode": "Program code",
+  "programTitle": "Title",
+  "programDegreeType": "Degree type",
+  "programFaculty": "Faculty",
+  "programStatus": "Status",
+  "programCreated": "Program created",
+  "programUpdated": "Program updated",
+  "programDeleted": "Program deleted"
 } as const;

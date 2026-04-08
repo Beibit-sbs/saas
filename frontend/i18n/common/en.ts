@@ -47,6 +47,7 @@ export const en = {
   "nav.audit": "Audit",
   "nav.system": "System",
   "nav.university": "University",
+  "nav.programs": "Programs",
   "nav.rules": "Rules",
   "nav.executions": "Executions",
   "nav.schedule": "Schedule",

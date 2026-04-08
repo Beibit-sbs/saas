@@ -384,5 +384,16 @@ export const ru = {
   "serviceAccountCreated": "Сервисный аккаунт создан",
   "serviceAccountIssueToken": "Выдать токен",
   "serviceAccountTokenIssued": "Токен выдан — скопируйте сейчас",
-  "serviceAccountTokenSecret": "Секрет подписи"
+  "serviceAccountTokenSecret": "Секрет подписи",
+  "programsHelp": "Управление образовательными программами и академическими метаданными.",
+  "addProgram": "Добавить программу",
+  "noPrograms": "Программы не найдены.",
+  "programCode": "Код программы",
+  "programTitle": "Название",
+  "programDegreeType": "Тип степени",
+  "programFaculty": "Факультет",
+  "programStatus": "Статус",
+  "programCreated": "Программа создана",
+  "programUpdated": "Программа обновлена",
+  "programDeleted": "Программа удалена"
 } as const;

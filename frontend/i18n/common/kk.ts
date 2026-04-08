@@ -47,6 +47,7 @@ export const kk = {
   "nav.audit": "Аудит",
   "nav.system": "Жүйе",
   "nav.university": "Университет",
+  "nav.programs": "Бағдарламалар",
   "nav.rules": "Ережелер",
   "nav.executions": "Орындаулар",
   "nav.schedule": "Кесте",

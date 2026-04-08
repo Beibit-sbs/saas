@@ -47,6 +47,7 @@ export const ru = {
   "nav.audit": "Аудит",
   "nav.system": "Система",
   "nav.university": "Университет",
+  "nav.programs": "Программы",
   "nav.rules": "Правила",
   "nav.executions": "Запуски",
   "nav.schedule": "Расписание",
