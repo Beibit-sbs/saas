@@ -115,7 +115,7 @@ export default function StudentsPage() {
           <PermissionGate permission={PERMISSIONS.STUDENTS_WRITE}>
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4 mr-1" />
-              Create student
+              {t("students.createAction")}
             </Button>
           </PermissionGate>
         }
@@ -173,12 +173,12 @@ export default function StudentsPage() {
           setStudentNumber("");
           setCohortYear("2026");
         }}
-        title="Create student"
-        description="Create a student profile by person and cohort."
+        title={t("students.createTitle")}
+        description={t("students.createDescription")}
       >
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="student-person-id">Person ID</Label>
+            <Label htmlFor="student-person-id">{t("students.create.personId")}</Label>
             <Input
               id="student-person-id"
               value={personId}
@@ -187,7 +187,7 @@ export default function StudentsPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="student-number">Student number</Label>
+            <Label htmlFor="student-number">{t("students.create.studentNumber")}</Label>
             <Input
               id="student-number"
               value={studentNumber}
@@ -196,7 +196,7 @@ export default function StudentsPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="student-cohort-year">Cohort year</Label>
+            <Label htmlFor="student-cohort-year">{t("students.create.cohortYear")}</Label>
             <Input
               id="student-cohort-year"
               value={cohortYear}
@@ -216,7 +216,7 @@ export default function StudentsPage() {
                     admission_source: "manual",
                   },
                   {
-                    ...getHandlers({ successTitle: "Student created" }),
+                    ...getHandlers({ successTitle: t("students.createdSuccess") }),
                     onSuccess: () => {
                       setCreateOpen(false);
                       setPersonId("");
@@ -227,7 +227,7 @@ export default function StudentsPage() {
                 )
               }
             >
-              Create student
+              {t("students.createAction")}
             </Button>
           </PermissionGate>
         </div>

@@ -123,7 +123,7 @@ export default function NotificationsPage() {
                 }}
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Send notification
+                {t("notifications.sendAction")}
               </Button>
               <Button
                 variant="outline"
@@ -188,12 +188,12 @@ export default function NotificationsPage() {
           setComposeOpen(false);
           setComposeError(null);
         }}
-        title="Send notification"
-        description="Dispatch notification to tenant channel."
+        title={t("notifications.sendTitle")}
+        description={t("notifications.sendDescription")}
       >
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="notification-tenant-id">Tenant ID</Label>
+            <Label htmlFor="notification-tenant-id">{t("notifications.form.tenantId")}</Label>
             <Input
               id="notification-tenant-id"
               value={tenantId}
@@ -202,7 +202,7 @@ export default function NotificationsPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="notification-channel">Channel</Label>
+            <Label htmlFor="notification-channel">{t("notifications.form.channel")}</Label>
             <select
               id="notification-channel"
               className="w-full rounded border bg-background px-3 py-2 text-sm"
@@ -215,7 +215,7 @@ export default function NotificationsPage() {
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="notification-target">Target</Label>
+            <Label htmlFor="notification-target">{t("notifications.form.target")}</Label>
             <Input
               id="notification-target"
               value={target}
@@ -224,7 +224,7 @@ export default function NotificationsPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="notification-subject">Subject (optional)</Label>
+            <Label htmlFor="notification-subject">{t("notifications.form.subject")}</Label>
             <Input
               id="notification-subject"
               value={subject}
@@ -233,7 +233,7 @@ export default function NotificationsPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="notification-payload">Payload JSON</Label>
+            <Label htmlFor="notification-payload">{t("notifications.form.payload")}</Label>
             <textarea
               id="notification-payload"
               className="min-h-[120px] w-full rounded border bg-background px-3 py-2 text-sm"
@@ -252,12 +252,12 @@ export default function NotificationsPage() {
                   try {
                     const raw = JSON.parse(payloadText);
                     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-                      setComposeError("Payload must be a JSON object.");
+                      setComposeError(t("notifications.payloadMustBeObject"));
                       return;
                     }
                     parsedPayload = raw as Record<string, unknown>;
                   } catch {
-                    setComposeError("Payload is not valid JSON.");
+                    setComposeError(t("notifications.payloadInvalid"));
                     return;
                   }
                 }
@@ -271,7 +271,7 @@ export default function NotificationsPage() {
                     payload: parsedPayload,
                   },
                   {
-                    ...getHandlers({ successTitle: "Notification sent" }),
+                    ...getHandlers({ successTitle: t("notifications.sent") }),
                     onSuccess: () => {
                       setComposeOpen(false);
                       setComposeError(null);
@@ -282,7 +282,7 @@ export default function NotificationsPage() {
                 );
               }}
             >
-              Send notification
+              {t("notifications.sendAction")}
             </Button>
           </PermissionGate>
         </div>
