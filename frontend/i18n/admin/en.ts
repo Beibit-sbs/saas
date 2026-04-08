@@ -373,5 +373,16 @@ export const en = {
   "orgUnitActive": "Active",
   "orgUnitCreated": "Unit created",
   "orgUnitUpdated": "Unit updated",
-  "orgUnitDeactivated": "Unit deactivated"
+  "orgUnitDeactivated": "Unit deactivated",
+  "serviceAccountsHelp": "Manage service accounts for API integrations. Tokens are issued per account.",
+  "addServiceAccount": "Add account",
+  "noServiceAccounts": "No service accounts found.",
+  "serviceAccountName": "Account name",
+  "serviceAccountPerms": "Permissions",
+  "serviceAccountRevoke": "Revoke",
+  "serviceAccountRevoked": "Account revoked",
+  "serviceAccountCreated": "Service account created",
+  "serviceAccountIssueToken": "Issue token",
+  "serviceAccountTokenIssued": "Token issued — copy it now",
+  "serviceAccountTokenSecret": "Signing secret"
 } as const;

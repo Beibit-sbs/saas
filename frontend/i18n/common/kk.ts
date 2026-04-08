@@ -590,4 +590,5 @@ export const kk = {
   "admissions.doc.status.rejected": "Қабылданбады",
   "admissions.createApplicant.description": "Қабыл кампаниясына жаңа үміткер қосу",
   "nav.orgUnits": "Ұйымдық бөлімшелер",
+  "nav.serviceAccounts": "Сервистік аккаунттар",
 } as const;

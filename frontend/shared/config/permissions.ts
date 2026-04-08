@@ -41,6 +41,9 @@ export const PERMISSIONS = {
     ORG_UNITS_READ: "admin.org_units.read",
     ORG_UNITS_WRITE: "admin.org_units.write",
 
+      // Integrations / Service Accounts
+      INTEGRATIONS_MANAGE: "admin.integrations.manage",
+
   // Audit
   AUDIT_READ: "admin.audit.read",
 

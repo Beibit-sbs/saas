@@ -373,5 +373,16 @@ export const kk = {
   "orgUnitActive": "Белсенді",
   "orgUnitCreated": "Бөлімше жасалды",
   "orgUnitUpdated": "Бөлімше жаңартылды",
-  "orgUnitDeactivated": "Бөлімше деактивирленді"
+  "orgUnitDeactivated": "Бөлімше деактивирленді",
+  "serviceAccountsHelp": "API интеграциялары үшін сервистік аккаунттарды басқару.",
+  "addServiceAccount": "Аккаунт қосу",
+  "noServiceAccounts": "Сервистік аккаунттар табылмады.",
+  "serviceAccountName": "Аккаунт атауы",
+  "serviceAccountPerms": "Рұқсаттар",
+  "serviceAccountRevoke": "Жою",
+  "serviceAccountRevoked": "Аккаунт жойылды",
+  "serviceAccountCreated": "Сервистік аккаунт жасалды",
+  "serviceAccountIssueToken": "Токен беру",
+  "serviceAccountTokenIssued": "Токен берілді — қазір көшіріңіз",
+  "serviceAccountTokenSecret": "Қол қою құпиясы"
 } as const;

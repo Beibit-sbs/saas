@@ -373,5 +373,16 @@ export const ru = {
   "orgUnitActive": "Активно",
   "orgUnitCreated": "Подразделение создано",
   "orgUnitUpdated": "Подразделение обновлено",
-  "orgUnitDeactivated": "Подразделение деактивировано"
+  "orgUnitDeactivated": "Подразделение деактивировано",
+  "serviceAccountsHelp": "Управление сервисными аккаунтами для API-интеграций.",
+  "addServiceAccount": "Добавить аккаунт",
+  "noServiceAccounts": "Сервисные аккаунты не найдены.",
+  "serviceAccountName": "Имя аккаунта",
+  "serviceAccountPerms": "Разрешения",
+  "serviceAccountRevoke": "Отозвать",
+  "serviceAccountRevoked": "Аккаунт отозван",
+  "serviceAccountCreated": "Сервисный аккаунт создан",
+  "serviceAccountIssueToken": "Выдать токен",
+  "serviceAccountTokenIssued": "Токен выдан — скопируйте сейчас",
+  "serviceAccountTokenSecret": "Секрет подписи"
 } as const;

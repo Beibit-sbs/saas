@@ -590,4 +590,5 @@ export const en = {
   "admissions.doc.status.rejected": "Rejected",
   "admissions.createApplicant.description": "Add a new applicant to the admissions pipeline",
   "nav.orgUnits": "Org Units",
+  "nav.serviceAccounts": "Service Accounts",
 } as const;

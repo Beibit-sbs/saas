@@ -590,4 +590,5 @@ export const ru = {
   "admissions.doc.status.rejected": "Отклонён",
   "admissions.createApplicant.description": "Добавить нового абитуриента в приёмную кампанию",
   "nav.orgUnits": "Орг. подразделения",
+  "nav.serviceAccounts": "Сервисные аккаунты",
 } as const;
