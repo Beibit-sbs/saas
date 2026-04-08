@@ -12,6 +12,7 @@ import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { PERMISSIONS } from "@/shared/config/permissions";
 import {
   Select,
   SelectTrigger,
@@ -342,7 +343,7 @@ export default function AutomationRuleNewPage() {
   }
 
   return (
-    <RequirePermission permission="automation.write">
+    <RequirePermission permission={PERMISSIONS.AUTOMATION_WRITE}>
       <div className="space-y-6">
         <PageHeader
           title="Create Automation Rule"

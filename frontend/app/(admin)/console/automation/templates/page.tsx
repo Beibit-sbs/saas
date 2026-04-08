@@ -8,6 +8,7 @@ import { Card } from "@/shared/ui/card"
 import { Button } from "@/shared/ui/button"
 import { EmptyState } from "@/shared/ui/empty-state"
 import { ErrorState } from "@/shared/ui/error-state"
+import { PERMISSIONS } from "@/shared/config/permissions"
 import { Skeleton } from "@/shared/ui/skeleton"
 import { useToast } from "@/shared/ui/use-toast"
 import { RequirePermission } from "@/shared/ui/permission-gate"
@@ -173,7 +174,7 @@ export default function AutomationTemplatesPage() {
   }
 
   return (
-    <RequirePermission permission="automation.write">
+    <RequirePermission permission={PERMISSIONS.AUTOMATION_WRITE}>
       <div className="space-y-6">
         <PageHeader
           title={t("automation.templates.title")}
