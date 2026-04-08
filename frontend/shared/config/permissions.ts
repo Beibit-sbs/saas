@@ -30,8 +30,8 @@ export const PERMISSIONS = {
   OPS_WRITE: "ops.write",
 
   // RBAC
-  RBAC_READ: "rbac.read",
-  RBAC_WRITE: "rbac.write",
+  RBAC_READ: "admin.roles.manage",
+  RBAC_WRITE: "admin.roles.manage",
   ROLES_MANAGE: "admin.roles.manage",
 
   // Local Users
