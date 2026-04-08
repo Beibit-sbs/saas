@@ -14,8 +14,8 @@ export const PERMISSIONS = {
   BILLING_WRITE: "billing.write",
 
   // Jobs
-  JOBS_READ: "jobs.read",
-  JOBS_WRITE: "jobs.write",
+  JOBS_READ: "admin.jobs.read",
+  JOBS_WRITE: "admin.jobs.write",
 
   // Notifications
   NOTIFICATIONS_READ: "notifications.read",

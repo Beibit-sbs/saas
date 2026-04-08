@@ -38,8 +38,8 @@ async function stubAuthSession(page: Page) {
           permissions: [
             "admin.tenants.read",
             "admin.tenants.write",
-            "jobs.read",
-            "jobs.write",
+            "admin.jobs.read",
+            "admin.jobs.write",
             "notifications.read",
             "notifications.write",
             "feature_flags.read",

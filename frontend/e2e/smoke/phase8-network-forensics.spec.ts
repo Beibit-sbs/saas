@@ -46,7 +46,7 @@ async function stubAuthSession(page: Page) {
             "enrollments.read",
             "scheduling.read",
             "admin.tenants.read",
-            "jobs.read",
+            "admin.jobs.read",
             "notifications.read",
             "feature_flags.read",
             "health.read",
