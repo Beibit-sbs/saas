@@ -39,8 +39,8 @@ async function stubAuthSession(page: Page) {
           roles: ["admin"],
           permissions: [
             "ai.chat.execute",
-            "interventions.read",
-            "interventions.write",
+            "admin.jobs.read",
+            "admin.jobs.write",
             "admin.tenants.read",
             "students.read",
           ],
