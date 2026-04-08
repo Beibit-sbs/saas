@@ -362,5 +362,16 @@ export const en = {
   "saving": "Saving...",
   "testing": "Testing...",
   "validating": "Validating...",
-  "errorPrefix": "Error"
+  "errorPrefix": "Error",
+  "orgUnitsHelp": "Manage university org chart: faculties, departments, and registrar offices.",
+  "addOrgUnit": "Add unit",
+  "noOrgUnits": "No org units found.",
+  "orgUnitName": "Unit name",
+  "orgUnitCode": "Short code",
+  "orgUnitType": "Type",
+  "orgUnitParent": "Parent unit ID",
+  "orgUnitActive": "Active",
+  "orgUnitCreated": "Unit created",
+  "orgUnitUpdated": "Unit updated",
+  "orgUnitDeactivated": "Unit deactivated"
 } as const;

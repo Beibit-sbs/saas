@@ -37,6 +37,10 @@ export const PERMISSIONS = {
   // Local Users
   LOCAL_USERS_MANAGE: "admin.users.manage",
 
+    // Org Units
+    ORG_UNITS_READ: "admin.org_units.read",
+    ORG_UNITS_WRITE: "admin.org_units.write",
+
   // Audit
   AUDIT_READ: "admin.audit.read",
 

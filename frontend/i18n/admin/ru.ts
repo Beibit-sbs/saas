@@ -362,5 +362,16 @@ export const ru = {
   "saving": "Saving...",
   "testing": "Testing...",
   "validating": "Validating...",
-  "errorPrefix": "Ошибка"
+  "errorPrefix": "Ошибка",
+  "orgUnitsHelp": "Управление оргструктурой: факультеты, кафедры, деканаты.",
+  "addOrgUnit": "Добавить подразделение",
+  "noOrgUnits": "Подразделения не найдены.",
+  "orgUnitName": "Название",
+  "orgUnitCode": "Код",
+  "orgUnitType": "Тип",
+  "orgUnitParent": "ID родителя",
+  "orgUnitActive": "Активно",
+  "orgUnitCreated": "Подразделение создано",
+  "orgUnitUpdated": "Подразделение обновлено",
+  "orgUnitDeactivated": "Подразделение деактивировано"
 } as const;

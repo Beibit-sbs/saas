@@ -362,5 +362,16 @@ export const kk = {
   "saving": "Saving...",
   "testing": "Testing...",
   "validating": "Validating...",
-  "errorPrefix": "Қате"
+  "errorPrefix": "Қате",
+  "orgUnitsHelp": "Университет оргструктурасын басқару: факультеттер, кафедралар, деканаттар.",
+  "addOrgUnit": "Бөлімше қосу",
+  "noOrgUnits": "Бөлімшелер табылмады.",
+  "orgUnitName": "Атауы",
+  "orgUnitCode": "Код",
+  "orgUnitType": "Түрі",
+  "orgUnitParent": "Жоғарғы бөлім ID",
+  "orgUnitActive": "Белсенді",
+  "orgUnitCreated": "Бөлімше жасалды",
+  "orgUnitUpdated": "Бөлімше жаңартылды",
+  "orgUnitDeactivated": "Бөлімше деактивирленді"
 } as const;
