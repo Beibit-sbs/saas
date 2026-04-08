@@ -74,6 +74,9 @@ export const PERMISSIONS = {
   PROFILES_READ: "profiles.read",
   PROFILES_WRITE: "profiles.write",
 
+  // Dashboard
+  DASHBOARD_READ: "admin.dashboard.read",
+
   // Audit
   AUDIT_READ: "admin.audit.read",
 
@@ -104,6 +107,7 @@ export const PERMISSIONS = {
   ADMISSIONS_READ: "admissions.read",
   ADMISSIONS_WRITE: "admissions.write",
   ADMISSIONS_DECIDE: "admissions.decide",
+  ADMISSIONS_DOCUMENTS_WRITE: "admissions.documents.write",
 
   // Automation / Workflow Engine
   AUTOMATION_READ: "automation.read",
@@ -111,6 +115,10 @@ export const PERMISSIONS = {
 
   // AI Copilot (read-only foundation v1)
   AI_COPILOT_READ: "ai.chat.execute",
+
+  // AI Gateway (model / provider management)
+  AI_PROVIDERS_MANAGE: "admin.ai.providers.manage",
+  AI_MODELS_MANAGE: "admin.ai.models.manage",
 
   // Federation Layer v1
   FEDERATION_READ: "federation.read",
