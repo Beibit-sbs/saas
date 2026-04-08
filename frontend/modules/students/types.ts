@@ -13,11 +13,18 @@ export interface Student {
 }
 
 export interface CreateStudentPayload {
+  // Current backend schema requires profile fields.
+  person_id?: number;
   student_number: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  tenant_id: string;
+  cohort_year?: number;
+  admission_source?: "admissions_workflow" | "migration" | "manual";
+  metadata_json?: Record<string, unknown>;
+
+  // Legacy fields are kept optional for compatibility with existing callers.
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  tenant_id?: string;
   program?: string;
   enrollment_year?: number;
 }

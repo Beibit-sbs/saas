@@ -1,32 +1,40 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/shared/ui/page-header";
 import { DataTable, Column } from "@/shared/ui/data-table";
 import { FilterBar } from "@/shared/ui/filter-bar";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { DetailList } from "@/shared/ui/detail-list";
 import { ErrorState } from "@/shared/ui/error-state";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
+import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
-import { useStudents } from "@/modules/students/hooks";
+import { useCreateStudent, useStudents } from "@/modules/students/hooks";
 import { Student } from "@/modules/students/types";
 import { formatDate } from "@/shared/utils/format";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, Plus } from "lucide-react";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { PERMISSIONS } from "@/shared/config/permissions";
-import { AccessDenied } from "@/shared/ui/permission-gate";
+import { AccessDenied, PermissionGate } from "@/shared/ui/permission-gate";
 import { useLanguage } from "@/app/components/LanguageProvider";
 
 export default function StudentsPage() {
   const { t } = useLanguage();
   const { hasPermission } = usePermissions();
   const router = useRouter();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [personId, setPersonId] = useState("");
+  const [studentNumber, setStudentNumber] = useState("");
+  const [cohortYear, setCohortYear] = useState("2026");
   const table = useTableQueryState({ filterKeys: ["search", "status"] as const, defaultPageSize: 20, defaultSort: { key: "created", direction: "desc" } });
   const detail = useDetailDrawer({ paramKey: "student" });
+  const { getHandlers } = useMutationFeedback();
 
   const { data, isLoading, error, refetch } = useStudents({
     page: table.page,
@@ -34,7 +42,9 @@ export default function StudentsPage() {
     search: table.filters.search,
     status: table.filters.status,
   });
+  const createStudent = useCreateStudent();
   const selectedStudent = data?.items.find((item) => item.id === detail.selectedId) ?? null;
+  const canCreate = personId.trim().length > 0 && studentNumber.trim().length > 0 && cohortYear.trim().length > 0;
 
   const filterFields = useMemo(
     () => [
@@ -97,7 +107,19 @@ export default function StudentsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t("nav.students")} description={t("console.students.description")} icon={GraduationCap} />
+      <PageHeader
+        title={t("nav.students")}
+        description={t("console.students.description")}
+        icon={GraduationCap}
+        actions={
+          <PermissionGate permission={PERMISSIONS.STUDENTS_WRITE}>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Create student
+            </Button>
+          </PermissionGate>
+        }
+      />
 
       <FilterBar
         fields={filterFields}
@@ -141,6 +163,74 @@ export default function StudentsPage() {
         ) : (
           <ErrorState title={t("students.notFound")} message={t("students.notFoundDescription")} />
         )}
+      </DrawerPanel>
+
+      <DrawerPanel
+        open={createOpen}
+        onClose={() => {
+          setCreateOpen(false);
+          setPersonId("");
+          setStudentNumber("");
+          setCohortYear("2026");
+        }}
+        title="Create student"
+        description="Create a student profile by person and cohort."
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="student-person-id">Person ID</Label>
+            <Input
+              id="student-person-id"
+              value={personId}
+              onChange={(event) => setPersonId(event.target.value)}
+              placeholder="101"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="student-number">Student number</Label>
+            <Input
+              id="student-number"
+              value={studentNumber}
+              onChange={(event) => setStudentNumber(event.target.value)}
+              placeholder="ADM-1-1001"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="student-cohort-year">Cohort year</Label>
+            <Input
+              id="student-cohort-year"
+              value={cohortYear}
+              onChange={(event) => setCohortYear(event.target.value)}
+              placeholder="2026"
+            />
+          </div>
+          <PermissionGate permission={PERMISSIONS.STUDENTS_WRITE}>
+            <Button
+              disabled={!canCreate || createStudent.isPending}
+              onClick={() =>
+                createStudent.mutate(
+                  {
+                    person_id: Number(personId),
+                    student_number: studentNumber.trim(),
+                    cohort_year: Number(cohortYear),
+                    admission_source: "manual",
+                  },
+                  {
+                    ...getHandlers({ successTitle: "Student created" }),
+                    onSuccess: () => {
+                      setCreateOpen(false);
+                      setPersonId("");
+                      setStudentNumber("");
+                      setCohortYear("2026");
+                    },
+                  },
+                )
+              }
+            >
+              Create student
+            </Button>
+          </PermissionGate>
+        </div>
       </DrawerPanel>
     </div>
   );

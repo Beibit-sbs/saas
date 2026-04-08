@@ -8,3 +8,11 @@ export interface Notification {
   read: boolean;
   created_at: string;
 }
+
+export interface NotificationDispatchPayload {
+  tenant_id: number;
+  channel: "email" | "in_app" | "webhook";
+  target: string;
+  subject?: string;
+  payload?: Record<string, unknown>;
+}

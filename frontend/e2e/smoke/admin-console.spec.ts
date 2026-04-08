@@ -341,6 +341,44 @@ test.describe("Platform pages", () => {
     await expect.poll(() => markAllCalls).toBeGreaterThan(0);
     await expect(page.getByRole("heading", { name: NOTIFICATIONS_RE })).toBeVisible();
   });
+
+  test("Notifications page allows dispatching a notification", async ({ page }) => {
+    await stubAuthSession(page);
+    await stubApi(page, "/api/**/admin/notifications*", {
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 20,
+    });
+
+    let dispatchCalls = 0;
+    await page.route("**/api/**/admin/notifications", async (route) => {
+      if (route.request().method() === "POST") {
+        dispatchCalls += 1;
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({ id: "n2", title: "Manual", body: "Manual dispatch", severity: "info", tenant_id: "1", read: false, type: "system", created_at: "2024-01-01T00:00:00Z" }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto("/console/notifications");
+    await page.getByRole("button", { name: /send notification/i }).click();
+    await page.getByLabel(/tenant id/i).fill("1");
+    await page.getByLabel(/target/i).fill("ops@example.com");
+
+    const dispatchRequest = page.waitForRequest((request) => {
+      return request.method() === "POST"
+        && request.url().endsWith("/notifications");
+    });
+
+    await page.getByRole("button", { name: /^send notification$/i }).last().click();
+    await dispatchRequest;
+    await expect.poll(() => dispatchCalls).toBeGreaterThan(0);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -499,5 +537,59 @@ test.describe("Academic pages", () => {
     await page.goto("/console/scheduling");
     await expect(page.getByRole("heading", { name: SCHEDULING_RE })).toBeVisible();
     await expect(page.getByText("Intro to CS")).toBeVisible();
+  });
+
+  test("Students page allows creating student profile", async ({ page }) => {
+    await stubAuthSession(page);
+    await stubApi(page, "/api/bff/admin/students*", {
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 20,
+    });
+
+    let createCalls = 0;
+    await page.route("**/api/**/admin/students", async (route) => {
+      if (route.request().method() === "POST") {
+        createCalls += 1;
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: 1001,
+            tenant_id: 1,
+            person_id: 101,
+            student_number: "ADM-1-1001",
+            cohort_year: 2026,
+            academic_level: null,
+            current_status: "active",
+            admission_source: "manual",
+            metadata_json: {},
+            version: 1,
+            created_by: "test",
+            updated_by: "test",
+            created_at: "2024-01-01T00:00:00Z",
+            updated_at: "2024-01-01T00:00:00Z",
+          }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto("/console/students");
+    await page.getByRole("button", { name: /create student/i }).click();
+    await page.getByLabel(/person id/i).fill("101");
+    await page.getByLabel(/student number/i).fill("ADM-1-1001");
+    await page.getByLabel(/cohort year/i).fill("2026");
+
+    const createRequest = page.waitForRequest((request) => {
+      return request.method() === "POST"
+        && request.url().includes("/admin/students");
+    });
+
+    await page.getByRole("button", { name: /^create student$/i }).last().click();
+    await createRequest;
+    await expect.poll(() => createCalls).toBeGreaterThan(0);
   });
 });

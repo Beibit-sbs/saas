@@ -26,3 +26,11 @@ export function useMarkAllNotificationsRead() {
     onSuccess: () => qc.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] }),
   });
 }
+
+export function useDispatchNotification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: notificationsApi.dispatch,
+    onSuccess: () => qc.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] }),
+  });
+}

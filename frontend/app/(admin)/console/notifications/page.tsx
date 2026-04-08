@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { DataTable, Column } from "@/shared/ui/data-table";
 import { FilterBar } from "@/shared/ui/filter-bar";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { DetailList } from "@/shared/ui/detail-list";
 import { ErrorState } from "@/shared/ui/error-state";
@@ -16,12 +19,13 @@ import {
   useNotifications,
   useMarkNotificationRead,
   useMarkAllNotificationsRead,
+  useDispatchNotification,
 } from "@/modules/platform/notifications/hooks";
 import { Notification } from "@/modules/platform/notifications/types";
 import { formatRelative } from "@/shared/utils/format";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { useLanguage } from "@/app/components/LanguageProvider";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCheck, Plus } from "lucide-react";
 
 const FILTER_FIELDS = [
   {
@@ -37,6 +41,13 @@ const FILTER_FIELDS = [
 
 export default function NotificationsPage() {
   const { t } = useLanguage();
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [tenantId, setTenantId] = useState("1");
+  const [channel, setChannel] = useState<"email" | "in_app" | "webhook">("in_app");
+  const [target, setTarget] = useState("");
+  const [subject, setSubject] = useState("");
+  const [payloadText, setPayloadText] = useState('{"event":"manual.dispatch"}');
+  const [composeError, setComposeError] = useState<string | null>(null);
   const table = useTableQueryState({ filterKeys: ["read"] as const, defaultPageSize: 20, defaultSort: { key: "when", direction: "desc" } });
   const detail = useDetailDrawer({ paramKey: "notification" });
   const { getHandlers } = useMutationFeedback();
@@ -48,7 +59,9 @@ export default function NotificationsPage() {
   });
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllNotificationsRead();
+  const dispatch = useDispatchNotification();
   const selectedNotification = data?.items.find((item) => item.id === detail.selectedId) ?? null;
+  const canDispatch = Number(tenantId) > 0 && target.trim().length >= 3;
 
   if (error) {
     return (
@@ -100,20 +113,33 @@ export default function NotificationsPage() {
         icon={Bell}
         actions={
           <PermissionGate permission={PERMISSIONS.NOTIFICATIONS_WRITE}>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={markAll.isPending || markRead.isPending}
-              onClick={() => {
-                if (markAll.isPending || markRead.isPending) {
-                  return;
-                }
-                markAll.mutate(undefined, getHandlers({ successTitle: "All notifications marked as read" }));
-              }}
-            >
-              <CheckCheck className="h-4 w-4 mr-1" />
-              Mark all read
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setComposeError(null);
+                  setComposeOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Send notification
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={markAll.isPending || markRead.isPending}
+                onClick={() => {
+                  if (markAll.isPending || markRead.isPending) {
+                    return;
+                  }
+                  markAll.mutate(undefined, getHandlers({ successTitle: "All notifications marked as read" }));
+                }}
+              >
+                <CheckCheck className="h-4 w-4 mr-1" />
+                Mark all read
+              </Button>
+            </div>
           </PermissionGate>
         }
       />
@@ -154,6 +180,112 @@ export default function NotificationsPage() {
         ) : (
           <ErrorState title="Notification not found" message="The selected notification is not present on this page of results." />
         )}
+      </DrawerPanel>
+
+      <DrawerPanel
+        open={composeOpen}
+        onClose={() => {
+          setComposeOpen(false);
+          setComposeError(null);
+        }}
+        title="Send notification"
+        description="Dispatch notification to tenant channel."
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="notification-tenant-id">Tenant ID</Label>
+            <Input
+              id="notification-tenant-id"
+              value={tenantId}
+              onChange={(event) => setTenantId(event.target.value)}
+              placeholder="1"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="notification-channel">Channel</Label>
+            <select
+              id="notification-channel"
+              className="w-full rounded border bg-background px-3 py-2 text-sm"
+              value={channel}
+              onChange={(event) => setChannel(event.target.value as "email" | "in_app" | "webhook")}
+            >
+              <option value="in_app">in_app</option>
+              <option value="email">email</option>
+              <option value="webhook">webhook</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="notification-target">Target</Label>
+            <Input
+              id="notification-target"
+              value={target}
+              onChange={(event) => setTarget(event.target.value)}
+              placeholder={channel === "email" ? "ops@example.com" : channel === "webhook" ? "https://example.com/webhook" : "admin-console"}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="notification-subject">Subject (optional)</Label>
+            <Input
+              id="notification-subject"
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+              placeholder="Platform alert"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="notification-payload">Payload JSON</Label>
+            <textarea
+              id="notification-payload"
+              className="min-h-[120px] w-full rounded border bg-background px-3 py-2 text-sm"
+              value={payloadText}
+              onChange={(event) => setPayloadText(event.target.value)}
+            />
+          </div>
+          {composeError ? <p className="text-xs text-destructive">{composeError}</p> : null}
+          <PermissionGate permission={PERMISSIONS.NOTIFICATIONS_WRITE}>
+            <Button
+              disabled={!canDispatch || dispatch.isPending}
+              onClick={() => {
+                setComposeError(null);
+                let parsedPayload: Record<string, unknown> = {};
+                if (payloadText.trim().length > 0) {
+                  try {
+                    const raw = JSON.parse(payloadText);
+                    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+                      setComposeError("Payload must be a JSON object.");
+                      return;
+                    }
+                    parsedPayload = raw as Record<string, unknown>;
+                  } catch {
+                    setComposeError("Payload is not valid JSON.");
+                    return;
+                  }
+                }
+
+                dispatch.mutate(
+                  {
+                    tenant_id: Number(tenantId),
+                    channel,
+                    target: target.trim(),
+                    subject: subject.trim() || undefined,
+                    payload: parsedPayload,
+                  },
+                  {
+                    ...getHandlers({ successTitle: "Notification sent" }),
+                    onSuccess: () => {
+                      setComposeOpen(false);
+                      setComposeError(null);
+                      setTarget("");
+                      setSubject("");
+                    },
+                  },
+                );
+              }}
+            >
+              Send notification
+            </Button>
+          </PermissionGate>
+        </div>
       </DrawerPanel>
     </div>
   );
