@@ -117,8 +117,8 @@ export const PERMISSIONS = {
   FEDERATION_WRITE: "federation.write",
 
   // Developer Platform v1
-  DEVELOPER_PLATFORM_READ: "developer_platform.read",
-  DEVELOPER_PLATFORM_WRITE: "developer_platform.write",
+  DEVELOPER_PLATFORM_READ: "platform.admin.read",
+  DEVELOPER_PLATFORM_WRITE: "platform.admin.write",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
