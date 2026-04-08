@@ -30,6 +30,10 @@ export default function GradesPage() {
   const table = useTableQueryState({ filterKeys: ["student_id", "section_id"] as const, defaultPageSize: 20, defaultSort: { key: "graded", direction: "desc" } });
   const detail = useDetailDrawer({ paramKey: "grade" });
   const { getHandlers } = useMutationFeedback();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newEnrollmentId, setNewEnrollmentId] = useState("");
+  const [newGradeValue, setNewGradeValue] = useState("");
+  const [newNumericValue, setNewNumericValue] = useState("");
   const [gradeValue, setGradeValue] = useState("");
   const [numericValue, setNumericValue] = useState("");
 
@@ -41,6 +45,7 @@ export default function GradesPage() {
   });
   const upsertGrade = useUpsertGrade();
   const selectedGrade = data?.items.find((item) => item.id === detail.selectedId) ?? null;
+  const canCreateGrade = newEnrollmentId.trim().length > 0 && newGradeValue.trim().length > 0;
 
   useEffect(() => {
     setGradeValue(selectedGrade?.grade_value ?? "");
@@ -81,7 +86,18 @@ export default function GradesPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t("nav.grades")} description={t("console.grades.description")} icon={BarChart2} />
+      <PageHeader
+        title={t("nav.grades")}
+        description={t("console.grades.description")}
+        icon={BarChart2}
+        actions={
+          <PermissionGate permission={PERMISSIONS.GRADES_WRITE}>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              Add grade
+            </Button>
+          </PermissionGate>
+        }
+      />
 
       <FilterBar
         fields={FILTER_FIELDS}
@@ -148,6 +164,73 @@ export default function GradesPage() {
         ) : (
           <ErrorState title="Grade not found" message="The selected grade is not present on this page of results." />
         )}
+      </DrawerPanel>
+
+      <DrawerPanel
+        open={createOpen}
+        onClose={() => {
+          setCreateOpen(false);
+          setNewEnrollmentId("");
+          setNewGradeValue("");
+          setNewNumericValue("");
+        }}
+        title="Add grade"
+        description="Create or update grade by enrollment ID."
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="new-grade-enrollment-id">Enrollment ID</Label>
+            <Input
+              id="new-grade-enrollment-id"
+              value={newEnrollmentId}
+              onChange={(event) => setNewEnrollmentId(event.target.value)}
+              placeholder="e1"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="new-grade-value">Letter grade</Label>
+            <Input
+              id="new-grade-value"
+              value={newGradeValue}
+              onChange={(event) => setNewGradeValue(event.target.value)}
+              placeholder="A"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="new-numeric-value">Numeric score</Label>
+            <Input
+              id="new-numeric-value"
+              value={newNumericValue}
+              onChange={(event) => setNewNumericValue(event.target.value)}
+              placeholder="4.0"
+            />
+          </div>
+          <PermissionGate permission={PERMISSIONS.GRADES_WRITE}>
+            <Button
+              disabled={!canCreateGrade || upsertGrade.isPending}
+              onClick={() =>
+                upsertGrade.mutate(
+                  {
+                    enrollment_id: newEnrollmentId.trim(),
+                    grade_value: newGradeValue.trim(),
+                    numeric_value: newNumericValue.trim() ? Number(newNumericValue) : undefined,
+                  },
+                  {
+                    ...getHandlers({ successTitle: "Grade saved" }),
+                    onSuccess: () => {
+                      setCreateOpen(false);
+                      setNewEnrollmentId("");
+                      setNewGradeValue("");
+                      setNewNumericValue("");
+                    },
+                  },
+                )
+              }
+            >
+              Save grade
+            </Button>
+          </PermissionGate>
+        </div>
       </DrawerPanel>
     </div>
   );

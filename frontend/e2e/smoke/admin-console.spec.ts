@@ -426,6 +426,57 @@ test.describe("Academic pages", () => {
     await expect(page.getByText("Jane Doe")).toBeVisible();
   });
 
+  test("Grades page allows adding grade by enrollment", async ({ page }) => {
+    await stubAuthSession(page);
+    await stubApi(page, "/api/bff/admin/grades*", {
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 20,
+    });
+
+    let upsertCalls = 0;
+    await page.route("**/api/**/admin/grades", async (route) => {
+      if (route.request().method() === "PUT") {
+        upsertCalls += 1;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "g-new",
+            enrollment_id: "e1",
+            student_id: "s1",
+            student_name: "Jane Doe",
+            section_id: "sec1",
+            section_code: "CS101-01",
+            course_name: "Intro to CS",
+            grade_value: "A",
+            numeric_value: 4.0,
+            graded_at: "2024-06-01T00:00:00Z",
+            tenant_id: "1",
+          }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto("/console/grades");
+    await page.getByRole("button", { name: /add grade/i }).click();
+    await page.getByLabel(/enrollment id/i).fill("e1");
+    await page.getByLabel(/letter grade/i).fill("A");
+    await page.getByLabel(/numeric score/i).fill("4.0");
+
+    const upsertRequest = page.waitForRequest((request) => {
+      return request.method() === "PUT"
+        && request.url().includes("/admin/grades");
+    });
+
+    await page.getByRole("button", { name: /^save grade$/i }).last().click();
+    await upsertRequest;
+    await expect.poll(() => upsertCalls).toBeGreaterThan(0);
+  });
+
   test("Transcript page renders student transcript", async ({ page }) => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/students/s1/transcript*", {
