@@ -5,9 +5,9 @@ export const PERMISSIONS = {
   TENANTS_READ: "admin.tenants.read",
   TENANTS_WRITE: "admin.tenants.write",
 
-  // Feature flags
-  FEATURE_FLAGS_READ: "feature_flags.read",
-  FEATURE_FLAGS_WRITE: "feature_flags.write",
+  // Feature flags (backend guards both read and write with admin.integrations.manage)
+  FEATURE_FLAGS_READ: "admin.integrations.manage",
+  FEATURE_FLAGS_WRITE: "admin.integrations.manage",
 
   // Billing
   BILLING_READ: "billing.read",

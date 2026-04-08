@@ -5,6 +5,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { Switch } from "@/shared/ui/switch";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { ErrorState } from "@/shared/ui/error-state";
+import { AccessDenied } from "@/shared/ui/permission-gate";
 import { useFeatureFlags, useUpsertFeatureFlag } from "@/modules/platform/feature-flags/hooks";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
@@ -94,6 +95,8 @@ export default function FeatureFlagsPage() {
   const { hasPermission } = usePermissions();
   const { getHandlers } = useMutationFeedback();
   const canWrite = hasPermission(PERMISSIONS.FEATURE_FLAGS_WRITE);
+
+  if (!hasPermission(PERMISSIONS.FEATURE_FLAGS_READ)) return <AccessDenied />;
 
   if (isLoading) {
     return (
