@@ -7,7 +7,7 @@ import { PERMISSIONS } from "@/shared/config/permissions";
 
 export default function PlatformControlPlanePage() {
   const { hasPermission } = usePermissions();
-  if (!hasPermission(PERMISSIONS.TENANTS_READ)) {
+  if (!hasPermission(PERMISSIONS.DEVELOPER_PLATFORM_READ)) {
     return <AccessDenied />;
   }
 
