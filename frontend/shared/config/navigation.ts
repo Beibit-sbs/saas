@@ -425,7 +425,7 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
         label: "RBAC",
         href: "/console/rbac",
         icon: ShieldCheck,
-        permission: PERMISSIONS.RBAC_READ,
+        permission: PERMISSIONS.ROLES_MANAGE,
       },
       {
         label: "Identity & Access",
