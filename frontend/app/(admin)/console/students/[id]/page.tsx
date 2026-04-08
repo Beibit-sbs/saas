@@ -1,6 +1,5 @@
 "use client";
 
-import { use } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/shared/ui/page-header";
 import { StatusBadge } from "@/shared/ui/status-badge";
@@ -12,6 +11,9 @@ import { useStudent } from "@/modules/students/hooks";
 import { useEnrollments } from "@/modules/enrollments/hooks";
 import { Enrollment } from "@/modules/enrollments/types";
 import { formatDate } from "@/shared/utils/format";
+import { usePermissions } from "@/shared/hooks/use-permissions";
+import { PERMISSIONS } from "@/shared/config/permissions";
+import { AccessDenied } from "@/shared/ui/permission-gate";
 import { GraduationCap, ChevronLeft, FileText } from "lucide-react";
 
 const enrollmentColumns: Column<Enrollment>[] = [
@@ -21,10 +23,13 @@ const enrollmentColumns: Column<Enrollment>[] = [
   { key: "enrolled", header: "Enrolled", cell: (r) => formatDate(r.enrolled_at) },
 ];
 
-export default function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function StudentDetailPage({ params }: { params: { id: string } }) {
+  const { hasPermission } = usePermissions();
+  const { id } = params;
   const { data: student, isLoading, error, refetch } = useStudent(id);
   const { data: enrollmentsData, isLoading: enrollmentsLoading } = useEnrollments({ student_id: id });
+
+  if (!hasPermission(PERMISSIONS.STUDENTS_READ)) return <AccessDenied />;
 
   if (isLoading) {
     return (
