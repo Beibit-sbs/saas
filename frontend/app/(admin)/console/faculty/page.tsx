@@ -263,6 +263,7 @@ export default function FacultyPage() {
         />
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }
 
@@ -345,6 +346,5 @@ function FacultyForm({
         {saveLabel}
       </Button>
     </div>
-    </RequirePermission>
   );
 }

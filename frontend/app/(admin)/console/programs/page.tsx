@@ -233,6 +233,7 @@ export default function ProgramsPage() {
         />
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }
 
@@ -305,6 +306,5 @@ function ProgramForm({
         {saveLabel}
       </Button>
     </div>
-    </RequirePermission>
   );
 }

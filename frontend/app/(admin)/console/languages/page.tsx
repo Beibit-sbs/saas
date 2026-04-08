@@ -30,7 +30,6 @@ function LanguageRowActions({ row }: { row: AdminLanguage }) {
   const deleteLanguage = useDeleteLanguage();
 
   return (
-    <RequirePermission permission={PERMISSIONS.I18N_MANAGE}>
     <PermissionGate permission={PERMISSIONS.I18N_MANAGE}>
       <div className="flex gap-1">
         <Button
@@ -134,6 +133,7 @@ export default function LanguagesPage() {
   const selectedCatalogItem = options.find((item) => item.code === newCode);
 
   return (
+    <RequirePermission permission={PERMISSIONS.I18N_MANAGE}>
     <div className="space-y-6" data-testid="languages-page">
       <PageHeader
         title={t("nav.languages")}

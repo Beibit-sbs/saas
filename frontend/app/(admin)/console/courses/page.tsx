@@ -256,6 +256,7 @@ export default function CoursesPage() {
         />
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }
 
@@ -332,6 +333,5 @@ function CourseForm({
         {saveLabel}
       </Button>
     </div>
-    </RequirePermission>
   );
 }

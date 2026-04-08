@@ -256,6 +256,7 @@ export default function RecordsPage() {
         />
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }
 
@@ -332,6 +333,5 @@ function RecordForm({
         {saveLabel}
       </Button>
     </div>
-    </RequirePermission>
   );
 }
