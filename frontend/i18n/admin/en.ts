@@ -418,5 +418,16 @@ export const en = {
   "facultyStatus": "Status",
   "facultyCreated": "Faculty member created",
   "facultyUpdated": "Faculty member updated",
-  "facultyDeleted": "Faculty member deleted"
+  "facultyDeleted": "Faculty member deleted",
+  "recordsHelp": "Manage academic records linked to students and courses.",
+  "addRecord": "Add record",
+  "noRecords": "No academic records found.",
+  "recordStudentId": "Student ID",
+  "recordCourseId": "Course ID",
+  "recordGrade": "Grade",
+  "recordSemester": "Semester",
+  "recordStatus": "Status",
+  "recordCreated": "Record created",
+  "recordUpdated": "Record updated",
+  "recordDeleted": "Record deleted"
 } as const;

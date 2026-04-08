@@ -53,6 +53,7 @@ export const kk = {
   "nav.executions": "Орындаулар",
   "nav.schedule": "Кесте",
   "nav.transcript": "Транскрипт",
+  "nav.records": "Жазбалар",
   "nav.requests": "Сұраулар",
   "developer.permissionDenied": "Бұл панельге кіру үшін әзірлеуші платформасын оқу құқығы қажет.",
   "developer.title": "Әзірлеуші қосымшалары",

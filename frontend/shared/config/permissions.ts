@@ -59,6 +59,10 @@ export const PERMISSIONS = {
       // Backups
       BACKUP_MANAGE: "admin.backup.manage",
 
+      // Academic records
+      RECORDS_READ: "admin.records.read",
+      RECORDS_WRITE: "admin.records.write",
+
   // Audit
   AUDIT_READ: "admin.audit.read",
 

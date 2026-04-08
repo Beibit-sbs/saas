@@ -53,6 +53,7 @@ export const en = {
   "nav.executions": "Executions",
   "nav.schedule": "Schedule",
   "nav.transcript": "Transcript",
+  "nav.records": "Records",
   "nav.requests": "Requests",
   "developer.permissionDenied": "You need developer platform read permission to access this panel.",
   "developer.title": "Developer Apps",

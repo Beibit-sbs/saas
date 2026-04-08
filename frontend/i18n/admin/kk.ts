@@ -418,5 +418,16 @@ export const kk = {
   "facultyStatus": "Күйі",
   "facultyCreated": "Оқытушы жасалды",
   "facultyUpdated": "Оқытушы жаңартылды",
-  "facultyDeleted": "Оқытушы жойылды"
+  "facultyDeleted": "Оқытушы жойылды",
+  "recordsHelp": "Студенттер мен курстарға қатысты академиялық жазбаларды басқару.",
+  "addRecord": "Жазба қосу",
+  "noRecords": "Академиялық жазбалар табылмады.",
+  "recordStudentId": "Студент ID",
+  "recordCourseId": "Курс ID",
+  "recordGrade": "Баға",
+  "recordSemester": "Семестр",
+  "recordStatus": "Күйі",
+  "recordCreated": "Жазба жасалды",
+  "recordUpdated": "Жазба жаңартылды",
+  "recordDeleted": "Жазба жойылды"
 } as const;

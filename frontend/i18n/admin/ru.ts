@@ -418,5 +418,16 @@ export const ru = {
   "facultyStatus": "Статус",
   "facultyCreated": "Преподаватель создан",
   "facultyUpdated": "Преподаватель обновлён",
-  "facultyDeleted": "Преподаватель удалён"
+  "facultyDeleted": "Преподаватель удалён",
+  "recordsHelp": "Управление академическими записями студентов по курсам.",
+  "addRecord": "Добавить запись",
+  "noRecords": "Академические записи не найдены.",
+  "recordStudentId": "ID студента",
+  "recordCourseId": "ID курса",
+  "recordGrade": "Оценка",
+  "recordSemester": "Семестр",
+  "recordStatus": "Статус",
+  "recordCreated": "Запись создана",
+  "recordUpdated": "Запись обновлена",
+  "recordDeleted": "Запись удалена"
 } as const;

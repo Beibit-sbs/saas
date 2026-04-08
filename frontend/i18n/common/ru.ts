@@ -53,6 +53,7 @@ export const ru = {
   "nav.executions": "Запуски",
   "nav.schedule": "Расписание",
   "nav.transcript": "Транскрипт",
+  "nav.records": "Записи",
   "nav.requests": "Запросы",
   "developer.permissionDenied": "Нужны права на чтение платформы разработчиков для доступа к этой панели.",
   "developer.title": "Приложения разработчиков",
