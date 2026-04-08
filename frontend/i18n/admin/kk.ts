@@ -429,5 +429,15 @@ export const kk = {
   "recordStatus": "Күйі",
   "recordCreated": "Жазба жасалды",
   "recordUpdated": "Жазба жаңартылды",
-  "recordDeleted": "Жазба жойылды"
+  "recordDeleted": "Жазба жойылды",
+  "workflowsHelp": "Workflow инстанстарын және тапсырмаларын қадағалап, жаңасын іске қосыңыз.",
+  "workflowKey": "Workflow кілті",
+  "workflowEntityType": "Entity түрі",
+  "workflowEntityId": "Entity ID",
+  "workflowStart": "Workflow іске қосу",
+  "workflowStarted": "Workflow іске қосылды",
+  "workflowInstances": "Workflow инстанстары",
+  "workflowTasks": "Workflow тапсырмалары",
+  "noWorkflowInstances": "Workflow инстанстары табылмады.",
+  "noWorkflowTasks": "Workflow тапсырмалары табылмады."
 } as const;

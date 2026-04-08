@@ -40,6 +40,7 @@ export const ru = {
   "nav.platformManagement": "Управление платформой",
   "nav.controlPlane": "Контрольный центр",
   "nav.languages": "Языки",
+  "nav.workflows": "Воркфлоу",
   "nav.localUsers": "Локальные пользователи",
   "nav.rbac": "RBAC",
   "nav.integrations": "Интеграции",

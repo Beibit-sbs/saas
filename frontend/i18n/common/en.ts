@@ -40,6 +40,7 @@ export const en = {
   "nav.platformManagement": "Platform Management",
   "nav.controlPlane": "Control Plane",
   "nav.languages": "Languages",
+  "nav.workflows": "Workflows",
   "nav.localUsers": "Local Users",
   "nav.rbac": "RBAC",
   "nav.integrations": "Integrations",

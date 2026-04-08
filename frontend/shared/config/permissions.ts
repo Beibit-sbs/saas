@@ -66,6 +66,10 @@ export const PERMISSIONS = {
       // i18n
       I18N_MANAGE: "admin.i18n.manage",
 
+      // Workflows
+      WORKFLOWS_READ: "workflows.read",
+      WORKFLOWS_WRITE: "workflows.write",
+
   // Audit
   AUDIT_READ: "admin.audit.read",
 

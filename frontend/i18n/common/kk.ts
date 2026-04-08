@@ -40,6 +40,7 @@ export const kk = {
   "nav.platformManagement": "Платформаны басқару",
   "nav.controlPlane": "Басқару орталығы",
   "nav.languages": "Тілдер",
+  "nav.workflows": "Воркфлоулар",
   "nav.localUsers": "Жергілікті пайдаланушылар",
   "nav.rbac": "RBAC",
   "nav.integrations": "Интеграциялар",

@@ -429,5 +429,15 @@ export const en = {
   "recordStatus": "Status",
   "recordCreated": "Record created",
   "recordUpdated": "Record updated",
-  "recordDeleted": "Record deleted"
+  "recordDeleted": "Record deleted",
+  "workflowsHelp": "Track workflow instances and tasks, and start new workflows.",
+  "workflowKey": "Workflow key",
+  "workflowEntityType": "Entity type",
+  "workflowEntityId": "Entity ID",
+  "workflowStart": "Start workflow",
+  "workflowStarted": "Workflow started",
+  "workflowInstances": "Workflow instances",
+  "workflowTasks": "Workflow tasks",
+  "noWorkflowInstances": "No workflow instances found.",
+  "noWorkflowTasks": "No workflow tasks found."
 } as const;

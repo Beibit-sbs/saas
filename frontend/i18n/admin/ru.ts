@@ -429,5 +429,15 @@ export const ru = {
   "recordStatus": "Статус",
   "recordCreated": "Запись создана",
   "recordUpdated": "Запись обновлена",
-  "recordDeleted": "Запись удалена"
+  "recordDeleted": "Запись удалена",
+  "workflowsHelp": "Отслеживайте инстансы и задачи workflow и запускайте новые.",
+  "workflowKey": "Ключ workflow",
+  "workflowEntityType": "Тип сущности",
+  "workflowEntityId": "ID сущности",
+  "workflowStart": "Запустить workflow",
+  "workflowStarted": "Workflow запущен",
+  "workflowInstances": "Инстансы workflow",
+  "workflowTasks": "Задачи workflow",
+  "noWorkflowInstances": "Инстансы workflow не найдены.",
+  "noWorkflowTasks": "Задачи workflow не найдены."
 } as const;
