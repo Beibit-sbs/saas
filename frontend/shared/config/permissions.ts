@@ -9,17 +9,17 @@ export const PERMISSIONS = {
   FEATURE_FLAGS_READ: "admin.integrations.manage",
   FEATURE_FLAGS_WRITE: "admin.integrations.manage",
 
-  // Billing
-  BILLING_READ: "billing.read",
-  BILLING_WRITE: "billing.write",
+  // Billing (platform billing routes are under router_admin, guarded by platform.admin.read/write)
+  BILLING_READ: "platform.admin.read",
+  BILLING_WRITE: "platform.admin.write",
 
   // Jobs
   JOBS_READ: "admin.jobs.read",
   JOBS_WRITE: "admin.jobs.write",
 
-  // Notifications
-  NOTIFICATIONS_READ: "notifications.read",
-  NOTIFICATIONS_WRITE: "notifications.write",
+  // Notifications (under platform admin router, guarded by platform.admin.read/write)
+  NOTIFICATIONS_READ: "platform.admin.read",
+  NOTIFICATIONS_WRITE: "platform.admin.write",
 
   // Health / metrics
   HEALTH_READ: "health.read",
@@ -109,9 +109,9 @@ export const PERMISSIONS = {
   ADMISSIONS_DECIDE: "admissions.decide",
   ADMISSIONS_DOCUMENTS_WRITE: "admissions.documents.write",
 
-  // Automation / Workflow Engine
-  AUTOMATION_READ: "automation.read",
-  AUTOMATION_WRITE: "automation.write",
+  // Automation / Workflow Engine (routes under platform admin router, guarded by platform.admin.read/write)
+  AUTOMATION_READ: "platform.admin.read",
+  AUTOMATION_WRITE: "platform.admin.write",
 
   // AI Copilot (read-only foundation v1)
   AI_COPILOT_READ: "ai.chat.execute",
