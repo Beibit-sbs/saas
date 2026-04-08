@@ -35,6 +35,7 @@ export const en = {
   "nav.myWork": "My Work",
   "nav.faculty": "Faculty",
   "nav.identityAccess": "Identity & Access",
+  "nav.profiles": "Profiles",
   "nav.operations": "Operations",
   "nav.usersRoles": "Users & Roles",
   "nav.platformManagement": "Platform Management",
@@ -57,9 +58,11 @@ export const en = {
   "nav.transcript": "Transcript",
   "nav.records": "Records",
   "nav.requests": "Requests",
-  "developer.permissionDenied": "You need developer platform read permission to access this panel.",
+  "developer.permissionDenied":
+    "You need developer platform read permission to access this panel.",
   "developer.title": "Developer Apps",
-  "developer.description": "Manage public API clients, installations, and usage visibility for external integrations.",
+  "developer.description":
+    "Manage public API clients, installations, and usage visibility for external integrations.",
   "developer.createTitle": "Create Developer App",
   "developer.appName": "App name",
   "developer.descriptionShort": "Description",
@@ -68,15 +71,18 @@ export const en = {
   "developer.registeredApps": "Registered Apps",
   "developer.loadAppsFailed": "Failed to load developer apps",
   "developer.emptyAppsTitle": "No developer apps yet",
-  "developer.emptyAppsDescription": "Create the first developer app to start external integrations.",
+  "developer.emptyAppsDescription":
+    "Create the first developer app to start external integrations.",
   "developer.installations": "Installations",
   "developer.loadInstallationsFailed": "Failed to load installations",
   "developer.emptyInstallationsTitle": "No installations",
-  "developer.emptyInstallationsDescription": "This app has not been installed into any tenant yet.",
+  "developer.emptyInstallationsDescription":
+    "This app has not been installed into any tenant yet.",
   "developer.apiUsageLogs": "API Usage Logs",
   "developer.loadLogsFailed": "Failed to load API logs",
   "developer.emptyLogsTitle": "No API usage logs",
-  "developer.emptyLogsDescription": "Usage records will appear after the first API calls from this app.",
+  "developer.emptyLogsDescription":
+    "Usage records will appear after the first API calls from this app.",
   "auth.loginTitle": "AI University Console",
   "auth.loginSubtitle": "Sign in to continue",
   "auth.username": "Username",
@@ -87,21 +93,28 @@ export const en = {
   "auth.tryAgain": "Please try again.",
   "auth.universityLabel": "University",
   "auth.universityHelp": "Choose the university for this sign-in.",
-  "auth.universityAutoDetected": "University auto-detected from {domain}: {name}",
-  "auth.universityManualRequired": "No university mapping was found for {domain}. Choose one manually.",
+  "auth.universityAutoDetected":
+    "University auto-detected from {domain}: {name}",
+  "auth.universityManualRequired":
+    "No university mapping was found for {domain}. Choose one manually.",
   "auth.universityRemembered": "Last used university restored: {name}",
   "auth.universityRequired": "Choose a university before signing in.",
   "auth.universityLoading": "Loading university directory...",
-  "auth.universityUnavailable": "University directory is temporarily unavailable. Use technical university ID (tenant ID) fallback.",
+  "auth.universityUnavailable":
+    "University directory is temporarily unavailable. Use technical university ID (tenant ID) fallback.",
   "auth.sessionChecking": "Checking active session...",
-  "auth.platformAdminDetected": "Platform administrator login detected. University binding is not required for this sign-in.",
+  "auth.platformAdminDetected":
+    "Platform administrator login detected. University binding is not required for this sign-in.",
   "auth.technicalTenantToggle": "Technical fallback (support use only)",
   "auth.technicalTenantLabel": "Technical university ID (fallback only)",
-  "auth.technicalTenantHelp": "Use only if your university cannot be selected above or support instructed you to use this fallback.",
-  "auth.technicalTenantInvalid": "Technical university ID must be a positive integer.",
+  "auth.technicalTenantHelp":
+    "Use only if your university cannot be selected above or support instructed you to use this fallback.",
+  "auth.technicalTenantInvalid":
+    "Technical university ID must be a positive integer.",
   "console.tenants.description": "Manage universities on the platform",
   "console.jobs.description": "Background job queue",
-  "console.interventions.description": "Intervention cases generated from academic risk signals",
+  "console.interventions.description":
+    "Intervention cases generated from academic risk signals",
   "intervention.col.case": "Case",
   "intervention.col.student": "Student",
   "intervention.col.severity": "Severity",
@@ -123,7 +136,8 @@ export const en = {
   "intervention.severity.medium": "Medium",
   "intervention.severity.low": "Low",
   "intervention.empty.title": "No intervention cases",
-  "intervention.empty.description": "Intervention cases will appear once AI recommendations are escalated.",
+  "intervention.empty.description":
+    "Intervention cases will appear once AI recommendations are escalated.",
   "intervention.drawer.caseTitle": "Case",
   "intervention.drawer.defaultTitle": "Intervention details",
   "intervention.drawer.ownerLabel": "Owner",
@@ -150,7 +164,8 @@ export const en = {
   "intervention.action.updateStatusSuccess": "Status updated",
   "intervention.action.actionType": "Action type",
   "intervention.action.addNote": "Action description",
-  "intervention.action.notePlaceholder": "Advisor contacted student and scheduled consultation",
+  "intervention.action.notePlaceholder":
+    "Advisor contacted student and scheduled consultation",
   "intervention.action.addAction": "Add action",
   "intervention.action.addActionSuccess": "Action added",
   "intervention.actionType.note": "Note",
@@ -175,7 +190,8 @@ export const en = {
   "console.featureFlags.description": "Toggle platform-level features",
   "console.health.description": "Platform operational status",
   "console.ops.description": "Operational visibility for platform reliability",
-  "console.federation.description": "Multi-institution view. Manage universities, colleges and institutes sharing this platform.",
+  "console.federation.description":
+    "Multi-institution view. Manage universities, colleges and institutes sharing this platform.",
   "federation.loadFailedTitle": "Failed to load institutions",
   "federation.loadFailedMessage": "Could not retrieve institution list.",
   "federation.loadingInstitutions": "Loading institutions...",
@@ -193,7 +209,8 @@ export const en = {
   "federation.form.tenantId": "Tenant ID",
   "federation.form.role": "Role",
   "federation.overviewLoadFailedTitle": "Failed to load overview",
-  "federation.overviewLoadFailedMessage": "Could not retrieve institution overview.",
+  "federation.overviewLoadFailedMessage":
+    "Could not retrieve institution overview.",
   "federation.loadingOverview": "Loading overview...",
   "federation.kpi.totalStudents": "Total Students",
   "federation.kpi.totalEnrollments": "Total Enrollments",
@@ -201,13 +218,17 @@ export const en = {
   "federation.kpi.universities": "Universities",
   "federation.kpi.allMetrics": "All KPI Metrics",
   "console.profile.title": "Profile",
-  "console.profile.description": "Manage your profile information and account details.",
+  "console.profile.description":
+    "Manage your profile information and account details.",
   "console.preferences.title": "Preferences",
-  "console.preferences.description": "Configure language, notifications and interface defaults.",
+  "console.preferences.description":
+    "Configure language, notifications and interface defaults.",
   "console.security.title": "Security",
-  "console.security.description": "Review sign-in security settings and account protection options.",
+  "console.security.description":
+    "Review sign-in security settings and account protection options.",
   "console.profile.accountInfoTitle": "Account Information",
-  "console.profile.accountInfoDescription": "Profile identity is sourced from the active authenticated session.",
+  "console.profile.accountInfoDescription":
+    "Profile identity is sourced from the active authenticated session.",
   "console.profile.displayName": "Display name",
   "console.profile.userId": "User ID",
   "console.profile.tenant": "University",
@@ -217,56 +238,79 @@ export const en = {
   "console.profile.sessionNotAuthenticated": "Not authenticated",
   "console.profile.roles": "Roles",
   "console.profile.noRoleData": "No role data available for this session.",
-  "console.profile.readOnlyNotice": "Direct profile edits are not exposed by the current API contract in this environment.",
-  "console.profile.readOnlyNoticeDetail": "Session data shown here refreshes from your active login context.",
+  "console.profile.readOnlyNotice":
+    "Direct profile edits are not exposed by the current API contract in this environment.",
+  "console.profile.readOnlyNoticeDetail":
+    "Session data shown here refreshes from your active login context.",
   "console.profile.refreshSession": "Refresh session data",
   "console.profile.actionsTitle": "Profile Actions",
-  "console.profile.actionsDescription": "Quick actions for account visibility and consistency.",
+  "console.profile.actionsDescription":
+    "Quick actions for account visibility and consistency.",
   "console.profile.identitySourceTitle": "Identity source",
-  "console.profile.identitySourceDescription": "The console reads identity from /api/auth/me and keeps it synchronized with your auth cookie.",
+  "console.profile.identitySourceDescription":
+    "The console reads identity from /api/auth/me and keeps it synchronized with your auth cookie.",
   "console.profile.updateAccountTitle": "Need to update account details?",
-  "console.profile.updateAccountDescription": "Contact a university administrator if your display name or role assignments are outdated.",
+  "console.profile.updateAccountDescription":
+    "Contact a university administrator if your display name or role assignments are outdated.",
   "console.preferences.workspaceTitle": "Console Preferences",
-  "console.preferences.workspaceDescription": "Configure your AI University Console experience for this account session.",
+  "console.preferences.workspaceDescription":
+    "Configure your AI University Console experience for this account session.",
   "console.preferences.languageLabel": "Language",
   "console.preferences.currentLanguageLabel": "Current",
   "console.preferences.selectLanguagePlaceholder": "Select language",
   "console.preferences.saveLanguage": "Save language",
   "console.preferences.themeModeLabel": "Theme mode",
-  "console.preferences.themeModeDescription": "Toggle between light and dark console palettes. Theme is stored per browser.",
+  "console.preferences.themeModeDescription":
+    "Toggle between light and dark console palettes. Theme is stored per browser.",
   "console.preferences.themeToggleAria": "Toggle dark mode",
   "console.preferences.scopeTitle": "Preference Scope",
   "console.preferences.scopeDescription": "How your settings are applied.",
-  "console.preferences.scopeLanguagePrefix": "Language preference is persisted for user",
+  "console.preferences.scopeLanguagePrefix":
+    "Language preference is persisted for user",
   "console.preferences.scopeLanguageSuffix": "and applied after next sign-in.",
-  "console.preferences.scopeThemeDescription": "Theme mode is stored in browser local storage for fast client-side rendering without backend changes.",
+  "console.preferences.scopeThemeDescription":
+    "Theme mode is stored in browser local storage for fast client-side rendering without backend changes.",
   "console.preferences.languageUpdatedTitle": "Language updated",
-  "console.preferences.languageUpdatedDescription": "Interface language preference has been saved.",
+  "console.preferences.languageUpdatedDescription":
+    "Interface language preference has been saved.",
   "console.preferences.themeUpdatedTitle": "Theme updated",
-  "console.preferences.themeUpdatedDescriptionDark": "Console theme switched to dark.",
-  "console.preferences.themeUpdatedDescriptionLight": "Console theme switched to light.",
+  "console.preferences.themeUpdatedDescriptionDark":
+    "Console theme switched to dark.",
+  "console.preferences.themeUpdatedDescriptionLight":
+    "Console theme switched to light.",
   "console.security.changePasswordTitle": "Change Password",
-  "console.security.changePasswordDescription": "Update your credentials with policy checks before submitting to the account security API.",
+  "console.security.changePasswordDescription":
+    "Update your credentials with policy checks before submitting to the account security API.",
   "console.security.currentPassword": "Current password",
   "console.security.newPassword": "New password",
   "console.security.confirmPassword": "Confirm new password",
   "console.security.updating": "Updating...",
   "console.security.updatePassword": "Update password",
   "console.security.accountSecurityTitle": "Account Security",
-  "console.security.accountSecurityDescription": "Current signed-in identity context.",
+  "console.security.accountSecurityDescription":
+    "Current signed-in identity context.",
   "console.security.userLabel": "User",
   "console.security.identifierLabel": "Identifier",
-  "console.security.rotationRecommendation": "Recommended rotation: update credentials regularly and avoid password reuse across systems.",
+  "console.security.rotationRecommendation":
+    "Recommended rotation: update credentials regularly and avoid password reuse across systems.",
   "console.security.validation.required": "All password fields are required.",
-  "console.security.validation.length": "New password must be at least 8 characters.",
-  "console.security.validation.complexity": "New password must include uppercase, lowercase and digits.",
-  "console.security.validation.confirmation": "Password confirmation does not match.",
-  "console.security.validation.different": "New password must differ from current password.",
-  "console.security.passwordUpdateFailed": "Password update failed. Please try again.",
-  "console.security.passwordUpdateSuccess": "Password has been updated successfully.",
+  "console.security.validation.length":
+    "New password must be at least 8 characters.",
+  "console.security.validation.complexity":
+    "New password must include uppercase, lowercase and digits.",
+  "console.security.validation.confirmation":
+    "Password confirmation does not match.",
+  "console.security.validation.different":
+    "New password must differ from current password.",
+  "console.security.passwordUpdateFailed":
+    "Password update failed. Please try again.",
+  "console.security.passwordUpdateSuccess":
+    "Password has been updated successfully.",
   "console.security.passwordUpdatedTitle": "Password updated",
-  "console.security.passwordUpdatedDescription": "Your account credentials were changed.",
-  "console.security.endpointUnavailable": "Security endpoint is currently unavailable. Please retry later.",
+  "console.security.passwordUpdatedDescription":
+    "Your account credentials were changed.",
+  "console.security.endpointUnavailable":
+    "Security endpoint is currently unavailable. Please retry later.",
   "tenants.searchLabel": "Search",
   "tenants.searchPlaceholder": "Name or slug...",
   "tenants.statusLabel": "Status",
@@ -289,7 +333,8 @@ export const en = {
   "tenants.activated": "University activated",
   "tenants.activate": "Activate",
   "tenants.deleteConfirmTitle": "Deactivate university?",
-  "tenants.deleteConfirmDescription": "{name} will be moved to inactive status.",
+  "tenants.deleteConfirmDescription":
+    "{name} will be moved to inactive status.",
   "tenants.deleted": "University moved to inactive",
   "tenants.delete": "Deactivate",
   "tenants.new": "New University",
@@ -300,7 +345,8 @@ export const en = {
   "tenants.selectFromTable": "Select a university from the table.",
   "tenants.studentCapacity": "Student capacity",
   "tenants.notFound": "University not found",
-  "tenants.notFoundDescription": "The selected university is not present on this page of results.",
+  "tenants.notFoundDescription":
+    "The selected university is not present on this page of results.",
   "tenants.createTitle": "Create university",
   "tenants.createDescription": "Add a new university to the platform",
   "tenants.displayName": "Display name",
@@ -315,7 +361,8 @@ export const en = {
   "ops.refresh": "Refresh",
   "ops.retry": "Retry",
   "ops.healthOverview": "Health Overview",
-  "ops.healthOverviewDescription": "Current status for core platform dependencies",
+  "ops.healthOverviewDescription":
+    "Current status for core platform dependencies",
   "ops.health.overallHealth": "Overall Health",
   "ops.health.api": "API",
   "ops.health.database": "Database",
@@ -325,7 +372,8 @@ export const en = {
   "ops.healthEndpointsUnavailable": "Health endpoints unavailable",
   "ops.healthEndpointsUnavailableMessage": "Could not read /health endpoints.",
   "ops.queueRetryHealth": "Queue / Retry Health",
-  "ops.queueRetryHealthDescription": "Backlogs, failed deliveries and dead-state visibility",
+  "ops.queueRetryHealthDescription":
+    "Backlogs, failed deliveries and dead-state visibility",
   "ops.queue.outboxBacklog": "Outbox Backlog",
   "ops.queue.eventQueueSize": "Event Queue Size",
   "ops.queue.failedWebhooks": "Failed Webhooks",
@@ -337,11 +385,13 @@ export const en = {
   "ops.queue.retryBacklog": "Retry Backlog",
   "ops.queue.deadCount": "Dead Count",
   "ops.queueMetricsUnavailable": "Queue metrics unavailable",
-  "ops.queueMetricsUnavailableMessage": "No queue/retry metrics were returned by /metrics/ops.",
+  "ops.queueMetricsUnavailableMessage":
+    "No queue/retry metrics were returned by /metrics/ops.",
   "ops.metricsEndpointUnavailable": "Metrics endpoint unavailable",
   "ops.metricsEndpointUnavailableMessage": "Could not read /metrics/ops.",
   "ops.apiTraffic": "API / Traffic",
-  "ops.apiTrafficDescription": "Latency and error-rate summary for recent requests",
+  "ops.apiTrafficDescription":
+    "Latency and error-rate summary for recent requests",
   "ops.traffic.requestsPerMin": "Requests / Min",
   "ops.traffic.p50Latency": "P50 Latency",
   "ops.traffic.p95Latency": "P95 Latency",
@@ -353,11 +403,13 @@ export const en = {
   "ops.latencyChart": "Latency chart",
   "ops.errorChart": "Error chart",
   "ops.trafficMetricsUnavailable": "Traffic metrics unavailable",
-  "ops.trafficMetricsUnavailableMessage": "No latency/traffic metrics were returned by /metrics/latency.",
+  "ops.trafficMetricsUnavailableMessage":
+    "No latency/traffic metrics were returned by /metrics/latency.",
   "ops.latencyEndpointUnavailable": "Latency endpoint unavailable",
   "ops.latencyEndpointUnavailableMessage": "Could not read /metrics/latency.",
   "ops.runtimeAndBackup": "Runtime / Backup",
-  "ops.runtimeAndBackupDescription": "Heartbeat freshness and latest backup status",
+  "ops.runtimeAndBackupDescription":
+    "Heartbeat freshness and latest backup status",
   "ops.runtime.workerHeartbeatAge": "Worker heartbeat age",
   "ops.runtime.schedulerHeartbeatAge": "Scheduler heartbeat age",
   "ops.backup.lastStatus": "Backup last status",
@@ -414,9 +466,11 @@ export const en = {
   "dashboard.executive.dataDate": "Data date: {date} | Generated: {generated}",
   "dashboard.executive.refresh": "Refresh",
   "dashboard.executive.loadFailedTitle": "Failed to load executive dashboard",
-  "dashboard.executive.loadFailedMessage": "KPI data is temporarily unavailable.",
+  "dashboard.executive.loadFailedMessage":
+    "KPI data is temporarily unavailable.",
   "dashboard.executive.noDataTitle": "No KPI data yet",
-  "dashboard.executive.noDataDescription": "No dashboard cards are available for the selected data interval.",
+  "dashboard.executive.noDataDescription":
+    "No dashboard cards are available for the selected data interval.",
   "dashboard.executive.retry": "Retry",
   "students.filter.search": "Search",
   "students.filter.searchPlaceholder": "Name or email...",
@@ -439,9 +493,11 @@ export const en = {
   "students.summaryTitle": "Student summary",
   "students.selectFromTable": "Select a student from the table.",
   "students.notFound": "Student not found",
-  "students.notFoundDescription": "The selected student is not present on this page of results.",
+  "students.notFoundDescription":
+    "The selected student is not present on this page of results.",
   "students.createTitle": "Create student",
-  "students.createDescription": "Create a student profile by person and cohort.",
+  "students.createDescription":
+    "Create a student profile by person and cohort.",
   "students.createAction": "Create student",
   "students.create.personId": "Person ID",
   "students.create.studentNumber": "Student number",
@@ -456,38 +512,48 @@ export const en = {
   "automation.ruleActivated": "Rule activated",
   "automation.ruleDeactivated": "Rule deactivated",
   "automation.updateFailed": "Failed to update rule",
-  "automation.permissionDenied": "You need automation.read permission to view automation rules.",
+  "automation.permissionDenied":
+    "You need automation.read permission to view automation rules.",
   "automation.title": "Automation Rules",
-  "automation.description": "Manage event-driven rules that trigger automated actions.",
+  "automation.description":
+    "Manage event-driven rules that trigger automated actions.",
   "automation.createRule": "Create Rule",
   "automation.loadFailedTitle": "Failed to load automation rules",
   "automation.loadFailedMessage": "Could not fetch automation rules.",
   "automation.emptyTitle": "No automation rules",
-  "automation.emptyDescription": "Create your first rule to start automating event-driven workflows.",
+  "automation.emptyDescription":
+    "Create your first rule to start automating event-driven workflows.",
   "automation.changeStatus": "Change rule status?",
   "automation.activate": "Activate",
   "automation.deactivate": "Deactivate",
   "automation.templates.title": "Automation Templates",
-  "automation.templates.shortDescription": "Create automation rules from predefined templates.",
-  "automation.templates.description": "Create automation rules from predefined templates. Choose a template and customize it for your needs.",
+  "automation.templates.shortDescription":
+    "Create automation rules from predefined templates.",
+  "automation.templates.description":
+    "Create automation rules from predefined templates. Choose a template and customize it for your needs.",
   "automation.templates.systemTemplate": "System Template",
   "automation.templates.eventLabel": "Event",
   "automation.templates.creating": "Creating...",
   "automation.templates.ruleCreated": "Rule created",
-  "automation.templates.ruleCreatedDescription": "Created rule \"{rule}\" from template \"{template}\".",
+  "automation.templates.ruleCreatedDescription":
+    'Created rule "{rule}" from template "{template}".',
   "automation.templates.createFailed": "Failed to create rule",
   "automation.templates.unexpectedError": "An unexpected error occurred.",
   "automation.templates.loadFailedTitle": "Failed to load templates",
-  "automation.templates.loadFailedMessage": "Template catalog is temporarily unavailable.",
+  "automation.templates.loadFailedMessage":
+    "Template catalog is temporarily unavailable.",
   "automation.templates.allTemplates": "All Templates",
   "automation.templates.emptyByCategoryTitle": "No templates in this category",
   "automation.templates.emptyTitle": "No templates available",
-  "automation.templates.emptyByCategoryDescription": "No templates in the {category} category.",
+  "automation.templates.emptyByCategoryDescription":
+    "No templates in the {category} category.",
   "automation.templates.emptyDescription": "Template catalog is empty.",
   "automation.templates.backToRules": "Back to Rules",
-  "automation.executions.permissionDenied": "You need automation.read permission to view execution logs.",
+  "automation.executions.permissionDenied":
+    "You need automation.read permission to view execution logs.",
   "automation.executions.title": "Execution Log",
-  "automation.executions.description": "Audit trail for all automation rule executions.",
+  "automation.executions.description":
+    "Audit trail for all automation rule executions.",
   "automation.executions.ruleId": "Rule ID",
   "automation.executions.eventId": "Event ID",
   "automation.executions.executedAt": "Executed At",
@@ -496,12 +562,16 @@ export const en = {
   "automation.executions.status.completed": "Completed",
   "automation.executions.status.failed": "Failed",
   "automation.executions.loadFailedTitle": "Failed to load execution log",
-  "automation.executions.loadFailedMessage": "Could not fetch automation executions.",
+  "automation.executions.loadFailedMessage":
+    "Could not fetch automation executions.",
   "automation.executions.emptyTitle": "No executions",
-  "automation.executions.emptyDescription": "Executions appear here once automation rules are triggered by events.",
-  "aiCopilot.permissionDenied": "You need AI Copilot read permission to access this panel.",
+  "automation.executions.emptyDescription":
+    "Executions appear here once automation rules are triggered by events.",
+  "aiCopilot.permissionDenied":
+    "You need AI Copilot read permission to access this panel.",
   "aiCopilot.title": "AI Copilot",
-  "aiCopilot.description": "Read-only deterministic assistant powered by KPI, analytics, context, and automation signals.",
+  "aiCopilot.description":
+    "Read-only deterministic assistant powered by KPI, analytics, context, and automation signals.",
   "aiCopilot.askLabel": "Ask a platform question",
   "aiCopilot.placeholder": "How many students do we currently have?",
   "aiCopilot.ask": "Ask",
@@ -521,7 +591,8 @@ export const en = {
   "home.title": "AI University Platform",
   "home.subtitle": "Starter template for browser-based systems.",
   "admin.title": "AI University Platform",
-  "admin.subtitle": "Unified console for identity, AI providers, and university operations.",
+  "admin.subtitle":
+    "Unified console for identity, AI providers, and university operations.",
   "help.title": "Project AI Help",
   "help.page": "Page",
   "help.field": "Field (optional)",
@@ -530,7 +601,8 @@ export const en = {
   "help.thinking": "Thinking...",
   "help.error.empty": "Please enter a question before sending.",
 
-  "console.admissions.description": "Manage applicants and track applications through the admissions pipeline",
+  "console.admissions.description":
+    "Manage applicants and track applications through the admissions pipeline",
   "admissions.tab.applicants": "Applicants",
   "admissions.tab.applications": "Applications",
   "admissions.col.name": "Name",
@@ -555,9 +627,11 @@ export const en = {
   "admissions.conclusion.waitlist": "Waitlist",
   "admissions.conclusion.withdrawn": "Withdrawn",
   "admissions.empty.applicants": "No applicants",
-  "admissions.empty.noApplicantsYet": "No applicants found. Create one to get started.",
+  "admissions.empty.noApplicantsYet":
+    "No applicants found. Create one to get started.",
   "admissions.empty.applications": "No applications",
-  "admissions.empty.noApplicationsYet": "No applications found for the selected filters.",
+  "admissions.empty.noApplicationsYet":
+    "No applications found for the selected filters.",
   "admissions.drawer.applicant": "Applicant details",
   "admissions.drawer.application": "Application",
   "admissions.drawer.loading": "Loading details…",
@@ -593,7 +667,8 @@ export const en = {
   "admissions.doc.status.received": "Received",
   "admissions.doc.status.verified": "Verified",
   "admissions.doc.status.rejected": "Rejected",
-  "admissions.createApplicant.description": "Add a new applicant to the admissions pipeline",
+  "admissions.createApplicant.description":
+    "Add a new applicant to the admissions pipeline",
   "nav.orgUnits": "Org Units",
   "nav.serviceAccounts": "Service Accounts",
 } as const;

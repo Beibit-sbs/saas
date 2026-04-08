@@ -37,38 +37,42 @@ export const PERMISSIONS = {
   // Local Users
   LOCAL_USERS_MANAGE: "admin.users.manage",
 
-    // Org Units
-    ORG_UNITS_READ: "admin.org_units.read",
-    ORG_UNITS_WRITE: "admin.org_units.write",
+  // Org Units
+  ORG_UNITS_READ: "admin.org_units.read",
+  ORG_UNITS_WRITE: "admin.org_units.write",
 
-        // Integrations / Service Accounts
-        INTEGRATIONS_MANAGE: "admin.integrations.manage",
+  // Integrations / Service Accounts
+  INTEGRATIONS_MANAGE: "admin.integrations.manage",
 
-      // Programs
-      PROGRAMS_READ: "admin.programs.read",
-      PROGRAMS_WRITE: "admin.programs.write",
+  // Programs
+  PROGRAMS_READ: "admin.programs.read",
+  PROGRAMS_WRITE: "admin.programs.write",
 
-      // Courses
-      COURSES_READ: "admin.courses.read",
-      COURSES_WRITE: "admin.courses.write",
+  // Courses
+  COURSES_READ: "admin.courses.read",
+  COURSES_WRITE: "admin.courses.write",
 
-      // Faculty
-      FACULTY_READ: "admin.faculty.read",
-      FACULTY_WRITE: "admin.faculty.write",
+  // Faculty
+  FACULTY_READ: "admin.faculty.read",
+  FACULTY_WRITE: "admin.faculty.write",
 
-      // Backups
-      BACKUP_MANAGE: "admin.backup.manage",
+  // Backups
+  BACKUP_MANAGE: "admin.backup.manage",
 
-      // Academic records
-      RECORDS_READ: "admin.records.read",
-      RECORDS_WRITE: "admin.records.write",
+  // Academic records
+  RECORDS_READ: "admin.records.read",
+  RECORDS_WRITE: "admin.records.write",
 
-      // i18n
-      I18N_MANAGE: "admin.i18n.manage",
+  // i18n
+  I18N_MANAGE: "admin.i18n.manage",
 
-      // Workflows
-      WORKFLOWS_READ: "workflows.read",
-      WORKFLOWS_WRITE: "workflows.write",
+  // Workflows
+  WORKFLOWS_READ: "workflows.read",
+  WORKFLOWS_WRITE: "workflows.write",
+
+  // Profiles
+  PROFILES_READ: "profiles.read",
+  PROFILES_WRITE: "profiles.write",
 
   // Audit
   AUDIT_READ: "admin.audit.read",
@@ -100,9 +104,9 @@ export const PERMISSIONS = {
   ADMISSIONS_READ: "admissions.read",
   ADMISSIONS_WRITE: "admissions.write",
 
-    // Automation / Workflow Engine
-    AUTOMATION_READ: "automation.read",
-    AUTOMATION_WRITE: "automation.write",
+  // Automation / Workflow Engine
+  AUTOMATION_READ: "automation.read",
+  AUTOMATION_WRITE: "automation.write",
 
   // AI Copilot (read-only foundation v1)
   AI_COPILOT_READ: "metrics.read",

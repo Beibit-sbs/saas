@@ -35,6 +35,7 @@ export const ru = {
   "nav.myWork": "Моя работа",
   "nav.faculty": "Факультет",
   "nav.identityAccess": "Идентификация и доступ",
+  "nav.profiles": "Профили",
   "nav.operations": "Операции",
   "nav.usersRoles": "Пользователи и роли",
   "nav.platformManagement": "Управление платформой",
@@ -57,9 +58,11 @@ export const ru = {
   "nav.transcript": "Транскрипт",
   "nav.records": "Записи",
   "nav.requests": "Запросы",
-  "developer.permissionDenied": "Нужны права на чтение платформы разработчиков для доступа к этой панели.",
+  "developer.permissionDenied":
+    "Нужны права на чтение платформы разработчиков для доступа к этой панели.",
   "developer.title": "Приложения разработчиков",
-  "developer.description": "Управление публичными API-клиентами, установками и видимостью использования для внешних интеграций.",
+  "developer.description":
+    "Управление публичными API-клиентами, установками и видимостью использования для внешних интеграций.",
   "developer.createTitle": "Создать приложение разработчика",
   "developer.appName": "Название приложения",
   "developer.descriptionShort": "Описание",
@@ -68,15 +71,18 @@ export const ru = {
   "developer.registeredApps": "Зарегистрированные приложения",
   "developer.loadAppsFailed": "Не удалось загрузить приложения разработчиков",
   "developer.emptyAppsTitle": "Приложений пока нет",
-  "developer.emptyAppsDescription": "Создайте первое приложение разработчика, чтобы начать внешние интеграции.",
+  "developer.emptyAppsDescription":
+    "Создайте первое приложение разработчика, чтобы начать внешние интеграции.",
   "developer.installations": "Установки",
   "developer.loadInstallationsFailed": "Не удалось загрузить установки",
   "developer.emptyInstallationsTitle": "Установок нет",
-  "developer.emptyInstallationsDescription": "Это приложение еще не установлено ни в один тенант.",
+  "developer.emptyInstallationsDescription":
+    "Это приложение еще не установлено ни в один тенант.",
   "developer.apiUsageLogs": "Логи использования API",
   "developer.loadLogsFailed": "Не удалось загрузить логи API",
   "developer.emptyLogsTitle": "Логи использования API отсутствуют",
-  "developer.emptyLogsDescription": "Записи появятся после первых API-вызовов из этого приложения.",
+  "developer.emptyLogsDescription":
+    "Записи появятся после первых API-вызовов из этого приложения.",
   "auth.loginTitle": "Консоль университета ИИ",
   "auth.loginSubtitle": "Войдите, чтобы продолжить",
   "auth.username": "Логин",
@@ -87,21 +93,30 @@ export const ru = {
   "auth.tryAgain": "Попробуйте еще раз.",
   "auth.universityLabel": "Университет",
   "auth.universityHelp": "Выберите университет для этого входа.",
-  "auth.universityAutoDetected": "Университет определён по домену {domain}: {name}",
-  "auth.universityManualRequired": "Для домена {domain} университет не найден. Выберите его вручную.",
-  "auth.universityRemembered": "Восстановлен последний выбранный университет: {name}",
+  "auth.universityAutoDetected":
+    "Университет определён по домену {domain}: {name}",
+  "auth.universityManualRequired":
+    "Для домена {domain} университет не найден. Выберите его вручную.",
+  "auth.universityRemembered":
+    "Восстановлен последний выбранный университет: {name}",
   "auth.universityRequired": "Выберите университет перед входом.",
   "auth.universityLoading": "Загружаем каталог университетов...",
-  "auth.universityUnavailable": "Каталог университетов временно недоступен. Используйте технический ID университета (tenant ID).",
+  "auth.universityUnavailable":
+    "Каталог университетов временно недоступен. Используйте технический ID университета (tenant ID).",
   "auth.sessionChecking": "Проверяем активную сессию...",
-  "auth.platformAdminDetected": "Обнаружен вход платформенного администратора. Привязка к университету для этого входа не требуется.",
-  "auth.technicalTenantToggle": "Технический fallback (только по инструкции поддержки)",
+  "auth.platformAdminDetected":
+    "Обнаружен вход платформенного администратора. Привязка к университету для этого входа не требуется.",
+  "auth.technicalTenantToggle":
+    "Технический fallback (только по инструкции поддержки)",
   "auth.technicalTenantLabel": "Технический ID университета (только fallback)",
-  "auth.technicalTenantHelp": "Используйте только если университет нельзя выбрать выше или поддержка попросила применить этот fallback.",
-  "auth.technicalTenantInvalid": "Технический ID университета должен быть положительным целым числом.",
+  "auth.technicalTenantHelp":
+    "Используйте только если университет нельзя выбрать выше или поддержка попросила применить этот fallback.",
+  "auth.technicalTenantInvalid":
+    "Технический ID университета должен быть положительным целым числом.",
   "console.tenants.description": "Управление университетами на платформе",
   "console.jobs.description": "Очередь фоновых задач",
-  "console.interventions.description": "Кейсы интервенций, созданные из сигналов академического риска",
+  "console.interventions.description":
+    "Кейсы интервенций, созданные из сигналов академического риска",
   "intervention.col.case": "Кейс",
   "intervention.col.student": "Студент",
   "intervention.col.severity": "Серьёзность",
@@ -123,7 +138,8 @@ export const ru = {
   "intervention.severity.medium": "Средняя",
   "intervention.severity.low": "Низкая",
   "intervention.empty.title": "Нет кейсов интервенций",
-  "intervention.empty.description": "Кейсы появятся после эскалации рекомендаций ИИ.",
+  "intervention.empty.description":
+    "Кейсы появятся после эскалации рекомендаций ИИ.",
   "intervention.drawer.caseTitle": "Кейс",
   "intervention.drawer.defaultTitle": "Детали интервенции",
   "intervention.drawer.ownerLabel": "Владелец",
@@ -150,11 +166,13 @@ export const ru = {
   "intervention.action.updateStatusSuccess": "Статус обновлён",
   "intervention.action.actionType": "Тип действия",
   "intervention.action.addNote": "Описание действия",
-  "intervention.action.notePlaceholder": "Советник связался со студентом и назначил консультацию",
+  "intervention.action.notePlaceholder":
+    "Советник связался со студентом и назначил консультацию",
   "intervention.action.addAction": "Добавить действие",
   "intervention.action.addActionSuccess": "Действие добавлено",
   "intervention.actionType.note": "Заметка",
-  "intervention.actionType.consultation_scheduled": "Консультация запланирована",
+  "intervention.actionType.consultation_scheduled":
+    "Консультация запланирована",
   "intervention.actionType.notification_sent": "Уведомление отправлено",
   "intervention.actionType.plan_updated": "План обновлён",
   "intervention.actionType.assignment": "Назначение",
@@ -172,10 +190,12 @@ export const ru = {
   "console.scheduling.description": "Секции курсов и расписание",
   "console.transcripts.description": "Открыть транскрипт по ID студента",
   "console.notifications.description": "Системные уведомления и оповещения",
-  "console.featureFlags.description": "Переключение платформенных feature flags",
+  "console.featureFlags.description":
+    "Переключение платформенных feature flags",
   "console.health.description": "Операционный статус платформы",
   "console.ops.description": "Операционная видимость для надежности платформы",
-  "console.federation.description": "Мультиинституциональный обзор. Управление университетами, колледжами и институтами на общей платформе.",
+  "console.federation.description":
+    "Мультиинституциональный обзор. Управление университетами, колледжами и институтами на общей платформе.",
   "federation.loadFailedTitle": "Не удалось загрузить институции",
   "federation.loadFailedMessage": "Не удалось получить список институций.",
   "federation.loadingInstitutions": "Загрузка институций...",
@@ -193,7 +213,8 @@ export const ru = {
   "federation.form.tenantId": "ID тенанта",
   "federation.form.role": "Роль",
   "federation.overviewLoadFailedTitle": "Не удалось загрузить обзор",
-  "federation.overviewLoadFailedMessage": "Не удалось получить обзор институции.",
+  "federation.overviewLoadFailedMessage":
+    "Не удалось получить обзор институции.",
   "federation.loadingOverview": "Загрузка обзора...",
   "federation.kpi.totalStudents": "Всего студентов",
   "federation.kpi.totalEnrollments": "Всего зачислений",
@@ -201,13 +222,17 @@ export const ru = {
   "federation.kpi.universities": "Университеты",
   "federation.kpi.allMetrics": "Все KPI-метрики",
   "console.profile.title": "Профиль",
-  "console.profile.description": "Управление данными профиля и информацией учетной записи.",
+  "console.profile.description":
+    "Управление данными профиля и информацией учетной записи.",
   "console.preferences.title": "Настройки",
-  "console.preferences.description": "Настройка языка, уведомлений и параметров интерфейса по умолчанию.",
+  "console.preferences.description":
+    "Настройка языка, уведомлений и параметров интерфейса по умолчанию.",
   "console.security.title": "Безопасность",
-  "console.security.description": "Проверка параметров входа и защиты учетной записи.",
+  "console.security.description":
+    "Проверка параметров входа и защиты учетной записи.",
   "console.profile.accountInfoTitle": "Информация об аккаунте",
-  "console.profile.accountInfoDescription": "Идентификационные данные профиля берутся из активной аутентифицированной сессии.",
+  "console.profile.accountInfoDescription":
+    "Идентификационные данные профиля берутся из активной аутентифицированной сессии.",
   "console.profile.displayName": "Отображаемое имя",
   "console.profile.userId": "ID пользователя",
   "console.profile.tenant": "Университет",
@@ -217,56 +242,79 @@ export const ru = {
   "console.profile.sessionNotAuthenticated": "Не аутентифицирован",
   "console.profile.roles": "Роли",
   "console.profile.noRoleData": "Для этой сессии нет данных о ролях.",
-  "console.profile.readOnlyNotice": "Прямое редактирование профиля не предусмотрено текущим API-контрактом в этом окружении.",
-  "console.profile.readOnlyNoticeDetail": "Показанные данные сессии обновляются из вашего активного контекста входа.",
+  "console.profile.readOnlyNotice":
+    "Прямое редактирование профиля не предусмотрено текущим API-контрактом в этом окружении.",
+  "console.profile.readOnlyNoticeDetail":
+    "Показанные данные сессии обновляются из вашего активного контекста входа.",
   "console.profile.refreshSession": "Обновить данные сессии",
   "console.profile.actionsTitle": "Действия профиля",
-  "console.profile.actionsDescription": "Быстрые действия для видимости и согласованности аккаунта.",
+  "console.profile.actionsDescription":
+    "Быстрые действия для видимости и согласованности аккаунта.",
   "console.profile.identitySourceTitle": "Источник идентификации",
-  "console.profile.identitySourceDescription": "Консоль получает данные идентификации из /api/auth/me и синхронизирует их с вашей auth-cookie.",
+  "console.profile.identitySourceDescription":
+    "Консоль получает данные идентификации из /api/auth/me и синхронизирует их с вашей auth-cookie.",
   "console.profile.updateAccountTitle": "Нужно обновить данные аккаунта?",
-  "console.profile.updateAccountDescription": "Свяжитесь с администратором университета, если отображаемое имя или назначение ролей устарели.",
+  "console.profile.updateAccountDescription":
+    "Свяжитесь с администратором университета, если отображаемое имя или назначение ролей устарели.",
   "console.preferences.workspaceTitle": "Настройки консоли",
-  "console.preferences.workspaceDescription": "Настройте работу AI University Console для текущей сессии аккаунта.",
+  "console.preferences.workspaceDescription":
+    "Настройте работу AI University Console для текущей сессии аккаунта.",
   "console.preferences.languageLabel": "Язык",
   "console.preferences.currentLanguageLabel": "Текущий",
   "console.preferences.selectLanguagePlaceholder": "Выберите язык",
   "console.preferences.saveLanguage": "Сохранить язык",
   "console.preferences.themeModeLabel": "Режим темы",
-  "console.preferences.themeModeDescription": "Переключение между светлой и темной палитрой консоли. Тема хранится в браузере.",
+  "console.preferences.themeModeDescription":
+    "Переключение между светлой и темной палитрой консоли. Тема хранится в браузере.",
   "console.preferences.themeToggleAria": "Переключить темную тему",
   "console.preferences.scopeTitle": "Область применения настроек",
   "console.preferences.scopeDescription": "Как применяются ваши настройки.",
-  "console.preferences.scopeLanguagePrefix": "Языковая настройка сохраняется для пользователя",
-  "console.preferences.scopeLanguageSuffix": "и применяется после следующего входа.",
-  "console.preferences.scopeThemeDescription": "Режим темы хранится в локальном хранилище браузера для быстрого клиентского рендера без изменений backend.",
+  "console.preferences.scopeLanguagePrefix":
+    "Языковая настройка сохраняется для пользователя",
+  "console.preferences.scopeLanguageSuffix":
+    "и применяется после следующего входа.",
+  "console.preferences.scopeThemeDescription":
+    "Режим темы хранится в локальном хранилище браузера для быстрого клиентского рендера без изменений backend.",
   "console.preferences.languageUpdatedTitle": "Язык обновлен",
-  "console.preferences.languageUpdatedDescription": "Предпочтение языка интерфейса сохранено.",
+  "console.preferences.languageUpdatedDescription":
+    "Предпочтение языка интерфейса сохранено.",
   "console.preferences.themeUpdatedTitle": "Тема обновлена",
-  "console.preferences.themeUpdatedDescriptionDark": "Тема консоли переключена на темную.",
-  "console.preferences.themeUpdatedDescriptionLight": "Тема консоли переключена на светлую.",
+  "console.preferences.themeUpdatedDescriptionDark":
+    "Тема консоли переключена на темную.",
+  "console.preferences.themeUpdatedDescriptionLight":
+    "Тема консоли переключена на светлую.",
   "console.security.changePasswordTitle": "Смена пароля",
-  "console.security.changePasswordDescription": "Обновите учетные данные с проверками политики перед отправкой в API безопасности аккаунта.",
+  "console.security.changePasswordDescription":
+    "Обновите учетные данные с проверками политики перед отправкой в API безопасности аккаунта.",
   "console.security.currentPassword": "Текущий пароль",
   "console.security.newPassword": "Новый пароль",
   "console.security.confirmPassword": "Подтвердите новый пароль",
   "console.security.updating": "Обновление...",
   "console.security.updatePassword": "Обновить пароль",
   "console.security.accountSecurityTitle": "Безопасность аккаунта",
-  "console.security.accountSecurityDescription": "Контекст текущей аутентифицированной учетной записи.",
+  "console.security.accountSecurityDescription":
+    "Контекст текущей аутентифицированной учетной записи.",
   "console.security.userLabel": "Пользователь",
   "console.security.identifierLabel": "Идентификатор",
-  "console.security.rotationRecommendation": "Рекомендуемая ротация: регулярно обновляйте учетные данные и избегайте повторного использования пароля в разных системах.",
+  "console.security.rotationRecommendation":
+    "Рекомендуемая ротация: регулярно обновляйте учетные данные и избегайте повторного использования пароля в разных системах.",
   "console.security.validation.required": "Все поля пароля обязательны.",
-  "console.security.validation.length": "Новый пароль должен содержать не менее 8 символов.",
-  "console.security.validation.complexity": "Новый пароль должен включать заглавные, строчные буквы и цифры.",
-  "console.security.validation.confirmation": "Подтверждение пароля не совпадает.",
-  "console.security.validation.different": "Новый пароль должен отличаться от текущего.",
-  "console.security.passwordUpdateFailed": "Не удалось обновить пароль. Попробуйте снова.",
+  "console.security.validation.length":
+    "Новый пароль должен содержать не менее 8 символов.",
+  "console.security.validation.complexity":
+    "Новый пароль должен включать заглавные, строчные буквы и цифры.",
+  "console.security.validation.confirmation":
+    "Подтверждение пароля не совпадает.",
+  "console.security.validation.different":
+    "Новый пароль должен отличаться от текущего.",
+  "console.security.passwordUpdateFailed":
+    "Не удалось обновить пароль. Попробуйте снова.",
   "console.security.passwordUpdateSuccess": "Пароль успешно обновлен.",
   "console.security.passwordUpdatedTitle": "Пароль обновлен",
-  "console.security.passwordUpdatedDescription": "Учетные данные вашего аккаунта были изменены.",
-  "console.security.endpointUnavailable": "Эндпоинт безопасности сейчас недоступен. Повторите попытку позже.",
+  "console.security.passwordUpdatedDescription":
+    "Учетные данные вашего аккаунта были изменены.",
+  "console.security.endpointUnavailable":
+    "Эндпоинт безопасности сейчас недоступен. Повторите попытку позже.",
   "tenants.searchLabel": "Поиск",
   "tenants.searchPlaceholder": "Название или slug...",
   "tenants.statusLabel": "Статус",
@@ -289,7 +337,8 @@ export const ru = {
   "tenants.activated": "Университет активирован",
   "tenants.activate": "Активировать",
   "tenants.deleteConfirmTitle": "Деактивировать университет?",
-  "tenants.deleteConfirmDescription": "{name} будет переведен в неактивный статус.",
+  "tenants.deleteConfirmDescription":
+    "{name} будет переведен в неактивный статус.",
   "tenants.deleted": "Университет переведен в неактивный статус",
   "tenants.delete": "Деактивировать",
   "tenants.new": "Новый университет",
@@ -300,7 +349,8 @@ export const ru = {
   "tenants.selectFromTable": "Выберите университет из таблицы.",
   "tenants.studentCapacity": "Лимит студентов",
   "tenants.notFound": "Университет не найден",
-  "tenants.notFoundDescription": "Выбранный университет отсутствует на этой странице результатов.",
+  "tenants.notFoundDescription":
+    "Выбранный университет отсутствует на этой странице результатов.",
   "tenants.createTitle": "Создать университет",
   "tenants.createDescription": "Добавить новый университет на платформу",
   "tenants.displayName": "Отображаемое имя",
@@ -315,7 +365,8 @@ export const ru = {
   "ops.refresh": "Обновить",
   "ops.retry": "Повторить",
   "ops.healthOverview": "Обзор состояния",
-  "ops.healthOverviewDescription": "Текущий статус ключевых зависимостей платформы",
+  "ops.healthOverviewDescription":
+    "Текущий статус ключевых зависимостей платформы",
   "ops.health.overallHealth": "Общее состояние",
   "ops.health.api": "API",
   "ops.health.database": "База данных",
@@ -323,9 +374,11 @@ export const ru = {
   "ops.health.workerNotRequired": "Не требуется в этом окружении",
   "ops.health.schedulerLastRun": "Последний запуск планировщика",
   "ops.healthEndpointsUnavailable": "Эндпоинты health недоступны",
-  "ops.healthEndpointsUnavailableMessage": "Не удалось получить данные с эндпоинтов /health.",
+  "ops.healthEndpointsUnavailableMessage":
+    "Не удалось получить данные с эндпоинтов /health.",
   "ops.queueRetryHealth": "Состояние очередей и ретраев",
-  "ops.queueRetryHealthDescription": "Бэклоги, неуспешные доставки и видимость dead-state",
+  "ops.queueRetryHealthDescription":
+    "Бэклоги, неуспешные доставки и видимость dead-state",
   "ops.queue.outboxBacklog": "Бэклог outbox",
   "ops.queue.eventQueueSize": "Размер очереди событий",
   "ops.queue.failedWebhooks": "Сбои webhook",
@@ -337,9 +390,11 @@ export const ru = {
   "ops.queue.retryBacklog": "Бэклог ретраев",
   "ops.queue.deadCount": "Суммарный dead",
   "ops.queueMetricsUnavailable": "Метрики очередей недоступны",
-  "ops.queueMetricsUnavailableMessage": "Эндпоинт /metrics/ops не вернул метрики очередей/ретраев.",
+  "ops.queueMetricsUnavailableMessage":
+    "Эндпоинт /metrics/ops не вернул метрики очередей/ретраев.",
   "ops.metricsEndpointUnavailable": "Эндпоинт метрик недоступен",
-  "ops.metricsEndpointUnavailableMessage": "Не удалось получить данные с /metrics/ops.",
+  "ops.metricsEndpointUnavailableMessage":
+    "Не удалось получить данные с /metrics/ops.",
   "ops.apiTraffic": "API / Трафик",
   "ops.apiTrafficDescription": "Сводка задержек и ошибок для недавних запросов",
   "ops.traffic.requestsPerMin": "Запросов / мин",
@@ -353,11 +408,14 @@ export const ru = {
   "ops.latencyChart": "График задержки",
   "ops.errorChart": "График ошибок",
   "ops.trafficMetricsUnavailable": "Метрики трафика недоступны",
-  "ops.trafficMetricsUnavailableMessage": "Эндпоинт /metrics/latency не вернул метрики задержек/трафика.",
+  "ops.trafficMetricsUnavailableMessage":
+    "Эндпоинт /metrics/latency не вернул метрики задержек/трафика.",
   "ops.latencyEndpointUnavailable": "Эндпоинт задержек недоступен",
-  "ops.latencyEndpointUnavailableMessage": "Не удалось получить данные с /metrics/latency.",
+  "ops.latencyEndpointUnavailableMessage":
+    "Не удалось получить данные с /metrics/latency.",
   "ops.runtimeAndBackup": "Runtime / Backup",
-  "ops.runtimeAndBackupDescription": "Свежесть heartbeat и статус последнего бэкапа",
+  "ops.runtimeAndBackupDescription":
+    "Свежесть heartbeat и статус последнего бэкапа",
   "ops.runtime.workerHeartbeatAge": "Возраст heartbeat воркера",
   "ops.runtime.schedulerHeartbeatAge": "Возраст heartbeat планировщика",
   "ops.backup.lastStatus": "Статус последнего бэкапа",
@@ -395,9 +453,11 @@ export const ru = {
   "dashboard.student.gradesTitle": "Оценки",
   "dashboard.student.gradesDescription": "Проверить текущие оценки",
   "dashboard.student.transcriptTitle": "Транскрипт",
-  "dashboard.student.transcriptDescription": "Просмотреть или скачать транскрипт",
+  "dashboard.student.transcriptDescription":
+    "Просмотреть или скачать транскрипт",
   "dashboard.teacher.studentsTitle": "Студенты",
-  "dashboard.teacher.studentsDescription": "Просмотр всех зачисленных студентов",
+  "dashboard.teacher.studentsDescription":
+    "Просмотр всех зачисленных студентов",
   "dashboard.teacher.gradesTitle": "Оценки",
   "dashboard.teacher.gradesDescription": "Ввод и управление оценками",
   "dashboard.teacher.requestsTitle": "Запросы",
@@ -411,12 +471,15 @@ export const ru = {
   "dashboard.dean.schedulingTitle": "Расписание",
   "dashboard.dean.schedulingDescription": "Секции курсов и расписание",
   "dashboard.executive.title": "Исполнительный дашборд университета",
-  "dashboard.executive.dataDate": "Дата данных: {date} | Сформировано: {generated}",
+  "dashboard.executive.dataDate":
+    "Дата данных: {date} | Сформировано: {generated}",
   "dashboard.executive.refresh": "Обновить",
-  "dashboard.executive.loadFailedTitle": "Не удалось загрузить исполнительный дашборд",
+  "dashboard.executive.loadFailedTitle":
+    "Не удалось загрузить исполнительный дашборд",
   "dashboard.executive.loadFailedMessage": "Данные KPI временно недоступны.",
   "dashboard.executive.noDataTitle": "Данных KPI пока нет",
-  "dashboard.executive.noDataDescription": "Для выбранного интервала нет карточек дашборда.",
+  "dashboard.executive.noDataDescription":
+    "Для выбранного интервала нет карточек дашборда.",
   "dashboard.executive.retry": "Повторить",
   "students.filter.search": "Поиск",
   "students.filter.searchPlaceholder": "Имя или email...",
@@ -439,7 +502,8 @@ export const ru = {
   "students.summaryTitle": "Сводка по студенту",
   "students.selectFromTable": "Выберите студента из таблицы.",
   "students.notFound": "Студент не найден",
-  "students.notFoundDescription": "Выбранный студент отсутствует на этой странице результатов.",
+  "students.notFoundDescription":
+    "Выбранный студент отсутствует на этой странице результатов.",
   "students.createTitle": "Создать студента",
   "students.createDescription": "Создать профиль студента по person и cohort.",
   "students.createAction": "Создать студента",
@@ -456,38 +520,48 @@ export const ru = {
   "automation.ruleActivated": "Правило активировано",
   "automation.ruleDeactivated": "Правило деактивировано",
   "automation.updateFailed": "Не удалось обновить правило",
-  "automation.permissionDenied": "Нужны права automation.read для просмотра правил автоматизации.",
+  "automation.permissionDenied":
+    "Нужны права automation.read для просмотра правил автоматизации.",
   "automation.title": "Правила автоматизации",
-  "automation.description": "Управляйте событийными правилами, которые запускают автоматические действия.",
+  "automation.description":
+    "Управляйте событийными правилами, которые запускают автоматические действия.",
   "automation.createRule": "Создать правило",
   "automation.loadFailedTitle": "Не удалось загрузить правила автоматизации",
   "automation.loadFailedMessage": "Не удалось получить правила автоматизации.",
   "automation.emptyTitle": "Правил автоматизации нет",
-  "automation.emptyDescription": "Создайте первое правило, чтобы запустить событийные сценарии.",
+  "automation.emptyDescription":
+    "Создайте первое правило, чтобы запустить событийные сценарии.",
   "automation.changeStatus": "Изменить статус правила?",
   "automation.activate": "Активировать",
   "automation.deactivate": "Деактивировать",
   "automation.templates.title": "Шаблоны автоматизации",
-  "automation.templates.shortDescription": "Создавайте правила автоматизации из готовых шаблонов.",
-  "automation.templates.description": "Создавайте правила автоматизации из готовых шаблонов. Выберите шаблон и настройте его под свои задачи.",
+  "automation.templates.shortDescription":
+    "Создавайте правила автоматизации из готовых шаблонов.",
+  "automation.templates.description":
+    "Создавайте правила автоматизации из готовых шаблонов. Выберите шаблон и настройте его под свои задачи.",
   "automation.templates.systemTemplate": "Системный шаблон",
   "automation.templates.eventLabel": "Событие",
   "automation.templates.creating": "Создание...",
   "automation.templates.ruleCreated": "Правило создано",
-  "automation.templates.ruleCreatedDescription": "Создано правило \"{rule}\" из шаблона \"{template}\".",
+  "automation.templates.ruleCreatedDescription":
+    'Создано правило "{rule}" из шаблона "{template}".',
   "automation.templates.createFailed": "Не удалось создать правило",
   "automation.templates.unexpectedError": "Произошла непредвиденная ошибка.",
   "automation.templates.loadFailedTitle": "Не удалось загрузить шаблоны",
-  "automation.templates.loadFailedMessage": "Каталог шаблонов временно недоступен.",
+  "automation.templates.loadFailedMessage":
+    "Каталог шаблонов временно недоступен.",
   "automation.templates.allTemplates": "Все шаблоны",
   "automation.templates.emptyByCategoryTitle": "В этой категории шаблонов нет",
   "automation.templates.emptyTitle": "Шаблоны отсутствуют",
-  "automation.templates.emptyByCategoryDescription": "В категории {category} шаблоны отсутствуют.",
+  "automation.templates.emptyByCategoryDescription":
+    "В категории {category} шаблоны отсутствуют.",
   "automation.templates.emptyDescription": "Каталог шаблонов пуст.",
   "automation.templates.backToRules": "Назад к правилам",
-  "automation.executions.permissionDenied": "Нужны права automation.read для просмотра журнала запусков.",
+  "automation.executions.permissionDenied":
+    "Нужны права automation.read для просмотра журнала запусков.",
   "automation.executions.title": "Журнал запусков",
-  "automation.executions.description": "Аудиторный след всех запусков правил автоматизации.",
+  "automation.executions.description":
+    "Аудиторный след всех запусков правил автоматизации.",
   "automation.executions.ruleId": "ID правила",
   "automation.executions.eventId": "ID события",
   "automation.executions.executedAt": "Выполнено",
@@ -495,13 +569,18 @@ export const ru = {
   "automation.executions.status.pending": "Ожидает",
   "automation.executions.status.completed": "Завершено",
   "automation.executions.status.failed": "Ошибка",
-  "automation.executions.loadFailedTitle": "Не удалось загрузить журнал запусков",
-  "automation.executions.loadFailedMessage": "Не удалось получить запуски автоматизации.",
+  "automation.executions.loadFailedTitle":
+    "Не удалось загрузить журнал запусков",
+  "automation.executions.loadFailedMessage":
+    "Не удалось получить запуски автоматизации.",
   "automation.executions.emptyTitle": "Запусков нет",
-  "automation.executions.emptyDescription": "Запуски появятся здесь после срабатывания правил по событиям.",
-  "aiCopilot.permissionDenied": "Нужны права на чтение AI Copilot для доступа к этой панели.",
+  "automation.executions.emptyDescription":
+    "Запуски появятся здесь после срабатывания правил по событиям.",
+  "aiCopilot.permissionDenied":
+    "Нужны права на чтение AI Copilot для доступа к этой панели.",
   "aiCopilot.title": "AI Copilot",
-  "aiCopilot.description": "Детерминированный ассистент только для чтения на основе KPI, аналитики, контекста и сигналов автоматизации.",
+  "aiCopilot.description":
+    "Детерминированный ассистент только для чтения на основе KPI, аналитики, контекста и сигналов автоматизации.",
   "aiCopilot.askLabel": "Задайте вопрос по платформе",
   "aiCopilot.placeholder": "Сколько студентов у нас сейчас?",
   "aiCopilot.ask": "Спросить",
@@ -521,7 +600,8 @@ export const ru = {
   "home.title": "AI University Platform",
   "home.subtitle": "Стартовый шаблон для browser-based систем.",
   "admin.title": "AI University Platform",
-  "admin.subtitle": "Единая консоль для identity, AI-провайдеров и университетских операций.",
+  "admin.subtitle":
+    "Единая консоль для identity, AI-провайдеров и университетских операций.",
   "help.title": "AI-справочник проекта",
   "help.page": "Страница",
   "help.field": "Поле (опционально)",
@@ -530,7 +610,8 @@ export const ru = {
   "help.thinking": "Думаю...",
   "help.error.empty": "Напиши вопрос перед отправкой.",
 
-  "console.admissions.description": "Управление абитуриентами и отслеживание заявок через приёмную кампанию",
+  "console.admissions.description":
+    "Управление абитуриентами и отслеживание заявок через приёмную кампанию",
   "admissions.tab.applicants": "Абитуриенты",
   "admissions.tab.applications": "Заявки",
   "admissions.col.name": "Имя",
@@ -555,9 +636,11 @@ export const ru = {
   "admissions.conclusion.waitlist": "Ожидание",
   "admissions.conclusion.withdrawn": "Отозвана",
   "admissions.empty.applicants": "Нет абитуриентов",
-  "admissions.empty.noApplicantsYet": "Абитуриентов не найдено. Создайте первого.",
+  "admissions.empty.noApplicantsYet":
+    "Абитуриентов не найдено. Создайте первого.",
   "admissions.empty.applications": "Нет заявок",
-  "admissions.empty.noApplicationsYet": "Заявок по выбранным фильтрам не найдено.",
+  "admissions.empty.noApplicationsYet":
+    "Заявок по выбранным фильтрам не найдено.",
   "admissions.drawer.applicant": "Данные абитуриента",
   "admissions.drawer.application": "Заявка",
   "admissions.drawer.loading": "Загрузка…",
@@ -593,7 +676,8 @@ export const ru = {
   "admissions.doc.status.received": "Получен",
   "admissions.doc.status.verified": "Проверен",
   "admissions.doc.status.rejected": "Отклонён",
-  "admissions.createApplicant.description": "Добавить нового абитуриента в приёмную кампанию",
+  "admissions.createApplicant.description":
+    "Добавить нового абитуриента в приёмную кампанию",
   "nav.orgUnits": "Орг. подразделения",
   "nav.serviceAccounts": "Сервисные аккаунты",
 } as const;

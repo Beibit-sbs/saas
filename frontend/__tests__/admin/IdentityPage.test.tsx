@@ -107,7 +107,7 @@ describe("IdentityPage", () => {
 
   it("renders providers and mappings rows", () => {
     render(<IdentityPage />);
-    expect(screen.getByText("oidc")).toBeInTheDocument();
+    expect(screen.getAllByText("oidc").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Campus LDAP")).toBeInTheDocument();
     expect(screen.getByText("cn=registrar")).toBeInTheDocument();
   });
