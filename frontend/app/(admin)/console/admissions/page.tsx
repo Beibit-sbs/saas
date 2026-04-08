@@ -13,7 +13,13 @@ import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { DetailList } from "@/shared/ui/detail-list";
 import { ErrorState } from "@/shared/ui/error-state";
 import { AccessDenied } from "@/shared/ui/permission-gate";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
@@ -63,36 +69,59 @@ const STAGE_ORDER: Record<ApplicationStage, number> = {
 
 function StageBadge({ stage }: { stage: ApplicationStage }) {
   const { t } = useLanguage();
-  const variantMap: Record<ApplicationStage, "default" | "warning" | "success" | "destructive"> = {
+  const variantMap: Record<
+    ApplicationStage,
+    "default" | "warning" | "success" | "destructive"
+  > = {
     new: "default",
     received: "default",
     under_review: "warning",
     decision_pending: "warning",
     concluded: "success",
   };
-  return <Badge variant={variantMap[stage]}>{t(`admissions.stage.${stage}`)}</Badge>;
+  return (
+    <Badge variant={variantMap[stage]}>{t(`admissions.stage.${stage}`)}</Badge>
+  );
 }
 
 function ConclusionBadge({ type }: { type: ApplicationConclusionType | null }) {
   const { t } = useLanguage();
   if (!type) return <span className="text-muted-foreground">—</span>;
-  const variantMap: Record<ApplicationConclusionType, "success" | "destructive" | "warning" | "default"> = {
+  const variantMap: Record<
+    ApplicationConclusionType,
+    "success" | "destructive" | "warning" | "default"
+  > = {
     accepted: "success",
     rejected: "destructive",
     waitlist: "warning",
     withdrawn: "default",
   };
-  return <Badge variant={variantMap[type]}>{t(`admissions.conclusion.${type}`)}</Badge>;
+  return (
+    <Badge variant={variantMap[type]}>
+      {t(`admissions.conclusion.${type}`)}
+    </Badge>
+  );
 }
 
-function DocumentStatusBadge({ status }: { status: "received" | "verified" | "rejected" }) {
+function DocumentStatusBadge({
+  status,
+}: {
+  status: "received" | "verified" | "rejected";
+}) {
   const { t } = useLanguage();
-  const variantMap: Record<typeof status, "default" | "success" | "destructive"> = {
+  const variantMap: Record<
+    typeof status,
+    "default" | "success" | "destructive"
+  > = {
     received: "default",
     verified: "success",
     rejected: "destructive",
   };
-  return <Badge variant={variantMap[status]}>{t(`admissions.doc.status.${status}`)}</Badge>;
+  return (
+    <Badge variant={variantMap[status]}>
+      {t(`admissions.doc.status.${status}`)}
+    </Badge>
+  );
 }
 
 function StageProgress({ current }: { current: ApplicationStage }) {
@@ -139,7 +168,9 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
   const listQuery = useApplicants({
     page: table.page,
     page_size: table.pageSize,
-    application_year: table.filters.application_year ? Number(table.filters.application_year) : undefined,
+    application_year: table.filters.application_year
+      ? Number(table.filters.application_year)
+      : undefined,
   });
 
   const createMutation = useCreateApplicant();
@@ -153,7 +184,8 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
 
   const rows = Array.isArray(listQuery.data?.items) ? listQuery.data.items : [];
 
-  const selectedApplicant = rows.find((r) => String(r.id) === detail.selectedId) ?? null;
+  const selectedApplicant =
+    rows.find((r) => String(r.id) === detail.selectedId) ?? null;
 
   const columns: Column<Applicant>[] = useMemo(
     () => [
@@ -183,7 +215,9 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
       {
         key: "program_id",
         header: t("admissions.col.program"),
-        cell: (row) => <span className="font-mono text-xs">P-{row.program_id}</span>,
+        cell: (row) => (
+          <span className="font-mono text-xs">P-{row.program_id}</span>
+        ),
         sortValue: (row) => row.program_id,
       },
       {
@@ -195,7 +229,11 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
       {
         key: "status",
         header: t("admissions.col.status"),
-        cell: (row) => <Badge variant={row.status === "active" ? "success" : "default"}>{row.status}</Badge>,
+        cell: (row) => (
+          <Badge variant={row.status === "active" ? "success" : "default"}>
+            {row.status}
+          </Badge>
+        ),
         sortValue: (row) => row.status,
       },
       {
@@ -237,7 +275,11 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
         data={rows}
         isLoading={listQuery.isLoading}
         getRowKey={(row) => String(row.id)}
-        pagination={{ page: table.page, pageSize: table.pageSize, total: listQuery.data?.total ?? 0 }}
+        pagination={{
+          page: table.page,
+          pageSize: table.pageSize,
+          total: listQuery.data?.total ?? 0,
+        }}
         pageSizeOptions={[10, 20, 50]}
         onPageChange={table.setPage}
         onPageSizeChange={table.setPageSize}
@@ -252,7 +294,11 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
       <DrawerPanel
         open={detail.isOpen}
         onClose={detail.close}
-        title={selectedApplicant ? `${selectedApplicant.first_name} ${selectedApplicant.last_name}` : t("admissions.drawer.applicant")}
+        title={
+          selectedApplicant
+            ? `${selectedApplicant.first_name} ${selectedApplicant.last_name}`
+            : t("admissions.drawer.applicant")
+        }
         description={selectedApplicant?.email ?? ""}
         width="md"
       >
@@ -260,12 +306,30 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
           <DetailList
             items={[
               { label: "ID", value: <code>#{selectedApplicant.id}</code> },
-              { label: t("admissions.col.email"), value: selectedApplicant.email },
-              { label: t("admissions.col.program"), value: `P-${selectedApplicant.program_id}` },
-              { label: t("admissions.col.year"), value: String(selectedApplicant.application_year) },
-              { label: t("admissions.col.status"), value: selectedApplicant.status },
-              { label: t("admissions.col.updated"), value: formatRelative(selectedApplicant.updated_at) },
-              { label: t("admissions.col.createdBy"), value: selectedApplicant.created_by },
+              {
+                label: t("admissions.col.email"),
+                value: selectedApplicant.email,
+              },
+              {
+                label: t("admissions.col.program"),
+                value: `P-${selectedApplicant.program_id}`,
+              },
+              {
+                label: t("admissions.col.year"),
+                value: String(selectedApplicant.application_year),
+              },
+              {
+                label: t("admissions.col.status"),
+                value: selectedApplicant.status,
+              },
+              {
+                label: t("admissions.col.updated"),
+                value: formatRelative(selectedApplicant.updated_at),
+              },
+              {
+                label: t("admissions.col.createdBy"),
+                value: selectedApplicant.created_by,
+              },
             ]}
           />
         )}
@@ -286,7 +350,9 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
                 <Label>{t(`admissions.field.${field}`)}</Label>
                 <Input
                   value={(form[field] as string) ?? ""}
-                  onChange={(e) => setForm((prev) => ({ ...prev, [field]: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, [field]: e.target.value }))
+                  }
                 />
               </div>
             ))}
@@ -295,7 +361,12 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
               <Input
                 type="number"
                 value={form.program_id ?? ""}
-                onChange={(e) => setForm((prev) => ({ ...prev, program_id: Number(e.target.value) }))}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    program_id: Number(e.target.value),
+                  }))
+                }
               />
             </div>
             <div className="space-y-1.5">
@@ -303,7 +374,12 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
               <Input
                 type="number"
                 value={form.application_year ?? new Date().getFullYear()}
-                onChange={(e) => setForm((prev) => ({ ...prev, application_year: Number(e.target.value) }))}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    application_year: Number(e.target.value),
+                  }))
+                }
               />
             </div>
             <Button
@@ -315,12 +391,24 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
                 createMutation.isPending
               }
               onClick={() => {
-                if (!form.email || !form.first_name || !form.last_name || !form.program_id) return;
+                if (
+                  !form.email ||
+                  !form.first_name ||
+                  !form.last_name ||
+                  !form.program_id
+                )
+                  return;
                 createMutation.mutate(form as CreateApplicantPayload, {
-                  ...getHandlers({ successTitle: t("admissions.action.createSuccess") }),
+                  ...getHandlers({
+                    successTitle: t("admissions.action.createSuccess"),
+                  }),
                   onSuccess: () => {
                     setShowCreate(false);
-                    setForm({ status: "active", application_year: new Date().getFullYear(), metadata_json: {} });
+                    setForm({
+                      status: "active",
+                      application_year: new Date().getFullYear(),
+                      metadata_json: {},
+                    });
                   },
                 });
               }}
@@ -338,7 +426,13 @@ function ApplicantsTab({ canWrite }: { canWrite: boolean }) {
 // Applications tab
 // ---------------------------------------------------------------------------
 
-function ApplicationsTab({ canWrite }: { canWrite: boolean }) {
+function ApplicationsTab({
+  canWrite,
+  canDecide,
+}: {
+  canWrite: boolean;
+  canDecide: boolean;
+}) {
   const { t } = useLanguage();
   const { getHandlers } = useMutationFeedback();
 
@@ -357,9 +451,17 @@ function ApplicationsTab({ canWrite }: { canWrite: boolean }) {
 
   const selectedId = detail.selectedId ? Number(detail.selectedId) : null;
   const appDetail = useApplication(selectedId);
-  const selectedApp = appDetail.data ?? listQuery.data?.items.find((r) => String(r.id) === detail.selectedId) ?? null;
+  const selectedApp =
+    appDetail.data ??
+    listQuery.data?.items.find((r) => String(r.id) === detail.selectedId) ??
+    null;
 
-  const decisionQuery = useApplicationDecision(selectedApp?.stage === "decision_pending" || selectedApp?.stage === "concluded" ? selectedId : null);
+  const decisionQuery = useApplicationDecision(
+    selectedApp?.stage === "decision_pending" ||
+      selectedApp?.stage === "concluded"
+      ? selectedId
+      : null,
+  );
   const documentsQuery = useApplicationDocuments(selectedId);
 
   const submitMutation = useSubmitApplication();
@@ -368,7 +470,8 @@ function ApplicationsTab({ canWrite }: { canWrite: boolean }) {
 
   const [toStage, setToStage] = useState<ApplicationStage>("received");
   const [transitionReason, setTransitionReason] = useState("");
-  const [decisionType, setDecisionType] = useState<ApplicationConclusionType>("accepted");
+  const [decisionType, setDecisionType] =
+    useState<ApplicationConclusionType>("accepted");
   const [decisionRationale, setDecisionRationale] = useState("");
   const [decidedBy, setDecidedBy] = useState("");
 
@@ -386,13 +489,17 @@ function ApplicationsTab({ canWrite }: { canWrite: boolean }) {
       {
         key: "applicant",
         header: t("admissions.col.applicant"),
-        cell: (row) => <span className="font-mono text-xs">A-{row.applicant_id}</span>,
+        cell: (row) => (
+          <span className="font-mono text-xs">A-{row.applicant_id}</span>
+        ),
         sortValue: (row) => row.applicant_id,
       },
       {
         key: "program",
         header: t("admissions.col.program"),
-        cell: (row) => <span className="font-mono text-xs">P-{row.program_id}</span>,
+        cell: (row) => (
+          <span className="font-mono text-xs">P-{row.program_id}</span>
+        ),
         sortValue: (row) => row.program_id,
       },
       {
@@ -425,7 +532,10 @@ function ApplicationsTab({ canWrite }: { canWrite: boolean }) {
             key: "stage",
             label: t("admissions.filter.stage"),
             type: "select" as const,
-            options: STAGES.map((s) => ({ label: t(`admissions.stage.${s}`), value: s })),
+            options: STAGES.map((s) => ({
+              label: t(`admissions.stage.${s}`),
+              value: s,
+            })),
           },
         ]}
         values={table.filters}
@@ -438,7 +548,11 @@ function ApplicationsTab({ canWrite }: { canWrite: boolean }) {
         data={rows}
         isLoading={listQuery.isLoading}
         getRowKey={(row) => String(row.id)}
-        pagination={{ page: table.page, pageSize: table.pageSize, total: listQuery.data?.total ?? 0 }}
+        pagination={{
+          page: table.page,
+          pageSize: table.pageSize,
+          total: listQuery.data?.total ?? 0,
+        }}
         pageSizeOptions={[10, 20, 50]}
         onPageChange={table.setPage}
         onPageSizeChange={table.setPageSize}
@@ -452,12 +566,20 @@ function ApplicationsTab({ canWrite }: { canWrite: boolean }) {
       <DrawerPanel
         open={detail.isOpen}
         onClose={detail.close}
-        title={selectedApp ? `${t("admissions.drawer.application")} #${selectedApp.id}` : t("admissions.drawer.application")}
-        description={selectedApp ? t(`admissions.stage.${selectedApp.stage}`) : ""}
+        title={
+          selectedApp
+            ? `${t("admissions.drawer.application")} #${selectedApp.id}`
+            : t("admissions.drawer.application")
+        }
+        description={
+          selectedApp ? t(`admissions.stage.${selectedApp.stage}`) : ""
+        }
         width="lg"
       >
         {detail.isOpen && appDetail.isLoading ? (
-          <p className="text-sm text-muted-foreground">{t("admissions.drawer.loading")}</p>
+          <p className="text-sm text-muted-foreground">
+            {t("admissions.drawer.loading")}
+          </p>
         ) : selectedApp ? (
           <div className="space-y-6">
             {/* Stage progress */}
@@ -470,26 +592,59 @@ function ApplicationsTab({ canWrite }: { canWrite: boolean }) {
 
             <DetailList
               items={[
-                { label: t("admissions.col.applicant"), value: <span className="font-mono">A-{selectedApp.applicant_id}</span> },
-                { label: t("admissions.col.program"), value: <span className="font-mono">P-{selectedApp.program_id}</span> },
-                { label: t("admissions.col.stage"), value: <StageBadge stage={selectedApp.stage} /> },
-                { label: t("admissions.col.conclusion"), value: <ConclusionBadge type={selectedApp.conclusion_type} /> },
-                { label: t("admissions.field.version"), value: String(selectedApp.version) },
-                { label: t("admissions.col.updated"), value: formatRelative(selectedApp.updated_at) },
+                {
+                  label: t("admissions.col.applicant"),
+                  value: (
+                    <span className="font-mono">
+                      A-{selectedApp.applicant_id}
+                    </span>
+                  ),
+                },
+                {
+                  label: t("admissions.col.program"),
+                  value: (
+                    <span className="font-mono">
+                      P-{selectedApp.program_id}
+                    </span>
+                  ),
+                },
+                {
+                  label: t("admissions.col.stage"),
+                  value: <StageBadge stage={selectedApp.stage} />,
+                },
+                {
+                  label: t("admissions.col.conclusion"),
+                  value: <ConclusionBadge type={selectedApp.conclusion_type} />,
+                },
+                {
+                  label: t("admissions.field.version"),
+                  value: String(selectedApp.version),
+                },
+                {
+                  label: t("admissions.col.updated"),
+                  value: formatRelative(selectedApp.updated_at),
+                },
               ]}
             />
 
             {/* Submit (new → received) */}
             {canWrite && selectedApp.stage === "new" && (
               <div className="rounded border p-4 space-y-3">
-                <p className="text-sm font-medium">{t("admissions.action.submit")}</p>
+                <p className="text-sm font-medium">
+                  {t("admissions.action.submit")}
+                </p>
                 <Button
                   size="sm"
                   disabled={submitMutation.isPending}
                   onClick={() =>
                     submitMutation.mutate(
-                      { id: selectedApp.id, expectedVersion: selectedApp.version },
-                      getHandlers({ successTitle: t("admissions.action.submitSuccess") }),
+                      {
+                        id: selectedApp.id,
+                        expectedVersion: selectedApp.version,
+                      },
+                      getHandlers({
+                        successTitle: t("admissions.action.submitSuccess"),
+                      }),
                     )
                   }
                 >
@@ -499,131 +654,188 @@ function ApplicationsTab({ canWrite }: { canWrite: boolean }) {
             )}
 
             {/* Stage transition */}
-            {canWrite && selectedApp.stage !== "concluded" && selectedApp.stage !== "new" && (
-              <div className="rounded border p-4 space-y-3">
-                <p className="text-sm font-medium">{t("admissions.action.transition")}</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>{t("admissions.field.toStage")}</Label>
-                    <Select value={toStage} onValueChange={(v) => setToStage(v as ApplicationStage)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STAGES.filter((s) => STAGE_ORDER[s] > STAGE_ORDER[selectedApp.stage]).map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {t(`admissions.stage.${s}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+            {canWrite &&
+              selectedApp.stage !== "concluded" &&
+              selectedApp.stage !== "new" && (
+                <div className="rounded border p-4 space-y-3">
+                  <p className="text-sm font-medium">
+                    {t("admissions.action.transition")}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>{t("admissions.field.toStage")}</Label>
+                      <Select
+                        value={toStage}
+                        onValueChange={(v) => setToStage(v as ApplicationStage)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STAGES.filter(
+                            (s) =>
+                              STAGE_ORDER[s] > STAGE_ORDER[selectedApp.stage],
+                          ).map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {t(`admissions.stage.${s}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>{t("admissions.field.reason")}</Label>
+                      <Input
+                        value={transitionReason}
+                        onChange={(e) => setTransitionReason(e.target.value)}
+                        placeholder={t("admissions.field.reasonPlaceholder")}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label>{t("admissions.field.reason")}</Label>
-                    <Input
-                      value={transitionReason}
-                      onChange={(e) => setTransitionReason(e.target.value)}
-                      placeholder={t("admissions.field.reasonPlaceholder")}
-                    />
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={transitionMutation.isPending}
+                    onClick={() =>
+                      transitionMutation.mutate(
+                        {
+                          id: selectedApp.id,
+                          data: {
+                            to_stage: toStage,
+                            reason: transitionReason || undefined,
+                          },
+                        },
+                        getHandlers({
+                          successTitle: t(
+                            "admissions.action.transitionSuccess",
+                          ),
+                        }),
+                      )
+                    }
+                  >
+                    {t("admissions.action.transition")}
+                  </Button>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={transitionMutation.isPending}
-                  onClick={() =>
-                    transitionMutation.mutate(
-                      {
-                        id: selectedApp.id,
-                        data: { to_stage: toStage, reason: transitionReason || undefined },
-                      },
-                      getHandlers({ successTitle: t("admissions.action.transitionSuccess") }),
-                    )
-                  }
-                >
-                  {t("admissions.action.transition")}
-                </Button>
-              </div>
-            )}
+              )}
 
             {/* Decision */}
-            {canWrite && selectedApp.stage === "decision_pending" && !decisionQuery.data && (
-              <div className="rounded border p-4 space-y-3">
-                <p className="text-sm font-medium">{t("admissions.action.decide")}</p>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                  <div className="space-y-1.5">
-                    <Label>{t("admissions.field.decisionType")}</Label>
-                    <Select value={decisionType} onValueChange={(v) => setDecisionType(v as ApplicationConclusionType)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(["accepted", "rejected", "waitlist", "withdrawn"] as const).map((v) => (
-                          <SelectItem key={v} value={v}>
-                            {t(`admissions.conclusion.${v}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+            {canDecide &&
+              selectedApp.stage === "decision_pending" &&
+              !decisionQuery.data && (
+                <div className="rounded border p-4 space-y-3">
+                  <p className="text-sm font-medium">
+                    {t("admissions.action.decide")}
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div className="space-y-1.5">
+                      <Label>{t("admissions.field.decisionType")}</Label>
+                      <Select
+                        value={decisionType}
+                        onValueChange={(v) =>
+                          setDecisionType(v as ApplicationConclusionType)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(
+                            [
+                              "accepted",
+                              "rejected",
+                              "waitlist",
+                              "withdrawn",
+                            ] as const
+                          ).map((v) => (
+                            <SelectItem key={v} value={v}>
+                              {t(`admissions.conclusion.${v}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label>{t("admissions.field.decisionRationale")}</Label>
+                      <Input
+                        value={decisionRationale}
+                        onChange={(e) => setDecisionRationale(e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1.5 md:col-span-2">
-                    <Label>{t("admissions.field.decisionRationale")}</Label>
+                  <div className="space-y-1.5">
+                    <Label>{t("admissions.field.decidedBy")}</Label>
                     <Input
-                      value={decisionRationale}
-                      onChange={(e) => setDecisionRationale(e.target.value)}
+                      value={decidedBy}
+                      onChange={(e) => setDecidedBy(e.target.value)}
+                      placeholder="registrar@example.com"
                     />
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("admissions.field.decidedBy")}</Label>
-                  <Input
-                    value={decidedBy}
-                    onChange={(e) => setDecidedBy(e.target.value)}
-                    placeholder="registrar@example.com"
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  disabled={!decidedBy.trim() || decisionMutation.isPending}
-                  onClick={() =>
-                    decisionMutation.mutate(
-                      {
-                        id: selectedApp.id,
-                        data: {
-                          decision_type: decisionType,
-                          decision_rationale: decisionRationale || undefined,
-                          decided_by: decidedBy.trim(),
-                          application_version: selectedApp.version,
+                  <Button
+                    size="sm"
+                    disabled={!decidedBy.trim() || decisionMutation.isPending}
+                    onClick={() =>
+                      decisionMutation.mutate(
+                        {
+                          id: selectedApp.id,
+                          data: {
+                            decision_type: decisionType,
+                            decision_rationale: decisionRationale || undefined,
+                            decided_by: decidedBy.trim(),
+                            application_version: selectedApp.version,
+                          },
                         },
-                      },
-                      getHandlers({ successTitle: t("admissions.action.decideSuccess") }),
-                    )
-                  }
-                >
-                  {t("admissions.action.decide")}
-                </Button>
-              </div>
-            )}
+                        getHandlers({
+                          successTitle: t("admissions.action.decideSuccess"),
+                        }),
+                      )
+                    }
+                  >
+                    {t("admissions.action.decide")}
+                  </Button>
+                </div>
+              )}
 
             {/* Existing decision */}
             {decisionQuery.data && (
               <div className="rounded border bg-muted/30 p-4 space-y-2">
-                <p className="text-sm font-medium">{t("admissions.field.decision")}</p>
+                <p className="text-sm font-medium">
+                  {t("admissions.field.decision")}
+                </p>
                 <DetailList
                   items={[
-                    { label: t("admissions.col.conclusion"), value: <ConclusionBadge type={decisionQuery.data.decision_type} /> },
-                    { label: t("admissions.field.decisionRationale"), value: decisionQuery.data.decision_rationale ?? "—" },
-                    { label: t("admissions.field.decidedBy"), value: decisionQuery.data.decided_by_id },
-                    { label: t("admissions.col.updated"), value: formatRelative(decisionQuery.data.decided_at) },
+                    {
+                      label: t("admissions.col.conclusion"),
+                      value: (
+                        <ConclusionBadge
+                          type={decisionQuery.data.decision_type}
+                        />
+                      ),
+                    },
+                    {
+                      label: t("admissions.field.decisionRationale"),
+                      value: decisionQuery.data.decision_rationale ?? "—",
+                    },
+                    {
+                      label: t("admissions.field.decidedBy"),
+                      value: decisionQuery.data.decided_by_id,
+                    },
+                    {
+                      label: t("admissions.col.updated"),
+                      value: formatRelative(decisionQuery.data.decided_at),
+                    },
                   ]}
                 />
               </div>
             )}
 
             <div className="rounded border p-4 space-y-3">
-              <p className="text-sm font-medium">{t("admissions.field.documents")}</p>
+              <p className="text-sm font-medium">
+                {t("admissions.field.documents")}
+              </p>
               {documentsQuery.isLoading ? (
-                <p className="text-sm text-muted-foreground">{t("admissions.doc.loading")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("admissions.doc.loading")}
+                </p>
               ) : documentsQuery.data?.items?.length ? (
                 <div className="space-y-2">
                   {documentsQuery.data.items.map((doc) => (
@@ -637,20 +849,27 @@ function ApplicationsTab({ canWrite }: { canWrite: boolean }) {
                           <p className="text-xs text-muted-foreground">
                             {doc.document_type}
                             {doc.mime_type ? ` • ${doc.mime_type}` : ""}
-                            {doc.file_size_bytes ? ` • ${doc.file_size_bytes} B` : ""}
+                            {doc.file_size_bytes
+                              ? ` • ${doc.file_size_bytes} B`
+                              : ""}
                           </p>
                         </div>
                         <DocumentStatusBadge status={doc.status} />
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
-                        {t("admissions.col.updated")}: {formatRelative(doc.created_at)}
-                        {doc.verified_at ? ` • ${t("admissions.doc.verifiedAt")}: ${formatRelative(doc.verified_at)}` : ""}
+                        {t("admissions.col.updated")}:{" "}
+                        {formatRelative(doc.created_at)}
+                        {doc.verified_at
+                          ? ` • ${t("admissions.doc.verifiedAt")}: ${formatRelative(doc.verified_at)}`
+                          : ""}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">{t("admissions.doc.empty")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("admissions.doc.empty")}
+                </p>
               )}
             </div>
           </div>
@@ -674,6 +893,7 @@ export default function AdmissionsPage() {
   const [activeTab, setActiveTab] = useState<AdmissionsTab>("applicants");
   const canRead = hasPermission(PERMISSIONS.ADMISSIONS_READ);
   const canWrite = hasPermission(PERMISSIONS.ADMISSIONS_WRITE);
+  const canDecide = hasPermission(PERMISSIONS.ADMISSIONS_DECIDE);
 
   if (!canRead) {
     return <AccessDenied />;
@@ -705,7 +925,11 @@ export default function AdmissionsPage() {
         ))}
       </div>
 
-      {activeTab === "applicants" ? <ApplicantsTab canWrite={canWrite} /> : <ApplicationsTab canWrite={canWrite} />}
+      {activeTab === "applicants" ? (
+        <ApplicantsTab canWrite={canWrite} />
+      ) : (
+        <ApplicationsTab canWrite={canWrite} canDecide={canDecide} />
+      )}
     </div>
   );
 }

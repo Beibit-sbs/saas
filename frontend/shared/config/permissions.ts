@@ -103,6 +103,7 @@ export const PERMISSIONS = {
   // Admissions
   ADMISSIONS_READ: "admissions.read",
   ADMISSIONS_WRITE: "admissions.write",
+  ADMISSIONS_DECIDE: "admissions.decide",
 
   // Automation / Workflow Engine
   AUTOMATION_READ: "automation.read",
