@@ -17,6 +17,8 @@ vi.mock("../../modules/org-units/hooks", () => ({
 vi.mock("../../shared/ui/permission-gate", () => ({
   PermissionGate: ({ children }: { children: React.ReactNode }) =>
     allowAccess ? <>{children}</> : null,
+  RequirePermission: ({ children }: { children: React.ReactNode; permission: string }) =>
+    allowAccess ? <>{children}</> : <div>Access Denied</div>,
   AccessDenied: ({ message }: { message?: string }) => (
     <div>{message ?? "Access Denied"}</div>
   ),
@@ -110,4 +112,10 @@ describe("OrgUnitsPage", () => {
       screen.getByRole("button", { name: /add unit/i }),
     ).toBeInTheDocument();
   });
+  it("shows access denied when read permission is missing", () => {
+    allowAccess = false;
+    render(<OrgUnitsPage />);
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
+  });
+
 });

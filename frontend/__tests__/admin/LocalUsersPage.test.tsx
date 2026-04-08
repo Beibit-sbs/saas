@@ -17,6 +17,8 @@ vi.mock("../../modules/local-users/hooks", () => ({
 vi.mock("../../shared/ui/permission-gate", () => ({
   PermissionGate: ({ children }: { children: React.ReactNode }) =>
     allowAccess ? <>{children}</> : null,
+  RequirePermission: ({ children }: { children: React.ReactNode; permission: string }) =>
+    allowAccess ? <>{children}</> : <div>Access Denied</div>,
   AccessDenied: ({ message }: { message?: string }) => (
     <div>{message ?? "Access Denied"}</div>
   ),
@@ -102,4 +104,10 @@ describe("LocalUsersPage", () => {
       screen.getByRole("button", { name: /add local user/i }),
     ).toBeInTheDocument();
   });
+  it("shows access denied when read permission is missing", () => {
+    allowAccess = false;
+    render(<LocalUsersPage />);
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
+  });
+
 });

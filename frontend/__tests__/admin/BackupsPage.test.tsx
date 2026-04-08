@@ -22,6 +22,8 @@ vi.mock("../../modules/backups/hooks", () => ({
 vi.mock("../../shared/ui/permission-gate", () => ({
   PermissionGate: ({ children }: { children: React.ReactNode }) =>
     allowAccess ? <>{children}</> : null,
+  RequirePermission: ({ children }: { children: React.ReactNode; permission: string }) =>
+    allowAccess ? <>{children}</> : <div>Access Denied</div>,
   AccessDenied: ({ message }: { message?: string }) => (
     <div>{message ?? "Access Denied"}</div>
   ),
@@ -144,4 +146,10 @@ describe("BackupsPage", () => {
     render(<BackupsPage />);
     expect(screen.getByText(/No backup jobs yet\./i)).toBeInTheDocument();
   });
+  it("shows access denied when read permission is missing", () => {
+    allowAccess = false;
+    render(<BackupsPage />);
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
+  });
+
 });

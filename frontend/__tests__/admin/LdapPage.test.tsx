@@ -14,6 +14,8 @@ vi.mock("../../modules/ldap-admin/hooks", () => ({
 vi.mock("../../shared/ui/permission-gate", () => ({
   PermissionGate: ({ children }: { children: React.ReactNode }) =>
     allowAccess ? <>{children}</> : null,
+  RequirePermission: ({ children }: { children: React.ReactNode; permission: string }) =>
+    allowAccess ? <>{children}</> : <div>Access Denied</div>,
   AccessDenied: ({ message }: { message?: string }) => (
     <div>{message ?? "Access Denied"}</div>
   ),
@@ -94,4 +96,10 @@ describe("LdapPage", () => {
     render(<LdapPage />);
     expect(screen.getByText("Failed to load LDAP status")).toBeInTheDocument();
   });
+  it("shows access denied when read permission is missing", () => {
+    allowAccess = false;
+    render(<LdapPage />);
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
+  });
+
 });
