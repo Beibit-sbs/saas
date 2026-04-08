@@ -406,5 +406,17 @@ export const en = {
   "courseStatus": "Status",
   "courseCreated": "Course created",
   "courseUpdated": "Course updated",
-  "courseDeleted": "Course deleted"
+  "courseDeleted": "Course deleted",
+  "facultyHelp": "Manage faculty directory records and departments.",
+  "addFaculty": "Add faculty",
+  "noFaculty": "No faculty records found.",
+  "facultyCode": "Faculty ID",
+  "facultyFirstName": "First name",
+  "facultyLastName": "Last name",
+  "facultyDepartment": "Department",
+  "facultyEmail": "Email",
+  "facultyStatus": "Status",
+  "facultyCreated": "Faculty member created",
+  "facultyUpdated": "Faculty member updated",
+  "facultyDeleted": "Faculty member deleted"
 } as const;

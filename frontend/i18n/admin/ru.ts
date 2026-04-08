@@ -406,5 +406,17 @@ export const ru = {
   "courseStatus": "Статус",
   "courseCreated": "Курс создан",
   "courseUpdated": "Курс обновлён",
-  "courseDeleted": "Курс удалён"
+  "courseDeleted": "Курс удалён",
+  "facultyHelp": "Управление справочником преподавателей и кафедрами.",
+  "addFaculty": "Добавить преподавателя",
+  "noFaculty": "Записи преподавателей не найдены.",
+  "facultyCode": "ID преподавателя",
+  "facultyFirstName": "Имя",
+  "facultyLastName": "Фамилия",
+  "facultyDepartment": "Кафедра",
+  "facultyEmail": "Email",
+  "facultyStatus": "Статус",
+  "facultyCreated": "Преподаватель создан",
+  "facultyUpdated": "Преподаватель обновлён",
+  "facultyDeleted": "Преподаватель удалён"
 } as const;

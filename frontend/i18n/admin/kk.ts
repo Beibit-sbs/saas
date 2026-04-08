@@ -406,5 +406,17 @@ export const kk = {
   "courseStatus": "Күйі",
   "courseCreated": "Курс жасалды",
   "courseUpdated": "Курс жаңартылды",
-  "courseDeleted": "Курс жойылды"
+  "courseDeleted": "Курс жойылды",
+  "facultyHelp": "Оқытушылар анықтамалығын және кафедраларды басқару.",
+  "addFaculty": "Оқытушы қосу",
+  "noFaculty": "Оқытушы жазбалары табылмады.",
+  "facultyCode": "Оқытушы ID",
+  "facultyFirstName": "Аты",
+  "facultyLastName": "Тегі",
+  "facultyDepartment": "Кафедра",
+  "facultyEmail": "Email",
+  "facultyStatus": "Күйі",
+  "facultyCreated": "Оқытушы жасалды",
+  "facultyUpdated": "Оқытушы жаңартылды",
+  "facultyDeleted": "Оқытушы жойылды"
 } as const;
