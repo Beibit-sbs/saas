@@ -26,6 +26,18 @@ describe("RequireAdminRole", () => {
     expect(screen.getByText("Platform Content")).toBeInTheDocument();
   });
 
+  it("renders children for admin", () => {
+    usePermissionsMock.mockReturnValue({ roles: ["admin"] });
+
+    render(
+      <RequireAdminRole>
+        <div>Platform Content</div>
+      </RequireAdminRole>,
+    );
+
+    expect(screen.getByText("Platform Content")).toBeInTheDocument();
+  });
+
   it("renders access denied for non-admin role", () => {
     usePermissionsMock.mockReturnValue({ roles: ["teacher"] });
 
@@ -35,6 +47,6 @@ describe("RequireAdminRole", () => {
       </RequireAdminRole>,
     );
 
-    expect(screen.getByText(/only to platform superadmins/i)).toBeInTheDocument();
+    expect(screen.getByText(/only to platform administrators/i)).toBeInTheDocument();
   });
 });

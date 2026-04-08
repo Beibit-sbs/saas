@@ -14,7 +14,7 @@ export function RequireAdminRole({ children, message }: RequireAdminRoleProps) {
   const hasPlatformAdminRole = roles.includes("superadmin") || roles.includes("admin");
 
   if (!hasPlatformAdminRole) {
-    return <AccessDenied message={message ?? "This section is available only to platform superadmins."} />;
+    return <AccessDenied message={message ?? "This section is available only to platform administrators."} />;
   }
 
   return <>{children}</>;

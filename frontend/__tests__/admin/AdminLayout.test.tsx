@@ -49,7 +49,7 @@ describe("AdminLayout", () => {
       </AdminLayout>,
     );
 
-    expect(screen.getByText(/only to platform superadmins/i)).toBeInTheDocument();
+    expect(screen.getByText(/only to platform administrators/i)).toBeInTheDocument();
     expect(screen.queryByText("Admin Content")).not.toBeInTheDocument();
   });
 });
