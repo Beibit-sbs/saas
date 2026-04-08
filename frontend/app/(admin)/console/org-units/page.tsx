@@ -8,7 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
 import {
@@ -126,6 +126,7 @@ export default function OrgUnitsPage() {
   ];
 
   return (
+    <RequirePermission permission={PERMISSIONS.ORG_UNITS_READ}>
     <div className="space-y-4" data-testid="org-units-page">
       <PageHeader
         title={t("nav.orgUnits")}
@@ -344,5 +345,6 @@ export default function OrgUnitsPage() {
         </div>
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }

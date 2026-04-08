@@ -9,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
 import {
@@ -125,6 +125,7 @@ export default function RbacPage() {
   }
 
   return (
+    <RequirePermission permission={PERMISSIONS.ROLES_MANAGE}>
     <div className="space-y-6" data-testid="rbac-page">
       <PageHeader
         title={t("nav.rbac")}
@@ -340,5 +341,6 @@ export default function RbacPage() {
         </div>
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }

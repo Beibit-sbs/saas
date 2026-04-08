@@ -8,7 +8,7 @@ import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { PageHeader } from "@/shared/ui/page-header";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useLanguage } from "@/app/components/LanguageProvider";
 import { PERMISSIONS } from "@/shared/config/permissions";
@@ -58,6 +58,7 @@ export default function WorkflowsPage() {
   ];
 
   return (
+    <RequirePermission permission={PERMISSIONS.WORKFLOWS_READ}>
     <div className="space-y-6" data-testid="workflows-page">
       <PageHeader title={t("nav.workflows")} description={tAny("workflowsHelp")} icon={Network} />
 
@@ -126,5 +127,6 @@ export default function WorkflowsPage() {
         />
       </section>
     </div>
+    </RequirePermission>
   );
 }

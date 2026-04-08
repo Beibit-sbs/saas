@@ -8,7 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import {
   useServiceAccounts,
@@ -135,6 +135,7 @@ export default function ServiceAccountsPage() {
   ];
 
   return (
+    <RequirePermission permission={PERMISSIONS.INTEGRATIONS_MANAGE}>
     <div className="space-y-4" data-testid="service-accounts-page">
       <PageHeader
         title={t("nav.serviceAccounts")}
@@ -289,5 +290,6 @@ export default function ServiceAccountsPage() {
         </div>
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }

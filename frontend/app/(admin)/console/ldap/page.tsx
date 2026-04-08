@@ -7,7 +7,7 @@ import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { PageHeader } from "@/shared/ui/page-header";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useLanguage } from "@/app/components/LanguageProvider";
 import { PERMISSIONS } from "@/shared/config/permissions";
@@ -32,6 +32,7 @@ export default function LdapPage() {
   const ldap = statusQuery.data?.ldap;
 
   return (
+    <RequirePermission permission={PERMISSIONS.INTEGRATIONS_MANAGE}>
     <div className="space-y-6" data-testid="ldap-page">
       <PageHeader
         title={t("nav.ldap")}
@@ -115,5 +116,6 @@ export default function LdapPage() {
         ) : null}
       </section>
     </div>
+    </RequirePermission>
   );
 }

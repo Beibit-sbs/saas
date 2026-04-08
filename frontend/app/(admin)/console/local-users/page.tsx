@@ -9,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
@@ -122,6 +122,7 @@ export default function LocalUsersPage() {
   ];
 
   return (
+    <RequirePermission permission={PERMISSIONS.LOCAL_USERS_MANAGE}>
     <div className="space-y-4" data-testid="local-users-page">
       <PageHeader
         title={t("nav.localUsers")}
@@ -388,5 +389,6 @@ export default function LocalUsersPage() {
         </div>
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }

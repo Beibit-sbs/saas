@@ -8,7 +8,7 @@ import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { PageHeader } from "@/shared/ui/page-header";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useLanguage } from "@/app/components/LanguageProvider";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { PERMISSIONS } from "@/shared/config/permissions";
@@ -115,6 +115,7 @@ export default function BackupsPage() {
   ];
 
   return (
+    <RequirePermission permission={PERMISSIONS.BACKUP_MANAGE}>
     <div className="space-y-6" data-testid="backups-page">
       <PageHeader
         title={t("nav.backups")}
@@ -267,5 +268,6 @@ export default function BackupsPage() {
         />
       </section>
     </div>
+    </RequirePermission>
   );
 }
