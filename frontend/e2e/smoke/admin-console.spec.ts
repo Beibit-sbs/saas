@@ -590,6 +590,61 @@ test.describe("Academic pages", () => {
     await expect(page.getByText("Intro to CS")).toBeVisible();
   });
 
+  test("Scheduling page allows creating section", async ({ page }) => {
+    await stubAuthSession(page);
+    await stubApi(page, "/api/bff/admin/scheduling/sections*", {
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 20,
+    });
+
+    let createCalls = 0;
+    await page.route("**/api/**/admin/scheduling/sections", async (route) => {
+      if (route.request().method() === "POST") {
+        createCalls += 1;
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "sec-new",
+            code: "CS102-01",
+            course_name: "Data Structures",
+            instructor: "Dr. Smith",
+            capacity: 35,
+            semester: "2026-spring",
+            schedule: "MWF 10:00",
+            room: "Room 201",
+            status: "open",
+            tenant_id: "1",
+          }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto("/console/scheduling");
+    await page.getByRole("button", { name: /add section/i }).click();
+    await page.getByLabel(/^code$/i).fill("CS102-01");
+    await page.getByLabel(/course name/i).fill("Data Structures");
+    await page.getByLabel(/instructor/i).fill("Dr. Smith");
+    await page.getByLabel(/capacity/i).fill("35");
+    await page.getByLabel(/semester/i).fill("2026-spring");
+    await page.getByLabel(/room/i).fill("Room 201");
+    await page.getByLabel(/schedule/i).fill("MWF 10:00");
+    await page.getByLabel(/tenant id/i).fill("1");
+
+    const createRequest = page.waitForRequest((request) => {
+      return request.method() === "POST"
+        && request.url().includes("/admin/scheduling/sections");
+    });
+
+    await page.getByRole("button", { name: /create section/i }).last().click();
+    await createRequest;
+    await expect.poll(() => createCalls).toBeGreaterThan(0);
+  });
+
   test("Students page allows creating student profile", async ({ page }) => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/students*", {
