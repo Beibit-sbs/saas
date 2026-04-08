@@ -511,6 +511,63 @@ test.describe("Academic pages", () => {
     await expect(page.getByText("Intro to CS")).toBeVisible();
   });
 
+  test("Transcript page allows creating snapshot", async ({ page }) => {
+    await stubAuthSession(page);
+    await stubApi(page, "/api/bff/admin/students/s1/transcript*", {
+      student_id: "s1",
+      student_name: "Jane Doe",
+      student_number: "STU-001",
+      program: "CS",
+      gpa: 3.9,
+      total_credits: 30,
+      entries: [
+        {
+          course_name: "Intro to CS",
+          section_code: "CS101-01",
+          credits: 3,
+          grade_value: "A",
+          numeric_value: 4.0,
+          semester: "2026 Spring",
+          completed: true,
+        },
+      ],
+      generated_at: "2026-04-03T00:00:00Z",
+    });
+
+    let snapshotCalls = 0;
+    await page.route("**/api/**/admin/students/s1/transcript/snapshot", async (route) => {
+      if (route.request().method() === "POST") {
+        snapshotCalls += 1;
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: 9301,
+            tenant_id: 1,
+            student_profile_id: 1001,
+            snapshot_json: { student_profile_id: 1001 },
+            generated_by: "owner@example.com",
+            generated_at: "2026-04-08T04:00:00Z",
+          }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto("/console/students/s1/transcript");
+
+    const snapshotRequest = page.waitForRequest((request) => {
+      return request.method() === "POST"
+        && request.url().includes("/admin/students/s1/transcript/snapshot");
+    });
+
+    await page.getByRole("button", { name: /create snapshot/i }).click();
+    await snapshotRequest;
+    await expect.poll(() => snapshotCalls).toBeGreaterThan(0);
+    await expect(page.getByText(/latest snapshot/i)).toBeVisible();
+  });
+
   test("Enrollments page renders enrollments table", async ({ page }) => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/enrollments*", {

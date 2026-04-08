@@ -18,3 +18,12 @@ export interface Transcript {
   entries: TranscriptEntry[];
   generated_at: string;
 }
+
+export interface TranscriptSnapshot {
+  id: number;
+  tenant_id: number;
+  student_profile_id: number;
+  snapshot_json: Record<string, unknown>;
+  generated_by: string;
+  generated_at: string;
+}
