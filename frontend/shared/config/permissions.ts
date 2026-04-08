@@ -120,9 +120,9 @@ export const PERMISSIONS = {
   AI_PROVIDERS_MANAGE: "admin.ai.providers.manage",
   AI_MODELS_MANAGE: "admin.ai.models.manage",
 
-  // Federation Layer v1
-  FEDERATION_READ: "federation.read",
-  FEDERATION_WRITE: "federation.write",
+  // Federation Layer v1 (currently served under platform admin router, guarded by platform.admin.read/write)
+  FEDERATION_READ: "platform.admin.read",
+  FEDERATION_WRITE: "platform.admin.write",
 
   // Developer Platform v1
   DEVELOPER_PLATFORM_READ: "platform.admin.read",
