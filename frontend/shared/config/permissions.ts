@@ -56,6 +56,9 @@ export const PERMISSIONS = {
       FACULTY_READ: "admin.faculty.read",
       FACULTY_WRITE: "admin.faculty.write",
 
+      // Backups
+      BACKUP_MANAGE: "admin.backup.manage",
+
   // Audit
   AUDIT_READ: "admin.audit.read",
 
