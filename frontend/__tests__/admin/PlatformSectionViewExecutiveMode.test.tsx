@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { PlatformSectionView } from "../../app/(admin)/console/platform/platform-section-view";
 
 const pushMock = vi.fn();
+const hasPermissionMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -14,6 +15,16 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/shared/ui/require-admin-role", () => ({
   RequireAdminRole: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+vi.mock("@/shared/hooks/use-permissions", () => ({
+  usePermissions: () => ({
+    hasPermission: hasPermissionMock,
+  }),
+}));
+
+vi.mock("@/shared/ui/permission-gate", () => ({
+  AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
 }));
 
 vi.mock("@tanstack/react-query", async () => {
@@ -30,6 +41,7 @@ describe("PlatformSectionView executive mode in canonical flow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
+    hasPermissionMock.mockReturnValue(true);
   });
 
   it("renders canonical executive toggle", () => {
@@ -55,5 +67,12 @@ describe("PlatformSectionView executive mode in canonical flow", () => {
 
     expect(window.localStorage.getItem("admin.executiveMode")).toBe("1");
     expect(toggle).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("renders AccessDenied when platform permission is missing", () => {
+    hasPermissionMock.mockReturnValue(false);
+    render(<PlatformSectionView section={"overview" as any} />);
+
+    expect(screen.getByText("Access Denied")).toBeInTheDocument();
   });
 });

@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { RequireAdminRole } from "@/shared/ui/require-admin-role";
+import { AccessDenied } from "@/shared/ui/permission-gate";
+import { usePermissions } from "@/shared/hooks/use-permissions";
+import { PERMISSIONS } from "@/shared/config/permissions";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Button } from "@/shared/ui/button";
 import { ConfirmActionDialog } from "@/shared/ui/confirm-action-dialog";
@@ -142,6 +145,7 @@ const PLATFORM_TABS: Array<{ tab: PlatformConsoleTab; title: string }> = [
 
 export function PlatformSectionView({ section }: PlatformSectionViewProps) {
   const router = useRouter();
+  const { hasPermission } = usePermissions();
   const [executiveMode, setExecutiveMode] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState<number | null>(null);
   const [newServiceAccountName, setNewServiceAccountName] = useState("");
@@ -740,6 +744,10 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
       </Card>
     );
   };
+
+  if (!hasPermission(PERMISSIONS.DEVELOPER_PLATFORM_READ)) {
+    return <AccessDenied />;
+  }
 
   return (
     <RequireAdminRole>

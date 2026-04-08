@@ -53,6 +53,7 @@ export const NAVIGATION: NavGroup[] = [
         label: "Control Plane",
         href: "/console/platform",
         icon: LayoutDashboard,
+        permission: PERMISSIONS.DEVELOPER_PLATFORM_READ,
       },
       {
         label: "Tenants",
