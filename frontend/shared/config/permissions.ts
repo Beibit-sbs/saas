@@ -2,8 +2,8 @@
 
 export const PERMISSIONS = {
   // Tenant management
-  TENANTS_READ: "tenants.read",
-  TENANTS_WRITE: "tenants.write",
+  TENANTS_READ: "admin.tenants.read",
+  TENANTS_WRITE: "admin.tenants.write",
 
   // Feature flags
   FEATURE_FLAGS_READ: "feature_flags.read",
