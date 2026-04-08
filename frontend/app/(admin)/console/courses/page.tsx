@@ -9,7 +9,7 @@ import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { PageHeader } from "@/shared/ui/page-header";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useLanguage } from "@/app/components/LanguageProvider";
 import { PERMISSIONS } from "@/shared/config/permissions";
@@ -163,6 +163,7 @@ export default function CoursesPage() {
   ];
 
   return (
+    <RequirePermission permission={PERMISSIONS.COURSES_READ}>
     <div className="space-y-4" data-testid="courses-page">
       <PageHeader
         title={t("nav.courses")}
@@ -331,5 +332,6 @@ function CourseForm({
         {saveLabel}
       </Button>
     </div>
+    </RequirePermission>
   );
 }

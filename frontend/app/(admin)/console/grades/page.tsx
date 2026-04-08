@@ -9,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
@@ -85,6 +85,7 @@ export default function GradesPage() {
   ];
 
   return (
+    <RequirePermission permission={PERMISSIONS.GRADES_READ}>
     <div className="space-y-4">
       <PageHeader
         title={t("nav.grades")}
@@ -233,5 +234,6 @@ export default function GradesPage() {
         </div>
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }

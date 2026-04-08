@@ -11,7 +11,7 @@ import { Label } from "@/shared/ui/label";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { DetailList } from "@/shared/ui/detail-list";
 import { ErrorState } from "@/shared/ui/error-state";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
@@ -106,6 +106,7 @@ export default function NotificationsPage() {
   ];
 
   return (
+    <RequirePermission permission={PERMISSIONS.NOTIFICATIONS_READ}>
     <div className="space-y-4">
       <PageHeader
         title={t("nav.notifications")}
@@ -288,5 +289,6 @@ export default function NotificationsPage() {
         </div>
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }

@@ -13,7 +13,7 @@ import { Label } from "@/shared/ui/label";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { DetailList } from "@/shared/ui/detail-list";
 import { ErrorState } from "@/shared/ui/error-state";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
@@ -178,6 +178,7 @@ export default function InterventionsPage() {
   }
 
   return (
+    <RequirePermission permission={PERMISSIONS.JOBS_READ}>
     <div className="space-y-4">
       <PageHeader
         title={t("nav.interventions")}
@@ -451,5 +452,6 @@ export default function InterventionsPage() {
         )}
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }

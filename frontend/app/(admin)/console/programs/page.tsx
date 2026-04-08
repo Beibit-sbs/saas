@@ -9,7 +9,7 @@ import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { PageHeader } from "@/shared/ui/page-header";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useLanguage } from "@/app/components/LanguageProvider";
 import { PERMISSIONS } from "@/shared/config/permissions";
@@ -158,6 +158,7 @@ export default function ProgramsPage() {
   ];
 
   return (
+    <RequirePermission permission={PERMISSIONS.PROGRAMS_READ}>
     <div className="space-y-4" data-testid="programs-page">
       <PageHeader
         title={t("nav.programs")}
@@ -304,5 +305,6 @@ function ProgramForm({
         {saveLabel}
       </Button>
     </div>
+    </RequirePermission>
   );
 }

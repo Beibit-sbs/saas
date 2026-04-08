@@ -8,7 +8,7 @@ import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { PageHeader } from "@/shared/ui/page-header";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useLanguage } from "@/app/components/LanguageProvider";
 import { PERMISSIONS } from "@/shared/config/permissions";
@@ -30,6 +30,7 @@ function LanguageRowActions({ row }: { row: AdminLanguage }) {
   const deleteLanguage = useDeleteLanguage();
 
   return (
+    <RequirePermission permission={PERMISSIONS.I18N_MANAGE}>
     <PermissionGate permission={PERMISSIONS.I18N_MANAGE}>
       <div className="flex gap-1">
         <Button
@@ -230,5 +231,6 @@ export default function LanguagesPage() {
         />
       </section>
     </div>
+    </RequirePermission>
   );
 }

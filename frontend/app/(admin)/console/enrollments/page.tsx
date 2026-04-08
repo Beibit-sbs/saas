@@ -14,7 +14,7 @@ import { ConfirmActionDialog } from "@/shared/ui/confirm-action-dialog";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { DetailList } from "@/shared/ui/detail-list";
 import { ErrorState } from "@/shared/ui/error-state";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
@@ -90,6 +90,7 @@ export default function EnrollmentsPage() {
   ];
 
   return (
+    <RequirePermission permission={PERMISSIONS.ENROLLMENTS_READ}>
     <div className="space-y-4">
       <PageHeader
         title={t("nav.enrollments")}
@@ -201,5 +202,6 @@ export default function EnrollmentsPage() {
         </div>
       </DrawerPanel>
     </div>
+    </RequirePermission>
   );
 }
