@@ -41,7 +41,9 @@ else
 fi
 
 echo "[release-check] frontend safety gate"
+"${ROOT_DIR}/scripts/check_permission_parity.sh"
 "${COMPOSE[@]}" run --rm frontend-tests npm run type-check
+"${COMPOSE[@]}" run --rm frontend-tests npm run lint
 "${COMPOSE[@]}" run --rm frontend-tests npm run test:frontend
 
 if [[ "${RELEASE_ENABLE_SMOKE_GATE:-false}" == "true" ]]; then

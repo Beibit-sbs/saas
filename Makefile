@@ -1,10 +1,11 @@
 SHELL := /bin/bash
 COMPOSE := cd infra && docker compose --env-file .env
 
-.PHONY: help up down logs ci test lint pipeline pipeline-force kill-host prod-up prod-down template-validate security-regression release-check release-gate rollback-check pilot-safe-gate pilot-bootstrap pilot-ldap-up pilot-ldap-down pilot-seed-demo
+.PHONY: help up down logs ci test lint pipeline pipeline-force system-audit kill-host prod-up prod-down template-validate security-regression release-check release-gate rollback-check pilot-safe-gate pilot-bootstrap pilot-ldap-up pilot-ldap-down pilot-seed-demo
 
 help:
 	@echo "Targets: up down logs ci test lint pipeline pipeline-force kill-host"
+	@echo "         system-audit"
 	@echo "         prod-up prod-down template-validate"
 	@echo "         security-regression release-check release-gate rollback-check pilot-safe-gate pilot-bootstrap"
 	@echo "         pilot-ldap-up pilot-ldap-down"
@@ -12,6 +13,7 @@ help:
 	@echo ""
 	@echo "  kill-host           — kill host-side dev processes blocked by docker-only guard"
 	@echo "  pipeline-force      — kill host-side dev processes, then run full pipeline"
+	@echo "  system-audit        — one-shot full backend/frontend/parity quality gate"
 	@echo "  pilot-ldap-up       — start stack with OpenLDAP mock for LDAP testing"
 	@echo "  pilot-ldap-down     — stop LDAP stack"
 
@@ -61,6 +63,9 @@ kill-host:
 
 pipeline-force: kill-host
 	./scripts/pipeline.sh
+
+system-audit:
+	./scripts/system_audit_gate.sh
 
 template-validate:
 	$(COMPOSE) run --rm --no-deps backend-tests pytest -q tests/test_template_validation.py

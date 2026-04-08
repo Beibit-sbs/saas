@@ -210,6 +210,11 @@ Full pipeline:
 make pipeline
 ```
 
+One-shot full quality/security audit:
+```bash
+make system-audit
+```
+
 Host-native frontend npm scripts are intentionally blocked. Run all validation through Docker Compose.
 
 Backend only:
