@@ -150,7 +150,7 @@ describe("AutomationRulesPage", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    setPermissions(["automation.read", "automation.write"]);
+    setPermissions(["platform.admin.read", "platform.admin.write"]);
     useCreateAutomationRuleMock.mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
@@ -201,7 +201,7 @@ describe("AutomationRulesPage", () => {
       isError: false,
       refetch: vi.fn(),
     });
-    setPermissions(["automation.read", "automation.write"]);
+    setPermissions(["platform.admin.read", "platform.admin.write"]);
 
     render(<AutomationRulesPage />);
 
@@ -209,14 +209,14 @@ describe("AutomationRulesPage", () => {
     expect(screen.getByTestId("toggle-rule-2")).toBeInTheDocument();
   });
 
-  it("switch is disabled without automation.write permission", () => {
+  it("switch is disabled without platform.admin.write permission", () => {
     useAutomationRulesMock.mockReturnValue({
       data: MOCK_RULES,
       isLoading: false,
       isError: false,
       refetch: vi.fn(),
     });
-    setPermissions(["automation.read"]);
+    setPermissions(["platform.admin.read"]);
 
     render(<AutomationRulesPage />);
 
@@ -231,7 +231,7 @@ describe("AutomationRulesPage", () => {
       isError: false,
       refetch: vi.fn(),
     });
-    setPermissions(["automation.read", "automation.write"]);
+    setPermissions(["platform.admin.read", "platform.admin.write"]);
 
     render(<AutomationRulesPage />);
 
@@ -255,7 +255,7 @@ describe("AutomationRulesPage", () => {
       isError: false,
       refetch: vi.fn(),
     });
-    setPermissions(["automation.read", "automation.write"]);
+    setPermissions(["platform.admin.read", "platform.admin.write"]);
 
     render(<AutomationRulesPage />);
 
@@ -290,7 +290,7 @@ describe("AutomationRulesPage", () => {
       isError: false,
       refetch: vi.fn(),
     });
-    setPermissions(["automation.read", "automation.write"]);
+    setPermissions(["platform.admin.read", "platform.admin.write"]);
 
     render(<AutomationRulesPage />);
 
