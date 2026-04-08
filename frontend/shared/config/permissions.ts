@@ -32,6 +32,10 @@ export const PERMISSIONS = {
   // RBAC
   RBAC_READ: "rbac.read",
   RBAC_WRITE: "rbac.write",
+  ROLES_MANAGE: "admin.roles.manage",
+
+  // Local Users
+  LOCAL_USERS_MANAGE: "admin.users.manage",
 
   // Audit
   AUDIT_READ: "admin.audit.read",
