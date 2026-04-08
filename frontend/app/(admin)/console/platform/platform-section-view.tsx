@@ -7,9 +7,10 @@ import { useMutation } from "@tanstack/react-query";
 import { RequireAdminRole } from "@/shared/ui/require-admin-role";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionDialog } from "@/shared/ui/confirm-action-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { StatusBadge } from "@/shared/ui/status-badge";
-import { apiGet, apiPost, apiPut } from "@/shared/api/client";
+import { apiDelete, apiGet, apiPost, apiPut } from "@/shared/api/client";
 import { TAB_TO_PLATFORM_SECTION, type PlatformConsoleTab } from "./platform-sections";
 
 interface TenantRecord {
@@ -268,6 +269,14 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["platform-console", "tenants"] }),
   });
 
+  const deactivateTenant = useMutation({
+    mutationFn: (tenantId: number) => apiDelete(`/api/admin/tenants/${tenantId}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["platform-console", "tenants"] });
+      void qc.invalidateQueries({ queryKey: ["platform-console", "billing-state", selectedTenantId] });
+    },
+  });
+
   const toggleFeatureFlag = useMutation({
     mutationFn: (flag: FeatureFlagRecord) =>
       apiPost("/api/admin/feature-flags", {
@@ -410,6 +419,18 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
                     >
                       {tenant.status === "active" ? "Suspend" : "Activate"}
                     </Button>
+                    {tenant.id !== 1 && tenant.status !== "inactive" ? (
+                      <ConfirmActionDialog
+                        title="Deactivate tenant?"
+                        description={`${tenant.name} will be moved to inactive status.`}
+                        variant="destructive"
+                        loading={deactivateTenant.isPending}
+                        onConfirm={async () => {
+                          await deactivateTenant.mutateAsync(tenant.id);
+                        }}
+                        trigger={<Button size="sm" variant="destructive">Deactivate</Button>}
+                      />
+                    ) : null}
                   </div>
                 </div>
               </div>

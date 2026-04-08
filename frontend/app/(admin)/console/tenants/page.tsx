@@ -16,7 +16,7 @@ import { PermissionGate } from "@/shared/ui/permission-gate";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
-import { useTenants, useSuspendTenant, useActivateTenant, useCreateTenant } from "@/modules/platform/tenants/hooks";
+import { useTenants, useSuspendTenant, useActivateTenant, useCreateTenant, useDeleteTenant } from "@/modules/platform/tenants/hooks";
 import { Tenant } from "@/modules/platform/tenants/types";
 import { formatDate, formatNumber } from "@/shared/utils/format";
 import { normalizeApiError } from "@/shared/utils/api-error";
@@ -46,6 +46,7 @@ export default function TenantsPage() {
 
   const suspend = useSuspendTenant();
   const activate = useActivateTenant();
+  const removeTenant = useDeleteTenant();
   const createTenant = useCreateTenant();
   const rows = Array.isArray(data?.items) ? data.items : [];
   const selectedTenant = rows.find((item) => item.id === detail.selectedId) ?? null;
@@ -60,6 +61,7 @@ export default function TenantsPage() {
       type: "select" as const,
       options: [
         { label: t("tenants.status.active"), value: "active" },
+        { label: t("tenants.status.inactive"), value: "inactive" },
         { label: t("tenants.status.suspended"), value: "suspended" },
         { label: t("tenants.status.trial"), value: "trial" },
         { label: t("tenants.status.archived"), value: "archived" },
@@ -120,6 +122,23 @@ export default function TenantsPage() {
                 {t("tenants.activate")}
               </Button>
             )}
+            {r.id !== "1" ? (
+              <ConfirmActionDialog
+                title={t("tenants.deleteConfirmTitle")}
+                description={t("tenants.deleteConfirmDescription").replace("{name}", r.display_name)}
+                variant="destructive"
+                onConfirm={() =>
+                  removeTenant.mutate(r.id, {
+                    ...getHandlers({ successTitle: t("tenants.deleted") }),
+                  })
+                }
+                trigger={
+                  <Button variant="destructive" size="sm" disabled={removeTenant.isPending}>
+                    {t("tenants.delete")}
+                  </Button>
+                }
+              />
+            ) : null}
           </PermissionGate>
         </div>
       ),

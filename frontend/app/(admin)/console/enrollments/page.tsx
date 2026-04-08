@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { DataTable, Column } from "@/shared/ui/data-table";
 import { FilterBar } from "@/shared/ui/filter-bar";
 import { StatusBadge } from "@/shared/ui/status-badge";
-import { useEnrollments, useDropEnrollment } from "@/modules/enrollments/hooks";
+import { useEnrollments, useDropEnrollment, useCreateEnrollment } from "@/modules/enrollments/hooks";
 import { Enrollment } from "@/modules/enrollments/types";
 import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { ConfirmActionDialog } from "@/shared/ui/confirm-action-dialog";
 import { DrawerPanel } from "@/shared/ui/drawer-panel";
 import { DetailList } from "@/shared/ui/detail-list";
@@ -18,7 +21,7 @@ import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
 import { formatDate } from "@/shared/utils/format";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { useLanguage } from "@/app/components/LanguageProvider";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Plus } from "lucide-react";
 
 const FILTER_FIELDS = [
   {
@@ -36,13 +39,18 @@ const FILTER_FIELDS = [
 
 export default function EnrollmentsPage() {
   const { t } = useLanguage();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [studentId, setStudentId] = useState("");
+  const [sectionId, setSectionId] = useState("");
   const table = useTableQueryState({ filterKeys: ["status"] as const, defaultPageSize: 20, defaultSort: { key: "enrolled", direction: "desc" } });
   const detail = useDetailDrawer({ paramKey: "enrollment" });
   const { getHandlers } = useMutationFeedback();
 
   const { data, isLoading, error, refetch } = useEnrollments({ page: table.page, page_size: table.pageSize, status: table.filters.status });
+  const createEnrollment = useCreateEnrollment();
   const drop = useDropEnrollment();
   const selectedEnrollment = data?.items.find((item) => item.id === detail.selectedId) ?? null;
+  const canCreate = studentId.trim().length > 0 && sectionId.trim().length > 0;
 
   if (error) {
     return <ErrorState title="Failed to load enrollments" onRetry={refetch} />;
@@ -83,7 +91,19 @@ export default function EnrollmentsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t("nav.enrollments")} description={t("console.enrollments.description")} icon={BookOpen} />
+      <PageHeader
+        title={t("nav.enrollments")}
+        description={t("console.enrollments.description")}
+        icon={BookOpen}
+        actions={
+          <PermissionGate permission={PERMISSIONS.ENROLLMENTS_WRITE}>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Enroll student
+            </Button>
+          </PermissionGate>
+        }
+      />
 
       <FilterBar
         fields={FILTER_FIELDS}
@@ -127,6 +147,58 @@ export default function EnrollmentsPage() {
         ) : (
           <ErrorState title="Enrollment not found" message="The selected enrollment is not present on this page of results." />
         )}
+      </DrawerPanel>
+
+      <DrawerPanel
+        open={createOpen}
+        onClose={() => {
+          setCreateOpen(false);
+          setStudentId("");
+          setSectionId("");
+        }}
+        title="Enroll student"
+        description="Create a new enrollment by student and section IDs."
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="enrollment-student-id">Student ID</Label>
+            <Input
+              id="enrollment-student-id"
+              value={studentId}
+              onChange={(event) => setStudentId(event.target.value)}
+              placeholder="student-1"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="enrollment-section-id">Section ID</Label>
+            <Input
+              id="enrollment-section-id"
+              value={sectionId}
+              onChange={(event) => setSectionId(event.target.value)}
+              placeholder="section-1"
+            />
+          </div>
+          <PermissionGate permission={PERMISSIONS.ENROLLMENTS_WRITE}>
+            <Button
+              disabled={!canCreate || createEnrollment.isPending}
+              onClick={() =>
+                createEnrollment.mutate(
+                  { student_id: studentId.trim(), section_id: sectionId.trim() },
+                  {
+                    ...getHandlers({ successTitle: "Enrollment created" }),
+                    onSuccess: () => {
+                      setCreateOpen(false);
+                      setStudentId("");
+                      setSectionId("");
+                    },
+                  },
+                )
+              }
+            >
+              Create enrollment
+            </Button>
+          </PermissionGate>
+        </div>
       </DrawerPanel>
     </div>
   );

@@ -3,7 +3,7 @@ export interface Tenant {
   slug: string;
   display_name: string;
   plan: string;
-  status: "active" | "suspended" | "trial" | "archived";
+  status: "active" | "inactive" | "suspended" | "trial" | "archived";
   max_students: number;
   current_students: number;
   created_at: string;

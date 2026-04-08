@@ -240,6 +240,44 @@ test.describe("Platform pages", () => {
     await expect(page.getByText(STUDENT_CAPACITY_RE)).toBeVisible();
   });
 
+  test("Tenants page allows deactivation with confirm dialog", async ({ page }) => {
+    await stubAuthSession(page);
+    await stubApi(page, "/api/bff/admin/tenants*", {
+      tenants: [
+        { id: 2, slug: "acme", name: "Acme Corp", status: "active", plan_id: 1, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-15T00:00:00Z" },
+      ],
+      items: [
+        { id: "2", slug: "acme", display_name: "Acme Corp", status: "active", plan: "1", max_students: 1000, current_students: 120, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-15T00:00:00Z" },
+      ],
+      total: 1,
+      page: 1,
+      page_size: 20,
+    });
+
+    let deleteCalls = 0;
+    await page.route("**/api/**/admin/tenants/2", async (route) => {
+      if (route.request().method() === "DELETE") {
+        deleteCalls += 1;
+        await route.fulfill({ status: 204, body: "" });
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto("/console/tenants");
+    await page.getByRole("button", { name: /deactivate/i }).click();
+    await expect(page.getByText(/deactivate university\?|deactivate tenant\?/i)).toBeVisible();
+
+    const deleteRequest = page.waitForRequest((request) => {
+      return request.method() === "DELETE"
+        && request.url().includes("/admin/tenants/2");
+    });
+
+    await page.getByRole("button", { name: /^deactivate$/i }).last().click();
+    await deleteRequest;
+    await expect.poll(() => deleteCalls).toBeGreaterThan(0);
+  });
+
   test("Jobs page renders the job queue table", async ({ page }) => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/jobs*", {
@@ -397,6 +435,54 @@ test.describe("Academic pages", () => {
     await page.goto("/console/enrollments");
     await expect(page.getByRole("heading", { name: ENROLLMENTS_RE })).toBeVisible();
     await expect(page.getByText("Jane Doe")).toBeVisible();
+  });
+
+  test("Enrollments page allows creating enrollment", async ({ page }) => {
+    await stubAuthSession(page);
+    await stubApi(page, "/api/bff/admin/enrollments*", {
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 20,
+    });
+
+    let createCalls = 0;
+    await page.route("**/api/**/admin/enrollments", async (route) => {
+      if (route.request().method() === "POST") {
+        createCalls += 1;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "e-new",
+            student_id: "student-1",
+            student_name: "Jane Doe",
+            section_id: "section-1",
+            section_code: "CS101-01",
+            course_name: "Intro to CS",
+            status: "enrolled",
+            enrolled_at: "2024-01-10T00:00:00Z",
+            tenant_id: "1",
+          }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto("/console/enrollments");
+    await page.getByRole("button", { name: /enroll student/i }).click();
+    await page.getByLabel(/student id/i).fill("student-1");
+    await page.getByLabel(/section id/i).fill("section-1");
+
+    const createRequest = page.waitForRequest((request) => {
+      return request.method() === "POST"
+        && request.url().includes("/admin/enrollments");
+    });
+
+    await page.getByRole("button", { name: /create enrollment/i }).click();
+    await createRequest;
+    await expect.poll(() => createCalls).toBeGreaterThan(0);
   });
 
   test("Scheduling page renders course sections table", async ({ page }) => {
