@@ -10,13 +10,15 @@ import FederationPage from "../../app/(admin)/console/federation/page";
 
 const useInstitutionsMock = vi.fn();
 const useInstitutionOverviewMock = vi.fn();
+const useCreateInstitutionMock = vi.fn();
+const useLinkTenantMock = vi.fn();
 
 vi.mock("../../modules/platform/federation/use-federation", () => ({
   useInstitutions: (...args: unknown[]) => useInstitutionsMock(...args),
   useInstitutionOverview: (...args: unknown[]) => useInstitutionOverviewMock(...args),
   useInstitution: vi.fn(() => ({ data: undefined, isLoading: false, isError: false })),
-  useCreateInstitution: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
-  useLinkTenant: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useCreateInstitution: (...args: unknown[]) => useCreateInstitutionMock(...args),
+  useLinkTenant: (...args: unknown[]) => useLinkTenantMock(...args),
 }));
 
 vi.mock("../../shared/ui/permission-gate", () => ({
@@ -87,6 +89,8 @@ const MOCK_OVERVIEW = {
 describe("FederationPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useCreateInstitutionMock.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    useLinkTenantMock.mockReturnValue({ mutate: vi.fn(), isPending: false });
     useInstitutionOverviewMock.mockReturnValue({
       data: undefined,
       isLoading: false,
@@ -231,5 +235,57 @@ describe("FederationPage", () => {
 
     fireEvent.click(screen.getByTestId("institution-row-1"));
     expect(screen.queryByTestId("institution-overview-1")).not.toBeInTheDocument();
+  });
+
+  it("creates institution from create panel", () => {
+    const mutate = vi.fn();
+    useCreateInstitutionMock.mockReturnValue({ mutate, isPending: false });
+    useInstitutionsMock.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<FederationPage />);
+
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: "Northwind University" } });
+    fireEvent.change(screen.getByLabelText(/code/i), { target: { value: "NORTHWIND" } });
+    fireEvent.change(screen.getByLabelText(/country/i), { target: { value: "Kazakhstan" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /create institution/i }));
+    expect(mutate).toHaveBeenCalled();
+    expect(mutate.mock.calls[0][0]).toMatchObject({
+      name: "Northwind University",
+      code: "NORTHWIND",
+      country: "Kazakhstan",
+    });
+  });
+
+  it("links tenant for selected institution", () => {
+    const mutate = vi.fn();
+    useLinkTenantMock.mockReturnValue({ mutate, isPending: false });
+    useInstitutionsMock.mockReturnValue({
+      data: MOCK_INSTITUTIONS,
+      isLoading: false,
+      isError: false,
+    });
+    useInstitutionOverviewMock.mockReturnValue({
+      data: MOCK_OVERVIEW,
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<FederationPage />);
+    fireEvent.click(screen.getByTestId("institution-row-1"));
+
+    fireEvent.change(screen.getByLabelText(/tenant id/i), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText(/^role$/i), { target: { value: "institution_admin" } });
+    fireEvent.click(screen.getByRole("button", { name: /link tenant/i }));
+
+    expect(mutate).toHaveBeenCalled();
+    expect(mutate.mock.calls[0][0]).toMatchObject({
+      tenant_id: 2,
+      role: "institution_admin",
+    });
   });
 });
