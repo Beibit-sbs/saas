@@ -48,7 +48,7 @@ async function stubAuthSession(page: Page, overrides: Record<string, unknown> = 
             "notifications.read", "notifications.write", "feature_flags.read",
             "feature_flags.write", "students.read", "enrollments.read",
             "grades.read", "transcripts.read", "scheduling.read",
-            "health.read", "metrics.read"],
+            "health.read", "metrics.read", "admin.audit.read"],
           tenantId: null,
           ...overrides,
         },
@@ -509,6 +509,39 @@ test.describe("Academic pages", () => {
     await transcriptResponse;
     await expect(page.getByText("Jane Doe · STU-001")).toBeVisible();
     await expect(page.getByText("Intro to CS")).toBeVisible();
+  });
+
+  test("Audit page renders audit events", async ({ page }) => {
+    await stubAuthSession(page);
+    await stubApi(page, "/api/bff/admin/audit/events*", {
+      events: [
+        {
+          event_id: "evt-1",
+          timestamp: "2026-04-08T03:00:00Z",
+          actor: "owner@example.com",
+          action: "rbac.role.assigned",
+          entity: "role_assignment",
+          path: "/api/admin/rbac/assign",
+          ip: "127.0.0.1",
+          client_ip: "127.0.0.1",
+          result: "success",
+          tenant_id: 1,
+          correlation_id: "corr-1",
+          metadata: {},
+        },
+      ],
+    });
+
+    const auditResponse = page.waitForResponse((response) => {
+      return response.request().method() === "GET"
+        && response.url().includes("/api/bff/admin/audit/events");
+    });
+
+    await page.goto("/console/audit");
+    await auditResponse;
+    await expect(page.getByRole("heading", { name: /audit/i })).toBeVisible();
+    await expect(page.getByText("owner@example.com")).toBeVisible();
+    await expect(page.getByText("rbac.role.assigned")).toBeVisible();
   });
 
   test("Transcript page allows creating snapshot", async ({ page }) => {

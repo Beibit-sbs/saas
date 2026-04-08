@@ -34,7 +34,7 @@ export const PERMISSIONS = {
   RBAC_WRITE: "rbac.write",
 
   // Audit
-  AUDIT_READ: "audit.read",
+  AUDIT_READ: "admin.audit.read",
 
   // Students
   STUDENTS_READ: "students.read",
