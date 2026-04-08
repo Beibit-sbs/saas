@@ -11,22 +11,30 @@ import { test, expect, type Page } from "@playwright/test";
  * The cookie is required because Next.js middleware checks it on the server
  * before any React code runs.  page.route() intercepts only client-side fetches.
  */
-async function stubAuthSession(page: Page, overrides: Record<string, unknown> = {}) {
+async function stubAuthSession(
+  page: Page,
+  overrides: Record<string, unknown> = {},
+) {
   const cookieUrl = process.env.E2E_BASE_URL ?? "https://nginx";
   const secureCookie = new URL(cookieUrl).protocol === "https:";
   // Build a minimal non-expired JWT that satisfies middleware.ts isTokenExpired().
-  const payloadJson = JSON.stringify({ sub: "test-user-id", exp: Math.floor(Date.now() / 1000) + 3600 });
+  const payloadJson = JSON.stringify({
+    sub: "test-user-id",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  });
   const payload = Buffer.from(payloadJson).toString("base64url");
   const fakeToken = `fakeheader.${payload}.fakesig`;
 
-  await page.context().addCookies([{
-    name: "admin_token",
-    value: fakeToken,
-    url: cookieUrl,
-    httpOnly: true,
-    secure: secureCookie,
-    sameSite: "Lax",
-  }]);
+  await page.context().addCookies([
+    {
+      name: "admin_token",
+      value: fakeToken,
+      url: cookieUrl,
+      httpOnly: true,
+      secure: secureCookie,
+      sameSite: "Lax",
+    },
+  ]);
 
   const sessionCookies = await page.context().cookies(cookieUrl);
   if (!sessionCookies.some((item) => item.name === "admin_token")) {
@@ -44,11 +52,24 @@ async function stubAuthSession(page: Page, overrides: Record<string, unknown> = 
           sub: "test-user-id",
           displayName: "Test Admin",
           roles: ["admin"],
-          permissions: ["tenants.read", "tenants.write", "jobs.read", "jobs.write",
-            "notifications.read", "notifications.write", "feature_flags.read",
-            "feature_flags.write", "students.read", "enrollments.read",
-            "grades.read", "transcripts.read", "scheduling.read",
-            "health.read", "metrics.read", "admin.audit.read"],
+          permissions: [
+            "admin.tenants.read",
+            "admin.tenants.write",
+            "jobs.read",
+            "jobs.write",
+            "notifications.read",
+            "notifications.write",
+            "feature_flags.read",
+            "feature_flags.write",
+            "students.read",
+            "enrollments.read",
+            "grades.read",
+            "transcripts.read",
+            "scheduling.read",
+            "health.read",
+            "metrics.read",
+            "admin.audit.read",
+          ],
           tenantId: null,
           ...overrides,
         },
@@ -71,7 +92,8 @@ async function stubApi(page: Page, path: string, body: unknown, status = 200) {
 
 const emptyPage = { items: [], total: 0, page: 1, page_size: 20 };
 
-const LOGIN_TITLE_RE = /AI University Console|Консоль университета ИИ|AI университет консолі/i;
+const LOGIN_TITLE_RE =
+  /AI University Console|Консоль университета ИИ|AI университет консолі/i;
 const USERNAME_RE = /Username|Логин/i;
 const PASSWORD_RE = /Password|Пароль|Құпиясөз/i;
 const SIGN_IN_RE = /Sign in|Войти|Кіру/i;
@@ -81,8 +103,10 @@ const JOBS_RE = /Jobs|Задачи|Тапсырмалар/i;
 const NOTIFICATIONS_RE = /Notifications|Уведомления|Хабарландырулар/i;
 const ENROLLMENTS_RE = /Enrollments|Зачисления|Тіркеулер/i;
 const SCHEDULING_RE = /Scheduling|Расписание|Кесте/i;
-const TENANT_SUMMARY_RE = /Operational summary for|Операционная сводка для|операциялық шолу/i;
-const STUDENT_CAPACITY_RE = /Student capacity|Лимит студентов|Студент сыйымдылығы/i;
+const TENANT_SUMMARY_RE =
+  /Operational summary for|Операционная сводка для|операциялық шолу/i;
+const STUDENT_CAPACITY_RE =
+  /Student capacity|Лимит студентов|Студент сыйымдылығы/i;
 
 async function forceEnglishLocale(page: Page) {
   const configuredUrl = process.env.E2E_BASE_URL ?? "https://nginx";
@@ -93,14 +117,16 @@ async function forceEnglishLocale(page: Page) {
     `https://${parsedUrl.host}`,
   ]);
 
-  await page.context().addCookies(Array.from(cookieOrigins).map((url) => ({
-    name: "app.locale",
-    value: "en",
-    url,
-    httpOnly: false,
-    secure: new URL(url).protocol === "https:",
-    sameSite: "Lax" as const,
-  })));
+  await page.context().addCookies(
+    Array.from(cookieOrigins).map((url) => ({
+      name: "app.locale",
+      value: "en",
+      url,
+      httpOnly: false,
+      secure: new URL(url).protocol === "https:",
+      sameSite: "Lax" as const,
+    })),
+  );
 
   await page.addInitScript(() => {
     document.cookie = "app.locale=en; Path=/; SameSite=Lax";
@@ -117,16 +143,22 @@ test.beforeEach(async ({ page }) => {
 // ---------------------------------------------------------------------------
 
 test.describe("Auth", () => {
-  test("login page renders the AI University Console sign-in form", async ({ page }) => {
+  test("login page renders the AI University Console sign-in form", async ({
+    page,
+  }) => {
     await page.goto("/login");
     await expect(page).toHaveTitle(/AI University Console|Admin/i);
-    await expect(page.getByRole("heading", { name: LOGIN_TITLE_RE })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: LOGIN_TITLE_RE }),
+    ).toBeVisible();
     await expect(page.getByLabel(USERNAME_RE)).toBeVisible();
     await expect(page.getByLabel(PASSWORD_RE)).toBeVisible();
     await expect(page.getByRole("button", { name: SIGN_IN_RE })).toBeVisible();
   });
 
-  test("unauthenticated visit to /console redirects to /login", async ({ page }) => {
+  test("unauthenticated visit to /console redirects to /login", async ({
+    page,
+  }) => {
     // Return 401 (no cookie / invalid session)
     await page.route("/api/auth/me", async (route) => {
       await route.fulfill({
@@ -141,7 +173,9 @@ test.describe("Auth", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test("expired session redirects to /login with intended destination", async ({ page }) => {
+  test("expired session redirects to /login with intended destination", async ({
+    page,
+  }) => {
     await page.route("/api/auth/me", async (route) => {
       await route.fulfill({
         status: 401,
@@ -151,29 +185,45 @@ test.describe("Auth", () => {
     });
 
     await page.goto("/console/jobs?page=2&pageSize=10");
-    await expect(page).toHaveURL(/\/login\?next=%2Fconsole%2Fjobs%3Fpage%3D2%26pageSize%3D10/);
+    await expect(page).toHaveURL(
+      /\/login\?next=%2Fconsole%2Fjobs%3Fpage%3D2%26pageSize%3D10/,
+    );
   });
 
-  test("valid session navigates to /console and shows dashboard", async ({ page }) => {
+  test("valid session navigates to /console and shows dashboard", async ({
+    page,
+  }) => {
     await stubAuthSession(page);
     // Stub metrics + health for dashboard
     await stubApi(page, "/api/bff/v1/admin/health/metrics", {
-      total_tenants: 12, active_tenants: 10, total_students: 4200,
+      total_tenants: 12,
+      active_tenants: 10,
+      total_students: 4200,
     });
     await stubApi(page, "/api/bff/v1/admin/health", {
-      status: "healthy", services: [{ name: "db", status: "healthy" }],
+      status: "healthy",
+      services: [{ name: "db", status: "healthy" }],
     });
     await stubApi(page, "/api/bff/admin/jobs*", { jobs: [] });
     await stubApi(page, "/api/bff/v1/admin/notifications*", emptyPage);
 
     await page.goto("/console");
-    await expect(page.getByRole("heading", { name: DASHBOARD_RE })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: DASHBOARD_RE }),
+    ).toBeVisible();
   });
 
   test("logout clears session and redirects to /login", async ({ page }) => {
     await stubAuthSession(page);
-    await stubApi(page, "/api/bff/v1/admin/health/metrics", { total_tenants: 0, active_tenants: 0, total_students: 0 });
-    await stubApi(page, "/api/bff/v1/admin/health", { status: "healthy", services: [] });
+    await stubApi(page, "/api/bff/v1/admin/health/metrics", {
+      total_tenants: 0,
+      active_tenants: 0,
+      total_students: 0,
+    });
+    await stubApi(page, "/api/bff/v1/admin/health", {
+      status: "healthy",
+      services: [],
+    });
     await stubApi(page, "/api/bff/admin/jobs*", { jobs: [] });
     await stubApi(page, "/api/bff/v1/admin/notifications*", emptyPage);
 
@@ -183,13 +233,17 @@ test.describe("Auth", () => {
     });
 
     await page.goto("/console");
-    await expect(page.getByRole("heading", { name: DASHBOARD_RE })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: DASHBOARD_RE }),
+    ).toBeVisible();
 
     // SessionPanel logout control is no longer mounted in runtime; emulate sign-out by clearing auth cookies.
     await page.context().clearCookies();
     await page.goto("/console");
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByRole("heading", { name: LOGIN_TITLE_RE })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: LOGIN_TITLE_RE }),
+    ).toBeVisible();
   });
 });
 
@@ -202,7 +256,15 @@ test.describe("Platform pages", () => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/tenants*", {
       tenants: [
-        { id: 1, slug: "acme", name: "Acme Corp", status: "active", plan_id: 1, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-15T00:00:00Z" },
+        {
+          id: 1,
+          slug: "acme",
+          name: "Acme Corp",
+          status: "active",
+          plan_id: 1,
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-15T00:00:00Z",
+        },
       ],
     });
 
@@ -211,15 +273,27 @@ test.describe("Platform pages", () => {
     await expect(page.getByRole("heading", { name: TENANTS_RE })).toBeVisible();
   });
 
-  test("Tenants page keeps filters, page size, and sort in URL", async ({ page }) => {
+  test("Tenants page keeps filters, page size, and sort in URL", async ({
+    page,
+  }) => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/tenants*", {
       tenants: [
-        { id: 1, slug: "acme", name: "Acme Corp", status: "active", plan_id: 1, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-15T00:00:00Z" },
+        {
+          id: 1,
+          slug: "acme",
+          name: "Acme Corp",
+          status: "active",
+          plan_id: 1,
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-15T00:00:00Z",
+        },
       ],
     });
 
-    await page.goto("/console/tenants?search=acme&status=active&page=2&pageSize=10&sort=name:asc");
+    await page.goto(
+      "/console/tenants?search=acme&status=active&page=2&pageSize=10&sort=name:asc",
+    );
     await expect(page.locator("input").first()).toHaveValue("acme");
     await expect(page).toHaveURL(/search=acme/);
     await expect(page).toHaveURL(/pageSize=10/);
@@ -230,7 +304,15 @@ test.describe("Platform pages", () => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/tenants*", {
       tenants: [
-        { id: 1, slug: "acme", name: "Acme Corp", status: "active", plan_id: 1, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-15T00:00:00Z" },
+        {
+          id: 1,
+          slug: "acme",
+          name: "Acme Corp",
+          status: "active",
+          plan_id: 1,
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-15T00:00:00Z",
+        },
       ],
     });
 
@@ -240,14 +322,34 @@ test.describe("Platform pages", () => {
     await expect(page.getByText(STUDENT_CAPACITY_RE)).toBeVisible();
   });
 
-  test("Tenants page allows deactivation with confirm dialog", async ({ page }) => {
+  test("Tenants page allows deactivation with confirm dialog", async ({
+    page,
+  }) => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/tenants*", {
       tenants: [
-        { id: 2, slug: "acme", name: "Acme Corp", status: "active", plan_id: 1, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-15T00:00:00Z" },
+        {
+          id: 2,
+          slug: "acme",
+          name: "Acme Corp",
+          status: "active",
+          plan_id: 1,
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-15T00:00:00Z",
+        },
       ],
       items: [
-        { id: "2", slug: "acme", display_name: "Acme Corp", status: "active", plan: "1", max_students: 1000, current_students: 120, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-15T00:00:00Z" },
+        {
+          id: "2",
+          slug: "acme",
+          display_name: "Acme Corp",
+          status: "active",
+          plan: "1",
+          max_students: 1000,
+          current_students: 120,
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-15T00:00:00Z",
+        },
       ],
       total: 1,
       page: 1,
@@ -266,14 +368,21 @@ test.describe("Platform pages", () => {
 
     await page.goto("/console/tenants");
     await page.getByRole("button", { name: /deactivate/i }).click();
-    await expect(page.getByText(/deactivate university\?|deactivate tenant\?/i)).toBeVisible();
+    await expect(
+      page.getByText(/deactivate university\?|deactivate tenant\?/i),
+    ).toBeVisible();
 
     const deleteRequest = page.waitForRequest((request) => {
-      return request.method() === "DELETE"
-        && request.url().includes("/admin/tenants/2");
+      return (
+        request.method() === "DELETE" &&
+        request.url().includes("/admin/tenants/2")
+      );
     });
 
-    await page.getByRole("button", { name: /^deactivate$/i }).last().click();
+    await page
+      .getByRole("button", { name: /^deactivate$/i })
+      .last()
+      .click();
     await deleteRequest;
     await expect.poll(() => deleteCalls).toBeGreaterThan(0);
   });
@@ -306,43 +415,78 @@ test.describe("Platform pages", () => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/v1/admin/notifications*", {
       items: [
-        { id: "n1", title: "Backup complete", body: "Daily backup succeeded.",
-          severity: "info", tenant_id: null, read: false, created_at: "2024-01-01T00:00:00Z" },
+        {
+          id: "n1",
+          title: "Backup complete",
+          body: "Daily backup succeeded.",
+          severity: "info",
+          tenant_id: null,
+          read: false,
+          created_at: "2024-01-01T00:00:00Z",
+        },
       ],
-      total: 1, page: 1, page_size: 20,
+      total: 1,
+      page: 1,
+      page_size: 20,
     });
 
     await page.goto("/console/notifications");
-    await expect(page.getByRole("heading", { name: NOTIFICATIONS_RE })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: NOTIFICATIONS_RE }),
+    ).toBeVisible();
     await expect(page.getByText("Backup complete")).toBeVisible();
   });
 
   test("Notifications mutation shows success feedback", async ({ page }) => {
     await stubAuthSession(page);
     let markAllCalls = 0;
-    await page.route("**/api/**/notifications/mark-all-read*", async (route) => {
-      markAllCalls += 1;
-      await route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
-    });
+    await page.route(
+      "**/api/**/notifications/mark-all-read*",
+      async (route) => {
+        markAllCalls += 1;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: "{}",
+        });
+      },
+    );
     await stubApi(page, "/api/**/admin/notifications*", {
       items: [
-        { id: "n1", title: "Backup complete", body: "Daily backup succeeded.", severity: "info", tenant_id: null, read: false, type: "system", created_at: "2024-01-01T00:00:00Z" },
+        {
+          id: "n1",
+          title: "Backup complete",
+          body: "Daily backup succeeded.",
+          severity: "info",
+          tenant_id: null,
+          read: false,
+          type: "system",
+          created_at: "2024-01-01T00:00:00Z",
+        },
       ],
-      total: 1, page: 1, page_size: 20,
+      total: 1,
+      page: 1,
+      page_size: 20,
     });
 
     await page.goto("/console/notifications");
     const markAllRequest = page.waitForRequest((request) => {
-      return request.method() === "POST"
-        && request.url().includes("/notifications/mark-all-read");
+      return (
+        request.method() === "POST" &&
+        request.url().includes("/notifications/mark-all-read")
+      );
     });
     await page.getByRole("button", { name: /mark all read/i }).click();
     await markAllRequest;
     await expect.poll(() => markAllCalls).toBeGreaterThan(0);
-    await expect(page.getByRole("heading", { name: NOTIFICATIONS_RE })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: NOTIFICATIONS_RE }),
+    ).toBeVisible();
   });
 
-  test("Notifications page allows dispatching a notification", async ({ page }) => {
+  test("Notifications page allows dispatching a notification", async ({
+    page,
+  }) => {
     await stubAuthSession(page);
     await stubApi(page, "/api/**/admin/notifications*", {
       items: [],
@@ -358,7 +502,16 @@ test.describe("Platform pages", () => {
         await route.fulfill({
           status: 201,
           contentType: "application/json",
-          body: JSON.stringify({ id: "n2", title: "Manual", body: "Manual dispatch", severity: "info", tenant_id: "1", read: false, type: "system", created_at: "2024-01-01T00:00:00Z" }),
+          body: JSON.stringify({
+            id: "n2",
+            title: "Manual",
+            body: "Manual dispatch",
+            severity: "info",
+            tenant_id: "1",
+            read: false,
+            type: "system",
+            created_at: "2024-01-01T00:00:00Z",
+          }),
         });
         return;
       }
@@ -371,11 +524,15 @@ test.describe("Platform pages", () => {
     await page.getByLabel(/target/i).fill("ops@example.com");
 
     const dispatchRequest = page.waitForRequest((request) => {
-      return request.method() === "POST"
-        && request.url().endsWith("/notifications");
+      return (
+        request.method() === "POST" && request.url().endsWith("/notifications")
+      );
     });
 
-    await page.getByRole("button", { name: /^send notification$/i }).last().click();
+    await page
+      .getByRole("button", { name: /^send notification$/i })
+      .last()
+      .click();
     await dispatchRequest;
     await expect.poll(() => dispatchCalls).toBeGreaterThan(0);
   });
@@ -390,15 +547,27 @@ test.describe("Academic pages", () => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/students*", {
       items: [
-        { id: "s1", student_number: "STU-001", first_name: "Jane", last_name: "Doe",
-          email: "jane@example.com", program: "CS", status: "active", created_at: "2024-01-01T00:00:00Z" },
+        {
+          id: "s1",
+          student_number: "STU-001",
+          first_name: "Jane",
+          last_name: "Doe",
+          email: "jane@example.com",
+          program: "CS",
+          status: "active",
+          created_at: "2024-01-01T00:00:00Z",
+        },
       ],
-      total: 1, page: 1, page_size: 20,
+      total: 1,
+      page: 1,
+      page_size: 20,
     });
 
     const studentsResponse = page.waitForResponse((response) => {
-      return response.request().method() === "GET"
-        && response.url().includes("/api/bff/admin/students");
+      return (
+        response.request().method() === "GET" &&
+        response.url().includes("/api/bff/admin/students")
+      );
     });
 
     await page.goto("/console/students");
@@ -410,15 +579,26 @@ test.describe("Academic pages", () => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/grades*", {
       items: [
-        { id: "g1", student_name: "Jane Doe", section_code: "CS101-01",
-          course_name: "Intro to CS", grade_value: "A", numeric_value: 4.0, graded_at: "2024-06-01T00:00:00Z" },
+        {
+          id: "g1",
+          student_name: "Jane Doe",
+          section_code: "CS101-01",
+          course_name: "Intro to CS",
+          grade_value: "A",
+          numeric_value: 4.0,
+          graded_at: "2024-06-01T00:00:00Z",
+        },
       ],
-      total: 1, page: 1, page_size: 20,
+      total: 1,
+      page: 1,
+      page_size: 20,
     });
 
     const gradesResponse = page.waitForResponse((response) => {
-      return response.request().method() === "GET"
-        && response.url().includes("/api/bff/admin/grades");
+      return (
+        response.request().method() === "GET" &&
+        response.url().includes("/api/bff/admin/grades")
+      );
     });
 
     await page.goto("/console/grades");
@@ -468,11 +648,15 @@ test.describe("Academic pages", () => {
     await page.getByLabel(/numeric score/i).fill("4.0");
 
     const upsertRequest = page.waitForRequest((request) => {
-      return request.method() === "PUT"
-        && request.url().includes("/admin/grades");
+      return (
+        request.method() === "PUT" && request.url().includes("/admin/grades")
+      );
     });
 
-    await page.getByRole("button", { name: /^save grade$/i }).last().click();
+    await page
+      .getByRole("button", { name: /^save grade$/i })
+      .last()
+      .click();
     await upsertRequest;
     await expect.poll(() => upsertCalls).toBeGreaterThan(0);
   });
@@ -501,8 +685,10 @@ test.describe("Academic pages", () => {
     });
 
     const transcriptResponse = page.waitForResponse((response) => {
-      return response.request().method() === "GET"
-        && response.url().includes("/api/bff/admin/students/s1/transcript");
+      return (
+        response.request().method() === "GET" &&
+        response.url().includes("/api/bff/admin/students/s1/transcript")
+      );
     });
 
     await page.goto("/console/students/s1/transcript");
@@ -533,8 +719,10 @@ test.describe("Academic pages", () => {
     });
 
     const auditResponse = page.waitForResponse((response) => {
-      return response.request().method() === "GET"
-        && response.url().includes("/api/bff/admin/audit/events");
+      return (
+        response.request().method() === "GET" &&
+        response.url().includes("/api/bff/admin/audit/events")
+      );
     });
 
     await page.goto("/console/audit");
@@ -568,31 +756,36 @@ test.describe("Academic pages", () => {
     });
 
     let snapshotCalls = 0;
-    await page.route("**/api/**/admin/students/s1/transcript/snapshot", async (route) => {
-      if (route.request().method() === "POST") {
-        snapshotCalls += 1;
-        await route.fulfill({
-          status: 201,
-          contentType: "application/json",
-          body: JSON.stringify({
-            id: 9301,
-            tenant_id: 1,
-            student_profile_id: 1001,
-            snapshot_json: { student_profile_id: 1001 },
-            generated_by: "owner@example.com",
-            generated_at: "2026-04-08T04:00:00Z",
-          }),
-        });
-        return;
-      }
-      await route.continue();
-    });
+    await page.route(
+      "**/api/**/admin/students/s1/transcript/snapshot",
+      async (route) => {
+        if (route.request().method() === "POST") {
+          snapshotCalls += 1;
+          await route.fulfill({
+            status: 201,
+            contentType: "application/json",
+            body: JSON.stringify({
+              id: 9301,
+              tenant_id: 1,
+              student_profile_id: 1001,
+              snapshot_json: { student_profile_id: 1001 },
+              generated_by: "owner@example.com",
+              generated_at: "2026-04-08T04:00:00Z",
+            }),
+          });
+          return;
+        }
+        await route.continue();
+      },
+    );
 
     await page.goto("/console/students/s1/transcript");
 
     const snapshotRequest = page.waitForRequest((request) => {
-      return request.method() === "POST"
-        && request.url().includes("/admin/students/s1/transcript/snapshot");
+      return (
+        request.method() === "POST" &&
+        request.url().includes("/admin/students/s1/transcript/snapshot")
+      );
     });
 
     await page.getByRole("button", { name: /create snapshot/i }).click();
@@ -605,14 +798,24 @@ test.describe("Academic pages", () => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/enrollments*", {
       items: [
-        { id: "e1", student_name: "Jane Doe", section_code: "CS101-01",
-          course_name: "Intro to CS", status: "enrolled", enrolled_at: "2024-01-10T00:00:00Z" },
+        {
+          id: "e1",
+          student_name: "Jane Doe",
+          section_code: "CS101-01",
+          course_name: "Intro to CS",
+          status: "enrolled",
+          enrolled_at: "2024-01-10T00:00:00Z",
+        },
       ],
-      total: 1, page: 1, page_size: 20,
+      total: 1,
+      page: 1,
+      page_size: 20,
     });
 
     await page.goto("/console/enrollments");
-    await expect(page.getByRole("heading", { name: ENROLLMENTS_RE })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: ENROLLMENTS_RE }),
+    ).toBeVisible();
     await expect(page.getByText("Jane Doe")).toBeVisible();
   });
 
@@ -655,8 +858,10 @@ test.describe("Academic pages", () => {
     await page.getByLabel(/section id/i).fill("section-1");
 
     const createRequest = page.waitForRequest((request) => {
-      return request.method() === "POST"
-        && request.url().includes("/admin/enrollments");
+      return (
+        request.method() === "POST" &&
+        request.url().includes("/admin/enrollments")
+      );
     });
 
     await page.getByRole("button", { name: /create enrollment/i }).click();
@@ -668,15 +873,28 @@ test.describe("Academic pages", () => {
     await stubAuthSession(page);
     await stubApi(page, "/api/bff/admin/scheduling/sections*", {
       items: [
-        { id: "sec1", code: "CS101-01", course_name: "Intro to CS", instructor: "Dr. Smith",
-          semester: "2024-spring", schedule: "MWF 10:00", room: "Room 201",
-          enrolled_count: 20, capacity: 30, status: "open" },
+        {
+          id: "sec1",
+          code: "CS101-01",
+          course_name: "Intro to CS",
+          instructor: "Dr. Smith",
+          semester: "2024-spring",
+          schedule: "MWF 10:00",
+          room: "Room 201",
+          enrolled_count: 20,
+          capacity: 30,
+          status: "open",
+        },
       ],
-      total: 1, page: 1, page_size: 20,
+      total: 1,
+      page: 1,
+      page_size: 20,
     });
 
     await page.goto("/console/scheduling");
-    await expect(page.getByRole("heading", { name: SCHEDULING_RE })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: SCHEDULING_RE }),
+    ).toBeVisible();
     await expect(page.getByText("Intro to CS")).toBeVisible();
   });
 
@@ -725,11 +943,15 @@ test.describe("Academic pages", () => {
     await page.getByLabel(/cohort year/i).fill("2026");
 
     const createRequest = page.waitForRequest((request) => {
-      return request.method() === "POST"
-        && request.url().includes("/admin/students");
+      return (
+        request.method() === "POST" && request.url().includes("/admin/students")
+      );
     });
 
-    await page.getByRole("button", { name: /^create student$/i }).last().click();
+    await page
+      .getByRole("button", { name: /^create student$/i })
+      .last()
+      .click();
     await createRequest;
     await expect.poll(() => createCalls).toBeGreaterThan(0);
   });

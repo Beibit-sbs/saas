@@ -8,18 +8,23 @@ import { test, expect, type Page } from "@playwright/test";
 async function stubAuthSession(page: Page) {
   const cookieUrl = process.env.E2E_BASE_URL ?? "https://nginx";
   const secureCookie = new URL(cookieUrl).protocol === "https:";
-  const payloadJson = JSON.stringify({ sub: "test-user-id", exp: Math.floor(Date.now() / 1000) + 3600 });
+  const payloadJson = JSON.stringify({
+    sub: "test-user-id",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  });
   const payload = Buffer.from(payloadJson).toString("base64url");
   const fakeToken = `fakeheader.${payload}.fakesig`;
 
-  await page.context().addCookies([{
-    name: "admin_token",
-    value: fakeToken,
-    url: cookieUrl,
-    httpOnly: true,
-    secure: secureCookie,
-    sameSite: "Lax",
-  }]);
+  await page.context().addCookies([
+    {
+      name: "admin_token",
+      value: fakeToken,
+      url: cookieUrl,
+      httpOnly: true,
+      secure: secureCookie,
+      sameSite: "Lax",
+    },
+  ]);
 
   await page.route("**/api/auth/me", async (route) => {
     await route.fulfill({
@@ -36,7 +41,7 @@ async function stubAuthSession(page: Page) {
             "ai.copilot.read",
             "interventions.read",
             "interventions.write",
-            "tenants.read",
+            "admin.tenants.read",
             "students.read",
           ],
           tenantId: 1,
@@ -58,9 +63,11 @@ async function stubApi(page: Page, path: string, body: unknown, status = 200) {
 }
 
 test.describe("Copilot → Interventions E2E flow", () => {
-  test("complete scenario: risk query → case creation → take case → update status", async ({ page }) => {
+  test("complete scenario: risk query → case creation → take case → update status", async ({
+    page,
+  }) => {
     await stubAuthSession(page);
-    
+
     // Mock Copilot response with auto-created case
     const COPILOT_RESPONSE = {
       question: "Which students are at expulsion risk?",
@@ -84,7 +91,8 @@ test.describe("Copilot → Interventions E2E flow", () => {
           recommendation_type: "expulsion_risk_escalation",
           title: "High Risk Students",
           priority: "high",
-          reason: "Multiple students at risk of expulsion due to poor attendance.",
+          reason:
+            "Multiple students at risk of expulsion due to poor attendance.",
           suggested_actions: [
             {
               action_type: "review",
@@ -103,7 +111,8 @@ test.describe("Copilot → Interventions E2E flow", () => {
       tenant_id: 1,
       student_profile_id: 9001,
       ai_recommendation_id: 1,
-      recommendation_snapshot: "Expulsion risk detected: 60% attendance threshold breached",
+      recommendation_snapshot:
+        "Expulsion risk detected: 60% attendance threshold breached",
       severity: "high",
       status: "open",
       owner_type: "system",
@@ -130,31 +139,49 @@ test.describe("Copilot → Interventions E2E flow", () => {
 
     // Step 1: Navigate to Copilot and ask risk question
     await page.goto("/console/ai/copilot");
-    await expect(page.getByRole("heading", { name: /AI Copilot/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /AI Copilot/i }),
+    ).toBeVisible();
 
     // Mock the Copilot API response before submitting
-    await stubApi(page, "/api/bff/admin/platform/ai/copilot/ask", COPILOT_RESPONSE);
+    await stubApi(
+      page,
+      "/api/bff/admin/platform/ai/copilot/ask",
+      COPILOT_RESPONSE,
+    );
     await stubApi(page, "/api/admin/interventions/cases/999", CREATED_CASE);
-    await stubApi(page, "/api/admin/interventions/cases/999/actions", { items: [], total: 0 });
+    await stubApi(page, "/api/admin/interventions/cases/999/actions", {
+      items: [],
+      total: 0,
+    });
 
     // Enter question
-    await page.fill('textarea[data-testid="copilot-question-input"]', "Which students are at expulsion risk?");
-    
+    await page.fill(
+      'textarea[data-testid="copilot-question-input"]',
+      "Which students are at expulsion risk?",
+    );
+
     // Submit query
     await page.click('button[data-testid="copilot-submit-btn"]');
 
     // Step 2: Verify Copilot response with case creation notification
-    await expect(page.getByTestId("copilot-answer-panel")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("2 students currently at high academic risk")).toBeVisible();
+    await expect(page.getByTestId("copilot-answer-panel")).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(
+      page.getByText("2 students currently at high academic risk"),
+    ).toBeVisible();
 
     // Step 3: Verify "Case Created" notification appeared
-    await expect(page.getByTestId("copilot-case-created")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("copilot-case-created")).toBeVisible({
+      timeout: 5000,
+    });
     await expect(page.getByText(/Case.*#999.*created/i)).toBeVisible();
 
     // Step 4: Click "Open Case" button to navigate to interventions page
     const openCaseBtn = page.getByTestId("copilot-open-case-btn");
     await expect(openCaseBtn).toBeVisible();
-    
+
     // Intercept navigation to interventions page
     await stubApi(page, "/api/admin/interventions/cases*", {
       items: [CREATED_CASE],
@@ -171,44 +198,66 @@ test.describe("Copilot → Interventions E2E flow", () => {
 
     // Step 6: Click on case to open drawer and take/assign it
     await page.getByText("#999").click();
-    
+
     // Wait for drawer to fully load
     await expect(page.getByText("Case #999")).toBeVisible({ timeout: 5000 });
 
     // Mock the "take case" (assign to current user) API call
-    await stubApi(page, "/api/admin/interventions/cases/999/assign", UPDATED_CASE);
-    
+    await stubApi(
+      page,
+      "/api/admin/interventions/cases/999/assign",
+      UPDATED_CASE,
+    );
+
     // Step 7: Simulate taking the case (assign to me)
     // The Take button should appear in the drawer
     const takeButton = page.locator('button:has-text("Take")').first();
     if (await takeButton.isVisible()) {
       await takeButton.click();
-      
+
       // Verify case is now assigned to me
-      await expect(page.getByText(/admin@test\.edu|assignee/i)).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText(/admin@test\.edu|assignee/i)).toBeVisible({
+        timeout: 5000,
+      });
     }
 
     // Step 8: Change status to "in_progress"
-    await stubApi(page, "/api/admin/interventions/cases/999/status", UPDATED_CASE);
-    
+    await stubApi(
+      page,
+      "/api/admin/interventions/cases/999/status",
+      UPDATED_CASE,
+    );
+
     // Find and interact with status selector in drawer
-    const statusSelect = page.locator('select, [role="combobox"]').filter({ hasText: /status|Status/i }).first();
-    
+    const statusSelect = page
+      .locator('select, [role="combobox"]')
+      .filter({ hasText: /status|Status/i })
+      .first();
+
     if (await statusSelect.isVisible({ timeout: 3000 }).catch(() => false)) {
       await statusSelect.click();
-      await page.locator('[role="option"]').filter({ hasText: /in.progress|In Progress|Үйінде/i }).click();
+      await page
+        .locator('[role="option"]')
+        .filter({ hasText: /in.progress|In Progress|Үйінде/i })
+        .click();
 
       // Verify status changed
-      await expect(page.getByText(/in.progress|In Progress/i)).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText(/in.progress|In Progress/i)).toBeVisible({
+        timeout: 5000,
+      });
     }
 
     // Step 9: Verify the case is now showing as in_progress on the page
     // If drawer closes, we should see the case in the table with updated status
-    await expect(page.getByText("In Progress")).toBeVisible({ timeout: 5000 }).catch(() => {
-      // Status might not be immediately visible, but the flow is complete
-    });
+    await expect(page.getByText("In Progress"))
+      .toBeVisible({ timeout: 5000 })
+      .catch(() => {
+        // Status might not be immediately visible, but the flow is complete
+      });
 
-    console.log("✅ Complete E2E flow verified: Risk → Case Created → Opened → Assigned → Status Updated");
+    console.log(
+      "✅ Complete E2E flow verified: Risk → Case Created → Opened → Assigned → Status Updated",
+    );
   });
 
   test("notification toast shows case ID with link", async ({ page }) => {
@@ -232,20 +281,29 @@ test.describe("Copilot → Interventions E2E flow", () => {
       created_intervention_case_id: 555,
     };
 
-    await stubApi(page, "/api/bff/admin/platform/ai/copilot/ask", COPILOT_RESPONSE);
+    await stubApi(
+      page,
+      "/api/bff/admin/platform/ai/copilot/ask",
+      COPILOT_RESPONSE,
+    );
 
     await page.goto("/console/ai/copilot");
-    await page.fill('textarea[data-testid="copilot-question-input"]', "Test risk query");
+    await page.fill(
+      'textarea[data-testid="copilot-question-input"]',
+      "Test risk query",
+    );
     await page.click('button[data-testid="copilot-submit-btn"]');
 
     // Verify case created notification
-    await expect(page.getByTestId("copilot-case-created")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("copilot-case-created")).toBeVisible({
+      timeout: 5000,
+    });
     await expect(page.getByText("#555")).toBeVisible();
 
     // Verify button links to interventions page with case parameter
     const openBtn = page.getByTestId("copilot-open-case-btn");
     const href = await openBtn.getAttribute("onclick");
-    
+
     // Or check the button click navigates correctly
     await stubApi(page, "/api/admin/interventions/cases*", {
       items: [],
@@ -255,7 +313,7 @@ test.describe("Copilot → Interventions E2E flow", () => {
     });
 
     await openBtn.click();
-    
+
     // Should include case ID in URL
     expect(page.url()).toContain("/console/interventions");
   });

@@ -7,18 +7,23 @@ import { test, expect, type Page } from "@playwright/test";
 async function stubAuthSession(page: Page) {
   const cookieUrl = process.env.E2E_BASE_URL ?? "https://nginx";
   const secureCookie = new URL(cookieUrl).protocol === "https:";
-  const payloadJson = JSON.stringify({ sub: "test-user-id", exp: Math.floor(Date.now() / 1000) + 3600 });
+  const payloadJson = JSON.stringify({
+    sub: "test-user-id",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  });
   const payload = Buffer.from(payloadJson).toString("base64url");
   const fakeToken = `fakeheader.${payload}.fakesig`;
 
-  await page.context().addCookies([{
-    name: "admin_token",
-    value: fakeToken,
-    url: cookieUrl,
-    httpOnly: true,
-    secure: secureCookie,
-    sameSite: "Lax",
-  }]);
+  await page.context().addCookies([
+    {
+      name: "admin_token",
+      value: fakeToken,
+      url: cookieUrl,
+      httpOnly: true,
+      secure: secureCookie,
+      sameSite: "Lax",
+    },
+  ]);
 
   await page.route("**/api/auth/me", async (route) => {
     await route.fulfill({
@@ -31,13 +36,21 @@ async function stubAuthSession(page: Page) {
           displayName: "Test Admin",
           roles: ["admin"],
           permissions: [
-            "tenants.read", "tenants.write",
-            "jobs.read", "jobs.write",
-            "notifications.read", "notifications.write",
-            "feature_flags.read", "feature_flags.write",
-            "students.read", "enrollments.read",
-            "grades.read", "transcripts.read",
-            "scheduling.read", "health.read", "metrics.read",
+            "admin.tenants.read",
+            "admin.tenants.write",
+            "jobs.read",
+            "jobs.write",
+            "notifications.read",
+            "notifications.write",
+            "feature_flags.read",
+            "feature_flags.write",
+            "students.read",
+            "enrollments.read",
+            "grades.read",
+            "transcripts.read",
+            "scheduling.read",
+            "health.read",
+            "metrics.read",
           ],
           tenantId: null,
         },
@@ -115,7 +128,9 @@ test.describe("Interventions smoke", () => {
 
     await page.goto("/console/interventions");
 
-    await expect(page.getByRole("heading", { name: /Interventions/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Interventions/i }),
+    ).toBeVisible();
     // Both case IDs should be in the table
     await expect(page.getByText("#101")).toBeVisible();
     await expect(page.getByText("#102")).toBeVisible();
@@ -146,7 +161,11 @@ test.describe("Interventions smoke", () => {
     await stubAuthSession(page);
     await stubApi(page, "/api/admin/interventions/cases*", casesPage);
     await stubApi(page, "/api/admin/interventions/cases/101", CASE_1);
-    await stubApi(page, "/api/admin/interventions/cases/101/actions*", emptyActions);
+    await stubApi(
+      page,
+      "/api/admin/interventions/cases/101/actions*",
+      emptyActions,
+    );
 
     await page.goto("/console/interventions");
 
@@ -162,7 +181,11 @@ test.describe("Interventions smoke", () => {
     await stubAuthSession(page);
     await stubApi(page, "/api/admin/interventions/cases*", casesPage);
     await stubApi(page, "/api/admin/interventions/cases/101", CASE_1);
-    await stubApi(page, "/api/admin/interventions/cases/101/actions*", emptyActions);
+    await stubApi(
+      page,
+      "/api/admin/interventions/cases/101/actions*",
+      emptyActions,
+    );
 
     await page.goto("/console/interventions");
     await page.getByText("#101").click();
@@ -171,27 +194,47 @@ test.describe("Interventions smoke", () => {
     await expect(page.getByText("Case #101")).toBeVisible({ timeout: 5000 });
 
     // Action type selector should be present
-    const actionTypeLabel = page.getByText(/Action type|Тип действия|Іс-әрекет түрі/i);
+    const actionTypeLabel = page.getByText(
+      /Action type|Тип действия|Іс-әрекет түрі/i,
+    );
     await expect(actionTypeLabel).toBeVisible();
   });
 
   test("empty state renders when no cases returned", async ({ page }) => {
     await stubAuthSession(page);
-    await stubApi(page, "/api/admin/interventions/cases*", { items: [], total: 0, page: 1, page_size: 20 });
+    await stubApi(page, "/api/admin/interventions/cases*", {
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 20,
+    });
 
     await page.goto("/console/interventions");
 
-    await expect(page.getByRole("heading", { name: /Interventions/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Interventions/i }),
+    ).toBeVisible();
     // Empty state message
-    await expect(page.getByText(/No intervention cases|Нет кейсов интервенций|Интервенция кейстері жоқ/i)).toBeVisible();
+    await expect(
+      page.getByText(
+        /No intervention cases|Нет кейсов интервенций|Интервенция кейстері жоқ/i,
+      ),
+    ).toBeVisible();
   });
 
   test("API error renders the error state", async ({ page }) => {
     await stubAuthSession(page);
-    await stubApi(page, "/api/admin/interventions/cases*", { detail: "Internal Server Error" }, 500);
+    await stubApi(
+      page,
+      "/api/admin/interventions/cases*",
+      { detail: "Internal Server Error" },
+      500,
+    );
 
     await page.goto("/console/interventions");
 
-    await expect(page.getByText(/Failed to load intervention cases/i)).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByText(/Failed to load intervention cases/i),
+    ).toBeVisible({ timeout: 5000 });
   });
 });

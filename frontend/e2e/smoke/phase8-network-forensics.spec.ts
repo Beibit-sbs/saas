@@ -11,7 +11,10 @@ type NetworkEvent = {
 async function stubAuthSession(page: Page) {
   const cookieUrl = process.env.E2E_BASE_URL ?? "http://nginx";
   const secureCookie = new URL(cookieUrl).protocol === "https:";
-  const payloadJson = JSON.stringify({ sub: "test-user-id", exp: Math.floor(Date.now() / 1000) + 3600 });
+  const payloadJson = JSON.stringify({
+    sub: "test-user-id",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  });
   const payload = Buffer.from(payloadJson).toString("base64url");
   const fakeToken = `fakeheader.${payload}.fakesig`;
 
@@ -42,7 +45,7 @@ async function stubAuthSession(page: Page) {
             "transcripts.read",
             "enrollments.read",
             "scheduling.read",
-            "tenants.read",
+            "admin.tenants.read",
             "jobs.read",
             "notifications.read",
             "feature_flags.read",
@@ -56,7 +59,12 @@ async function stubAuthSession(page: Page) {
   });
 }
 
-async function runForensics(page: Page, pagePath: string, expectedPathPart: string, label: string) {
+async function runForensics(
+  page: Page,
+  pagePath: string,
+  expectedPathPart: string,
+  label: string,
+) {
   const events: NetworkEvent[] = [];
 
   page.on("request", (request) => {
@@ -95,7 +103,10 @@ async function runForensics(page: Page, pagePath: string, expectedPathPart: stri
 
   let gotoError: string | null = null;
   try {
-    await page.goto(pagePath, { waitUntil: "domcontentloaded", timeout: 20000 });
+    await page.goto(pagePath, {
+      waitUntil: "domcontentloaded",
+      timeout: 20000,
+    });
   } catch (error) {
     gotoError = error instanceof Error ? error.message : String(error);
   }
@@ -104,7 +115,10 @@ async function runForensics(page: Page, pagePath: string, expectedPathPart: stri
 
   const cookiesAfter = await page.context().cookies(cookieUrl);
   const finalUrl = page.url();
-  const hasLoginHeading = (await page.getByRole("heading", { name: /AI University Console/i }).count()) > 0;
+  const hasLoginHeading =
+    (await page
+      .getByRole("heading", { name: /AI University Console/i })
+      .count()) > 0;
 
   let authProbe: { status: number; body: unknown } | { error: string };
   try {
@@ -123,10 +137,14 @@ async function runForensics(page: Page, pagePath: string, expectedPathPart: stri
     });
     authProbe = result;
   } catch (error) {
-    authProbe = { error: error instanceof Error ? error.message : String(error) };
+    authProbe = {
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 
-  const expectedMatched = events.some((event) => event.url.includes(expectedPathPart));
+  const expectedMatched = events.some((event) =>
+    event.url.includes(expectedPathPart),
+  );
 
   console.log(`\n=== FORENSICS ${label} ===`);
   console.log(`PATH: ${pagePath}`);
@@ -135,17 +153,25 @@ async function runForensics(page: Page, pagePath: string, expectedPathPart: stri
   console.log(`LOGIN_HEADING_VISIBLE: ${hasLoginHeading}`);
   console.log(`COOKIE_BEFORE_COUNT: ${cookiesBefore.length}`);
   console.log(`COOKIE_AFTER_COUNT: ${cookiesAfter.length}`);
-  console.log(`HAS_ADMIN_COOKIE_BEFORE: ${cookiesBefore.some((item) => item.name === "admin_token")}`);
-  console.log(`HAS_ADMIN_COOKIE_AFTER: ${cookiesAfter.some((item) => item.name === "admin_token")}`);
+  console.log(
+    `HAS_ADMIN_COOKIE_BEFORE: ${cookiesBefore.some((item) => item.name === "admin_token")}`,
+  );
+  console.log(
+    `HAS_ADMIN_COOKIE_AFTER: ${cookiesAfter.some((item) => item.name === "admin_token")}`,
+  );
   console.log(`AUTH_PROBE: ${JSON.stringify(authProbe)}`);
   console.log(`EXPECTED_PATH_PART: ${expectedPathPart}`);
   console.log(`EXPECTED_PATH_MATCHED: ${expectedMatched}`);
   console.log("NETWORK_EVENTS_START");
   for (const event of events) {
     if (event.kind === "response") {
-      console.log(`RES ${event.method ?? "?"} ${event.status ?? "?"} ${event.url}`);
+      console.log(
+        `RES ${event.method ?? "?"} ${event.status ?? "?"} ${event.url}`,
+      );
     } else if (event.kind === "failed") {
-      console.log(`FAIL ${event.method ?? "?"} ${event.error ?? "?"} ${event.url}`);
+      console.log(
+        `FAIL ${event.method ?? "?"} ${event.error ?? "?"} ${event.url}`,
+      );
     } else {
       console.log(`REQ ${event.method ?? "?"} ${event.url}`);
     }
@@ -156,16 +182,31 @@ async function runForensics(page: Page, pagePath: string, expectedPathPart: stri
 test.describe("PHASE 8 network forensics", () => {
   test("students page trace", async ({ page }) => {
     await stubAuthSession(page);
-    await runForensics(page, "/console/students", "/api/bff/admin/students", "students");
+    await runForensics(
+      page,
+      "/console/students",
+      "/api/bff/admin/students",
+      "students",
+    );
   });
 
   test("grades page trace", async ({ page }) => {
     await stubAuthSession(page);
-    await runForensics(page, "/console/grades", "/api/bff/admin/grades", "grades");
+    await runForensics(
+      page,
+      "/console/grades",
+      "/api/bff/admin/grades",
+      "grades",
+    );
   });
 
   test("transcript page trace", async ({ page }) => {
     await stubAuthSession(page);
-    await runForensics(page, "/console/students/s1/transcript", "/api/bff/admin/students/s1/transcript", "transcript");
+    await runForensics(
+      page,
+      "/console/students/s1/transcript",
+      "/api/bff/admin/students/s1/transcript",
+      "transcript",
+    );
   });
 });
