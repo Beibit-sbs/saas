@@ -15,7 +15,7 @@ pushd "${ROOT_DIR}/infra" >/dev/null
 
 # Backend gates
 "${COMPOSE[@]}" exec -T backend ruff check .
-"${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q
+"${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --disable-warnings
 
 # RBAC parity guardrail
 "${ROOT_DIR}/scripts/check_permission_parity.sh"

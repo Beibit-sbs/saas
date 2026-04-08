@@ -14,19 +14,19 @@ pushd "${ROOT_DIR}/infra" >/dev/null
 "${COMPOSE[@]}" up -d db redis
 
 echo "[release-check] architecture governance gate"
-run_backend_checks pytest -q tests/platform/test_platform_architecture_guardrails_v1.py
+run_backend_checks pytest -q --disable-warnings tests/platform/test_platform_architecture_guardrails_v1.py
 
 echo "[release-check] tenant safety gate"
-run_backend_checks pytest -q tests/platform/test_platform_tenant_safety_audit_v1.py
+run_backend_checks pytest -q --disable-warnings tests/platform/test_platform_tenant_safety_audit_v1.py
 
 echo "[release-check] platform regression gate"
-run_backend_checks pytest -q tests/platform/
+run_backend_checks pytest -q --disable-warnings tests/platform/
 
 echo "[release-check] security regression gate"
-run_backend_checks pytest -q -m security_regression
+run_backend_checks pytest -q --disable-warnings -m security_regression
 
 echo "[release-check] template validation gate"
-run_backend_checks pytest -q tests/test_template_validation.py
+run_backend_checks pytest -q --disable-warnings tests/test_template_validation.py
 
 echo "[release-check] migration safety gate"
 run_backend_checks alembic heads

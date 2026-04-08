@@ -30,14 +30,14 @@ logs:
 ci:
 	bash ./scripts/docker_only_guard.sh
 	$(COMPOSE) up -d --build
-	$(COMPOSE) run --rm --no-deps backend-tests pytest -q
+	$(COMPOSE) run --rm --no-deps backend-tests pytest -q --disable-warnings
 	$(COMPOSE) exec -T backend ruff check .
 	$(COMPOSE) run --rm frontend-tests npm run lint
 	$(COMPOSE) run --rm frontend-tests npm run test:frontend
 
 test:
 	bash ./scripts/docker_only_guard.sh
-	$(COMPOSE) run --rm --no-deps backend-tests pytest -q
+	$(COMPOSE) run --rm --no-deps backend-tests pytest -q --disable-warnings
 
 lint:
 	bash ./scripts/docker_only_guard.sh
@@ -68,10 +68,10 @@ system-audit:
 	./scripts/system_audit_gate.sh
 
 template-validate:
-	$(COMPOSE) run --rm --no-deps backend-tests pytest -q tests/test_template_validation.py
+	$(COMPOSE) run --rm --no-deps backend-tests pytest -q --disable-warnings tests/test_template_validation.py
 
 security-regression:
-	$(COMPOSE) run --rm --no-deps backend-tests pytest -q -m security_regression
+	$(COMPOSE) run --rm --no-deps backend-tests pytest -q --disable-warnings -m security_regression
 
 release-check:
 	./scripts/release_check.sh
