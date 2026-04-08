@@ -6,6 +6,7 @@ import AICopilotPage from "../../app/(admin)/console/ai/copilot/page";
 
 const useAskCopilotMock = vi.fn();
 const useAdminAuthMock = vi.fn();
+let allowAccess = true;
 
 vi.mock("../../modules/platform/ai/use-copilot", () => ({
   useAskCopilot: (...args: unknown[]) => useAskCopilotMock(...args),
@@ -16,7 +17,8 @@ vi.mock("../../shared/auth/context", () => ({
 }));
 
 vi.mock("../../shared/ui/permission-gate", () => ({
-  RequirePermission: ({ children }: { children: ReactNode }) => <>{children}</>,
+  RequirePermission: ({ children }: { children: ReactNode; permission: string }) =>
+    allowAccess ? <>{children}</> : <div>Access Denied</div>,
   PermissionGate: ({ children }: { children: ReactNode }) => <>{children}</>,
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
 }));
@@ -36,6 +38,7 @@ vi.mock("@/app/components/LanguageProvider", async () => {
 describe("AICopilotPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    allowAccess = true;
     useAdminAuthMock.mockReturnValue({
       user: { tenantId: 1, roles: ["admin"], permissions: [] },
       isLoading: false,
@@ -195,5 +198,19 @@ describe("AICopilotPage", () => {
 
     const badge = screen.getByTestId("copilot-rec-priority-badge");
     expect(badge).toHaveTextContent("high");
+  });
+
+  it("shows access denied when read permission is missing", () => {
+    allowAccess = false;
+    useAskCopilotMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      data: undefined,
+    });
+
+    render(<AICopilotPage />);
+
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
   });
 });

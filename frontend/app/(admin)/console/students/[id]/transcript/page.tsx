@@ -8,8 +8,9 @@ import { ErrorState } from "@/shared/ui/error-state";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
-import { PermissionGate } from "@/shared/ui/permission-gate";
+import { AccessDenied, PermissionGate } from "@/shared/ui/permission-gate";
 import { PERMISSIONS } from "@/shared/config/permissions";
+import { usePermissions } from "@/shared/hooks/use-permissions";
 import { useCreateTranscriptSnapshot, useTranscript } from "@/modules/transcripts/hooks";
 import type { TranscriptSnapshot } from "@/modules/transcripts/types";
 import { formatDate } from "@/shared/utils/format";
@@ -17,10 +18,13 @@ import { FileText, ChevronLeft } from "lucide-react";
 
 export default function TranscriptPage({ params }: { params: { id: string } }) {
   const { id } = params;
+  const { hasPermission } = usePermissions();
   const { data: transcript, isLoading, error, refetch } = useTranscript(id);
   const [lastSnapshot, setLastSnapshot] = useState<TranscriptSnapshot | null>(null);
   const { getHandlers } = useMutationFeedback();
   const createSnapshot = useCreateTranscriptSnapshot(id);
+
+  if (!hasPermission(PERMISSIONS.TRANSCRIPTS_READ)) return <AccessDenied />;
 
   if (isLoading) {
     return (

@@ -6,6 +6,7 @@ import TranscriptPage from "../../app/(admin)/console/students/[id]/transcript/p
 
 const useTranscriptMock = vi.fn();
 const useCreateTranscriptSnapshotMock = vi.fn();
+let allowAccess = true;
 
 vi.mock("next/link", () => ({
   default: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -19,6 +20,14 @@ vi.mock("../../modules/transcripts/hooks", () => ({
 vi.mock("../../shared/ui/permission-gate", () => ({
   PermissionGate: ({ children }: { children: ReactNode }) => <>{children}</>,
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
+}));
+
+vi.mock("../../shared/hooks/use-permissions", () => ({
+  usePermissions: () => ({
+    hasPermission: () => allowAccess,
+    hasAnyPermission: () => allowAccess,
+    roles: allowAccess ? ["admin"] : [],
+  }),
 }));
 
 vi.mock("../../shared/hooks/use-mutation-feedback", () => ({
@@ -54,6 +63,7 @@ const TRANSCRIPT = {
 describe("TranscriptPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    allowAccess = true;
     useTranscriptMock.mockReturnValue({
       data: TRANSCRIPT,
       isLoading: false,
@@ -109,5 +119,11 @@ describe("TranscriptPage", () => {
     render(<TranscriptPage params={{ id: "s1" }} />);
 
     expect(screen.getByText(/transcript not found/i)).toBeInTheDocument();
+  });
+
+  it("shows access denied when read permission is missing", () => {
+    allowAccess = false;
+    render(<TranscriptPage params={{ id: "s1" }} />);
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
   });
 });

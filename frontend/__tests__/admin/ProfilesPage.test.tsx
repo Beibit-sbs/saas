@@ -133,4 +133,10 @@ describe("ProfilesPage", () => {
     expect(screen.getByText(/No people found\./i)).toBeInTheDocument();
     expect(screen.getByText(/No departments found\./i)).toBeInTheDocument();
   });
+
+  it("shows access denied when read permission is missing", () => {
+    allowAccess = false;
+    render(<ProfilesPage />);
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
+  });
 });
