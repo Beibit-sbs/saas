@@ -282,11 +282,11 @@ test.describe("Platform pages", () => {
   test("Notifications mutation shows success feedback", async ({ page }) => {
     await stubAuthSession(page);
     let markAllCalls = 0;
-    await page.route("**/api/bff/**/notifications/mark-all-read*", async (route) => {
+    await page.route("**/api/**/notifications/mark-all-read*", async (route) => {
       markAllCalls += 1;
       await route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
     });
-    await stubApi(page, "/api/bff/v1/admin/notifications*", {
+    await stubApi(page, "/api/**/admin/notifications*", {
       items: [
         { id: "n1", title: "Backup complete", body: "Daily backup succeeded.", severity: "info", tenant_id: null, read: false, type: "system", created_at: "2024-01-01T00:00:00Z" },
       ],
