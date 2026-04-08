@@ -10,48 +10,49 @@ import { cn } from "@/shared/utils/cn";
 import { GraduationCap } from "lucide-react";
 
 const NAV_LABEL_KEY: Record<string, string> = {
-  "Overview": "nav.overview",
-  "Platform": "nav.platform",
-  "Academic": "nav.academic",
-  "Dashboard": "nav.dashboard",
-  "Tenants": "nav.tenants",
+  Overview: "nav.overview",
+  Platform: "nav.platform",
+  Academic: "nav.academic",
+  Dashboard: "nav.dashboard",
+  Tenants: "nav.tenants",
   "Feature Flags": "nav.featureFlags",
-  "Jobs": "nav.jobs",
-  "Notifications": "nav.notifications",
+  Jobs: "nav.jobs",
+  Notifications: "nav.notifications",
   "Health & Metrics": "nav.healthMetrics",
   "Platform Ops": "nav.platformOps",
-  "Automation": "nav.automation",
+  Automation: "nav.automation",
   "AI Copilot": "nav.aiCopilot",
-  "Federation": "nav.federation",
+  Federation: "nav.federation",
   "Developer Apps": "nav.developerApps",
-  "Students": "nav.students",
-  "Enrollments": "nav.enrollments",
-  "Grades": "nav.grades",
-  "Transcripts": "nav.transcripts",
-  "Scheduling": "nav.scheduling",
+  Students: "nav.students",
+  Enrollments: "nav.enrollments",
+  Grades: "nav.grades",
+  Transcripts: "nav.transcripts",
+  Scheduling: "nav.scheduling",
   "My Space": "nav.mySpace",
   "My Work": "nav.myWork",
-  "Faculty": "nav.faculty",
+  Faculty: "nav.faculty",
   "Identity & Access": "nav.identityAccess",
-  "Operations": "nav.operations",
+  Profiles: "nav.profiles",
+  Operations: "nav.operations",
   "Users & Roles": "nav.usersRoles",
   "Platform Management": "nav.platformManagement",
   "Control Plane": "nav.controlPlane",
-  "Languages": "nav.languages",
+  Languages: "nav.languages",
   "Local Users": "nav.localUsers",
-  "RBAC": "nav.rbac",
-  "Integrations": "nav.integrations",
-  "Backups": "nav.backups",
-  "Audit": "nav.audit",
-  "System": "nav.system",
-  "University": "nav.university",
-  "Rules": "nav.rules",
-  "Executions": "nav.executions",
-  "Schedule": "nav.schedule",
-  "Transcript": "nav.transcript",
-  "Requests": "nav.requests",
-  "Admissions": "nav.admissions",
-  "Interventions": "nav.interventions",
+  RBAC: "nav.rbac",
+  Integrations: "nav.integrations",
+  Backups: "nav.backups",
+  Audit: "nav.audit",
+  System: "nav.system",
+  University: "nav.university",
+  Rules: "nav.rules",
+  Executions: "nav.executions",
+  Schedule: "nav.schedule",
+  Transcript: "nav.transcript",
+  Requests: "nav.requests",
+  Admissions: "nav.admissions",
+  Interventions: "nav.interventions",
 };
 
 function normalizePath(path: string): string {
@@ -79,12 +80,15 @@ export function AppSidebar() {
   const navigation = getNavigationForRoles(roles);
 
   const visibleNavigation = useMemo(
-    () => navigation
-      .map((group) => ({
-        ...group,
-        items: group.items.filter((item) => (item.permission ? hasPermission(item.permission) : true)),
-      }))
-      .filter((group) => group.items.length > 0),
+    () =>
+      navigation
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) =>
+            item.permission ? hasPermission(item.permission) : true,
+          ),
+        }))
+        .filter((group) => group.items.length > 0),
     [hasPermission, navigation],
   );
 
@@ -98,7 +102,9 @@ export function AppSidebar() {
     }
 
     // Prefer the most specific route to avoid multiple highlighted items.
-    return [...matchedItems].sort((left, right) => right.href.length - left.href.length)[0].href;
+    return [...matchedItems].sort(
+      (left, right) => right.href.length - left.href.length,
+    )[0].href;
   }, [pathname, visibleNavigation]);
 
   const tx = (label: string) => {

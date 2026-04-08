@@ -301,9 +301,7 @@ export const DEAN_NAVIGATION: NavGroup[] = [
 export const SUPERADMIN_NAVIGATION: NavGroup[] = [
   {
     label: "Overview",
-    items: [
-      { label: "Dashboard", href: "/console", icon: LayoutDashboard },
-    ],
+    items: [{ label: "Dashboard", href: "/console", icon: LayoutDashboard }],
   },
   {
     label: "Platform Management",
@@ -406,6 +404,53 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
         icon: BarChart3,
         permission: PERMISSIONS.GRADES_READ,
       },
+      {
+        label: "Profiles",
+        href: "/console/profiles",
+        icon: UserCog,
+        permission: PERMISSIONS.PROFILES_READ,
+      },
+    ],
+  },
+  {
+    label: "Users & Roles",
+    items: [
+      {
+        label: "Local Users",
+        href: "/console/local-users",
+        icon: UserCog,
+        permission: PERMISSIONS.LOCAL_USERS_MANAGE,
+      },
+      {
+        label: "RBAC",
+        href: "/console/rbac",
+        icon: ShieldCheck,
+        permission: PERMISSIONS.RBAC_READ,
+      },
+      {
+        label: "Identity & Access",
+        href: "/console/identity",
+        icon: ShieldCheck,
+        permission: PERMISSIONS.INTEGRATIONS_MANAGE,
+      },
+      {
+        label: "LDAP",
+        href: "/console/ldap",
+        icon: Network,
+        permission: PERMISSIONS.INTEGRATIONS_MANAGE,
+      },
+      {
+        label: "Languages",
+        href: "/console/languages",
+        icon: Code2,
+        permission: PERMISSIONS.I18N_MANAGE,
+      },
+      {
+        label: "Workflows",
+        href: "/console/workflows",
+        icon: Bot,
+        permission: PERMISSIONS.WORKFLOWS_READ,
+      },
     ],
   },
 ];
@@ -415,7 +460,8 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
  * Priority: superadmin/admin > student > teacher > dean > platform nav.
  */
 export function getNavigationForRoles(roles: string[]): NavGroup[] {
-  if (roles.includes("superadmin") || roles.includes("admin")) return SUPERADMIN_NAVIGATION;
+  if (roles.includes("superadmin") || roles.includes("admin"))
+    return SUPERADMIN_NAVIGATION;
   if (roles.includes("student")) return STUDENT_NAVIGATION;
   if (roles.includes("teacher")) return TEACHER_NAVIGATION;
   if (roles.includes("dean")) return DEAN_NAVIGATION;
