@@ -6,6 +6,7 @@ import { EmptyState } from "@/shared/ui/empty-state";
 import { ErrorState } from "@/shared/ui/error-state";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { AccessDenied } from "@/shared/ui/permission-gate";
 import { formatDate, formatRelative } from "@/shared/utils/format";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { LayoutDashboard, RefreshCw, CalendarDays, BarChart3, FileText, GraduationCap, BookOpen, ClipboardCheck } from "lucide-react";
@@ -139,6 +140,8 @@ export default function RectorDashboardPage() {
   }
 
   // Admin / operator / viewer — full executive dashboard
+  if (!hasPermission(PERMISSIONS.DASHBOARD_READ)) return <AccessDenied />;
+
   return (
     <div className="space-y-6" data-testid="rector-dashboard-page">
       <PageHeader
