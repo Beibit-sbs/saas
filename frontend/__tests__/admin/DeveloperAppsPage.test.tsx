@@ -8,6 +8,7 @@ const useDeveloperAppsMock = vi.fn();
 const useDeveloperAppInstallationsMock = vi.fn();
 const useDeveloperAppLogsMock = vi.fn();
 const useCreateDeveloperAppMock = vi.fn();
+let allowAccess = true;
 
 vi.mock("../../modules/platform/developer/use-developer", () => ({
   useDeveloperApps: (...args: unknown[]) => useDeveloperAppsMock(...args),
@@ -17,7 +18,8 @@ vi.mock("../../modules/platform/developer/use-developer", () => ({
 }));
 
 vi.mock("../../shared/ui/permission-gate", () => ({
-  RequirePermission: ({ children }: { children: ReactNode }) => <>{children}</>,
+  RequirePermission: ({ children }: { children: ReactNode; permission: string }) =>
+    allowAccess ? <>{children}</> : <div>Access Denied</div>,
   PermissionGate: ({ children }: { children: ReactNode }) => <>{children}</>,
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
 }));
@@ -54,6 +56,7 @@ vi.mock("../../app/components/LanguageProvider", () => ({
 describe("DeveloperAppsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    allowAccess = true;
     useDeveloperAppInstallationsMock.mockReturnValue({ data: [], isLoading: false, isError: false });
     useDeveloperAppLogsMock.mockReturnValue({ data: [], isLoading: false, isError: false });
     useCreateDeveloperAppMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
@@ -103,5 +106,14 @@ describe("DeveloperAppsPage", () => {
     expect(screen.getByTestId("developer-app-detail-1")).toBeInTheDocument();
     expect(screen.getByTestId("developer-app-installations")).toBeInTheDocument();
     expect(screen.getByTestId("developer-app-logs")).toBeInTheDocument();
+  });
+
+  it("shows access denied when read permission is missing", () => {
+    allowAccess = false;
+    useDeveloperAppsMock.mockReturnValue({ data: [], isLoading: false, isError: false });
+
+    render(<DeveloperAppsPage />);
+
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
   });
 });

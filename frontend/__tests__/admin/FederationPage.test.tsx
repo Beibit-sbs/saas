@@ -12,6 +12,7 @@ const useInstitutionsMock = vi.fn();
 const useInstitutionOverviewMock = vi.fn();
 const useCreateInstitutionMock = vi.fn();
 const useLinkTenantMock = vi.fn();
+let allowAccess = true;
 
 vi.mock("../../modules/platform/federation/use-federation", () => ({
   useInstitutions: (...args: unknown[]) => useInstitutionsMock(...args),
@@ -22,7 +23,8 @@ vi.mock("../../modules/platform/federation/use-federation", () => ({
 }));
 
 vi.mock("../../shared/ui/permission-gate", () => ({
-  RequirePermission: ({ children }: { children: ReactNode }) => <>{children}</>,
+  RequirePermission: ({ children, permission }: { children: ReactNode; permission: string }) =>
+    allowAccess ? <>{children}</> : <div>Access Denied</div>,
   PermissionGate: ({ children }: { children: ReactNode }) => <>{children}</>,
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
 }));
@@ -96,6 +98,7 @@ describe("FederationPage", () => {
       isLoading: false,
       isError: false,
     });
+    allowAccess = true;
   });
 
   it("renders the federation page root element", () => {
@@ -259,6 +262,19 @@ describe("FederationPage", () => {
       code: "NORTHWIND",
       country: "Kazakhstan",
     });
+  });
+
+  it("shows access denied when read permission is missing", () => {
+    allowAccess = false;
+    useInstitutionsMock.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<FederationPage />);
+
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
   });
 
   it("links tenant for selected institution", () => {

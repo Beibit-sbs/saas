@@ -6,6 +6,7 @@ import RectorDashboardPage from "../../app/(admin)/console/dashboard/page";
 
 const useRectorDashboardMock = vi.fn();
 const useAdminAuthMock = vi.fn();
+let allowAccess = true;
 
 vi.mock("../../modules/platform/kpi/use-dashboard", () => ({
   useRectorDashboard: (...args: unknown[]) => useRectorDashboardMock(...args),
@@ -19,6 +20,14 @@ vi.mock("../../shared/ui/permission-gate", () => ({
   RequirePermission: ({ children }: { children: ReactNode }) => <>{children}</>,
   PermissionGate: ({ children }: { children: ReactNode }) => <>{children}</>,
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
+}));
+
+vi.mock("../../shared/hooks/use-permissions", () => ({
+  usePermissions: () => ({
+    hasPermission: () => allowAccess,
+    hasAnyPermission: () => allowAccess,
+    roles: allowAccess ? ["admin"] : [],
+  }),
 }));
 
 vi.mock("../../modules/platform/automation/automation-overview-widget", () => ({
@@ -43,6 +52,7 @@ vi.mock("@/app/components/LanguageProvider", () => ({
 describe("RectorDashboardPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    allowAccess = true;
     useAdminAuthMock.mockReturnValue({
       user: { tenantId: 1, roles: ["admin"], permissions: [] },
       isLoading: false,
@@ -146,5 +156,19 @@ describe("RectorDashboardPage", () => {
     expect(screen.getByText("Failed to load executive dashboard")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows access denied when read permission is missing", () => {
+    allowAccess = false;
+    useRectorDashboardMock.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
   });
 });
