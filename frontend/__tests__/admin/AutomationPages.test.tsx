@@ -16,6 +16,7 @@ const useCreateAutomationRuleMock = vi.fn();
 const useUpdateAutomationRuleMock = vi.fn();
 const useToastMock = vi.fn();
 const useAdminAuthMock = vi.fn();
+let allowAccess = true;
 
 vi.mock("../../modules/platform/automation/use-rules", () => ({
   useAutomationRules: (...args: unknown[]) => useAutomationRulesMock(...args),
@@ -39,7 +40,8 @@ vi.mock("../../shared/auth/context", () => ({
 }));
 
 vi.mock("../../shared/ui/permission-gate", () => ({
-  RequirePermission: ({ children }: { children: ReactNode }) => <>{children}</>,
+  RequirePermission: ({ children }: { children: ReactNode }) =>
+    allowAccess ? <>{children}</> : <div>Access Denied</div>,
   PermissionGate: ({ children }: { children: ReactNode }) => <>{children}</>,
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
 }));
@@ -150,6 +152,7 @@ describe("AutomationRulesPage", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    allowAccess = true;
     setPermissions(["platform.admin.read", "platform.admin.write"]);
     useCreateAutomationRuleMock.mockReturnValue({
       mutateAsync: vi.fn(),
@@ -363,6 +366,20 @@ describe("AutomationRulesPage", () => {
     await clickWithAct(user, screen.getByTestId("create-rule-btn"));
     expect(screen.getByTestId("create-rule-form")).toBeInTheDocument();
   });
+
+  it("shows access denied when automation read permission is missing", () => {
+    allowAccess = false;
+    useAutomationRulesMock.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<AutomationRulesPage />);
+
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -372,6 +389,7 @@ describe("AutomationRulesPage", () => {
 describe("AutomationExecutionsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    allowAccess = true;
   });
 
   it("renders executions page header and table with data", () => {
@@ -447,5 +465,19 @@ describe("AutomationExecutionsPage", () => {
     expect(screen.getByText("Failed to load execution log")).toBeInTheDocument();
     await clickWithAct(user, screen.getByRole("button", { name: /retry/i }));
     expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows access denied when automation read permission is missing", () => {
+    allowAccess = false;
+    useAutomationExecutionsMock.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<AutomationExecutionsPage />);
+
+    expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
   });
 });
