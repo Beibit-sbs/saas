@@ -46,7 +46,7 @@ describe("AutomationRuleNewPage", () => {
     allowAccess = true;
   });
 
-  it("renders AccessDenied when automation.write permission is missing", () => {
+  it("renders AccessDenied when automation create permission is missing", () => {
     allowAccess = false;
 
     render(<AutomationRuleNewPage />);
