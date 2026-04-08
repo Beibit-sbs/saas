@@ -63,6 +63,9 @@ export const PERMISSIONS = {
       RECORDS_READ: "admin.records.read",
       RECORDS_WRITE: "admin.records.write",
 
+      // i18n
+      I18N_MANAGE: "admin.i18n.manage",
+
   // Audit
   AUDIT_READ: "admin.audit.read",
 
