@@ -9,7 +9,6 @@ Verify that:
 - Audit logging is enabled
 """
 
-import pytest
 from tests.conftest import client
 from app.platform.developer import service as developer_service
 

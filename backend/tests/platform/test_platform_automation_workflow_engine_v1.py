@@ -7,7 +7,6 @@ from tests.conftest import ADMIN_HEADERS, client
 
 from app.platform.automation import service as automation_service
 from app.platform.automation.service import _evaluate_condition
-from app.platform.events.handlers.analytics_handler import AnalyticsEventHandler
 from app.platform.events.handlers.automation_handler import AutomationEventHandler
 from app.platform.events.schemas import OutboxEventRead
 from app.platform.jobs import service as jobs_service

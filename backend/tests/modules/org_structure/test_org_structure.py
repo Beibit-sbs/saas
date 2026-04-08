@@ -9,9 +9,7 @@ import pytest
 from app.main import app
 from app.modules.org_structure.dependencies import get_org_structure_db
 from app.modules.org_structure.models import OrgUnitModel, OrgUnitType
-from app.modules.org_structure.schemas import OrgUnitReadSchema
 from app.modules.org_structure import service as org_service
-from app.modules.rbac import service as rbac_service
 from tests.conftest import ADMIN_HEADERS, _auth_headers, _configure_db_only_role_resolution, client
 
 

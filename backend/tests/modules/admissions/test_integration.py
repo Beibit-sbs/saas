@@ -33,14 +33,11 @@ Design decisions
 
 from __future__ import annotations
 
-import os
-from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.main import app

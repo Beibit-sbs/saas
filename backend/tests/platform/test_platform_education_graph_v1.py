@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from tests.conftest import ADMIN_HEADERS, _auth_headers, client
+from tests.conftest import _auth_headers, client
 
 from app.platform.ai import service as ai_service
 from app.platform.context import service as context_service

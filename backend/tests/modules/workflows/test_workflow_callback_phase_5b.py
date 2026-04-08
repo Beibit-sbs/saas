@@ -20,15 +20,12 @@ Tests verify:
 """
 
 import pytest
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch, call
-from sqlalchemy import and_
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.modules.workflows.workflow_service import WorkflowService
 from app.modules.workflows.callback_handler import (
     CallbackHandlerRegistry,
     WorkflowCompletionCallbackHandler,
-    get_callback_registry,
 )
 from app.modules.workflows.callbacks.admissions_callback import (
     AdmissionsWorkflowCompletionCallbackHandler,

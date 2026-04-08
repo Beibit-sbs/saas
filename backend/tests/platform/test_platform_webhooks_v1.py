@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from tests.conftest import ADMIN_HEADERS, INTERNAL_HEADERS, _auth_headers, client
+from tests.conftest import INTERNAL_HEADERS, _auth_headers, client
 
 from app.platform.events.handlers.webhook_handler import WebhookEventHandler
 from app.platform.events.publisher import EventPublisher

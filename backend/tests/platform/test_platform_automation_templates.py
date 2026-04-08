@@ -1,12 +1,10 @@
 """Tests for Automation Templates Engine v1."""
 
 import pytest
-from app.platform.automation.templates.models import AutomationTemplateModel
 from app.platform.automation.templates.repository import AutomationTemplateRepository
 from app.platform.automation.templates import service as template_service
 from app.platform.automation.templates.seeds import get_seed_templates
 from app.platform.uow import UnitOfWork
-from app.platform.repository.db import transaction
 
 
 class TestAutomationTemplateRepository:

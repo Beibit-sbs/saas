@@ -9,8 +9,6 @@ from app.modules.admissions.schemas import (
     ApplicantListResponseSchema,
     ApplicantReadSchema,
     ApplicationDecisionReadSchema,
-    ApplicationListResponseSchema,
-    ApplicationReadSchema,
     ApplicationStage,
     DocumentReadSchema,
     StageTransitionResponseSchema,

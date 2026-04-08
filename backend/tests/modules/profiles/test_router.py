@@ -14,12 +14,9 @@ from app.modules.profiles import service as profiles_service
 from app.modules.profiles.dependencies import get_profiles_db
 from app.modules.profiles.router import _raise_profile_http_error
 from app.modules.profiles.schemas import (
-    DepartmentReadSchema,
     FacultyReadSchema,
     PersonListResponseSchema,
     PersonReadSchema,
-    ProgramReadSchema,
-    StudentReadSchema,
 )
 from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 

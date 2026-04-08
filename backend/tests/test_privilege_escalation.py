@@ -9,8 +9,7 @@ These tests verify that the system prevents privilege escalation through:
 4. Comprehensive audit logging
 """
 
-import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
