@@ -110,7 +110,7 @@ export const PERMISSIONS = {
   AUTOMATION_WRITE: "automation.write",
 
   // AI Copilot (read-only foundation v1)
-  AI_COPILOT_READ: "metrics.read",
+  AI_COPILOT_READ: "ai.chat.execute",
 
   // Federation Layer v1
   FEDERATION_READ: "federation.read",
