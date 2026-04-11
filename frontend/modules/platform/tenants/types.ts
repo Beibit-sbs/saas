@@ -14,12 +14,10 @@ export interface CreateTenantPayload {
   slug: string;
   display_name: string;
   plan: string;
-  max_students: number;
 }
 
 export interface UpdateTenantPayload {
   display_name?: string;
   plan?: string;
   status?: Tenant["status"];
-  max_students?: number;
 }

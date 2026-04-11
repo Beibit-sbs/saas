@@ -42,7 +42,7 @@ describe("auth routes hardening", () => {
       new Request(`${EDGE_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ username: "owner@example.com", password: "secret" }),
+        body: JSON.stringify({ username: "owner@example.com", password: "secret", tenant_id: 1 }),
       }),
     );
 
@@ -57,12 +57,12 @@ describe("auth routes hardening", () => {
     const fetchCalls = vi.mocked(global.fetch).mock.calls;
     expect(fetchCalls).toHaveLength(1);
     const [, init] = fetchCalls[0] as [string, RequestInit];
-    expect(init.body).toBe(JSON.stringify({ username: "owner@example.com", password: "secret", login: "owner@example.com" }));
+    expect(init.body).toBe(JSON.stringify({ username: "owner@example.com", password: "secret", tenant_id: 1, login: "owner@example.com" }));
     const headers = new Headers(init.headers as HeadersInit);
     expect(headers.get("x-tenant-id")).toBe("1");
 
     const setCookie = response.headers.get("set-cookie") ?? "";
-    expect(setCookie).toContain("admin_token=");
+    expect(setCookie).toContain("app_access_token=");
     expect(setCookie).toContain("HttpOnly");
     expect(setCookie).toContain("SameSite=lax");
   });
@@ -107,6 +107,52 @@ describe("auth routes hardening", () => {
     expect(String(url)).toBe(`${API_BASE}/api/auth/login`);
     const headers = new Headers(init.headers as HeadersInit);
     expect(headers.get("x-tenant-id")).toBe("2");
+  });
+
+  it("login rejects non-platform payload without tenant", async () => {
+    const fetchMock = vi.spyOn(global, "fetch");
+
+    const response = await loginPost(
+      new Request(`${EDGE_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username: "tenant.user@example.com", password: "secret" }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("local/platform_admin login uses platform tenant implicitly", async () => {
+    const token = makeJwt({
+      sub: "platform_admin",
+      display_name: "Platform Admin",
+      roles: ["admin"],
+      scp: ["students.read"],
+      tenant_id: 1,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ access_token: token, token_type: "bearer" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+
+    const response = await loginPost(
+      new Request(`${EDGE_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username: "local/platform_admin", password: "secret" }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = new Headers(init.headers as HeadersInit);
+    expect(headers.get("x-tenant-id")).toBe("1");
   });
 
   it("me validates session via backend me endpoint and returns safe payload", async () => {

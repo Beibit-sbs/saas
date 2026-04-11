@@ -20,6 +20,12 @@ type PasswordFeedback = {
   message: string;
 };
 
+type MfaEnrollmentPayload = {
+  secret?: string;
+  otpauth_uri?: string;
+  recovery_codes?: string[];
+};
+
 export default function SecurityPage() {
   const { t } = useLanguage();
   const { user } = useAdminAuth();
@@ -30,6 +36,11 @@ export default function SecurityPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<PasswordFeedback | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaRecoveryCode, setMfaRecoveryCode] = useState("");
+  const [mfaEnrollment, setMfaEnrollment] = useState<MfaEnrollmentPayload | null>(null);
+  const [mfaBusy, setMfaBusy] = useState(false);
+  const [mfaMessage, setMfaMessage] = useState<{ tone: "success" | "error"; message: string } | null>(null);
 
   const validationError = useMemo(() => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -95,6 +106,128 @@ export default function SecurityPage() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const fetchCsrfToken = async (): Promise<string> => {
+    const res = await fetch("/api/auth/csrf", {
+      method: "GET",
+      cache: "no-store",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      throw new Error("Failed to fetch CSRF token");
+    }
+    const payload = (await res.json().catch(() => ({}))) as { csrf_token?: unknown };
+    const token = String(payload.csrf_token ?? "").trim();
+    if (!token) {
+      throw new Error("CSRF token is empty");
+    }
+    return token;
+  };
+
+  const handleMfaEnableStart = async () => {
+    setMfaBusy(true);
+    setMfaMessage(null);
+    try {
+      const csrfToken = await fetchCsrfToken();
+      const res = await fetch("/api/auth/mfa/enable", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "X-CSRF-Token": csrfToken,
+        },
+      });
+      const payload = (await res.json().catch(() => ({}))) as MfaEnrollmentPayload & { detail?: string };
+      if (!res.ok) {
+        throw new Error(payload.detail || "Failed to start MFA enrollment");
+      }
+      setMfaEnrollment(payload);
+      setMfaMessage({ tone: "success", message: "MFA enrollment started. Confirm with a one-time code." });
+    } catch (error) {
+      setMfaMessage({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Failed to start MFA enrollment",
+      });
+    } finally {
+      setMfaBusy(false);
+    }
+  };
+
+  const handleMfaVerify = async () => {
+    setMfaBusy(true);
+    setMfaMessage(null);
+    try {
+      const csrfToken = await fetchCsrfToken();
+      const res = await fetch("/api/auth/mfa/verify", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "content-type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify({
+          code: mfaCode.trim() || undefined,
+          recovery_code: mfaRecoveryCode.trim() || undefined,
+        }),
+      });
+      const payload = (await res.json().catch(() => ({}))) as { status?: string; detail?: string };
+      if (!res.ok) {
+        throw new Error(payload.detail || "MFA verification failed");
+      }
+      setMfaCode("");
+      setMfaRecoveryCode("");
+      setMfaMessage({ tone: "success", message: `MFA ${payload.status ?? "verified"}.` });
+      toast({
+        title: "MFA updated",
+        description: `Current status: ${payload.status ?? "verified"}`,
+      });
+    } catch (error) {
+      setMfaMessage({
+        tone: "error",
+        message: error instanceof Error ? error.message : "MFA verification failed",
+      });
+    } finally {
+      setMfaBusy(false);
+    }
+  };
+
+  const handleMfaDisable = async () => {
+    setMfaBusy(true);
+    setMfaMessage(null);
+    try {
+      const csrfToken = await fetchCsrfToken();
+      const res = await fetch("/api/auth/mfa/disable", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "content-type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify({
+          code: mfaCode.trim() || undefined,
+          recovery_code: mfaRecoveryCode.trim() || undefined,
+        }),
+      });
+      const payload = (await res.json().catch(() => ({}))) as { status?: string; detail?: string };
+      if (!res.ok) {
+        throw new Error(payload.detail || "MFA disable failed");
+      }
+      setMfaEnrollment(null);
+      setMfaCode("");
+      setMfaRecoveryCode("");
+      setMfaMessage({ tone: "success", message: "MFA disabled." });
+      toast({
+        title: "MFA disabled",
+        description: "Two-factor authentication was disabled for this account.",
+      });
+    } catch (error) {
+      setMfaMessage({
+        tone: "error",
+        message: error instanceof Error ? error.message : "MFA disable failed",
+      });
+    } finally {
+      setMfaBusy(false);
     }
   };
 
@@ -187,6 +320,85 @@ export default function SecurityPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Multi-factor authentication (MFA)</CardTitle>
+          <CardDescription>
+            Enable TOTP-based second factor, verify codes, and disable MFA with a valid code.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" onClick={handleMfaEnableStart} disabled={mfaBusy}>
+              {mfaBusy ? "Please wait..." : "Start MFA enrollment"}
+            </Button>
+            <Button type="button" variant="outline" onClick={handleMfaVerify} disabled={mfaBusy}>
+              {mfaBusy ? "Please wait..." : "Verify / Enable MFA"}
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleMfaDisable} disabled={mfaBusy}>
+              {mfaBusy ? "Please wait..." : "Disable MFA"}
+            </Button>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="mfa-code">One-time code</Label>
+              <Input
+                id="mfa-code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={mfaCode}
+                onChange={(event) => setMfaCode(event.target.value)}
+                placeholder="123456"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mfa-recovery">Recovery code (optional)</Label>
+              <Input
+                id="mfa-recovery"
+                value={mfaRecoveryCode}
+                onChange={(event) => setMfaRecoveryCode(event.target.value)}
+                placeholder="abcd1234"
+              />
+            </div>
+          </div>
+
+          {mfaEnrollment?.secret ? (
+            <div className="rounded-md border border-muted px-3 py-2 text-sm">
+              <p><span className="font-medium">Secret:</span> {mfaEnrollment.secret}</p>
+              {mfaEnrollment.otpauth_uri ? (
+                <p className="mt-1 break-all text-xs text-muted-foreground">
+                  otpauth URI: {mfaEnrollment.otpauth_uri}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {mfaEnrollment?.recovery_codes && mfaEnrollment.recovery_codes.length > 0 ? (
+            <div className="rounded-md border border-muted px-3 py-2 text-sm">
+              <p className="font-medium">Recovery codes</p>
+              <ul className="mt-2 grid gap-1 text-xs text-muted-foreground">
+                {mfaEnrollment.recovery_codes.map((code) => (
+                  <li key={code}>{code}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {mfaMessage ? (
+            <div
+              className={
+                mfaMessage.tone === "success"
+                  ? "rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
+                  : "rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              }
+            >
+              {mfaMessage.message}
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
     </section>
   );
 }

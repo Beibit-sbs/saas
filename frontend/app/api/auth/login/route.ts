@@ -2,11 +2,7 @@ import { NextResponse } from "next/server";
 import { isJwtExpired, toSafeSession } from "@/shared/server/auth-session";
 import { getServerApiBaseUrl, shouldUseSecureCookie } from "@/shared/server/runtime-env";
 
-const DEFAULT_LOGIN_TENANT_ID = process.env.AUTH_DEFAULT_TENANT_ID ?? "1";
-const PRIMARY_AUTH_COOKIE = "app_access_token";
-const LEGACY_AUTH_COOKIE = "admin_token";
-
-function resolveTenantId(body: unknown, request: Request): string {
+function resolveTenantId(body: unknown, request: Request): string | null {
   if (body && typeof body === "object") {
     const tenantIdCandidate = (body as { tenant_id?: unknown; tenantId?: unknown }).tenant_id
       ?? (body as { tenant_id?: unknown; tenantId?: unknown }).tenantId;
@@ -21,7 +17,7 @@ function resolveTenantId(body: unknown, request: Request): string {
     return headerTenantId.trim();
   }
 
-  return String(DEFAULT_LOGIN_TENANT_ID).trim() || "1";
+  return null;
 }
 
 function normalizeLogin(raw: unknown): string {
@@ -35,15 +31,21 @@ function normalizeLogin(raw: unknown): string {
   return value;
 }
 
-function isPlatformAdminLogin(login: string): boolean {
-  return login.trim().toLowerCase() === "platform_admin";
+function isPlatformAdminLogin(raw: unknown): boolean {
+  return String(raw ?? "").trim().toLowerCase() === "local/platform_admin";
 }
 
 export async function POST(request: Request) {
   const apiBase = getServerApiBaseUrl();
   const body = await request.json();
+  const rawLogin = body?.login ?? body?.username;
+  const isPlatformLogin = isPlatformAdminLogin(rawLogin);
   const login = normalizeLogin(body?.login ?? body?.username);
-  const tenantId = isPlatformAdminLogin(login) ? "1" : resolveTenantId(body, request);
+  const tenantId = isPlatformLogin ? "1" : resolveTenantId(body, request);
+
+  if (!tenantId) {
+    return NextResponse.json({ error: { detail: "tenant_id is required" } }, { status: 400 });
+  }
 
   const upstream = await fetch(new URL("/api/auth/login", apiBase), {
     method: "POST",
@@ -73,15 +75,12 @@ export async function POST(request: Request) {
   const response = NextResponse.json({ ok: true, ...session });
   response.headers.set("cache-control", "no-store");
 
-  const cookieOptions = {
+  response.cookies.set("app_access_token", token, {
     httpOnly: true,
     secure: shouldUseSecureCookie(request),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 8, // 8 hours
-  } as const;
-
-  response.cookies.set(PRIMARY_AUTH_COOKIE, token, cookieOptions);
-  response.cookies.set(LEGACY_AUTH_COOKIE, token, cookieOptions);
+  });
   return response;
 }

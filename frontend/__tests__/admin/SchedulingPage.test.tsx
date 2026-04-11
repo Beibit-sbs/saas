@@ -49,6 +49,14 @@ vi.mock("../../app/components/LanguageProvider", () => ({
 describe("SchedulingPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    hasPermissionMock.mockReturnValue(true);
+  });
+
+  it("renders scheduling workspace when read permission exists", () => {
+    render(<SchedulingPage />);
+
+    expect(screen.getByText("nav.scheduling")).toBeInTheDocument();
+    expect(screen.getByText("No sections found")).toBeInTheDocument();
   });
 
   it("renders AccessDenied when scheduling read permission is missing", () => {

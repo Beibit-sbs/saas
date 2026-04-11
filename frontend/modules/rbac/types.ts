@@ -18,9 +18,11 @@ export interface AssignmentsResponse {
 export interface UpsertRolePayload {
   name: string;
   permissions: string[];
+  tenant_id?: number;
 }
 
 export interface AssignRolePayload {
   user_id: string;
   role: string;
+  tenant_id?: number;
 }

@@ -37,6 +37,12 @@ const ASSIGNMENT_FILTER_FIELDS = [
     type: "text" as const,
     placeholder: "Filter by role…",
   },
+  {
+    key: "tenant_id",
+    label: "Tenant ID",
+    type: "text" as const,
+    placeholder: "Filter by tenant ID…",
+  },
 ];
 
 export default function RbacPage() {
@@ -53,16 +59,23 @@ export default function RbacPage() {
   const [assignOpen, setAssignOpen] = useState(false);
   const [assignUserId, setAssignUserId] = useState("");
   const [assignRole, setAssignRole] = useState("");
+  const [assignTenantId, setAssignTenantId] = useState("");
 
   // Assignments filter
   const table = useTableQueryState({
-    filterKeys: ["user_id", "role"] as const,
+    filterKeys: ["user_id", "role", "tenant_id"] as const,
   });
 
-  const rolesResult = useRbacRoles();
+  const parsedTenantId = Number(String(table.filters.tenant_id || "").trim());
+  const tenantFilter = Number.isFinite(parsedTenantId) && parsedTenantId > 0 ? parsedTenantId : undefined;
+
+  const rolesResult = useRbacRoles({
+    tenant_id: tenantFilter,
+  });
   const assignmentsResult = useRbacAssignments({
     user_id: table.filters.user_id,
     role: table.filters.role,
+    tenant_id: tenantFilter,
   });
 
   const upsertRole = useUpsertRole();
@@ -89,6 +102,12 @@ export default function RbacPage() {
       sortValue: (r) => r.role,
     },
     {
+      key: "tenant_id",
+      header: "Tenant",
+      cell: (r) => (r.tenant_id ? String(r.tenant_id) : "-"),
+      sortValue: (r) => String(r.tenant_id ?? ""),
+    },
+    {
       key: "actions",
       header: "",
       width: "90px",
@@ -100,7 +119,7 @@ export default function RbacPage() {
             onClick={(event) => {
               event.stopPropagation();
               revokeAssignment.mutate(
-                { userId: r.user_id, role: r.role },
+                { userId: r.user_id, role: r.role, tenantId: r.tenant_id },
                 getHandlers({ successTitle: tAny("rbacRevoked") }),
               );
             }}
@@ -150,6 +169,7 @@ export default function RbacPage() {
                 onClick={() => {
                   setAssignUserId("");
                   setAssignRole("");
+                  setAssignTenantId("");
                   setAssignOpen(true);
                 }}
               >
@@ -315,6 +335,15 @@ export default function RbacPage() {
               placeholder="registrar"
             />
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="assign-tenant-id">Tenant ID (optional)</Label>
+            <Input
+              id="assign-tenant-id"
+              value={assignTenantId}
+              onChange={(e) => setAssignTenantId(e.target.value)}
+              placeholder="1"
+            />
+          </div>
           <PermissionGate permission={PERMISSIONS.ROLES_MANAGE}>
             <Button
               disabled={
@@ -324,7 +353,14 @@ export default function RbacPage() {
               }
               onClick={() =>
                 assignRoleMutation.mutate(
-                  { user_id: assignUserId.trim(), role: assignRole.trim() },
+                  {
+                    user_id: assignUserId.trim(),
+                    role: assignRole.trim(),
+                    tenant_id: (() => {
+                      const value = Number(assignTenantId.trim());
+                      return Number.isFinite(value) && value > 0 ? value : undefined;
+                    })(),
+                  },
                   {
                     ...getHandlers({ successTitle: tAny("rbacAssigned") }),
                     onSuccess: () => {

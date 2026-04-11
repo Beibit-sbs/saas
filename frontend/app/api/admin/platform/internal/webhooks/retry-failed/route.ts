@@ -10,7 +10,7 @@ function misconfigured() {
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("admin_token")?.value;
+  const token = request.cookies.get("app_access_token")?.value ?? request.cookies.get("admin_token")?.value;
   if (!token) return unauthorized();
 
   const internalApiToken = process.env.INTERNAL_API_TOKEN?.trim();

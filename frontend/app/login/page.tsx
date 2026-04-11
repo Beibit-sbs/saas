@@ -26,6 +26,8 @@ type FormData = {
   username: string;
   password: string;
   tenantId: string;
+  mfaCode?: string;
+  mfaRecoveryCode?: string;
 };
 
 function isPlatformAdminUsername(value: string): boolean {
@@ -76,12 +78,17 @@ export default function LoginPage() {
   const [technicalTenantId, setTechnicalTenantId] = useState("");
   const [tenantError, setTenantError] = useState<string | null>(null);
   const [tenantSelectionState, setTenantSelectionState] = useState<"default" | "restored" | "manual">("default");
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaError, setMfaError] = useState<string | null>(null);
   const manualDomainLockRef = useRef<string | null>(null);
   const lastAutoAppliedDomainRef = useRef<string | null>(null);
 
   const schema = useMemo(() => z.object({
     username: z.string().min(1, t("auth.required")),
     password: z.string().min(1, t("auth.required")),
+    tenantId: z.string().optional(),
+    mfaCode: z.string().optional(),
+    mfaRecoveryCode: z.string().optional(),
   }), [t]);
 
   const {
@@ -315,6 +322,7 @@ export default function LoginPage() {
     }
 
     setTenantError(null);
+    setMfaError(null);
     setLoading(true);
     try {
       const csrfToken = await fetchCsrfToken();
@@ -323,6 +331,13 @@ export default function LoginPage() {
         username: data.username,
         password: data.password,
       };
+
+      if (mfaRequired && data.mfaCode?.trim()) {
+        payload.mfa_code = data.mfaCode.trim();
+      }
+      if (mfaRequired && data.mfaRecoveryCode?.trim()) {
+        payload.mfa_recovery_code = data.mfaRecoveryCode.trim();
+      }
 
       if (!platformAdminLogin && effectiveTenantId) {
         payload.tenant_id = Number.parseInt(effectiveTenantId, 10);
@@ -340,8 +355,16 @@ export default function LoginPage() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+        const detail = String(err?.detail ?? "").trim().toLowerCase();
+        if (detail.includes("mfa required")) {
+          setMfaRequired(true);
+          setMfaError("MFA is required for this account. Enter one-time code or recovery code.");
+          return;
+        }
         throw new Error(err.detail ?? t("auth.loginFailed"));
       }
+
+      setMfaRequired(false);
 
       const next = searchParams.get("next") ?? "/console";
       // Hard navigation avoids client-router race conditions while auth cookie is being persisted.
@@ -452,6 +475,30 @@ export default function LoginPage() {
               <Input id="password" type="password" autoComplete="current-password" {...register("password")} />
               {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
+            {mfaRequired ? (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="mfa-code">MFA code</Label>
+                  <Input
+                    id="mfa-code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="123456"
+                    {...register("mfaCode")}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="mfa-recovery-code">Recovery code (optional)</Label>
+                  <Input
+                    id="mfa-recovery-code"
+                    autoComplete="one-time-code"
+                    placeholder="abcd1234"
+                    {...register("mfaRecoveryCode")}
+                  />
+                </div>
+                {mfaError ? <p className="text-xs text-destructive">{mfaError}</p> : null}
+              </>
+            ) : null}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {t("auth.signIn")}

@@ -44,14 +44,30 @@ function toUpstreamPath(pathParts: string[]): string {
 }
 
 function normalizeError(status: number, detail: string, requestId: string | null) {
+  const code = status === 401
+    ? "UNAUTHORIZED"
+    : status === 400
+      ? "BAD_REQUEST"
+      : "UPSTREAM_ERROR";
+
   return {
     error: {
       status,
-      code: status === 401 ? "UNAUTHORIZED" : "UPSTREAM_ERROR",
+      code,
       detail,
       request_id: requestId,
     },
   };
+}
+
+function hasUnsafePathPart(pathPart: string): boolean {
+  const lowered = pathPart.toLowerCase();
+  if (lowered === "." || lowered === "..") return true;
+  if (lowered.includes("://")) return true;
+  if (lowered.startsWith("//")) return true;
+  if (lowered.includes("\\")) return true;
+  if (lowered.includes("%2f") || lowered.includes("%5c") || lowered.includes("%2e%2e")) return true;
+  return false;
 }
 
 function bffDebugLog(payload: Record<string, unknown>) {
@@ -69,6 +85,19 @@ export async function proxyBffRequest(request: NextRequest, pathParts: string[])
   const token = readAuthToken(request);
   const csrfHeader = request.headers.get("x-csrf-token");
   const requestPath = `/${pathParts.join("/")}`;
+
+  if (pathParts.length === 0 || pathParts.some(hasUnsafePathPart)) {
+    bffDebugLog({
+      phase: "path-reject",
+      method: request.method,
+      requestPath,
+      reason: "unsafe_path",
+    });
+    return NextResponse.json(
+      normalizeError(400, "Invalid upstream path", request.headers.get("x-request-id")),
+      { status: 400 },
+    );
+  }
 
   bffDebugLog({
     phase: "request",

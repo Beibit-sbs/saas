@@ -55,6 +55,7 @@ vi.mock("../../modules/platform/tenants/hooks", () => ({
   useSuspendTenant: () => ({ mutate: vi.fn(), isPending: false }),
   useActivateTenant: () => ({ mutate: vi.fn(), isPending: false }),
   useCreateTenant: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateTenant: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteTenant: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 

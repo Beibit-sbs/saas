@@ -149,7 +149,7 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
   const [executiveMode, setExecutiveMode] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState<number | null>(null);
   const [newServiceAccountName, setNewServiceAccountName] = useState("");
-  const [newServiceAccountPermissions, setNewServiceAccountPermissions] = useState(PERMISSIONS.INTEGRATIONS_MANAGE);
+  const [newServiceAccountPermissions, setNewServiceAccountPermissions] = useState<string>(PERMISSIONS.INTEGRATIONS_MANAGE);
   const [newServiceAccountPlatformGlobal, setNewServiceAccountPlatformGlobal] = useState(false);
   const qc = useQueryClient();
 

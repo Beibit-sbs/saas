@@ -8,7 +8,7 @@ function unauthorized() {
 export async function PATCH(request: NextRequest) {
   const apiBase = getServerApiBaseUrl();
   try {
-    const token = request.cookies.get("admin_token")?.value;
+    const token = request.cookies.get("app_access_token")?.value ?? request.cookies.get("admin_token")?.value;
     if (!token) return unauthorized();
 
     const upstream = await fetch(new URL("/api/admin/i18n/default-language", apiBase), {

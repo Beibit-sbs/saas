@@ -5,8 +5,10 @@ import type { AuditEventsParams, AuditEventsResponse } from "./types";
 export const AUDIT_EVENTS_KEY = "audit-events";
 
 export function useAuditEvents(params?: AuditEventsParams) {
+  const queryParams = params as Record<string, string | number | boolean | undefined> | undefined;
+
   return useQuery({
     queryKey: [AUDIT_EVENTS_KEY, params],
-    queryFn: () => apiGet<AuditEventsResponse>("/api/admin/audit/events", params),
+    queryFn: () => apiGet<AuditEventsResponse>("/api/admin/audit/events", queryParams),
   });
 }

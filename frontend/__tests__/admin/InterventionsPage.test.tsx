@@ -77,6 +77,14 @@ describe("InterventionsPage", () => {
     allowAccess = true;
   });
 
+  it("renders interventions workspace when read permission exists", () => {
+    render(<InterventionsPage />);
+
+    expect(screen.getByText("nav.interventions")).toBeInTheDocument();
+    expect(screen.getByText("intervention.action.exportCsv")).toBeInTheDocument();
+    expect(screen.getByText("summary")).toBeInTheDocument();
+  });
+
   it("renders AccessDenied when interventions read permission is missing", () => {
     allowAccess = false;
 

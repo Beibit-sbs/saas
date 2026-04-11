@@ -16,7 +16,7 @@ import { PermissionGate, RequirePermission } from "@/shared/ui/permission-gate";
 import { useDetailDrawer } from "@/shared/hooks/use-detail-drawer";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
 import { useTableQueryState } from "@/shared/hooks/use-table-query-state";
-import { useTenants, useSuspendTenant, useActivateTenant, useCreateTenant, useDeleteTenant } from "@/modules/platform/tenants/hooks";
+import { useTenants, useSuspendTenant, useActivateTenant, useCreateTenant, useDeleteTenant, useUpdateTenant } from "@/modules/platform/tenants/hooks";
 import { Tenant } from "@/modules/platform/tenants/types";
 import { formatDate, formatNumber } from "@/shared/utils/format";
 import { normalizeApiError } from "@/shared/utils/api-error";
@@ -30,8 +30,10 @@ export default function TenantsPage() {
   const [slug, setSlug] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [plan, setPlan] = useState("1");
-  const [maxStudents, setMaxStudents] = useState("1000");
   const [createError, setCreateError] = useState<string | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editPlan, setEditPlan] = useState("1");
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   const table = useTableQueryState({ filterKeys: ["search", "status"] as const, defaultPageSize: 20, defaultSort: { key: "created", direction: "desc" } });
   const detail = useDetailDrawer({ paramKey: "tenant" });
@@ -48,6 +50,7 @@ export default function TenantsPage() {
   const activate = useActivateTenant();
   const removeTenant = useDeleteTenant();
   const createTenant = useCreateTenant();
+  const updateTenant = useUpdateTenant();
   const rows = Array.isArray(data?.items) ? data.items : [];
   const selectedTenant = rows.find((item) => item.id === detail.selectedId) ?? null;
 
@@ -186,7 +189,12 @@ export default function TenantsPage() {
         onPageSizeChange={table.setPageSize}
         sort={table.sort}
         onSortChange={table.setSort}
-        onRowClick={(row) => detail.open(row.id)}
+        onRowClick={(row) => {
+          setEditDisplayName(row.display_name);
+          setEditPlan(row.plan);
+          setUpdateError(null);
+          detail.open(row.id);
+        }}
         emptyTitle={t("tenants.emptyTitle")}
         emptyDescription={t("tenants.emptyDescription")}
       />
@@ -199,16 +207,75 @@ export default function TenantsPage() {
         width="md"
       >
         {selectedTenant ? (
-          <DetailList
-            items={[
-              { label: t("tenants.slug"), value: <code className="text-xs">{selectedTenant.slug}</code> },
-              { label: t("tenants.statusLabel"), value: <StatusBadge status={selectedTenant.status} /> },
-              { label: t("tenants.plan"), value: selectedTenant.plan },
-              { label: t("tenants.studentCapacity"), value: `${formatNumber(selectedTenant.current_students)} / ${formatNumber(selectedTenant.max_students)}` },
-              { label: t("tenants.created"), value: formatDate(selectedTenant.created_at) },
-              { label: t("tenants.updated"), value: formatDate(selectedTenant.updated_at) },
-            ]}
-          />
+          <div className="space-y-4">
+            <DetailList
+              items={[
+                { label: t("tenants.slug"), value: <code className="text-xs">{selectedTenant.slug}</code> },
+                { label: t("tenants.statusLabel"), value: <StatusBadge status={selectedTenant.status} /> },
+                { label: t("tenants.studentCapacity"), value: `${formatNumber(selectedTenant.current_students)} / ${formatNumber(selectedTenant.max_students)}` },
+                { label: t("tenants.created"), value: formatDate(selectedTenant.created_at) },
+                { label: t("tenants.updated"), value: formatDate(selectedTenant.updated_at) },
+              ]}
+            />
+
+            <PermissionGate permission={PERMISSIONS.TENANTS_WRITE}>
+              <div className="space-y-1.5">
+                <Label htmlFor="tenant-edit-name">{t("tenants.displayName")}</Label>
+                <Input
+                  id="tenant-edit-name"
+                  value={editDisplayName}
+                  onChange={(event) => {
+                    setEditDisplayName(event.target.value);
+                    if (updateError) setUpdateError(null);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="tenant-edit-plan">{t("tenants.plan")}</Label>
+                <Input
+                  id="tenant-edit-plan"
+                  value={editPlan}
+                  onChange={(event) => {
+                    setEditPlan(event.target.value);
+                    if (updateError) setUpdateError(null);
+                  }}
+                  placeholder="1"
+                />
+              </div>
+
+              {updateError ? <p className="text-xs text-destructive">{updateError}</p> : null}
+
+              <Button
+                disabled={updateTenant.isPending || !editDisplayName.trim() || !editPlan.trim()}
+                onClick={() =>
+                  updateTenant.mutate(
+                    {
+                      id: selectedTenant.id,
+                      payload: {
+                        display_name: editDisplayName.trim(),
+                        plan: editPlan.trim(),
+                      },
+                    },
+                    {
+                      ...getHandlers({ successTitle: t("tenants.activated") }),
+                      onSuccess: () => {
+                        setUpdateError(null);
+                        detail.close();
+                      },
+                      onError: (error) => {
+                        getHandlers({ successTitle: t("tenants.activated") }).onError(error);
+                        const normalized = normalizeApiError(error);
+                        setUpdateError(normalized.message);
+                      },
+                    },
+                  )
+                }
+              >
+                Save changes
+              </Button>
+            </PermissionGate>
+          </div>
         ) : (
           <ErrorState title={t("tenants.notFound")} message={t("tenants.notFoundDescription")} />
         )}
@@ -265,19 +332,6 @@ export default function TenantsPage() {
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="tenant-max-students">{t("tenants.maxStudents")}</Label>
-            <Input
-              id="tenant-max-students"
-              value={maxStudents}
-              onChange={(event) => {
-                setMaxStudents(event.target.value);
-                if (createError) setCreateError(null);
-              }}
-              placeholder="1000"
-            />
-          </div>
-
           <PermissionGate permission={PERMISSIONS.TENANTS_WRITE}>
             <Button
               disabled={!canCreate || createTenant.isPending}
@@ -287,7 +341,6 @@ export default function TenantsPage() {
                     slug: slug.trim(),
                     display_name: displayName.trim(),
                     plan: plan.trim() || "1",
-                    max_students: Number(maxStudents) || 1000,
                   },
                   {
                     ...getHandlers({ successTitle: t("tenants.createdSuccess") }),
@@ -297,7 +350,6 @@ export default function TenantsPage() {
                       setSlug("");
                       setDisplayName("");
                       setPlan("1");
-                      setMaxStudents("1000");
                     },
                     onError: (error) => {
                       getHandlers({ successTitle: t("tenants.createdSuccess") }).onError(error);

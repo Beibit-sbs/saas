@@ -12,14 +12,14 @@ const BASE = "/api/admin/rbac";
 export const RBAC_ROLES_KEY = "rbac-roles";
 export const RBAC_ASSIGNMENTS_KEY = "rbac-assignments";
 
-export function useRbacRoles() {
+export function useRbacRoles(params?: { tenant_id?: number }) {
   return useQuery({
-    queryKey: [RBAC_ROLES_KEY],
-    queryFn: () => apiGet<RolesResponse>(`${BASE}/roles`),
+    queryKey: [RBAC_ROLES_KEY, params],
+    queryFn: () => apiGet<RolesResponse>(`${BASE}/roles`, params),
   });
 }
 
-export function useRbacAssignments(params?: { user_id?: string; role?: string }) {
+export function useRbacAssignments(params?: { user_id?: string; role?: string; tenant_id?: number }) {
   return useQuery({
     queryKey: [RBAC_ASSIGNMENTS_KEY, params],
     queryFn: () => apiGet<AssignmentsResponse>(`${BASE}/assignments`, params),
@@ -48,8 +48,10 @@ export function useAssignRole() {
 export function useRevokeAssignment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
-      apiDelete(`${BASE}/assignments/${encodeURIComponent(userId)}/${encodeURIComponent(role)}`),
+    mutationFn: ({ userId, role, tenantId }: { userId: string; role: string; tenantId?: number }) => {
+      const suffix = tenantId ? `?tenant_id=${encodeURIComponent(String(tenantId))}` : "";
+      return apiDelete(`${BASE}/assignments/${encodeURIComponent(userId)}/${encodeURIComponent(role)}${suffix}`);
+    },
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: [RBAC_ASSIGNMENTS_KEY] }),
   });

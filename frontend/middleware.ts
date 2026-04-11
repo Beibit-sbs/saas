@@ -1,33 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerApiBaseUrl } from "@/shared/server/runtime-env";
 
-function readAuthToken(request: NextRequest): string | undefined {
-  return request.cookies.get("app_access_token")?.value ?? request.cookies.get("admin_token")?.value;
-}
-
 const PUBLIC_PATHS = ["/login", "/api/auth/login"];
-
-const ROLE_ROUTE_RULES: Array<{ prefix: string; allowedRoles: string[] }> = [
-  { prefix: "/student", allowedRoles: ["student", "admin", "superadmin"] },
-  { prefix: "/faculty", allowedRoles: ["faculty", "teacher", "instructor", "admin", "superadmin"] },
-  {
-    prefix: "/registrar",
-    allowedRoles: ["registrar", "academic_admin", "institution_admin", "admin", "superadmin"],
-  },
-];
-
-type SessionSnapshot = {
-  active: boolean;
-  roles: string[];
-};
 
 function isTokenExpired(token: string): boolean {
   try {
     const [, payload] = token.split(".");
-    if (!payload) return true;
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
-    const decoded = JSON.parse(atob(padded));
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString());
     if (!decoded.exp) return false;
     return Date.now() / 1000 > decoded.exp;
   } catch {
@@ -35,16 +14,7 @@ function isTokenExpired(token: string): boolean {
   }
 }
 
-function normalizeRoles(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-  return value
-    .map((item) => String(item).trim().toLowerCase())
-    .filter(Boolean);
-}
-
-async function readSessionSnapshot(token: string, requestId: string | null): Promise<SessionSnapshot> {
+async function hasActiveSession(token: string, requestId: string | null): Promise<boolean> {
   const apiBase = getServerApiBaseUrl();
   try {
     const response = await fetch(new URL("/api/auth/me", apiBase), {
@@ -57,17 +27,8 @@ async function readSessionSnapshot(token: string, requestId: string | null): Pro
     });
 
     if (response.ok) {
-      const payload = (await response.json().catch(() => ({}))) as {
-        authenticated?: boolean;
-        user?: { roles?: unknown };
-      };
-      if (payload.authenticated === true) {
-        return {
-          active: true,
-          roles: normalizeRoles(payload.user?.roles),
-        };
-      }
-      return { active: false, roles: [] };
+      const payload = (await response.json().catch(() => ({}))) as { authenticated?: boolean };
+      return payload.authenticated === true;
     }
 
     // Backward compatibility for environments that only expose /me/profile.
@@ -80,31 +41,17 @@ async function readSessionSnapshot(token: string, requestId: string | null): Pro
         },
         cache: "no-store",
       });
-      if (!profileResponse.ok) {
-        return { active: false, roles: [] };
-      }
-      const profilePayload = (await profileResponse.json().catch(() => ({}))) as {
-        roles?: unknown;
-      };
-      return {
-        active: true,
-        roles: normalizeRoles(profilePayload.roles),
-      };
+      return profileResponse.ok;
     }
 
-    return { active: false, roles: [] };
+    return false;
   } catch {
-    return { active: false, roles: [] };
+    return false;
   }
 }
 
-function resolveRequiredRoles(pathname: string): string[] | null {
-  for (const rule of ROLE_ROUTE_RULES) {
-    if (pathname === rule.prefix || pathname.startsWith(`${rule.prefix}/`)) {
-      return rule.allowedRoles;
-    }
-  }
-  return null;
+function readAuthToken(request: NextRequest): string | undefined {
+  return request.cookies.get("app_access_token")?.value ?? request.cookies.get("admin_token")?.value;
 }
 
 export async function middleware(request: NextRequest) {
@@ -117,8 +64,8 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/login")) {
     const token = readAuthToken(request);
     if (token && !isTokenExpired(token)) {
-      const snapshot = await readSessionSnapshot(token, request.headers.get("x-request-id"));
-      if (snapshot.active) {
+      const isActive = await hasActiveSession(token, request.headers.get("x-request-id"));
+      if (isActive) {
         const next = request.nextUrl.searchParams.get("next") ?? "/console";
         const target = next.startsWith("/login") ? "/console" : next;
         return NextResponse.redirect(new URL(target, request.url));
@@ -131,8 +78,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const protectedPath = pathname.startsWith("/console") || resolveRequiredRoles(pathname) !== null;
-  if (!protectedPath) {
+  if (!pathname.startsWith("/console") && !pathname.startsWith("/student") && !pathname.startsWith("/faculty") && !pathname.startsWith("/registrar") && !pathname.startsWith("/profile")) {
     return NextResponse.next();
   }
 
@@ -145,26 +91,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // For the admin console, a valid non-expired token is sufficient.
-  // Avoid backend round-trips here to prevent redirect loops when edge fetch has transient issues.
-  if (pathname === "/console" || pathname.startsWith("/console/")) {
-    return NextResponse.next();
-  }
-
-  const snapshot = await readSessionSnapshot(token, request.headers.get("x-request-id"));
-  if (!snapshot.active) {
+  const isActive = await hasActiveSession(token, request.headers.get("x-request-id"));
+  if (!isActive) {
     const loginUrl = new URL("/login", request.url);
     const search = request.nextUrl.search;
     loginUrl.searchParams.set("next", search ? `${pathname}${search}` : pathname);
     return NextResponse.redirect(loginUrl);
-  }
-
-  const requiredRoles = resolveRequiredRoles(pathname);
-  if (requiredRoles) {
-    const hasAccess = snapshot.roles.some((role) => requiredRoles.includes(role));
-    if (!hasAccess) {
-      return NextResponse.redirect(new URL("/console", request.url));
-    }
   }
 
   return NextResponse.next();
@@ -182,5 +114,7 @@ export const config = {
     "/faculty/:path*",
     "/registrar",
     "/registrar/:path*",
+    "/profile",
+    "/profile/:path*",
   ],
 };

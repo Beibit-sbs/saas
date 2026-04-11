@@ -234,4 +234,58 @@ describe("LoginPage tenant UX", () => {
     });
     expect(window.localStorage.getItem("login.lastTenantId")).toBe("1");
   });
+
+  it("retries login with MFA code when server requires MFA", async () => {
+    let loginAttempt = 0;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = getRequestUrl(input);
+      if (url.endsWith("/api/auth/me")) {
+        return new Response(JSON.stringify({ authenticated: false }), { status: 401 });
+      }
+      if (url.endsWith("/api/auth/csrf")) {
+        return new Response(JSON.stringify({ csrf_token: "test-csrf-token" }), { status: 200 });
+      }
+      if (url.endsWith("/api/auth/login")) {
+        loginAttempt += 1;
+        if (loginAttempt === 1) {
+          return new Response(JSON.stringify({ detail: "mfa required" }), { status: 401 });
+        }
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      return new Response(JSON.stringify({}), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LoginPage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("University")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText("University"), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "dean@northwind.edu" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "secret" } });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/MFA is required/i)).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText("MFA code"), { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await waitFor(() => {
+      expect(loginAttempt).toBe(2);
+    });
+
+    const loginCalls = fetchMock.mock.calls.filter(([input]) => getRequestUrl(input).endsWith("/api/auth/login"));
+    expect(loginCalls).toHaveLength(2);
+    const [, secondInit] = loginCalls[1] as [RequestInfo | URL, RequestInit];
+    expect(JSON.parse(String(secondInit.body))).toEqual({
+      username: "dean@northwind.edu",
+      password: "secret",
+      tenant_id: 2,
+      mfa_code: "123456",
+    });
+  });
 });

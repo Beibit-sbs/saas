@@ -96,4 +96,44 @@ describe("bff proxy route", () => {
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(init.body).toBe(JSON.stringify({ slug: "t1" }));
   });
+
+  it("rejects path traversal segments before upstream call", async () => {
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+
+    const req = new NextRequest(`${EDGE_BASE}/api/bff/../admin/students`, {
+      headers: { cookie: "admin_token=session-token" },
+    });
+
+    const res = await bffGet(req, { params: { path: ["..", "admin", "students"] } });
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe("BAD_REQUEST");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects protocol-like segments before upstream call", async () => {
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+
+    const req = new NextRequest(`${EDGE_BASE}/api/bff/http://evil.test/path`, {
+      headers: { cookie: "admin_token=session-token" },
+    });
+
+    const res = await bffGet(req, { params: { path: ["http://evil.test", "path"] } });
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe("BAD_REQUEST");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
