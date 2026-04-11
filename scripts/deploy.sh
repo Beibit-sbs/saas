@@ -18,11 +18,23 @@ fi
 
 TARGET="$1"
 ARCHIVE="release-$(date +%Y%m%d-%H%M%S).tar.gz"
+RELEASE_NAME="${ARCHIVE%.tar.gz}"
 
 pushd "${ROOT_DIR}" >/dev/null
 tar --exclude-vcs --exclude='.env' --exclude='node_modules' --exclude='.[v]env' -czf "$ARCHIVE" .
 scp "$ARCHIVE" "$TARGET:~/"
-ssh "$TARGET" "mkdir -p ~/app && tar -xzf ~/$ARCHIVE -C ~/app && cd ~/app/infra && cp -n .env.example .env && docker compose --env-file .env up -d --build"
+ssh "$TARGET" "set -euo pipefail; \
+  mkdir -p ~/releases; \
+  rm -rf ~/releases/${RELEASE_NAME}; \
+  mkdir -p ~/releases/${RELEASE_NAME}; \
+  tar -xzf ~/${ARCHIVE} -C ~/releases/${RELEASE_NAME}; \
+  if [ -L ~/current ]; then PREV_TARGET=\$(readlink -f ~/current || true); else PREV_TARGET=; fi; \
+  if [ -n \"\${PREV_TARGET:-}\" ]; then ln -sfn \"\${PREV_TARGET}\" ~/previous; fi; \
+  if [ -f ~/shared/.env ]; then mkdir -p ~/releases/${RELEASE_NAME}/infra && cp ~/shared/.env ~/releases/${RELEASE_NAME}/infra/.env; fi; \
+  if [ ! -f ~/releases/${RELEASE_NAME}/infra/.env ]; then cp -n ~/releases/${RELEASE_NAME}/infra/.env.example ~/releases/${RELEASE_NAME}/infra/.env; fi; \
+  ln -sfn ~/releases/${RELEASE_NAME} ~/current; \
+  cd ~/current/infra && docker compose --env-file .env up -d --build"
+rm -f "$ARCHIVE"
 popd >/dev/null
 
-echo "Deploy completed to $TARGET"
+echo "Deploy completed to $TARGET (release=${RELEASE_NAME})"

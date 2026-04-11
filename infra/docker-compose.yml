@@ -13,9 +13,34 @@ services:
       timeout: 5s
       retries: 10
 
+  pgbouncer:
+    image: pgbouncer/pgbouncer:latest
+    environment:
+      DATABASES_HOST: db
+      DATABASES_PORT: 5432
+      DATABASES_USER: ${POSTGRES_USER}
+      DATABASES_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASES_DBNAME: ${POSTGRES_DB}
+      PGBOUNCER_AUTH_TYPE: any
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-200}
+      PGBOUNCER_DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-20}
+      PGBOUNCER_RESERVE_POOL_SIZE: ${PGBOUNCER_RESERVE_POOL_SIZE:-5}
+      PGBOUNCER_IGNORE_STARTUP_PARAMETERS: extra_float_digits,options
+      PGBOUNCER_ADMIN_USERS: ${POSTGRES_USER}
+      PGBOUNCER_LISTEN_PORT: ${PGBOUNCER_PORT:-6432}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 ${PGBOUNCER_PORT:-6432}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -32,8 +57,6 @@ services:
     volumes:
       - ldap_data:/var/lib/ldap
       - ldap_config:/etc/ldap/slapd.d
-    ports:
-      - "389:389"
     healthcheck:
       test: ["CMD", "ldapwhoami", "-H", "ldap://localhost", "-D", "cn=admin,dc=example,dc=local", "-w", "admin"]
       interval: 10s
@@ -45,7 +68,7 @@ services:
       context: ../backend
     environment:
       PYTHONPATH: /app
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer:${PGBOUNCER_PORT:-6432}/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET}
       API_BASE_URL: ${API_BASE_URL}
@@ -68,13 +91,20 @@ services:
       OPS_JOBS_FAILURE_SPIKE_THRESHOLD: ${OPS_JOBS_FAILURE_SPIKE_THRESHOLD:-5}
       RBAC_ALLOW_DEV_FALLBACK: "${RBAC_ALLOW_DEV_FALLBACK:-false}"
       AUTH_CSRF_PROTECTION_ENABLED: "${AUTH_CSRF_PROTECTION_ENABLED:-true}"
+      BILLING_DB_ONLY_MODE: "${BILLING_DB_ONLY_MODE:-true}"
       TRUSTED_HOSTS: "${TRUSTED_HOSTS:-localhost,127.0.0.1,backend,nginx}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      AI_CUSTOM_PROVIDER_URL: "${AI_CUSTOM_PROVIDER_URL:-}"
+      AI_CUSTOM_PROVIDER_API_KEY: "${AI_CUSTOM_PROVIDER_API_KEY:-}"
+      AI_PROVIDER_TIMEOUT_SECONDS: "${AI_PROVIDER_TIMEOUT_SECONDS:-8}"
     ports:
       - "${BACKEND_PORT}:8000"
     volumes:
       - backup_data:/tmp/app-backups
     depends_on:
-      db:
+      pgbouncer:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -90,7 +120,7 @@ services:
       dockerfile: Dockerfile.tests
     working_dir: /app
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer:${PGBOUNCER_PORT:-6432}/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET}
       API_BASE_URL: ${API_BASE_URL}
@@ -102,13 +132,14 @@ services:
       PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL}
       RBAC_ALLOW_DEV_FALLBACK: "${RBAC_ALLOW_DEV_FALLBACK:-false}"
       AUTH_CSRF_PROTECTION_ENABLED: "${AUTH_CSRF_PROTECTION_ENABLED:-true}"
+      BILLING_DB_ONLY_MODE: "${BILLING_DB_ONLY_MODE:-true}"
       TRUSTED_HOSTS: "${TRUSTED_HOSTS:-localhost,127.0.0.1,backend,backend-tests,nginx}"
       PROJECT_ROOT: "/project"
     volumes:
       - ..:/project:ro,z
       - backup_data:/tmp/app-backups
     depends_on:
-      db:
+      pgbouncer:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -123,7 +154,7 @@ services:
     build:
       context: ../backend
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer:${PGBOUNCER_PORT:-6432}/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET}
       API_BASE_URL: ${API_BASE_URL}
@@ -135,17 +166,18 @@ services:
       BACKUP_PROFILES_JSON: "${BACKUP_PROFILES_JSON:-[{\"id\":\"local\",\"label\":\"Local backup volume\",\"path\":\"/tmp/app-backups/local\"}]}"
       RBAC_ALLOW_DEV_FALLBACK: "${RBAC_ALLOW_DEV_FALLBACK:-false}"
       AUTH_CSRF_PROTECTION_ENABLED: "${AUTH_CSRF_PROTECTION_ENABLED:-true}"
-    command:
-      - sh
-      - -lc
-      - |
-        echo "worker loop started"
-        while true; do
-          python -u -c "from app.modules.jobs.worker import run_worker_loop; from app.platform.runtime_state import record_worker_heartbeat; record_worker_heartbeat(); run_worker_loop(iterations=200)"
-          sleep 1
-        done
+      BILLING_DB_ONLY_MODE: "${BILLING_DB_ONLY_MODE:-true}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      AI_CUSTOM_PROVIDER_URL: "${AI_CUSTOM_PROVIDER_URL:-}"
+      AI_CUSTOM_PROVIDER_API_KEY: "${AI_CUSTOM_PROVIDER_API_KEY:-}"
+      AI_PROVIDER_TIMEOUT_SECONDS: "${AI_PROVIDER_TIMEOUT_SECONDS:-8}"
+    command: ["python", "-u", "scripts/run_worker.py"]
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
     depends_on:
-      db:
+      pgbouncer:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -158,7 +190,7 @@ services:
     build:
       context: ../backend
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer:${PGBOUNCER_PORT:-6432}/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET}
       API_BASE_URL: ${API_BASE_URL}
@@ -176,6 +208,7 @@ services:
       OPS_JOBS_FAILURE_SPIKE_THRESHOLD: ${OPS_JOBS_FAILURE_SPIKE_THRESHOLD:-5}
       RBAC_ALLOW_DEV_FALLBACK: "${RBAC_ALLOW_DEV_FALLBACK:-false}"
       AUTH_CSRF_PROTECTION_ENABLED: "${AUTH_CSRF_PROTECTION_ENABLED:-true}"
+      BILLING_DB_ONLY_MODE: "${BILLING_DB_ONLY_MODE:-true}"
     command:
       - sh
       - -lc
@@ -183,7 +216,7 @@ services:
         echo "scheduler loop started"
         python -u -c "from app.platform.jobs.scheduler import scheduler; scheduler.run_forever(poll_interval_seconds=5.0)"
     depends_on:
-      db:
+      pgbouncer:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -303,7 +336,7 @@ services:
     profiles: ["devtools"]
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change_me_grafana_password}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"

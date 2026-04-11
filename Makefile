@@ -1,13 +1,13 @@
 SHELL := /bin/bash
 COMPOSE := cd infra && docker compose --env-file .env
 
-.PHONY: help up down logs ci test lint pipeline pipeline-force system-audit kill-host prod-up prod-down template-validate security-regression release-check release-gate rollback-check pilot-safe-gate pilot-bootstrap pilot-ldap-up pilot-ldap-down pilot-seed-demo
+.PHONY: help up down logs ci test lint pipeline pipeline-force system-audit kill-host prod-up prod-down template-validate security-regression domain-layer-gate data-layer-gate release-check release-gate rollback-check rollback-previous prune-remote-releases pilot-safe-gate pilot-full-gate pilot-to-prod-promote pilot-bootstrap pilot-ldap-up pilot-ldap-down pilot-seed-demo
 
 help:
 	@echo "Targets: up down logs ci test lint pipeline pipeline-force kill-host"
 	@echo "         system-audit"
 	@echo "         prod-up prod-down template-validate"
-	@echo "         security-regression release-check release-gate rollback-check pilot-safe-gate pilot-bootstrap"
+	@echo "         security-regression domain-layer-gate data-layer-gate release-check release-gate rollback-check rollback-previous prune-remote-releases pilot-safe-gate pilot-full-gate pilot-to-prod-promote pilot-bootstrap"
 	@echo "         pilot-ldap-up pilot-ldap-down"
 	@echo "         pilot-seed-demo"
 	@echo ""
@@ -73,17 +73,35 @@ template-validate:
 security-regression:
 	$(COMPOSE) run --rm --no-deps backend-tests pytest -q --disable-warnings -m security_regression
 
+domain-layer-gate:
+	./scripts/domain_layer_gate.sh
+
+data-layer-gate:
+	./scripts/data_layer_gate.sh
+
 release-check:
 	./scripts/release_check.sh
 
 rollback-check:
 	./scripts/rollback_check.sh
 
+rollback-previous:
+	./scripts/rollback_to_previous_release.sh $(TARGET)
+
+prune-remote-releases:
+	./scripts/prune_remote_releases.sh $(TARGET) $(KEEP)
+
 release-gate:
 	./scripts/release_gate.sh
 
 pilot-safe-gate:
 	./scripts/university_pilot_safe_gate.sh
+
+pilot-full-gate:
+	./scripts/pilot_full_function_gate.sh
+
+pilot-to-prod-promote:
+	./scripts/pilot_to_prod_promotion.sh
 
 pilot-bootstrap:
 	bash ./scripts/bootstrap_university_pilot_env.sh

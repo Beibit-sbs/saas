@@ -76,6 +76,26 @@ groups:
           summary: "Scheduler heartbeat stale or missing"
           description: "Scheduler last run is missing or older than 300 seconds."
 
+      - alert: RedisLatencyHigh
+        expr: redis_latency_seconds{job="backend"} > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis latency is elevated"
+          description: "redis_latency_seconds is above 100ms for at least 10 minutes."
+
+      - alert: DbPoolActiveHigh
+        expr: db_connections_active{job="backend"} > 80
+        for: 10m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "DB pool active connections are high"
+          description: "db_connections_active is above 80 for at least 10 minutes; investigate pool saturation."
+
   - name: webhook-and-automation
     rules:
       - alert: WebhookDeadQueueGrowing

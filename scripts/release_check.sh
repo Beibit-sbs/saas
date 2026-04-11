@@ -22,11 +22,29 @@ run_backend_checks pytest -q --disable-warnings tests/platform/test_platform_ten
 echo "[release-check] platform regression gate"
 run_backend_checks pytest -q --disable-warnings tests/platform/
 
+if [[ "${RELEASE_ENABLE_DOMAIN_GATE:-true}" == "true" ]]; then
+	echo "[release-check] domain layer gate"
+	popd >/dev/null
+	bash "${ROOT_DIR}/scripts/domain_layer_gate.sh"
+	pushd "${ROOT_DIR}/infra" >/dev/null
+else
+	echo "[release-check] domain layer gate skipped (RELEASE_ENABLE_DOMAIN_GATE=false)"
+fi
+
 echo "[release-check] security regression gate"
 run_backend_checks pytest -q --disable-warnings -m security_regression
 
 echo "[release-check] template validation gate"
 run_backend_checks pytest -q --disable-warnings tests/test_template_validation.py
+
+if [[ "${RELEASE_ENABLE_DATA_LAYER_GATE:-true}" == "true" ]]; then
+	echo "[release-check] data layer gate"
+	popd >/dev/null
+	bash "${ROOT_DIR}/scripts/data_layer_gate.sh"
+	pushd "${ROOT_DIR}/infra" >/dev/null
+else
+	echo "[release-check] data layer gate skipped (RELEASE_ENABLE_DATA_LAYER_GATE=false)"
+fi
 
 echo "[release-check] migration safety gate"
 run_backend_checks alembic heads

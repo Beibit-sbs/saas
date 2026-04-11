@@ -6,24 +6,64 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE=(docker compose --env-file .env)
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+AUDIT_DIR="${ROOT_DIR}/artifacts/audits"
+AUDIT_REPORT="${AUDIT_DIR}/system-audit-${STAMP}.txt"
 
-bash "${ROOT_DIR}/scripts/preflight_checks.sh"
+mkdir -p "${AUDIT_DIR}"
+
+log() {
+	echo "$1" | tee -a "${AUDIT_REPORT}"
+}
+
+section() {
+	log ""
+	log "=== $1 ==="
+}
+
+run_cmd() {
+	log "[run] $*"
+	"$@" | tee -a "${AUDIT_REPORT}"
+}
+
+log "=== system audit ==="
+log "timestamp_utc=${STAMP}"
+
+run_cmd bash "${ROOT_DIR}/scripts/preflight_checks.sh"
 
 pushd "${ROOT_DIR}/infra" >/dev/null
 
-"${COMPOSE[@]}" up -d db redis backend frontend nginx
+section "bootstrap"
+run_cmd "${COMPOSE[@]}" up -d db redis backend frontend nginx
 
-# Backend gates
-"${COMPOSE[@]}" exec -T backend ruff check .
-"${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --disable-warnings
+section "core layer"
+run_cmd "${COMPOSE[@]}" exec -T backend ruff check .
+run_cmd "${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --disable-warnings tests/platform/test_platform_architecture_guardrails_v1.py
+run_cmd "${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --disable-warnings tests/platform/test_platform_tenant_safety_audit_v1.py
 
-# RBAC parity guardrail
-"${ROOT_DIR}/scripts/check_permission_parity.sh"
+section "application layer"
+run_cmd "${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --disable-warnings
 
-# Frontend gates
-"${COMPOSE[@]}" run --rm -T frontend-tests npm run lint
-"${COMPOSE[@]}" run --rm -T frontend-tests npm run test:frontend
+section "security layer"
+run_cmd "${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --disable-warnings -m security_regression
+
+section "access layer"
+run_cmd "${ROOT_DIR}/scripts/check_permission_parity.sh"
+
+section "frontend layer"
+run_cmd "${COMPOSE[@]}" run --rm -T frontend-tests npm run lint
+run_cmd "${COMPOSE[@]}" run --rm -T frontend-tests npm run test:frontend
 
 popd >/dev/null
 
-echo "[system-audit] OK: backend/frontend lint+tests and RBAC parity checks passed."
+section "domain layer"
+run_cmd bash "${ROOT_DIR}/scripts/domain_layer_gate.sh"
+
+section "data layer"
+run_cmd bash "${ROOT_DIR}/scripts/data_layer_gate.sh"
+
+section "ops layer"
+run_cmd bash "${ROOT_DIR}/scripts/rollback_check.sh"
+
+log "[system-audit] OK: core/application/security/access/frontend/domain/data/ops layers are green."
+log "audit_report=${AUDIT_REPORT}"
