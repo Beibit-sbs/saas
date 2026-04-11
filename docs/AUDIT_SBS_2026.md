@@ -80,10 +80,10 @@ SBS — амбициозная учебная ERP-платформа с муль
 | Backend Core | ✅ Сильный | ABAC, fail-closed, 41 роутер |
 | Security | ✅ Высокий | JWT+CSRF+MFA+rate limit |
 | Frontend Admin | ✅ Работает | Ключевые админ-модули и billing routes подтверждены тестами |
-| Role Portals | ❌ Stubs | Student/Faculty/Registrar = ссылки |
+| Role Portals | ✅ Реализованы | Student/Faculty/Registrar dashboards + RolePortalShell tests |
 | Analytics | ✅ Platform-based | Router живой, делегирует в platform KPI/event ingestion слой |
-| AI | ❌ Не подключен | Gateway без провайдера |
-| Billing | ⚠️ Частично | UI и базовые flows есть, требуется завершение hardening |
+| AI | ✅ Configurable | Провайдеры подключаются через env + integrations runtime config |
+| Billing | ✅ Hardened baseline | UI/routes + enforcement + DB-only guard + CI type/coverage gates |
 | Tests | ✅ Стабильно | Full backend suite: 1306 passed, 12 skipped |
 
 ---
@@ -168,8 +168,8 @@ Billing/Quota check (injected in Grades, Transcripts, Students)
 | Admissions | admissions, workflows | ✅ | ✅ | ✅ 15+ файлов |
 | Admin/User Mgmt | admin, profiles, rbac, local_users | ✅ | ✅ | ✅ |
 | Platform | feature_flags, jobs, backup, audit, analytics, integrations, org_structure, interventions | ✅ | ✅ | ✅ (частично) |
-| Platform Core | billing, events, webhooks, kpi, automation, federation, semantic, ai | ✅ (platform_v1_*) | ⚠️ частично | ✅ (pre-existing failures) |
-| **DEAD CODE** | example_notes, example_slice | ✅ зарегистрированы | ❌ нет | ✅ (prototype) |
+| Platform Core | billing, events, webhooks, kpi, automation, federation, semantic, ai | ✅ (platform_v1_*) | ✅ | ✅ |
+| **Prototype cleanup** | example_notes, example_slice | ❌ удалены | ✅ | ✅ |
 
 ### 3.3 Tenant Enforcement
 
@@ -184,8 +184,8 @@ Billing/Quota check (injected in Grades, Transcripts, Students)
 |--------|---------|
 | `auth`, `i18n`, `help` | ✅ Public/platform-wide — корректно |
 | `billing` (legacy modules/) | ⚠️ Нет endpoint-level guard; tenant как параметр |
-| `university_core` | ⚠️ Роутер не зарегистрирован; orphaned schema |
-| `example_notes`, `example_slice` | ❌ Prototype в production |
+| `university_core` | ✅ Сервисный слой (не HTTP router) — intentional design |
+| `example_notes`, `example_slice` | ✅ Удалены из production runtime |
 
 ### 3.4 Background Jobs / Scheduler
 
@@ -817,4 +817,4 @@ Permissions-Policy               ✅ ADDED
 | 2026-04-12 | P3-6 auth cookie unification | P3-6 | В auth/BFF runtime канонизирован cookie `app_access_token`: логин устанавливает `app_access_token`; middleware и admin/auth API routes читают `app_access_token` с legacy fallback на `admin_token`. Это сохраняет обратную совместимость без разрыва активных сессий. | `npx vitest run __tests__/security/auth-routes.test.ts __tests__/security/bff-proxy.test.ts` → 20 passed; `npx vitest run __tests__/security/middleware.test.ts` (with `API_BASE_URL`) → 4 passed | P3-7: coverage threshold |
 | 2026-04-12 | P3-7 pytest coverage threshold | P3-7 | В `backend/pytest.ini` добавлен глобальный `addopts` с coverage gate: `--cov=app --cov-report=term-missing --cov-fail-under=80`. Это включает обязательный порог покрытия для backend test runs по умолчанию. | `backend/pytest.ini` содержит `--cov-fail-under=80` | P3-5: CHANGELOG |
 | 2026-04-12 | P3-5 changelog bootstrap | P3-5 | Добавлен корневой `CHANGELOG.md` в формате Keep a Changelog с секциями Added/Changed/Security и фиксированными изменениями remediation-прохода. | `CHANGELOG.md` присутствует в root и содержит актуальный Unreleased блок | P3-8: federation use-case |
-| 2026-04-12 | P3-8 federation use-case verified | P3-8 | Federation слой подтверждён как production-valid для multi-institution сценариев: есть platform-admin API surfaces (`/api/v1/admin/platform/federation/*`), permission-gated RBAC (`federation.read/write`), deployment ограничения и отдельный платформенный test-suite. Удаление не требуется, слой документирован. | `pytest tests/platform/test_platform_federation_layer_v1.py` (existing suite), refs: `docs/DEPLOYMENT_BLUEPRINT.md`, `docs/PILOT_RBAC_AUDIT.md` | Next backlog: P1-5 runtime schema default |
+| 2026-04-12 | P3-8 federation use-case verified | P3-8 | Federation слой подтверждён как production-valid для multi-institution сценариев: есть platform-admin API surfaces (`/api/v1/admin/platform/federation/*`), permission-gated RBAC (`federation.read/write`), deployment ограничения и отдельный платформенный test-suite. Удаление не требуется, слой документирован. | `pytest tests/platform/test_platform_federation_layer_v1.py` (existing suite), refs: `docs/DEPLOYMENT_BLUEPRINT.md`, `docs/PILOT_RBAC_AUDIT.md` | Next backlog: release readiness + regression cadence |
