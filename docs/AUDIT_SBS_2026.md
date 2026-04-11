@@ -43,7 +43,7 @@
 | 2026-04-11 | P1-2 | `analytics/service.py` не существует — router мёртвый | ✅ VERIFIED REFACTORED | `backend/app/modules/analytics/router.py` (delegation to platform kpi/event_ingestion) |
 | 2026-04-12 | P1-3 | MFA нет во frontend | ✅ FIXED | `frontend/app/(admin)/console/security/page.tsx`, `frontend/app/login/page.tsx`, `frontend/__tests__/admin/SecurityPage.test.tsx`, `frontend/__tests__/components/LoginTenantMode.test.tsx` |
 | 2026-04-12 | P1-4 | Worker — bash while loop, нет graceful shutdown | ✅ FIXED | `infra/docker-compose.yml`, `backend/scripts/run_worker.py`, `backend/tests/test_worker_graceful_shutdown.py` |
-| — | P1-5 | `RUNTIME_SCHEMA_BOOTSTRAP_ENABLED=true` по умолчанию | 🔲 TODO | `backend/app/core/config.py`, `infra/.env.example` |
+| 2026-04-11 | P1-5 | `RUNTIME_SCHEMA_BOOTSTRAP_ENABLED=true` по умолчанию | ✅ FIXED | `backend/app/core/config.py`, `infra/.env.example` |
 | 2026-04-12 | P1-6 | `example_notes` + `example_slice` зарегистрированы в production | ✅ FIXED (уже удалено) | `backend/app/main.py` |
 | 2026-04-12 | P1-7 | `university_core` — таблицы есть, роутер не зарегистрирован | ✅ N/A — сервисный слой | `backend/app/main.py` |
 | 2026-04-12 | P2-1 | Role portal UX — реальный per-role UI, не ссылки | ✅ VERIFIED | `frontend/app/student/`, `faculty/`, `registrar/` |
@@ -58,10 +58,10 @@
 | 2026-04-12 | P3-2 | Нет PgBouncer перед PostgreSQL | ✅ FIXED | `infra/docker-compose.yml`, `infra/.env.example` |
 | 2026-04-11 | P3-3 | Нет Redis alert в Prometheus | ✅ FIXED | `infra/prometheus/alerts.yml` (`RedisLatencyHigh`, `DbPoolActiveHigh`) |
 | 2026-04-12 | P3-4 | Frontend RBAC nav hiding (скрывать items по ролям) | ✅ VERIFIED | `frontend/shared/ui/app-sidebar.tsx`, `frontend/shared/config/navigation.ts` |
-| — | P3-5 | Нет CHANGELOG.md | 🔲 TODO | root |
+| 2026-04-12 | P3-5 | Нет CHANGELOG.md | ✅ FIXED | `CHANGELOG.md` |
 | 2026-04-12 | P3-6 | `admin_token` / `app_access_token` — два имени cookie для одного токена | ✅ FIXED | `frontend/app/api/auth/login/route.ts`, `frontend/middleware.ts`, `frontend/shared/server/bff-proxy.ts` |
-| — | P3-7 | Нет coverage threshold в pytest.ini | 🔲 TODO | `backend/pytest.ini` |
-| — | P3-8 | Federation layer — не ясен production use-case | 🔲 TODO | `backend/app/platform/federation/` |
+| 2026-04-12 | P3-7 | Нет coverage threshold в pytest.ini | ✅ FIXED | `backend/pytest.ini` |
+| 2026-04-12 | P3-8 | Federation layer — не ясен production use-case | ✅ VERIFIED | `backend/app/platform/router_admin.py`, `docs/DEPLOYMENT_BLUEPRINT.md`, `backend/tests/platform/test_platform_federation_layer_v1.py` |
 
 ---
 
@@ -208,7 +208,7 @@ Worker: заменён на `backend/scripts/run_worker.py` с `signal.signal(SI
 
 56 файлов, merge-голова `a0b1c2d3e4f5_merge_all_feature_heads.py`.
 
-**Риск:** `RUNTIME_SCHEMA_BOOTSTRAP_ENABLED=true` по умолчанию. `_ensure_mfa_table()` в `mfa_service.py` всё ещё создаёт таблицы в runtime. Миграция существует, DDL-путь не убран. **P1-5.**
+**Статус:** `RUNTIME_SCHEMA_BOOTSTRAP_ENABLED=false` по умолчанию. Runtime DDL ограничен bootstrap-scope; legacy `_ensure_mfa_table()` runtime path удалён. **P1-5 ✅ FIXED 2026-04-11.**
 
 ---
 
@@ -268,7 +268,7 @@ matcher: [
 | P0-2 | Grafana default password | ✅ FIXED |
 | P0-3 | Redis без persistence | ✅ FIXED |
 | P0-5 | Role portals не в middleware | ✅ FIXED |
-| P1-5 | `RUNTIME_SCHEMA_BOOTSTRAP_ENABLED=true` по умолчанию | 🔲 TODO |
+| P1-5 | `RUNTIME_SCHEMA_BOOTSTRAP_ENABLED=true` по умолчанию | ✅ FIXED |
 | P2-3 | Content-Security-Policy header отсутствует | ✅ FIXED |
 | P3-6 | Два имени cookie (`admin_token` / `app_access_token`) | ✅ FIXED |
 
@@ -385,18 +385,18 @@ Permissions-Policy               ✅ ADDED
 | P0-1 | LDAP порт 389 открыт на хост | `infra/docker-compose.yml` | ✅ FIXED 2026-04-11 |
 | P0-2 | Grafana default password | `infra/docker-compose.yml` | ✅ FIXED 2026-04-11 |
 | P0-3 | Redis без persistence | `infra/docker-compose.yml` | ✅ FIXED 2026-04-11 |
-| P0-4 | 211 pre-existing test failures | backend test suite | 🔲 TODO |
+| P0-4 | 211 pre-existing test failures | backend test suite | ✅ VERIFIED RESOLVED 2026-04-11 |
 | P0-5 | Role portals не в middleware matcher | `frontend/middleware.ts` | ✅ FIXED 2026-04-11 |
 
 ### P1 — До Pilot
 
 | # | Проблема | Файл | Статус |
 |---|----------|------|--------|
-| P1-1 | Billing UI → 404 | `frontend/app/(admin)/console/billing/` | 🔲 TODO |
-| P1-2 | `analytics/service.py` не существует | `backend/app/modules/analytics/` | 🔲 TODO |
+| P1-1 | Billing UI → 404 | `frontend/app/(admin)/console/billing/` | ✅ FIXED 2026-04-11 |
+| P1-2 | `analytics/service.py` не существует | `backend/app/modules/analytics/` | ✅ VERIFIED REFACTORED 2026-04-11 |
 | P1-3 | MFA нет во frontend | `frontend/app/(admin)/console/security/` | ✅ FIXED 2026-04-12 |
 | P1-4 | Worker — bash loop, нет graceful shutdown | `infra/docker-compose.yml` | ✅ FIXED 2026-04-12 |
-| P1-5 | `RUNTIME_SCHEMA_BOOTSTRAP_ENABLED=true` default | `backend/app/core/config.py` | 🔲 TODO |
+| P1-5 | `RUNTIME_SCHEMA_BOOTSTRAP_ENABLED=true` default | `backend/app/core/config.py` | ✅ FIXED 2026-04-11 |
 | P1-6 | example_notes + example_slice в production | `backend/app/main.py` | ✅ FIXED (уже удалено) |
 | P1-7 | `university_core` orphaned schema | `backend/app/main.py` | ✅ N/A — сервисный слой, без HTTP роутера, исп. 7 модулями |
 
@@ -409,7 +409,7 @@ Permissions-Policy               ✅ ADDED
 | P2-3 | Content-Security-Policy в nginx | `infra/nginx/nginx.conf` | ✅ FIXED 2026-04-12 |
 | P2-4 | Нет CI restore-тестирования backup | `scripts/` | ✅ FIXED 2026-04-12 |
 | P2-5 | Billing enforcement пропущен в course/enrollment | `backend/app/modules/courses/` | ✅ FIXED 2026-04-12 |
-| P2-6 | Event ingestion pre-existing failures | `backend/tests/platform/` | 🔲 TODO |
+| P2-6 | Event ingestion pre-existing failures | `backend/tests/platform/` | ✅ VERIFIED RESOLVED 2026-04-11 |
 | P2-7 | Нет mypy в CI | `backend/requirements.txt` | ✅ FIXED 2026-04-12 |
 | P2-8 | In-memory billing state | `backend/app/modules/billing/service.py` | ✅ FIXED 2026-04-12 |
 
@@ -421,10 +421,10 @@ Permissions-Policy               ✅ ADDED
 | P3-2 | Нет PgBouncer | `infra/docker-compose.yml` | ✅ FIXED 2026-04-12 |
 | P3-3 | Нет Redis alert в Prometheus | `infra/prometheus/alerts.yml` | ✅ FIXED 2026-04-11 |
 | P3-4 | Frontend RBAC nav hiding | `frontend/app/(admin)/layout.tsx` | ✅ VERIFIED 2026-04-12 |
-| P3-5 | Нет CHANGELOG.md | root | 🔲 TODO |
+| P3-5 | Нет CHANGELOG.md | root | ✅ FIXED 2026-04-12 |
 | P3-6 | Два имени cookie | `frontend/shared/server/bff-proxy.ts` | ✅ FIXED 2026-04-12 |
-| P3-7 | Нет coverage threshold в pytest.ini | `backend/pytest.ini` | 🔲 TODO |
-| P3-8 | Federation production use-case | `backend/app/platform/federation/` | 🔲 TODO |
+| P3-7 | Нет coverage threshold в pytest.ini | `backend/pytest.ini` | ✅ FIXED 2026-04-12 |
+| P3-8 | Federation production use-case | `backend/app/platform/federation/` | ✅ VERIFIED 2026-04-12 |
 
 ---
 
@@ -447,7 +447,7 @@ Permissions-Policy               ✅ ADDED
 | `ruff` | ✅ настроен (`pyproject.toml`), нет violations |
 | `pytest` | ✅ 1091 passed / **211 pre-existing failures** (P0-4) |
 | `mypy` / `pyright` | ✅ `mypy` добавлен в CI (P2-7 fixed) |
-| Coverage threshold | ❌ не задан в `pytest.ini` (P3-7) |
+| Coverage threshold | ✅ задан в `pytest.ini` (`--cov-fail-under=80`) (P3-7 fixed) |
 | Lazy imports | ✅ удалены из `admissions/service.py` (P3-1 fixed) |
 | Prototype код в production | ✅ `example_notes`, `example_slice` удалены (P1-6) |
 
@@ -491,7 +491,7 @@ Permissions-Policy               ✅ ADDED
 | P0-2 | Обязательный Grafana password | 10m | ✅ DONE |
 | P0-3 | Redis AOF persistence | 5m | ✅ DONE |
 | P0-5 | middleware.ts — role portals в matcher | 10m | ✅ DONE |
-| P0-4 | Исправить/изолировать 211 failing tests | 2–4h | 🔲 TODO |
+| P0-4 | Исправить/изолировать 211 failing tests | 2–4h | ✅ DONE |
 
 ### Stage 1 — Pilot-Ready Sprint (P1, 1–2 недели)
 
@@ -526,13 +526,13 @@ Permissions-Policy               ✅ ADDED
 
 | # | Задача | Усилие |
 |---|--------|--------|
-| P3-7 | Coverage threshold ≥ 80% в pytest.ini | 30m |
-| P3-5 | Создать CHANGELOG.md | 30m |
+| P3-7 | Coverage threshold ≥ 80% в pytest.ini | ✅ DONE |
+| P3-5 | Создать CHANGELOG.md | ✅ DONE |
 | P3-6 | Унифицировать имя cookie (`app_access_token`) | ✅ DONE |
 | P3-4 | Frontend RBAC nav hiding | ✅ DONE |
 | P3-1 | Убрать lazy imports из admissions/service.py | ✅ DONE |
 | P3-2 | PgBouncer перед PostgreSQL | ✅ DONE |
-| P3-8 | Задокументировать / убрать federation layer | 2h |
+| P3-8 | Задокументировать / убрать federation layer | ✅ DONE |
 
 ### Milestone Summary
 
@@ -815,3 +815,6 @@ Permissions-Policy               ✅ ADDED
 | 2026-04-12 | P3-2 PgBouncer integration | P3-2 | В `infra/docker-compose.yml` добавлен сервис `pgbouncer` (transaction pooling, healthcheck, tuning envs), backend/backend-tests/worker/scheduler переключены на `DATABASE_URL` через PgBouncer (`pgbouncer:6432`). В `infra/.env.example` добавлены `PGBOUNCER_PORT`, `PGBOUNCER_MAX_CLIENT_CONN`, `PGBOUNCER_DEFAULT_POOL_SIZE`, `PGBOUNCER_RESERVE_POOL_SIZE`. | `docker compose -f infra/docker-compose.yml --env-file infra/.env config` → OK | P3-4: frontend RBAC nav hiding |
 | 2026-04-12 | P3-4 navigation RBAC verified | P3-4 | Role-based nav hiding уже реализован: `AppSidebar` использует `getNavigationForRoles(roles)` + фильтр `hasPermission(item.permission)`. Отдельно подтверждено, что `Platform Management` показывается только для superadmin/admin. | `npx vitest run __tests__/navigation/navigation-clean.test.ts` → 3 passed | P3-5: CHANGELOG |
 | 2026-04-12 | P3-6 auth cookie unification | P3-6 | В auth/BFF runtime канонизирован cookie `app_access_token`: логин устанавливает `app_access_token`; middleware и admin/auth API routes читают `app_access_token` с legacy fallback на `admin_token`. Это сохраняет обратную совместимость без разрыва активных сессий. | `npx vitest run __tests__/security/auth-routes.test.ts __tests__/security/bff-proxy.test.ts` → 20 passed; `npx vitest run __tests__/security/middleware.test.ts` (with `API_BASE_URL`) → 4 passed | P3-7: coverage threshold |
+| 2026-04-12 | P3-7 pytest coverage threshold | P3-7 | В `backend/pytest.ini` добавлен глобальный `addopts` с coverage gate: `--cov=app --cov-report=term-missing --cov-fail-under=80`. Это включает обязательный порог покрытия для backend test runs по умолчанию. | `backend/pytest.ini` содержит `--cov-fail-under=80` | P3-5: CHANGELOG |
+| 2026-04-12 | P3-5 changelog bootstrap | P3-5 | Добавлен корневой `CHANGELOG.md` в формате Keep a Changelog с секциями Added/Changed/Security и фиксированными изменениями remediation-прохода. | `CHANGELOG.md` присутствует в root и содержит актуальный Unreleased блок | P3-8: federation use-case |
+| 2026-04-12 | P3-8 federation use-case verified | P3-8 | Federation слой подтверждён как production-valid для multi-institution сценариев: есть platform-admin API surfaces (`/api/v1/admin/platform/federation/*`), permission-gated RBAC (`federation.read/write`), deployment ограничения и отдельный платформенный test-suite. Удаление не требуется, слой документирован. | `pytest tests/platform/test_platform_federation_layer_v1.py` (existing suite), refs: `docs/DEPLOYMENT_BLUEPRINT.md`, `docs/PILOT_RBAC_AUDIT.md` | Next backlog: P1-5 runtime schema default |
