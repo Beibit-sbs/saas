@@ -210,9 +210,57 @@ Full pipeline:
 make pipeline
 ```
 
+Domain layer quality gate (education workflows + tenant safety):
+```bash
+make domain-layer-gate
+```
+
+Data layer safety gate (migrations + tenant context + persistence/workflow integrity):
+```bash
+make data-layer-gate
+```
+
 One-shot full quality/security audit:
 ```bash
 make system-audit
+```
+
+`make system-audit` now also executes domain-layer and data-layer gates and writes a timestamped evidence artifact:
+- `artifacts/audits/system-audit-<UTCSTAMP>.txt`
+
+Pilot to production promotion (safe dry-run by default):
+```bash
+make pilot-to-prod-promote
+```
+
+Real deploy example (required vars):
+```bash
+PROMOTION_DRY_RUN=false \
+PROMOTION_TARGET=user@prod-host \
+PROMOTION_HEALTH_URL=https://prod.example.edu \
+make pilot-to-prod-promote
+```
+
+Real deploy now performs a non-interactive SSH preflight first and aborts immediately if the host is unreachable or key-based access is unavailable.
+
+Optional control:
+- `PROMOTION_REMOTE_SMOKE=false` to skip post-deploy remote smoke check.
+- `PROMOTION_REMOTE_PRUNE=false` to skip old release cleanup.
+- `PROMOTION_KEEP_RELEASES=3` to retain more historical releases.
+
+Atomic remote release layout:
+- deploy writes into `~/releases/<release-id>`
+- current release symlink: `~/current`
+- previous release symlink: `~/previous`
+
+Emergency rollback to previous release:
+```bash
+make rollback-previous TARGET=user@prod-host
+```
+
+Manual old release cleanup:
+```bash
+make prune-remote-releases TARGET=user@prod-host KEEP=2
 ```
 
 Host-native frontend npm scripts are intentionally blocked. Run all validation through Docker Compose.
@@ -289,5 +337,8 @@ make template-validate
 - `docs/configuration-model.md`
 - `docs/module-boundaries.md`
 - `docs/admin-information-architecture.md`
+- `docs/LAYER_AUDIT_REGISTER.md`
+- `docs/DATA_LAYER_AUDIT_REGISTER.md`
+- `docs/domain-layer-max-upgrade-roadmap.md`
 - `docs/templates/platform-maturity-matrix.md`
 - `docs/templates/template-contracts.md`

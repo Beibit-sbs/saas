@@ -1,0 +1,28 @@
+
+=== pilot-to-prod promotion ===
+timestamp_utc=20260408T144031Z
+dry_run=true
+run_gates=true
+run_smoke=true
+run_pilot_safe=true
+
+=== preflight ===
+[run] bash /home/sbs/AI/scripts/preflight_checks.sh
+[guard] WARN: process check skipped by DOCKER_ONLY_GUARD_SKIP_PROCESS_CHECK=1
+[preflight] OK: guard/env/compose checks passed
+
+=== release gate ===
+[run] bash /home/sbs/AI/scripts/release_gate.sh
+[release-gate] running release checks
+[guard] WARN: process check skipped by DOCKER_ONLY_GUARD_SKIP_PROCESS_CHECK=1
+[preflight] OK: guard/env/compose checks passed
+[release-check] architecture governance gate
+.......                                                                  [100%]
+7 passed, 2 warnings in 0.04s
+[release-check] tenant safety gate
+........                                                                 [100%]
+8 passed, 2 warnings in 0.36s
+[release-check] platform regression gate
+........................................................................ [ 16%]
+............ss.s........................................................ [ 32%]
+.....................sssss..................

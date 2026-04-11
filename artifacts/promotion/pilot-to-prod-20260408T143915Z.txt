@@ -1,0 +1,38 @@
+
+=== pilot-to-prod promotion ===
+timestamp_utc=20260408T143915Z
+dry_run=true
+run_gates=false
+run_smoke=true
+run_pilot_safe=true
+
+=== preflight ===
+[run] bash /home/sbs/AI/scripts/preflight_checks.sh
+[guard] OK: docker-only mode confirmed
+[preflight] OK: guard/env/compose checks passed
+
+=== gates ===
+skipped by PROMOTION_RUN_GATES=false
+
+=== artifact fingerprint ===
+[run] git -C /home/sbs/AI rev-parse HEAD
+1593d7039f4b273c5f7fe9972e9ee00a24147060
+[run] git -C /home/sbs/AI status --short
+ M Makefile
+ M README.md
+ M frontend/app/(admin)/console/platform/platform-section-view.tsx
+ M frontend/modules/audit/hooks.ts
+ M frontend/package-lock.json
+ M scripts/release_check.sh
+ M scripts/release_gate.sh
+ M scripts/rollback_check.sh
+ M scripts/scheduling_phase_b_smoke_check.sh
+?? artifacts/
+?? docs/domain-layer-max-upgrade-roadmap.md
+?? scripts/domain_layer_gate.sh
+?? scripts/pilot_to_prod_promotion.sh
+
+=== deploy ===
+DRY RUN: deploy step skipped
+set PROMOTION_DRY_RUN=false and PROMOTION_TARGET=user@server to execute deploy
+promotion_report=/home/sbs/AI/artifacts/promotion/pilot-to-prod-20260408T143915Z.txt

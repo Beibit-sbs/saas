@@ -1,0 +1,249 @@
+=== system audit ===
+timestamp_utc=20260410T041828Z
+[run] bash /home/sbs/AI/scripts/preflight_checks.sh
+[guard] OK: docker-only mode confirmed
+[preflight] OK: guard/env/compose checks passed
+
+=== bootstrap ===
+[run] docker compose --env-file .env up -d db redis backend frontend nginx
+
+=== core layer ===
+[run] docker compose --env-file .env exec -T backend ruff check .
+All checks passed!
+[run] docker compose --env-file .env run --rm --no-deps backend-tests pytest -q --disable-warnings tests/platform/test_platform_architecture_guardrails_v1.py
+.......                                                                  [100%]
+7 passed in 0.06s
+[run] docker compose --env-file .env run --rm --no-deps backend-tests pytest -q --disable-warnings tests/platform/test_platform_tenant_safety_audit_v1.py
+........                                                                 [100%]
+8 passed in 0.33s
+
+=== application layer ===
+[run] docker compose --env-file .env run --rm --no-deps backend-tests pytest -q --disable-warnings
+........................................................................ [  5%]
+........................................................................ [ 10%]
+........................................................................ [ 16%]
+........................................................................ [ 21%]
+........................................................................ [ 27%]
+........................................................................ [ 32%]
+..................................................ss.s.................. [ 38%]
+...........................................................sssss........ [ 43%]
+........................................................................ [ 48%]
+........................................................................ [ 54%]
+........................................................................ [ 59%]
+.......................s................................................ [ 65%]
+........................................................................ [ 70%]
+........................................................................ [ 76%]
+........................................................................ [ 81%]
+........................................................................ [ 86%]
+........................................................................ [ 92%]
+........................................................................ [ 97%]
+.............................                                            [100%]
+1316 passed, 9 skipped in 21.14s
+
+=== security layer ===
+[run] docker compose --env-file .env run --rm --no-deps backend-tests pytest -q --disable-warnings -m security_regression
+..........................................                               [100%]
+42 passed, 1283 deselected in 3.55s
+
+=== access layer ===
+[run] /home/sbs/AI/scripts/check_permission_parity.sh
+Frontend permissions: 49
+Backend guarded permissions: 48
+Backend permission universe: 71
+OK: all frontend permission constants are present in backend permissions.
+
+=== frontend layer ===
+[run] docker compose --env-file .env run --rm -T frontend-tests npm run lint
+
+> ai-engineering-frontend@0.1.0 lint
+> node ./scripts/docker-only-run.mjs lint
+
+✔ No ESLint warnings or errors
+[run] docker compose --env-file .env run --rm -T frontend-tests npm run test:frontend
+
+> ai-engineering-frontend@0.1.0 test:frontend
+> node ./scripts/docker-only-run.mjs test:frontend
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90m/app[39m
+
+ [32m✓[39m __tests__/security/bff-proxy.test.ts [2m ([22m[2m4 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m __tests__/security/middleware.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m __tests__/navigation/navigation-clean.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m __tests__/components/AuthProvider.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[90m 182[2mms[22m[39m
+ [32m✓[39m __tests__/security/auth-routes.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 132[2mms[22m[39m
+ [32m✓[39m __tests__/admin/DeveloperAppsPage.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[90m 202[2mms[22m[39m
+ [32m✓[39m __tests__/components/LanguageProvider.test.tsx [2m ([22m[2m8 tests[22m[2m)[22m[90m 142[2mms[22m[39m
+ [32m✓[39m __tests__/admin/LdapPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 221[2mms[22m[39m
+ [32m✓[39m __tests__/admin/LanguagesPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 300[2mms[22m[39m
+ [32m✓[39m __tests__/admin/BackupsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 446[2mms[22m[39m
+ [32m✓[39m __tests__/admin/IdentityPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 405[2mms[22m[39m
+ [32m✓[39m __tests__/admin/ProfilesPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 417[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AICopilotPage.test.tsx [2m ([22m[2m7 tests[22m[2m)[22m[33m 429[2mms[22m[39m
+ [32m✓[39m __tests__/admin/WorkflowsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 421[2mms[22m[39m
+ [32m✓[39m __tests__/admin/OrgUnitsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 674[2mms[22m[39m
+ [32m✓[39m __tests__/admin/ServiceAccountsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 801[2mms[22m[39m
+ [32m✓[39m __tests__/admin/RecordsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 880[2mms[22m[39m
+ [32m✓[39m __tests__/admin/CoursesPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 870[2mms[22m[39m
+ [32m✓[39m __tests__/admin/LocalUsersPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 742[2mms[22m[39m
+ [32m✓[39m __tests__/admin/RectorDashboardPage.test.tsx [2m ([22m[2m5 tests[22m[2m)[22m[33m 769[2mms[22m[39m
+ [32m✓[39m __tests__/admin/TranscriptPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 800[2mms[22m[39m
+ [32m✓[39m __tests__/admin/FacultyPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 897[2mms[22m[39m
+ [32m✓[39m __tests__/admin/RbacPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 810[2mms[22m[39m
+ [32m✓[39m __tests__/admin/ProgramsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 991[2mms[22m[39m
+ [32m✓[39m __tests__/admin/OpsConsolePage.test.tsx [2m ([22m[2m7 tests[22m[2m)[22m[33m 1541[2mms[22m[39m
+ [32m✓[39m __tests__/components/LoginTenantMode.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[33m 1566[2mms[22m[39m
+ [32m✓[39m __tests__/admin/FederationPage.test.tsx [2m ([22m[2m12 tests[22m[2m)[22m[33m 1500[2mms[22m[39m
+ [32m✓[39m __tests__/components/AppTopbar.test.tsx [2m ([22m[2m5 tests[22m[2m)[22m[33m 1893[2mms[22m[39m
+ [32m✓[39m __tests__/admin/UserConsoleUxStability.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 1931[2mms[22m[39m
+ [32m✓[39m __tests__/components/LanguageSwitcher.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[33m 530[2mms[22m[39m
+ [32m✓[39m __tests__/modules/platform/admissions/api.test.ts [2m ([22m[2m5 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m __tests__/admin/InterventionsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m __tests__/admin/NotificationsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m __tests__/admin/TenantsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 75[2mms[22m[39m
+ [32m✓[39m __tests__/admin/PlatformSectionViewExecutiveMode.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 330[2mms[22m[39m
+ [32m✓[39m __tests__/components/LoginPageRedirect.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[33m 393[2mms[22m[39m
+ [32m✓[39m __tests__/admin/GradesPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m __tests__/admin/JobsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m __tests__/admin/EnrollmentsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AutomationTemplatesPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m __tests__/admin/RequireAdminRole.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[90m 51[2mms[22m[39m
+ [32m✓[39m __tests__/admin/PlatformControlPlanePage.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AdminLayout.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[90m 57[2mms[22m[39m
+ [32m✓[39m __tests__/admin/PlatformSectionRoute.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[90m 80[2mms[22m[39m
+ [32m✓[39m __tests__/admin/StudentsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 122[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AuditPage.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[33m 855[2mms[22m[39m
+ [32m✓[39m __tests__/admin/SchedulingPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 168[2mms[22m[39m
+ [32m✓[39m __tests__/modules/platform/ops/use-ops-health.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 68[2mms[22m[39m
+ [32m✓[39m __tests__/admin/TranscriptsPageList.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 158[2mms[22m[39m
+ [32m✓[39m __tests__/admin/FeatureFlagsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 41[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AutomationNewPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 66[2mms[22m[39m
+ [32m✓[39m __tests__/admin/StudentDetailPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AutomationPages.test.tsx [2m ([22m[2m17 tests[22m[2m)[22m[33m 3377[2mms[22m[39m
+ [32m✓[39m __tests__/admin/HealthPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 135[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AdmissionsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AutomationRuleBuilder.test.tsx [2m ([22m[2m10 tests[22m[2m)[22m[33m 4822[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m56 passed[39m[22m[90m (56)[39m
+[2m      Tests [22m [1m[32m215 passed[39m[22m[90m (215)[39m
+[2m   Start at [22m 04:19:16
+[2m   Duration [22m 7.06s[2m (transform 7.59s, setup 15.15s, collect 31.97s, tests 31.59s, environment 41.80s, prepare 7.10s)[22m
+
+
+=== domain layer ===
+[run] bash /home/sbs/AI/scripts/domain_layer_gate.sh
+[guard] OK: docker-only mode confirmed
+[preflight] OK: guard/env/compose checks passed
+[domain-gate] backend domain services and routers
+........................................................................ [ 24%]
+........................................................................ [ 48%]
+........................................................................ [ 72%]
+........................................................................ [ 96%]
+...........                                                              [100%]
+299 passed in 2.84s
+[domain-gate] domain tenant safety invariants
+.................                                                        [100%]
+17 passed in 0.34s
+[domain-gate] frontend domain workflows
+
+> ai-engineering-frontend@0.1.0 test:frontend
+> node ./scripts/docker-only-run.mjs test:frontend __tests__/admin/AdmissionsPage.test.tsx __tests__/admin/CoursesPage.test.tsx __tests__/admin/EnrollmentsPage.test.tsx __tests__/admin/FacultyPage.test.tsx __tests__/admin/GradesPage.test.tsx __tests__/admin/ProgramsPage.test.tsx __tests__/admin/SchedulingPage.test.tsx __tests__/admin/StudentDetailPage.test.tsx __tests__/admin/StudentsPage.test.tsx __tests__/admin/TranscriptsPageList.test.tsx
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90m/app[39m
+
+ [32m✓[39m __tests__/admin/StudentDetailPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m __tests__/admin/StudentsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m __tests__/admin/SchedulingPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m __tests__/admin/TranscriptsPageList.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m __tests__/admin/EnrollmentsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 67[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AdmissionsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 33[2mms[22m[39m
+ [32m✓[39m __tests__/admin/GradesPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m __tests__/admin/CoursesPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 199[2mms[22m[39m
+ [32m✓[39m __tests__/admin/FacultyPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 391[2mms[22m[39m
+ [32m✓[39m __tests__/admin/ProgramsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 392[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m10 passed[39m[22m[90m (10)[39m
+[2m      Tests [22m [1m[32m19 passed[39m[22m[90m (19)[39m
+[2m   Start at [22m 04:19:37
+[2m   Duration [22m 1.63s[2m (transform 563ms, setup 1.29s, collect 2.39s, tests 1.18s, environment 2.93s, prepare 619ms)[22m
+
+[domain-gate] PASS: educational domain checks are green
+
+=== data layer ===
+[run] bash /home/sbs/AI/scripts/data_layer_gate.sh
+[guard] OK: docker-only mode confirmed
+[preflight] OK: guard/env/compose checks passed
+[data-layer-gate] migration graph safety
+d4c5e6f7a8b9 (head)
+[data-layer-gate] tenant fail-closed and context integrity
+........................                                                 [100%]
+24 passed in 0.64s
+[data-layer-gate] domain binding consistency integrity
+..........................                                               [100%]
+26 passed in 0.22s
+[data-layer-gate] transcript enrollment reconciliation integrity
+.............                                                            [100%]
+13 passed in 0.16s
+[data-layer-gate] grades enrollment reconciliation integrity
+............                                                             [100%]
+12 passed in 0.16s
+[data-layer-gate] scheduling section and attendance consistency integrity
+....................................                                     [100%]
+36 passed in 0.36s
+[data-layer-gate] interventions case and action consistency integrity
+.....                                                                    [100%]
+5 passed in 0.10s
+[data-layer-gate] degree progress binding and requirement consistency integrity
+.........                                                                [100%]
+9 passed in 0.13s
+[data-layer-gate] enrollment reference consistency integrity
+...............                                                          [100%]
+15 passed in 0.16s
+[data-layer-gate] courses program reference consistency integrity
+...                                                                      [100%]
+3 passed in 0.04s
+[data-layer-gate] programs code consistency integrity
+...                                                                      [100%]
+3 passed in 0.04s
+[data-layer-gate] profiles people consistency integrity
+..                                                                       [100%]
+2 passed in 0.07s
+[data-layer-gate] org structure hierarchy consistency integrity
+............                                                             [100%]
+12 passed in 0.14s
+[data-layer-gate] faculty data quality consistency integrity
+...                                                                      [100%]
+3 passed in 0.04s
+[data-layer-gate] academic records reference consistency integrity
+....                                                                     [100%]
+4 passed in 0.04s
+[data-layer-gate] admissions applicant and application consistency integrity
+...............                                                          [100%]
+15 passed in 0.17s
+[data-layer-gate] platform plan and quota consistency integrity
+..                                                                       [100%]
+2 passed in 0.02s
+[data-layer-gate] workflows runtime consistency integrity
+..                                                                       [100%]
+2 passed in 0.05s
+[data-layer-gate] university core graph consistency integrity
+.                                                                        [100%]
+1 passed in 0.03s
+[data-layer-gate] platform persistence and workflow data guarantees
+sss.....................s............................................... [ 72%]
+............................                                             [100%]
+96 passed, 4 skipped in 1.49s
+[data-layer-gate] PASS: data layer safety and consistency checks are green
+
+=== ops layer ===
+[run] bash /home/sbs/AI/scripts/rollback_check.sh
+[guard] OK: docker-only mode confirmed
+[preflight] OK: guard/env/compose checks passed
+[rollback-check] latest backup: /home/sbs/AI/backups/dr_rehearsal_platform_source_20260325_020351.dump
+[rollback-check] backup artifact is readable
+[rollback-check] safe mode: restore drill execution skipped
+[rollback-check] set ROLLBACK_ENABLE_RESTORE_DRILL=true after provisioning isolated target DB
+[rollback-check] PASS: rollback readiness checks completed
+[system-audit] OK: core/application/security/access/frontend/domain/data/ops layers are green.
+audit_report=/home/sbs/AI/artifacts/audits/system-audit-20260410T041828Z.txt

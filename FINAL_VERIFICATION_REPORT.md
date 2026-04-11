@@ -24,6 +24,38 @@ Current canonical operational status is tracked in:
 - [docs/PILOT_DEPLOYMENT_CHECKLIST.md](docs/PILOT_DEPLOYMENT_CHECKLIST.md)
 - [docs/UNIVERSITY_OPERATIONAL_MODEL.md](docs/UNIVERSITY_OPERATIONAL_MODEL.md)
 
+## 2026-04-10 ADDENDUM
+
+Additional runtime validation was completed and recorded with full evidence artifacts.
+
+Validated on 2026-04-10:
+
+- `make data-layer-gate` — PASS
+- `make release-check` — PASS
+- `make system-audit` — PASS
+
+Canonical evidence artifact:
+
+- `artifacts/audits/system-audit-20260410T041828Z.txt`
+
+Current operational status remains green across core/application/security/access/frontend/domain/data/ops layers.
+
+---
+
+## 2026-04-11 ADDENDUM
+
+Final verification after closure of audit tracker blocks 3–8 was completed with docker-only evidence.
+
+Validated on 2026-04-11:
+
+- `RELEASE_ENABLE_DOMAIN_GATE=false RELEASE_ENABLE_DATA_LAYER_GATE=false RELEASE_ENABLE_SMOKE_GATE=false RELEASE_ENABLE_MIGRATION_ROLLBACK_TEST=false bash scripts/release_check.sh` — PASS
+- `docker compose -f infra/docker-compose.yml --env-file infra/.env exec -T backend pytest -q tests/platform/test_platform_semantic_layer_v1.py -rA` — PASS (8 passed)
+- `docker compose -f infra/docker-compose.yml --env-file infra/.env exec -T backend pytest -q tests/test_enterprise_identity.py -k "oidc or saml"` — PASS (3 passed, 7 deselected)
+- `docker compose --env-file .env exec -T backend pytest -q tests/platform/test_platform_kpi_metrics_v1.py -k "event_bridge or event-derived or source_breakdown"` — PASS (7 passed)
+- `docker compose --env-file .env exec -T backend pytest -q --maxfail=1 -rA` — PASS (1306 passed, 12 skipped)
+
+Conclusion: runtime gates and targeted regressions for security/semantic/identity/AI-KPI bridge remain green after remediation sequence; historical pre-existing backend failure blocker no longer reproduces.
+
 ---
 
 ## EXECUTIVE SUMMARY

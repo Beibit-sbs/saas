@@ -19,6 +19,7 @@ All required merge gates must be green in CI:
 - `tenant-safety-gate`
 - `platform-regression-gate`
 - `security-regression-gate`
+- `data-layer-gate`
 - `frontend-safety-gate`
 - `migration-safety-gate`
 - `template-validation`
@@ -41,6 +42,16 @@ Before deploy, run:
 ```bash
 bash scripts/release_gate.sh
 ```
+
+For full multi-layer evidence bundle, additionally run:
+
+```bash
+make system-audit
+```
+
+Expected artifact:
+
+- `artifacts/audits/system-audit-<UTCSTAMP>.txt`
 
 Expected outcome:
 

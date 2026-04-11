@@ -1,0 +1,21 @@
+=== system audit ===
+timestamp_utc=20260410T041804Z
+[run] bash /home/sbs/AI/scripts/preflight_checks.sh
+[guard] OK: docker-only mode confirmed
+[preflight] OK: guard/env/compose checks passed
+
+=== bootstrap ===
+[run] docker compose --env-file .env up -d db redis backend frontend nginx
+
+=== core layer ===
+[run] docker compose --env-file .env exec -T backend ruff check .
+All checks passed!
+[run] docker compose --env-file .env run --rm --no-deps backend-tests pytest -q --disable-warnings tests/platform/test_platform_architecture_guardrails_v1.py
+.......                                                                  [100%]
+7 passed in 0.04s
+[run] docker compose --env-file .env run --rm --no-deps backend-tests pytest -q --disable-warnings tests/platform/test_platform_tenant_safety_audit_v1.py
+........                                                                 [100%]
+8 passed in 0.33s
+
+=== application layer ===
+[run] docker compose --env-file .env run --rm --no-deps backend-tests pytest -q --disable-warnings

@@ -6,6 +6,17 @@ This checklist is the final go-live gate for the university pilot.
 
 For canonical release discipline and evidence fields, use `docs/RELEASE_CHECKLIST.md` together with this pilot-specific checklist.
 
+## 2026-04-10 Runtime Validation Addendum
+
+Latest verified runtime snapshot for pilot readiness evidence:
+
+1. `make data-layer-gate` — PASS
+2. `make release-check` — PASS
+3. `make system-audit` — PASS
+4. Canonical artifact: `artifacts/audits/system-audit-20260410T041828Z.txt`
+
+This addendum is the current runtime source of truth for go/no-go evidence when older Sign-Off rows represent historical snapshots.
+
 ## Pre-Deployment
 
 1. Release artifact built and versioned.

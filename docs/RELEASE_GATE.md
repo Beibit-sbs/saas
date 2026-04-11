@@ -4,18 +4,26 @@
 
 Release Gate v1 blocks unsafe merges and deploys by enforcing deterministic checks for tenant isolation, platform regressions, frontend regressions, and migration safety.
 
-Current validated baseline snapshot (2026-04-07):
+Current validated baseline snapshot (2026-04-10):
 - Architecture governance gate: 7 passed
 - Tenant safety gate: 8 passed
 - Platform regression gate: 439 passed, 9 skipped
 - Security regression gate: 42 passed
+- Application layer regression sweep: 1316 passed, 9 skipped
+- Data layer gate: migration graph safety + tenant/context + persistence/workflow checks green
 - Template validation gate: 5 passed
-- Frontend safety gate: type-check ✅, 123 tests passed (legacy admin ui removed)
+- Frontend safety gate: type-check ✅, 215 tests passed
+- Domain layer gate: backend domain suite 299 passed; tenant invariants 17 passed; frontend domain workflows 19 passed
 - Migration safety gate: head `d4c5e6f7a8b9`
+
+Latest full audit evidence artifact:
+- `artifacts/audits/system-audit-20260410T041828Z.txt`
 
 Canonical release checklist:
 
 - `docs/RELEASE_CHECKLIST.md`
+- `docs/LAYER_AUDIT_REGISTER.md`
+- `docs/DATA_LAYER_AUDIT_REGISTER.md`
 
 ## Mandatory CI Jobs
 
@@ -25,6 +33,7 @@ The CI workflow defines separate required gates:
 - `tenant-safety-gate`
 - `platform-regression-gate`
 - `security-regression-gate`
+- `data-layer-gate`
 - `frontend-safety-gate`
 - `migration-safety-gate`
 - `template-validation`
@@ -40,10 +49,12 @@ A change is merge-ready only if all required jobs pass.
 3. Platform regression gate passes:
    - `pytest -q tests/platform/`
    - `pytest -q -m security_regression`
-4. Frontend safety gate passes:
+4. Data layer gate passes:
+   - `bash scripts/data_layer_gate.sh`
+5. Frontend safety gate passes:
    - `npm run type-check`
    - `npm run test:frontend`
-5. Template validation passes:
+6. Template validation passes:
    - `pytest -q tests/test_template_validation.py`
 
 ## Required Checks Before Deploy
@@ -54,12 +65,22 @@ Run unified Docker pre-release command:
 bash scripts/release_gate.sh
 ```
 
+For full audit evidence bundle (including domain/data layer evidence artifact):
+
+```bash
+make system-audit
+```
+
+Expected artifact:
+- `artifacts/audits/system-audit-<UTCSTAMP>.txt`
+
 This command enforces:
 
 - backend tenant safety gate
 - backend architecture governance gate
 - backend platform regression gate
 - critical security regression tests
+- data layer safety and consistency checks
 - template validation
 - migration safety (`alembic heads`, `alembic upgrade head`)
 - frontend type-check and tests
@@ -104,6 +125,7 @@ Release is blocked when any of these occur:
 - architecture governance guardrails fail
 - platform regression suite fails
 - security regression marker suite fails
+- data layer safety gate fails
 - TypeScript type-check fails
 - frontend tests fail
 - migration smoke fails

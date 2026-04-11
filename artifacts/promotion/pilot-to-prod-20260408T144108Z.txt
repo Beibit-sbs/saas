@@ -1,0 +1,694 @@
+
+=== pilot-to-prod promotion ===
+timestamp_utc=20260408T144108Z
+dry_run=true
+run_gates=true
+run_smoke=true
+run_pilot_safe=true
+
+=== preflight ===
+[run] bash /home/sbs/AI/scripts/preflight_checks.sh
+[guard] WARN: process check skipped by DOCKER_ONLY_GUARD_SKIP_PROCESS_CHECK=1
+[preflight] OK: guard/env/compose checks passed
+
+=== release gate ===
+[run] bash /home/sbs/AI/scripts/release_gate.sh
+[release-gate] running release checks
+[guard] WARN: process check skipped by DOCKER_ONLY_GUARD_SKIP_PROCESS_CHECK=1
+[preflight] OK: guard/env/compose checks passed
+[release-check] architecture governance gate
+.......                                                                  [100%]
+7 passed, 2 warnings in 0.03s
+[release-check] tenant safety gate
+........                                                                 [100%]
+8 passed, 2 warnings in 0.37s
+[release-check] platform regression gate
+........................................................................ [ 16%]
+............ss.s........................................................ [ 32%]
+.....................sssss.............................................. [ 48%]
+........................................................................ [ 64%]
+........................................................................ [ 80%]
+.........................................................s.............. [ 96%]
+................                                                         [100%]
+439 passed, 9 skipped, 2 warnings in 7.17s
+[release-check] domain layer gate
+[guard] WARN: process check skipped by DOCKER_ONLY_GUARD_SKIP_PROCESS_CHECK=1
+[preflight] OK: guard/env/compose checks passed
+[domain-gate] backend domain services and routers
+........................................................................ [ 27%]
+........................................................................ [ 54%]
+........................................................................ [ 81%]
+..................................................                       [100%]
+266 passed, 2 warnings in 2.04s
+[domain-gate] domain tenant safety invariants
+.................                                                        [100%]
+17 passed, 2 warnings in 0.28s
+[domain-gate] frontend domain workflows
+
+> ai-engineering-frontend@0.1.0 test:frontend
+> node ./scripts/docker-only-run.mjs test:frontend __tests__/admin/AdmissionsPage.test.tsx __tests__/admin/CoursesPage.test.tsx __tests__/admin/EnrollmentsPage.test.tsx __tests__/admin/FacultyPage.test.tsx __tests__/admin/GradesPage.test.tsx __tests__/admin/ProgramsPage.test.tsx __tests__/admin/SchedulingPage.test.tsx __tests__/admin/StudentDetailPage.test.tsx __tests__/admin/StudentsPage.test.tsx __tests__/admin/TranscriptsPageList.test.tsx
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90m/app[39m
+
+ [32m✓[39m __tests__/admin/TranscriptsPageList.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m __tests__/admin/StudentsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m __tests__/admin/EnrollmentsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m __tests__/admin/SchedulingPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m __tests__/admin/GradesPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AdmissionsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m __tests__/admin/ProgramsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 171[2mms[22m[39m
+ [32m✓[39m __tests__/admin/CoursesPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 174[2mms[22m[39m
+ [32m✓[39m __tests__/admin/FacultyPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 178[2mms[22m[39m
+ [32m✓[39m __tests__/admin/StudentDetailPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 49[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m10 passed[39m[22m[90m (10)[39m
+[2m      Tests [22m [1m[32m19 passed[39m[22m[90m (19)[39m
+[2m   Start at [22m 14:41:37
+[2m   Duration [22m 1.28s[2m (transform 539ms, setup 1.08s, collect 2.30s, tests 715ms, environment 2.62s, prepare 535ms)[22m
+
+[domain-gate] PASS: educational domain checks are green
+[release-check] security regression gate
+..........................................                               [100%]
+42 passed, 1230 deselected, 2 warnings in 3.24s
+[release-check] template validation gate
+.....                                                                    [100%]
+5 passed, 2 warnings in 0.04s
+[release-check] migration safety gate
+d4c5e6f7a8b9 (head)
+[release-check] safe mode: rollback migration test skipped
+[release-check] set RELEASE_ENABLE_MIGRATION_ROLLBACK_TEST=true to enable downgrade/upgrade check
+[release-check] frontend safety gate
+Frontend permissions: 49
+Backend guarded permissions: 48
+Backend permission universe: 71
+OK: all frontend permission constants are present in backend permissions.
+
+> ai-engineering-frontend@0.1.0 type-check
+> node ./scripts/docker-only-run.mjs type-check
+
+
+> ai-engineering-frontend@0.1.0 lint
+> node ./scripts/docker-only-run.mjs lint
+
+✔ No ESLint warnings or errors
+
+> ai-engineering-frontend@0.1.0 test:frontend
+> node ./scripts/docker-only-run.mjs test:frontend
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90m/app[39m
+
+ [32m✓[39m __tests__/security/middleware.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m __tests__/security/bff-proxy.test.ts [2m ([22m[2m4 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m __tests__/navigation/navigation-clean.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m __tests__/components/AuthProvider.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[90m 122[2mms[22m[39m
+ [32m✓[39m __tests__/security/auth-routes.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m __tests__/admin/DeveloperAppsPage.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[90m 210[2mms[22m[39m
+ [32m✓[39m __tests__/admin/LdapPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 196[2mms[22m[39m
+ [32m✓[39m __tests__/components/LanguageProvider.test.tsx [2m ([22m[2m8 tests[22m[2m)[22m[90m 123[2mms[22m[39m
+ [32m✓[39m __tests__/admin/WorkflowsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 272[2mms[22m[39m
+ [32m✓[39m __tests__/admin/LanguagesPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 257[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AICopilotPage.test.tsx [2m ([22m[2m7 tests[22m[2m)[22m[90m 280[2mms[22m[39m
+ [32m✓[39m __tests__/admin/BackupsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 339[2mms[22m[39m
+ [32m✓[39m __tests__/admin/IdentityPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 432[2mms[22m[39m
+ [32m✓[39m __tests__/admin/OrgUnitsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 454[2mms[22m[39m
+ [32m✓[39m __tests__/admin/ProfilesPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 462[2mms[22m[39m
+ [32m✓[39m __tests__/admin/TranscriptPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 556[2mms[22m[39m
+ [32m✓[39m __tests__/admin/FacultyPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 593[2mms[22m[39m
+ [32m✓[39m __tests__/admin/LocalUsersPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 550[2mms[22m[39m
+ [32m✓[39m __tests__/admin/RectorDashboardPage.test.tsx [2m ([22m[2m5 tests[22m[2m)[22m[33m 575[2mms[22m[39m
+ [32m✓[39m __tests__/admin/RecordsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 622[2mms[22m[39m
+ [32m✓[39m __tests__/admin/CoursesPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 738[2mms[22m[39m
+ [32m✓[39m __tests__/admin/ServiceAccountsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 797[2mms[22m[39m
+ [32m✓[39m __tests__/components/AppTopbar.test.tsx [2m ([22m[2m5 tests[22m[2m)[22m[33m 1106[2mms[22m[39m
+ [32m✓[39m __tests__/admin/ProgramsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 819[2mms[22m[39m
+ [32m✓[39m __tests__/admin/OpsConsolePage.test.tsx [2m ([22m[2m7 tests[22m[2m)[22m[33m 1043[2mms[22m[39m
+ [32m✓[39m __tests__/components/LoginTenantMode.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[33m 1059[2mms[22m[39m
+ [32m✓[39m __tests__/admin/RbacPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 1147[2mms[22m[39m
+ [32m✓[39m __tests__/admin/FederationPage.test.tsx [2m ([22m[2m12 tests[22m[2m)[22m[33m 1349[2mms[22m[39m
+ [32m✓[39m __tests__/modules/platform/admissions/api.test.ts [2m ([22m[2m5 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m __tests__/admin/UserConsoleUxStability.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 1839[2mms[22m[39m
+ [32m✓[39m __tests__/admin/InterventionsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m __tests__/components/LanguageSwitcher.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[33m 457[2mms[22m[39m
+ [32m✓[39m __tests__/admin/TenantsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m __tests__/admin/PlatformControlPlanePage.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32m✓[39m __tests__/admin/EnrollmentsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 38[2mms[22m[39m
+ [32m✓[39m __tests__/admin/JobsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32m✓[39m __tests__/admin/PlatformSectionViewExecutiveMode.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 345[2mms[22m[39m
+ [32m✓[39m __tests__/components/LoginPageRedirect.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[33m 395[2mms[22m[39m
+ [32m✓[39m __tests__/admin/GradesPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m __tests__/admin/RequireAdminRole.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m __tests__/modules/platform/ops/use-ops-health.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AdminLayout.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[90m 142[2mms[22m[39m
+ [32m✓[39m __tests__/admin/PlatformSectionRoute.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[90m 112[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AutomationPages.test.tsx [2m ([22m[2m17 tests[22m[2m)[22m[33m 2443[2mms[22m[39m
+ [32m✓[39m __tests__/admin/FeatureFlagsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 59[2mms[22m[39m
+ [32m✓[39m __tests__/admin/NotificationsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m __tests__/admin/StudentsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 132[2mms[22m[39m
+ [32m✓[39m __tests__/admin/TranscriptsPageList.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 121[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AutomationTemplatesPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 176[2mms[22m[39m
+ [32m✓[39m __tests__/admin/SchedulingPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 120[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AuditPage.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[33m 1113[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AutomationNewPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 177[2mms[22m[39m
+ [32m✓[39m __tests__/admin/StudentDetailPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 54[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AdmissionsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 54[2mms[22m[39m
+ [32m✓[39m __tests__/admin/HealthPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 38[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AutomationRuleBuilder.test.tsx [2m ([22m[2m10 tests[22m[2m)[22m[33m 4426[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m56 passed[39m[22m[90m (56)[39m
+[2m      Tests [22m [1m[32m215 passed[39m[22m[90m (215)[39m
+[2m   Start at [22m 14:42:02
+[2m   Duration [22m 6.55s[2m (transform 7.02s, setup 13.27s, collect 28.72s, tests 26.64s, environment 38.96s, prepare 9.51s)[22m
+
+[release-check] docker-only safety gates passed
+[release-gate] running phase-b scheduling smoke checks
+[guard] WARN: process check skipped by DOCKER_ONLY_GUARD_SKIP_PROCESS_CHECK=1
+[PASS] Phase B Lesson Create: lesson_id=11
+[PASS] Phase B Lesson List: total=1
+[PASS] Phase B Attendance Upsert: attendance_id=11
+[PASS] Phase B Attendance List: total=1
+[SUMMARY] passed=4 failed=0
+[release-gate] stopping compose services before rollback readiness checks
+[release-gate] running rollback readiness checks
+[guard] WARN: process check skipped by DOCKER_ONLY_GUARD_SKIP_PROCESS_CHECK=1
+[preflight] OK: guard/env/compose checks passed
+[rollback-check] latest backup: /home/sbs/AI/backups/dr_rehearsal_platform_source_20260325_020351.dump
+[rollback-check] backup artifact is readable
+[rollback-check] safe mode: restore drill execution skipped
+[rollback-check] set ROLLBACK_ENABLE_RESTORE_DRILL=true after provisioning isolated target DB
+[rollback-check] PASS: rollback readiness checks completed
+[release-gate] PASS: release gate and rollback readiness are green
+
+=== domain layer gate ===
+[run] bash /home/sbs/AI/scripts/domain_layer_gate.sh
+[guard] WARN: process check skipped by DOCKER_ONLY_GUARD_SKIP_PROCESS_CHECK=1
+[preflight] OK: guard/env/compose checks passed
+[domain-gate] backend domain services and routers
+........................................................................ [ 27%]
+........................................................................ [ 54%]
+........................................................................ [ 81%]
+..................................................                       [100%]
+266 passed, 2 warnings in 2.31s
+[domain-gate] domain tenant safety invariants
+.................                                                        [100%]
+17 passed, 2 warnings in 0.36s
+[domain-gate] frontend domain workflows
+
+> ai-engineering-frontend@0.1.0 test:frontend
+> node ./scripts/docker-only-run.mjs test:frontend __tests__/admin/AdmissionsPage.test.tsx __tests__/admin/CoursesPage.test.tsx __tests__/admin/EnrollmentsPage.test.tsx __tests__/admin/FacultyPage.test.tsx __tests__/admin/GradesPage.test.tsx __tests__/admin/ProgramsPage.test.tsx __tests__/admin/SchedulingPage.test.tsx __tests__/admin/StudentDetailPage.test.tsx __tests__/admin/StudentsPage.test.tsx __tests__/admin/TranscriptsPageList.test.tsx
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90m/app[39m
+
+ [32m✓[39m __tests__/admin/TranscriptsPageList.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m __tests__/admin/StudentsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m __tests__/admin/EnrollmentsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m __tests__/admin/SchedulingPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m __tests__/admin/StudentDetailPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 39[2mms[22m[39m
+ [32m✓[39m __tests__/admin/GradesPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m __tests__/admin/AdmissionsPage.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 33[2mms[22m[39m
+ [32m✓[39m __tests__/admin/FacultyPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 254[2mms[22m[39m
+ [32m✓[39m __tests__/admin/CoursesPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 303[2mms[22m[39m
+ [32m✓[39m __tests__/admin/ProgramsPage.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 304[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m10 passed[39m[22m[90m (10)[39m
+[2m      Tests [22m [1m[32m19 passed[39m[22m[90m (19)[39m
+[2m   Start at [22m 14:42:55
+[2m   Duration [22m 1.34s[2m (transform 484ms, setup 990ms, collect 2.46s, tests 1.03s, environment 2.59s, prepare 567ms)[22m
+
+[domain-gate] PASS: educational domain checks are green
+
+=== pilot safe gate ===
+[run] bash /home/sbs/AI/scripts/university_pilot_safe_gate.sh
+[pilot-safe-gate] starting non-destructive university pilot gate
+[guard] WARN: process check skipped by DOCKER_ONLY_GUARD_SKIP_PROCESS_CHECK=1
+[preflight] OK: guard/env/compose checks passed
+[pilot-safe-gate] LDAP mapping source: LDAP_GROUP_ROLE_MAP_FILE (/home/sbs/AI/infra/./ldap_group_role_map.json)
+[pilot-safe-gate] ensuring core dependencies are available
+[pilot-safe-gate] tenant isolation and architecture guardrails
+........                                                                 [100%]
+=============================== warnings summary ===============================
+../usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50
+  /usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50: DeprecationWarning: tagMap is deprecated. Please use TAG_MAP instead.
+    from pyasn1.codec.ber.encoder import tagMap, typeMap, AbstractItemEncoder
+
+../usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50
+  /usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50: DeprecationWarning: typeMap is deprecated. Please use TYPE_MAP instead.
+    from pyasn1.codec.ber.encoder import tagMap, typeMap, AbstractItemEncoder
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+8 passed, 2 warnings in 0.34s
+.......                                                                  [100%]
+=============================== warnings summary ===============================
+../usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50
+  /usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50: DeprecationWarning: tagMap is deprecated. Please use TAG_MAP instead.
+    from pyasn1.codec.ber.encoder import tagMap, typeMap, AbstractItemEncoder
+
+../usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50
+  /usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50: DeprecationWarning: typeMap is deprecated. Please use TYPE_MAP instead.
+    from pyasn1.codec.ber.encoder import tagMap, typeMap, AbstractItemEncoder
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+7 passed, 2 warnings in 0.04s
+[pilot-safe-gate] readiness and auth regression checks
+.......................................                                  [100%]
+=============================== warnings summary ===============================
+../usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50
+  /usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50: DeprecationWarning: tagMap is deprecated. Please use TAG_MAP instead.
+    from pyasn1.codec.ber.encoder import tagMap, typeMap, AbstractItemEncoder
+
+../usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50
+  /usr/local/lib/python3.12/site-packages/ldap3/utils/asn1.py:50: DeprecationWarning: typeMap is deprecated. Please use TYPE_MAP instead.
+    from pyasn1.codec.ber.encoder import tagMap, typeMap, AbstractItemEncoder
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+39 passed, 2 warnings in 1.21s
+[pilot-safe-gate] frontend security/middleware gate
+
+> ai-engineering-frontend@0.1.0 lint
+> node ./scripts/docker-only-run.mjs lint
+
+✔ No ESLint warnings or errors
+
+> ai-engineering-frontend@0.1.0 test:frontend
+> node ./scripts/docker-only-run.mjs test:frontend __tests__/security/middleware.test.ts
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90m/app[39m
+
+ [32m✓[39m __tests__/security/middleware.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 14:43:14
+[2m   Duration [22m 781ms[2m (transform 42ms, setup 85ms, collect 28ms, tests 10ms, environment 188ms, prepare 35ms)[22m
+
+[pilot-safe-gate] PASS: non-destructive pilot gate is green
+[pilot-safe-gate] next recommended step: bash scripts/release_gate.sh
+
+=== platform smoke gate ===
+[run] bash /home/sbs/AI/scripts/platform_smoke_check.sh
+[guard] WARN: process check skipped by DOCKER_ONLY_GUARD_SKIP_PROCESS_CHECK=1
+#1 [internal] load local bake definitions
+#1 reading from stdin 2.67kB done
+#1 DONE 0.0s
+
+#2 [scheduler internal] load build definition from Dockerfile
+#2 transferring dockerfile: 773B done
+#2 DONE 0.0s
+
+#3 [backend internal] load metadata for docker.io/library/python:3.12-slim
+#3 ...
+
+#4 [backend-tests internal] load build definition from Dockerfile.tests
+#4 transferring dockerfile: 499B done
+#4 DONE 0.0s
+
+#5 [frontend internal] load build definition from Dockerfile
+#5 transferring dockerfile: 997B done
+#5 DONE 0.0s
+
+#6 [frontend-tests internal] load build definition from Dockerfile.test
+#6 transferring dockerfile: 303B done
+#6 DONE 0.1s
+
+#7 [frontend internal] load metadata for docker.io/library/node:20-alpine
+#7 DONE 0.0s
+
+#8 [frontend internal] load .dockerignore
+#8 transferring context: 2B done
+#8 DONE 0.0s
+
+#9 [frontend deps 1/4] FROM docker.io/library/node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c
+#9 resolve docker.io/library/node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c 0.0s done
+#9 DONE 0.0s
+
+#3 [backend-tests internal] load metadata for docker.io/library/python:3.12-slim
+#3 DONE 0.6s
+
+#10 [frontend internal] load build context
+#10 ...
+
+#11 [backend-tests internal] load .dockerignore
+#11 transferring context: 2B done
+#11 DONE 0.0s
+
+#12 [worker  1/10] FROM docker.io/library/python:3.12-slim@sha256:5072b08ad74609c5329ab4085a96dfa873de565fb4751a4cfcd7dcc427661df0
+#12 resolve docker.io/library/python:3.12-slim@sha256:5072b08ad74609c5329ab4085a96dfa873de565fb4751a4cfcd7dcc427661df0 0.0s done
+#12 DONE 0.0s
+
+#13 [worker internal] load build context
+#13 transferring context: 202.21kB 0.0s done
+#13 DONE 0.1s
+
+#14 [backend  6/10] COPY app ./app
+#14 CACHED
+
+#15 [backend  3/10] RUN apt-get update 	&& apt-get install -y --no-install-recommends postgresql-client 	&& rm -rf /var/lib/apt/lists/*
+#15 CACHED
+
+#16 [backend  4/10] COPY requirements.txt ./
+#16 CACHED
+
+#17 [backend  7/10] COPY tests ./tests
+#17 CACHED
+
+#18 [backend  8/10] COPY alembic ./alembic
+#18 CACHED
+
+#19 [backend  5/10] RUN pip install --no-cache-dir -r requirements.txt
+#19 CACHED
+
+#20 [backend  2/10] WORKDIR /app
+#20 CACHED
+
+#21 [backend  9/10] COPY alembic.ini ./alembic.ini
+#21 CACHED
+
+#10 [frontend internal] load build context
+#10 ...
+
+#8 [frontend-tests internal] load .dockerignore
+#8 transferring context: 2B done
+#8 DONE 0.0s
+
+#22 [backend-tests  7/10] COPY alembic ./alembic
+#22 CACHED
+
+#23 [backend-tests  8/10] COPY alembic.ini ./alembic.ini
+#23 CACHED
+
+#15 [backend-tests  3/10] RUN apt-get update 	&& apt-get install -y --no-install-recommends postgresql-client 	&& rm -rf /var/lib/apt/lists/*
+#15 CACHED
+
+#19 [backend-tests  5/10] RUN pip install --no-cache-dir -r requirements.txt
+#19 CACHED
+
+#21 [scheduler  9/10] COPY alembic.ini ./alembic.ini
+#21 CACHED
+
+#20 [backend-tests  2/10] WORKDIR /app
+#20 CACHED
+
+#16 [backend-tests  4/10] COPY requirements.txt ./
+#16 CACHED
+
+#17 [scheduler  7/10] COPY tests ./tests
+#17 CACHED
+
+#18 [scheduler  8/10] COPY alembic ./alembic
+#18 CACHED
+
+#14 [backend-tests  6/10] COPY app ./app
+#14 CACHED
+
+#24 [scheduler 10/10] COPY pytest.ini ./pytest.ini
+#24 CACHED
+
+#25 [frontend-tests internal] load metadata for mcr.microsoft.com/playwright:v1.58.2-jammy
+#25 DONE 0.7s
+
+#26 [frontend-tests 1/5] FROM mcr.microsoft.com/playwright:v1.58.2-jammy@sha256:4698a73749c5848d3f5fcd42a2174d172fcad2b2283e087843b115424303a565
+#26 resolve mcr.microsoft.com/playwright:v1.58.2-jammy@sha256:4698a73749c5848d3f5fcd42a2174d172fcad2b2283e087843b115424303a565 0.0s done
+#26 DONE 0.1s
+
+#27 [backend-tests  9/10] COPY pytest.ini ./pytest.ini
+#27 DONE 0.1s
+
+#10 [frontend-tests internal] load build context
+#10 ...
+
+#28 [backend] exporting to image
+#28 exporting layers done
+#28 exporting manifest sha256:7364d216ef0f4d1d8c48822af82b05b32423047edf7e8af171f2202bb7b18f0d done
+#28 exporting config sha256:9f4ca7902e918f82da6ed3f5e6088f2a2794054d1a917d8d18dc56e6dc98ba8f done
+#28 exporting attestation manifest sha256:d678a2f8248974dfa017a69b03839229b16e09c43962325e9cfd7e6dda415300 0.0s done
+#28 exporting manifest list sha256:e6cf3f9874ef721529bd37128391182fde76e8a3a3b83999efd5d6f3658468f6 0.0s done
+#28 naming to docker.io/library/ai-backend:latest done
+#28 unpacking to docker.io/library/ai-backend:latest 0.0s done
+#28 DONE 0.1s
+
+#29 [worker] exporting to image
+#29 exporting layers done
+#29 exporting manifest sha256:9f9c923a04f6517339d8ae6773e5675e2c18324089d4ac4ac91fb7f17fabeda2 0.0s done
+#29 exporting config sha256:84d3ccf39bbe3ce6d7375927c132e453e4415aab14712400216863bcebd75ac3 0.0s done
+#29 exporting attestation manifest sha256:47bd35985cce6f6a8c3a7ca5f56829032e76ca5bf9708846d60b2609135f95d6 0.0s done
+#29 exporting manifest list sha256:4f09154d1fd9b6e775c4adffec919b04427a2f6ab961970f383e461954a597ff 0.0s done
+#29 naming to docker.io/library/ai-worker:latest done
+#29 unpacking to docker.io/library/ai-worker:latest 0.0s done
+#29 DONE 0.1s
+
+#30 [scheduler] exporting to image
+#30 exporting layers done
+#30 exporting manifest sha256:82c319490b442f5e022bf2123e4aa45e41a0e890d94d038d3aabcc1eaea6b92e 0.0s done
+#30 exporting config sha256:2289d8b4c77e9ebd3d534189b3d3a8eb97692d8393055baacb8010f60a5bee11 0.0s done
+#30 exporting attestation manifest sha256:b86c11bde4008b63f5bfaa98370200d635ddb06d4cec3826e51c6af3c9bf9330 0.0s done
+#30 exporting manifest list sha256:c3c64b89b4186848edc0b41fe93cef27956423e9ecccf65115d6d0c2b6eaf9e4 0.0s done
+#30 naming to docker.io/library/ai-scheduler:latest done
+#30 unpacking to docker.io/library/ai-scheduler:latest done
+#30 DONE 0.1s
+
+#10 [frontend-tests internal] load build context
+#10 ...
+
+#31 [backend-tests 10/10] COPY tests ./tests
+#31 DONE 0.2s
+
+#32 [worker] resolving provenance for metadata file
+#32 DONE 0.0s
+
+#33 [backend] resolving provenance for metadata file
+#33 DONE 0.1s
+
+#34 [scheduler] resolving provenance for metadata file
+#34 DONE 0.0s
+
+#10 [frontend-tests internal] load build context
+#10 transferring context: 5.06MB 0.9s done
+#10 DONE 1.0s
+
+#35 [frontend-tests 3/5] COPY package.json package-lock.json ./
+#35 CACHED
+
+#36 [frontend-tests 2/5] WORKDIR /app
+#36 CACHED
+
+#37 [frontend-tests 4/5] RUN npm ci
+#37 CACHED
+
+#38 [frontend-tests 5/5] COPY . .
+#38 CACHED
+
+#39 [frontend builder 3/5] COPY --from=deps /app/node_modules ./node_modules
+#39 CACHED
+
+#40 [frontend deps 2/4] WORKDIR /app
+#40 CACHED
+
+#41 [frontend deps 3/4] COPY package.json package-lock.json ./
+#41 CACHED
+
+#42 [frontend deps 4/4] RUN npm ci
+#42 CACHED
+
+#43 [frontend builder 4/5] COPY . .
+#43 CACHED
+
+#44 [frontend-tests] exporting to image
+#44 exporting layers done
+#44 exporting manifest sha256:1e4afcc589738dbb865666535c4e05d3bf4c3151d0484fe65333cf406d4d60c1 done
+#44 exporting config sha256:9f9974b4abc647cb72685cdacd55ce9791ce78aa3dd402c9f38f842bc405cf00 done
+#44 exporting attestation manifest sha256:beff5271ad179b4af6e34a263e9d19e0989123de48d6f0ad7a2e9f343c143685 0.0s done
+#44 exporting manifest list sha256:c6ccffc898ce0b8216ff948ce1fc86c3021d71dd53cfa7d7be5243fb6948b615 done
+#44 naming to docker.io/library/ai-frontend-tests:latest done
+#44 unpacking to docker.io/library/ai-frontend-tests:latest done
+#44 DONE 0.1s
+
+#45 [frontend-tests] resolving provenance for metadata file
+#45 DONE 0.0s
+
+#46 [backend-tests] exporting to image
+#46 exporting layers 0.2s done
+#46 exporting manifest sha256:9f11c84b6b4ba083a25b68ea94c5fa729d967891a764b058e6584238c7484dd7 done
+#46 exporting config sha256:da7d42372a8bed09d7800cd79dfa9ee6dd47a222440fe8d664800371b3025778 done
+#46 exporting attestation manifest sha256:e6b790d9273e0b63cece6922d22919a3797dea6b324f07b8da0c1cc596b67a72 done
+#46 exporting manifest list sha256:c8302e2198d1bfbd9ea98daf76811ce2fcf44797fbaa66ec9dce493e5982c3a0 done
+#46 naming to docker.io/library/ai-backend-tests:latest done
+#46 unpacking to docker.io/library/ai-backend-tests:latest 0.1s done
+#46 DONE 0.3s
+
+#47 [backend-tests] resolving provenance for metadata file
+#47 DONE 0.0s
+
+#48 [frontend builder 5/5] RUN npm run build
+#48 0.342 
+#48 0.342 > ai-engineering-frontend@0.1.0 build
+#48 0.342 > node ./scripts/docker-only-run.mjs build
+#48 0.342 
+#48 0.665 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#48 0.666 This information is used to shape Next.js' roadmap and prioritize features.
+#48 0.666 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#48 0.666 https://nextjs.org/telemetry
+#48 0.666 
+#48 0.696   ▲ Next.js 14.2.31
+#48 0.696 
+#48 0.739    Creating an optimized production build ...
+#48 10.49  ✓ Compiled successfully
+#48 10.49    Linting and checking validity of types ...
+#48 14.98    Collecting page data ...
+#48 15.85    Generating static pages (0/66) ...
+#48 15.97    Generating static pages (16/66) 
+#48 16.08    Generating static pages (32/66) 
+#48 16.08    Generating static pages (49/66) 
+#48 16.14  ✓ Generating static pages (66/66)
+#48 16.26    Finalizing page optimization ...
+#48 16.26    Collecting build traces ...
+#48 20.52 
+#48 20.53 Route (app)                                             Size     First Load JS
+#48 20.53 ┌ ƒ /                                                   147 B          87.3 kB
+#48 20.53 ├ ƒ /_not-found                                         876 B          88.1 kB
+#48 20.53 ├ ƒ /api/admin/i18n/default-language                    0 B                0 B
+#48 20.53 ├ ƒ /api/admin/i18n/languages                           0 B                0 B
+#48 20.53 ├ ƒ /api/admin/i18n/languages/[code]                    0 B                0 B
+#48 20.53 ├ ƒ /api/admin/platform/internal/automation/trigger     0 B                0 B
+#48 20.53 ├ ƒ /api/admin/platform/internal/webhooks/retry-failed  0 B                0 B
+#48 20.53 ├ ƒ /api/auth/csrf                                      0 B                0 B
+#48 20.53 ├ ƒ /api/auth/login                                     0 B                0 B
+#48 20.53 ├ ƒ /api/auth/logout                                    0 B                0 B
+#48 20.53 ├ ƒ /api/auth/me                                        0 B                0 B
+#48 20.53 ├ ƒ /api/auth/me/password                               0 B                0 B
+#48 20.53 ├ ƒ /api/auth/me/preferences                            0 B                0 B
+#48 20.53 ├ ƒ /api/auth/me/preferences/language                   0 B                0 B
+#48 20.53 ├ ƒ /api/auth/modes                                     0 B                0 B
+#48 20.53 ├ ƒ /api/bff/[...path]                                  0 B                0 B
+#48 20.53 ├ ƒ /api/i18n/catalog                                   0 B                0 B
+#48 20.53 ├ ƒ /api/i18n/languages                                 0 B                0 B
+#48 20.53 ├ ○ /api/internal/ready                                 0 B                0 B
+#48 20.53 ├ ƒ /api/public/tenants/login-directory                 0 B                0 B
+#48 20.53 ├ ƒ /console                                            203 B           161 kB
+#48 20.53 ├ ƒ /console/admissions                                 8.09 kB         203 kB
+#48 20.53 ├ ƒ /console/ai/copilot                                 5.4 kB          157 kB
+#48 20.53 ├ ƒ /console/audit                                      6.33 kB         188 kB
+#48 20.53 ├ ƒ /console/automation                                 8.92 kB         229 kB
+#48 20.53 ├ ƒ /console/automation/executions                      5.32 kB         187 kB
+#48 20.53 ├ ƒ /console/automation/new                             10.6 kB         182 kB
+#48 20.53 ├ ƒ /console/automation/templates                       5.9 kB          163 kB
+#48 20.53 ├ ƒ /console/backups                                    8.8 kB          190 kB
+#48 20.53 ├ ƒ /console/courses                                    3.69 kB         193 kB
+#48 20.53 ├ ƒ /console/dashboard                                  204 B           161 kB
+#48 20.53 ├ ƒ /console/developer/apps                             5.18 kB         153 kB
+#48 20.53 ├ ƒ /console/enrollments                                7.87 kB         203 kB
+#48 20.53 ├ ƒ /console/faculty                                    3.76 kB         193 kB
+#48 20.53 ├ ƒ /console/feature-flags                              7.23 kB         170 kB
+#48 20.53 ├ ƒ /console/federation                                 7.38 kB         165 kB
+#48 20.53 ├ ƒ /console/grades                                     5.38 kB         200 kB
+#48 20.53 ├ ƒ /console/health                                     3.23 kB         157 kB
+#48 20.53 ├ ƒ /console/identity                                   8.52 kB         190 kB
+#48 20.53 ├ ƒ /console/interventions                              8.62 kB         204 kB
+#48 20.53 ├ ƒ /console/jobs                                       6.87 kB         202 kB
+#48 20.53 ├ ƒ /console/languages                                  8.33 kB         189 kB
+#48 20.53 ├ ƒ /console/ldap                                       5.72 kB         163 kB
+#48 20.53 ├ ƒ /console/local-users                                5.23 kB         195 kB
+#48 20.53 ├ ƒ /console/notifications                              6.52 kB         201 kB
+#48 20.53 ├ ƒ /console/ops                                        4.96 kB         153 kB
+#48 20.53 ├ ƒ /console/org-units                                  4.22 kB         193 kB
+#48 20.53 ├ ƒ /console/platform                                   388 B           146 kB
+#48 20.53 ├ ƒ /console/platform/[section]                         204 B           146 kB
+#48 20.53 ├ ƒ /console/preferences                                5.97 kB         165 kB
+#48 20.53 ├ ƒ /console/profile                                    3.36 kB         129 kB
+#48 20.53 ├ ƒ /console/profiles                                   8.73 kB         190 kB
+#48 20.53 ├ ƒ /console/programs                                   3.67 kB         193 kB
+#48 20.53 ├ ƒ /console/rbac                                       4.81 kB         194 kB
+#48 20.53 ├ ƒ /console/records                                    3.71 kB         193 kB
+#48 20.53 ├ ƒ /console/scheduling                                 6.07 kB         188 kB
+#48 20.53 ├ ƒ /console/security                                   4.74 kB         140 kB
+#48 20.53 ├ ƒ /console/service-accounts                           3.67 kB         193 kB
+#48 20.53 ├ ƒ /console/students                                   6.24 kB         201 kB
+#48 20.53 ├ ƒ /console/students/[id]                              7.1 kB          189 kB
+#48 20.53 ├ ƒ /console/students/[id]/transcript                   6.2 kB          139 kB
+#48 20.53 ├ ƒ /console/tenants                                    8.86 kB         204 kB
+#48 20.53 ├ ƒ /console/transcripts                                4.51 kB         139 kB
+#48 20.53 ├ ƒ /console/workflows                                  8.21 kB         189 kB
+#48 20.53 ├ ƒ /faculty                                            146 B          98.8 kB
+#48 20.53 ├ ƒ /login                                              7.11 kB         167 kB
+#48 20.53 ├ ƒ /profile                                            1.56 kB         128 kB
+#48 20.53 ├ ƒ /registrar                                          146 B          98.8 kB
+#48 20.53 └ ƒ /student                                            146 B          98.8 kB
+#48 20.53 + First Load JS shared by all                           87.2 kB
+#48 20.53   ├ chunks/2117-34a461f8dab03773.js                     31.6 kB
+#48 20.53   ├ chunks/fd9d1056-96f08e3f6bc78df7.js                 53.6 kB
+#48 20.53   └ other shared chunks (total)                         1.97 kB
+#48 20.53 
+#48 20.53 
+#48 20.53 ƒ Middleware                                            27.5 kB
+#48 20.53 
+#48 20.53 ○  (Static)   prerendered as static content
+#48 20.53 ƒ  (Dynamic)  server-rendered on demand
+#48 20.53 
+#48 20.56 npm notice
+#48 20.56 npm notice New major version of npm available! 10.8.2 -> 11.12.1
+#48 20.56 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+#48 20.56 npm notice To update run: npm install -g npm@11.12.1
+#48 20.56 npm notice
+#48 DONE 20.7s
+
+#40 [frontend deps 2/4] WORKDIR /app
+#40 CACHED
+
+#49 [frontend runner 3/5] COPY --from=builder /app/.next/standalone ./
+#49 DONE 0.1s
+
+#50 [frontend runner 4/5] COPY --from=builder /app/.next/static ./.next/static
+#50 DONE 0.1s
+
+#51 [frontend runner 5/5] RUN mkdir -p ./public
+#51 DONE 0.2s
+
+#52 [frontend] exporting to image
+#52 exporting layers
+#52 exporting layers 1.0s done
+#52 exporting manifest sha256:0c58f0a280fb0f53b606f4a0263edf38babc4357ed46f3e8c6d753ddf4b837d7 done
+#52 exporting config sha256:8255e89d06eca0ce37b449fdb3f3c7089a6e31ea2bfed5226b4d16b30d485a39 done
+#52 exporting attestation manifest sha256:0d6e97a7e955720a71a4b2546e69bcde835bf8a3fe5d653058069559455165ef done
+#52 exporting manifest list sha256:eb92337760bbf67e93ffc904c26f7b211327313764881f5860338bc321b08aa1 done
+#52 naming to docker.io/library/ai-frontend:latest done
+#52 unpacking to docker.io/library/ai-frontend:latest
+#52 unpacking to docker.io/library/ai-frontend:latest 0.2s done
+#52 DONE 1.2s
+
+#53 [frontend] resolving provenance for metadata file
+#53 DONE 0.0s
+[PASS] Health Surfaces: live=ok ready=ok db=reachable worker=reachable scheduler=ran
+[PASS] Outbox Event Processing: event_id=325 processed=1 backlog=0
+[PASS] Automation Execution: matched=1 executions=1
+[PASS] Webhook Retry Behavior: failed=1 backlog=1 recovered=1
+[PASS] KPI Refresh: cards=14 snapshot_date=2026-04-08
+[PASS] AI Copilot Response: summary=Latest KPI summary loaded.
+[PASS] Developer Platform Auth Flow: app_id=34 public_students=1
+[PASS] Metrics Surfaces: failed_webhooks=1 retry_backlog=1 developer_api_error_count=0
+
+[SUMMARY] passed=8 failed=0
+
+=== artifact fingerprint ===
+[run] git -C /home/sbs/AI rev-parse HEAD
+1593d7039f4b273c5f7fe9972e9ee00a24147060
+[run] git -C /home/sbs/AI status --short
+ M Makefile
+ M README.md
+ M frontend/app/(admin)/console/platform/platform-section-view.tsx
+ M frontend/modules/audit/hooks.ts
+ M frontend/package-lock.json
+ M scripts/release_check.sh
+ M scripts/release_gate.sh
+ M scripts/rollback_check.sh
+ M scripts/scheduling_phase_b_smoke_check.sh
+?? artifacts/
+?? docs/domain-layer-max-upgrade-roadmap.md
+?? scripts/domain_layer_gate.sh
+?? scripts/pilot_to_prod_promotion.sh
+
+=== deploy ===
+DRY RUN: deploy step skipped
+set PROMOTION_DRY_RUN=false and PROMOTION_TARGET=user@server to execute deploy
+promotion_report=/home/sbs/AI/artifacts/promotion/pilot-to-prod-20260408T144108Z.txt
