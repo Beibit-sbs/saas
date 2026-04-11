@@ -7,6 +7,10 @@ from datetime import datetime, timezone
 import os
 from threading import Lock
 
+from app.modules.quotas.schemas import (
+    PlanQuotaConsistencyIssueSchema,
+    PlanQuotaConsistencyReportSchema,
+)
 from app.modules.plans.service import get_plan_by_code, get_plan_by_id, list_plans
 from app.modules.tenants.service import get_tenant
 
@@ -82,6 +86,16 @@ DEFAULT_QUOTAS_BY_PLAN: dict[str, dict[str, int]] = {
         "integrations": 1000,
     },
 }
+
+BASELINE_QUOTA_KEYS: tuple[str, ...] = tuple(
+    sorted(
+        {
+            key
+            for quota_map in DEFAULT_QUOTAS_BY_PLAN.values()
+            for key in quota_map.keys()
+        }
+    )
+)
 
 
 @dataclass
@@ -218,6 +232,62 @@ def get_plan_quotas(plan_id: int) -> dict[str, int]:
     if not rows:
         return {}
     return {str(item["key"]): int(item["limit_value"]) for item in rows}
+
+
+def get_plan_quota_consistency_report() -> PlanQuotaConsistencyReportSchema:
+    plans = list_plans(include_inactive=True)
+    plan_ids = {int(plan["id"]) for plan in plans}
+    quota_rows = list_quotas()
+
+    issues: list[PlanQuotaConsistencyIssueSchema] = []
+    quotas_by_plan: dict[int, set[str]] = {}
+
+    for row in quota_rows:
+        plan_id = int(row["plan_id"])
+        quota_key = str(row["key"])
+        quotas_by_plan.setdefault(plan_id, set()).add(quota_key)
+        if plan_id not in plan_ids:
+            issues.append(
+                PlanQuotaConsistencyIssueSchema(
+                    issue_type="quota_plan_missing",
+                    plan_id=plan_id,
+                    quota_key=quota_key,
+                    detail="Quota row references a plan that is not configured.",
+                )
+            )
+
+    for plan in plans:
+        plan_id = int(plan["id"])
+        plan_code = str(plan.get("code") or "")
+        plan_quota_keys = quotas_by_plan.get(plan_id, set())
+        if not plan_quota_keys:
+            issues.append(
+                PlanQuotaConsistencyIssueSchema(
+                    issue_type="plan_missing_quotas",
+                    plan_id=plan_id,
+                    plan_code=plan_code,
+                    detail="Plan has no configured quotas.",
+                )
+            )
+            continue
+
+        for missing_key in sorted(set(BASELINE_QUOTA_KEYS) - plan_quota_keys):
+            issues.append(
+                PlanQuotaConsistencyIssueSchema(
+                    issue_type="plan_missing_quota_key",
+                    plan_id=plan_id,
+                    plan_code=plan_code,
+                    quota_key=missing_key,
+                    detail="Plan is missing a baseline quota key.",
+                )
+            )
+
+    return PlanQuotaConsistencyReportSchema(
+        total_plan_count=len(plans),
+        configured_plan_quota_count=len(quotas_by_plan),
+        issue_count=len(issues),
+        issues=issues,
+    )
 
 
 def update_plan_quotas(plan_id: int, quotas: dict[str, int]) -> list[dict[str, object]]:

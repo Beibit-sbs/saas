@@ -4,13 +4,20 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.modules.audit.service import log_admin_action
 from app.modules.programs.schemas import (
+    ProgramConsistencyReportSchema,
     ProgramCreatePayload,
     ProgramDeleteResponse,
     ProgramItemResponse,
     ProgramListResponse,
     ProgramUpdatePayload,
 )
-from app.modules.programs.service import create_program, delete_program, list_programs, update_program
+from app.modules.programs.service import (
+    create_program,
+    delete_program,
+    get_program_consistency_report,
+    list_programs,
+    update_program,
+)
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -25,6 +32,17 @@ def get_programs(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ProgramListResponse:
     return {"programs": list_programs(int(tenant["id"]))}
+
+
+@router.get("/consistency", response_model=ProgramConsistencyReportSchema)
+def get_program_consistency_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.programs.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ProgramConsistencyReportSchema:
+    return ProgramConsistencyReportSchema.model_validate(
+        get_program_consistency_report(int(tenant["id"]))
+    )
 
 
 @router.post("", response_model=ProgramItemResponse)

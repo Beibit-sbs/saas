@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Iterator
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,7 +10,12 @@ from app.core.module_helpers.service_validation import TenantResourceNotFoundErr
 from app.main import app
 from app.modules.degree_progress import service as degree_progress_service
 from app.modules.degree_progress.dependencies import get_degree_progress_db
-from app.modules.degree_progress.schemas import DegreeProgressSchema, GraduationEligibilitySchema, RequirementStatusSchema
+from app.modules.degree_progress.schemas import (
+    DegreeProgressConsistencyReportSchema,
+    DegreeProgressSchema,
+    GraduationEligibilitySchema,
+    RequirementStatusSchema,
+)
 from app.modules.rbac import service as rbac_service
 from tests.conftest import ADMIN_HEADERS, _auth_headers, _configure_db_only_role_resolution, client
 
@@ -29,7 +35,7 @@ def _enable_degree_progress_permissions_for_admin(monkeypatch: pytest.MonkeyPatc
 
 
 @pytest.fixture
-def override_degree_progress_db() -> MagicMock:
+def override_degree_progress_db() -> Iterator[MagicMock]:
     session = MagicMock()
     app.dependency_overrides[get_degree_progress_db] = lambda: session
     try:
@@ -127,3 +133,37 @@ def test_get_degree_progress_tenant_isolation_404(
 def test_degree_progress_requires_permission(student_headers: dict[str, str]) -> None:
     response = client.get("/api/admin/students/1001/degree-progress", headers=student_headers)
     assert response.status_code == 403, response.text
+
+
+def test_get_degree_progress_consistency_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_degree_progress_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_consistency(self, tenant_id: int):
+        assert tenant_id == 1
+        return DegreeProgressConsistencyReportSchema(
+            active_primary_binding_count=2,
+            active_requirement_count=3,
+            requirement_item_count=1,
+            issue_count=3,
+            issues=[
+                {
+                    "issue_type": "active_primary_binding_missing_requirement",
+                    "student_profile_id": 1002,
+                    "program_id": 799,
+                }
+            ],
+        )
+
+    monkeypatch.setattr(
+        degree_progress_service.DegreeProgressService,
+        "list_tenant_degree_progress_consistency_report",
+        fake_consistency,
+    )
+
+    response = client.get("/api/admin/degree-progress/consistency", headers=admin_headers)
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["issue_count"] == 3
+    assert body["issues"][0]["issue_type"] == "active_primary_binding_missing_requirement"

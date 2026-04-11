@@ -67,7 +67,7 @@ def _now_iso() -> str:
 def _should_fallback_to_memory(exc: Exception) -> bool:
     if isinstance(exc, RuntimeError) and str(exc) == "database unavailable":
         return True
-    if isinstance(exc, (ConnectionError, TimeoutError, OSError, ValueError)):
+    if isinstance(exc, (ConnectionError, TimeoutError, OSError)):
         return True
     if psycopg is not None and isinstance(exc, (psycopg.OperationalError, psycopg.InterfaceError)):
         return True

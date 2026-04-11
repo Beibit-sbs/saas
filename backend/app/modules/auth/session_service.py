@@ -6,7 +6,6 @@ import secrets
 from threading import Lock
 from typing import Any
 
-from app.core.config import is_runtime_schema_bootstrap_enabled
 from app.core.db import get_raw_conn
 
 
@@ -20,7 +19,9 @@ class SessionState:
 
 _state_lock = Lock()
 _state = SessionState(rows={})
-_db_ready = False
+# Table is guaranteed by Alembic migration f3e4d5c6b7a9_add_auth_session_and_mfa_tables.
+# In-memory fallback (_state) is used only when DB is unavailable (e.g. tests without DATABASE_URL).
+_db_ready = True
 
 
 def _now_iso() -> str:
@@ -28,60 +29,10 @@ def _now_iso() -> str:
 
 
 def _ensure_session_table(conn) -> bool:
-    global _db_ready
+    """Return True if DB is available; False causes caller to use in-memory fallback."""
     if conn is None:
         return False
-    if _db_ready:
-        return True
-    if not is_runtime_schema_bootstrap_enabled():
-        return False
-
-    with _state_lock:
-        if _db_ready:
-            return True
-        if not is_runtime_schema_bootstrap_enabled():
-            return False
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                CREATE TABLE IF NOT EXISTS app_auth_sessions (
-                    session_id TEXT PRIMARY KEY,
-                    user_id TEXT NOT NULL,
-                    tenant_id BIGINT NOT NULL,
-                    auth_source TEXT NOT NULL,
-                    client_ip TEXT NOT NULL,
-                    user_agent TEXT NOT NULL,
-                    device_id TEXT NOT NULL,
-                    device_name TEXT NOT NULL,
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    expires_at TIMESTAMPTZ,
-                    is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
-                    revoked_at TIMESTAMPTZ
-                )
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_tenant_created
-                ON app_auth_sessions (user_id, tenant_id, created_at DESC)
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_auth_sessions_active_by_user
-                ON app_auth_sessions (user_id, tenant_id, is_revoked)
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_auth_sessions_device_active
-                ON app_auth_sessions (device_id, user_id, tenant_id, is_revoked)
-                """
-            )
-        conn.commit()
-        _db_ready = True
-    return True
+    return _db_ready
 
 
 def _dt_to_iso(value: object | None) -> str | None:

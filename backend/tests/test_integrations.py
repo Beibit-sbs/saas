@@ -102,7 +102,11 @@ def test_ldap_admin_can_access_all_protected_ldap_ai_integrations_endpoints(monk
     monkeypatch.setattr("app.modules.auth.router.authenticate_ldap_user", fake_authenticate)
     monkeypatch.setattr("app.modules.auth.router.sync_user_roles_from_trusted_source", fake_sync)
 
-    login_response = client.post("/api/auth/ldap-login", json={"login": "bob", "password": "pass"})
+    login_response = client.post(
+        "/api/auth/ldap-login",
+        json={"login": "bob", "password": "pass"},
+        headers={"X-Tenant-ID": "1"},
+    )
     assert login_response.status_code == 200
     assert assignments.get("ad.bob") == ["admin"]
 

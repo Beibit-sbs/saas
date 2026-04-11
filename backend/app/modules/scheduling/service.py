@@ -15,6 +15,7 @@ from app.core.module_helpers.service_validation import (
     validate_version_match,
 )
 from app.modules.audit.service import log_admin_action
+from app.modules.billing.service import assert_billing_write_allowed
 from app.modules.courses.models import CourseModel
 from app.modules.enrollments.models import EnrollmentModel, EnrollmentStatus
 from app.modules.scheduling.business_rules import SchedulingRules
@@ -60,6 +61,8 @@ from app.modules.scheduling.schemas import (
     StudentTopicProgressReadSchema,
     StudentTopicProgressUpsertSchema,
     StudentScheduleItemSchema,
+    SchedulingConsistencyIssueSchema,
+    SchedulingConsistencyReportSchema,
 )
 from app.modules.students.models import StudentProfileModel
 
@@ -300,6 +303,7 @@ class SchedulingService:
         actor_id: str,
     ) -> CourseSectionReadSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
+        assert_billing_write_allowed(tenant_id, action="scheduling.section.create")
         SchedulingRules.validate_section_capacity(request.max_capacity)
         self._load_course_placeholder(tenant_id, request.course_id)
         self._validate_term_exists(tenant_id, request.term_id)
@@ -909,6 +913,7 @@ class SchedulingService:
         actor_id: str,
     ) -> LessonInstanceReadSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
+        assert_billing_write_allowed(tenant_id, action="scheduling.lesson.create")
         section = self._load_course_section(tenant_id, section_id)
         if section.status == SectionStatus.CANCELLED:
             raise DomainValidationError("cannot create lessons for cancelled section")
@@ -1107,6 +1112,7 @@ class SchedulingService:
         actor_id: str,
     ) -> DisciplineReadSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
+        assert_billing_write_allowed(tenant_id, action="scheduling.discipline.create")
 
         discipline = DisciplineModel(
             tenant_id=tenant_id,
@@ -1175,6 +1181,7 @@ class SchedulingService:
         actor_id: str,
     ) -> LessonTopicReadSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
+        assert_billing_write_allowed(tenant_id, action="scheduling.topic.create")
         self._load_discipline(tenant_id, discipline_id)
 
         topic = LessonTopicModel(
@@ -1378,4 +1385,88 @@ class SchedulingService:
         return StudentTopicProgressListResponseSchema(
             total=len(rows),
             items=[StudentTopicProgressReadSchema.model_validate(row) for row in rows],
+        )
+
+    async def list_tenant_scheduling_consistency_report(
+        self, tenant_id: int
+    ) -> SchedulingConsistencyReportSchema:
+        validate_tenant_id_provided(tenant_id)
+        issues: list[SchedulingConsistencyIssueSchema] = []
+
+        # All non-cancelled sections
+        sections = self.db.execute(
+            select(CourseSectionModel).where(
+                and_(
+                    CourseSectionModel.tenant_id == tenant_id,
+                    CourseSectionModel.status.in_(
+                        [SectionStatus.PLANNED, SectionStatus.SCHEDULED]
+                    ),
+                )
+            )
+        ).scalars().all()
+        section_ids = {s.id for s in sections}
+
+        # Sections missing a schedule record
+        scheduled_section_ids = set(
+            self.db.execute(
+                select(SectionScheduleModel.section_id).where(
+                    SectionScheduleModel.tenant_id == tenant_id
+                )
+            ).scalars().all()
+        )
+        for sec in sections:
+            if sec.id not in scheduled_section_ids:
+                issues.append(
+                    SchedulingConsistencyIssueSchema(
+                        issue_type="section_without_schedule",
+                        section_id=sec.id,
+                    )
+                )
+
+        # Sections missing an instructor assignment
+        assigned_section_ids = set(
+            self.db.execute(
+                select(InstructorAssignmentModel.section_id).where(
+                    InstructorAssignmentModel.tenant_id == tenant_id
+                )
+            ).scalars().all()
+        )
+        for sec in sections:
+            if sec.id not in assigned_section_ids:
+                issues.append(
+                    SchedulingConsistencyIssueSchema(
+                        issue_type="section_without_instructor",
+                        section_id=sec.id,
+                    )
+                )
+
+        # Attendance records pointing to non-existent student profiles
+        attendances = self.db.execute(
+            select(LessonAttendanceModel).where(
+                LessonAttendanceModel.tenant_id == tenant_id
+            )
+        ).scalars().all()
+
+        student_ids = set(
+            self.db.execute(
+                select(StudentProfileModel.id).where(
+                    StudentProfileModel.tenant_id == tenant_id
+                )
+            ).scalars().all()
+        )
+        for att in attendances:
+            if att.student_profile_id not in student_ids:
+                issues.append(
+                    SchedulingConsistencyIssueSchema(
+                        issue_type="attendance_orphaned_student",
+                        lesson_attendance_id=att.id,
+                        student_profile_id=att.student_profile_id,
+                    )
+                )
+
+        return SchedulingConsistencyReportSchema(
+            section_count=len(sections),
+            attendance_count=len(attendances),
+            issue_count=len(issues),
+            issues=issues,
         )

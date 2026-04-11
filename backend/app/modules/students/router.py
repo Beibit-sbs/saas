@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel, ValidationError
@@ -25,6 +25,7 @@ from app.modules.students.schemas import (
     StudentProfileCreateSchema,
     StudentProfileListResponseSchema,
     StudentProfileReadSchema,
+    StudentProgramBindingConsistencyIssueSchema,
     StudentProgramBindingCreateSchema,
     StudentProgramBindingReadSchema,
     StudentStatusChangeSchema,
@@ -62,9 +63,9 @@ def _raise_students_http_error(exc: Exception) -> HTTPException:
     raise HTTPException(status_code=400, detail=str(exc))
 
 
-TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
-Actor = Annotated[str, Depends(get_actor)]
-StudentsDb = Annotated[Session, Depends(get_students_db)]
+TrustedTenant: TypeAlias = Annotated[dict[str, object], Depends(get_current_tenant)]
+Actor: TypeAlias = Annotated[str, Depends(get_actor)]
+StudentsDb: TypeAlias = Annotated[Session, Depends(get_students_db)]
 
 
 @router.post(
@@ -226,5 +227,27 @@ async def get_active_primary_program_endpoint(
         )
     except (PermissionError, ValueError, TenantResourceNotFoundError) as exc:
         raise _raise_students_http_error(exc) from exc
+
+
+@router.get(
+    "/consistency/program-bindings",
+    response_model=list[StudentProgramBindingConsistencyIssueSchema],
+    responses={403: {"model": ErrorDetailResponse}},
+)
+async def list_program_binding_consistency_issues_endpoint(
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("students.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: StudentsDb = None,
+) -> list[StudentProgramBindingConsistencyIssueSchema]:
+    service = StudentLifecycleService(db)
+    try:
+        return await service.list_program_binding_consistency_issues(tenant_id=int(tenant["id"]))
+    except (PermissionError, ValueError, TenantResourceNotFoundError) as exc:
+        raise _raise_students_http_error(exc) from exc
+
+
+# Backward-compatible alias consumed by app bootstrap imports.
+legacy_router = router
 
 

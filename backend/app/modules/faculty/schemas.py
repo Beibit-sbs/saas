@@ -34,3 +34,16 @@ class FacultyItemResponse(BaseModel):
 class FacultyDeleteResponse(BaseModel):
     deleted: bool
     faculty: FacultyResponse
+
+
+class FacultyConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    faculty_row_id: int | None = None
+    faculty_id: str | None = None
+    email: str | None = None
+
+
+class FacultyConsistencyReportSchema(BaseModel):
+    faculty_count: int
+    issue_count: int
+    issues: list[FacultyConsistencyIssueSchema]

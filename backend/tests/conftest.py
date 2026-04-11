@@ -14,6 +14,7 @@ os.environ.setdefault("API_BASE_URL", "http://backend:8000")
 os.environ.setdefault("ADMIN_PANEL_URL", "http://nginx")
 os.environ.setdefault("INTERNAL_API_TOKEN", "internal-token-for-tests-only")
 os.environ.setdefault("INTEGRATIONS_ENCRYPTION_KEY", "test-integration-key-not-for-production-123")
+os.environ.setdefault("BILLING_DB_ONLY_MODE", "false")
 
 _trusted_hosts_raw = os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1,backend,nginx")
 _trusted_hosts = [item.strip() for item in _trusted_hosts_raw.split(",") if item.strip()]
@@ -73,11 +74,6 @@ from app.platform.webhooks import service as webhook_service
 client = TestClient(app)
 os.environ.setdefault("RBAC_ALLOW_DEV_FALLBACK", "true")
 
-DEFAULT_FLAGS = copy.deepcopy(feature_flags_service._flags)
-DEFAULT_FLAGS_BY_TENANT = {
-    tenant_id: copy.deepcopy(store)
-    for tenant_id, store in feature_flags_service._flags_by_tenant.items()
-}
 DEFAULT_LANGUAGES = copy.deepcopy(i18n_service.languages)
 TEST_PLATFORM_TENANT_ID = 1
 
@@ -208,15 +204,9 @@ def _reset_template_state() -> None:
     clear_sessions_state()
     i18n_service.languages.clear()
     i18n_service.languages.update(copy.deepcopy(DEFAULT_LANGUAGES))
-    feature_flags_service._flags.clear()
-    feature_flags_service._flags.update(copy.deepcopy(DEFAULT_FLAGS))
-    feature_flags_service._flags_by_tenant.clear()
-    feature_flags_service._flags_by_tenant.update(
-        {
-            tenant_id: copy.deepcopy(store)
-            for tenant_id, store in DEFAULT_FLAGS_BY_TENANT.items()
-        }
-    )
+    # feature_flags in-memory state removed — platform service uses DB
+    # (cleared above via uow.feature_flag_repository.clear_state and
+    #  platform_feature_flags_service.clear_feature_flag_cache)
 
 
 @pytest.fixture(autouse=True)

@@ -35,6 +35,7 @@ def _enforce_role_mutation_guard(
     target_user_id: str | None,
     role_name: str,
     target_tenant_id: int,
+    actor_claim_roles: List[str] | None = None,
 ) -> None:
     normalized_actor = str(actor or "").strip()
     normalized_target_user = str(target_user_id or "").strip()
@@ -61,6 +62,8 @@ def _enforce_role_mutation_guard(
     
     # Get actor's current roles in target tenant
     actor_roles = get_user_roles_for_tenant(normalized_actor, target_tenant_id)
+    if not actor_roles and actor_claim_roles:
+        actor_roles = sorted({str(item).strip().lower() for item in actor_claim_roles if str(item).strip()})
     actor_max_level = get_highest_role_level(actor_roles)
     
     # Get target role's privilege level
@@ -119,6 +122,7 @@ def upsert_role(
         target_user_id=None,
         role_name=normalized_role_name,
         target_tenant_id=target_tenant_id,
+        actor_claim_roles=getattr(getattr(request.state, "auth_claims", None), "roles", None),
     )
     if normalized_role_name in _PLATFORM_ONLY_ROLES and target_tenant_id != _PLATFORM_TENANT_ID:
         raise HTTPException(status_code=403, detail="role 'superadmin' is reserved for the platform tenant")
@@ -160,6 +164,7 @@ def assign_user_role(
             target_user_id=payload.user_id,
             role_name=payload.role,
             target_tenant_id=target_tenant_id,
+            actor_claim_roles=getattr(getattr(request.state, "auth_claims", None), "roles", None),
         )
         
         # Service call
@@ -256,6 +261,7 @@ def delete_role_assignment(
         target_user_id=user_id,
         role_name=role,
         target_tenant_id=target_tenant_id,
+        actor_claim_roles=getattr(getattr(request.state, "auth_claims", None), "roles", None),
     )
     try:
         result = revoke_role_for_tenant(tenant_id=target_tenant_id, user_id=user_id, role=role)

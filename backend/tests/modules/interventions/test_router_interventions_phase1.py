@@ -18,6 +18,7 @@ from app.modules.interventions.models import (
 )
 from app.modules.rbac import service as rbac_service
 from app.modules.interventions.schemas import InterventionActionReadSchema, InterventionCaseReadSchema
+from app.modules.interventions.schemas import InterventionConsistencyReportSchema
 from tests.conftest import ADMIN_HEADERS, _auth_headers, _configure_db_only_role_resolution, client
 
 
@@ -216,3 +217,43 @@ def test_case_write_requires_permission(
     )
 
     assert response.status_code == 403, response.text
+
+
+def test_get_intervention_consistency_report_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_interventions_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_list_tenant_intervention_consistency_report(
+        self, tenant_id: int
+    ) -> InterventionConsistencyReportSchema:
+        assert tenant_id == 1
+        return InterventionConsistencyReportSchema(
+            case_count=4,
+            action_count=7,
+            issue_count=1,
+            issues=[
+                {
+                    "issue_type": "case_missing_student_profile",
+                    "case_id": 101,
+                    "student_profile_id": 9999,
+                }
+            ],
+        )
+
+    monkeypatch.setattr(
+        interventions_service.InterventionService,
+        "list_tenant_intervention_consistency_report",
+        fake_list_tenant_intervention_consistency_report,
+    )
+
+    response = client.get(
+        "/api/admin/interventions/cases/consistency",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["case_count"] == 4
+    assert body["issue_count"] == 1
+    assert body["issues"][0]["issue_type"] == "case_missing_student_profile"

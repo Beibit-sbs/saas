@@ -33,3 +33,15 @@ class CourseItemResponse(BaseModel):
 class CourseDeleteResponse(BaseModel):
     deleted: bool
     course: CourseResponse
+
+
+class CourseConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    course_id: int
+    program_id: int | None = None
+
+
+class CourseConsistencyReportSchema(BaseModel):
+    course_count: int
+    issue_count: int
+    issues: list[CourseConsistencyIssueSchema]

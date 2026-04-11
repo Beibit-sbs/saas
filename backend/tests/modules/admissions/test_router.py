@@ -6,6 +6,7 @@ from app.main import app
 from app.modules.admissions.dependencies import get_admissions_db
 from app.modules.admissions.router import _map_service_error
 from app.modules.admissions.schemas import (
+    AdmissionsConsistencyReportSchema,
     ApplicantListResponseSchema,
     ApplicantReadSchema,
     ApplicationDecisionReadSchema,
@@ -181,3 +182,44 @@ def test_router_error_mapping_helper_behaves_consistently() -> None:
     assert _map_service_error(ValueError("resource not found")).status_code == 404
     assert _map_service_error(ValueError("Version mismatch: expected 1, but application version is 2")).status_code == 409
     assert _map_service_error(ValueError("Invalid transition")).status_code == 400
+
+
+def test_get_admissions_consistency_report_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_admissions_db: MagicMock,
+) -> None:
+    async def fake_get_tenant_consistency_report(
+        self,
+        tenant_id: int,
+    ) -> AdmissionsConsistencyReportSchema:
+        assert tenant_id == 1
+        return AdmissionsConsistencyReportSchema(
+            applicant_count=3,
+            application_count=5,
+            document_count=8,
+            decision_count=2,
+            issue_count=1,
+            issues=[
+                {
+                    "issue_type": "application_missing_applicant",
+                    "application_id": 999,
+                    "applicant_id": 555,
+                }
+            ],
+        )
+
+    monkeypatch.setattr(
+        admissions_service.ApplicationService,
+        "get_tenant_consistency_report",
+        fake_get_tenant_consistency_report,
+    )
+
+    response = client.get(
+        "/api/admin/admissions/consistency",
+        headers=ADMIN_HEADERS,
+    )
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["issue_count"] == 1
+    assert payload["issues"][0]["issue_type"] == "application_missing_applicant"

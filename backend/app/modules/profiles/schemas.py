@@ -289,3 +289,16 @@ class FacultyReadSchema(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PersonConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    person_id: int | None = None
+    email: str | None = None
+    external_person_key: str | None = None
+
+
+class PersonConsistencyReportSchema(BaseModel):
+    person_count: int = Field(ge=0)
+    issue_count: int = Field(ge=0)
+    issues: list[PersonConsistencyIssueSchema] = Field(default_factory=list)

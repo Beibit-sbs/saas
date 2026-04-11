@@ -28,6 +28,7 @@ from app.modules.scheduling.schemas import (
     StudentTopicProgressReadSchema,
     StudentScheduleItemSchema,
 )
+from app.modules.scheduling.schemas import SchedulingConsistencyReportSchema
 from tests.conftest import ADMIN_HEADERS, _auth_headers, _configure_db_only_role_resolution, client
 
 
@@ -623,3 +624,42 @@ def test_list_student_topic_progress_success(
     assert response.status_code == 200, response.text
     assert response.json()["total"] == 1
     assert response.json()["items"][0]["topic_id"] == 401
+
+
+def test_get_scheduling_consistency_report_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_scheduling_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_list_tenant_scheduling_consistency_report(
+        self, tenant_id: int
+    ) -> SchedulingConsistencyReportSchema:
+        assert tenant_id == 1
+        return SchedulingConsistencyReportSchema(
+            section_count=3,
+            attendance_count=10,
+            issue_count=1,
+            issues=[
+                {
+                    "issue_type": "section_without_schedule",
+                    "section_id": 201,
+                }
+            ],
+        )
+
+    monkeypatch.setattr(
+        scheduling_service.SchedulingService,
+        "list_tenant_scheduling_consistency_report",
+        fake_list_tenant_scheduling_consistency_report,
+    )
+
+    response = client.get(
+        "/api/admin/scheduling/consistency",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["section_count"] == 3
+    assert body["issue_count"] == 1
+    assert body["issues"][0]["issue_type"] == "section_without_schedule"

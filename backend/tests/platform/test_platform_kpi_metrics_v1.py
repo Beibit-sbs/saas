@@ -76,6 +76,12 @@ def _strip_kpi_runtime_fields(payload: dict[str, object]) -> dict[str, object]:
     return normalized
 
 
+def _assert_auth_or_csrf_denied(response) -> None:
+    assert response.status_code in {401, 403}, response.text
+    if response.status_code == 403:
+        assert "csrf" in str(response.json().get("detail", "")).lower()
+
+
 def test_kpi_metric_snapshot_creation_and_values(reset_shared_state) -> None:
     tenant_id = _create_tenant("kpi-metrics")
 
@@ -394,7 +400,7 @@ def test_tenant_analytics_kpis_external_client_denied_for_non_allowed_paths(rese
 
     refresh = client.post("/api/analytics/kpis/refresh", headers=headers)
     trends = client.get("/api/analytics/kpis/trends", headers=headers)
-    assert refresh.status_code == 401, refresh.text
+    _assert_auth_or_csrf_denied(refresh)
     assert trends.status_code == 401, trends.text
 
 
@@ -452,7 +458,7 @@ def test_tenant_analytics_kpis_external_client_contract_matches_internal(reset_s
 
 def test_tenant_analytics_kpis_refresh_requires_auth(reset_shared_state) -> None:
     response = client.post("/api/analytics/kpis/refresh")
-    assert response.status_code == 401, response.text
+    _assert_auth_or_csrf_denied(response)
 
 
 def test_tenant_analytics_kpis_refresh_history_requires_auth(reset_shared_state) -> None:

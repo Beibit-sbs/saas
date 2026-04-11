@@ -11,7 +11,6 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.responses import PlainTextResponse
-from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy import text
 
 from app.core.config import (
@@ -20,25 +19,24 @@ from app.core.config import (
     is_csrf_protection_enabled,
     get_metrics_allowed_ips,
     get_metrics_token,
-    get_trusted_hosts,
     is_production_mode,
     is_worker_health_required,
     validate_required_environment,
 )
 from app.core.runtime_schema import bootstrap_runtime_schema
-from app.core.tenant import get_current_tenant
 
 from app.modules.admin.router import router as admin_router
 from app.modules.admin.local_users_router import router as admin_local_users_router
 from app.modules.academic_records.router import router as academic_records_router
-from app.modules.analytics.router import router as analytics_kpi_router
 from app.modules.admissions.router import router as admissions_router
 from app.modules.ai_gateway.router import router as ai_gateway_router
 from app.modules.ai_gateway.public_router import router as ai_gateway_public_router
 from app.modules.audit.router import router as audit_router
 from app.modules.audit.service import log_admin_action, reset_request_tenant_id, set_request_tenant_id
+from app.modules.analytics.router import router as analytics_router
 from app.modules.backup.router import router as backup_router
 from app.modules.courses.router import router as courses_router
+from app.modules.enrollments.router import legacy_router as legacy_enrollments_router
 from app.modules.enrollments.router import router as enrollments_router
 from app.modules.faculty.router import router as faculty_router
 from app.modules.feature_flags.router import router as feature_flags_router
@@ -56,10 +54,8 @@ from app.modules.help.router import router as help_router
 from app.modules.i18n.router import admin_router as i18n_admin_router
 from app.modules.i18n.router import public_router as i18n_public_router
 from app.modules.integrations.router import router as integrations_router
-from app.modules.interventions.router import router as interventions_router
-from app.modules.interventions.risk_router import router as interventions_risk_router
-from app.modules.org_structure.router import router as org_structure_router
 from app.modules.identity.router import router as identity_router
+from app.modules.identity.phase1_router import router as identity_phase1_router
 from app.modules.ldap.router import router as ldap_router
 from app.modules.jobs.router import router as jobs_router
 from app.modules.programs.router import router as programs_router
@@ -67,18 +63,20 @@ from app.modules.platform.router import router as platform_router
 from app.modules.platform.self_service_router import router as platform_self_service_router
 from app.platform.router_admin import router as platform_v1_admin_router
 from app.platform.router_public import router as platform_v1_public_router
-from app.platform.router_ops import router as platform_v1_ops_router
-from app.platform.router_semantic import router as platform_v2_semantic_router
 from app.platform.router_developer_api import router as platform_developer_api_router
 from app.platform.router_internal import router as platform_v1_internal_router
-from app.platform.router_mcp import router as platform_v1_mcp_router
+from app.platform.router_semantic import router as platform_v2_semantic_router
 from app.modules.profiles.router import router as profiles_router
+from app.modules.interventions.router import router as interventions_router
+from app.modules.interventions.risk_router import router as interventions_risk_router
+from app.modules.org_structure.router import router as org_structure_router
 from app.modules.workflows.router import router as workflows_router
 from app.modules.rbac.router import router as rbac_router
 from app.modules.rbac.security import get_actor
 from app.modules.rbac.security import permission_dependency
 from app.modules.rbac.security import resolve_current_user_claims
 from app.modules.rbac.service import resolve_permissions_for_tenant
+from app.modules.students.router import legacy_router as legacy_students_router
 from app.modules.students.router import router as students_router
 from app.modules.service_accounts.router import router as service_accounts_router
 from app.modules.tenants.router import router as tenants_router
@@ -93,7 +91,6 @@ from app.modules.observability.logging import (
     trace_id_var,
 )
 from app.modules.observability.health import deep_payload, live_payload, readiness_payload
-from app.modules.observability.otel import setup_otel, teardown_otel
 from app.modules.observability.perf_profile import (
     begin_request_profile,
     finish_request_profile,
@@ -147,9 +144,6 @@ async def lifespan(fastapi_app: FastAPI):
 
     bootstrap_runtime_schema()
 
-    # OpenTelemetry — no-op if OTEL_EXPORTER_OTLP_ENDPOINT is not set.
-    setup_otel(fastapi_app)
-
     # Wire the admissions SQLAlchemy session factory.
     # build_engine() raises RuntimeError when DATABASE_URL is absent; we catch it
     # and log a warning so that the server still starts (endpoints return 503).
@@ -166,8 +160,6 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.students_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.grades_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.workflows_session_factory = make_session_factory(_admissions_engine)
-        fastapi_app.state.interventions_session_factory = make_session_factory(_admissions_engine)
-        fastapi_app.state.org_structure_session_factory = make_session_factory(_admissions_engine)
         logger.info("admissions database engine initialised (pool_size=5, max_overflow=10)")
     except RuntimeError as exc:
         fastapi_app.state.admissions_engine = None
@@ -175,8 +167,6 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.students_session_factory = None
         fastapi_app.state.grades_session_factory = None
         fastapi_app.state.workflows_session_factory = None
-        fastapi_app.state.interventions_session_factory = None
-        fastapi_app.state.org_structure_session_factory = None
         logger.warning(
             "admissions database not configured — admissions endpoints will return HTTP 503. "
             "Reason: %s",
@@ -200,15 +190,11 @@ async def lifespan(fastapi_app: FastAPI):
         _admissions_engine.dispose()
         logger.info("admissions database engine disposed")
 
-    teardown_otel()
-
 
 app = FastAPI(title="AI Engineering Backend", version="0.1.0", lifespan=lifespan)
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=get_trusted_hosts())
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(admin_local_users_router)
-app.include_router(analytics_kpi_router)
 app.include_router(admissions_router)
 app.include_router(ai_gateway_router)
 app.include_router(ai_gateway_public_router)
@@ -220,22 +206,26 @@ app.include_router(help_router)
 app.include_router(i18n_public_router)
 app.include_router(i18n_admin_router)
 app.include_router(integrations_router)
-app.include_router(interventions_router)
-app.include_router(interventions_risk_router)
 app.include_router(identity_router)
+app.include_router(identity_phase1_router)
 app.include_router(ldap_router)
 app.include_router(backup_router)
 app.include_router(jobs_router)
 app.include_router(feature_flags_router)
 app.include_router(students_router)
+app.include_router(legacy_students_router)
 app.include_router(service_accounts_router)
 app.include_router(faculty_router)
 app.include_router(programs_router)
 app.include_router(courses_router)
 app.include_router(enrollments_router)
+app.include_router(legacy_enrollments_router)
 app.include_router(grades_router)
 app.include_router(scheduling_router)
+app.include_router(interventions_router)
+app.include_router(interventions_risk_router)
 app.include_router(org_structure_router)
+app.include_router(analytics_router)
 app.include_router(transcripts_router)
 app.include_router(degree_progress_router)
 app.include_router(academic_records_router)
@@ -245,11 +235,9 @@ app.include_router(platform_router)
 app.include_router(platform_self_service_router)
 app.include_router(platform_v1_admin_router)
 app.include_router(platform_v1_public_router)
-app.include_router(platform_v1_ops_router)
-app.include_router(platform_v2_semantic_router)
 app.include_router(platform_developer_api_router)
 app.include_router(platform_v1_internal_router)
-app.include_router(platform_v1_mcp_router)
+app.include_router(platform_v2_semantic_router)
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
@@ -327,23 +315,38 @@ def _resolve_rate_limit_actor(request: Request) -> str | None:
 
 
 def _resolve_request_tenant_id(request: Request) -> int:
+    """Resolve tenant_id for audit context. Trusts JWT; superadmin may override via X-Tenant-ID."""
     try:
         claims = parse_access_token_from_request(request, request.headers.get("authorization"))
     except TokenValidationError:
         claims = None
     if claims is not None and int(claims.tenant_id) > 0:
-        return int(claims.tenant_id)
-    raw_header = request.headers.get("x-tenant-id", "").strip()
-    if raw_header:
-        try:
-            tid = int(raw_header)
-            if tid > 0:
-                return tid
-        except (ValueError, TypeError):
-            pass
+        token_tenant_id = int(claims.tenant_id)
+        raw_header = request.headers.get("x-tenant-id", "").strip()
+        if raw_header:
+            try:
+                header_tenant_id = int(raw_header)
+                if header_tenant_id > 0 and header_tenant_id != token_tenant_id:
+                    roles = {str(r).strip() for r in claims.roles if str(r).strip()}
+                    if "superadmin" in roles:
+                        return header_tenant_id
+            except (TypeError, ValueError):
+                pass
+        return token_tenant_id
     return _DEFAULT_TENANT_ID
 
 
+def _resolve_metrics_tenant_id(request: Request) -> int:
+    """Resolve tenant_id for metrics labels. Trusts X-Tenant-ID header directly (observability only)."""
+    raw_header = request.headers.get("x-tenant-id", "").strip()
+    if raw_header:
+        try:
+            val = int(raw_header)
+            if val > 0:
+                return val
+        except (TypeError, ValueError):
+            pass
+    return _resolve_request_tenant_id(request)
 def _resolve_request_actor_id(request: Request) -> str | None:
     try:
         claims = parse_access_token_from_request(request, request.headers.get("authorization"))
@@ -351,7 +354,9 @@ def _resolve_request_actor_id(request: Request) -> str | None:
         claims = None
     if claims is not None and claims.user_id:
         return claims.user_id
-    return None
+
+    fallback_actor = request.headers.get("x-actor-id", "").strip()
+    return fallback_actor or None
 
 
 def _resolve_request_institution_id(request: Request) -> str | None:
@@ -509,6 +514,7 @@ async def add_request_id(request: Request, call_next):
     request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
     trace_id = request.headers.get("x-trace-id", generate_trace_id())
     tenant_id = _resolve_request_tenant_id(request)
+    metrics_tenant_id = _resolve_metrics_tenant_id(request)
     actor_id = _resolve_request_actor_id(request)
     institution_id = _resolve_request_institution_id(request)
     request.state.request_id = request_id
@@ -540,7 +546,7 @@ async def add_request_id(request: Request, call_next):
     except Exception:
         duration = time.monotonic() - start
         with perf_segment("metrics.record_request"):
-            record_request(request.method, request.url.path, status_code, duration, tenant_id)
+            record_request(request.method, request.url.path, status_code, duration, metrics_tenant_id)
         request_logger.exception(
             "http_request_error",
             extra={
@@ -564,7 +570,7 @@ async def add_request_id(request: Request, call_next):
             duration = time.monotonic() - start
             raw_path = request.url.path
             with perf_segment("metrics.record_request"):
-                record_request(request.method, raw_path, status_code, duration, tenant_id)
+                record_request(request.method, raw_path, status_code, duration, metrics_tenant_id)
             if raw_path.startswith("/api/") and int(tenant_id) > 0:
                 _schedule_usage_event(int(tenant_id))
             error_code = _extract_error_code_from_response(response)
@@ -656,12 +662,10 @@ def health_db(
 @app.get("/health/ready")
 def health_ready(request: Request):
     payload = readiness_payload(request.app)
-    # Return only a slim public-safe response; infrastructure details are
-    # available exclusively via the authenticated /health/deep endpoint.
-    slim = {"status": payload["status"], "ready": payload["ready"], "timestamp": payload.get("timestamp")}
+    lean_payload = {k: v for k, v in payload.items() if k != "dependencies"}
     if not payload["ready"]:
-        return JSONResponse(status_code=503, content=slim)
-    return slim
+        return JSONResponse(status_code=503, content=lean_payload)
+    return lean_payload
 
 
 @app.get("/health/worker", response_model=None)
@@ -825,12 +829,9 @@ def meta() -> dict[str, str]:
 def admin_audit_test(
     request: Request,
     actor: str = Depends(get_actor),
-    tenant: dict[str, object] = Depends(get_current_tenant),
-    __: None = Depends(permission_dependency("admin.audit.read")),
 ) -> dict[str, str]:
     log_admin_action(
         actor=actor,
-        tenant_id=int(tenant.get("id", 1)),
         action="audit_test",
         path=str(request.url.path),
         client_ip=request.client.host if request.client else "unknown",

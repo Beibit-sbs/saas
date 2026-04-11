@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import and_, desc, func, select
+from sqlalchemy import and_, case, desc, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -30,6 +30,7 @@ from app.modules.students.schemas import (
     StudentProfileCreateSchema,
     StudentProfileListResponseSchema,
     StudentProfileReadSchema,
+    StudentProgramBindingConsistencyIssueSchema,
     StudentProgramBindingCreateSchema,
     StudentProgramBindingReadSchema,
     StudentStatusChangeSchema,
@@ -418,6 +419,116 @@ class StudentLifecycleService:
         if binding is None:
             return None
         return StudentProgramBindingReadSchema.model_validate(binding)
+
+    async def list_program_binding_consistency_issues(
+        self,
+        tenant_id: int,
+    ) -> list[StudentProgramBindingConsistencyIssueSchema]:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        duplicate_primary_student_ids = self.db.execute(
+            select(StudentProgramBindingModel.student_profile_id)
+            .where(
+                and_(
+                    StudentProgramBindingModel.tenant_id == tenant_id,
+                    StudentProgramBindingModel.binding_state == StudentProgramBindingState.ACTIVE,
+                    StudentProgramBindingModel.is_primary.is_(True),
+                )
+            )
+            .group_by(StudentProgramBindingModel.student_profile_id)
+            .having(func.count(StudentProgramBindingModel.id) > 1)
+        ).scalars().all()
+
+        missing_primary_student_ids = self.db.execute(
+            select(StudentProgramBindingModel.student_profile_id)
+            .where(
+                and_(
+                    StudentProgramBindingModel.tenant_id == tenant_id,
+                    StudentProgramBindingModel.binding_state == StudentProgramBindingState.ACTIVE,
+                )
+            )
+            .group_by(StudentProgramBindingModel.student_profile_id)
+            .having(
+                func.sum(
+                    case(
+                        (StudentProgramBindingModel.is_primary.is_(True), 1),
+                        else_=0,
+                    )
+                )
+                == 0
+            )
+        ).scalars().all()
+
+        issues: list[StudentProgramBindingConsistencyIssueSchema] = []
+
+        if duplicate_primary_student_ids:
+            duplicate_bindings = self.db.execute(
+                select(StudentProgramBindingModel)
+                .where(
+                    and_(
+                        StudentProgramBindingModel.tenant_id == tenant_id,
+                        StudentProgramBindingModel.student_profile_id.in_(duplicate_primary_student_ids),
+                        StudentProgramBindingModel.binding_state == StudentProgramBindingState.ACTIVE,
+                        StudentProgramBindingModel.is_primary.is_(True),
+                    )
+                )
+                .order_by(
+                    StudentProgramBindingModel.student_profile_id,
+                    desc(StudentProgramBindingModel.started_at),
+                    desc(StudentProgramBindingModel.id),
+                )
+            ).scalars().all()
+
+            duplicate_map: dict[int, list[StudentProgramBindingModel]] = {}
+            for binding in duplicate_bindings:
+                duplicate_map.setdefault(int(binding.student_profile_id), []).append(binding)
+
+            for student_profile_id in sorted(duplicate_map):
+                bindings = duplicate_map[student_profile_id]
+                issues.append(
+                    StudentProgramBindingConsistencyIssueSchema(
+                        student_profile_id=student_profile_id,
+                        issue_type="duplicate_active_primary_bindings",
+                        active_binding_count=len(bindings),
+                        active_primary_count=len(bindings),
+                        program_ids=[int(binding.program_id) for binding in bindings],
+                    )
+                )
+
+        if missing_primary_student_ids:
+            active_bindings = self.db.execute(
+                select(StudentProgramBindingModel)
+                .where(
+                    and_(
+                        StudentProgramBindingModel.tenant_id == tenant_id,
+                        StudentProgramBindingModel.student_profile_id.in_(missing_primary_student_ids),
+                        StudentProgramBindingModel.binding_state == StudentProgramBindingState.ACTIVE,
+                    )
+                )
+                .order_by(
+                    StudentProgramBindingModel.student_profile_id,
+                    desc(StudentProgramBindingModel.started_at),
+                    desc(StudentProgramBindingModel.id),
+                )
+            ).scalars().all()
+
+            missing_map: dict[int, list[StudentProgramBindingModel]] = {}
+            for binding in active_bindings:
+                missing_map.setdefault(int(binding.student_profile_id), []).append(binding)
+
+            for student_profile_id in sorted(missing_map):
+                bindings = missing_map[student_profile_id]
+                issues.append(
+                    StudentProgramBindingConsistencyIssueSchema(
+                        student_profile_id=student_profile_id,
+                        issue_type="active_bindings_without_primary",
+                        active_binding_count=len(bindings),
+                        active_primary_count=0,
+                        program_ids=[int(binding.program_id) for binding in bindings],
+                    )
+                )
+
+        return sorted(issues, key=lambda item: (item.student_profile_id, item.issue_type))
 
     async def provision_student_for_admissions_compat(
         self,

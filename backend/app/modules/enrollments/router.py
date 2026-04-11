@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Request, status
 from pydantic import BaseModel, ValidationError
@@ -22,6 +22,7 @@ from app.modules.audit.service import log_admin_action
 from app.modules.enrollments.dependencies import get_enrollments_db
 from app.modules.enrollments.models import EnrollmentStatus
 from app.modules.enrollments.schemas import (
+    EnrollmentConsistencyReportSchema,
     EnrollmentCreateSchema,
     EnrollmentDropSchema,
     EnrollmentListResponseSchema,
@@ -38,9 +39,9 @@ class ErrorDetailResponse(BaseModel):
     detail: Any
 
 
-TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
-Actor = Annotated[str, Depends(get_actor)]
-EnrollmentsDb = Annotated[Session, Depends(get_enrollments_db)]
+TrustedTenant: TypeAlias = Annotated[dict[str, object], Depends(get_current_tenant)]
+Actor: TypeAlias = Annotated[str, Depends(get_actor)]
+EnrollmentsDb: TypeAlias = Annotated[Session, Depends(get_enrollments_db)]
 
 
 def _parse_payload(schema_cls: type[BaseModel], payload: dict[str, Any]) -> BaseModel:
@@ -178,6 +179,38 @@ async def get_active_enrollment_endpoint(
             course_id=course_id,
             term_id=term_id,
             actor_id=actor,
+        )
+    except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
+        raise _raise_enrollments_http_error(exc) from exc
+
+
+@router.get(
+    "/enrollments/consistency",
+    status_code=status.HTTP_200_OK,
+    response_model=EnrollmentConsistencyReportSchema,
+    responses={
+        400: {"model": ErrorDetailResponse},
+        403: {"model": ErrorDetailResponse},
+    },
+)
+async def get_enrollment_consistency_endpoint(
+    request: Request = None,
+    actor: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("enrollments.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: EnrollmentsDb = None,
+) -> EnrollmentConsistencyReportSchema:
+    try:
+        tenant_id = int(tenant["id"])
+        _log_router_call(
+            request,
+            endpoint="GET /api/admin/enrollments/consistency",
+            actor_id=actor,
+            tenant_id=tenant_id,
+        )
+        service = EnrollmentLifecycleService(db)
+        return await service.list_tenant_enrollment_consistency_report(
+            tenant_id=tenant_id,
         )
     except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
         raise _raise_enrollments_http_error(exc) from exc
@@ -415,5 +448,9 @@ async def drop_enrollment_endpoint(
         OptimisticLockConflictError,
     ) as exc:
         raise _raise_enrollments_http_error(exc) from exc
+
+
+# Backward-compatible alias consumed by app bootstrap imports.
+legacy_router = router
 
 

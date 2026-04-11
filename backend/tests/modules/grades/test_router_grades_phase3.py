@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import Iterator
 from unittest.mock import MagicMock
 
 import pytest
@@ -13,6 +14,8 @@ from app.main import app
 from app.modules.grades import service as grades_service
 from app.modules.grades.dependencies import get_grades_db
 from app.modules.grades.schemas import (
+    GradeEnrollmentConsistencyIssueSchema,
+    GradeEnrollmentConsistencyReportSchema,
     GradeListResponseSchema,
     GradeReadSchema,
 )
@@ -40,7 +43,7 @@ def _enable_grades_permissions_for_admin(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture
-def override_grades_db() -> MagicMock:
+def override_grades_db() -> Iterator[MagicMock]:
     session = MagicMock()
     app.dependency_overrides[get_grades_db] = lambda: session
     try:
@@ -168,3 +171,40 @@ def test_list_course_grades_success(
 
     assert response.status_code == 200, response.text
     assert response.json()["total"] == 1
+
+
+def test_get_grade_enrollment_consistency_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_grades_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_list_consistency(self, tenant_id: int):
+        assert tenant_id == 1
+        return GradeEnrollmentConsistencyReportSchema(
+            enrollment_count=2,
+            grade_submission_count=2,
+            issue_count=1,
+            issues=[
+                GradeEnrollmentConsistencyIssueSchema(
+                    issue_type="grade_enrollment_mismatch",
+                    enrollment_id=4002,
+                    grade_submission_id=7002,
+                    field="grade_code",
+                    expected="B",
+                    actual="C",
+                )
+            ],
+        )
+
+    monkeypatch.setattr(
+        grades_service.GradeLifecycleService,
+        "list_tenant_grade_enrollment_consistency_report",
+        fake_list_consistency,
+    )
+
+    response = client.get("/api/admin/grades/consistency", headers=admin_headers)
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["issue_count"] == 1
+    assert payload["issues"][0]["issue_type"] == "grade_enrollment_mismatch"

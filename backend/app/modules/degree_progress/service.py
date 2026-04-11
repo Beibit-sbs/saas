@@ -15,6 +15,8 @@ from app.modules.audit.service import log_admin_action
 from app.modules.degree_progress.business_rules import DegreeProgressRules
 from app.modules.degree_progress.models import ProgramRequirementItemModel, ProgramRequirementModel
 from app.modules.degree_progress.schemas import (
+    DegreeProgressConsistencyIssueSchema,
+    DegreeProgressConsistencyReportSchema,
     DegreeProgressSchema,
     GraduationEligibilitySchema,
     RequirementStatusSchema,
@@ -225,4 +227,90 @@ class DegreeProgressService:
             gpa=progress.gpa,
             minimum_gpa=progress.minimum_gpa,
             remaining_required_items=len(progress.remaining_requirements),
+        )
+
+    async def list_tenant_degree_progress_consistency_report(
+        self,
+        tenant_id: int,
+    ) -> DegreeProgressConsistencyReportSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        active_primary_bindings = self.db.execute(
+            select(StudentProgramBindingModel)
+            .where(
+                and_(
+                    StudentProgramBindingModel.tenant_id == tenant_id,
+                    StudentProgramBindingModel.binding_state == StudentProgramBindingState.ACTIVE,
+                    StudentProgramBindingModel.is_primary.is_(True),
+                )
+            )
+            .order_by(StudentProgramBindingModel.student_profile_id, StudentProgramBindingModel.id)
+        ).scalars().all()
+
+        active_requirements = self.db.execute(
+            select(ProgramRequirementModel)
+            .where(
+                and_(
+                    ProgramRequirementModel.tenant_id == tenant_id,
+                    ProgramRequirementModel.is_active.is_(True),
+                )
+            )
+            .order_by(ProgramRequirementModel.program_id, ProgramRequirementModel.id)
+        ).scalars().all()
+
+        requirement_items = self.db.execute(
+            select(ProgramRequirementItemModel)
+            .where(ProgramRequirementItemModel.tenant_id == tenant_id)
+            .order_by(ProgramRequirementItemModel.requirement_id, ProgramRequirementItemModel.id)
+        ).scalars().all()
+
+        requirements_by_program: dict[int, list[ProgramRequirementModel]] = {}
+        for requirement in active_requirements:
+            requirements_by_program.setdefault(int(requirement.program_id), []).append(requirement)
+
+        requirement_item_counts: dict[int, int] = {}
+        for item in requirement_items:
+            requirement_id = int(item.requirement_id)
+            requirement_item_counts[requirement_id] = requirement_item_counts.get(requirement_id, 0) + 1
+
+        issues: list[DegreeProgressConsistencyIssueSchema] = []
+
+        for binding in active_primary_bindings:
+            program_requirements = requirements_by_program.get(int(binding.program_id), [])
+            if not program_requirements:
+                issues.append(
+                    DegreeProgressConsistencyIssueSchema(
+                        issue_type="active_primary_binding_missing_requirement",
+                        student_profile_id=int(binding.student_profile_id),
+                        program_id=int(binding.program_id),
+                    )
+                )
+
+        for program_id, program_requirements in requirements_by_program.items():
+            if len(program_requirements) > 1:
+                issues.append(
+                    DegreeProgressConsistencyIssueSchema(
+                        issue_type="program_multiple_active_requirements",
+                        program_id=program_id,
+                        requirement_id=int(program_requirements[0].id),
+                        active_requirement_count=len(program_requirements),
+                    )
+                )
+
+            for requirement in program_requirements:
+                if requirement_item_counts.get(int(requirement.id), 0) == 0:
+                    issues.append(
+                        DegreeProgressConsistencyIssueSchema(
+                            issue_type="active_requirement_without_items",
+                            program_id=int(requirement.program_id),
+                            requirement_id=int(requirement.id),
+                        )
+                    )
+
+        return DegreeProgressConsistencyReportSchema(
+            active_primary_binding_count=len(active_primary_bindings),
+            active_requirement_count=len(active_requirements),
+            requirement_item_count=len(requirement_items),
+            issue_count=len(issues),
+            issues=issues,
         )

@@ -37,6 +37,7 @@ from app.modules.admissions.models import (
     ApplicationStageHistoryModel,
 )
 from app.modules.admissions.schemas import (
+    AdmissionsConsistencyReportSchema,
     ApplicantCreateSchema,
     ApplicantReadSchema,
     ApplicantUpdateSchema,
@@ -59,6 +60,10 @@ from app.modules.admissions.schemas import (
     StageTransitionRequestSchema,
     StageTransitionResponseSchema,
 )
+from app.modules.profiles.models import PersonModel
+from app.modules.students.schemas import AdmissionsProvisionStudentRequestSchema
+from app.modules.students.service import StudentLifecycleService
+from app.modules.workflows import workflow_service
 
 
 def _utc_now() -> datetime:
@@ -400,6 +405,210 @@ class ApplicationService:
             items=[ApplicationReadSchema.model_validate(app) for app in applications],
         )
 
+    async def get_tenant_consistency_report(
+        self,
+        tenant_id: int,
+    ) -> AdmissionsConsistencyReportSchema:
+        """Build tenant-scoped admissions reference consistency report."""
+        TenantIsolationRules.validate_tenant_id_provided(tenant_id)
+
+        applicants = self.db.execute(
+            select(ApplicantModel).where(ApplicantModel.tenant_id == tenant_id)
+        ).scalars().all()
+        applications = self.db.execute(
+            select(ApplicationModel).where(ApplicationModel.tenant_id == tenant_id)
+        ).scalars().all()
+        documents = self.db.execute(
+            select(ApplicationDocumentModel).where(ApplicationDocumentModel.tenant_id == tenant_id)
+        ).scalars().all()
+        stage_histories = self.db.execute(
+            select(ApplicationStageHistoryModel).where(ApplicationStageHistoryModel.tenant_id == tenant_id)
+        ).scalars().all()
+        decisions = self.db.execute(
+            select(ApplicationDecisionModel).where(ApplicationDecisionModel.tenant_id == tenant_id)
+        ).scalars().all()
+
+        applicant_by_id = {applicant.id: applicant for applicant in applicants}
+        application_by_id = {application.id: application for application in applications}
+        application_ids = set(application_by_id.keys())
+        history_transitions_by_application: dict[int, set[str]] = {}
+        decision_by_application: dict[int, ApplicationDecisionModel] = {}
+        decision_ids_by_application: dict[int, list[int]] = {}
+
+        allowed_application_statuses = {"new", "received", "under_review", "decision_pending", "concluded", "withdrawn", "archived"}
+        allowed_applicant_statuses = {"active", "inactive", "withdrawn"}
+
+        issues: list[dict[str, int | str]] = []
+
+        for applicant in applicants:
+            email = str(applicant.email).strip() if applicant.email else ""
+            if not email:
+                issues.append({
+                    "issue_type": "applicant_missing_email",
+                    "applicant_id": applicant.id,
+                })
+            elif "@" not in email:
+                issues.append({
+                    "issue_type": "applicant_invalid_email_format",
+                    "applicant_id": applicant.id,
+                    "email": applicant.email,
+                })
+
+            status = str(applicant.status).strip().lower() if applicant.status else ""
+            if status not in allowed_applicant_statuses:
+                issues.append({
+                    "issue_type": "applicant_invalid_status",
+                    "applicant_id": applicant.id,
+                    "status": applicant.status,
+                })
+
+        application_enrollment_keys: dict[tuple, int] = {}
+        for application in applications:
+            applicant = applicant_by_id.get(application.applicant_id)
+            if applicant is None:
+                issues.append(
+                    {
+                        "issue_type": "application_missing_applicant",
+                        "application_id": application.id,
+                        "applicant_id": application.applicant_id,
+                    }
+                )
+                continue
+
+            if int(applicant.program_id) != int(application.program_id):
+                issues.append(
+                    {
+                        "issue_type": "application_program_mismatch",
+                        "application_id": application.id,
+                        "applicant_id": application.applicant_id,
+                    }
+                )
+
+            app_status = str(application.stage).strip().lower() if application.stage else ""
+            if app_status not in allowed_application_statuses:
+                issues.append({
+                    "issue_type": "application_invalid_status",
+                    "application_id": application.id,
+                    "status": application.stage,
+                })
+
+            enrollment_key = (applicant.id, application.program_id, applicant.application_year)
+            application_enrollment_keys[enrollment_key] = application_enrollment_keys.get(enrollment_key, 0) + 1
+
+        for enrollment_key, count in application_enrollment_keys.items():
+            if count > 1:
+                applicant_id, program_id, app_year = enrollment_key
+                for application in applications:
+                    if (
+                        application.applicant_id == applicant_id
+                        and int(application.program_id) == int(program_id)
+                    ):
+                        issues.append({
+                            "issue_type": "duplicate_application_per_applicant",
+                            "application_id": application.id,
+                            "applicant_id": applicant_id,
+                            "program_id": program_id,
+                        })
+
+        for document in documents:
+            if document.application_id not in application_ids:
+                issues.append(
+                    {
+                        "issue_type": "document_missing_application",
+                        "application_id": document.application_id,
+                        "document_id": document.id,
+                    }
+                )
+
+        for history in stage_histories:
+            if history.application_id not in application_ids:
+                issues.append(
+                    {
+                        "issue_type": "stage_history_missing_application",
+                        "application_id": history.application_id,
+                    }
+                )
+                continue
+            history_transitions_by_application.setdefault(int(history.application_id), set()).add(
+                str(history.to_stage)
+            )
+
+        for decision in decisions:
+            if decision.application_id not in application_ids:
+                issues.append(
+                    {
+                        "issue_type": "decision_missing_application",
+                        "application_id": decision.application_id,
+                        "decision_id": decision.id,
+                    }
+                )
+                continue
+            application_id = int(decision.application_id)
+            decision_by_application[application_id] = decision
+            decision_ids_by_application.setdefault(application_id, []).append(int(decision.id))
+
+        for application_id, decision_ids in decision_ids_by_application.items():
+            if len(decision_ids) <= 1:
+                continue
+            for decision_id in decision_ids:
+                issues.append(
+                    {
+                        "issue_type": "duplicate_decisions_for_application",
+                        "application_id": application_id,
+                        "decision_id": decision_id,
+                    }
+                )
+
+        for application in applications:
+            application_id = int(application.id)
+            history_targets = history_transitions_by_application.get(application_id, set())
+            has_decision = application_id in decision_by_application
+
+            if (
+                application.stage == ApplicationStage.CONCLUDED.value
+                and not has_decision
+            ):
+                issues.append(
+                    {
+                        "issue_type": "concluded_application_missing_decision",
+                        "application_id": application_id,
+                    }
+                )
+
+            if has_decision and application.stage != ApplicationStage.CONCLUDED.value:
+                issues.append(
+                    {
+                        "issue_type": "decision_application_stage_mismatch",
+                        "application_id": application_id,
+                        "decision_id": int(decision_by_application[application_id].id),
+                    }
+                )
+
+            if application.stage != ApplicationStage.NEW.value and application.stage not in history_targets:
+                issues.append(
+                    {
+                        "issue_type": "application_stage_missing_history_entry",
+                        "application_id": application_id,
+                    }
+                )
+
+            if application.decision_at is not None and not has_decision:
+                issues.append(
+                    {
+                        "issue_type": "application_decision_timestamp_without_decision",
+                        "application_id": application_id,
+                    }
+                )
+
+        return AdmissionsConsistencyReportSchema(
+            applicant_count=len(applicants),
+            application_count=len(applications),
+            document_count=len(documents),
+            decision_count=len(decisions),
+            issue_count=len(issues),
+            issues=issues,
+        )
+
     async def submit_application(
         self,
         tenant_id: int,
@@ -564,15 +773,11 @@ class ApplicationService:
             ValueError: If workflow template not found
             RuntimeError: If workflow service not available
         """
-        from app.modules.workflows.workflow_service import WorkflowService
-        
         tenant_id = validate_tenant_id_provided(tenant_id)
-        
-        # Lazy import to avoid circular dependency
-        workflow_service = WorkflowService(self.db)
+        workflow_runtime = workflow_service.WorkflowService(self.db)
         
         # Start workflow
-        workflow_instance = await workflow_service.start_workflow(
+        workflow_instance = await workflow_runtime.start_workflow(
             tenant_id=tenant_id,
             workflow_key="admissions",
             entity_type="admission_application",
@@ -946,11 +1151,6 @@ class DecisionService:
         # Only accepted decisions are eligible for identity provisioning.
         if application.conclusion_type != ApplicationConclusionType.ACCEPTED.value:
             return
-
-        # Lazy imports keep module boundaries loose and avoid hard import coupling.
-        from app.modules.profiles.models import PersonModel
-        from app.modules.students.schemas import AdmissionsProvisionStudentRequestSchema
-        from app.modules.students.service import StudentLifecycleService
 
         applicant = self.db.execute(
             select(ApplicantModel).where(

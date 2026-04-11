@@ -434,3 +434,56 @@ class TestTranscriptAndGpa:
         assert result.gpa == Decimal("4.00")
         assert len(result.items) == 1
         assert result.items[0].course_code == "CS101"
+
+
+class TestGradeEnrollmentConsistency:
+    def test_list_tenant_grade_enrollment_consistency_report_detects_issues(
+        self,
+        run_async,
+        db_session,
+        enrollment_factory,
+        submission_factory,
+    ) -> None:
+        service = GradeLifecycleService(db_session)
+
+        enrollment_ok = enrollment_factory(
+            id=4001,
+            tenant_id=1,
+            grade_code="A",
+            grade_points=Decimal("4.00"),
+        )
+        enrollment_missing_submission = enrollment_factory(
+            id=4002,
+            tenant_id=1,
+            grade_code="B",
+            grade_points=Decimal("3.00"),
+        )
+
+        submission_ok = submission_factory(
+            id=7001,
+            tenant_id=1,
+            enrollment_id=4001,
+            grade_code="A",
+            grade_points=Decimal("4.00"),
+        )
+        submission_dangling = submission_factory(
+            id=7002,
+            tenant_id=1,
+            enrollment_id=4999,
+            grade_code="A",
+            grade_points=Decimal("4.00"),
+        )
+
+        db_session.execute.side_effect = [
+            ExecuteResult(scalars=[enrollment_ok, enrollment_missing_submission]),
+            ExecuteResult(scalars=[submission_ok, submission_dangling]),
+        ]
+
+        result = run_async(service.list_tenant_grade_enrollment_consistency_report(tenant_id=1))
+
+        assert result.enrollment_count == 2
+        assert result.grade_submission_count == 2
+        assert result.issue_count == 2
+        issue_types = [issue.issue_type for issue in result.issues]
+        assert "missing_grade_submission" in issue_types
+        assert "dangling_grade_submission" in issue_types

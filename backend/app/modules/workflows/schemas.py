@@ -106,3 +106,23 @@ class WorkflowInstanceListResponseSchema(BaseModel):
 class WorkflowTaskListResponseSchema(BaseModel):
     total: int = Field(..., ge=0)
     items: list[WorkflowTaskReadSchema]
+
+
+class WorkflowConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    workflow_instance_id: int | None = None
+    workflow_task_id: int | None = None
+    comment_id: int | None = None
+    reference_id: int | None = None
+    detail: str
+
+
+class WorkflowConsistencyReportSchema(BaseModel):
+    definition_count: int = Field(..., ge=0)
+    definition_version_count: int = Field(..., ge=0)
+    step_count: int = Field(..., ge=0)
+    instance_count: int = Field(..., ge=0)
+    task_count: int = Field(..., ge=0)
+    comment_count: int = Field(..., ge=0)
+    issue_count: int = Field(..., ge=0)
+    issues: list[WorkflowConsistencyIssueSchema] = Field(default_factory=list)

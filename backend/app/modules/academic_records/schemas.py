@@ -33,3 +33,16 @@ class RecordItemResponse(BaseModel):
 class RecordDeleteResponse(BaseModel):
     deleted: bool
     record: RecordResponse
+
+
+class AcademicRecordConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    record_id: int
+    student_id: int | None = None
+    course_id: int | None = None
+
+
+class AcademicRecordConsistencyReportSchema(BaseModel):
+    record_count: int
+    issue_count: int
+    issues: list[AcademicRecordConsistencyIssueSchema]

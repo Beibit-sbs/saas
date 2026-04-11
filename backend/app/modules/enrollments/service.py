@@ -16,6 +16,7 @@ from app.core.module_helpers.service_validation import (
 )
 from app.modules.audit.service import log_admin_action
 from app.modules.audit.service import log_data_access_event
+from app.modules.billing.service import assert_billing_write_allowed
 from app.modules.courses.models import CourseModel
 from app.modules.enrollments.business_rules import EnrollmentLifecycleRules
 from app.modules.enrollments.models import (
@@ -25,6 +26,8 @@ from app.modules.enrollments.models import (
     EnrollmentStatusHistoryModel,
 )
 from app.modules.enrollments.schemas import (
+    EnrollmentConsistencyIssueSchema,
+    EnrollmentConsistencyReportSchema,
     EnrollmentCreateSchema,
     EnrollmentDropSchema,
     EnrollmentListResponseSchema,
@@ -216,6 +219,7 @@ class EnrollmentLifecycleService:
         actor_id: str,
     ) -> EnrollmentReadSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
+        assert_billing_write_allowed(tenant_id, action="enrollments.create")
         EnrollmentLifecycleRules.validate_initial_status(request.enrollment_status)
 
         profile = self._load_student_profile(tenant_id, request.student_profile_id)
@@ -334,6 +338,78 @@ class EnrollmentLifecycleService:
                 result="success",
             )
         return EnrollmentReadSchema.model_validate(enrollment)
+
+    async def list_tenant_enrollment_consistency_report(
+        self,
+        tenant_id: int,
+    ) -> EnrollmentConsistencyReportSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        enrollments = self.db.execute(
+            select(EnrollmentModel)
+            .where(EnrollmentModel.tenant_id == tenant_id)
+            .order_by(EnrollmentModel.id)
+        ).scalars().all()
+
+        student_ids = set(
+            self.db.execute(
+                select(StudentProfileModel.id).where(
+                    StudentProfileModel.tenant_id == tenant_id
+                )
+            ).scalars().all()
+        )
+        course_ids = set(
+            self.db.execute(
+                    select(CourseModel.id).where(CourseModel.tenant_id == tenant_id)
+            ).scalars().all()
+        )
+        term_ids = set(
+            self.db.execute(
+                select(AcademicTermModel.id).where(
+                    AcademicTermModel.tenant_id == tenant_id
+                )
+            ).scalars().all()
+        )
+
+        issues: list[EnrollmentConsistencyIssueSchema] = []
+        for enrollment in enrollments:
+            enrollment_id = int(enrollment.id)
+            if int(enrollment.student_profile_id) not in student_ids:
+                issues.append(
+                    EnrollmentConsistencyIssueSchema(
+                        issue_type="enrollment_missing_student_profile",
+                        enrollment_id=enrollment_id,
+                        student_profile_id=int(enrollment.student_profile_id),
+                        course_id=int(enrollment.course_id),
+                        term_id=int(enrollment.term_id),
+                    )
+                )
+            if int(enrollment.course_id) not in course_ids:
+                issues.append(
+                    EnrollmentConsistencyIssueSchema(
+                        issue_type="enrollment_missing_course",
+                        enrollment_id=enrollment_id,
+                        student_profile_id=int(enrollment.student_profile_id),
+                        course_id=int(enrollment.course_id),
+                        term_id=int(enrollment.term_id),
+                    )
+                )
+            if int(enrollment.term_id) not in term_ids:
+                issues.append(
+                    EnrollmentConsistencyIssueSchema(
+                        issue_type="enrollment_missing_term",
+                        enrollment_id=enrollment_id,
+                        student_profile_id=int(enrollment.student_profile_id),
+                        course_id=int(enrollment.course_id),
+                        term_id=int(enrollment.term_id),
+                    )
+                )
+
+        return EnrollmentConsistencyReportSchema(
+            enrollment_count=len(enrollments),
+            issue_count=len(issues),
+            issues=issues,
+        )
 
     async def list_student_enrollments(
         self,
@@ -581,6 +657,7 @@ def list_enrollments(tenant_id: int) -> list[dict[str, object]]:
 
 
 def create_enrollment(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+    assert_billing_write_allowed(int(tenant_id), action="enrollments.create")
     return create_entity_for_tenant("enrollments", payload, tenant_id)
 
 

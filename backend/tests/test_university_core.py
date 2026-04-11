@@ -1,4 +1,5 @@
 from app.modules.students.service import create_student
+from app.modules.university_core import tenant_entity_service
 
 from tests.conftest import ADMIN_HEADERS, client
 
@@ -125,3 +126,41 @@ def test_record_assignment() -> None:
     assert record["student_id"] == student_id
     assert record["course_id"] == course_id
     assert record["grade"] == "A-"
+
+
+def test_university_core_consistency_endpoint_detects_cross_entity_drift(monkeypatch) -> None:
+    def fake_list_entities_for_tenant(entity_name: str, tenant_id: int):
+        assert tenant_id == 1
+        fixtures = {
+            "students": [{"id": 1001, "tenant_id": "1"}],
+            "programs": [{"id": 501, "tenant_id": "1"}],
+            "courses": [
+                {"id": 701, "program_id": 501, "tenant_id": "1"},
+                {"id": 702, "program_id": 9999, "tenant_id": "1"},
+            ],
+            "enrollments": [
+                {"id": 801, "student_id": 1001, "course_id": 701, "tenant_id": "1"},
+                {"id": 802, "student_id": 9999, "course_id": 702, "tenant_id": ""},
+            ],
+            "academic_records": [
+                {"id": 901, "student_id": 1001, "course_id": 9998, "tenant_id": "1"},
+            ],
+        }
+        return fixtures[entity_name]
+
+    monkeypatch.setattr(
+        tenant_entity_service,
+        "list_entities_for_tenant",
+        fake_list_entities_for_tenant,
+    )
+
+    response = client.get("/api/admin/university/consistency", headers=ADMIN_HEADERS)
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["entity_counts"]["courses"] == 2
+    issue_types = [issue["issue_type"] for issue in body["issues"]]
+    assert "course_missing_program" in issue_types
+    assert "enrollment_missing_student" in issue_types
+    assert "missing_tenant_marker" in issue_types
+    assert "academic_record_missing_course" in issue_types

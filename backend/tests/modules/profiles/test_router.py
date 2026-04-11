@@ -15,6 +15,7 @@ from app.modules.profiles.dependencies import get_profiles_db
 from app.modules.profiles.router import _raise_profile_http_error
 from app.modules.profiles.schemas import (
     FacultyReadSchema,
+    PersonConsistencyReportSchema,
     PersonListResponseSchema,
     PersonReadSchema,
 )
@@ -82,6 +83,45 @@ def test_list_people_endpoint_is_rbac_protected(monkeypatch: pytest.MonkeyPatch,
 
     assert allowed.status_code == 200, allowed.text
     assert denied.status_code == 403, denied.text
+
+
+def test_list_people_consistency_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_profiles_db: MagicMock,
+) -> None:
+    async def fake_list_tenant_person_consistency_report(
+        self,
+        tenant_id: int,
+    ) -> PersonConsistencyReportSchema:
+        assert tenant_id == 1
+        return PersonConsistencyReportSchema(
+            person_count=3,
+            issue_count=1,
+            issues=[
+                {
+                    "issue_type": "duplicate_person_email",
+                    "person_id": 102,
+                    "email": "student@example.edu",
+                }
+            ],
+        )
+
+    monkeypatch.setattr(
+        profiles_service.PersonService,
+        "list_tenant_person_consistency_report",
+        fake_list_tenant_person_consistency_report,
+    )
+
+    response = client.get(
+        "/api/admin/profiles/people/consistency",
+        headers=ADMIN_HEADERS,
+    )
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["person_count"] == 3
+    assert payload["issue_count"] == 1
+    assert payload["issues"][0]["issue_type"] == "duplicate_person_email"
 
 
 def test_get_person_maps_tenant_scoped_not_found_to_404(monkeypatch: pytest.MonkeyPatch, override_profiles_db: MagicMock) -> None:

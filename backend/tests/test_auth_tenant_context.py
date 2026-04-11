@@ -141,7 +141,7 @@ def test_tenant_user_with_matching_header_is_allowed() -> None:
     assert ok.status_code == 200, ok.text
 
 
-def test_platform_local_login_without_tenant_header_uses_platform_fallback() -> None:
+def test_platform_local_login_without_tenant_header_is_rejected() -> None:
     suffix = uuid4().hex[:8]
     platform_login = f"platform-default-{suffix}"
     local_user_store.create_user(
@@ -158,7 +158,7 @@ def test_platform_local_login_without_tenant_header_uses_platform_fallback() -> 
         "/api/auth/login",
         json={"login": platform_login, "password": "PlatformDefaultPass123"},
     )
-    assert login.status_code == 200, login.text
+    assert login.status_code == 400, login.text
 
 
 def test_tenant_local_login_requires_explicit_tenant_header() -> None:
@@ -180,7 +180,7 @@ def test_tenant_local_login_requires_explicit_tenant_header() -> None:
         "/api/auth/login",
         json={"login": tenant_b_login, "password": "TenantBexplicit123"},
     )
-    assert without_header.status_code in {401, 503}, without_header.text
+    assert without_header.status_code == 400, without_header.text
 
     with_wrong_header = client.post(
         "/api/auth/login",

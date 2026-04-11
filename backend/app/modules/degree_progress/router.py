@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from pydantic import BaseModel
@@ -20,7 +20,11 @@ from app.core.module_helpers.service_validation import (
 )
 from app.core.tenant import get_current_tenant
 from app.modules.degree_progress.dependencies import get_degree_progress_db
-from app.modules.degree_progress.schemas import DegreeProgressSchema, GraduationEligibilitySchema
+from app.modules.degree_progress.schemas import (
+    DegreeProgressConsistencyReportSchema,
+    DegreeProgressSchema,
+    GraduationEligibilitySchema,
+)
 from app.modules.degree_progress.service import DegreeProgressService
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -29,9 +33,9 @@ class ErrorDetailResponse(BaseModel):
     detail: Any
 
 
-TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
-Actor = Annotated[str, Depends(get_actor)]
-DegreeProgressDb = Annotated[Session, Depends(get_degree_progress_db)]
+TrustedTenant: TypeAlias = Annotated[dict[str, object], Depends(get_current_tenant)]
+Actor: TypeAlias = Annotated[str, Depends(get_actor)]
+DegreeProgressDb: TypeAlias = Annotated[Session, Depends(get_degree_progress_db)]
 
 
 def _raise_degree_progress_http_error(exc: Exception) -> HTTPException:
@@ -106,6 +110,32 @@ async def get_graduation_eligibility_endpoint(
             tenant_id=int(tenant["id"]),
             student_profile_id=student_id,
             actor_id=actor,
+        )
+    except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
+        raise _raise_degree_progress_http_error(exc) from exc
+
+
+@router.get(
+    "/degree-progress/consistency",
+    summary="Get tenant degree progress consistency report",
+    description="Read-only reconciliation for active program bindings and degree requirements.",
+    response_model=DegreeProgressConsistencyReportSchema,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": ErrorDetailResponse},
+        403: {"model": ErrorDetailResponse},
+    },
+)
+async def get_degree_progress_consistency_endpoint(
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("degree_progress.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: DegreeProgressDb = None,
+) -> DegreeProgressConsistencyReportSchema:
+    service = DegreeProgressService(db)
+    try:
+        return await service.list_tenant_degree_progress_consistency_report(
+            tenant_id=int(tenant["id"])
         )
     except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
         raise _raise_degree_progress_http_error(exc) from exc

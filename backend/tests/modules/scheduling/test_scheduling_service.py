@@ -109,7 +109,14 @@ def audit_mock(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     return mock
 
 
-def test_create_course_section_success(run_async, db_session, audit_mock) -> None:
+@pytest.fixture
+def billing_guard_mock(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    mock = MagicMock(name="assert_billing_write_allowed")
+    monkeypatch.setattr("app.modules.scheduling.service.assert_billing_write_allowed", mock)
+    return mock
+
+
+def test_create_course_section_success(run_async, db_session, audit_mock, billing_guard_mock) -> None:
     service = SchedulingService(db_session)
     request = CourseSectionCreateSchema(
         course_id=701,
@@ -134,6 +141,7 @@ def test_create_course_section_success(run_async, db_session, audit_mock) -> Non
     assert result.status == SectionStatus.PLANNED
     db_session.commit.assert_called_once()
     audit_mock.assert_called_once()
+    billing_guard_mock.assert_called_once_with(1, action="scheduling.section.create")
 
 
 def test_schedule_section_room_conflict_raises(run_async, db_session) -> None:
@@ -375,7 +383,7 @@ def test_get_room_schedule_rejects_cross_tenant_classroom(run_async, db_session)
         run_async(service.get_room_schedule(tenant_id=1, classroom_id=999))
 
 
-def test_create_lesson_instance_success(run_async, db_session, audit_mock) -> None:
+def test_create_lesson_instance_success(run_async, db_session, audit_mock, billing_guard_mock) -> None:
     service = SchedulingService(db_session)
     section = CourseSectionModel(
         id=1101,
@@ -412,6 +420,7 @@ def test_create_lesson_instance_success(run_async, db_session, audit_mock) -> No
     assert result.status == LessonStatus.PLANNED
     db_session.commit.assert_called_once()
     audit_mock.assert_called_once()
+    billing_guard_mock.assert_called_once_with(1, action="scheduling.lesson.create")
 
 
 def test_upsert_lesson_attendance_success(run_async, db_session, audit_mock) -> None:
@@ -554,7 +563,7 @@ def test_list_lesson_attendance_returns_rows(run_async, db_session) -> None:
     assert result.items[0].student_profile_id == 501
 
 
-def test_create_discipline_success(run_async, db_session, audit_mock) -> None:
+def test_create_discipline_success(run_async, db_session, audit_mock, billing_guard_mock) -> None:
     service = SchedulingService(db_session)
     request = DisciplineCreateSchema(
         unique_code="CS-101",
@@ -571,9 +580,10 @@ def test_create_discipline_success(run_async, db_session, audit_mock) -> None:
     assert result.title == "Introduction to Programming"
     db_session.commit.assert_called_once()
     audit_mock.assert_called_once()
+    billing_guard_mock.assert_called_once_with(1, action="scheduling.discipline.create")
 
 
-def test_create_lesson_topic_success(run_async, db_session, audit_mock) -> None:
+def test_create_lesson_topic_success(run_async, db_session, audit_mock, billing_guard_mock) -> None:
     service = SchedulingService(db_session)
     discipline = DisciplineModel(
         id=301,
@@ -612,6 +622,7 @@ def test_create_lesson_topic_success(run_async, db_session, audit_mock) -> None:
     assert result.topic_num == 1
     db_session.commit.assert_called_once()
     audit_mock.assert_called_once()
+    billing_guard_mock.assert_called_once_with(1, action="scheduling.topic.create")
 
 
 def test_upsert_student_topic_progress_success(run_async, db_session, audit_mock) -> None:
@@ -772,3 +783,74 @@ def test_list_student_topic_progress_success(run_async, db_session) -> None:
     assert result.total == 1
     assert result.items[0].student_profile_id == 777
     assert result.items[0].topic_id == 401
+
+
+class TestSchedulingConsistency:
+    def test_list_tenant_scheduling_consistency_report_detects_issues(
+        self,
+        run_async,
+        db_session,
+    ) -> None:
+        from app.modules.scheduling.schemas import SchedulingConsistencyReportSchema
+        from app.modules.scheduling.models import (
+            CourseSectionModel,
+            LessonAttendanceModel,
+        )
+
+        service = SchedulingService(db_session)
+
+        section_ok = CourseSectionModel(
+            id=901,
+            tenant_id=1,
+            course_id=10,
+            term_id=1,
+            section_code="CS101-A",
+            status=SectionStatus.SCHEDULED,
+            max_capacity=30,
+            version=1,
+        )
+        section_no_schedule = CourseSectionModel(
+            id=902,
+            tenant_id=1,
+            course_id=10,
+            term_id=1,
+            section_code="CS101-B",
+            status=SectionStatus.PLANNED,
+            max_capacity=30,
+            version=1,
+        )
+
+        attendance_orphaned = LessonAttendanceModel(
+            id=5001,
+            tenant_id=1,
+            lesson_instance_id=100,
+            student_profile_id=9999,
+            attendance_status=AttendanceStatus.PRESENT,
+            marked_by="teacher@example.com",
+            version=1,
+        )
+
+        # execute call order:
+        # 1. sections query
+        # 2. scheduled_section_ids (SectionScheduleModel.section_id)
+        # 3. assigned_section_ids (InstructorAssignmentModel.section_id)
+        # 4. attendances query
+        # 5. student_ids query
+        db_session.execute.side_effect = [
+            ExecuteResult(rows=[section_ok, section_no_schedule]),
+            ExecuteResult(rows=[901]),
+            ExecuteResult(rows=[901, 902]),
+            ExecuteResult(rows=[attendance_orphaned]),
+            ExecuteResult(rows=[1, 2, 3]),
+        ]
+
+        result = run_async(
+            service.list_tenant_scheduling_consistency_report(tenant_id=1)
+        )
+
+        assert result.section_count == 2
+        assert result.attendance_count == 1
+        issue_types = [i.issue_type for i in result.issues]
+        assert "section_without_schedule" in issue_types
+        assert "attendance_orphaned_student" in issue_types
+        assert result.issue_count == len(result.issues)

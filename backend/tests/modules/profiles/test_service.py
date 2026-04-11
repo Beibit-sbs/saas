@@ -132,6 +132,29 @@ class TestPersonService:
         assert result.total == 2
         assert len(result.items) == 2
 
+    def test_list_tenant_person_consistency_report_detects_issues(
+        self,
+        db_session: MagicMock,
+        person_factory,
+    ) -> None:
+        service = PersonService(db_session)
+        db_session.execute.return_value = make_execute_result(
+            scalars_all=[
+                person_factory(id=101, email="student@example.edu", external_person_key="ext-1"),
+                person_factory(id=102, email="STUDENT@example.edu", external_person_key="ext-1"),
+                person_factory(id=103, email="", external_person_key=None),
+            ]
+        )
+
+        result = _run(service.list_tenant_person_consistency_report(tenant_id=1))
+
+        assert result.person_count == 3
+        assert result.issue_count == 5
+        issue_types = [issue.issue_type for issue in result.issues]
+        assert issue_types.count("duplicate_person_email") == 2
+        assert issue_types.count("duplicate_external_person_key") == 2
+        assert "person_missing_email" in issue_types
+
 
 class TestDepartmentService:
     def test_create_department_success_writes_audit(self, db_session: MagicMock, audit_mock: MagicMock) -> None:

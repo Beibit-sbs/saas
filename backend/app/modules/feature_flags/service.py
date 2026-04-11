@@ -1,74 +1,54 @@
-from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Dict, List
+"""
+Feature flags — thin delegation bridge.
+
+All state is persisted in app_platform_feature_flags via Alembic migrations.
+This module provides the legacy flat API (`list_flags`, `is_flag_enabled`,
+`set_flag`) used by modules-layer callers; it delegates every operation to
+the DB-backed `app.platform.feature_flags.service`.
+"""
+from __future__ import annotations
+
+from typing import List
+
+from app.platform.feature_flags import service as _platform_service
 
 
-@dataclass
-class FeatureFlag:
-    key: str
-    description: str
-    enabled: bool
-    scope: str
-    updated_at: str
+def _split_composite_key(composite_key: str) -> tuple[str, str]:
+    """Split 'module.rest.of.key' into (module, rest.of.key).
+
+    Falls back to ('global', composite_key) for un-dotted keys.
+    """
+    parts = composite_key.split(".", 1)
+    if len(parts) == 2 and parts[0] and parts[1]:
+        return parts[0].strip().lower(), parts[1].strip().lower()
+    return "global", composite_key.lower()
 
 
-_PLATFORM_DEFAULT_TENANT_ID = 1
-
-
-# Scaffold-only in-memory store.
-# This module is intentionally not wired into runtime until rollout phase.
-_flags: Dict[str, FeatureFlag] = {
-    "admin.local_users.tab": FeatureFlag(
-        key="admin.local_users.tab",
-        description="Show local users tab in admin panel",
-        enabled=True,
-        scope="global",
-        updated_at=datetime.now(timezone.utc).isoformat(),
-    )
-}
-_flags_by_tenant: Dict[int, Dict[str, FeatureFlag]] = {_PLATFORM_DEFAULT_TENANT_ID: _flags}
-
-
-def _require_tenant_id(tenant_id: int | None, *, operation: str) -> int:
-    if tenant_id is None:
-        raise ValueError(f"tenant_id is required for {operation}")
-    normalized = int(tenant_id)
-    if normalized <= 0:
-        raise ValueError("tenant_id must be positive")
-    return normalized
-
-
-def _tenant_store(tenant_id: int) -> Dict[str, FeatureFlag]:
-    store = _flags_by_tenant.get(tenant_id)
-    if store is not None:
-        return store
-
-    seeded: Dict[str, FeatureFlag] = {
-        key: FeatureFlag(
-            key=item.key,
-            description=item.description,
-            enabled=item.enabled,
-            scope=item.scope,
-            updated_at=item.updated_at,
-        )
-        for key, item in _flags.items()
+def _to_legacy_dict(row: dict[str, object]) -> dict[str, object]:
+    module = str(row.get("module", ""))
+    key = str(row.get("key", ""))
+    composite = f"{module}.{key}" if module and module not in ("", "global") else key
+    return {
+        "key": composite,
+        "description": str(row.get("description", "")),
+        "enabled": bool(row.get("enabled", False)),
+        "scope": str(row.get("scope", "tenant")),
+        "updated_at": str(row.get("updated_at", "")),
     }
-    _flags_by_tenant[tenant_id] = seeded
-    return seeded
 
 
 def list_flags(tenant_id: int | None = None) -> List[dict[str, object]]:
-    store = _tenant_store(_require_tenant_id(tenant_id, operation="list_flags"))
-    return [
-        {
-            "key": item.key,
-            "description": item.description,
-            "enabled": item.enabled,
-            "scope": item.scope,
-            "updated_at": item.updated_at,
-        }
-        for item in store.values()
-    ]
+    """Return feature flags for the given tenant in legacy composite-key format."""
+    if tenant_id is None:
+        raise ValueError("tenant_id is required for list_flags")
+    normalized = int(tenant_id)
+    if normalized <= 0:
+        raise ValueError("tenant_id must be positive")
+    try:
+        rows = _platform_service.list_tenant_features(normalized)
+    except Exception:
+        return []
+    return [_to_legacy_dict(row) for row in rows]
 
 
 def is_flag_enabled(
@@ -77,15 +57,33 @@ def is_flag_enabled(
     tenant_id: int | None = None,
     default: bool = False,
 ) -> bool:
+    """Check if a feature flag is enabled for a tenant.
+
+    Delegates to the DB-backed platform service (no actor bucketing —
+    returns enabled state as stored in DB).
+    """
     normalized_key = str(key or "").strip()
     if not normalized_key:
         return bool(default)
-
-    store = _tenant_store(_require_tenant_id(tenant_id, operation="is_flag_enabled"))
-    item = store.get(normalized_key)
-    if item is None:
+    if tenant_id is None:
         return bool(default)
-    return bool(item.enabled)
+    normalized_tenant = int(tenant_id)
+    if normalized_tenant <= 0:
+        return bool(default)
+
+    module, flag_key = _split_composite_key(normalized_key)
+    try:
+        rows = _platform_service.list_tenant_features(normalized_tenant)
+    except Exception:
+        return bool(default)
+
+    for row in rows:
+        if (
+            str(row.get("module", "")).lower() == module
+            and str(row.get("key", "")).lower() == flag_key
+        ):
+            return bool(row.get("enabled", default))
+    return bool(default)
 
 
 def set_flag(
@@ -95,31 +93,14 @@ def set_flag(
     scope: str = "global",
     tenant_id: int | None = None,
 ) -> dict[str, object]:
-    store = _tenant_store(_require_tenant_id(tenant_id, operation="set_flag"))
-    now = datetime.now(timezone.utc).isoformat()
-    existing = store.get(key)
-
-    if existing is None:
-        created = FeatureFlag(
-            key=key,
-            description=(description or key).strip(),
-            enabled=enabled,
-            scope=scope,
-            updated_at=now,
-        )
-        store[key] = created
-        existing = created
-    else:
-        existing.enabled = enabled
-        existing.scope = scope
-        existing.updated_at = now
-        if description is not None and description.strip():
-            existing.description = description.strip()
-
-    return {
-        "key": existing.key,
-        "description": existing.description,
-        "enabled": existing.enabled,
-        "scope": existing.scope,
-        "updated_at": existing.updated_at,
-    }
+    """Upsert a feature flag; delegates to the DB-backed platform service."""
+    if tenant_id is None:
+        raise ValueError("tenant_id is required for set_flag")
+    normalized_tenant = int(tenant_id)
+    if normalized_tenant <= 0:
+        raise ValueError("tenant_id must be positive")
+    module, flag_key = _split_composite_key(str(key).strip())
+    row = _platform_service.set_tenant_feature(
+        normalized_tenant, module, flag_key, bool(enabled)
+    )
+    return _to_legacy_dict(row)

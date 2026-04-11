@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel, ValidationError
@@ -14,6 +14,7 @@ from app.core.module_helpers.router_errors import (
 from app.core.tenant import get_current_tenant
 from app.modules.admissions.dependencies import get_admissions_db
 from app.modules.admissions.schemas import (
+    AdmissionsConsistencyReportSchema,
     ApplicantCreateSchema,
     ApplicantListResponseSchema,
     ApplicantReadSchema,
@@ -71,9 +72,9 @@ def _map_service_error(exc: Exception) -> HTTPException:
     return HTTPException(status_code=400, detail=detail)
 
 
-TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
-Actor = Annotated[str, Depends(get_actor)]
-AdmissionsDb = Annotated[Session, Depends(get_admissions_db)]
+TrustedTenant: TypeAlias = Annotated[dict[str, object], Depends(get_current_tenant)]
+Actor: TypeAlias = Annotated[str, Depends(get_actor)]
+AdmissionsDb: TypeAlias = Annotated[Session, Depends(get_admissions_db)]
 
 
 @router.post(
@@ -127,6 +128,21 @@ async def list_applicants_endpoint(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get(
+    "/consistency",
+    response_model=AdmissionsConsistencyReportSchema,
+    responses={403: {"model": ErrorDetailResponse}},
+)
+async def get_admissions_consistency_endpoint(
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("admissions.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: AdmissionsDb = None,
+) -> AdmissionsConsistencyReportSchema:
+    service = ApplicationService(db)
+    return await service.get_tenant_consistency_report(tenant_id=int(tenant["id"]))
 
 
 @router.get(

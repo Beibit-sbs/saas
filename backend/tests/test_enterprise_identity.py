@@ -332,6 +332,77 @@ def test_oidc_callback_mapping_does_not_grant_platform_authority(monkeypatch) ->
     assert denied.status_code == 403, denied.text
 
 
+def test_saml_provider_configuration_roundtrip() -> None:
+    tenant_b_id = _create_tenant_b()
+    tenant_b_admin_headers = {
+        "Authorization": f"Bearer {create_access_token('tenant-b-admin@example.com', ['admin'], 'test', tenant_id=tenant_b_id)}"
+    }
+
+    upsert_provider = client.put(
+        "/api/admin/identity/providers/okta-saml",
+        headers=tenant_b_admin_headers,
+        json={
+            "provider": "okta-saml",
+            "type": "saml",
+            "enabled": True,
+            "issuer": "",
+            "client_id": "",
+            "client_secret": "",
+            "redirect_uri": "",
+            "scopes": [],
+            "tenant_scope": "tenant",
+            "saml_metadata_url": "https://idp.example.com/metadata.xml",
+            "saml_sso_url": "https://idp.example.com/sso",
+            "saml_entity_id": "urn:example:tenant-b:saml",
+        },
+    )
+    assert upsert_provider.status_code == 200, upsert_provider.text
+
+    providers = client.get(
+        "/api/admin/identity/providers",
+        headers=tenant_b_admin_headers,
+    )
+    assert providers.status_code == 200, providers.text
+    rows = providers.json().get("providers", [])
+    row = next(item for item in rows if item["provider"] == "okta-saml")
+    assert row["type"] == "saml"
+    assert row["saml_metadata_url"] == "https://idp.example.com/metadata.xml"
+
+
+def test_oidc_initiate_rejects_saml_provider() -> None:
+    tenant_b_id = _create_tenant_b()
+    tenant_b_admin_headers = {
+        "Authorization": f"Bearer {create_access_token('tenant-b-admin@example.com', ['admin'], 'test', tenant_id=tenant_b_id)}"
+    }
+
+    upsert_provider = client.put(
+        "/api/admin/identity/providers/saml-only",
+        headers=tenant_b_admin_headers,
+        json={
+            "provider": "saml-only",
+            "type": "saml",
+            "enabled": True,
+            "issuer": "",
+            "client_id": "",
+            "client_secret": "",
+            "redirect_uri": "",
+            "scopes": [],
+            "tenant_scope": "tenant",
+            "saml_metadata_url": "https://idp.example.com/saml-only/metadata.xml",
+            "saml_sso_url": "https://idp.example.com/saml-only/sso",
+            "saml_entity_id": "urn:example:saml-only",
+        },
+    )
+    assert upsert_provider.status_code == 200, upsert_provider.text
+
+    initiate = client.post(
+        "/api/auth/oidc/saml-only/initiate",
+        headers={**tenant_b_admin_headers, "X-Tenant-ID": str(tenant_b_id)},
+    )
+    assert initiate.status_code == 400, initiate.text
+    assert "not oidc" in str(initiate.json().get("detail", "")).lower()
+
+
 def test_auth_lifecycle_and_service_account_events_are_audited() -> None:
     client.cookies.clear()
     _ensure_local_user("admin", "admin123", ["admin"], "Admin Local")

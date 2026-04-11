@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
 from app.modules.faculty.schemas import (
+    FacultyConsistencyReportSchema,
     FacultyCreatePayload,
     FacultyDeleteResponse,
     FacultyItemResponse,
@@ -14,6 +15,7 @@ from app.modules.faculty.schemas import (
 from app.modules.faculty.service import (
     create_faculty_member,
     delete_faculty_member,
+    get_faculty_consistency_report,
     list_faculty,
     update_faculty_member,
 )
@@ -30,6 +32,17 @@ def get_faculty(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> FacultyListResponse:
     return {"faculty": list_faculty(int(tenant["id"]))}
+
+
+@router.get("/consistency", response_model=FacultyConsistencyReportSchema)
+def get_faculty_consistency_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> FacultyConsistencyReportSchema:
+    return FacultyConsistencyReportSchema.model_validate(
+        get_faculty_consistency_report(int(tenant["id"]))
+    )
 
 
 @router.post("", response_model=FacultyItemResponse)

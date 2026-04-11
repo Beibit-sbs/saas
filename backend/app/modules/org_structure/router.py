@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Optional
+from typing import Annotated, Optional, TypeAlias
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
@@ -20,6 +20,7 @@ from app.core.tenant import get_current_tenant
 from app.modules.org_structure.dependencies import get_org_structure_db
 from app.modules.org_structure.models import OrgUnitModel, OrgUnitType
 from app.modules.org_structure.schemas import (
+    OrgUnitConsistencyReportSchema,
     OrgUnitCreateSchema,
     OrgUnitReadSchema,
     OrgUnitTreeNodeSchema,
@@ -30,8 +31,8 @@ from app.modules.rbac.security import permission_dependency
 
 router = APIRouter(prefix="/api/admin/org-units", tags=["org-units"])
 
-TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
-OrgDb = Annotated[Session, Depends(get_org_structure_db)]
+TrustedTenant: TypeAlias = Annotated[dict[str, object], Depends(get_current_tenant)]
+OrgDb: TypeAlias = Annotated[Session, Depends(get_org_structure_db)]
 
 
 def _http_error(exc: Exception) -> HTTPException:
@@ -114,6 +115,19 @@ def get_tree(
     tenant_id = int(tenant["id"])
     all_units = service.get_tree(db, tenant_id)
     return _build_tree(all_units, parent_id=None)
+
+
+@router.get(
+    "/consistency",
+    response_model=OrgUnitConsistencyReportSchema,
+    dependencies=[Depends(permission_dependency("admin.org_units.read"))],
+)
+def get_org_unit_consistency(
+    tenant: TrustedTenant,
+    db: OrgDb,
+) -> OrgUnitConsistencyReportSchema:
+    tenant_id = int(tenant["id"])
+    return service.get_org_unit_consistency_report(db, tenant_id)
 
 
 @router.get(

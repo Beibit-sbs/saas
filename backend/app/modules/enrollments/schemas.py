@@ -91,6 +91,20 @@ class EnrollmentDropSchema(BaseModel):
     metadata_json: dict = Field(default_factory=dict)
 
 
+class EnrollmentConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    enrollment_id: int
+    student_profile_id: int | None = None
+    course_id: int | None = None
+    term_id: int | None = None
+
+
+class EnrollmentConsistencyReportSchema(BaseModel):
+    enrollment_count: int
+    issue_count: int
+    issues: list[EnrollmentConsistencyIssueSchema]
+
+
 # ---------------------------------------------------------------------------
 # Legacy compatibility for current router (to be removed in future phase).
 # ---------------------------------------------------------------------------

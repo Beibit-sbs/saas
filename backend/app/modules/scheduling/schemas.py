@@ -269,3 +269,20 @@ class ConflictReportSchema(BaseModel):
     has_room_conflict: bool
     room_conflict_section_id: int | None
     instructor_conflicts: list[dict]
+    
+    
+
+
+class SchedulingConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    section_id: int | None = None
+    lesson_attendance_id: int | None = None
+    student_profile_id: int | None = None
+    detail: str | None = None
+
+
+class SchedulingConsistencyReportSchema(BaseModel):
+    section_count: int
+    attendance_count: int
+    issue_count: int
+    issues: list[SchedulingConsistencyIssueSchema]

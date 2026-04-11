@@ -14,8 +14,16 @@ from app.modules.billing.service import (
 from app.modules.observability.security_signals import record_security_signal
 from app.modules.plans.schemas import PlanCreatePayload, PlanItemResponse, PlanListResponse, PlanUpdatePayload
 from app.modules.plans.service import create_plan, list_plans, update_plan
-from app.modules.quotas.schemas import PlanQuotaPayload, QuotaListResponse
-from app.modules.quotas.service import list_quotas, update_plan_quotas
+from app.modules.quotas.schemas import (
+    PlanQuotaConsistencyReportSchema,
+    PlanQuotaPayload,
+    QuotaListResponse,
+)
+from app.modules.quotas.service import (
+    get_plan_quota_consistency_report,
+    list_quotas,
+    update_plan_quotas,
+)
 from app.modules.rbac.security import get_actor, resolve_current_user_claims
 from app.modules.rbac.service import is_platform_admin
 from app.modules.tenants.provisioning_service import TenantProvisioningService
@@ -109,6 +117,13 @@ def get_platform_quotas(
     _: Annotated[str, Depends(_require_platform_admin)],
 ) -> QuotaListResponse:
     return {"quotas": list_quotas()}
+
+
+@router.get("/quotas/consistency", response_model=PlanQuotaConsistencyReportSchema)
+def get_platform_quota_consistency(
+    _: Annotated[str, Depends(_require_platform_admin)],
+) -> PlanQuotaConsistencyReportSchema:
+    return get_plan_quota_consistency_report()
 
 
 @router.put("/quotas/{plan_id}", response_model=QuotaListResponse)

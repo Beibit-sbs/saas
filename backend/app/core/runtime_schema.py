@@ -7,7 +7,6 @@ from app.core.config import runtime_schema_bootstrap_scope
 from app.core.db import get_raw_conn
 from app.modules.ai_gateway.service import _ensure_ai_gateway_tables
 from app.modules.audit.service import _ensure_table_once as ensure_audit_table_once
-from app.modules.auth.mfa_service import _ensure_mfa_table
 from app.modules.auth.preferences_service import _ensure_preferences_table
 from app.modules.auth.session_service import _ensure_session_table
 from app.modules.billing.service import _ensure_db as ensure_billing_schema
@@ -45,7 +44,6 @@ def bootstrap_runtime_schema() -> None:
 
                 ensure_platform_core_schema(conn)
                 _ensure_session_table(conn)
-                _ensure_mfa_table(conn)
                 _ensure_preferences_table(conn)
                 ensure_audit_table_once(conn)
                 ensure_integration_settings_once(conn)

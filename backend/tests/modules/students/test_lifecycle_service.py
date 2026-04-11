@@ -604,3 +604,68 @@ class TestProvisionStudentForAdmissionsCompat:
         assert first.student_profile.id == second.student_profile.id
         assert first.active_primary_program.id == second.active_primary_program.id
         bind_mock.assert_not_awaited()
+
+
+class TestProgramBindingConsistency:
+    def test_duplicate_active_primary_bindings_reported(
+        self,
+        run_async,
+        db_session,
+        binding_factory,
+    ) -> None:
+        service = StudentLifecycleService(db_session)
+        duplicate_bindings = [
+            binding_factory(id=3001, student_profile_id=1001, program_id=501, is_primary=True),
+            binding_factory(id=3002, student_profile_id=1001, program_id=502, is_primary=True),
+        ]
+        db_session.execute.side_effect = [
+            ExecuteResult(scalars=[1001]),
+            ExecuteResult(scalars=[]),
+            ExecuteResult(scalars=duplicate_bindings),
+        ]
+
+        result = run_async(service.list_program_binding_consistency_issues(tenant_id=1))
+
+        assert len(result) == 1
+        assert result[0].student_profile_id == 1001
+        assert result[0].issue_type == "duplicate_active_primary_bindings"
+        assert result[0].active_binding_count == 2
+        assert result[0].active_primary_count == 2
+        assert result[0].program_ids == [501, 502]
+
+    def test_active_bindings_without_primary_reported(
+        self,
+        run_async,
+        db_session,
+        binding_factory,
+    ) -> None:
+        service = StudentLifecycleService(db_session)
+        active_bindings = [
+            binding_factory(id=3003, student_profile_id=1002, program_id=601, is_primary=False),
+            binding_factory(id=3004, student_profile_id=1002, program_id=602, is_primary=False),
+        ]
+        db_session.execute.side_effect = [
+            ExecuteResult(scalars=[]),
+            ExecuteResult(scalars=[1002]),
+            ExecuteResult(scalars=active_bindings),
+        ]
+
+        result = run_async(service.list_program_binding_consistency_issues(tenant_id=1))
+
+        assert len(result) == 1
+        assert result[0].student_profile_id == 1002
+        assert result[0].issue_type == "active_bindings_without_primary"
+        assert result[0].active_binding_count == 2
+        assert result[0].active_primary_count == 0
+        assert result[0].program_ids == [601, 602]
+
+    def test_no_consistency_issues_returns_empty_list(self, run_async, db_session) -> None:
+        service = StudentLifecycleService(db_session)
+        db_session.execute.side_effect = [
+            ExecuteResult(scalars=[]),
+            ExecuteResult(scalars=[]),
+        ]
+
+        result = run_async(service.list_program_binding_consistency_issues(tenant_id=1))
+
+        assert result == []

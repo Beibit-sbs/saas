@@ -1,5 +1,4 @@
 from app.core.db import get_raw_conn
-from app.core.config import is_runtime_schema_bootstrap_enabled
 from app.modules.auth.local_users_service import local_user_store
 import os
 from dataclasses import dataclass, field
@@ -317,85 +316,8 @@ def _seed_baseline_data(conn) -> None:
 
 
 def _ensure_schema_and_seed(conn) -> None:
-    if not is_runtime_schema_bootstrap_enabled():
-        return
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS app_roles (
-                id BIGSERIAL PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT NOT NULL DEFAULT '',
-                tenant_id BIGINT NOT NULL,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                UNIQUE (tenant_id, name)
-            )
-            """
-        )
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS app_permissions (
-                id BIGSERIAL PRIMARY KEY,
-                code TEXT NOT NULL UNIQUE,
-                description TEXT NOT NULL DEFAULT '',
-                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            )
-            """
-        )
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS app_role_permissions (
-                role_id BIGINT NOT NULL REFERENCES app_roles(id) ON DELETE CASCADE,
-                permission_id BIGINT NOT NULL REFERENCES app_permissions(id) ON DELETE CASCADE,
-                tenant_id BIGINT NOT NULL,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                PRIMARY KEY (role_id, permission_id)
-            )
-            """
-        )
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS app_user_roles (
-                user_id TEXT NOT NULL,
-                role_id BIGINT NOT NULL REFERENCES app_roles(id) ON DELETE CASCADE,
-                tenant_id BIGINT NOT NULL,
-                assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                PRIMARY KEY (user_id, role_id)
-            )
-            """
-        )
-        cur.execute("ALTER TABLE app_roles ALTER COLUMN tenant_id DROP DEFAULT")
-        cur.execute("ALTER TABLE app_role_permissions ALTER COLUMN tenant_id DROP DEFAULT")
-        cur.execute("ALTER TABLE app_user_roles ALTER COLUMN tenant_id DROP DEFAULT")
-        cur.execute(
-            """
-            DO $$
-            BEGIN
-                IF EXISTS (SELECT 1 FROM app_roles WHERE tenant_id IS NULL) THEN
-                    RAISE EXCEPTION 'rbac remediation required: app_roles has NULL tenant_id rows';
-                END IF;
-                IF EXISTS (SELECT 1 FROM app_role_permissions WHERE tenant_id IS NULL) THEN
-                    RAISE EXCEPTION 'rbac remediation required: app_role_permissions has NULL tenant_id rows';
-                END IF;
-                IF EXISTS (SELECT 1 FROM app_user_roles WHERE tenant_id IS NULL) THEN
-                    RAISE EXCEPTION 'rbac remediation required: app_user_roles has NULL tenant_id rows';
-                END IF;
-            END
-            $$;
-            """
-        )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS ix_app_role_permissions_role_id ON app_role_permissions (role_id)"
-        )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS ix_app_role_permissions_permission_id ON app_role_permissions (permission_id)"
-        )
-        cur.execute("CREATE INDEX IF NOT EXISTS ix_app_user_roles_user_id ON app_user_roles (user_id)")
-        cur.execute("CREATE INDEX IF NOT EXISTS ix_app_user_roles_role_id ON app_user_roles (role_id)")
-        cur.execute("CREATE INDEX IF NOT EXISTS ix_app_roles_tenant_name ON app_roles (tenant_id, name)")
-
+    # RBAC schema is Alembic-authoritative (see b7d3f1a9c2e4, f9a1b2c3d4e5, f1c2d3e4a5b7).
+    # Runtime path only enforces baseline seed for environments where DB is available.
     _seed_baseline_data(conn)
     conn.commit()
 

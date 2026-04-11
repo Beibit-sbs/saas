@@ -225,3 +225,19 @@ class InterventionRiskKpiSummarySchema(BaseModel):
     signals_last_24h: int
     auto_created_cases_last_24h: int
     severity_breakdown: dict[str, int]
+
+
+
+class InterventionConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    case_id: int | None = None
+    action_id: int | None = None
+    student_profile_id: int | None = None
+    detail: str | None = None
+
+
+class InterventionConsistencyReportSchema(BaseModel):
+    case_count: int
+    action_count: int
+    issue_count: int
+    issues: list[InterventionConsistencyIssueSchema]

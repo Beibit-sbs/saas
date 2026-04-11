@@ -36,6 +36,7 @@ from app.modules.interventions.schemas import (
     InterventionCaseStatusUpdateSchema,
     InterventionCaseTakeSchema,
 )
+from app.modules.interventions.schemas import InterventionConsistencyReportSchema
 from app.modules.interventions.service import InterventionService
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -182,6 +183,22 @@ async def export_cases_csv_endpoint(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=interventions.csv"},
     )
+
+
+@router.get("/consistency", response_model=InterventionConsistencyReportSchema)
+async def get_intervention_consistency_report(
+    _: str = Depends(get_actor),
+    __: Annotated[None, Depends(permission_dependency("admin.jobs.read"))] = None,
+    tenant: dict[str, object] = Depends(get_current_tenant),
+    db: Session = Depends(get_interventions_db),
+) -> InterventionConsistencyReportSchema:
+    service = InterventionService(db)
+    try:
+        return await service.list_tenant_intervention_consistency_report(
+            tenant_id=int(tenant["id"])
+        )
+    except (PermissionError, ValueError, TenantResourceNotFoundError) as exc:
+        raise _raise_intervention_http_error(exc) from exc
 
 
 @router.get(

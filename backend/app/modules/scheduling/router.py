@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -51,6 +51,7 @@ from app.modules.scheduling.schemas import (
     StudentTopicProgressUpsertSchema,
     StudentScheduleItemSchema,
 )
+from app.modules.scheduling.schemas import SchedulingConsistencyReportSchema
 from app.modules.scheduling.service import SchedulingService
 
 
@@ -58,9 +59,9 @@ class ErrorDetailResponse(BaseModel):
     detail: Any
 
 
-TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
-Actor = Annotated[str, Depends(get_actor)]
-SchedulingDb = Annotated[Session, Depends(get_scheduling_db)]
+TrustedTenant: TypeAlias = Annotated[dict[str, object], Depends(get_current_tenant)]
+Actor: TypeAlias = Annotated[str, Depends(get_actor)]
+SchedulingDb: TypeAlias = Annotated[Session, Depends(get_scheduling_db)]
 
 
 def _raise_scheduling_http_error(exc: Exception) -> HTTPException:
@@ -275,6 +276,22 @@ async def list_lesson_instances(
             status=status,
         )
     except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
+        raise _raise_scheduling_http_error(exc) from exc
+
+
+@router.get("/consistency", response_model=SchedulingConsistencyReportSchema)
+async def get_scheduling_consistency_report(
+    _: str = Depends(get_actor),
+    __: Annotated[None, Depends(permission_dependency("scheduling.read"))] = None,
+    tenant: dict[str, object] = Depends(get_current_tenant),
+    db: Session = Depends(get_scheduling_db),
+) -> SchedulingConsistencyReportSchema:
+    service = SchedulingService(db)
+    try:
+        return await service.list_tenant_scheduling_consistency_report(
+            tenant_id=int(tenant["id"])
+        )
+    except (PermissionError, ValueError, TenantResourceNotFoundError) as exc:
         raise _raise_scheduling_http_error(exc) from exc
 
 

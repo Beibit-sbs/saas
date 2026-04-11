@@ -37,7 +37,7 @@ def is_runtime_schema_bootstrap_enabled() -> bool:
     # Runtime DDL is allowed only inside the explicit startup/bootstrap scope.
     # Default stays enabled for startup compatibility until all bootstrap DDL is
     # fully migrated to Alembic, but regular request paths never enter the scope.
-    return is_enabled(os.getenv("RUNTIME_SCHEMA_BOOTSTRAP_ENABLED", "true")) and _runtime_schema_bootstrap_scope.get()
+    return is_enabled(os.getenv("RUNTIME_SCHEMA_BOOTSTRAP_ENABLED", "false")) and _runtime_schema_bootstrap_scope.get()
 
 
 @contextmanager

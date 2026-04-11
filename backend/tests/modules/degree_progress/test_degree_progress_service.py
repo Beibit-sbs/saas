@@ -189,3 +189,54 @@ def test_evaluate_degree_progress_tenant_not_found(run_async, db_session) -> Non
 
     with pytest.raises(TenantResourceNotFoundError):
         run_async(service.evaluate_degree_progress(tenant_id=1, student_profile_id=1001, actor_id="advisor@example.com"))
+
+
+def test_list_tenant_degree_progress_consistency_report_detects_issues(run_async, db_session) -> None:
+    requirement_ok = _requirement()
+    requirement_duplicate = ProgramRequirementModel(
+        id=6002,
+        tenant_id=1,
+        program_id=701,
+        name="BSCS Core Duplicate",
+        minimum_credits=120,
+        minimum_gpa=Decimal("2.00"),
+        is_active=True,
+    )
+    requirement_without_items = ProgramRequirementModel(
+        id=6003,
+        tenant_id=1,
+        program_id=702,
+        name="BSEE Core",
+        minimum_credits=120,
+        minimum_gpa=Decimal("2.00"),
+        is_active=True,
+    )
+    binding_missing_requirement = StudentProgramBindingModel(
+        id=5002,
+        tenant_id=1,
+        student_profile_id=1002,
+        program_id=799,
+        is_primary=True,
+        binding_state=StudentProgramBindingState.ACTIVE,
+        metadata_json={},
+        version=1,
+        created_by="owner@example.com",
+        updated_by="owner@example.com",
+    )
+
+    db_session.execute.side_effect = [
+        ExecuteResult(scalars=[_binding(), binding_missing_requirement]),
+        ExecuteResult(scalars=[requirement_ok, requirement_duplicate, requirement_without_items]),
+        ExecuteResult(scalars=[_req_item(101)]),
+    ]
+
+    service = DegreeProgressService(db_session)
+    result = run_async(service.list_tenant_degree_progress_consistency_report(tenant_id=1))
+
+    assert result.active_primary_binding_count == 2
+    assert result.active_requirement_count == 3
+    assert result.requirement_item_count == 1
+    issue_types = [issue.issue_type for issue in result.issues]
+    assert "active_primary_binding_missing_requirement" in issue_types
+    assert "program_multiple_active_requirements" in issue_types
+    assert "active_requirement_without_items" in issue_types

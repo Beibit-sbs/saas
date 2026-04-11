@@ -79,3 +79,19 @@ class StudentTranscriptSchema(BaseModel):
     total_credits: int
     gpa: Decimal | None
     items: list[TranscriptItemSchema]
+
+
+class GradeEnrollmentConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    enrollment_id: int | None = None
+    grade_submission_id: int | None = None
+    field: str | None = None
+    expected: str | None = None
+    actual: str | None = None
+
+
+class GradeEnrollmentConsistencyReportSchema(BaseModel):
+    enrollment_count: int
+    grade_submission_count: int
+    issue_count: int
+    issues: list[GradeEnrollmentConsistencyIssueSchema]

@@ -28,6 +28,8 @@ from app.modules.grades.models import (
     GradingScaleModel,
 )
 from app.modules.grades.schemas import (
+    GradeEnrollmentConsistencyIssueSchema,
+    GradeEnrollmentConsistencyReportSchema,
     GradeChangeSchema,
     GradeListResponseSchema,
     GradeReadSchema,
@@ -661,4 +663,95 @@ class GradeLifecycleService:
             total_credits=total_credits,
             gpa=gpa,
             items=items,
+        )
+
+    async def list_tenant_grade_enrollment_consistency_report(
+        self,
+        tenant_id: int,
+    ) -> GradeEnrollmentConsistencyReportSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        enrollments = self.db.execute(
+            select(EnrollmentModel)
+            .where(EnrollmentModel.tenant_id == tenant_id)
+            .order_by(EnrollmentModel.id)
+        ).scalars().all()
+
+        submissions = self.db.execute(
+            select(GradeSubmissionModel)
+            .where(GradeSubmissionModel.tenant_id == tenant_id)
+            .order_by(GradeSubmissionModel.enrollment_id, GradeSubmissionModel.id)
+        ).scalars().all()
+
+        enrollment_by_id = {int(enrollment.id): enrollment for enrollment in enrollments}
+        submissions_by_enrollment: dict[int, list[GradeSubmissionModel]] = {}
+        for submission in submissions:
+            submissions_by_enrollment.setdefault(int(submission.enrollment_id), []).append(submission)
+
+        issues: list[GradeEnrollmentConsistencyIssueSchema] = []
+
+        for enrollment in enrollments:
+            enrollment_id = int(enrollment.id)
+            linked_submissions = submissions_by_enrollment.get(enrollment_id, [])
+            has_enrollment_grade = enrollment.grade_code is not None or enrollment.grade_points is not None
+
+            if has_enrollment_grade and not linked_submissions:
+                issues.append(
+                    GradeEnrollmentConsistencyIssueSchema(
+                        issue_type="missing_grade_submission",
+                        enrollment_id=enrollment_id,
+                    )
+                )
+                continue
+
+            if len(linked_submissions) > 1:
+                issues.append(
+                    GradeEnrollmentConsistencyIssueSchema(
+                        issue_type="duplicate_grade_submissions_for_enrollment",
+                        enrollment_id=enrollment_id,
+                        grade_submission_id=int(linked_submissions[0].id),
+                    )
+                )
+
+            if not linked_submissions:
+                continue
+
+            submission = linked_submissions[0]
+            field_pairs = [
+                ("grade_code", enrollment.grade_code, submission.grade_code),
+                (
+                    "grade_points",
+                    str(enrollment.grade_points) if enrollment.grade_points is not None else None,
+                    str(submission.grade_points) if submission.grade_points is not None else None,
+                ),
+            ]
+
+            for field_name, expected, actual in field_pairs:
+                if expected != actual:
+                    issues.append(
+                        GradeEnrollmentConsistencyIssueSchema(
+                            issue_type="grade_enrollment_mismatch",
+                            enrollment_id=enrollment_id,
+                            grade_submission_id=int(submission.id),
+                            field=field_name,
+                            expected=str(expected) if expected is not None else None,
+                            actual=str(actual) if actual is not None else None,
+                        )
+                    )
+
+        for submission in submissions:
+            if int(submission.enrollment_id) not in enrollment_by_id:
+                issues.append(
+                    GradeEnrollmentConsistencyIssueSchema(
+                        issue_type="dangling_grade_submission",
+                        enrollment_id=int(submission.enrollment_id),
+                        grade_submission_id=int(submission.id),
+                    )
+                )
+
+        return GradeEnrollmentConsistencyReportSchema(
+            enrollment_count=len(enrollments),
+            grade_submission_count=len(submissions),
+            issue_count=len(issues),
+            issues=issues,
         )

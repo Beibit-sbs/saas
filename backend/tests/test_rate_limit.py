@@ -39,6 +39,38 @@ def test_login_rate_limit_returns_429_and_audits(monkeypatch) -> None:
     assert "password" not in abuse_events[0]["metadata"]
 
 
+def test_refresh_rate_limit_returns_429(monkeypatch) -> None:
+    rate_limit_service.clear_rate_limit_state()
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
+    monkeypatch.setenv("RATE_LIMIT_GENERAL_LIMIT", "1000")
+    monkeypatch.setenv("RATE_LIMIT_LOGIN_WINDOW_SECONDS", "60")
+    monkeypatch.setenv("RATE_LIMIT_LOGIN_IP_LIMIT", "1")
+    monkeypatch.setenv("RATE_LIMIT_LOGIN_IDENTIFIER_LIMIT", "0")
+
+    first = client.post("/api/auth/refresh", json={"refresh_token": "invalid"}, headers={"X-Tenant-ID": "1"})
+    second = client.post("/api/auth/refresh", json={"refresh_token": "invalid"}, headers={"X-Tenant-ID": "1"})
+
+    assert first.status_code in {400, 401}
+    assert second.status_code == 429
+    assert int(second.headers["Retry-After"]) >= 59
+
+
+def test_mfa_verify_rate_limit_returns_429(monkeypatch) -> None:
+    rate_limit_service.clear_rate_limit_state()
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
+    monkeypatch.setenv("RATE_LIMIT_GENERAL_LIMIT", "1000")
+    monkeypatch.setenv("RATE_LIMIT_LOGIN_WINDOW_SECONDS", "60")
+    monkeypatch.setenv("RATE_LIMIT_LOGIN_IP_LIMIT", "1")
+    monkeypatch.setenv("RATE_LIMIT_LOGIN_IDENTIFIER_LIMIT", "0")
+
+    first = client.post("/api/auth/mfa/verify", json={"code": "000000"}, headers={"X-Tenant-ID": "1"})
+    second = client.post("/api/auth/mfa/verify", json={"code": "000000"}, headers={"X-Tenant-ID": "1"})
+
+    assert first.status_code == 401
+    assert second.status_code == 429
+    assert int(second.headers["Retry-After"]) >= 59
+
+
 def test_sensitive_admin_rate_limit_returns_429_and_audits(monkeypatch) -> None:
     audit_service.clear_audit_events()
     rate_limit_service.clear_rate_limit_state()

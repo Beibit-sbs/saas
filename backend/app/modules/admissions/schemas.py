@@ -329,3 +329,27 @@ class ErrorResponseSchema(BaseModel):
     error: ErrorDetailSchema
     request_id: Optional[str] = Field(None, description="Correlation ID for debugging")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ==============================================================================
+# CONSISTENCY REPORT SCHEMAS
+# ==============================================================================
+
+
+class AdmissionsConsistencyIssueSchema(BaseModel):
+    """Single admissions consistency issue."""
+    issue_type: str
+    application_id: Optional[int] = None
+    applicant_id: Optional[int] = None
+    document_id: Optional[int] = None
+    decision_id: Optional[int] = None
+
+
+class AdmissionsConsistencyReportSchema(BaseModel):
+    """Tenant-scoped admissions consistency summary."""
+    applicant_count: int = Field(ge=0)
+    application_count: int = Field(ge=0)
+    document_count: int = Field(ge=0)
+    decision_count: int = Field(ge=0)
+    issue_count: int = Field(ge=0)
+    issues: list[AdmissionsConsistencyIssueSchema] = Field(default_factory=list)

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.core.config import (
+    allow_legacy_header_auth,
     get_auth_cookie_name,
     get_auth_csrf_cookie_name,
     get_auth_csrf_cookie_same_site,
@@ -71,10 +72,12 @@ def _require_tenant_id(value: int | str | None, *, operation: str) -> int:
 def _resolve_tenant_for_auth_entrypoint(
     x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
 ) -> dict[str, object]:
-    # Login fallback: platform tenant (1) can authenticate without explicit header,
-    # while tenant-scoped users still require the matching X-Tenant-ID in practice.
-    # Missing header therefore resolves to tenant 1.
-    tenant_id = 1 if x_tenant_id is None else _require_tenant_id(x_tenant_id, operation="auth_entrypoint")
+    # SECURITY: Tenant must be explicitly provided — no automatic fallback or default assignment.
+    # Fail-closed behavior: require X-Tenant-ID header for all login operations.
+    if x_tenant_id is None:
+        raise HTTPException(status_code=400, detail="X-Tenant-ID header is required")
+
+    tenant_id = _require_tenant_id(x_tenant_id, operation="auth_entrypoint")
     tenant = get_tenant(tenant_id)
     if tenant is None:
         raise HTTPException(status_code=404, detail=f"Tenant {tenant_id} not found")
@@ -351,7 +354,8 @@ def _resolve_user_id_from_request(
         )
         raise HTTPException(status_code=403, detail="service token cannot access browser user profile")
     if x_user_id and x_user_id != claims.user_id:
-        raise HTTPException(status_code=401, detail="header user mismatch with token")
+        if allow_legacy_header_auth():
+            raise HTTPException(status_code=401, detail="header user mismatch with token")
     return claims.user_id
 
 

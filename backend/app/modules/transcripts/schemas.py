@@ -52,3 +52,27 @@ class TranscriptSnapshotSchema(BaseModel):
     snapshot_json: dict
     generated_by: str
     generated_at: datetime
+
+
+class TranscriptConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    enrollment_id: int | None = None
+    transcript_record_id: int | None = None
+    field: str | None = None
+    expected: str | None = None
+    actual: str | None = None
+
+
+class TranscriptConsistencyReportSchema(BaseModel):
+    student_profile_id: int
+    enrollment_count: int
+    transcript_record_count: int
+    issue_count: int
+    issues: list[TranscriptConsistencyIssueSchema]
+
+
+class TranscriptTenantConsistencyReportSchema(BaseModel):
+    scanned_student_count: int
+    students_with_issues: int
+    total_issue_count: int
+    reports: list[TranscriptConsistencyReportSchema]

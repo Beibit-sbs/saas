@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel, ValidationError
@@ -22,6 +22,7 @@ from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.observability.metrics import observe_workflow_execution
 from app.modules.workflows.dependencies import get_workflows_db
 from app.modules.workflows.schemas import (
+    WorkflowConsistencyReportSchema,
     WorkflowInstanceListResponseSchema,
     WorkflowInstanceReadSchema,
     WorkflowStartRequestSchema,
@@ -62,9 +63,9 @@ def _raise_workflow_http_error(exc: Exception) -> HTTPException:
     raise HTTPException(status_code=400, detail=str(exc))
 
 
-TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
-Actor = Annotated[str, Depends(get_actor)]
-WorkflowsDb = Annotated[Session, Depends(get_workflows_db)]
+TrustedTenant: TypeAlias = Annotated[dict[str, object], Depends(get_current_tenant)]
+Actor: TypeAlias = Annotated[str, Depends(get_actor)]
+WorkflowsDb: TypeAlias = Annotated[Session, Depends(get_workflows_db)]
 
 
 @router.post(
@@ -151,6 +152,21 @@ async def list_user_tasks_endpoint(
     )
     items = [WorkflowTaskReadSchema.model_validate(row) for row in rows]
     return WorkflowTaskListResponseSchema(total=len(items), items=items)
+
+
+@router.get(
+    "/consistency",
+    response_model=WorkflowConsistencyReportSchema,
+    responses={403: {"model": ErrorDetailResponse}},
+)
+async def get_workflow_consistency_endpoint(
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("workflows.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: WorkflowsDb = None,
+) -> WorkflowConsistencyReportSchema:
+    service = WorkflowService(db)
+    return await service.get_tenant_consistency_report(tenant_id=int(tenant["id"]))
 
 
 @router.post(

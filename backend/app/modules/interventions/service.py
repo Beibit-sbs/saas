@@ -29,6 +29,10 @@ from app.modules.interventions.schemas import (
     InterventionCaseStatusUpdateSchema,
     InterventionCaseTakeSchema,
 )
+from app.modules.interventions.schemas import (
+    InterventionConsistencyIssueSchema,
+    InterventionConsistencyReportSchema,
+)
 from app.modules.students.models import StudentProfileModel
 
 
@@ -394,3 +398,57 @@ class InterventionService:
             .order_by(desc(InterventionActionModel.performed_at))
             .limit(limit)
         ).scalars().all()
+
+    async def list_tenant_intervention_consistency_report(
+        self, tenant_id: int
+    ) -> InterventionConsistencyReportSchema:
+        validate_tenant_id_provided(tenant_id)
+        issues: list[InterventionConsistencyIssueSchema] = []
+
+        cases = self.db.execute(
+            select(InterventionCaseModel).where(
+                InterventionCaseModel.tenant_id == tenant_id
+            )
+        ).scalars().all()
+        case_ids = {c.id for c in cases}
+
+        # Cases pointing to non-existent student profiles
+        student_ids = set(
+            self.db.execute(
+                select(StudentProfileModel.id).where(
+                    StudentProfileModel.tenant_id == tenant_id
+                )
+            ).scalars().all()
+        )
+        for case in cases:
+            if case.student_profile_id not in student_ids:
+                issues.append(
+                    InterventionConsistencyIssueSchema(
+                        issue_type="case_missing_student_profile",
+                        case_id=case.id,
+                        student_profile_id=case.student_profile_id,
+                    )
+                )
+
+        # Actions pointing to non-existent cases
+        actions = self.db.execute(
+            select(InterventionActionModel).where(
+                InterventionActionModel.tenant_id == tenant_id
+            )
+        ).scalars().all()
+        for action in actions:
+            if action.case_id not in case_ids:
+                issues.append(
+                    InterventionConsistencyIssueSchema(
+                        issue_type="action_orphaned_case",
+                        action_id=action.id,
+                        case_id=action.case_id,
+                    )
+                )
+
+        return InterventionConsistencyReportSchema(
+            case_count=len(cases),
+            action_count=len(actions),
+            issue_count=len(issues),
+            issues=issues,
+        )

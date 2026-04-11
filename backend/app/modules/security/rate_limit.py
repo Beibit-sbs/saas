@@ -66,6 +66,10 @@ _RATE_LIMIT_REDIS_PREFIX = "rate_limit:v2"
 _LOGIN_PATHS = {
     ("POST", "/api/auth/login"),
     ("POST", "/api/auth/ldap-login"),
+    ("POST", "/api/auth/refresh"),
+    ("POST", "/api/auth/mfa/enable"),
+    ("POST", "/api/auth/mfa/verify"),
+    ("POST", "/api/auth/mfa/disable"),
 }
 _SENSITIVE_ADMIN_PATHS = {
     ("POST", "/api/admin/ldap/test-connection"),

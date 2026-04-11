@@ -20,8 +20,13 @@ from app.modules.workflows.models import (
     WorkflowStepType,
     WorkflowTaskModel,
     WorkflowTaskStatus,
+    WorkflowTaskCommentModel,
 )
 from app.modules.workflows.workflow_engine import WorkflowRuntimeEngine
+from app.modules.workflows.schemas import (
+    WorkflowConsistencyIssueSchema,
+    WorkflowConsistencyReportSchema,
+)
 from app.modules.workflows.workflow_task_service import WorkflowTaskService
 
 
@@ -317,6 +322,121 @@ class WorkflowService:
         ).scalars().all()
 
         return list(rows)
+
+    async def get_tenant_consistency_report(
+        self,
+        tenant_id: int,
+    ) -> WorkflowConsistencyReportSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        definitions = self.db.execute(
+            select(WorkflowDefinitionModel.id).where(WorkflowDefinitionModel.tenant_id == tenant_id)
+        ).scalars().all()
+        definition_versions = self.db.execute(
+            select(WorkflowDefinitionVersionModel.id).where(
+                WorkflowDefinitionVersionModel.tenant_id == tenant_id
+            )
+        ).scalars().all()
+        steps = self.db.execute(
+            select(WorkflowStepModel.id).where(WorkflowStepModel.tenant_id == tenant_id)
+        ).scalars().all()
+        instances = self.db.execute(
+            select(WorkflowInstanceModel)
+            .where(WorkflowInstanceModel.tenant_id == tenant_id)
+            .order_by(WorkflowInstanceModel.id)
+        ).scalars().all()
+        tasks = self.db.execute(
+            select(WorkflowTaskModel)
+            .where(WorkflowTaskModel.tenant_id == tenant_id)
+            .order_by(WorkflowTaskModel.id)
+        ).scalars().all()
+        comments = self.db.execute(
+            select(WorkflowTaskCommentModel)
+            .where(WorkflowTaskCommentModel.tenant_id == tenant_id)
+            .order_by(WorkflowTaskCommentModel.id)
+        ).scalars().all()
+
+        definition_ids = {int(item) for item in definitions}
+        definition_version_ids = {int(item) for item in definition_versions}
+        step_ids = {int(item) for item in steps}
+        instance_ids = {int(instance.id) for instance in instances}
+        task_ids = {int(task.id) for task in tasks}
+
+        issues: list[WorkflowConsistencyIssueSchema] = []
+
+        for instance in instances:
+            instance_id = int(instance.id)
+            if int(instance.workflow_definition_id) not in definition_ids:
+                issues.append(
+                    WorkflowConsistencyIssueSchema(
+                        issue_type="instance_missing_definition",
+                        workflow_instance_id=instance_id,
+                        reference_id=int(instance.workflow_definition_id),
+                        detail="Workflow instance references a missing definition.",
+                    )
+                )
+            if int(instance.workflow_definition_version_id) not in definition_version_ids:
+                issues.append(
+                    WorkflowConsistencyIssueSchema(
+                        issue_type="instance_missing_definition_version",
+                        workflow_instance_id=instance_id,
+                        reference_id=int(instance.workflow_definition_version_id),
+                        detail="Workflow instance references a missing definition version.",
+                    )
+                )
+            if instance.current_step_id is not None and int(instance.current_step_id) not in step_ids:
+                issues.append(
+                    WorkflowConsistencyIssueSchema(
+                        issue_type="instance_missing_current_step",
+                        workflow_instance_id=instance_id,
+                        reference_id=int(instance.current_step_id),
+                        detail="Workflow instance points to a missing current step.",
+                    )
+                )
+
+        for task in tasks:
+            task_id = int(task.id)
+            if int(task.workflow_instance_id) not in instance_ids:
+                issues.append(
+                    WorkflowConsistencyIssueSchema(
+                        issue_type="task_missing_instance",
+                        workflow_task_id=task_id,
+                        reference_id=int(task.workflow_instance_id),
+                        detail="Workflow task references a missing instance.",
+                    )
+                )
+            if task.workflow_step_id is not None and int(task.workflow_step_id) not in step_ids:
+                issues.append(
+                    WorkflowConsistencyIssueSchema(
+                        issue_type="task_missing_step",
+                        workflow_task_id=task_id,
+                        reference_id=int(task.workflow_step_id),
+                        detail="Workflow task references a missing workflow step.",
+                    )
+                )
+
+        for comment in comments:
+            comment_id = int(comment.id)
+            if int(comment.workflow_task_id) not in task_ids:
+                issues.append(
+                    WorkflowConsistencyIssueSchema(
+                        issue_type="comment_missing_task",
+                        comment_id=comment_id,
+                        reference_id=int(comment.workflow_task_id),
+                        detail="Workflow comment references a missing task.",
+                    )
+                )
+
+        return WorkflowConsistencyReportSchema(
+            definition_count=len(definition_ids),
+            definition_version_count=len(definition_version_ids),
+            step_count=len(step_ids),
+            instance_count=len(instances),
+            task_count=len(tasks),
+            comment_count=len(comments),
+            issue_count=len(issues),
+            issues=issues,
+        )
 
     async def on_workflow_completed(
         self,

@@ -31,6 +31,7 @@ from app.modules.profiles.schemas import (
     DepartmentReadSchema,
     FacultyCreateSchema,
     FacultyReadSchema,
+    PersonConsistencyReportSchema,
     PersonCreateSchema,
     PersonListResponseSchema,
     PersonReadSchema,
@@ -213,6 +214,83 @@ class PersonService:
             page=page,
             page_size=page_size,
             items=[PersonReadSchema.model_validate(item) for item in persons],
+        )
+
+    async def list_tenant_person_consistency_report(
+        self,
+        tenant_id: int,
+    ) -> PersonConsistencyReportSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        persons = self.db.execute(
+            select(PersonModel)
+            .where(PersonModel.tenant_id == tenant_id)
+            .order_by(PersonModel.id)
+        ).scalars().all()
+
+        email_counts: dict[str, int] = {}
+        key_counts: dict[str, int] = {}
+        issues: list[dict[str, int | str | None]] = []
+
+        for person in persons:
+            person_id = int(person.id)
+            raw_email = person.email if person.email is not None else ""
+            normalized_email = raw_email.strip().lower()
+            raw_key = person.external_person_key if person.external_person_key is not None else ""
+            normalized_key = raw_key.strip()
+
+            if not normalized_email:
+                issues.append(
+                    {
+                        "issue_type": "person_missing_email",
+                        "person_id": person_id,
+                        "external_person_key": normalized_key or None,
+                    }
+                )
+            else:
+                email_counts[normalized_email] = email_counts.get(normalized_email, 0) + 1
+
+            if normalized_key:
+                key_counts[normalized_key] = key_counts.get(normalized_key, 0) + 1
+
+        duplicate_emails = {
+            email for email, count in email_counts.items() if count > 1
+        }
+        duplicate_keys = {
+            key for key, count in key_counts.items() if count > 1
+        }
+
+        for person in persons:
+            person_id = int(person.id)
+            raw_email = person.email if person.email is not None else ""
+            normalized_email = raw_email.strip().lower()
+            raw_key = person.external_person_key if person.external_person_key is not None else ""
+            normalized_key = raw_key.strip()
+
+            if normalized_email and normalized_email in duplicate_emails:
+                issues.append(
+                    {
+                        "issue_type": "duplicate_person_email",
+                        "person_id": person_id,
+                        "email": normalized_email,
+                        "external_person_key": normalized_key or None,
+                    }
+                )
+
+            if normalized_key and normalized_key in duplicate_keys:
+                issues.append(
+                    {
+                        "issue_type": "duplicate_external_person_key",
+                        "person_id": person_id,
+                        "email": normalized_email or None,
+                        "external_person_key": normalized_key,
+                    }
+                )
+
+        return PersonConsistencyReportSchema(
+            person_count=len(persons),
+            issue_count=len(issues),
+            issues=issues,
         )
 
 

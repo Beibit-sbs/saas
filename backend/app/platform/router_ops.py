@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.modules.backup.service import list_backup_history
 from app.modules.observability.metrics import snapshot_latency_metrics
@@ -41,7 +41,9 @@ def _age_seconds(raw: str | None) -> float | None:
 def _resolve_request_tenant_id(request: Request) -> int:
     claims = resolve_current_user_claims(request, request.headers.get("authorization"))
     tenant_id = int(claims.tenant_id)
-    return tenant_id if tenant_id > 0 else 1
+    if tenant_id <= 0:
+        raise HTTPException(status_code=403, detail="tenant context missing")
+    return tenant_id
 
 
 @router.get("/summary")

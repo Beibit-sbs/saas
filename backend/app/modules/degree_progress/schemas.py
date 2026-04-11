@@ -35,3 +35,19 @@ class GraduationEligibilitySchema(BaseModel):
     gpa: Decimal | None
     minimum_gpa: Decimal
     remaining_required_items: int
+
+
+class DegreeProgressConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    student_profile_id: int | None = None
+    program_id: int | None = None
+    requirement_id: int | None = None
+    active_requirement_count: int | None = None
+
+
+class DegreeProgressConsistencyReportSchema(BaseModel):
+    active_primary_binding_count: int
+    active_requirement_count: int
+    requirement_item_count: int
+    issue_count: int
+    issues: list[DegreeProgressConsistencyIssueSchema]

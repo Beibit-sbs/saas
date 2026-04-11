@@ -3,13 +3,20 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.modules.academic_records.schemas import (
+    AcademicRecordConsistencyReportSchema,
     RecordCreatePayload,
     RecordDeleteResponse,
     RecordItemResponse,
     RecordListResponse,
     RecordUpdatePayload,
 )
-from app.modules.academic_records.service import create_record, delete_record, list_records, update_record
+from app.modules.academic_records.service import (
+    create_record,
+    delete_record,
+    get_record_consistency_report,
+    list_records,
+    update_record,
+)
 from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
 from app.modules.rbac.security import get_actor, permission_dependency
@@ -24,6 +31,17 @@ def get_records(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> RecordListResponse:
     return {"records": list_records(int(tenant["id"]))}
+
+
+@router.get("/consistency", response_model=AcademicRecordConsistencyReportSchema)
+def get_record_consistency_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.records.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> AcademicRecordConsistencyReportSchema:
+    return AcademicRecordConsistencyReportSchema.model_validate(
+        get_record_consistency_report(int(tenant["id"]))
+    )
 
 
 @router.post("", response_model=RecordItemResponse)

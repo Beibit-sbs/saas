@@ -102,6 +102,13 @@ def db_session() -> MagicMock:
 
 
 @pytest.fixture
+def billing_guard_mock(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    mock = MagicMock(name="assert_billing_write_allowed")
+    monkeypatch.setattr("app.modules.enrollments.service.assert_billing_write_allowed", mock)
+    return mock
+
+
+@pytest.fixture
 def audit_mock(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     mock = MagicMock(name="log_admin_action")
     monkeypatch.setattr("app.modules.enrollments.service.log_admin_action", mock)
@@ -193,6 +200,7 @@ class TestEnrollStudent:
         run_async,
         db_session,
         audit_mock,
+        billing_guard_mock,
         student_profile_factory,
         course_factory,
         term_factory,
@@ -221,6 +229,7 @@ class TestEnrollStudent:
         assert any(isinstance(item, OutboxEventModel) for item in added_instances)
         db_session.commit.assert_called_once()
         audit_mock.assert_called_once()
+        billing_guard_mock.assert_called_once_with(1, action="enrollments.create")
 
     def test_tenant_missing_fail_closed(self, run_async, db_session) -> None:
         service = EnrollmentLifecycleService(db_session)
@@ -247,6 +256,35 @@ class TestEnrollStudent:
 
         with pytest.raises(TenantResourceNotFoundError, match="Course 701"):
             run_async(service.enroll_student(tenant_id=1, request=request, actor_id="registrar@example.com"))
+
+
+def test_list_tenant_enrollment_consistency_report_detects_issues(
+    run_async,
+    db_session,
+    enrollment_factory,
+) -> None:
+    db_session.execute.side_effect = [
+        ExecuteResult(
+            scalars=[
+                enrollment_factory(id=4001, student_profile_id=1001, course_id=701, term_id=1),
+                enrollment_factory(id=4002, student_profile_id=9999, course_id=702, term_id=2),
+            ]
+        ),
+        ExecuteResult(scalars=[1001]),
+        ExecuteResult(scalars=[701]),
+        ExecuteResult(scalars=[1]),
+    ]
+
+    service = EnrollmentLifecycleService(db_session)
+    result = run_async(service.list_tenant_enrollment_consistency_report(tenant_id=1))
+
+    assert result.enrollment_count == 2
+    course_query = db_session.execute.call_args_list[2].args[0]
+    assert str(course_query.compile(compile_kwargs={"literal_binds": True})).find("tenant_id = 1") != -1
+    issue_types = [issue.issue_type for issue in result.issues]
+    assert "enrollment_missing_student_profile" in issue_types
+    assert "enrollment_missing_course" in issue_types
+    assert "enrollment_missing_term" in issue_types
 
     def test_duplicate_active_enrollment_prevented(
         self,

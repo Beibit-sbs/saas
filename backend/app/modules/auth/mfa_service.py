@@ -11,12 +11,13 @@ import json
 from threading import Lock
 from typing import Any
 
-from app.core.config import is_runtime_schema_bootstrap_enabled
 from app.core.db import get_raw_conn
 
 
 _state_lock = Lock()
-_db_ready = False
+# Table is guaranteed by Alembic migration f3e4d5c6b7a9_add_auth_session_and_mfa_tables.
+# In-memory fallback (_state) is used only when DB is unavailable (e.g. tests without DATABASE_URL).
+_db_ready = True
 _state: dict[str, dict[str, Any]] = {}
 
 
@@ -29,44 +30,10 @@ def _state_key(user_id: str, tenant_id: int) -> str:
 
 
 def _ensure_mfa_table(conn) -> bool:
-    global _db_ready
+    """Return True if DB is available; False causes caller to use in-memory fallback."""
     if conn is None:
         return False
-    if _db_ready:
-        return True
-    if not is_runtime_schema_bootstrap_enabled():
-        return False
-
-    with _state_lock:
-        if _db_ready:
-            return True
-        if not is_runtime_schema_bootstrap_enabled():
-            return False
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                CREATE TABLE IF NOT EXISTS app_mfa_state (
-                    user_id TEXT NOT NULL,
-                    tenant_id BIGINT NOT NULL,
-                    secret_encrypted TEXT,
-                    pending_secret_encrypted TEXT,
-                    recovery_codes JSONB NOT NULL DEFAULT '[]'::jsonb,
-                    enabled BOOLEAN NOT NULL DEFAULT FALSE,
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    PRIMARY KEY (user_id, tenant_id)
-                )
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_mfa_tenant_enabled
-                ON app_mfa_state (tenant_id, enabled)
-                """
-            )
-        conn.commit()
-        _db_ready = True
-    return True
+    return _db_ready
 
 
 def _parse_recovery_codes(value: object) -> list[str]:

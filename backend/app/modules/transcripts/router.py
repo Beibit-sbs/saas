@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from pydantic import BaseModel
@@ -21,7 +21,12 @@ from app.core.module_helpers.service_validation import (
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.transcripts.dependencies import get_transcripts_db
-from app.modules.transcripts.schemas import StudentTranscriptSchema, TranscriptSnapshotSchema
+from app.modules.transcripts.schemas import (
+    StudentTranscriptSchema,
+    TranscriptConsistencyReportSchema,
+    TranscriptTenantConsistencyReportSchema,
+    TranscriptSnapshotSchema,
+)
 from app.modules.transcripts.service import TranscriptService
 
 
@@ -29,9 +34,9 @@ class ErrorDetailResponse(BaseModel):
     detail: Any
 
 
-TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
-Actor = Annotated[str, Depends(get_actor)]
-TranscriptsDb = Annotated[Session, Depends(get_transcripts_db)]
+TrustedTenant: TypeAlias = Annotated[dict[str, object], Depends(get_current_tenant)]
+Actor: TypeAlias = Annotated[str, Depends(get_actor)]
+TranscriptsDb: TypeAlias = Annotated[Session, Depends(get_transcripts_db)]
 
 
 def _raise_transcripts_http_error(exc: Exception) -> HTTPException:
@@ -115,4 +120,57 @@ async def create_transcript_snapshot_endpoint(
         OptimisticLockConflictError,
         IntegrityError,
     ) as exc:
+        raise _raise_transcripts_http_error(exc) from exc
+
+
+@router.get(
+    "/students/{student_id}/transcript/consistency",
+    summary="Get transcript consistency issues",
+    description="Read-only reconciliation between enrollments and transcript records for a student.",
+    response_model=TranscriptConsistencyReportSchema,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": ErrorDetailResponse},
+        403: {"model": ErrorDetailResponse},
+        404: {"model": ErrorDetailResponse},
+    },
+)
+async def get_student_transcript_consistency_endpoint(
+    student_id: int = Path(..., gt=0),
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("transcripts.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: TranscriptsDb = None,
+) -> TranscriptConsistencyReportSchema:
+    service = TranscriptService(db)
+    try:
+        return await service.get_student_transcript_consistency_report(
+            tenant_id=int(tenant["id"]),
+            student_profile_id=student_id,
+        )
+    except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
+        raise _raise_transcripts_http_error(exc) from exc
+
+
+@router.get(
+    "/transcripts/consistency",
+    summary="Get tenant transcript consistency report",
+    description="Read-only reconciliation summary for all tenant students with transcript anomalies.",
+    response_model=TranscriptTenantConsistencyReportSchema,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": ErrorDetailResponse},
+        403: {"model": ErrorDetailResponse},
+    },
+)
+async def get_tenant_transcript_consistency_endpoint(
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("transcripts.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: TranscriptsDb = None,
+) -> TranscriptTenantConsistencyReportSchema:
+    service = TranscriptService(db)
+    try:
+        return await service.list_tenant_transcript_consistency_reports(tenant_id=int(tenant["id"]))
+    except (PermissionError, ValueError, DomainValidationError) as exc:
         raise _raise_transcripts_http_error(exc) from exc

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel, ValidationError
@@ -25,6 +25,7 @@ from app.modules.profiles.schemas import (
     DepartmentReadSchema,
     FacultyCreateSchema,
     FacultyReadSchema,
+    PersonConsistencyReportSchema,
     PersonCreateSchema,
     PersonListResponseSchema,
     PersonReadSchema,
@@ -70,9 +71,9 @@ def _raise_profile_http_error(exc: Exception) -> HTTPException:
     raise HTTPException(status_code=400, detail=str(exc))
 
 
-TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
-Actor = Annotated[str, Depends(get_actor)]
-ProfilesDb = Annotated[Session, Depends(get_profiles_db)]
+TrustedTenant: TypeAlias = Annotated[dict[str, object], Depends(get_current_tenant)]
+Actor: TypeAlias = Annotated[str, Depends(get_actor)]
+ProfilesDb: TypeAlias = Annotated[Session, Depends(get_profiles_db)]
 
 
 @router.post(
@@ -116,6 +117,23 @@ async def list_people_endpoint(
         page=page,
         page_size=page_size,
         status=status,
+    )
+
+
+@router.get(
+    "/people/consistency",
+    response_model=PersonConsistencyReportSchema,
+    responses={403: {"model": ErrorDetailResponse}},
+)
+async def list_people_consistency_endpoint(
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("profiles.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: ProfilesDb = None,
+) -> PersonConsistencyReportSchema:
+    service = PersonService(db)
+    return await service.list_tenant_person_consistency_report(
+        tenant_id=int(tenant["id"]),
     )
 
 

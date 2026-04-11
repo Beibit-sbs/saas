@@ -8,7 +8,7 @@ from pathlib import Path
 from app.modules.audit.service import log_admin_action
 from app.modules.billing.service import ensure_tenant_subscription
 from app.modules.backup.service import save_backup_settings
-from app.modules.feature_flags.service import list_flags
+from app.modules.feature_flags.service import set_flag
 from app.modules.integrations.service import save_setting
 from app.modules.plans.service import get_plan_by_code
 from app.modules.rbac.service import BASELINE_ROLE_PERMISSIONS, add_or_update_role_for_tenant
@@ -98,8 +98,8 @@ class TenantProvisioningService:
                 sorted(BASELINE_ROLE_PERMISSIONS.get("admin", set())),
             )
 
-            # Seed feature flags storage for the tenant.
-            list_flags(tenant_id=tenant_id)
+            # Seed default feature flags for the tenant.
+            set_flag("admin.local_users.tab", enabled=True, scope="global", tenant_id=tenant_id)
 
             # Seed integration settings.
             save_setting("ldap.enabled", "false", is_secret=False, tenant_id=tenant_id)

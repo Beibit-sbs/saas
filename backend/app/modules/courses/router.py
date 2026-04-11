@@ -4,13 +4,20 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.modules.audit.service import log_admin_action
 from app.modules.courses.schemas import (
+    CourseConsistencyReportSchema,
     CourseCreatePayload,
     CourseDeleteResponse,
     CourseItemResponse,
     CourseListResponse,
     CourseUpdatePayload,
 )
-from app.modules.courses.service import create_course, delete_course, list_courses, update_course
+from app.modules.courses.service import (
+    create_course,
+    delete_course,
+    get_course_consistency_report,
+    list_courses,
+    update_course,
+)
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -25,6 +32,17 @@ def get_courses(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> CourseListResponse:
     return {"courses": list_courses(int(tenant["id"]))}
+
+
+@router.get("/consistency", response_model=CourseConsistencyReportSchema)
+def get_course_consistency_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.courses.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> CourseConsistencyReportSchema:
+    return CourseConsistencyReportSchema.model_validate(
+        get_course_consistency_report(int(tenant["id"]))
+    )
 
 
 @router.post("", response_model=CourseItemResponse)

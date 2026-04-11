@@ -14,6 +14,10 @@ from app.modules.integrations.service import get_ldap_config_for_admin, list_ai_
 from app.modules.jobs.service import count_jobs_for_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.rbac.service import list_roles_for_tenant, list_user_role_assignments_for_tenant
+from app.modules.university_core.tenant_entity_service import (
+    UniversityCoreConsistencyReportSchema,
+    get_tenant_entity_consistency_report,
+)
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -139,3 +143,12 @@ def admin_dashboard_meta(
             "last_event": last_audit_event,
         },
     }
+
+
+@router.get("/university/consistency", response_model=UniversityCoreConsistencyReportSchema)
+def admin_university_consistency(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> UniversityCoreConsistencyReportSchema:
+    return get_tenant_entity_consistency_report(int(tenant["id"]))

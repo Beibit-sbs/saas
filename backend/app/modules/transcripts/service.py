@@ -23,6 +23,9 @@ from app.modules.students.models import StudentProfileModel
 from app.modules.transcripts.business_rules import TranscriptRules
 from app.modules.transcripts.models import TranscriptRecordModel, TranscriptSnapshotModel
 from app.modules.transcripts.schemas import (
+    TranscriptConsistencyIssueSchema,
+    TranscriptConsistencyReportSchema,
+    TranscriptTenantConsistencyReportSchema,
     StudentTranscriptSchema,
     TranscriptItemSchema,
     TranscriptSnapshotSchema,
@@ -320,3 +323,160 @@ class TranscriptService:
         )
 
         return TranscriptSnapshotSchema.model_validate(snapshot)
+
+    async def get_student_transcript_consistency_report(
+        self,
+        tenant_id: int,
+        *,
+        student_profile_id: int,
+    ) -> TranscriptConsistencyReportSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        self._load_student(tenant_id, student_profile_id)
+
+        enrollments = self._load_enrollments(tenant_id, student_profile_id)
+        transcript_records = self.db.execute(
+            select(TranscriptRecordModel)
+            .where(
+                and_(
+                    TranscriptRecordModel.tenant_id == tenant_id,
+                    TranscriptRecordModel.student_profile_id == student_profile_id,
+                )
+            )
+            .order_by(TranscriptRecordModel.enrollment_id, TranscriptRecordModel.id)
+        ).scalars().all()
+
+        return self._build_transcript_consistency_report(
+            student_profile_id=student_profile_id,
+            enrollments=enrollments,
+            transcript_records=transcript_records,
+        )
+
+    def _build_transcript_consistency_report(
+        self,
+        *,
+        student_profile_id: int,
+        enrollments: list[EnrollmentModel],
+        transcript_records: list[TranscriptRecordModel],
+    ) -> TranscriptConsistencyReportSchema:
+        enrollment_by_id = {int(enrollment.id): enrollment for enrollment in enrollments}
+        records_by_enrollment_id: dict[int, list[TranscriptRecordModel]] = {}
+        for record in transcript_records:
+            records_by_enrollment_id.setdefault(int(record.enrollment_id), []).append(record)
+
+        issues: list[TranscriptConsistencyIssueSchema] = []
+
+        for enrollment in enrollments:
+            enrollment_id = int(enrollment.id)
+            records = records_by_enrollment_id.get(enrollment_id, [])
+            if not records:
+                issues.append(
+                    TranscriptConsistencyIssueSchema(
+                        issue_type="missing_transcript_record",
+                        enrollment_id=enrollment_id,
+                    )
+                )
+                continue
+
+            if len(records) > 1:
+                issues.append(
+                    TranscriptConsistencyIssueSchema(
+                        issue_type="duplicate_transcript_records_for_enrollment",
+                        enrollment_id=enrollment_id,
+                        transcript_record_id=int(records[0].id),
+                    )
+                )
+
+            record = records[0]
+
+            field_pairs = [
+                ("course_id", int(enrollment.course_id), int(record.course_id)),
+                ("term_id", int(enrollment.term_id), int(record.term_id)),
+                ("grade_code", enrollment.grade_code, record.grade_code),
+                (
+                    "grade_points",
+                    str(enrollment.grade_points) if enrollment.grade_points is not None else None,
+                    str(record.grade_points) if record.grade_points is not None else None,
+                ),
+            ]
+
+            for field_name, expected, actual in field_pairs:
+                if expected != actual:
+                    issues.append(
+                        TranscriptConsistencyIssueSchema(
+                            issue_type="transcript_record_mismatch",
+                            enrollment_id=enrollment_id,
+                            transcript_record_id=int(record.id),
+                            field=field_name,
+                            expected=str(expected) if expected is not None else None,
+                            actual=str(actual) if actual is not None else None,
+                        )
+                    )
+
+        for record in transcript_records:
+            if int(record.enrollment_id) not in enrollment_by_id:
+                issues.append(
+                    TranscriptConsistencyIssueSchema(
+                        issue_type="dangling_transcript_record",
+                        enrollment_id=int(record.enrollment_id),
+                        transcript_record_id=int(record.id),
+                    )
+                )
+
+        return TranscriptConsistencyReportSchema(
+            student_profile_id=student_profile_id,
+            enrollment_count=len(enrollments),
+            transcript_record_count=len(transcript_records),
+            issue_count=len(issues),
+            issues=issues,
+        )
+
+    async def list_tenant_transcript_consistency_reports(
+        self,
+        tenant_id: int,
+    ) -> TranscriptTenantConsistencyReportSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+
+        enrollments = self.db.execute(
+            select(EnrollmentModel)
+            .where(EnrollmentModel.tenant_id == tenant_id)
+            .order_by(EnrollmentModel.student_profile_id, EnrollmentModel.id)
+        ).scalars().all()
+
+        transcript_records = self.db.execute(
+            select(TranscriptRecordModel)
+            .where(TranscriptRecordModel.tenant_id == tenant_id)
+            .order_by(
+                TranscriptRecordModel.student_profile_id,
+                TranscriptRecordModel.enrollment_id,
+                TranscriptRecordModel.id,
+            )
+        ).scalars().all()
+
+        enrollments_by_student: dict[int, list[EnrollmentModel]] = {}
+        for enrollment in enrollments:
+            enrollments_by_student.setdefault(int(enrollment.student_profile_id), []).append(enrollment)
+
+        records_by_student: dict[int, list[TranscriptRecordModel]] = {}
+        for record in transcript_records:
+            records_by_student.setdefault(int(record.student_profile_id), []).append(record)
+
+        student_ids = sorted(set(enrollments_by_student.keys()) | set(records_by_student.keys()))
+        reports: list[TranscriptConsistencyReportSchema] = []
+        total_issue_count = 0
+
+        for student_profile_id in student_ids:
+            report = self._build_transcript_consistency_report(
+                student_profile_id=student_profile_id,
+                enrollments=enrollments_by_student.get(student_profile_id, []),
+                transcript_records=records_by_student.get(student_profile_id, []),
+            )
+            if report.issue_count > 0:
+                reports.append(report)
+                total_issue_count += report.issue_count
+
+        return TranscriptTenantConsistencyReportSchema(
+            scanned_student_count=len(student_ids),
+            students_with_issues=len(reports),
+            total_issue_count=total_issue_count,
+            reports=reports,
+        )

@@ -158,6 +158,32 @@ class TestOrgUnitTree:
         assert len(tree[0]["children"]) == 1
         assert tree[0]["children"][0]["code"] == "ENG"
 
+    def test_consistency_endpoint_returns_issues(self, override_org_db: MagicMock, admin_headers: dict) -> None:
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(
+                org_service,
+                "get_org_unit_consistency_report",
+                lambda db, tid: {
+                    "unit_count": 3,
+                    "issue_count": 1,
+                    "issues": [
+                        {
+                            "issue_type": "unit_missing_parent",
+                            "unit_id": 3,
+                            "parent_unit_id": 999,
+                            "unit_type": "department",
+                        }
+                    ],
+                },
+            )
+            resp = client.get("/api/admin/org-units/consistency", headers=admin_headers)
+
+        assert resp.status_code == 200
+        payload = resp.json()
+        assert payload["unit_count"] == 3
+        assert payload["issue_count"] == 1
+        assert payload["issues"][0]["issue_type"] == "unit_missing_parent"
+
 
 # ---------------------------------------------------------------------------
 # Tenant isolation
@@ -203,3 +229,173 @@ class TestTenantIsolation:
         result = org_service.bootstrap_university_root(session, tenant_id=1, name="Test University")
         assert result is existing
         session.add.assert_not_called()
+
+    def test_consistency_report_detects_missing_parent_and_multiple_roots(self) -> None:
+        root_a = _make_unit(unit_id=1, code="ROOT-A", unit_type=OrgUnitType.UNIVERSITY, parent_unit_id=None)
+        root_b = _make_unit(unit_id=2, code="ROOT-B", unit_type=OrgUnitType.UNIVERSITY, parent_unit_id=None)
+        child_orphan = _make_unit(unit_id=3, code="CS", unit_type=OrgUnitType.DEPARTMENT, parent_unit_id=999)
+
+        session = MagicMock()
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(org_service, "get_tree", lambda db, tid: [root_a, root_b, child_orphan])
+            report = org_service.get_org_unit_consistency_report(session, tenant_id=1)
+
+        assert report.unit_count == 3
+        assert report.issue_count == 7
+        issue_types = [issue.issue_type for issue in report.issues]
+        assert issue_types.count("multiple_root_units") == 2
+        assert issue_types.count("multiple_university_roots") == 2
+        assert issue_types.count("multiple_active_university_roots") == 2
+        assert "unit_missing_parent" in issue_types
+
+    def test_consistency_report_detects_multi_node_cycle(self) -> None:
+        root = _make_unit(unit_id=1, code="ROOT", unit_type=OrgUnitType.UNIVERSITY, parent_unit_id=None)
+        faculty = _make_unit(unit_id=2, code="ENG", unit_type=OrgUnitType.FACULTY, parent_unit_id=4)
+        department = _make_unit(unit_id=3, code="CS", unit_type=OrgUnitType.DEPARTMENT, parent_unit_id=2)
+        lab = _make_unit(unit_id=4, code="AI", unit_type=OrgUnitType.DEPARTMENT, parent_unit_id=3)
+
+        session = MagicMock()
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(org_service, "get_tree", lambda db, tid: [root, faculty, department, lab])
+            report = org_service.get_org_unit_consistency_report(session, tenant_id=1)
+
+        cycle_issues = [issue for issue in report.issues if issue.issue_type == "unit_cycle_detected"]
+        assert len(cycle_issues) == 3
+        assert {issue.unit_id for issue in cycle_issues} == {2, 3, 4}
+
+    def test_consistency_report_detects_invalid_parent_type(self) -> None:
+        root = _make_unit(unit_id=1, code="ROOT", unit_type=OrgUnitType.UNIVERSITY, parent_unit_id=None)
+        department = _make_unit(unit_id=2, code="CS", unit_type=OrgUnitType.DEPARTMENT, parent_unit_id=1)
+        faculty = _make_unit(unit_id=3, code="ENG", unit_type=OrgUnitType.FACULTY, parent_unit_id=2)
+
+        session = MagicMock()
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(org_service, "get_tree", lambda db, tid: [root, department, faculty])
+            report = org_service.get_org_unit_consistency_report(session, tenant_id=1)
+
+        type_issues = [issue for issue in report.issues if issue.issue_type == "unit_invalid_parent_type"]
+        assert len(type_issues) == 2
+        assert {issue.unit_id for issue in type_issues} == {2, 3}
+
+    def test_consistency_report_detects_active_child_with_inactive_parent(self) -> None:
+        root = _make_unit(
+            unit_id=1,
+            code="ROOT",
+            unit_type=OrgUnitType.UNIVERSITY,
+            parent_unit_id=None,
+            active=False,
+        )
+        faculty = _make_unit(
+            unit_id=2,
+            code="ENG",
+            unit_type=OrgUnitType.FACULTY,
+            parent_unit_id=1,
+            active=True,
+        )
+
+        session = MagicMock()
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(org_service, "get_tree", lambda db, tid: [root, faculty])
+            report = org_service.get_org_unit_consistency_report(session, tenant_id=1)
+
+        state_issues = [
+            issue for issue in report.issues if issue.issue_type == "unit_active_child_inactive_parent"
+        ]
+        assert len(state_issues) == 1
+        assert state_issues[0].unit_id == 2
+
+    def test_consistency_report_detects_duplicate_codes(self) -> None:
+        root = _make_unit(unit_id=1, code="ROOT", unit_type=OrgUnitType.UNIVERSITY, parent_unit_id=None)
+        faculty_a = _make_unit(unit_id=2, code="ENG", unit_type=OrgUnitType.FACULTY, parent_unit_id=1)
+        faculty_b = _make_unit(unit_id=3, code="ENG", unit_type=OrgUnitType.FACULTY, parent_unit_id=1)
+
+        session = MagicMock()
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(org_service, "get_tree", lambda db, tid: [root, faculty_a, faculty_b])
+            report = org_service.get_org_unit_consistency_report(session, tenant_id=1)
+
+        duplicate_issues = [issue for issue in report.issues if issue.issue_type == "unit_duplicate_code"]
+        assert len(duplicate_issues) == 2
+        assert {issue.unit_id for issue in duplicate_issues} == {2, 3}
+
+    def test_consistency_report_detects_missing_root_unit(self) -> None:
+        a = _make_unit(unit_id=1, code="A", unit_type=OrgUnitType.FACULTY, parent_unit_id=2)
+        b = _make_unit(unit_id=2, code="B", unit_type=OrgUnitType.DEPARTMENT, parent_unit_id=1)
+
+        session = MagicMock()
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(org_service, "get_tree", lambda db, tid: [a, b])
+            report = org_service.get_org_unit_consistency_report(session, tenant_id=1)
+
+        assert any(issue.issue_type == "missing_root_unit" for issue in report.issues)
+
+    def test_consistency_report_detects_non_university_root_unit(self) -> None:
+        school_root = _make_unit(unit_id=1, code="SCH", unit_type=OrgUnitType.SCHOOL, parent_unit_id=None)
+        dept = _make_unit(unit_id=2, code="CS", unit_type=OrgUnitType.DEPARTMENT, parent_unit_id=1)
+
+        session = MagicMock()
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(org_service, "get_tree", lambda db, tid: [school_root, dept])
+            report = org_service.get_org_unit_consistency_report(session, tenant_id=1)
+
+        assert any(issue.issue_type == "non_university_root_unit" for issue in report.issues)
+        assert any(issue.issue_type == "missing_university_root" for issue in report.issues)
+
+    def test_consistency_report_detects_multiple_university_roots(self) -> None:
+        root_a = _make_unit(unit_id=1, code="ROOT-A", unit_type=OrgUnitType.UNIVERSITY, parent_unit_id=None)
+        root_b = _make_unit(unit_id=2, code="ROOT-B", unit_type=OrgUnitType.UNIVERSITY, parent_unit_id=None)
+
+        session = MagicMock()
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(org_service, "get_tree", lambda db, tid: [root_a, root_b])
+            report = org_service.get_org_unit_consistency_report(session, tenant_id=1)
+
+        university_root_issues = [
+            issue for issue in report.issues if issue.issue_type == "multiple_university_roots"
+        ]
+        assert len(university_root_issues) == 2
+
+    def test_consistency_report_detects_inactive_university_root(self) -> None:
+        root = _make_unit(
+            unit_id=1,
+            code="ROOT",
+            unit_type=OrgUnitType.UNIVERSITY,
+            parent_unit_id=None,
+            active=False,
+        )
+        faculty = _make_unit(unit_id=2, code="ENG", unit_type=OrgUnitType.FACULTY, parent_unit_id=1)
+
+        session = MagicMock()
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(org_service, "get_tree", lambda db, tid: [root, faculty])
+            report = org_service.get_org_unit_consistency_report(session, tenant_id=1)
+
+        issue_types = [issue.issue_type for issue in report.issues]
+        assert "inactive_university_root" in issue_types
+        assert "missing_active_university_root" in issue_types
+
+    def test_consistency_report_detects_multiple_active_university_roots(self) -> None:
+        root_a = _make_unit(unit_id=1, code="ROOT-A", unit_type=OrgUnitType.UNIVERSITY, parent_unit_id=None)
+        root_b = _make_unit(unit_id=2, code="ROOT-B", unit_type=OrgUnitType.UNIVERSITY, parent_unit_id=None)
+
+        session = MagicMock()
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(org_service, "get_tree", lambda db, tid: [root_a, root_b])
+            report = org_service.get_org_unit_consistency_report(session, tenant_id=1)
+
+        active_root_issues = [
+            issue for issue in report.issues if issue.issue_type == "multiple_active_university_roots"
+        ]
+        assert len(active_root_issues) == 2
+
+    def test_consistency_report_detects_missing_university_root_without_roots(self) -> None:
+        a = _make_unit(unit_id=1, code="A", unit_type=OrgUnitType.FACULTY, parent_unit_id=2)
+        b = _make_unit(unit_id=2, code="B", unit_type=OrgUnitType.DEPARTMENT, parent_unit_id=1)
+
+        session = MagicMock()
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr(org_service, "get_tree", lambda db, tid: [a, b])
+            report = org_service.get_org_unit_consistency_report(session, tenant_id=1)
+
+        assert any(issue.issue_type == "missing_university_root" for issue in report.issues)
+        assert any(issue.issue_type == "missing_active_university_root" for issue in report.issues)

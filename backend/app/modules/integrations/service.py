@@ -1,7 +1,9 @@
 from app.core.db import get_raw_conn
 from app.core.config import is_runtime_schema_bootstrap_enabled
+import ipaddress
 import os
 import time
+import urllib.parse
 from base64 import urlsafe_b64encode
 from dataclasses import dataclass
 from functools import lru_cache
@@ -467,6 +469,58 @@ def get_ai_provider_runtime_config(provider: str, tenant_id: int | None = None) 
     }
 
 
+# ---------------------------------------------------------------------------
+# SSRF-safe URL validator
+# ---------------------------------------------------------------------------
+
+_PRIVATE_NETWORKS = [
+    ipaddress.ip_network("127.0.0.0/8"),
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("169.254.0.0/16"),   # link-local / cloud metadata
+    ipaddress.ip_network("100.64.0.0/10"),    # shared address space (RFC 6598)
+    ipaddress.ip_network("::1/128"),           # IPv6 loopback
+    ipaddress.ip_network("fc00::/7"),          # IPv6 ULA
+    ipaddress.ip_network("fe80::/10"),         # IPv6 link-local
+]
+
+
+def _validate_outbound_url(url: str) -> str:
+    """Validate a URL intended for outbound HTTPS requests.
+
+    Rules:
+    - Must start with https://
+    - Must have a non-empty hostname
+    - Hostname must not resolve to a private/loopback/metadata address *when
+      given as a literal IP*; DNS-based checks are deferred to the network layer.
+    - Path-only or relative URLs are rejected.
+
+    Returns the normalised URL or raises ValueError with a safe message.
+    """
+    url = url.strip()
+    if not url:
+        raise ValueError("validation_url is required")
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme != "https":
+        raise ValueError("validation_url must use the https scheme")
+    hostname = (parsed.hostname or "").strip().lower()
+    if not hostname:
+        raise ValueError("validation_url must contain a valid hostname")
+    if hostname in ("localhost",):
+        raise ValueError("validation_url hostname is not allowed")
+    try:
+        addr = ipaddress.ip_address(hostname)
+        for net in _PRIVATE_NETWORKS:
+            if addr in net:
+                raise ValueError("validation_url resolves to a private or reserved address")
+    except ValueError as exc:
+        # ip_address() raises ValueError for non-IP hostnames — that's fine.
+        if "validation_url" in str(exc):
+            raise
+    return url
+
+
 def save_ai_provider_config(
     provider: str,
     api_key: str | None,
@@ -481,7 +535,8 @@ def save_ai_provider_config(
     if api_key is not None:
         save_setting(f"ai.{provider}.api_key", api_key.strip(), is_secret=True, tenant_id=normalized_tenant_id)
     if validation_url is not None:
-        save_setting(f"ai.{provider}.validation_url", validation_url.strip(), is_secret=False, tenant_id=normalized_tenant_id)
+        safe_url = _validate_outbound_url(validation_url)
+        save_setting(f"ai.{provider}.validation_url", safe_url, is_secret=False, tenant_id=normalized_tenant_id)
 
     return get_ai_provider_config_for_admin(provider, tenant_id=normalized_tenant_id)
 

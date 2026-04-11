@@ -20,6 +20,7 @@ from app.modules.rbac import service as rbac_service
 from app.modules.students.schemas import (
     StudentProfileListResponseSchema,
     StudentProfileReadSchema,
+    StudentProgramBindingConsistencyIssueSchema,
     StudentProgramBindingReadSchema,
 )
 from tests.conftest import (
@@ -123,6 +124,23 @@ def _binding_schema(*, binding_id: int = 3001, student_id: int = 1001, program_i
         updated_by="owner@example.com",
         created_at=now,
         updated_at=now,
+    )
+
+
+def _consistency_issue_schema(
+    *,
+    student_profile_id: int = 1001,
+    issue_type: str = "duplicate_active_primary_bindings",
+    active_binding_count: int = 2,
+    active_primary_count: int = 2,
+    program_ids: list[int] | None = None,
+) -> StudentProgramBindingConsistencyIssueSchema:
+    return StudentProgramBindingConsistencyIssueSchema(
+        student_profile_id=student_profile_id,
+        issue_type=issue_type,
+        active_binding_count=active_binding_count,
+        active_primary_count=active_primary_count,
+        program_ids=program_ids or [501, 502],
     )
 
 
@@ -692,6 +710,30 @@ def test_get_active_program_rbac_denied_returns_403(student_headers: dict[str, s
     response = client.get("/api/admin/students/1001/program", headers=student_headers)
 
     assert response.status_code == 403, response.text
+
+
+def test_list_program_binding_consistency_issues_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_students_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_list_program_binding_consistency_issues(self, tenant_id: int):
+        assert tenant_id == 1
+        return [_consistency_issue_schema()]
+
+    monkeypatch.setattr(
+        students_service.StudentLifecycleService,
+        "list_program_binding_consistency_issues",
+        fake_list_program_binding_consistency_issues,
+    )
+
+    response = client.get("/api/admin/students/consistency/program-bindings", headers=admin_headers)
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["issue_type"] == "duplicate_active_primary_bindings"
+    assert body[0]["program_ids"] == [501, 502]
 
 
 # ---------------------------------------------------------------------------

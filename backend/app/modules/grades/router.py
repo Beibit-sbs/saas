@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from pydantic import BaseModel, ValidationError
@@ -22,6 +22,7 @@ from app.core.tenant import get_current_tenant
 from app.modules.grades.dependencies import get_grades_db
 from app.modules.grades.schemas import (
     GradeChangeSchema,
+    GradeEnrollmentConsistencyReportSchema,
     GradeListResponseSchema,
     GradeReadSchema,
     GradeSubmitSchema,
@@ -35,9 +36,9 @@ class ErrorDetailResponse(BaseModel):
     detail: Any
 
 
-TrustedTenant = Annotated[dict[str, object], Depends(get_current_tenant)]
-Actor = Annotated[str, Depends(get_actor)]
-GradesDb = Annotated[Session, Depends(get_grades_db)]
+TrustedTenant: TypeAlias = Annotated[dict[str, object], Depends(get_current_tenant)]
+Actor: TypeAlias = Annotated[str, Depends(get_actor)]
+GradesDb: TypeAlias = Annotated[Session, Depends(get_grades_db)]
 
 
 def _parse_payload(schema_cls: type[BaseModel], payload: dict[str, Any]) -> BaseModel:
@@ -178,4 +179,28 @@ async def list_course_grades_endpoint(
             actor_id=actor,
         )
     except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
+        raise _raise_grades_http_error(exc) from exc
+
+
+@router.get(
+    "/grades/consistency",
+    summary="Get tenant grade-enrollment consistency report",
+    description="Read-only reconciliation summary between enrollments and grade submissions.",
+    response_model=GradeEnrollmentConsistencyReportSchema,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": ErrorDetailResponse},
+        403: {"model": ErrorDetailResponse},
+    },
+)
+async def get_grade_enrollment_consistency_endpoint(
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("grades.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: GradesDb = None,
+) -> GradeEnrollmentConsistencyReportSchema:
+    service = GradeLifecycleService(db)
+    try:
+        return await service.list_tenant_grade_enrollment_consistency_report(tenant_id=int(tenant["id"]))
+    except (PermissionError, ValueError, DomainValidationError) as exc:
         raise _raise_grades_http_error(exc) from exc

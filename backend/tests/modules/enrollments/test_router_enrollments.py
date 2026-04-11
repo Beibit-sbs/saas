@@ -10,6 +10,7 @@ from app.main import app
 from app.modules.enrollments.dependencies import get_enrollments_db
 from app.modules.enrollments.models import EnrollmentStatus, EnrollmentType
 from app.modules.enrollments.schemas import EnrollmentReadSchema
+from app.modules.enrollments.schemas import EnrollmentConsistencyReportSchema
 from app.modules.enrollments.service import EnrollmentLifecycleService
 from app.modules.rbac import service as rbac_service
 from tests.conftest import ADMIN_HEADERS, _configure_db_only_role_resolution, client
@@ -98,3 +99,38 @@ def test_post_enrollment_success(
     assert body["student_profile_id"] == 1001
     assert body["course_id"] == 701
     assert body["term_id"] == 1
+
+
+def test_get_enrollment_consistency_success(
+    monkeypatch: pytest.MonkeyPatch,
+    override_enrollments_db: MagicMock,
+    admin_headers: dict[str, str],
+) -> None:
+    async def fake_consistency(self, tenant_id: int):
+        assert tenant_id == 1
+        return EnrollmentConsistencyReportSchema(
+            enrollment_count=2,
+            issue_count=3,
+            issues=[
+                {
+                    "issue_type": "enrollment_missing_student_profile",
+                    "enrollment_id": 4002,
+                    "student_profile_id": 9999,
+                    "course_id": 702,
+                    "term_id": 2,
+                }
+            ],
+        )
+
+    monkeypatch.setattr(
+        EnrollmentLifecycleService,
+        "list_tenant_enrollment_consistency_report",
+        fake_consistency,
+    )
+
+    response = client.get("/api/admin/enrollments/consistency", headers=admin_headers)
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["issue_count"] == 3
+    assert body["issues"][0]["issue_type"] == "enrollment_missing_student_profile"

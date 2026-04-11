@@ -131,6 +131,14 @@ class StudentProgramBindingReadSchema(BaseModel):
     updated_at: datetime
 
 
+class StudentProgramBindingConsistencyIssueSchema(BaseModel):
+    student_profile_id: int
+    issue_type: str
+    active_binding_count: int
+    active_primary_count: int
+    program_ids: list[int] = Field(default_factory=list)
+
+
 class AdmissionsProvisionStudentRequestSchema(BaseModel):
     person_id: int = Field(gt=0)
     program_id: int = Field(gt=0)

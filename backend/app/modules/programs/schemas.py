@@ -33,3 +33,15 @@ class ProgramItemResponse(BaseModel):
 class ProgramDeleteResponse(BaseModel):
     deleted: bool
     program: ProgramResponse
+
+
+class ProgramConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    program_id: int | None = None
+    program_code: str | None = None
+
+
+class ProgramConsistencyReportSchema(BaseModel):
+    program_count: int
+    issue_count: int
+    issues: list[ProgramConsistencyIssueSchema]

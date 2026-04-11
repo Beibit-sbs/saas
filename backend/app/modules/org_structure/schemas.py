@@ -61,3 +61,16 @@ class OrgUnitTreeNodeSchema(BaseModel):
 
 
 OrgUnitTreeNodeSchema.model_rebuild()
+
+
+class OrgUnitConsistencyIssueSchema(BaseModel):
+    issue_type: str
+    unit_id: int | None = None
+    parent_unit_id: int | None = None
+    unit_type: OrgUnitType | None = None
+
+
+class OrgUnitConsistencyReportSchema(BaseModel):
+    unit_count: int = Field(ge=0)
+    issue_count: int = Field(ge=0)
+    issues: list[OrgUnitConsistencyIssueSchema] = Field(default_factory=list)

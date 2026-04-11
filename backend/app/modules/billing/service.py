@@ -59,6 +59,19 @@ def _use_database() -> bool:
     return bool(_db_url()) and psycopg is not None
 
 
+def _billing_db_only_mode_enabled() -> bool:
+    value = str(os.getenv("BILLING_DB_ONLY_MODE", "true")).strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+
+def _require_billing_database() -> None:
+    if _billing_db_only_mode_enabled() and not _use_database():
+        raise HTTPException(
+            status_code=503,
+            detail="billing_required: subscription store unavailable (DB-only mode)",
+        )
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -215,6 +228,7 @@ def ensure_tenant_subscription(
     next_plan_code: str | None = None,
     preserve_existing_trial_end: bool = True,
 ) -> dict[str, object]:
+    _require_billing_database()
     normalized_tenant_id = int(tenant_id)
     if normalized_tenant_id <= 0:
         raise ValueError("tenant_id must be positive")
@@ -479,6 +493,7 @@ def _effective_subscription(subscription: dict[str, object]) -> dict[str, object
 
 
 def get_tenant_subscription(tenant_id: int) -> dict[str, object] | None:
+    _require_billing_database()
     normalized_tenant_id = int(tenant_id)
     if normalized_tenant_id <= 0:
         return None
