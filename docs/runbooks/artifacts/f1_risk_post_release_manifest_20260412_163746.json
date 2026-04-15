@@ -1,0 +1,17 @@
+{
+  "generated_at_utc": "2026-04-12T16:37:46Z",
+  "artifacts": {
+    "state_latest": {
+      "path": "docs/runbooks/artifacts/f1_risk_post_release_state_latest.json",
+      "sha256": "a97fe1fb6cf9b3e509cd5c945ebbdb8f83ff7600e767cad74968bb7e50adfba8"
+    },
+    "daily_report_latest": {
+      "path": "docs/runbooks/artifacts/f1_risk_post_release_daily_report_latest.md",
+      "sha256": "f35d7bb72b583ebe327c6be1b68adc1d2af59794d5822cc30441ac818c76fd28"
+    },
+    "snapshot_latest": {
+      "path": "docs/runbooks/artifacts/f1_risk_post_release_snapshot_latest.md",
+      "sha256": "b4651a14676920d8eca48ca491e6542b86828ee12228a9b3588625446fc67b4e"
+    }
+  }
+}

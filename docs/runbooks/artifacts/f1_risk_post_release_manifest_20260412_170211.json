@@ -1,0 +1,28 @@
+{
+  "generated_at_utc": "2026-04-12T17:02:11Z",
+  "artifacts": {
+    "state_latest": {
+      "path": "docs/runbooks/artifacts/f1_risk_post_release_state_latest.json",
+      "sha256": "7d1563567082ab612d18380d3a30c8510108ca5183e1795748381a7dbfbe1a73"
+    },
+    "daily_report_latest": {
+      "path": "docs/runbooks/artifacts/f1_risk_post_release_daily_report_latest.md",
+      "sha256": "09a459fcb1ceed92d8ba2bb8d4ff4f5466d6e487a71fed71892929e698934991"
+    },
+    "snapshot_latest": {
+      "path": "docs/runbooks/artifacts/f1_risk_post_release_snapshot_latest.md",
+      "sha256": "71c097aba3f93e8e7742dbf92ea4c8bc98f4e33e845c3dabdb53871f663128bf"
+    }
+  },
+  "source_artifacts": {
+    "state": {
+      "file": "f1_risk_post_release_state_20260412_170210.json"
+    },
+    "daily_report": {
+      "file": "f1_risk_post_release_daily_report_20260412_170210.md"
+    },
+    "snapshot": {
+      "file": "f1_risk_post_release_snapshot_20260412_170211.md"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "generated_at_utc": "2026-04-13T08:46:06Z",
+  "f1_9_status": "IN_PROGRESS",
+  "today_utc": "2026-04-13",
+  "window": "pre_day7",
+  "next_action": "wait_day7_due_then_run_official_day7_review",
+  "daily_health": "ON_TRACK_WAIT",
+  "daily_check_exit_code": 0,
+  "due_alert": {
+    "state": "ACTIVE",
+    "next_pending_phase": "day7",
+    "due_date_utc": "2026-04-19",
+    "today_utc": "2026-04-13",
+    "days_remaining": "6",
+    "next_action": "wait_day7_due_then_run_official_day7_review",
+    "alert_level": "medium",
+    "alert_action": "prepare_review_window",
+    "exit_code": 0
+  },
+  "gate": {
+    "state": "FAIL",
+    "reason": "missing_official_review_artifacts",
+    "missing_phases": "day14 day30",
+    "today_utc": "2026-04-13",
+    "window": "pre_day7",
+    "next_action": "wait_due_window_then_run_official_reviews",
+    "exit_code": 1
+  },
+  "schedule": {
+    "day7_due": "2026-04-19",
+    "day14_due": "2026-04-26",
+    "day30_due": "2026-05-12"
+  },
+  "artifacts": {
+    "day0_baseline": "f1_risk_day0_baseline_20260412_043014.md",
+    "day7_review": "f1_risk_day7_review_20260412_043815.md",
+    "day14_review": "",
+    "day30_review": ""
+  }
+}

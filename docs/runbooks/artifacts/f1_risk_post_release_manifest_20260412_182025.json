@@ -1,0 +1,37 @@
+{
+  "generated_at_utc": "2026-04-12T18:20:25Z",
+  "artifacts": {
+    "state_latest": {
+      "path": "docs/runbooks/artifacts/f1_risk_post_release_state_latest.json",
+      "sha256": "b51ca45f497b6f855b50a574b7188b1b2191e09133c24355a99c2f8420375099",
+      "size_bytes": 1166
+    },
+    "daily_report_latest": {
+      "path": "docs/runbooks/artifacts/f1_risk_post_release_daily_report_latest.md",
+      "sha256": "488dcb1ebc2dbd3bec67df9dff4519ef22bf06e0d2d543d70aa5caf9b7aa1f7a",
+      "size_bytes": 988
+    },
+    "snapshot_latest": {
+      "path": "docs/runbooks/artifacts/f1_risk_post_release_snapshot_latest.md",
+      "sha256": "04ce1298d991d4d85122ec92e7e126915ac17363b130f363ea0687b220bf2cb5",
+      "size_bytes": 1274
+    }
+  },
+  "source_artifacts": {
+    "state": {
+      "file": "f1_risk_post_release_state_20260412_182024.json",
+      "sha256": "b51ca45f497b6f855b50a574b7188b1b2191e09133c24355a99c2f8420375099",
+      "size_bytes": 1166
+    },
+    "daily_report": {
+      "file": "f1_risk_post_release_daily_report_20260412_182023.md",
+      "sha256": "488dcb1ebc2dbd3bec67df9dff4519ef22bf06e0d2d543d70aa5caf9b7aa1f7a",
+      "size_bytes": 988
+    },
+    "snapshot": {
+      "file": "f1_risk_post_release_snapshot_20260412_182024.md",
+      "sha256": "04ce1298d991d4d85122ec92e7e126915ac17363b130f363ea0687b220bf2cb5",
+      "size_bytes": 1274
+    }
+  }
+}
