@@ -127,6 +127,11 @@ export const PERMISSIONS = {
   // Developer Platform v1
   DEVELOPER_PLATFORM_READ: "platform.admin.read",
   DEVELOPER_PLATFORM_WRITE: "platform.admin.write",
+
+  // Interventions
+  INTERVENTIONS_VIEW: "interventions:view",
+  INTERVENTIONS_MANAGE_PLAYBOOKS: "interventions:manage_playbooks",
+  INTERVENTIONS_EXECUTE_PLAYBOOK: "interventions:execute_playbook",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
