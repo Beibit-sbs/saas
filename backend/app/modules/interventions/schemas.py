@@ -227,6 +227,37 @@ class InterventionRiskKpiSummarySchema(BaseModel):
     severity_breakdown: dict[str, int]
 
 
+class RiskStudentLatestSchema(BaseModel):
+    student_profile_id: int
+    severity: InterventionCaseSeverity
+    signal_type: RiskSignalType
+    detected_at: datetime
+    current_value: float
+    threshold_value: float
+    associated_case_id: int | None
+    signal_data_json: dict
+
+
+class RiskStudentHistoryResponseSchema(BaseModel):
+    student_profile_id: int
+    total: int
+    page: int
+    page_size: int
+    items: list[RiskStudentLatestSchema]
+
+
+class RiskRecommendationAckRequestSchema(BaseModel):
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class RiskRecommendationAckResponseSchema(BaseModel):
+    recommendation_id: int
+    case_id: int
+    acknowledged: bool
+    action_id: int
+    acknowledged_at: datetime
+
+
 
 class InterventionConsistencyIssueSchema(BaseModel):
     issue_type: str

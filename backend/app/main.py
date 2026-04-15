@@ -65,10 +65,13 @@ from app.platform.router_admin import router as platform_v1_admin_router
 from app.platform.router_public import router as platform_v1_public_router
 from app.platform.router_developer_api import router as platform_developer_api_router
 from app.platform.router_internal import router as platform_v1_internal_router
+from app.platform.router_mcp import router as platform_v1_mcp_router
 from app.platform.router_semantic import router as platform_v2_semantic_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.interventions.router import router as interventions_router
+from app.modules.interventions.playbook_router import router as interventions_playbook_router
 from app.modules.interventions.risk_router import router as interventions_risk_router
+from app.modules.interventions.risk_v1_router import router as interventions_risk_v1_router
 from app.modules.org_structure.router import router as org_structure_router
 from app.modules.workflows.router import router as workflows_router
 from app.modules.rbac.router import router as rbac_router
@@ -223,7 +226,9 @@ app.include_router(legacy_enrollments_router)
 app.include_router(grades_router)
 app.include_router(scheduling_router)
 app.include_router(interventions_router)
+app.include_router(interventions_playbook_router)
 app.include_router(interventions_risk_router)
+app.include_router(interventions_risk_v1_router)
 app.include_router(org_structure_router)
 app.include_router(analytics_router)
 app.include_router(transcripts_router)
@@ -237,6 +242,7 @@ app.include_router(platform_v1_admin_router)
 app.include_router(platform_v1_public_router)
 app.include_router(platform_developer_api_router)
 app.include_router(platform_v1_internal_router)
+app.include_router(platform_v1_mcp_router)
 app.include_router(platform_v2_semantic_router)
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}

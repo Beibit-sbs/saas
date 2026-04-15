@@ -36,6 +36,14 @@ _recent_request_samples: deque[tuple[float, int, float]] = deque(maxlen=5000)
 _auth_login_attempts_total: dict[tuple[str, str, str], int] = defaultdict(int)
 _auth_login_failures_total: dict[tuple[str, str, str], int] = defaultdict(int)
 _developer_analytics_contract_total: dict[tuple[str, str, str], int] = defaultdict(int)
+_playbook_executions_total: dict[tuple[str, str, str], int] = defaultdict(int)
+_playbook_execution_duration: dict[tuple[str, str], tuple[int, float]] = defaultdict(lambda: (0, 0.0))
+_playbook_step_actions_total: dict[tuple[str, str], int] = defaultdict(int)
+_risk_scoring_jobs_total: dict[tuple[str, str], int] = defaultdict(int)
+_risk_scoring_duration: dict[tuple[str, str], tuple[int, float]] = defaultdict(lambda: (0, 0.0))
+_risk_recommendation_ack_total: dict[tuple[str, str], int] = defaultdict(int)
+_risk_high_band_students_total: dict[str, int] = defaultdict(int)
+_risk_latest_snapshot_age_seconds: dict[str, float] = defaultdict(float)
 _jobs_executed_total: int = 0
 _jobs_failed_total: int = 0
 _jobs_queue_size: int = 0
@@ -164,6 +172,79 @@ def observe_developer_analytics_contract(*, endpoint: str, outcome: str, reason:
         _developer_analytics_contract_total[key] += 1
 
 
+def observe_playbook_execution_started(*, tenant_id: str | int | None, triggered_by: str) -> None:
+    key = (
+        str(tenant_id if tenant_id is not None else "-").strip() or "-",
+        "started",
+        str(triggered_by).strip().lower() or "-",
+    )
+    with _lock:
+        _playbook_executions_total[key] += 1
+
+
+def observe_playbook_execution_finished(
+    *, tenant_id: str | int | None, status: str, duration_seconds: float
+) -> None:
+    tenant = str(tenant_id if tenant_id is not None else "-").strip() or "-"
+    normalized_status = str(status).strip().lower() or "unknown"
+    with _lock:
+        _playbook_executions_total[(tenant, normalized_status, "-")] += 1
+        count, total_duration = _playbook_execution_duration[(tenant, normalized_status)]
+        _playbook_execution_duration[(tenant, normalized_status)] = (
+            count + 1,
+            total_duration + max(0.0, float(duration_seconds)),
+        )
+
+
+def observe_playbook_step_action(*, tenant_id: str | int | None, action: str) -> None:
+    key = (
+        str(tenant_id if tenant_id is not None else "-").strip() or "-",
+        str(action).strip().lower() or "unknown",
+    )
+    with _lock:
+        _playbook_step_actions_total[key] += 1
+
+
+def observe_risk_scoring_job(*, tenant_id: str | int | None, status: str) -> None:
+    key = (
+        str(tenant_id if tenant_id is not None else "-").strip() or "-",
+        str(status).strip().lower() or "unknown",
+    )
+    with _lock:
+        _risk_scoring_jobs_total[key] += 1
+
+
+def observe_risk_scoring_duration(*, tenant_id: str | int | None, status: str, duration_seconds: float) -> None:
+    key = (
+        str(tenant_id if tenant_id is not None else "-").strip() or "-",
+        str(status).strip().lower() or "unknown",
+    )
+    with _lock:
+        count, total_duration = _risk_scoring_duration[key]
+        _risk_scoring_duration[key] = (count + 1, total_duration + max(0.0, float(duration_seconds)))
+
+
+def observe_risk_recommendation_ack(*, tenant_id: str | int | None, status: str) -> None:
+    key = (
+        str(tenant_id if tenant_id is not None else "-").strip() or "-",
+        str(status).strip().lower() or "unknown",
+    )
+    with _lock:
+        _risk_recommendation_ack_total[key] += 1
+
+
+def set_risk_high_band_students_total(*, tenant_id: str | int | None, total: int) -> None:
+    key = str(tenant_id if tenant_id is not None else "-").strip() or "-"
+    with _lock:
+        _risk_high_band_students_total[key] = max(0, int(total))
+
+
+def set_risk_latest_snapshot_age_seconds(*, tenant_id: str | int | None, age_seconds: float) -> None:
+    key = str(tenant_id if tenant_id is not None else "-").strip() or "-"
+    with _lock:
+        _risk_latest_snapshot_age_seconds[key] = max(0.0, float(age_seconds))
+
+
 def snapshot_developer_analytics_contract_metrics() -> dict[tuple[str, str, str], int]:
     with _lock:
         return dict(_developer_analytics_contract_total)
@@ -219,6 +300,14 @@ def clear_metrics_state() -> None:
         _auth_login_attempts_total.clear()
         _auth_login_failures_total.clear()
         _developer_analytics_contract_total.clear()
+        _playbook_executions_total.clear()
+        _playbook_execution_duration.clear()
+        _playbook_step_actions_total.clear()
+        _risk_scoring_jobs_total.clear()
+        _risk_scoring_duration.clear()
+        _risk_recommendation_ack_total.clear()
+        _risk_high_band_students_total.clear()
+        _risk_latest_snapshot_age_seconds.clear()
         global _workflow_executions_total, _grade_submissions_total, _scheduling_conflicts_total
         global _jobs_executed_total, _jobs_failed_total, _jobs_queue_size, _invoices_created_total, _billing_failures_total
         global _db_connections_active, _redis_latency_seconds
@@ -255,6 +344,14 @@ def render_metrics() -> str:
         auth_login_attempts_total = dict(_auth_login_attempts_total)
         auth_login_failures_total = dict(_auth_login_failures_total)
         developer_analytics_contract_total = dict(_developer_analytics_contract_total)
+        playbook_executions_total = dict(_playbook_executions_total)
+        playbook_execution_duration = dict(_playbook_execution_duration)
+        playbook_step_actions_total = dict(_playbook_step_actions_total)
+        risk_scoring_jobs_total = dict(_risk_scoring_jobs_total)
+        risk_scoring_duration = dict(_risk_scoring_duration)
+        risk_recommendation_ack_total = dict(_risk_recommendation_ack_total)
+        risk_high_band_students_total = dict(_risk_high_band_students_total)
+        risk_latest_snapshot_age_seconds = dict(_risk_latest_snapshot_age_seconds)
         jobs_executed_total = _jobs_executed_total
         jobs_failed_total = _jobs_failed_total
         jobs_queue_size = _jobs_queue_size
@@ -333,6 +430,66 @@ def render_metrics() -> str:
     for (endpoint, outcome, reason), count in sorted(developer_analytics_contract_total.items()):
         labels = f'endpoint="{_escape(endpoint)}",outcome="{_escape(outcome)}",reason="{_escape(reason)}"'
         lines.append(f"developer_analytics_contract_total{{{labels}}} {count}")
+
+    lines.append("# HELP playbook_executions_total Total playbook execution lifecycle events.")
+    lines.append("# TYPE playbook_executions_total counter")
+    for (tenant, status, triggered_by), count in sorted(playbook_executions_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",status="{_escape(status)}",triggered_by="{_escape(triggered_by)}"'
+        lines.append(f"playbook_executions_total{{{labels}}} {count}")
+
+    lines.append("# HELP playbook_execution_duration_seconds_total Sum of playbook execution durations.")
+    lines.append("# TYPE playbook_execution_duration_seconds_total counter")
+    for (tenant, status), (_, total_duration) in sorted(playbook_execution_duration.items()):
+        labels = f'tenant_id="{_escape(tenant)}",status="{_escape(status)}"'
+        lines.append(f"playbook_execution_duration_seconds_total{{{labels}}} {total_duration:.6f}")
+
+    lines.append("# HELP playbook_execution_duration_seconds_count Number of finished playbook executions.")
+    lines.append("# TYPE playbook_execution_duration_seconds_count counter")
+    for (tenant, status), (count, _) in sorted(playbook_execution_duration.items()):
+        labels = f'tenant_id="{_escape(tenant)}",status="{_escape(status)}"'
+        lines.append(f"playbook_execution_duration_seconds_count{{{labels}}} {count}")
+
+    lines.append("# HELP playbook_step_actions_total Total playbook step actions.")
+    lines.append("# TYPE playbook_step_actions_total counter")
+    for (tenant, action), count in sorted(playbook_step_actions_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",action="{_escape(action)}"'
+        lines.append(f"playbook_step_actions_total{{{labels}}} {count}")
+
+    lines.append("# HELP risk_scoring_jobs_total Total risk scoring recompute jobs.")
+    lines.append("# TYPE risk_scoring_jobs_total counter")
+    for (tenant, status), count in sorted(risk_scoring_jobs_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",status="{_escape(status)}"'
+        lines.append(f"risk_scoring_jobs_total{{{labels}}} {count}")
+
+    lines.append("# HELP risk_scoring_duration_seconds_total Sum of risk scoring durations.")
+    lines.append("# TYPE risk_scoring_duration_seconds_total counter")
+    for (tenant, status), (_, total_duration) in sorted(risk_scoring_duration.items()):
+        labels = f'tenant_id="{_escape(tenant)}",status="{_escape(status)}"'
+        lines.append(f"risk_scoring_duration_seconds_total{{{labels}}} {total_duration:.6f}")
+
+    lines.append("# HELP risk_scoring_duration_seconds_count Number of risk scoring runs.")
+    lines.append("# TYPE risk_scoring_duration_seconds_count counter")
+    for (tenant, status), (count, _) in sorted(risk_scoring_duration.items()):
+        labels = f'tenant_id="{_escape(tenant)}",status="{_escape(status)}"'
+        lines.append(f"risk_scoring_duration_seconds_count{{{labels}}} {count}")
+
+    lines.append("# HELP risk_recommendation_ack_total Total risk recommendation acknowledgements.")
+    lines.append("# TYPE risk_recommendation_ack_total counter")
+    for (tenant, status), count in sorted(risk_recommendation_ack_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",status="{_escape(status)}"'
+        lines.append(f"risk_recommendation_ack_total{{{labels}}} {count}")
+
+    lines.append("# HELP risk_high_band_students_total Total students currently in the highest risk band.")
+    lines.append("# TYPE risk_high_band_students_total gauge")
+    for tenant, total in sorted(risk_high_band_students_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}"'
+        lines.append(f"risk_high_band_students_total{{{labels}}} {total}")
+
+    lines.append("# HELP risk_latest_snapshot_age_seconds Age of the latest risk snapshot in seconds.")
+    lines.append("# TYPE risk_latest_snapshot_age_seconds gauge")
+    for tenant, age_seconds in sorted(risk_latest_snapshot_age_seconds.items()):
+        labels = f'tenant_id="{_escape(tenant)}"'
+        lines.append(f"risk_latest_snapshot_age_seconds{{{labels}}} {age_seconds:.3f}")
 
     lines.append("# HELP jobs_executed_total Total successfully executed jobs.")
     lines.append("# TYPE jobs_executed_total counter")
