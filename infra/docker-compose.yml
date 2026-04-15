@@ -15,6 +15,7 @@ services:
 
   pgbouncer:
     image: pgbouncer/pgbouncer:latest
+    entrypoint: ["sh", "-c", "export DATABASES_HOST=$(getent hosts db | awk '{print $1}') && exec /opt/pgbouncer/entrypoint.sh"]
     environment:
       DATABASES_HOST: db
       DATABASES_PORT: 5432
