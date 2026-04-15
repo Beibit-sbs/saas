@@ -1282,6 +1282,30 @@ def add_or_update_role_for_tenant(
     return {normalized_name: sorted(normalized_permissions)}
 
 
+def add_or_update_role_for_tenant_with_replay(
+    tenant_id: int,
+    name: str,
+    permissions: List[str],
+) -> Dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_name = name.strip()
+    normalized_permissions = sorted({perm.strip() for perm in permissions if perm.strip()})
+
+    existing_roles = list_roles_for_tenant(normalized_tenant_id)
+    existing_permissions = sorted(existing_roles.get(normalized_name, []))
+    replayed = existing_permissions == normalized_permissions
+
+    result = add_or_update_role_for_tenant(
+        normalized_tenant_id,
+        normalized_name,
+        normalized_permissions,
+    )
+    return {
+        "role": result,
+        "idempotent_replay": replayed,
+    }
+
+
 def assign_role_to_user(tenant_id: int, user_id: str, role: str) -> Dict[str, List[str]]:
     normalized_tenant_id = _normalize_tenant_id(tenant_id)
     normalized_user_id = user_id.strip()

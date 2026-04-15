@@ -7,7 +7,7 @@ from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.rbac.service import (
-    add_or_update_role_for_tenant,
+    add_or_update_role_for_tenant_with_replay,
     assign_role_to_user,
     is_platform_admin,
     list_roles_for_tenant,
@@ -90,6 +90,17 @@ class AssignRolePayload(BaseModel):
     tenant_id: int | None = Field(default=None, gt=0)
 
 
+class RoleUpsertResponse(BaseModel):
+    role: dict[str, list[str]]
+    idempotent_replay: bool
+
+
+class RoleAssignResponse(BaseModel):
+    user_id: str
+    roles: list[str]
+    idempotent_replay: bool
+
+
 @router.get("/roles")
 def get_roles(
     request: Request,
@@ -103,14 +114,14 @@ def get_roles(
     return {"roles": list_roles_for_tenant(target_tenant_id)}
 
 
-@router.post("/roles")
+@router.post("/roles", response_model=RoleUpsertResponse)
 def upsert_role(
     request: Request,
     payload: RolePayload,
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.roles.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
-) -> dict[str, dict[str, list[str]]]:
+) -> RoleUpsertResponse:
     current_tenant_id = int(tenant["id"])
     actor_is_platform_admin = _actor_is_platform_admin(actor)
     if payload.tenant_id is not None and payload.tenant_id != current_tenant_id and not actor_is_platform_admin:
@@ -127,7 +138,7 @@ def upsert_role(
     if normalized_role_name in _PLATFORM_ONLY_ROLES and target_tenant_id != _PLATFORM_TENANT_ID:
         raise HTTPException(status_code=403, detail="role 'superadmin' is reserved for the platform tenant")
     try:
-        result = {"role": add_or_update_role_for_tenant(target_tenant_id, payload.name, payload.permissions)}
+        result = add_or_update_role_for_tenant_with_replay(target_tenant_id, payload.name, payload.permissions)
         log_admin_action(
             actor=actor,
             action="rbac.role.upsert",
@@ -139,21 +150,21 @@ def upsert_role(
             metadata={"role": payload.name, "permissions": payload.permissions},
             tenant_id=target_tenant_id,
         )
-        return result
+        return RoleUpsertResponse.model_validate(result)
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@router.post("/assign")
+@router.post("/assign", response_model=RoleAssignResponse)
 def assign_user_role(
     request: Request,
     payload: AssignRolePayload,
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.roles.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
-) -> dict[str, object]:
+) -> RoleAssignResponse:
     current_tenant_id = int(tenant["id"])
     target_tenant_id = payload.tenant_id if payload.tenant_id is not None and _actor_is_platform_admin(actor) else current_tenant_id
     
@@ -168,7 +179,9 @@ def assign_user_role(
         )
         
         # Service call
+        before_roles = get_user_roles_for_tenant(payload.user_id, target_tenant_id)
         assigned = assign_role_to_user(target_tenant_id, payload.user_id, payload.role)
+        replayed = sorted(before_roles) == sorted(assigned.get("roles", []))
         
         # Log success
         log_admin_action(
@@ -182,7 +195,11 @@ def assign_user_role(
             metadata={"user_id": payload.user_id, "role": payload.role},
             tenant_id=target_tenant_id,
         )
-        return assigned
+        return RoleAssignResponse(
+            user_id=str(assigned.get("user_id", payload.user_id)),
+            roles=[str(item) for item in assigned.get("roles", [])],
+            idempotent_replay=replayed,
+        )
     except HTTPException as exc:
         # Log governance denials (403, 400, etc)
         log_admin_action(

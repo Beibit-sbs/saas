@@ -14,7 +14,10 @@ os.environ.setdefault("API_BASE_URL", "http://backend:8000")
 os.environ.setdefault("ADMIN_PANEL_URL", "http://nginx")
 os.environ.setdefault("INTERNAL_API_TOKEN", "internal-token-for-tests-only")
 os.environ.setdefault("INTEGRATIONS_ENCRYPTION_KEY", "test-integration-key-not-for-production-123")
-os.environ.setdefault("BILLING_DB_ONLY_MODE", "false")
+# Unit/integration pytest suite still relies on in-memory billing fallback in
+# cases where tests intentionally remove DATABASE_URL. Force the documented test
+# override even when docker-compose injects BILLING_DB_ONLY_MODE=true.
+os.environ["BILLING_DB_ONLY_MODE"] = "false"
 
 _trusted_hosts_raw = os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1,backend,nginx")
 _trusted_hosts = [item.strip() for item in _trusted_hosts_raw.split(",") if item.strip()]

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
-from app.modules.jobs.schemas import JobCreate, JobListResponse, JobResultResponse
+from app.modules.jobs.schemas import JobCreate, JobCreateResultResponse, JobListResponse, JobResultResponse
 from app.modules.jobs.service import (
     cancel_job,
     enqueue_job,
@@ -172,7 +172,7 @@ def get_job(
     return JobResultResponse(job=row)
 
 
-@router.post("", response_model=JobResultResponse)
+@router.post("", response_model=JobCreateResultResponse)
 def create_job(
     payload: JobCreate,
     request: Request,
@@ -180,7 +180,7 @@ def create_job(
     __: Annotated[None, Depends(permission_dependency("admin.jobs.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
     tenant_id: int | None = Query(default=None, gt=0),
-) -> JobResultResponse:
+) -> JobCreateResultResponse:
     target_tenant_id = _resolve_target_tenant_id(request, actor, tenant, tenant_id)
     normalized_job_type = _validate_public_job_type(payload.job_type)
     try:
@@ -205,7 +205,7 @@ def create_job(
         result="success",
         metadata={"job_id": row["id"], "job_type": row["job_type"]},
     )
-    return JobResultResponse(job=row)
+    return JobCreateResultResponse(job=row, idempotent_replay=bool(row.get("deduplicated", False)))
 
 
 @router.post("/{job_id}/retry", response_model=JobResultResponse)

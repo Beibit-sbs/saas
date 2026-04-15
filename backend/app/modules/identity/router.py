@@ -116,6 +116,11 @@ class UpdateMappingPayload(BaseModel):
     platform_role: str = Field(min_length=1, max_length=128)
 
 
+class IdentityProviderUpsertResponse(BaseModel):
+    provider: dict[str, object]
+    idempotent_replay: bool
+
+
 @router.get("/providers")
 def get_identity_providers(
     _: Annotated[str, Depends(get_actor)],
@@ -133,9 +138,14 @@ def put_identity_provider(
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
-) -> dict[str, dict[str, object]]:
+) -> IdentityProviderUpsertResponse:
     if provider.strip().lower() != payload.provider.strip().lower():
         raise HTTPException(status_code=400, detail="provider path mismatch")
+    existing = None
+    for item in list_identity_providers(tenant_id=int(tenant["id"])):
+        if str(item.get("provider", "")).strip().lower() == provider.strip().lower():
+            existing = item
+            break
     try:
         row = upsert_identity_provider(tenant_id=int(tenant["id"]), payload=payload.model_dump())
     except ValueError as exc:
@@ -152,7 +162,7 @@ def put_identity_provider(
         result="success",
         metadata={"provider": row.get("provider"), "type": row.get("type"), "enabled": row.get("enabled")},
     )
-    return {"provider": row}
+    return IdentityProviderUpsertResponse(provider=row, idempotent_replay=existing == row)
 
 
 @router.post("/directory-providers")

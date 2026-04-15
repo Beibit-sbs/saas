@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
 from app.modules.integrations.service import (
+    get_ai_provider_config_for_admin,
     get_ldap_config_for_admin,
     list_ai_provider_config_for_admin,
     save_ai_provider_config,
@@ -36,6 +37,16 @@ class AiProviderConfigPayload(BaseModel):
     validation_url: str | None = None
 
 
+class LdapUpdateResponse(BaseModel):
+    ldap: dict[str, object]
+    idempotent_replay: bool
+
+
+class AiProviderUpdateResponse(BaseModel):
+    provider: dict[str, object]
+    idempotent_replay: bool
+
+
 @router.get("/settings")
 def get_settings(
     _: Annotated[str, Depends(get_actor)],
@@ -55,7 +66,8 @@ def update_ldap_settings(
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
-) -> dict[str, object]:
+) -> LdapUpdateResponse:
+    before = get_ldap_config_for_admin(tenant_id=int(tenant["id"]))
     updated_fields = payload.model_dump(exclude_unset=True)
     ldap = save_ldap_config(updated_fields, tenant_id=int(tenant["id"]))
     log_admin_action(
@@ -72,7 +84,7 @@ def update_ldap_settings(
         },
         tenant_id=int(tenant["id"]),
     )
-    return {"ldap": ldap}
+    return LdapUpdateResponse(ldap=ldap, idempotent_replay=before == ldap)
 
 
 @router.put("/ai/{provider}")
@@ -83,7 +95,8 @@ def update_ai_provider_settings(
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
-) -> dict[str, object]:
+) -> AiProviderUpdateResponse:
+    before = get_ai_provider_config_for_admin(provider, tenant_id=int(tenant["id"]))
     try:
         result = save_ai_provider_config(
             provider,
@@ -110,4 +123,4 @@ def update_ai_provider_settings(
         tenant_id=int(tenant["id"]),
     )
 
-    return {"provider": result}
+    return AiProviderUpdateResponse(provider=result, idempotent_replay=before == result)

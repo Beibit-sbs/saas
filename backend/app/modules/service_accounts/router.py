@@ -32,6 +32,11 @@ class ServiceAccountTokenPayload(BaseModel):
     secret: str = Field(min_length=8, max_length=256)
 
 
+class ServiceAccountCreateResponse(BaseModel):
+    account: dict[str, object]
+    idempotent_replay: bool
+
+
 @router.get("")
 def get_service_accounts(
     actor: Annotated[str, Depends(get_actor)],
@@ -44,16 +49,34 @@ def get_service_accounts(
     return {"accounts": accounts}
 
 
-@router.post("")
+@router.post("", response_model=ServiceAccountCreateResponse)
 def post_service_account(
     payload: ServiceAccountCreatePayload,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
-) -> dict[str, dict[str, object]]:
+) -> ServiceAccountCreateResponse:
     if payload.platform_global and not is_platform_admin(actor):
         raise HTTPException(status_code=403, detail="platform-global service account requires platform admin")
+
+    existing = None
+    normalized_permissions = sorted({str(item).strip() for item in payload.permissions if str(item).strip()})
+    for item in list_service_accounts(tenant_id=int(tenant["id"])):
+        if not bool(item.get("active", False)):
+            continue
+        item_permissions = sorted({str(p).strip() for p in item.get("permissions", []) if str(p).strip()})
+        if (
+            str(item.get("name", "")).strip() == payload.name.strip()
+            and bool(item.get("platform_global", False)) == bool(payload.platform_global)
+            and item_permissions == normalized_permissions
+        ):
+            existing = item
+            break
+
+    if existing is not None:
+        return ServiceAccountCreateResponse(account=existing, idempotent_replay=True)
+
     try:
         account = create_service_account(
             tenant_id=int(tenant["id"]),
@@ -75,7 +98,7 @@ def post_service_account(
         result="success",
         metadata={"account_id": account.get("account_id"), "platform_global": account.get("platform_global")},
     )
-    return {"account": account}
+    return ServiceAccountCreateResponse(account=account, idempotent_replay=False)
 
 
 @router.post("/{account_id}/token")

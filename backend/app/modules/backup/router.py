@@ -32,6 +32,15 @@ class BackupSettingsPayload(BaseModel):
     retention_min_files: int | None = Field(default=None, ge=0, le=1000)
 
 
+class BackupSettingsUpdateResponse(BaseModel):
+    active_profile: str
+    profiles: list[dict[str, str]]
+    allowed_roots: list[str]
+    retention_days: int
+    retention_min_files: int
+    idempotent_replay: bool
+
+
 class BackupRestorePayload(BaseModel):
     profile_id: str | None = Field(default=None, min_length=2, max_length=64)
     file_name: str | None = Field(default=None, min_length=1, max_length=255)
@@ -53,16 +62,23 @@ def get_backup_settings(
     return get_backup_settings_for_admin(tenant_id=int(tenant["id"]))
 
 
-@router.put("/settings")
+@router.put("/settings", response_model=BackupSettingsUpdateResponse)
 def update_backup_settings(
     payload: BackupSettingsPayload,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("admin.backup.manage"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
-) -> dict[str, Any]:
+) -> BackupSettingsUpdateResponse:
     try:
+        before = get_backup_settings_for_admin(tenant_id=int(tenant["id"]))
         result = save_backup_settings(payload.model_dump(), tenant_id=int(tenant["id"]))
+        replayed = (
+            before.get("active_profile") == result.get("active_profile")
+            and before.get("profiles") == result.get("profiles")
+            and int(before.get("retention_days", 0)) == int(result.get("retention_days", 0))
+            and int(before.get("retention_min_files", 0)) == int(result.get("retention_min_files", 0))
+        )
         log_admin_action(
             actor=actor,
             tenant_id=int(tenant["id"]),
@@ -73,7 +89,7 @@ def update_backup_settings(
             entity="backup_settings",
             result="success",
         )
-        return result
+        return BackupSettingsUpdateResponse.model_validate({**result, "idempotent_replay": replayed})
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

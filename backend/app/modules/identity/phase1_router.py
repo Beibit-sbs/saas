@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import Response
 from pydantic import BaseModel, Field
 
 from app.core.errors import DependencyUnavailableError
@@ -17,6 +18,7 @@ from app.modules.identity.router import (
 	test_directory_provider,
 	update_identity_mapping,
 )
+from app.modules.identity.service import list_identity_providers
 from app.modules.rbac.security import get_actor, permission_dependency
 
 
@@ -45,6 +47,15 @@ router = APIRouter(prefix="/api/identity", tags=["identity-phase1-compat"])
 
 def _raise_phase1_http(exc: IdentityError) -> None:
 	raise HTTPException(status_code=int(exc.http_status), detail=exc.to_response())
+
+
+_LEGACY_NAMESPACE = "/api/identity"
+_LEGACY_WARNING = "deprecated; use /api/admin/identity instead"
+
+
+def _set_legacy_headers(response: Response) -> None:
+	response.headers["X-Legacy-Namespace"] = _LEGACY_NAMESPACE
+	response.headers["X-Legacy-Warning"] = _LEGACY_WARNING
 
 
 @router.post("/providers/{provider_id}/test")
@@ -121,6 +132,7 @@ def list_mappings_compat(
 	_: Annotated[str, Depends(get_actor)] = None,
 	__: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))] = None,
 	tenant: Annotated[dict, Depends(get_current_tenant)] = None,
+	response: Response = None,
 ) -> dict[str, object]:
 	try:
 		mappings = list_identity_mappings(
@@ -129,7 +141,19 @@ def list_mappings_compat(
 		)
 	except IdentityError as exc:
 		_raise_phase1_http(exc)
+	_set_legacy_headers(response)
 	return {"mappings": mappings}
+
+
+@router.get("/providers")
+def list_providers_compat(
+	response: Response,
+	_: Annotated[str, Depends(get_actor)],
+	__: Annotated[None, Depends(permission_dependency("admin.integrations.manage"))],
+	tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict[str, object]:
+	_set_legacy_headers(response)
+	return {"providers": list_identity_providers(tenant_id=int(tenant["id"]))}
 
 
 @router.put("/mappings/{mapping_id}")

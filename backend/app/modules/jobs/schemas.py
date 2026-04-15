@@ -29,6 +29,8 @@ class JobResponse(BaseModel):
     started_at: datetime | None = None
     finished_at: datetime | None = None
     created_by: str | None = None
+    deduplicated: bool = False
+    dedup_key: str | None = None
 
 
 class JobListResponse(BaseModel):
@@ -37,3 +39,8 @@ class JobListResponse(BaseModel):
 
 class JobResultResponse(BaseModel):
     job: JobResponse
+
+
+class JobCreateResultResponse(BaseModel):
+    job: JobResponse
+    idempotent_replay: bool

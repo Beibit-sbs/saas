@@ -565,3 +565,29 @@ def test_legacy_migration_parses_tenant_scoped_legacy_keys() -> None:
     assert module._tenant_id_from_key("tenant:42:ldap.bind_dn") == 42
     assert module._tenant_id_from_key("tenant:0:ldap.bind_dn") is None
     assert module._tenant_id_from_key("tenant:1:oidc.client_id") is None
+
+
+def test_phase1_get_providers_emits_legacy_namespace_headers(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.modules.identity.phase1_router.list_identity_providers",
+        lambda *, tenant_id: [],
+    )
+
+    response = client.get("/api/identity/providers", headers=ADMIN_HEADERS)
+
+    assert response.status_code == 200, response.text
+    assert response.headers.get("x-legacy-namespace") == "/api/identity"
+    assert "deprecated" in response.headers.get("x-legacy-warning", "").lower()
+
+
+def test_phase1_get_mappings_emits_legacy_namespace_headers(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.modules.identity.phase1_router.list_identity_mappings",
+        lambda *, tenant_id, provider_id: [],
+    )
+
+    response = client.get("/api/identity/mappings", headers=ADMIN_HEADERS)
+
+    assert response.status_code == 200, response.text
+    assert response.headers.get("x-legacy-namespace") == "/api/identity"
+    assert "deprecated" in response.headers.get("x-legacy-warning", "").lower()
