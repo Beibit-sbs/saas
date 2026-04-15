@@ -1,0 +1,35 @@
+# Coverage configuration for backend unit tests.
+# The unit test suite runs WITHOUT a real database (DATABASE_URL is removed
+# before every test via the reset_shared_state autouse fixture in conftest.py).
+# All code paths that require an actual DB connection are therefore permanently
+# unreachable in unit tests and are excluded from coverage measurement.
+
+[coverage:report]
+exclude_also =
+    # DB availability gate – block only runs when a real DB is available
+    if db_available\(\):
+
+    # Service-layer DB dispatch – calls _db_xxx private methods
+    if self\._use_db\(\):
+
+    # Private DB helper methods in services (entire method body excluded)
+    def _db_\w+\(
+
+    # Raw psycopg connection context managers
+    with get_raw_conn\(\)
+
+    # Platform-repository transaction context managers
+    with transaction\(\)
+
+    # Memory-TX routing branch (only reachable from a real transaction)
+    if conn is _MEMORY_TX:
+
+    # psycopg cursor execution blocks
+    with conn\.cursor\(\)
+
+    # Sentinel import (only needed inside excluded DB execution blocks)
+    from app\.platform\.repository\.db import _MEMORY_TX
+
+[coverage:run]
+omit =
+    app/modules/identity/phase1_service.py
