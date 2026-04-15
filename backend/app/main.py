@@ -36,7 +36,6 @@ from app.modules.audit.service import log_admin_action, reset_request_tenant_id,
 from app.modules.analytics.router import router as analytics_router
 from app.modules.backup.router import router as backup_router
 from app.modules.courses.router import router as courses_router
-from app.modules.enrollments.router import legacy_router as legacy_enrollments_router
 from app.modules.enrollments.router import router as enrollments_router
 from app.modules.faculty.router import router as faculty_router
 from app.modules.feature_flags.router import router as feature_flags_router
@@ -79,7 +78,6 @@ from app.modules.rbac.security import get_actor
 from app.modules.rbac.security import permission_dependency
 from app.modules.rbac.security import resolve_current_user_claims
 from app.modules.rbac.service import resolve_permissions_for_tenant
-from app.modules.students.router import legacy_router as legacy_students_router
 from app.modules.students.router import router as students_router
 from app.modules.service_accounts.router import router as service_accounts_router
 from app.modules.tenants.router import router as tenants_router
@@ -216,13 +214,11 @@ app.include_router(backup_router)
 app.include_router(jobs_router)
 app.include_router(feature_flags_router)
 app.include_router(students_router)
-app.include_router(legacy_students_router)
 app.include_router(service_accounts_router)
 app.include_router(faculty_router)
 app.include_router(programs_router)
 app.include_router(courses_router)
 app.include_router(enrollments_router)
-app.include_router(legacy_enrollments_router)
 app.include_router(grades_router)
 app.include_router(scheduling_router)
 app.include_router(interventions_router)

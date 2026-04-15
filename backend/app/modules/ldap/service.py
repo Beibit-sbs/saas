@@ -1,6 +1,12 @@
 import json
 import os
+import warnings
 from typing import Any
+
+# pyasn1 deprecations are emitted during ldap3 import and cannot be filtered by pytest ini early enough.
+warnings.filterwarnings("ignore", message=r".*tagMap is deprecated.*", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message=r".*typeMap is deprecated.*", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message=r".*AbstractItemEncoder is deprecated.*", category=DeprecationWarning)
 
 from ldap3 import ALL, Connection, Server
 from ldap3.core.exceptions import LDAPException
