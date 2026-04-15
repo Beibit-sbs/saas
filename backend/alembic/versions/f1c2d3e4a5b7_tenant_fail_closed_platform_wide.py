@@ -71,10 +71,12 @@ def upgrade() -> None:
 
     # 4) Enforce non-null tenant constraints where tenant context is mandatory.
     op.execute("ALTER TABLE app_platform_feature_flags ALTER COLUMN tenant_id SET NOT NULL")
+        op.execute("ALTER TABLE app_platform_developer_apps ALTER COLUMN tenant_id SET NOT NULL")
     op.execute("ALTER TABLE app_platform_developer_apps ALTER COLUMN tenant_id SET NOT NULL")
 
 
 def downgrade() -> None:
+    op.execute("ALTER TABLE app_platform_developer_apps ALTER COLUMN tenant_id DROP NOT NULL")
     op.execute("ALTER TABLE app_platform_feature_flags ALTER COLUMN tenant_id DROP NOT NULL")
 
     op.execute("ALTER TABLE app_user_roles ALTER COLUMN tenant_id SET DEFAULT 1")

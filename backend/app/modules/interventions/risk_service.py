@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 import asyncio
+from time import perf_counter
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.exc import IntegrityError
@@ -14,6 +15,7 @@ from app.core.module_helpers.service_validation import (
     assert_resource_belongs_to_tenant,
     validate_tenant_id_provided,
 )
+from app.modules.audit.service import log_admin_action
 from app.modules.interventions.models import (
     InterventionActionModel,
     InterventionActionType,
@@ -27,6 +29,13 @@ from app.modules.interventions.models import (
     RiskSignalModel,
     RiskThresholdComparison,
     RiskThresholdModel,
+)
+from app.modules.observability.metrics import (
+    observe_risk_recommendation_ack,
+    observe_risk_scoring_duration,
+    observe_risk_scoring_job,
+    set_risk_high_band_students_total,
+    set_risk_latest_snapshot_age_seconds,
 )
 from app.modules.interventions.schemas import (
     OutcomeTrackingUpsertSchema,
@@ -53,6 +62,18 @@ class RiskDetectionResult:
 
 def _utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+def _audit(*, actor: str, action: str, entity: str, metadata: dict, tenant_id: int) -> None:
+    log_admin_action(
+        actor=actor,
+        action=action,
+        path="risk_service",
+        client_ip="service",
+        entity=entity,
+        metadata=metadata,
+        tenant_id=tenant_id,
+    )
 
 
 def _compare_metric(*, value: float, comparison: RiskThresholdComparison, threshold: float) -> bool:
@@ -192,6 +213,104 @@ class InterventionRiskService:
 
         return int(total), rows
 
+    async def get_student_latest_signal(
+        self, *, tenant_id: int, student_profile_id: int
+    ) -> RiskSignalModel:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        row = self.db.execute(
+            select(RiskSignalModel)
+            .where(
+                and_(
+                    RiskSignalModel.tenant_id == tenant_id,
+                    RiskSignalModel.student_profile_id == student_profile_id,
+                )
+            )
+            .order_by(RiskSignalModel.detected_at.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+        assert_resource_belongs_to_tenant(
+            row,
+            tenant_id,
+            resource_name="Risk signal",
+            resource_id=student_profile_id,
+        )
+        return row
+
+    async def list_student_signal_history(
+        self,
+        *,
+        tenant_id: int,
+        student_profile_id: int,
+        page: int,
+        page_size: int,
+    ) -> tuple[int, list[RiskSignalModel]]:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        filters = and_(
+            RiskSignalModel.tenant_id == tenant_id,
+            RiskSignalModel.student_profile_id == student_profile_id,
+        )
+        total = int(
+            self.db.execute(
+                select(func.count()).select_from(RiskSignalModel).where(filters)
+            ).scalar_one()
+            or 0
+        )
+        rows = self.db.execute(
+            select(RiskSignalModel)
+            .where(filters)
+            .order_by(RiskSignalModel.detected_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        ).scalars().all()
+        return total, rows
+
+    async def acknowledge_recommendation(
+        self,
+        *,
+        tenant_id: int,
+        recommendation_id: int,
+        actor: str,
+        note: str | None = None,
+    ) -> InterventionActionModel:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        case = self.db.execute(
+            select(InterventionCaseModel).where(
+                and_(
+                    InterventionCaseModel.id == recommendation_id,
+                    InterventionCaseModel.tenant_id == tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if case is None:
+            observe_risk_recommendation_ack(tenant_id=tenant_id, status="error")
+            raise TenantResourceNotFoundError("Recommendation", recommendation_id)
+
+        action = InterventionActionModel(
+            tenant_id=tenant_id,
+            case_id=case.id,
+            action_type=InterventionActionType.NOTE,
+            description="Risk recommendation acknowledged",
+            outcome_note=note,
+            performed_by=actor,
+            metadata_json={
+                "source": "risk_recommendation_ack",
+                "recommendation_id": recommendation_id,
+            },
+        )
+        self.db.add(action)
+        self.db.flush()
+        self.db.refresh(action)
+        self.db.commit()
+        observe_risk_recommendation_ack(tenant_id=tenant_id, status="success")
+        _audit(
+            actor=actor,
+            action="risk_recommendation.ack",
+            entity=f"case:{case.id}",
+            metadata={"recommendation_id": recommendation_id},
+            tenant_id=tenant_id,
+        )
+        return action
+
     async def upsert_outcome(
         self,
         *,
@@ -313,12 +432,74 @@ class InterventionRiskService:
         self.db.flush()
         self.db.commit()
 
+        _audit(
+            actor=actor,
+            action="risk_detection.run",
+            entity="risk_detection",
+            metadata={
+                "thresholds_evaluated": len(thresholds),
+                "signals_created": signals_created,
+                "cases_created": cases_created,
+            },
+            tenant_id=tenant_id,
+        )
+
         return RiskDetectionResult(
             tenant_id=tenant_id,
             thresholds_evaluated=len(thresholds),
             signals_created=signals_created,
             cases_created=cases_created,
         )
+
+    async def _refresh_observability_snapshot(self, *, tenant_id: int) -> None:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        high_band_total = int(
+            self.db.execute(
+                select(func.count(func.distinct(RiskSignalModel.student_profile_id))).where(
+                    and_(
+                        RiskSignalModel.tenant_id == tenant_id,
+                        RiskSignalModel.severity == InterventionCaseSeverity.HIGH,
+                    )
+                )
+            ).scalar_one()
+            or 0
+        )
+        latest_detected_at = self.db.execute(
+            select(func.max(RiskSignalModel.detected_at)).where(
+                RiskSignalModel.tenant_id == tenant_id
+            )
+        ).scalar_one_or_none()
+        age_seconds = 0.0
+        if latest_detected_at is not None:
+            age_seconds = max(0.0, (_utc_now() - latest_detected_at).total_seconds())
+
+        set_risk_high_band_students_total(tenant_id=tenant_id, total=high_band_total)
+        set_risk_latest_snapshot_age_seconds(tenant_id=tenant_id, age_seconds=age_seconds)
+
+    async def recompute_scores(self, *, tenant_id: int, actor: str) -> RiskDetectionResult:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        started_at = perf_counter()
+        try:
+            result = await self.run_daily_detection(tenant_id=tenant_id, actor=actor)
+            await self._refresh_observability_snapshot(tenant_id=tenant_id)
+        except Exception:
+            duration_seconds = perf_counter() - started_at
+            observe_risk_scoring_job(tenant_id=tenant_id, status="error")
+            observe_risk_scoring_duration(
+                tenant_id=tenant_id,
+                status="error",
+                duration_seconds=duration_seconds,
+            )
+            raise
+
+        duration_seconds = perf_counter() - started_at
+        observe_risk_scoring_job(tenant_id=tenant_id, status="success")
+        observe_risk_scoring_duration(
+            tenant_id=tenant_id,
+            status="success",
+            duration_seconds=duration_seconds,
+        )
+        return result
 
     async def get_kpi_summary(self, *, tenant_id: int) -> dict[str, object]:
         tenant_id = validate_tenant_id_provided(tenant_id)
@@ -380,7 +561,15 @@ class InterventionRiskService:
             .group_by(RiskSignalModel.severity)
         ).all()
 
-        severity_breakdown = {str(level.value): int(count) for level, count in severity_rows}
+        severity_breakdown: dict[str, int] = {}
+        for row in severity_rows:
+            if isinstance(row, tuple) and len(row) >= 2:
+                level, count = row[0], row[1]
+            else:
+                level = getattr(row, "severity", None)
+                count = getattr(row, "count", 0)
+            key = str(getattr(level, "value", level))
+            severity_breakdown[key] = int(count or 0)
 
         return {
             "tenant_id": tenant_id,
@@ -397,7 +586,13 @@ class InterventionRiskService:
         threshold: RiskThresholdModel,
     ) -> list[tuple[int, float, dict]]:
         now = _utc_now()
-        since = now - timedelta(days=threshold.window_days)
+        try:
+            window_days = int(getattr(threshold, "window_days", 30))
+        except (TypeError, ValueError):
+            window_days = 30
+        if window_days <= 0:
+            window_days = 30
+        since = now - timedelta(days=window_days)
 
         if threshold.metric == RiskMetric.ABSENCE_COUNT:
             rows = self.db.execute(
@@ -429,7 +624,7 @@ class InterventionRiskService:
                     float(absence_count),
                     {
                         "metric": RiskMetric.ABSENCE_COUNT.value,
-                        "window_days": threshold.window_days,
+                        "window_days": window_days,
                         "absence_count": int(absence_count),
                     },
                 )
@@ -463,7 +658,7 @@ class InterventionRiskService:
                     float(best_score),
                     {
                         "metric": RiskMetric.QUIZ_BEST_SCORE.value,
-                        "window_days": threshold.window_days,
+                        "window_days": window_days,
                         "quiz_best_score": float(best_score),
                     },
                 )

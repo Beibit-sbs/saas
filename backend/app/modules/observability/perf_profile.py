@@ -206,15 +206,20 @@ def install_sqlalchemy_profiler(engine) -> None:
     except Exception:
         return
 
-    @event.listens_for(engine, "before_cursor_execute")
-    def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-        context._perf_started_at = time.perf_counter()
+    try:
+        @event.listens_for(engine, "before_cursor_execute")
+        def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+            context._perf_started_at = time.perf_counter()
 
-    @event.listens_for(engine, "after_cursor_execute")
-    def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-        started = getattr(context, "_perf_started_at", None)
-        if started is None:
-            return
-        observe_db_query(str(statement), (time.perf_counter() - started) * 1000.0)
+        @event.listens_for(engine, "after_cursor_execute")
+        def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+            started = getattr(context, "_perf_started_at", None)
+            if started is None:
+                return
+            observe_db_query(str(statement), (time.perf_counter() - started) * 1000.0)
+    except Exception:
+        # Some SQLAlchemy targets (e.g. mocked/session objects in tests) do not support
+        # cursor-level events; in that case profiler install is a safe no-op.
+        return
 
     setattr(engine, "_perf_profile_wrapped", True)

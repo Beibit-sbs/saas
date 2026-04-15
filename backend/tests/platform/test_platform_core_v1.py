@@ -237,7 +237,8 @@ def test_platform_core_v1_billing_plan_duplicate_create_is_rejected_and_state_st
     assert first.status_code == 201, first.text
 
     second = client.post("/api/v1/admin/billing/plans", headers=ADMIN_HEADERS, json=payload)
-    assert second.status_code == 400, second.text
+    assert second.status_code == 201, second.text
+    assert second.json()["idempotent_replay"] is True
 
     listed = client.get("/api/v1/admin/billing/plans", headers=ADMIN_HEADERS)
     assert listed.status_code == 200, listed.text

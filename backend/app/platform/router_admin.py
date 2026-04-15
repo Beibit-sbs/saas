@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Annotated
 import dataclasses as _dc
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request
+from pydantic import BaseModel
 
 from app.modules.audit.service import log_admin_action
 from app.modules.rbac.service import is_platform_admin
@@ -62,6 +63,7 @@ from app.platform.context import service as context_service
 from app.platform.context.schemas import FacultyProfileRead, StudentProfileRead
 from app.platform.billing import service as billing_service
 from app.platform.feature_flags import service as flags_service
+from app.platform.idempotency.service import IdempotencyService
 from app.platform.jobs import service as jobs_service
 from app.platform.notifications import service as notifications_service
 from app.platform.webhooks import service as webhooks_service
@@ -106,6 +108,84 @@ PLATFORM_TENANT_ID = 1
 
 _platform_admin_read_dependency = permission_dependency("platform.admin.read")
 _platform_admin_write_dependency = permission_dependency("platform.admin.write")
+
+
+class TenantMutationRead(TenantPlatformRead):
+    tenant: TenantPlatformRead
+    idempotent_replay: bool
+
+
+class TenantCreateMutationRead(TenantPlatformRead):
+    idempotent_replay: bool
+
+
+class FeatureFlagMutationRead(FeatureFlagRead):
+    flag: FeatureFlagRead
+    idempotent_replay: bool
+
+
+class PlanMutationRead(PlanRead):
+    plan: PlanRead
+    idempotent_replay: bool
+
+
+class SubscriptionMutationRead(SubscriptionRead):
+    subscription: SubscriptionRead
+    idempotent_replay: bool
+
+
+class NotificationMutationRead(NotificationRead):
+    notification: NotificationRead
+    idempotent_replay: bool
+
+
+class WebhookSubscriptionMutationRead(WebhookSubscriptionReadSchema):
+    subscription: WebhookSubscriptionReadSchema
+    idempotent_replay: bool
+
+
+class SkillMutationRead(SkillReadSchema):
+    skill: SkillReadSchema
+    idempotent_replay: bool
+
+
+class CourseSkillMutationRead(CourseSkillReadSchema):
+    course_skill: CourseSkillReadSchema
+    idempotent_replay: bool
+
+
+class AutomationRuleMutationRead(AutomationRuleReadSchema):
+    idempotent_replay: bool
+
+
+class InstitutionMutationRead(InstitutionReadSchema):
+    institution: InstitutionReadSchema
+    idempotent_replay: bool
+
+
+class FederationMemberMutationRead(FederationMemberReadSchema):
+    member: FederationMemberReadSchema
+    idempotent_replay: bool
+
+
+class DeveloperAppMutationRead(DeveloperAppReadSchema):
+    idempotent_replay: bool
+    app_secret: str | None = None
+
+
+class DeveloperInstallationMutationRead(DeveloperAppInstallationReadSchema):
+    installation: DeveloperAppInstallationReadSchema
+    idempotent_replay: bool
+
+
+class DeveloperSubscriptionMutationRead(DeveloperAppEventSubscriptionReadSchema):
+    subscription: DeveloperAppEventSubscriptionReadSchema
+    idempotent_replay: bool
+
+
+class AcademicRiskThresholdsMutationRead(AcademicRiskThresholdsRead):
+    thresholds: AcademicRiskThresholdsRead
+    idempotent_replay: bool
 
 
 async def _require_platform_admin_permissions(
@@ -194,8 +274,18 @@ def _legacy_job_read(row: dict[str, object]) -> JobRead:
     )
 
 
-@router.post("/tenants", response_model=TenantPlatformRead, status_code=201)
-def create_tenant(request: Request, payload: TenantCreateRequest, actor: Actor) -> TenantPlatformRead:
+@router.post("/tenants", response_model=TenantCreateMutationRead, status_code=201)
+def create_tenant(request: Request, payload: TenantCreateRequest, actor: Actor) -> TenantCreateMutationRead:
+    existing = None
+    for item in tenant_service.list_tenant_profiles():
+        if str(item.get("slug", "")).strip().lower() == payload.slug.strip().lower():
+            existing = item
+            break
+    if existing is not None:
+        if str(existing.get("name", "")).strip() != payload.name.strip():
+            raise HTTPException(status_code=400, detail=f"tenant slug '{payload.slug}' already exists with different name")
+        return TenantCreateMutationRead.model_validate({**existing, "idempotent_replay": True})
+
     try:
         row = tenant_service.create_tenant(
             payload.slug,
@@ -207,7 +297,7 @@ def create_tenant(request: Request, payload: TenantCreateRequest, actor: Actor) 
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.tenant.create", int(row["tenant_id"]), {"slug": payload.slug})
-    return TenantPlatformRead.model_validate(row)
+    return TenantCreateMutationRead.model_validate({**row, "idempotent_replay": False})
 
 
 @router.get(
@@ -239,54 +329,82 @@ def get_tenant_profile(tenant_id: int, _actor: Actor) -> TenantPlatformRead:
     return TenantPlatformRead.model_validate(row)
 
 
-@router.patch("/tenants/{tenant_id}/settings", response_model=TenantPlatformRead)
+@router.patch("/tenants/{tenant_id}/settings", response_model=TenantMutationRead)
 def patch_tenant_settings(
     tenant_id: int,
     payload: TenantSettingsPatchRequest,
     request: Request,
     actor: Actor,
-) -> TenantPlatformRead:
+) -> TenantMutationRead:
+    before = tenant_service.get_tenant_profile(tenant_id)
     try:
         row = tenant_service.patch_settings(tenant_id, payload.settings)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.tenant.settings.patch", tenant_id)
-    return TenantPlatformRead.model_validate(row)
+    return TenantMutationRead.model_validate(
+        {
+            **row,
+            "tenant": row,
+            "idempotent_replay": dict(before.get("settings") or {}) == dict(row.get("settings") or {}),
+        }
+    )
 
 
-@router.put("/tenants/{tenant_id}/quotas", response_model=TenantPlatformRead)
-def set_tenant_quotas(tenant_id: int, payload: TenantMapRequest, request: Request, actor: Actor) -> TenantPlatformRead:
+@router.put("/tenants/{tenant_id}/quotas", response_model=TenantMutationRead)
+def set_tenant_quotas(tenant_id: int, payload: TenantMapRequest, request: Request, actor: Actor) -> TenantMutationRead:
+    before = tenant_service.get_tenant_profile(tenant_id)
     try:
         row = tenant_service.set_quotas(tenant_id, payload.values)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.tenant.quotas.put", tenant_id)
-    return TenantPlatformRead.model_validate(row)
+    return TenantMutationRead.model_validate(
+        {
+            **row,
+            "tenant": row,
+            "idempotent_replay": dict(before.get("quotas") or {}) == dict(row.get("quotas") or {}),
+        }
+    )
 
 
-@router.put("/tenants/{tenant_id}/limits", response_model=TenantPlatformRead)
-def set_tenant_limits(tenant_id: int, payload: TenantMapRequest, request: Request, actor: Actor) -> TenantPlatformRead:
+@router.put("/tenants/{tenant_id}/limits", response_model=TenantMutationRead)
+def set_tenant_limits(tenant_id: int, payload: TenantMapRequest, request: Request, actor: Actor) -> TenantMutationRead:
+    before = tenant_service.get_tenant_profile(tenant_id)
     try:
         row = tenant_service.set_limits(tenant_id, payload.values)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.tenant.limits.put", tenant_id)
-    return TenantPlatformRead.model_validate(row)
+    return TenantMutationRead.model_validate(
+        {
+            **row,
+            "tenant": row,
+            "idempotent_replay": dict(before.get("limits") or {}) == dict(row.get("limits") or {}),
+        }
+    )
 
 
-@router.post("/tenants/{tenant_id}/suspension", response_model=TenantPlatformRead)
+@router.post("/tenants/{tenant_id}/suspension", response_model=TenantMutationRead)
 def set_tenant_suspension(
     tenant_id: int,
     payload: TenantSuspendRequest,
     request: Request,
     actor: Actor,
-) -> TenantPlatformRead:
+) -> TenantMutationRead:
+    before = tenant_service.get_tenant_profile(tenant_id)
     try:
         row = tenant_service.set_suspended(tenant_id, payload.suspended)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.tenant.suspension.set", tenant_id, {"suspended": payload.suspended})
-    return TenantPlatformRead.model_validate(row)
+    return TenantMutationRead.model_validate(
+        {
+            **row,
+            "tenant": row,
+            "idempotent_replay": bool(before.get("suspended", False)) == bool(row.get("suspended", False)),
+        }
+    )
 
 
 @router.get("/features", response_model=list[FeatureFlagRead])
@@ -295,11 +413,19 @@ def list_platform_features(_actor: Actor) -> list[FeatureFlagRead]:
     return [FeatureFlagRead.model_validate(row) for row in rows]
 
 
-@router.put("/features/{module}/{key}", response_model=FeatureFlagRead)
-def set_platform_feature(module: str, key: str, payload: FeatureFlagSetRequest, request: Request, actor: Actor) -> FeatureFlagRead:
+@router.put("/features/{module}/{key}", response_model=FeatureFlagMutationRead)
+def set_platform_feature(module: str, key: str, payload: FeatureFlagSetRequest, request: Request, actor: Actor) -> FeatureFlagMutationRead:
+    before = None
+    for item in flags_service.list_tenant_features(PLATFORM_TENANT_ID):
+        if str(item.get("module", "")).strip().lower() == module.strip().lower() and str(item.get("key", "")).strip().lower() == key.strip().lower():
+            before = item
+            break
     row = flags_service.set_platform_feature(module, key, payload.enabled, payload.rollout_percentage)
     _audit(request, actor, "platform_core.feature.platform.set", 1, {"module": module, "key": key})
-    return FeatureFlagRead.model_validate(row)
+    replayed = False
+    if before is not None:
+        replayed = bool(before.get("enabled", False)) == bool(row.get("enabled", False)) and int(before.get("rollout_percentage", 100)) == int(row.get("rollout_percentage", 100))
+    return FeatureFlagMutationRead.model_validate({**row, "flag": row, "idempotent_replay": replayed})
 
 
 @router.get("/tenants/{tenant_id}/features", response_model=list[FeatureFlagRead])
@@ -309,7 +435,7 @@ def list_tenant_features(tenant_id: int, request: Request, _actor: Actor) -> lis
     return [FeatureFlagRead.model_validate(row) for row in rows]
 
 
-@router.put("/tenants/{tenant_id}/features/{module}/{key}", response_model=FeatureFlagRead)
+@router.put("/tenants/{tenant_id}/features/{module}/{key}", response_model=FeatureFlagMutationRead)
 def set_tenant_feature(
     tenant_id: int,
     module: str,
@@ -317,11 +443,19 @@ def set_tenant_feature(
     payload: FeatureFlagSetRequest,
     request: Request,
     actor: Actor,
-) -> FeatureFlagRead:
+) -> FeatureFlagMutationRead:
     _enforce_target_tenant_match(request, tenant_id)
+    before = None
+    for item in flags_service.list_tenant_features(tenant_id):
+        if str(item.get("module", "")).strip().lower() == module.strip().lower() and str(item.get("key", "")).strip().lower() == key.strip().lower():
+            before = item
+            break
     row = flags_service.set_tenant_feature(tenant_id, module, key, payload.enabled, payload.rollout_percentage)
     _audit(request, actor, "platform_core.feature.tenant.set", tenant_id, {"module": module, "key": key})
-    return FeatureFlagRead.model_validate(row)
+    replayed = False
+    if before is not None:
+        replayed = bool(before.get("enabled", False)) == bool(row.get("enabled", False)) and int(before.get("rollout_percentage", 100)) == int(row.get("rollout_percentage", 100))
+    return FeatureFlagMutationRead.model_validate({**row, "flag": row, "idempotent_replay": replayed})
 
 
 @router.get(
@@ -342,14 +476,30 @@ def get_tenant_analytics_entitlement_rollout_state(
     return AnalyticsEntitlementRolloutStateRead.model_validate(payload)
 
 
-@router.post("/billing/plans", response_model=PlanRead, status_code=201)
-def create_plan(payload: PlanCreateRequest, request: Request, actor: Actor) -> PlanRead:
+@router.post("/billing/plans", response_model=PlanMutationRead, status_code=201)
+def create_plan(payload: PlanCreateRequest, request: Request, actor: Actor) -> PlanMutationRead:
+    existing = None
+    for item in billing_service.list_plans():
+        if str(item.get("code", "")).strip().lower() == payload.code.strip().lower():
+            existing = item
+            break
+    if existing is not None:
+        same_payload = (
+            str(existing.get("name", "")).strip() == payload.name.strip()
+            and int(existing.get("price_cents", 0)) == int(payload.price_cents)
+            and dict(existing.get("features") or {}) == dict(payload.features)
+            and dict(existing.get("limits") or {}) == dict(payload.limits)
+        )
+        if not same_payload:
+            raise HTTPException(status_code=400, detail=f"plan '{payload.code}' already exists with different payload")
+        return PlanMutationRead.model_validate({**existing, "plan": existing, "idempotent_replay": True})
+
     try:
         row = billing_service.create_plan(payload.code, payload.name, payload.price_cents, payload.features, payload.limits)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.billing.plan.create", 1, {"code": payload.code})
-    return PlanRead.model_validate(row)
+    return PlanMutationRead.model_validate({**row, "plan": row, "idempotent_replay": False})
 
 
 @router.get("/billing/plans", response_model=list[PlanRead])
@@ -357,19 +507,23 @@ def list_plans(_actor: Actor) -> list[PlanRead]:
     return [PlanRead.model_validate(item) for item in billing_service.list_plans()]
 
 
-@router.put("/tenants/{tenant_id}/billing/subscription", response_model=SubscriptionRead)
+@router.put("/tenants/{tenant_id}/billing/subscription", response_model=SubscriptionMutationRead)
 def assign_subscription(
     tenant_id: int,
     payload: SubscriptionAssignRequest,
     request: Request,
     actor: Actor,
-) -> SubscriptionRead:
+) -> SubscriptionMutationRead:
+    existing = billing_service.get_subscription(tenant_id)
+    if existing is not None and str(existing.get("plan_code", "")).strip().lower() == payload.plan_code.strip().lower():
+        _audit(request, actor, "platform_core.billing.subscription.assign", tenant_id, {"plan_code": payload.plan_code})
+        return SubscriptionMutationRead.model_validate({**existing, "subscription": existing, "idempotent_replay": True})
     try:
         row = billing_service.assign_plan(tenant_id, payload.plan_code)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.billing.subscription.assign", tenant_id, {"plan_code": payload.plan_code})
-    return SubscriptionRead.model_validate(row)
+    return SubscriptionMutationRead.model_validate({**row, "subscription": row, "idempotent_replay": False})
 
 
 @router.post("/tenants/{tenant_id}/billing/usage/{metric}", response_model=UsageCounterRead)
@@ -392,24 +546,78 @@ def enqueue_job(payload: JobEnqueueRequest, request: Request, actor: Actor) -> J
     return JobRead.model_validate(row)
 
 
-@router.post("/notifications", response_model=NotificationRead, status_code=201)
-def dispatch_notification(payload: NotificationRequest, request: Request, actor: Actor) -> NotificationRead:
-    try:
-        row = notifications_service.dispatch_notification(
-            tenant_id=payload.tenant_id,
-            channel=payload.channel,
-            target=payload.target,
-            payload=payload.payload,
-            subject=payload.subject,
+@router.post("/notifications", response_model=NotificationMutationRead, status_code=201)
+def dispatch_notification(
+    payload: NotificationRequest,
+    request: Request,
+    actor: Actor,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+) -> NotificationMutationRead:
+    normalized_key = str(idempotency_key or "").strip()
+
+    def _execute(_uow: UnitOfWork) -> dict[str, object]:
+        try:
+            row = notifications_service.dispatch_notification(
+                tenant_id=payload.tenant_id,
+                channel=payload.channel,
+                target=payload.target,
+                payload=payload.payload,
+                subject=payload.subject,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"notification": row}
+
+    if normalized_key:
+        result = IdempotencyService().execute(
+            tenant_id=int(payload.tenant_id),
+            key=normalized_key,
+            operation="platform_admin_notification_dispatch",
+            request_payload={
+                "tenant_id": int(payload.tenant_id),
+                "channel": payload.channel,
+                "target": payload.target,
+                "subject": payload.subject,
+                "payload": payload.payload,
+            },
+            executor=_execute,
         )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        row = dict(result.response.get("notification") or {})
+        replayed = bool(result.replayed)
+    else:
+        try:
+            row = notifications_service.dispatch_notification(
+                tenant_id=payload.tenant_id,
+                channel=payload.channel,
+                target=payload.target,
+                payload=payload.payload,
+                subject=payload.subject,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        replayed = False
+
     _audit(request, actor, "platform_core.notification.dispatch", payload.tenant_id, {"channel": payload.channel})
-    return NotificationRead.model_validate(row)
+    return NotificationMutationRead.model_validate({**row, "notification": row, "idempotent_replay": replayed})
 
 
-@router.post("/webhooks/subscriptions", response_model=WebhookSubscriptionReadSchema, status_code=201)
+@router.post("/webhooks/subscriptions", response_model=WebhookSubscriptionMutationRead, status_code=201)
 def create_webhook_subscription(payload: WebhookSubscriptionCreateSchema, request: Request, actor: Actor) -> WebhookSubscriptionReadSchema:
+    existing = None
+    for item in webhooks_service.webhook_service.list_subscriptions(tenant_id=payload.tenant_id, event_type=payload.event_type, active_only=False, limit=500):
+        if str(item.get("target_url", "")).strip() == payload.target_url.strip() and bool(item.get("is_active", False)):
+            existing = item
+            break
+    if existing is not None:
+        _audit(
+            request,
+            actor,
+            "platform_core.webhook.subscription.create",
+            payload.tenant_id,
+            {"event_type": payload.event_type},
+        )
+        return WebhookSubscriptionMutationRead.model_validate({**existing, "subscription": existing, "idempotent_replay": True})
+
     try:
         row = webhooks_service.webhook_service.create_subscription(
             tenant_id=payload.tenant_id,
@@ -427,7 +635,7 @@ def create_webhook_subscription(payload: WebhookSubscriptionCreateSchema, reques
         payload.tenant_id,
         {"event_type": payload.event_type},
     )
-    return WebhookSubscriptionReadSchema.model_validate(row)
+    return WebhookSubscriptionMutationRead.model_validate({**row, "subscription": row, "idempotent_replay": False})
 
 
 @router.get("/tenants/{tenant_id}/webhooks/subscriptions", response_model=list[WebhookSubscriptionReadSchema])
@@ -437,8 +645,24 @@ def list_webhook_subscriptions(tenant_id: int, request: Request, _actor: Actor) 
     return [WebhookSubscriptionReadSchema.model_validate(item) for item in rows]
 
 
-@router.post("/webhooks/subscriptions/{subscription_id}/deactivate", response_model=WebhookSubscriptionReadSchema)
+@router.post("/webhooks/subscriptions/{subscription_id}/deactivate", response_model=WebhookSubscriptionMutationRead)
 def deactivate_webhook_subscription(subscription_id: int, request: Request, actor: Actor) -> WebhookSubscriptionReadSchema:
+    current_tenant_id = _require_request_tenant_id(request)
+    existing = None
+    for item in webhooks_service.webhook_service.list_subscriptions(tenant_id=current_tenant_id, active_only=False, limit=500):
+        if int(item.get("id", 0)) == int(subscription_id):
+            existing = item
+            break
+    if existing is not None and not bool(existing.get("is_active", True)):
+        _audit(
+            request,
+            actor,
+            "platform_core.webhook.subscription.deactivate",
+            int(existing["tenant_id"]),
+            {"subscription_id": subscription_id},
+        )
+        return WebhookSubscriptionMutationRead.model_validate({**existing, "subscription": existing, "idempotent_replay": True})
+
     try:
         row = webhooks_service.webhook_service.deactivate_subscription(subscription_id=subscription_id, actor=actor)
     except ValueError as exc:
@@ -450,7 +674,7 @@ def deactivate_webhook_subscription(subscription_id: int, request: Request, acto
         int(row["tenant_id"]),
         {"subscription_id": subscription_id},
     )
-    return WebhookSubscriptionReadSchema.model_validate(row)
+    return WebhookSubscriptionMutationRead.model_validate({**row, "subscription": row, "idempotent_replay": False})
 
 
 @router.get("/tenants/{tenant_id}/webhooks/deliveries", response_model=WebhookDeliveryListSchema)
@@ -507,9 +731,24 @@ def list_skills(tenant_id: int, request: Request, _actor: Actor) -> list[SkillRe
     return [SkillReadSchema.model_validate(item) for item in rows]
 
 
-@router.post("/skills", response_model=SkillReadSchema, status_code=201)
-def create_skill(body: SkillCreateSchema, actor: Actor, request: Request) -> SkillReadSchema:
+@router.post("/skills", response_model=SkillMutationRead, status_code=201)
+def create_skill(body: SkillCreateSchema, actor: Actor, request: Request) -> SkillMutationRead:
     _enforce_target_tenant_match(request, int(body.tenant_id))
+    with UnitOfWork() as uow:
+        existing_rows = education_graph_service.list_skills(tenant_id=body.tenant_id, uow=uow)
+    for item in existing_rows:
+        if str(item.get("skill_key", "")).strip().lower() != str(body.skill_key).strip().lower():
+            continue
+        same_payload = (
+            str(item.get("name", "")).strip() == str(body.name).strip()
+            and str(item.get("description", "")).strip() == str(body.description or "").strip()
+            and str(item.get("category", "")).strip() == str(body.category).strip()
+            and str(item.get("level", "") or "") == str(body.level or "")
+        )
+        if not same_payload:
+            raise HTTPException(status_code=400, detail=f"skill '{body.skill_key}' already exists with different payload")
+        return SkillMutationRead.model_validate({**item, "skill": item, "idempotent_replay": True})
+
     with UnitOfWork() as uow:
         row = education_graph_service.create_skill(
             tenant_id=body.tenant_id,
@@ -527,7 +766,7 @@ def create_skill(body: SkillCreateSchema, actor: Actor, request: Request) -> Ski
         int(body.tenant_id),
         {"skill_key": body.skill_key, "category": body.category},
     )
-    return SkillReadSchema.model_validate(row)
+    return SkillMutationRead.model_validate({**row, "skill": row, "idempotent_replay": False})
 
 
 @router.get("/course-skills", response_model=list[CourseSkillReadSchema])
@@ -547,9 +786,21 @@ def list_course_skills(
     return [CourseSkillReadSchema.model_validate(item) for item in rows]
 
 
-@router.post("/course-skills", response_model=CourseSkillReadSchema, status_code=201)
-def create_course_skill(body: CourseSkillCreateSchema, actor: Actor, request: Request) -> CourseSkillReadSchema:
+@router.post("/course-skills", response_model=CourseSkillMutationRead, status_code=201)
+def create_course_skill(body: CourseSkillCreateSchema, actor: Actor, request: Request) -> CourseSkillMutationRead:
     _enforce_target_tenant_match(request, int(body.tenant_id))
+    with UnitOfWork() as uow:
+        existing_rows = education_graph_service.list_course_skills(
+            tenant_id=body.tenant_id,
+            course_id=body.course_id,
+            uow=uow,
+        )
+    for item in existing_rows:
+        if int(item.get("skill_id", 0)) != int(body.skill_id):
+            continue
+        if float(item.get("weight", 0.0) or 0.0) == float(body.weight):
+            return CourseSkillMutationRead.model_validate({**item, "course_skill": item, "idempotent_replay": True})
+
     try:
         with UnitOfWork() as uow:
             row = education_graph_service.map_course_skill(
@@ -569,7 +820,7 @@ def create_course_skill(body: CourseSkillCreateSchema, actor: Actor, request: Re
         int(body.tenant_id),
         {"course_id": body.course_id, "skill_id": body.skill_id, "weight": body.weight},
     )
-    return CourseSkillReadSchema.model_validate(row)
+    return CourseSkillMutationRead.model_validate({**row, "course_skill": row, "idempotent_replay": False})
 
 
 @router.get("/student-skills", response_model=list[StudentSkillReadSchema])
@@ -610,8 +861,25 @@ def get_platform_rector_dashboard(tenant_id: int, _actor: Actor) -> RectorDashbo
 # ------------------------------------------------------------------ #
 
 
-@router.post("/platform/automation/rules", response_model=AutomationRuleReadSchema, status_code=201)
-def create_automation_rule(body: AutomationRuleCreateSchema, actor: Actor, request: Request) -> AutomationRuleReadSchema:
+@router.post("/platform/automation/rules", response_model=AutomationRuleMutationRead, status_code=201)
+def create_automation_rule(body: AutomationRuleCreateSchema, actor: Actor, request: Request) -> AutomationRuleMutationRead:
+    with UnitOfWork() as uow:
+        existing_rules = automation_service.list_rules(tenant_id=body.tenant_id, uow=uow)
+    for existing in existing_rules:
+        if str(existing.name).strip() != str(body.name).strip():
+            continue
+        same_payload = (
+            str(existing.description) == str(body.description or "")
+            and str(existing.event_type) == str(body.event_type)
+            and dict(existing.condition_json or {}) == dict(body.condition_json)
+            and list(existing.actions_json or []) == list(body.actions_json)
+            and bool(existing.is_active) == bool(body.is_active)
+        )
+        if not same_payload:
+            raise HTTPException(status_code=400, detail=f"automation rule '{body.name}' already exists with different payload")
+        payload = AutomationRuleReadSchema.model_validate(_dc.asdict(existing))
+        return AutomationRuleMutationRead.model_validate({**payload.model_dump(), "idempotent_replay": True})
+
     with UnitOfWork() as uow:
         rule = automation_service.create_rule(
             tenant_id=body.tenant_id,
@@ -624,7 +892,8 @@ def create_automation_rule(body: AutomationRuleCreateSchema, actor: Actor, reque
             uow=uow,
         )
     _audit(request, actor, "platform_core.automation.rule_created", body.tenant_id, {"rule_name": body.name})
-    return AutomationRuleReadSchema.model_validate(_dc.asdict(rule))
+    payload = AutomationRuleReadSchema.model_validate(_dc.asdict(rule))
+    return AutomationRuleMutationRead.model_validate({**payload.model_dump(), "idempotent_replay": False})
 
 
 @router.get("/platform/automation/rules", response_model=list[AutomationRuleReadSchema])
@@ -651,7 +920,7 @@ def list_automation_templates(_actor: Actor) -> list[AutomationTemplateReadSchem
 
 @router.post(
     "/platform/automation/templates/{template_key}/instantiate",
-    response_model=AutomationRuleReadSchema,
+    response_model=AutomationRuleMutationRead,
     status_code=201,
 )
 def instantiate_automation_template(
@@ -659,9 +928,31 @@ def instantiate_automation_template(
     body: InstantiateTemplateSchema,
     actor: Actor,
     request: Request,
-) -> AutomationRuleReadSchema:
+) -> AutomationRuleMutationRead:
     """Instantiate an automation template into a new rule for the tenant."""
     tenant_id = _require_request_tenant_id(request)
+
+    with UnitOfWork() as uow:
+        template = automation_template_service.get_template(template_key=template_key, uow=uow)
+        if template is None:
+            raise HTTPException(status_code=404, detail=f"Template not found: {template_key}")
+        candidate_name = body.rule_name if body.rule_name else template.title
+        candidate_description = body.rule_description if body.rule_description else template.description
+        existing_rules = automation_service.list_rules(tenant_id=tenant_id, uow=uow)
+        for existing in existing_rules:
+            if str(existing.name).strip() != str(candidate_name).strip():
+                continue
+            same_payload = (
+                str(existing.description) == str(candidate_description)
+                and str(existing.event_type) == str(template.event_type)
+                and dict(existing.condition_json or {}) == dict(template.condition_json or {})
+                and list(existing.actions_json or []) == list(template.actions_json or [])
+                and bool(existing.is_active)
+            )
+            if not same_payload:
+                raise HTTPException(status_code=400, detail=f"automation rule '{candidate_name}' already exists with different payload")
+            payload = AutomationRuleReadSchema.model_validate(_dc.asdict(existing))
+            return AutomationRuleMutationRead.model_validate({**payload.model_dump(), "idempotent_replay": True})
 
     with UnitOfWork() as uow:
         rule = automation_template_service.instantiate_template(
@@ -679,7 +970,8 @@ def instantiate_automation_template(
         tenant_id,
         {"template_key": template_key, "rule_name": rule.name},
     )
-    return AutomationRuleReadSchema.model_validate(_dc.asdict(rule))
+    payload = AutomationRuleReadSchema.model_validate(_dc.asdict(rule))
+    return AutomationRuleMutationRead.model_validate({**payload.model_dump(), "idempotent_replay": False})
 
 
 # ------------------------------------------------------------------ #
@@ -760,12 +1052,26 @@ def list_copilot_logs(
 # ------------------------------------------------------------------ #
 
 
-@router.post("/platform/federation/institutions", response_model=InstitutionReadSchema, status_code=201)
+@router.post("/platform/federation/institutions", response_model=InstitutionMutationRead, status_code=201)
 def create_institution(
     body: InstitutionCreateSchema,
     actor: Actor,
     request: Request,
-) -> InstitutionReadSchema:
+) -> InstitutionMutationRead:
+    for existing in federation_service.list_institutions():
+        if str(existing.get("code", "")).strip().lower() != body.code.strip().lower():
+            continue
+        same_payload = (
+            str(existing.get("name", "")).strip() == body.name.strip()
+            and str(existing.get("country", "")).strip() == body.country.strip()
+            and str(existing.get("type", "")).strip() == body.type.strip()
+            and dict(existing.get("metadata_json") or existing.get("metadata") or {}) == dict(body.metadata or {})
+        )
+        if not same_payload:
+            raise HTTPException(status_code=400, detail=f"institution code '{body.code}' already exists with different payload")
+        _audit(request, actor, "platform_core.federation.institution.create", 1, {"code": body.code})
+        return InstitutionMutationRead.model_validate({**existing, "institution": existing, "idempotent_replay": True})
+
     try:
         institution = federation_service.create_institution(
             name=body.name,
@@ -777,7 +1083,7 @@ def create_institution(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.federation.institution.create", 1, {"code": body.code})
-    return InstitutionReadSchema.model_validate(institution)
+    return InstitutionMutationRead.model_validate({**institution, "institution": institution, "idempotent_replay": False})
 
 
 @router.get("/platform/federation/institutions", response_model=list[InstitutionReadSchema])
@@ -796,7 +1102,7 @@ def get_institution(institution_id: int, _actor: Actor) -> InstitutionReadSchema
 
 @router.post(
     "/platform/federation/institutions/{institution_id}/tenants",
-    response_model=FederationMemberReadSchema,
+    response_model=FederationMemberMutationRead,
     status_code=201,
 )
 def link_tenant_to_institution(
@@ -804,7 +1110,21 @@ def link_tenant_to_institution(
     body: LinkTenantSchema,
     actor: Actor,
     request: Request,
-) -> FederationMemberReadSchema:
+) -> FederationMemberMutationRead:
+    existing_members = federation_service.list_institution_tenants(institution_id)
+    for member in existing_members:
+        if int(member.get("tenant_id", 0)) != int(body.tenant_id):
+            continue
+        if str(member.get("role", "")).strip() == str(body.role).strip():
+            _audit(
+                request, actor,
+                "platform_core.federation.tenant.link",
+                int(body.tenant_id),
+                {"institution_id": institution_id, "role": body.role},
+            )
+            return FederationMemberMutationRead.model_validate({**member, "member": member, "idempotent_replay": True})
+        break
+
     try:
         member = federation_service.register_tenant_under_institution(
             institution_id=institution_id,
@@ -819,7 +1139,7 @@ def link_tenant_to_institution(
         int(body.tenant_id),
         {"institution_id": institution_id, "role": body.role},
     )
-    return FederationMemberReadSchema.model_validate(member)
+    return FederationMemberMutationRead.model_validate({**member, "member": member, "idempotent_replay": False})
 
 
 @router.get(
@@ -834,13 +1154,37 @@ def get_institution_overview(institution_id: int, _actor: Actor) -> InstitutionO
     return InstitutionOverviewSchema.model_validate(overview)
 
 
-@router.post("/platform/developer/apps", response_model=DeveloperAppSecretReadSchema, status_code=201)
+@router.post("/platform/developer/apps", response_model=DeveloperAppMutationRead, status_code=201)
 def create_developer_app(
     body: DeveloperAppCreateSchema,
     actor: Actor,
     request: Request,
-) -> DeveloperAppSecretReadSchema:
+) -> DeveloperAppMutationRead:
     tenant_id = _require_request_tenant_id(request)
+
+    existing = None
+    normalized_scopes = sorted({str(scope or "").strip().lower() for scope in body.scopes if str(scope or "").strip()})
+    for item in developer_service.developer_service.list_apps(tenant_id=tenant_id):
+        item_scopes = sorted({str(scope or "").strip().lower() for scope in item.get("scopes", []) if str(scope or "").strip()})
+        same_identity = (
+            str(item.get("name", "")).strip() == body.name.strip()
+            and str(item.get("owner_email", "")).strip().lower() == body.owner_email.strip().lower()
+        )
+        if not same_identity:
+            continue
+        same_payload = (
+            str(item.get("description", "")).strip() == str(body.description or "").strip()
+            and item_scopes == normalized_scopes
+            and str(item.get("webhook_url") or "") == str(body.webhook_url or "")
+        )
+        if not same_payload:
+            raise HTTPException(status_code=400, detail=f"developer app '{body.name}' already exists with different payload")
+        existing = item
+        break
+
+    if existing is not None:
+        payload = DeveloperAppReadSchema.model_validate(existing)
+        return DeveloperAppMutationRead.model_validate({**payload.model_dump(), "idempotent_replay": True, "app_secret": None})
 
     try:
         app = developer_service.developer_service.create_app(
@@ -854,7 +1198,8 @@ def create_developer_app(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.developer_app.create", tenant_id, {"app_key": app["app_key"]})
-    return DeveloperAppSecretReadSchema.model_validate(app)
+    payload = DeveloperAppSecretReadSchema.model_validate(app)
+    return DeveloperAppMutationRead.model_validate({**payload.model_dump(), "idempotent_replay": False})
 
 
 @router.get("/platform/developer/apps", response_model=list[DeveloperAppReadSchema])
@@ -885,7 +1230,7 @@ def rotate_developer_app_secret(app_id: int, actor: Actor, request: Request) -> 
 
 @router.post(
     "/platform/developer/apps/{app_id}/installations",
-    response_model=DeveloperAppInstallationReadSchema,
+    response_model=DeveloperInstallationMutationRead,
     status_code=201,
 )
 def install_developer_app(
@@ -893,17 +1238,23 @@ def install_developer_app(
     body: DeveloperAppInstallSchema,
     actor: Actor,
     request: Request,
-) -> DeveloperAppInstallationReadSchema:
+) -> DeveloperInstallationMutationRead:
     request_tenant_id = _require_request_tenant_id(request)
     if request_tenant_id != int(body.tenant_id):
         raise HTTPException(status_code=403, detail="cross-tenant installation denied")
+
+    existing = developer_service.developer_service.list_installations(app_id, tenant_id=body.tenant_id)
+    for item in existing:
+        if int(item.get("tenant_id", 0)) == int(body.tenant_id):
+            _audit(request, actor, "platform_core.developer_app.install", body.tenant_id, {"app_id": app_id})
+            return DeveloperInstallationMutationRead.model_validate({**item, "installation": item, "idempotent_replay": True})
 
     try:
         row = developer_service.developer_service.install_app(app_id=app_id, tenant_id=body.tenant_id, installed_by=actor)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.developer_app.install", body.tenant_id, {"app_id": app_id})
-    return DeveloperAppInstallationReadSchema.model_validate(row)
+    return DeveloperInstallationMutationRead.model_validate({**row, "installation": row, "idempotent_replay": False})
 
 
 @router.get(
@@ -935,7 +1286,7 @@ def list_developer_app_logs(app_id: int, request: Request, _actor: Actor, limit:
 
 @router.post(
     "/platform/developer/apps/{app_id}/subscriptions",
-    response_model=DeveloperAppEventSubscriptionReadSchema,
+    response_model=DeveloperSubscriptionMutationRead,
     status_code=201,
 )
 def subscribe_developer_app_to_event(
@@ -943,8 +1294,13 @@ def subscribe_developer_app_to_event(
     body: DeveloperAppEventSubscriptionCreateSchema,
     actor: Actor,
     request: Request,
-) -> DeveloperAppEventSubscriptionReadSchema:
+) -> DeveloperSubscriptionMutationRead:
     tenant_id = _require_request_tenant_id(request)
+    existing = developer_service.developer_service.list_event_subscriptions(app_id)
+    for item in existing:
+        if str(item.get("event_type", "")).strip().lower() == body.event_type.strip().lower():
+            _audit(request, actor, "platform_core.developer_app.subscribe", tenant_id, {"app_id": app_id, "event_type": body.event_type})
+            return DeveloperSubscriptionMutationRead.model_validate({**item, "subscription": item, "idempotent_replay": True})
     try:
         row = developer_service.developer_service.subscribe_to_event(
             app_id=app_id,
@@ -954,7 +1310,7 @@ def subscribe_developer_app_to_event(
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     _audit(request, actor, "platform_core.developer_app.subscribe", tenant_id, {"app_id": app_id, "event_type": body.event_type})
-    return DeveloperAppEventSubscriptionReadSchema.model_validate(row)
+    return DeveloperSubscriptionMutationRead.model_validate({**row, "subscription": row, "idempotent_replay": False})
 
 
 # ------------------------------------------------------------------ #
@@ -991,14 +1347,39 @@ def get_ai_risk_thresholds(
     )
 
 
-@router.put("/platform/ai/risk-thresholds", response_model=AcademicRiskThresholdsRead)
+@router.put("/platform/ai/risk-thresholds", response_model=AcademicRiskThresholdsMutationRead)
 def set_ai_risk_thresholds(
     body: AcademicRiskThresholdsPutRequest,
     request: Request,
     actor: Actor,
-) -> AcademicRiskThresholdsRead:
+) -> AcademicRiskThresholdsMutationRead:
     """Override academic risk grade thresholds for a specific tenant."""
     tenant_id = _require_request_tenant_id(request)
+    previous = AcademicRiskThresholdsRead(
+        tenant_id=tenant_id,
+        risk_grade_threshold=int(
+            get_runtime_value(
+                "academic.risk_grade_threshold",
+                "ACADEMIC_RISK_GRADE_THRESHOLD",
+                "60",
+                tenant_id=tenant_id,
+            )
+        ),
+        severe_risk_grade_threshold=int(
+            get_runtime_value(
+                "academic.severe_risk_grade_threshold",
+                "ACADEMIC_SEVERE_RISK_GRADE_THRESHOLD",
+                "50",
+                tenant_id=tenant_id,
+            )
+        ),
+    )
+
+    replayed = (
+        int(previous.risk_grade_threshold) == int(body.risk_grade_threshold)
+        and int(previous.severe_risk_grade_threshold) == int(body.severe_risk_grade_threshold)
+    )
+
     save_setting(
         "academic.risk_grade_threshold",
         str(body.risk_grade_threshold),
@@ -1019,8 +1400,9 @@ def set_ai_risk_thresholds(
             "severe_risk_grade_threshold": body.severe_risk_grade_threshold,
         },
     )
-    return AcademicRiskThresholdsRead(
+    thresholds = AcademicRiskThresholdsRead(
         tenant_id=tenant_id,
         risk_grade_threshold=body.risk_grade_threshold,
         severe_risk_grade_threshold=body.severe_risk_grade_threshold,
     )
+    return AcademicRiskThresholdsMutationRead.model_validate({**thresholds.model_dump(), "thresholds": thresholds.model_dump(), "idempotent_replay": replayed})

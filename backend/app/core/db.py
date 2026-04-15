@@ -58,7 +58,11 @@ def build_engine(
         max_overflow=max_overflow,
         pool_pre_ping=True,
         pool_timeout=pool_timeout,
-        connect_args={"connect_timeout": 5, "options": get_db_connect_options()},
+        connect_args={
+            "connect_timeout": 5,
+            "options": get_db_connect_options(),
+            "prepare_threshold": None,
+        },
     )
 
 

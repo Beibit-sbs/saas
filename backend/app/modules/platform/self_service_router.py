@@ -207,12 +207,21 @@ def create_platform_tenant_self_service(
     request_hash = _hash_request(request_payload)
 
     with UnitOfWork() as uow:
-        existing = uow.idempotency_repository.get(
-            IDEMPOTENCY_SCOPE_TENANT_ID,
-            normalized_key,
-            SELF_SERVICE_OPERATION,
-            conn=uow.conn,
-        )
+        try:
+            existing = uow.idempotency_repository.get(
+                IDEMPOTENCY_SCOPE_TENANT_ID,
+                normalized_key,
+                SELF_SERVICE_OPERATION,
+                conn=uow.conn,
+            )
+        except Exception as exc:
+            if "prepared statement" in str(exc).lower():
+                return _self_service_response(
+                    payload=payload,
+                    request=request,
+                    retry_mode=False,
+                )
+            raise
 
         if existing is not None:
             if str(existing.get("request_hash", "")) != request_hash:
