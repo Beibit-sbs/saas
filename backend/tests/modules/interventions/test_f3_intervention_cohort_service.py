@@ -89,11 +89,11 @@ def _make_svc(*, scalar_return=None, scalars_list=None) -> InterventionEffective
 
 
 # ---------------------------------------------------------------------------
-# finalize_cohort: frozen guard (freeze remains until F3.3)
+# finalize_cohort: unfrozen behaviour (F3.3 unfreeze complete 2026-04-17)
 # ---------------------------------------------------------------------------
 
-class TestFinalizeCohortFrozen:
-    """finalize_cohort must not execute any business logic while frozen."""
+class TestFinalizeCohortUnfrozen:
+    """finalize_cohort executes business logic after F3.3 unfreeze."""
 
     def _payload(self) -> CohortFinalizeRequestSchema:
         return CohortFinalizeRequestSchema(
@@ -103,38 +103,38 @@ class TestFinalizeCohortFrozen:
             analysis_window_end=WINDOW_END,
         )
 
-    def test_raises_for_valid_tenant(self) -> None:
+    def test_creates_cohort_for_valid_tenant(self) -> None:
         svc = _make_svc()
-        with pytest.raises(DomainValidationError, match="frozen"):
-            svc.finalize_cohort(tenant_id=TENANT_ID, actor="pm@example.com", payload=self._payload())
+        result = svc.finalize_cohort(tenant_id=TENANT_ID, actor="pm@example.com", payload=self._payload())
+        assert result.tenant_id == TENANT_ID
+        assert result.playbook_id == PLAYBOOK_ID
 
-    def test_raises_before_any_db_call(self) -> None:
-        """DB should NOT be touched when freeze guard fires."""
+    def test_calls_db_add_and_flush(self) -> None:
+        """DB should be called when creating a cohort."""
         db = MagicMock()
         svc = InterventionEffectivenessService(db=db)
-        with pytest.raises(DomainValidationError):
-            svc.finalize_cohort(tenant_id=TENANT_ID, actor="pm@example.com", payload=self._payload())
-        db.scalar.assert_not_called()
-        db.add.assert_not_called()
-        db.commit.assert_not_called()
+        svc.finalize_cohort(tenant_id=TENANT_ID, actor="pm@example.com", payload=self._payload())
+        db.add.assert_called_once()
+        db.flush.assert_called_once()
 
-    def test_tenant_zero_rejected_before_freeze_guard(self) -> None:
+    def test_tenant_zero_rejected(self) -> None:
         svc = _make_svc()
         with pytest.raises(TenantRequiredError):
             svc.finalize_cohort(tenant_id=0, actor="pm@example.com", payload=self._payload())
 
 
 # ---------------------------------------------------------------------------
-# analyze_cohort: frozen guard
+# analyze_cohort: unfrozen behaviour (F3.3 unfreeze complete 2026-04-17)
 # ---------------------------------------------------------------------------
 
-class TestAnalyzeCohortFrozen:
-    def test_raises_frozen_for_existing_cohort(self) -> None:
+class TestAnalyzeCohortUnfrozen:
+    def test_queues_analysis_for_existing_cohort(self) -> None:
         cohort = _mock_cohort()
         svc = _make_svc(scalar_return=cohort)
         payload = CohortAnalyzeRequestSchema(segment_keys=[])
-        with pytest.raises(DomainValidationError, match="frozen"):
-            svc.analyze_cohort(tenant_id=TENANT_ID, cohort_id=COHORT_ID, actor="pm@example.com", payload=payload)
+        result = svc.analyze_cohort(tenant_id=TENANT_ID, cohort_id=COHORT_ID, actor="pm@example.com", payload=payload)
+        assert result["status"] == "analysis_queued"
+        assert result["cohort_id"] == COHORT_ID
 
     def test_raises_not_found_for_missing_cohort(self) -> None:
         svc = _make_svc(scalar_return=None)

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.module_helpers.audit_helpers import build_audit_action
 from app.core.module_helpers.service_validation import (
     DomainValidationError,
+    MutationResult,
     TenantResourceNotFoundError,
     assert_resource_belongs_to_tenant,
     validate_tenant_id_provided,
@@ -212,7 +213,7 @@ class GradeLifecycleService:
         tenant_id: int,
         request: GradeSubmitSchema,
         actor_id: str,
-    ) -> GradeReadSchema:
+    ) -> MutationResult[GradeReadSchema]:
         tenant_id = validate_tenant_id_provided(tenant_id)
         assert_billing_write_allowed(tenant_id, action="grades.submit")
         assert_quota_with_increment(tenant_id, "grades_submitted", increment=1)
@@ -230,8 +231,9 @@ class GradeLifecycleService:
 
         existing = self._load_grade_submission(tenant_id, request.enrollment_id)
         if existing is not None:
-            raise DomainValidationError(
-                f"Grade already submitted for enrollment {request.enrollment_id}; use change_grade"
+            return MutationResult(
+                entity=GradeReadSchema.model_validate(existing),
+                idempotent_replay=True,
             )
 
         self._load_grading_scale(tenant_id, request.grading_scale_id)
@@ -325,14 +327,14 @@ class GradeLifecycleService:
 
         record_usage_event(tenant_id=tenant_id, metric="grades_submitted", value=1)
 
-        return GradeReadSchema.model_validate(submission)
+        return MutationResult(entity=GradeReadSchema.model_validate(submission))
 
     async def change_grade(
         self,
         tenant_id: int,
         request: GradeChangeSchema,
         actor_id: str,
-    ) -> GradeReadSchema:
+    ) -> MutationResult[GradeReadSchema]:
         tenant_id = validate_tenant_id_provided(tenant_id)
         GradeLifecycleRules.validate_grade_change_allowed(actor_id)
 
@@ -370,7 +372,10 @@ class GradeLifecycleService:
         prev_points = submission.grade_points
 
         if prev_code == request.new_grade_code and Decimal(str(prev_points)) == resolved_points:
-            raise DomainValidationError("grade change must modify grade_code or grade_points")
+            return MutationResult(
+                entity=GradeReadSchema.model_validate(submission),
+                idempotent_replay=True,
+            )
 
         submission.grade_code = request.new_grade_code
         submission.grade_points = resolved_points
@@ -431,7 +436,7 @@ class GradeLifecycleService:
 
         record_usage_event(tenant_id=tenant_id, metric="grades_submitted", value=1)
 
-        return GradeReadSchema.model_validate(submission)
+        return MutationResult(entity=GradeReadSchema.model_validate(submission))
 
     async def get_enrollment_grade(
         self,

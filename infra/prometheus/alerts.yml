@@ -10,6 +10,7 @@ groups:
         annotations:
           summary: "Backend target is down"
           description: "Prometheus cannot scrape backend metrics target for more than 1 minute."
+          runbook_url: "docs/runbooks/RECOVERY.md"
 
       - alert: BackendHighErrorRate
         expr: |
@@ -25,6 +26,7 @@ groups:
         annotations:
           summary: "High backend 5xx error rate"
           description: "5xx ratio is above 2% over the last 5 minutes for at least 10 minutes."
+          runbook_url: "docs/runbooks/RECOVERY.md"
 
       - alert: BackendHighLatencyP95
         expr: http_request_duration_seconds_quantile{job="backend",quantile="0.95"} > 1.0
@@ -35,6 +37,7 @@ groups:
         annotations:
           summary: "High backend latency p95"
           description: "p95 latency is above 1 second for at least 10 minutes."
+          runbook_url: "docs/runbooks/RECOVERY.md"
 
       - alert: JobsFailedSpike
         expr: increase(jobs_failed_total{job="backend"}[10m]) >= 5
@@ -45,6 +48,7 @@ groups:
         annotations:
           summary: "Job failures spiked"
           description: "jobs_failed_total increased by 5 or more during the last 10 minutes."
+          runbook_url: "docs/runbooks/RECOVERY.md"
 
       - alert: JobsQueueTooHigh
         expr: jobs_queue_size{job="backend"} > 100
@@ -55,6 +59,7 @@ groups:
         annotations:
           summary: "Jobs queue is too high"
           description: "jobs_queue_size is above 100 for at least 10 minutes."
+          runbook_url: "docs/runbooks/RECOVERY.md"
 
       - alert: WorkerDown
         expr: (worker_heartbeat_age_seconds{job="backend"} < 0) or (worker_heartbeat_age_seconds{job="backend"} > 180)
@@ -65,6 +70,7 @@ groups:
         annotations:
           summary: "Worker heartbeat stale or missing"
           description: "Worker heartbeat is missing or older than 180 seconds."
+          runbook_url: "docs/runbooks/RECOVERY.md"
 
       - alert: SchedulerDown
         expr: (scheduler_last_run_age_seconds{job="backend"} < 0) or (scheduler_last_run_age_seconds{job="backend"} > 300)
@@ -75,6 +81,7 @@ groups:
         annotations:
           summary: "Scheduler heartbeat stale or missing"
           description: "Scheduler last run is missing or older than 300 seconds."
+          runbook_url: "docs/runbooks/RECOVERY.md"
 
       - alert: RedisLatencyHigh
         expr: redis_latency_seconds{job="backend"} > 0.1
@@ -85,6 +92,7 @@ groups:
         annotations:
           summary: "Redis latency is elevated"
           description: "redis_latency_seconds is above 100ms for at least 10 minutes."
+          runbook_url: "docs/runbooks/REDIS_UNAVAILABLE.md"
 
       - alert: DbPoolActiveHigh
         expr: db_connections_active{job="backend"} > 80
@@ -95,6 +103,66 @@ groups:
         annotations:
           summary: "DB pool active connections are high"
           description: "db_connections_active is above 80 for at least 10 minutes; investigate pool saturation."
+          runbook_url: "docs/runbooks/DB_UNAVAILABLE.md"
+
+      - alert: F3CohortAnalysisLatencyHigh
+        expr: |
+          (
+            sum(rate(f3_cohort_operation_duration_seconds_total{job="backend",operation="analyze",status="success"}[10m]))
+            /
+            clamp_min(sum(rate(f3_cohort_operation_duration_seconds_count{job="backend",operation="analyze",status="success"}[10m])), 0.001)
+          ) > 2.0
+        for: 10m
+        labels:
+          severity: warning
+          service: interventions
+        annotations:
+          summary: "F3 cohort analysis latency is elevated"
+          description: "Average analyze latency is above 2 seconds for at least 10 minutes."
+          runbook_url: "docs/runbooks/RECOVERY.md"
+
+      - alert: F3CohortOperationErrorRateHigh
+        expr: |
+          (
+            sum(rate(f3_cohort_operations_total{job="backend",status="error"}[10m]))
+            /
+            clamp_min(sum(rate(f3_cohort_operations_total{job="backend"}[10m])), 0.001)
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: interventions
+        annotations:
+          summary: "F3 cohort operation error rate is high"
+          description: "F3 cohort operations exceed 5% error ratio over 10 minutes."
+          runbook_url: "docs/runbooks/RECOVERY.md"
+
+      - alert: F3GuardrailPassRateLow
+        expr: |
+          (
+            sum(rate(f3_guardrails_evaluated_total{job="backend",result="pass"}[30m]))
+            /
+            clamp_min(sum(rate(f3_guardrails_evaluated_total{job="backend"}[30m])), 0.001)
+          ) < 0.80
+        for: 15m
+        labels:
+          severity: warning
+          service: interventions
+        annotations:
+          summary: "F3 guardrail pass rate is low"
+          description: "F3 guardrail pass rate dropped below 80% for at least 15 minutes."
+          runbook_url: "docs/runbooks/RECOVERY.md"
+
+      - alert: F3AnalysisQueueBacklogHigh
+        expr: sum(f3_active_cohort_analysis_queue_depth{job="backend",status="pending"}) > 50
+        for: 10m
+        labels:
+          severity: warning
+          service: interventions
+        annotations:
+          summary: "F3 analysis queue backlog is high"
+          description: "Pending F3 cohort analysis queue depth is above 50 for at least 10 minutes."
+          runbook_url: "docs/runbooks/RECOVERY.md"
 
   - name: webhook-and-automation
     rules:
@@ -107,6 +175,7 @@ groups:
         annotations:
           summary: "Dead webhook queue is growing"
           description: "3 or more webhooks exhausted retry budget in the last 15 minutes."
+          runbook_url: "docs/runbooks/RECOVERY.md"
 
       - alert: AutomationExecutionFailureSpike
         expr: increase(automation_execution_failed_total{job="backend"}[10m]) >= 5
@@ -117,6 +186,7 @@ groups:
         annotations:
           summary: "Automation execution failure spike"
           description: "automation_execution_failed_total increased by 5+ in the last 10 minutes."
+          runbook_url: "docs/runbooks/RECOVERY.md"
 
       - alert: DeveloperApiErrorRateHigh
         expr: developer_api_error_count{job="backend"} > 50

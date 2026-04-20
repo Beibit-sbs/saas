@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.module_helpers.audit_helpers import build_audit_action
 from app.core.module_helpers.service_validation import (
     DomainValidationError,
+    MutationResult,
     TenantResourceNotFoundError,
     assert_resource_belongs_to_tenant,
     validate_tenant_id_provided,
@@ -287,7 +288,7 @@ class TranscriptService:
         *,
         student_profile_id: int,
         actor_id: str,
-    ) -> TranscriptSnapshotSchema:
+    ) -> MutationResult[TranscriptSnapshotSchema]:
         transcript = await self.generate_transcript(
             tenant_id,
             student_profile_id=student_profile_id,
@@ -322,7 +323,7 @@ class TranscriptService:
             tenant_id,
         )
 
-        return TranscriptSnapshotSchema.model_validate(snapshot)
+        return MutationResult(entity=TranscriptSnapshotSchema.model_validate(snapshot))
 
     async def get_student_transcript_consistency_report(
         self,

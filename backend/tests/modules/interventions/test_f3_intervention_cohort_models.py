@@ -218,10 +218,12 @@ class TestCohortReadSchema:
             "data_completeness_pct": Decimal("94.00"),
             "created_by": "pm@example.com",
             "created_at": MOCK_NOW,
+            "status": "draft",
         }
         schema = CohortReadSchema(**data)
         assert schema.student_count == 50
         assert schema.data_completeness_pct == Decimal("94.00")
+        assert schema.status == "draft"
 
     def test_outcome_list_response_schema_empty(self) -> None:
         schema = CohortOutcomeListResponseSchema(items=[], total=0)

@@ -25,6 +25,7 @@ from app.modules.transcripts.schemas import (
     StudentTranscriptSchema,
     TranscriptConsistencyReportSchema,
     TranscriptTenantConsistencyReportSchema,
+    TranscriptSnapshotMutationResponse,
     TranscriptSnapshotSchema,
 )
 from app.modules.transcripts.service import TranscriptService
@@ -89,7 +90,7 @@ async def get_student_transcript_endpoint(
     "/students/{student_id}/transcript/snapshot",
     summary="Create immutable transcript snapshot",
     description="Generates current transcript and stores an immutable JSON snapshot.",
-    response_model=TranscriptSnapshotSchema,
+    response_model=TranscriptSnapshotMutationResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
         400: {"model": ErrorDetailResponse},
@@ -104,13 +105,17 @@ async def create_transcript_snapshot_endpoint(
     _: Annotated[None, Depends(permission_dependency("transcripts.write"))] = None,
     tenant: TrustedTenant = None,
     db: TranscriptsDb = None,
-) -> TranscriptSnapshotSchema:
+) -> TranscriptSnapshotMutationResponse:
     service = TranscriptService(db)
     try:
-        return await service.create_transcript_snapshot(
+        result = await service.create_transcript_snapshot(
             tenant_id=int(tenant["id"]),
             student_profile_id=student_id,
             actor_id=actor,
+        )
+        return TranscriptSnapshotMutationResponse(
+            snapshot=result.entity,
+            idempotent_replay=result.idempotent_replay,
         )
     except (
         PermissionError,

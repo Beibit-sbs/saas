@@ -1,6 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Generic, TypeVar
+
+T = TypeVar("T")
+
+
+@dataclass
+class MutationResult(Generic[T]):
+    """Wrap a service mutation return with an idempotent-replay flag."""
+    entity: T
+    idempotent_replay: bool = False
 
 
 class TenantRequiredError(ValueError):

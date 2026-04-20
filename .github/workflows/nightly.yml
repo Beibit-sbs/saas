@@ -1,0 +1,91 @@
+name: Nightly Integration Gate
+
+on:
+  schedule:
+    # Every day at 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  integration-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create CI env file
+        working-directory: infra
+        run: |
+          cat > .env <<'EOF'
+          COMPOSE_PROJECT_NAME=ai
+          POSTGRES_DB=app
+          POSTGRES_USER=app
+          POSTGRES_PASSWORD=app
+          POSTGRES_PORT=5432
+          DATABASE_URL=postgresql://app:app@db:5432/app
+          REDIS_URL=redis://redis:6379/0
+          BACKEND_PORT=8000
+          FRONTEND_PORT=3000
+          NGINX_PORT=80
+          NGINX_TLS_PORT=443
+          NEXT_PUBLIC_API_BASE_URL=/api
+          API_BASE_URL=http://nginx
+          ADMIN_PANEL_URL=http://nginx
+          INTERNAL_API_TOKEN=test_internal_api_token_12345678901234567890
+          JWT_SECRET=test_suite_secret_not_for_prod_1234567890123456
+          INTEGRATIONS_ENCRYPTION_KEY=test_integration_key_1234567890123456
+          AUTH_CSRF_PROTECTION_ENABLED=true
+          RBAC_ALLOW_DEV_FALLBACK=false
+          METRICS_TOKEN=test_metrics_token_12345678901234567890
+          BILLING_DB_ONLY_MODE=true
+          EOF
+
+      - name: Build images
+        working-directory: infra
+        run: docker compose --env-file .env build
+
+      - name: Start full stack
+        working-directory: infra
+        run: |
+          docker compose --env-file .env up -d
+          # Wait for DB + PgBouncer to be ready
+          for i in $(seq 1 30); do
+            docker compose --env-file .env exec -T db pg_isready -U app && break
+            echo "Waiting for DB... ($i/30)"
+            sleep 2
+          done
+
+      - name: Run full backend test suite
+        working-directory: infra
+        run: docker compose --env-file .env exec -T backend pytest -q
+
+      - name: Run integration-marked tests (fail-closed)
+        working-directory: infra
+        run: |
+          echo "=== NIGHTLY: integration tests with live DATABASE_URL ==="
+          docker compose --env-file .env exec -T backend \
+            pytest -m integration -v --no-cov --tb=short
+          echo "=== NIGHTLY: integration gate PASS ==="
+
+      - name: Run restore drill
+        working-directory: infra
+        run: |
+          echo "=== NIGHTLY: restore drill ==="
+          docker compose --env-file .env exec -T backend \
+            pytest -m integration -v --no-cov --tb=short \
+            tests/test_restore_ci.py tests/test_nightly_restore_drill.py
+          echo "=== NIGHTLY: restore drill PASS ==="
+
+      - name: Run degradation scenario tests
+        working-directory: infra
+        run: |
+          echo "=== NIGHTLY: degradation scenarios ==="
+          docker compose --env-file .env exec -T backend \
+            pytest -v --no-cov --tb=short \
+            tests/test_degradation_scenarios.py
+          echo "=== NIGHTLY: degradation scenarios PASS ==="
+
+      - name: Stop stack
+        if: always()
+        working-directory: infra
+        run: docker compose --env-file .env down -v

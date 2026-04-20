@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -30,6 +31,7 @@ class CohortReadSchema(BaseModel):
     data_completeness_pct: Decimal | None = None
     created_by: str
     created_at: datetime
+    status: Literal["draft", "finalized", "analyzed"]
 
 
 class CohortOutcomeReadSchema(BaseModel):

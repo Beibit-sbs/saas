@@ -346,6 +346,11 @@ def is_platform_self_service_enabled() -> bool:
     return not is_production_mode()
 
 
+def is_billing_module_router_enabled() -> bool:
+    # Fail-safe default: billing module router stays disabled until explicitly enabled.
+    return is_enabled(os.getenv("BILLING_MODULE_ROUTER_ENABLED", "false"))
+
+
 def get_metrics_token() -> str | None:
     """Optional static bearer token required to read /metrics.
 

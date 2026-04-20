@@ -195,9 +195,10 @@ class TestCreateStudentProfile:
 
         result = run_async(service.create_student_profile(tenant_id=1, request=request, created_by="actor@example.com"))
 
-        assert result.tenant_id == 1
-        assert result.person_id == 101
-        assert result.current_status == StudentStatus.ADMITTED
+        assert result.entity.tenant_id == 1
+        assert result.entity.person_id == 101
+        assert result.entity.current_status == StudentStatus.ADMITTED
+        assert result.idempotent_replay is False
         added_instances = [call.args[0] for call in db_session.add.call_args_list]
         assert any(isinstance(item, OutboxEventModel) for item in added_instances)
         db_session.commit.assert_called_once()
@@ -218,7 +219,7 @@ class TestCreateStudentProfile:
         with pytest.raises(DomainValidationError, match="Person not found"):
             run_async(service.create_student_profile(tenant_id=1, request=request, created_by="actor@example.com"))
 
-    def test_duplicate_profile_prevention(self, run_async, db_session, person_factory, student_profile_factory) -> None:
+    def test_duplicate_profile_returns_replay(self, run_async, db_session, person_factory, student_profile_factory) -> None:
         service = StudentLifecycleService(db_session)
         request = StudentProfileCreateSchema(person_id=101, student_number="ADM-1-1001", cohort_year=2026)
         db_session.execute.side_effect = [
@@ -226,8 +227,9 @@ class TestCreateStudentProfile:
             ExecuteResult(scalar_one_or_none=student_profile_factory(person_id=101, tenant_id=1)),
         ]
 
-        with pytest.raises(DomainValidationError, match="already exists"):
-            run_async(service.create_student_profile(tenant_id=1, request=request, created_by="actor@example.com"))
+        result = run_async(service.create_student_profile(tenant_id=1, request=request, created_by="actor@example.com"))
+        assert result.idempotent_replay is True
+        assert result.entity.person_id == 101
 
 
 class TestGetStudentProfile:
@@ -332,8 +334,9 @@ class TestChangeStudentStatus:
             )
         )
 
-        assert result.current_status == StudentStatus.ACTIVE
-        assert result.version == 2
+        assert result.entity.current_status == StudentStatus.ACTIVE
+        assert result.entity.version == 2
+        assert result.idempotent_replay is False
         db_session.commit.assert_called_once()
         audit_mock.assert_called_once()
 
@@ -420,9 +423,10 @@ class TestBindStudentToProgram:
 
         result = run_async(service.bind_student_to_program(tenant_id=1, request=request, actor_id="actor@example.com"))
 
-        assert result.student_profile_id == 1001
-        assert result.program_id == 501
-        assert result.is_primary is True
+        assert result.entity.student_profile_id == 1001
+        assert result.entity.program_id == 501
+        assert result.entity.is_primary is True
+        assert result.idempotent_replay is False
         db_session.commit.assert_called_once()
         audit_mock.assert_called_once()
 
@@ -467,7 +471,7 @@ class TestBindStudentToProgram:
         with pytest.raises(DomainValidationError, match="Program not found"):
             run_async(service.bind_student_to_program(tenant_id=1, request=request, actor_id="actor@example.com"))
 
-    def test_duplicate_binding_rejection(self, run_async, db_session, student_profile_factory, program_factory, binding_factory) -> None:
+    def test_duplicate_binding_returns_replay(self, run_async, db_session, student_profile_factory, program_factory, binding_factory) -> None:
         service = StudentLifecycleService(db_session)
         request = StudentProgramBindingCreateSchema(
             student_profile_id=1001,
@@ -481,8 +485,9 @@ class TestBindStudentToProgram:
             ExecuteResult(scalar_one_or_none=binding_factory(student_profile_id=1001, program_id=501)),
         ]
 
-        with pytest.raises(DomainValidationError, match="already exists"):
-            run_async(service.bind_student_to_program(tenant_id=1, request=request, actor_id="actor@example.com"))
+        result = run_async(service.bind_student_to_program(tenant_id=1, request=request, actor_id="actor@example.com"))
+        assert result.idempotent_replay is True
+        assert result.entity.student_profile_id == 1001
 
 
 class TestGetActivePrimaryProgram:

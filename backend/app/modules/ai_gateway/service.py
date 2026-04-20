@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from threading import Lock
 from typing import Any, Protocol
+import math
 
 import httpx
 from fastapi import HTTPException
@@ -17,6 +18,11 @@ from fastapi import HTTPException
 from app.modules.integrations.service import get_ai_provider_runtime_config
 from app.modules.integrations.service import get_global_runtime_value
 from app.modules.integrations.service import get_runtime_value
+from app.modules.observability.metrics import (
+    observe_ai_budget_status,
+    observe_ai_cost_summary,
+    observe_ai_slo_compliance,
+)
 from app.modules.security.db_tenant_context import set_db_tenant_context
 from app.modules.security.url_validation import validate_external_https_url
 
@@ -34,6 +40,22 @@ _model_registry: dict[str, dict[str, object]] = {}
 
 _usage_lock = Lock()
 _usage_logs: deque[dict[str, object]] = deque(maxlen=2000)
+
+_routing_lock = Lock()
+_routing_policies: dict[int, dict[int, dict[str, object]]] = {}
+_routing_policy_counters: dict[int, int] = {}
+
+_budget_lock = Lock()
+_usage_budgets: dict[int, dict[str, dict[str, object]]] = {}
+
+_price_lock = Lock()
+_usage_token_prices: dict[int, dict[str, dict[str, object]]] = {}
+
+_slo_lock = Lock()
+_usage_slo_policies: dict[int, dict[str, dict[str, object]]] = {}
+
+_daily_cost_lock = Lock()
+_usage_cost_daily_aggregates: dict[int, dict[str, dict[str, object]]] = {}
 
 SUPPORTED_PROVIDERS = ("openai", "gemini", "anthropic", "custom")
 
@@ -206,6 +228,650 @@ def clear_ai_gateway_state() -> None:
         _model_registry.clear()
     with _usage_lock:
         _usage_logs.clear()
+    with _routing_lock:
+        _routing_policies.clear()
+        _routing_policy_counters.clear()
+    with _budget_lock:
+        _usage_budgets.clear()
+    with _price_lock:
+        _usage_token_prices.clear()
+    with _slo_lock:
+        _usage_slo_policies.clear()
+    with _daily_cost_lock:
+        _usage_cost_daily_aggregates.clear()
+
+
+def list_usage_token_prices(*, tenant_id: int) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    with _price_lock:
+        rows = [dict(item) for item in _usage_token_prices.get(normalized_tenant_id, {}).values()]
+    return sorted(rows, key=lambda item: (str(item.get("provider") or ""), str(item.get("model_key") or "")))
+
+
+def upsert_usage_token_price(
+    provider: str,
+    model_key: str,
+    payload: dict[str, object],
+    *,
+    tenant_id: int,
+) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_provider = str(provider or "").strip().lower()
+    if normalized_provider not in SUPPORTED_PROVIDERS:
+        raise ValueError("unsupported provider")
+
+    normalized_model_key = _normalize_model_key(model_key)
+    if not normalized_model_key:
+        raise ValueError("model_key is required")
+
+    input_price_per_1k = max(0.0, float(payload.get("input_price_per_1k") or 0.0))
+    output_price_per_1k = max(0.0, float(payload.get("output_price_per_1k") or 0.0))
+
+    row = {
+        "tenant_id": normalized_tenant_id,
+        "provider": normalized_provider,
+        "model_key": normalized_model_key,
+        "input_price_per_1k": round(input_price_per_1k, 6),
+        "output_price_per_1k": round(output_price_per_1k, 6),
+        "updated_at": _now_iso(),
+    }
+
+    key = f"{normalized_provider}:{normalized_model_key}"
+    with _price_lock:
+        tenant_rows = _usage_token_prices.setdefault(normalized_tenant_id, {})
+        tenant_rows[key] = dict(row)
+
+    return dict(row)
+
+
+def list_slo_policies(*, tenant_id: int) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    with _slo_lock:
+        rows = [dict(item) for item in _usage_slo_policies.get(normalized_tenant_id, {}).values()]
+    return sorted(rows, key=lambda item: str(item.get("model_key") or ""))
+
+
+def upsert_slo_policy(model_key: str, payload: dict[str, object], *, tenant_id: int) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_model_key = _normalize_model_key(model_key)
+    if not normalized_model_key:
+        raise ValueError("model_key is required")
+
+    p95_latency_ms = max(1, int(payload.get("p95_latency_ms") or 1000))
+    max_error_rate_pct = float(payload.get("max_error_rate_pct") or 5.0)
+    if max_error_rate_pct < 0.0 or max_error_rate_pct > 100.0:
+        raise ValueError("max_error_rate_pct must be between 0 and 100")
+
+    row = {
+        "tenant_id": normalized_tenant_id,
+        "model_key": normalized_model_key,
+        "p95_latency_ms": p95_latency_ms,
+        "max_error_rate_pct": round(max_error_rate_pct, 2),
+        "updated_at": _now_iso(),
+    }
+
+    with _slo_lock:
+        tenant_rows = _usage_slo_policies.setdefault(normalized_tenant_id, {})
+        tenant_rows[normalized_model_key] = dict(row)
+    return dict(row)
+
+
+def list_slo_compliance(*, tenant_id: int, limit: int = 5000) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    rows = list_usage_logs(limit=max(1, min(limit, 5000)), tenant_id=normalized_tenant_id)
+
+    with _slo_lock:
+        policies = {key: dict(value) for key, value in _usage_slo_policies.get(normalized_tenant_id, {}).items()}
+
+    grouped: dict[str, list[dict[str, object]]] = {}
+    for row in rows:
+        model_key = str(row.get("model_key") or "unknown")
+        grouped.setdefault(model_key, []).append(row)
+
+    result: list[dict[str, object]] = []
+    for model_key, model_rows in grouped.items():
+        latencies = sorted(max(0, int(item.get("latency_ms") or 0)) for item in model_rows)
+        requests_total = len(model_rows)
+        if requests_total == 0:
+            continue
+        failed_count = sum(1 for item in model_rows if str(item.get("outcome") or "").strip().lower() == "failed")
+        p95_index = max(0, int(math.ceil(requests_total * 0.95)) - 1)
+        p95_observed = int(latencies[p95_index])
+        error_rate_observed = round(float((failed_count / requests_total) * 100.0), 2)
+
+        policy = policies.get(model_key)
+        if policy is None:
+            policy = {
+                "p95_latency_ms": 1000,
+                "max_error_rate_pct": 5.0,
+            }
+
+        p95_target = int(policy.get("p95_latency_ms") or 1000)
+        error_rate_target = float(policy.get("max_error_rate_pct") or 5.0)
+        latency_compliant = p95_observed <= p95_target
+        error_rate_compliant = error_rate_observed <= error_rate_target
+
+        result.append(
+            {
+                "tenant_id": normalized_tenant_id,
+                "model_key": model_key,
+                "requests_total": requests_total,
+                "p95_latency_ms_observed": p95_observed,
+                "error_rate_pct_observed": error_rate_observed,
+                "p95_latency_ms_target": p95_target,
+                "max_error_rate_pct_target": round(error_rate_target, 2),
+                "latency_compliant": latency_compliant,
+                "error_rate_compliant": error_rate_compliant,
+                "compliant": latency_compliant and error_rate_compliant,
+            }
+        )
+
+    sorted_result = sorted(result, key=lambda item: str(item.get("model_key") or ""))
+    observe_ai_slo_compliance(sorted_result)
+    return sorted_result
+
+
+def list_slo_violations(*, tenant_id: int, limit: int = 5000) -> list[dict[str, object]]:
+    rows = list_slo_compliance(tenant_id=tenant_id, limit=limit)
+    result: list[dict[str, object]] = []
+    for row in rows:
+        if bool(row.get("compliant", True)):
+            continue
+        violation_types: list[str] = []
+        if not bool(row.get("latency_compliant", True)):
+            violation_types.append("latency")
+        if not bool(row.get("error_rate_compliant", True)):
+            violation_types.append("error_rate")
+        result.append({**row, "violation_types": violation_types})
+    return sorted(result, key=lambda item: str(item.get("model_key") or ""))
+
+
+def refresh_usage_cost_daily_aggregation(
+    *,
+    tenant_id: int,
+    days: int = 30,
+    limit: int = 5000,
+) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_days = max(1, min(int(days), 365))
+    rows = list_usage_logs(limit=max(1, min(limit, 5000)), tenant_id=normalized_tenant_id)
+    now_date = datetime.now(timezone.utc).date()
+    usd_per_token = 0.80 / 1_000_000.0
+
+    grouped: dict[str, dict[str, object]] = {}
+    for row in rows:
+        day_key = _usage_row_date(row)
+        if day_key is None:
+            continue
+        day_delta = (now_date - datetime.fromisoformat(day_key).date()).days
+        if day_delta < 0 or day_delta >= normalized_days:
+            continue
+
+        provider = str(row.get("provider") or "unknown").strip().lower() or "unknown"
+        model_key = str(row.get("model_key") or "unknown").strip() or "unknown"
+        aggregate_key = f"{day_key}:{provider}:{model_key}"
+        item = grouped.get(aggregate_key)
+        if item is None:
+            item = {
+                "tenant_id": normalized_tenant_id,
+                "date": day_key,
+                "provider": provider,
+                "model_key": model_key,
+                "requests_total": 0,
+                "total_tokens": 0,
+                "estimated_cost_usd": 0.0,
+                "updated_at": _now_iso(),
+            }
+            grouped[aggregate_key] = item
+
+        tokens = max(0, int(row.get("total_tokens") or 0))
+        item["requests_total"] = int(item["requests_total"]) + 1
+        item["total_tokens"] = int(item["total_tokens"]) + tokens
+        item["estimated_cost_usd"] = round(float(int(item["total_tokens"]) * usd_per_token), 6)
+        item["updated_at"] = _now_iso()
+
+    with _daily_cost_lock:
+        tenant_rows = _usage_cost_daily_aggregates.setdefault(normalized_tenant_id, {})
+        tenant_rows.clear()
+        for key, value in grouped.items():
+            tenant_rows[key] = dict(value)
+
+    return list_usage_cost_daily_aggregation(tenant_id=normalized_tenant_id, days=normalized_days)
+
+
+def list_usage_cost_daily_aggregation(*, tenant_id: int, days: int = 30) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_days = max(1, min(int(days), 365))
+    now_date = datetime.now(timezone.utc).date()
+
+    with _daily_cost_lock:
+        tenant_rows = list(_usage_cost_daily_aggregates.get(normalized_tenant_id, {}).values())
+
+    if not tenant_rows:
+        return refresh_usage_cost_daily_aggregation(tenant_id=normalized_tenant_id, days=normalized_days)
+
+    result: list[dict[str, object]] = []
+    for row in tenant_rows:
+        day_key = str(row.get("date") or "").strip()
+        if not day_key:
+            continue
+        try:
+            day_delta = (now_date - datetime.fromisoformat(day_key).date()).days
+        except ValueError:
+            continue
+        if day_delta < 0 or day_delta >= normalized_days:
+            continue
+        result.append(dict(row))
+
+    return sorted(
+        result,
+        key=lambda item: (
+            str(item.get("date") or ""),
+            str(item.get("provider") or ""),
+            str(item.get("model_key") or ""),
+        ),
+        reverse=True,
+    )
+
+
+def get_usage_budget(*, tenant_id: int) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    scope_key = _budget_scope_key("tenant", None)
+    with _budget_lock:
+        tenant_budgets = _usage_budgets.setdefault(normalized_tenant_id, {})
+        current = tenant_budgets.get(scope_key)
+        if current is None:
+            current = _default_budget_row(normalized_tenant_id, scope="tenant", scope_id=None)
+            tenant_budgets[scope_key] = dict(current)
+        return dict(current)
+
+
+def update_usage_budget(payload: dict[str, object], *, tenant_id: int) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    budget_limit = max(0.0, float(payload.get("budget_limit_usd") or 0.0))
+    alert_threshold = int(payload.get("alert_threshold_pct") or 80)
+    if alert_threshold < 1 or alert_threshold > 100:
+        raise ValueError("alert_threshold_pct must be between 1 and 100")
+
+    next_row = {
+        "tenant_id": normalized_tenant_id,
+        "scope": "tenant",
+        "scope_id": None,
+        "budget_limit_usd": round(budget_limit, 6),
+        "alert_threshold_pct": alert_threshold,
+        "hard_cap": bool(payload.get("hard_cap", False)),
+        "updated_at": _now_iso(),
+    }
+    with _budget_lock:
+        tenant_budgets = _usage_budgets.setdefault(normalized_tenant_id, {})
+        tenant_budgets[_budget_scope_key("tenant", None)] = dict(next_row)
+    return dict(next_row)
+
+
+def _budget_scope_key(scope: str, scope_id: str | None) -> str:
+    normalized_scope = str(scope or "tenant").strip().lower()
+    normalized_scope_id = str(scope_id or "").strip().lower()
+    return f"{normalized_scope}:{normalized_scope_id}"
+
+
+def _default_budget_row(tenant_id: int, *, scope: str, scope_id: str | None) -> dict[str, object]:
+    return {
+        "tenant_id": int(tenant_id),
+        "scope": str(scope),
+        "scope_id": str(scope_id).strip() if scope_id is not None else None,
+        "budget_limit_usd": 0.0,
+        "alert_threshold_pct": 80,
+        "hard_cap": False,
+        "updated_at": _now_iso(),
+    }
+
+
+def upsert_usage_budget_scoped(payload: dict[str, object], *, tenant_id: int) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    scope = str(payload.get("scope") or "tenant").strip().lower()
+    if scope not in {"tenant", "department", "user"}:
+        raise ValueError("scope must be one of: tenant, department, user")
+
+    raw_scope_id = payload.get("scope_id")
+    scope_id = str(raw_scope_id).strip() if raw_scope_id is not None else None
+    if scope in {"department", "user"} and not scope_id:
+        raise ValueError("scope_id is required for non-tenant scope")
+    if scope == "tenant":
+        scope_id = None
+
+    budget_limit = max(0.0, float(payload.get("budget_limit_usd") or 0.0))
+    alert_threshold = int(payload.get("alert_threshold_pct") or 80)
+    if alert_threshold < 1 or alert_threshold > 100:
+        raise ValueError("alert_threshold_pct must be between 1 and 100")
+
+    next_row = {
+        "tenant_id": normalized_tenant_id,
+        "scope": scope,
+        "scope_id": scope_id,
+        "budget_limit_usd": round(budget_limit, 6),
+        "alert_threshold_pct": alert_threshold,
+        "hard_cap": bool(payload.get("hard_cap", False)),
+        "updated_at": _now_iso(),
+    }
+
+    with _budget_lock:
+        tenant_budgets = _usage_budgets.setdefault(normalized_tenant_id, {})
+        tenant_budgets[_budget_scope_key(scope, scope_id)] = dict(next_row)
+    return dict(next_row)
+
+
+def list_usage_budgets(*, tenant_id: int) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    with _budget_lock:
+        tenant_budgets = _usage_budgets.setdefault(normalized_tenant_id, {})
+        tenant_scope_key = _budget_scope_key("tenant", None)
+        if tenant_scope_key not in tenant_budgets:
+            tenant_budgets[tenant_scope_key] = _default_budget_row(normalized_tenant_id, scope="tenant", scope_id=None)
+        rows = [dict(item) for item in tenant_budgets.values()]
+    return sorted(rows, key=lambda item: (str(item.get("scope") or ""), str(item.get("scope_id") or "")))
+
+
+def delete_usage_budget_scoped(*, tenant_id: int, scope: str, scope_id: str | None) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_scope = str(scope or "tenant").strip().lower()
+    if normalized_scope not in {"tenant", "department", "user"}:
+        raise ValueError("scope must be one of: tenant, department, user")
+
+    normalized_scope_id = str(scope_id or "").strip() if scope_id is not None else None
+    if normalized_scope in {"department", "user"} and not normalized_scope_id:
+        raise ValueError("scope_id is required for non-tenant scope")
+    if normalized_scope == "tenant":
+        normalized_scope_id = None
+
+    key = _budget_scope_key(normalized_scope, normalized_scope_id)
+    with _budget_lock:
+        tenant_budgets = _usage_budgets.setdefault(normalized_tenant_id, {})
+        current = tenant_budgets.get(key)
+        if current is None:
+            raise ValueError("usage budget scope not found")
+        deleted = dict(current)
+        del tenant_budgets[key]
+
+        tenant_scope_key = _budget_scope_key("tenant", None)
+        if tenant_scope_key not in tenant_budgets:
+            tenant_budgets[tenant_scope_key] = _default_budget_row(normalized_tenant_id, scope="tenant", scope_id=None)
+
+    return deleted
+
+
+def list_usage_budget_status(*, tenant_id: int) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    with _budget_lock:
+        tenant_budgets = _usage_budgets.setdefault(normalized_tenant_id, {})
+        tenant_scope_key = _budget_scope_key("tenant", None)
+        if tenant_scope_key not in tenant_budgets:
+            tenant_budgets[tenant_scope_key] = _default_budget_row(normalized_tenant_id, scope="tenant", scope_id=None)
+        rows = [dict(item) for item in tenant_budgets.values()]
+
+    usd_per_token = 0.80 / 1_000_000.0
+    usage_rows = list_usage_logs(limit=5000, tenant_id=normalized_tenant_id)
+
+    result: list[dict[str, object]] = []
+    for row in rows:
+        scope = str(row.get("scope") or "tenant").strip().lower()
+        scope_id = row.get("scope_id")
+        current_cost = _usage_cost_for_scope(
+            usage_rows,
+            scope=scope,
+            scope_id=str(scope_id).strip() if scope_id is not None else None,
+            usd_per_token=usd_per_token,
+        )
+        budget_limit_usd = float(row.get("budget_limit_usd") or 0.0)
+        utilization_pct = float((current_cost / budget_limit_usd) * 100.0) if budget_limit_usd > 0 else 0.0
+        alert_threshold = int(row.get("alert_threshold_pct") or 80)
+        hard_cap = bool(row.get("hard_cap", False))
+        hard_cap_exceeded = hard_cap and budget_limit_usd > 0 and current_cost > budget_limit_usd
+
+        result.append(
+            {
+                "tenant_id": normalized_tenant_id,
+                "scope": scope,
+                "scope_id": scope_id,
+                "budget_limit_usd": round(budget_limit_usd, 6),
+                "current_cost_usd": round(current_cost, 6),
+                "utilization_pct": round(utilization_pct, 2),
+                "alert_threshold_pct": alert_threshold,
+                "budget_alert": utilization_pct >= float(alert_threshold),
+                "hard_cap": hard_cap,
+                "hard_cap_exceeded": hard_cap_exceeded,
+                "updated_at": str(row.get("updated_at") or _now_iso()),
+            }
+        )
+
+    sorted_result = sorted(result, key=lambda item: (str(item.get("scope") or ""), str(item.get("scope_id") or "")))
+    observe_ai_budget_status(tenant_id=normalized_tenant_id, rows=sorted_result)
+    return sorted_result
+
+
+def _usage_cost_for_scope(
+    rows: list[dict[str, object]],
+    *,
+    scope: str,
+    scope_id: str | None,
+    usd_per_token: float,
+) -> float:
+    normalized_scope = str(scope or "tenant").strip().lower()
+    normalized_scope_id = str(scope_id or "").strip().lower()
+
+    if normalized_scope == "tenant":
+        tokens = sum(max(0, int(item.get("total_tokens") or 0)) for item in rows)
+        return float(tokens * usd_per_token)
+
+    if normalized_scope == "user":
+        tokens = sum(
+            max(0, int(item.get("total_tokens") or 0))
+            for item in rows
+            if str(item.get("actor") or "").strip().lower() == normalized_scope_id
+        )
+        return float(tokens * usd_per_token)
+
+    if normalized_scope == "department":
+        rows_with_department = [item for item in rows if str(item.get("department") or "").strip()]
+        if rows_with_department:
+            tokens = sum(
+                max(0, int(item.get("total_tokens") or 0))
+                for item in rows_with_department
+                if str(item.get("department") or "").strip().lower() == normalized_scope_id
+            )
+            return float(tokens * usd_per_token)
+
+        # Legacy fallback for existing logs that do not yet contain department attribution.
+        tokens = sum(max(0, int(item.get("total_tokens") or 0)) for item in rows)
+        return float(tokens * usd_per_token)
+
+    tokens = sum(max(0, int(item.get("total_tokens") or 0)) for item in rows)
+    return float(tokens * usd_per_token)
+
+
+def _detect_cost_anomaly(rows: list[dict[str, object]], *, usd_per_token: float) -> tuple[bool, float, str | None]:
+    if not rows:
+        return False, 0.0, None
+
+    costs = [float(max(0, int(item.get("total_tokens") or 0)) * usd_per_token) for item in rows]
+    if len(costs) < 6:
+        return False, 0.0, None
+
+    latest = costs[0]
+    baseline = costs[1:]
+    mean = sum(baseline) / len(baseline)
+    variance = sum((value - mean) ** 2 for value in baseline) / len(baseline)
+    std = math.sqrt(max(0.0, variance))
+    if std <= 0.0:
+        # Flat baseline: if latest sample is significantly larger than baseline mean,
+        # treat it as a spike even without variance history.
+        if latest > mean * 2.0 and latest > 0:
+            return True, 99.0, "flat_baseline_spike"
+        return False, 0.0, None
+
+    z_score = (latest - mean) / std
+    detected = z_score > 2.0
+    reason = "z_score_spike" if detected else None
+    return detected, round(float(z_score), 3), reason
+
+
+def _evaluate_budget_guardrail(*, tenant_id: int, estimated_increment_tokens: int) -> dict[str, object]:
+    budget = get_usage_budget(tenant_id=tenant_id)
+    budget_limit_usd = float(budget.get("budget_limit_usd") or 0.0)
+    alert_threshold_pct = int(budget.get("alert_threshold_pct") or 80)
+    hard_cap = bool(budget.get("hard_cap", False))
+
+    if budget_limit_usd <= 0:
+        return {
+            "budget_limit_usd": 0.0,
+            "current_cost_usd": 0.0,
+            "projected_cost_usd": 0.0,
+            "projected_utilization_pct": 0.0,
+            "alert": False,
+            "blocked": False,
+            "hard_cap": hard_cap,
+        }
+
+    usd_per_token = 0.80 / 1_000_000.0
+    rows = list_usage_logs(limit=5000, tenant_id=tenant_id)
+    total_tokens = sum(max(0, int(item.get("total_tokens") or 0)) for item in rows)
+    current_cost = float(total_tokens * usd_per_token)
+    projected_cost = current_cost + float(max(0, int(estimated_increment_tokens)) * usd_per_token)
+    projected_utilization_pct = float((projected_cost / budget_limit_usd) * 100.0)
+
+    alert = projected_utilization_pct >= float(alert_threshold_pct)
+    blocked = hard_cap and projected_cost > budget_limit_usd
+
+    return {
+        "budget_limit_usd": round(budget_limit_usd, 6),
+        "current_cost_usd": round(current_cost, 6),
+        "projected_cost_usd": round(projected_cost, 6),
+        "projected_utilization_pct": round(projected_utilization_pct, 2),
+        "alert": bool(alert),
+        "blocked": bool(blocked),
+        "hard_cap": hard_cap,
+    }
+
+
+def list_routing_policies(*, tenant_id: int) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    with _routing_lock:
+        tenant_policies = _routing_policies.get(normalized_tenant_id, {})
+        rows = [dict(item) for item in tenant_policies.values()]
+    return sorted(rows, key=lambda item: int(item.get("id", 0)))
+
+
+def create_routing_policy(payload: dict[str, Any], *, tenant_id: int) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    name = str(payload.get("name") or "").strip()
+    if not name:
+        raise ValueError("policy name is required")
+    strategy = str(payload.get("strategy") or "priority").strip().lower()
+    if strategy != "priority":
+        raise ValueError("unsupported strategy")
+    rules = list(payload.get("rules") or [])
+    fallback_chain = [str(item).strip() for item in list(payload.get("fallback_chain") or []) if str(item).strip()]
+
+    now = _now_iso()
+    with _routing_lock:
+        next_id = _routing_policy_counters.get(normalized_tenant_id, 0) + 1
+        _routing_policy_counters[normalized_tenant_id] = next_id
+        tenant_policies = _routing_policies.setdefault(normalized_tenant_id, {})
+        row = {
+            "id": next_id,
+            "tenant_id": normalized_tenant_id,
+            "name": name,
+            "strategy": strategy,
+            "enabled": bool(payload.get("enabled", True)),
+            "rules": rules,
+            "fallback_chain": fallback_chain,
+            "created_at": now,
+            "updated_at": now,
+        }
+        tenant_policies[next_id] = row
+        return dict(row)
+
+
+def update_routing_policy(policy_id: int, payload: dict[str, Any], *, tenant_id: int) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_policy_id = int(policy_id)
+    with _routing_lock:
+        tenant_policies = _routing_policies.get(normalized_tenant_id, {})
+        current = tenant_policies.get(normalized_policy_id)
+        if current is None:
+            raise ValueError("routing policy not found")
+
+        name = str(payload.get("name") or current.get("name") or "").strip()
+        if not name:
+            raise ValueError("policy name is required")
+        strategy = str(payload.get("strategy") or current.get("strategy") or "priority").strip().lower()
+        if strategy != "priority":
+            raise ValueError("unsupported strategy")
+
+        updated = {
+            **current,
+            "name": name,
+            "strategy": strategy,
+            "enabled": bool(payload.get("enabled", current.get("enabled", True))),
+            "rules": list(payload.get("rules") if "rules" in payload else current.get("rules") or []),
+            "fallback_chain": [
+                str(item).strip()
+                for item in list(payload.get("fallback_chain") if "fallback_chain" in payload else current.get("fallback_chain") or [])
+                if str(item).strip()
+            ],
+            "updated_at": _now_iso(),
+        }
+        tenant_policies[normalized_policy_id] = updated
+        return dict(updated)
+
+
+def delete_routing_policy(policy_id: int, *, tenant_id: int) -> None:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_policy_id = int(policy_id)
+    with _routing_lock:
+        tenant_policies = _routing_policies.get(normalized_tenant_id, {})
+        if normalized_policy_id not in tenant_policies:
+            raise ValueError("routing policy not found")
+        del tenant_policies[normalized_policy_id]
+
+
+def _select_auto_model(payload: dict[str, Any], *, tenant_id: int) -> tuple[str, dict[str, object]]:
+    models = list_models(include_disabled=False, tenant_id=tenant_id)
+    if not models:
+        raise ValueError("no enabled models configured for auto routing")
+
+    enabled_keys = {str(item.get("model_key") or "").strip() for item in models}
+    task_type = str(payload.get("task_type") or "").strip().lower()
+
+    with _routing_lock:
+        tenant_policies = list((_routing_policies.get(tenant_id) or {}).values())
+    tenant_policies.sort(key=lambda item: int(item.get("id", 0)))
+
+    for policy in tenant_policies:
+        if not bool(policy.get("enabled", True)):
+            continue
+        rules = list(policy.get("rules") or [])
+        rules.sort(key=lambda item: int((item or {}).get("priority", 100)))
+        for rule in rules:
+            if not isinstance(rule, dict):
+                continue
+            rule_task = str(rule.get("task_type") or "").strip().lower()
+            target_model = str(rule.get("target_model") or "").strip()
+            if task_type and rule_task == task_type and target_model in enabled_keys:
+                return target_model, {
+                    "mode": "auto",
+                    "selection": "policy_rule",
+                    "policy_id": int(policy.get("id", 0)),
+                    "task_type": task_type,
+                }
+
+    selected = str(models[0].get("model_key") or "").strip()
+    if not selected:
+        raise ValueError("no enabled models configured for auto routing")
+    return selected, {
+        "mode": "auto",
+        "selection": "priority_default",
+        "task_type": task_type or None,
+    }
 
 
 def _prune(bucket: deque[float], now: float, window_seconds: int) -> None:
@@ -861,6 +1527,317 @@ def list_usage_logs(limit: int = 100, *, tenant_id: int) -> list[dict[str, objec
         return rows[: max(1, min(limit, 500))]
 
 
+def summarize_usage_cost(*, tenant_id: int, limit: int = 500) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    rows = list_usage_logs(limit=max(1, min(limit, 5000)), tenant_id=normalized_tenant_id)
+
+    # Conservative blended estimate for pilot reporting: $0.80 per 1M tokens.
+    usd_per_token = 0.80 / 1_000_000.0
+
+    budget = get_usage_budget(tenant_id=normalized_tenant_id)
+
+    total_requests = len(rows)
+    success_count = 0
+    degraded_count = 0
+    failed_count = 0
+    total_tokens = 0
+    total_latency_ms = 0
+
+    per_model: dict[tuple[str, str], dict[str, object]] = {}
+
+    for row in rows:
+        model_key = str(row.get("model_key") or "unknown")
+        provider = str(row.get("provider") or "unknown")
+        outcome = str(row.get("outcome") or "failed").strip().lower()
+        tokens = max(0, int(row.get("total_tokens") or 0))
+        latency_ms = max(0, int(row.get("latency_ms") or 0))
+
+        total_tokens += tokens
+        total_latency_ms += latency_ms
+
+        if outcome == "success":
+            success_count += 1
+        elif outcome == "degraded":
+            degraded_count += 1
+        else:
+            failed_count += 1
+
+        key = (model_key, provider)
+        item = per_model.get(key)
+        if item is None:
+            item = {
+                "model_key": model_key,
+                "provider": provider,
+                "requests_total": 0,
+                "success_count": 0,
+                "degraded_count": 0,
+                "failed_count": 0,
+                "total_tokens": 0,
+                "latency_sum_ms": 0,
+            }
+            per_model[key] = item
+
+        item["requests_total"] = int(item["requests_total"]) + 1
+        item["total_tokens"] = int(item["total_tokens"]) + tokens
+        item["latency_sum_ms"] = int(item["latency_sum_ms"]) + latency_ms
+        if outcome == "success":
+            item["success_count"] = int(item["success_count"]) + 1
+        elif outcome == "degraded":
+            item["degraded_count"] = int(item["degraded_count"]) + 1
+        else:
+            item["failed_count"] = int(item["failed_count"]) + 1
+
+    models: list[dict[str, object]] = []
+    for item in per_model.values():
+        requests_total = max(1, int(item["requests_total"]))
+        item_total_tokens = int(item["total_tokens"])
+        models.append(
+            {
+                "model_key": str(item["model_key"]),
+                "provider": str(item["provider"]),
+                "requests_total": int(item["requests_total"]),
+                "success_count": int(item["success_count"]),
+                "degraded_count": int(item["degraded_count"]),
+                "failed_count": int(item["failed_count"]),
+                "total_tokens": item_total_tokens,
+                "avg_latency_ms": round(float(int(item["latency_sum_ms"]) / requests_total), 2),
+                "estimated_cost_usd": round(float(item_total_tokens * usd_per_token), 6),
+            }
+        )
+
+    models.sort(key=lambda item: int(item["requests_total"]), reverse=True)
+
+    avg_latency_ms = round(float(total_latency_ms / total_requests), 2) if total_requests > 0 else 0.0
+    estimated_cost_usd = round(float(total_tokens * usd_per_token), 6)
+    budget_limit_usd = float(budget.get("budget_limit_usd") or 0.0)
+    budget_utilization_pct = round(float((estimated_cost_usd / budget_limit_usd) * 100.0), 2) if budget_limit_usd > 0 else 0.0
+    budget_alert = budget_limit_usd > 0 and budget_utilization_pct >= float(int(budget.get("alert_threshold_pct") or 80))
+    anomaly_detected, anomaly_score_z, anomaly_reason = _detect_cost_anomaly(rows, usd_per_token=usd_per_token)
+
+    summary = {
+        "tenant_id": normalized_tenant_id,
+        "requests_total": total_requests,
+        "success_count": success_count,
+        "degraded_count": degraded_count,
+        "failed_count": failed_count,
+        "total_tokens": total_tokens,
+        "avg_latency_ms": avg_latency_ms,
+        "estimated_cost_usd": estimated_cost_usd,
+        "budget_limit_usd": round(budget_limit_usd, 6),
+        "budget_utilization_pct": budget_utilization_pct,
+        "budget_alert": bool(budget_alert),
+        "budget_hard_cap": bool(budget.get("hard_cap", False)),
+        "anomaly_detected": bool(anomaly_detected),
+        "anomaly_score_z": float(anomaly_score_z),
+        "anomaly_reason": anomaly_reason,
+        "models": models,
+    }
+    observe_ai_cost_summary(tenant_id=normalized_tenant_id, summary=summary)
+    return summary
+
+
+def summarize_usage_cost_by_user(*, tenant_id: int, limit: int = 500) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    rows = list_usage_logs(limit=max(1, min(limit, 5000)), tenant_id=normalized_tenant_id)
+    return _summarize_usage_cost_grouped(
+        rows,
+        tenant_id=normalized_tenant_id,
+        dimension_name="actor",
+        key_resolver=lambda row: str(row.get("actor") or "unknown"),
+    )
+
+
+def summarize_usage_cost_by_department(*, tenant_id: int, limit: int = 500) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    rows = list_usage_logs(limit=max(1, min(limit, 5000)), tenant_id=normalized_tenant_id)
+    return _summarize_usage_cost_grouped(
+        rows,
+        tenant_id=normalized_tenant_id,
+        dimension_name="department",
+        key_resolver=lambda row: str(row.get("department") or "unattributed"),
+    )
+
+
+def summarize_usage_cost_trend(*, tenant_id: int, days: int = 30, limit: int = 5000) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_days = max(1, min(int(days), 365))
+    rows = list_usage_logs(limit=max(1, min(limit, 5000)), tenant_id=normalized_tenant_id)
+    usd_per_token = 0.80 / 1_000_000.0
+    now_date = datetime.now(timezone.utc).date()
+
+    per_day: dict[str, dict[str, object]] = {}
+    for row in rows:
+        day_key = _usage_row_date(row)
+        if day_key is None:
+            continue
+        day_delta = (now_date - datetime.fromisoformat(day_key).date()).days
+        if day_delta < 0 or day_delta >= normalized_days:
+            continue
+
+        item = per_day.get(day_key)
+        if item is None:
+            item = {
+                "tenant_id": normalized_tenant_id,
+                "date": day_key,
+                "requests_total": 0,
+                "total_tokens": 0,
+            }
+            per_day[day_key] = item
+
+        item["requests_total"] = int(item["requests_total"]) + 1
+        item["total_tokens"] = int(item["total_tokens"]) + max(0, int(row.get("total_tokens") or 0))
+
+    result: list[dict[str, object]] = []
+    for item in per_day.values():
+        total_tokens = int(item["total_tokens"])
+        result.append(
+            {
+                "tenant_id": int(item["tenant_id"]),
+                "date": str(item["date"]),
+                "requests_total": int(item["requests_total"]),
+                "total_tokens": total_tokens,
+                "estimated_cost_usd": round(float(total_tokens * usd_per_token), 6),
+            }
+        )
+
+    return sorted(result, key=lambda entry: str(entry["date"]))
+
+
+def summarize_usage_cost_projection(*, tenant_id: int, limit: int = 5000) -> dict[str, object]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    rows = list_usage_logs(limit=max(1, min(limit, 5000)), tenant_id=normalized_tenant_id)
+    usd_per_token = 0.80 / 1_000_000.0
+
+    current_tokens = sum(max(0, int(item.get("total_tokens") or 0)) for item in rows)
+    current_cost = float(current_tokens * usd_per_token)
+    elapsed_requests = max(0, len(rows))
+
+    if elapsed_requests == 0:
+        projected_cost = 0.0
+    else:
+        # Heuristic for pilot: project the remaining daily volume as 2x observed sample.
+        projected_cost = current_cost * 2.0
+
+    return {
+        "tenant_id": normalized_tenant_id,
+        "period": "daily",
+        "elapsed_requests": elapsed_requests,
+        "current_cost_usd": round(current_cost, 6),
+        "projected_cost_usd": round(projected_cost, 6),
+        "projection_basis": "daily_linear_samplex2",
+    }
+
+
+def list_usage_cost_anomalies(*, tenant_id: int, limit: int = 20) -> list[dict[str, object]]:
+    normalized_tenant_id = _normalize_tenant_id(tenant_id)
+    normalized_limit = max(1, min(int(limit), 200))
+    sample_size = 6
+    rows = list_usage_logs(limit=max(500, normalized_limit * sample_size), tenant_id=normalized_tenant_id)
+    if len(rows) < sample_size:
+        return []
+
+    usd_per_token = 0.80 / 1_000_000.0
+    anomalies: list[dict[str, object]] = []
+
+    for idx in range(0, len(rows) - sample_size + 1):
+        window = rows[idx : idx + sample_size]
+        detected, z_score, reason = _detect_cost_anomaly(window, usd_per_token=usd_per_token)
+        if not detected or reason is None:
+            continue
+
+        latest = window[0]
+        tokens = max(0, int(latest.get("total_tokens") or 0))
+        anomalies.append(
+            {
+                "tenant_id": normalized_tenant_id,
+                "timestamp": str(latest.get("timestamp") or _now_iso()),
+                "model_key": str(latest.get("model_key") or "unknown"),
+                "provider": str(latest.get("provider") or "unknown"),
+                "total_tokens": tokens,
+                "estimated_cost_usd": round(float(tokens * usd_per_token), 6),
+                "anomaly_score_z": float(z_score),
+                "anomaly_reason": str(reason),
+            }
+        )
+        if len(anomalies) >= normalized_limit:
+            break
+
+    return anomalies
+
+
+def _usage_row_date(row: dict[str, object]) -> str | None:
+    raw = str(row.get("timestamp") or "").strip()
+    if not raw:
+        return None
+    normalized = raw.replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+    return parsed.date().isoformat()
+
+
+def _summarize_usage_cost_grouped(
+    rows: list[dict[str, object]],
+    *,
+    tenant_id: int,
+    dimension_name: str,
+    key_resolver,
+) -> list[dict[str, object]]:
+    usd_per_token = 0.80 / 1_000_000.0
+    grouped: dict[str, dict[str, object]] = {}
+
+    for row in rows:
+        key = str(key_resolver(row) or "unknown").strip() or "unknown"
+        outcome = str(row.get("outcome") or "failed").strip().lower()
+        tokens = max(0, int(row.get("total_tokens") or 0))
+        latency_ms = max(0, int(row.get("latency_ms") or 0))
+
+        item = grouped.get(key)
+        if item is None:
+            item = {
+                "tenant_id": int(tenant_id),
+                dimension_name: key,
+                "requests_total": 0,
+                "success_count": 0,
+                "degraded_count": 0,
+                "failed_count": 0,
+                "total_tokens": 0,
+                "latency_sum_ms": 0,
+            }
+            grouped[key] = item
+
+        item["requests_total"] = int(item["requests_total"]) + 1
+        item["total_tokens"] = int(item["total_tokens"]) + tokens
+        item["latency_sum_ms"] = int(item["latency_sum_ms"]) + latency_ms
+        if outcome == "success":
+            item["success_count"] = int(item["success_count"]) + 1
+        elif outcome == "degraded":
+            item["degraded_count"] = int(item["degraded_count"]) + 1
+        else:
+            item["failed_count"] = int(item["failed_count"]) + 1
+
+    result: list[dict[str, object]] = []
+    for item in grouped.values():
+        requests_total = max(1, int(item["requests_total"]))
+        total_tokens = int(item["total_tokens"])
+        result.append(
+            {
+                "tenant_id": int(item["tenant_id"]),
+                dimension_name: str(item[dimension_name]),
+                "requests_total": int(item["requests_total"]),
+                "success_count": int(item["success_count"]),
+                "degraded_count": int(item["degraded_count"]),
+                "failed_count": int(item["failed_count"]),
+                "total_tokens": total_tokens,
+                "avg_latency_ms": round(float(int(item["latency_sum_ms"]) / requests_total), 2),
+                "estimated_cost_usd": round(float(total_tokens * usd_per_token), 6),
+            }
+        )
+
+    return sorted(result, key=lambda item: (float(item["estimated_cost_usd"]), int(item["requests_total"])), reverse=True)
+
+
 def _provider_config(tenant_id: int | None = None) -> dict[str, dict[str, Any]]:
     openai_cfg = get_ai_provider_runtime_config("openai", tenant_id=tenant_id)
     gemini_cfg = get_ai_provider_runtime_config("gemini", tenant_id=tenant_id)
@@ -1365,9 +2342,16 @@ def execute_chat(
     except Exception:
         pass
 
-    model_key = str(payload.get("model", "")).strip()
+    requested_model = str(payload.get("model", "")).strip()
+    model_key = requested_model
+    routing_meta: dict[str, object] = {"mode": "explicit", "selection": "requested"}
     if not model_key:
         raise AIGatewayError(status_code=400, detail="model is required", audit_reason="invalid_payload")
+    if model_key.lower() == "auto":
+        try:
+            model_key, routing_meta = _select_auto_model(payload, tenant_id=normalized_tenant_id)
+        except ValueError as exc:
+            raise AIGatewayError(status_code=400, detail=str(exc), audit_reason="unknown_model") from exc
 
     messages = payload.get("messages")
     if not isinstance(messages, list) or not messages:
@@ -1381,6 +2365,33 @@ def execute_chat(
 
     provider = str(model_entry["provider"])
     provider_model_id = str(model_entry["provider_model_id"])
+
+    budget_guardrail = _evaluate_budget_guardrail(
+        tenant_id=normalized_tenant_id,
+        estimated_increment_tokens=max(1, int(payload.get("max_tokens") or 1024)),
+    )
+    if bool(budget_guardrail.get("blocked")):
+        _record_usage_log(
+            tenant_id=normalized_tenant_id,
+            actor=actor,
+            provider=provider,
+            model_key=model_key,
+            provider_model_id=provider_model_id,
+            outcome="budget_blocked",
+            latency_ms=1,
+            input_tokens=None,
+            output_tokens=None,
+            total_tokens=None,
+            failure_reason="budget_hard_cap_exceeded",
+            correlation_id=correlation_id,
+        )
+        raise AIGatewayError(
+            status_code=403,
+            detail="ai_budget_hard_cap_exceeded",
+            audit_reason="budget_hard_cap",
+            provider=provider,
+            model=model_key,
+        )
 
     started = time.monotonic()
     try:
@@ -1444,13 +2455,16 @@ def execute_chat(
             failure_reason="provider_timeout",
             correlation_id=correlation_id,
         )
-        return _degraded_fallback_result(
+        degraded = _degraded_fallback_result(
             model_key=model_key,
             provider=provider,
             provider_model_id=provider_model_id,
             latency_ms=latency_ms,
             degraded_reason="provider_timeout",
         )
+        degraded["routing"] = routing_meta
+        degraded["budget"] = budget_guardrail
+        return degraded
     except AIProviderExecutionError as exc:
         latency_ms = max(1, int((time.monotonic() - started) * 1000))
         # If error has a status_code, it's a remote provider error → degrade gracefully (200)
@@ -1471,13 +2485,16 @@ def execute_chat(
                 failure_reason="provider_error",
                 correlation_id=correlation_id,
             )
-            return _degraded_fallback_result(
+            degraded = _degraded_fallback_result(
                 model_key=model_key,
                 provider=provider,
                 provider_model_id=provider_model_id,
                 latency_ms=latency_ms,
                 degraded_reason="provider_error",
             )
+            degraded["routing"] = routing_meta
+            degraded["budget"] = budget_guardrail
+            return degraded
         else:
             # Internal error: record as failure and raise 502
             _record_usage_log(
@@ -1530,4 +2547,6 @@ def execute_chat(
             "total_tokens": result.usage.get("total_tokens") if isinstance(result.usage, dict) else None,
         },
         "latency_ms": latency_ms,
+        "routing": routing_meta,
+        "budget": budget_guardrail,
     }

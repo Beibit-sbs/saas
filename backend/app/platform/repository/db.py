@@ -37,7 +37,12 @@ def transaction() -> Iterator[object]:
         yield _MEMORY_TX
         return
 
-    with psycopg.connect(url, connect_timeout=5, options=get_db_connect_options()) as conn:
+    with psycopg.connect(
+        url,
+        connect_timeout=5,
+        options=get_db_connect_options(),
+        prepare_threshold=None,
+    ) as conn:
         try:
             yield conn
             conn.commit()

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.module_helpers.audit_helpers import build_audit_action
 from app.core.module_helpers.service_validation import (
     DomainValidationError,
+    MutationResult,
     assert_resource_belongs_to_tenant,
     validate_tenant_id_provided,
     validate_version_match,
@@ -79,7 +80,7 @@ class StudentLifecycleService:
         tenant_id: int,
         request: StudentProfileCreateSchema,
         created_by: str,
-    ) -> StudentProfileReadSchema:
+    ) -> MutationResult[StudentProfileReadSchema]:
         tenant_id = validate_tenant_id_provided(tenant_id)
 
         person = self.db.execute(
@@ -101,8 +102,9 @@ class StudentLifecycleService:
             )
         ).scalar_one_or_none()
         if existing_profile is not None:
-            raise DomainValidationError(
-                f"Student profile already exists for person {request.person_id} in tenant {tenant_id}"
+            return MutationResult(
+                entity=StudentProfileReadSchema.model_validate(existing_profile),
+                idempotent_replay=True,
             )
 
         profile = StudentProfileModel(
@@ -169,7 +171,7 @@ class StudentLifecycleService:
             self.db.rollback()
             raise DomainValidationError("Unable to create student profile due to constraint violation") from exc
 
-        return StudentProfileReadSchema.model_validate(profile)
+        return MutationResult(entity=StudentProfileReadSchema.model_validate(profile))
 
     async def get_student_profile(
         self,
@@ -236,7 +238,7 @@ class StudentLifecycleService:
         student_profile_id: int,
         request: StudentStatusChangeSchema,
         actor_id: str,
-    ) -> StudentProfileReadSchema:
+    ) -> MutationResult[StudentProfileReadSchema]:
         tenant_id = validate_tenant_id_provided(tenant_id)
 
         profile = self.db.execute(
@@ -254,8 +256,14 @@ class StudentLifecycleService:
             resource_id=student_profile_id,
         )
 
-        validate_version_match(profile.version, request.expected_version)
         previous_status = StudentStatus(profile.current_status)
+        if previous_status == request.to_status:
+            return MutationResult(
+                entity=StudentProfileReadSchema.model_validate(profile),
+                idempotent_replay=True,
+            )
+
+        validate_version_match(profile.version, request.expected_version)
         StudentLifecycleRules.validate_status_transition(previous_status, request.to_status)
 
         self.db.add(
@@ -292,14 +300,14 @@ class StudentLifecycleService:
         )
 
         self.db.commit()
-        return StudentProfileReadSchema.model_validate(profile)
+        return MutationResult(entity=StudentProfileReadSchema.model_validate(profile))
 
     async def bind_student_to_program(
         self,
         tenant_id: int,
         request: StudentProgramBindingCreateSchema,
         actor_id: str,
-    ) -> StudentProgramBindingReadSchema:
+    ) -> MutationResult[StudentProgramBindingReadSchema]:
         tenant_id = validate_tenant_id_provided(tenant_id)
         StudentLifecycleRules.validate_binding_is_active(request.binding_state)
 
@@ -339,8 +347,9 @@ class StudentLifecycleService:
             )
         ).scalar_one_or_none()
         if existing_active_same_program is not None:
-            raise DomainValidationError(
-                f"Active binding for program {request.program_id} already exists"
+            return MutationResult(
+                entity=StudentProgramBindingReadSchema.model_validate(existing_active_same_program),
+                idempotent_replay=True,
             )
 
         if request.is_primary:
@@ -394,7 +403,7 @@ class StudentLifecycleService:
             self.db.rollback()
             raise DomainValidationError("Unable to bind student to program due to constraint violation") from exc
 
-        return StudentProgramBindingReadSchema.model_validate(binding)
+        return MutationResult(entity=StudentProgramBindingReadSchema.model_validate(binding))
 
     async def get_active_primary_program(
         self,

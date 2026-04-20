@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.core.module_helpers.service_validation import (
+    MutationResult,
     OptimisticLockConflictError,
 )
 from app.main import app
@@ -86,7 +87,7 @@ def test_submit_grade_success(
     async def fake_submit_grade(self, tenant_id: int, request, actor_id: str):
         assert tenant_id == 1
         assert actor_id == "owner@example.com"
-        return _grade_schema()
+        return MutationResult(entity=_grade_schema())
 
     monkeypatch.setattr(grades_service.GradeLifecycleService, "submit_grade", fake_submit_grade)
 
@@ -102,7 +103,7 @@ def test_submit_grade_success(
     )
 
     assert response.status_code == 201, response.text
-    assert response.json()["grade_code"] == "A"
+    assert response.json()["grade"]["grade_code"] == "A"
 
 
 def test_submit_grade_requires_permission(student_headers: dict[str, str]) -> None:

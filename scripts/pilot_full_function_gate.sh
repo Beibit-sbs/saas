@@ -36,7 +36,7 @@ echo "[pilot-full-gate] ensuring core dependencies are available"
 "${COMPOSE[@]}" up -d db redis
 
 echo "[pilot-full-gate] platform backend capability suite"
-run_backend_checks pytest -q --disable-warnings \
+run_backend_checks pytest -q --no-cov --disable-warnings \
   tests/platform/test_platform_automation_workflow_engine_v1.py \
   tests/platform/test_platform_automation_templates.py \
   tests/platform/test_platform_webhooks_v1.py \
@@ -46,7 +46,7 @@ run_backend_checks pytest -q --disable-warnings \
   tests/platform/test_platform_federation_layer_v1.py
 
 echo "[pilot-full-gate] tenant and rollout control suite"
-run_backend_checks pytest -q --disable-warnings \
+run_backend_checks pytest -q --no-cov --disable-warnings \
   tests/test_feature_flags_tenant_isolation.py \
   tests/test_local_users_tenant_isolation.py \
   tests/test_tenants.py \

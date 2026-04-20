@@ -45,6 +45,9 @@ PLAN_RANK: dict[str, int] = {
 @dataclass
 class BillingState:
     subscriptions: dict[int, dict[str, object]] = field(default_factory=dict)
+    delinquency_records: dict[int, dict[int, dict[str, object]]] = field(default_factory=dict)
+    dunning_policies: dict[int, dict[str, object]] = field(default_factory=dict)
+    delinquency_counters: dict[int, int] = field(default_factory=dict)
 
 
 _state = BillingState()
@@ -795,3 +798,284 @@ def get_tenant_billing_state(tenant_id: int) -> dict[str, object]:
 def clear_billing_state() -> None:
     with _state_lock:
         _state.subscriptions.clear()
+        _state.delinquency_records.clear()
+        _state.dunning_policies.clear()
+        _state.delinquency_counters.clear()
+
+
+DELINQUENCY_STATUSES = {
+    "grace_period",
+    "overdue",
+    "suspended",
+    "collections",
+    "cancelled",
+}
+
+DELINQUENCY_ESCALATION_ORDER = [
+    "grace_period",
+    "overdue",
+    "suspended",
+    "collections",
+    "cancelled",
+]
+
+DELINQUENCY_RESOLUTIONS = {"paid", "waived", "cancelled", "written_off"}
+
+
+def _default_dunning_policy() -> dict[str, object]:
+    return {
+        "grace_period_days": 7,
+        "overdue_period_days": 30,
+        "suspension_period_days": 30,
+        "auto_cancel_after_days": 90,
+        "reminder_schedule": [1, 3, 7, 14, 30],
+        "require_approval_for_reactivation": True,
+    }
+
+
+def _copy_delinquency_record(record: dict[str, object]) -> dict[str, object]:
+    cloned = dict(record)
+    cloned["events"] = [dict(item) for item in list(record.get("events") or [])]
+    return cloned
+
+
+def _append_delinquency_event(record: dict[str, object], *, event_type: str, metadata: dict[str, object] | None = None) -> None:
+    events = list(record.get("events") or [])
+    events.append(
+        {
+            "event_type": event_type,
+            "metadata": dict(metadata or {}),
+            "created_at": _now_iso(),
+        }
+    )
+    record["events"] = events
+
+
+def _next_delinquency_status(current_status: str) -> str:
+    normalized = str(current_status or "").strip().lower()
+    if normalized not in DELINQUENCY_ESCALATION_ORDER:
+        return "grace_period"
+    index = DELINQUENCY_ESCALATION_ORDER.index(normalized)
+    return DELINQUENCY_ESCALATION_ORDER[min(index + 1, len(DELINQUENCY_ESCALATION_ORDER) - 1)]
+
+
+def _ensure_tenant_exists(tenant_id: int) -> None:
+    if get_tenant(int(tenant_id)) is None:
+        raise ValueError("tenant not found")
+
+
+def create_delinquency_record(
+    tenant_id: int,
+    *,
+    invoice_id: str,
+    status: str = "grace_period",
+    amount_cents: int = 0,
+    notes: str | None = None,
+) -> dict[str, object]:
+    normalized_tenant_id = int(tenant_id)
+    _ensure_tenant_exists(normalized_tenant_id)
+    normalized_status = str(status or "grace_period").strip().lower()
+    if normalized_status not in DELINQUENCY_STATUSES:
+        raise ValueError("invalid delinquency status")
+
+    with _state_lock:
+        records = _state.delinquency_records.setdefault(normalized_tenant_id, {})
+        next_id = _state.delinquency_counters.get(normalized_tenant_id, 0) + 1
+        _state.delinquency_counters[normalized_tenant_id] = next_id
+
+        record = {
+            "id": next_id,
+            "tenant_id": normalized_tenant_id,
+            "invoice_id": str(invoice_id).strip(),
+            "status": normalized_status,
+            "opened_at": _now_iso(),
+            "last_reminder_at": None,
+            "reminder_count": 0,
+            "escalated_at": None,
+            "resolved_at": None,
+            "resolution": None,
+            "notes": notes,
+            "amount_cents": max(0, int(amount_cents)),
+            "events": [],
+        }
+        _append_delinquency_event(record, event_type="opened", metadata={"status": normalized_status})
+        records[next_id] = record
+        return _copy_delinquency_record(record)
+
+
+def list_delinquency_records(tenant_id: int, *, status: str | None = None) -> list[dict[str, object]]:
+    normalized_tenant_id = int(tenant_id)
+    _ensure_tenant_exists(normalized_tenant_id)
+    status_filter = str(status or "").strip().lower()
+
+    with _state_lock:
+        records = _state.delinquency_records.get(normalized_tenant_id, {})
+        items = [_copy_delinquency_record(item) for item in records.values()]
+
+    if status_filter:
+        items = [item for item in items if str(item.get("status") or "").lower() == status_filter]
+    items.sort(key=lambda item: int(item["id"]))
+    return items
+
+
+def get_delinquency_record(tenant_id: int, record_id: int) -> dict[str, object]:
+    normalized_tenant_id = int(tenant_id)
+    _ensure_tenant_exists(normalized_tenant_id)
+    with _state_lock:
+        record = (_state.delinquency_records.get(normalized_tenant_id) or {}).get(int(record_id))
+        if record is None:
+            raise ValueError("delinquency record not found")
+        return _copy_delinquency_record(record)
+
+
+def escalate_delinquency_record(tenant_id: int, record_id: int, *, actor: str, notes: str | None = None) -> dict[str, object]:
+    normalized_tenant_id = int(tenant_id)
+    _ensure_tenant_exists(normalized_tenant_id)
+    with _state_lock:
+        records = _state.delinquency_records.get(normalized_tenant_id) or {}
+        record = records.get(int(record_id))
+        if record is None:
+            raise ValueError("delinquency record not found")
+        previous_status = str(record.get("status") or "grace_period")
+        next_status = _next_delinquency_status(previous_status)
+        record["status"] = next_status
+        record["escalated_at"] = _now_iso()
+        if notes:
+            record["notes"] = notes
+        _append_delinquency_event(
+            record,
+            event_type="escalated",
+            metadata={"from_status": previous_status, "to_status": next_status, "actor": actor},
+        )
+        updated = _copy_delinquency_record(record)
+
+    _audit_billing(
+        tenant_id=normalized_tenant_id,
+        action="billing.delinquency.escalated",
+        result="success",
+        actor=actor,
+        metadata={"record_id": int(record_id), "from_status": previous_status, "to_status": next_status},
+    )
+    return updated
+
+
+def resolve_delinquency_record(
+    tenant_id: int,
+    record_id: int,
+    *,
+    resolution: str,
+    actor: str,
+    notes: str | None = None,
+) -> dict[str, object]:
+    normalized_tenant_id = int(tenant_id)
+    _ensure_tenant_exists(normalized_tenant_id)
+    normalized_resolution = str(resolution or "").strip().lower()
+    if normalized_resolution not in DELINQUENCY_RESOLUTIONS:
+        raise ValueError("invalid delinquency resolution")
+
+    with _state_lock:
+        records = _state.delinquency_records.get(normalized_tenant_id) or {}
+        record = records.get(int(record_id))
+        if record is None:
+            raise ValueError("delinquency record not found")
+        record["resolved_at"] = _now_iso()
+        record["resolution"] = normalized_resolution
+        if normalized_resolution == "cancelled":
+            record["status"] = "cancelled"
+        if notes:
+            record["notes"] = notes
+        _append_delinquency_event(
+            record,
+            event_type="resolved",
+            metadata={"resolution": normalized_resolution, "actor": actor},
+        )
+        updated = _copy_delinquency_record(record)
+
+    _audit_billing(
+        tenant_id=normalized_tenant_id,
+        action="billing.delinquency.resolved",
+        result="success",
+        actor=actor,
+        metadata={"record_id": int(record_id), "resolution": normalized_resolution},
+    )
+    return updated
+
+
+def send_delinquency_reminder(tenant_id: int, record_id: int, *, actor: str, notes: str | None = None) -> dict[str, object]:
+    normalized_tenant_id = int(tenant_id)
+    _ensure_tenant_exists(normalized_tenant_id)
+    with _state_lock:
+        records = _state.delinquency_records.get(normalized_tenant_id) or {}
+        record = records.get(int(record_id))
+        if record is None:
+            raise ValueError("delinquency record not found")
+        record["reminder_count"] = int(record.get("reminder_count") or 0) + 1
+        record["last_reminder_at"] = _now_iso()
+        if notes:
+            record["notes"] = notes
+        _append_delinquency_event(
+            record,
+            event_type="reminder_sent",
+            metadata={"actor": actor, "reminder_count": record["reminder_count"]},
+        )
+        updated = _copy_delinquency_record(record)
+
+    _audit_billing(
+        tenant_id=normalized_tenant_id,
+        action="billing.delinquency.reminder_sent",
+        result="success",
+        actor=actor,
+        metadata={"record_id": int(record_id), "reminder_count": updated["reminder_count"]},
+    )
+    return updated
+
+
+def get_dunning_policy(tenant_id: int) -> dict[str, object]:
+    normalized_tenant_id = int(tenant_id)
+    _ensure_tenant_exists(normalized_tenant_id)
+    with _state_lock:
+        policy = _state.dunning_policies.get(normalized_tenant_id)
+        if policy is None:
+            policy = _default_dunning_policy()
+            _state.dunning_policies[normalized_tenant_id] = dict(policy)
+        return dict(policy)
+
+
+def update_dunning_policy(tenant_id: int, payload: dict[str, object], *, actor: str) -> dict[str, object]:
+    normalized_tenant_id = int(tenant_id)
+    _ensure_tenant_exists(normalized_tenant_id)
+    current = get_dunning_policy(normalized_tenant_id)
+    updated = {
+        **current,
+        **dict(payload or {}),
+    }
+    with _state_lock:
+        _state.dunning_policies[normalized_tenant_id] = dict(updated)
+
+    _audit_billing(
+        tenant_id=normalized_tenant_id,
+        action="billing.delinquency.policy.updated",
+        result="success",
+        actor=actor,
+        metadata={"updated_fields": sorted(list(dict(payload or {}).keys()))},
+    )
+    return dict(updated)
+
+
+def get_delinquency_dashboard(tenant_id: int) -> dict[str, object]:
+    records = list_delinquency_records(tenant_id)
+    by_status: dict[str, int] = {}
+    total_overdue_cents = 0
+    open_total = 0
+    for record in records:
+        status = str(record.get("status") or "").strip().lower()
+        by_status[status] = by_status.get(status, 0) + 1
+        if not record.get("resolved_at"):
+            open_total += 1
+            total_overdue_cents += max(0, int(record.get("amount_cents") or 0))
+    return {
+        "total": len(records),
+        "open_total": open_total,
+        "total_overdue_cents": total_overdue_cents,
+        "by_status": by_status,
+    }

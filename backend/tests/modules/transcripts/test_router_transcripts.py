@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.core.module_helpers.service_validation import TenantResourceNotFoundError
+from app.core.module_helpers.service_validation import MutationResult, TenantResourceNotFoundError
 from app.main import app
 from app.modules.rbac import service as rbac_service
 from app.modules.transcripts import service as transcripts_service
@@ -119,21 +119,21 @@ def test_create_snapshot_success(
     now = datetime(2026, 3, 24, 11, 0, 0, tzinfo=UTC)
 
     async def fake_create_snapshot(self, tenant_id: int, *, student_profile_id: int, actor_id: str):
-        return TranscriptSnapshotSchema(
+        return MutationResult(entity=TranscriptSnapshotSchema(
             id=9301,
             tenant_id=tenant_id,
             student_profile_id=student_profile_id,
             snapshot_json={"student_profile_id": student_profile_id},
             generated_by=actor_id,
             generated_at=now,
-        )
+        ))
 
     monkeypatch.setattr(transcripts_service.TranscriptService, "create_transcript_snapshot", fake_create_snapshot)
 
     response = client.post("/api/admin/students/1001/transcript/snapshot", headers=admin_headers)
 
     assert response.status_code == 201, response.text
-    assert response.json()["id"] == 9301
+    assert response.json()["snapshot"]["id"] == 9301
 
 
 def test_get_transcript_consistency_success(

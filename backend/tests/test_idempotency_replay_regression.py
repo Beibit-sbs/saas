@@ -1,5 +1,10 @@
+from datetime import UTC, datetime
+from decimal import Decimal
+from unittest.mock import MagicMock
 from uuid import uuid4
 
+from app.core.module_helpers.service_validation import MutationResult
+from app.main import app
 from app.modules.auth.token_service import create_access_token
 from app.modules.jobs import service as jobs_service
 from app.platform.uow import UnitOfWork
@@ -820,3 +825,430 @@ def test_job_enqueue_idempotent_replay_contract_remains_explicit() -> None:
     second_body = second.json()
     assert second_body["idempotent_replay"] is True
     assert int(second_body["job"]["id"]) == int(first_body["job"]["id"])
+
+
+# ---------------------------------------------------------------------------
+# University-domain idempotency regression tests (ERP-QA-39)
+# ---------------------------------------------------------------------------
+# University modules require a PostgreSQL session (no in-memory fallback).
+# These tests override the DB dependency with a mock and monkeypatch service
+# methods with stateful callables to verify the HTTP contract:
+#   - Response includes top-level ``idempotent_replay`` field
+#   - First call → replay=False, duplicate call → replay=True
+# ---------------------------------------------------------------------------
+
+_NOW = datetime(2026, 4, 17, 12, 0, 0, tzinfo=UTC)
+
+
+def _student_read_schema(*, student_id: int = 1001, tenant_id: int = 1):
+    from app.modules.students.schemas import StudentProfileReadSchema
+
+    return StudentProfileReadSchema(
+        id=student_id,
+        tenant_id=tenant_id,
+        person_id=101,
+        student_number=f"ADM-{tenant_id}-{student_id}",
+        cohort_year=2026,
+        academic_level=None,
+        current_status="admitted",
+        admission_source="admissions_workflow",
+        metadata_json={},
+        version=1,
+        created_by="owner@example.com",
+        updated_by="owner@example.com",
+        created_at=_NOW,
+        updated_at=_NOW,
+    )
+
+
+def _binding_read_schema(*, binding_id: int = 3001, student_id: int = 1001, program_id: int = 501):
+    from app.modules.students.schemas import StudentProgramBindingReadSchema
+
+    return StudentProgramBindingReadSchema(
+        id=binding_id,
+        tenant_id=1,
+        student_profile_id=student_id,
+        program_id=program_id,
+        is_primary=True,
+        binding_state="active",
+        started_at=_NOW,
+        ended_at=None,
+        metadata_json={},
+        version=1,
+        created_by="owner@example.com",
+        updated_by="owner@example.com",
+        created_at=_NOW,
+        updated_at=_NOW,
+    )
+
+
+def _org_unit_read_schema(*, unit_id: int = 100, code: str = "ORG-1"):
+    from app.modules.org_structure.schemas import OrgUnitReadSchema
+
+    return OrgUnitReadSchema(
+        id=unit_id,
+        tenant_id=1,
+        name="Test Faculty",
+        code=code,
+        unit_type="faculty",
+        parent_unit_id=None,
+        active=True,
+        head_person_id=None,
+        email=None,
+        phone=None,
+        location=None,
+        created_at=_NOW,
+        updated_at=_NOW,
+    )
+
+
+def _grade_read_schema(*, grade_id: int = 5001, enrollment_id: int = 2001):
+    from app.modules.grades.schemas import GradeReadSchema
+
+    return GradeReadSchema(
+        id=grade_id,
+        tenant_id=1,
+        enrollment_id=enrollment_id,
+        grade_code="A",
+        grade_points=Decimal("4.0"),
+        grading_scale_id=1,
+        submitted_by="owner@example.com",
+        submitted_at=_NOW,
+        version=1,
+        metadata_json={},
+    )
+
+
+def _transcript_snapshot_schema(*, snapshot_id: int = 7001, student_id: int = 1001):
+    from app.modules.transcripts.schemas import TranscriptSnapshotSchema
+
+    return TranscriptSnapshotSchema(
+        id=snapshot_id,
+        tenant_id=1,
+        student_profile_id=student_id,
+        snapshot_json={"gpa": "3.5", "courses": []},
+        generated_by="owner@example.com",
+        generated_at=_NOW,
+    )
+
+
+def _override_db(dep_fn):
+    """Register a mock session as dependency override and return cleanup fn."""
+    mock_session = MagicMock()
+    app.dependency_overrides[dep_fn] = lambda: mock_session
+    return mock_session
+
+
+def _cleanup_db(dep_fn):
+    app.dependency_overrides.pop(dep_fn, None)
+
+
+# -- students create --------------------------------------------------------
+
+def test_students_create_replay_contract_remains_explicit(monkeypatch) -> None:
+    """ERP-QA-39: POST /api/admin/students returns idempotent_replay on replay."""
+    from app.modules.students.dependencies import get_students_db
+    from app.modules.students.service import StudentLifecycleService
+
+    _override_db(get_students_db)
+    seen_person_ids: list[int] = []
+    entity = _student_read_schema()
+
+    async def fake_create(self, tenant_id, request, created_by):
+        replay = request.person_id in seen_person_ids
+        seen_person_ids.append(request.person_id)
+        return MutationResult(entity=entity, idempotent_replay=replay)
+
+    monkeypatch.setattr(StudentLifecycleService, "create_student_profile", fake_create)
+
+    marker = uuid4().hex[:8]
+    payload = {"person_id": 101, "student_number": f"S-{marker}", "cohort_year": 2026}
+
+    try:
+        first = client.post("/api/admin/students", headers=ADMIN_HEADERS, json=payload)
+        assert first.status_code == 201, first.text
+        assert first.json()["idempotent_replay"] is False
+        assert "student" in first.json()
+
+        second = client.post("/api/admin/students", headers=ADMIN_HEADERS, json=payload)
+        assert second.status_code == 201, second.text
+        assert second.json()["idempotent_replay"] is True
+        assert int(second.json()["student"]["id"]) == int(first.json()["student"]["id"])
+    finally:
+        _cleanup_db(get_students_db)
+
+
+# -- students change_status -------------------------------------------------
+
+def test_students_change_status_replay_contract_remains_explicit(monkeypatch) -> None:
+    """ERP-QA-39: PATCH /api/admin/students/{id}/status returns idempotent_replay on no-op."""
+    from app.modules.students.dependencies import get_students_db
+    from app.modules.students.service import StudentLifecycleService
+
+    _override_db(get_students_db)
+    call_count = [0]
+    entity = _student_read_schema()
+
+    async def fake_change(self, tenant_id, student_profile_id, request, actor_id):
+        call_count[0] += 1
+        return MutationResult(entity=entity, idempotent_replay=call_count[0] > 1)
+
+    monkeypatch.setattr(StudentLifecycleService, "change_student_status", fake_change)
+
+    try:
+        first = client.patch(
+            "/api/admin/students/1001/status",
+            headers=ADMIN_HEADERS,
+            json={"to_status": "active", "expected_version": 1},
+        )
+        assert first.status_code == 200, first.text
+        assert first.json()["idempotent_replay"] is False
+
+        second = client.patch(
+            "/api/admin/students/1001/status",
+            headers=ADMIN_HEADERS,
+            json={"to_status": "active", "expected_version": 1},
+        )
+        assert second.status_code == 200, second.text
+        assert second.json()["idempotent_replay"] is True
+    finally:
+        _cleanup_db(get_students_db)
+
+
+# -- students program binding -----------------------------------------------
+
+def test_students_program_binding_replay_contract_remains_explicit(monkeypatch) -> None:
+    """ERP-QA-39: POST /api/admin/students/{id}/program-bindings returns idempotent_replay."""
+    from app.modules.students.dependencies import get_students_db
+    from app.modules.students.service import StudentLifecycleService
+
+    _override_db(get_students_db)
+    call_count = [0]
+    entity = _binding_read_schema()
+
+    async def fake_bind(self, tenant_id, request, actor_id):
+        call_count[0] += 1
+        return MutationResult(entity=entity, idempotent_replay=call_count[0] > 1)
+
+    monkeypatch.setattr(StudentLifecycleService, "bind_student_to_program", fake_bind)
+
+    try:
+        first = client.post(
+            "/api/admin/students/1001/program-bindings",
+            headers=ADMIN_HEADERS,
+            json={"student_profile_id": 1001, "program_id": 501},
+        )
+        assert first.status_code == 201, first.text
+        assert first.json()["idempotent_replay"] is False
+        assert "binding" in first.json()
+
+        second = client.post(
+            "/api/admin/students/1001/program-bindings",
+            headers=ADMIN_HEADERS,
+            json={"student_profile_id": 1001, "program_id": 501},
+        )
+        assert second.status_code == 201, second.text
+        assert second.json()["idempotent_replay"] is True
+        assert int(second.json()["binding"]["id"]) == int(first.json()["binding"]["id"])
+    finally:
+        _cleanup_db(get_students_db)
+
+
+# -- org_structure create ---------------------------------------------------
+
+def test_org_structure_create_replay_contract_remains_explicit(monkeypatch) -> None:
+    """ERP-QA-39: POST /api/admin/org-units returns idempotent_replay on duplicate code."""
+    from app.modules.org_structure.dependencies import get_org_structure_db
+    from app.modules.org_structure import service as org_service
+
+    _override_db(get_org_structure_db)
+    seen_codes: list[str] = []
+    marker = uuid4().hex[:8]
+    entity = _org_unit_read_schema(code=f"FAC-{marker}")
+
+    def fake_create(db, tenant_id, payload):
+        replay = payload.code in seen_codes
+        seen_codes.append(payload.code)
+        return MutationResult(entity=entity, idempotent_replay=replay)
+
+    monkeypatch.setattr(org_service, "create_org_unit", fake_create)
+
+    payload = {"name": "Test Faculty", "code": f"FAC-{marker}", "unit_type": "faculty"}
+
+    try:
+        first = client.post("/api/admin/org-units", headers=ADMIN_HEADERS, json=payload)
+        assert first.status_code == 201, first.text
+        assert first.json()["idempotent_replay"] is False
+        assert "unit" in first.json()
+
+        second = client.post("/api/admin/org-units", headers=ADMIN_HEADERS, json=payload)
+        assert second.status_code == 201, second.text
+        assert second.json()["idempotent_replay"] is True
+        assert int(second.json()["unit"]["id"]) == int(first.json()["unit"]["id"])
+    finally:
+        _cleanup_db(get_org_structure_db)
+
+
+# -- org_structure update ---------------------------------------------------
+
+def test_org_structure_update_replay_contract_remains_explicit(monkeypatch) -> None:
+    """ERP-QA-39: PATCH /api/admin/org-units/{id} returns idempotent_replay on no-op."""
+    from app.modules.org_structure.dependencies import get_org_structure_db
+    from app.modules.org_structure import service as org_service
+
+    _override_db(get_org_structure_db)
+    call_count = [0]
+    entity = _org_unit_read_schema()
+
+    def fake_update(db, tenant_id, unit_id, payload):
+        call_count[0] += 1
+        return MutationResult(entity=entity, idempotent_replay=call_count[0] > 1)
+
+    monkeypatch.setattr(org_service, "update_org_unit", fake_update)
+
+    try:
+        first = client.patch(
+            "/api/admin/org-units/100",
+            headers=ADMIN_HEADERS,
+            json={"name": "Updated Faculty"},
+        )
+        assert first.status_code == 200, first.text
+        assert first.json()["idempotent_replay"] is False
+
+        second = client.patch(
+            "/api/admin/org-units/100",
+            headers=ADMIN_HEADERS,
+            json={"name": "Updated Faculty"},
+        )
+        assert second.status_code == 200, second.text
+        assert second.json()["idempotent_replay"] is True
+    finally:
+        _cleanup_db(get_org_structure_db)
+
+
+# -- org_structure deactivate -----------------------------------------------
+
+def test_org_structure_deactivate_replay_contract_remains_explicit(monkeypatch) -> None:
+    """ERP-QA-39: DELETE /api/admin/org-units/{id} returns idempotent_replay on already-inactive."""
+    from app.modules.org_structure.dependencies import get_org_structure_db
+    from app.modules.org_structure import service as org_service
+
+    _override_db(get_org_structure_db)
+    call_count = [0]
+    entity = _org_unit_read_schema()
+
+    def fake_deactivate(db, tenant_id, unit_id):
+        call_count[0] += 1
+        return MutationResult(entity=entity, idempotent_replay=call_count[0] > 1)
+
+    monkeypatch.setattr(org_service, "deactivate_org_unit", fake_deactivate)
+
+    try:
+        first = client.delete("/api/admin/org-units/100", headers=ADMIN_HEADERS)
+        assert first.status_code == 200, first.text
+        assert first.json()["idempotent_replay"] is False
+        assert "unit" in first.json()
+
+        second = client.delete("/api/admin/org-units/100", headers=ADMIN_HEADERS)
+        assert second.status_code == 200, second.text
+        assert second.json()["idempotent_replay"] is True
+    finally:
+        _cleanup_db(get_org_structure_db)
+
+
+# -- grades submit ----------------------------------------------------------
+
+def test_grades_submit_replay_contract_remains_explicit(monkeypatch) -> None:
+    """ERP-QA-39: POST /api/admin/grades/submit returns idempotent_replay on duplicate enrollment."""
+    from app.modules.grades.dependencies import get_grades_db
+    from app.modules.grades.service import GradeLifecycleService
+
+    _override_db(get_grades_db)
+    seen_enrollments: list[int] = []
+    entity = _grade_read_schema()
+
+    async def fake_submit(self, tenant_id, request, actor_id):
+        replay = request.enrollment_id in seen_enrollments
+        seen_enrollments.append(request.enrollment_id)
+        return MutationResult(entity=entity, idempotent_replay=replay)
+
+    monkeypatch.setattr(GradeLifecycleService, "submit_grade", fake_submit)
+
+    payload = {"enrollment_id": 2001, "grading_scale_id": 1, "grade_code": "A"}
+
+    try:
+        first = client.post("/api/admin/grades/submit", headers=ADMIN_HEADERS, json=payload)
+        assert first.status_code == 201, first.text
+        assert first.json()["idempotent_replay"] is False
+        assert "grade" in first.json()
+
+        second = client.post("/api/admin/grades/submit", headers=ADMIN_HEADERS, json=payload)
+        assert second.status_code == 201, second.text
+        assert second.json()["idempotent_replay"] is True
+        assert int(second.json()["grade"]["id"]) == int(first.json()["grade"]["id"])
+    finally:
+        _cleanup_db(get_grades_db)
+
+
+# -- grades change ----------------------------------------------------------
+
+def test_grades_change_replay_contract_remains_explicit(monkeypatch) -> None:
+    """ERP-QA-39: PATCH /api/admin/grades/change returns idempotent_replay on no-op."""
+    from app.modules.grades.dependencies import get_grades_db
+    from app.modules.grades.service import GradeLifecycleService
+
+    _override_db(get_grades_db)
+    call_count = [0]
+    entity = _grade_read_schema()
+
+    async def fake_change(self, tenant_id, request, actor_id):
+        call_count[0] += 1
+        return MutationResult(entity=entity, idempotent_replay=call_count[0] > 1)
+
+    monkeypatch.setattr(GradeLifecycleService, "change_grade", fake_change)
+
+    payload = {
+        "enrollment_id": 2001,
+        "grading_scale_id": 1,
+        "new_grade_code": "A",
+        "expected_version": 1,
+    }
+
+    try:
+        first = client.patch("/api/admin/grades/change", headers=ADMIN_HEADERS, json=payload)
+        assert first.status_code == 200, first.text
+        assert first.json()["idempotent_replay"] is False
+
+        second = client.patch("/api/admin/grades/change", headers=ADMIN_HEADERS, json=payload)
+        assert second.status_code == 200, second.text
+        assert second.json()["idempotent_replay"] is True
+    finally:
+        _cleanup_db(get_grades_db)
+
+
+# -- transcripts snapshot ---------------------------------------------------
+
+def test_transcripts_snapshot_replay_contract_remains_explicit(monkeypatch) -> None:
+    """ERP-QA-39: POST /api/admin/students/{id}/transcript/snapshot returns idempotent_replay."""
+    from app.modules.transcripts.dependencies import get_transcripts_db
+    from app.modules.transcripts.service import TranscriptService
+
+    _override_db(get_transcripts_db)
+    entity = _transcript_snapshot_schema()
+
+    async def fake_snapshot(self, tenant_id, *, student_profile_id, actor_id):
+        return MutationResult(entity=entity, idempotent_replay=False)
+
+    monkeypatch.setattr(TranscriptService, "create_transcript_snapshot", fake_snapshot)
+
+    try:
+        first = client.post(
+            "/api/admin/students/1001/transcript/snapshot",
+            headers=ADMIN_HEADERS,
+        )
+        assert first.status_code == 201, first.text
+        assert "idempotent_replay" in first.json(), "idempotent_replay field must be present"
+        assert first.json()["idempotent_replay"] is False
+        assert "snapshot" in first.json()
+    finally:
+        _cleanup_db(get_transcripts_db)

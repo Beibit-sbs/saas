@@ -71,6 +71,12 @@ def _should_fallback_to_memory(exc: Exception) -> bool:
         return True
     if psycopg is not None and isinstance(exc, (psycopg.OperationalError, psycopg.InterfaceError)):
         return True
+    if psycopg is not None and isinstance(exc, psycopg.ProgrammingError):
+        message = str(exc).lower()
+        # Unit tests intentionally run without migrated DB schema; in that mode
+        # we must fail over to in-memory tenant state instead of hard-failing.
+        if "undefined table" in message or "relation" in message and "does not exist" in message:
+            return True
     return False
 
 

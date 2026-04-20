@@ -1,19 +1,14 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
 
 from app.modules.audit.service import log_admin_action
 from app.core.tenant import get_current_tenant
+from app.modules.ldap.schemas import LdapTestPayload
 from app.modules.ldap.service import ldap_status, test_ldap_connection
 from app.modules.rbac.security import get_actor, permission_dependency
 
 router = APIRouter(prefix="/api/admin/ldap", tags=["ldap-admin"])
-
-
-class LdapTestPayload(BaseModel):
-    username: str | None = None
-    password: str | None = None
 
 
 @router.get("/status")

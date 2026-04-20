@@ -24,6 +24,17 @@ day3_due="$(parse_due "Day 3 review due")"
 day7_due="$(parse_due "Day 7 review due")"
 today="$(date -u +%Y-%m-%d)"
 
+window=""
+if [[ "${today}" < "${day1_due}" ]]; then
+  window="pre_day1"
+elif [[ "${today}" < "${day3_due}" ]]; then
+  window="day1_to_day3"
+elif [[ "${today}" < "${day7_due}" ]]; then
+  window="day3_to_day7"
+else
+  window="post_day7"
+fi
+
 latest_for_phase() {
   local phase="$1"
   ls -1 "${ARTIFACTS_DIR}"/f1_risk_${phase}_review_20*.md 2>/dev/null | tail -n 1 || true
@@ -47,13 +58,13 @@ day3_early="$(early_flag "${day3_artifact}")"
 day7_early="$(early_flag "${day7_artifact}")"
 
 missing=""
-if [[ -z "${day1_artifact}" ]]; then
+if [[ ! "${today}" < "${day1_due}" && -z "${day1_artifact}" ]]; then
   missing="${missing} day1"
 fi
-if [[ -z "${day3_artifact}" ]]; then
+if [[ ! "${today}" < "${day3_due}" && -z "${day3_artifact}" ]]; then
   missing="${missing} day3"
 fi
-if [[ -z "${day7_artifact}" ]]; then
+if [[ ! "${today}" < "${day7_due}" && -z "${day7_artifact}" ]]; then
   missing="${missing} day7"
 fi
 
@@ -70,22 +81,24 @@ if [[ -n "${missing}" ]]; then
   echo "DAY7_ARTIFACT=${day7_artifact##*/}"
 
   if [[ "${today}" < "${day1_due}" ]]; then
-    echo "WINDOW=pre_day1"
+    echo "WINDOW=${window}"
     echo "NEXT_ACTION=wait_due_window_then_run_official_reviews"
   elif [[ "${today}" < "${day3_due}" ]]; then
-    echo "WINDOW=day1_to_day3"
+    echo "WINDOW=${window}"
     echo "NEXT_ACTION=wait_day3_due_then_run_official_day3_review"
   elif [[ "${today}" < "${day7_due}" ]]; then
-    echo "WINDOW=day3_to_day7"
+    echo "WINDOW=${window}"
     echo "NEXT_ACTION=wait_day7_due_then_run_official_day7_review"
   else
-    echo "WINDOW=post_day7"
+    echo "WINDOW=${window}"
     echo "NEXT_ACTION=run_missing_official_reviews_immediately"
   fi
   exit 1
 fi
 
-if [[ "${day1_early}" == "true" || "${day3_early}" == "true" || "${day7_early}" == "true" ]]; then
+if [[ ! "${today}" < "${day1_due}" && "${day1_early}" == "true" ]] || \
+  [[ ! "${today}" < "${day3_due}" && "${day3_early}" == "true" ]] || \
+  [[ ! "${today}" < "${day7_due}" && "${day7_early}" == "true" ]]; then
   echo "F1.9_GATE=FAIL"
   echo "REASON=early_rehearsal_artifact_detected"
   echo "TODAY_UTC=${today}"
@@ -96,6 +109,18 @@ if [[ "${day1_early}" == "true" || "${day3_early}" == "true" || "${day7_early}" 
   echo "DAY3_EARLY=${day3_early}"
   echo "DAY7_EARLY=${day7_early}"
   echo "NEXT_ACTION=generate_official_non_early_review_artifacts"
+  exit 1
+fi
+
+if [[ "${today}" < "${day7_due}" ]]; then
+  echo "F1.9_GATE=FAIL"
+  echo "REASON=post_release_observation_window_open"
+  echo "TODAY_UTC=${today}"
+  echo "DAY1_DUE=${day1_due}"
+  echo "DAY3_DUE=${day3_due}"
+  echo "DAY7_DUE=${day7_due}"
+  echo "WINDOW=${window}"
+  echo "NEXT_ACTION=wait_day7_due_then_run_official_day7_review"
   exit 1
 fi
 

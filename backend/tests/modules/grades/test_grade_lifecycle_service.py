@@ -271,9 +271,10 @@ class TestGradeSubmission:
 
         result = run_async(service.submit_grade(tenant_id=1, request=request, actor_id="instructor@example.com"))
 
-        assert result.enrollment_id == 4001
-        assert result.grade_code == "A"
-        assert result.grade_points == Decimal("4.00")
+        assert result.entity.enrollment_id == 4001
+        assert result.entity.grade_code == "A"
+        assert result.entity.grade_points == Decimal("4.00")
+        assert result.idempotent_replay is False
         assert enrollment.grade_code == "A"
         assert enrollment.grade_points == Decimal("4.00")
         added_instances = [call.args[0] for call in db_session.add.call_args_list]
@@ -336,8 +337,9 @@ class TestGradeChange:
 
         result = run_async(service.change_grade(tenant_id=1, request=request, actor_id="admin@example.com"))
 
-        assert result.grade_code == "A"
-        assert result.version == 2
+        assert result.entity.grade_code == "A"
+        assert result.entity.version == 2
+        assert result.idempotent_replay is False
         assert enrollment.grade_code == "A"
         assert enrollment.grade_points == Decimal("4.00")
         history_rows = [

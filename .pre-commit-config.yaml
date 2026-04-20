@@ -1,0 +1,75 @@
+repos:
+  # Prevent secrets from being committed
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.8.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        stages: [commit]
+
+  # Prevent large files
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-large-files
+        args: [--maxkb=1000]
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  # Prevent console.log/print statements in production code
+  - repo: https://github.com/QwertycowMoo/detect-by-regex
+    rev: v1.0.0
+    hooks:
+      - id: detect-by-regex
+        name: Detect console.log/print in production
+        entry: (console\.log|print\(|debugger)
+        language: pygrep
+        types: [typescript, typescriptreact, python]
+        exclude: ^(tests/|frontend/.*\.test\.|.*\.spec\.)
+        stages: [commit]
+
+  # Python linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.5
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # TypeScript/JavaScript
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.57.0
+    hooks:
+      - id: eslint
+        types: [typescript, typescriptreact]
+        files: ^frontend/
+        additional_dependencies:
+          - eslint
+          - eslint-config-next
+          - @typescript-eslint/eslint-plugin
+        args: [--fix]
+
+  # Security scanning (optional, can be slow)
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        args: [-ll]
+        stages: [manual]
+
+ci:
+  autofix_commit_msg: |
+    [pre-commit] Auto fixes from pre-commit hooks
+    
+    for more info, see https://pre-commit.com
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: [bandit]
+  submodules: false

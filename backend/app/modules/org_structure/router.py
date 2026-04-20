@@ -22,6 +22,7 @@ from app.modules.org_structure.models import OrgUnitModel, OrgUnitType
 from app.modules.org_structure.schemas import (
     OrgUnitConsistencyReportSchema,
     OrgUnitCreateSchema,
+    OrgUnitMutationResponse,
     OrgUnitReadSchema,
     OrgUnitTreeNodeSchema,
     OrgUnitUpdateSchema,
@@ -68,7 +69,7 @@ def _build_tree(
 
 @router.post(
     "",
-    response_model=OrgUnitReadSchema,
+    response_model=OrgUnitMutationResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(permission_dependency("admin.org_units.write"))],
 )
@@ -76,15 +77,19 @@ def create_org_unit(
     payload: OrgUnitCreateSchema,
     tenant: TrustedTenant,
     db: OrgDb,
-) -> OrgUnitReadSchema:
+) -> OrgUnitMutationResponse:
     tenant_id = int(tenant["id"])
     try:
-        unit = service.create_org_unit(db, tenant_id, payload)
-        db.commit()
+        result = service.create_org_unit(db, tenant_id, payload)
+        if not result.idempotent_replay:
+            db.commit()
     except Exception as exc:
         db.rollback()
         raise _http_error(exc)
-    return OrgUnitReadSchema.model_validate(unit)
+    return OrgUnitMutationResponse(
+        unit=result.entity,
+        idempotent_replay=result.idempotent_replay,
+    )
 
 
 @router.get(
@@ -150,7 +155,7 @@ def get_org_unit(
 
 @router.patch(
     "/{unit_id}",
-    response_model=OrgUnitReadSchema,
+    response_model=OrgUnitMutationResponse,
     dependencies=[Depends(permission_dependency("admin.org_units.write"))],
 )
 def update_org_unit(
@@ -158,32 +163,40 @@ def update_org_unit(
     payload: OrgUnitUpdateSchema,
     tenant: TrustedTenant,
     db: OrgDb,
-) -> OrgUnitReadSchema:
+) -> OrgUnitMutationResponse:
     tenant_id = int(tenant["id"])
     try:
-        unit = service.update_org_unit(db, tenant_id, unit_id, payload)
-        db.commit()
+        result = service.update_org_unit(db, tenant_id, unit_id, payload)
+        if not result.idempotent_replay:
+            db.commit()
     except Exception as exc:
         db.rollback()
         raise _http_error(exc)
-    return OrgUnitReadSchema.model_validate(unit)
+    return OrgUnitMutationResponse(
+        unit=result.entity,
+        idempotent_replay=result.idempotent_replay,
+    )
 
 
 @router.delete(
     "/{unit_id}",
-    response_model=OrgUnitReadSchema,
+    response_model=OrgUnitMutationResponse,
     dependencies=[Depends(permission_dependency("admin.org_units.write"))],
 )
 def deactivate_org_unit(
     unit_id: int,
     tenant: TrustedTenant,
     db: OrgDb,
-) -> OrgUnitReadSchema:
+) -> OrgUnitMutationResponse:
     tenant_id = int(tenant["id"])
     try:
-        unit = service.deactivate_org_unit(db, tenant_id, unit_id)
-        db.commit()
+        result = service.deactivate_org_unit(db, tenant_id, unit_id)
+        if not result.idempotent_replay:
+            db.commit()
     except Exception as exc:
         db.rollback()
         raise _http_error(exc)
-    return OrgUnitReadSchema.model_validate(unit)
+    return OrgUnitMutationResponse(
+        unit=result.entity,
+        idempotent_replay=result.idempotent_replay,
+    )

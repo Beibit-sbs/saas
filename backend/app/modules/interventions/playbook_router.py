@@ -137,82 +137,8 @@ def list_playbooks(
     )
 
 
-@router.get(
-    "/{playbook_id}",
-    response_model=PlaybookReadSchema,
-    responses={404: {"model": ErrorDetailResponse}},
-    dependencies=[Depends(permission_dependency("interventions:view"))],
-)
-def get_playbook(
-    playbook_id: int,
-    tenant_id: Annotated[int, Depends(get_current_tenant)],
-    db: Annotated[Session, Depends(get_interventions_db)],
-) -> PlaybookReadSchema:
-    try:
-        playbook = PlaybookService(db).get_playbook(
-            tenant_id=tenant_id, playbook_id=playbook_id
-        )
-    except Exception as exc:
-        raise _raise(exc) from exc
-    return PlaybookReadSchema.model_validate(playbook)
-
-
-@router.patch(
-    "/{playbook_id}",
-    response_model=PlaybookReadSchema,
-    responses=_common_errors,
-    dependencies=[Depends(permission_dependency("interventions:manage_playbooks"))],
-)
-def update_playbook(
-    playbook_id: int,
-    payload: Annotated[dict[str, Any], Body()],
-    tenant_id: Annotated[int, Depends(get_current_tenant)],
-    actor: Annotated[str, Depends(get_actor)],
-    db: Annotated[Session, Depends(get_interventions_db)],
-) -> PlaybookReadSchema:
-    try:
-        _ensure_playbooks_enabled(tenant_id)
-        data = _parse(PlaybookUpdateSchema, payload)
-        playbook = PlaybookService(db).update_playbook(
-            tenant_id=tenant_id,
-            playbook_id=playbook_id,
-            actor=actor,
-            payload=data,
-        )
-        db.commit()
-        db.refresh(playbook)
-    except Exception as exc:
-        db.rollback()
-        raise _raise(exc) from exc
-    return PlaybookReadSchema.model_validate(playbook)
-
-
-@router.delete(
-    "/{playbook_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses=_common_errors,
-    dependencies=[Depends(permission_dependency("interventions:manage_playbooks"))],
-)
-def delete_playbook(
-    playbook_id: int,
-    tenant_id: Annotated[int, Depends(get_current_tenant)],
-    actor: Annotated[str, Depends(get_actor)],
-    db: Annotated[Session, Depends(get_interventions_db)],
-) -> Response:
-    try:
-        _ensure_playbooks_enabled(tenant_id)
-        PlaybookService(db).delete_playbook(
-            tenant_id=tenant_id, playbook_id=playbook_id, actor=actor
-        )
-        db.commit()
-    except Exception as exc:
-        db.rollback()
-        raise _raise(exc) from exc
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
 # ---------------------------------------------------------------------------
-# Playbook executions
+# Playbook executions  (registered before /{playbook_id} to avoid route clash)
 # ---------------------------------------------------------------------------
 
 
@@ -388,3 +314,82 @@ def skip_step(
         db.rollback()
         raise _raise(exc) from exc
     return PlaybookStepExecutionReadSchema.model_validate(step_exec)
+
+
+# ---------------------------------------------------------------------------
+# Individual playbook by ID  (after /executions to avoid route clash)
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/{playbook_id}",
+    response_model=PlaybookReadSchema,
+    responses={404: {"model": ErrorDetailResponse}},
+    dependencies=[Depends(permission_dependency("interventions:view"))],
+)
+def get_playbook(
+    playbook_id: int,
+    tenant_id: Annotated[int, Depends(get_current_tenant)],
+    db: Annotated[Session, Depends(get_interventions_db)],
+) -> PlaybookReadSchema:
+    try:
+        playbook = PlaybookService(db).get_playbook(
+            tenant_id=tenant_id, playbook_id=playbook_id
+        )
+    except Exception as exc:
+        raise _raise(exc) from exc
+    return PlaybookReadSchema.model_validate(playbook)
+
+
+@router.patch(
+    "/{playbook_id}",
+    response_model=PlaybookReadSchema,
+    responses=_common_errors,
+    dependencies=[Depends(permission_dependency("interventions:manage_playbooks"))],
+)
+def update_playbook(
+    playbook_id: int,
+    payload: Annotated[dict[str, Any], Body()],
+    tenant_id: Annotated[int, Depends(get_current_tenant)],
+    actor: Annotated[str, Depends(get_actor)],
+    db: Annotated[Session, Depends(get_interventions_db)],
+) -> PlaybookReadSchema:
+    try:
+        _ensure_playbooks_enabled(tenant_id)
+        data = _parse(PlaybookUpdateSchema, payload)
+        playbook = PlaybookService(db).update_playbook(
+            tenant_id=tenant_id,
+            playbook_id=playbook_id,
+            actor=actor,
+            payload=data,
+        )
+        db.commit()
+        db.refresh(playbook)
+    except Exception as exc:
+        db.rollback()
+        raise _raise(exc) from exc
+    return PlaybookReadSchema.model_validate(playbook)
+
+
+@router.delete(
+    "/{playbook_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=_common_errors,
+    dependencies=[Depends(permission_dependency("interventions:manage_playbooks"))],
+)
+def delete_playbook(
+    playbook_id: int,
+    tenant_id: Annotated[int, Depends(get_current_tenant)],
+    actor: Annotated[str, Depends(get_actor)],
+    db: Annotated[Session, Depends(get_interventions_db)],
+) -> Response:
+    try:
+        _ensure_playbooks_enabled(tenant_id)
+        PlaybookService(db).delete_playbook(
+            tenant_id=tenant_id, playbook_id=playbook_id, actor=actor
+        )
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _raise(exc) from exc
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

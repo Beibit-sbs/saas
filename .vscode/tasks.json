@@ -86,6 +86,43 @@
 			"type": "shell",
 			"command": "docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_identity_phase11_hardening.py::test_phase1_get_providers_emits_legacy_namespace_headers tests/test_identity_phase11_hardening.py::test_phase1_get_mappings_emits_legacy_namespace_headers",
 			"isBackground": false
+		},
+		{
+			"label": "billing-contract-tests-once",
+			"type": "shell",
+			"command": "docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/modules/billing/test_billing_router_contract.py --no-cov -rA",
+			"args": [],
+			"isBackground": false
+		},
+		{
+			"label": "billing-contract-tests-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/modules/billing/test_billing_router_contract.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "billing-contract-tests-infra-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/modules/billing/test_billing_router_contract.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "billing-contract-tests-infra-once-2",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/modules/billing/test_billing_router_contract.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "billing-contract-tests-wave1-32",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/modules/billing/test_billing_router_contract.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "billing-contract-tests-wave1-32-after-rebuild",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/modules/billing/test_billing_router_contract.py --no-cov -rA",
+			"isBackground": false
 		}
 	]
 }

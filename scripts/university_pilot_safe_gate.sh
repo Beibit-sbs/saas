@@ -108,11 +108,11 @@ run_backend_checks() {
 }
 
 echo "[pilot-safe-gate] tenant isolation and architecture guardrails"
-run_backend_checks pytest -q tests/platform/test_platform_tenant_safety_audit_v1.py
-run_backend_checks pytest -q tests/platform/test_platform_architecture_guardrails_v1.py
+run_backend_checks pytest -q --no-cov tests/platform/test_platform_tenant_safety_audit_v1.py
+run_backend_checks pytest -q --no-cov tests/platform/test_platform_architecture_guardrails_v1.py
 
 echo "[pilot-safe-gate] readiness and auth regression checks"
-run_backend_checks pytest -q tests/test_sre_ops_layer.py tests/test_auth.py
+run_backend_checks pytest -q --no-cov tests/test_sre_ops_layer.py tests/test_auth.py
 
 echo "[pilot-safe-gate] frontend security/middleware gate"
 "${COMPOSE[@]}" run --rm frontend-tests npm run lint

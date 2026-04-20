@@ -84,13 +84,13 @@ fi
 
 pushd "${ROOT_DIR}/infra" >/dev/null
 
-BACKEND_TEST_OUTPUT="$(${COMPOSE[@]} run --rm --no-deps -e DATABASE_URL= backend-tests pytest -q \
+BACKEND_TEST_OUTPUT="$(${COMPOSE[@]} run --rm --no-deps -T -e DATABASE_URL= backend-tests pytest -q \
   tests/modules/interventions/test_router_playbooks_phase2.py \
   tests/modules/interventions/test_playbook_security_guards.py \
   tests/modules/interventions/test_risk_observability_metrics.py \
   --no-cov -rA)"
 
-PROMTOOL_OUTPUT="$(${COMPOSE[@]} run --rm --no-deps --entrypoint promtool prometheus check rules /etc/prometheus/alerts.yml)"
+PROMTOOL_OUTPUT="$(${COMPOSE[@]} run --rm --no-deps -T --entrypoint promtool prometheus check rules /etc/prometheus/alerts.yml)"
 
 popd >/dev/null
 

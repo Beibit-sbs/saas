@@ -81,6 +81,11 @@ class StudentTranscriptSchema(BaseModel):
     items: list[TranscriptItemSchema]
 
 
+class GradeMutationResponse(BaseModel):
+    grade: GradeReadSchema
+    idempotent_replay: bool = False
+
+
 class GradeEnrollmentConsistencyIssueSchema(BaseModel):
     issue_type: str
     enrollment_id: int | None = None

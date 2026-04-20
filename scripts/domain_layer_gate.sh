@@ -27,7 +27,7 @@ pushd "${ROOT_DIR}/infra" >/dev/null
 "${COMPOSE[@]}" up -d db redis
 
 echo "[domain-gate] backend domain services and routers"
-run_backend_checks pytest -q --disable-warnings \
+run_backend_checks pytest -q --no-cov --disable-warnings \
   tests/modules/admissions/ \
   tests/modules/students/ \
   tests/modules/enrollments/ \
@@ -39,7 +39,7 @@ run_backend_checks pytest -q --disable-warnings \
   tests/modules/interventions/
 
 echo "[domain-gate] domain tenant safety invariants"
-run_backend_checks pytest -q --disable-warnings \
+run_backend_checks pytest -q --no-cov --disable-warnings \
   tests/modules/admissions/test_tenant_isolation.py \
   tests/test_saas_tenant_cross_user_isolation.py \
   tests/test_tenant_fail_closed.py \

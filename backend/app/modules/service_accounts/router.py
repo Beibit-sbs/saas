@@ -3,13 +3,17 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
 
 from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
 from app.modules.auth.token_service import create_service_token
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.rbac.service import is_platform_admin
+from app.modules.service_accounts.schemas import (
+    ServiceAccountCreatePayload,
+    ServiceAccountCreateResponse,
+    ServiceAccountTokenPayload,
+)
 from app.modules.service_accounts.service import (
     create_service_account,
     get_service_account,
@@ -20,21 +24,6 @@ from app.modules.service_accounts.service import (
 
 
 router = APIRouter(prefix="/api/admin/service-accounts", tags=["service-accounts"])
-
-
-class ServiceAccountCreatePayload(BaseModel):
-    name: str = Field(min_length=2, max_length=128)
-    permissions: list[str] = Field(min_length=1)
-    platform_global: bool = False
-
-
-class ServiceAccountTokenPayload(BaseModel):
-    secret: str = Field(min_length=8, max_length=256)
-
-
-class ServiceAccountCreateResponse(BaseModel):
-    account: dict[str, object]
-    idempotent_replay: bool
 
 
 @router.get("")

@@ -16,6 +16,7 @@ from sqlalchemy import text
 from app.core.config import (
     get_auth_cookie_name,
     get_auth_csrf_cookie_name,
+    is_billing_module_router_enabled,
     is_csrf_protection_enabled,
     get_metrics_allowed_ips,
     get_metrics_token,
@@ -35,6 +36,7 @@ from app.modules.audit.router import router as audit_router
 from app.modules.audit.service import log_admin_action, reset_request_tenant_id, set_request_tenant_id
 from app.modules.analytics.router import router as analytics_router
 from app.modules.backup.router import router as backup_router
+from app.modules.billing.router import router as billing_router
 from app.modules.courses.router import router as courses_router
 from app.modules.enrollments.router import router as enrollments_router
 from app.modules.faculty.router import router as faculty_router
@@ -71,6 +73,7 @@ from app.modules.interventions.router import router as interventions_router
 from app.modules.interventions.playbook_router import router as interventions_playbook_router
 from app.modules.interventions.risk_router import router as interventions_risk_router
 from app.modules.interventions.risk_v1_router import router as interventions_risk_v1_router
+from app.modules.interventions.effectiveness_router import router as interventions_effectiveness_router
 from app.modules.org_structure.router import router as org_structure_router
 from app.modules.workflows.router import router as workflows_router
 from app.modules.rbac.router import router as rbac_router
@@ -225,6 +228,7 @@ app.include_router(interventions_router)
 app.include_router(interventions_playbook_router)
 app.include_router(interventions_risk_router)
 app.include_router(interventions_risk_v1_router)
+app.include_router(interventions_effectiveness_router)
 app.include_router(org_structure_router)
 app.include_router(analytics_router)
 app.include_router(transcripts_router)
@@ -240,6 +244,14 @@ app.include_router(platform_developer_api_router)
 app.include_router(platform_v1_internal_router)
 app.include_router(platform_v1_mcp_router)
 app.include_router(platform_v2_semantic_router)
+
+
+def _register_optional_routers(fastapi_app: FastAPI) -> None:
+    if is_billing_module_router_enabled():
+        fastapi_app.include_router(billing_router)
+
+
+_register_optional_routers(app)
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 

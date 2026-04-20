@@ -131,6 +131,16 @@ class StudentProgramBindingReadSchema(BaseModel):
     updated_at: datetime
 
 
+class StudentProfileMutationResponse(BaseModel):
+    student: StudentProfileReadSchema
+    idempotent_replay: bool = False
+
+
+class StudentProgramBindingMutationResponse(BaseModel):
+    binding: StudentProgramBindingReadSchema
+    idempotent_replay: bool = False
+
+
 class StudentProgramBindingConsistencyIssueSchema(BaseModel):
     student_profile_id: int
     issue_type: str

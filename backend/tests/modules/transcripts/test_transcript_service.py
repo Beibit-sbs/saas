@@ -297,7 +297,8 @@ def test_create_snapshot_emits_audit(
         )
     )
 
-    assert result.student_profile_id == 1001
+    assert result.entity.student_profile_id == 1001
+    assert result.idempotent_replay is False
     # one audit for transcript generation + one audit for snapshot creation
     assert audit_mock.call_count == 2
     actions = [call.kwargs.get("action") for call in audit_mock.call_args_list]

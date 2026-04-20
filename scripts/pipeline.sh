@@ -22,7 +22,7 @@ pushd "${ROOT_DIR}" >/dev/null
 bash "${ROOT_DIR}/scripts/data_layer_gate.sh"
 popd >/dev/null
 pushd "${ROOT_DIR}/infra" >/dev/null
-"${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --disable-warnings tests/test_template_validation.py
+"${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --no-cov --disable-warnings tests/test_template_validation.py
 "${ROOT_DIR}/scripts/check_permission_parity.sh"
 "${COMPOSE[@]}" run --rm frontend-tests npm run lint
 "${COMPOSE[@]}" run --rm frontend-tests npm run test:frontend

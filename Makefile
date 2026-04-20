@@ -1,19 +1,28 @@
 SHELL := /bin/bash
 COMPOSE := cd infra && docker compose --env-file .env
 
-.PHONY: help up down logs ci test lint pipeline pipeline-force system-audit kill-host prod-up prod-down template-validate security-regression domain-layer-gate data-layer-gate release-check release-gate rollback-check rollback-previous prune-remote-releases pilot-safe-gate pilot-full-gate pilot-to-prod-promote pilot-bootstrap pilot-ldap-up pilot-ldap-down pilot-seed-demo
+.PHONY: help up down logs ci test lint pipeline pipeline-force system-audit kill-host prod-up prod-down template-validate security-regression domain-layer-gate data-layer-gate f3-unfreeze-validation f3-4-frontend-kickoff f3-5-observability-kickoff f3-kickoff-readiness f3-4-f3-5-prep-snapshot f3-alert-gate day7-f1f2-pre-validation day7-f1f2-one-shot f4-kickoff-readiness release-check release-gate rollback-check rollback-previous prune-remote-releases pilot-safe-gate pilot-full-gate pilot-to-prod-promote pilot-bootstrap pilot-ldap-up pilot-ldap-down pilot-seed-demo
 
 help:
 	@echo "Targets: up down logs ci test lint pipeline pipeline-force kill-host"
 	@echo "         system-audit"
 	@echo "         prod-up prod-down template-validate"
-	@echo "         security-regression domain-layer-gate data-layer-gate release-check release-gate rollback-check rollback-previous prune-remote-releases pilot-safe-gate pilot-full-gate pilot-to-prod-promote pilot-bootstrap"
+	@echo "         security-regression domain-layer-gate data-layer-gate"
+	@echo "         f3-unfreeze-validation f3-4-frontend-kickoff f3-5-observability-kickoff"
+	@echo "         f3-kickoff-readiness f3-alert-gate"
+	@echo "         f3-4-f3-5-prep-snapshot"
+	@echo "         day7-f1f2-pre-validation day7-f1f2-one-shot f4-kickoff-readiness"
+	@echo "         release-check release-gate rollback-check rollback-previous prune-remote-releases"
+	@echo "         pilot-safe-gate pilot-full-gate pilot-to-prod-promote pilot-bootstrap"
 	@echo "         pilot-ldap-up pilot-ldap-down"
 	@echo "         pilot-seed-demo"
 	@echo ""
 	@echo "  kill-host           — kill host-side dev processes blocked by docker-only guard"
 	@echo "  pipeline-force      — kill host-side dev processes, then run full pipeline"
 	@echo "  system-audit        — one-shot full backend/frontend/parity quality gate"
+	@echo "  day7-f1f2-pre-validation  — verify docker/scripts/env ready before 2026-04-20 day7 run"
+	@echo "  f3-kickoff-readiness      — unified gate for F3.3/F3.4/F3.5 before 2026-04-21 Phase 1"
+	@echo "  f3-4-f3-5-prep-snapshot   — generate pre-day7 prep artifact for F3.4/F3.5"
 	@echo "  pilot-ldap-up       — start stack with OpenLDAP mock for LDAP testing"
 	@echo "  pilot-ldap-down     — stop LDAP stack"
 
@@ -78,6 +87,33 @@ domain-layer-gate:
 
 data-layer-gate:
 	./scripts/data_layer_gate.sh
+
+f3-unfreeze-validation:
+	./scripts/f3_unfreeze_validation.sh
+
+f3-4-frontend-kickoff:
+	./scripts/f3_4_frontend_kickoff_readiness.sh
+
+f3-5-observability-kickoff:
+	./scripts/f3_5_observability_kickoff_readiness.sh
+
+f3-kickoff-readiness:
+	./scripts/f3_kickoff_readiness.sh
+
+f3-4-f3-5-prep-snapshot:
+	./scripts/f3_4_f3_5_pre_day7_prep.sh
+
+f3-alert-gate:
+	./scripts/f3_observability_alerts_gate.sh
+
+day7-f1f2-pre-validation:
+	./scripts/f1_f2_day7_pre_execution_validation.sh
+
+day7-f1f2-one-shot:
+	./scripts/f1_f2_day7_official_one_shot.sh
+
+f4-kickoff-readiness:
+	./scripts/f4_kickoff_readiness.sh
 
 release-check:
 	./scripts/release_check.sh

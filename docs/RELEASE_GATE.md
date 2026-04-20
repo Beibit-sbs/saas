@@ -91,6 +91,7 @@ Any failure returns non-zero and blocks release.
 Optional explicit modes:
 
 - `RELEASE_ENABLE_MIGRATION_ROLLBACK_TEST=true` to run `downgrade -1 -> re-upgrade`
+- `RELEASE_ENABLE_F3_ALERT_GATE=false` to skip F3 observability alert gate (default: enabled in `release_check.sh` and `release_gate.sh`)
 - `RELEASE_ENABLE_SMOKE_GATE=true` to include `scripts/platform_smoke_check.sh`
 - `ROLLBACK_ENABLE_RESTORE_DRILL=true` when isolated restore-rehearsal DB is provisioned
 

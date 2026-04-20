@@ -3,6 +3,9 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# F3 observability alerting is part of standard release path by default.
+export RELEASE_ENABLE_F3_ALERT_GATE="${RELEASE_ENABLE_F3_ALERT_GATE:-true}"
+
 echo "[release-gate] running release checks"
 bash "${ROOT_DIR}/scripts/release_check.sh"
 

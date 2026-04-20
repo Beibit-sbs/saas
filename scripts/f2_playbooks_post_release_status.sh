@@ -24,6 +24,17 @@ day3_due="$(parse_due "Day 3 review due")"
 day7_due="$(parse_due "Day 7 review due")"
 today="$(date -u +%Y-%m-%d)"
 
+window=""
+if [[ "${today}" < "${day1_due}" ]]; then
+  window="pre_day1"
+elif [[ "${today}" < "${day3_due}" ]]; then
+  window="day1_to_day3"
+elif [[ "${today}" < "${day7_due}" ]]; then
+  window="day3_to_day7"
+else
+  window="post_day7"
+fi
+
 latest_for_phase() {
   local phase="$1"
   ls -1 "${ARTIFACTS_DIR}"/f2_playbooks_${phase}_review_20*.md 2>/dev/null | tail -n 1 || true
@@ -96,5 +107,5 @@ echo "DAY7_DUE=${day7_due}"
 echo "DAY1_ARTIFACT=${day1_artifact##*/}"
 echo "DAY3_ARTIFACT=${day3_artifact##*/}"
 echo "DAY7_ARTIFACT=${day7_artifact##*/}"
-echo "WINDOW=pre_day1"
+echo "WINDOW=${window}"
 echo "NEXT_ACTION=${next_action}"

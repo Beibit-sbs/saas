@@ -43,3 +43,160 @@ def test_get_faculty_consistency_success(
     assert body["faculty_count"] == 3
     assert body["issue_count"] == 1
     assert body["issues"][0]["issue_type"] == "faculty_missing_email"
+
+
+def test_get_faculty_workload_success(
+    monkeypatch: pytest.MonkeyPatch,
+    admin_headers: dict[str, str],
+) -> None:
+    def fake_get_faculty_workload(tenant_id: int, faculty_id: str, term_id: int):
+        assert tenant_id == 1
+        assert faculty_id == "FAC-01"
+        assert term_id == 20261
+        return {
+            "faculty_id": "FAC-01",
+            "department": "Engineering",
+            "term_id": 20261,
+            "total_credit_hours": 9,
+            "max_credit_hours": 12,
+            "fte_ratio": 1.0,
+            "effective_capacity": 12,
+            "utilization": 0.75,
+            "primary_assignments": 3,
+            "assistant_assignments": 0,
+            "alerts": [],
+        }
+
+    monkeypatch.setattr(
+        "app.modules.faculty.router.get_faculty_workload",
+        fake_get_faculty_workload,
+    )
+
+    response = client.get(
+        "/api/admin/org/faculty/FAC-01/workload?term_id=20261",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["workload"]["faculty_id"] == "FAC-01"
+    assert body["workload"]["total_credit_hours"] == 9
+
+
+def test_get_department_workload_summary_success(
+    monkeypatch: pytest.MonkeyPatch,
+    admin_headers: dict[str, str],
+) -> None:
+    def fake_get_department_workload_summary(tenant_id: int, department: str, term_id: int):
+        assert tenant_id == 1
+        assert department == "Engineering"
+        assert term_id == 20261
+        return [
+            {
+                "faculty_id": "FAC-01",
+                "department": "Engineering",
+                "term_id": 20261,
+                "total_credit_hours": 9,
+                "max_credit_hours": 12,
+                "fte_ratio": 1.0,
+                "effective_capacity": 12,
+                "utilization": 0.75,
+                "primary_assignments": 3,
+                "assistant_assignments": 0,
+                "alerts": [],
+            }
+        ]
+
+    monkeypatch.setattr(
+        "app.modules.faculty.router.get_department_workload_summary",
+        fake_get_department_workload_summary,
+    )
+
+    response = client.get(
+        "/api/admin/org/faculty/workload/department/Engineering?term_id=20261",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body["workloads"]) == 1
+    assert body["workloads"][0]["department"] == "Engineering"
+
+
+def test_get_workload_alerts_success(
+    monkeypatch: pytest.MonkeyPatch,
+    admin_headers: dict[str, str],
+) -> None:
+    def fake_list_workload_alerts(tenant_id: int, term_id: int):
+        assert tenant_id == 1
+        assert term_id == 20261
+        return [
+            {
+                "faculty_id": "FAC-02",
+                "department": "Engineering",
+                "term_id": 20261,
+                "total_credit_hours": 16,
+                "max_credit_hours": 12,
+                "fte_ratio": 1.0,
+                "effective_capacity": 12,
+                "utilization": 1.3333,
+                "primary_assignments": 4,
+                "assistant_assignments": 0,
+                "alerts": ["overload_threshold"],
+            }
+        ]
+
+    monkeypatch.setattr(
+        "app.modules.faculty.router.list_workload_alerts",
+        fake_list_workload_alerts,
+    )
+
+    response = client.get(
+        "/api/admin/org/faculty/workload/alerts?term_id=20261",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["workloads"][0]["alerts"] == ["overload_threshold"]
+
+
+def test_update_faculty_capacity_success(
+    monkeypatch: pytest.MonkeyPatch,
+    admin_headers: dict[str, str],
+) -> None:
+    def fake_update_faculty_capacity(
+        tenant_id: int,
+        faculty_id: str,
+        max_credit_hours: int,
+        fte_ratio: float,
+    ):
+        assert tenant_id == 1
+        assert faculty_id == "FAC-01"
+        assert max_credit_hours == 16
+        assert fte_ratio == 0.8
+        return {
+            "id": 5,
+            "faculty_id": "FAC-01",
+            "first_name": "Ann",
+            "last_name": "Stone",
+            "department": "Engineering",
+            "email": "ann@example.edu",
+            "status": "active",
+            "tenant_id": "1",
+        }
+
+    monkeypatch.setattr(
+        "app.modules.faculty.router.update_faculty_capacity",
+        fake_update_faculty_capacity,
+    )
+
+    response = client.put(
+        "/api/admin/org/faculty/FAC-01/capacity",
+        headers=admin_headers,
+        json={"max_credit_hours": 16, "fte_ratio": 0.8},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["faculty"]["faculty_id"] == "FAC-01"

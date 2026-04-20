@@ -7,8 +7,10 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.main import app
+from app.core.module_helpers.service_validation import MutationResult
 from app.modules.org_structure.dependencies import get_org_structure_db
 from app.modules.org_structure.models import OrgUnitModel, OrgUnitType
+from app.modules.org_structure.schemas import OrgUnitReadSchema
 from app.modules.org_structure import service as org_service
 from tests.conftest import ADMIN_HEADERS, _auth_headers, _configure_db_only_role_resolution, client
 
@@ -95,7 +97,7 @@ class TestCreateOrgUnit:
         with (
             pytest.MonkeyPatch().context() as mp,
         ):
-            mp.setattr(org_service, "create_org_unit", lambda db, tid, payload: unit)
+            mp.setattr(org_service, "create_org_unit", lambda db, tid, payload: MutationResult(entity=OrgUnitReadSchema.model_validate(unit)))
             resp = client.post(
                 "/api/admin/org-units",
                 json={
@@ -107,8 +109,8 @@ class TestCreateOrgUnit:
             )
         assert resp.status_code == 201
         data = resp.json()
-        assert data["code"] == "ENG"
-        assert data["unit_type"] == "faculty"
+        assert data["unit"]["code"] == "ENG"
+        assert data["unit"]["unit_type"] == "faculty"
 
     def test_create_forbidden_for_students(self, override_org_db: MagicMock, student_headers: dict) -> None:
         resp = client.post(

@@ -1,4 +1,4 @@
-import type { ApiError } from "./types";
+import type { ApiError, RequestConfig } from "./types";
 import { emitBackendUnavailable, emitSessionInvalid } from "@/shared/auth/session-events";
 
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -31,6 +31,10 @@ function buildHeaders(extra?: Record<string, string>): Record<string, string> {
     "Content-Type": "application/json",
     ...extra,
   };
+}
+
+function isRequestConfig(value: unknown): value is RequestConfig {
+  return !!value && typeof value === "object" && ("headers" in value || "signal" in value);
 }
 
 async function fetchWithTimeout(input: string, init: RequestInit, signal?: AbortSignal): Promise<Response> {
@@ -115,11 +119,16 @@ function debugApiError(payload: {
   mapped: ApiError;
 }) {
   if (!API_DEBUG) return;
+  // Dev-only diagnostics — sanitised: raw body/detail stripped to prevent leaking internals.
+  const safe = {
+    requestPath: payload.requestPath,
+    status: payload.status,
+    code: payload.mapped?.code,
+  };
   try {
-    // Temporary incident diagnostics: capture raw + mapped error payload in browser console.
-    console.error("[api-debug:error]", JSON.stringify(payload));
+    console.error("[api-debug:error]", JSON.stringify(safe));
   } catch {
-    console.error("[api-debug:error]", payload);
+    console.error("[api-debug:error]", safe);
   }
 }
 
@@ -155,10 +164,13 @@ async function parseResponse<T>(res: Response, requestPath: string): Promise<T> 
 
 export async function apiGet<T>(
   path: string,
-  params?: Record<string, string | number | boolean | undefined>,
+  paramsOrConfig?: Record<string, string | number | boolean | undefined> | RequestConfig,
   signal?: AbortSignal,
 ): Promise<T> {
   const bffPath = mapToBffPath(path);
+  const config = isRequestConfig(paramsOrConfig) ? paramsOrConfig : undefined;
+  const params = config ? undefined : paramsOrConfig;
+  const effectiveSignal = config?.signal ?? signal;
   const query = new URLSearchParams();
   if (params) {
     for (const [k, v] of Object.entries(params)) {
@@ -170,47 +182,55 @@ export async function apiGet<T>(
   const requestPath = query.size > 0 ? `${bffPath}?${query.toString()}` : bffPath;
   const res = await fetchWithTimeout(requestPath, {
     method: "GET",
-    headers: buildHeaders(),
+    headers: buildHeaders(config?.headers),
     credentials: "include",
-  }, signal);
+  }, effectiveSignal);
   return parseResponse<T>(res, bffPath);
 }
 
-export async function apiPost<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+export async function apiPost<T>(path: string, body?: unknown, config?: RequestConfig): Promise<T> {
   const res = await fetchWithTimeout(mapToBffPath(path), {
     method: "POST",
-    headers: buildHeaders(),
+    headers: buildHeaders(config?.headers),
     credentials: "include",
     body: body !== undefined ? JSON.stringify(body) : undefined,
-  }, signal);
+  }, config?.signal);
   return parseResponse<T>(res, path);
 }
 
-export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
+export async function apiPut<T>(path: string, body?: unknown, config?: RequestConfig): Promise<T> {
   const res = await fetchWithTimeout(mapToBffPath(path), {
     method: "PUT",
-    headers: buildHeaders(),
+    headers: buildHeaders(config?.headers),
     credentials: "include",
     body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  }, config?.signal);
   return parseResponse<T>(res, path);
 }
 
-export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+export async function apiPatch<T>(path: string, body?: unknown, config?: RequestConfig): Promise<T> {
   const res = await fetchWithTimeout(mapToBffPath(path), {
     method: "PATCH",
-    headers: buildHeaders(),
+    headers: buildHeaders(config?.headers),
     credentials: "include",
     body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  }, config?.signal);
   return parseResponse<T>(res, path);
 }
 
-export async function apiDelete<T = void>(path: string): Promise<T> {
+export async function apiDelete<T = void>(path: string, config?: RequestConfig): Promise<T> {
   const res = await fetchWithTimeout(mapToBffPath(path), {
     method: "DELETE",
-    headers: buildHeaders(),
+    headers: buildHeaders(config?.headers),
     credentials: "include",
-  });
+  }, config?.signal);
   return parseResponse<T>(res, path);
 }
+
+export const apiClient = {
+  get: apiGet,
+  post: apiPost,
+  put: apiPut,
+  patch: apiPatch,
+  delete: apiDelete,
+};

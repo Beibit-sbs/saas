@@ -282,9 +282,9 @@ test("F3 Cohort Analysis page loads and displays mock uplift report", async ({ p
 - [ ] Product Contract (this document) — DONE
 - [ ] Data Contract v1 (tables, schema, FK) — DONE
 - [ ] API Contract (endpoints, request/response shapes) — DONE
-- [ ] Testing skeleton (3-5 mock tests per layer: unit/integration/e2e) — TODO
-- [ ] Alembic migration script (schema creation, no backfill) — TODO
-- [ ] Django models (ORM definition for 3 F3 tables) — TODO
+- [ ] Testing skeleton (3-5 mock tests per layer: unit/integration/e2e) — PENDING (F3.2 deliverable)
+- [ ] Alembic migration script (schema creation, no backfill) — PENDING (F3.2 deliverable)
+- [ ] Django models (ORM definition for 3 F3 tables) — PENDING (F3.2 deliverable)
 
 ❌ **NOT in scope:**
 - Actual cohort finalization logic

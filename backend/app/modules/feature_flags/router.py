@@ -1,10 +1,10 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, Field
 
 from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
+from app.modules.feature_flags.schemas import FeatureFlagPayload
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.platform.feature_flags import service as platform_flags_service
 
@@ -31,13 +31,6 @@ def _to_legacy_dict(row: dict[str, object]) -> dict[str, object]:
         "rollout_percentage": int(row.get("rollout_percentage", 100)),
         "updated_at": str(row.get("updated_at", "")),
     }
-
-
-class FeatureFlagPayload(BaseModel):
-    key: str = Field(min_length=3, max_length=128)
-    enabled: bool
-    description: str | None = Field(default=None, max_length=256)
-    scope: str = Field(default="global", min_length=3, max_length=64)
 
 
 @router.get("")

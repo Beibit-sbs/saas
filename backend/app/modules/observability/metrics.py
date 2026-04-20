@@ -44,6 +44,16 @@ _risk_scoring_duration: dict[tuple[str, str], tuple[int, float]] = defaultdict(l
 _risk_recommendation_ack_total: dict[tuple[str, str], int] = defaultdict(int)
 _risk_high_band_students_total: dict[str, int] = defaultdict(int)
 _risk_latest_snapshot_age_seconds: dict[str, float] = defaultdict(float)
+_f3_cohort_operations_total: dict[tuple[str, str, str], int] = defaultdict(int)
+_f3_cohort_operation_duration: dict[tuple[str, str, str], tuple[int, float]] = defaultdict(lambda: (0, 0.0))
+_f3_guardrails_evaluated_total: dict[tuple[str, str, str], int] = defaultdict(int)
+_f3_active_cohort_analysis_queue_depth: dict[tuple[str, str, str], int] = defaultdict(int)
+_ai_cost_total_usd: dict[tuple[str, str, str, str], float] = defaultdict(float)
+_ai_budget_utilization_pct: dict[tuple[str, str, str], float] = defaultdict(float)
+_ai_budget_exceeded_total: dict[tuple[str, str], int] = defaultdict(int)
+_ai_cost_anomaly_detected_total: dict[str, int] = defaultdict(int)
+_ai_slo_compliance_pct: dict[tuple[str, str], float] = defaultdict(float)
+_ai_slo_breach_total: dict[tuple[str, str], int] = defaultdict(int)
 _jobs_executed_total: int = 0
 _jobs_failed_total: int = 0
 _jobs_queue_size: int = 0
@@ -233,6 +243,49 @@ def observe_risk_recommendation_ack(*, tenant_id: str | int | None, status: str)
         _risk_recommendation_ack_total[key] += 1
 
 
+def observe_f3_cohort_operation(
+    *,
+    tenant_id: str | int | None,
+    operation: str,
+    status: str,
+    duration_seconds: float,
+) -> None:
+    key = (
+        str(tenant_id if tenant_id is not None else "-").strip() or "-",
+        str(operation).strip().lower() or "unknown",
+        str(status).strip().lower() or "unknown",
+    )
+    with _lock:
+        _f3_cohort_operations_total[key] += 1
+        count, total_duration = _f3_cohort_operation_duration[key]
+        _f3_cohort_operation_duration[key] = (count + 1, total_duration + max(0.0, float(duration_seconds)))
+
+
+def observe_f3_guardrail_evaluation(
+    *,
+    tenant_id: str | int | None,
+    guardrail: str,
+    result: str,
+) -> None:
+    key = (
+        str(tenant_id if tenant_id is not None else "-").strip() or "-",
+        str(guardrail).strip().lower() or "unknown",
+        str(result).strip().lower() or "unknown",
+    )
+    with _lock:
+        _f3_guardrails_evaluated_total[key] += 1
+
+
+def observe_f3_analysis_queue_enqueued(*, tenant_id: str | int | None, queue_name: str = "analyze_queue") -> None:
+    key = (
+        str(tenant_id if tenant_id is not None else "-").strip() or "-",
+        str(queue_name).strip().lower() or "analyze_queue",
+        "pending",
+    )
+    with _lock:
+        _f3_active_cohort_analysis_queue_depth[key] += 1
+
+
 def set_risk_high_band_students_total(*, tenant_id: str | int | None, total: int) -> None:
     key = str(tenant_id if tenant_id is not None else "-").strip() or "-"
     with _lock:
@@ -290,6 +343,55 @@ def set_redis_latency(value_seconds: float | None) -> None:
         _redis_latency_seconds = None if value_seconds is None else float(value_seconds)
 
 
+def observe_ai_cost_summary(*, tenant_id: int, summary: dict[str, object]) -> None:
+    tenant = str(int(tenant_id))
+    models = list(summary.get("models") or [])
+    with _lock:
+        for item in models:
+            if not isinstance(item, dict):
+                continue
+            provider = str(item.get("provider") or "unknown").strip().lower() or "unknown"
+            model = str(item.get("model_key") or "unknown").strip() or "unknown"
+            cost_usd = max(0.0, float(item.get("estimated_cost_usd") or 0.0))
+            _ai_cost_total_usd[(tenant, provider, model, "daily")] = round(cost_usd, 6)
+
+        if bool(summary.get("anomaly_detected", False)):
+            _ai_cost_anomaly_detected_total[tenant] += 1
+
+
+def observe_ai_budget_status(*, tenant_id: int, rows: list[dict[str, object]]) -> None:
+    tenant = str(int(tenant_id))
+    with _lock:
+        for item in rows:
+            scope = str(item.get("scope") or "tenant").strip().lower() or "tenant"
+            raw_scope_id = item.get("scope_id")
+            scope_id = str(raw_scope_id).strip() if raw_scope_id is not None else "-"
+            utilization_pct = max(0.0, float(item.get("utilization_pct") or 0.0))
+            _ai_budget_utilization_pct[(tenant, scope, scope_id)] = round(utilization_pct, 2)
+
+            exceeded = bool(item.get("hard_cap_exceeded", False)) or utilization_pct >= 100.0
+            if exceeded:
+                _ai_budget_exceeded_total[(tenant, scope)] += 1
+
+
+def observe_ai_slo_compliance(rows: list[dict[str, object]]) -> None:
+    with _lock:
+        for item in rows:
+            model = str(item.get("model_key") or "unknown").strip() or "unknown"
+
+            latency_compliant = bool(item.get("latency_compliant", False))
+            latency_pct = 100.0 if latency_compliant else 0.0
+            _ai_slo_compliance_pct[(model, "p95_latency")] = latency_pct
+            if not latency_compliant:
+                _ai_slo_breach_total[(model, "p95_latency")] += 1
+
+            error_rate_compliant = bool(item.get("error_rate_compliant", False))
+            error_rate_pct = 100.0 if error_rate_compliant else 0.0
+            _ai_slo_compliance_pct[(model, "error_rate")] = error_rate_pct
+            if not error_rate_compliant:
+                _ai_slo_breach_total[(model, "error_rate")] += 1
+
+
 def clear_metrics_state() -> None:
     with _lock:
         _req_total.clear()
@@ -308,6 +410,16 @@ def clear_metrics_state() -> None:
         _risk_recommendation_ack_total.clear()
         _risk_high_band_students_total.clear()
         _risk_latest_snapshot_age_seconds.clear()
+        _f3_cohort_operations_total.clear()
+        _f3_cohort_operation_duration.clear()
+        _f3_guardrails_evaluated_total.clear()
+        _f3_active_cohort_analysis_queue_depth.clear()
+        _ai_cost_total_usd.clear()
+        _ai_budget_utilization_pct.clear()
+        _ai_budget_exceeded_total.clear()
+        _ai_cost_anomaly_detected_total.clear()
+        _ai_slo_compliance_pct.clear()
+        _ai_slo_breach_total.clear()
         global _workflow_executions_total, _grade_submissions_total, _scheduling_conflicts_total
         global _jobs_executed_total, _jobs_failed_total, _jobs_queue_size, _invoices_created_total, _billing_failures_total
         global _db_connections_active, _redis_latency_seconds
@@ -352,6 +464,16 @@ def render_metrics() -> str:
         risk_recommendation_ack_total = dict(_risk_recommendation_ack_total)
         risk_high_band_students_total = dict(_risk_high_band_students_total)
         risk_latest_snapshot_age_seconds = dict(_risk_latest_snapshot_age_seconds)
+        f3_cohort_operations_total = dict(_f3_cohort_operations_total)
+        f3_cohort_operation_duration = dict(_f3_cohort_operation_duration)
+        f3_guardrails_evaluated_total = dict(_f3_guardrails_evaluated_total)
+        f3_active_cohort_analysis_queue_depth = dict(_f3_active_cohort_analysis_queue_depth)
+        ai_cost_total_usd = dict(_ai_cost_total_usd)
+        ai_budget_utilization_pct = dict(_ai_budget_utilization_pct)
+        ai_budget_exceeded_total = dict(_ai_budget_exceeded_total)
+        ai_cost_anomaly_detected_total = dict(_ai_cost_anomaly_detected_total)
+        ai_slo_compliance_pct = dict(_ai_slo_compliance_pct)
+        ai_slo_breach_total = dict(_ai_slo_breach_total)
         jobs_executed_total = _jobs_executed_total
         jobs_failed_total = _jobs_failed_total
         jobs_queue_size = _jobs_queue_size
@@ -490,6 +612,75 @@ def render_metrics() -> str:
     for tenant, age_seconds in sorted(risk_latest_snapshot_age_seconds.items()):
         labels = f'tenant_id="{_escape(tenant)}"'
         lines.append(f"risk_latest_snapshot_age_seconds{{{labels}}} {age_seconds:.3f}")
+
+    lines.append("# HELP f3_cohort_operations_total Total F3 cohort operations.")
+    lines.append("# TYPE f3_cohort_operations_total counter")
+    for (tenant, operation, status), count in sorted(f3_cohort_operations_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",operation="{_escape(operation)}",status="{_escape(status)}"'
+        lines.append(f"f3_cohort_operations_total{{{labels}}} {count}")
+
+    lines.append("# HELP f3_cohort_operation_duration_seconds_total Sum of F3 cohort operation durations.")
+    lines.append("# TYPE f3_cohort_operation_duration_seconds_total counter")
+    for (tenant, operation, status), (_, total_duration) in sorted(f3_cohort_operation_duration.items()):
+        labels = f'tenant_id="{_escape(tenant)}",operation="{_escape(operation)}",status="{_escape(status)}"'
+        lines.append(f"f3_cohort_operation_duration_seconds_total{{{labels}}} {total_duration:.6f}")
+
+    lines.append("# HELP f3_cohort_operation_duration_seconds_count Number of finished F3 cohort operations.")
+    lines.append("# TYPE f3_cohort_operation_duration_seconds_count counter")
+    for (tenant, operation, status), (count, _) in sorted(f3_cohort_operation_duration.items()):
+        labels = f'tenant_id="{_escape(tenant)}",operation="{_escape(operation)}",status="{_escape(status)}"'
+        lines.append(f"f3_cohort_operation_duration_seconds_count{{{labels}}} {count}")
+
+    lines.append("# HELP f3_guardrails_evaluated_total Total F3 guardrail evaluations.")
+    lines.append("# TYPE f3_guardrails_evaluated_total counter")
+    for (tenant, guardrail, result), count in sorted(f3_guardrails_evaluated_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",guardrail="{_escape(guardrail)}",result="{_escape(result)}"'
+        lines.append(f"f3_guardrails_evaluated_total{{{labels}}} {count}")
+
+    lines.append("# HELP f3_active_cohort_analysis_queue_depth Current queued F3 analysis depth.")
+    lines.append("# TYPE f3_active_cohort_analysis_queue_depth gauge")
+    for (tenant, queue_name, status), value in sorted(f3_active_cohort_analysis_queue_depth.items()):
+        labels = f'tenant_id="{_escape(tenant)}",queue_name="{_escape(queue_name)}",status="{_escape(status)}"'
+        lines.append(f"f3_active_cohort_analysis_queue_depth{{{labels}}} {value}")
+
+    lines.append("# HELP ai_cost_total_usd Total AI cost per tenant/provider/model/period.")
+    lines.append("# TYPE ai_cost_total_usd gauge")
+    for (tenant, provider, model, period), value in sorted(ai_cost_total_usd.items()):
+        labels = (
+            f'tenant_id="{_escape(tenant)}",provider="{_escape(provider)}",'
+            f'model="{_escape(model)}",period="{_escape(period)}"'
+        )
+        lines.append(f"ai_cost_total_usd{{{labels}}} {value:.6f}")
+
+    lines.append("# HELP ai_budget_utilization_pct AI budget utilization percentage.")
+    lines.append("# TYPE ai_budget_utilization_pct gauge")
+    for (tenant, scope, scope_id), value in sorted(ai_budget_utilization_pct.items()):
+        labels = f'tenant_id="{_escape(tenant)}",scope="{_escape(scope)}",scope_id="{_escape(scope_id)}"'
+        lines.append(f"ai_budget_utilization_pct{{{labels}}} {value:.2f}")
+
+    lines.append("# HELP ai_budget_exceeded_total Total AI budget exceeded events.")
+    lines.append("# TYPE ai_budget_exceeded_total counter")
+    for (tenant, scope), count in sorted(ai_budget_exceeded_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",scope="{_escape(scope)}"'
+        lines.append(f"ai_budget_exceeded_total{{{labels}}} {count}")
+
+    lines.append("# HELP ai_cost_anomaly_detected_total Total detected AI cost anomalies.")
+    lines.append("# TYPE ai_cost_anomaly_detected_total counter")
+    for tenant, count in sorted(ai_cost_anomaly_detected_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}"'
+        lines.append(f"ai_cost_anomaly_detected_total{{{labels}}} {count}")
+
+    lines.append("# HELP ai_slo_compliance_pct AI SLO compliance percentage by model and metric.")
+    lines.append("# TYPE ai_slo_compliance_pct gauge")
+    for (model, metric), value in sorted(ai_slo_compliance_pct.items()):
+        labels = f'model="{_escape(model)}",metric="{_escape(metric)}"'
+        lines.append(f"ai_slo_compliance_pct{{{labels}}} {value:.2f}")
+
+    lines.append("# HELP ai_slo_breach_total Total AI SLO breach events by model and metric.")
+    lines.append("# TYPE ai_slo_breach_total counter")
+    for (model, metric), count in sorted(ai_slo_breach_total.items()):
+        labels = f'model="{_escape(model)}",metric="{_escape(metric)}"'
+        lines.append(f"ai_slo_breach_total{{{labels}}} {count}")
 
     lines.append("# HELP jobs_executed_total Total successfully executed jobs.")
     lines.append("# TYPE jobs_executed_total counter")

@@ -85,7 +85,13 @@ class UnitOfWork:
 
     def __enter__(self) -> UnitOfWork:
         if db_available() and db_url() and psycopg is not None:
-            self.conn = psycopg.connect(db_url(), connect_timeout=5, options=get_db_connect_options())
+            # PgBouncer transaction pooling is incompatible with session prepared statements.
+            self.conn = psycopg.connect(
+                db_url(),
+                connect_timeout=5,
+                options=get_db_connect_options(),
+                prepare_threshold=None,
+            )
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:

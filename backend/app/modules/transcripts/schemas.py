@@ -54,6 +54,11 @@ class TranscriptSnapshotSchema(BaseModel):
     generated_at: datetime
 
 
+class TranscriptSnapshotMutationResponse(BaseModel):
+    snapshot: TranscriptSnapshotSchema
+    idempotent_replay: bool = False
+
+
 class TranscriptConsistencyIssueSchema(BaseModel):
     issue_type: str
     enrollment_id: int | None = None

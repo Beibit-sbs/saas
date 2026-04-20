@@ -72,11 +72,12 @@ function hasUnsafePathPart(pathPart: string): boolean {
 
 function bffDebugLog(payload: Record<string, unknown>) {
   if (!BFF_DEBUG) return;
+  // Dev-only diagnostics — sanitised: strip body/headers to prevent leaking internals.
+  const { body, headers, ...safe } = payload;
   try {
-    // Temporary incident diagnostics for shared BFF failures across tabs.
-    console.error("[bff-debug]", JSON.stringify(payload));
+    console.error("[bff-debug]", JSON.stringify(safe));
   } catch {
-    console.error("[bff-debug]", payload);
+    console.error("[bff-debug]", safe);
   }
 }
 

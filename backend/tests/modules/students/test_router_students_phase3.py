@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.core.module_helpers.service_validation import (
     DomainValidationError,
+    MutationResult,
     OptimisticLockConflictError,
     TenantResourceNotFoundError,
 )
@@ -160,7 +161,7 @@ def test_post_students_success(
         assert request.person_id == 101
         # tenant_id from payload must never be used by router
         assert request.metadata_json.get("tenant_id") == 999
-        return _profile_schema(student_id=1001, tenant_id=tenant_id)
+        return MutationResult(entity=_profile_schema(student_id=1001, tenant_id=tenant_id))
 
     monkeypatch.setattr(
         students_service.StudentLifecycleService,
@@ -180,7 +181,7 @@ def test_post_students_success(
     )
 
     assert response.status_code == 201, response.text
-    assert response.json()["id"] == 1001
+    assert response.json()["student"]["id"] == 1001
     # Router should not write audit directly.
     assert audit_mock.call_count == 0
 
@@ -448,7 +449,7 @@ def test_patch_status_valid_transition_returns_200(
         assert tenant_id == 1
         assert student_profile_id == 1001
         assert request.to_status == StudentStatus.ACTIVE
-        return _profile_schema(student_id=student_profile_id, tenant_id=tenant_id, status=StudentStatus.ACTIVE)
+        return MutationResult(entity=_profile_schema(student_id=student_profile_id, tenant_id=tenant_id, status=StudentStatus.ACTIVE))
 
     monkeypatch.setattr(
         students_service.StudentLifecycleService,
@@ -463,7 +464,7 @@ def test_patch_status_valid_transition_returns_200(
     )
 
     assert response.status_code == 200, response.text
-    assert response.json()["current_status"] == "active"
+    assert response.json()["student"]["current_status"] == "active"
 
 
 def test_patch_status_invalid_transition_returns_400(
@@ -558,7 +559,7 @@ def test_post_program_bindings_success_and_path_id_overrides_body(
         assert tenant_id == 1
         # Router must force student_profile_id from path, not body.
         assert request.student_profile_id == 1001
-        return _binding_schema(student_id=1001, program_id=request.program_id)
+        return MutationResult(entity=_binding_schema(student_id=1001, program_id=request.program_id))
 
     monkeypatch.setattr(
         students_service.StudentLifecycleService,
@@ -578,7 +579,7 @@ def test_post_program_bindings_success_and_path_id_overrides_body(
     )
 
     assert response.status_code == 201, response.text
-    assert response.json()["student_profile_id"] == 1001
+    assert response.json()["binding"]["student_profile_id"] == 1001
 
 
 def test_post_program_bindings_duplicate_primary_returns_409(

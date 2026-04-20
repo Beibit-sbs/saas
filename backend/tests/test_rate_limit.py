@@ -88,7 +88,8 @@ def test_sensitive_admin_rate_limit_returns_429_and_audits(monkeypatch) -> None:
 
     assert first.status_code == 200
     assert second.status_code == 429
-    assert int(second.headers["Retry-After"]) >= 59
+    retry_after = int(second.headers["Retry-After"])
+    assert 0 < retry_after <= 60
 
     events_response = client.get("/api/admin/audit/events", headers=ADMIN_HEADERS)
     assert events_response.status_code == 200

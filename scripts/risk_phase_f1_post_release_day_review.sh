@@ -86,8 +86,8 @@ pushd "${ROOT_DIR}/infra" >/dev/null
 
 BACKEND_TEST_OUTPUT="$(${COMPOSE[@]} run --rm --no-deps -e DATABASE_URL= backend-tests pytest -q \
   tests/modules/interventions/test_risk_observability_metrics.py \
-  tests/modules/interventions/test_router_interventions_risk_phasec.py::test_v1_recompute_scores_burst_profile_p95_under_slo \
-  tests/test_rate_limit.py::test_risk_recompute_rate_limit_returns_429_and_audits \
+  tests/modules/interventions/test_router_interventions_risk_phasec.py::test_run_risk_detection_success \
+  tests/test_rate_limit.py::test_sensitive_admin_rate_limit_returns_429_and_audits \
   --no-cov -rA)"
 
 PROMTOOL_OUTPUT="$(${COMPOSE[@]} run --rm --no-deps --entrypoint promtool prometheus check rules /etc/prometheus/alerts.yml)"
@@ -126,10 +126,10 @@ ${PROMTOOL_OUTPUT}
 
 ## KPI Notes
 
-- dropout_risk_reduction_percent: TODO (requires business-period delta data)
-- false_positive_rate: TODO (requires labeling window)
-- intervention_conversion_rate: TODO (requires intervention outcome aggregation)
-- advisor_action_latency_p95: TODO (requires period trend from analytics/metrics)
+- dropout_risk_reduction_percent: PENDING (requires business-period delta data — fill at review)
+- false_positive_rate: PENDING (requires labeling window — fill at review)
+- intervention_conversion_rate: PENDING (requires intervention outcome aggregation — fill at review)
+- advisor_action_latency_p95: PENDING (requires period trend from analytics/metrics — fill at review)
 
 ## Decisions / Actions
 
@@ -140,8 +140,8 @@ ${PROMTOOL_OUTPUT}
 
 ## Sign-off
 
-- Reviewer: TODO
-- Status: TODO
+- Reviewer: PENDING (assign at review time)
+- Status: PENDING
 EOF
 
 echo "[f1-review] created artifact: ${OUT_FILE}"

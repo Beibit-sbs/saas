@@ -38,14 +38,14 @@ run_cmd "${COMPOSE[@]}" up -d db redis backend frontend nginx
 
 section "core layer"
 run_cmd "${COMPOSE[@]}" exec -T backend ruff check .
-run_cmd "${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --disable-warnings tests/platform/test_platform_architecture_guardrails_v1.py
-run_cmd "${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --disable-warnings tests/platform/test_platform_tenant_safety_audit_v1.py
+run_cmd "${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --no-cov --disable-warnings tests/platform/test_platform_architecture_guardrails_v1.py
+run_cmd "${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --no-cov --disable-warnings tests/platform/test_platform_tenant_safety_audit_v1.py
 
 section "application layer"
 run_cmd "${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --disable-warnings
 
 section "security layer"
-run_cmd "${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --disable-warnings -m security_regression
+run_cmd "${COMPOSE[@]}" run --rm --no-deps backend-tests pytest -q --no-cov --disable-warnings -m security_regression
 
 section "access layer"
 run_cmd "${ROOT_DIR}/scripts/check_permission_parity.sh"

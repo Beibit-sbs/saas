@@ -47,3 +47,30 @@ class FacultyConsistencyReportSchema(BaseModel):
     faculty_count: int
     issue_count: int
     issues: list[FacultyConsistencyIssueSchema]
+
+
+class FacultyWorkloadSchema(BaseModel):
+    faculty_id: str
+    department: str
+    term_id: int
+    total_credit_hours: int
+    max_credit_hours: int
+    fte_ratio: float
+    effective_capacity: int
+    utilization: float
+    primary_assignments: int
+    assistant_assignments: int
+    alerts: list[str]
+
+
+class FacultyWorkloadItemResponse(BaseModel):
+    workload: FacultyWorkloadSchema
+
+
+class FacultyWorkloadListResponse(BaseModel):
+    workloads: list[FacultyWorkloadSchema]
+
+
+class FacultyCapacityUpdatePayload(BaseModel):
+    max_credit_hours: int = Field(ge=1, le=100)
+    fte_ratio: float = Field(gt=0.0, le=1.0)

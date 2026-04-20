@@ -24,6 +24,7 @@ from app.modules.grades.schemas import (
     GradeChangeSchema,
     GradeEnrollmentConsistencyReportSchema,
     GradeListResponseSchema,
+    GradeMutationResponse,
     GradeReadSchema,
     GradeSubmitSchema,
 )
@@ -68,7 +69,7 @@ router = APIRouter(prefix="/api/admin", tags=["grades"])
     "/grades/submit",
     summary="Submit grade for enrollment",
     description="Creates a grade submission and updates enrollment grade placeholders.",
-    response_model=GradeReadSchema,
+    response_model=GradeMutationResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
         400: {"model": ErrorDetailResponse},
@@ -83,17 +84,21 @@ async def submit_grade_endpoint(
     _: Annotated[None, Depends(permission_dependency("grades.write"))] = None,
     tenant: TrustedTenant = None,
     db: GradesDb = None,
-) -> GradeReadSchema:
+) -> GradeMutationResponse:
     try:
         request_model = _parse_payload(GradeSubmitSchema, payload)
         service = GradeLifecycleService(db)
-        grade = await service.submit_grade(
+        result = await service.submit_grade(
             tenant_id=int(tenant["id"]),
             request=request_model,
             actor_id=actor,
         )
-        observe_grade_submission()
-        return grade
+        if not result.idempotent_replay:
+            observe_grade_submission()
+        return GradeMutationResponse(
+            grade=result.entity,
+            idempotent_replay=result.idempotent_replay,
+        )
     except (
         PermissionError,
         ValidationError,
@@ -110,7 +115,7 @@ async def submit_grade_endpoint(
     "/grades/change",
     summary="Change submitted grade",
     description="Changes a previously submitted grade with optimistic locking.",
-    response_model=GradeReadSchema,
+    response_model=GradeMutationResponse,
     status_code=status.HTTP_200_OK,
     responses={
         400: {"model": ErrorDetailResponse},
@@ -125,14 +130,18 @@ async def change_grade_endpoint(
     _: Annotated[None, Depends(permission_dependency("grades.write"))] = None,
     tenant: TrustedTenant = None,
     db: GradesDb = None,
-) -> GradeReadSchema:
+) -> GradeMutationResponse:
     try:
         request_model = _parse_payload(GradeChangeSchema, payload)
         service = GradeLifecycleService(db)
-        return await service.change_grade(
+        result = await service.change_grade(
             tenant_id=int(tenant["id"]),
             request=request_model,
             actor_id=actor,
+        )
+        return GradeMutationResponse(
+            grade=result.entity,
+            idempotent_replay=result.idempotent_replay,
         )
     except (
         PermissionError,

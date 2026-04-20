@@ -454,3 +454,407 @@ def test_job_enqueue_exposes_idempotent_replay_flag() -> None:
     )
     assert properties["idempotent_replay"].get("type") == "boolean"
     assert "job" in properties
+
+
+# ---------------------------------------------------------------------------
+# University-domain CRUD contract tests (ERP-QA-37 gap closure)
+# ---------------------------------------------------------------------------
+
+
+class TestStudentsOpenAPIContract:
+    """Contract tests for /api/admin/students endpoints."""
+
+    def test_students_list_contract(self) -> None:
+        operation = _operation("/api/admin/students", "get")
+        assert operation.get("tags") == ["students"]
+        _response_schema_ref(operation, "200")
+
+    def test_students_create_contract(self) -> None:
+        operation = _operation("/api/admin/students", "post")
+        assert operation.get("tags") == ["students"]
+        ref = _response_schema_ref(operation, "201")
+        assert "StudentProfileMutationResponse" in ref
+
+    def test_students_get_by_id_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}", "get")
+        assert operation.get("tags") == ["students"]
+        ref = _response_schema_ref(operation, "200")
+        assert "StudentProfileReadSchema" in ref
+
+    def test_students_status_patch_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}/status", "patch")
+        assert operation.get("tags") == ["students"]
+        ref = _response_schema_ref(operation, "200")
+        assert "StudentProfileMutationResponse" in ref
+
+    def test_students_program_binding_create_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}/program-bindings", "post")
+        assert operation.get("tags") == ["students"]
+        ref = _response_schema_ref(operation, "201")
+        assert "StudentProgramBindingMutationResponse" in ref
+
+    def test_students_consistency_contract(self) -> None:
+        operation = _operation("/api/admin/students/consistency/program-bindings", "get")
+        assert operation.get("tags") == ["students"]
+        responses = operation.get("responses", {})
+        assert "200" in responses
+
+
+class TestFacultyOpenAPIContract:
+    """Contract tests for /api/admin/org/faculty endpoints."""
+
+    def test_faculty_list_contract(self) -> None:
+        operation = _operation("/api/admin/org/faculty", "get")
+        assert operation.get("tags") == ["org-faculty"]
+        ref = _response_schema_ref(operation, "200")
+        assert "FacultyListResponse" in ref
+
+    def test_faculty_create_contract(self) -> None:
+        operation = _operation("/api/admin/org/faculty", "post")
+        assert operation.get("tags") == ["org-faculty"]
+        ref = _response_schema_ref(operation, "200")
+        assert "FacultyItemResponse" in ref
+
+    def test_faculty_update_contract(self) -> None:
+        operation = _operation("/api/admin/org/faculty/{faculty_row_id}", "put")
+        assert operation.get("tags") == ["org-faculty"]
+        ref = _response_schema_ref(operation, "200")
+        assert "FacultyItemResponse" in ref
+
+    def test_faculty_delete_contract(self) -> None:
+        operation = _operation("/api/admin/org/faculty/{faculty_row_id}", "delete")
+        assert operation.get("tags") == ["org-faculty"]
+        ref = _response_schema_ref(operation, "200")
+        assert "FacultyDeleteResponse" in ref
+
+    def test_faculty_consistency_contract(self) -> None:
+        operation = _operation("/api/admin/org/faculty/consistency", "get")
+        assert operation.get("tags") == ["org-faculty"]
+        ref = _response_schema_ref(operation, "200")
+        assert "FacultyConsistencyReportSchema" in ref
+
+
+class TestCoursesOpenAPIContract:
+    """Contract tests for /api/admin/org/courses endpoints."""
+
+    def test_courses_list_contract(self) -> None:
+        operation = _operation("/api/admin/org/courses", "get")
+        assert operation.get("tags") == ["org-courses"]
+        ref = _response_schema_ref(operation, "200")
+        assert "CourseListResponse" in ref
+
+    def test_courses_create_contract(self) -> None:
+        operation = _operation("/api/admin/org/courses", "post")
+        assert operation.get("tags") == ["org-courses"]
+        ref = _response_schema_ref(operation, "200")
+        assert "CourseItemResponse" in ref
+
+    def test_courses_update_contract(self) -> None:
+        operation = _operation("/api/admin/org/courses/{course_id}", "put")
+        assert operation.get("tags") == ["org-courses"]
+        ref = _response_schema_ref(operation, "200")
+        assert "CourseItemResponse" in ref
+
+    def test_courses_delete_contract(self) -> None:
+        operation = _operation("/api/admin/org/courses/{course_id}", "delete")
+        assert operation.get("tags") == ["org-courses"]
+        ref = _response_schema_ref(operation, "200")
+        assert "CourseDeleteResponse" in ref
+
+    def test_courses_consistency_contract(self) -> None:
+        operation = _operation("/api/admin/org/courses/consistency", "get")
+        assert operation.get("tags") == ["org-courses"]
+        ref = _response_schema_ref(operation, "200")
+        assert "CourseConsistencyReportSchema" in ref
+
+
+class TestGradesOpenAPIContract:
+    """Contract tests for /api/admin/grades endpoints."""
+
+    def test_grades_submit_contract(self) -> None:
+        operation = _operation("/api/admin/grades/submit", "post")
+        assert operation.get("tags") == ["grades"]
+        ref = _response_schema_ref(operation, "201")
+        assert "GradeMutationResponse" in ref
+
+    def test_grades_change_contract(self) -> None:
+        operation = _operation("/api/admin/grades/change", "patch")
+        assert operation.get("tags") == ["grades"]
+        ref = _response_schema_ref(operation, "200")
+        assert "GradeMutationResponse" in ref
+
+    def test_grades_list_by_course_contract(self) -> None:
+        operation = _operation("/api/admin/courses/{course_id}/grades", "get")
+        assert operation.get("tags") == ["grades"]
+        ref = _response_schema_ref(operation, "200")
+        assert "GradeListResponseSchema" in ref
+
+    def test_grades_consistency_contract(self) -> None:
+        operation = _operation("/api/admin/grades/consistency", "get")
+        assert operation.get("tags") == ["grades"]
+        ref = _response_schema_ref(operation, "200")
+        assert "GradeEnrollmentConsistencyReportSchema" in ref
+
+
+class TestTranscriptsOpenAPIContract:
+    """Contract tests for /api/admin transcript endpoints."""
+
+    def test_transcript_get_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}/transcript", "get")
+        assert operation.get("tags") == ["transcripts"]
+        ref = _response_schema_ref(operation, "200")
+        assert "StudentTranscriptSchema" in ref
+
+    def test_transcript_snapshot_create_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}/transcript/snapshot", "post")
+        assert operation.get("tags") == ["transcripts"]
+        ref = _response_schema_ref(operation, "201")
+        assert "TranscriptSnapshotMutationResponse" in ref
+
+    def test_transcript_consistency_by_student_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}/transcript/consistency", "get")
+        assert operation.get("tags") == ["transcripts"]
+        ref = _response_schema_ref(operation, "200")
+        assert "TranscriptConsistencyReportSchema" in ref
+
+    def test_transcript_tenant_consistency_contract(self) -> None:
+        operation = _operation("/api/admin/transcripts/consistency", "get")
+        assert operation.get("tags") == ["transcripts"]
+        ref = _response_schema_ref(operation, "200")
+        assert "TranscriptTenantConsistencyReportSchema" in ref
+
+
+class TestLocalUsersOpenAPIContract:
+    """Contract tests for /api/admin/local-users endpoints (no named response schemas)."""
+
+    def test_local_users_list_contract(self) -> None:
+        operation = _operation("/api/admin/local-users", "get")
+        assert operation.get("tags") == ["local-users"]
+        responses = operation.get("responses", {})
+        assert "200" in responses
+
+    def test_local_users_create_contract(self) -> None:
+        operation = _operation("/api/admin/local-users", "post")
+        assert operation.get("tags") == ["local-users"]
+        responses = operation.get("responses", {})
+        assert "200" in responses
+
+    def test_local_users_update_contract(self) -> None:
+        operation = _operation("/api/admin/local-users/{user_id}", "patch")
+        assert operation.get("tags") == ["local-users"]
+        responses = operation.get("responses", {})
+        assert "200" in responses
+
+    def test_local_users_delete_contract(self) -> None:
+        operation = _operation("/api/admin/local-users/{user_id}", "delete")
+        assert operation.get("tags") == ["local-users"]
+        responses = operation.get("responses", {})
+        assert "200" in responses
+
+    def test_local_users_password_reset_contract(self) -> None:
+        operation = _operation("/api/admin/local-users/{user_id}/password", "post")
+        assert operation.get("tags") == ["local-users"]
+        responses = operation.get("responses", {})
+        assert "200" in responses
+
+
+# ---------------------------------------------------------------------------
+# University-domain CRUD contract tests (ERP-QA-37 gap closure)
+# ---------------------------------------------------------------------------
+
+
+class TestStudentsOpenAPIContract:
+    """Contract tests for /api/admin/students endpoints."""
+
+    def test_students_list_contract(self) -> None:
+        operation = _operation("/api/admin/students", "get")
+        assert operation.get("tags") == ["students"]
+        _response_schema_ref(operation, "200")
+
+    def test_students_create_contract(self) -> None:
+        operation = _operation("/api/admin/students", "post")
+        assert operation.get("tags") == ["students"]
+        ref = _response_schema_ref(operation, "201")
+        assert "StudentProfileMutationResponse" in ref
+
+    def test_students_get_by_id_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}", "get")
+        assert operation.get("tags") == ["students"]
+        ref = _response_schema_ref(operation, "200")
+        assert "StudentProfileReadSchema" in ref
+
+    def test_students_status_patch_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}/status", "patch")
+        assert operation.get("tags") == ["students"]
+        ref = _response_schema_ref(operation, "200")
+        assert "StudentProfileMutationResponse" in ref
+
+    def test_students_program_binding_create_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}/program-bindings", "post")
+        assert operation.get("tags") == ["students"]
+        ref = _response_schema_ref(operation, "201")
+        assert "StudentProgramBindingMutationResponse" in ref
+
+    def test_students_consistency_contract(self) -> None:
+        operation = _operation("/api/admin/students/consistency/program-bindings", "get")
+        assert operation.get("tags") == ["students"]
+        responses = operation.get("responses", {})
+        assert "200" in responses
+
+
+class TestFacultyOpenAPIContract:
+    """Contract tests for /api/admin/org/faculty endpoints."""
+
+    def test_faculty_list_contract(self) -> None:
+        operation = _operation("/api/admin/org/faculty", "get")
+        assert operation.get("tags") == ["org-faculty"]
+        ref = _response_schema_ref(operation, "200")
+        assert "FacultyListResponse" in ref
+
+    def test_faculty_create_contract(self) -> None:
+        operation = _operation("/api/admin/org/faculty", "post")
+        assert operation.get("tags") == ["org-faculty"]
+        ref = _response_schema_ref(operation, "200")
+        assert "FacultyItemResponse" in ref
+
+    def test_faculty_update_contract(self) -> None:
+        operation = _operation("/api/admin/org/faculty/{faculty_row_id}", "put")
+        assert operation.get("tags") == ["org-faculty"]
+        ref = _response_schema_ref(operation, "200")
+        assert "FacultyItemResponse" in ref
+
+    def test_faculty_delete_contract(self) -> None:
+        operation = _operation("/api/admin/org/faculty/{faculty_row_id}", "delete")
+        assert operation.get("tags") == ["org-faculty"]
+        ref = _response_schema_ref(operation, "200")
+        assert "FacultyDeleteResponse" in ref
+
+    def test_faculty_consistency_contract(self) -> None:
+        operation = _operation("/api/admin/org/faculty/consistency", "get")
+        assert operation.get("tags") == ["org-faculty"]
+        ref = _response_schema_ref(operation, "200")
+        assert "FacultyConsistencyReportSchema" in ref
+
+
+class TestCoursesOpenAPIContract:
+    """Contract tests for /api/admin/org/courses endpoints."""
+
+    def test_courses_list_contract(self) -> None:
+        operation = _operation("/api/admin/org/courses", "get")
+        assert operation.get("tags") == ["org-courses"]
+        ref = _response_schema_ref(operation, "200")
+        assert "CourseListResponse" in ref
+
+    def test_courses_create_contract(self) -> None:
+        operation = _operation("/api/admin/org/courses", "post")
+        assert operation.get("tags") == ["org-courses"]
+        ref = _response_schema_ref(operation, "200")
+        assert "CourseItemResponse" in ref
+
+    def test_courses_update_contract(self) -> None:
+        operation = _operation("/api/admin/org/courses/{course_id}", "put")
+        assert operation.get("tags") == ["org-courses"]
+        ref = _response_schema_ref(operation, "200")
+        assert "CourseItemResponse" in ref
+
+    def test_courses_delete_contract(self) -> None:
+        operation = _operation("/api/admin/org/courses/{course_id}", "delete")
+        assert operation.get("tags") == ["org-courses"]
+        ref = _response_schema_ref(operation, "200")
+        assert "CourseDeleteResponse" in ref
+
+    def test_courses_consistency_contract(self) -> None:
+        operation = _operation("/api/admin/org/courses/consistency", "get")
+        assert operation.get("tags") == ["org-courses"]
+        ref = _response_schema_ref(operation, "200")
+        assert "CourseConsistencyReportSchema" in ref
+
+
+class TestGradesOpenAPIContract:
+    """Contract tests for /api/admin/grades endpoints."""
+
+    def test_grades_submit_contract(self) -> None:
+        operation = _operation("/api/admin/grades/submit", "post")
+        assert operation.get("tags") == ["grades"]
+        ref = _response_schema_ref(operation, "201")
+        assert "GradeMutationResponse" in ref
+
+    def test_grades_change_contract(self) -> None:
+        operation = _operation("/api/admin/grades/change", "patch")
+        assert operation.get("tags") == ["grades"]
+        ref = _response_schema_ref(operation, "200")
+        assert "GradeMutationResponse" in ref
+
+    def test_grades_list_by_course_contract(self) -> None:
+        operation = _operation("/api/admin/courses/{course_id}/grades", "get")
+        assert operation.get("tags") == ["grades"]
+        ref = _response_schema_ref(operation, "200")
+        assert "GradeListResponseSchema" in ref
+
+    def test_grades_consistency_contract(self) -> None:
+        operation = _operation("/api/admin/grades/consistency", "get")
+        assert operation.get("tags") == ["grades"]
+        ref = _response_schema_ref(operation, "200")
+        assert "GradeEnrollmentConsistencyReportSchema" in ref
+
+
+class TestTranscriptsOpenAPIContract:
+    """Contract tests for /api/admin transcript endpoints."""
+
+    def test_transcript_get_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}/transcript", "get")
+        assert operation.get("tags") == ["transcripts"]
+        ref = _response_schema_ref(operation, "200")
+        assert "StudentTranscriptSchema" in ref
+
+    def test_transcript_snapshot_create_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}/transcript/snapshot", "post")
+        assert operation.get("tags") == ["transcripts"]
+        ref = _response_schema_ref(operation, "201")
+        assert "TranscriptSnapshotMutationResponse" in ref
+
+    def test_transcript_consistency_by_student_contract(self) -> None:
+        operation = _operation("/api/admin/students/{student_id}/transcript/consistency", "get")
+        assert operation.get("tags") == ["transcripts"]
+        ref = _response_schema_ref(operation, "200")
+        assert "TranscriptConsistencyReportSchema" in ref
+
+    def test_transcript_tenant_consistency_contract(self) -> None:
+        operation = _operation("/api/admin/transcripts/consistency", "get")
+        assert operation.get("tags") == ["transcripts"]
+        ref = _response_schema_ref(operation, "200")
+        assert "TranscriptTenantConsistencyReportSchema" in ref
+
+
+class TestLocalUsersOpenAPIContract:
+    """Contract tests for /api/admin/local-users endpoints (no named response schemas)."""
+
+    def test_local_users_list_contract(self) -> None:
+        operation = _operation("/api/admin/local-users", "get")
+        assert operation.get("tags") == ["local-users"]
+        responses = operation.get("responses", {})
+        assert "200" in responses
+
+    def test_local_users_create_contract(self) -> None:
+        operation = _operation("/api/admin/local-users", "post")
+        assert operation.get("tags") == ["local-users"]
+        responses = operation.get("responses", {})
+        assert "200" in responses
+
+    def test_local_users_update_contract(self) -> None:
+        operation = _operation("/api/admin/local-users/{user_id}", "patch")
+        assert operation.get("tags") == ["local-users"]
+        responses = operation.get("responses", {})
+        assert "200" in responses
+
+    def test_local_users_delete_contract(self) -> None:
+        operation = _operation("/api/admin/local-users/{user_id}", "delete")
+        assert operation.get("tags") == ["local-users"]
+        responses = operation.get("responses", {})
+        assert "200" in responses
+
+    def test_local_users_password_reset_contract(self) -> None:
+        operation = _operation("/api/admin/local-users/{user_id}/password", "post")
+        assert operation.get("tags") == ["local-users"]
+        responses = operation.get("responses", {})
+        assert "200" in responses

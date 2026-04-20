@@ -24,9 +24,11 @@ from app.modules.students.models import StudentStatus
 from app.modules.students.schemas import (
     StudentProfileCreateSchema,
     StudentProfileListResponseSchema,
+    StudentProfileMutationResponse,
     StudentProfileReadSchema,
     StudentProgramBindingConsistencyIssueSchema,
     StudentProgramBindingCreateSchema,
+    StudentProgramBindingMutationResponse,
     StudentProgramBindingReadSchema,
     StudentStatusChangeSchema,
 )
@@ -70,7 +72,7 @@ StudentsDb: TypeAlias = Annotated[Session, Depends(get_students_db)]
 
 @router.post(
     "",
-    response_model=StudentProfileReadSchema,
+    response_model=StudentProfileMutationResponse,
     responses={
         400: {"model": ErrorDetailResponse},
         403: {"model": ErrorDetailResponse},
@@ -85,14 +87,18 @@ async def create_student_profile_endpoint(
     _: Annotated[None, Depends(permission_dependency("students.write"))] = None,
     tenant: TrustedTenant = None,
     db: StudentsDb = None,
-) -> StudentProfileReadSchema:
+) -> StudentProfileMutationResponse:
     request_model = _parse_payload(StudentProfileCreateSchema, payload)
     service = StudentLifecycleService(db)
     try:
-        return await service.create_student_profile(
+        result = await service.create_student_profile(
             tenant_id=int(tenant["id"]),
             request=request_model,
             created_by=actor,
+        )
+        return StudentProfileMutationResponse(
+            student=result.entity,
+            idempotent_replay=result.idempotent_replay,
         )
     except (PermissionError, ValueError, IntegrityError, TenantResourceNotFoundError, OptimisticLockConflictError) as exc:
         raise _raise_students_http_error(exc) from exc
@@ -145,7 +151,7 @@ async def list_students_endpoint(
 
 @router.patch(
     "/{student_id}/status",
-    response_model=StudentProfileReadSchema,
+    response_model=StudentProfileMutationResponse,
     responses={
         400: {"model": ErrorDetailResponse},
         403: {"model": ErrorDetailResponse},
@@ -160,15 +166,19 @@ async def change_student_status_endpoint(
     _: Annotated[None, Depends(permission_dependency("students.write"))] = None,
     tenant: TrustedTenant = None,
     db: StudentsDb = None,
-) -> StudentProfileReadSchema:
+) -> StudentProfileMutationResponse:
     request_model = _parse_payload(StudentStatusChangeSchema, payload)
     service = StudentLifecycleService(db)
     try:
-        return await service.change_student_status(
+        result = await service.change_student_status(
             tenant_id=int(tenant["id"]),
             student_profile_id=student_id,
             request=request_model,
             actor_id=actor,
+        )
+        return StudentProfileMutationResponse(
+            student=result.entity,
+            idempotent_replay=result.idempotent_replay,
         )
     except (PermissionError, ValueError, IntegrityError, TenantResourceNotFoundError, OptimisticLockConflictError) as exc:
         raise _raise_students_http_error(exc) from exc
@@ -176,7 +186,7 @@ async def change_student_status_endpoint(
 
 @router.post(
     "/{student_id}/program-bindings",
-    response_model=StudentProgramBindingReadSchema,
+    response_model=StudentProgramBindingMutationResponse,
     responses={
         400: {"model": ErrorDetailResponse},
         403: {"model": ErrorDetailResponse},
@@ -192,16 +202,20 @@ async def bind_student_to_program_endpoint(
     _: Annotated[None, Depends(permission_dependency("students.write"))] = None,
     tenant: TrustedTenant = None,
     db: StudentsDb = None,
-) -> StudentProgramBindingReadSchema:
+) -> StudentProgramBindingMutationResponse:
     request_model = _parse_payload(StudentProgramBindingCreateSchema, payload)
     request_model = request_model.model_copy(update={"student_profile_id": student_id})
 
     service = StudentLifecycleService(db)
     try:
-        return await service.bind_student_to_program(
+        result = await service.bind_student_to_program(
             tenant_id=int(tenant["id"]),
             request=request_model,
             actor_id=actor,
+        )
+        return StudentProgramBindingMutationResponse(
+            binding=result.entity,
+            idempotent_replay=result.idempotent_replay,
         )
     except (PermissionError, ValueError, IntegrityError, TenantResourceNotFoundError, OptimisticLockConflictError) as exc:
         raise _raise_students_http_error(exc) from exc

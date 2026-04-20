@@ -5,12 +5,14 @@ from sqlalchemy.orm import Session
 
 from app.core.module_helpers.service_validation import (
     DomainValidationError,
+    MutationResult,
     TenantResourceNotFoundError,
 )
 from app.modules.org_structure.models import OrgUnitModel, OrgUnitType
 from app.modules.org_structure.schemas import (
     OrgUnitConsistencyReportSchema,
     OrgUnitCreateSchema,
+    OrgUnitReadSchema,
     OrgUnitUpdateSchema,
 )
 
@@ -41,7 +43,7 @@ ALLOWED_PARENT_TYPES: dict[OrgUnitType, set[OrgUnitType] | None] = {
 
 def create_org_unit(
     db: Session, tenant_id: int, payload: OrgUnitCreateSchema
-) -> OrgUnitModel:
+) -> MutationResult[OrgUnitReadSchema]:
     if payload.parent_unit_id is not None:
         parent = (
             db.query(OrgUnitModel)
@@ -55,6 +57,17 @@ def create_org_unit(
             raise DomainValidationError(
                 f"Parent unit {payload.parent_unit_id} not found in tenant {tenant_id}"
             )
+
+    existing = (
+        db.query(OrgUnitModel)
+        .filter(OrgUnitModel.tenant_id == tenant_id, OrgUnitModel.code == payload.code)
+        .first()
+    )
+    if existing is not None:
+        return MutationResult(
+            entity=OrgUnitReadSchema.model_validate(existing),
+            idempotent_replay=True,
+        )
 
     unit = OrgUnitModel(
         tenant_id=tenant_id,
@@ -76,7 +89,7 @@ def create_org_unit(
             f"Org unit with code '{payload.code}' already exists in tenant {tenant_id}"
         ) from exc
     db.refresh(unit)
-    return unit
+    return MutationResult(entity=OrgUnitReadSchema.model_validate(unit))
 
 
 def get_org_unit(db: Session, tenant_id: int, unit_id: int) -> OrgUnitModel:
@@ -120,7 +133,7 @@ def get_tree(db: Session, tenant_id: int) -> list[OrgUnitModel]:
 
 def update_org_unit(
     db: Session, tenant_id: int, unit_id: int, payload: OrgUnitUpdateSchema
-) -> OrgUnitModel:
+) -> MutationResult[OrgUnitReadSchema]:
     unit = get_org_unit(db, tenant_id, unit_id)
 
     if payload.parent_unit_id is not None and payload.parent_unit_id != unit.parent_unit_id:
@@ -140,6 +153,12 @@ def update_org_unit(
             )
 
     data = payload.model_dump(exclude_unset=True)
+    is_noop = all(getattr(unit, field) == value for field, value in data.items())
+    if is_noop:
+        return MutationResult(
+            entity=OrgUnitReadSchema.model_validate(unit),
+            idempotent_replay=True,
+        )
     for field, value in data.items():
         setattr(unit, field, value)
 
@@ -149,15 +168,20 @@ def update_org_unit(
         db.rollback()
         raise DomainValidationError("Update violated a uniqueness constraint") from exc
     db.refresh(unit)
-    return unit
+    return MutationResult(entity=OrgUnitReadSchema.model_validate(unit))
 
 
-def deactivate_org_unit(db: Session, tenant_id: int, unit_id: int) -> OrgUnitModel:
+def deactivate_org_unit(db: Session, tenant_id: int, unit_id: int) -> MutationResult[OrgUnitReadSchema]:
     unit = get_org_unit(db, tenant_id, unit_id)
+    if not unit.active:
+        return MutationResult(
+            entity=OrgUnitReadSchema.model_validate(unit),
+            idempotent_replay=True,
+        )
     unit.active = False
     db.flush()
     db.refresh(unit)
-    return unit
+    return MutationResult(entity=OrgUnitReadSchema.model_validate(unit))
 
 
 def bootstrap_university_root(db: Session, tenant_id: int, name: str = "Университет") -> OrgUnitModel:

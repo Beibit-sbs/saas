@@ -32,7 +32,7 @@ RAW_PROCS="$(ps -eo pid=,args= | rg -i "${PROHIBITED_REGEX}" | rg -vi "docker|co
 HOST_DEV_PROCS=""
 while IFS= read -r line; do
   [[ -z "${line}" ]] && continue
-  pid="${line%% *}"
+  pid="$(echo "${line}" | awk '{print $1}')"
   cgroup="$(cat "/proc/${pid}/cgroup" 2>/dev/null || true)"
   if echo "${cgroup}" | grep -qE "docker-|kubepods|lxc"; then
     continue  # container process — not a host dev server

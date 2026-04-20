@@ -63,6 +63,11 @@ class OrgUnitTreeNodeSchema(BaseModel):
 OrgUnitTreeNodeSchema.model_rebuild()
 
 
+class OrgUnitMutationResponse(BaseModel):
+    unit: OrgUnitReadSchema
+    idempotent_replay: bool = False
+
+
 class OrgUnitConsistencyIssueSchema(BaseModel):
     issue_type: str
     unit_id: int | None = None

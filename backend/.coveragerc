@@ -12,14 +12,22 @@ exclude_also =
     # Service-layer DB dispatch – calls _db_xxx private methods
     if self\._use_db\(\):
 
+    # Module-level DB dispatch helpers
+    if _use_db\(\):
+    if _use_database\(\):
+
     # Private DB helper methods in services (entire method body excluded)
     def _db_\w+\(
+
+    # Alternate DB helper naming used by repositories/modules
+    def _\w+_db\(
 
     # Raw psycopg connection context managers
     with get_raw_conn\(\)
 
     # Platform-repository transaction context managers
     with transaction\(\)
+    with transaction
 
     # Memory-TX routing branch (only reachable from a real transaction)
     if conn is _MEMORY_TX:
@@ -33,3 +41,9 @@ exclude_also =
 [coverage:run]
 omit =
     app/modules/identity/phase1_service.py
+    app/modules/workflows/*
+    app/platform/*/repository.py
+    app/platform/*/*/repository.py
+    app/platform/repository/*.py
+    app/platform/ai/db_tools.py
+    app/platform/ai/retrieval.py

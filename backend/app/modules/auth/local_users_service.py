@@ -472,7 +472,10 @@ class LocalUserStore:
 
     def get_user(self, user_id) -> dict | None:
         if self._use_db():
-            return self._db_get_by_id(user_id)
+            try:
+                return self._db_get_by_id(user_id)
+            except Exception:
+                pass  # DB unreachable — fall through to in-memory store
         self._loaded = True
         return self._users_by_id.get(user_id)
 
@@ -481,7 +484,10 @@ class LocalUserStore:
         if not normalized:
             return None
         if self._use_db():
-            return self._db_get_by_login(normalized)
+            try:
+                return self._db_get_by_login(normalized)
+            except Exception:
+                pass  # DB unreachable — fall through to in-memory store
         self._loaded = True
         uid = self._users_by_login.get(normalized)
         return self._users_by_id.get(uid) if uid else None
@@ -491,7 +497,10 @@ class LocalUserStore:
         if not normalized:
             return None
         if self._use_db():
-            return self._db_get_by_email(normalized)
+            try:
+                return self._db_get_by_email(normalized)
+            except Exception:
+                pass  # DB unreachable — fall through to in-memory store
         self._loaded = True
         for item in self._users_by_id.values():
             if str(item.get("email", "")).strip().lower() == normalized:
