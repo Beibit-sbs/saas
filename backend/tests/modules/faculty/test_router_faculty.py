@@ -200,3 +200,126 @@ def test_update_faculty_capacity_success(
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["faculty"]["faculty_id"] == "FAC-01"
+
+
+def test_get_faculty_contracts_success(
+    monkeypatch: pytest.MonkeyPatch,
+    admin_headers: dict[str, str],
+) -> None:
+    def fake_list_faculty_contracts(tenant_id: int, faculty_id: str | None = None, status: str | None = None):
+        assert tenant_id == 1
+        assert faculty_id is None
+        assert status is None
+        return [
+            {
+                "id": 11,
+                "faculty_id": "FAC-01",
+                "contract_type": "full_time",
+                "start_date": "2026-09-01",
+                "end_date": "2027-08-31",
+                "fte_ratio": 1.0,
+                "max_credit_hours": 18,
+                "status": "active",
+                "notes": "renewed",
+                "tenant_id": "1",
+            }
+        ]
+
+    monkeypatch.setattr(
+        "app.modules.faculty.router.list_faculty_contracts",
+        fake_list_faculty_contracts,
+    )
+
+    response = client.get("/api/admin/org/faculty/contracts", headers=admin_headers)
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body["contracts"]) == 1
+    assert body["contracts"][0]["faculty_id"] == "FAC-01"
+
+
+def test_create_faculty_contract_success(
+    monkeypatch: pytest.MonkeyPatch,
+    admin_headers: dict[str, str],
+) -> None:
+    def fake_create_faculty_contract(payload: dict[str, object], tenant_id: int):
+        assert tenant_id == 1
+        assert payload["faculty_id"] == "FAC-01"
+        return {
+            "id": 12,
+            "faculty_id": "FAC-01",
+            "contract_type": "full_time",
+            "start_date": "2026-09-01",
+            "end_date": None,
+            "fte_ratio": 1.0,
+            "max_credit_hours": 18,
+            "status": "draft",
+            "notes": None,
+            "tenant_id": "1",
+        }
+
+    monkeypatch.setattr(
+        "app.modules.faculty.router.create_faculty_contract",
+        fake_create_faculty_contract,
+    )
+
+    response = client.post(
+        "/api/admin/org/faculty/contracts",
+        headers=admin_headers,
+        json={
+            "faculty_id": "FAC-01",
+            "contract_type": "full_time",
+            "start_date": "2026-09-01",
+            "end_date": None,
+            "fte_ratio": 1.0,
+            "max_credit_hours": 18,
+            "status": "draft",
+            "notes": None,
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["contract"]["id"] == 12
+
+
+def test_update_faculty_contract_status_success(
+    monkeypatch: pytest.MonkeyPatch,
+    admin_headers: dict[str, str],
+) -> None:
+    def fake_update_faculty_contract_status(
+        contract_id: int,
+        status: str,
+        tenant_id: int,
+        notes: str | None = None,
+    ):
+        assert contract_id == 12
+        assert status == "active"
+        assert tenant_id == 1
+        assert notes == "signed"
+        return {
+            "id": 12,
+            "faculty_id": "FAC-01",
+            "contract_type": "full_time",
+            "start_date": "2026-09-01",
+            "end_date": None,
+            "fte_ratio": 1.0,
+            "max_credit_hours": 18,
+            "status": "active",
+            "notes": "signed",
+            "tenant_id": "1",
+        }
+
+    monkeypatch.setattr(
+        "app.modules.faculty.router.update_faculty_contract_status",
+        fake_update_faculty_contract_status,
+    )
+
+    response = client.patch(
+        "/api/admin/org/faculty/contracts/12/status",
+        headers=admin_headers,
+        json={"status": "active", "notes": "signed"},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["contract"]["status"] == "active"

@@ -13,8 +13,39 @@ from app.modules.integrations.service import (
     save_ldap_config,
 )
 from app.modules.rbac.security import get_actor, permission_dependency
+from app.platform.events.publisher import EventPublisher
 
 router = APIRouter(prefix="/api/admin/integrations", tags=["integrations"])
+
+
+def _publish_integration_updated_event(
+    *,
+    tenant_id: int,
+    actor: str,
+    integration_type: str,
+    aggregate_id: str,
+    fields_updated: list[str],
+    idempotent_replay: bool,
+    provider: str | None = None,
+    secret_fields_updated: list[str] | None = None,
+) -> None:
+    if idempotent_replay:
+        return
+
+    EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type="integration.updated",
+        aggregate_type="integration",
+        aggregate_id=aggregate_id,
+        payload_json={
+            "integration_type": integration_type,
+            "actor": actor,
+            "fields_updated": fields_updated,
+            "idempotent_replay": False,
+            "provider": provider,
+            "secret_fields_updated": secret_fields_updated or [],
+        },
+    )
 
 
 class LdapConfigPayload(BaseModel):
@@ -69,6 +100,14 @@ def update_ldap_settings(
 ) -> LdapUpdateResponse:
     before = get_ldap_config_for_admin(tenant_id=int(tenant["id"]))
     updated_fields = payload.model_dump(exclude_unset=True)
+    # For secret fields, admin responses only expose presence flags, so treat explicit updates as non-idempotent.
+    if "bind_password" in updated_fields:
+        idempotent_replay = False
+    else:
+        idempotent_replay = all(
+            str(before.get(field, "")).strip() == str(value).strip()
+            for field, value in updated_fields.items()
+        )
     ldap = save_ldap_config(updated_fields, tenant_id=int(tenant["id"]))
     log_admin_action(
         actor=actor,
@@ -84,7 +123,18 @@ def update_ldap_settings(
         },
         tenant_id=int(tenant["id"]),
     )
-    return LdapUpdateResponse(ldap=ldap, idempotent_replay=before == ldap)
+
+    _publish_integration_updated_event(
+        tenant_id=int(tenant["id"]),
+        actor=actor,
+        integration_type="ldap",
+        aggregate_id="ldap",
+        fields_updated=sorted(list(updated_fields.keys())),
+        idempotent_replay=idempotent_replay,
+        secret_fields_updated=["bind_password"] if "bind_password" in updated_fields else [],
+    )
+
+    return LdapUpdateResponse(ldap=ldap, idempotent_replay=idempotent_replay)
 
 
 @router.put("/ai/{provider}")
@@ -97,6 +147,20 @@ def update_ai_provider_settings(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> AiProviderUpdateResponse:
     before = get_ai_provider_config_for_admin(provider, tenant_id=int(tenant["id"]))
+    updated_fields = {
+        field_name: field_value
+        for field_name, field_value in {
+            "api_key": payload.api_key,
+            "validation_url": payload.validation_url,
+        }.items()
+        if field_value is not None
+    }
+    if "api_key" in updated_fields:
+        idempotent_replay = False
+    elif "validation_url" in updated_fields:
+        idempotent_replay = str(before.get("validation_url", "")).strip() == str(updated_fields["validation_url"]).strip()
+    else:
+        idempotent_replay = True
     try:
         result = save_ai_provider_config(
             provider,
@@ -123,4 +187,15 @@ def update_ai_provider_settings(
         tenant_id=int(tenant["id"]),
     )
 
-    return AiProviderUpdateResponse(provider=result, idempotent_replay=before == result)
+    _publish_integration_updated_event(
+        tenant_id=int(tenant["id"]),
+        actor=actor,
+        integration_type="ai_provider",
+        aggregate_id=provider.strip().lower(),
+        fields_updated=sorted(updated_fields.keys()),
+        idempotent_replay=idempotent_replay,
+        provider=provider.strip().lower(),
+        secret_fields_updated=["api_key"] if payload.api_key is not None else [],
+    )
+
+    return AiProviderUpdateResponse(provider=result, idempotent_replay=idempotent_replay)

@@ -24,6 +24,27 @@ export type CopilotRecommendation = {
   created_intervention_case_id?: number | null;
 };
 
+export type CopilotPromptPack = {
+  prompt_key: string;
+  admin_role: string;
+  tenant_id: number;
+  query_type: string;
+  scope: string;
+};
+
+export type CopilotTenantPolicyBinding = {
+  binding_mode: string;
+  bound_tenant_id: number;
+  cross_tenant_allowed: boolean;
+  admin_role: string;
+};
+
+export type CopilotAuditTaxonomy = {
+  domain: string;
+  action: string;
+  query_type: string;
+};
+
 export type CopilotAnswer = {
   question: string;
   summary: string;
@@ -32,6 +53,10 @@ export type CopilotAnswer = {
   warnings: string[];
   recommendations: CopilotRecommendation[];
   created_intervention_case_id?: number | null;
+  query_type?: string | null;
+  admin_prompt_pack?: CopilotPromptPack | null;
+  tenant_policy_binding?: CopilotTenantPolicyBinding | null;
+  audit_taxonomy?: CopilotAuditTaxonomy | null;
 };
 
 export type CopilotAskRequest = {

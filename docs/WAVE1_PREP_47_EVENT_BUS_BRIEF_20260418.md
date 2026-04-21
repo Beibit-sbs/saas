@@ -68,17 +68,22 @@ Event bus в системе Uже реализован на 70-80%: PostgreSQL o
 
 ### Gap 2: Admin UI для Webhook Subscriptions (HIGH)
 
-**Проблема:** Webhook CRUD есть в API, но нет admin UI для управления подписками.
+**Статус:** ✅ SHIPPED (2026-04-20)
 
-**Решение (draft):**
-- Frontend: `/console/webhooks` — list subscriptions, create, edit, deactivate, delivery history
-- Использовать существующий API: `GET/POST /api/v1/admin/platform/webhooks/subscriptions`, etc.
-- Добавить в admin navigation config
+**Реализация:**
+- Platform Console `/console/platform/integrations` tab — webhook subscriptions list (event_type, status, deactivate), create form (event_type + target_url + signing_secret с validation), delivery history (status, retries, errors)
+- Create mutation: `POST /api/v1/admin/webhooks/subscriptions` с tenant_id из выбранного тенанта
+- Deactivate mutation: `POST /api/v1/admin/webhooks/subscriptions/{id}/deactivate` (только для active subscriptions)
+- Client-side validation: кнопка Create заблокирована, пока поля не заполнены (event_type ≥3, url ≥10, secret ≥16)
+- Error handling: inline error message при mutation error
+- data-testid атрибуты на форме: `webhook-create-form`, `webhook-event-type-input`, `webhook-target-url-input`, `webhook-signing-secret-input`, `webhook-create-submit`
 
-**Skeleton test list:**
-- `test_webhook_subscriptions_page_renders`
-- `test_webhook_create_form_validation`
-- `test_webhook_delivery_history_display`
+**Тесты (5/5 PASS):**
+- `test_webhook_subscriptions_page_renders` ✅
+- `test_webhook_create_form_validation` (disabled until valid) ✅
+- `test_webhook_create_form_validation` (submit calls mutate with correct payload) ✅
+- `test_webhook_delivery_history_display` ✅
+- `deactivate button shown only for active subscriptions` ✅
 
 ### Gap 3: Dead-Letter Queue (DLQ) Management (MEDIUM)
 
@@ -116,9 +121,12 @@ Event bus в системе Uже реализован на 70-80%: PostgreSQL o
 
 ### Gap 5: Event Replay / Re-processing (LOW for pilot)
 
-**Решение (draft):**
-- API: `POST /api/admin/events/{event_id}/replay` — повторная публикация события
-- Safeguard: только admin, только для processed/failed, audit trail обязателен
+**Статус:** ✅ SHIPPED (2026-04-20)
+
+**Реализация:**
+- API: `POST /api/v1/admin/tenants/{tenant_id}/events/outbox/{event_id}/replay` — повторная публикация события в новый pending outbox event
+- Safeguard: только tenant-scoped admin, только для `processed/failed/dead_lettered`, audit trail обязателен
+- Идемпотентность: повторный replay одного и того же source event возвращает уже созданный replay event через стабильный `causation_id`
 
 ### Gap 6: Event Filtering / Routing Rules (LOW for pilot)
 

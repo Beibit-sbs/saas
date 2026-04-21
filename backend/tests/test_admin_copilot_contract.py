@@ -18,7 +18,7 @@ from app.platform.ai.query_types import AiCopilotQueryType
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _build_client() -> TestClient:
+def _build_client(request_tenant_id: int = 1) -> TestClient:
     app = FastAPI()
     app.include_router(router_admin.router)
     # router_admin.router has two router-level dependencies that enforce auth:
@@ -26,7 +26,7 @@ def _build_client() -> TestClient:
     # 2. _require_request_tenant_id (calls resolve_current_user_claims directly)
     app.dependency_overrides[router_admin.get_actor] = lambda: "admin@uni.edu"
     app.dependency_overrides[router_admin._require_platform_admin_permissions] = lambda: None
-    app.dependency_overrides[router_admin._require_request_tenant_id] = lambda: 1
+    app.dependency_overrides[router_admin._require_request_tenant_id] = lambda: request_tenant_id
     app.dependency_overrides[router_admin._platform_admin_read_dependency] = lambda: None
     app.dependency_overrides[router_admin._platform_admin_write_dependency] = lambda: None
     return TestClient(app)
@@ -142,6 +142,39 @@ def test_ask_copilot_rejects_empty_question(monkeypatch) -> None:
     assert response.status_code == 422
 
 
+def test_ask_copilot_rejects_cross_tenant_for_non_platform_context(monkeypatch) -> None:
+    client = _build_client(request_tenant_id=2)
+    monkeypatch.setattr(router_admin.ai_service, "answer_question", lambda **_kw: _answer())
+
+    response = client.post(
+        "/api/v1/admin/platform/ai/copilot/ask",
+        json={"tenant_id": 5, "question": "kpi summary?"},
+    )
+    assert response.status_code == 403
+    assert "cross-tenant access denied" in response.text
+
+
+def test_ask_copilot_emits_query_type_specific_audit_action(monkeypatch) -> None:
+    client = _build_client()
+    captured: list[dict] = []
+
+    def _capture_audit(_request, _actor, action, _tenant_id, metadata=None):
+        captured.append({"action": action, "metadata": metadata or {}})
+
+    monkeypatch.setattr(router_admin.ai_service, "answer_question", lambda **_kw: _answer("kpi summary?"))
+    monkeypatch.setattr(router_admin, "_audit", _capture_audit)
+
+    response = client.post(
+        "/api/v1/admin/platform/ai/copilot/ask",
+        json={"tenant_id": 5, "question": "kpi summary?"},
+    )
+    assert response.status_code == 200, response.text
+    assert captured
+    assert captured[0]["action"] == "platform_core.ai.copilot.ask.kpi_overview"
+    assert captured[0]["metadata"]["request_tenant_id"] == 1
+    assert captured[0]["metadata"]["bound_tenant_id"] == 5
+
+
 # ---------------------------------------------------------------------------
 # GET /api/v1/admin/platform/ai/copilot/logs
 # ---------------------------------------------------------------------------
@@ -172,3 +205,23 @@ def test_list_copilot_logs_passes_tenant_id_to_service(monkeypatch) -> None:
 
     client.get("/api/v1/admin/platform/ai/copilot/logs", params={"tenant_id": 9})
     assert calls[0]["tenant_id"] == 9
+
+
+def test_build_prompt_pack_uses_admin_role_from_context() -> None:
+    svc = AiCopilotService.__new__(AiCopilotService)
+    role = svc.resolve_admin_role(context={"admin_role": "platform_admin"})
+    prompt_pack = svc.build_prompt_pack(admin_role=role, tenant_id=5, query_type=AiCopilotQueryType.KPI_OVERVIEW.value)
+
+    assert prompt_pack["prompt_key"] == "admin_copilot.platform_admin.v1"
+    assert prompt_pack["scope"] == "cross_tenant_ops"
+    assert prompt_pack["tenant_id"] == 5
+
+
+def test_build_tenant_policy_binding_defaults_to_institution_admin() -> None:
+    svc = AiCopilotService.__new__(AiCopilotService)
+    role = svc.resolve_admin_role(context={"admin_role": "invalid-role"})
+    binding = svc.build_tenant_policy_binding(admin_role=role, tenant_id=9)
+
+    assert binding["admin_role"] == "institution_admin"
+    assert binding["cross_tenant_allowed"] is False
+    assert binding["bound_tenant_id"] == 9

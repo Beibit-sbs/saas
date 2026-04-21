@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.modules.observability.trace import inject_trace_context
+from app.platform.events.registry import validate_event_publish_inputs
 from app.platform.events.models import OutboxEventModel
 from app.platform.events.repository import OutboxEventRepository
 from app.platform.uow import UnitOfWork
@@ -64,14 +65,20 @@ class EventPublisher:
     ) -> dict[str, Any]:
         normalized_tenant_id = int(tenant_id)
         normalized_available_at = _normalize_datetime(available_at)
+        normalized_payload = dict(payload_json or {})
+        normalized_event_type = validate_event_publish_inputs(
+            tenant_id=normalized_tenant_id,
+            event_type=event_type,
+            payload=normalized_payload,
+        )
         
         # Inject trace context (request_id, trace_id) into payload
-        enriched_payload = inject_trace_context(payload_json)
+        enriched_payload = inject_trace_context(normalized_payload)
 
         if self._uow is not None:
             return self._repository.enqueue(
                 tenant_id=normalized_tenant_id,
-                event_type=event_type,
+                event_type=normalized_event_type,
                 aggregate_type=aggregate_type,
                 aggregate_id=str(aggregate_id),
                 payload_json=enriched_payload,
@@ -84,7 +91,7 @@ class EventPublisher:
         if self._db_session is not None:
             event = OutboxEventModel(
                 tenant_id=normalized_tenant_id,
-                event_type=event_type.strip().lower(),
+                event_type=normalized_event_type,
                 aggregate_type=aggregate_type.strip().lower(),
                 aggregate_id=str(aggregate_id).strip(),
                 payload_json=dict(enriched_payload),
@@ -102,7 +109,7 @@ class EventPublisher:
         with UnitOfWork() as uow:
             return self._repository.enqueue(
                 tenant_id=normalized_tenant_id,
-                event_type=event_type,
+                event_type=normalized_event_type,
                 aggregate_type=aggregate_type,
                 aggregate_id=str(aggregate_id),
                 payload_json=enriched_payload,

@@ -10,6 +10,14 @@ from app.platform.uow import UnitOfWork
 
 
 _SHARED_AI_COPILOT_REPOSITORY = AiCopilotRepository()
+_VALID_ADMIN_ROLES = {"platform_admin", "institution_admin", "academic_admin"}
+
+
+def _normalize_admin_role(raw: object) -> str:
+    role = str(raw or "").strip().lower()
+    if role in _VALID_ADMIN_ROLES:
+        return role
+    return "institution_admin"
 
 
 class AiCopilotService:
@@ -122,6 +130,10 @@ class AiCopilotService:
     ) -> dict[str, Any]:
         q = str(question or "").strip()
         query_type = self.classify_question(q)
+        admin_role = self.resolve_admin_role(context=context)
+        prompt_pack = self.build_prompt_pack(admin_role=admin_role, tenant_id=int(tenant_id), query_type=query_type)
+        tenant_policy = self.build_tenant_policy_binding(admin_role=admin_role, tenant_id=int(tenant_id))
+        audit_taxonomy = self.build_audit_taxonomy(query_type=query_type)
 
         with UnitOfWork() as uow:
             answer = self._build_answer(
@@ -131,6 +143,10 @@ class AiCopilotService:
                 context=context,
                 uow=uow,
             )
+            answer["query_type"] = query_type
+            answer["admin_prompt_pack"] = prompt_pack
+            answer["tenant_policy_binding"] = tenant_policy
+            answer["audit_taxonomy"] = audit_taxonomy
             self._repository.log_query(
                 tenant_id=int(tenant_id),
                 actor_id=str(actor_id or "unknown"),
@@ -142,6 +158,52 @@ class AiCopilotService:
             )
 
         return answer
+
+    def resolve_admin_role(self, *, context: dict[str, Any] | None) -> str:
+        if isinstance(context, dict):
+            return _normalize_admin_role(context.get("admin_role"))
+        return "institution_admin"
+
+    def build_prompt_pack(self, *, admin_role: str, tenant_id: int, query_type: str) -> dict[str, Any]:
+        role = _normalize_admin_role(admin_role)
+        prompt_key = f"admin_copilot.{role}.v1"
+        if role == "platform_admin":
+            scope = "cross_tenant_ops"
+        elif role == "academic_admin":
+            scope = "academic_scope"
+        else:
+            scope = "single_tenant_ops"
+        return {
+            "prompt_key": prompt_key,
+            "admin_role": role,
+            "tenant_id": int(tenant_id),
+            "query_type": str(query_type),
+            "scope": scope,
+        }
+
+    def build_tenant_policy_binding(self, *, admin_role: str, tenant_id: int) -> dict[str, Any]:
+        role = _normalize_admin_role(admin_role)
+        return {
+            "binding_mode": "strict",
+            "bound_tenant_id": int(tenant_id),
+            "cross_tenant_allowed": role == "platform_admin",
+            "admin_role": role,
+        }
+
+    def build_audit_taxonomy(self, *, query_type: str) -> dict[str, str]:
+        qtype = str(query_type or AiCopilotQueryType.UNSUPPORTED.value)
+        return {
+            "domain": "platform_core.ai.copilot",
+            "action": f"platform_core.ai.copilot.ask.{qtype}",
+            "query_type": qtype,
+        }
+
+    def audit_action_for_query_type(self, query_type: str) -> str:
+        return self.build_audit_taxonomy(query_type=query_type)["action"]
+
+    def audit_action_for_question(self, question: str) -> str:
+        query_type = self.classify_question(question)
+        return self.audit_action_for_query_type(query_type)
 
     def list_logs(self, *, tenant_id: int, limit: int = 100) -> list[dict[str, Any]]:
         with UnitOfWork() as uow:
@@ -266,6 +328,10 @@ def answer_question(
 
 def list_logs(*, tenant_id: int, limit: int = 100) -> list[dict[str, Any]]:
     return copilot_service.list_logs(tenant_id=tenant_id, limit=limit)
+
+
+def audit_action_for_question(question: str) -> str:
+    return copilot_service.audit_action_for_question(question)
 
 
 def clear_ai_state() -> None:

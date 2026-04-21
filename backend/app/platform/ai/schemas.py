@@ -32,6 +32,10 @@ class CopilotAnswerReadSchema(BaseModel):
     warnings: list[str]
     recommendations: list[CopilotRecommendationSchema] = []
     created_intervention_case_id: int | None = None
+    query_type: str | None = None
+    admin_prompt_pack: dict[str, Any] | None = None
+    tenant_policy_binding: dict[str, Any] | None = None
+    audit_taxonomy: dict[str, str] | None = None
 
 
 class CopilotQueryLogReadSchema(BaseModel):

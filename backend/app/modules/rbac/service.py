@@ -47,6 +47,18 @@ _CANONICAL_PLATFORM_ADMIN_PERMISSIONS: Set[str] = {
     "scheduling.read",
     "scheduling.write",
     "degree_progress.read",
+    "advising.read",
+    "advising.write",
+    "student_services.read",
+    "student_services.write",
+    "career_services.read",
+    "career_services.write",
+    "financial_aid.read",
+    "financial_aid.write",
+    "housing.read",
+    "housing.write",
+    "alumni.read",
+    "alumni.write",
 }
 
 _CANONICAL_AUDITOR_PERMISSIONS: Set[str] = {
@@ -67,6 +79,12 @@ _CANONICAL_AUDITOR_PERMISSIONS: Set[str] = {
     "transcripts.read",
     "scheduling.read",
     "degree_progress.read",
+    "advising.read",
+    "student_services.read",
+    "career_services.read",
+    "financial_aid.read",
+    "housing.read",
+    "alumni.read",
 }
 
 BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {

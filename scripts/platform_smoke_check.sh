@@ -189,7 +189,7 @@ def outbox_processing_check() -> str:
             event_type="student.created",
             aggregate_type="student_profile",
             aggregate_id=f"smoke-event-{suffix}",
-            payload_json={"student_id": f"smoke-event-{suffix}", "name": "Pilot Student"},
+            payload_json={"student_profile_id": f"smoke-event-{suffix}", "name": "Pilot Student"},
         )
 
     worker = OutboxEventWorker(
@@ -228,7 +228,7 @@ def automation_check() -> str:
             "event_type": "student.created",
             "aggregate_type": "student_profile",
             "aggregate_id": f"automation-{suffix}",
-            "payload_json": {"student_id": f"automation-{suffix}"},
+            "payload_json": {"student_profile_id": f"automation-{suffix}"},
             "status": "pending",
             "retry_count": 0,
             "available_at": now,
@@ -302,7 +302,7 @@ def kpi_refresh_check() -> str:
     event_ingestion_service.record_event(
         tenant_id=tenant_id,
         event_type="student.created",
-        payload={"student_id": f"SMOKE-{suffix.upper()}"},
+        payload={"student_profile_id": f"SMOKE-{suffix.upper()}"},
     )
     response = client.post(f"/api/v1/internal/platform/kpi/refresh/{tenant_id}", headers=internal_auth_headers)
     ensure(response.status_code == 200, f"kpi refresh returned {response.status_code}")

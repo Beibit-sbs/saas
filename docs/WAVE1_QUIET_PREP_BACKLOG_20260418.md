@@ -25,6 +25,7 @@
 - Artifact: `docs/WAVE1_PREP_47_EVENT_BUS_BRIEF_20260418.md`
 - Ready-критерий: описаны события и гарантии доставки, есть skeleton integration tests.
 - **Статус: ✅ PREP-BRIEF-READY** (as-is audit + 6 gaps + skeleton tests + priority plan)
+- **Статус: ▶ ACTIVE-DELIVERY-STARTED (2026-04-20)** — strict registry + schema validation shipped; first real producer `integration.updated` wired; DLQ list/redrive shipped; tenant-scoped replay shipped; next gap: webhook CRUD UI.
 - Artifact: `docs/WAVE1_PREP_47_EVENT_BUS_BRIEF_20260418.md`
 - Ready-критерий: описаны события и гарантии доставки, есть skeleton integration tests.
 - **Статус: ✅ PREP-BRIEF-READY** (as-is audit + 6 gaps + skeleton tests + priority plan)

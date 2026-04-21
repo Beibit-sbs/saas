@@ -210,3 +210,96 @@ def test_update_faculty_capacity_persists_fields(monkeypatch) -> None:
 
     assert updated["max_credit_hours"] == 16
     assert updated["fte_ratio"] == 0.75
+
+
+def test_create_faculty_contract_requires_existing_faculty(monkeypatch) -> None:
+    def fake_list_entities_for_tenant(entity_name: str, tenant_id: int):
+        assert tenant_id == 1
+        if entity_name == "faculty":
+            return []
+        return []
+
+    monkeypatch.setattr(faculty_service, "list_entities_for_tenant", fake_list_entities_for_tenant)
+
+    try:
+        faculty_service.create_faculty_contract(
+            {
+                "faculty_id": "FAC-404",
+                "contract_type": "full_time",
+                "start_date": "2026-09-01",
+                "end_date": None,
+                "fte_ratio": 1.0,
+                "max_credit_hours": 18,
+                "status": "draft",
+                "notes": None,
+            },
+            1,
+        )
+    except ValueError as exc:
+        assert str(exc) == "faculty not found"
+    else:
+        raise AssertionError("Expected ValueError when faculty is missing")
+
+
+def test_list_faculty_contracts_filters_by_faculty_and_status(monkeypatch) -> None:
+    def fake_list_entities_for_tenant(entity_name: str, tenant_id: int):
+        assert entity_name == "faculty_contracts"
+        assert tenant_id == 1
+        return [
+            {
+                "id": 1,
+                "faculty_id": "FAC-01",
+                "status": "active",
+            },
+            {
+                "id": 2,
+                "faculty_id": "FAC-01",
+                "status": "draft",
+            },
+            {
+                "id": 3,
+                "faculty_id": "FAC-02",
+                "status": "active",
+            },
+        ]
+
+    monkeypatch.setattr(faculty_service, "list_entities_for_tenant", fake_list_entities_for_tenant)
+
+    filtered = faculty_service.list_faculty_contracts(1, faculty_id="FAC-01", status="active")
+    assert len(filtered) == 1
+    assert filtered[0]["id"] == 1
+
+
+def test_update_faculty_contract_status_persists_fields(monkeypatch) -> None:
+    def fake_list_entities_for_tenant(entity_name: str, tenant_id: int):
+        assert entity_name == "faculty_contracts"
+        assert tenant_id == 1
+        return [
+            {
+                "id": 9,
+                "faculty_id": "FAC-01",
+                "contract_type": "full_time",
+                "start_date": "2026-09-01",
+                "end_date": None,
+                "fte_ratio": 1.0,
+                "max_credit_hours": 18,
+                "status": "draft",
+                "notes": None,
+                "tenant_id": "1",
+            }
+        ]
+
+    def fake_update_entity_for_tenant(entity_name: str, item_id: int, payload: dict[str, object], tenant_id: int):
+        assert entity_name == "faculty_contracts"
+        assert item_id == 9
+        assert tenant_id == 1
+        assert payload["status"] == "active"
+        assert payload["notes"] == "signed"
+        return payload
+
+    monkeypatch.setattr(faculty_service, "list_entities_for_tenant", fake_list_entities_for_tenant)
+    monkeypatch.setattr(faculty_service, "update_entity_for_tenant", fake_update_entity_for_tenant)
+
+    updated = faculty_service.update_faculty_contract_status(9, "active", 1, notes="signed")
+    assert updated["status"] == "active"
+    assert updated["notes"] == "signed"

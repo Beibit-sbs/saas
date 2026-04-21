@@ -35,6 +35,7 @@ BACKEND_DIR = ROOT_DIR / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
+from app.core.db import clear_shared_engine
 from app.main import app
 from app.modules.ai_gateway import service as ai_service
 from app.modules.audit import service as audit_service
@@ -159,6 +160,7 @@ def _reset_template_state() -> None:
     # Tests intentionally run against in-memory repositories unless explicitly opted in.
     # Ensure temporary DATABASE_URL overrides from individual tests don't leak into teardown.
     os.environ.pop("DATABASE_URL", None)
+    clear_shared_engine()
     client.cookies.clear()
     clear_alert_state()
     clear_metrics_state()

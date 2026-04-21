@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import logging
 import secrets
 import struct
 import time
@@ -13,6 +14,8 @@ from typing import Any
 
 from app.core.db import get_raw_conn
 
+
+logger = logging.getLogger(__name__)
 
 _state_lock = Lock()
 # Table is guaranteed by Alembic migration f3e4d5c6b7a9_add_auth_session_and_mfa_tables.
@@ -352,11 +355,14 @@ def disable_mfa(*, user_id: str, tenant_id: int) -> bool:
 def clear_mfa_state() -> None:
     global _db_ready
 
-    with get_raw_conn() as conn:
-        if _ensure_mfa_table(conn):
-            with conn.cursor() as cur:
-                cur.execute("DELETE FROM app_mfa_state")
-            conn.commit()
+    try:
+        with get_raw_conn() as conn:
+            if _ensure_mfa_table(conn):
+                with conn.cursor() as cur:
+                    cur.execute("DELETE FROM app_mfa_state")
+                conn.commit()
+    except Exception:  # noqa: BLE001
+        logger.warning("clear_mfa_state fallback: database unavailable", exc_info=True)
 
     with _state_lock:
         _state.clear()

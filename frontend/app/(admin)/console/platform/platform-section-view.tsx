@@ -151,6 +151,10 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
   const [newServiceAccountName, setNewServiceAccountName] = useState("");
   const [newServiceAccountPermissions, setNewServiceAccountPermissions] = useState<string>(PERMISSIONS.INTEGRATIONS_MANAGE);
   const [newServiceAccountPlatformGlobal, setNewServiceAccountPlatformGlobal] = useState(false);
+  const [newWebhookEventType, setNewWebhookEventType] = useState("");
+  const [newWebhookTargetUrl, setNewWebhookTargetUrl] = useState("");
+  const [newWebhookSigningSecret, setNewWebhookSigningSecret] = useState("");
+  const [webhookFormError, setWebhookFormError] = useState<string | null>(null);
   const qc = useQueryClient();
 
   useEffect(() => {
@@ -295,6 +299,21 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
   const deactivateWebhook = useMutation({
     mutationFn: (subscriptionId: number) => apiPost(`/api/v1/admin/webhooks/subscriptions/${subscriptionId}/deactivate`),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["platform-console", "webhooks", "subs", selectedTenantId] }),
+  });
+
+  const createWebhookSubscription = useMutation({
+    mutationFn: (payload: { tenant_id: number; event_type: string; target_url: string; signing_secret: string }) =>
+      apiPost("/api/v1/admin/webhooks/subscriptions", payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["platform-console", "webhooks", "subs", selectedTenantId] });
+      setNewWebhookEventType("");
+      setNewWebhookTargetUrl("");
+      setNewWebhookSigningSecret("");
+      setWebhookFormError(null);
+    },
+    onError: (err: unknown) => {
+      setWebhookFormError(err instanceof Error ? err.message : "Failed to create subscription");
+    },
   });
 
   const revokeServiceAccount = useMutation({
@@ -583,6 +602,57 @@ export function PlatformSectionView({ section }: PlatformSectionViewProps) {
                   disabled={manualAutomationTrigger.isPending}
                 >
                   Manual Trigger
+                </Button>
+              </div>
+              <div className="pt-2 text-xs text-muted-foreground">Create Subscription</div>
+              <div className="space-y-2 rounded border p-2" data-testid="webhook-create-form">
+                <input
+                  className="w-full rounded border px-2 py-1 text-sm"
+                  placeholder="Event type (e.g. integration.updated)"
+                  value={newWebhookEventType}
+                  onChange={(e) => setNewWebhookEventType(e.target.value)}
+                  data-testid="webhook-event-type-input"
+                />
+                <input
+                  className="w-full rounded border px-2 py-1 text-sm"
+                  placeholder="Target URL (https://...)"
+                  value={newWebhookTargetUrl}
+                  onChange={(e) => setNewWebhookTargetUrl(e.target.value)}
+                  data-testid="webhook-target-url-input"
+                />
+                <input
+                  className="w-full rounded border px-2 py-1 text-sm"
+                  type="password"
+                  placeholder="Signing secret (min 16 chars)"
+                  value={newWebhookSigningSecret}
+                  onChange={(e) => setNewWebhookSigningSecret(e.target.value)}
+                  data-testid="webhook-signing-secret-input"
+                />
+                {webhookFormError ? (
+                  <div className="text-xs text-red-700" data-testid="webhook-form-error">{webhookFormError}</div>
+                ) : null}
+                <Button
+                  size="sm"
+                  disabled={
+                    selectedTenantId === null ||
+                    newWebhookEventType.trim().length < 3 ||
+                    newWebhookTargetUrl.trim().length < 10 ||
+                    newWebhookSigningSecret.trim().length < 16 ||
+                    createWebhookSubscription.isPending
+                  }
+                  onClick={() => {
+                    if (selectedTenantId === null) return;
+                    setWebhookFormError(null);
+                    createWebhookSubscription.mutate({
+                      tenant_id: selectedTenantId,
+                      event_type: newWebhookEventType.trim(),
+                      target_url: newWebhookTargetUrl.trim(),
+                      signing_secret: newWebhookSigningSecret.trim(),
+                    });
+                  }}
+                  data-testid="webhook-create-submit"
+                >
+                  {createWebhookSubscription.isPending ? "Creating…" : "Create Subscription"}
                 </Button>
               </div>
               <div className="text-xs text-muted-foreground">Subscriptions</div>

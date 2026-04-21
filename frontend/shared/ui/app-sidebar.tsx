@@ -28,6 +28,8 @@ const NAV_LABEL_KEY: Record<string, string> = {
   Enrollments: "nav.enrollments",
   Grades: "nav.grades",
   Transcripts: "nav.transcripts",
+  Thesis: "nav.thesis",
+  "Degree Progress": "nav.degreeProgress",
   Scheduling: "nav.scheduling",
   "My Space": "nav.mySpace",
   "My Work": "nav.myWork",

@@ -129,3 +129,7 @@ def test_backup_settings_and_run_success(monkeypatch, tmp_path) -> None:
     assert retention_run.status_code == 200
     assert retention_run.json()["job"]["status"] == "completed"
     assert old_dump.exists() is False
+
+    # Keep autouse reset in in-memory mode; otherwise teardown helpers can
+    # attempt DB-backed cleanup against the compose-only test DSN above.
+    monkeypatch.delenv("DATABASE_URL", raising=False)

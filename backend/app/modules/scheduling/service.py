@@ -63,6 +63,8 @@ from app.modules.scheduling.schemas import (
     StudentScheduleItemSchema,
     SchedulingConsistencyIssueSchema,
     SchedulingConsistencyReportSchema,
+    AttendanceTrendSchema,
+    AttendanceTrendDataPointSchema,
 )
 from app.modules.students.models import StudentProfileModel
 
@@ -1469,4 +1471,85 @@ class SchedulingService:
             attendance_count=len(attendances),
             issue_count=len(issues),
             issues=issues,
+        )
+
+    def get_attendance_trends(
+        self, tenant_id: int, section_id: int, weeks: int = 4
+    ) -> AttendanceTrendSchema:
+        """Get attendance trends for a section over the past N weeks."""
+        validate_tenant_id_provided(tenant_id)
+        section = self._load_course_section(tenant_id, section_id)
+
+        # Get all lessons for this section
+        lessons = self.db.execute(
+            select(LessonInstanceModel).where(
+                and_(
+                    LessonInstanceModel.tenant_id == tenant_id,
+                    LessonInstanceModel.section_id == section_id,
+                )
+            )
+        ).scalars().all()
+
+        if not lessons:
+            return AttendanceTrendSchema(
+                section_id=section_id,
+                total_students=0,
+                total_lessons=0,
+                data_points=[],
+            )
+
+        # Get unique student count
+        student_ids = set(
+            self.db.execute(
+                select(LessonAttendanceModel.student_profile_id).where(
+                    and_(
+                        LessonAttendanceModel.tenant_id == tenant_id,
+                        LessonAttendanceModel.lesson_instance_id.in_(
+                            [l.id for l in lessons]
+                        ),
+                    )
+                )
+            ).scalars().all()
+        )
+
+        total_students = len(student_ids)
+
+        # Aggregate attendance by date
+        date_attendance = {}
+        for lesson in lessons:
+            if lesson.scheduled_date not in date_attendance:
+                date_attendance[lesson.scheduled_date] = {"present": 0, "total": 0}
+
+            attendances = self.db.execute(
+                select(LessonAttendanceModel).where(
+                    and_(
+                        LessonAttendanceModel.tenant_id == tenant_id,
+                        LessonAttendanceModel.lesson_instance_id == lesson.id,
+                    )
+                )
+            ).scalars().all()
+
+            for att in attendances:
+                date_attendance[lesson.scheduled_date]["total"] += 1
+                if att.attendance_status == AttendanceStatus.PRESENT:
+                    date_attendance[lesson.scheduled_date]["present"] += 1
+
+        # Build trend data points
+        data_points = [
+            AttendanceTrendDataPointSchema(
+                date=date,
+                attendance_rate=(
+                    counts["present"] / counts["total"]
+                    if counts["total"] > 0
+                    else 0.0
+                ),
+            )
+            for date, counts in sorted(date_attendance.items())
+        ]
+
+        return AttendanceTrendSchema(
+            section_id=section_id,
+            total_students=total_students,
+            total_lessons=len(lessons),
+            data_points=data_points,
         )

@@ -149,6 +149,49 @@ describe("AICopilotPage", () => {
     expect(link).toHaveAttribute("href", "/console/analytics/academic-risk");
   });
 
+  it("renders runtime policy metadata when present", () => {
+    useAskCopilotMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      data: {
+        question: "kpi summary?",
+        summary: "ok",
+        insights: [],
+        sources: [],
+        warnings: [],
+        recommendations: [],
+        admin_prompt_pack: {
+          prompt_key: "admin_copilot.platform_admin.v1",
+          admin_role: "platform_admin",
+          tenant_id: 1,
+          query_type: "kpi_overview",
+          scope: "cross_tenant_ops",
+        },
+        tenant_policy_binding: {
+          binding_mode: "strict",
+          bound_tenant_id: 1,
+          cross_tenant_allowed: true,
+          admin_role: "platform_admin",
+        },
+        audit_taxonomy: {
+          domain: "platform_core.ai.copilot",
+          action: "platform_core.ai.copilot.ask.kpi_overview",
+          query_type: "kpi_overview",
+        },
+      },
+    });
+
+    render(<AICopilotPage />);
+
+    expect(screen.getByTestId("copilot-policy-metadata")).toBeInTheDocument();
+    expect(screen.getByTestId("copilot-prompt-pack")).toHaveTextContent("admin_copilot.platform_admin.v1");
+    expect(screen.getByTestId("copilot-tenant-policy-binding")).toHaveTextContent("bound_tenant_id=1");
+    expect(screen.getByTestId("copilot-audit-taxonomy")).toHaveTextContent(
+      "platform_core.ai.copilot.ask.kpi_overview",
+    );
+  });
+
   it("does not render recommendations section when empty", () => {
     useAskCopilotMock.mockReturnValue({
       mutate: vi.fn(),

@@ -100,6 +100,40 @@ export default function AICopilotPage() {
               <p className="text-sm font-medium">{ask.data.summary}</p>
             </div>
 
+            {(ask.data.admin_prompt_pack || ask.data.tenant_policy_binding || ask.data.audit_taxonomy) && (
+              <div className="rounded border bg-muted/20 p-3 space-y-2" data-testid="copilot-policy-metadata">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">Runtime policy metadata</p>
+                </div>
+
+                {ask.data.admin_prompt_pack && (
+                  <div className="text-xs" data-testid="copilot-prompt-pack">
+                    <p className="font-medium">Prompt pack</p>
+                    <p>
+                      {ask.data.admin_prompt_pack.prompt_key} ({ask.data.admin_prompt_pack.scope})
+                    </p>
+                  </div>
+                )}
+
+                {ask.data.tenant_policy_binding && (
+                  <div className="text-xs" data-testid="copilot-tenant-policy-binding">
+                    <p className="font-medium">Tenant policy binding</p>
+                    <p>
+                      bound_tenant_id={ask.data.tenant_policy_binding.bound_tenant_id}, cross_tenant_allowed={String(ask.data.tenant_policy_binding.cross_tenant_allowed)}
+                    </p>
+                  </div>
+                )}
+
+                {ask.data.audit_taxonomy && (
+                  <div className="text-xs" data-testid="copilot-audit-taxonomy">
+                    <p className="font-medium">Audit taxonomy</p>
+                    <p>{ask.data.audit_taxonomy.action}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2" data-testid="copilot-insights">
               <p className="text-xs text-muted-foreground">{t("aiCopilot.insights")}</p>
               {ask.data.insights.length === 0 ? (

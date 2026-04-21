@@ -83,6 +83,24 @@ _engine_lock = threading.Lock()
 _shared_engine: Engine | None = None
 
 
+def clear_shared_engine() -> None:
+    """Dispose and clear the process-level shared engine.
+
+    Tests may temporarily override DATABASE_URL to exercise DB-specific paths.
+    Without resetting the cached engine afterwards, later in-memory tests can
+    accidentally reuse a stale engine bound to an unreachable host.
+    """
+    global _shared_engine
+    with _engine_lock:
+        engine = _shared_engine
+        _shared_engine = None
+    if engine is not None:
+        try:
+            engine.dispose()
+        except Exception:
+            pass
+
+
 def _get_shared_engine() -> Engine | None:
     global _shared_engine
     if _shared_engine is not None:

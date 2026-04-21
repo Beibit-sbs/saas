@@ -371,10 +371,11 @@ def test_non_academic_query_does_not_trigger_intervention_auto_creation(reset_sh
 
 
 def test_academic_risk_creates_bound_intervention_case_and_action(reset_shared_state, monkeypatch) -> None:
-    monkeypatch.setenv(
-        "DATABASE_URL",
-        os.getenv("DATABASE_URL", "postgresql://app:app@db:5432/app"),
-    )
+    database_url = str(os.getenv("DATABASE_URL") or "").strip()
+    if not database_url:
+        pytest.skip("DB-backed UnitOfWork connection is required for this integration test")
+
+    monkeypatch.setenv("DATABASE_URL", database_url)
 
     tenant_id = _tenant("ai-risk-db-bind")
     handler = ContextProjectionHandler()

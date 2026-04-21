@@ -74,3 +74,36 @@ class FacultyWorkloadListResponse(BaseModel):
 class FacultyCapacityUpdatePayload(BaseModel):
     max_credit_hours: int = Field(ge=1, le=100)
     fte_ratio: float = Field(gt=0.0, le=1.0)
+
+
+class FacultyContractBase(BaseModel):
+    faculty_id: str = Field(min_length=1, max_length=64)
+    contract_type: str = Field(min_length=1, max_length=64)
+    start_date: str = Field(min_length=4, max_length=32)
+    end_date: str | None = Field(default=None, max_length=32)
+    fte_ratio: float = Field(gt=0.0, le=1.0)
+    max_credit_hours: int = Field(ge=1, le=100)
+    status: str = Field(min_length=1, max_length=64)
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+class FacultyContractCreatePayload(FacultyContractBase):
+    pass
+
+
+class FacultyContractStatusUpdatePayload(BaseModel):
+    status: str = Field(min_length=1, max_length=64)
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+class FacultyContractResponse(FacultyContractBase):
+    id: int
+    tenant_id: str | None = None
+
+
+class FacultyContractItemResponse(BaseModel):
+    contract: FacultyContractResponse
+
+
+class FacultyContractListResponse(BaseModel):
+    contracts: list[FacultyContractResponse]

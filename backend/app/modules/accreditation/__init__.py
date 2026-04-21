@@ -1,0 +1,1 @@
+"""Accreditation compliance module."""

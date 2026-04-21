@@ -6,6 +6,10 @@ from app.core.tenant import get_current_tenant
 from app.modules.audit.service import log_admin_action
 from app.modules.faculty.schemas import (
     FacultyCapacityUpdatePayload,
+    FacultyContractCreatePayload,
+    FacultyContractItemResponse,
+    FacultyContractListResponse,
+    FacultyContractStatusUpdatePayload,
     FacultyConsistencyReportSchema,
     FacultyCreatePayload,
     FacultyDeleteResponse,
@@ -16,13 +20,16 @@ from app.modules.faculty.schemas import (
     FacultyUpdatePayload,
 )
 from app.modules.faculty.service import (
+    create_faculty_contract,
     create_faculty_member,
     delete_faculty_member,
     get_department_workload_summary,
     get_faculty_consistency_report,
     get_faculty_workload,
     list_faculty,
+    list_faculty_contracts,
     list_workload_alerts,
+    update_faculty_contract_status,
     update_faculty_capacity,
     update_faculty_member,
 )
@@ -137,6 +144,82 @@ def delete_faculty_endpoint(
         metadata={"id": faculty_entry["id"], "faculty_id": faculty_entry["faculty_id"]},
     )
     return {"deleted": True, "faculty": faculty_entry}
+
+
+@router.get("/contracts", response_model=FacultyContractListResponse)
+def get_faculty_contracts_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+    faculty_id: str | None = None,
+    status: str | None = None,
+) -> FacultyContractListResponse:
+    contracts = list_faculty_contracts(int(tenant["id"]), faculty_id=faculty_id, status=status)
+    return {"contracts": contracts}
+
+
+@router.post("/contracts", response_model=FacultyContractItemResponse)
+def create_faculty_contract_endpoint(
+    payload: FacultyContractCreatePayload,
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+    _: Annotated[None, Depends(permission_dependency("admin.faculty.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> FacultyContractItemResponse:
+    try:
+        contract = create_faculty_contract(payload.model_dump(), int(tenant["id"]))
+    except ValueError as exc:
+        detail = str(exc)
+        status_code = 404 if "not found" in detail else 400
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+
+    log_admin_action(
+        actor=actor,
+        tenant_id=int(tenant["id"]),
+        action="university.faculty_contract.create",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="university_faculty_contracts",
+        result="success",
+        metadata={"id": contract["id"], "faculty_id": contract["faculty_id"]},
+    )
+    return {"contract": contract}
+
+
+@router.patch("/contracts/{contract_id}/status", response_model=FacultyContractItemResponse)
+def update_faculty_contract_status_endpoint(
+    contract_id: int,
+    payload: FacultyContractStatusUpdatePayload,
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+    _: Annotated[None, Depends(permission_dependency("admin.faculty.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> FacultyContractItemResponse:
+    try:
+        contract = update_faculty_contract_status(
+            contract_id=contract_id,
+            status=payload.status,
+            tenant_id=int(tenant["id"]),
+            notes=payload.notes,
+        )
+    except ValueError as exc:
+        detail = str(exc)
+        status_code = 404 if "not found" in detail else 400
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+
+    log_admin_action(
+        actor=actor,
+        tenant_id=int(tenant["id"]),
+        action="university.faculty_contract.update_status",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="university_faculty_contracts",
+        result="success",
+        metadata={"id": contract_id, "status": payload.status},
+    )
+    return {"contract": contract}
 
 
 @router.get("/{faculty_id}/workload", response_model=FacultyWorkloadItemResponse)

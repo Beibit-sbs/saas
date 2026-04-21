@@ -4,12 +4,16 @@ import { render, screen } from "@testing-library/react";
 import FacultyPage from "../../app/(admin)/console/faculty/page";
 
 const useFacultyMock = vi.fn();
+const useFacultyContractsMock = vi.fn();
 let allowAccess = true;
 
 vi.mock("../../modules/faculty/hooks", () => ({
   useFaculty: (...args: unknown[]) => useFacultyMock(...args),
+  useFacultyContracts: (...args: unknown[]) => useFacultyContractsMock(...args),
   useCreateFaculty: () => ({ mutate: vi.fn(), isPending: false }),
+  useCreateFacultyContract: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateFaculty: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateFacultyContractStatus: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteFaculty: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
@@ -88,12 +92,30 @@ describe("FacultyPage", () => {
       error: null,
       refetch: vi.fn(),
     });
+    useFacultyContractsMock.mockReturnValue({
+      data: {
+        contracts: [
+          {
+            id: 101,
+            faculty_id: "FAC-001",
+            contract_type: "full_time",
+            start_date: "2026-09-01",
+            end_date: "2027-08-31",
+            fte_ratio: 1,
+            max_credit_hours: 18,
+            status: "active",
+            notes: "renewed",
+          },
+        ],
+      },
+      isLoading: false,
+    });
   });
 
   it("renders faculty page and rows", () => {
     render(<FacultyPage />);
     expect(screen.getByTestId("faculty-page")).toBeInTheDocument();
-    expect(screen.getByText("FAC-001")).toBeInTheDocument();
+    expect(screen.getAllByText("FAC-001").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Turing")).toBeInTheDocument();
   });
 
@@ -101,6 +123,8 @@ describe("FacultyPage", () => {
     render(<FacultyPage />);
     expect(screen.getByText("Computer Science")).toBeInTheDocument();
     expect(screen.getByText("ada@example.edu")).toBeInTheDocument();
+    expect(screen.getByText("Faculty Contracts")).toBeInTheDocument();
+    expect(screen.getByText("full_time")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /delete|удалить|жою/i }).length).toBeGreaterThanOrEqual(1);
   });
 

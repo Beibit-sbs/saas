@@ -18,6 +18,10 @@ import {
   UserCog,
   ShieldCheck,
   ClipboardCheck,
+  MessageSquare,
+  LifeBuoy,
+  Wallet,
+  Home,
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS, type Permission } from "./permissions";
@@ -187,10 +191,70 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.TRANSCRIPTS_READ,
       },
       {
+        label: "Degree Progress",
+        href: "/console/degree-progress",
+        icon: ClipboardList,
+        permission: PERMISSIONS.DEGREE_PROGRESS_READ,
+      },
+      {
         label: "Scheduling",
         href: "/console/scheduling",
         icon: CalendarDays,
         permission: PERMISSIONS.SCHEDULING_READ,
+      },
+      {
+        label: "Thesis",
+        href: "/console/thesis",
+        icon: BookOpen,
+        permission: PERMISSIONS.TRANSCRIPTS_READ,
+      },
+      {
+        label: "Advising",
+        href: "/console/advising",
+        icon: MessageSquare,
+        permission: PERMISSIONS.ADVISING_READ,
+      },
+      {
+        label: "Student Services",
+        href: "/console/student-services",
+        icon: LifeBuoy,
+        permission: PERMISSIONS.STUDENT_SERVICES_READ,
+      },
+      {
+        label: "Career Services",
+        href: "/console/career-services",
+        icon: Briefcase,
+        permission: PERMISSIONS.CAREER_SERVICES_READ,
+      },
+      {
+        label: "Financial Aid",
+        href: "/console/financial-aid",
+        icon: Wallet,
+        permission: PERMISSIONS.FINANCIAL_AID_READ,
+      },
+      {
+        label: "Housing",
+        href: "/console/housing",
+        icon: Home,
+        permission: PERMISSIONS.HOUSING_READ,
+      },
+      {
+        label: "Alumni",
+        href: "/console/alumni",
+        icon: GraduationCap,
+        permission: PERMISSIONS.ALUMNI_READ,
+      },
+      {
+        label: "Academic Integrity",
+        href: "/console/academic-integrity",
+        icon: ShieldCheck,
+        permission: PERMISSIONS.ACADEMIC_RECORDS_READ,
+      },
+      {
+        label: "Accreditation Compliance",
+        href: "/console/accreditation-compliance",
+        icon: FileText,
+        permission: PERMISSIONS.ACADEMIC_RECORDS_READ,
       },
       {
         label: "Admissions",

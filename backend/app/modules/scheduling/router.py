@@ -52,6 +52,7 @@ from app.modules.scheduling.schemas import (
     StudentScheduleItemSchema,
 )
 from app.modules.scheduling.schemas import SchedulingConsistencyReportSchema
+from app.modules.scheduling.schemas import AttendanceTrendSchema
 from app.modules.scheduling.service import SchedulingService
 
 
@@ -274,6 +275,26 @@ async def list_lesson_instances(
             page=page,
             page_size=page_size,
             status=status,
+        )
+    except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
+        raise _raise_scheduling_http_error(exc) from exc
+
+
+@router.get("/sections/{section_id}/attendance-trends", response_model=AttendanceTrendSchema)
+async def get_section_attendance_trends(
+    section_id: int,
+    weeks: int = Query(4, ge=1, le=12),
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("scheduling.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: SchedulingDb = None,
+):
+    service = SchedulingService(db)
+    try:
+        return service.get_attendance_trends(
+            tenant_id=int(tenant["id"]),
+            section_id=section_id,
+            weeks=weeks,
         )
     except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
         raise _raise_scheduling_http_error(exc) from exc

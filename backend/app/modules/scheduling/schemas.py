@@ -286,3 +286,15 @@ class SchedulingConsistencyReportSchema(BaseModel):
     attendance_count: int
     issue_count: int
     issues: list[SchedulingConsistencyIssueSchema]
+
+
+class AttendanceTrendDataPointSchema(BaseModel):
+    date: date
+    attendance_rate: float  # 0.0 to 1.0
+
+
+class AttendanceTrendSchema(BaseModel):
+    section_id: int
+    total_students: int
+    total_lessons: int
+    data_points: list[AttendanceTrendDataPointSchema]

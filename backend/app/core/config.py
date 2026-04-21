@@ -347,8 +347,12 @@ def is_platform_self_service_enabled() -> bool:
 
 
 def is_billing_module_router_enabled() -> bool:
-    # Fail-safe default: billing module router stays disabled until explicitly enabled.
-    return is_enabled(os.getenv("BILLING_MODULE_ROUTER_ENABLED", "false"))
+    raw = os.getenv("BILLING_MODULE_ROUTER_ENABLED", "").strip().lower()
+    if raw:
+        return is_enabled(raw)
+    # In production keep billing module router opt-in; in non-production enable by default
+    # so module endpoints are validated continuously in docker test runs.
+    return not is_production_mode()
 
 
 def get_metrics_token() -> str | None:

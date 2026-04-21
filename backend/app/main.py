@@ -43,6 +43,15 @@ from app.modules.faculty.router import router as faculty_router
 from app.modules.feature_flags.router import router as feature_flags_router
 from app.modules.grades.router import router as grades_router
 from app.modules.scheduling.router import router as scheduling_router
+from app.modules.thesis.router import router as thesis_router
+from app.modules.advising.router import router as advising_router
+from app.modules.student_services.router import router as student_services_router
+from app.modules.career_services.router import router as career_services_router
+from app.modules.financial_aid.router import router as financial_aid_router
+from app.modules.housing.router import router as housing_router
+from app.modules.alumni.router import router as alumni_router
+from app.modules.academic_integrity.router import router as academic_integrity_router
+from app.modules.accreditation.router import router as accreditation_router
 from app.modules.transcripts.router import router as transcripts_router
 from app.modules.degree_progress.router import router as degree_progress_router
 from app.modules.auth.router import router as auth_router
@@ -143,10 +152,14 @@ async def lifespan(fastapi_app: FastAPI):
     validate_token_signing_config()
     # Skip in pytest runs (PYTEST_CURRENT_TEST is set by pytest automatically).
     # Tests use in-memory stores; env validation is verified by a dedicated test.
-    if not os.getenv("PYTEST_CURRENT_TEST"):
+    in_pytest = bool(os.getenv("PYTEST_CURRENT_TEST"))
+    if not in_pytest:
         validate_required_environment()
 
-    bootstrap_runtime_schema()
+    # Runtime schema bootstrap may open a live DB connection. Keep startup tests
+    # isolated from infrastructure by skipping this path under pytest.
+    if not in_pytest:
+        bootstrap_runtime_schema()
 
     # Wire the admissions SQLAlchemy session factory.
     # build_engine() raises RuntimeError when DATABASE_URL is absent; we catch it
@@ -224,6 +237,15 @@ app.include_router(courses_router)
 app.include_router(enrollments_router)
 app.include_router(grades_router)
 app.include_router(scheduling_router)
+app.include_router(thesis_router)
+app.include_router(advising_router)
+app.include_router(student_services_router)
+app.include_router(career_services_router)
+app.include_router(financial_aid_router)
+app.include_router(housing_router)
+app.include_router(alumni_router)
+app.include_router(academic_integrity_router)
+app.include_router(accreditation_router)
 app.include_router(interventions_router)
 app.include_router(interventions_playbook_router)
 app.include_router(interventions_risk_router)

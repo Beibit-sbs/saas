@@ -62,6 +62,8 @@ export const PERMISSIONS = {
   // Academic records
   RECORDS_READ: "admin.records.read",
   RECORDS_WRITE: "admin.records.write",
+  ACADEMIC_RECORDS_READ: "admin.records.read",
+  ACADEMIC_RECORDS_WRITE: "admin.records.write",
 
   // i18n
   I18N_MANAGE: "admin.i18n.manage",
@@ -99,6 +101,30 @@ export const PERMISSIONS = {
   // Scheduling
   SCHEDULING_READ: "scheduling.read",
   SCHEDULING_WRITE: "scheduling.write",
+
+  // Advising & Mentoring
+  ADVISING_READ: "advising.read",
+  ADVISING_WRITE: "advising.write",
+
+  // Student Services Ticketing
+  STUDENT_SERVICES_READ: "student_services.read",
+  STUDENT_SERVICES_WRITE: "student_services.write",
+
+  // Career Services & Employability
+  CAREER_SERVICES_READ: "career_services.read",
+  CAREER_SERVICES_WRITE: "career_services.write",
+
+  // Scholarship & Financial Aid
+  FINANCIAL_AID_READ: "financial_aid.read",
+  FINANCIAL_AID_WRITE: "financial_aid.write",
+
+  // Dormitory & Housing
+  HOUSING_READ: "housing.read",
+  HOUSING_WRITE: "housing.write",
+
+  // Alumni lifecycle
+  ALUMNI_READ: "alumni.read",
+  ALUMNI_WRITE: "alumni.write",
 
   // Degree progress
   DEGREE_PROGRESS_READ: "degree_progress.read",

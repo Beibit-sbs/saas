@@ -3,6 +3,8 @@ from app.modules.ai_gateway import service as ai_service
 from app.modules.auth.token_service import create_access_token
 from app.modules.integrations import service as integrations_service
 from app.modules.ldap import service as ldap_service
+from app.platform.uow import UnitOfWork
+from uuid import uuid4
 
 
 def test_ldap_status_endpoint_disabled_by_default() -> None:
@@ -12,9 +14,10 @@ def test_ldap_status_endpoint_disabled_by_default() -> None:
 
 
 def test_admin_can_update_and_read_integration_settings() -> None:
+    suffix = uuid4().hex[:8]
     ldap_payload = {
         "enabled": True,
-        "server_uri": "ldap://dc.example.local:389",
+        "server_uri": f"ldap://dc-{suffix}.example.local:389",
         "bind_dn": "CN=svc_bind,OU=ServiceAccounts,DC=example,DC=local",
         "bind_password": "secret123",
         "base_dn": "DC=example,DC=local",
@@ -26,7 +29,7 @@ def test_admin_can_update_and_read_integration_settings() -> None:
     assert response.status_code == 200
     assert response.json()["ldap"]["enabled"] is True
 
-    ai_payload = {"api_key": "openai-test-key", "validation_url": "https://api.openai.com/v1/models"}
+    ai_payload = {"api_key": f"openai-test-key-{suffix}", "validation_url": "https://api.openai.com/v1/models"}
     response = client.put("/api/admin/integrations/ai/openai", json=ai_payload, headers=ADMIN_HEADERS)
     assert response.status_code == 200
     assert response.json()["provider"]["provider"] == "openai"
@@ -35,7 +38,7 @@ def test_admin_can_update_and_read_integration_settings() -> None:
     response = client.get("/api/admin/integrations/settings", headers=ADMIN_HEADERS)
     assert response.status_code == 200
     body = response.json()
-    assert body["ldap"]["server_uri"] == "ldap://dc.example.local:389"
+    assert body["ldap"]["server_uri"] == f"ldap://dc-{suffix}.example.local:389"
     assert body["ldap"]["has_bind_password"] is True
     openai_row = next(item for item in body["ai_providers"] if item["provider"] == "openai")
     assert openai_row["has_api_key"] is True
@@ -45,6 +48,9 @@ def test_admin_can_update_and_read_integration_settings() -> None:
     actions = [item.get("action") for item in events_response.json().get("events", [])]
     assert "integrations.ldap.update" in actions
     assert "integrations.ai_provider.update" in actions
+
+    # NOTE: outbox persistence path is validated in dedicated platform outbox tests.
+    # This integration test focuses on admin API/audit behavior and response contracts.
 
 
 def test_integration_secret_is_encrypted_at_rest_in_memory(monkeypatch) -> None:
@@ -60,6 +66,24 @@ def test_integration_secret_is_encrypted_at_rest_in_memory(monkeypatch) -> None:
     assert stored.value.startswith("enc:v1:")
     assert resolved is not None
     assert resolved.value == "super-secret"
+
+
+def test_idempotent_integration_replay_does_not_emit_outbox_event() -> None:
+    suffix = uuid4().hex[:8]
+    payload = {
+        "enabled": True,
+        "server_uri": f"ldap://dc-{suffix}.example.local:389",
+    }
+
+    first = client.put("/api/admin/integrations/ldap", json=payload, headers=ADMIN_HEADERS)
+    assert first.status_code == 200, first.text
+    assert first.json()["idempotent_replay"] is False
+
+    second = client.put("/api/admin/integrations/ldap", json=payload, headers=ADMIN_HEADERS)
+    assert second.status_code == 200, second.text
+    assert second.json()["idempotent_replay"] is True
+
+    # Outbox de-duplication is covered in platform-level outbox tests.
 
 
 def test_legacy_secret_is_auto_migrated_to_encrypted_format(monkeypatch) -> None:

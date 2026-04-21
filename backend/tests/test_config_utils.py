@@ -264,6 +264,11 @@ def test_metrics_and_ops_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_billing_module_router_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APP_ENV", "development")
+    monkeypatch.delenv("BILLING_MODULE_ROUTER_ENABLED", raising=False)
+    assert config.is_billing_module_router_enabled() is True
+
+    monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.delenv("BILLING_MODULE_ROUTER_ENABLED", raising=False)
     assert config.is_billing_module_router_enabled() is False
 

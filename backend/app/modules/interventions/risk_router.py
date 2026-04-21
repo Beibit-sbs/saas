@@ -28,6 +28,8 @@ from app.modules.interventions.schemas import (
     RiskDetectionRunResultSchema,
     RiskSignalListResponseSchema,
     RiskSignalReadSchema,
+    RiskStudentHistoryResponseSchema,
+    RiskStudentLatestSchema,
     RiskThresholdCreateSchema,
     RiskThresholdListResponseSchema,
     RiskThresholdReadSchema,
@@ -166,6 +168,80 @@ async def list_risk_signals_endpoint(
         page=page,
         page_size=page_size,
         items=[RiskSignalReadSchema.model_validate(i) for i in rows],
+    )
+
+
+@router.get(
+    "/students/{student_profile_id}/latest",
+    response_model=RiskStudentLatestSchema,
+    responses={403: {"model": ErrorDetailResponse}, 404: {"model": ErrorDetailResponse}},
+)
+async def get_student_latest_risk_endpoint(
+    student_profile_id: int,
+    _: str = Depends(get_actor),
+    __: Annotated[None, Depends(permission_dependency("admin.jobs.read"))] = None,
+    tenant: dict[str, object] = Depends(get_current_tenant),
+    db: Session = Depends(get_interventions_db),
+) -> RiskStudentLatestSchema:
+    service = InterventionRiskService(db)
+    try:
+        row = await service.get_student_latest_signal(
+            tenant_id=int(tenant["id"]),
+            student_profile_id=student_profile_id,
+        )
+        return RiskStudentLatestSchema(
+            student_profile_id=row.student_profile_id,
+            severity=row.severity,
+            signal_type=row.signal_type,
+            detected_at=row.detected_at,
+            current_value=row.current_value,
+            threshold_value=row.threshold_value,
+            associated_case_id=row.associated_case_id,
+            signal_data_json=row.signal_data_json,
+        )
+    except (PermissionError, ValueError, TenantResourceNotFoundError, DomainValidationError) as exc:
+        raise _raise_intervention_risk_http_error(exc) from exc
+
+
+@router.get(
+    "/students/{student_profile_id}/history",
+    response_model=RiskStudentHistoryResponseSchema,
+    responses={403: {"model": ErrorDetailResponse}},
+)
+async def get_student_risk_history_endpoint(
+    student_profile_id: int,
+    _: str = Depends(get_actor),
+    __: Annotated[None, Depends(permission_dependency("admin.jobs.read"))] = None,
+    tenant: dict[str, object] = Depends(get_current_tenant),
+    db: Session = Depends(get_interventions_db),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+) -> RiskStudentHistoryResponseSchema:
+    service = InterventionRiskService(db)
+    total, rows = await service.list_student_signal_history(
+        tenant_id=int(tenant["id"]),
+        student_profile_id=student_profile_id,
+        page=page,
+        page_size=page_size,
+    )
+    return RiskStudentHistoryResponseSchema(
+        student_profile_id=student_profile_id,
+        total=total,
+        page=page,
+        page_size=page_size,
+        items=[
+            RiskStudentLatestSchema(
+                student_profile_id=item.student_profile_id,
+                severity=item.severity,
+                signal_type=item.signal_type,
+                detected_at=item.detected_at,
+                current_value=item.current_value,
+                threshold_value=item.threshold_value,
+                associated_case_id=item.associated_case_id,
+                signal_data_json=item.signal_data_json,
+            )
+            for item in rows
+        ],
     )
 
 

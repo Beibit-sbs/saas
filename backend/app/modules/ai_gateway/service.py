@@ -22,7 +22,11 @@ from app.modules.observability.metrics import (
     observe_ai_budget_status,
     observe_ai_cost_summary,
     observe_ai_slo_compliance,
+    observe_ai_guardrail_evaluation,
+    observe_ai_guardrail_blocked,
 )
+from app.modules.ai_guardrails import GuardrailEngine, GuardrailResult
+from app.modules.ai_guardrails.schemas import GuardrailPolicy
 from app.modules.security.db_tenant_context import set_db_tenant_context
 from app.modules.security.url_validation import validate_external_https_url
 
@@ -56,6 +60,9 @@ _usage_slo_policies: dict[int, dict[str, dict[str, object]]] = {}
 
 _daily_cost_lock = Lock()
 _usage_cost_daily_aggregates: dict[int, dict[str, dict[str, object]]] = {}
+
+_safety_lock = Lock()
+_ai_safety_policies: dict[int, dict[str, object]] = {}
 
 SUPPORTED_PROVIDERS = ("openai", "gemini", "anthropic", "custom")
 
@@ -240,6 +247,9 @@ def clear_ai_gateway_state() -> None:
     with _daily_cost_lock:
         _usage_cost_daily_aggregates.clear()
 
+    with _safety_lock:
+        _ai_safety_policies.clear()
+
 
 def list_usage_token_prices(*, tenant_id: int) -> list[dict[str, object]]:
     normalized_tenant_id = _normalize_tenant_id(tenant_id)
@@ -384,6 +394,62 @@ def list_slo_violations(*, tenant_id: int, limit: int = 5000) -> list[dict[str, 
             violation_types.append("error_rate")
         result.append({**row, "violation_types": violation_types})
     return sorted(result, key=lambda item: str(item.get("model_key") or ""))
+
+
+# ---------------------------------------------------------------------------
+# Tenant AI Safety Policy override
+# ---------------------------------------------------------------------------
+
+_DEFAULT_SAFETY_POLICY: dict[str, object] = {
+    "injection_detection": True,
+    "content_moderation": True,
+    "pii_detection": True,
+    "audit_only": False,
+    "blocked_patterns": [],
+}
+
+
+def get_ai_safety_policy(*, tenant_id: int) -> dict[str, object]:
+    normalized = _normalize_tenant_id(tenant_id)
+    with _safety_lock:
+        override = _ai_safety_policies.get(normalized)
+    if override is None:
+        return dict(_DEFAULT_SAFETY_POLICY)
+    merged = dict(_DEFAULT_SAFETY_POLICY)
+    merged.update(override)
+    return merged
+
+
+def upsert_ai_safety_policy(payload: dict[str, object], *, tenant_id: int) -> dict[str, object]:
+    normalized = _normalize_tenant_id(tenant_id)
+    allowed = {"injection_detection", "content_moderation", "pii_detection", "audit_only", "blocked_patterns"}
+    cleaned: dict[str, object] = {}
+    for k in allowed:
+        if k in payload:
+            cleaned[k] = payload[k]
+    with _safety_lock:
+        existing = dict(_ai_safety_policies.get(normalized, {}))
+        existing.update(cleaned)
+        existing["tenant_id"] = normalized
+        _ai_safety_policies[normalized] = existing
+    return get_ai_safety_policy(tenant_id=normalized)
+
+
+def list_ai_safety_policies() -> list[dict[str, object]]:
+    with _safety_lock:
+        rows = [dict(v) for v in _ai_safety_policies.values()]
+    return sorted(rows, key=lambda r: int(r.get("tenant_id") or 0))
+
+
+def _build_guardrail_policy_for_tenant(tenant_id: int) -> GuardrailPolicy:
+    data = get_ai_safety_policy(tenant_id=tenant_id)
+    return GuardrailPolicy(
+        injection_detection=bool(data.get("injection_detection", True)),
+        content_moderation=bool(data.get("content_moderation", True)),
+        pii_detection=bool(data.get("pii_detection", True)),
+        audit_only=bool(data.get("audit_only", False)),
+        blocked_patterns=list(data.get("blocked_patterns") or []),
+    )
 
 
 def refresh_usage_cost_daily_aggregation(
@@ -2431,6 +2497,51 @@ def execute_chat(
         if isinstance(item, dict)
     ]
 
+    # --- Pre-call guardrails ---
+    _tenant_guardrail_policy = _build_guardrail_policy_for_tenant(normalized_tenant_id)
+    _guardrail_engine = GuardrailEngine(_tenant_guardrail_policy)
+    _combined_input = " ".join(
+        str(m.get("content", "")) for m in normalized_messages
+    )
+    pre_guardrail = _guardrail_engine.evaluate_pre(_combined_input)
+    for _det in pre_guardrail.detectors:
+        observe_ai_guardrail_evaluation(
+            tenant_id=normalized_tenant_id,
+            stage="pre",
+            detector=_det.detector,
+            decision=_det.decision.value,
+            duration_seconds=pre_guardrail.latency_ms / 1000.0,
+        )
+    if pre_guardrail.blocked:
+        for _det in pre_guardrail.detectors:
+            if _det.decision.value == "block":
+                observe_ai_guardrail_blocked(
+                    tenant_id=normalized_tenant_id,
+                    detector=_det.detector,
+                    reason=_det.reason or "guardrail_pre_block",
+                )
+        _record_usage_log(
+            tenant_id=normalized_tenant_id,
+            actor=actor,
+            provider=provider,
+            model_key=model_key,
+            provider_model_id=provider_model_id,
+            outcome="blocked_by_guardrail",
+            latency_ms=max(1, int(pre_guardrail.latency_ms)),
+            input_tokens=None,
+            output_tokens=None,
+            total_tokens=None,
+            failure_reason=f"pre_guardrail:{pre_guardrail.decision}",
+            correlation_id=correlation_id,
+        )
+        raise AIGatewayError(
+            status_code=422,
+            detail="request_blocked_by_guardrail",
+            audit_reason="guardrail_pre_block",
+            provider=provider,
+            model=model_key,
+        )
+
     try:
         result = adapter.execute_chat(
             provider_model_id=provider_model_id,
@@ -2520,6 +2631,47 @@ def execute_chat(
             ) from exc
 
     latency_ms = max(1, int((time.monotonic() - started) * 1000))
+
+    # --- Post-call guardrails ---
+    post_guardrail = _guardrail_engine.evaluate_post(result.output_text or "")
+    for _det in post_guardrail.detectors:
+        observe_ai_guardrail_evaluation(
+            tenant_id=normalized_tenant_id,
+            stage="post",
+            detector=_det.detector,
+            decision=_det.decision.value,
+            duration_seconds=post_guardrail.latency_ms / 1000.0,
+        )
+    if post_guardrail.blocked:
+        for _det in post_guardrail.detectors:
+            if _det.decision.value == "block":
+                observe_ai_guardrail_blocked(
+                    tenant_id=normalized_tenant_id,
+                    detector=_det.detector,
+                    reason=_det.reason or "guardrail_post_block",
+                )
+        _record_usage_log(
+            tenant_id=normalized_tenant_id,
+            actor=actor,
+            provider=provider,
+            model_key=model_key,
+            provider_model_id=provider_model_id,
+            outcome="blocked_by_guardrail",
+            latency_ms=latency_ms,
+            input_tokens=result.usage.get("input_tokens") if isinstance(result.usage, dict) else None,
+            output_tokens=result.usage.get("output_tokens") if isinstance(result.usage, dict) else None,
+            total_tokens=result.usage.get("total_tokens") if isinstance(result.usage, dict) else None,
+            failure_reason=f"post_guardrail:{post_guardrail.decision}",
+            correlation_id=correlation_id,
+        )
+        raise AIGatewayError(
+            status_code=422,
+            detail="response_blocked_by_guardrail",
+            audit_reason="guardrail_post_block",
+            provider=provider,
+            model=model_key,
+        )
+
     _record_usage_log(
         tenant_id=normalized_tenant_id,
         actor=actor,
@@ -2549,4 +2701,24 @@ def execute_chat(
         "latency_ms": latency_ms,
         "routing": routing_meta,
         "budget": budget_guardrail,
+        "guardrail": {
+            "pre": {
+                "decision": pre_guardrail.decision.value,
+                "blocked": pre_guardrail.blocked,
+                "latency_ms": pre_guardrail.latency_ms,
+                "detectors": [
+                    {"detector": d.detector, "decision": d.decision.value, "score": d.score}
+                    for d in pre_guardrail.detectors
+                ],
+            },
+            "post": {
+                "decision": post_guardrail.decision.value,
+                "blocked": post_guardrail.blocked,
+                "latency_ms": post_guardrail.latency_ms,
+                "detectors": [
+                    {"detector": d.detector, "decision": d.decision.value, "score": d.score}
+                    for d in post_guardrail.detectors
+                ],
+            },
+        },
     }

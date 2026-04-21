@@ -6,17 +6,14 @@ from threading import Lock
 from typing import Any, Callable, Protocol
 from uuid import uuid4
 
+from app.platform.events.registry import (
+    normalize_event_type,
+    registered_tenant_aware_event_types,
+    validate_event_publish_inputs,
+)
 
-TENANT_AWARE_EVENT_TYPES = {
-    "tenant.created",
-    "user.created",
-    "role.assigned",
-    "ai.chat.executed",
-    "integration.updated",
-    "workflow.approved",
-    "student.created",
-    "file.uploaded",
-}
+
+TENANT_AWARE_EVENT_TYPES = registered_tenant_aware_event_types()
 
 
 @dataclass(frozen=True)
@@ -47,16 +44,16 @@ def create_domain_event(
     actor: str | None = None,
     correlation_id: str | None = None,
 ) -> DomainEvent:
-    normalized_type = str(event_type).strip().lower()
-    if not normalized_type:
-        raise ValueError("event_type is required")
-
     normalized_tenant_id = int(tenant_id) if tenant_id is not None else None
-    if normalized_type in TENANT_AWARE_EVENT_TYPES and (normalized_tenant_id is None or normalized_tenant_id <= 0):
-        raise ValueError("tenant-aware event requires tenant_id")
-
     if normalized_tenant_id is not None and normalized_tenant_id <= 0:
         raise ValueError("tenant_id must be positive")
+
+    payload_dict = dict(payload or {})
+    normalized_type = validate_event_publish_inputs(
+        tenant_id=normalized_tenant_id,
+        event_type=event_type,
+        payload=payload_dict,
+    )
 
     return DomainEvent(
         event_id=str(uuid4()),
@@ -65,7 +62,7 @@ def create_domain_event(
         tenant_id=normalized_tenant_id,
         actor=str(actor).strip() if actor else None,
         correlation_id=str(correlation_id).strip() if correlation_id else None,
-        payload=dict(payload or {}),
+        payload=payload_dict,
     )
 
 
@@ -77,9 +74,7 @@ class InProcessEventBus:
         self._handlers: dict[str, list[Callable[[DomainEvent], None]]] = {}
 
     def subscribe(self, event_type: str, handler: Callable[[DomainEvent], None]) -> None:
-        normalized = str(event_type).strip().lower()
-        if not normalized:
-            raise ValueError("event_type is required")
+        normalized = normalize_event_type(event_type)
         with self._lock:
             self._handlers.setdefault(normalized, []).append(handler)
 

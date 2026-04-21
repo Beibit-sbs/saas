@@ -8,6 +8,7 @@ from typing import Sequence
 from app.modules.audit.service import log_admin_action
 from app.modules.observability.logging import bind_log_context, reset_log_context
 from app.platform.events.handlers import AnalyticsEventHandler, AutomationEventHandler, ContextProjectionHandler, EducationGraphInferenceHandler, EventHandler, NotificationEventHandler, WebhookEventHandler
+from app.platform.events.handlers import AcademicChainEventHandler
 from app.platform.events.schemas import OutboxEventRead
 from app.platform.uow import UnitOfWork
 
@@ -35,6 +36,7 @@ class OutboxEventWorker:
             EducationGraphInferenceHandler(),
             AutomationEventHandler(),
             ContextProjectionHandler(),
+            AcademicChainEventHandler(),
         ])
         self._batch_size = max(1, int(batch_size))
         self._max_retry_count = max(1, int(max_retry_count))
@@ -127,13 +129,16 @@ class OutboxEventWorker:
                     succeeded += 1
                 except Exception as exc:
                     next_available_at = _utc_now() + timedelta(seconds=self._retry_delay_seconds * (2 ** int(event.retry_count)))
+                    terminal = int(event.retry_count) + 1 >= self._max_retry_count
                     failed_row = uow.outbox_event_repository.mark_failed(
                         event_id,
                         error=str(exc),
                         next_available_at=next_available_at,
+                        dead_letter=terminal,
                         conn=uow.conn,
                     )
-                    terminal = int(event.retry_count) + 1 >= self._max_retry_count or failed_row is None
+                    if failed_row is None:
+                        terminal = True
                     if terminal:
                         failed += 1
                         logger.error(
@@ -141,7 +146,7 @@ class OutboxEventWorker:
                             extra={
                                 "event_id": event_id,
                                 "event_type": event.event_type,
-                                "retry_count": int(event.retry_count),
+                                "retry_count": int((failed_row or {}).get("retry_count", int(event.retry_count) + 1)),
                                 "max_retries": self._max_retry_count,
                                 "error": str(exc),
                             },
@@ -161,7 +166,12 @@ class OutboxEventWorker:
                         correlation_id=event.correlation_id,
                         entity="platform-outbox",
                         result="failed" if terminal else "retry",
-                        metadata={"event_id": event_id, "event_type": event.event_type, "error": str(exc)},
+                        metadata={
+                            "event_id": event_id,
+                            "event_type": event.event_type,
+                            "error": str(exc),
+                            "status": (failed_row or {}).get("status", "dead_lettered" if terminal else "failed"),
+                        },
                     )
                 finally:
                     reset_log_context(log_tokens)

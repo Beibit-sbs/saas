@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
+from app.platform.events.handlers.academic_chain_handler import AcademicChainEventHandler
 from app.platform.events.handlers.analytics_handler import AnalyticsEventHandler
 from app.platform.events.handlers.automation_handler import AutomationEventHandler
 from app.platform.events.handlers.context_projection_handler import ContextProjectionHandler
@@ -19,6 +20,7 @@ class EventHandler(Protocol):
         ...
 
 __all__ = [
+    "AcademicChainEventHandler",
     "AnalyticsEventHandler",
     "AutomationEventHandler",
     "ContextProjectionHandler",

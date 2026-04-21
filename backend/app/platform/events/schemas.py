@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
-OutboxEventStatus = Literal["pending", "processing", "processed", "failed"]
+OutboxEventStatus = Literal["pending", "processing", "processed", "failed", "dead_lettered"]
 
 
 class OutboxEventRead(BaseModel):
@@ -35,38 +35,74 @@ class OutboxEventPublishRequest(BaseModel):
     causation_id: str | None = Field(default=None, max_length=255)
 
 
+class OutboxEventListSchema(BaseModel):
+    tenant_id: int
+    total: int
+    items: list[OutboxEventRead]
+
+
+class OutboxEventMutationRead(BaseModel):
+    event: OutboxEventRead
+    idempotent_replay: bool
+
+
 class TenantCreatedEventPayload(BaseModel):
     tenant_id: int
-    slug: str
-    name: str
-    status: str
+    slug: str | None = None
+    name: str | None = None
+    status: str | None = None
     actor: str | None = None
+
+    model_config = ConfigDict(extra="allow")
 
 
 class StudentCreatedEventPayload(BaseModel):
-    student_profile_id: int
-    person_id: int
-    student_number: str
-    current_status: str
-    created_by: str
+    student_profile_id: int | str
+    person_id: int | str | None = None
+    student_number: str | None = None
+    current_status: str | None = None
+    created_by: str | None = None
+
+    model_config = ConfigDict(extra="allow")
 
 
 class EnrollmentCreatedEventPayload(BaseModel):
-    enrollment_id: int
-    student_profile_id: int
-    course_id: int
-    term_id: int
-    enrollment_status: str
-    created_by: str
+    enrollment_id: int | str | None = None
+    student_profile_id: int | str | None = None
+    course_id: int | str | None = None
+    term_id: int | str | None = None
+    enrollment_status: str | None = None
+    created_by: str | None = None
+
+    model_config = ConfigDict(extra="allow")
+
+    @model_validator(mode="after")
+    def _require_identity(self) -> "EnrollmentCreatedEventPayload":
+        if self.enrollment_id is None and self.student_profile_id is None:
+            raise ValueError("enrollment.created requires enrollment_id or student_profile_id")
+        return self
 
 
 class GradeSubmittedEventPayload(BaseModel):
-    submission_id: int
-    enrollment_id: int
-    student_profile_id: int
-    grade_code: str
-    grade_points: str
-    submitted_by: str
+    submission_id: int | str | None = None
+    enrollment_id: int | str | None = None
+    student_profile_id: int | str | None = None
+    grade_code: str | None = None
+    grade_points: str | None = None
+    submitted_by: str | None = None
+    grade_id: str | None = None
+    value: float | str | None = None
+
+    model_config = ConfigDict(extra="allow")
+
+
+class IntegrationUpdatedEventPayload(BaseModel):
+    integration_type: str
+    actor: str
+    fields_updated: list[str] = Field(default_factory=list)
+    idempotent_replay: bool = False
+    provider: str | None = None
+    secret_fields_updated: list[str] = Field(default_factory=list)
 
 
 class OutboxWorkerResult(BaseModel):

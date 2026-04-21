@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+import logging
 import secrets
 from threading import Lock
 from typing import Any
 
 from app.core.db import get_raw_conn
 
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_SESSION_TTL_DAYS = 30
 
@@ -475,11 +478,14 @@ def revoke_device(*, device_id: str, user_id: str, tenant_id: int) -> int:
 def clear_sessions_state() -> None:
     global _db_ready
 
-    with get_raw_conn() as conn:
-        if _ensure_session_table(conn):
-            with conn.cursor() as cur:
-                cur.execute("DELETE FROM app_auth_sessions")
-            conn.commit()
+    try:
+        with get_raw_conn() as conn:
+            if _ensure_session_table(conn):
+                with conn.cursor() as cur:
+                    cur.execute("DELETE FROM app_auth_sessions")
+                conn.commit()
+    except Exception:  # noqa: BLE001
+        logger.warning("clear_sessions_state fallback: database unavailable", exc_info=True)
 
     with _state_lock:
         _state.rows.clear()

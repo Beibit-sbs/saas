@@ -229,3 +229,15 @@ class AIUsageBudgetStatusSchema(BaseModel):
     hard_cap: bool
     hard_cap_exceeded: bool
     updated_at: str
+
+
+class AISafetyPolicyPayload(BaseModel):
+    injection_detection: bool = True
+    content_moderation: bool = True
+    pii_detection: bool = True
+    audit_only: bool = False
+    blocked_patterns: list[str] = Field(default_factory=list, max_length=200)
+
+
+class AISafetyPolicySchema(AISafetyPolicyPayload):
+    tenant_id: int

@@ -61,6 +61,54 @@ def list_faculty(tenant_id: int) -> list[dict[str, object]]:
     return list_entities_for_tenant("faculty", tenant_id)
 
 
+def list_faculty_contracts(
+    tenant_id: int,
+    faculty_id: str | None = None,
+    status: str | None = None,
+) -> list[dict[str, object]]:
+    contracts = list_entities_for_tenant("faculty_contracts", tenant_id)
+    faculty_filter = str(faculty_id or "").strip()
+    status_filter = str(status or "").strip().lower()
+
+    filtered: list[dict[str, object]] = []
+    for row in contracts:
+        row_faculty_id = str(row.get("faculty_id") or "").strip()
+        row_status = str(row.get("status") or "").strip().lower()
+        if faculty_filter and row_faculty_id != faculty_filter:
+            continue
+        if status_filter and row_status != status_filter:
+            continue
+        filtered.append(row)
+    return filtered
+
+
+def create_faculty_contract(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+    faculty_id = str(payload.get("faculty_id") or "").strip()
+    faculty_rows = list_entities_for_tenant("faculty", tenant_id)
+    faculty_exists = any(str(row.get("faculty_id") or "").strip() == faculty_id for row in faculty_rows)
+    if not faculty_exists:
+        raise ValueError("faculty not found")
+    return create_entity_for_tenant("faculty_contracts", payload, tenant_id)
+
+
+def update_faculty_contract_status(
+    contract_id: int,
+    status: str,
+    tenant_id: int,
+    notes: str | None = None,
+) -> dict[str, object]:
+    current = list_entities_for_tenant("faculty_contracts", tenant_id)
+    row = next((item for item in current if _safe_int(item.get("id")) == contract_id), None)
+    if row is None:
+        raise ValueError("faculty_contract not found")
+
+    updated_payload = dict(row)
+    updated_payload["status"] = status
+    if notes is not None:
+        updated_payload["notes"] = notes
+    return update_entity_for_tenant("faculty_contracts", contract_id, updated_payload, tenant_id)
+
+
 def create_faculty_member(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
     return create_entity_for_tenant("faculty", payload, tenant_id)
 

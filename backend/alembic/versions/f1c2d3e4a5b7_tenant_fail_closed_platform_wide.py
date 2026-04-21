@@ -39,6 +39,33 @@ def _assert_no_null_or_orphan(table: str) -> None:
     )
 
 
+def _ensure_developer_apps_tenant_column() -> None:
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                  AND table_name = 'app_platform_developer_apps'
+            )
+            AND NOT EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = 'app_platform_developer_apps'
+                  AND column_name = 'tenant_id'
+            ) THEN
+                ALTER TABLE app_platform_developer_apps
+                ADD COLUMN tenant_id BIGINT REFERENCES app_tenants(id) ON DELETE CASCADE;
+            END IF;
+        END
+        $$;
+        """
+    )
+
+
 def upgrade() -> None:
     # 1) Remove legacy DEFAULT 1 from tenant columns (no implicit tenant assignment).
     op.execute("ALTER TABLE app_audit_events ALTER COLUMN tenant_id DROP DEFAULT")
@@ -56,6 +83,7 @@ def upgrade() -> None:
         WHERE scope = 'platform' AND tenant_id IS NULL
         """
     )
+    _ensure_developer_apps_tenant_column()
 
     # 3) Fail-fast validation for NULL/orphan rows.
     for table in (
@@ -66,6 +94,7 @@ def upgrade() -> None:
         "app_role_permissions",
         "app_user_roles",
         "app_platform_feature_flags",
+        "app_platform_developer_apps",
     ):
         _assert_no_null_or_orphan(table)
 

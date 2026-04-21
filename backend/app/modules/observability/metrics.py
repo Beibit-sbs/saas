@@ -54,6 +54,9 @@ _ai_budget_exceeded_total: dict[tuple[str, str], int] = defaultdict(int)
 _ai_cost_anomaly_detected_total: dict[str, int] = defaultdict(int)
 _ai_slo_compliance_pct: dict[tuple[str, str], float] = defaultdict(float)
 _ai_slo_breach_total: dict[tuple[str, str], int] = defaultdict(int)
+_ai_guardrail_evaluations_total: dict[tuple[str, str, str, str], int] = defaultdict(int)
+_ai_guardrail_blocked_total: dict[tuple[str, str, str], int] = defaultdict(int)
+_ai_guardrail_evaluation_duration_seconds: dict[tuple[str, str], tuple[int, float]] = defaultdict(lambda: (0, 0.0))
 _jobs_executed_total: int = 0
 _jobs_failed_total: int = 0
 _jobs_queue_size: int = 0
@@ -392,6 +395,37 @@ def observe_ai_slo_compliance(rows: list[dict[str, object]]) -> None:
                 _ai_slo_breach_total[(model, "error_rate")] += 1
 
 
+def observe_ai_guardrail_evaluation(
+    *,
+    tenant_id: str | int | None,
+    stage: str,
+    detector: str,
+    decision: str,
+    duration_seconds: float = 0.0,
+) -> None:
+    t = str(tenant_id if tenant_id is not None else "-").strip() or "-"
+    s = str(stage).strip().lower() or "unknown"
+    d = str(detector).strip().lower() or "unknown"
+    dec = str(decision).strip().lower() or "unknown"
+    with _lock:
+        _ai_guardrail_evaluations_total[(t, s, d, dec)] += 1
+        count, total = _ai_guardrail_evaluation_duration_seconds[(t, s)]
+        _ai_guardrail_evaluation_duration_seconds[(t, s)] = (count + 1, total + max(0.0, float(duration_seconds)))
+
+
+def observe_ai_guardrail_blocked(
+    *,
+    tenant_id: str | int | None,
+    detector: str,
+    reason: str,
+) -> None:
+    t = str(tenant_id if tenant_id is not None else "-").strip() or "-"
+    d = str(detector).strip().lower() or "unknown"
+    r = str(reason).strip().lower() or "unknown"
+    with _lock:
+        _ai_guardrail_blocked_total[(t, d, r)] += 1
+
+
 def clear_metrics_state() -> None:
     with _lock:
         _req_total.clear()
@@ -420,6 +454,9 @@ def clear_metrics_state() -> None:
         _ai_cost_anomaly_detected_total.clear()
         _ai_slo_compliance_pct.clear()
         _ai_slo_breach_total.clear()
+        _ai_guardrail_evaluations_total.clear()
+        _ai_guardrail_blocked_total.clear()
+        _ai_guardrail_evaluation_duration_seconds.clear()
         global _workflow_executions_total, _grade_submissions_total, _scheduling_conflicts_total
         global _jobs_executed_total, _jobs_failed_total, _jobs_queue_size, _invoices_created_total, _billing_failures_total
         global _db_connections_active, _redis_latency_seconds
@@ -474,6 +511,9 @@ def render_metrics() -> str:
         ai_cost_anomaly_detected_total = dict(_ai_cost_anomaly_detected_total)
         ai_slo_compliance_pct = dict(_ai_slo_compliance_pct)
         ai_slo_breach_total = dict(_ai_slo_breach_total)
+        ai_guardrail_evaluations_total = dict(_ai_guardrail_evaluations_total)
+        ai_guardrail_blocked_total = dict(_ai_guardrail_blocked_total)
+        ai_guardrail_evaluation_duration_seconds = dict(_ai_guardrail_evaluation_duration_seconds)
         jobs_executed_total = _jobs_executed_total
         jobs_failed_total = _jobs_failed_total
         jobs_queue_size = _jobs_queue_size
@@ -724,6 +764,30 @@ def render_metrics() -> str:
         lines.append(f"security_anomalies_total{{{labels}}} {count}")
 
     worker_age_seconds = _age_seconds_from_iso(get_worker_heartbeat())
+    lines.append("# HELP ai_guardrail_evaluations_total Total AI guardrail evaluations per stage/detector/decision.")
+    lines.append("# TYPE ai_guardrail_evaluations_total counter")
+    for (tenant, stage, detector, decision), count in sorted(ai_guardrail_evaluations_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",stage="{_escape(stage)}",detector="{_escape(detector)}",decision="{_escape(decision)}"'
+        lines.append(f"ai_guardrail_evaluations_total{{{labels}}} {count}")
+
+    lines.append("# HELP ai_guardrail_blocked_total Total AI guardrail blocks per detector/reason.")
+    lines.append("# TYPE ai_guardrail_blocked_total counter")
+    for (tenant, detector, reason), count in sorted(ai_guardrail_blocked_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",detector="{_escape(detector)}",reason="{_escape(reason)}"'
+        lines.append(f"ai_guardrail_blocked_total{{{labels}}} {count}")
+
+    lines.append("# HELP ai_guardrail_evaluation_duration_seconds_total Sum of AI guardrail evaluation durations.")
+    lines.append("# TYPE ai_guardrail_evaluation_duration_seconds_total counter")
+    for (tenant, stage), (_, total_duration) in sorted(ai_guardrail_evaluation_duration_seconds.items()):
+        labels = f'tenant_id="{_escape(tenant)}",stage="{_escape(stage)}"'
+        lines.append(f"ai_guardrail_evaluation_duration_seconds_total{{{labels}}} {total_duration:.6f}")
+
+    lines.append("# HELP ai_guardrail_evaluation_duration_seconds_count Number of AI guardrail evaluations timed.")
+    lines.append("# TYPE ai_guardrail_evaluation_duration_seconds_count counter")
+    for (tenant, stage), (count, _) in sorted(ai_guardrail_evaluation_duration_seconds.items()):
+        labels = f'tenant_id="{_escape(tenant)}",stage="{_escape(stage)}"'
+        lines.append(f"ai_guardrail_evaluation_duration_seconds_count{{{labels}}} {count}")
+
     scheduler_last_run = get_scheduler_last_run()
     scheduler_age_seconds = _age_seconds_from_iso(
         str(scheduler_last_run.get("at")) if isinstance(scheduler_last_run, dict) and scheduler_last_run.get("at") else None

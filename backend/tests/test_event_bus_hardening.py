@@ -14,6 +14,9 @@ from app.modules.platform_shared.events import (
     InProcessEventBus,
     create_domain_event,
 )
+from app.platform.events.registry import is_registered_event_type
+from app.platform.events.publisher import EventPublisher
+from app.platform.events.repository import OutboxEventRepository
 
 
 # ---------------------------------------------------------------------------
@@ -61,6 +64,78 @@ def test_create_domain_event_returns_valid_domain_event() -> None:
 def test_create_domain_event_normalises_event_type_to_lowercase() -> None:
     event = create_domain_event(event_type="Grade.Submitted", tenant_id=1)
     assert event.event_type == "grade.submitted"
+
+
+def test_create_domain_event_rejects_unknown_registered_type() -> None:
+    with pytest.raises(ValueError, match="unknown event_type"):
+        create_domain_event(event_type="unknown.event", tenant_id=1, payload={})
+
+
+def test_create_domain_event_rejects_invalid_payload_shape() -> None:
+    with pytest.raises(ValueError, match="invalid payload"):
+        create_domain_event(
+            event_type="tenant.created",
+            tenant_id=1,
+            payload={},
+        )
+
+
+def test_create_domain_event_accepts_registered_ai_chat_payload() -> None:
+    event = create_domain_event(
+        event_type="ai.chat.executed",
+        tenant_id=1,
+        payload={"model": "gpt-4o-mini", "provider": "openai"},
+    )
+    assert event.event_type == "ai.chat.executed"
+
+
+def test_event_publisher_rejects_unknown_event_type() -> None:
+    with pytest.raises(ValueError, match="unknown event_type"):
+        EventPublisher(repository=OutboxEventRepository()).publish_event(
+            tenant_id=1,
+            event_type="unknown.event",
+            aggregate_type="tenant",
+            aggregate_id="1",
+            payload_json={},
+        )
+
+
+def test_event_publisher_validates_payload_schema() -> None:
+    with pytest.raises(ValueError, match="invalid payload"):
+        EventPublisher(repository=OutboxEventRepository()).publish_event(
+            tenant_id=1,
+            event_type="student.created",
+            aggregate_type="student_profile",
+            aggregate_id="1",
+            payload_json={},
+        )
+
+
+def test_event_publisher_accepts_automation_namespace_events() -> None:
+    result = EventPublisher(repository=OutboxEventRepository()).publish_event(
+        tenant_id=1,
+        event_type="automation.rule_applied",
+        aggregate_type="automation_rule",
+        aggregate_id="rule-1",
+        payload_json={
+            "automation_action": "emit_event",
+            "source_event_type": "grade.submitted",
+            "source_aggregate_id": "55",
+            "event_payload": {"grade_points": 4.0},
+        },
+    )
+    assert result["event_type"] == "automation.rule_applied"
+
+
+def test_event_publisher_validates_integration_updated_payload() -> None:
+    with pytest.raises(ValueError, match="invalid payload"):
+        EventPublisher(repository=OutboxEventRepository()).publish_event(
+            tenant_id=1,
+            event_type="integration.updated",
+            aggregate_type="integration",
+            aggregate_id="ldap",
+            payload_json={"integration_type": "ldap"},
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +200,12 @@ def test_event_bus_publishes_to_no_handlers_without_error() -> None:
 
 def test_known_producer_types_are_in_tenant_aware_registry() -> None:
     """Types actively published in production code must be in the registry."""
-    produced_in_code = {"tenant.created", "student.created"}
+    produced_in_code = {"tenant.created", "student.created", "enrollment.created", "grade.submitted"}
     missing = produced_in_code - TENANT_AWARE_EVENT_TYPES
     assert not missing, f"Produced types missing from registry: {missing}"
+
+
+def test_known_producer_types_are_registered_event_types() -> None:
+    produced_in_code = {"tenant.created", "student.created", "enrollment.created", "grade.submitted", "integration.updated"}
+    missing = {event_type for event_type in produced_in_code if not is_registered_event_type(event_type)}
+    assert not missing, f"Produced types missing from event registry: {missing}"

@@ -22,8 +22,8 @@ echo "[f3.4-kickoff] checking API health"
 API_HEALTH="UNKNOWN"
 API_ENDPOINT_COUNT="0"
 
-# Try to hit a simple health endpoint
-if "${COMPOSE[@]}" exec -T backend curl -s http://localhost:8000/health/live >/dev/null 2>&1; then
+# Try to hit a simple health endpoint (avoid curl dependency inside container)
+if "${COMPOSE[@]}" exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live')" >/dev/null 2>&1; then
   API_HEALTH="PASS"
   echo "[f3.4-kickoff] API is live"
   

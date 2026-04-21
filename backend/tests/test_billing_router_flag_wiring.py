@@ -14,7 +14,18 @@ def _route_paths(app: FastAPI) -> set[str]:
     return {route.path for route in app.routes}
 
 
-def test_optional_billing_router_disabled_by_default(monkeypatch) -> None:
+def test_optional_billing_router_enabled_by_default_in_non_production(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "development")
+    monkeypatch.delenv("BILLING_MODULE_ROUTER_ENABLED", raising=False)
+
+    app = FastAPI()
+    _register_optional_routers(app)
+
+    assert _BILLING_STATE_PATH in _route_paths(app)
+
+
+def test_optional_billing_router_disabled_by_default_in_production(monkeypatch) -> None:
+    monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.delenv("BILLING_MODULE_ROUTER_ENABLED", raising=False)
 
     app = FastAPI()

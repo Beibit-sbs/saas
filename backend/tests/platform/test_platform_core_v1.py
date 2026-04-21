@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+from app.platform.events.publisher import EventPublisher
+from app.platform.events.worker import OutboxEventWorker
+from app.platform.uow import UnitOfWork
 from app.modules.auth.token_service import create_access_token
 from tests.conftest import ADMIN_HEADERS, INTERNAL_HEADERS, _auth_headers, client
 
@@ -174,6 +177,164 @@ def test_platform_core_v1_admin_forbids_non_admin_user() -> None:
         json={"slug": "x2", "name": "X2"},
     )
     assert response.status_code == 403
+
+
+def test_platform_core_v1_admin_can_list_and_redrive_dead_lettered_outbox_events() -> None:
+    class FailingHandler:
+        name = "pytest-failing-handler"
+
+        def handle(self, event, *, uow):
+            _ = (event, uow)
+            raise RuntimeError("dlq regression test")
+
+    suffix = uuid4().hex[:8]
+    tenant = client.post(
+        "/api/v1/admin/tenants",
+        headers=ADMIN_HEADERS,
+        json={"slug": f"dlq-{suffix}", "name": f"DLQ {suffix}"},
+    )
+    assert tenant.status_code == 201, tenant.text
+    tenant_id = int(tenant.json()["tenant_id"])
+    tenant_admin_headers = _auth_headers("owner@example.com", ["admin"], tenant_id=tenant_id)
+
+    with UnitOfWork() as uow:
+        uow.outbox_event_repository.clear_state(conn=uow.conn)
+
+    with UnitOfWork() as uow:
+        published = EventPublisher(uow=uow).publish_event(
+            tenant_id=tenant_id,
+            event_type="integration.updated",
+            aggregate_type="integration_settings",
+            aggregate_id="ldap",
+            payload_json={
+                "integration_type": "ldap",
+                "actor": "pytest",
+                "fields_updated": ["base_dn"],
+                "idempotent_replay": False,
+                "provider": "ldap",
+                "secret_fields_updated": [],
+            },
+        )
+
+    outcome = OutboxEventWorker(handlers=[FailingHandler()], max_retry_count=1, retry_delay_seconds=0.0).run_once()
+    assert outcome["processed"] == 1
+    assert outcome["failed"] == 1
+
+    listed = client.get(
+        f"/api/v1/admin/tenants/{tenant_id}/events/outbox/dead-letter",
+        headers=tenant_admin_headers,
+    )
+    assert listed.status_code == 200, listed.text
+    body = listed.json()
+    assert body["tenant_id"] == tenant_id
+    assert body["total"] == 1
+    assert len(body["items"]) == 1
+    assert int(body["items"][0]["id"]) == int(published["id"])
+    assert body["items"][0]["status"] == "dead_lettered"
+
+    redriven = client.post(
+        f"/api/v1/admin/tenants/{tenant_id}/events/outbox/{int(published['id'])}/redrive",
+        headers=tenant_admin_headers,
+    )
+    assert redriven.status_code == 200, redriven.text
+    redriven_body = redriven.json()
+    assert redriven_body["idempotent_replay"] is False
+    assert redriven_body["event"]["status"] == "pending"
+    assert int(redriven_body["event"]["retry_count"]) == 0
+    assert "dlq regression test" in str(redriven_body["event"]["last_error"])
+
+    replayed = client.post(
+        f"/api/v1/admin/tenants/{tenant_id}/events/outbox/{int(published['id'])}/redrive",
+        headers=tenant_admin_headers,
+    )
+    assert replayed.status_code == 200, replayed.text
+    assert replayed.json()["idempotent_replay"] is True
+
+    after = client.get(
+        f"/api/v1/admin/tenants/{tenant_id}/events/outbox/dead-letter",
+        headers=tenant_admin_headers,
+    )
+    assert after.status_code == 200, after.text
+    assert after.json()["total"] == 0
+
+
+def test_platform_core_v1_admin_can_replay_processed_outbox_event_idempotently() -> None:
+    class RecordingHandler:
+        name = "pytest-recording-handler"
+
+        def __init__(self) -> None:
+            self.seen_event_ids: list[int] = []
+
+        def handle(self, event, *, uow):
+            _ = uow
+            self.seen_event_ids.append(int(event.id))
+            return {"handled": True, "event_id": int(event.id)}
+
+    suffix = uuid4().hex[:8]
+    tenant = client.post(
+        "/api/v1/admin/tenants",
+        headers=ADMIN_HEADERS,
+        json={"slug": f"replay-{suffix}", "name": f"Replay {suffix}"},
+    )
+    assert tenant.status_code == 201, tenant.text
+    tenant_id = int(tenant.json()["tenant_id"])
+    tenant_admin_headers = _auth_headers("owner@example.com", ["admin"], tenant_id=tenant_id)
+
+    with UnitOfWork() as uow:
+        uow.outbox_event_repository.clear_state(conn=uow.conn)
+
+    with UnitOfWork() as uow:
+        original = EventPublisher(uow=uow).publish_event(
+            tenant_id=tenant_id,
+            event_type="integration.updated",
+            aggregate_type="integration_settings",
+            aggregate_id="ldap",
+            payload_json={
+                "integration_type": "ldap",
+                "actor": "pytest",
+                "fields_updated": ["bind_dn"],
+                "idempotent_replay": False,
+                "provider": "ldap",
+                "secret_fields_updated": [],
+            },
+        )
+
+    handler = RecordingHandler()
+    first_run = OutboxEventWorker(handlers=[handler], max_retry_count=1, retry_delay_seconds=0.0).run_once()
+    assert first_run["processed"] == 1
+    assert first_run["succeeded"] == 1
+    assert handler.seen_event_ids == [int(original["id"])]
+
+    replayed = client.post(
+        f"/api/v1/admin/tenants/{tenant_id}/events/outbox/{int(original['id'])}/replay",
+        headers=tenant_admin_headers,
+    )
+    assert replayed.status_code == 200, replayed.text
+    replayed_body = replayed.json()
+    replay_event = replayed_body["event"]
+    assert replayed_body["idempotent_replay"] is False
+    assert int(replay_event["id"]) != int(original["id"])
+    assert replay_event["status"] == "pending"
+    assert replay_event["causation_id"] == f"outbox.replay:{int(original['id'])}"
+
+    replayed_again = client.post(
+        f"/api/v1/admin/tenants/{tenant_id}/events/outbox/{int(original['id'])}/replay",
+        headers=tenant_admin_headers,
+    )
+    assert replayed_again.status_code == 200, replayed_again.text
+    replayed_again_body = replayed_again.json()
+    assert replayed_again_body["idempotent_replay"] is True
+    assert int(replayed_again_body["event"]["id"]) == int(replay_event["id"])
+
+    second_run = OutboxEventWorker(handlers=[handler], max_retry_count=1, retry_delay_seconds=0.0).run_once()
+    assert second_run["processed"] == 1
+    assert second_run["succeeded"] == 1
+    assert handler.seen_event_ids == [int(original["id"]), int(replay_event["id"])]
+
+    with UnitOfWork() as uow:
+        persisted_replay = uow.outbox_event_repository.get(int(replay_event["id"]), conn=uow.conn)
+    assert persisted_replay is not None
+    assert str(persisted_replay["status"]) == "processed"
 
 
 def test_platform_core_v1_internal_requires_token() -> None:

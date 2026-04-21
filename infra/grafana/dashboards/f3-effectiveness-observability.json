@@ -1,0 +1,123 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" },
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "" },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "" }
+  ],
+  "annotations": { "list": [] },
+  "description": "F3 intervention effectiveness observability dashboard for cohort operations, guardrails, latency, and queue depth.",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "F3 Success Ops / min",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum(rate(f3_cohort_operations_total{status=\"success\"}[5m])) * 60", "legendFormat": "success/min", "refId": "A" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "value", "colorMode": "background", "graphMode": "area" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "red" }, { "color": "yellow", "value": 1 }, { "color": "green", "value": 5 } ] } } }
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "title": "F3 Error Ops / min",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum(rate(f3_cohort_operations_total{status=\"error\"}[5m])) * 60", "legendFormat": "error/min", "refId": "A" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "value", "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "green" }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 } ] } } }
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "title": "Analysis Queue Depth",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum(f3_active_cohort_analysis_queue_depth{status=\"pending\"})", "legendFormat": "pending", "refId": "A" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "value", "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "green" }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 } ] } } }
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "title": "Guardrail Pass Ratio",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(rate(f3_guardrails_evaluated_total{result=\"pass\"}[5m])) / clamp_min(sum(rate(f3_guardrails_evaluated_total[5m])), 0.001)",
+          "legendFormat": "pass ratio",
+          "refId": "A"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "value", "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "mode": "absolute", "steps": [ { "color": "red" }, { "color": "yellow", "value": 0.8 }, { "color": "green", "value": 0.95 } ] } } }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 5,
+      "title": "F3 Operations by Type and Status",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum by (operation, status) (rate(f3_cohort_operations_total[5m]))", "legendFormat": "{{operation}} / {{status}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 6,
+      "title": "Average Operation Duration by Type",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (operation) (rate(f3_cohort_operation_duration_seconds_total{status=\"success\"}[5m])) / clamp_min(sum by (operation) (rate(f3_cohort_operation_duration_seconds_count{status=\"success\"}[5m])), 0.001)",
+          "legendFormat": "{{operation}} avg",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 7,
+      "title": "Guardrail Evaluations by Rule",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum by (guardrail, result) (rate(f3_guardrails_evaluated_total[5m]))", "legendFormat": "{{guardrail}} / {{result}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 8,
+      "title": "Analysis Queue Depth by Tenant",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum by (tenant_id, queue_name, status) (f3_active_cohort_analysis_queue_depth)", "legendFormat": "tenant={{tenant_id}} {{queue_name}} / {{status}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["platform", "f3", "observability", "cohorts"],
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "F3 Intervention Effectiveness - Observability",
+  "uid": "f3-effectiveness-observability-v1",
+  "version": 1
+}

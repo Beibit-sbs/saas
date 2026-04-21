@@ -34,6 +34,8 @@ from app.modules.ai_gateway.service import (
     update_routing_policy,
     upsert_model,
     validate_provider_runtime,
+    upsert_ai_safety_policy,
+    list_ai_safety_policies,
 )
 from app.modules.ai_gateway.schemas import (
     AISLOComplianceSchema,
@@ -56,6 +58,8 @@ from app.modules.ai_gateway.schemas import (
     AIUsageCostSummarySchema,
     AIRoutingPolicyPayload,
     AIRoutingPolicyReadSchema,
+    AISafetyPolicyPayload,
+    AISafetyPolicySchema,
 )
 from app.modules.audit.service import log_admin_action
 from app.modules.rbac.security import get_actor, permission_dependency
@@ -413,6 +417,41 @@ def get_slo_violations_endpoint(
 ) -> list[AISLOViolationSchema]:
     rows = list_slo_violations(tenant_id=int(tenant["id"]), limit=int(limit))
     return [AISLOViolationSchema.model_validate(item) for item in rows]
+
+
+@router.get("/safety-policies", response_model=list[AISafetyPolicySchema])
+def list_safety_policies_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.ai.models.manage"))],
+) -> list[AISafetyPolicySchema]:
+    rows = list_ai_safety_policies()
+    return [AISafetyPolicySchema.model_validate(item) for item in rows]
+
+
+@router.put("/safety-policies/{tenant_id}", response_model=AISafetyPolicySchema)
+def put_safety_policy_endpoint(
+    tenant_id: int,
+    payload: AISafetyPolicyPayload,
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.ai.models.manage"))],
+) -> AISafetyPolicySchema:
+    try:
+        row = upsert_ai_safety_policy(payload.model_dump(), tenant_id=tenant_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    log_admin_action(
+        actor=actor,
+        action="ai.safety.policy.upsert",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="ai_safety_policy",
+        result="success",
+        metadata={"tenant_id": tenant_id, "audit_only": row.get("audit_only")},
+        tenant_id=tenant_id,
+    )
+    return AISafetyPolicySchema.model_validate(row)
 
 
 @router.get("/usage/budget", response_model=AIUsageBudgetReadSchema)

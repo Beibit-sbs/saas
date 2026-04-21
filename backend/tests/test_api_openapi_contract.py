@@ -247,6 +247,30 @@ def test_platform_webhook_subscription_deactivate_exposes_idempotent_replay_flag
     assert subscription.get("$ref") == "#/components/schemas/WebhookSubscriptionReadSchema"
 
 
+def test_platform_outbox_redrive_exposes_idempotent_replay_flag() -> None:
+    operation = _operation("/api/v1/admin/tenants/{tenant_id}/events/outbox/{event_id}/redrive", "post")
+    schema = _response_schema(operation, "200")
+    properties = schema.get("properties", {})
+    assert isinstance(properties, dict) and "idempotent_replay" in properties
+    assert properties["idempotent_replay"].get("type") == "boolean"
+
+    event = properties.get("event", {})
+    assert isinstance(event, dict)
+    assert event.get("$ref") == "#/components/schemas/OutboxEventRead"
+
+
+def test_platform_outbox_replay_exposes_idempotent_replay_flag() -> None:
+    operation = _operation("/api/v1/admin/tenants/{tenant_id}/events/outbox/{event_id}/replay", "post")
+    schema = _response_schema(operation, "200")
+    properties = schema.get("properties", {})
+    assert isinstance(properties, dict) and "idempotent_replay" in properties
+    assert properties["idempotent_replay"].get("type") == "boolean"
+
+    event = properties.get("event", {})
+    assert isinstance(event, dict)
+    assert event.get("$ref") == "#/components/schemas/OutboxEventRead"
+
+
 def test_platform_feature_flag_mutations_expose_idempotent_replay_flag() -> None:
     platform_operation = _operation("/api/v1/admin/features/{module}/{key}", "put")
     platform_schema = _response_schema(platform_operation, "200")

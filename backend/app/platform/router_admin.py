@@ -31,6 +31,7 @@ from app.platform.developer.schemas import (
     DeveloperAppReadSchema,
     DeveloperAppSecretReadSchema,
 )
+from app.platform.events.publisher import EventPublisher
 from app.platform.education_graph.schemas import (
     CourseSkillCreateSchema,
     CourseSkillReadSchema,
@@ -39,6 +40,7 @@ from app.platform.education_graph.schemas import (
     StudentSkillReadSchema,
 )
 from app.platform.federation import service as federation_service
+from app.platform.events.schemas import OutboxEventListSchema, OutboxEventMutationRead, OutboxEventRead
 from app.platform.federation.schemas import (
     InstitutionCreateSchema,
     InstitutionOverviewSchema,
@@ -137,6 +139,28 @@ class SubscriptionMutationRead(SubscriptionRead):
 class NotificationMutationRead(NotificationRead):
     notification: NotificationRead
     idempotent_replay: bool
+
+
+class ConsoleNotificationRead(BaseModel):
+    id: str
+    type: str
+    severity: str
+    title: str
+    body: str
+    tenant_id: str | None
+    read: bool
+    created_at: str
+
+
+class ConsoleNotificationListRead(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[ConsoleNotificationRead]
+
+
+class NotificationMarkAllReadRead(BaseModel):
+    updated: int
 
 
 class WebhookSubscriptionMutationRead(WebhookSubscriptionReadSchema):
@@ -546,6 +570,96 @@ def enqueue_job(payload: JobEnqueueRequest, request: Request, actor: Actor) -> J
     return JobRead.model_validate(row)
 
 
+def _to_console_notification(row: dict[str, object]) -> ConsoleNotificationRead:
+    payload = dict(row.get("payload") or {})
+    status = str(row.get("status") or "queued").strip().lower()
+    severity = str(payload.get("severity") or "").strip().lower()
+    if severity not in {"info", "warning", "error", "success"}:
+        severity = "error" if status == "failed" else "info"
+    title = (
+        str(payload.get("title") or "").strip()
+        or str(row.get("subject") or "").strip()
+        or str(payload.get("event") or "").strip()
+        or "Notification"
+    )
+    body = (
+        str(payload.get("body") or "").strip()
+        or str(payload.get("message") or "").strip()
+        or str(payload.get("event") or "").strip()
+        or str(row.get("target") or "").strip()
+    )
+    tenant_id = row.get("tenant_id")
+    return ConsoleNotificationRead(
+        id=str(row.get("id")),
+        type=str(row.get("channel") or "in_app"),
+        severity=severity,
+        title=title,
+        body=body,
+        tenant_id=str(tenant_id) if tenant_id is not None else None,
+        read=status == "read",
+        created_at=str(row.get("created_at") or ""),
+    )
+
+
+@router.get("/notifications", response_model=ConsoleNotificationListRead)
+def list_notifications(
+    request: Request,
+    _actor: Actor,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=200),
+    read: bool | None = Query(default=None),
+) -> ConsoleNotificationListRead:
+    tenant_id = _require_request_tenant_id(request)
+    rows = notifications_service.list_notifications(tenant_id, limit=500)
+    items = [_to_console_notification(row) for row in rows]
+    if read is not None:
+        items = [item for item in items if item.read is read]
+    total = len(items)
+    start = (page - 1) * page_size
+    end = start + page_size
+    return ConsoleNotificationListRead(total=total, page=page, page_size=page_size, items=items[start:end])
+
+
+@router.post("/notifications/{notification_id}/read", response_model=ConsoleNotificationRead)
+def mark_notification_read(notification_id: int, request: Request, _actor: Actor) -> ConsoleNotificationRead:
+    tenant_id = _require_request_tenant_id(request)
+    with UnitOfWork() as uow:
+        row = uow.notification_repository.get(notification_id, conn=uow.conn)
+        if row is None or int(row.get("tenant_id") or 0) != int(tenant_id):
+            raise HTTPException(status_code=404, detail="notification not found")
+        updated = uow.notification_repository.mark_status(
+            notification_id,
+            status="read",
+            last_error=row.get("last_error") if isinstance(row.get("last_error"), str) else None,
+            increment_retry=False,
+            conn=uow.conn,
+        )
+        if updated is None:
+            raise HTTPException(status_code=404, detail="notification not found")
+    return _to_console_notification(updated)
+
+
+@router.post("/notifications/mark-all-read", response_model=NotificationMarkAllReadRead)
+def mark_all_notifications_read(request: Request, _actor: Actor) -> NotificationMarkAllReadRead:
+    tenant_id = _require_request_tenant_id(request)
+    updated_count = 0
+    with UnitOfWork() as uow:
+        rows = uow.notification_repository.list_for_tenant(tenant_id, limit=500, conn=uow.conn)
+        for row in rows:
+            if str(row.get("status") or "").strip().lower() == "read":
+                continue
+            updated = uow.notification_repository.mark_status(
+                int(row.get("id") or 0),
+                status="read",
+                last_error=row.get("last_error") if isinstance(row.get("last_error"), str) else None,
+                increment_retry=False,
+                conn=uow.conn,
+            )
+            if updated is not None:
+                updated_count += 1
+    return NotificationMarkAllReadRead(updated=updated_count)
+
+
 @router.post("/notifications", response_model=NotificationMutationRead, status_code=201)
 def dispatch_notification(
     payload: NotificationRequest,
@@ -684,6 +798,109 @@ def list_webhook_deliveries(tenant_id: int, _actor: Actor) -> WebhookDeliveryLis
         tenant_id=tenant_id,
         total=len(rows),
         items=[WebhookDeliveryReadSchema.model_validate(item) for item in rows],
+    )
+
+
+@router.get("/tenants/{tenant_id}/events/outbox/dead-letter", response_model=OutboxEventListSchema)
+def list_dead_letter_events(
+    tenant_id: int,
+    request: Request,
+    _actor: Actor,
+    limit: int = Query(default=100, ge=1, le=500),
+) -> OutboxEventListSchema:
+    _enforce_target_tenant_match(request, tenant_id)
+    with UnitOfWork() as uow:
+        rows = uow.outbox_event_repository.list_dead_lettered(tenant_id=tenant_id, limit=limit, conn=uow.conn)
+    return OutboxEventListSchema(
+        tenant_id=tenant_id,
+        total=len(rows),
+        items=[OutboxEventRead.model_validate(item) for item in rows],
+    )
+
+
+@router.post("/tenants/{tenant_id}/events/outbox/{event_id}/redrive", response_model=OutboxEventMutationRead)
+def redrive_dead_letter_event(
+    tenant_id: int,
+    event_id: int,
+    request: Request,
+    actor: Actor,
+) -> OutboxEventMutationRead:
+    _enforce_target_tenant_match(request, tenant_id)
+    with UnitOfWork() as uow:
+        existing = uow.outbox_event_repository.get(event_id, conn=uow.conn)
+        if existing is None or int(existing.get("tenant_id", 0)) != int(tenant_id):
+            raise HTTPException(status_code=404, detail="outbox event not found")
+
+        status = str(existing.get("status") or "")
+        if status == "dead_lettered":
+            row = uow.outbox_event_repository.redrive(event_id, tenant_id=tenant_id, conn=uow.conn)
+            if row is None:
+                raise HTTPException(status_code=409, detail="outbox event redrive failed")
+            replayed = False
+        elif status == "pending" and int(existing.get("retry_count", 0)) == 0 and existing.get("last_error"):
+            row = existing
+            replayed = True
+        else:
+            raise HTTPException(status_code=409, detail=f"outbox event is not redrivable from status '{status}'")
+
+    _audit(
+        request,
+        actor,
+        "platform_core.events.redrive",
+        tenant_id,
+        {"event_id": event_id, "idempotent_replay": replayed},
+    )
+    return OutboxEventMutationRead.model_validate(
+        {"event": OutboxEventRead.model_validate(row), "idempotent_replay": replayed}
+    )
+
+
+@router.post("/tenants/{tenant_id}/events/outbox/{event_id}/replay", response_model=OutboxEventMutationRead)
+def replay_outbox_event(
+    tenant_id: int,
+    event_id: int,
+    request: Request,
+    actor: Actor,
+) -> OutboxEventMutationRead:
+    _enforce_target_tenant_match(request, tenant_id)
+    replay_causation_id = f"outbox.replay:{int(event_id)}"
+    with UnitOfWork() as uow:
+        existing = uow.outbox_event_repository.get(event_id, conn=uow.conn)
+        if existing is None or int(existing.get("tenant_id", 0)) != int(tenant_id):
+            raise HTTPException(status_code=404, detail="outbox event not found")
+
+        replayed_event = uow.outbox_event_repository.find_by_causation_id(
+            tenant_id=tenant_id,
+            causation_id=replay_causation_id,
+            conn=uow.conn,
+        )
+        if replayed_event is not None:
+            row = replayed_event
+            replayed = True
+        else:
+            status = str(existing.get("status") or "")
+            if status not in {"processed", "failed", "dead_lettered"}:
+                raise HTTPException(status_code=409, detail=f"outbox event is not replayable from status '{status}'")
+            row = EventPublisher(uow=uow).publish_event(
+                tenant_id=tenant_id,
+                event_type=str(existing.get("event_type") or ""),
+                aggregate_type=str(existing.get("aggregate_type") or ""),
+                aggregate_id=str(existing.get("aggregate_id") or ""),
+                payload_json=dict(existing.get("payload_json") or {}),
+                correlation_id=existing.get("correlation_id"),
+                causation_id=replay_causation_id,
+            )
+            replayed = False
+
+    _audit(
+        request,
+        actor,
+        "platform_core.events.replay",
+        tenant_id,
+        {"event_id": event_id, "replay_event_id": int(row["id"]), "idempotent_replay": replayed},
+    )
+    return OutboxEventMutationRead.model_validate(
+        {"event": OutboxEventRead.model_validate(row), "idempotent_replay": replayed}
     )
 
 
@@ -1021,6 +1238,11 @@ def ask_copilot(
     actor: Actor,
     request: Request,
 ) -> CopilotAnswerReadSchema:
+    request_tenant_id = _require_request_tenant_id(request)
+    if int(request_tenant_id) != PLATFORM_TENANT_ID and int(request_tenant_id) != int(body.tenant_id):
+        raise HTTPException(status_code=403, detail="cross-tenant access denied")
+
+    audit_action = ai_service.audit_action_for_question(body.question)
     answer = ai_service.answer_question(
         tenant_id=body.tenant_id,
         actor_id=actor,
@@ -1030,9 +1252,13 @@ def ask_copilot(
     _audit(
         request,
         actor,
-        "platform_core.ai.copilot.ask",
+        audit_action,
         int(body.tenant_id),
-        {"query_length": len(body.question)},
+        {
+            "query_length": len(body.question),
+            "request_tenant_id": int(request_tenant_id),
+            "bound_tenant_id": int(body.tenant_id),
+        },
     )
     return CopilotAnswerReadSchema.model_validate(answer)
 

@@ -2,7 +2,7 @@
 
 Дата: 2026-04-18
 Task ID: #56
-Статус: PREP-OPEN
+Статус: ✅ SHIPPED (P0+P1 complete 2026-04-20)
 Owner: AI Safety Team
 Reviewers: Security Lead, Backend Lead, Product
 
@@ -217,13 +217,13 @@ class ContentPolicy:
 
 ## 8) Definition of Done (для перехода #56 из HARDENING → EXISTS)
 
-- [ ] Standalone guardrail module (`ai_guardrails/`)
-- [ ] Prompt injection detector (pattern + heuristic)
-- [ ] Content moderation filter (deny-list + categories)
-- [ ] PII detector (regex, ≥5 patterns)
-- [ ] GuardrailEngine integrated в AI Gateway
-- [ ] Guardrail metrics в Prometheus
-- [ ] Audit trail для guardrail decisions
-- [ ] Tenant policy override mechanism
-- [ ] Regression: все AI Gateway тесты green
-- [ ] Coverage: ≥80% на новый код
+- [x] Standalone guardrail module (`ai_guardrails/`)
+- [x] Prompt injection detector (pattern + heuristic)
+- [x] Content moderation filter (deny-list + categories)
+- [x] PII detector (regex, ≥5 patterns)
+- [x] GuardrailEngine integrated в AI Gateway
+- [x] Guardrail metrics в Prometheus
+- [x] Audit trail для guardrail decisions (`blocked_by_guardrail` outcome в usage log)
+- [x] Tenant policy override mechanism
+- [x] Regression: все AI Gateway тесты green
+- [x] Coverage: ≥80% на новый код (96–100% по всем файлам ai_guardrails)

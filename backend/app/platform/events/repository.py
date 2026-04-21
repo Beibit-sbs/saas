@@ -172,6 +172,54 @@ class OutboxEventRepository:
             row = self._rows.get(normalized_event_id)
             return dict(row) if row else None
 
+    def find_by_causation_id(
+        self,
+        *,
+        tenant_id: int,
+        causation_id: str,
+        conn: object | None = None,
+    ) -> dict[str, Any] | None:
+        normalized_tenant_id = int(tenant_id)
+        normalized_causation_id = causation_id.strip()
+        if not normalized_causation_id:
+            return None
+        if conn is None:
+            with transaction() as tx:
+                return self.find_by_causation_id(
+                    tenant_id=normalized_tenant_id,
+                    causation_id=normalized_causation_id,
+                    conn=tx,
+                )
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id, tenant_id, event_type, aggregate_type, aggregate_id, payload_json,
+                           status, retry_count, available_at, created_at, processed_at,
+                           last_error, correlation_id, causation_id
+                    FROM app_platform_outbox_events
+                    WHERE tenant_id = %s AND causation_id = %s
+                    ORDER BY created_at DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (normalized_tenant_id, normalized_causation_id),
+                )
+                row = cur.fetchone()
+            return self._row_to_api(row) if row else None
+
+        with self._lock:
+            matches = [
+                dict(item)
+                for item in self._rows.values()
+                if int(item.get("tenant_id", 0)) == normalized_tenant_id
+                and str(item.get("causation_id") or "") == normalized_causation_id
+            ]
+        if not matches:
+            return None
+        matches.sort(key=lambda item: (str(item["created_at"]), int(item["id"])), reverse=True)
+        return matches[0]
+
     def list_for_tenant(self, tenant_id: int, *, limit: int = 100, conn: object | None = None) -> list[dict[str, Any]]:
         normalized_tenant_id = int(tenant_id)
         normalized_limit = max(1, min(int(limit), 1000))
@@ -198,6 +246,45 @@ class OutboxEventRepository:
 
         with self._lock:
             rows = [dict(item) for item in self._rows.values() if int(item["tenant_id"]) == normalized_tenant_id]
+        rows.sort(key=lambda item: (str(item["created_at"]), int(item["id"])), reverse=True)
+        return rows[:normalized_limit]
+
+    def list_dead_lettered(
+        self,
+        tenant_id: int,
+        *,
+        limit: int = 100,
+        conn: object | None = None,
+    ) -> list[dict[str, Any]]:
+        normalized_tenant_id = int(tenant_id)
+        normalized_limit = max(1, min(int(limit), 1000))
+        if conn is None:
+            with transaction() as tx:
+                return self.list_dead_lettered(normalized_tenant_id, limit=normalized_limit, conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id, tenant_id, event_type, aggregate_type, aggregate_id, payload_json,
+                           status, retry_count, available_at, created_at, processed_at,
+                           last_error, correlation_id, causation_id
+                    FROM app_platform_outbox_events
+                    WHERE tenant_id = %s AND status = 'dead_lettered'
+                    ORDER BY created_at DESC, id DESC
+                    LIMIT %s
+                    """,
+                    (normalized_tenant_id, normalized_limit),
+                )
+                rows = cur.fetchall()
+            return [self._row_to_api(row) for row in rows]
+
+        with self._lock:
+            rows = [
+                dict(item)
+                for item in self._rows.values()
+                if int(item["tenant_id"]) == normalized_tenant_id and str(item.get("status")) == "dead_lettered"
+            ]
         rows.sort(key=lambda item: (str(item["created_at"]), int(item["id"])), reverse=True)
         return rows[:normalized_limit]
 
@@ -349,17 +436,20 @@ class OutboxEventRepository:
         *,
         error: str,
         next_available_at: datetime,
+        dead_letter: bool = False,
         conn: object | None = None,
     ) -> dict[str, Any] | None:
         normalized_event_id = int(event_id)
         normalized_error = error.strip() or "event handler failed"
         normalized_next_available_at = self._normalize_datetime(next_available_at)
+        normalized_status = "dead_lettered" if dead_letter else "failed"
         if conn is None:
             with transaction() as tx:
                 return self.mark_failed(
                     normalized_event_id,
                     error=normalized_error,
                     next_available_at=normalized_next_available_at,
+                    dead_letter=dead_letter,
                     conn=tx,
                 )
 
@@ -368,7 +458,7 @@ class OutboxEventRepository:
                 cur.execute(
                     """
                     UPDATE app_platform_outbox_events
-                    SET status = 'failed',
+                    SET status = %s,
                         retry_count = retry_count + 1,
                         available_at = %s,
                         last_error = %s
@@ -377,7 +467,7 @@ class OutboxEventRepository:
                               status, retry_count, available_at, created_at, processed_at,
                               last_error, correlation_id, causation_id
                     """,
-                    (normalized_next_available_at, normalized_error, normalized_event_id),
+                    (normalized_status, normalized_next_available_at, normalized_error, normalized_event_id),
                 )
                 row = cur.fetchone()
             return self._row_to_api(row) if row else None
@@ -386,8 +476,59 @@ class OutboxEventRepository:
             row = self._rows.get(normalized_event_id)
             if row is None or str(row.get("status")) != "processing":
                 return None
-            row["status"] = "failed"
+            row["status"] = normalized_status
             row["retry_count"] = int(row.get("retry_count", 0)) + 1
             row["available_at"] = normalized_next_available_at.isoformat()
             row["last_error"] = normalized_error
+            return dict(row)
+
+    def redrive(
+        self,
+        event_id: int,
+        *,
+        tenant_id: int,
+        available_at: datetime | None = None,
+        conn: object | None = None,
+    ) -> dict[str, Any] | None:
+        normalized_event_id = int(event_id)
+        normalized_tenant_id = int(tenant_id)
+        normalized_available_at = self._normalize_datetime(available_at)
+        if conn is None:
+            with transaction() as tx:
+                return self.redrive(
+                    normalized_event_id,
+                    tenant_id=normalized_tenant_id,
+                    available_at=normalized_available_at,
+                    conn=tx,
+                )
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE app_platform_outbox_events
+                    SET status = 'pending',
+                        retry_count = 0,
+                        available_at = %s,
+                        processed_at = NULL
+                    WHERE id = %s AND tenant_id = %s AND status = 'dead_lettered'
+                    RETURNING id, tenant_id, event_type, aggregate_type, aggregate_id, payload_json,
+                              status, retry_count, available_at, created_at, processed_at,
+                              last_error, correlation_id, causation_id
+                    """,
+                    (normalized_available_at, normalized_event_id, normalized_tenant_id),
+                )
+                row = cur.fetchone()
+            return self._row_to_api(row) if row else None
+
+        with self._lock:
+            row = self._rows.get(normalized_event_id)
+            if row is None:
+                return None
+            if int(row.get("tenant_id", 0)) != normalized_tenant_id or str(row.get("status")) != "dead_lettered":
+                return None
+            row["status"] = "pending"
+            row["retry_count"] = 0
+            row["available_at"] = normalized_available_at.isoformat()
+            row["processed_at"] = None
             return dict(row)
