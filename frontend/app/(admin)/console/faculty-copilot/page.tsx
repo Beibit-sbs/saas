@@ -32,7 +32,7 @@ export default function FacultyCopilotPage() {
       <div className="space-y-8">
         <PageHeader
           title="Faculty Copilot"
-          subtitle="AI assistant for lesson plans, teaching materials, and faculty Q&A"
+          description="AI assistant for lesson plans, teaching materials, and faculty Q&A"
           icon={Bot}
         />
 

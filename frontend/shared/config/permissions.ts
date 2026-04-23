@@ -182,6 +182,18 @@ export const PERMISSIONS = {
   // Faculty Copilot (Phase XII)
   FACULTY_COPILOT_READ: "faculty_copilot.read",
   FACULTY_COPILOT_WRITE: "faculty_copilot.write",
+
+  // Knowledge Retrieval (Phase XII2)
+  KNOWLEDGE_RETRIEVAL_READ: "knowledge_retrieval.read",
+  KNOWLEDGE_RETRIEVAL_WRITE: "knowledge_retrieval.write",
+
+  // Prompt Management (Phase XII3)
+  PROMPT_MANAGEMENT_READ: "prompt_management.read",
+  PROMPT_MANAGEMENT_WRITE: "prompt_management.write",
+
+  // Model Evaluation (Phase XII4)
+  MODEL_EVALUATION_READ: "model_evaluation.read",
+  MODEL_EVALUATION_WRITE: "model_evaluation.write",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

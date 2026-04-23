@@ -69,6 +69,9 @@ from app.modules.delinquency_collections.router import router as delinquency_col
 from app.modules.facilities_work_orders.router import router as facilities_work_orders_router
 from app.modules.asset_inventory.router import router as asset_inventory_router
 from app.modules.faculty_copilot.router import router as faculty_copilot_router
+from app.modules.knowledge_retrieval.router import router as knowledge_retrieval_router
+from app.modules.prompt_management.router import router as prompt_management_router
+from app.modules.model_evaluation.router import router as model_evaluation_router
 from app.modules.operations.router import router as operations_router
 from app.modules.student_life.router import router as student_life_router
 from app.modules.procurement.router import router as procurement_router
@@ -285,6 +288,9 @@ app.include_router(delinquency_collections_router)
 app.include_router(facilities_work_orders_router)
 app.include_router(asset_inventory_router)
 app.include_router(faculty_copilot_router)
+app.include_router(knowledge_retrieval_router)
+app.include_router(prompt_management_router)
+app.include_router(model_evaluation_router)
 app.include_router(operations_router)
 app.include_router(student_life_router)
 app.include_router(procurement_router)

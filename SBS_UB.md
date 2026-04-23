@@ -7,7 +7,7 @@
 
 ## Текущий прогресс (оперативный трекер)
 
-**Обновлено:** 2026-04-23 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII started: XII1 in progress)
+**Обновлено:** 2026-04-23 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII COMPLETE ✅ XII1-XII5: backend 13/13 ✅ + frontend 550/550 ✅ + release-gate PASS ✅)
 
 **[Предыдущее обновление 2026-04-23]** (Brain Core + integrations regression fixes ✅ `test_student_risk_flow.py` 41 passed; `test_financial_aid.py` + `test_housing.py` + `test_integrations.py` 21 passed; post-Phase-G smoke-gate remains PASS `passed=8`, `failed=0`; access model fixed: tenant-local Brain + ministry KPI layer)
 
@@ -151,11 +151,11 @@
 
 #### Phase XII — P6 Wave: AI Platform Modules
 
-- [ ] XII1: #52 `faculty_copilot` module (in progress) — teaching assistant AI for faculty (lesson plans, materials, Q&A), backed by ai_gateway + knowledge layer; backend slice + frontend + tests
-- [ ] XII2: #55 `knowledge_retrieval` module — RAG pipeline, document ingestion, semantic search, knowledge base management; backend slice + frontend + tests
-- [ ] XII3: #57 `prompt_management` module — prompt templates, versioning, A/B test routing; backend slice + frontend + tests
-- [ ] XII4: #58 `model_evaluation` module — model quality metrics, A/B experiments, evaluation runs, leaderboard; backend slice + frontend + tests
-- [ ] XII5: Финальный release-gate после Phase XII — AUDIT 60/60 EXISTS ✅
+- [x] XII1: #52 `faculty_copilot` module — teaching assistant AI for faculty (lesson plans, materials, Q&A), backed by ai_gateway + knowledge layer; backend slice + frontend + tests (backend 4/4 ✅; frontend 4/4 ✅)
+- [x] XII2: #55 `knowledge_retrieval` module — RAG pipeline, document ingestion, semantic search, knowledge base management; backend slice + frontend + tests (backend 4/4 ✅; frontend 4/4 ✅)
+- [x] XII3: #57 `prompt_management` module — prompt templates, versioning, A/B test routing; backend slice + frontend + tests (backend 5/5 ✅; frontend 4/4 ✅)
+- [x] XII4: #58 `model_evaluation` module — model quality metrics, A/B experiments, evaluation runs, leaderboard; backend slice + frontend + tests (backend 4/4 ✅; frontend 4/4 ✅)
+- [x] XII5: Финальный release-gate после Phase XII — AUDIT 60/60 EXISTS ✅ release-gate PASS ✅
 
 ### Правила обновления трекера
 

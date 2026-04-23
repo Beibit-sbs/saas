@@ -286,6 +286,24 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.FACULTY_COPILOT_READ,
       },
       {
+        label: "Knowledge Retrieval",
+        href: "/console/knowledge-retrieval",
+        icon: BookOpen,
+        permission: PERMISSIONS.KNOWLEDGE_RETRIEVAL_READ,
+      },
+      {
+        label: "Prompt Management",
+        href: "/console/prompt-management",
+        icon: Code2,
+        permission: PERMISSIONS.PROMPT_MANAGEMENT_READ,
+      },
+      {
+        label: "Model Evaluation",
+        href: "/console/model-evaluation",
+        icon: BarChart3,
+        permission: PERMISSIONS.MODEL_EVALUATION_READ,
+      },
+      {
         label: "Housing",
         href: "/console/housing",
         icon: Home,
