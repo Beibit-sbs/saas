@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 from tests.conftest import ADMIN_HEADERS, client
 
 BASE = "/api/admin/financial-aid"
@@ -46,3 +48,46 @@ def test_update_financial_aid_status_flow() -> None:
 def test_update_financial_aid_status_not_found() -> None:
     resp = client.patch(f"{BASE}/999999/status", headers=ADMIN_HEADERS, json={"status": "rejected"})
     assert resp.status_code == 404
+
+
+def test_update_financial_aid_status_rejected_emits_bridge_signal(monkeypatch) -> None:
+    publisher_instance = MagicMock(name="event_publisher")
+    publisher_factory = MagicMock(return_value=publisher_instance)
+    monkeypatch.setattr("app.platform.events.publisher.EventPublisher", publisher_factory)
+
+    create_resp = client.post(BASE, headers=ADMIN_HEADERS, json=_AID_PAYLOAD)
+    assert create_resp.status_code == 200, create_resp.text
+    record_id = create_resp.json()["item"]["id"]
+
+    update_resp = client.patch(
+        f"{BASE}/{record_id}/status",
+        headers=ADMIN_HEADERS,
+        json={"status": "rejected", "notes": "Rejected after review"},
+    )
+    assert update_resp.status_code == 200, update_resp.text
+
+    publisher_instance.publish_event.assert_called_once()
+    call_kwargs = publisher_instance.publish_event.call_args.kwargs
+    assert call_kwargs["event_type"] == "financial_aid.warning.detected"
+    assert call_kwargs["aggregate_type"] == "financial_aid_record"
+    assert call_kwargs["aggregate_id"] == record_id
+    assert call_kwargs["payload_json"]["to_status"] == "rejected"
+
+
+def test_update_financial_aid_status_approved_does_not_emit_bridge_signal(monkeypatch) -> None:
+    publisher_instance = MagicMock(name="event_publisher")
+    publisher_factory = MagicMock(return_value=publisher_instance)
+    monkeypatch.setattr("app.platform.events.publisher.EventPublisher", publisher_factory)
+
+    create_resp = client.post(BASE, headers=ADMIN_HEADERS, json=_AID_PAYLOAD)
+    assert create_resp.status_code == 200, create_resp.text
+    record_id = create_resp.json()["item"]["id"]
+
+    update_resp = client.patch(
+        f"{BASE}/{record_id}/status",
+        headers=ADMIN_HEADERS,
+        json={"status": "approved", "notes": "Approved by committee"},
+    )
+    assert update_resp.status_code == 200, update_resp.text
+
+    publisher_instance.publish_event.assert_not_called()

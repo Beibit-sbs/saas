@@ -15,6 +15,7 @@ from app.modules.programs.service import (
     create_program,
     delete_program,
     get_program_consistency_report,
+    get_programs_brain_context,
     list_programs,
     update_program,
 )
@@ -129,3 +130,17 @@ def delete_program_endpoint(
         metadata={"id": program["id"], "program_code": program["program_code"]},
     )
     return {"deleted": True, "program": program}
+
+
+@router.get("/brain-context", response_model=dict, tags=["org-programs", "brain-core"])
+def get_programs_brain_context_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.programs.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict:
+    """Return aggregated brain-context snapshot for Brain Core context builder.
+
+    Used by Brain Core to enrich decisions with programs signals:
+    total programs, active programs, inconsistency count, risk level.
+    """
+    return get_programs_brain_context(int(tenant["id"]))

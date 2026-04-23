@@ -426,3 +426,30 @@ def get_org_unit_consistency_report(
         issue_count=len(issues),
         issues=issues,
     )
+
+
+def get_org_structure_brain_context(db: Session, tenant_id: int) -> dict:
+    """Return aggregated org structure context snapshot for Brain Core."""
+    units = list_org_units(db, tenant_id, active_only=False)
+    total = len(units)
+    by_type: dict[str, int] = {}
+    active_count = 0
+    for unit in units:
+        ut = str(unit.unit_type.value if hasattr(unit.unit_type, "value") else unit.unit_type)
+        by_type[ut] = by_type.get(ut, 0) + 1
+        if bool(unit.active):
+            active_count += 1
+
+    report = get_org_unit_consistency_report(db, tenant_id)
+    issue_count = int(report.issue_count)
+    risk_level = "high" if issue_count >= 3 else ("medium" if issue_count > 0 else "low")
+
+    return {
+        "module": "org_structure",
+        "tenant_id": tenant_id,
+        "total_units": total,
+        "active_units": active_count,
+        "by_type": by_type,
+        "consistency_issues": issue_count,
+        "risk_level": risk_level,
+    }

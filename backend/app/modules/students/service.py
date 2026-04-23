@@ -630,3 +630,65 @@ def update_student(student_id: int, payload: dict[str, object], tenant_id: int) 
 
 def delete_student(student_id: int, tenant_id: int) -> dict[str, object]:
     return delete_entity_for_tenant("students", student_id, tenant_id)
+
+
+# ---------------------------------------------------------------------------
+# Brain Core context: student risk context (I1.3)
+# ---------------------------------------------------------------------------
+
+
+def get_student_risk_context(tenant_id: int, student_id: int | str) -> dict:
+    """Return a risk context snapshot for a specific student, for Brain Core context builder.
+
+    Uses generic entity stores (session-free) for compatibility with context sources.
+    Returns:
+        {
+            "student_id": str,
+            "tenant_id": int,
+            "open_interventions": int,
+            "recent_advising_sessions": int,
+            "last_advising_outcome": str | None,
+            "risk_flags": list[str],
+        }
+    """
+    sid = str(student_id)
+
+    # Count open intervention cases for this student.
+    # intervention_cases live in a SQL table (not the generic entity store), so we
+    # attempt the lookup fail-safely — Brain Core context is still useful without it.
+    try:
+        intervention_rows = list_entities_for_tenant("intervention_cases", tenant_id)
+        open_interventions = sum(
+            1 for r in intervention_rows
+            if str(r.get("student_id") or "") == sid and str(r.get("status") or "") in {"open", "in_progress"}
+        )
+    except Exception:  # noqa: BLE001
+        intervention_rows = []
+        open_interventions = 0
+
+    # Find recent advising sessions for this student
+    advising_rows = list_entities_for_tenant("advising_sessions", tenant_id)
+    student_sessions = [r for r in advising_rows if str(r.get("student_id") or "") == sid]
+    recent_advising_count = len(student_sessions)
+    last_advising_outcome: str | None = None
+    for row in reversed(student_sessions):
+        outcome = str(row.get("outcome") or "")
+        if outcome and outcome != "pending":
+            last_advising_outcome = outcome
+            break
+
+    # Compile risk flags
+    risk_flags: list[str] = []
+    if open_interventions > 0:
+        risk_flags.append("open_intervention_case")
+    if any(str(r.get("status") or "") == "no_show" for r in student_sessions):
+        risk_flags.append("advising_no_show")
+
+    return {
+        "student_id": sid,
+        "tenant_id": tenant_id,
+        "open_interventions": open_interventions,
+        "recent_advising_sessions": recent_advising_count,
+        "last_advising_outcome": last_advising_outcome,
+        "risk_flags": risk_flags,
+    }

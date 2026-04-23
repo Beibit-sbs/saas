@@ -23,6 +23,7 @@ from .schemas import (
     TenantAnalyticsKpiRecommendationListReadSchema,
     TenantAnalyticsKpiTrendListReadSchema,
 )
+from app.modules.usage.service import get_usage_brain_context
 
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics-kpi"])
@@ -207,3 +208,15 @@ def get_tenant_event_summary(
         counts_by_type=counts,
         total=sum(counts.values()),
     )
+
+
+@router.get("/brain-context", response_model=dict, tags=["analytics-kpi", "brain-core"])
+def get_analytics_brain_context(
+    access: Annotated[dict[str, int | Literal["internal_user", "external_client"]], Depends(_resolve_kpi_read_access)],
+) -> dict:
+    """Return usage context snapshot for Brain Core enrichment.
+
+    Tenant-scoped — no cross-tenant data leakage.
+    """
+    tenant_id = int(access.get("tenant_id") or 0)
+    return get_usage_brain_context(tenant_id=tenant_id)

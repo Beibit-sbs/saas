@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 from tests.conftest import ADMIN_HEADERS, client
 
 BASE = "/api/admin/housing"
@@ -45,3 +47,46 @@ def test_update_housing_request_status_flow() -> None:
 def test_update_housing_request_status_not_found() -> None:
     resp = client.patch(f"{BASE}/999999/status", headers=ADMIN_HEADERS, json={"status": "approved"})
     assert resp.status_code == 404
+
+
+def test_update_housing_status_in_review_emits_bridge_signal(monkeypatch) -> None:
+    publisher_instance = MagicMock(name="event_publisher")
+    publisher_factory = MagicMock(return_value=publisher_instance)
+    monkeypatch.setattr("app.platform.events.publisher.EventPublisher", publisher_factory)
+
+    create_resp = client.post(BASE, headers=ADMIN_HEADERS, json=_REQUEST_PAYLOAD)
+    assert create_resp.status_code == 200, create_resp.text
+    request_id = create_resp.json()["item"]["id"]
+
+    update_resp = client.patch(
+        f"{BASE}/{request_id}/status",
+        headers=ADMIN_HEADERS,
+        json={"status": "in_review", "notes": "Need additional verification"},
+    )
+    assert update_resp.status_code == 200, update_resp.text
+
+    publisher_instance.publish_event.assert_called_once()
+    call_kwargs = publisher_instance.publish_event.call_args.kwargs
+    assert call_kwargs["event_type"] == "housing.status.risk_detected"
+    assert call_kwargs["aggregate_type"] == "housing_request"
+    assert call_kwargs["aggregate_id"] == request_id
+    assert call_kwargs["payload_json"]["to_status"] == "in_review"
+
+
+def test_update_housing_status_approved_does_not_emit_bridge_signal(monkeypatch) -> None:
+    publisher_instance = MagicMock(name="event_publisher")
+    publisher_factory = MagicMock(return_value=publisher_instance)
+    monkeypatch.setattr("app.platform.events.publisher.EventPublisher", publisher_factory)
+
+    create_resp = client.post(BASE, headers=ADMIN_HEADERS, json=_REQUEST_PAYLOAD)
+    assert create_resp.status_code == 200, create_resp.text
+    request_id = create_resp.json()["item"]["id"]
+
+    update_resp = client.patch(
+        f"{BASE}/{request_id}/status",
+        headers=ADMIN_HEADERS,
+        json={"status": "approved", "notes": "Accepted"},
+    )
+    assert update_resp.status_code == 200, update_resp.text
+
+    publisher_instance.publish_event.assert_not_called()

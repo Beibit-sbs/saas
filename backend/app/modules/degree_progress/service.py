@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from decimal import Decimal
 
 from sqlalchemy import and_, select
@@ -23,6 +24,46 @@ from app.modules.degree_progress.schemas import (
 )
 from app.modules.students.models import StudentProgramBindingModel, StudentProgramBindingState, StudentProfileModel
 from app.modules.transcripts.service import TranscriptService
+
+
+def _emit_graduation_risk_signal(
+    *,
+    tenant_id: int,
+    student_profile_id: int,
+    program_id: int,
+    credits_earned: int,
+    minimum_credits: int,
+    gpa: Decimal | None,
+    minimum_gpa: Decimal,
+    remaining_required_items: int,
+) -> None:
+    """Fire-and-forget: publish graduation_risk to Brain Core."""
+    try:
+        from app.platform.events.publisher import EventPublisher
+
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="degree_progress.graduation_risk.detected",
+            aggregate_type="student_graduation_progress",
+            aggregate_id=student_profile_id,
+            payload_json={
+                "student_profile_id": student_profile_id,
+                "program_id": program_id,
+                "credits_earned": credits_earned,
+                "minimum_credits": minimum_credits,
+                "gpa": str(gpa) if gpa else "0.00",
+                "minimum_gpa": str(minimum_gpa),
+                "remaining_required_items": remaining_required_items,
+                "source_module": "degree_progress",
+            },
+        )
+    except Exception:  # noqa: BLE001
+        logger = logging.getLogger("app.modules.degree_progress")
+        logger.exception(
+            "graduation_risk signal failed silently for tenant_id=%s student_profile_id=%s",
+            tenant_id,
+            student_profile_id,
+        )
 
 
 def _audit(actor: str, action: str, path: str, metadata: dict, tenant_id: int) -> None:
@@ -218,6 +259,19 @@ class DegreeProgressService:
             student_profile_id=student_profile_id,
             actor_id=actor_id,
         )
+
+        # Emit graduation risk signal if student not eligible (at-risk condition)
+        if not progress.graduation_eligible:
+            _emit_graduation_risk_signal(
+                tenant_id=tenant_id,
+                student_profile_id=student_profile_id,
+                program_id=progress.program_id,
+                credits_earned=progress.credits_earned,
+                minimum_credits=progress.minimum_credits,
+                gpa=progress.gpa,
+                minimum_gpa=progress.minimum_gpa,
+                remaining_required_items=len(progress.remaining_requirements),
+            )
 
         return GraduationEligibilitySchema(
             student_profile_id=student_profile_id,

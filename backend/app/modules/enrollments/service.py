@@ -68,6 +68,43 @@ def _audit(
     )
 
 
+_DROPOUT_RISK_STATUSES = {
+    EnrollmentStatus.WITHDRAWN,
+    EnrollmentStatus.SUSPENDED,
+    EnrollmentStatus.DROPPED,
+}
+
+
+def _emit_dropout_risk_signal(
+    *,
+    tenant_id: int,
+    enrollment_id: int,
+    student_profile_id: int,
+    course_id: int,
+    from_status: str,
+    to_status: str,
+) -> None:
+    """Fire-and-forget bridge signal for enrollment dropout-risk scenarios."""
+    from app.platform.events.publisher import EventPublisher
+
+    EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type="enrollments.dropout_risk.detected",
+        aggregate_type="enrollment",
+        aggregate_id=enrollment_id,
+        payload_json={
+            "enrollment_id": enrollment_id,
+            "student_id": student_profile_id,
+            "course_id": course_id,
+            "from_status": from_status,
+            "to_status": to_status,
+            "source_module": "enrollments",
+            "source_entity_type": "enrollment",
+            "source_entity_id": str(enrollment_id),
+        },
+    )
+
+
 def _merge_metadata(existing: dict | None, incoming: dict | None) -> dict:
     base = deepcopy(existing or {})
     for key, value in (incoming or {}).items():
@@ -574,6 +611,19 @@ class EnrollmentLifecycleService:
             raise DomainValidationError(
                 "Unable to change enrollment status due to constraint violation"
             ) from exc
+
+        if request.to_status in _DROPOUT_RISK_STATUSES:
+            try:
+                _emit_dropout_risk_signal(
+                    tenant_id=tenant_id,
+                    enrollment_id=enrollment.id,
+                    student_profile_id=enrollment.student_profile_id,
+                    course_id=enrollment.course_id,
+                    from_status=previous_status.value,
+                    to_status=request.to_status.value,
+                )
+            except Exception:
+                pass
 
         return EnrollmentReadSchema.model_validate(enrollment)
 

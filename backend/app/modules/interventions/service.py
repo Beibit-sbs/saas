@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+import logging
 
 from sqlalchemy import and_, asc, desc, func, select
 from sqlalchemy.exc import IntegrityError
@@ -34,6 +35,10 @@ from app.modules.interventions.schemas import (
     InterventionConsistencyReportSchema,
 )
 from app.modules.students.models import StudentProfileModel
+from app.platform.events.publisher import EventPublisher
+
+
+logger = logging.getLogger(__name__)
 
 
 def _utc_now() -> datetime:
@@ -72,8 +77,9 @@ def _default_due_at(severity: InterventionCaseSeverity) -> datetime:
 
 
 class InterventionService:
-    def __init__(self, db_session: Session):
+    def __init__(self, db_session: Session, on_case_outcome: callable | None = None):
         self.db = db_session
+        self._on_case_outcome = on_case_outcome
 
     async def create_case(
         self,
@@ -326,6 +332,53 @@ class InterventionService:
         self.db.flush()
         self.db.refresh(case)
         self.db.commit()
+
+        # Emit outcome event to Brain Core learning loop when case is completed
+        if request.status in (InterventionCaseStatus.RESOLVED, InterventionCaseStatus.CLOSED):
+            effectiveness = "positive" if request.status == InterventionCaseStatus.RESOLVED else "neutral"
+            EventPublisher().publish_event(
+                tenant_id=tenant_id,
+                event_type="interventions.case_outcome.recorded",
+                aggregate_type="intervention_case",
+                aggregate_id=str(case.id),
+                payload_json={
+                    "case_id": str(case.id),
+                    "case_type": case.case_type,
+                    "status": request.status.value,
+                    "severity": case.severity.value,
+                    "outcome_type": request.status.value,
+                    "effectiveness": effectiveness,
+                    "reason": request.reason or "",
+                    "student_profile_id": str(case.student_profile_id) if case.student_profile_id else None,
+                    "source_entity_type": "intervention_case",
+                    "source_entity_id": str(case.id),
+                },
+            )
+            
+            # Immediately ingest outcome into Brain Core if callback is registered
+            if self._on_case_outcome is not None:
+                try:
+                    self._on_case_outcome(
+                        tenant_id,
+                        case_id=str(case.id),
+                        payload={
+                            "case_id": str(case.id),
+                            "outcome_type": request.status.value,
+                            "effectiveness": effectiveness,
+                            "notes": request.reason or "",
+                            "source_entity_type": "intervention_case",
+                        },
+                        actor="system",
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "brain_core_outcome_ingestion_failed",
+                        extra={
+                            "case_id": str(case.id),
+                            "error": str(exc),
+                        },
+                    )
+
         return case
 
     async def add_case_action(

@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import lru_cache
 from hashlib import sha256
-from typing import Any
+from typing import Any, cast
 
 from app.core.errors import DependencyUnavailableError
 from app.modules.auth.local_users_service import local_user_store
@@ -667,7 +667,8 @@ def update_directory_provider(
         if not normalized_name:
             raise IdentityMappingInvalid("provider name is required")
 
-        payload_policy = payload.get("policy") if isinstance(payload.get("policy"), dict) else {}
+        raw_policy = payload.get("policy")
+        payload_policy: dict[str, Any] = raw_policy if isinstance(raw_policy, dict) else {}
         policy = _normalized_policy(
             {
                 "is_default": payload_policy.get("is_default", payload.get("is_default", provider.is_default)),
@@ -1031,6 +1032,13 @@ def _security_key(prefix: str, tenant_id: int, value: str) -> str:
     return f"identity:{prefix}:{int(tenant_id)}:{value.strip().lower()}"
 
 
+def _redis_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(cast(Any, value))
+    except (TypeError, ValueError):
+        return default
+
+
 def clear_identity_security_state() -> None:
     """Clear all identity rate-limit and lockout keys from Redis.
 
@@ -1057,7 +1065,7 @@ def _check_rate_limit(*, tenant_id: int, ip: str, username: str) -> None:
         (_security_key("rl:ip", tenant_id, ip), ip_limit),
         (_security_key("rl:user", tenant_id, username), user_limit),
     ):
-        count = int(client.incr(key))
+        count = _redis_int(client.incr(key))
         if count == 1:
             client.expire(key, int(window_seconds))
         if count > limit:
@@ -1069,7 +1077,7 @@ def _check_account_lock(*, tenant_id: int, username: str) -> None:
     if client is None:
         return
     lock_key = _security_key("lock", tenant_id, username)
-    if int(client.exists(lock_key)) > 0:
+    if _redis_int(client.exists(lock_key)) > 0:
         raise IdentityAccountLocked()
 
 
@@ -1081,7 +1089,7 @@ def _record_failed_login(*, tenant_id: int, username: str) -> None:
     fail_key = _security_key("fail", tenant_id, username)
     lock_key = _security_key("lock", tenant_id, username)
 
-    attempts = int(client.incr(fail_key))
+    attempts = _redis_int(client.incr(fail_key))
     if attempts == 1:
         client.expire(fail_key, int(window_seconds))
     if attempts >= lock_threshold:

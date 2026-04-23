@@ -110,7 +110,7 @@ def test_update_thesis_status_emits_domain_event_on_rejected(monkeypatch: pytest
     assert len(published) == 1
     assert published[0]["event_type"] == "thesis.status_changed"
     assert published[0]["payload_json"]["to_status"] == "rejected"
-    assert published[0]["payload_json"]["student_id"] == 42
+    assert published[0]["payload_json"]["student_id"] == "42"
     assert published[0]["payload_json"]["source_module"] == "thesis"
 
 

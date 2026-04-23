@@ -123,4 +123,78 @@ def update_alumni_status(
         },
         tenant_id=tenant_id,
     )
+
+    if request.status in _DISENGAGEMENT_TRIGGER_STATUSES:
+        try:
+            _emit_alumni_engagement_risk_signal(
+                tenant_id=tenant_id,
+                record_id=record_id,
+                student_id=int(existing.get("student_id") or 0),
+                from_status=current_status,
+                to_status=request.status,
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
     return AlumniRecordSchema.model_validate(updated)
+
+
+# ---------------------------------------------------------------------------
+# Brain-readiness: signal emitter + context snapshot
+# ---------------------------------------------------------------------------
+
+_DISENGAGEMENT_TRIGGER_STATUSES: frozenset[str] = frozenset({"inactive"})
+
+
+def _emit_alumni_engagement_risk_signal(
+    *,
+    tenant_id: int,
+    record_id: int,
+    student_id: int,
+    from_status: str,
+    to_status: str,
+) -> None:
+    """Fire-and-forget bridge signal for alumni engagement risk."""
+    from app.platform.events.publisher import EventPublisher
+
+    EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type="alumni.engagement.risk_detected",
+        aggregate_type="alumni_record",
+        aggregate_id=record_id,
+        payload_json={
+            "record_id": record_id,
+            "student_id": student_id,
+            "from_status": from_status,
+            "to_status": to_status,
+            "source_module": "alumni",
+            "source_entity_type": "alumni_record",
+            "source_entity_id": str(record_id),
+        },
+    )
+
+
+def get_alumni_brain_context(tenant_id: int) -> dict:
+    """Return aggregated alumni context snapshot for Brain Core."""
+    rows = list_entities_for_tenant("alumni_records", tenant_id)
+    total = len(rows)
+    by_status: dict[str, int] = {}
+    by_engagement: dict[str, int] = {}
+    for r in rows:
+        st = str(r.get("status") or "unknown")
+        by_status[st] = by_status.get(st, 0) + 1
+        et = str(r.get("engagement_type") or "unknown")
+        by_engagement[et] = by_engagement.get(et, 0) + 1
+
+    inactive = by_status.get("inactive", 0)
+    risk_level = "high" if (total > 0 and inactive / total > 0.4) else ("medium" if inactive > 0 else "low")
+
+    return {
+        "module": "alumni",
+        "tenant_id": tenant_id,
+        "total_records": total,
+        "by_status": by_status,
+        "by_engagement_type": by_engagement,
+        "inactive_count": inactive,
+        "risk_level": risk_level,
+    }

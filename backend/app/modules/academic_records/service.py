@@ -154,3 +154,32 @@ def get_record_consistency_report(tenant_id: int) -> dict[str, object]:
         "issue_count": len(issues),
         "issues": issues,
     }
+
+
+def emit_academic_records_inconsistency_signal(tenant_id: int, issue_count: int) -> None:
+    from app.platform.events.publisher import EventPublisher
+    EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type="academic_records.inconsistency.detected",
+        aggregate_type="academic_records",
+        aggregate_id=tenant_id,
+        payload_json={
+            "issue_count": issue_count,
+            "source_module": "academic_records",
+        },
+    )
+
+
+def get_academic_records_brain_context(tenant_id: int) -> dict[str, object]:
+    """Return aggregated brain-context snapshot for Brain Core context builder."""
+    report = get_record_consistency_report(tenant_id)
+    issue_count = int(report.get("issue_count", 0))
+    record_count = int(report.get("record_count", 0))
+    return {
+        "snapshot_type": "brain_context",
+        "module": "academic_records",
+        "tenant_id": tenant_id,
+        "total_records": record_count,
+        "inconsistency_count": issue_count,
+        "records_risk_level": "high" if issue_count > 10 else ("medium" if issue_count > 0 else "low"),
+    }

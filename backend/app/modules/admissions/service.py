@@ -38,6 +38,7 @@ from app.modules.admissions.models import (
 )
 from app.modules.admissions.schemas import (
     AdmissionsConsistencyReportSchema,
+    AdmissionsConsistencyIssueSchema,
     ApplicantCreateSchema,
     ApplicantReadSchema,
     ApplicantUpdateSchema,
@@ -68,6 +69,11 @@ from app.modules.workflows import workflow_service
 
 def _utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+def _audit_action(event_name: str, fallback_action: str) -> str:
+    action = AuditEventRules.get_log_action_for_event(event_name)
+    return action or fallback_action
 
 
 # ==============================================================================
@@ -207,7 +213,7 @@ class ApplicantService:
         applicants = self.db.execute(query).scalars().all()
 
         return ApplicantListResponseSchema(
-            total=total,
+            total=int(total or 0),
             page=page,
             page_size=page_size,
             items=[ApplicantReadSchema.model_validate(a) for a in applicants],
@@ -258,7 +264,7 @@ class ApplicantService:
         # Audit logging
         log_admin_action(
             actor=updated_by,
-            action=AuditEventRules.get_log_action_for_event("applicant.updated"),
+            action=_audit_action("applicant.updated", "admissions.applicant.update"),
             path=f"/internal/admissions/applicants/{applicant_id}",
             client_ip="service",
             entity="applicant",
@@ -328,7 +334,7 @@ class ApplicationService:
         # Audit logging
         log_admin_action(
             actor=created_by,
-            action=AuditEventRules.get_log_action_for_event("application.created"),
+            action=_audit_action("application.created", "admissions.application.create"),
             path=f"/internal/admissions/applications/{application.id}",
             client_ip="service",
             entity="application",
@@ -399,7 +405,7 @@ class ApplicationService:
         applications = self.db.execute(query).scalars().all()
 
         return ApplicationListResponseSchema(
-            total=total,
+            total=int(total or 0),
             page=page,
             page_size=page_size,
             items=[ApplicationReadSchema.model_validate(app) for app in applications],
@@ -600,13 +606,24 @@ class ApplicationService:
                     }
                 )
 
+        issue_schemas = [
+            AdmissionsConsistencyIssueSchema(
+                issue_type=str(issue.get("issue_type", "unknown_issue")),
+                application_id=int(issue["application_id"]) if isinstance(issue.get("application_id"), int) else None,
+                applicant_id=int(issue["applicant_id"]) if isinstance(issue.get("applicant_id"), int) else None,
+                document_id=int(issue["document_id"]) if isinstance(issue.get("document_id"), int) else None,
+                decision_id=int(issue["decision_id"]) if isinstance(issue.get("decision_id"), int) else None,
+            )
+            for issue in issues
+        ]
+
         return AdmissionsConsistencyReportSchema(
             applicant_count=len(applicants),
             application_count=len(applications),
             document_count=len(documents),
             decision_count=len(decisions),
             issue_count=len(issues),
-            issues=issues,
+            issues=issue_schemas,
         )
 
     async def submit_application(
@@ -692,7 +709,13 @@ class ApplicationService:
                 program_id=application.program_id,
                 actor=actor,
             )
-            workflow_instance_id = workflow_instance.id
+            if isinstance(workflow_instance, dict):
+                raw_workflow_instance_id = workflow_instance.get("id")
+            else:
+                raw_workflow_instance_id = getattr(workflow_instance, "id", None)
+            workflow_instance_id = int(raw_workflow_instance_id or 0)
+            if workflow_instance_id <= 0:
+                raise ValueError("Workflow instance started without valid id")
             
             # Store workflow reference in metadata
             application.metadata_json["workflow_instance_id"] = workflow_instance_id
@@ -865,7 +888,7 @@ class DocumentService:
         # Audit logging
         log_admin_action(
             actor=created_by,
-            action=AuditEventRules.get_log_action_for_event("application.document_attached"),
+            action=_audit_action("application.document_attached", "admissions.application.document_attach"),
             path=f"/internal/admissions/applications/{application_id}/documents/{document.id}",
             client_ip="service",
             entity="document",
@@ -1052,7 +1075,7 @@ class StageTransitionService:
         # Audit logging
         log_admin_action(
             actor=actor_id,
-            action=AuditEventRules.get_log_action_for_event("application.stage_changed"),
+            action=_audit_action("application.stage_changed", "admissions.application.stage_change"),
             path=f"/internal/admissions/applications/{application_id}/stage-transitions/{history.id}",
             client_ip="service",
             entity="application",
@@ -1340,7 +1363,7 @@ class DecisionService:
         # Audit logging
         log_admin_action(
             actor=request.decided_by,
-            action=AuditEventRules.get_log_action_for_event("application.decision_made"),
+            action=_audit_action("application.decision_made", "admissions.application.decision_make"),
             path=f"/internal/admissions/applications/{application_id}/decisions/{decision.id}",
             client_ip="service",
             entity="decision",

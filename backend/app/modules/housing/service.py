@@ -36,6 +36,38 @@ def _emit_audit(*, actor: str, action: str, path: str, metadata: dict, tenant_id
     )
 
 
+def _emit_housing_status_signal(
+    *,
+    tenant_id: int,
+    request_id: int,
+    student_id: int,
+    request_type: str,
+    dormitory: str,
+    from_status: str,
+    to_status: str,
+) -> None:
+    """Fire-and-forget bridge signal for housing-related student risk."""
+    from app.platform.events.publisher import EventPublisher
+
+    EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type="housing.status.risk_detected",
+        aggregate_type="housing_request",
+        aggregate_id=request_id,
+        payload_json={
+            "request_id": request_id,
+            "student_id": student_id,
+            "request_type": request_type,
+            "dormitory": dormitory,
+            "from_status": from_status,
+            "to_status": to_status,
+            "source_module": "housing",
+            "source_entity_type": "housing_request",
+            "source_entity_id": str(request_id),
+        },
+    )
+
+
 def list_housing_requests(
     tenant_id: int,
     status: HousingRequestStatus | None = None,
@@ -123,4 +155,16 @@ def update_housing_request_status(
         },
         tenant_id=tenant_id,
     )
+
+    if payload.status in {"rejected", "in_review"}:
+        _emit_housing_status_signal(
+            tenant_id=tenant_id,
+            request_id=request_id,
+            student_id=int(updated.get("student_id") or 0),
+            request_type=str(updated.get("request_type") or "unknown"),
+            dormitory=str(updated.get("dormitory") or "unknown"),
+            from_status=current_status,
+            to_status=payload.status,
+        )
+
     return HousingRequestSchema.model_validate(updated)

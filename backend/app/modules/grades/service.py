@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from decimal import Decimal, ROUND_HALF_UP
+from typing import cast
 
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.exc import IntegrityError
@@ -78,6 +79,16 @@ class GradeLifecycleService:
     def __init__(self, db_session: Session):
         self.db = db_session
 
+    @staticmethod
+    def _derive_grade_risk_level(grade_points: Decimal | None) -> str | None:
+        if grade_points is None:
+            return None
+        if grade_points <= Decimal("1.00"):
+            return "high"
+        if grade_points <= Decimal("2.00"):
+            return "medium"
+        return None
+
     def _load_enrollment(self, tenant_id: int, enrollment_id: int) -> EnrollmentModel:
         enrollment = self.db.execute(
             select(EnrollmentModel).where(
@@ -87,12 +98,10 @@ class GradeLifecycleService:
                 )
             )
         ).scalar_one_or_none()
-        assert_resource_belongs_to_tenant(
-            enrollment,
-            tenant_id,
-            resource_name="Enrollment",
-            resource_id=enrollment_id,
-        )
+        if enrollment is None:
+            raise TenantResourceNotFoundError(
+                f"Enrollment {enrollment_id} not found or does not belong to tenant {tenant_id}"
+            )
         return enrollment
 
     def _load_student(self, tenant_id: int, student_profile_id: int) -> StudentProfileModel:
@@ -104,12 +113,10 @@ class GradeLifecycleService:
                 )
             )
         ).scalar_one_or_none()
-        assert_resource_belongs_to_tenant(
-            student,
-            tenant_id,
-            resource_name="Student profile",
-            resource_id=student_profile_id,
-        )
+        if student is None:
+            raise TenantResourceNotFoundError(
+                f"Student profile {student_profile_id} not found or does not belong to tenant {tenant_id}"
+            )
         return student
 
     def _load_course(self, tenant_id: int, course_id: int) -> CourseModel:
@@ -147,12 +154,14 @@ class GradeLifecycleService:
             resource_name="Grading scale",
             resource_id=grading_scale_id,
         )
+        scale = cast(GradingScaleModel, scale)
         if not bool(scale.is_active):
             raise DomainValidationError(f"Grading scale {grading_scale_id} is not active")
         return scale
 
     def _load_scale_items(self, tenant_id: int, grading_scale_id: int) -> list[GradingScaleItemModel]:
-        items = self.db.execute(
+        items = list(
+            self.db.execute(
             select(GradingScaleItemModel)
             .where(
                 and_(
@@ -162,6 +171,7 @@ class GradeLifecycleService:
             )
             .order_by(GradingScaleItemModel.max_percentage.desc(), GradingScaleItemModel.id)
         ).scalars().all()
+        )
         if not items:
             raise DomainValidationError(f"Grading scale {grading_scale_id} has no scale items")
         return items
@@ -240,7 +250,7 @@ class GradeLifecycleService:
         scale_items = self._load_scale_items(tenant_id, request.grading_scale_id)
         resolved_points = GradeLifecycleRules.validate_grade_points_match_scale(
             request.grade_code,
-            scale_items,
+            cast(list[object], scale_items),
             request.grade_points,
         )
         resolved_points = self._quantize(resolved_points)
@@ -281,7 +291,8 @@ class GradeLifecycleService:
         self.db.flush()
         self.db.refresh(submission)
 
-        EventPublisher(db_session=self.db).publish_event(
+        publisher = EventPublisher(db_session=self.db)
+        publisher.publish_event(
             tenant_id=tenant_id,
             event_type="grade.submitted",
             aggregate_type="grade_submission",
@@ -295,6 +306,25 @@ class GradeLifecycleService:
                 "submitted_by": actor_id,
             },
         )
+
+        risk_level = self._derive_grade_risk_level(resolved_points)
+        if risk_level is not None:
+            publisher.publish_event(
+                tenant_id=tenant_id,
+                event_type="academic.grade_risk.detected",
+                aggregate_type="grade_submission",
+                aggregate_id=submission.id,
+                payload_json={
+                    "student_id": enrollment.student_profile_id,
+                    "course_id": enrollment.course_id,
+                    "section_id": None,
+                    "current_grade": float(resolved_points),
+                    "grade_trend": "declining",
+                    "risk_level": risk_level,
+                    "source_entity_type": "grade_submission",
+                    "source_entity_id": str(submission.id),
+                },
+            )
 
         _audit(
             actor=actor_id,
@@ -342,12 +372,10 @@ class GradeLifecycleService:
         GradeLifecycleRules.validate_grade_submission_allowed(enrollment)
 
         submission = self._load_grade_submission(tenant_id, request.enrollment_id)
-        assert_resource_belongs_to_tenant(
-            submission,
-            tenant_id,
-            resource_name="Grade submission",
-            resource_id=request.enrollment_id,
-        )
+        if submission is None:
+            raise TenantResourceNotFoundError(
+                f"Grade submission for enrollment {request.enrollment_id} not found or does not belong to tenant {tenant_id}"
+            )
         
         # ABAC: Only original submitter or admin can modify grade
         await validate_grade_modification(
@@ -363,7 +391,7 @@ class GradeLifecycleService:
         scale_items = self._load_scale_items(tenant_id, request.grading_scale_id)
         resolved_points = GradeLifecycleRules.validate_grade_points_match_scale(
             request.new_grade_code,
-            scale_items,
+            cast(list[object], scale_items),
             request.new_grade_points,
         )
         resolved_points = self._quantize(resolved_points)
@@ -480,7 +508,7 @@ class GradeLifecycleService:
                 actor_id=actor_id,
                 grade_id=0,  # Not checking specific grade, just course access
                 course_id=course_id,
-                student_id="",
+                student_id=0,
                 submitted_by="",
                 tenant_id=tenant_id,
             )

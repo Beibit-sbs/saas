@@ -124,4 +124,78 @@ def update_career_opportunity_status(
         },
         tenant_id=tenant_id,
     )
+
+    if request.status in _AT_RISK_TRIGGER_STATUSES:
+        try:
+            _emit_career_opportunity_at_risk_signal(
+                tenant_id=tenant_id,
+                opportunity_id=opportunity_id,
+                student_id=int(existing.get("student_id") or 0),
+                from_status=current_status,
+                to_status=request.status,
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
     return CareerOpportunitySchema.model_validate(updated)
+
+
+# ---------------------------------------------------------------------------
+# Brain-readiness: signal emitter + context snapshot
+# ---------------------------------------------------------------------------
+
+_AT_RISK_TRIGGER_STATUSES: frozenset[str] = frozenset({"archived"})
+
+
+def _emit_career_opportunity_at_risk_signal(
+    *,
+    tenant_id: int,
+    opportunity_id: int,
+    student_id: int,
+    from_status: str,
+    to_status: str,
+) -> None:
+    """Fire-and-forget bridge signal for career placement risk."""
+    from app.platform.events.publisher import EventPublisher
+
+    EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type="career_services.opportunity.at_risk",
+        aggregate_type="career_opportunity",
+        aggregate_id=opportunity_id,
+        payload_json={
+            "opportunity_id": opportunity_id,
+            "student_id": student_id,
+            "from_status": from_status,
+            "to_status": to_status,
+            "source_module": "career_services",
+            "source_entity_type": "career_opportunity",
+            "source_entity_id": str(opportunity_id),
+        },
+    )
+
+
+def get_career_services_brain_context(tenant_id: int) -> dict:
+    """Return aggregated career services context snapshot for Brain Core."""
+    rows = list_entities_for_tenant("career_opportunities", tenant_id)
+    total = len(rows)
+    by_status: dict[str, int] = {}
+    by_type: dict[str, int] = {}
+    for r in rows:
+        st = str(r.get("status") or "unknown")
+        by_status[st] = by_status.get(st, 0) + 1
+        ot = str(r.get("opportunity_type") or "unknown")
+        by_type[ot] = by_type.get(ot, 0) + 1
+
+    archived = by_status.get("archived", 0)
+    risk_level = "high" if (total > 0 and archived / total > 0.5) else ("medium" if archived > 0 else "low")
+
+    return {
+        "module": "career_services",
+        "tenant_id": tenant_id,
+        "total_opportunities": total,
+        "by_status": by_status,
+        "by_type": by_type,
+        "archived_count": archived,
+        "risk_level": risk_level,
+    }

@@ -44,6 +44,18 @@ from app.modules.rbac.security import get_actor, permission_dependency
 router = APIRouter(prefix="/api/admin/interventions/cases", tags=["interventions"])
 
 
+def _get_intervention_service(db: Session) -> InterventionService:
+    """Create InterventionService with Brain Core outcome callback if available."""
+    on_case_outcome_callback = None
+    try:
+        from app.modules.brain_core.service import brain_core_service
+        on_case_outcome_callback = brain_core_service.record_dispatch_outcome
+    except Exception:
+        pass
+    
+    return InterventionService(db, on_case_outcome=on_case_outcome_callback)
+
+
 class ErrorDetailResponse(BaseModel):
     detail: Any
 
@@ -88,7 +100,7 @@ async def create_case_endpoint(
     db: Session = Depends(get_interventions_db),
 ) -> InterventionCaseReadSchema:
     request_model = _parse_payload(InterventionCaseCreateSchema, payload)
-    service = InterventionService(db)
+    service = _get_intervention_service(db)
     try:
         created = await service.create_case(
             tenant_id=int(tenant["id"]),
@@ -117,7 +129,7 @@ async def list_cases_endpoint(
     assignee_ref: str | None = Query(default=None, min_length=2, max_length=255),
     overdue_only: bool = False,
 ) -> InterventionCaseListResponseSchema:
-    service = InterventionService(db)
+    service = _get_intervention_service(db)
     total, items = await service.list_cases(
         tenant_id=int(tenant["id"]),
         page=page,
@@ -159,7 +171,7 @@ async def export_cases_csv_endpoint(
     assignee_ref: str | None = Query(default=None, min_length=2, max_length=255),
     overdue_only: bool = False,
 ) -> StreamingResponse:
-    service = InterventionService(db)
+    service = _get_intervention_service(db)
     _total, items = await service.list_cases(
         tenant_id=int(tenant["id"]),
         page=1,
@@ -192,7 +204,7 @@ async def get_intervention_consistency_report(
     tenant: dict[str, object] = Depends(get_current_tenant),
     db: Session = Depends(get_interventions_db),
 ) -> InterventionConsistencyReportSchema:
-    service = InterventionService(db)
+    service = _get_intervention_service(db)
     try:
         return await service.list_tenant_intervention_consistency_report(
             tenant_id=int(tenant["id"])
@@ -213,7 +225,7 @@ async def get_case_endpoint(
     tenant: dict[str, object] = Depends(get_current_tenant),
     db: Session = Depends(get_interventions_db),
 ) -> InterventionCaseReadSchema:
-    service = InterventionService(db)
+    service = _get_intervention_service(db)
     try:
         case = await service.get_case(tenant_id=int(tenant["id"]), case_id=case_id)
         return InterventionCaseReadSchema.model_validate(case)
@@ -240,7 +252,7 @@ async def assign_case_endpoint(
     db: Session = Depends(get_interventions_db),
 ) -> InterventionCaseReadSchema:
     request_model = _parse_payload(InterventionCaseAssignSchema, payload)
-    service = InterventionService(db)
+    service = _get_intervention_service(db)
     try:
         case = await service.assign_case(
             tenant_id=int(tenant["id"]),
@@ -272,7 +284,7 @@ async def take_case_endpoint(
     db: Session = Depends(get_interventions_db),
 ) -> InterventionCaseReadSchema:
     request_model = _parse_payload(InterventionCaseTakeSchema, payload)
-    service = InterventionService(db)
+    service = _get_intervention_service(db)
     try:
         case = await service.take_case(
             tenant_id=int(tenant["id"]),
@@ -304,7 +316,7 @@ async def update_case_status_endpoint(
     db: Session = Depends(get_interventions_db),
 ) -> InterventionCaseReadSchema:
     request_model = _parse_payload(InterventionCaseStatusUpdateSchema, payload)
-    service = InterventionService(db)
+    service = _get_intervention_service(db)
     try:
         case = await service.update_case_status(
             tenant_id=int(tenant["id"]),
@@ -337,7 +349,7 @@ async def add_case_action_endpoint(
     db: Session = Depends(get_interventions_db),
 ) -> InterventionCaseActionResultSchema:
     request_model = _parse_payload(InterventionActionCreateSchema, payload)
-    service = InterventionService(db)
+    service = _get_intervention_service(db)
     try:
         case, action = await service.add_case_action(
             tenant_id=int(tenant["id"]),
@@ -369,7 +381,7 @@ async def list_case_actions_endpoint(
     db: Session = Depends(get_interventions_db),
     limit: int = Query(default=100, ge=1, le=500),
 ) -> InterventionActionListResponseSchema:
-    service = InterventionService(db)
+    service = _get_intervention_service(db)
     try:
         actions = await service.list_case_actions(tenant_id=int(tenant["id"]), case_id=case_id, limit=limit)
         return InterventionActionListResponseSchema(

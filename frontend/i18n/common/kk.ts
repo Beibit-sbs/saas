@@ -23,6 +23,8 @@ export const kk = {
   "nav.platformOps": "Платформа операциялары",
   "nav.automation": "Автоматтандыру",
   "nav.aiCopilot": "AI Copilot",
+  "nav.brainCore": "Brain Core",
+  "nav.brainPolicySettings": "Саясат параметрлері",
   "nav.federation": "Федерация",
   "nav.developerApps": "Әзірлеуші қосымшалары",
   "nav.students": "Студенттер",

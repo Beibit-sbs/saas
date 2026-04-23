@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 from app.modules.faculty import service as faculty_service
 
 
@@ -210,6 +212,39 @@ def test_update_faculty_capacity_persists_fields(monkeypatch) -> None:
 
     assert updated["max_credit_hours"] == 16
     assert updated["fte_ratio"] == 0.75
+
+
+def test_list_workload_alerts_publishes_overload_signal(monkeypatch) -> None:
+    def fake_list_entities_for_tenant(entity_name: str, tenant_id: int):
+        assert entity_name == "faculty"
+        assert tenant_id == 1
+        return [{"id": 10, "faculty_id": "FAC-01"}]
+
+    def fake_get_faculty_workload(tenant_id: int, faculty_id: str, term_id: int):
+        assert tenant_id == 1
+        assert faculty_id == "FAC-01"
+        assert term_id == 20261
+        return {
+            "faculty_id": "FAC-01",
+            "term_id": 20261,
+            "utilization": 1.4,
+            "total_credit_hours": 28,
+            "max_credit_hours": 20,
+            "alerts": ["overload_threshold"],
+        }
+
+    publisher_instance = MagicMock(name="event_publisher")
+    publisher_factory = MagicMock(return_value=publisher_instance)
+
+    monkeypatch.setattr(faculty_service, "list_entities_for_tenant", fake_list_entities_for_tenant)
+    monkeypatch.setattr(faculty_service, "get_faculty_workload", fake_get_faculty_workload)
+    monkeypatch.setattr(faculty_service, "EventPublisher", publisher_factory)
+
+    alerts = faculty_service.list_workload_alerts(1, 20261)
+
+    assert len(alerts) == 1
+    publisher_instance.publish_event.assert_called_once()
+    assert publisher_instance.publish_event.call_args.kwargs["event_type"] == "faculty.workload_overload.detected"
 
 
 def test_create_faculty_contract_requires_existing_faculty(monkeypatch) -> None:

@@ -7,6 +7,7 @@ from app.modules.ai_gateway.schemas import AIModelEnabledPayload, AIModelUpsertP
 from app.modules.ai_gateway.service import (
     create_routing_policy,
     delete_routing_policy,
+    list_routing_selection_log,
     list_slo_compliance,
     list_slo_violations,
     list_slo_policies,
@@ -680,3 +681,13 @@ def delete_routing_policy_endpoint(
         metadata={"policy_id": int(policy_id)},
         tenant_id=int(tenant["id"]),
     )
+
+
+@router.get("/routing/selection-log")
+def get_routing_selection_log_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.ai.models.manage"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+    limit: int = Query(default=50, ge=1, le=200),
+) -> list[dict[str, object]]:
+    return list_routing_selection_log(tenant_id=int(tenant["id"]), limit=limit)

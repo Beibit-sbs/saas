@@ -136,6 +136,18 @@ def get_org_unit_consistency(
 
 
 @router.get(
+    "/brain-context",
+    dependencies=[Depends(permission_dependency("admin.org_units.read"))],
+)
+def get_org_structure_brain_context_endpoint(
+    tenant: TrustedTenant,
+    db: OrgDb,
+) -> dict:
+    tenant_id = int(tenant["id"])
+    return service.get_org_structure_brain_context(db, tenant_id)
+
+
+@router.get(
     "/{unit_id}",
     response_model=OrgUnitReadSchema,
     dependencies=[Depends(permission_dependency("admin.org_units.read"))],

@@ -34,6 +34,7 @@ from app.modules.students.schemas import (
 )
 from app.modules.students.service import (
     StudentLifecycleService,
+    get_student_risk_context,
 )
 
 
@@ -263,5 +264,26 @@ async def list_program_binding_consistency_issues_endpoint(
 
 # Backward-compatible alias consumed by app bootstrap imports.
 legacy_router = router
+
+
+@router.get(
+    "/{student_id}/risk-context",
+    response_model=dict,
+    responses={403: {"model": ErrorDetailResponse}},
+    tags=["students", "brain-core"],
+)
+async def get_student_risk_context_endpoint(
+    student_id: int,
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("students.read"))] = None,
+    tenant: TrustedTenant = None,
+) -> dict:
+    """Return Brain Core risk context for a specific student.
+
+    Used by Brain Core context builder (student_success context source) to enrich
+    decisions with student-level risk indicators: open interventions, advising history,
+    risk flags.
+    """
+    return get_student_risk_context(int(tenant["id"]), student_id)
 
 

@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from app.core.config import is_runtime_schema_bootstrap_enabled
 from app.core.db import get_raw_conn
 from app.modules.audit.service import log_admin_action
+from app.platform.events.publisher import EventPublisher
 from app.modules.plans.service import get_plan_by_code, get_plan_by_id
 from app.modules.quotas.service import check_quota, resolve_tenant_quotas
 from app.modules.tenants.service import get_tenant
@@ -956,6 +957,26 @@ def escalate_delinquency_record(tenant_id: int, record_id: int, *, actor: str, n
         actor=actor,
         metadata={"record_id": int(record_id), "from_status": previous_status, "to_status": next_status},
     )
+
+    if next_status in {"overdue", "suspended", "collections"}:
+        risk_level = "high" if next_status in {"suspended", "collections"} else "medium"
+        source_id = str(updated.get("id") or int(record_id))
+        EventPublisher().publish_event(
+            tenant_id=normalized_tenant_id,
+            event_type="finance.payment_overdue.detected",
+            aggregate_type="billing_delinquency",
+            aggregate_id=source_id,
+            payload_json={
+                "record_id": int(updated.get("id") or int(record_id)),
+                "invoice_id": str(updated.get("invoice_id") or ""),
+                "status": next_status,
+                "amount_cents": int(updated.get("amount_cents") or 0),
+                "risk_level": risk_level,
+                "source_entity_type": "billing_delinquency",
+                "source_entity_id": source_id,
+            },
+        )
+
     return updated
 
 

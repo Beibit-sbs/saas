@@ -107,3 +107,80 @@ class FacultyContractItemResponse(BaseModel):
 
 class FacultyContractListResponse(BaseModel):
     contracts: list[FacultyContractResponse]
+
+
+# --- Teaching Quality schemas (Phase IV-IV1) ---
+
+class TeachingQualityCreatePayload(BaseModel):
+    faculty_id: str = Field(min_length=1, max_length=64)
+    course_id: str = Field(min_length=1, max_length=64)
+    term_id: int = Field(ge=1)
+    quality_score: float = Field(ge=0.0, le=100.0)
+    kpi_score: float = Field(ge=0.0, le=100.0)
+    improvement_plan: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+class TeachingQualityResponse(TeachingQualityCreatePayload):
+    id: int
+    tenant_id: str | None = None
+
+
+class TeachingQualityItemResponse(BaseModel):
+    record: TeachingQualityResponse
+
+
+class TeachingQualityListResponse(BaseModel):
+    records: list[TeachingQualityResponse]
+
+
+# --- Proctoring schemas (Phase IV-IV2) ---
+
+class ProctoringCreatePayload(BaseModel):
+    exam_id: str = Field(min_length=1, max_length=64)
+    faculty_id: str = Field(min_length=1, max_length=64)
+    room_id: str | None = Field(default=None, max_length=64)
+    violation_type: str = Field(min_length=1, max_length=128)
+    severity: str = Field(min_length=1, max_length=32)
+    student_id: str | None = Field(default=None, max_length=64)
+    notes: str | None = Field(default=None, max_length=2000)
+    status: str = Field(default="open", min_length=1, max_length=32)
+
+
+class ProctoringResponse(ProctoringCreatePayload):
+    id: int
+    tenant_id: str | None = None
+
+
+class ProctoringItemResponse(BaseModel):
+    record: ProctoringResponse
+
+
+class ProctoringListResponse(BaseModel):
+    records: list[ProctoringResponse]
+
+
+# --- Office hours schemas (Phase IV-IV3) ---
+
+class OfficeHoursCreatePayload(BaseModel):
+    faculty_id: str = Field(min_length=1, max_length=64)
+    scheduled_at: str = Field(min_length=1, max_length=64)
+    duration_minutes: int = Field(ge=5, le=480)
+    location: str | None = Field(default=None, max_length=256)
+    status: str = Field(default="scheduled", min_length=1, max_length=32)
+    student_id: str | None = Field(default=None, max_length=64)
+    notes: str | None = Field(default=None, max_length=2000)
+    no_show: bool = Field(default=False)
+
+
+class OfficeHoursResponse(OfficeHoursCreatePayload):
+    id: int
+    tenant_id: str | None = None
+
+
+class OfficeHoursItemResponse(BaseModel):
+    record: OfficeHoursResponse
+
+
+class OfficeHoursListResponse(BaseModel):
+    records: list[OfficeHoursResponse]

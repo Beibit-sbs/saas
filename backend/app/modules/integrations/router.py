@@ -13,7 +13,7 @@ from app.modules.integrations.service import (
     save_ldap_config,
 )
 from app.modules.rbac.security import get_actor, permission_dependency
-from app.platform.events.publisher import EventPublisher
+from app.platform.events import publisher as events_publisher
 
 router = APIRouter(prefix="/api/admin/integrations", tags=["integrations"])
 
@@ -32,7 +32,7 @@ def _publish_integration_updated_event(
     if idempotent_replay:
         return
 
-    EventPublisher().publish_event(
+    events_publisher.EventPublisher().publish_event(
         tenant_id=tenant_id,
         event_type="integration.updated",
         aggregate_type="integration",
@@ -44,6 +44,35 @@ def _publish_integration_updated_event(
             "idempotent_replay": False,
             "provider": provider,
             "secret_fields_updated": secret_fields_updated or [],
+        },
+    )
+
+
+def _publish_integration_degraded_event(
+    *,
+    tenant_id: int,
+    actor: str,
+    integration_key: str,
+    degradation_reason: str,
+    idempotent_replay: bool,
+    severity: str = "high",
+) -> None:
+    if idempotent_replay:
+        return
+
+    events_publisher.EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type="platform.integration.degraded",
+        aggregate_type="integration",
+        aggregate_id=integration_key,
+        payload_json={
+            "integration_key": integration_key,
+            "severity": severity,
+            "degradation_reason": degradation_reason,
+            "actor": actor,
+            "source_module": "integrations",
+            "source_entity_type": "integration",
+            "source_entity_id": integration_key,
         },
     )
 
@@ -134,6 +163,28 @@ def update_ldap_settings(
         secret_fields_updated=["bind_password"] if "bind_password" in updated_fields else [],
     )
 
+    ldap_enabled = bool(ldap.get("enabled"))
+    missing_required_fields: list[str] = []
+    if ldap_enabled:
+        required_field_map = {
+            "server_uri": ldap.get("server_uri"),
+            "bind_dn": ldap.get("bind_dn"),
+            "base_dn": ldap.get("base_dn"),
+        }
+        missing_required_fields = [
+            field
+            for field, value in required_field_map.items()
+            if not str(value or "").strip()
+        ]
+    if missing_required_fields:
+        _publish_integration_degraded_event(
+            tenant_id=int(tenant["id"]),
+            actor=actor,
+            integration_key="ldap",
+            degradation_reason=f"missing_required_fields:{','.join(sorted(missing_required_fields))}",
+            idempotent_replay=idempotent_replay,
+        )
+
     return LdapUpdateResponse(ldap=ldap, idempotent_replay=idempotent_replay)
 
 
@@ -197,5 +248,15 @@ def update_ai_provider_settings(
         provider=provider.strip().lower(),
         secret_fields_updated=["api_key"] if payload.api_key is not None else [],
     )
+
+    if not bool(result.get("has_api_key")):
+        _publish_integration_degraded_event(
+            tenant_id=int(tenant["id"]),
+            actor=actor,
+            integration_key=f"ai_provider:{provider.strip().lower()}",
+            degradation_reason="missing_api_key",
+            idempotent_replay=idempotent_replay,
+            severity="medium",
+        )
 
     return AiProviderUpdateResponse(provider=result, idempotent_replay=idempotent_replay)

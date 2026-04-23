@@ -15,6 +15,7 @@ from app.modules.courses.service import (
     create_course,
     delete_course,
     get_course_consistency_report,
+    get_courses_brain_context,
     list_courses,
     update_course,
 )
@@ -129,3 +130,17 @@ def delete_course_endpoint(
         metadata={"id": course["id"], "course_code": course["course_code"]},
     )
     return {"deleted": True, "course": course}
+
+
+@router.get("/brain-context", response_model=dict, tags=["org-courses", "brain-core"])
+def get_courses_brain_context_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.courses.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict:
+    """Return aggregated brain-context snapshot for Brain Core context builder.
+
+    Used by Brain Core to enrich decisions with courses signals:
+    total courses, active courses, inconsistency count, risk level.
+    """
+    return get_courses_brain_context(int(tenant["id"]))

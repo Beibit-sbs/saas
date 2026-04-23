@@ -23,6 +23,8 @@ export const ru = {
   "nav.platformOps": "Операции платформы",
   "nav.automation": "Автоматизация",
   "nav.aiCopilot": "AI Copilot",
+  "nav.brainCore": "Brain Core",
+  "nav.brainPolicySettings": "Настройки политики",
   "nav.federation": "Федерация",
   "nav.developerApps": "Приложения разработчиков",
   "nav.students": "Студенты",

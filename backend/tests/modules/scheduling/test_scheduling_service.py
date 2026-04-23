@@ -470,6 +470,75 @@ def test_upsert_lesson_attendance_success(run_async, db_session, audit_mock) -> 
     audit_mock.assert_called_once()
 
 
+def test_upsert_lesson_attendance_publishes_attendance_risk_event(
+    run_async,
+    db_session,
+    audit_mock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = SchedulingService(db_session)
+    lesson = LessonInstanceModel(
+        id=9001,
+        tenant_id=1,
+        section_id=1101,
+        scheduled_date=datetime(2026, 4, 5, tzinfo=UTC).date(),
+        actual_date=None,
+        topic_title="Linear equations",
+        status=LessonStatus.PLANNED,
+        notes=None,
+        metadata_json={},
+        created_by="owner@example.com",
+        created_at=datetime(2026, 4, 5, 8, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2026, 4, 5, 8, 0, 0, tzinfo=UTC),
+        version=1,
+    )
+    student = MagicMock(id=501, tenant_id=1)
+
+    db_session.execute.side_effect = [
+        ExecuteResult(scalar_one_or_none=lesson),
+        ExecuteResult(scalar_one_or_none=student),
+        ExecuteResult(scalar_one_or_none=None),
+        ExecuteResult(rows=[AttendanceStatus.ABSENT, AttendanceStatus.PRESENT, AttendanceStatus.ABSENT]),
+    ]
+
+    publisher_instance = MagicMock(name="event_publisher")
+    publisher_factory = MagicMock(return_value=publisher_instance)
+    monkeypatch.setattr("app.modules.scheduling.service.EventPublisher", publisher_factory)
+
+    request = LessonAttendanceUpsertSchema(
+        student_profile_id=501,
+        attendance_status=AttendanceStatus.ABSENT,
+    )
+
+    result = run_async(
+        service.upsert_lesson_attendance(
+            tenant_id=1,
+            lesson_instance_id=9001,
+            request=request,
+            actor_id="owner@example.com",
+        )
+    )
+
+    assert result.attendance_status == AttendanceStatus.ABSENT
+    publisher_instance.publish_event.assert_called_once_with(
+        tenant_id=1,
+        event_type="academic.attendance_risk.detected",
+        aggregate_type="lesson_attendance",
+        aggregate_id=9101,
+        payload_json={
+            "student_id": 501,
+            "section_id": 1101,
+            "course_id": None,
+            "attendance_rate": pytest.approx(1 / 3),
+            "risk_level": "high",
+            "source_entity_type": "lesson_attendance",
+            "source_entity_id": "9101",
+        },
+    )
+    db_session.commit.assert_called_once()
+    audit_mock.assert_called_once()
+
+
 def test_list_lesson_instances_pagination(run_async, db_session) -> None:
     service = SchedulingService(db_session)
     section = CourseSectionModel(

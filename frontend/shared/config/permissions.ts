@@ -56,6 +56,14 @@ export const PERMISSIONS = {
   FACULTY_READ: "admin.faculty.read",
   FACULTY_WRITE: "admin.faculty.write",
 
+  // HR / Payroll (Phase X)
+  HR_READ: "hr.read",
+  HR_WRITE: "hr.write",
+
+  // Finance / Collections (Phase X)
+  FINANCE_READ: "finance.read",
+  FINANCE_WRITE: "finance.write",
+
   // Backups
   BACKUP_MANAGE: "admin.backup.manage",
 
@@ -158,6 +166,22 @@ export const PERMISSIONS = {
   INTERVENTIONS_VIEW: "interventions:view",
   INTERVENTIONS_MANAGE_PLAYBOOKS: "interventions:manage_playbooks",
   INTERVENTIONS_EXECUTE_PLAYBOOK: "interventions:execute_playbook",
+
+  // Research Contour (grants, publications, labs, projects)
+  RESEARCH_READ: "research.read",
+  RESEARCH_WRITE: "research.write",
+
+  // Facilities & Work Orders (Phase XI)
+  FACILITIES_READ: "facilities.read",
+  FACILITIES_WRITE: "facilities.write",
+
+  // Asset Inventory (Phase XI)
+  ASSET_INVENTORY_READ: "asset_inventory.read",
+  ASSET_INVENTORY_WRITE: "asset_inventory.write",
+
+  // Faculty Copilot (Phase XII)
+  FACULTY_COPILOT_READ: "faculty_copilot.read",
+  FACULTY_COPILOT_WRITE: "faculty_copilot.write",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

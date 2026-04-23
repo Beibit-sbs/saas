@@ -1,5 +1,6 @@
 from statistics import pstdev
 
+from app.platform.events.publisher import EventPublisher
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     delete_entity_for_tenant,
@@ -333,6 +334,25 @@ def list_workload_alerts(tenant_id: int, term_id: int) -> list[dict[str, object]
         workload = get_faculty_workload(tenant_id, faculty_id, term_id)
         if workload["alerts"]:
             alerts.append(workload)
+            if "overload_threshold" in workload["alerts"] or "max_credit_exceeded" in workload["alerts"]:
+                risk_level = "high" if "overload_threshold" in workload["alerts"] else "medium"
+                source_id = f"{faculty_id}:{term_id}"
+                EventPublisher().publish_event(
+                    tenant_id=tenant_id,
+                    event_type="faculty.workload_overload.detected",
+                    aggregate_type="faculty_workload",
+                    aggregate_id=source_id,
+                    payload_json={
+                        "faculty_id": faculty_id,
+                        "term_id": term_id,
+                        "workload_ratio": workload.get("utilization"),
+                        "total_credit_hours": workload.get("total_credit_hours"),
+                        "max_credit_hours": workload.get("max_credit_hours"),
+                        "risk_level": risk_level,
+                        "source_entity_type": "faculty_workload",
+                        "source_entity_id": source_id,
+                    },
+                )
     return alerts
 
 
@@ -363,3 +383,255 @@ def update_faculty_capacity(
     updated_payload["max_credit_hours"] = int(max_credit_hours)
     updated_payload["fte_ratio"] = float(fte_ratio)
     return update_entity_for_tenant("faculty", row_id, updated_payload, tenant_id)
+
+
+# --- Teaching Quality (Phase IV-IV1) ---
+
+_QUALITY_ALERT_THRESHOLD = 60.0
+
+
+def list_teaching_quality(tenant_id: int, faculty_id: str | None = None) -> list[dict[str, object]]:
+    rows = list_entities_for_tenant("teaching_quality_records", tenant_id)
+    if faculty_id is not None:
+        normalized = faculty_id.strip()
+        rows = [r for r in rows if str(r.get("faculty_id") or "").strip() == normalized]
+    return rows
+
+
+def create_teaching_quality_record(
+    payload: dict[str, object],
+    tenant_id: int,
+) -> dict[str, object]:
+    record = create_entity_for_tenant("teaching_quality_records", payload, tenant_id)
+    quality_score = float(record.get("quality_score") or 100.0)
+    kpi_score = float(record.get("kpi_score") or 100.0)
+    if quality_score < _QUALITY_ALERT_THRESHOLD or kpi_score < _QUALITY_ALERT_THRESHOLD:
+        record_id = str(record.get("id") or "unknown")
+        faculty_id_val = str(record.get("faculty_id") or "unknown")
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="faculty.quality_drop.detected",
+            aggregate_type="teaching_quality_record",
+            aggregate_id=record_id,
+            payload_json={
+                "faculty_id": faculty_id_val,
+                "course_id": record.get("course_id"),
+                "term_id": record.get("term_id"),
+                "quality_score": quality_score,
+                "kpi_score": kpi_score,
+                "risk_level": "high" if min(quality_score, kpi_score) < 40.0 else "medium",
+                "source_entity_type": "teaching_quality_record",
+                "source_entity_id": record_id,
+            },
+        )
+    return record
+
+
+def get_faculty_brain_context(tenant_id: int) -> dict:
+    """Return aggregated faculty context snapshot for Brain Core."""
+    faculty_rows = list_entities_for_tenant("faculty", tenant_id)
+    quality_rows = list_entities_for_tenant("teaching_quality_records", tenant_id)
+
+    total_faculty = len(faculty_rows)
+    by_status: dict[str, int] = {}
+    by_department: dict[str, int] = {}
+    for r in faculty_rows:
+        st = str(r.get("status") or "unknown")
+        by_status[st] = by_status.get(st, 0) + 1
+        dep = str(r.get("department") or "unknown")
+        by_department[dep] = by_department.get(dep, 0) + 1
+
+    quality_alert_count = sum(
+        1
+        for r in quality_rows
+        if float(r.get("quality_score") or 100.0) < _QUALITY_ALERT_THRESHOLD
+        or float(r.get("kpi_score") or 100.0) < _QUALITY_ALERT_THRESHOLD
+    )
+    avg_quality = (
+        sum(float(r.get("quality_score") or 0.0) for r in quality_rows) / len(quality_rows)
+        if quality_rows
+        else None
+    )
+
+    risk_level = (
+        "high"
+        if total_faculty > 0 and quality_alert_count / max(total_faculty, 1) > 0.3
+        else ("medium" if quality_alert_count > 0 else "low")
+    )
+
+    return {
+        "module": "faculty",
+        "tenant_id": tenant_id,
+        "total_faculty": total_faculty,
+        "by_status": by_status,
+        "by_department": by_department,
+        "total_quality_records": len(quality_rows),
+        "quality_alert_count": quality_alert_count,
+        "avg_quality_score": avg_quality,
+        "risk_level": risk_level,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Phase IV-IV2: Proctoring / exam supervision
+# ---------------------------------------------------------------------------
+
+_PROCTORING_HIGH_SEVERITY = "high"
+
+
+def list_proctoring_records(
+    tenant_id: int,
+    faculty_id: str | None = None,
+    exam_id: str | None = None,
+) -> list[dict[str, object]]:
+    rows = list_entities_for_tenant("proctoring_records", tenant_id)
+    faculty_filter = str(faculty_id or "").strip()
+    exam_filter = str(exam_id or "").strip()
+    result: list[dict[str, object]] = []
+    for row in rows:
+        if faculty_filter and str(row.get("faculty_id") or "").strip() != faculty_filter:
+            continue
+        if exam_filter and str(row.get("exam_id") or "").strip() != exam_filter:
+            continue
+        result.append(row)
+    return result
+
+
+def create_proctoring_record(
+    payload: dict[str, object],
+    tenant_id: int,
+) -> dict[str, object]:
+    record = create_entity_for_tenant("proctoring_records", payload, tenant_id)
+    severity = str(record.get("severity") or "").strip().lower()
+    if severity == _PROCTORING_HIGH_SEVERITY:
+        record_id = str(record.get("id") or "unknown")
+        faculty_id_val = str(record.get("faculty_id") or "unknown")
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="faculty.proctoring.violation_detected",
+            aggregate_type="proctoring_record",
+            aggregate_id=record_id,
+            payload_json={
+                "faculty_id": faculty_id_val,
+                "exam_id": record.get("exam_id"),
+                "room_id": record.get("room_id"),
+                "violation_type": record.get("violation_type"),
+                "severity": severity,
+                "student_id": record.get("student_id"),
+                "status": record.get("status"),
+                "source_entity_type": "proctoring_record",
+                "source_entity_id": record_id,
+            },
+        )
+    return record
+
+
+def get_proctoring_brain_context(tenant_id: int) -> dict:
+    """Return aggregated proctoring context snapshot for Brain Core."""
+    rows = list_entities_for_tenant("proctoring_records", tenant_id)
+
+    total = len(rows)
+    by_severity: dict[str, int] = {}
+    by_violation_type: dict[str, int] = {}
+    open_count = 0
+    for r in rows:
+        sev = str(r.get("severity") or "unknown").lower()
+        by_severity[sev] = by_severity.get(sev, 0) + 1
+        vtype = str(r.get("violation_type") or "unknown")
+        by_violation_type[vtype] = by_violation_type.get(vtype, 0) + 1
+        if str(r.get("status") or "").lower() == "open":
+            open_count += 1
+
+    high_count = by_severity.get("high", 0)
+    risk_level = (
+        "high"
+        if high_count > 0 and high_count / max(total, 1) > 0.2
+        else ("medium" if high_count > 0 else "low")
+    )
+
+    return {
+        "module": "proctoring",
+        "tenant_id": tenant_id,
+        "total_records": total,
+        "open_violations": open_count,
+        "by_severity": by_severity,
+        "by_violation_type": by_violation_type,
+        "high_severity_count": high_count,
+        "risk_level": risk_level,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Phase IV-IV3: Office hours scheduling & availability management
+# ---------------------------------------------------------------------------
+
+
+def list_office_hours(
+    tenant_id: int,
+    faculty_id: str | None = None,
+) -> list[dict[str, object]]:
+    rows = list_entities_for_tenant("office_hours_records", tenant_id)
+    faculty_filter = str(faculty_id or "").strip()
+    result: list[dict[str, object]] = []
+    for row in rows:
+        if faculty_filter and str(row.get("faculty_id") or "").strip() != faculty_filter:
+            continue
+        result.append(row)
+    return result
+
+
+def create_office_hours_record(
+    payload: dict[str, object],
+    tenant_id: int,
+) -> dict[str, object]:
+    record = create_entity_for_tenant("office_hours_records", payload, tenant_id)
+    no_show = record.get("no_show")
+    if no_show is True or no_show == "true" or no_show == 1:
+        record_id = str(record.get("id") or "unknown")
+        faculty_id_val = str(record.get("faculty_id") or "unknown")
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="faculty.office_hours.no_show_detected",
+            aggregate_type="office_hours_record",
+            aggregate_id=record_id,
+            payload_json={
+                "faculty_id": faculty_id_val,
+                "scheduled_at": record.get("scheduled_at"),
+                "student_id": record.get("student_id"),
+                "location": record.get("location"),
+                "no_show": True,
+                "source_entity_type": "office_hours_record",
+                "source_entity_id": record_id,
+            },
+        )
+    return record
+
+
+def get_office_hours_brain_context(tenant_id: int) -> dict:
+    """Return aggregated office hours context snapshot for Brain Core."""
+    rows = list_entities_for_tenant("office_hours_records", tenant_id)
+
+    total = len(rows)
+    no_show_count = 0
+    by_status: dict[str, int] = {}
+    for r in rows:
+        status = str(r.get("status") or "unknown").lower()
+        by_status[status] = by_status.get(status, 0) + 1
+        if r.get("no_show") is True or r.get("no_show") == "true" or r.get("no_show") == 1:
+            no_show_count += 1
+
+    no_show_rate = round(no_show_count / max(total, 1), 2)
+    risk_level = (
+        "high" if no_show_rate > 0.3
+        else ("medium" if no_show_rate > 0.1 else "low")
+    )
+
+    return {
+        "module": "office_hours",
+        "tenant_id": tenant_id,
+        "total_records": total,
+        "no_show_count": no_show_count,
+        "no_show_rate": no_show_rate,
+        "by_status": by_status,
+        "risk_level": risk_level,
+    }

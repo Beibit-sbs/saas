@@ -1,4 +1,5 @@
 from tests.conftest import ADMIN_HEADERS, _configure_db_only_role_resolution, client
+from unittest.mock import MagicMock
 from app.modules.ai_gateway import service as ai_service
 from app.modules.auth.token_service import create_access_token
 from app.modules.integrations import service as integrations_service
@@ -84,6 +85,57 @@ def test_idempotent_integration_replay_does_not_emit_outbox_event() -> None:
     assert second.json()["idempotent_replay"] is True
 
     # Outbox de-duplication is covered in platform-level outbox tests.
+
+
+def test_ldap_missing_required_fields_emits_integration_degraded(monkeypatch) -> None:
+    publisher_instance = MagicMock(name="event_publisher")
+    publisher_factory = MagicMock(return_value=publisher_instance)
+    monkeypatch.setattr("app.platform.events.publisher.EventPublisher", publisher_factory)
+
+    suffix = uuid4().hex[:8]
+    first_payload = {
+        "enabled": True,
+        "server_uri": f"ldap://dc-{suffix}.example.local:389",
+        "bind_dn": "CN=svc_bind,OU=ServiceAccounts,DC=example,DC=local",
+        "base_dn": "DC=example,DC=local",
+    }
+    first_resp = client.put("/api/admin/integrations/ldap", json=first_payload, headers=ADMIN_HEADERS)
+    assert first_resp.status_code == 200, first_resp.text
+
+    degraded_payload = {
+        "enabled": True,
+        "server_uri": "",
+        "bind_dn": "",
+        "base_dn": "",
+    }
+    degraded_resp = client.put("/api/admin/integrations/ldap", json=degraded_payload, headers=ADMIN_HEADERS)
+    assert degraded_resp.status_code == 200, degraded_resp.text
+
+    calls = [c.kwargs for c in publisher_instance.publish_event.call_args_list]
+    degraded_calls = [c for c in calls if c.get("event_type") == "platform.integration.degraded"]
+    assert degraded_calls
+    assert degraded_calls[-1]["payload_json"]["integration_key"] == "ldap"
+    assert degraded_calls[-1]["payload_json"]["severity"] == "high"
+
+
+def test_ai_provider_without_api_key_emits_integration_degraded(monkeypatch) -> None:
+    publisher_instance = MagicMock(name="event_publisher")
+    publisher_factory = MagicMock(return_value=publisher_instance)
+    monkeypatch.setattr("app.platform.events.publisher.EventPublisher", publisher_factory)
+
+    suffix = uuid4().hex[:8]
+    payload = {
+        "api_key": "",
+        "validation_url": f"https://api.openai.com/v1/models?tenant={suffix}",
+    }
+    response = client.put("/api/admin/integrations/ai/openai", json=payload, headers=ADMIN_HEADERS)
+    assert response.status_code == 200, response.text
+
+    calls = [c.kwargs for c in publisher_instance.publish_event.call_args_list]
+    degraded_calls = [c for c in calls if c.get("event_type") == "platform.integration.degraded"]
+    assert degraded_calls
+    assert degraded_calls[-1]["payload_json"]["integration_key"] == "ai_provider:openai"
+    assert degraded_calls[-1]["payload_json"]["severity"] == "medium"
 
 
 def test_legacy_secret_is_auto_migrated_to_encrypted_format(monkeypatch) -> None:

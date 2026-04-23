@@ -1,0 +1,1 @@
+"""Campus operations module."""

@@ -1237,8 +1237,8 @@ def ask_copilot(
     body: CopilotQuestionRequestSchema,
     actor: Actor,
     request: Request,
+    request_tenant_id: Annotated[int, Depends(_require_request_tenant_id)],
 ) -> CopilotAnswerReadSchema:
-    request_tenant_id = _require_request_tenant_id(request)
     if int(request_tenant_id) != PLATFORM_TENANT_ID and int(request_tenant_id) != int(body.tenant_id):
         raise HTTPException(status_code=403, detail="cross-tenant access denied")
 

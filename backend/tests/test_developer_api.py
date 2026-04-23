@@ -9,8 +9,29 @@ Verify that:
 - Audit logging is enabled
 """
 
+from datetime import datetime, timezone
+
 from tests.conftest import client
 from app.platform.developer import service as developer_service
+
+
+def _developer_headers_for_scopes(*, scopes: list[str], tenant_id: int = 1) -> dict[str, str]:
+    app = developer_service.developer_service.create_app(
+        tenant_id=tenant_id,
+        name="Developer API Test App",
+        description="test app",
+        owner_email="owner@example.com",
+        scopes=scopes,
+    )
+    developer_service.developer_service.install_app(
+        app_id=int(app["id"]),
+        tenant_id=tenant_id,
+        installed_by="test-suite",
+    )
+    return {
+        "X-App-Key": str(app["app_key"]),
+        "X-App-Secret": str(app["app_secret"]),
+    }
 
 
 class TestDeveloperAPIEndpoints:
@@ -184,6 +205,162 @@ class TestDeveloperAPIScopes:
         """analytics.read scope must be present for /analytics/kpis/latest endpoint."""
         response = client.get("/api/dev/analytics/kpis/latest")
         assert response.status_code == 401
+
+
+class TestDeveloperAnalyticsBehavior:
+    def test_analytics_events_returns_bounded_payload_for_authenticated_app(self, monkeypatch) -> None:
+        headers = _developer_headers_for_scopes(scopes=["analytics.read"])
+        observed: dict[str, object] = {}
+        usage_calls: list[tuple[int, str, int]] = []
+
+        def _fake_list_event_projections(
+            *,
+            tenant_id: int,
+            event_type: str | None,
+            date_from,
+            date_to,
+            cursor_id_lt,
+            ordering: str,
+            limit: int,
+            uow,
+        ) -> list[dict[str, object]]:
+            observed.update(
+                {
+                    "tenant_id": tenant_id,
+                    "event_type": event_type,
+                    "date_from": date_from,
+                    "date_to": date_to,
+                    "cursor_id_lt": cursor_id_lt,
+                    "ordering": ordering,
+                    "limit": limit,
+                    "uow": uow,
+                }
+            )
+            return [
+                {
+                    "id": 321,
+                    "tenant_id": tenant_id,
+                    "outbox_event_id": 654,
+                    "event_type": "student.created",
+                    "aggregate_type": "student",
+                    "aggregate_id": "stu-1",
+                    "created_at": "2026-01-02T03:04:05+00:00",
+                }
+            ]
+
+        monkeypatch.setattr("app.platform.router_developer_api.assert_analytics_read_entitled", lambda tenant_id: None)
+        monkeypatch.setattr(
+            "app.platform.router_developer_api.analytics_service.list_event_projections",
+            _fake_list_event_projections,
+        )
+        monkeypatch.setattr(
+            "app.platform.router_developer_api.billing_service.increment_usage",
+            lambda tenant_id, metric, value: usage_calls.append((tenant_id, metric, value)),
+        )
+
+        response = client.get(
+            "/api/dev/analytics/events?limit=500&event_type=student.created",
+            headers=headers,
+        )
+
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert observed["tenant_id"] == 1
+        assert observed["event_type"] == "student.created"
+        assert observed["cursor_id_lt"] is None
+        assert observed["ordering"] == "created_at_desc"
+        assert observed["limit"] == 100
+        assert observed["uow"] is not None
+        assert body["tenant_id"] == 1
+        assert body["total"] == 1
+        assert body["limit"] == 100
+        assert body["ordering"] == "created_at_desc"
+        assert body["next_cursor"] is None
+        assert body["data_as_of"] == "2026-01-02T03:04:05+00:00"
+        assert body["freshness_status"] == "fresh"
+        assert body["served_at"]
+        assert body["applied_filters"] == {
+            "event_type": "student.created",
+            "date_from": None,
+            "date_to": None,
+        }
+        assert body["items"] == [
+            {
+                "id": 321,
+                "tenant_id": 1,
+                "outbox_event_id": 654,
+                "event_type": "student.created",
+                "aggregate_type": "student",
+                "aggregate_id": "stu-1",
+                "created_at": "2026-01-02T03:04:05+00:00",
+            }
+        ]
+        assert usage_calls == [(1, "analytics.events.read", 1)]
+
+    def test_analytics_events_rejects_invalid_cursor_for_authenticated_app(self, monkeypatch) -> None:
+        headers = _developer_headers_for_scopes(scopes=["analytics.read"])
+
+        monkeypatch.setattr("app.platform.router_developer_api.assert_analytics_read_entitled", lambda tenant_id: None)
+
+        response = client.get(
+            "/api/dev/analytics/events?cursor=not-a-valid-cursor",
+            headers=headers,
+        )
+
+        assert response.status_code == 400
+        assert response.json() == {"detail": "invalid cursor"}
+
+    def test_analytics_events_rejects_invalid_date_range_for_authenticated_app(self, monkeypatch) -> None:
+        headers = _developer_headers_for_scopes(scopes=["analytics.read"])
+
+        monkeypatch.setattr("app.platform.router_developer_api.assert_analytics_read_entitled", lambda tenant_id: None)
+
+        response = client.get(
+            "/api/dev/analytics/events?date_from=2026-02-01&date_to=2026-01-01",
+            headers=headers,
+        )
+
+        assert response.status_code == 422
+        assert "date_from must be less than or equal to date_to" in response.json()["detail"]
+
+    def test_analytics_kpis_latest_returns_freshness_metadata_for_authenticated_app(self, monkeypatch) -> None:
+        headers = _developer_headers_for_scopes(scopes=["analytics.read"])
+        usage_calls: list[tuple[int, str, int]] = []
+        today = datetime.now(timezone.utc).date().isoformat()
+
+        monkeypatch.setattr("app.platform.router_developer_api.assert_analytics_read_entitled", lambda tenant_id: None)
+        monkeypatch.setattr(
+            "app.platform.router_developer_api.analytics_service.get_latest_tenant_kpis",
+            lambda tenant_id, uow: {
+                "id": 77,
+                "tenant_id": tenant_id,
+                "snapshot_date": today,
+                "event_counts_json": {"student.created": 4},
+                "total_events": 4,
+                "version": 2,
+                "updated_at": "2026-01-03T04:05:06+00:00",
+            },
+        )
+        monkeypatch.setattr(
+            "app.platform.router_developer_api.billing_service.increment_usage",
+            lambda tenant_id, metric, value: usage_calls.append((tenant_id, metric, value)),
+        )
+
+        response = client.get("/api/dev/analytics/kpis/latest", headers=headers)
+
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["id"] == 77
+        assert body["tenant_id"] == 1
+        assert body["snapshot_date"] == today
+        assert body["event_counts_json"] == {"student.created": 4}
+        assert body["total_events"] == 4
+        assert body["version"] == 2
+        assert body["updated_at"] == "2026-01-03T04:05:06+00:00"
+        assert body["data_as_of"] == "2026-01-03T04:05:06+00:00"
+        assert body["freshness_status"] == "fresh"
+        assert body["served_at"]
+        assert usage_calls == [(1, "analytics.kpi.read", 1)]
 
 
 class TestDeveloperAPIDocumentation:

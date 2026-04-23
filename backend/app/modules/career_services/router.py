@@ -14,6 +14,7 @@ from app.modules.career_services.schemas import (
 )
 from app.modules.career_services.service import (
     create_career_opportunity,
+    get_career_services_brain_context,
     list_career_opportunities,
     update_career_opportunity_status,
 )
@@ -64,3 +65,12 @@ def update_opportunity_status_endpoint(
         detail = str(exc)
         status_code = 404 if "not found" in detail else 400
         raise HTTPException(status_code=status_code, detail=detail) from exc
+
+
+@router.get("/brain-context")
+def get_career_services_brain_context_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("career_services.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict:
+    return get_career_services_brain_context(int(tenant["id"]))

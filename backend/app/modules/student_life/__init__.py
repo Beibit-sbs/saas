@@ -1,0 +1,1 @@
+"""Advanced student life module."""

@@ -302,6 +302,45 @@ class TestGradeSubmission:
         with pytest.raises(TenantResourceNotFoundError):
             run_async(service.submit_grade(tenant_id=1, request=request, actor_id="instructor@example.com"))
 
+    def test_submit_grade_publishes_grade_risk_event_for_low_grade(
+        self,
+        run_async,
+        db_session,
+        enrollment_factory,
+        scale_factory,
+        scale_item_factory,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        service = GradeLifecycleService(db_session)
+        request = GradeSubmitSchema(
+            enrollment_id=4001,
+            grading_scale_id=9001,
+            grade_code="D",
+            grade_points=Decimal("1.50"),
+        )
+        enrollment = enrollment_factory(id=4001, tenant_id=1, enrollment_status=EnrollmentStatus.COMPLETED)
+
+        db_session.execute.side_effect = [
+            ExecuteResult(scalar_one_or_none=enrollment),
+            ExecuteResult(scalar_one_or_none=type("CourseStub", (), {"tenant_id": 1})()),
+            ExecuteResult(scalar_one_or_none=None),
+            ExecuteResult(scalar_one_or_none=scale_factory(id=9001, tenant_id=1, is_active=True)),
+            ExecuteResult(scalars=[scale_item_factory(scale_id=9001, grade_code="D", grade_points=Decimal("1.50"))]),
+        ]
+
+        publisher_instance = MagicMock(name="event_publisher")
+        publisher_factory = MagicMock(return_value=publisher_instance)
+        monkeypatch.setattr("app.modules.grades.service.EventPublisher", publisher_factory)
+
+        run_async(service.submit_grade(tenant_id=1, request=request, actor_id="instructor@example.com"))
+
+        published_event_types = [
+            call.kwargs.get("event_type")
+            for call in publisher_instance.publish_event.call_args_list
+        ]
+        assert "grade.submitted" in published_event_types
+        assert "academic.grade_risk.detected" in published_event_types
+
 
 class TestGradeChange:
     def test_change_grade_success(

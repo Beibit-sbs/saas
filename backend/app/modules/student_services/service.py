@@ -81,6 +81,23 @@ def create_student_service_ticket(
         },
         tenant_id=tenant_id,
     )
+
+    if request.priority == "high":
+        from app.platform.events.publisher import EventPublisher
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="student_services.ticket.escalated",
+            aggregate_type="student_service_ticket",
+            aggregate_id=created.get("id", 0),
+            payload_json={
+                "ticket_id": created.get("id"),
+                "student_id": int(request.student_id),
+                "category": request.category,
+                "priority": request.priority,
+                "source_module": "student_services",
+            },
+        )
+
     return StudentServiceTicketSchema.model_validate(created)
 
 
@@ -129,3 +146,22 @@ def update_student_service_ticket_status(
         tenant_id=tenant_id,
     )
     return StudentServiceTicketSchema.model_validate(updated)
+
+
+def get_student_services_brain_context(tenant_id: int) -> dict[str, object]:
+    """Return aggregated brain-context snapshot for Brain Core context builder."""
+    tickets = list_entities_for_tenant("student_service_tickets", tenant_id)
+    open_count = sum(1 for t in tickets if str(t.get("status", "")).lower() in {"open", "in_progress"})
+    escalated_count = sum(
+        1 for t in tickets
+        if str(t.get("priority", "")).lower() == "high" and str(t.get("status", "")).lower() in {"open", "in_progress"}
+    )
+    return {
+        "snapshot_type": "brain_context",
+        "module": "student_services",
+        "tenant_id": tenant_id,
+        "total_tickets": len(tickets),
+        "open_tickets": open_count,
+        "escalated_high_priority_tickets": escalated_count,
+        "student_services_risk_level": "high" if escalated_count > 0 else ("medium" if open_count > 5 else "low"),
+    }

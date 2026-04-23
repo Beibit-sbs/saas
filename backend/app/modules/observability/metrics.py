@@ -57,6 +57,7 @@ _ai_slo_breach_total: dict[tuple[str, str], int] = defaultdict(int)
 _ai_guardrail_evaluations_total: dict[tuple[str, str, str, str], int] = defaultdict(int)
 _ai_guardrail_blocked_total: dict[tuple[str, str, str], int] = defaultdict(int)
 _ai_guardrail_evaluation_duration_seconds: dict[tuple[str, str], tuple[int, float]] = defaultdict(lambda: (0, 0.0))
+_ai_routing_selection_total: dict[tuple[str, str, str], int] = defaultdict(int)
 _jobs_executed_total: int = 0
 _jobs_failed_total: int = 0
 _jobs_queue_size: int = 0
@@ -395,6 +396,19 @@ def observe_ai_slo_compliance(rows: list[dict[str, object]]) -> None:
                 _ai_slo_breach_total[(model, "error_rate")] += 1
 
 
+def observe_ai_routing_selection(
+    *,
+    tenant_id: int | str,
+    mode: str,
+    selection: str,
+) -> None:
+    t = str(tenant_id)
+    m = str(mode).strip().lower() or "unknown"
+    s = str(selection).strip().lower() or "unknown"
+    with _lock:
+        _ai_routing_selection_total[(t, m, s)] += 1
+
+
 def observe_ai_guardrail_evaluation(
     *,
     tenant_id: str | int | None,
@@ -457,6 +471,7 @@ def clear_metrics_state() -> None:
         _ai_guardrail_evaluations_total.clear()
         _ai_guardrail_blocked_total.clear()
         _ai_guardrail_evaluation_duration_seconds.clear()
+        _ai_routing_selection_total.clear()
         global _workflow_executions_total, _grade_submissions_total, _scheduling_conflicts_total
         global _jobs_executed_total, _jobs_failed_total, _jobs_queue_size, _invoices_created_total, _billing_failures_total
         global _db_connections_active, _redis_latency_seconds
@@ -511,6 +526,7 @@ def render_metrics() -> str:
         ai_cost_anomaly_detected_total = dict(_ai_cost_anomaly_detected_total)
         ai_slo_compliance_pct = dict(_ai_slo_compliance_pct)
         ai_slo_breach_total = dict(_ai_slo_breach_total)
+        ai_routing_selection_total = dict(_ai_routing_selection_total)
         ai_guardrail_evaluations_total = dict(_ai_guardrail_evaluations_total)
         ai_guardrail_blocked_total = dict(_ai_guardrail_blocked_total)
         ai_guardrail_evaluation_duration_seconds = dict(_ai_guardrail_evaluation_duration_seconds)
@@ -764,6 +780,12 @@ def render_metrics() -> str:
         lines.append(f"security_anomalies_total{{{labels}}} {count}")
 
     worker_age_seconds = _age_seconds_from_iso(get_worker_heartbeat())
+    lines.append("# HELP ai_routing_selection_total Total AI routing selections by mode and selection type.")
+    lines.append("# TYPE ai_routing_selection_total counter")
+    for (tenant, mode, selection), count in sorted(ai_routing_selection_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",mode="{_escape(mode)}",selection="{_escape(selection)}"'
+        lines.append(f"ai_routing_selection_total{{{labels}}} {count}")
+
     lines.append("# HELP ai_guardrail_evaluations_total Total AI guardrail evaluations per stage/detector/decision.")
     lines.append("# TYPE ai_guardrail_evaluations_total counter")
     for (tenant, stage, detector, decision), count in sorted(ai_guardrail_evaluations_total.items()):

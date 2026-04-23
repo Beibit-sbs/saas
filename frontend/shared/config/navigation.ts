@@ -22,6 +22,9 @@ import {
   LifeBuoy,
   Wallet,
   Home,
+  Settings2,
+  Wrench,
+  Package,
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS, type Permission } from "./permissions";
@@ -150,6 +153,20 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.AI_COPILOT_READ,
       },
       {
+        label: "Brain Core",
+        href: "/console/ai/brain",
+        icon: Bot,
+        permission: PERMISSIONS.DASHBOARD_READ,
+        children: [
+          {
+            label: "Policy Settings",
+            href: "/console/ai/brain/policy",
+            icon: Settings2,
+            permission: PERMISSIONS.DASHBOARD_READ,
+          },
+        ],
+      },
+      {
         label: "Federation",
         href: "/console/federation",
         icon: Network,
@@ -231,6 +248,42 @@ export const NAVIGATION: NavGroup[] = [
         href: "/console/financial-aid",
         icon: Wallet,
         permission: PERMISSIONS.FINANCIAL_AID_READ,
+      },
+      {
+        label: "Faculty KPIs",
+        href: "/console/faculty-performance-kpis",
+        icon: BarChart3,
+        permission: PERMISSIONS.FACULTY_READ,
+      },
+      {
+        label: "HR & Payroll",
+        href: "/console/hr-payroll",
+        icon: Briefcase,
+        permission: PERMISSIONS.HR_READ,
+      },
+      {
+        label: "Delinquency Collections",
+        href: "/console/delinquency-collections",
+        icon: Wallet,
+        permission: PERMISSIONS.FINANCE_READ,
+      },
+      {
+        label: "Facilities & Work Orders",
+        href: "/console/facilities-work-orders",
+        icon: Wrench,
+        permission: PERMISSIONS.FACILITIES_READ,
+      },
+      {
+        label: "Asset Inventory",
+        href: "/console/asset-inventory",
+        icon: Package,
+        permission: PERMISSIONS.ASSET_INVENTORY_READ,
+      },
+      {
+        label: "Faculty Copilot",
+        href: "/console/faculty-copilot",
+        icon: Bot,
+        permission: PERMISSIONS.FACULTY_COPILOT_READ,
       },
       {
         label: "Housing",

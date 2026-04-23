@@ -57,6 +57,36 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     # Academic chain cross-domain events (Contour v1)
     "thesis.status_changed": EventDefinition(GenericTenantEventPayload),
     "accreditation.status_changed": EventDefinition(GenericTenantEventPayload),
+    "academic.attendance_risk.detected": EventDefinition(GenericTenantEventPayload),
+    "academic.grade_risk.detected": EventDefinition(GenericTenantEventPayload),
+    "faculty.workload_overload.detected": EventDefinition(GenericTenantEventPayload),
+    "faculty.quality_drop.detected": EventDefinition(GenericTenantEventPayload),
+    "finance.payment_overdue.detected": EventDefinition(GenericTenantEventPayload),
+    "financial_aid.warning.detected": EventDefinition(GenericTenantEventPayload),
+    "housing.status.risk_detected": EventDefinition(GenericTenantEventPayload),
+    "platform.integration.degraded": EventDefinition(GenericTenantEventPayload),
+    # Research & Innovation cross-domain events (Contour v2)
+    "research.grant_deadline.approaching": EventDefinition(GenericTenantEventPayload),
+    "research.publication_stagnant": EventDefinition(GenericTenantEventPayload),
+    # Student Services module events
+    "student_services.ticket.escalated": EventDefinition(GenericTenantEventPayload),
+    # Interventions module events
+    "interventions.case_outcome.recorded": EventDefinition(GenericTenantEventPayload),
+    # Campus SLA module events
+    "campus.sla.breach_detected": EventDefinition(GenericTenantEventPayload),
+    # Equipment booking module events
+    "research.equipment.booking_conflict_detected": EventDefinition(GenericTenantEventPayload),
+    # Scholarship module events
+    "scholarship.award.at_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Faculty Performance KPI module events (Phase X)
+    "faculty_performance.kpi.warning_detected": EventDefinition(GenericTenantEventPayload),
+    # HR/Payroll module events (Phase X)
+    "hr.employee.offboarding_initiated": EventDefinition(GenericTenantEventPayload),
+    "collections.delinquency.critical_overdue": EventDefinition(GenericTenantEventPayload),
+    # Facilities Work Orders module events (Phase XI)
+    "facilities.work_order.critical_priority": EventDefinition(GenericTenantEventPayload),
+    # Asset Inventory module events (Phase XI)
+    "asset_inventory.item.condemned_asset": EventDefinition(GenericTenantEventPayload),
 }
 
 PREFIX_EVENT_REGISTRY: dict[str, EventDefinition] = {

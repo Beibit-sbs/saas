@@ -20,6 +20,7 @@ from app.modules.courses.models import CourseModel
 from app.modules.enrollments.models import EnrollmentModel, EnrollmentStatus
 from app.modules.scheduling.business_rules import SchedulingRules
 from app.modules.scheduling.models import (
+    AttendanceStatus,
     ClassroomModel,
     CourseSectionModel,
     DayOfWeek,
@@ -67,6 +68,7 @@ from app.modules.scheduling.schemas import (
     AttendanceTrendDataPointSchema,
 )
 from app.modules.students.models import StudentProfileModel
+from app.platform.events.publisher import EventPublisher
 
 
 def _utc_now() -> datetime:
@@ -104,6 +106,49 @@ class SchedulingService:
         ).scalar_one_or_none()
         assert_resource_belongs_to_tenant(section, tenant_id, resource_name="Course section", resource_id=section_id)
         return section
+
+    def _calculate_student_attendance_rate(
+        self,
+        *,
+        tenant_id: int,
+        section_id: int,
+        student_profile_id: int,
+    ) -> float | None:
+        statuses = self.db.execute(
+            select(LessonAttendanceModel.attendance_status)
+            .join(
+                LessonInstanceModel,
+                LessonInstanceModel.id == LessonAttendanceModel.lesson_instance_id,
+            )
+            .where(
+                and_(
+                    LessonAttendanceModel.tenant_id == tenant_id,
+                    LessonAttendanceModel.student_profile_id == student_profile_id,
+                    LessonInstanceModel.tenant_id == tenant_id,
+                    LessonInstanceModel.section_id == section_id,
+                )
+            )
+        ).scalars().all()
+        if not statuses:
+            return None
+
+        attended_statuses = {
+            AttendanceStatus.PRESENT,
+            AttendanceStatus.LATE,
+            AttendanceStatus.EXCUSED,
+        }
+        attended_count = sum(1 for status in statuses if status in attended_statuses)
+        return attended_count / len(statuses)
+
+    @staticmethod
+    def _derive_attendance_risk_level(attendance_rate: float | None) -> str | None:
+        if attendance_rate is None:
+            return None
+        if attendance_rate < 0.40:
+            return "high"
+        if attendance_rate < 0.60:
+            return "medium"
+        return None
 
     def _load_section_schedule(self, tenant_id: int, section_id: int) -> SectionScheduleModel | None:
         return self.db.execute(
@@ -1061,6 +1106,30 @@ class SchedulingService:
 
         self.db.flush()
         self.db.refresh(attendance)
+
+        if request.attendance_status == AttendanceStatus.ABSENT:
+            attendance_rate = self._calculate_student_attendance_rate(
+                tenant_id=tenant_id,
+                section_id=lesson.section_id,
+                student_profile_id=request.student_profile_id,
+            )
+            risk_level = self._derive_attendance_risk_level(attendance_rate)
+            if risk_level is not None:
+                EventPublisher(db_session=self.db).publish_event(
+                    tenant_id=tenant_id,
+                    event_type="academic.attendance_risk.detected",
+                    aggregate_type="lesson_attendance",
+                    aggregate_id=attendance.id or lesson_instance_id,
+                    payload_json={
+                        "student_id": request.student_profile_id,
+                        "section_id": lesson.section_id,
+                        "course_id": None,
+                        "attendance_rate": attendance_rate,
+                        "risk_level": risk_level,
+                        "source_entity_type": "lesson_attendance",
+                        "source_entity_id": str(attendance.id or lesson_instance_id),
+                    },
+                )
 
         try:
             self.db.commit()

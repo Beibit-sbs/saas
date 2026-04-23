@@ -18,20 +18,38 @@ from app.modules.faculty.schemas import (
     FacultyWorkloadItemResponse,
     FacultyWorkloadListResponse,
     FacultyUpdatePayload,
+    TeachingQualityCreatePayload,
+    TeachingQualityItemResponse,
+    TeachingQualityListResponse,
+    ProctoringCreatePayload,
+    ProctoringItemResponse,
+    ProctoringListResponse,
+    OfficeHoursCreatePayload,
+    OfficeHoursItemResponse,
+    OfficeHoursListResponse,
 )
 from app.modules.faculty.service import (
     create_faculty_contract,
     create_faculty_member,
+    create_teaching_quality_record,
     delete_faculty_member,
     get_department_workload_summary,
+    get_faculty_brain_context,
     get_faculty_consistency_report,
     get_faculty_workload,
     list_faculty,
     list_faculty_contracts,
+    list_teaching_quality,
     list_workload_alerts,
     update_faculty_contract_status,
     update_faculty_capacity,
     update_faculty_member,
+    create_proctoring_record,
+    get_proctoring_brain_context,
+    list_proctoring_records,
+    create_office_hours_record,
+    get_office_hours_brain_context,
+    list_office_hours,
 )
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -262,6 +280,37 @@ def get_workload_alerts_endpoint(
     return {"workloads": workloads}
 
 
+@router.get("/teaching-quality", response_model=TeachingQualityListResponse)
+def list_teaching_quality_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+    faculty_id: str | None = None,
+) -> TeachingQualityListResponse:
+    records = list_teaching_quality(int(tenant["id"]), faculty_id=faculty_id)
+    return {"records": records}
+
+
+@router.post("/teaching-quality", response_model=TeachingQualityItemResponse)
+def create_teaching_quality_endpoint(
+    payload: TeachingQualityCreatePayload,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> TeachingQualityItemResponse:
+    record = create_teaching_quality_record(payload.model_dump(), int(tenant["id"]))
+    return {"record": record}
+
+
+@router.get("/brain-context")
+def get_faculty_brain_context_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict:
+    return get_faculty_brain_context(int(tenant["id"]))
+
+
 @router.put("/{faculty_id}/capacity", response_model=FacultyItemResponse)
 def update_faculty_capacity_endpoint(
     faculty_id: str,
@@ -295,3 +344,76 @@ def update_faculty_capacity_endpoint(
         metadata={"faculty_id": faculty_id},
     )
     return {"faculty": faculty_entry}
+
+
+# ---------------------------------------------------------------------------
+# Proctoring endpoints (Phase IV-IV2)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/proctoring", response_model=ProctoringListResponse)
+def list_proctoring_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+    faculty_id: str | None = None,
+    exam_id: str | None = None,
+) -> ProctoringListResponse:
+    records = list_proctoring_records(int(tenant["id"]), faculty_id=faculty_id, exam_id=exam_id)
+    return {"records": records}
+
+
+@router.post("/proctoring", response_model=ProctoringItemResponse)
+def create_proctoring_endpoint(
+    payload: ProctoringCreatePayload,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ProctoringItemResponse:
+    record = create_proctoring_record(payload.model_dump(), int(tenant["id"]))
+    return {"record": record}
+
+
+@router.get("/proctoring/brain-context")
+def get_proctoring_brain_context_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict:
+    return get_proctoring_brain_context(int(tenant["id"]))
+
+
+# ---------------------------------------------------------------------------
+# Office hours endpoints (Phase IV-IV3)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/office-hours", response_model=OfficeHoursListResponse)
+def list_office_hours_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+    faculty_id: str | None = None,
+) -> OfficeHoursListResponse:
+    records = list_office_hours(int(tenant["id"]), faculty_id=faculty_id)
+    return {"records": records}
+
+
+@router.post("/office-hours", response_model=OfficeHoursItemResponse)
+def create_office_hours_endpoint(
+    payload: OfficeHoursCreatePayload,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> OfficeHoursItemResponse:
+    record = create_office_hours_record(payload.model_dump(), int(tenant["id"]))
+    return {"record": record}
+
+
+@router.get("/office-hours/brain-context")
+def get_office_hours_brain_context_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict:
+    return get_office_hours_brain_context(int(tenant["id"]))

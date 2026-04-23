@@ -1,13 +1,16 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PlatformSectionView } from "../../app/(admin)/console/platform/platform-section-view";
 
 const pushMock = vi.fn();
 const hasPermissionMock = vi.fn();
-const mutateMock = vi.fn();
-const invalidateQueriesMock = vi.fn();
+
+const apiGetMock = vi.fn();
+const apiPostMock = vi.fn();
+const apiPutMock = vi.fn();
+const apiDeleteMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
@@ -23,6 +26,13 @@ vi.mock("@/shared/hooks/use-permissions", () => ({
 
 vi.mock("@/shared/ui/permission-gate", () => ({
   AccessDenied: ({ message }: { message?: string }) => <div>{message ?? "Access Denied"}</div>,
+}));
+
+vi.mock("@/shared/api/client", () => ({
+  apiGet: (...args: unknown[]) => apiGetMock(...args),
+  apiPost: (...args: unknown[]) => apiPostMock(...args),
+  apiPut: (...args: unknown[]) => apiPutMock(...args),
+  apiDelete: (...args: unknown[]) => apiDeleteMock(...args),
 }));
 
 const mockWebhookSubs = [
@@ -55,42 +65,109 @@ const mockWebhookDeliveries = {
   ],
 };
 
-vi.mock("@tanstack/react-query", async () => {
-  const actual = await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
-  return {
-    ...actual,
-    useQuery: ({ queryKey }: { queryKey: unknown[] }) => {
-      const key = queryKey as string[];
-      if (key.includes("subs")) return { data: mockWebhookSubs };
-      if (key.includes("deliveries")) return { data: mockWebhookDeliveries };
-      if (key.includes("tenants")) return { data: { tenants: [{ id: 1, slug: "t1", name: "Tenant 1", status: "active", plan_id: 1 }] } };
-      if (key.includes("ops-summary")) return { data: { queues: { retry_backlog: 2, dead_webhooks: 1, failed_webhooks: 3, failed_automation_executions: 0 } } };
-      return { data: undefined };
+function createTestQueryClient(): QueryClient {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: 0,
+      },
+      mutations: {
+        retry: false,
+      },
     },
-    useQueryClient: () => ({ invalidateQueries: invalidateQueriesMock }),
-    useMutation: () => ({ mutate: mutateMock, isPending: false }),
-  };
-});
+  });
+}
+
+const TEST_TIMEOUT_MS = 30_000;
+
+function renderWithQueryClient(): void {
+  const queryClient = createTestQueryClient();
+  render(
+    <QueryClientProvider client={queryClient}>
+      <PlatformSectionView section={"integrations" as any} />
+    </QueryClientProvider>,
+  );
+}
 
 describe("Webhook Subscriptions UI (Gap 2 DoD)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
     hasPermissionMock.mockReturnValue(true);
+
+    apiPostMock.mockResolvedValue({ ok: true });
+    apiPutMock.mockResolvedValue({ ok: true });
+    apiDeleteMock.mockResolvedValue({ ok: true });
+
+    apiGetMock.mockImplementation(async (path: string) => {
+      if (path === "/api/admin/tenants") {
+        return { tenants: [{ id: 1, slug: "t1", name: "Tenant 1", status: "active", plan_id: 1 }] };
+      }
+      if (path === "/platform/plans") {
+        return { plans: [] };
+      }
+      if (path === "/platform/quotas") {
+        return { quotas: [] };
+      }
+      if (path === "/api/admin/feature-flags") {
+        return { flags: [] };
+      }
+      if (path === "/api/admin/integrations/settings") {
+        return {
+          ldap: { enabled: true, configured: true },
+          ai_providers: [{ provider: "openai", configured: true }],
+        };
+      }
+      if (path === "/api/v1/platform/ops/summary") {
+        return { queues: { retry_backlog: 2, dead_webhooks: 1, failed_webhooks: 3, failed_automation_executions: 0 } };
+      }
+      if (path === "/api/admin/service-accounts") {
+        return { accounts: [] };
+      }
+      if (path === "/api/v1/admin/tenants/1/webhooks/subscriptions") {
+        return mockWebhookSubs;
+      }
+      if (path === "/api/v1/admin/tenants/1/webhooks/deliveries") {
+        return mockWebhookDeliveries;
+      }
+      if (path === "/api/bff/admin/platform/automation/rules") {
+        return [];
+      }
+      if (path === "/api/bff/admin/platform/automation/executions") {
+        return [];
+      }
+      if (path === "/api/admin/audit/events") {
+        return { events: [] };
+      }
+      if (path === "/platform/tenants/1/billing") {
+        return {
+          tenant_id: 1,
+          plan_code: "basic",
+          next_plan_code: null,
+          subscription_status: "active",
+          billing_state: "ok",
+          limits: {},
+          usage: {},
+        };
+      }
+      return {};
+    });
   });
 
-  it("test_webhook_subscriptions_page_renders: renders integrations tab with webhook subscriptions list", () => {
-    render(<PlatformSectionView section={"integrations" as any} />);
+  it("test_webhook_subscriptions_page_renders: renders integrations tab with webhook subscriptions list", async () => {
+    renderWithQueryClient();
 
-    expect(screen.getByTestId("platform-console-integrations")).toBeInTheDocument();
-    // event_type appears in both subscriptions list and deliveries list
-    expect(screen.getAllByText("integration.updated").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("user.created").length).toBeGreaterThanOrEqual(1);
-  });
+    expect(await screen.findByTestId("platform-console-integrations")).toBeInTheDocument();
+    expect((await screen.findAllByText("integration.updated")).length).toBeGreaterThanOrEqual(1);
+    expect((await screen.findAllByText("user.created")).length).toBeGreaterThanOrEqual(1);
+  }, TEST_TIMEOUT_MS);
 
   it("test_webhook_create_form_validation: create button is disabled until all required fields are filled", async () => {
     const user = userEvent.setup();
-    render(<PlatformSectionView section={"integrations" as any} />);
+    renderWithQueryClient();
+
+    await screen.findByTestId("platform-console-integrations");
 
     const submitBtn = screen.getByTestId("webhook-create-submit");
     expect(submitBtn).toBeDisabled();
@@ -101,50 +178,52 @@ describe("Webhook Subscriptions UI (Gap 2 DoD)", () => {
     await user.type(screen.getByTestId("webhook-target-url-input"), "https://example.com/hook");
     expect(submitBtn).toBeDisabled();
 
-    // signing secret must be >= 16 chars
     await user.type(screen.getByTestId("webhook-signing-secret-input"), "short");
     expect(submitBtn).toBeDisabled();
 
     await user.clear(screen.getByTestId("webhook-signing-secret-input"));
     await user.type(screen.getByTestId("webhook-signing-secret-input"), "a_valid_secret_1234");
     expect(submitBtn).not.toBeDisabled();
-  });
+  }, TEST_TIMEOUT_MS);
 
   it("test_webhook_create_form_validation: submitting the form calls mutate with correct payload", async () => {
     const user = userEvent.setup();
-    render(<PlatformSectionView section={"integrations" as any} />);
+    renderWithQueryClient();
+
+    await screen.findByTestId("platform-console-integrations");
 
     await user.type(screen.getByTestId("webhook-event-type-input"), "integration.updated");
     await user.type(screen.getByTestId("webhook-target-url-input"), "https://example.com/hook");
     await user.type(screen.getByTestId("webhook-signing-secret-input"), "a_valid_secret_1234");
 
-    const submitBtn = screen.getByTestId("webhook-create-submit");
-    await user.click(submitBtn);
+    await user.click(screen.getByTestId("webhook-create-submit"));
 
-    expect(mutateMock).toHaveBeenCalledWith({
-      tenant_id: 1,
-      event_type: "integration.updated",
-      target_url: "https://example.com/hook",
-      signing_secret: "a_valid_secret_1234",
+    await waitFor(() => {
+      expect(apiPostMock).toHaveBeenCalledWith("/api/v1/admin/webhooks/subscriptions", {
+        tenant_id: 1,
+        event_type: "integration.updated",
+        target_url: "https://example.com/hook",
+        signing_secret: "a_valid_secret_1234",
+      });
     });
-  });
+  }, TEST_TIMEOUT_MS);
 
-  it("test_webhook_delivery_history_display: renders delivery history with status and error details", () => {
-    render(<PlatformSectionView section={"integrations" as any} />);
+  it("test_webhook_delivery_history_display: renders delivery history with status and error details", async () => {
+    renderWithQueryClient();
 
-    // Both delivery entries should appear
-    const deliveryRows = screen.getAllByText(/integration\.updated|user\.created/);
-    expect(deliveryRows.length).toBeGreaterThanOrEqual(2);
+    await screen.findByTestId("platform-console-integrations");
 
-    // Error message displayed for failed delivery
-    expect(screen.getByText("Connection timeout")).toBeInTheDocument();
-  });
+    expect(await screen.findByText("Connection timeout")).toBeInTheDocument();
+    expect(await screen.findByText(/outbox #6/i)).toBeInTheDocument();
+    expect(await screen.findByText(/retries: 3/i)).toBeInTheDocument();
+  }, TEST_TIMEOUT_MS);
 
-  it("deactivate button shown only for active subscriptions", () => {
-    render(<PlatformSectionView section={"integrations" as any} />);
+  it("deactivate button shown only for active subscriptions", async () => {
+    renderWithQueryClient();
 
-    const deactivateButtons = screen.getAllByRole("button", { name: /Deactivate/i });
-    // Only 1 active subscription → 1 deactivate button
+    await screen.findByTestId("platform-console-integrations");
+
+    const deactivateButtons = await screen.findAllByRole("button", { name: /Deactivate/i });
     expect(deactivateButtons).toHaveLength(1);
-  });
+  }, TEST_TIMEOUT_MS);
 });

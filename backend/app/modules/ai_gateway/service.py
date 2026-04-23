@@ -24,6 +24,7 @@ from app.modules.observability.metrics import (
     observe_ai_slo_compliance,
     observe_ai_guardrail_evaluation,
     observe_ai_guardrail_blocked,
+    observe_ai_routing_selection,
 )
 from app.modules.ai_guardrails import GuardrailEngine, GuardrailResult
 from app.modules.ai_guardrails.schemas import GuardrailPolicy
@@ -48,6 +49,8 @@ _usage_logs: deque[dict[str, object]] = deque(maxlen=2000)
 _routing_lock = Lock()
 _routing_policies: dict[int, dict[int, dict[str, object]]] = {}
 _routing_policy_counters: dict[int, int] = {}
+_routing_log_lock = Lock()
+_routing_selection_log: deque[dict[str, object]] = deque(maxlen=200)
 
 _budget_lock = Lock()
 _usage_budgets: dict[int, dict[str, dict[str, object]]] = {}
@@ -238,6 +241,8 @@ def clear_ai_gateway_state() -> None:
     with _routing_lock:
         _routing_policies.clear()
         _routing_policy_counters.clear()
+    with _routing_log_lock:
+        _routing_selection_log.clear()
     with _budget_lock:
         _usage_budgets.clear()
     with _price_lock:
@@ -900,6 +905,30 @@ def delete_routing_policy(policy_id: int, *, tenant_id: int) -> None:
         del tenant_policies[normalized_policy_id]
 
 
+def _record_routing_selection(model_key: str, meta: dict[str, object], *, tenant_id: int) -> None:
+    entry: dict[str, object] = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "tenant_id": tenant_id,
+        "model_key": model_key,
+        **meta,
+    }
+    with _routing_log_lock:
+        _routing_selection_log.appendleft(entry)
+    observe_ai_routing_selection(
+        tenant_id=tenant_id,
+        mode=str(meta.get("mode") or "auto"),
+        selection=str(meta.get("selection") or "unknown"),
+    )
+
+
+def list_routing_selection_log(*, tenant_id: int | None = None, limit: int = 50) -> list[dict[str, object]]:
+    with _routing_log_lock:
+        rows = list(_routing_selection_log)
+    if tenant_id is not None:
+        rows = [r for r in rows if int(r.get("tenant_id", -1)) == int(tenant_id)]
+    return rows[:max(1, min(limit, 200))]
+
+
 def _select_auto_model(payload: dict[str, Any], *, tenant_id: int) -> tuple[str, dict[str, object]]:
     models = list_models(include_disabled=False, tenant_id=tenant_id)
     if not models:
@@ -923,21 +952,25 @@ def _select_auto_model(payload: dict[str, Any], *, tenant_id: int) -> tuple[str,
             rule_task = str(rule.get("task_type") or "").strip().lower()
             target_model = str(rule.get("target_model") or "").strip()
             if task_type and rule_task == task_type and target_model in enabled_keys:
-                return target_model, {
+                meta: dict[str, object] = {
                     "mode": "auto",
                     "selection": "policy_rule",
                     "policy_id": int(policy.get("id", 0)),
                     "task_type": task_type,
                 }
+                _record_routing_selection(target_model, meta, tenant_id=tenant_id)
+                return target_model, meta
 
     selected = str(models[0].get("model_key") or "").strip()
     if not selected:
         raise ValueError("no enabled models configured for auto routing")
-    return selected, {
+    meta = {
         "mode": "auto",
         "selection": "priority_default",
         "task_type": task_type or None,
     }
+    _record_routing_selection(selected, meta, tenant_id=tenant_id)
+    return selected, meta
 
 
 def _prune(bucket: deque[float], now: float, window_seconds: int) -> None:

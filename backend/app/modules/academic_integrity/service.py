@@ -10,6 +10,49 @@ from app.modules.academic_integrity.schemas import (
 )
 
 
+class _InMemoryEntityAdapter:
+    """Minimal adapter that proxies AcademicIntegrityService to in-memory tenant store."""
+
+    async def list_entities(self, *, entity_type: str, tenant_id: str, **kwargs):  # type: ignore[no-untyped-def]
+        from app.modules.university_core.tenant_entity_api import list_entities_for_tenant
+        try:
+            tenant_id_int = int(tenant_id)
+        except (TypeError, ValueError):
+            tenant_id_int = 1
+        try:
+            items = list_entities_for_tenant(entity_type, tenant_id_int)
+        except (ValueError, KeyError):
+            items = []
+        return items, len(items)
+
+    async def create_entity(self, *, entity_type: str, entity_data: dict, tenant_id: str, **kwargs):  # type: ignore[no-untyped-def]
+        from app.modules.university_core.tenant_entity_api import create_entity_for_tenant
+        try:
+            tenant_id_int = int(tenant_id)
+        except (TypeError, ValueError):
+            tenant_id_int = 1
+        return create_entity_for_tenant(entity_type, entity_data, tenant_id_int)
+
+    async def get_entity(self, *, entity_type: str, entity_id: str, tenant_id: str, **kwargs):  # type: ignore[no-untyped-def]
+        from app.modules.university_core.tenant_entity_api import list_entities_for_tenant
+        try:
+            tenant_id_int = int(tenant_id)
+        except (TypeError, ValueError):
+            tenant_id_int = 1
+        for item in list_entities_for_tenant(entity_type, tenant_id_int):
+            if str(item.get("id")) == str(entity_id):
+                return item
+        return None
+
+    async def update_entity(self, *, entity_type: str, entity_id: str, entity_data: dict, tenant_id: str, **kwargs):  # type: ignore[no-untyped-def]
+        return entity_data
+
+
+def get_default_entity_service() -> "_InMemoryEntityAdapter":
+    """Return default in-memory entity adapter for dependency injection."""
+    return _InMemoryEntityAdapter()
+
+
 # State machine: allowed transitions between statuses
 _ALLOWED_TRANSITIONS = {
     IntegrityCaseStatus.FLAGGED: [
@@ -182,6 +225,21 @@ class AcademicIntegrityService:
             entity_data=case,
         )
 
+        if new_status == IntegrityCaseStatus.ESCALATED:
+            from app.platform.events.publisher import EventPublisher
+            EventPublisher().publish_event(
+                tenant_id=tenant_id,
+                event_type="academic_integrity.case.escalated",
+                aggregate_type="integrity_case",
+                aggregate_id=case_id,
+                payload_json={
+                    "case_id": case_id,
+                    "case_type": case.get("case_type"),
+                    "student_id": case.get("student_id"),
+                    "source_module": "academic_integrity",
+                },
+            )
+
         return case
 
     async def get_integrity_case(self, tenant_id: str, case_id: str) -> dict:
@@ -196,3 +254,21 @@ class AcademicIntegrityService:
             raise ValueError(f"Case {case_id} not found")
 
         return case
+
+    async def get_brain_context(self, tenant_id: str) -> dict:
+        """Return aggregated brain-context snapshot for Brain Core context builder."""
+        result = await self.list_integrity_cases(tenant_id=tenant_id, page=1, page_size=200)
+        cases = result.get("cases", [])
+        total = result.get("total", 0)
+        escalated = sum(1 for c in cases if c.get("status") == "escalated")
+        under_review = sum(1 for c in cases if c.get("status") == "under_review")
+        return {
+            "snapshot_type": "brain_context",
+            "module": "academic_integrity",
+            "tenant_id": tenant_id,
+            "total_cases": total,
+            "escalated_cases": escalated,
+            "under_review_cases": under_review,
+            "open_cases": under_review,
+            "integrity_risk_level": "high" if escalated > 0 else ("medium" if under_review > 2 else "low"),
+        }

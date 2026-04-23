@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from app.core.module_helpers.audit_helpers import build_audit_action
 from app.modules.audit.service import log_admin_action
 from app.modules.advising.schemas import (
@@ -21,6 +23,46 @@ _ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     "cancelled": set(),
     "no_show": {"scheduled"},
 }
+
+logger = logging.getLogger("app.modules.advising")
+
+
+def _emit_outcome_signal(
+    *,
+    tenant_id: int,
+    session_id: int,
+    student_id: int,
+    advisor_id: str,
+    session_type: str,
+    outcome_status: str,
+    outcome: str,
+) -> None:
+    """Fire-and-forget: publish advising.session.outcome.recorded for Brain Core feedback loop."""
+    try:
+        from app.platform.events.publisher import EventPublisher
+
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="advising.session.outcome.recorded",
+            aggregate_type="advising_session",
+            aggregate_id=session_id,
+            payload_json={
+                "session_id": str(session_id),
+                "student_id": str(student_id),
+                "advisor_id": advisor_id,
+                "session_type": session_type,
+                "outcome_status": outcome_status,
+                "outcome": outcome,
+                "source_entity_type": "advising_session",
+                "source_entity_id": str(session_id),
+            },
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "advising.session.outcome.recorded event failed silently for tenant_id=%s session_id=%s",
+            tenant_id,
+            session_id,
+        )
 
 
 def _emit_audit(*, actor: str, action: str, path: str, metadata: dict, tenant_id: int) -> None:
@@ -124,4 +166,17 @@ def update_advising_session_status(
         },
         tenant_id=tenant_id,
     )
+
+    # Emit brain feedback signal when session outcome is recorded
+    if request.status in {"completed", "no_show", "cancelled"}:
+        _emit_outcome_signal(
+            tenant_id=tenant_id,
+            session_id=session_id,
+            student_id=int(existing.get("student_id") or 0),
+            advisor_id=str(existing.get("advisor_id") or ""),
+            session_type=str(existing.get("session_type") or "academic"),
+            outcome_status=request.status,
+            outcome=str(updated.get("outcome") or "pending"),
+        )
+
     return AdvisingSessionSchema.model_validate(updated)

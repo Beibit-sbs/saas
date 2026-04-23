@@ -14,6 +14,7 @@ from app.modules.alumni.schemas import (
 )
 from app.modules.alumni.service import (
     create_alumni_record,
+    get_alumni_brain_context,
     list_alumni_records,
     update_alumni_status,
 )
@@ -64,3 +65,12 @@ def update_alumni_status_endpoint(
         detail = str(exc)
         status_code = 404 if "not found" in detail else 400
         raise HTTPException(status_code=status_code, detail=detail) from exc
+
+
+@router.get("/brain-context")
+def get_alumni_brain_context_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("alumni.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict:
+    return get_alumni_brain_context(int(tenant["id"]))

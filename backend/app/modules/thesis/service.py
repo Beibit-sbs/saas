@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import UTC, date, datetime
 
 from app.core.module_helpers.audit_helpers import build_audit_action
 from app.modules.audit.service import log_admin_action
@@ -52,8 +52,13 @@ def _emit_domain_event(
     advisor_faculty_id: str,
     from_status: str,
     to_status: str,
+    days_since_last_milestone: int = 0,
 ) -> None:
-    """Fire-and-forget: publish thesis.status_changed to the outbox for B-domain consumers."""
+    """Fire-and-forget: publish thesis.status_changed to the outbox for B-domain consumers.
+
+    Payload conforms to the canonical Brain Core signal format so that the event can
+    be processed directly by BrainCoreService.process_signal without adaptation.
+    """
     try:
         from app.platform.events.publisher import EventPublisher
 
@@ -63,9 +68,15 @@ def _emit_domain_event(
             aggregate_type="thesis_record",
             aggregate_id=thesis_id,
             payload_json={
-                "thesis_id": thesis_id,
-                "student_id": student_id,
-                "advisor_faculty_id": advisor_faculty_id,
+                # Canonical brain signal fields
+                "thesis_id": str(thesis_id),
+                "student_id": str(student_id),
+                "advisor_id": advisor_faculty_id,
+                "faculty_id": advisor_faculty_id,
+                "days_since_last_milestone": days_since_last_milestone,
+                "source_entity_type": "thesis",
+                "source_entity_id": str(thesis_id),
+                # Status transition context (for academic_chain_handler)
                 "from_status": from_status,
                 "to_status": to_status,
                 "source_module": "thesis",
@@ -160,6 +171,16 @@ def update_thesis_status(
     )
 
     # Cross-domain event: notify B (Student Success) on risk statuses
+    # Compute days_since_last_milestone from last_milestone_at if recorded, else 0.
+    last_milestone_at_str = str(current.get("last_milestone_at") or "")
+    days_since_last_milestone = 0
+    if last_milestone_at_str:
+        try:
+            last_dt = datetime.fromisoformat(last_milestone_at_str)
+            days_since_last_milestone = (datetime.now(UTC) - last_dt.replace(tzinfo=UTC)).days
+        except ValueError:
+            pass
+
     _emit_domain_event(
         tenant_id=tenant_id,
         thesis_id=thesis_id,
@@ -167,6 +188,7 @@ def update_thesis_status(
         advisor_faculty_id=str(current.get("advisor_faculty_id") or ""),
         from_status=current_status,
         to_status=next_status,
+        days_since_last_milestone=days_since_last_milestone,
     )
 
     return ThesisRecordSchema.model_validate(updated)

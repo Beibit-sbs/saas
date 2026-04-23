@@ -36,6 +36,7 @@ from app.modules.audit.router import router as audit_router
 from app.modules.audit.service import log_admin_action, reset_request_tenant_id, set_request_tenant_id
 from app.modules.analytics.router import router as analytics_router
 from app.modules.backup.router import router as backup_router
+from app.modules.brain_core.router import router as brain_core_router
 from app.modules.billing.router import router as billing_router
 from app.modules.courses.router import router as courses_router
 from app.modules.enrollments.router import router as enrollments_router
@@ -48,8 +49,29 @@ from app.modules.advising.router import router as advising_router
 from app.modules.student_services.router import router as student_services_router
 from app.modules.career_services.router import router as career_services_router
 from app.modules.financial_aid.router import router as financial_aid_router
+from app.modules.budget_planning.router import router as budget_planning_router
+from app.modules.expense_controls.router import router as expense_controls_router
+from app.modules.security_operations.router import router as security_operations_router
+from app.modules.transport.router import router as transport_router
+from app.modules.dining.router import router as dining_router
+from app.modules.campus_sla.router import router as campus_sla_router
+from app.modules.research_ethics.router import router as research_ethics_router
+from app.modules.ip_management.router import router as ip_management_router
+from app.modules.equipment_booking.router import router as equipment_booking_router
+from app.modules.scholarship.router import router as scholarship_router
+from app.modules.communications.router import router as communications_router
 from app.modules.housing.router import router as housing_router
 from app.modules.alumni.router import router as alumni_router
+from app.modules.research.router import router as research_router
+from app.modules.faculty_performance_kpis.router import router as faculty_performance_kpis_router
+from app.modules.hr_payroll.router import router as hr_payroll_router
+from app.modules.delinquency_collections.router import router as delinquency_collections_router
+from app.modules.facilities_work_orders.router import router as facilities_work_orders_router
+from app.modules.asset_inventory.router import router as asset_inventory_router
+from app.modules.faculty_copilot.router import router as faculty_copilot_router
+from app.modules.operations.router import router as operations_router
+from app.modules.student_life.router import router as student_life_router
+from app.modules.procurement.router import router as procurement_router
 from app.modules.academic_integrity.router import router as academic_integrity_router
 from app.modules.accreditation.router import router as accreditation_router
 from app.modules.transcripts.router import router as transcripts_router
@@ -215,6 +237,7 @@ app.include_router(admin_local_users_router)
 app.include_router(admissions_router)
 app.include_router(ai_gateway_router)
 app.include_router(ai_gateway_public_router)
+app.include_router(brain_core_router)
 app.include_router(profiles_router)
 app.include_router(workflows_router)
 app.include_router(rbac_router)
@@ -242,8 +265,29 @@ app.include_router(advising_router)
 app.include_router(student_services_router)
 app.include_router(career_services_router)
 app.include_router(financial_aid_router)
+app.include_router(budget_planning_router)
+app.include_router(expense_controls_router)
+app.include_router(security_operations_router)
+app.include_router(transport_router)
+app.include_router(dining_router)
+app.include_router(campus_sla_router)
+app.include_router(research_ethics_router)
+app.include_router(ip_management_router)
+app.include_router(equipment_booking_router)
+app.include_router(scholarship_router)
+app.include_router(communications_router)
 app.include_router(housing_router)
 app.include_router(alumni_router)
+app.include_router(research_router)
+app.include_router(faculty_performance_kpis_router)
+app.include_router(hr_payroll_router)
+app.include_router(delinquency_collections_router)
+app.include_router(facilities_work_orders_router)
+app.include_router(asset_inventory_router)
+app.include_router(faculty_copilot_router)
+app.include_router(operations_router)
+app.include_router(student_life_router)
+app.include_router(procurement_router)
 app.include_router(academic_integrity_router)
 app.include_router(accreditation_router)
 app.include_router(interventions_router)

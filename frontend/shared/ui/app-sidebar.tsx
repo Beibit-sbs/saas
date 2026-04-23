@@ -22,6 +22,8 @@ const NAV_LABEL_KEY: Record<string, string> = {
   "Platform Ops": "nav.platformOps",
   Automation: "nav.automation",
   "AI Copilot": "nav.aiCopilot",
+  "Brain Core": "nav.brainCore",
+  "Policy Settings": "nav.brainPolicySettings",
   Federation: "nav.federation",
   "Developer Apps": "nav.developerApps",
   Students: "nav.students",

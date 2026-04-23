@@ -18,6 +18,7 @@ interface CohortOutcomesPanelProps {
   onRerun: () => void;
   onRetry: () => void;
   actionPending?: boolean;
+  analysisLocked?: boolean;
   cohortSize?: number;
 }
 
@@ -93,6 +94,7 @@ export function CohortOutcomesPanel({
   onRerun,
   onRetry,
   actionPending = false,
+  analysisLocked = false,
   cohortSize,
 }: CohortOutcomesPanelProps) {
   const summary = getSummaryMetrics(outcomes);
@@ -152,10 +154,11 @@ export function CohortOutcomesPanel({
       {!isLoading && status === 'no_analysis_yet' && outcomes.length === 0 && (
         <div className="space-y-3 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
           <p>No outcomes available yet.</p>
+          {analysisLocked && <p>Finalize cohort before analysis becomes available.</p>}
           <button
             type="button"
             onClick={onRerun}
-            disabled={actionPending}
+            disabled={actionPending || analysisLocked}
             className="inline-flex items-center rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-60"
             aria-label="Run outcomes analysis for this cohort"
           >

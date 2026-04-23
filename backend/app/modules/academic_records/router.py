@@ -13,6 +13,7 @@ from app.modules.academic_records.schemas import (
 from app.modules.academic_records.service import (
     create_record,
     delete_record,
+    get_academic_records_brain_context,
     get_record_consistency_report,
     list_records,
     update_record,
@@ -128,3 +129,17 @@ def delete_record_endpoint(
         metadata={"id": record["id"], "student_id": record["student_id"], "course_id": record["course_id"]},
     )
     return {"deleted": True, "record": record}
+
+
+@router.get("/brain-context", response_model=dict, tags=["university-records", "brain-core"])
+def get_academic_records_brain_context_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.records.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict:
+    """Return aggregated brain-context snapshot for Brain Core context builder.
+
+    Used by Brain Core to enrich decisions with academic records signals:
+    total records, inconsistency count, records risk level.
+    """
+    return get_academic_records_brain_context(int(tenant["id"]))

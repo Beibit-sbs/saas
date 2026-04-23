@@ -35,6 +35,36 @@ def _emit_audit(*, actor: str, action: str, path: str, metadata: dict, tenant_id
     )
 
 
+def _emit_financial_aid_warning_signal(
+    *,
+    tenant_id: int,
+    record_id: int,
+    student_id: int,
+    aid_type: str,
+    from_status: str,
+    to_status: str,
+) -> None:
+    """Fire-and-forget bridge signal for student-success/financial risk scenarios."""
+    from app.platform.events.publisher import EventPublisher
+
+    EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type="financial_aid.warning.detected",
+        aggregate_type="financial_aid_record",
+        aggregate_id=record_id,
+        payload_json={
+            "record_id": record_id,
+            "student_id": student_id,
+            "aid_type": aid_type,
+            "from_status": from_status,
+            "to_status": to_status,
+            "source_module": "financial_aid",
+            "source_entity_type": "financial_aid_record",
+            "source_entity_id": str(record_id),
+        },
+    )
+
+
 def list_financial_aid_records(
     tenant_id: int,
     status: AidStatus | None = None,
@@ -124,4 +154,15 @@ def update_financial_aid_status(
         },
         tenant_id=tenant_id,
     )
+
+    if request.status == "rejected":
+        _emit_financial_aid_warning_signal(
+            tenant_id=tenant_id,
+            record_id=record_id,
+            student_id=int(updated.get("student_id") or 0),
+            aid_type=str(updated.get("aid_type") or "unknown"),
+            from_status=current_status,
+            to_status=request.status,
+        )
+
     return FinancialAidRecordSchema.model_validate(updated)

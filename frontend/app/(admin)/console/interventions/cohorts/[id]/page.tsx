@@ -227,6 +227,7 @@ function CohortDetailContent({ cohortId, tenantId }: { cohortId: number; tenantI
           void refetchOutcomes();
         }}
         actionPending={analyzeMutation.isPending}
+        analysisLocked={cohort.status === 'draft'}
         cohortSize={cohort.student_count}
       />
     </div>

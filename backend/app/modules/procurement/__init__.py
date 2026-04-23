@@ -1,0 +1,1 @@
+"""Procurement and supply chain module."""

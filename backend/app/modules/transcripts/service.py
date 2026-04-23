@@ -481,3 +481,34 @@ class TranscriptService:
             total_issue_count=total_issue_count,
             reports=reports,
         )
+
+
+def emit_transcript_inconsistency_signal(tenant_id: int, issue_count: int) -> None:
+    from app.platform.events.publisher import EventPublisher
+    EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type="transcripts.inconsistency.detected",
+        aggregate_type="transcript",
+        aggregate_id=tenant_id,
+        payload_json={
+            "issue_count": issue_count,
+            "source_module": "transcripts",
+        },
+    )
+
+
+async def get_transcripts_brain_context(tenant_id: int, db) -> dict[str, object]:
+    """Return aggregated brain-context snapshot for Brain Core context builder."""
+    service = TranscriptService(db)
+    report = await service.list_tenant_transcript_consistency_reports(tenant_id=tenant_id)
+    total_issues = report.total_issue_count
+    students_with_issues = report.students_with_issues
+    return {
+        "snapshot_type": "brain_context",
+        "module": "transcripts",
+        "tenant_id": tenant_id,
+        "scanned_student_count": report.scanned_student_count,
+        "students_with_issues": students_with_issues,
+        "total_inconsistency_count": total_issues,
+        "transcripts_risk_level": "high" if total_issues > 10 else ("medium" if total_issues > 0 else "low"),
+    }

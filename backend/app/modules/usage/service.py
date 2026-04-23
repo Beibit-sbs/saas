@@ -215,3 +215,22 @@ def clear_usage_state() -> None:
                 conn.commit()
         except Exception:
             pass
+
+
+def get_usage_brain_context(tenant_id: int) -> dict[str, object]:
+    """Return a usage metrics snapshot for Brain Core context enrichment."""
+    recent_events = list_usage_events(tenant_id=tenant_id, limit=200)
+    total_events = len(recent_events)
+
+    metrics_summary: dict[str, int] = {}
+    for item in recent_events:
+        metric = str(item.get("metric", "unknown"))
+        metrics_summary[metric] = metrics_summary.get(metric, 0) + int(item.get("value", 1))
+
+    return {
+        "tenant_id": tenant_id,
+        "total_recent_events": total_events,
+        "metrics_summary": metrics_summary,
+        "context_source": "usage",
+        "snapshot_type": "brain_context",
+    }

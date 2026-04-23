@@ -15,6 +15,7 @@ from app.modules.student_services.schemas import (
 )
 from app.modules.student_services.service import (
     create_student_service_ticket,
+    get_student_services_brain_context,
     list_student_service_tickets,
     update_student_service_ticket_status,
 )
@@ -64,3 +65,17 @@ def update_ticket_status_endpoint(
         detail = str(exc)
         status_code = 404 if "not found" in detail else 400
         raise HTTPException(status_code=status_code, detail=detail) from exc
+
+
+@router.get("/brain-context", response_model=dict, tags=["student-services", "brain-core"])
+def get_student_services_brain_context_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("student_services.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict:
+    """Return aggregated brain-context snapshot for Brain Core context builder.
+
+    Used by Brain Core to enrich decisions with student services signals:
+    total tickets, open tickets, escalated high-priority tickets, risk level.
+    """
+    return get_student_services_brain_context(int(tenant["id"]))

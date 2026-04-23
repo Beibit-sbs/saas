@@ -227,3 +227,105 @@ def test_execute_chat_auto_model_priority_default(monkeypatch) -> None:
 
     assert result["model"] == "openai.default.chat"
     assert result["routing"]["selection"] == "priority_default"
+
+
+def test_routing_selection_log_records_decisions(monkeypatch) -> None:
+    from app.modules.ai_gateway import service as ai_service
+    from app.modules.billing import service as billing_service
+
+    ai_service.clear_ai_gateway_state()
+
+    monkeypatch.setattr(billing_service, "assert_billing_write_allowed", lambda tenant_id, action: None)
+    monkeypatch.setattr(
+        billing_service,
+        "assert_quota_with_increment",
+        lambda tenant_id, quota_key, increment=1: {
+            "tenant_id": tenant_id,
+            "quota_key": quota_key,
+            "within_limit": True,
+        },
+    )
+    monkeypatch.setattr(ai_service, "enforce_rate_limit", lambda provider, actor, roles: None)
+    monkeypatch.setattr(ai_service, "_provider_runtime_config", lambda provider, tenant_id=None: {})
+    monkeypatch.setattr(
+        ai_service,
+        "list_models",
+        lambda include_disabled=True, tenant_id=1: [
+            {
+                "model_key": "openai.default.chat",
+                "provider": "openai",
+                "enabled": True,
+                "priority": 100,
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        ai_service,
+        "_resolve_model",
+        lambda model_key, tenant_id=1: {
+            "provider": "openai",
+            "provider_model_id": "gpt-4o-mini",
+            "enabled": True,
+        },
+    )
+
+    class _FakeAdapter:
+        def execute_chat(self, **kwargs):
+            class _R:
+                output_text = "hello"
+                finish_reason = "stop"
+                usage = {"input_tokens": 1, "output_tokens": 1, "total_tokens": 2}
+            return _R()
+
+    monkeypatch.setattr(ai_service, "_adapter_for_provider", lambda provider: _FakeAdapter())
+
+    ai_service.execute_chat(
+        {"model": "auto", "task_type": "chat", "messages": [{"role": "user", "content": "hi"}]},
+        actor="user@example.com",
+        roles=["admin"],
+        tenant_id=1,
+    )
+
+    log_entries = ai_service.list_routing_selection_log(tenant_id=1)
+    assert len(log_entries) >= 1
+    entry = log_entries[0]
+    assert entry["tenant_id"] == 1
+    assert str(entry["model_key"]) == "openai.default.chat"
+    assert str(entry["selection"]) == "priority_default"
+    assert "timestamp" in entry
+
+
+def test_routing_selection_emits_prometheus_metric(monkeypatch) -> None:
+    from app.modules.ai_gateway import service as ai_service
+    from app.modules.observability import metrics as obs
+
+    ai_service.clear_ai_gateway_state()
+    obs.clear_metrics_state()
+
+    ai_service._record_routing_selection(
+        "openai.default.chat",
+        {"mode": "auto", "selection": "policy_rule", "policy_id": 1, "task_type": "chat"},
+        tenant_id=42,
+    )
+
+    rendered = obs.render_metrics()
+    assert "ai_routing_selection_total" in rendered
+    assert 'selection="policy_rule"' in rendered
+
+
+def test_routing_selection_log_api_endpoint() -> None:
+    from app.modules.ai_gateway import service as ai_service
+
+    ai_service.clear_ai_gateway_state()
+
+    ai_service._record_routing_selection(
+        "gemini.default.chat",
+        {"mode": "auto", "selection": "policy_rule", "policy_id": 2, "task_type": "summarize"},
+        tenant_id=1,
+    )
+
+    resp = client.get("/api/admin/ai/routing/selection-log", headers=ADMIN_HEADERS)
+    assert resp.status_code == 200, resp.text
+    items = resp.json()
+    assert isinstance(items, list)
+    assert any(item.get("model_key") == "gemini.default.chat" for item in items)

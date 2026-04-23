@@ -23,6 +23,8 @@ export const en = {
   "nav.platformOps": "Platform Ops",
   "nav.automation": "Automation",
   "nav.aiCopilot": "AI Copilot",
+  "nav.brainCore": "Brain Core",
+  "nav.brainPolicySettings": "Policy Settings",
   "nav.federation": "Federation",
   "nav.developerApps": "Developer Apps",
   "nav.students": "Students",

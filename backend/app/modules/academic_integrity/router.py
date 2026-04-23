@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import permission_dependency
-from app.modules.academic_integrity.service import AcademicIntegrityService
+from app.modules.academic_integrity.service import AcademicIntegrityService, get_default_entity_service
 from app.modules.academic_integrity.schemas import (
     IntegrityCaseCreateSchema,
     IntegrityCaseStatusUpdateSchema,
@@ -134,3 +134,22 @@ async def get_integrity_case(
 
     case_record = IntegrityCaseRecordSchema(**case)
     return IntegrityCaseDetailResponseSchema(case=case_record)
+
+
+@router.get(
+    "/brain-context",
+    response_model=dict,
+    tags=["academic-integrity", "brain-core"],
+    dependencies=[Depends(permission_dependency("admin.records.read"))],
+)
+async def get_academic_integrity_brain_context(
+    tenant=Depends(get_current_tenant),
+):
+    """Return aggregated brain context snapshot for Brain Core context builder.
+
+    Used by Brain Core to enrich decisions with academic integrity signals:
+    escalated case count, open case count, risk level.
+    """
+    svc = AcademicIntegrityService(tenant_entity_service=get_default_entity_service())
+    tenant_id = tenant["id"] if isinstance(tenant, dict) else tenant.id
+    return await svc.get_brain_context(tenant_id=str(tenant_id))

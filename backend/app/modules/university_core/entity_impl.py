@@ -87,6 +87,9 @@ def _normalize_payload_impl(entity_name: str, payload: dict[str, object]) -> dic
             normalized[field_name] = fk_id
             continue
 
+        if field_name not in config.required and (raw_value is None or raw_value == ""):
+            normalized[field_name] = None
+            continue
         normalized[field_name] = _normalize_string_impl(field_name, raw_value)
 
     email_value = normalized.get("email")

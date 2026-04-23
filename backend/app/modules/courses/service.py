@@ -18,7 +18,22 @@ def create_course(payload: dict[str, object], tenant_id: int) -> dict[str, objec
 
 def update_course(course_id: int, payload: dict[str, object], tenant_id: int) -> dict[str, object]:
     assert_billing_write_allowed(int(tenant_id), action="courses.update")
-    return update_entity_for_tenant("courses", course_id, payload, tenant_id)
+    result = update_entity_for_tenant("courses", course_id, payload, tenant_id)
+    to_status = str(payload.get("status") or "").strip().lower()
+    if to_status in {"inactive", "archived"}:
+        from app.platform.events.publisher import EventPublisher
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="courses.status.risk_detected",
+            aggregate_type="course",
+            aggregate_id=course_id,
+            payload_json={
+                "course_id": course_id,
+                "to_status": to_status,
+                "source_module": "courses",
+            },
+        )
+    return result
 
 
 def delete_course(course_id: int, tenant_id: int) -> dict[str, object]:
@@ -116,4 +131,21 @@ def get_course_consistency_report(tenant_id: int) -> dict[str, object]:
         "course_count": len(courses),
         "issue_count": len(issues),
         "issues": issues,
+    }
+
+
+def get_courses_brain_context(tenant_id: int) -> dict[str, object]:
+    """Return aggregated brain-context snapshot for Brain Core context builder."""
+    courses = list_entities_for_tenant("courses", tenant_id)
+    report = get_course_consistency_report(tenant_id)
+    active = sum(1 for c in courses if str(c.get("status", "")).lower() == "active")
+    issue_count = int(report.get("issue_count", 0))
+    return {
+        "snapshot_type": "brain_context",
+        "module": "courses",
+        "tenant_id": tenant_id,
+        "total_courses": len(courses),
+        "active_courses": active,
+        "inconsistency_count": issue_count,
+        "courses_risk_level": "high" if issue_count > 10 else ("medium" if issue_count > 0 else "low"),
     }

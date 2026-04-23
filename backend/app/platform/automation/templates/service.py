@@ -8,7 +8,7 @@ from app.platform.automation import service as automation_service
 from app.platform.automation.templates.models import AutomationTemplateModel
 
 if TYPE_CHECKING:
-    from app.core.uow import UnitOfWork
+    from app.platform.uow import UnitOfWork
 
 
 def list_templates(

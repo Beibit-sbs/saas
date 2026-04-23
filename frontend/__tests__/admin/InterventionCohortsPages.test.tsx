@@ -85,6 +85,23 @@ describe('Intervention Cohorts Phase 4 Components', () => {
     expect(screen.getByText('No outcomes available yet.')).toBeInTheDocument();
   });
 
+  it('locks outcomes analysis action for draft cohorts', () => {
+    render(
+      <CohortOutcomesPanel
+        isLoading={false}
+        status="no_analysis_yet"
+        outcomes={[]}
+        onRefresh={() => {}}
+        onRerun={() => {}}
+        onRetry={() => {}}
+        analysisLocked={true}
+      />,
+    );
+
+    expect(screen.getByText('Finalize cohort before analysis becomes available.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run outcomes analysis for this cohort' })).toBeDisabled();
+  });
+
   it('renders outcomes error state', () => {
     render(
       <CohortOutcomesPanel

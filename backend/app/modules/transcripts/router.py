@@ -28,7 +28,7 @@ from app.modules.transcripts.schemas import (
     TranscriptSnapshotMutationResponse,
     TranscriptSnapshotSchema,
 )
-from app.modules.transcripts.service import TranscriptService
+from app.modules.transcripts.service import TranscriptService, get_transcripts_brain_context
 
 
 class ErrorDetailResponse(BaseModel):
@@ -179,3 +179,25 @@ async def get_tenant_transcript_consistency_endpoint(
         return await service.list_tenant_transcript_consistency_reports(tenant_id=int(tenant["id"]))
     except (PermissionError, ValueError, DomainValidationError) as exc:
         raise _raise_transcripts_http_error(exc) from exc
+
+
+@router.get(
+    "/transcripts/brain-context",
+    summary="Get transcripts brain-context snapshot",
+    description="Aggregated brain-context snapshot for Brain Core context builder.",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    tags=["transcripts", "brain-core"],
+)
+async def get_transcripts_brain_context_endpoint(
+    _: Actor = None,
+    __: Annotated[None, Depends(permission_dependency("transcripts.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: TranscriptsDb = None,
+) -> dict:
+    """Return aggregated brain-context snapshot for Brain Core.
+
+    Used by Brain Core to enrich decisions with transcript signals:
+    scanned students, students with issues, total inconsistencies, risk level.
+    """
+    return await get_transcripts_brain_context(tenant_id=int(tenant["id"]), db=db)
