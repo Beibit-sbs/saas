@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
+
+from app.platform.ai import llm_bridge
+
+logger = logging.getLogger(__name__)
 
 
 class ExplanationEngine:
@@ -57,4 +62,41 @@ class ExplanationEngine:
             "policy_notes": policy_notes,
             "expected_outcome": "Actions dispatched or queued for approval based on policy.",
             "knowledge_items": knowledge_items,
+            "llm_explanation": self._build_llm_explanation(
+                event_type=event_type,
+                situation_type=str(classification.get("situation_type", "")),
+                severity=str(classification.get("severity", "")),
+                urgency=str(classification.get("urgency", "")),
+                factors=factors,
+                reasoning=reasoning,
+            ),
         }
+
+    @staticmethod
+    def _build_llm_explanation(
+        *,
+        event_type: str | None,
+        situation_type: str,
+        severity: str,
+        urgency: str,
+        factors: list[str],
+        reasoning: dict[str, Any],
+    ) -> str | None:
+        """Call LLM bridge for enhanced explanation; return None if unavailable."""
+        actions = list(reasoning.get("actions") or [])
+        action_names = [
+            a.get("action_type", str(a)) if isinstance(a, dict) else str(a)
+            for a in actions
+        ]
+        try:
+            return llm_bridge.generate_explanation(
+                event_type=str(event_type or "unknown"),
+                situation_type=situation_type,
+                severity=severity,
+                urgency=urgency,
+                factors=factors,
+                actions=action_names,
+            )
+        except Exception as exc:
+            logger.debug("LLM explanation skipped: %s", exc)
+            return None
