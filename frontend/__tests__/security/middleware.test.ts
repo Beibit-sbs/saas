@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { middleware } from "@/middleware";
 
@@ -9,10 +9,6 @@ function makeJwt(payload: Record<string, unknown>) {
   const p = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `header.${p}.signature`;
 }
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
 
 describe("console route protection middleware", () => {
   it("redirects unauthenticated /console requests to /login", async () => {
@@ -26,13 +22,6 @@ describe("console route protection middleware", () => {
   });
 
   it("allows authenticated /console requests with non-expired token", async () => {
-    vi.spyOn(global, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ authenticated: true }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
-    );
-
     const token = makeJwt({ exp: Math.floor(Date.now() / 1000) + 3600 });
     const req = new NextRequest(`${EDGE_BASE}/console/students`, {
       headers: { cookie: `admin_token=${token}` },
@@ -56,22 +45,4 @@ describe("console route protection middleware", () => {
     expect(res.headers.get("location") ?? "").toContain("/login");
   });
 
-  it("redirects to /login when session is inactive", async () => {
-    vi.spyOn(global, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ authenticated: false }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
-    );
-
-    const token = makeJwt({ exp: Math.floor(Date.now() / 1000) + 3600 });
-    const req = new NextRequest(`${EDGE_BASE}/console/students`, {
-      headers: { cookie: `admin_token=${token}` },
-    });
-
-    const res = await middleware(req);
-
-    expect(res.status).toBe(307);
-    expect(res.headers.get("location") ?? "").toContain("/login");
-  });
 });

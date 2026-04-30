@@ -1,0 +1,2940 @@
+=== system audit ===
+timestamp_utc=20260429T102121Z
+[run] bash /home/sbs/AI/scripts/preflight_checks.sh
+[guard] OK: docker-only mode confirmed
+[preflight] OK: guard/env/compose checks passed
+
+=== bootstrap ===
+[run] docker compose --env-file .env up -d db redis backend frontend nginx
+
+=== core layer ===
+[run] docker compose --env-file .env exec -T backend ruff check .
+F401 [*] `sqlalchemy` imported but unused
+ --> alembic/versions/ie56fg78hi90_add_accreditation_and_thesis_tables.py:9:22
+  |
+8 | from alembic import op
+9 | import sqlalchemy as sa
+  |                      ^^
+  |
+help: Remove unused import: `sqlalchemy`
+
+F401 [*] `sqlalchemy` imported but unused
+  --> alembic/versions/ne23op45qr67_add_model_eval_runs_table.py:11:22
+   |
+10 | from alembic import op
+11 | import sqlalchemy as sa
+   |                      ^^
+12 | from sqlalchemy.dialects import postgresql
+   |
+help: Remove unused import: `sqlalchemy`
+
+F401 [*] `sqlalchemy.dialects.postgresql` imported but unused
+  --> alembic/versions/ne23op45qr67_add_model_eval_runs_table.py:12:33
+   |
+10 | from alembic import op
+11 | import sqlalchemy as sa
+12 | from sqlalchemy.dialects import postgresql
+   |                                 ^^^^^^^^^^
+13 |
+14 | # revision identifiers, used by Alembic.
+   |
+help: Remove unused import: `sqlalchemy.dialects.postgresql`
+
+F541 [*] f-string without any placeholders
+   --> app/modules/academic_integrity/service.py:264:21
+    |
+262 |             if not (payload.recommended_action and payload.recommended_action.strip()):
+263 |                 raise ValueError(
+264 |                     f"Cannot escalate integrity case without recommended_action: "
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+265 |                     f"escalation requires a documented action recommendation."
+266 |                 )
+    |
+help: Remove extraneous `f` prefix
+
+F541 [*] f-string without any placeholders
+   --> app/modules/academic_integrity/service.py:265:21
+    |
+263 |                 raise ValueError(
+264 |                     f"Cannot escalate integrity case without recommended_action: "
+265 |                     f"escalation requires a documented action recommendation."
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+266 |                 )
+    |
+help: Remove extraneous `f` prefix
+
+F401 [*] `app.modules.ai_guardrails.GuardrailResult` imported but unused
+  --> app/modules/ai_gateway/service.py:29:56
+   |
+27 |     observe_ai_routing_selection,
+28 | )
+29 | from app.modules.ai_guardrails import GuardrailEngine, GuardrailResult
+   |                                                        ^^^^^^^^^^^^^^^
+30 | from app.modules.ai_guardrails.schemas import GuardrailPolicy
+31 | from app.modules.security.db_tenant_context import set_db_tenant_context
+   |
+help: Remove unused import: `app.modules.ai_guardrails.GuardrailResult`
+
+F601 Dictionary key literal `"asset_code"` repeated
+   --> app/modules/brain_core/actions/planner.py:135:25
+    |
+133 |                         "building_code": building_code,
+134 |                         "missed_count": missed_count,
+135 |                         "asset_code": asset_code,
+    |                         ^^^^^^^^^^^^
+136 |                         "asset_type": asset_type,
+137 |                         "days_since_maintenance": days_since_maintenance,
+    |
+help: Remove repeated key literal `"asset_code"`
+
+F401 [*] `app.modules.brain_core.constants.ADMISSIONS_EVENT_TYPES` imported but unused
+ --> app/modules/brain_core/registry.py:7:5
+  |
+5 |     ACADEMIC_RECORDS_EVENT_TYPES,
+6 |     ACCREDITATION_EVENT_TYPES,
+7 |     ADMISSIONS_EVENT_TYPES,
+  |     ^^^^^^^^^^^^^^^^^^^^^^
+8 |     COURSES_EVENT_TYPES,
+9 |     ENROLLMENT_DROPOUT_EVENT_TYPES,
+  |
+help: Remove unused import
+
+F401 [*] `app.modules.brain_core.constants.SCHEDULING_EVENT_TYPES` imported but unused
+  --> app/modules/brain_core/registry.py:18:5
+   |
+16 |     PROGRAMS_EVENT_TYPES,
+17 |     RESEARCH_EVENT_TYPES,
+18 |     SCHEDULING_EVENT_TYPES,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+19 |     STUDENT_LIFE_EVENT_TYPES,
+20 |     STUDENT_SERVICES_EVENT_TYPES,
+   |
+help: Remove unused import
+
+F811 Redefinition of unused `simulate_supply_low` from line 447
+   --> app/modules/brain_core/router.py:496:5
+    |
+495 | @router.post("/simulate/supply-low")
+496 | def simulate_supply_low(
+    |     ^^^^^^^^^^^^^^^^^^^ `simulate_supply_low` redefined here
+497 |     payload: SupplyLowSignalRequest,
+498 |     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+    |
+   ::: app/modules/brain_core/router.py:447:5
+    |
+446 | @router.post("/simulate/supply-low")
+447 | def simulate_supply_low(
+    |     ------------------- previous definition of `simulate_supply_low` here
+448 |     payload: SupplyLowSignalRequest,
+449 |     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+    |
+help: Remove definition: `simulate_supply_low`
+
+F401 [*] `app.modules.budget_planning.business_rules.BudgetPlanningRules` imported but unused
+  --> app/modules/budget_planning/service.py:10:56
+   |
+ 8 |     update_entity_for_tenant,
+ 9 | )
+10 | from app.modules.budget_planning.business_rules import BudgetPlanningRules
+   |                                                        ^^^^^^^^^^^^^^^^^^^
+11 | from app.core.module_helpers.service_validation import DomainValidationError
+   |
+help: Remove unused import: `app.modules.budget_planning.business_rules.BudgetPlanningRules`
+
+F821 Undefined name `create_cost_center`
+  --> app/modules/expense_controls/router.py:65:14
+   |
+63 |     tenant: Annotated[dict, Depends(get_current_tenant)],
+64 | ) -> dict:
+65 |     record = create_cost_center(payload.model_dump(), int(tenant["id"]))
+   |              ^^^^^^^^^^^^^^^^^^
+66 |     return {"record": record}
+   |
+
+F401 [*] `app.modules.expense_controls.business_rules.ExpenseControlRules` imported but unused
+  --> app/modules/expense_controls/service.py:10:57
+   |
+ 8 |     list_entities_for_tenant,
+ 9 | )
+10 | from app.modules.expense_controls.business_rules import ExpenseControlRules
+   |                                                         ^^^^^^^^^^^^^^^^^^^
+11 |
+12 | # ---------------------------------------------------------------------------
+   |
+help: Remove unused import: `app.modules.expense_controls.business_rules.ExpenseControlRules`
+
+F401 [*] `app.modules.grades.schemas.GradeReadSchema` imported but unused
+  --> app/modules/grades/router.py:28:5
+   |
+26 |     GradeListResponseSchema,
+27 |     GradeMutationResponse,
+28 |     GradeReadSchema,
+   |     ^^^^^^^^^^^^^^^
+29 |     GradeSubmitSchema,
+30 | )
+   |
+help: Remove unused import: `app.modules.grades.schemas.GradeReadSchema`
+
+F811 Redefinition of unused `router` from line 17
+  --> app/modules/identity/phase1_router.py:45:1
+   |
+45 | router = APIRouter(prefix="/api/identity", tags=["identity-phase1-compat"])
+   | ^^^^^^ `router` redefined here
+   |
+  ::: app/modules/identity/phase1_router.py:17:2
+   |
+15 |     list_identity_mappings,
+16 |     preview_provider_mapping,
+17 |     router,
+   |     ------ previous definition of `router` here
+18 |     test_directory_provider,
+19 |     update_identity_mapping,
+   |
+help: Remove definition: `router`
+
+E402 Module level import not at top of file
+  --> app/modules/ldap/service.py:11:1
+   |
+ 9 | warnings.filterwarnings("ignore", message=r".*AbstractItemEncoder is deprecated.*", category=DeprecationWarning)
+10 |
+11 | from ldap3 import ALL, Connection, Server
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+12 | from ldap3.core.exceptions import LDAPException
+13 | from ldap3.utils.conv import escape_filter_chars
+   |
+
+E402 Module level import not at top of file
+  --> app/modules/ldap/service.py:12:1
+   |
+11 | from ldap3 import ALL, Connection, Server
+12 | from ldap3.core.exceptions import LDAPException
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+13 | from ldap3.utils.conv import escape_filter_chars
+   |
+
+E402 Module level import not at top of file
+  --> app/modules/ldap/service.py:13:1
+   |
+11 | from ldap3 import ALL, Connection, Server
+12 | from ldap3.core.exceptions import LDAPException
+13 | from ldap3.utils.conv import escape_filter_chars
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 |
+15 | from app.modules.integrations.service import get_ldap_runtime_config
+   |
+
+E402 Module level import not at top of file
+  --> app/modules/ldap/service.py:15:1
+   |
+13 | from ldap3.utils.conv import escape_filter_chars
+14 |
+15 | from app.modules.integrations.service import get_ldap_runtime_config
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+F401 [*] `app.modules.research.schemas.ResearchExperimentStatus` imported but unused
+  --> app/modules/research/service.py:10:5
+   |
+ 8 |     ResearchExperimentCreateSchema,
+ 9 |     ResearchExperimentSchema,
+10 |     ResearchExperimentStatus,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+11 |     ResearchExperimentStatusUpdateSchema,
+12 |     ResearchGrantCreateSchema,
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.research.schemas.ResearchLabStatus` imported but unused
+  --> app/modules/research/service.py:21:5
+   |
+19 |     ResearchLabCreateSchema,
+20 |     ResearchLabSchema,
+21 |     ResearchLabStatus,
+   |     ^^^^^^^^^^^^^^^^^
+22 |     ResearchLabStatusUpdateSchema,
+23 |     ResearchPublicationCreateSchema,
+   |
+help: Remove unused import
+
+F841 Local variable `section_ids` is assigned to but never used
+    --> app/modules/scheduling/service.py:1583:9
+     |
+1581 |             )
+1582 |         ).scalars().all()
+1583 |         section_ids = {s.id for s in sections}
+     |         ^^^^^^^^^^^
+1584 |
+1585 |         # Sections missing a schedule record
+     |
+help: Remove assignment to unused variable `section_ids`
+
+F841 Local variable `section` is assigned to but never used
+    --> app/modules/scheduling/service.py:1655:9
+     |
+1653 |         """Get attendance trends for a section over the past N weeks."""
+1654 |         validate_tenant_id_provided(tenant_id)
+1655 |         section = self._load_course_section(tenant_id, section_id)
+     |         ^^^^^^^
+1656 |
+1657 |         # Get all lessons for this section
+     |
+help: Remove assignment to unused variable `section`
+
+E741 Ambiguous variable name: `l`
+    --> app/modules/scheduling/service.py:1682:39
+     |
+1680 |                         LessonAttendanceModel.tenant_id == tenant_id,
+1681 |                         LessonAttendanceModel.lesson_instance_id.in_(
+1682 |                             [l.id for l in lessons]
+     |                                       ^
+1683 |                         ),
+1684 |                     )
+     |
+
+F401 [*] `statistics.pstdev` imported but unused
+  --> app/modules/teaching_quality/router.py:9:24
+   |
+ 8 | import datetime
+ 9 | from statistics import pstdev
+   |                        ^^^^^^
+10 | from typing import Annotated
+   |
+help: Remove unused import: `statistics.pstdev`
+
+F401 [*] `app.modules.transcripts.schemas.TranscriptSnapshotSchema` imported but unused
+  --> app/modules/transcripts/router.py:29:5
+   |
+27 |     TranscriptTenantConsistencyReportSchema,
+28 |     TranscriptSnapshotMutationResponse,
+29 |     TranscriptSnapshotSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+30 | )
+31 | from app.modules.transcripts.service import TranscriptService, get_transcripts_brain_context
+   |
+help: Remove unused import: `app.modules.transcripts.schemas.TranscriptSnapshotSchema`
+
+E402 Module level import not at top of file
+  --> app/modules/university_core/entity_impl.py:88:1
+   |
+88 | from app.modules.university_core.business_rules import UniversityCoreRules
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+F401 [*] `app.modules.feature_flags.service` imported but unused
+  --> tests/conftest.py:50:50
+   |
+48 | from app.modules.backup import service as backup_service
+49 | from app.modules.billing import service as billing_service
+50 | from app.modules.feature_flags import service as feature_flags_service
+   |                                                  ^^^^^^^^^^^^^^^^^^^^^
+51 | from app.modules.i18n import service as i18n_service
+52 | from app.modules.integrations import service as integrations_service
+   |
+help: Remove unused import: `app.modules.feature_flags.service`
+
+F401 [*] `os` imported but unused
+  --> tests/modules/billing/test_billing_service_integration.py:22:8
+   |
+20 | from __future__ import annotations
+21 |
+22 | import os
+   |        ^^
+23 | from datetime import datetime, timedelta, timezone
+24 | from unittest.mock import patch
+   |
+help: Remove unused import: `os`
+
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/modules/billing/test_billing_service_integration.py:24:27
+   |
+22 | import os
+23 | from datetime import datetime, timedelta, timezone
+24 | from unittest.mock import patch
+   |                           ^^^^^
+25 |
+26 | import pytest
+   |
+help: Remove unused import: `unittest.mock.patch`
+
+F401 [*] `tests.conftest.ADMIN_HEADERS` imported but unused
+  --> tests/modules/billing/test_billing_service_integration.py:42:28
+   |
+40 | from app.modules.plans.service import get_plan_by_code
+41 | from app.modules.quotas.service import update_plan_quotas
+42 | from tests.conftest import ADMIN_HEADERS, client
+   |                            ^^^^^^^^^^^^^
+   |
+help: Remove unused import: `tests.conftest.ADMIN_HEADERS`
+
+F841 Local variable `future_end` is assigned to but never used
+   --> tests/modules/billing/test_billing_service_integration.py:342:9
+    |
+340 |         past_period_start = _utc_now() - timedelta(days=60)
+341 |         past_period_end = _utc_now() - timedelta(days=30)
+342 |         future_end = _utc_now() + timedelta(days=30)
+    |         ^^^^^^^^^^
+343 |
+344 |         tid = _provision("rollover-plan")
+    |
+help: Remove assignment to unused variable `future_end`
+
+F401 [*] `pytest` imported but unused
+ --> tests/modules/communications/test_communications.py:4:8
+  |
+2 | from __future__ import annotations
+3 |
+4 | import pytest
+  |        ^^^^^^
+5 |
+6 | from app.modules.communications import service as comm_service
+  |
+help: Remove unused import: `pytest`
+
+F401 [*] `tests.conftest.ADMIN_HEADERS` imported but unused
+ --> tests/modules/communications/test_communications.py:7:28
+  |
+6 | from app.modules.communications import service as comm_service
+7 | from tests.conftest import ADMIN_HEADERS, client as test_client
+  |                            ^^^^^^^^^^^^^
+  |
+help: Remove unused import
+
+F401 [*] `tests.conftest.client` imported but unused
+ --> tests/modules/communications/test_communications.py:7:53
+  |
+6 | from app.modules.communications import service as comm_service
+7 | from tests.conftest import ADMIN_HEADERS, client as test_client
+  |                                                     ^^^^^^^^^^^
+  |
+help: Remove unused import
+
+F401 [*] `asyncio` imported but unused
+ --> tests/modules/degree_progress/test_degree_progress_domain_bridge.py:4:8
+  |
+2 | from __future__ import annotations
+3 |
+4 | import asyncio
+  |        ^^^^^^^
+5 | from decimal import Decimal
+6 | from types import SimpleNamespace
+  |
+help: Remove unused import: `asyncio`
+
+F401 [*] `pytest` imported but unused
+ --> tests/modules/dining/test_dining.py:6:8
+  |
+4 | from unittest.mock import MagicMock, patch
+5 |
+6 | import pytest
+  |        ^^^^^^
+7 |
+8 | from app.modules.dining import service as dining_service
+  |
+help: Remove unused import: `pytest`
+
+F401 [*] `app.core.module_helpers.service_validation.DomainValidationError` imported but unused
+  --> tests/modules/interventions/test_f3_intervention_cohort_service.py:19:5
+   |
+18 | from app.core.module_helpers.service_validation import (
+19 |     DomainValidationError,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+20 |     TenantRequiredError,
+21 |     TenantResourceNotFoundError,
+   |
+help: Remove unused import: `app.core.module_helpers.service_validation.DomainValidationError`
+
+F401 [*] `asyncio` imported but unused
+ --> tests/modules/interventions/test_interventions_outcome_feedback.py:5:8
+  |
+3 | from __future__ import annotations
+4 |
+5 | import asyncio
+  |        ^^^^^^^
+6 | from datetime import UTC, datetime, timedelta
+7 | from unittest.mock import AsyncMock, MagicMock, patch, call
+  |
+help: Remove unused import: `asyncio`
+
+F401 [*] `unittest.mock.AsyncMock` imported but unused
+ --> tests/modules/interventions/test_interventions_outcome_feedback.py:7:27
+  |
+5 | import asyncio
+6 | from datetime import UTC, datetime, timedelta
+7 | from unittest.mock import AsyncMock, MagicMock, patch, call
+  |                           ^^^^^^^^^
+8 |
+9 | import pytest
+  |
+help: Remove unused import
+
+F401 [*] `unittest.mock.call` imported but unused
+ --> tests/modules/interventions/test_interventions_outcome_feedback.py:7:56
+  |
+5 | import asyncio
+6 | from datetime import UTC, datetime, timedelta
+7 | from unittest.mock import AsyncMock, MagicMock, patch, call
+  |                                                        ^^^^
+8 |
+9 | import pytest
+  |
+help: Remove unused import
+
+F401 [*] `app.modules.interventions.models.InterventionActionType` imported but unused
+  --> tests/modules/interventions/test_interventions_outcome_feedback.py:12:5
+   |
+11 | from app.modules.interventions.models import (
+12 |     InterventionActionType,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+13 |     InterventionAssigneeType,
+14 |     InterventionCaseSeverity,
+   |
+help: Remove unused import: `app.modules.interventions.models.InterventionActionType`
+
+F841 Local variable `result` is assigned to but never used
+   --> tests/modules/interventions/test_interventions_outcome_feedback.py:130:9
+    |
+128 |             expected_version=2,
+129 |         )
+130 |         result = await service.update_case_status(
+    |         ^^^^^^
+131 |             tenant_id=102,
+132 |             case_id=43,
+    |
+help: Remove assignment to unused variable `result`
+
+F401 [*] `app.modules.scheduling.schemas.SchedulingConsistencyReportSchema` imported but unused
+   --> tests/modules/scheduling/test_scheduling_service.py:863:52
+    |
+861 |         db_session,
+862 |     ) -> None:
+863 |         from app.modules.scheduling.schemas import SchedulingConsistencyReportSchema
+    |                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+864 |         from app.modules.scheduling.models import (
+865 |             CourseSectionModel,
+    |
+help: Remove unused import: `app.modules.scheduling.schemas.SchedulingConsistencyReportSchema`
+
+F401 [*] `pytest` imported but unused
+ --> tests/modules/scholarship/test_scholarship.py:6:8
+  |
+4 | from unittest.mock import MagicMock, patch
+5 |
+6 | import pytest
+  |        ^^^^^^
+7 |
+8 | from app.modules.scholarship import service as sc_service
+  |
+help: Remove unused import: `pytest`
+
+F401 [*] `tests.conftest.ADMIN_HEADERS` imported but unused
+ --> tests/modules/scholarship/test_scholarship.py:9:28
+  |
+8 | from app.modules.scholarship import service as sc_service
+9 | from tests.conftest import ADMIN_HEADERS, client as test_client
+  |                            ^^^^^^^^^^^^^
+  |
+help: Remove unused import
+
+F401 [*] `tests.conftest.client` imported but unused
+ --> tests/modules/scholarship/test_scholarship.py:9:53
+  |
+8 | from app.modules.scholarship import service as sc_service
+9 | from tests.conftest import ADMIN_HEADERS, client as test_client
+  |                                                     ^^^^^^^^^^^
+  |
+help: Remove unused import
+
+F401 [*] `pytest` imported but unused
+ --> tests/modules/transport/test_transport.py:6:8
+  |
+4 | from unittest.mock import MagicMock, patch
+5 |
+6 | import pytest
+  |        ^^^^^^
+7 |
+8 | from app.modules.transport import service as transport_service
+  |
+help: Remove unused import: `pytest`
+
+F401 [*] `unittest.mock.AsyncMock` imported but unused
+   --> tests/test_admissions.py:463:49
+    |
+461 | def test_create_application_duplicate_active_returns_409() -> None:
+462 |     """Service must reject a second active application for same applicant+program."""
+463 |     from unittest.mock import MagicMock, patch, AsyncMock
+    |                                                 ^^^^^^^^^
+464 |     from app.modules.admissions.models import ApplicationModel, ApplicantModel
+465 |     from app.modules.admissions.schemas import ApplicationStage
+    |
+help: Remove unused import: `unittest.mock.AsyncMock`
+
+F401 [*] `app.modules.ai_gateway.service` imported but unused
+  --> tests/test_ai_gateway_models.py:13:47
+   |
+12 | from tests.conftest import ADMIN_HEADERS, _auth_headers, client
+13 | from app.modules.ai_gateway import service as ai_service
+   |                                               ^^^^^^^^^^
+   |
+help: Remove unused import: `app.modules.ai_gateway.service`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_ai_guardrails_contract.py:13:8
+   |
+11 | """
+12 |
+13 | import pytest
+   |        ^^^^^^
+14 |
+15 | from app.modules.ai_guardrails.detector_injection import detect_injection
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `app.modules.ai_guardrails.engine.GuardrailEngine` imported but unused
+  --> tests/test_ai_guardrails_integration.py:14:46
+   |
+13 | from app.modules.ai_gateway import service as ai_service
+14 | from app.modules.ai_guardrails.engine import GuardrailEngine
+   |                                              ^^^^^^^^^^^^^^^
+15 | from app.modules.ai_guardrails.schemas import (
+16 |     GuardrailDecision,
+   |
+help: Remove unused import: `app.modules.ai_guardrails.engine.GuardrailEngine`
+
+F401 [*] `app.modules.ai_guardrails.schemas.GuardrailPolicy` imported but unused
+  --> tests/test_ai_guardrails_integration.py:17:5
+   |
+15 | from app.modules.ai_guardrails.schemas import (
+16 |     GuardrailDecision,
+17 |     GuardrailPolicy,
+   |     ^^^^^^^^^^^^^^^
+18 |     GuardrailResult,
+19 |     GuardrailStage,
+   |
+help: Remove unused import: `app.modules.ai_guardrails.schemas.GuardrailPolicy`
+
+F811 Redefinition of unused `TestStudentsOpenAPIContract` from line 471
+   --> tests/test_api_openapi_contract.py:673:7
+    |
+673 | class TestStudentsOpenAPIContract:
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `TestStudentsOpenAPIContract` redefined here
+674 |     """Contract tests for /api/admin/students endpoints."""
+    |
+   ::: tests/test_api_openapi_contract.py:471:7
+    |
+471 | class TestStudentsOpenAPIContract:
+    |       --------------------------- previous definition of `TestStudentsOpenAPIContract` here
+472 |     """Contract tests for /api/admin/students endpoints."""
+    |
+help: Remove definition: `TestStudentsOpenAPIContract`
+
+F811 Redefinition of unused `TestFacultyOpenAPIContract` from line 510
+   --> tests/test_api_openapi_contract.py:712:7
+    |
+712 | class TestFacultyOpenAPIContract:
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^ `TestFacultyOpenAPIContract` redefined here
+713 |     """Contract tests for /api/admin/org/faculty endpoints."""
+    |
+   ::: tests/test_api_openapi_contract.py:510:7
+    |
+510 | class TestFacultyOpenAPIContract:
+    |       -------------------------- previous definition of `TestFacultyOpenAPIContract` here
+511 |     """Contract tests for /api/admin/org/faculty endpoints."""
+    |
+help: Remove definition: `TestFacultyOpenAPIContract`
+
+F811 Redefinition of unused `TestCoursesOpenAPIContract` from line 544
+   --> tests/test_api_openapi_contract.py:746:7
+    |
+746 | class TestCoursesOpenAPIContract:
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^ `TestCoursesOpenAPIContract` redefined here
+747 |     """Contract tests for /api/admin/org/courses endpoints."""
+    |
+   ::: tests/test_api_openapi_contract.py:544:7
+    |
+544 | class TestCoursesOpenAPIContract:
+    |       -------------------------- previous definition of `TestCoursesOpenAPIContract` here
+545 |     """Contract tests for /api/admin/org/courses endpoints."""
+    |
+help: Remove definition: `TestCoursesOpenAPIContract`
+
+F811 Redefinition of unused `TestGradesOpenAPIContract` from line 578
+   --> tests/test_api_openapi_contract.py:780:7
+    |
+780 | class TestGradesOpenAPIContract:
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^ `TestGradesOpenAPIContract` redefined here
+781 |     """Contract tests for /api/admin/grades endpoints."""
+    |
+   ::: tests/test_api_openapi_contract.py:578:7
+    |
+578 | class TestGradesOpenAPIContract:
+    |       ------------------------- previous definition of `TestGradesOpenAPIContract` here
+579 |     """Contract tests for /api/admin/grades endpoints."""
+    |
+help: Remove definition: `TestGradesOpenAPIContract`
+
+F811 Redefinition of unused `TestTranscriptsOpenAPIContract` from line 606
+   --> tests/test_api_openapi_contract.py:808:7
+    |
+808 | class TestTranscriptsOpenAPIContract:
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `TestTranscriptsOpenAPIContract` redefined here
+809 |     """Contract tests for /api/admin transcript endpoints."""
+    |
+   ::: tests/test_api_openapi_contract.py:606:7
+    |
+606 | class TestTranscriptsOpenAPIContract:
+    |       ------------------------------ previous definition of `TestTranscriptsOpenAPIContract` here
+607 |     """Contract tests for /api/admin transcript endpoints."""
+    |
+help: Remove definition: `TestTranscriptsOpenAPIContract`
+
+F811 Redefinition of unused `TestLocalUsersOpenAPIContract` from line 634
+   --> tests/test_api_openapi_contract.py:836:7
+    |
+836 | class TestLocalUsersOpenAPIContract:
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `TestLocalUsersOpenAPIContract` redefined here
+837 |     """Contract tests for /api/admin/local-users endpoints (no named response schemas)."""
+    |
+   ::: tests/test_api_openapi_contract.py:634:7
+    |
+634 | class TestLocalUsersOpenAPIContract:
+    |       ----------------------------- previous definition of `TestLocalUsersOpenAPIContract` here
+635 |     """Contract tests for /api/admin/local-users endpoints (no named response schemas)."""
+    |
+help: Remove definition: `TestLocalUsersOpenAPIContract`
+
+F401 [*] `typing.Optional` imported but unused
+ --> tests/test_billing_router_skeleton.py:9:20
+  |
+7 | import pytest
+8 | from datetime import datetime, timezone
+9 | from typing import Optional
+  |                    ^^^^^^^^
+  |
+help: Remove unused import: `typing.Optional`
+
+F401 [*] `importlib` imported but unused
+  --> tests/test_brain_core_action_bridge.py:16:8
+   |
+14 | from __future__ import annotations
+15 |
+16 | import importlib
+   |        ^^^^^^^^^
+17 | from typing import Any
+18 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `importlib`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_brain_core_action_bridge.py:20:8
+   |
+18 | from unittest.mock import MagicMock, patch
+19 |
+20 | import pytest
+   |        ^^^^^^
+21 |
+22 | from app.modules.brain_core.action_bridge import (
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `app.modules.interventions.models.InterventionCaseStatus` imported but unused
+  --> tests/test_brain_core_action_bridge.py:30:5
+   |
+28 |     InterventionCaseModel,
+29 |     InterventionCaseSeverity,
+30 |     InterventionCaseStatus,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+31 |     InterventionCaseType,
+32 | )
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.interventions.models.InterventionCaseType` imported but unused
+  --> tests/test_brain_core_action_bridge.py:31:5
+   |
+29 |     InterventionCaseSeverity,
+30 |     InterventionCaseStatus,
+31 |     InterventionCaseType,
+   |     ^^^^^^^^^^^^^^^^^^^^
+32 | )
+   |
+help: Remove unused import
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_brain_core_blocker12_13.py:14:8
+   |
+12 | from __future__ import annotations
+13 |
+14 | import pytest
+   |        ^^^^^^
+15 |
+16 | from app.modules.brain_core.policy.tenant_policy import TenantPolicyProfile, TenantPolicyResolver
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `sqlalchemy.select` imported but unused
+  --> tests/test_brain_core_db_persistence.py:42:28
+   |
+40 |     from app.modules.brain_core.service import brain_core_service
+41 |     from app.modules.brain_core.models import BrainSignalModel
+42 |     from sqlalchemy import select
+   |                            ^^^^^^
+43 |
+44 |     correlation_id = str(uuid4())
+   |
+help: Remove unused import: `sqlalchemy.select`
+
+F401 [*] `sqlalchemy.select` imported but unused
+  --> tests/test_brain_core_db_persistence.py:83:28
+   |
+81 |     from app.modules.brain_core.service import brain_core_service
+82 |     from app.modules.brain_core.models import BrainDecisionModel
+83 |     from sqlalchemy import select
+   |                            ^^^^^^
+84 |
+85 |     signal = {
+   |
+help: Remove unused import: `sqlalchemy.select`
+
+F401 [*] `app.modules.brain_core.models.BrainSignalModel` imported but unused
+   --> tests/test_brain_core_db_persistence.py:158:47
+    |
+157 |     from app.modules.brain_core.service import brain_core_service
+158 |     from app.modules.brain_core.models import BrainSignalModel
+    |                                               ^^^^^^^^^^^^^^^^
+159 |     from sqlalchemy import select, func
+    |
+help: Remove unused import: `app.modules.brain_core.models.BrainSignalModel`
+
+F401 [*] `sqlalchemy.select` imported but unused
+   --> tests/test_brain_core_db_persistence.py:159:28
+    |
+157 |     from app.modules.brain_core.service import brain_core_service
+158 |     from app.modules.brain_core.models import BrainSignalModel
+159 |     from sqlalchemy import select, func
+    |                            ^^^^^^
+160 |
+161 |     signal = {
+    |
+help: Remove unused import
+
+F401 [*] `sqlalchemy.func` imported but unused
+   --> tests/test_brain_core_db_persistence.py:159:36
+    |
+157 |     from app.modules.brain_core.service import brain_core_service
+158 |     from app.modules.brain_core.models import BrainSignalModel
+159 |     from sqlalchemy import select, func
+    |                                    ^^^^
+160 |
+161 |     signal = {
+    |
+help: Remove unused import
+
+F401 [*] `unittest.mock.call` imported but unused
+  --> tests/test_brain_core_decision_notification.py:9:38
+   |
+ 8 | import uuid
+ 9 | from unittest.mock import MagicMock, call, patch
+   |                                      ^^^^
+10 |
+11 | import pytest
+   |
+help: Remove unused import: `unittest.mock.call`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_brain_core_decision_notification.py:11:8
+   |
+ 9 | from unittest.mock import MagicMock, call, patch
+10 |
+11 | import pytest
+   |        ^^^^^^
+12 |
+13 | from app.modules.brain_core.service import BrainCoreService
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_brain_core_signal_dedup.py:11:8
+   |
+ 9 | from unittest.mock import MagicMock, patch
+10 |
+11 | import pytest
+   |        ^^^^^^
+12 |
+13 | from app.modules.brain_core.service import BrainCoreService, _compute_dedup_key
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_brain_core_state_recovery.py:22:8
+   |
+20 | from __future__ import annotations
+21 |
+22 | import pytest
+   |        ^^^^^^
+23 |
+24 | from app.modules.brain_core.service import BrainCoreService
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `os` imported but unused
+  --> tests/test_degradation_scenarios.py:12:8
+   |
+10 | """
+11 |
+12 | import os
+   |        ^^
+13 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `os`
+
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/test_degradation_scenarios.py:13:38
+   |
+12 | import os
+13 | from unittest.mock import MagicMock, patch
+   |                                      ^^^^^
+14 |
+15 | import pytest
+   |
+help: Remove unused import: `unittest.mock.patch`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_degradation_scenarios.py:15:8
+   |
+13 | from unittest.mock import MagicMock, patch
+14 |
+15 | import pytest
+   |        ^^^^^^
+16 | from fastapi.testclient import TestClient
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_domain_cross_tenant_isolation.py:14:8
+   |
+12 | from uuid import uuid4
+13 |
+14 | import pytest
+   |        ^^^^^^
+15 |
+16 | from app.modules.auth.token_service import create_access_token
+   |
+help: Remove unused import: `pytest`
+
+F841 Local variable `created_id` is assigned to but never used
+    --> tests/test_domain_cross_tenant_isolation.py:2727:9
+     |
+2725 |         )
+2726 |         assert resp.status_code == 200, resp.text
+2727 |         created_id = int(resp.json()["_record_id"])
+     |         ^^^^^^^^^^
+2728 |
+2729 |         kpi_resp = client.get(
+     |
+help: Remove assignment to unused variable `created_id`
+
+F401 [*] `tests.conftest._auth_headers` imported but unused
+  --> tests/test_effectiveness_router_coverage.py:16:28
+   |
+14 | from sqlalchemy.orm import Session
+15 |
+16 | from tests.conftest import _auth_headers, client
+   |                            ^^^^^^^^^^^^^
+17 | from app.main import app
+18 | from app.modules.interventions.dependencies import get_interventions_db
+   |
+help: Remove unused import: `tests.conftest._auth_headers`
+
+F401 [*] `unittest.mock.AsyncMock` imported but unused
+ --> tests/test_event_bus_registry_skeleton.py:8:27
+  |
+7 | import pytest
+8 | from unittest.mock import AsyncMock, patch
+  |                           ^^^^^^^^^
+9 | from pydantic import BaseModel, ValidationError
+  |
+help: Remove unused import
+
+F401 [*] `unittest.mock.patch` imported but unused
+ --> tests/test_event_bus_registry_skeleton.py:8:38
+  |
+7 | import pytest
+8 | from unittest.mock import AsyncMock, patch
+  |                                      ^^^^^
+9 | from pydantic import BaseModel, ValidationError
+  |
+help: Remove unused import
+
+F401 [*] `pydantic.BaseModel` imported but unused
+ --> tests/test_event_bus_registry_skeleton.py:9:22
+  |
+7 | import pytest
+8 | from unittest.mock import AsyncMock, patch
+9 | from pydantic import BaseModel, ValidationError
+  |                      ^^^^^^^^^
+  |
+help: Remove unused import
+
+F401 [*] `pydantic.ValidationError` imported but unused
+ --> tests/test_event_bus_registry_skeleton.py:9:33
+  |
+7 | import pytest
+8 | from unittest.mock import AsyncMock, patch
+9 | from pydantic import BaseModel, ValidationError
+  |                                 ^^^^^^^^^^^^^^^
+  |
+help: Remove unused import
+
+F401 [*] `pytest` imported but unused
+ --> tests/test_faculty.py:5:8
+  |
+3 | from __future__ import annotations
+4 |
+5 | import pytest
+  |        ^^^^^^
+6 |
+7 | from tests.conftest import ADMIN_HEADERS, _auth_headers, client
+  |
+help: Remove unused import: `pytest`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_help_router.py:13:8
+   |
+11 | from __future__ import annotations
+12 |
+13 | import pytest
+   |        ^^^^^^
+14 |
+15 | from tests.conftest import ADMIN_HEADERS, client
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `app.platform.uow.UnitOfWork` imported but unused
+ --> tests/test_integrations.py:7:30
+  |
+5 | from app.modules.integrations import service as integrations_service
+6 | from app.modules.ldap import service as ldap_service
+7 | from app.platform.uow import UnitOfWork
+  |                              ^^^^^^^^^^
+8 | from uuid import uuid4
+  |
+help: Remove unused import: `app.platform.uow.UnitOfWork`
+
+F401 [*] `unittest.mock.AsyncMock` imported but unused
+  --> tests/test_interventions_service_coverage.py:11:27
+   |
+ 9 | import asyncio
+10 | from datetime import UTC, datetime, timedelta
+11 | from unittest.mock import AsyncMock, MagicMock, patch
+   |                           ^^^^^^^^^
+12 |
+13 | import pytest
+   |
+help: Remove unused import
+
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/test_interventions_service_coverage.py:11:49
+   |
+ 9 | import asyncio
+10 | from datetime import UTC, datetime, timedelta
+11 | from unittest.mock import AsyncMock, MagicMock, patch
+   |                                                 ^^^^^
+12 |
+13 | import pytest
+   |
+help: Remove unused import
+
+F841 Local variable `case` is assigned to but never used
+   --> tests/test_interventions_service_coverage.py:124:5
+    |
+122 |     """create_case with student_profile_id=None skips DB student lookup."""
+123 |     db = MagicMock()
+124 |     case = _make_case(student_profile_id=None)
+    |     ^^^^
+125 |     # db.flush and db.refresh are needed; db.add must not raise
+126 |     db.flush = MagicMock()
+    |
+help: Remove assignment to unused variable `case`
+
+F841 Local variable `created` is assigned to but never used
+   --> tests/test_interventions_service_coverage.py:141:5
+    |
+139 |         description="Test",
+140 |     )
+141 |     created = _run(svc.create_case(tenant_id=1, request=req, actor="admin@e.com"))
+    |     ^^^^^^^
+142 |     assert db.add.called
+143 |     assert db.commit.called
+    |
+help: Remove assignment to unused variable `created`
+
+F841 Local variable `result` is assigned to but never used
+   --> tests/test_interventions_service_coverage.py:339:5
+    |
+337 |         assignee_ref="advisor@e.com",
+338 |     )
+339 |     result = _run(svc.assign_case(tenant_id=1, case_id=10, request=req, actor="admin@e.com"))
+    |     ^^^^^^
+340 |     assert db.commit.called
+    |
+help: Remove assignment to unused variable `result`
+
+F401 [*] `time` imported but unused
+  --> tests/test_observability.py:9:8
+   |
+ 7 | """
+ 8 |
+ 9 | import time
+   |        ^^^^
+10 |
+11 | from app.modules.observability.alerts import (
+   |
+help: Remove unused import: `time`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_phase_i1_hardening.py:11:27
+   |
+ 9 | from __future__ import annotations
+10 |
+11 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+12 |
+13 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_phase_i1_hardening.py:13:8
+   |
+11 | from unittest.mock import MagicMock, patch
+12 |
+13 | import pytest
+   |        ^^^^^^
+14 |
+15 | from tests.conftest import ADMIN_HEADERS, client
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_phase_i2_hardening.py:10:27
+   |
+ 8 | from __future__ import annotations
+ 9 |
+10 | from unittest.mock import MagicMock, call, patch
+   |                           ^^^^^^^^^
+11 |
+12 | import pytest
+   |
+help: Remove unused import
+
+F401 [*] `unittest.mock.call` imported but unused
+  --> tests/test_phase_i2_hardening.py:10:38
+   |
+ 8 | from __future__ import annotations
+ 9 |
+10 | from unittest.mock import MagicMock, call, patch
+   |                                      ^^^^
+11 |
+12 | import pytest
+   |
+help: Remove unused import
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_phase_i2_hardening.py:12:8
+   |
+10 | from unittest.mock import MagicMock, call, patch
+11 |
+12 | import pytest
+   |        ^^^^^^
+13 |
+14 | from tests.conftest import ADMIN_HEADERS, client
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `tests.conftest.ADMIN_HEADERS` imported but unused
+  --> tests/test_phase_i2_hardening.py:14:28
+   |
+12 | import pytest
+13 |
+14 | from tests.conftest import ADMIN_HEADERS, client
+   |                            ^^^^^^^^^^^^^
+15 |
+16 | # ---------------------------------------------------------------------------
+   |
+help: Remove unused import: `tests.conftest.ADMIN_HEADERS`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_phase_i3_hardening.py:18:8
+   |
+16 | from unittest.mock import AsyncMock, MagicMock, patch
+17 |
+18 | import pytest
+   |        ^^^^^^
+19 |
+20 | # ---------------------------------------------------------------------------
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_phase_i5_hardening.py:18:8
+   |
+16 | from __future__ import annotations
+17 |
+18 | import pytest
+   |        ^^^^^^
+19 |
+20 | from app.platform.kpi.ministry_kpi import (
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `sys` imported but unused
+  --> tests/test_phase_i6_release_gate.py:15:8
+   |
+14 | import importlib
+15 | import sys
+   |        ^^^
+16 | from pathlib import Path
+   |
+help: Remove unused import: `sys`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_phase_ii_domain_brain_readiness.py:19:8
+   |
+17 | from unittest.mock import AsyncMock, MagicMock, patch
+18 |
+19 | import pytest
+   |        ^^^^^^
+20 |
+21 | from tests.conftest import ADMIN_HEADERS, client
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `typing.Any` imported but unused
+  --> tests/test_phase_iii_low_ev_brain_readiness.py:14:20
+   |
+12 | from __future__ import annotations
+13 |
+14 | from typing import Any
+   |                    ^^^
+15 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `typing.Any`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_phase_iii_low_ev_brain_readiness.py:17:8
+   |
+15 | from unittest.mock import MagicMock, patch
+16 |
+17 | import pytest
+   |        ^^^^^^
+18 |
+19 | from tests.conftest import ADMIN_HEADERS, TEST_PLATFORM_TENANT_ID, client
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `tests.conftest.TEST_PLATFORM_TENANT_ID` imported but unused
+  --> tests/test_phase_iii_low_ev_brain_readiness.py:19:43
+   |
+17 | import pytest
+18 |
+19 | from tests.conftest import ADMIN_HEADERS, TEST_PLATFORM_TENANT_ID, client
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+help: Remove unused import: `tests.conftest.TEST_PLATFORM_TENANT_ID`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_platform_router_coverage.py:10:27
+   |
+ 8 | from __future__ import annotations
+ 9 |
+10 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+11 |
+12 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_platform_router_coverage.py:12:8
+   |
+10 | from unittest.mock import MagicMock, patch
+11 |
+12 | import pytest
+   |        ^^^^^^
+13 |
+14 | from tests.conftest import _auth_headers, client
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `app.main.app` imported but unused
+  --> tests/test_platform_router_coverage.py:15:22
+   |
+14 | from tests.conftest import _auth_headers, client
+15 | from app.main import app
+   |                      ^^^
+16 | from app.modules.auth.token_service import create_access_token
+17 | from app.modules.rbac import service as rbac_service
+   |
+help: Remove unused import: `app.main.app`
+
+F401 [*] `unittest.mock.PropertyMock` imported but unused
+  --> tests/test_playbook_service_unit.py:19:45
+   |
+17 | from datetime import datetime, UTC
+18 | from types import SimpleNamespace
+19 | from unittest.mock import MagicMock, patch, PropertyMock
+   |                                             ^^^^^^^^^^^^
+20 |
+21 | import pytest
+   |
+help: Remove unused import: `unittest.mock.PropertyMock`
+
+F401 [*] `app.modules.interventions.playbook_models.PlaybookAssigneeRole` imported but unused
+  --> tests/test_playbook_service_unit.py:30:5
+   |
+28 | )
+29 | from app.modules.interventions.playbook_models import (
+30 |     PlaybookAssigneeRole,
+   |     ^^^^^^^^^^^^^^^^^^^^
+31 |     PlaybookExecutionStatus,
+32 |     PlaybookStepActionType,
+   |
+help: Remove unused import: `app.modules.interventions.playbook_models.PlaybookAssigneeRole`
+
+F841 Local variable `result` is assigned to but never used
+   --> tests/test_playbook_service_unit.py:163:9
+    |
+161 |         steps = [PlaybookStepCreateSchema(step_order=0, title="Step A", action_type=PlaybookStepActionType.NOTE)]
+162 |         payload = _create_payload(steps=steps)
+163 |         result = service.create_playbook(tenant_id=1, actor="owner@test", payload=payload)
+    |         ^^^^^^
+164 |         assert db.add.called
+165 |         assert db.flush.called
+    |
+help: Remove assignment to unused variable `result`
+
+F841 Local variable `program_id` is assigned to but never used
+  --> tests/test_programs_courses.py:46:5
+   |
+44 |     program = body["program"]
+45 |     assert program["program_code"] == "TEST-PRG-001"
+46 |     program_id = program["id"]
+   |     ^^^^^^^^^^
+47 |
+48 |     # Verify it appears in list
+   |
+help: Remove assignment to unused variable `program_id`
+
+F401 [*] `datetime.date` imported but unused
+  --> tests/test_risk_service_coverage.py:9:27
+   |
+ 8 | import asyncio
+ 9 | from datetime import UTC, date, datetime, timedelta
+   |                           ^^^^
+10 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import
+
+F401 [*] `datetime.timedelta` imported but unused
+  --> tests/test_risk_service_coverage.py:9:43
+   |
+ 8 | import asyncio
+ 9 | from datetime import UTC, date, datetime, timedelta
+   |                                           ^^^^^^^^^
+10 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.interventions.models.InterventionCaseStatus` imported but unused
+  --> tests/test_risk_service_coverage.py:17:5
+   |
+15 |     InterventionAssigneeType,
+16 |     InterventionCaseSeverity,
+17 |     InterventionCaseStatus,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+18 |     OutcomeTrackingStatus,
+19 |     RiskMetric,
+   |
+help: Remove unused import: `app.modules.interventions.models.InterventionCaseStatus`
+
+F841 Local variable `result` is assigned to but never used
+   --> tests/test_risk_service_coverage.py:139:5
+    |
+137 |         signal_type=RiskSignalType.ATTENDANCE_RISK,
+138 |     )
+139 |     result = _run(svc.create_threshold(tenant_id=1, request=req))
+    |     ^^^^^^
+140 |     assert db.add.called
+141 |     assert db.commit.called
+    |
+help: Remove assignment to unused variable `result`
+
+F841 Local variable `result` is assigned to but never used
+   --> tests/test_risk_service_coverage.py:317:5
+    |
+316 |     svc = _make_service(db)
+317 |     result = _run(svc.acknowledge_recommendation(
+    |     ^^^^^^
+318 |         tenant_id=1, recommendation_id=10, actor="admin@e.com", note="Acknowledged"
+319 |     ))
+    |
+help: Remove assignment to unused variable `result`
+
+F841 Local variable `result` is assigned to but never used
+   --> tests/test_risk_service_coverage.py:371:5
+    |
+369 |         outcome=OutcomeTrackingStatus.IMPROVED,
+370 |     )
+371 |     result = _run(svc.upsert_outcome(tenant_id=1, case_id=30, request=req))
+    |     ^^^^^^
+372 |     assert db.add.called
+    |
+help: Remove assignment to unused variable `result`
+
+F841 Local variable `result` is assigned to but never used
+   --> tests/test_risk_service_coverage.py:504:9
+    |
+502 |     svc = _make_service(db)
+503 |     with patch("app.modules.interventions.risk_service._audit") as audit_mock:
+504 |         result = _run(svc.run_daily_detection(tenant_id=1, actor="cron"))
+    |         ^^^^^^
+505 |         audit_mock.assert_called()
+    |
+help: Remove assignment to unused variable `result`
+
+F841 Local variable `audit_mock` is assigned to but never used
+   --> tests/test_risk_service_coverage.py:654:68
+    |
+653 |     svc = _make_service(db)
+654 |     with patch("app.modules.interventions.risk_service._audit") as audit_mock:
+    |                                                                    ^^^^^^^^^^
+655 |         result = _run(svc.run_daily_detection(tenant_id=1, actor="system"))
+    |
+help: Remove assignment to unused variable `audit_mock`
+
+F811 Redefinition of unused `test_run_daily_detection_large_batch` from line 590
+   --> tests/test_risk_service_coverage.py:660:5
+    |
+660 | def test_run_daily_detection_large_batch():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_run_daily_detection_large_batch` redefined here
+661 |     """Test detection with multiple students returning risks."""
+662 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:590:5
+    |
+590 | def test_run_daily_detection_large_batch():
+    |     ------------------------------------ previous definition of `test_run_daily_detection_large_batch` here
+591 |     """Test detection with multiple students."""
+592 |     db = MagicMock()
+    |
+help: Remove definition: `test_run_daily_detection_large_batch`
+
+F811 Redefinition of unused `test_get_kpi_summary_with_severity_breakdown` from line 539
+   --> tests/test_risk_service_coverage.py:704:5
+    |
+704 | def test_get_kpi_summary_with_severity_breakdown():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_get_kpi_summary_with_severity_breakdown` redefined here
+705 |     """Test KPI summary includes severity breakdown."""
+706 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:539:5
+    |
+539 | def test_get_kpi_summary_with_severity_breakdown():
+    |     -------------------------------------------- previous definition of `test_get_kpi_summary_with_severity_breakdown` here
+540 |     """Test KPI summary with severity breakdown rows."""
+541 |     db = MagicMock()
+    |
+help: Remove definition: `test_get_kpi_summary_with_severity_breakdown`
+
+F811 Redefinition of unused `test_run_daily_detection_zero_students` from line 508
+   --> tests/test_risk_service_coverage.py:723:5
+    |
+723 | def test_run_daily_detection_zero_students():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_run_daily_detection_zero_students` redefined here
+724 |     """Test detection when no students match criteria."""
+725 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:508:5
+    |
+508 | def test_run_daily_detection_zero_students():
+    |     -------------------------------------- previous definition of `test_run_daily_detection_zero_students` here
+509 |     """Test detection when no students match query."""
+510 |     db = MagicMock()
+    |
+help: Remove definition: `test_run_daily_detection_zero_students`
+
+F811 Redefinition of unused `test_recompute_scores_with_tenant_isolation` from line 557
+   --> tests/test_risk_service_coverage.py:735:5
+    |
+735 | def test_recompute_scores_with_tenant_isolation():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_recompute_scores_with_tenant_isolation` redefined here
+736 |     """Test that recompute_scores respects tenant boundaries."""
+737 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:557:5
+    |
+557 | def test_recompute_scores_with_tenant_isolation():
+    |     ------------------------------------------- previous definition of `test_recompute_scores_with_tenant_isolation` here
+558 |     """Test that different tenants are isolated."""
+559 |     db = MagicMock()
+    |
+help: Remove definition: `test_recompute_scores_with_tenant_isolation`
+
+F811 Redefinition of unused `test_run_daily_detection_audit_logging` from line 496
+   --> tests/test_risk_service_coverage.py:769:5
+    |
+769 | def test_run_daily_detection_audit_logging():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_run_daily_detection_audit_logging` redefined here
+770 |     """Test that risk detection calls audit logging."""
+771 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:496:5
+    |
+496 | def test_run_daily_detection_audit_logging():
+    |     -------------------------------------- previous definition of `test_run_daily_detection_audit_logging` here
+497 |     """Test that risk detection calls audit logging."""
+498 |     db = MagicMock()
+    |
+help: Remove definition: `test_run_daily_detection_audit_logging`
+
+F811 Redefinition of unused `test_run_daily_detection_with_threshold_exceptions` from line 647
+   --> tests/test_risk_service_coverage.py:818:5
+    |
+818 | def test_run_daily_detection_with_threshold_exceptions():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_run_daily_detection_with_threshold_exceptions` redefined here
+819 |     """Test detection when threshold evaluation raises exception."""
+820 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:647:5
+    |
+647 | def test_run_daily_detection_with_threshold_exceptions():
+    |     -------------------------------------------------- previous definition of `test_run_daily_detection_with_threshold_exceptions` here
+648 |     """Test detection when threshold evaluation raises exception."""
+649 |     db = MagicMock()
+    |
+help: Remove definition: `test_run_daily_detection_with_threshold_exceptions`
+
+F811 Redefinition of unused `test_run_daily_detection_large_batch` from line 660
+   --> tests/test_risk_service_coverage.py:832:5
+    |
+832 | def test_run_daily_detection_large_batch():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_run_daily_detection_large_batch` redefined here
+833 |     """Test detection with multiple students returning risks."""
+834 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:660:5
+    |
+660 | def test_run_daily_detection_large_batch():
+    |     ------------------------------------ previous definition of `test_run_daily_detection_large_batch` here
+661 |     """Test detection with multiple students returning risks."""
+662 |     db = MagicMock()
+    |
+help: Remove definition: `test_run_daily_detection_large_batch`
+
+F811 Redefinition of unused `test_recompute_scores_idempotent_call` from line 685
+   --> tests/test_risk_service_coverage.py:857:5
+    |
+857 | def test_recompute_scores_idempotent_call():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_recompute_scores_idempotent_call` redefined here
+858 |     """Test that recompute_scores is idempotent (safe to call multiple times)."""
+859 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:685:5
+    |
+685 | def test_recompute_scores_idempotent_call():
+    |     ------------------------------------- previous definition of `test_recompute_scores_idempotent_call` here
+686 |     """Test that recompute_scores is idempotent (safe to call multiple times)."""
+687 |     db = MagicMock()
+    |
+help: Remove definition: `test_recompute_scores_idempotent_call`
+
+F811 Redefinition of unused `test_get_kpi_summary_with_severity_breakdown` from line 704
+   --> tests/test_risk_service_coverage.py:876:5
+    |
+876 | def test_get_kpi_summary_with_severity_breakdown():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_get_kpi_summary_with_severity_breakdown` redefined here
+877 |     """Test KPI summary includes severity breakdown."""
+878 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:704:5
+    |
+704 | def test_get_kpi_summary_with_severity_breakdown():
+    |     -------------------------------------------- previous definition of `test_get_kpi_summary_with_severity_breakdown` here
+705 |     """Test KPI summary includes severity breakdown."""
+706 |     db = MagicMock()
+    |
+help: Remove definition: `test_get_kpi_summary_with_severity_breakdown`
+
+F811 Redefinition of unused `test_run_daily_detection_zero_students` from line 723
+   --> tests/test_risk_service_coverage.py:895:5
+    |
+895 | def test_run_daily_detection_zero_students():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_run_daily_detection_zero_students` redefined here
+896 |     """Test detection when no students match criteria."""
+897 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:723:5
+    |
+723 | def test_run_daily_detection_zero_students():
+    |     -------------------------------------- previous definition of `test_run_daily_detection_zero_students` here
+724 |     """Test detection when no students match criteria."""
+725 |     db = MagicMock()
+    |
+help: Remove definition: `test_run_daily_detection_zero_students`
+
+F811 Redefinition of unused `test_recompute_scores_with_tenant_isolation` from line 735
+   --> tests/test_risk_service_coverage.py:907:5
+    |
+907 | def test_recompute_scores_with_tenant_isolation():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_recompute_scores_with_tenant_isolation` redefined here
+908 |     """Test that recompute_scores respects tenant boundaries."""
+909 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:735:5
+    |
+735 | def test_recompute_scores_with_tenant_isolation():
+    |     ------------------------------------------- previous definition of `test_recompute_scores_with_tenant_isolation` here
+736 |     """Test that recompute_scores respects tenant boundaries."""
+737 |     db = MagicMock()
+    |
+help: Remove definition: `test_recompute_scores_with_tenant_isolation`
+
+F811 Redefinition of unused `test_get_kpi_summary_for_multiple_tenants` from line 753
+   --> tests/test_risk_service_coverage.py:925:5
+    |
+925 | def test_get_kpi_summary_for_multiple_tenants():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_get_kpi_summary_for_multiple_tenants` redefined here
+926 |     """Test KPI summary works for different tenant IDs."""
+927 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:753:5
+    |
+753 | def test_get_kpi_summary_for_multiple_tenants():
+    |     ----------------------------------------- previous definition of `test_get_kpi_summary_for_multiple_tenants` here
+754 |     """Test KPI summary works for different tenant IDs."""
+755 |     db = MagicMock()
+    |
+help: Remove definition: `test_get_kpi_summary_for_multiple_tenants`
+
+F811 Redefinition of unused `test_run_daily_detection_audit_logging` from line 769
+   --> tests/test_risk_service_coverage.py:941:5
+    |
+941 | def test_run_daily_detection_audit_logging():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_run_daily_detection_audit_logging` redefined here
+942 |     """Test that risk detection calls audit logging."""
+943 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:769:5
+    |
+769 | def test_run_daily_detection_audit_logging():
+    |     -------------------------------------- previous definition of `test_run_daily_detection_audit_logging` here
+770 |     """Test that risk detection calls audit logging."""
+771 |     db = MagicMock()
+    |
+help: Remove definition: `test_run_daily_detection_audit_logging`
+
+F841 Local variable `mock_run` is assigned to but never used
+   --> tests/test_risk_service_coverage.py:965:85
+    |
+963 |     svc = _make_service(db)
+964 |     
+965 |     with patch.object(svc, "run_daily_detection", wraps=svc.run_daily_detection) as mock_run:
+    |                                                                                     ^^^^^^^^
+966 |         result = _run(svc.recompute_scores(tenant_id=1, actor="admin"))
+967 |         # Should have called run_daily_detection
+    |
+help: Remove assignment to unused variable `mock_run`
+
+F811 Redefinition of unused `test_run_daily_detection_with_threshold_exceptions` from line 818
+   --> tests/test_risk_service_coverage.py:976:5
+    |
+976 | def test_run_daily_detection_with_threshold_exceptions():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_run_daily_detection_with_threshold_exceptions` redefined here
+977 |     """Test detection when threshold evaluation raises exception."""
+978 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:818:5
+    |
+818 | def test_run_daily_detection_with_threshold_exceptions():
+    |     -------------------------------------------------- previous definition of `test_run_daily_detection_with_threshold_exceptions` here
+819 |     """Test detection when threshold evaluation raises exception."""
+820 |     db = MagicMock()
+    |
+help: Remove definition: `test_run_daily_detection_with_threshold_exceptions`
+
+F811 Redefinition of unused `test_run_daily_detection_large_batch` from line 832
+   --> tests/test_risk_service_coverage.py:990:5
+    |
+990 | def test_run_daily_detection_large_batch():
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_run_daily_detection_large_batch` redefined here
+991 |     """Test detection with multiple students returning risks."""
+992 |     db = MagicMock()
+    |
+   ::: tests/test_risk_service_coverage.py:832:5
+    |
+832 | def test_run_daily_detection_large_batch():
+    |     ------------------------------------ previous definition of `test_run_daily_detection_large_batch` here
+833 |     """Test detection with multiple students returning risks."""
+834 |     db = MagicMock()
+    |
+help: Remove definition: `test_run_daily_detection_large_batch`
+
+F811 Redefinition of unused `test_recompute_scores_idempotent_call` from line 857
+    --> tests/test_risk_service_coverage.py:1015:5
+     |
+1015 | def test_recompute_scores_idempotent_call():
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_recompute_scores_idempotent_call` redefined here
+1016 |     """Test that recompute_scores is idempotent (safe to call multiple times)."""
+1017 |     db = MagicMock()
+     |
+    ::: tests/test_risk_service_coverage.py:857:5
+     |
+ 857 | def test_recompute_scores_idempotent_call():
+     |     ------------------------------------- previous definition of `test_recompute_scores_idempotent_call` here
+ 858 |     """Test that recompute_scores is idempotent (safe to call multiple times)."""
+ 859 |     db = MagicMock()
+     |
+help: Remove definition: `test_recompute_scores_idempotent_call`
+
+F811 Redefinition of unused `test_get_kpi_summary_with_severity_breakdown` from line 876
+    --> tests/test_risk_service_coverage.py:1034:5
+     |
+1034 | def test_get_kpi_summary_with_severity_breakdown():
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_get_kpi_summary_with_severity_breakdown` redefined here
+1035 |     """Test KPI summary includes severity breakdown."""
+1036 |     db = MagicMock()
+     |
+    ::: tests/test_risk_service_coverage.py:876:5
+     |
+ 876 | def test_get_kpi_summary_with_severity_breakdown():
+     |     -------------------------------------------- previous definition of `test_get_kpi_summary_with_severity_breakdown` here
+ 877 |     """Test KPI summary includes severity breakdown."""
+ 878 |     db = MagicMock()
+     |
+help: Remove definition: `test_get_kpi_summary_with_severity_breakdown`
+
+F811 Redefinition of unused `test_run_daily_detection_zero_students` from line 895
+    --> tests/test_risk_service_coverage.py:1053:5
+     |
+1053 | def test_run_daily_detection_zero_students():
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_run_daily_detection_zero_students` redefined here
+1054 |     """Test detection when no students match criteria."""
+1055 |     db = MagicMock()
+     |
+    ::: tests/test_risk_service_coverage.py:895:5
+     |
+ 895 | def test_run_daily_detection_zero_students():
+     |     -------------------------------------- previous definition of `test_run_daily_detection_zero_students` here
+ 896 |     """Test detection when no students match criteria."""
+ 897 |     db = MagicMock()
+     |
+help: Remove definition: `test_run_daily_detection_zero_students`
+
+F811 Redefinition of unused `test_recompute_scores_with_tenant_isolation` from line 907
+    --> tests/test_risk_service_coverage.py:1065:5
+     |
+1065 | def test_recompute_scores_with_tenant_isolation():
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_recompute_scores_with_tenant_isolation` redefined here
+1066 |     """Test that recompute_scores respects tenant boundaries."""
+1067 |     db = MagicMock()
+     |
+    ::: tests/test_risk_service_coverage.py:907:5
+     |
+ 907 | def test_recompute_scores_with_tenant_isolation():
+     |     ------------------------------------------- previous definition of `test_recompute_scores_with_tenant_isolation` here
+ 908 |     """Test that recompute_scores respects tenant boundaries."""
+ 909 |     db = MagicMock()
+     |
+help: Remove definition: `test_recompute_scores_with_tenant_isolation`
+
+F811 Redefinition of unused `test_get_kpi_summary_for_multiple_tenants` from line 925
+    --> tests/test_risk_service_coverage.py:1083:5
+     |
+1083 | def test_get_kpi_summary_for_multiple_tenants():
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_get_kpi_summary_for_multiple_tenants` redefined here
+1084 |     """Test KPI summary works for different tenant IDs."""
+1085 |     db = MagicMock()
+     |
+    ::: tests/test_risk_service_coverage.py:925:5
+     |
+ 925 | def test_get_kpi_summary_for_multiple_tenants():
+     |     ----------------------------------------- previous definition of `test_get_kpi_summary_for_multiple_tenants` here
+ 926 |     """Test KPI summary works for different tenant IDs."""
+ 927 |     db = MagicMock()
+     |
+help: Remove definition: `test_get_kpi_summary_for_multiple_tenants`
+
+F811 Redefinition of unused `test_run_daily_detection_audit_logging` from line 941
+    --> tests/test_risk_service_coverage.py:1099:5
+     |
+1099 | def test_run_daily_detection_audit_logging():
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_run_daily_detection_audit_logging` redefined here
+1100 |     """Test that risk detection calls audit logging."""
+1101 |     db = MagicMock()
+     |
+    ::: tests/test_risk_service_coverage.py:941:5
+     |
+ 941 | def test_run_daily_detection_audit_logging():
+     |     -------------------------------------- previous definition of `test_run_daily_detection_audit_logging` here
+ 942 |     """Test that risk detection calls audit logging."""
+ 943 |     db = MagicMock()
+     |
+help: Remove definition: `test_run_daily_detection_audit_logging`
+
+F811 Redefinition of unused `test_recompute_scores_delegates_to_run_daily_detection_call` from line 954
+    --> tests/test_risk_service_coverage.py:1112:5
+     |
+1112 | def test_recompute_scores_delegates_to_run_daily_detection_call():
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `test_recompute_scores_delegates_to_run_daily_detection_call` redefined here
+1113 |     """Test that recompute_scores correctly delegates execution."""
+1114 |     db = MagicMock()
+     |
+    ::: tests/test_risk_service_coverage.py:954:5
+     |
+ 954 | def test_recompute_scores_delegates_to_run_daily_detection_call():
+     |     ----------------------------------------------------------- previous definition of `test_recompute_scores_delegates_to_run_daily_detection_call` here
+ 955 |     """Test that recompute_scores correctly delegates execution."""
+ 956 |     db = MagicMock()
+     |
+help: Remove definition: `test_recompute_scores_delegates_to_run_daily_detection_call`
+
+F841 Local variable `mock_run` is assigned to but never used
+    --> tests/test_risk_service_coverage.py:1123:85
+     |
+1121 |     svc = _make_service(db)
+1122 |     
+1123 |     with patch.object(svc, "run_daily_detection", wraps=svc.run_daily_detection) as mock_run:
+     |                                                                                     ^^^^^^^^
+1124 |         result = _run(svc.recompute_scores(tenant_id=1, actor="admin"))
+1125 |         # Should have called run_daily_detection
+     |
+help: Remove assignment to unused variable `mock_run`
+
+F401 [*] `datetime.UTC` imported but unused
+  --> tests/test_scheduling_service_coverage.py:10:22
+   |
+ 9 | import asyncio
+10 | from datetime import UTC, date, datetime, time, timedelta
+   |                      ^^^
+11 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import
+
+F401 [*] `datetime.date` imported but unused
+  --> tests/test_scheduling_service_coverage.py:10:27
+   |
+ 9 | import asyncio
+10 | from datetime import UTC, date, datetime, time, timedelta
+   |                           ^^^^
+11 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import
+
+F401 [*] `datetime.datetime` imported but unused
+  --> tests/test_scheduling_service_coverage.py:10:33
+   |
+ 9 | import asyncio
+10 | from datetime import UTC, date, datetime, time, timedelta
+   |                                 ^^^^^^^^
+11 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import
+
+F401 [*] `datetime.timedelta` imported but unused
+  --> tests/test_scheduling_service_coverage.py:10:49
+   |
+ 9 | import asyncio
+10 | from datetime import UTC, date, datetime, time, timedelta
+   |                                                 ^^^^^^^^^
+11 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.scheduling.models.LessonStatus` imported but unused
+  --> tests/test_scheduling_service_coverage.py:17:5
+   |
+15 | from app.modules.scheduling.models import (
+16 |     DayOfWeek,
+17 |     LessonStatus,
+   |     ^^^^^^^^^^^^
+18 |     SectionStatus,
+19 | )
+   |
+help: Remove unused import: `app.modules.scheduling.models.LessonStatus`
+
+F401 [*] `app.modules.scheduling.schemas.LessonTopicCreateSchema` imported but unused
+  --> tests/test_scheduling_service_coverage.py:23:5
+   |
+21 |     CourseSectionCreateSchema,
+22 |     SectionScheduleCreateSchema,
+23 |     LessonTopicCreateSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+24 |     DisciplineCreateSchema,
+25 |     LessonInstanceCreateSchema,
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.scheduling.schemas.LessonInstanceCreateSchema` imported but unused
+  --> tests/test_scheduling_service_coverage.py:25:5
+   |
+23 |     LessonTopicCreateSchema,
+24 |     DisciplineCreateSchema,
+25 |     LessonInstanceCreateSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+26 |     LessonAttendanceUpsertSchema,
+27 |     StudentTopicProgressUpsertSchema,
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.scheduling.schemas.LessonAttendanceUpsertSchema` imported but unused
+  --> tests/test_scheduling_service_coverage.py:26:5
+   |
+24 |     DisciplineCreateSchema,
+25 |     LessonInstanceCreateSchema,
+26 |     LessonAttendanceUpsertSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+27 |     StudentTopicProgressUpsertSchema,
+28 |     InstructorAssignmentSchema,
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.scheduling.schemas.StudentTopicProgressUpsertSchema` imported but unused
+  --> tests/test_scheduling_service_coverage.py:27:5
+   |
+25 |     LessonInstanceCreateSchema,
+26 |     LessonAttendanceUpsertSchema,
+27 |     StudentTopicProgressUpsertSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+28 |     InstructorAssignmentSchema,
+29 |     SectionCancelSchema,
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.scheduling.schemas.InstructorAssignmentSchema` imported but unused
+  --> tests/test_scheduling_service_coverage.py:28:5
+   |
+26 |     LessonAttendanceUpsertSchema,
+27 |     StudentTopicProgressUpsertSchema,
+28 |     InstructorAssignmentSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+29 |     SectionCancelSchema,
+30 |     SectionRescheduleSchema,
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.scheduling.schemas.SectionCancelSchema` imported but unused
+  --> tests/test_scheduling_service_coverage.py:29:5
+   |
+27 |     StudentTopicProgressUpsertSchema,
+28 |     InstructorAssignmentSchema,
+29 |     SectionCancelSchema,
+   |     ^^^^^^^^^^^^^^^^^^^
+30 |     SectionRescheduleSchema,
+31 | )
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.scheduling.schemas.SectionRescheduleSchema` imported but unused
+  --> tests/test_scheduling_service_coverage.py:30:5
+   |
+28 |     InstructorAssignmentSchema,
+29 |     SectionCancelSchema,
+30 |     SectionRescheduleSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+31 | )
+32 | from app.modules.scheduling.service import SchedulingService, _time_to_str
+   |
+help: Remove unused import
+
+F841 Local variable `s2` is assigned to but never used
+   --> tests/test_session_service_coverage.py:250:5
+    |
+248 | def test_revoke_all_only_revokes_active():
+249 |     s1 = _make_session(user_id="eve", tenant_id=1)
+250 |     s2 = _make_session(user_id="eve", tenant_id=1, device_id="dev-y")
+    |     ^^
+251 |     revoke_session(session_id=s1["session_id"])  # pre-revoke one
+    |
+help: Remove assignment to unused variable `s2`
+
+F401 [*] `types` imported but unused
+  --> tests/test_week106_domain_depth.py:18:8
+   |
+17 | import importlib
+18 | import types
+   |        ^^^^^
+19 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `types`
+
+F401 [*] `app.modules.dining.service.DomainValidationError` imported but unused
+  --> tests/test_week106_domain_depth.py:85:13
+   |
+83 |         from app.modules.dining.service import (
+84 |             _check_menu_is_orderable,
+85 |             DomainValidationError,
+   |             ^^^^^^^^^^^^^^^^^^^^^
+86 |         )
+87 |         # DomainValidationError may not be re-exported; import from canonical path
+   |
+help: Remove unused import: `app.modules.dining.service.DomainValidationError`
+
+F401 [*] `app.core.module_helpers.service_validation.DomainValidationError` imported but unused
+  --> tests/test_week106_domain_depth.py:88:89
+   |
+86 |         )
+87 |         # DomainValidationError may not be re-exported; import from canonical path
+88 |         from app.core.module_helpers.service_validation import DomainValidationError as DVE
+   |                                                                                         ^^^
+89 |
+90 |         with patch(
+   |
+help: Remove unused import: `app.core.module_helpers.service_validation.DomainValidationError`
+
+F401 [*] `app.core.module_helpers.service_validation.DomainValidationError` imported but unused
+   --> tests/test_week107_domain_depth.py:109:89
+    |
+107 |             _check_facility_has_no_active_critical_incident,
+108 |         )
+109 |         from app.core.module_helpers.service_validation import DomainValidationError as DVE
+    |                                                                                         ^^^
+110 |
+111 |         with patch(
+    |
+help: Remove unused import: `app.core.module_helpers.service_validation.DomainValidationError`
+
+F401 [*] `app.core.module_helpers.service_validation.DomainValidationError` imported but unused
+  --> tests/test_week108_domain_depth.py:94:89
+   |
+92 |     def _call(self, rooms: list[dict], room_code: str = "ROOM-101"):
+93 |         from app.modules.housing.service import _check_room_is_assignable
+94 |         from app.core.module_helpers.service_validation import DomainValidationError as DVE
+   |                                                                                         ^^^
+95 |
+96 |         with patch(
+   |
+help: Remove unused import: `app.core.module_helpers.service_validation.DomainValidationError`
+
+F401 [*] `types` imported but unused
+  --> tests/test_week10_domain_depth.py:11:8
+   |
+10 | import inspect
+11 | import types
+   |        ^^^^^
+12 |
+13 | import pytest
+   |
+help: Remove unused import: `types`
+
+F401 [*] `importlib` imported but unused
+  --> tests/test_week110_domain_depth.py:14:8
+   |
+12 | from __future__ import annotations
+13 |
+14 | import importlib
+   |        ^^^^^^^^^
+15 | import types
+16 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `importlib`
+
+F401 [*] `types` imported but unused
+  --> tests/test_week110_domain_depth.py:15:8
+   |
+14 | import importlib
+15 | import types
+   |        ^^^^^
+16 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `types`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week110_domain_depth.py:16:27
+   |
+14 | import importlib
+15 | import types
+16 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+17 |
+18 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F841 Local variable `gid` is assigned to but never used
+   --> tests/test_week111_domain_depth.py:237:53
+    |
+235 |     def test_active_among_many_vendors_allowed(self):
+236 |         vendors = [
+237 |             _make_vendor("VND-OTHER-1", "inactive", gid := 1),
+    |                                                     ^^^
+238 |             _make_vendor(VENDOR_CODE, "active", 2),
+239 |             _make_vendor("VND-OTHER-2", "under_review", 3),
+    |
+help: Remove assignment to unused variable `gid`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week116_domain_depth.py:13:34
+   |
+12 | import pytest
+13 | from unittest.mock import patch, MagicMock
+   |                                  ^^^^^^^^^
+14 |
+15 | from app.core.module_helpers.service_validation import DomainValidationError
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F841 Local variable `mock_list` is assigned to but never used
+   --> tests/test_week116_domain_depth.py:230:14
+    |
+228 |             "app.modules.expense_controls.service.list_entities_for_tenant",
+229 |             return_value=_cc_list(active=False),
+230 |         ) as mock_list, \
+    |              ^^^^^^^^^
+231 |              patch(
+232 |             "app.modules.expense_controls.service.create_entity_for_tenant",
+    |
+help: Remove assignment to unused variable `mock_list`
+
+F401 [*] `app.modules.university_core.tenant_entity_service.list_entities_for_tenant` imported but unused
+   --> tests/test_week11_domain_depth.py:241:13
+    |
+239 |         from app.modules.university_core.tenant_entity_service import (
+240 |             create_entity_for_tenant,
+241 |             list_entities_for_tenant,
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^
+242 |         )
+243 |         from app.modules.university_core.tenant_entity_api import (
+    |
+help: Remove unused import: `app.modules.university_core.tenant_entity_service.list_entities_for_tenant`
+
+F401 [*] `app.modules.university_core.tenant_entity_api.create_entity_for_tenant` imported but unused
+   --> tests/test_week11_domain_depth.py:244:41
+    |
+242 |         )
+243 |         from app.modules.university_core.tenant_entity_api import (
+244 |             create_entity_for_tenant as api_create,
+    |                                         ^^^^^^^^^^
+245 |             list_entities_for_tenant as api_list,
+246 |         )
+    |
+help: Remove unused import: `app.modules.university_core.tenant_entity_api.create_entity_for_tenant`
+
+F401 [*] `app.modules.facilities_work_orders.service._BLOCKING_SECURITY_INCIDENT_SEVERITIES` imported but unused
+  --> tests/test_week122_domain_depth.py:29:5
+   |
+27 | from app.modules.facilities_work_orders.schemas import WorkOrderCreateSchema
+28 | from app.modules.facilities_work_orders.service import (
+29 |     _BLOCKING_SECURITY_INCIDENT_SEVERITIES,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+30 |     _BLOCKING_SECURITY_INCIDENT_STATUSES,
+31 |     _FACILITY_BLOCKING_SEVERITIES,
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.facilities_work_orders.service._BLOCKING_SECURITY_INCIDENT_STATUSES` imported but unused
+  --> tests/test_week122_domain_depth.py:30:5
+   |
+28 | from app.modules.facilities_work_orders.service import (
+29 |     _BLOCKING_SECURITY_INCIDENT_SEVERITIES,
+30 |     _BLOCKING_SECURITY_INCIDENT_STATUSES,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+31 |     _FACILITY_BLOCKING_SEVERITIES,
+32 |     _FACILITY_SAFE_STATUSES,
+   |
+help: Remove unused import
+
+F841 Local variable `created` is assigned to but never used
+   --> tests/test_week122_domain_depth.py:340:9
+    |
+339 |     def test_create_succeeds_for_clear_facility(self, monkeypatch):
+340 |         created = self._setup(monkeypatch, incidents=[])
+    |         ^^^^^^^
+341 |         result = create_work_order(1, _make_payload(facility_code="FAC-CLEAR"), actor="admin")
+342 |         assert result.id == 55
+    |
+help: Remove assignment to unused variable `created`
+
+F841 Local variable `created` is assigned to but never used
+   --> tests/test_week123_domain_depth.py:294:9
+    |
+293 |     def test_create_succeeds_for_active_faculty(self, monkeypatch):
+294 |         created = self._setup(monkeypatch, contracts=[ACTIVE_CONTRACT])
+    |         ^^^^^^^
+295 |         result = create_syllabus(1, _make_payload(faculty_id="FAC-001"), actor="admin")
+296 |         assert result.id == 88
+    |
+help: Remove assignment to unused variable `created`
+
+F401 [*] `types` imported but unused
+  --> tests/test_week131_domain_depth.py:14:8
+   |
+13 | import inspect
+14 | import types
+   |        ^^^^^
+15 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `types`
+
+F401 [*] `importlib` imported but unused
+   --> tests/test_week131_domain_depth.py:402:16
+    |
+401 |     def test_router_module_imports_domain_validation_error(self):
+402 |         import importlib
+    |                ^^^^^^^^^
+403 |         import sys
+404 |         # Ensure the import is accessible
+    |
+help: Remove unused import: `importlib`
+
+F401 [*] `types` imported but unused
+  --> tests/test_week137_domain_depth.py:18:8
+   |
+16 | import importlib
+17 | import inspect
+18 | import types
+   |        ^^^^^
+19 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `types`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week137_domain_depth.py:19:27
+   |
+17 | import inspect
+18 | import types
+19 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+20 |
+21 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F401 [*] `importlib` imported but unused
+  --> tests/test_week138_domain_depth.py:15:8
+   |
+13 | from __future__ import annotations
+14 |
+15 | import importlib
+   |        ^^^^^^^^^
+16 | import inspect
+17 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `importlib`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week138_domain_depth.py:17:27
+   |
+15 | import importlib
+16 | import inspect
+17 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+18 |
+19 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week139_domain_depth.py:17:27
+   |
+15 | import inspect
+16 | import sys
+17 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+18 |
+19 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+E731 Do not assign a `lambda` expression, use a `def`
+   --> tests/test_week139_domain_depth.py:337:9
+    |
+335 |             "tenant_id": "1",
+336 |         }
+337 |         default_se = lambda tid, p, actor: _svc.AlumniRecordSchema.model_validate(mock_record)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+338 |         with patch.object(_svc, "create_alumni_record",
+339 |                           side_effect=side_effect or default_se):
+    |
+help: Rewrite `default_se` as a `def`
+
+E731 Do not assign a `lambda` expression, use a `def`
+   --> tests/test_week139_domain_depth.py:385:9
+    |
+383 |             "tenant_id": "1",
+384 |         }
+385 |         default_se = lambda tid, rid, p, actor: _svc.AlumniRecordSchema.model_validate(mock_record)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+386 |         with patch.object(_svc, "update_alumni_status",
+387 |                           side_effect=side_effect or default_se):
+    |
+help: Rewrite `default_se` as a `def`
+
+F401 [*] `app.modules.research.router` imported but unused
+  --> tests/test_week140_domain_depth.py:18:8
+   |
+17 | import app.modules.research.service as _svc
+18 | import app.modules.research.router  # ensure registered in sys.modules
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 |
+20 | _ROUTER_MOD = sys.modules.get("app.modules.research.router")
+   |
+help: Remove unused import: `app.modules.research.router`
+
+E402 Module level import not at top of file
+  --> tests/test_week140_domain_depth.py:22:1
+   |
+20 | _ROUTER_MOD = sys.modules.get("app.modules.research.router")
+21 |
+22 | from app.core.module_helpers.service_validation import DomainValidationError
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+23 | from app.modules.research.schemas import (
+24 |     ResearchGrantCreateSchema,
+   |
+
+E402 Module level import not at top of file
+  --> tests/test_week140_domain_depth.py:23:1
+   |
+22 |   from app.core.module_helpers.service_validation import DomainValidationError
+23 | / from app.modules.research.schemas import (
+24 | |     ResearchGrantCreateSchema,
+25 | |     ResearchGrantSchema,
+26 | |     ResearchGrantStatusUpdateSchema,
+27 | |     ResearchPublicationCreateSchema,
+28 | |     ResearchPublicationSchema,
+29 | |     ResearchPublicationStatusUpdateSchema,
+30 | |     ResearchLabCreateSchema,
+31 | |     ResearchLabSchema,
+32 | |     ResearchLabStatusUpdateSchema,
+33 | |     ResearchExperimentCreateSchema,
+34 | |     ResearchExperimentSchema,
+35 | |     ResearchExperimentStatusUpdateSchema,
+36 | |     ResearchIpAssetCreateSchema,
+37 | |     ResearchIpAssetSchema,
+38 | |     ResearchHealthSnapshotSchema,
+39 | | )
+   | |_^
+40 |   from fastapi import HTTPException
+   |
+
+F401 [*] `app.modules.research.schemas.ResearchLabCreateSchema` imported but unused
+  --> tests/test_week140_domain_depth.py:30:5
+   |
+28 |     ResearchPublicationSchema,
+29 |     ResearchPublicationStatusUpdateSchema,
+30 |     ResearchLabCreateSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+31 |     ResearchLabSchema,
+32 |     ResearchLabStatusUpdateSchema,
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.research.schemas.ResearchExperimentCreateSchema` imported but unused
+  --> tests/test_week140_domain_depth.py:33:5
+   |
+31 |     ResearchLabSchema,
+32 |     ResearchLabStatusUpdateSchema,
+33 |     ResearchExperimentCreateSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+34 |     ResearchExperimentSchema,
+35 |     ResearchExperimentStatusUpdateSchema,
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.research.schemas.ResearchIpAssetCreateSchema` imported but unused
+  --> tests/test_week140_domain_depth.py:36:5
+   |
+34 |     ResearchExperimentSchema,
+35 |     ResearchExperimentStatusUpdateSchema,
+36 |     ResearchIpAssetCreateSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+37 |     ResearchIpAssetSchema,
+38 |     ResearchHealthSnapshotSchema,
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.research.schemas.ResearchHealthSnapshotSchema` imported but unused
+  --> tests/test_week140_domain_depth.py:38:5
+   |
+36 |     ResearchIpAssetCreateSchema,
+37 |     ResearchIpAssetSchema,
+38 |     ResearchHealthSnapshotSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+39 | )
+40 | from fastapi import HTTPException
+   |
+help: Remove unused import
+
+E402 Module level import not at top of file
+  --> tests/test_week140_domain_depth.py:40:1
+   |
+38 |     ResearchHealthSnapshotSchema,
+39 | )
+40 | from fastapi import HTTPException
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+41 |
+42 | # ---------------------------------------------------------------------------
+   |
+
+F401 [*] `types` imported but unused
+  --> tests/test_week141_domain_depth.py:11:8
+   |
+ 9 | import inspect
+10 | import sys
+11 | import types
+   |        ^^^^^
+12 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `types`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week141_domain_depth.py:12:27
+   |
+10 | import sys
+11 | import types
+12 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+13 |
+14 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F841 Local variable `vendor_tenant2` is assigned to but never used
+   --> tests/test_week141_domain_depth.py:208:9
+    |
+206 |     def test_cross_tenant_vendor_does_not_satisfy_guard(self):
+207 |         """Vendors for tenant_id=2 returned — guard for tenant_id=1 should block."""
+208 |         vendor_tenant2 = {**_make_vendor("VEND-001", "active"), "tenant_id": "2"}
+    |         ^^^^^^^^^^^^^^
+209 |         # Simulate: list_entities_for_tenant always returns tenant2's vendor
+210 |         with patch.object(_svc, "list_entities_for_tenant", return_value=[]):
+    |
+help: Remove assignment to unused variable `vendor_tenant2`
+
+F401 [*] `app.modules.expense_controls.service.ExpenseControlRules` imported but unused
+   --> tests/test_week145_domain_depth.py:154:58
+    |
+152 |     def test_category_caps_enforced(self, monkeypatch):
+153 |         """Category active count respected in create_expense_record."""
+154 |         from app.modules.expense_controls.service import ExpenseControlRules
+    |                                                          ^^^^^^^^^^^^^^^^^^^
+155 |
+156 |         # Mock to have 3 existing pending travel expenses
+    |
+help: Remove unused import: `app.modules.expense_controls.service.ExpenseControlRules`
+
+F401 [*] `importlib` imported but unused
+  --> tests/test_week147_domain_depth.py:15:8
+   |
+13 | from __future__ import annotations
+14 |
+15 | import importlib
+   |        ^^^^^^^^^
+16 | import inspect
+17 | import pytest
+   |
+help: Remove unused import: `importlib`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week147_domain_depth.py:18:27
+   |
+16 | import inspect
+17 | import pytest
+18 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+19 |
+20 | import app.modules.facilities_work_orders.service as svc
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F401 [*] `app.modules.facilities_work_orders.schemas.WorkOrderStatusUpdateSchema` imported but unused
+  --> tests/test_week147_domain_depth.py:24:5
+   |
+22 | from app.modules.facilities_work_orders.schemas import (
+23 |     WorkOrderCreateSchema,
+24 |     WorkOrderStatusUpdateSchema,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+25 | )
+   |
+help: Remove unused import: `app.modules.facilities_work_orders.schemas.WorkOrderStatusUpdateSchema`
+
+F841 Local variable `client` is assigned to but never used
+   --> tests/test_week147_domain_depth.py:523:17
+    |
+521 |                  patch("app.modules.facilities_work_orders.router.permission_dependency", return_value=lambda: None), \
+522 |                  patch("app.modules.facilities_work_orders.router.get_current_tenant", return_value=lambda: {"id": 1}):
+523 |                 client = TestClient(app_instance, raise_server_exceptions=False)
+    |                 ^^^^^^
+524 |                 # The 422 mapping should be present in the router code
+525 |                 # Verify via source code inspection
+    |
+help: Remove assignment to unused variable `client`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week148_domain_depth.py:22:34
+   |
+21 | import pytest
+22 | from unittest.mock import patch, MagicMock
+   |                                  ^^^^^^^^^
+23 |
+24 | import app.modules.asset_inventory.service as svc
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week155_domain_depth.py:12:27
+   |
+10 | import importlib
+11 | from pathlib import Path
+12 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+13 |
+14 | import pytest
+   |
+help: Remove unused import
+
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/test_week155_domain_depth.py:12:38
+   |
+10 | import importlib
+11 | from pathlib import Path
+12 | from unittest.mock import MagicMock, patch
+   |                                      ^^^^^
+13 |
+14 | import pytest
+   |
+help: Remove unused import
+
+F401 [*] `types` imported but unused
+  --> tests/test_week156_domain_depth.py:8:8
+   |
+ 7 | import importlib
+ 8 | import types
+   |        ^^^^^
+ 9 | from pathlib import Path
+10 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `types`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week156_domain_depth.py:10:27
+   |
+ 8 | import types
+ 9 | from pathlib import Path
+10 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+11 |
+12 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week157_domain_depth.py:10:27
+   |
+ 8 | import importlib
+ 9 | from pathlib import Path
+10 | from unittest.mock import MagicMock, patch, call
+   |                           ^^^^^^^^^
+11 |
+12 | import pytest
+   |
+help: Remove unused import
+
+F401 [*] `unittest.mock.call` imported but unused
+  --> tests/test_week157_domain_depth.py:10:45
+   |
+ 8 | import importlib
+ 9 | from pathlib import Path
+10 | from unittest.mock import MagicMock, patch, call
+   |                                             ^^^^
+11 |
+12 | import pytest
+   |
+help: Remove unused import
+
+F401 [*] `uuid` imported but unused
+  --> tests/test_week17_domain_depth.py:12:8
+   |
+11 | import inspect
+12 | import uuid
+   |        ^^^^
+13 |
+14 | from app.modules.auth.token_service import create_access_token
+   |
+help: Remove unused import: `uuid`
+
+F401 [*] `uuid` imported but unused
+  --> tests/test_week21_domain_depth.py:12:8
+   |
+11 | import inspect
+12 | import uuid
+   |        ^^^^
+13 |
+14 | from app.modules.auth.token_service import create_access_token
+   |
+help: Remove unused import: `uuid`
+
+F401 [*] `app.modules.communications.service._ensure_broadcast_audit_record` imported but unused
+  --> tests/test_week37_domain_depth.py:10:5
+   |
+ 8 |     _LARGE_AUDIENCE_THRESHOLD,
+ 9 |     _MESSAGE_TYPE_MAX_ACTIVE,
+10 |     _ensure_broadcast_audit_record,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |     create_message,
+12 | )
+   |
+help: Remove unused import: `app.modules.communications.service._ensure_broadcast_audit_record`
+
+F401 [*] `app.modules.faculty_performance_kpis.service._ensure_low_performance_alert_record` imported but unused
+  --> tests/test_week38_domain_depth.py:10:5
+   |
+ 8 |     _KPI_PERIOD_MAX_ACTIVE,
+ 9 |     _LOW_SCORE_THRESHOLD,
+10 |     _ensure_low_performance_alert_record,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |     create_faculty_kpi,
+12 | )
+   |
+help: Remove unused import: `app.modules.faculty_performance_kpis.service._ensure_low_performance_alert_record`
+
+F401 [*] `app.modules.financial_aid.service._ensure_disbursement_watch_record` imported but unused
+  --> tests/test_week39_domain_depth.py:10:5
+   |
+ 8 |     _AID_TYPE_MAX_ACTIVE,
+ 9 |     _HIGH_VALUE_AID_THRESHOLD,
+10 |     _ensure_disbursement_watch_record,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |     create_financial_aid_record,
+12 | )
+   |
+help: Remove unused import: `app.modules.financial_aid.service._ensure_disbursement_watch_record`
+
+F401 [*] `app.modules.advising.service._ensure_support_alert_record` imported but unused
+  --> tests/test_week40_domain_depth.py:10:5
+   |
+ 8 |     _HIGH_FREQUENCY_SESSION_TYPES,
+ 9 |     _SESSION_TYPE_MAX_ACTIVE,
+10 |     _ensure_support_alert_record,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |     create_advising_session,
+12 | )
+   |
+help: Remove unused import: `app.modules.advising.service._ensure_support_alert_record`
+
+F401 [*] `unittest.mock.AsyncMock` imported but unused
+ --> tests/test_week53_domain_depth.py:4:27
+  |
+3 | import pytest
+4 | from unittest.mock import AsyncMock, MagicMock
+  |                           ^^^^^^^^^
+5 |
+6 | from app.modules.student_services import service
+  |
+help: Remove unused import: `unittest.mock.AsyncMock`
+
+F401 [*] `unittest.mock.AsyncMock` imported but unused
+ --> tests/test_week54_domain_depth.py:4:27
+  |
+3 | import pytest
+4 | from unittest.mock import AsyncMock, MagicMock
+  |                           ^^^^^^^^^
+5 |
+6 | from app.modules.career_services import service
+  |
+help: Remove unused import: `unittest.mock.AsyncMock`
+
+F401 [*] `unittest.mock.AsyncMock` imported but unused
+ --> tests/test_week55_domain_depth.py:4:27
+  |
+3 | import pytest
+4 | from unittest.mock import AsyncMock, MagicMock
+  |                           ^^^^^^^^^
+5 |
+6 | from app.modules.facilities_work_orders import service
+  |
+help: Remove unused import: `unittest.mock.AsyncMock`
+
+F401 [*] `app.modules.facilities_work_orders.schemas.WorkOrderPriority` imported but unused
+ --> tests/test_week55_domain_depth.py:7:79
+  |
+6 | from app.modules.facilities_work_orders import service
+7 | from app.modules.facilities_work_orders.schemas import WorkOrderCreateSchema, WorkOrderPriority
+  |                                                                               ^^^^^^^^^^^^^^^^^
+  |
+help: Remove unused import: `app.modules.facilities_work_orders.schemas.WorkOrderPriority`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+ --> tests/test_week61_domain_depth.py:5:27
+  |
+4 | import pytest
+5 | from unittest.mock import MagicMock, patch
+  |                           ^^^^^^^^^
+  |
+help: Remove unused import
+
+F401 [*] `unittest.mock.patch` imported but unused
+ --> tests/test_week61_domain_depth.py:5:38
+  |
+4 | import pytest
+5 | from unittest.mock import MagicMock, patch
+  |                                      ^^^^^
+  |
+help: Remove unused import
+
+F401 [*] `unittest.mock.patch` imported but unused
+ --> tests/test_week62_domain_depth.py:5:38
+  |
+4 | import pytest
+5 | from unittest.mock import MagicMock, patch
+  |                                      ^^^^^
+  |
+help: Remove unused import: `unittest.mock.patch`
+
+F841 Local variable `event_calls` is assigned to but never used
+  --> tests/test_week62_domain_depth.py:85:5
+   |
+84 |     calls_to_create: list = []
+85 |     event_calls: list = []
+   |     ^^^^^^^^^^^
+86 |
+87 |     # Mock: existing alert already exists
+   |
+help: Remove assignment to unused variable `event_calls`
+
+F401 [*] `unittest.mock.patch` imported but unused
+ --> tests/test_week63_domain_depth.py:5:38
+  |
+4 | import pytest
+5 | from unittest.mock import MagicMock, patch
+  |                                      ^^^^^
+  |
+help: Remove unused import: `unittest.mock.patch`
+
+F401 [*] `pytest` imported but unused
+ --> tests/test_week69_domain_depth.py:4:8
+  |
+2 | from __future__ import annotations
+3 |
+4 | import pytest
+  |        ^^^^^^
+5 |
+6 | from app.modules.thesis.service import (
+  |
+help: Remove unused import: `pytest`
+
+F401 [*] `decimal.Decimal` imported but unused
+  --> tests/test_week76_domain_depth.py:12:21
+   |
+10 | from __future__ import annotations
+11 |
+12 | from decimal import Decimal
+   |                     ^^^^^^^
+13 | from unittest.mock import AsyncMock, MagicMock, patch
+   |
+help: Remove unused import: `decimal.Decimal`
+
+F401 [*] `unittest.mock.AsyncMock` imported but unused
+  --> tests/test_week76_domain_depth.py:13:27
+   |
+12 | from decimal import Decimal
+13 | from unittest.mock import AsyncMock, MagicMock, patch
+   |                           ^^^^^^^^^
+14 |
+15 | import pytest
+   |
+help: Remove unused import
+
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/test_week76_domain_depth.py:13:49
+   |
+12 | from decimal import Decimal
+13 | from unittest.mock import AsyncMock, MagicMock, patch
+   |                                                 ^^^^^
+14 |
+15 | import pytest
+   |
+help: Remove unused import
+
+F401 [*] `app.modules.transcripts.service.TranscriptService` imported but unused
+  --> tests/test_week76_domain_depth.py:90:49
+   |
+88 | async def test_w76_generate_transcript_blocked_for_graduated_student():
+89 |     from app.core.module_helpers.service_validation import DomainValidationError
+90 |     from app.modules.transcripts.service import TranscriptService
+   |                                                 ^^^^^^^^^^^^^^^^^
+91 |
+92 |     svc = _make_service(student_status="graduated")
+   |
+help: Remove unused import: `app.modules.transcripts.service.TranscriptService`
+
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/test_week77_domain_depth.py:9:38
+   |
+ 8 | from datetime import UTC, datetime, timedelta
+ 9 | from unittest.mock import MagicMock, patch
+   |                                      ^^^^^
+10 |
+11 | import pytest
+   |
+help: Remove unused import: `unittest.mock.patch`
+
+F401 [*] `app.modules.academic_records.service.update_record` imported but unused
+  --> tests/test_week79_domain_depth.py:13:50
+   |
+11 | import pytest
+12 |
+13 | from app.modules.academic_records.service import update_record, _check_record_not_published
+   |                                                  ^^^^^^^^^^^^^
+   |
+help: Remove unused import: `app.modules.academic_records.service.update_record`
+
+F401 [*] `app.modules.academic_integrity.service._ESCALATION_REQUIRES_ACTION` imported but unused
+  --> tests/test_week80_domain_depth.py:15:5
+   |
+13 |     AcademicIntegrityService,
+14 |     _CLOSURE_REQUIRES_NOTES,
+15 |     _ESCALATION_REQUIRES_ACTION,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 | )
+17 | from app.modules.academic_integrity.schemas import (
+   |
+help: Remove unused import: `app.modules.academic_integrity.service._ESCALATION_REQUIRES_ACTION`
+
+F841 Local variable `item` is assigned to but never used
+   --> tests/test_week84_domain_depth.py:121:5
+    |
+119 |     svc._check_course_exists_in_tenant = _fake_guard
+120 |
+121 |     item = svc.create_program_requirement_item(
+    |     ^^^^
+122 |         tenant_id=10,
+123 |         requirement_id=5,
+    |
+help: Remove assignment to unused variable `item`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week85_domain_depth.py:13:27
+   |
+11 | from __future__ import annotations
+12 |
+13 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+14 |
+15 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/test_week87_domain_depth.py:25:27
+   |
+23 | from __future__ import annotations
+24 |
+25 | from unittest.mock import patch
+   |                           ^^^^^
+26 |
+27 | import pytest
+   |
+help: Remove unused import: `unittest.mock.patch`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week88_domain_depth.py:17:34
+   |
+16 | import pytest
+17 | from unittest.mock import patch, MagicMock
+   |                                  ^^^^^^^^^
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F401 [*] `importlib` imported but unused
+  --> tests/test_week8_observability_perf.py:12:8
+   |
+10 | from __future__ import annotations
+11 |
+12 | import importlib
+   |        ^^^^^^^^^
+13 | import types
+   |
+help: Remove unused import: `importlib`
+
+F401 [*] `types` imported but unused
+  --> tests/test_week8_observability_perf.py:13:8
+   |
+12 | import importlib
+13 | import types
+   |        ^^^^^
+14 |
+15 | import pytest
+   |
+help: Remove unused import: `types`
+
+F401 [*] `pytest` imported but unused
+  --> tests/test_week8_observability_perf.py:15:8
+   |
+13 | import types
+14 |
+15 | import pytest
+   |        ^^^^^^
+16 |
+17 | from app.modules.observability.metrics import (
+   |
+help: Remove unused import: `pytest`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/test_week93_domain_depth.py:22:27
+   |
+20 | from __future__ import annotations
+21 |
+22 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+23 |
+24 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+F401 [*] `app.modules.hr_payroll.service.update_payroll_cycle_status` imported but unused
+  --> tests/test_week94_domain_depth.py:35:5
+   |
+33 |     _PAYROLL_APPROVAL_GATE_STATUSES,
+34 |     _check_active_employees_exist_for_payroll_approval,
+35 |     update_payroll_cycle_status,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+36 | )
+37 | from app.modules.hr_payroll.schemas import PayrollCycleStatusUpdateSchema
+   |
+help: Remove unused import: `app.modules.hr_payroll.service.update_payroll_cycle_status`
+
+F401 [*] `app.modules.hr_payroll.schemas.PayrollCycleStatusUpdateSchema` imported but unused
+  --> tests/test_week94_domain_depth.py:37:44
+   |
+35 |     update_payroll_cycle_status,
+36 | )
+37 | from app.modules.hr_payroll.schemas import PayrollCycleStatusUpdateSchema
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+help: Remove unused import: `app.modules.hr_payroll.schemas.PayrollCycleStatusUpdateSchema`
+
+F401 [*] `app.modules.interventions.models.InterventionCaseModel` imported but unused
+   --> tests/test_week9_domain_depth.py:106:54
+    |
+104 |         import inspect
+105 |         from app.modules.grades.service import GradeLifecycleService
+106 |         from app.modules.interventions.models import InterventionCaseModel  # import must succeed
+    |                                                      ^^^^^^^^^^^^^^^^^^^^^
+107 |
+108 |         src = inspect.getsource(GradeLifecycleService.submit_grade)
+    |
+help: Remove unused import: `app.modules.interventions.models.InterventionCaseModel`
+
+F401 [*] `threading` imported but unused
+  --> tests/test_worker_graceful_shutdown.py:19:8
+   |
+17 | import signal
+18 | import sys
+19 | import threading
+   |        ^^^^^^^^^
+20 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `threading`
+
+Found 243 errors.
+[*] 174 fixable with the `--fix` option (29 hidden fixes can be enabled with the `--unsafe-fixes` option).

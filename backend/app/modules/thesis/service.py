@@ -4,6 +4,7 @@ import logging
 from datetime import UTC, date, datetime
 
 from app.core.module_helpers.audit_helpers import build_audit_action
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.audit.service import log_admin_action
 from app.modules.thesis.schemas import ThesisCreateSchema, ThesisRecordSchema, ThesisStatus, ThesisStatusUpdateSchema
 from app.modules.university_core.tenant_entity_service import (
@@ -23,6 +24,25 @@ _ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     "rejected": {"submitted"},
     "defended": set(),
 }
+
+# W41: cap on active (draft/submitted/under_review) theses per tenant
+_THESIS_STATUS_MAX_ACTIVE: dict[str, int] = {
+    "draft": 200,
+    "submitted": 100,
+    "under_review": 80,
+}
+
+_ACTIVE_THESIS_STATUSES: frozenset[str] = frozenset({"draft", "submitted", "under_review"})
+
+# W41: statuses requiring an overdue-review alert
+_HIGH_RISK_THESIS_STATUSES: frozenset[str] = frozenset({"under_review"})
+
+# W69: statuses that trigger a rejection risk alert
+_REJECTION_RISK_STATUSES: frozenset[str] = frozenset({"rejected"})
+
+# W92: defending thesis requires no open academic integrity cases for the student.
+_DEFENSE_TRANSITION_STATUSES: frozenset[str] = frozenset({"defended"})
+_BLOCKING_INTEGRITY_CASE_STATUSES: frozenset[str] = frozenset({"flagged", "under_review", "escalated"})
 
 
 def _normalize_optional(value: str | None) -> str | None:
@@ -107,6 +127,18 @@ def create_thesis_record(
     if any(str(row.get("thesis_code") or "").strip().lower() == thesis_code.lower() for row in existing):
         raise ValueError("thesis_code already exists")
 
+    # W41: count-cap guard on active theses
+    initial_status = "draft"
+    cap = _THESIS_STATUS_MAX_ACTIVE.get(initial_status, 200)
+    active_count = sum(
+        1 for r in existing
+        if str(r.get("status") or "") in _ACTIVE_THESIS_STATUSES
+    )
+    if active_count >= cap:
+        raise ValueError(
+            f"Active thesis cap ({cap}) reached; cannot create new draft thesis"
+        )
+
     created = create_entity_for_tenant(
         "thesis_records",
         {
@@ -152,6 +184,13 @@ def update_thesis_status(
     if next_status == "defended" and defense_date_value is None:
         raise ValueError("defense_date is required when status is defended")
 
+    _check_no_open_integrity_cases_for_defense(
+        tenant_id=tenant_id,
+        thesis_id=thesis_id,
+        thesis_data=current,
+        target_status=next_status,
+    )
+
     updated = update_entity_for_tenant(
         "thesis_records",
         thesis_id,
@@ -191,4 +230,149 @@ def update_thesis_status(
         days_since_last_milestone=days_since_last_milestone,
     )
 
+    # W41: side-effect overdue alert for high-risk statuses
+    if next_status in _HIGH_RISK_THESIS_STATUSES:
+        _ensure_overdue_alert_record(
+            tenant_id=tenant_id,
+            thesis_id=thesis_id,
+            thesis_data={
+                "thesis_code": current.get("thesis_code"),
+                "student_id": current.get("student_id"),
+                "current_status": next_status,
+            },
+        )
+
+    # W69: side-effect rejection risk alert
+    if next_status in _REJECTION_RISK_STATUSES:
+        _ensure_rejection_risk_alert(
+            tenant_id=tenant_id,
+            thesis_id=thesis_id,
+            thesis_data={
+                "thesis_code": current.get("thesis_code"),
+                "student_id": current.get("student_id"),
+                "current_status": next_status,
+            },
+        )
+
     return ThesisRecordSchema.model_validate(updated)
+
+
+def _check_no_open_integrity_cases_for_defense(
+    *,
+    tenant_id: int,
+    thesis_id: int,
+    thesis_data: dict,
+    target_status: str,
+) -> None:
+    """Fail-closed invariant: defended transition requires integrity clearance.
+
+    A thesis defense cannot be finalized while the student has active academic
+    integrity cases (flagged/under_review/escalated).
+    """
+    if target_status not in _DEFENSE_TRANSITION_STATUSES:
+        return
+
+    student_id_raw = thesis_data.get("student_id")
+    try:
+        student_id = int(student_id_raw)
+    except (TypeError, ValueError) as exc:
+        raise DomainValidationError(
+            f"Cannot mark thesis {thesis_id} as defended: missing or invalid student_id"
+        ) from exc
+
+    try:
+        integrity_cases = list_entities_for_tenant("integrity_case", tenant_id)
+    except Exception as exc:  # pragma: no cover - exercised via monkeypatch tests
+        raise DomainValidationError(
+            "Cannot mark thesis as defended: academic_integrity lookup failed. "
+            "Integrity clearance must be verified before defense finalization"
+        ) from exc
+
+    blocking_cases = [
+        row
+        for row in integrity_cases
+        if int(row.get("student_id") or 0) == student_id
+        and str(row.get("status") or "").strip().lower() in _BLOCKING_INTEGRITY_CASE_STATUSES
+    ]
+    if blocking_cases:
+        blocking_case_ids = [str(row.get("id") or "unknown") for row in blocking_cases]
+        raise DomainValidationError(
+            f"Cannot mark thesis {thesis_id} as defended for student_id={student_id}: "
+            "open academic integrity cases exist "
+            f"(statuses={sorted(_BLOCKING_INTEGRITY_CASE_STATUSES)}, case_ids={blocking_case_ids})"
+        )
+
+
+def _ensure_overdue_alert_record(
+    tenant_id: int,
+    thesis_id: int,
+    thesis_data: dict,
+) -> None:
+    """Idempotent: create a thesis_overdue_alerts entry when thesis enters under_review."""
+    existing = list_entities_for_tenant("thesis_overdue_alerts", tenant_id)
+    for rec in existing:
+        if (
+            str(rec.get("integration_source")) == "thesis_review_queue"
+            and str(rec.get("source_entity_id")) == str(thesis_id)
+        ):
+            return  # already exists
+    create_entity_for_tenant(
+        "thesis_overdue_alerts",
+        {
+            "thesis_id": thesis_id,
+            "thesis_code": str(thesis_data.get("thesis_code") or ""),
+            "student_id": int(thesis_data.get("student_id") or 0),
+            "current_status": str(thesis_data.get("current_status") or ""),
+            "alert_status": "open",
+            "integration_source": "thesis_review_queue",
+            "source_entity_id": str(thesis_id),
+            "tenant_id": tenant_id,
+        },
+        tenant_id,
+    )
+
+
+def _ensure_rejection_risk_alert(
+    tenant_id: int,
+    thesis_id: int,
+    thesis_data: dict,
+) -> None:
+    """Idempotent: create a thesis_rejection_risk_alerts entry when thesis transitions to rejected."""
+    existing = list_entities_for_tenant("thesis_rejection_risk_alerts", tenant_id)
+    for rec in existing:
+        if (
+            str(rec.get("integration_source")) == "thesis_rejection_queue"
+            and str(rec.get("source_entity_id")) == str(thesis_id)
+        ):
+            return  # already recorded
+    create_entity_for_tenant(
+        "thesis_rejection_risk_alerts",
+        {
+            "thesis_id": thesis_id,
+            "thesis_code": str(thesis_data.get("thesis_code") or ""),
+            "student_id": int(thesis_data.get("student_id") or 0),
+            "current_status": str(thesis_data.get("current_status") or ""),
+            "alert_status": "open",
+            "integration_source": "thesis_rejection_queue",
+            "source_entity_id": str(thesis_id),
+            "tenant_id": tenant_id,
+        },
+        tenant_id,
+    )
+    try:
+        from app.platform.events.publisher import EventPublisher
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="campus.thesis.rejection_risk_detected",
+            aggregate_type="thesis_record",
+            aggregate_id=str(thesis_id),
+            payload_json={
+                "thesis_id": thesis_id,
+                "thesis_code": str(thesis_data.get("thesis_code") or ""),
+                "student_id": str(thesis_data.get("student_id") or ""),
+                "source_entity_type": "thesis_record",
+                "source_entity_id": str(thesis_id),
+            },
+        )
+    except Exception:  # noqa: BLE001
+        pass

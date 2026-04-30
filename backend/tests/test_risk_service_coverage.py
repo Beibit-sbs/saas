@@ -6,7 +6,7 @@ Tests call service methods directly with MagicMock DB sessions.
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -14,7 +14,6 @@ import pytest
 from app.modules.interventions.models import (
     InterventionAssigneeType,
     InterventionCaseSeverity,
-    InterventionCaseStatus,
     OutcomeTrackingStatus,
     RiskMetric,
     RiskSignalType,
@@ -136,7 +135,7 @@ def test_create_threshold():
         comparison=RiskThresholdComparison.GTE,
         signal_type=RiskSignalType.ATTENDANCE_RISK,
     )
-    result = _run(svc.create_threshold(tenant_id=1, request=req))
+    _run(svc.create_threshold(tenant_id=1, request=req))
     assert db.add.called
     assert db.commit.called
 
@@ -314,7 +313,7 @@ def test_acknowledge_recommendation_success():
     db.commit = MagicMock()
 
     svc = _make_service(db)
-    result = _run(svc.acknowledge_recommendation(
+    _run(svc.acknowledge_recommendation(
         tenant_id=1, recommendation_id=10, actor="admin@e.com", note="Acknowledged"
     ))
     assert db.commit.called
@@ -368,7 +367,7 @@ def test_upsert_outcome_creates_new():
         current_risk_score=0.3,
         outcome=OutcomeTrackingStatus.IMPROVED,
     )
-    result = _run(svc.upsert_outcome(tenant_id=1, case_id=30, request=req))
+    _run(svc.upsert_outcome(tenant_id=1, case_id=30, request=req))
     assert db.add.called
 
 
@@ -501,7 +500,7 @@ def test_run_daily_detection_audit_logging():
     
     svc = _make_service(db)
     with patch("app.modules.interventions.risk_service._audit") as audit_mock:
-        result = _run(svc.run_daily_detection(tenant_id=1, actor="cron"))
+        _run(svc.run_daily_detection(tenant_id=1, actor="cron"))
         audit_mock.assert_called()
 
 
@@ -651,7 +650,7 @@ def test_run_daily_detection_with_threshold_exceptions():
     db.execute.return_value.scalar_one.return_value = 0
     
     svc = _make_service(db)
-    with patch("app.modules.interventions.risk_service._audit") as audit_mock:
+    with patch("app.modules.interventions.risk_service._audit"):
         result = _run(svc.run_daily_detection(tenant_id=1, actor="system"))
     
     assert result.thresholds_evaluated == 0
@@ -962,7 +961,7 @@ def test_recompute_scores_delegates_to_run_daily_detection_call():
     
     svc = _make_service(db)
     
-    with patch.object(svc, "run_daily_detection", wraps=svc.run_daily_detection) as mock_run:
+    with patch.object(svc, "run_daily_detection", wraps=svc.run_daily_detection):
         result = _run(svc.recompute_scores(tenant_id=1, actor="admin"))
         # Should have called run_daily_detection
         assert isinstance(result, RiskDetectionResult)
@@ -1120,7 +1119,7 @@ def test_recompute_scores_delegates_to_run_daily_detection_call():
     
     svc = _make_service(db)
     
-    with patch.object(svc, "run_daily_detection", wraps=svc.run_daily_detection) as mock_run:
+    with patch.object(svc, "run_daily_detection", wraps=svc.run_daily_detection):
         result = _run(svc.recompute_scores(tenant_id=1, actor="admin"))
         # Should have called run_daily_detection
         assert isinstance(result, RiskDetectionResult)

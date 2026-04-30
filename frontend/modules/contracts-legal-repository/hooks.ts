@@ -18,6 +18,8 @@ import type {
   ContractWorkflowStep,
 } from './types';
 
+const CONTRACTS_BASE = '/api/admin/procurement/contracts';
+
 const CACHE_KEYS = {
   DASHBOARD: ['contracts:dashboard'],
   ALL_CONTRACTS: ['contracts:all'],
@@ -33,7 +35,7 @@ const CACHE_KEYS = {
 export function useContractDashboardSummary() {
   return useQuery({
     queryKey: CACHE_KEYS.DASHBOARD,
-    queryFn: () => apiGet<ContractDashboardSummary>('/api/contracts/dashboard/summary'),
+    queryFn: () => apiGet<ContractDashboardSummary>(`${CONTRACTS_BASE}/dashboard/summary`),
     staleTime: 60000,
   });
 }
@@ -45,7 +47,7 @@ export function useContractsList(filters?: { status?: string; type?: string }) {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.type) params.append('type', filters.type);
-      return apiGet<ContractListItem[]>(`/api/contracts?${params.toString()}`);
+      return apiGet<ContractListItem[]>(`${CONTRACTS_BASE}?${params.toString()}`);
     },
     staleTime: 60000,
   });
@@ -54,7 +56,7 @@ export function useContractsList(filters?: { status?: string; type?: string }) {
 export function useContractDetail(contractId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.DETAIL(contractId),
-    queryFn: () => apiGet<ContractMetadata>(`/api/contracts/${contractId}`),
+    queryFn: () => apiGet<ContractMetadata>(`${CONTRACTS_BASE}/${contractId}`),
     enabled: !!contractId,
     staleTime: 30000,
   });
@@ -63,7 +65,7 @@ export function useContractDetail(contractId: string) {
 export function useContractVersions(contractId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.VERSIONS(contractId),
-    queryFn: () => apiGet<ContractVersion[]>(`/api/contracts/${contractId}/versions`),
+    queryFn: () => apiGet<ContractVersion[]>(`${CONTRACTS_BASE}/${contractId}/versions`),
     enabled: !!contractId,
     staleTime: 30000,
   });
@@ -72,7 +74,7 @@ export function useContractVersions(contractId: string) {
 export function useContractWorkflow(contractId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.WORKFLOW(contractId),
-    queryFn: () => apiGet<ContractWorkflowStep[]>(`/api/contracts/${contractId}/workflow`),
+    queryFn: () => apiGet<ContractWorkflowStep[]>(`${CONTRACTS_BASE}/${contractId}/workflow`),
     enabled: !!contractId,
     staleTime: 30000,
   });
@@ -81,7 +83,7 @@ export function useContractWorkflow(contractId: string) {
 export function useContractAuditTrail(contractId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.AUDIT(contractId),
-    queryFn: () => apiGet<ContractAuditEntry[]>(`/api/contracts/${contractId}/audit-trail`),
+    queryFn: () => apiGet<ContractAuditEntry[]>(`${CONTRACTS_BASE}/${contractId}/audit-trail`),
     enabled: !!contractId,
     staleTime: 30000,
   });
@@ -90,7 +92,7 @@ export function useContractAuditTrail(contractId: string) {
 export function useContractsSearch(query: string) {
   return useQuery({
     queryKey: CACHE_KEYS.SEARCH(query),
-    queryFn: () => apiGet<ContractSearchResult[]>(`/api/contracts/search?q=${encodeURIComponent(query)}`),
+    queryFn: () => apiGet<ContractSearchResult[]>(`${CONTRACTS_BASE}/search?q=${encodeURIComponent(query)}`),
     enabled: query.trim().length > 1,
     staleTime: 15000,
   });
@@ -99,7 +101,7 @@ export function useContractsSearch(query: string) {
 export function useContractsByStatus(status: string) {
   return useQuery({
     queryKey: CACHE_KEYS.BY_STATUS(status),
-    queryFn: () => apiGet<ContractListItem[]>(`/api/contracts/status/${status}`),
+    queryFn: () => apiGet<ContractListItem[]>(`${CONTRACTS_BASE}/status/${status}`),
     enabled: !!status,
     staleTime: 60000,
   });
@@ -108,7 +110,7 @@ export function useContractsByStatus(status: string) {
 export function useContractsByType(type: string) {
   return useQuery({
     queryKey: CACHE_KEYS.BY_TYPE(type),
-    queryFn: () => apiGet<ContractListItem[]>(`/api/contracts/type/${type}`),
+    queryFn: () => apiGet<ContractListItem[]>(`${CONTRACTS_BASE}/type/${type}`),
     enabled: !!type,
     staleTime: 60000,
   });
@@ -118,7 +120,7 @@ export function useCreateContract() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: ContractCreatePayload) => apiPost<ContractMetadata>('/api/contracts', payload),
+    mutationFn: (payload: ContractCreatePayload) => apiPost<ContractMetadata>(CONTRACTS_BASE, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.ALL_CONTRACTS });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.DASHBOARD });
@@ -131,7 +133,7 @@ export function useUpdateContract(contractId: string) {
 
   return useMutation({
     mutationFn: (payload: ContractUpdatePayload) =>
-      apiPut<ContractMetadata>(`/api/contracts/${contractId}`, payload),
+      apiPut<ContractMetadata>(`${CONTRACTS_BASE}/${contractId}`, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.DETAIL(contractId) });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.ALL_CONTRACTS });
@@ -144,7 +146,7 @@ export function useSubmitContractForReview() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (contractId: string) => apiPost<ContractMetadata>(`/api/contracts/${contractId}/submit`, {}),
+    mutationFn: (contractId: string) => apiPost<ContractMetadata>(`${CONTRACTS_BASE}/${contractId}/submit`, {}),
     onSuccess: (_, contractId) => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.DETAIL(contractId) });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.WORKFLOW(contractId) });
@@ -164,7 +166,7 @@ export function useUpdateContractStatus() {
     }: {
       contractId: string;
       payload: ContractStatusUpdatePayload;
-    }) => apiPatch<ContractMetadata>(`/api/contracts/${contractId}/status`, payload),
+    }) => apiPatch<ContractMetadata>(`${CONTRACTS_BASE}/${contractId}/status`, payload),
     onSuccess: (_, { contractId }) => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.DETAIL(contractId) });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.WORKFLOW(contractId) });

@@ -3,20 +3,15 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.expense_controls.schemas import (
     ExpenseRecordCreatePayload,
     CostCenterCreatePayload,
 )
-from app.modules.expense_controls.service import (
-    create_expense_record,
-    list_expense_records,
-    create_cost_center,
-    list_cost_centers,
-    get_expense_brain_context,
-)
+import app.modules.expense_controls.service as _svc
 from app.modules.rbac.security import get_actor, permission_dependency
 
 
@@ -31,7 +26,7 @@ def list_expense_records_endpoint(
     cost_center_id: int | None = None,
     status: str | None = None,
 ) -> dict:
-    records = list_expense_records(int(tenant["id"]), cost_center_id=cost_center_id, status=status)
+    records = _svc.list_expense_records(int(tenant["id"]), cost_center_id=cost_center_id, status=status)
     return {"records": records}
 
 
@@ -42,7 +37,10 @@ def create_expense_record_endpoint(
     __: Annotated[None, Depends(permission_dependency("finance.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict:
-    record = create_expense_record(payload.model_dump(), int(tenant["id"]))
+    try:
+        record = _svc.create_expense_record(payload.model_dump(), int(tenant["id"]))
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return {"record": record}
 
 
@@ -53,7 +51,7 @@ def list_cost_centers_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
     active: bool | None = None,
 ) -> dict:
-    records = list_cost_centers(int(tenant["id"]), active=active)
+    records = _svc.list_cost_centers(int(tenant["id"]), active=active)
     return {"records": records}
 
 
@@ -64,7 +62,7 @@ def create_cost_center_endpoint(
     __: Annotated[None, Depends(permission_dependency("finance.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict:
-    record = create_cost_center(payload.model_dump(), int(tenant["id"]))
+    record = _svc.create_cost_center(payload.model_dump(), int(tenant["id"]))
     return {"record": record}
 
 
@@ -74,4 +72,4 @@ def get_expense_brain_context_endpoint(
     __: Annotated[None, Depends(permission_dependency("finance.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict:
-    return get_expense_brain_context(int(tenant["id"]))
+    return _svc.get_expense_brain_context(int(tenant["id"]))

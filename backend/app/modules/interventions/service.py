@@ -106,6 +106,24 @@ class InterventionService:
                 resource_id=request.student_profile_id,
             )
 
+            # Enforce: one open case per student (OPEN or IN_PROGRESS)
+            existing_open = self.db.execute(
+                select(InterventionCaseModel).where(
+                    and_(
+                        InterventionCaseModel.tenant_id == tenant_id,
+                        InterventionCaseModel.student_profile_id == request.student_profile_id,
+                        InterventionCaseModel.status.in_(
+                            (InterventionCaseStatus.OPEN, InterventionCaseStatus.IN_PROGRESS)
+                        ),
+                    )
+                )
+            ).scalar_one_or_none()
+            if existing_open is not None:
+                raise DomainValidationError(
+                    f"Student {request.student_profile_id} already has an open intervention case "
+                    f"(case_id={existing_open.id}, status={existing_open.status.value}). "
+                    "Close or resolve it before opening a new case."
+                )
         assignee_type = request.assignee_type
         assignee_ref = request.assignee_ref
         if assignee_type is None or assignee_ref is None:

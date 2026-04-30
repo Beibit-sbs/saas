@@ -7,6 +7,7 @@ class RecordBase(BaseModel):
     grade: str = Field(min_length=1, max_length=16)
     semester: str = Field(min_length=1, max_length=64)
     status: str = Field(min_length=1, max_length=64)
+    notes: str | None = Field(default=None, max_length=1000)
 
 
 class RecordCreatePayload(RecordBase):

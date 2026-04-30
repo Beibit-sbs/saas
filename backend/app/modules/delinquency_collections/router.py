@@ -6,6 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.tenant import get_current_tenant
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.delinquency_collections.schemas import (
     DelinquencyEscalationUpdateSchema,
     DelinquencyItemResponseSchema,
@@ -15,13 +16,7 @@ from app.modules.delinquency_collections.schemas import (
     DelinquencyStatusUpdateSchema,
     EscalationStage,
 )
-from app.modules.delinquency_collections.service import (
-    create_delinquency_record,
-    get_delinquency_record,
-    list_delinquency_records,
-    update_delinquency_escalation,
-    update_delinquency_status,
-)
+import app.modules.delinquency_collections.service as _svc
 from app.modules.rbac.security import get_actor, permission_dependency
 
 
@@ -36,7 +31,7 @@ def list_delinquency_records_endpoint(
     status: DelinquencyStatus | None = None,
     escalation_stage: EscalationStage | None = None,
 ) -> DelinquencyListResponseSchema:
-    items = list_delinquency_records(int(tenant["id"]), status=status, escalation_stage=escalation_stage)
+    items = _svc.list_delinquency_records(int(tenant["id"]), status=status, escalation_stage=escalation_stage)
     return DelinquencyListResponseSchema(items=items)
 
 
@@ -47,7 +42,10 @@ def create_delinquency_record_endpoint(
     __: Annotated[None, Depends(permission_dependency("finance.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> DelinquencyItemResponseSchema:
-    item = create_delinquency_record(int(tenant["id"]), payload, actor)
+    try:
+        item = _svc.create_delinquency_record(int(tenant["id"]), payload, actor)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return DelinquencyItemResponseSchema(item=item)
 
 
@@ -58,7 +56,7 @@ def get_delinquency_record_endpoint(
     __: Annotated[None, Depends(permission_dependency("finance.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> DelinquencyItemResponseSchema:
-    item = get_delinquency_record(int(tenant["id"]), record_id)
+    item = _svc.get_delinquency_record(int(tenant["id"]), record_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Delinquency record not found")
     return DelinquencyItemResponseSchema(item=item)
@@ -72,7 +70,10 @@ def update_delinquency_status_endpoint(
     __: Annotated[None, Depends(permission_dependency("finance.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> DelinquencyItemResponseSchema:
-    item = update_delinquency_status(int(tenant["id"]), record_id, payload, actor)
+    try:
+        item = _svc.update_delinquency_status(int(tenant["id"]), record_id, payload, actor)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     if item is None:
         raise HTTPException(status_code=404, detail="Delinquency record not found")
     return DelinquencyItemResponseSchema(item=item)
@@ -86,7 +87,10 @@ def update_delinquency_escalation_endpoint(
     __: Annotated[None, Depends(permission_dependency("finance.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> DelinquencyItemResponseSchema:
-    item = update_delinquency_escalation(int(tenant["id"]), record_id, payload, actor)
+    try:
+        item = _svc.update_delinquency_escalation(int(tenant["id"]), record_id, payload, actor)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     if item is None:
         raise HTTPException(status_code=404, detail="Delinquency record not found")
     return DelinquencyItemResponseSchema(item=item)

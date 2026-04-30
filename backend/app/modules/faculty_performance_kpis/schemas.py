@@ -19,6 +19,8 @@ class FacultyKpiCreateSchema(BaseModel):
     service_score: float = Field(default=0.0, ge=0.0, le=100.0)
     overall_score: float = Field(default=0.0, ge=0.0, le=100.0)
     status: FacultyKpiStatus = "satisfactory"
+    reviewer_id: str | None = Field(default=None, max_length=64)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class FacultyKpiSchema(FacultyKpiCreateSchema):

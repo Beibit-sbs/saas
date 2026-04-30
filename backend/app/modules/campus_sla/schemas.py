@@ -10,10 +10,12 @@ class CampusSlaRecordCreatePayload(BaseModel):
     target_sla_minutes: int = Field(ge=1)
     actual_minutes: int | None = Field(default=None, ge=0)
     status: str = Field(default="open", min_length=1, max_length=32)
+    priority: str | None = Field(default=None, max_length=32)
     reported_at: str | None = Field(default=None, max_length=64)
     resolved_at: str | None = Field(default=None, max_length=64)
     description: str | None = Field(default=None, max_length=2000)
     integration_source: str | None = Field(default=None, max_length=64)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class CampusSlaRecordResponse(CampusSlaRecordCreatePayload):

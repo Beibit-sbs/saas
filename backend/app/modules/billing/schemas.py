@@ -55,6 +55,11 @@ class BillingPlanCreateRequestSchema(BaseModel):
     limits: dict[str, int] = Field(default_factory=dict)
 
 
+class BillingPlanUpdateRequestSchema(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=255)
+    active: bool | None = None
+
+
 class BillingPlanReadSchema(BaseModel):
     id: int
     code: str

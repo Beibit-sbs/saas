@@ -3,6 +3,15 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+# State machine: allowed status transitions for ethics reviews
+RE_ALLOWED_TRANSITIONS: dict[str, list[str]] = {
+    "pending": ["under_review", "rejected"],
+    "under_review": ["approved", "rejected", "revision_requested"],
+    "revision_requested": ["under_review", "rejected"],
+    "approved": [],
+    "rejected": [],
+}
+
 
 class EthicsReviewCreatePayload(BaseModel):
     review_code: str = Field(min_length=1, max_length=64)
@@ -15,6 +24,7 @@ class EthicsReviewCreatePayload(BaseModel):
     risk_level: str = Field(default="minimal", min_length=1, max_length=32)
     notes: str | None = Field(default=None, max_length=2000)
     integration_source: str | None = Field(default=None, max_length=64)
+    committee_name: str | None = Field(default=None, max_length=128)
 
 
 class EthicsReviewResponse(EthicsReviewCreatePayload):
@@ -28,6 +38,11 @@ class EthicsReviewItemResponse(BaseModel):
 
 class EthicsReviewListResponse(BaseModel):
     records: list[EthicsReviewResponse]
+
+
+class EthicsReviewStatusUpdateSchema(BaseModel):
+    status: str = Field(min_length=1, max_length=32)
+    notes: str | None = Field(default=None, max_length=500)
 
 
 class ResearchEthicsBrainContextResponse(BaseModel):

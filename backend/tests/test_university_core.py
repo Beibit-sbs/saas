@@ -109,6 +109,18 @@ def test_record_assignment() -> None:
     assert course_response.status_code == 200
     course_id = course_response.json()["course"]["id"]
 
+    tenant_entity_service.create_entity_for_tenant(
+        "enrollments",
+        {
+            "student_id": student_id,
+            "course_id": course_id,
+            "semester": "2026-spring",
+            "status": "enrolled",
+            "tenant_id": None,
+        },
+        1,
+    )
+
     record_response = client.post(
         "/api/admin/university/records",
         headers=ADMIN_HEADERS,

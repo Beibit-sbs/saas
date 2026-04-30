@@ -93,6 +93,9 @@ def test_create_condemned_asset_fires_event() -> None:
 
 
 def test_create_depreciation_and_get_by_id() -> None:
+    create_asset = client.post(BASE_ITEMS, headers=ASSET_HEADERS, json=_make_asset("ID1"))
+    assert create_asset.status_code == 200, create_asset.text
+
     created = client.post(BASE_DEPR, headers=ASSET_HEADERS, json=_make_depreciation("ID1"))
     assert created.status_code == 200, created.text
     rec_id = created.json()["item"]["id"]
@@ -109,6 +112,11 @@ def test_get_depreciation_not_found_returns_404() -> None:
 
 
 def test_list_depreciation_records_returns_items() -> None:
+    create_asset_1 = client.post(BASE_ITEMS, headers=ASSET_HEADERS, json=_make_asset("LIST1"))
+    assert create_asset_1.status_code == 200, create_asset_1.text
+    create_asset_2 = client.post(BASE_ITEMS, headers=ASSET_HEADERS, json=_make_asset("LIST2"))
+    assert create_asset_2.status_code == 200, create_asset_2.text
+
     client.post(BASE_DEPR, headers=ASSET_HEADERS, json=_make_depreciation("LIST1"))
     client.post(BASE_DEPR, headers=ASSET_HEADERS, json=_make_depreciation("LIST2"))
 

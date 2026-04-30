@@ -45,6 +45,33 @@ class WorkflowRuntimeEngine:
     def __init__(self, db_session: Session):
         self.db = db_session
 
+    def _mark_instance_failed(
+        self,
+        *,
+        instance: WorkflowInstanceModel,
+        tenant_id: int,
+        actor: str,
+        reason: str,
+    ) -> None:
+        instance.status = WorkflowInstanceStatus.FAILED
+        instance.completed_at = _utc_now()
+        instance.current_step_id = None
+
+        _audit(
+            actor=actor,
+            action=build_audit_action("workflows", "instance", "failed"),
+            path=f"/internal/workflows/instances/{instance.id}/failed",
+            entity="workflow_instance",
+            metadata={
+                "resource_id": str(instance.id),
+                "reason": reason,
+            },
+            tenant_id=tenant_id,
+        )
+
+        self.db.flush()
+        self.db.commit()
+
     async def execute_transition(
         self,
         tenant_id: int,
@@ -98,16 +125,30 @@ class WorkflowRuntimeEngine:
             ).scalars().all()
 
         if not transition_rows:
-            raise ValueError(
-                f"No valid transition for action '{action_key}' from step {from_step_id}"
+            reason = f"No valid transition for action '{action_key}' from step {from_step_id}"
+            self._mark_instance_failed(
+                instance=instance,
+                tenant_id=tenant_id,
+                actor=actor,
+                reason=reason,
             )
+            raise ValueError(reason)
 
-        next_tasks = await self.create_next_tasks(
-            tenant_id=tenant_id,
-            workflow_instance_id=workflow_instance_id,
-            transition_rows=transition_rows,
-            actor=actor,
-        )
+        try:
+            next_tasks = await self.create_next_tasks(
+                tenant_id=tenant_id,
+                workflow_instance_id=workflow_instance_id,
+                transition_rows=transition_rows,
+                actor=actor,
+            )
+        except Exception as exc:
+            self._mark_instance_failed(
+                instance=instance,
+                tenant_id=tenant_id,
+                actor=actor,
+                reason=str(exc),
+            )
+            raise
 
         # End-state close when transition reaches END and no tasks are generated.
         reached_end = False

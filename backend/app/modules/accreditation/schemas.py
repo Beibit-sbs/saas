@@ -49,6 +49,7 @@ class AccreditationCreateSchema(BaseModel):
     due_date: date | None = None
     evidence_summary: str | None = Field(default=None, max_length=1000)
     risk_level: RiskLevel = "medium"
+    external_auditor_id: str | None = Field(default=None, max_length=64)
 
 
 class AccreditationStatusUpdateSchema(BaseModel):

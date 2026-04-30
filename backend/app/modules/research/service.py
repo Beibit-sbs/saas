@@ -7,7 +7,6 @@ from app.modules.audit.service import log_admin_action
 from app.modules.research.schemas import (
     ResearchExperimentCreateSchema,
     ResearchExperimentSchema,
-    ResearchExperimentStatus,
     ResearchExperimentStatusUpdateSchema,
     ResearchGrantCreateSchema,
     ResearchGrantSchema,
@@ -18,18 +17,73 @@ from app.modules.research.schemas import (
     ResearchIpAssetSchema,
     ResearchLabCreateSchema,
     ResearchLabSchema,
-    ResearchLabStatus,
     ResearchLabStatusUpdateSchema,
     ResearchPublicationCreateSchema,
     ResearchPublicationSchema,
     ResearchPublicationStatus,
     ResearchPublicationStatusUpdateSchema,
 )
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+
+
+# W110: Grant statuses that count as "active" for publication authorship check
+_GRANT_ACTIVE_FOR_PUBLICATION: frozenset[str] = frozenset({"active", "planned", "submitted"})
+
+
+_RESEARCH_GRANT_STATUS_MAX_ACTIVE: dict[str, int] = {
+    "planned": 250,
+    "active": 180,
+    "submitted": 120,
+    "delayed": 80,
+    "closed": 2000,
+}
+
+_ACTIVE_RESEARCH_GRANT_STATUSES = frozenset({"planned", "active", "submitted", "delayed"})
+_GRANT_DELAY_RISK_STATUSES = frozenset({"delayed"})
+
+
+def _check_author_has_active_grant(
+    *,
+    tenant_id: int,
+    lead_author_id: str,
+) -> None:
+    """Cross-entity guard: research_publications × research_grants by lead_author_id / pi_faculty_id.
+
+    A publication may only be created if the lead author has at least one
+    active research grant (status: active, planned, submitted). Creating
+    publications without funding evidence produces phantom research output,
+    corrupts Brain Core research KPIs, and misrepresents institutional
+    research productivity metrics.
+
+    FAIL-CLOSED: If grant lookup fails (any exception), publication creation
+    is BLOCKED. Cannot verify funding without grant data.
+    """
+    try:
+        all_grants = list_entities_for_tenant("research_grants", tenant_id)
+    except Exception as exc:
+        raise DomainValidationError(
+            f"Publication creation blocked for lead_author_id='{lead_author_id}': "
+            f"research_grants lookup failed \u2014 {exc}. Cannot verify active grant."
+        ) from exc
+
+    has_active_grant = any(
+        str(g.get("pi_faculty_id") or "").strip().lower()
+        == str(lead_author_id).strip().lower()
+        and str(g.get("status") or "").strip().lower() in _GRANT_ACTIVE_FOR_PUBLICATION
+        for g in all_grants
+    )
+
+    if not has_active_grant:
+        raise DomainValidationError(
+            f"Publication creation blocked for lead_author_id='{lead_author_id}': "
+            f"no active research grant found (required statuses: {sorted(_GRANT_ACTIVE_FOR_PUBLICATION)}). "
+            f"Publications must be backed by funded research to prevent phantom output."
+        )
 
 
 def _emit_audit(*, actor: str, action: str, path: str, metadata: dict, tenant_id: int) -> None:
@@ -70,6 +124,16 @@ def list_research_grants(tenant_id: int, status: ResearchGrantStatus | None = No
 
 
 def create_research_grant(tenant_id: int, request: ResearchGrantCreateSchema, actor: str) -> ResearchGrantSchema:
+    requested_status = str(request.status).strip().lower()
+    active_grants = [
+        row
+        for row in list_entities_for_tenant("research_grants", tenant_id)
+        if str(row.get("status") or "").strip().lower() in _ACTIVE_RESEARCH_GRANT_STATUSES
+    ]
+    grant_cap = _RESEARCH_GRANT_STATUS_MAX_ACTIVE.get(requested_status, 250)
+    if len(active_grants) >= grant_cap:
+        raise ValueError("research_grant active cap reached")
+
     created = create_entity_for_tenant(
         "research_grants",
         {
@@ -79,6 +143,7 @@ def create_research_grant(tenant_id: int, request: ResearchGrantCreateSchema, ac
             "deadline": request.deadline.isoformat(),
             "funding_amount": float(request.funding_amount),
             "status": request.status,
+            "sponsor_notes": (request.sponsor_notes or "").strip() or None,
         },
         tenant_id,
     )
@@ -91,6 +156,43 @@ def create_research_grant(tenant_id: int, request: ResearchGrantCreateSchema, ac
         tenant_id=tenant_id,
     )
     return ResearchGrantSchema.model_validate(created)
+
+
+# Max active (draft/submitted) publications per lead_author_id per status
+_PUBLICATION_STATUS_MAX_ACTIVE: dict[str, int] = {
+    "draft": 3,
+    "submitted": 2,
+    "stalled": 1,
+    "published": 20,
+}
+
+
+def _ensure_publication_review_record(
+    tenant_id: int,
+    publication_id: int,
+    publication_data: dict,
+) -> None:
+    """Idempotent: create a publication_review_records entity when publication transitions to submitted."""
+    existing = list_entities_for_tenant("publication_review_records", tenant_id)
+    for rec in existing:
+        if (
+            str(rec.get("integration_source")) == "research_submission"
+            and str(rec.get("source_entity_id")) == str(publication_id)
+        ):
+            return  # already created — idempotent
+    create_entity_for_tenant(
+        "publication_review_records",
+        {
+            "publication_id": publication_id,
+            "publication_code": str(publication_data.get("publication_code") or ""),
+            "lead_author_id": str(publication_data.get("lead_author_id") or ""),
+            "target_venue": str(publication_data.get("target_venue") or ""),
+            "status": "under_review",
+            "integration_source": "research_submission",
+            "source_entity_id": str(publication_id),
+        },
+        tenant_id,
+    )
 
 
 def list_research_publications(
@@ -108,6 +210,29 @@ def create_research_publication(
     request: ResearchPublicationCreateSchema,
     actor: str,
 ) -> ResearchPublicationSchema:
+    # W110: Cross-entity guard — author must have active grant before publication
+    _check_author_has_active_grant(
+        tenant_id=tenant_id,
+        lead_author_id=request.lead_author_id,
+    )
+
+    # Enforce cap: max active publications per author per status
+    _ACTIVE_STATUSES = {"draft", "submitted", "stalled"}
+    max_active = _PUBLICATION_STATUS_MAX_ACTIVE.get(request.status, 2)
+    existing_rows = list_entities_for_tenant("research_publications", tenant_id)
+    active_count = sum(
+        1
+        for r in existing_rows
+        if str(r.get("lead_author_id") or "") == request.lead_author_id
+        and str(r.get("status") or "") == request.status
+        and str(r.get("status") or "") in _ACTIVE_STATUSES
+    )
+    if active_count >= max_active:
+        raise ValueError(
+            f"lead_author_id={request.lead_author_id} already has {active_count}"
+            f" '{request.status}' publications; max={max_active}"
+        )
+
     created = create_entity_for_tenant(
         "research_publications",
         {
@@ -245,7 +370,48 @@ def update_research_grant_status(
         metadata={"resource_id": str(grant_id), "new_status": request.status},
         tenant_id=tenant_id,
     )
+    if str(request.status).strip().lower() in _GRANT_DELAY_RISK_STATUSES:
+        _ensure_grant_delay_alert_record(tenant_id=tenant_id, grant_id=grant_id, grant_data=updated)
     return ResearchGrantSchema.model_validate(updated)
+
+
+def _ensure_grant_delay_alert_record(tenant_id: int, grant_id: int, grant_data: dict[str, object]) -> None:
+    existing = list_entities_for_tenant("research_grant_delay_alerts", tenant_id)
+    for rec in existing:
+        if (
+            str(rec.get("integration_source")) == "research_grant_delay_queue"
+            and str(rec.get("source_entity_id")) == str(grant_id)
+        ):
+            return
+
+    create_entity_for_tenant(
+        "research_grant_delay_alerts",
+        {
+            "grant_id": grant_id,
+            "grant_code": str(grant_data.get("grant_code") or ""),
+            "pi_faculty_id": str(grant_data.get("pi_faculty_id") or ""),
+            "status": str(grant_data.get("status") or "delayed"),
+            "alert_status": "active",
+            "integration_source": "research_grant_delay_queue",
+            "source_entity_id": str(grant_id),
+        },
+        tenant_id,
+    )
+
+    from app.platform.events.publisher import EventPublisher
+
+    EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type="campus.research.grant_delay_risk_detected",
+        aggregate_type="research_grant",
+        aggregate_id=grant_id,
+        payload_json={
+            "grant_id": grant_id,
+            "grant_code": str(grant_data.get("grant_code") or ""),
+            "pi_faculty_id": str(grant_data.get("pi_faculty_id") or ""),
+            "tenant_id": tenant_id,
+        },
+    )
 
 
 def get_research_publication(tenant_id: int, publication_id: int) -> ResearchPublicationSchema:
@@ -274,6 +440,8 @@ def update_research_publication_status(
         metadata={"resource_id": str(publication_id), "new_status": request.status},
         tenant_id=tenant_id,
     )
+    if request.status == "submitted":
+        _ensure_publication_review_record(tenant_id, publication_id, updated)
     return ResearchPublicationSchema.model_validate(updated)
 
 

@@ -593,7 +593,7 @@ def test_ai_usage_cost_trend_contract(monkeypatch) -> None:
         ],
     )
 
-    response = client.get("/api/admin/ai/usage/trend?days=7", headers=ADMIN_HEADERS)
+    response = client.get("/api/admin/ai/usage/trend?days=30", headers=ADMIN_HEADERS)
     assert response.status_code == 200, response.text
     rows = response.json()
     assert len(rows) == 2
@@ -651,7 +651,7 @@ def test_ai_usage_cost_daily_aggregation_contract(monkeypatch) -> None:
     )
 
     refresh_response = client.post(
-        "/api/admin/ai/usage/daily-aggregation/refresh?days=7&limit=100",
+        "/api/admin/ai/usage/daily-aggregation/refresh?days=30&limit=100",
         headers=ADMIN_HEADERS,
     )
     assert refresh_response.status_code == 200, refresh_response.text
@@ -669,7 +669,7 @@ def test_ai_usage_cost_daily_aggregation_contract(monkeypatch) -> None:
     assert day20_openai["total_tokens"] == 1000
     assert day20_openai["estimated_cost_usd"] == 0.0008
 
-    list_response = client.get("/api/admin/ai/usage/daily-aggregation?days=7", headers=ADMIN_HEADERS)
+    list_response = client.get("/api/admin/ai/usage/daily-aggregation?days=30", headers=ADMIN_HEADERS)
     assert list_response.status_code == 200, list_response.text
     listed_rows = list_response.json()
     assert len(listed_rows) == 3

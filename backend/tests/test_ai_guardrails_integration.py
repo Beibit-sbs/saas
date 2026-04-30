@@ -11,10 +11,8 @@ from __future__ import annotations
 import pytest
 
 from app.modules.ai_gateway import service as ai_service
-from app.modules.ai_guardrails.engine import GuardrailEngine
 from app.modules.ai_guardrails.schemas import (
     GuardrailDecision,
-    GuardrailPolicy,
     GuardrailResult,
     GuardrailStage,
     DetectorResult,

@@ -83,6 +83,13 @@ def test_create_sla_record_breach_fires_signal(monkeypatch) -> None:
         "integration_source": "helpdesk",
         "tenant_id": 1,
     }
+    monkeypatch.setattr(
+        sla_service,
+        "list_entities_for_tenant",
+        lambda name, tid: (
+            [{"facility_code": "BLDG-A", "status": "open"}] if name == "facilities_maintenance_requests" else []
+        ),
+    )
     monkeypatch.setattr(sla_service, "create_entity_for_tenant", lambda name, payload, tid: created)
 
     with patch("app.modules.campus_sla.service.EventPublisher") as mock_pub_cls:
@@ -122,6 +129,13 @@ def test_create_sla_record_no_breach_no_signal(monkeypatch) -> None:
         "integration_source": None,
         "tenant_id": 2,
     }
+    monkeypatch.setattr(
+        sla_service,
+        "list_entities_for_tenant",
+        lambda name, tid: (
+            [{"facility_code": "BLDG-B", "status": "open"}] if name == "facilities_maintenance_requests" else []
+        ),
+    )
     monkeypatch.setattr(sla_service, "create_entity_for_tenant", lambda name, payload, tid: created)
 
     with patch("app.modules.campus_sla.service.EventPublisher") as mock_pub_cls:
@@ -161,7 +175,7 @@ def test_get_campus_sla_brain_context_empty(monkeypatch) -> None:
 
 def test_http_list_sla_records_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "app.modules.campus_sla.router.list_sla_records",
+        "app.modules.campus_sla.service.list_sla_records",
         lambda tenant_id, status=None, service_type=None: [],
     )
     resp = test_client.get("/api/admin/campus-sla/sla-records", headers=dict(ADMIN_HEADERS))
@@ -185,7 +199,7 @@ def test_http_create_sla_record(monkeypatch: pytest.MonkeyPatch) -> None:
         "breached": True,
     }
     monkeypatch.setattr(
-        "app.modules.campus_sla.router.create_sla_record",
+        "app.modules.campus_sla.service.create_sla_record",
         lambda payload, tenant_id: created,
     )
     resp = test_client.post(
@@ -217,7 +231,7 @@ def test_http_brain_context(monkeypatch: pytest.MonkeyPatch) -> None:
         "compliance_level": "medium",
     }
     monkeypatch.setattr(
-        "app.modules.campus_sla.router.get_campus_sla_brain_context",
+        "app.modules.campus_sla.service.get_campus_sla_brain_context",
         lambda tenant_id: ctx,
     )
     resp = test_client.get("/api/admin/campus-sla/brain-context", headers=dict(ADMIN_HEADERS))

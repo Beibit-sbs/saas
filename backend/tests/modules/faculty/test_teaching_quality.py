@@ -204,7 +204,7 @@ def test_faculty_brain_context_endpoint_http(monkeypatch: pytest.MonkeyPatch) ->
         "avg_quality_score": 82.5,
         "risk_level": "low",
     }
-    monkeypatch.setattr("app.modules.faculty.router.get_faculty_brain_context", lambda tenant_id: ctx)
+    monkeypatch.setattr("app.modules.faculty.service.get_faculty_brain_context", lambda tenant_id: ctx)
     resp = test_client.get("/api/admin/org/faculty/brain-context", headers=dict(ADMIN_HEADERS))
     assert resp.status_code == 200
     data = resp.json()

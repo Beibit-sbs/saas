@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.module_helpers.audit_helpers import build_audit_action
 from app.modules.audit.service import log_admin_action
 from app.modules.procurement.schemas import (
@@ -7,13 +8,95 @@ from app.modules.procurement.schemas import (
     AssetSchema,
     ContractCreateSchema,
     ContractSchema,
+    ContractStatusUpdateSchema,
     InventoryItemCreateSchema,
     InventoryItemSchema,
     ProcurementHealthSnapshotSchema,
     VendorCreateSchema,
     VendorSchema,
 )
-from app.modules.university_core.tenant_entity_service import create_entity_for_tenant, list_entities_for_tenant
+from app.modules.university_core.tenant_entity_service import create_entity_for_tenant, list_entities_for_tenant, update_entity_for_tenant
+
+
+# W111: vendor statuses that allow receiving new contracts
+_VENDOR_ACTIVE_FOR_CONTRACT: frozenset[str] = frozenset({"active"})
+
+
+_PO_ALLOWED_TRANSITIONS: dict[str, set[str]] = {
+    "DRAFT": {"SUBMITTED"},
+    "SUBMITTED": {"APPROVED", "REJECTED"},
+    "APPROVED": {"PO_ISSUED"},
+    "REJECTED": set(),
+    "PO_ISSUED": set(),
+}
+
+# W34: cap on active vendors per category
+_VENDOR_CATEGORY_MAX_ACTIVE: dict[str, int] = {
+    "it": 10,
+    "facilities": 8,
+    "catering": 5,
+    "construction": 6,
+    "logistics": 7,
+    "other": 15,
+}
+
+_ACTIVE_VENDOR_STATUSES: frozenset[str] = frozenset({"active", "under_review"})
+
+# W34: risk threshold for procurement alerts
+_HIGH_RISK_SCORE_THRESHOLD: float = 0.8
+
+_PO_STATUS_ALIASES: dict[str, str] = {
+    "draft": "DRAFT",
+    "submitted": "SUBMITTED",
+    "approved": "APPROVED",
+    "rejected": "REJECTED",
+    "po_issued": "PO_ISSUED",
+}
+
+
+def _check_vendor_active_for_contract(
+    *,
+    tenant_id: int,
+    vendor_code: str,
+) -> None:
+    """Cross-entity guard: procurement_contracts × procurement_vendors by vendor_code.
+
+    A contract may only be created when the referenced vendor exists in
+    procurement_vendors AND has status 'active'. Contracting with non-existent
+    or inactive vendors creates financial obligations without a valid counterparty,
+    enables procurement fraud, and corrupts Brain Core vendor risk analytics.
+
+    FAIL-CLOSED: If vendor lookup fails (any exception), contract creation is
+    BLOCKED. Cannot bind financial commitment without verifying counterparty.
+    """
+    try:
+        all_vendors = list_entities_for_tenant("procurement_vendors", tenant_id)
+    except Exception as exc:
+        raise DomainValidationError(
+            f"Contract creation blocked for vendor_code='{vendor_code}': "
+            f"procurement_vendors lookup failed — {exc}. Cannot verify vendor."
+        ) from exc
+
+    matching = [
+        v for v in all_vendors
+        if str(v.get("vendor_code") or "").strip().lower()
+        == str(vendor_code).strip().lower()
+    ]
+
+    if not matching:
+        raise DomainValidationError(
+            f"Contract creation blocked: vendor_code='{vendor_code}' not found in "
+            f"procurement_vendors. Cannot bind financial commitment to unknown vendor."
+        )
+
+    vendor = matching[0]
+    vendor_status = str(vendor.get("status") or "").strip().lower()
+    if vendor_status not in _VENDOR_ACTIVE_FOR_CONTRACT:
+        raise DomainValidationError(
+            f"Contract creation blocked: vendor_code='{vendor_code}' has status "
+            f"'{vendor_status}' — only 'active' vendors may receive new contracts. "
+            f"Contracting with inactive/under_review vendors bypasses procurement controls."
+        )
 
 
 def _emit_audit(*, actor: str, action: str, path: str, metadata: dict, tenant_id: int) -> None:
@@ -50,12 +133,64 @@ def _to_bool(value: object) -> bool:
     return bool(value)
 
 
+def _normalize_po_status(status: object) -> str:
+    raw = str(status or "").strip()
+    if raw in _PO_ALLOWED_TRANSITIONS:
+        return raw
+    mapped = _PO_STATUS_ALIASES.get(raw.lower())
+    if mapped is not None:
+        return mapped
+    raise ValueError(f"Unsupported PO status '{status}'")
+
+
 def list_vendors(tenant_id: int) -> list[VendorSchema]:
     rows = list_entities_for_tenant("procurement_vendors", tenant_id)
     return [VendorSchema.model_validate(r) for r in rows]
 
 
+def _ensure_risk_alert_record(
+    tenant_id: int,
+    contract_id: int,
+    contract_data: dict,
+) -> None:
+    """Idempotent: create a procurement_risk_alerts entry when a high-risk contract is created."""
+    existing = list_entities_for_tenant("procurement_risk_alerts", tenant_id)
+    for rec in existing:
+        if (
+            str(rec.get("integration_source")) == "procurement_risk"
+            and str(rec.get("source_entity_id")) == str(contract_id)
+        ):
+            return  # already exists
+    create_entity_for_tenant(
+        "procurement_risk_alerts",
+        {
+            "contract_id": contract_id,
+            "vendor_code": str(contract_data.get("vendor_code") or ""),
+            "risk_score": float(contract_data.get("risk_score") or 0.0),
+            "alert_status": "open",
+            "integration_source": "procurement_risk",
+            "source_entity_id": str(contract_id),
+            "tenant_id": tenant_id,
+        },
+        tenant_id,
+    )
+
+
 def create_vendor(tenant_id: int, request: VendorCreateSchema, actor: str) -> VendorSchema:
+    category_key = request.category.strip().lower()
+    cap = _VENDOR_CATEGORY_MAX_ACTIVE.get(category_key, _VENDOR_CATEGORY_MAX_ACTIVE["other"])
+    existing_vendors = list_entities_for_tenant("procurement_vendors", tenant_id)
+    active_count = sum(
+        1
+        for v in existing_vendors
+        if str(v.get("category") or "").strip().lower() == category_key
+        and str(v.get("status") or "") in _ACTIVE_VENDOR_STATUSES
+    )
+    if active_count >= cap:
+        raise ValueError(
+            f"Active vendor cap ({cap}) reached for category '{category_key}'"
+        )
+
     created = create_entity_for_tenant(
         "procurement_vendors",
         {
@@ -65,6 +200,7 @@ def create_vendor(tenant_id: int, request: VendorCreateSchema, actor: str) -> Ve
             "sla_breach_rate": float(request.sla_breach_rate),
             "on_time_delivery_rate": float(request.on_time_delivery_rate),
             "status": request.status,
+            "contact_name": str(request.contact_name or ""),
         },
         tenant_id,
     )
@@ -85,6 +221,12 @@ def list_contracts(tenant_id: int) -> list[ContractSchema]:
 
 
 def create_contract(tenant_id: int, request: ContractCreateSchema, actor: str) -> ContractSchema:
+    # W111: Cross-entity guard — vendor must exist and be active before contract creation
+    _check_vendor_active_for_contract(
+        tenant_id=tenant_id,
+        vendor_code=request.vendor_code,
+    )
+
     created = create_entity_for_tenant(
         "procurement_contracts",
         {
@@ -105,7 +247,141 @@ def create_contract(tenant_id: int, request: ContractCreateSchema, actor: str) -
         metadata={"resource_id": str(created.get("id")), "contract_code": request.contract_code},
         tenant_id=tenant_id,
     )
+
+    if float(request.risk_score) >= _HIGH_RISK_SCORE_THRESHOLD:
+        _ensure_risk_alert_record(
+            tenant_id=tenant_id,
+            contract_id=int(created.get("id") or 0),
+            contract_data={
+                "vendor_code": request.vendor_code,
+                "risk_score": float(request.risk_score),
+            },
+        )
+
     return ContractSchema.model_validate(created)
+
+
+def update_contract_status(
+    tenant_id: int,
+    contract_id: int,
+    request: ContractStatusUpdateSchema,
+    actor: str,
+) -> ContractSchema | None:
+    rows = list_entities_for_tenant("procurement_contracts", tenant_id)
+    existing = next((r for r in rows if int(r.get("id") or 0) == contract_id), None)
+    if existing is None:
+        return None
+
+    current_status = _normalize_po_status(existing.get("status") or "DRAFT")
+    next_status = _normalize_po_status(request.status)
+    if next_status not in _PO_ALLOWED_TRANSITIONS.get(current_status, set()):
+        raise ValueError(f"Invalid PO transition from '{current_status}' to '{next_status}'")
+
+    # W70: block approval if vendor SLA breach rate is at or above threshold
+    if next_status == "APPROVED":
+        vendor_code = str(existing.get("vendor_code") or "").strip()
+        if vendor_code:
+            vendor_rows = list_entities_for_tenant("procurement_vendors", tenant_id)
+            vendor = next(
+                (v for v in vendor_rows if str(v.get("vendor_code") or "").strip() == vendor_code),
+                None,
+            )
+            if vendor is not None:
+                vendor_sla = float(vendor.get("sla_breach_rate") or 0.0)
+                if vendor_sla >= _HIGH_RISK_SCORE_THRESHOLD:
+                    raise ValueError(
+                        f"Cannot approve contract: vendor '{vendor_code}' has SLA breach rate "
+                        f"{vendor_sla:.0%} (threshold {_HIGH_RISK_SCORE_THRESHOLD:.0%}). "
+                        "Resolve vendor SLA issues before approving."
+                    )
+
+    # W91: fail-closed guard — PO issuance must have a corresponding asset_inventory record.
+    if next_status == "PO_ISSUED":
+        _ensure_asset_inventory_registration_for_po_issue(existing, tenant_id, actor)
+
+    updated = update_entity_for_tenant(
+        "procurement_contracts",
+        contract_id,
+        {**existing, "status": next_status},
+        tenant_id,
+    )
+
+    _emit_audit(
+        actor=actor,
+        action=build_audit_action("procurement", "contract", "status_update"),
+        path=f"/internal/procurement/contracts/{contract_id}/status",
+        metadata={
+            "resource_id": str(contract_id),
+            "old_status": current_status,
+            "new_status": next_status,
+        },
+        tenant_id=tenant_id,
+    )
+
+    return ContractSchema.model_validate(updated)
+
+
+def _ensure_asset_inventory_registration_for_po_issue(
+    contract: dict,
+    tenant_id: int,
+    actor: str,
+) -> None:
+    """Ensure a PO-issued contract is represented in asset_inventory (fail-closed).
+
+    On PO_ISSUED transition, a contract must have a corresponding
+    asset_inventory_items record with asset_code=PROC-{contract_code}.
+    """
+    contract_code = str(contract.get("contract_code") or "").strip()
+    if not contract_code:
+        raise DomainValidationError(
+            "Cannot issue purchase order: contract_code is missing; "
+            "asset inventory registration cannot be enforced"
+        )
+
+    asset_code = f"PROC-{contract_code}"[:64]
+
+    try:
+        inventory_rows = list_entities_for_tenant("asset_inventory_items", tenant_id)
+    except Exception as exc:  # pragma: no cover - tested via monkeypatch
+        raise DomainValidationError(
+            "Cannot issue purchase order: asset_inventory lookup failed. "
+            "Registration must be verified before PO_ISSUED"
+        ) from exc
+
+    already_registered = any(
+        str(row.get("asset_code") or "").strip() == asset_code for row in inventory_rows
+    )
+    if already_registered:
+        return
+
+    try:
+        from datetime import datetime  # noqa: PLC0415
+        from app.modules.asset_inventory.schemas import AssetItemCreateSchema  # noqa: PLC0415
+        from app.modules.asset_inventory.service import create_asset_item  # noqa: PLC0415
+
+        title = str(contract.get("title") or "Procured Asset")
+        vendor_code = str(contract.get("vendor_code") or "")
+
+        create_asset_item(
+            tenant_id=tenant_id,
+            request=AssetItemCreateSchema(
+                asset_code=asset_code,
+                name=title[:200],
+                category="equipment",
+                location="procurement",
+                condition="good",
+                purchase_year=datetime.now().year,
+                vendor=vendor_code[:128] if vendor_code else None,
+                status="active",
+            ),
+            actor=actor,
+        )
+    except Exception as exc:  # pragma: no cover - tested via monkeypatch
+        raise DomainValidationError(
+            f"Cannot issue purchase order for contract '{contract_code}': "
+            "asset inventory registration failed"
+        ) from exc
+
 
 
 def list_assets(tenant_id: int) -> list[AssetSchema]:

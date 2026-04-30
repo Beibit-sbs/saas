@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
 import logging
 import time
+import uuid
+from typing import Callable
 from uuid import uuid4
 
+from app.core.db import _get_shared_engine, make_session_factory
 from app.modules.brain_core.actions.dispatcher import ActionDispatcher
 from app.modules.brain_core.actions.planner import ActionPlanner
 from app.modules.brain_core.classifiers.risk_classifier import RiskClassifier
@@ -19,9 +23,28 @@ from app.modules.brain_core.reasoning.explanation import ExplanationEngine
 from app.modules.brain_core.reasoning.engine import ReasoningEngine
 from app.modules.brain_core.reasoning.knowledge_retriever import KnowledgeRetriever
 from app.modules.brain_core.registry import SignalRegistry
+from app.modules.observability.metrics import (
+    record_brain_action_dispatched,
+    record_brain_decision_made,
+    record_brain_signal_emitted,
+)
 
 
 logger = logging.getLogger(__name__)
+
+
+def _coerce_uuid(value: object) -> uuid.UUID:
+    """Convert a string/UUID to uuid.UUID, generating a new one on failure."""
+    try:
+        return uuid.UUID(str(value))
+    except (ValueError, AttributeError):
+        return uuid4()
+
+
+def _compute_dedup_key(event_type: str, tenant_id: int, source_entity_type: str, source_entity_id: str) -> str:
+    """Return a 64-char hex digest used to deduplicate identical signals."""
+    raw = f"{event_type}|{tenant_id}|{source_entity_type}|{source_entity_id}"
+    return hashlib.sha256(raw.encode()).hexdigest()
 
 
 class BrainCoreService:
@@ -45,6 +68,221 @@ class BrainCoreService:
         self._decisions: list[dict] = []
         self._explanations: dict[str, dict] = {}
 
+    # ------------------------------------------------------------------
+    # DB persistence helpers (fire-and-forget; degrade gracefully)
+    # ------------------------------------------------------------------
+
+    def _check_duplicate_signal(
+        self,
+        *,
+        tenant_id: int,
+        dedup_key: str,
+        window_seconds: int = 60,
+    ) -> uuid.UUID | None:
+        """Return existing signal_id if an identical signal was received within the window; None otherwise."""
+        from sqlalchemy import text as sa_text  # local import to avoid circular
+
+        engine = _get_shared_engine()
+        if engine is None:
+            return None
+        try:
+            session_factory = make_session_factory(engine)
+            with session_factory() as session:
+                row = session.execute(
+                    sa_text(
+                        "SELECT signal_id FROM app_brain_signals"
+                        " WHERE tenant_id = :tid AND dedup_key = :key"
+                        f"   AND created_at > NOW() - INTERVAL '{window_seconds} seconds'"
+                        " LIMIT 1"
+                    ).bindparams(tid=tenant_id, key=dedup_key)
+                ).fetchone()
+                return uuid.UUID(str(row[0])) if row else None
+        except Exception:  # noqa: BLE001
+            return None
+
+    def _try_persist_signal_to_db(
+        self,
+        *,
+        signal_id: uuid.UUID,
+        signal: dict,
+        tenant_id: int,
+        event_type: str,
+        signal_class: str,
+        dedup_key: str | None = None,
+    ) -> None:
+        """Write a row to app_brain_signals; silently skip if DB is unavailable."""
+        from app.modules.brain_core.models import BrainSignalModel  # local to avoid circular import
+
+        engine = _get_shared_engine()
+        if engine is None:
+            return
+        session_factory = make_session_factory(engine)
+        with session_factory() as session:
+            try:
+                row = BrainSignalModel(
+                    signal_id=signal_id,
+                    tenant_id=tenant_id,
+                    correlation_id=_coerce_uuid(signal.get("correlation_id")),
+                    event_type=event_type,
+                    signal_class=signal_class,
+                    source_module=str(signal.get("source_module") or event_type.split(".")[0]),
+                    source_entity_type=str(signal.get("source_entity_type") or ""),
+                    source_entity_id=str(signal.get("source_entity_id") or ""),
+                    subject_student_id=signal.get("student_id") or signal.get("subject_student_id") or None,
+                    subject_faculty_id=signal.get("subject_faculty_id") or None,
+                    subject_course_id=signal.get("subject_course_id") or None,
+                    payload=dict(signal.get("payload") or {}),
+                    status="received",
+                    dedup_key=dedup_key,
+                )
+                session.add(row)
+                session.commit()
+            except Exception:  # noqa: BLE001
+                logger.warning("brain_core_signal_persist_failed", exc_info=True)
+                session.rollback()
+
+    # Priorities and types that warrant an immediate in-app notification.
+    _NOTIFIABLE_PRIORITIES: frozenset[str] = frozenset({"critical", "high"})
+    _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance"})
+
+    def _ensure_intervention_action_for_intervention_decisions(
+        self,
+        *,
+        decision_type: str,
+        action_plan: list[dict],
+        signal: dict,
+        requires_approval: bool,
+    ) -> list[dict]:
+        """Enforce intervention side-effect contract for intervention decisions.
+
+        If reasoning marks a decision as "intervention", we ensure the action plan
+        contains create_intervention_case so the dispatcher can persist a real case.
+        """
+        if str(decision_type).lower() != "intervention":
+            return action_plan
+
+        has_intervention_action = any(
+            str(item.get("name") or "") == "create_intervention_case"
+            for item in action_plan
+        )
+        if has_intervention_action:
+            return action_plan
+
+        payload = dict(signal.get("payload") or {})
+        subject = dict(signal.get("subject") or {})
+        merged_payload = {
+            **payload,
+            "student_id": payload.get("student_id") or subject.get("student_id") or signal.get("student_id"),
+            "event_type": str(signal.get("event_type") or ""),
+            "source_entity_type": str(signal.get("source_entity_type") or ""),
+            "source_entity_id": str(signal.get("source_entity_id") or ""),
+        }
+        return [
+            *action_plan,
+            {
+                "name": "create_intervention_case",
+                "action_type": "workflow_task",
+                "requires_approval": bool(requires_approval),
+                "payload": merged_payload,
+            },
+        ]
+
+    def _emit_decision_notification(self, *, decision: dict, signal: dict) -> dict | None:
+        """Create an in-app notification for high/critical Brain decisions.
+
+        Returns the notification row on success, None if skipped or on error.
+        """
+        priority = str(decision.get("priority") or "").lower()
+        decision_type = str(decision.get("decision_type") or "").lower()
+        tenant_id = int(decision.get("tenant_id") or 0)
+
+        if priority not in self._NOTIFIABLE_PRIORITIES:
+            return None
+        if decision_type not in self._NOTIFIABLE_DECISION_TYPES:
+            return None
+        if tenant_id <= 0:
+            return None
+
+        situation_type = str(decision.get("situation_type") or "unknown")
+        subject = f"Brain Decision [{priority.upper()}]: {situation_type.replace('_', ' ').title()}"
+
+        recipient = (
+            str(signal.get("recipient") or "").strip()
+            or str(signal.get("supervisor_contact") or "").strip()
+            or f"tenant:{tenant_id}:admin"
+        )
+
+        payload: dict = {
+            "decision_id": str(decision.get("decision_id") or ""),
+            "decision_type": decision_type,
+            "situation_type": situation_type,
+            "priority": priority,
+            "recommended_actions": list(decision.get("recommended_actions") or []),
+            "source_event_type": str(signal.get("event_type") or ""),
+        }
+
+        try:
+            from app.platform.repository.notification_repository import NotificationRepository  # local to avoid circular
+
+            repo = NotificationRepository()
+            result = repo.dispatch(
+                tenant_id=tenant_id,
+                channel="in_app",
+                target=recipient,
+                subject=subject,
+                payload=payload,
+            )
+            self._observability.increment("decision_notifications_emitted_total")
+            logger.info(
+                "brain_core_decision_notification_emitted",
+                extra={
+                    "tenant_id": tenant_id,
+                    "decision_id": str(decision.get("decision_id") or ""),
+                    "priority": priority,
+                    "notification_id": result.get("id"),
+                },
+            )
+            return result
+        except Exception:  # noqa: BLE001
+            logger.warning("brain_core_decision_notification_failed", exc_info=True)
+            return None
+
+    def _try_persist_decision_to_db(
+        self,
+        *,
+        signal_id: uuid.UUID,
+        decision: dict,
+    ) -> None:
+        """Write a row to app_brain_decisions; silently skip if DB is unavailable."""
+        from app.modules.brain_core.models import BrainDecisionModel  # local to avoid circular import
+
+        engine = _get_shared_engine()
+        if engine is None:
+            return
+        session_factory = make_session_factory(engine)
+        with session_factory() as session:
+            try:
+                row = BrainDecisionModel(
+                    decision_id=_coerce_uuid(decision["decision_id"]),
+                    tenant_id=int(decision["tenant_id"]),
+                    signal_id=signal_id,
+                    correlation_id=_coerce_uuid(decision.get("correlation_id")),
+                    decision_type=str(decision["decision_type"]),
+                    situation_type=str(decision["situation_type"]),
+                    priority=str(decision["priority"]),
+                    status=str(decision["status"]),
+                    confidence_score=float(decision.get("confidence_score") or 0.0),
+                    severity_score=float(decision.get("severity_score") or 0.0),
+                    urgency_score=float(decision.get("urgency_score") or 0.0),
+                    requires_approval=bool(decision.get("requires_approval", False)),
+                    policy_snapshot={},
+                )
+                session.add(row)
+                session.commit()
+            except Exception:  # noqa: BLE001
+                logger.warning("brain_core_decision_persist_failed", exc_info=True)
+                session.rollback()
+
     def process_signal(self, signal: dict) -> dict:
         started = time.perf_counter()
         self._observability.increment("signals_received_total")
@@ -63,12 +301,34 @@ class BrainCoreService:
             self._observability.increment("signals_rejected_total")
             return {"status": "rejected", "reason": "missing_tenant_context"}
 
+        source_entity_type = str(signal.get("source_entity_type") or "")
+        source_entity_id = str(signal.get("source_entity_id") or "")
+        dedup_key = _compute_dedup_key(event_type, tenant_id, source_entity_type, source_entity_id)
+        existing_id = self._check_duplicate_signal(tenant_id=tenant_id, dedup_key=dedup_key)
+        if existing_id is not None:
+            self._observability.increment("signals_deduplicated_total")
+            return {
+                "status": "deduplicated",
+                "reason": "duplicate_signal_within_window",
+                "original_signal_id": str(existing_id),
+            }
+
+        signal_id = uuid4()
+        signal.setdefault("signal_id", str(signal_id))
         self._signals.append(signal)
 
         context_started = time.perf_counter()
         context = self._context_builder.build_context(signal)
         self._observability.record_latency_ms("context_build_latency_ms", (time.perf_counter() - context_started) * 1000.0)
         classification = self._classifier.classify(signal, context)
+        self._try_persist_signal_to_db(
+            signal_id=signal_id,
+            signal=signal,
+            tenant_id=tenant_id,
+            event_type=event_type,
+            signal_class=str(classification.get("situation_type") or "unknown"),
+            dedup_key=dedup_key,
+        )
         knowledge = self._knowledge.retrieve(signal=signal, classification=classification)
         context["knowledge"] = knowledge
         policy_profile = self._policy_resolver.get_profile(tenant_id)
@@ -85,6 +345,12 @@ class BrainCoreService:
             decision_scenario=scenario,
             reasoning=reasoning,
             signal=signal,
+        )
+        action_plan = self._ensure_intervention_action_for_intervention_decisions(
+            decision_type=str(reasoning.get("decision_type") or ""),
+            action_plan=action_plan,
+            signal=signal,
+            requires_approval=bool(reasoning.get("requires_approval", False)),
         )
         policy_validation = self._policy_guard.validate(
             tenant_id=tenant_id,
@@ -107,12 +373,15 @@ class BrainCoreService:
             )
             if has_dispatch_failure:
                 self._observability.increment("action_dispatch_failure_total")
+                record_brain_action_dispatched(tenant_id, "failure")
             else:
                 self._observability.increment("action_dispatch_success_total")
+                record_brain_action_dispatched(tenant_id, "success")
         elif policy_validation.requires_approval:
             self._observability.increment("decisions_requiring_approval_total")
         else:
             self._observability.increment("action_dispatch_failure_total")
+            record_brain_action_dispatched(tenant_id, "failure")
 
         explanation = self._explanation.build(
             signal=signal,
@@ -147,10 +416,14 @@ class BrainCoreService:
             "ai_reasoning_trace": list(reasoning.get("ai_reasoning_trace") or []),
         }
         self._decisions.append(decision)
+        self._try_persist_decision_to_db(signal_id=signal_id, decision=decision)
+        self._emit_decision_notification(decision=decision, signal=signal)
         self._explanations[decision_id] = explanation
         self._observability.increment("decisions_created_total")
         self._observability.increment(f"decisions_by_type_{reasoning['decision_type']}_total")
         self._observability.increment(f"decisions_by_priority_{reasoning['priority']}_total")
+        record_brain_signal_emitted(tenant_id)
+        record_brain_decision_made(tenant_id, reasoning["decision_type"])
         self._observability.record_trace(
             tenant_id=tenant_id,
             correlation_id=str(decision["correlation_id"]),
@@ -495,6 +768,70 @@ class BrainCoreService:
 
     def observability_traces(self, limit: int = 100) -> list[dict]:
         return self._observability.snapshot_traces(limit=limit)
+
+    # ------------------------------------------------------------------
+    # Blocker #12: startup policy seeding
+    # ------------------------------------------------------------------
+
+    def seed_default_policies(
+        self,
+        tenant_ids: list[int],
+        *,
+        autonomy_level: int = 3,
+        require_approval_for_critical: bool = True,
+        default_approval_role: str = "dean_office",
+        enable_ai_reasoning: bool = False,
+    ) -> dict:
+        """Seed sensible default policy profiles for a list of tenants.
+
+        Skips tenants whose profiles have already been explicitly configured so
+        that a hot-restart does not overwrite operator-tuned settings.
+
+        Returns a summary dict for observability.
+        """
+        seeded: list[int] = []
+        skipped: list[int] = []
+        for tid in tenant_ids:
+            existing = self._policy_resolver.get_profile(tid)
+            # Only seed if the profile is still the programmatic default
+            # (i.e. the operator has not explicitly updated it).
+            if self._policy_resolver.is_default(tid):
+                self._policy_resolver.set_profile_values(
+                    tenant_id=tid,
+                    autonomy_level=autonomy_level,
+                    require_approval_for_critical=require_approval_for_critical,
+                    default_approval_role=default_approval_role,
+                    enable_ai_reasoning=enable_ai_reasoning,
+                )
+                logger.info(
+                    "brain_core.policy_seeded tenant_id=%s autonomy_level=%s",
+                    tid,
+                    autonomy_level,
+                )
+                seeded.append(tid)
+            else:
+                skipped.append(tid)
+                _ = existing  # referenced to satisfy linters
+        return {"seeded": seeded, "skipped": skipped}
+
+    # ------------------------------------------------------------------
+    # Blocker #13: module action callback registration
+    # ------------------------------------------------------------------
+
+    def register_module_action_handler(
+        self,
+        action_name: str,
+        handler: "Callable[[int, str, dict], dict]",
+    ) -> None:
+        """Register a module-level callback for a Brain Core action name.
+
+        The *handler* is called after the in-memory workflow sink with the
+        signature ``(tenant_id: int, decision_id: str, payload: dict) -> dict``.
+        This wires Brain Core decisions back into real module write-paths,
+        closing the Brain → Module action feedback loop.
+        """
+        self._dispatcher.register_module_handler(action_name, handler)
+        logger.info("brain_core.module_handler_registered action_name=%s", action_name)
 
 
 brain_core_service = BrainCoreService()

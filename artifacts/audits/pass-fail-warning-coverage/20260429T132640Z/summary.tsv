@@ -1,0 +1,29 @@
+batch	status	exit_code	log	detail
+preflight	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/preflight.log	ok
+permission-parity	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/permission-parity.log	ok
+compose-bootstrap	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/compose-bootstrap.log	ok
+backend-lint	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-lint.log	exit=1
+backend-pytest-shard-01	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-01.log	ok
+backend-pytest-shard-02	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-02.log	exit=1
+backend-pytest-shard-03	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-03.log	exit=1
+backend-pytest-shard-04	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-04.log	exit=1
+backend-pytest-shard-05	WARNING	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-05.log	exit=0 with warning patterns
+backend-pytest-shard-06	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-06.log	exit=1
+backend-pytest-shard-07	WARNING	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-07.log	exit=0 with warning patterns
+backend-pytest-shard-08	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-08.log	exit=1
+backend-pytest-shard-09	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-09.log	exit=1
+backend-pytest-shard-10	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-10.log	exit=1
+backend-pytest-shard-11	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-11.log	exit=1
+backend-pytest-shard-12	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-12.log	exit=1
+backend-pytest-shard-13	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-13.log	exit=1
+backend-pytest-shard-14	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-14.log	exit=1
+backend-pytest-shard-15	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-15.log	exit=1
+backend-pytest-shard-16	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-16.log	exit=1
+backend-pytest-shard-17	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-17.log	exit=1
+backend-pytest-shard-18	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-18.log	exit=1
+backend-pytest-shard-19	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-19.log	exit=1
+backend-pytest-shard-20	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-20.log	exit=1
+backend-pytest-shard-21	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-21.log	ok
+backend-pytest-shard-22	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shard-22.log	exit=1
+backend-pytest-shards	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/backend-pytest-shards.log	426 files across 22 shards
+frontend-lint	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T132640Z/frontend-lint.log	ok

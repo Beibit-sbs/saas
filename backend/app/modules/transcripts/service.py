@@ -134,7 +134,13 @@ class TranscriptService:
         tenant_id = validate_tenant_id_provided(tenant_id)
         assert_billing_write_allowed(tenant_id, action="transcripts.generate")
         assert_quota_with_increment(tenant_id, "transcripts_generated", increment=1)
-        self._load_student(tenant_id, student_profile_id)
+        student = self._load_student(tenant_id, student_profile_id)
+
+        # W76: Cross-entity lock — graduated students have immutable transcripts
+        TranscriptRules.validate_transcript_not_locked(
+            getattr(student, "current_status", None),
+            student_profile_id,
+        )
 
         enrollments = self._load_enrollments(tenant_id, student_profile_id)
         items: list[TranscriptItemSchema] = []

@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.tenant import get_current_tenant
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.career_services.schemas import (
     CareerOpportunityCreateSchema,
     CareerOpportunityItemResponseSchema,
@@ -12,12 +13,7 @@ from app.modules.career_services.schemas import (
     CareerOpportunityStatus,
     CareerOpportunityStatusUpdateSchema,
 )
-from app.modules.career_services.service import (
-    create_career_opportunity,
-    get_career_services_brain_context,
-    list_career_opportunities,
-    update_career_opportunity_status,
-)
+import app.modules.career_services.service as _svc
 from app.modules.rbac.security import get_actor, permission_dependency
 
 
@@ -32,7 +28,7 @@ def list_opportunities_endpoint(
     status: CareerOpportunityStatus | None = None,
     student_id: int | None = None,
 ) -> CareerOpportunityListResponseSchema:
-    items = list_career_opportunities(int(tenant["id"]), status=status, student_id=student_id)
+    items = _svc.list_career_opportunities(int(tenant["id"]), status=status, student_id=student_id)
     return CareerOpportunityListResponseSchema(items=items)
 
 
@@ -44,10 +40,10 @@ def create_opportunity_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> CareerOpportunityItemResponseSchema:
     try:
-        item = create_career_opportunity(int(tenant["id"]), payload, actor)
+        item = _svc.create_career_opportunity(int(tenant["id"]), payload, actor)
         return CareerOpportunityItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.patch("/{opportunity_id}/status", response_model=CareerOpportunityItemResponseSchema)
@@ -59,7 +55,7 @@ def update_opportunity_status_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> CareerOpportunityItemResponseSchema:
     try:
-        item = update_career_opportunity_status(int(tenant["id"]), opportunity_id, payload, actor)
+        item = _svc.update_career_opportunity_status(int(tenant["id"]), opportunity_id, payload, actor)
         return CareerOpportunityItemResponseSchema(item=item)
     except ValueError as exc:
         detail = str(exc)
@@ -73,4 +69,4 @@ def get_career_services_brain_context_endpoint(
     __: Annotated[None, Depends(permission_dependency("career_services.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict:
-    return get_career_services_brain_context(int(tenant["id"]))
+    return _svc.get_career_services_brain_context(int(tenant["id"]))

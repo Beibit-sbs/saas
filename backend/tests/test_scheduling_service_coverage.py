@@ -7,27 +7,19 @@ Billing and audit side-effects are patched out.
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import time
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from app.modules.scheduling.models import (
     DayOfWeek,
-    LessonStatus,
     SectionStatus,
 )
 from app.modules.scheduling.schemas import (
     CourseSectionCreateSchema,
     SectionScheduleCreateSchema,
-    LessonTopicCreateSchema,
     DisciplineCreateSchema,
-    LessonInstanceCreateSchema,
-    LessonAttendanceUpsertSchema,
-    StudentTopicProgressUpsertSchema,
-    InstructorAssignmentSchema,
-    SectionCancelSchema,
-    SectionRescheduleSchema,
 )
 from app.modules.scheduling.service import SchedulingService, _time_to_str
 
@@ -453,3 +445,48 @@ def test_create_discipline():
         with patch("app.modules.scheduling.schemas.DisciplineReadSchema.model_validate", return_value=MagicMock()):
             _run(svc.create_discipline(tenant_id=1, request=req, actor_id="admin@e.com"))
     assert db.add.called
+
+
+# ---------------------------------------------------------------------------
+# DATA INTEGRITY: scheduling conflict guards (unit tests for business rules)
+# ---------------------------------------------------------------------------
+
+def test_validate_no_room_conflict_raises_when_conflict_exists() -> None:
+    """validate_no_room_conflict raises DomainValidationError when a room conflict exists."""
+    from app.modules.scheduling.business_rules import SchedulingRules
+    from app.core.module_helpers.service_validation import DomainValidationError
+
+    existing_section = MagicMock()  # truthy → conflict found
+    with pytest.raises(DomainValidationError, match="room conflict detected for classroom_id=5"):
+        SchedulingRules.validate_no_room_conflict(
+            existing_section, classroom_id=5, day_of_week="MONDAY"
+        )
+
+
+def test_validate_no_room_conflict_passes_when_none() -> None:
+    """validate_no_room_conflict does NOT raise when there is no room conflict."""
+    from app.modules.scheduling.business_rules import SchedulingRules
+
+    # Should not raise
+    SchedulingRules.validate_no_room_conflict(None, classroom_id=5, day_of_week="MONDAY")
+
+
+def test_validate_no_instructor_conflict_raises_when_conflicts_exist() -> None:
+    """validate_no_instructor_conflict raises DomainValidationError when instructor conflicts exist."""
+    from app.modules.scheduling.business_rules import SchedulingRules
+    from app.core.module_helpers.service_validation import DomainValidationError
+
+    conflicts = [MagicMock()]  # non-empty list → conflict
+    with pytest.raises(DomainValidationError, match="instructor conflict detected for instructor_id=INS01"):
+        SchedulingRules.validate_no_instructor_conflict(
+            conflicts, instructor_id="INS01", day_of_week="TUESDAY"
+        )
+
+
+def test_validate_no_instructor_conflict_passes_when_empty() -> None:
+    """validate_no_instructor_conflict does NOT raise when there are no instructor conflicts."""
+    from app.modules.scheduling.business_rules import SchedulingRules
+
+    # Should not raise
+    SchedulingRules.validate_no_instructor_conflict([], instructor_id="INS01", day_of_week="TUESDAY")
+

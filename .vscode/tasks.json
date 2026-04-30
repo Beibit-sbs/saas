@@ -76,6 +76,12 @@
 			"isBackground": false
 		},
 		{
+			"label": "coverage-pass-fail-warning",
+			"type": "shell",
+			"command": "bash scripts/pass_fail_warning_coverage.sh --profile standard",
+			"isBackground": false
+		},
+		{
 			"label": "safe-gate-once-2",
 			"type": "shell",
 			"command": "bash scripts/university_pilot_safe_gate.sh",
@@ -122,6 +128,24 @@
 			"label": "billing-contract-tests-wave1-32-after-rebuild",
 			"type": "shell",
 			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/modules/billing/test_billing_router_contract.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "knowledge-retrieval-integration-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_knowledge_retrieval_router.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "model-eval-integration-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_model_evaluation_router.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "prompt-mgmt-integration-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_prompt_management_router.py --no-cov -rA",
 			"isBackground": false
 		}
 	]

@@ -336,6 +336,20 @@ class TestShouldFallbackToMemory:
     def test_key_error_not_fallback(self):
         assert entity_impl._should_fallback_to_memory_impl(KeyError()) is False
 
+    def test_fail_closed_mode_from_env_true(self, monkeypatch):
+        monkeypatch.setenv("UNIVERSITY_CORE_FAIL_CLOSED", "true")
+        assert entity_impl._is_fail_closed_mode_impl() is True
+
+    def test_fail_closed_mode_detects_production_env(self, monkeypatch):
+        monkeypatch.delenv("UNIVERSITY_CORE_FAIL_CLOSED", raising=False)
+        monkeypatch.setenv("APP_ENV", "production")
+        assert entity_impl._is_fail_closed_mode_impl() is True
+
+    def test_fail_closed_mode_detects_non_production_env(self, monkeypatch):
+        monkeypatch.delenv("UNIVERSITY_CORE_FAIL_CLOSED", raising=False)
+        monkeypatch.setenv("APP_ENV", "development")
+        assert entity_impl._is_fail_closed_mode_impl() is False
+
 
 # ---------------------------------------------------------------------------
 # _sql_identifier_impl

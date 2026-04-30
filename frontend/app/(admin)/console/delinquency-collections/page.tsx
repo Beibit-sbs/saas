@@ -155,7 +155,7 @@ export default function DelinquencyCollectionsPage() {
                 onClick={() =>
                   updateStatus.mutate(
                     { recordId: row.id, payload: { status: next } },
-                    getHandlers(`Status moved to ${next}`),
+                    getHandlers({ successTitle: `Status moved to ${next}` }),
                   )
                 }
               >
@@ -171,7 +171,7 @@ export default function DelinquencyCollectionsPage() {
                 onClick={() =>
                   updateEscalation.mutate(
                     { recordId: row.id, payload: { escalation_stage: next } },
-                    getHandlers(`Escalation moved to ${next}`),
+                    getHandlers({ successTitle: `Escalation moved to ${next}` }),
                   )
                 }
               >
@@ -197,10 +197,10 @@ export default function DelinquencyCollectionsPage() {
         status: "open",
       },
       {
-        ...getHandlers("Delinquency record created"),
+        ...getHandlers({ successTitle: "Delinquency record created" }),
         onSuccess: (...args) => {
           setForm(EMPTY_FORM);
-          getHandlers("Delinquency record created").onSuccess?.(...args);
+          getHandlers({ successTitle: "Delinquency record created" }).onSuccess?.(args[0]);
         },
       },
     );
@@ -211,7 +211,7 @@ export default function DelinquencyCollectionsPage() {
       <div className="space-y-8">
         <PageHeader
           title="Delinquency & Collections"
-          subtitle="Track overdue invoices and escalation workflow"
+          description="Track overdue invoices and escalation workflow"
           icon={Wallet}
         />
 

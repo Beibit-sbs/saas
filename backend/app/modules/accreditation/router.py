@@ -62,7 +62,7 @@ def create_accreditation_endpoint(
         item = create_accreditation_record(int(tenant["id"]), payload, actor)
         return AccreditationItemResponseSchema(item=item)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.patch("/{record_id}/status", response_model=AccreditationItemResponseSchema)

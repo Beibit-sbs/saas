@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.operations.schemas import (
     CleaningCheckCreateSchema,
@@ -76,8 +77,8 @@ def create_facility_issue_endpoint(
     try:
         item = create_facility_issue(int(tenant["id"]), payload, actor)
         return FacilityIssueItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/work-orders", response_model=WorkOrderListResponseSchema)
@@ -99,8 +100,8 @@ def create_work_order_endpoint(
     try:
         item = create_work_order(int(tenant["id"]), payload, actor)
         return WorkOrderItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/cleaning-checks", response_model=CleaningCheckListResponseSchema)
@@ -122,8 +123,8 @@ def create_cleaning_check_endpoint(
     try:
         item = create_cleaning_check(int(tenant["id"]), payload, actor)
         return CleaningCheckItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/room-readiness", response_model=RoomReadinessListResponseSchema)
@@ -145,8 +146,8 @@ def create_room_readiness_endpoint(
     try:
         item = create_room_readiness(int(tenant["id"]), payload, actor)
         return RoomReadinessItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/maintenance-assets", response_model=MaintenanceAssetListResponseSchema)
@@ -168,8 +169,8 @@ def create_maintenance_asset_endpoint(
     try:
         item = create_maintenance_asset(int(tenant["id"]), payload, actor)
         return MaintenanceAssetItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/utility-readings", response_model=UtilityReadingListResponseSchema)
@@ -191,5 +192,5 @@ def create_utility_reading_endpoint(
     try:
         item = create_utility_reading(int(tenant["id"]), payload, actor)
         return UtilityReadingItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

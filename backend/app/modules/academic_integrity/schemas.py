@@ -33,6 +33,7 @@ class IntegrityCaseCreateSchema(BaseModel):
     description: str = Field(..., min_length=10, description="Detailed description of suspicion")
     evidence_url: Optional[str] = Field(None, description="URL to evidence (plagiarism report, etc)")
     priority: str = Field("normal", description="Case priority: low, normal, high")
+    reviewer_notes: Optional[str] = Field(None, max_length=500, description="Optional reviewer notes")
 
 
 class IntegrityCaseStatusUpdateSchema(BaseModel):

@@ -411,6 +411,55 @@ def _optional_integrations_dependency() -> dict[str, Any]:
     return _dependency_payload(name="external_integrations", healthy=True, critical=False, details=details)
 
 
+def comprehensive_payload(app: FastAPI) -> dict[str, Any]:
+    # Simplified DB check — only requires session_factory (no engine needed)
+    session_factory = getattr(app.state, "admissions_session_factory", None)
+    if session_factory is None:
+        database_status = "unreachable"
+    else:
+        try:
+            with session_factory() as session:
+                session.execute(text("SELECT 1"))
+            database_status = "reachable"
+        except Exception:
+            database_status = "unreachable"
+
+    worker_dep = _worker_dependency()
+    scheduler_dep = _scheduler_dependency()
+
+    worker_status = "reachable" if worker_dep["healthy"] else "unreachable"
+    scheduler_status = "reachable" if scheduler_dep["healthy"] else "unreachable"
+
+    issues: list[str] = []
+    if not worker_dep["healthy"]:
+        issues.append("worker_not_running")
+    if not scheduler_dep["healthy"]:
+        issues.append("scheduler_not_running")
+    if database_status == "unreachable":
+        issues.append("database_unreachable")
+
+    status = "healthy" if not issues else "degraded"
+
+    metrics: dict[str, Any] = {}
+    try:
+        with UnitOfWork() as uow:
+            metrics["event_queue_size"] = int(uow.job_repository.count_by_status("queued", conn=uow.conn))
+    except Exception as exc:
+        metrics["error"] = str(exc)
+
+    return {
+        "status": status,
+        "components": {
+            "database": database_status,
+            "worker": worker_status,
+            "scheduler": scheduler_status,
+        },
+        "issues": issues,
+        "metrics": metrics,
+        "timestamp": _now_iso(),
+    }
+
+
 def deep_payload(app: FastAPI) -> dict[str, Any]:
     readiness = readiness_payload(app)
     dependencies = dict(readiness["dependencies"])

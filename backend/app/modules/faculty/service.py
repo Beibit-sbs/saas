@@ -9,6 +9,17 @@ from app.modules.university_core.tenant_entity_service import (
 )
 
 
+_FACULTY_CONTRACT_STATUS_MAX_ACTIVE: dict[str, int] = {
+    "active": 500,
+    "draft": 200,
+    "pending": 150,
+    "terminated": 1000,
+    "expired": 2000,
+}
+_ACTIVE_CONTRACT_STATUSES = frozenset({"active", "draft", "pending"})
+_CONTRACT_TERMINATION_RISK_STATUSES = frozenset({"terminated"})
+
+
 def _safe_int(value: object) -> int | None:
     try:
         return int(value)
@@ -89,6 +100,15 @@ def create_faculty_contract(payload: dict[str, object], tenant_id: int) -> dict[
     faculty_exists = any(str(row.get("faculty_id") or "").strip() == faculty_id for row in faculty_rows)
     if not faculty_exists:
         raise ValueError("faculty not found")
+    contract_status = str(payload.get("status") or "active").strip().lower()
+    existing = list_entities_for_tenant("faculty_contracts", tenant_id)
+    active_count = sum(
+        1 for r in existing
+        if str(r.get("status") or "").strip().lower() in _ACTIVE_CONTRACT_STATUSES
+    )
+    cap = _FACULTY_CONTRACT_STATUS_MAX_ACTIVE.get(contract_status, 200)
+    if active_count >= cap:
+        raise ValueError("faculty_contract active cap reached")
     return create_entity_for_tenant("faculty_contracts", payload, tenant_id)
 
 
@@ -107,7 +127,33 @@ def update_faculty_contract_status(
     updated_payload["status"] = status
     if notes is not None:
         updated_payload["notes"] = notes
-    return update_entity_for_tenant("faculty_contracts", contract_id, updated_payload, tenant_id)
+    result = update_entity_for_tenant("faculty_contracts", contract_id, updated_payload, tenant_id)
+    if status in _CONTRACT_TERMINATION_RISK_STATUSES:
+        _ensure_contract_termination_alert_record(contract_id, tenant_id)
+    return result
+
+
+def _ensure_contract_termination_alert_record(contract_id: int, tenant_id: int) -> None:
+    existing = list_entities_for_tenant("faculty_contract_termination_alerts", tenant_id)
+    already = any(
+        r.get("integration_source") == "faculty_contract_termination_queue"
+        and str(r.get("source_entity_id") or "") == str(contract_id)
+        for r in existing
+    )
+    if already:
+        return
+    alert_payload: dict[str, object] = {
+        "contract_id": contract_id,
+        "alert_status": "open",
+        "integration_source": "faculty_contract_termination_queue",
+        "source_entity_id": str(contract_id),
+        "tenant_id": tenant_id,
+    }
+    create_entity_for_tenant("faculty_contract_termination_alerts", alert_payload, tenant_id)
+    EventPublisher.publish(
+        "campus.faculty.contract_termination_risk_detected",
+        {"contract_id": contract_id, "tenant_id": tenant_id},
+    )
 
 
 def create_faculty_member(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
@@ -354,6 +400,79 @@ def list_workload_alerts(tenant_id: int, term_id: int) -> list[dict[str, object]
                     },
                 )
     return alerts
+
+
+def get_faculty_capacity(tenant_id: int, faculty_id: str) -> dict[str, object]:
+    faculty_rows = list_entities_for_tenant("faculty", tenant_id)
+    normalized = faculty_id.strip()
+    row = next(
+        (r for r in faculty_rows if str(r.get("faculty_id") or "").strip() == normalized),
+        None,
+    )
+    if row is None:
+        raise ValueError("faculty not found")
+    return {
+        "faculty_id": faculty_id,
+        "max_credit_hours": int(row.get("max_credit_hours") or 18),
+        "fte_ratio": float(row.get("fte_ratio") or 1.0),
+    }
+
+
+def get_workload_metrics(tenant_id: int, term_id: int) -> dict[str, object]:
+    faculty_rows = list_entities_for_tenant("faculty", tenant_id)
+    by_dept: dict[str, list[dict]] = {}
+    for row in faculty_rows:
+        fid = str(row.get("faculty_id") or "").strip()
+        if not fid:
+            continue
+        try:
+            w = get_faculty_workload(tenant_id, fid, term_id)
+        except (ValueError, Exception):
+            continue
+        dept = str(w.get("department") or "unknown")
+        by_dept.setdefault(dept, []).append(w)
+
+    all_workloads = [w for ws in by_dept.values() for w in ws]
+    utils = [float(w["utilization"]) for w in all_workloads]
+
+    def _avg(vals: list[float]) -> float:
+        return round(sum(vals) / len(vals), 4) if vals else 0.0
+
+    def _median(vals: list[float]) -> float:
+        if not vals:
+            return 0.0
+        s = sorted(vals)
+        m = len(s) // 2
+        return round(s[m] if len(s) % 2 else (s[m - 1] + s[m]) / 2, 4)
+
+    departments = []
+    for dept, ws in by_dept.items():
+        du = [float(w["utilization"]) for w in ws]
+        departments.append({
+            "department": dept,
+            "term_id": term_id,
+            "total_faculty": len(ws),
+            "average_utilization_pct": _avg(du),
+            "underload_count": sum(1 for w in ws if "underload_alert" in (w.get("alerts") or [])),
+            "overload_count": sum(1 for w in ws if "overload_threshold" in (w.get("alerts") or [])),
+            "max_credit_exceeded_count": sum(1 for w in ws if "max_credit_exceeded" in (w.get("alerts") or [])),
+        })
+
+    return {
+        "term_id": term_id,
+        "total_faculty": len(all_workloads),
+        "average_utilization_pct": _avg(utils),
+        "median_utilization_pct": _median(utils),
+        "min_utilization_pct": round(min(utils), 4) if utils else 0.0,
+        "max_utilization_pct": round(max(utils), 4) if utils else 0.0,
+        "utilization_std_dev": round(pstdev(utils), 4) if len(utils) > 1 else 0.0,
+        "alert_count_by_type": {
+            "underload": sum(1 for w in all_workloads if "underload_alert" in (w.get("alerts") or [])),
+            "overload": sum(1 for w in all_workloads if "overload_threshold" in (w.get("alerts") or [])),
+            "max_credit_exceeded": sum(1 for w in all_workloads if "max_credit_exceeded" in (w.get("alerts") or [])),
+        },
+        "departments": departments,
+    }
 
 
 def update_faculty_capacity(

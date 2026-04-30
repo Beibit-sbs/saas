@@ -3,19 +3,16 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.faculty_copilot.schemas import (
     FacultyQnARequestSchema,
     LessonPlanRequestSchema,
     MaterialPackRequestSchema,
 )
-from app.modules.faculty_copilot.service import (
-    answer_faculty_question,
-    generate_lesson_plan,
-    generate_material_pack,
-)
+import app.modules.faculty_copilot.service as _svc
 from app.platform.ai.schemas import CopilotAnswerReadSchema
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -38,8 +35,11 @@ def lesson_plan_endpoint(
     __: Annotated[None, Depends(permission_dependency("faculty_copilot.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> CopilotAnswerReadSchema:
-    answer = generate_lesson_plan(tenant_id=int(tenant["id"]), actor_id=actor, payload=payload)
-    return CopilotAnswerReadSchema.model_validate(answer)
+    try:
+        answer = _svc.generate_lesson_plan(tenant_id=int(tenant["id"]), actor_id=actor, payload=payload)
+        return CopilotAnswerReadSchema.model_validate(answer)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.post("/materials", response_model=CopilotAnswerReadSchema)
@@ -49,8 +49,11 @@ def materials_endpoint(
     __: Annotated[None, Depends(permission_dependency("faculty_copilot.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> CopilotAnswerReadSchema:
-    answer = generate_material_pack(tenant_id=int(tenant["id"]), actor_id=actor, payload=payload)
-    return CopilotAnswerReadSchema.model_validate(answer)
+    try:
+        answer = _svc.generate_material_pack(tenant_id=int(tenant["id"]), actor_id=actor, payload=payload)
+        return CopilotAnswerReadSchema.model_validate(answer)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.post("/qna", response_model=CopilotAnswerReadSchema)
@@ -60,5 +63,8 @@ def qna_endpoint(
     __: Annotated[None, Depends(permission_dependency("faculty_copilot.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> CopilotAnswerReadSchema:
-    answer = answer_faculty_question(tenant_id=int(tenant["id"]), actor_id=actor, payload=payload)
-    return CopilotAnswerReadSchema.model_validate(answer)
+    try:
+        answer = _svc.answer_faculty_question(tenant_id=int(tenant["id"]), actor_id=actor, payload=payload)
+        return CopilotAnswerReadSchema.model_validate(answer)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

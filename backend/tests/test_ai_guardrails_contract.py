@@ -10,7 +10,6 @@ Tests cover:
 - GuardrailResult contract shape
 """
 
-import pytest
 
 from app.modules.ai_guardrails.detector_injection import detect_injection
 from app.modules.ai_guardrails.detector_pii import detect_pii

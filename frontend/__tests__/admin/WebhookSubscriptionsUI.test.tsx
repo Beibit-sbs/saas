@@ -223,7 +223,7 @@ describe("Webhook Subscriptions UI (Gap 2 DoD)", () => {
 
     await screen.findByTestId("platform-console-integrations");
 
-    const deactivateButtons = await screen.findAllByRole("button", { name: /Deactivate/i });
+    const deactivateButtons = await screen.findAllByRole("button", { name: /Deactivate/i }, { timeout: TEST_TIMEOUT_MS });
     expect(deactivateButtons).toHaveLength(1);
   }, TEST_TIMEOUT_MS);
 });

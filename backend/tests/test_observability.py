@@ -6,7 +6,6 @@ internal logic: emit_alert return value, cooldown behaviour, dependency
 state transitions, event-spike counters, live_payload structure.
 """
 
-import time
 
 from app.modules.observability.alerts import (
     _dependency_state,

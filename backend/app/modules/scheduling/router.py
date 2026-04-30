@@ -27,6 +27,7 @@ from app.modules.scheduling.schemas import (
     ConflictReportSchema,
     CourseSectionCreateSchema,
     CourseSectionReadSchema,
+    CourseSectionUpdateSchema,
     DisciplineCreateSchema,
     DisciplineListResponseSchema,
     DisciplineReadSchema,
@@ -94,6 +95,54 @@ async def create_course_section(
     try:
         return await service.create_course_section(
             tenant_id=int(tenant["id"]),
+            request=request,
+            actor_id=actor,
+        )
+    except (
+        PermissionError,
+        ValueError,
+        IntegrityError,
+        TenantResourceNotFoundError,
+        DomainValidationError,
+        OptimisticLockConflictError,
+    ) as exc:
+        raise _raise_scheduling_http_error(exc) from exc
+
+
+@router.get("/sections/{section_id}", response_model=CourseSectionReadSchema)
+async def get_course_section(
+    section_id: int,
+    _: Annotated[None, Depends(permission_dependency("scheduling.read"))] = None,
+    tenant: TrustedTenant = None,
+    db: SchedulingDb = None,
+):
+    service = SchedulingService(db)
+    try:
+        return await service.get_course_section(
+            tenant_id=int(tenant["id"]),
+            section_id=section_id,
+        )
+    except (
+        PermissionError,
+        TenantResourceNotFoundError,
+    ) as exc:
+        raise _raise_scheduling_http_error(exc) from exc
+
+
+@router.patch("/sections/{section_id}", response_model=CourseSectionReadSchema)
+async def update_course_section(
+    section_id: int,
+    request: CourseSectionUpdateSchema,
+    actor: Actor = None,
+    _: Annotated[None, Depends(permission_dependency("scheduling.write"))] = None,
+    tenant: TrustedTenant = None,
+    db: SchedulingDb = None,
+):
+    service = SchedulingService(db)
+    try:
+        return await service.update_course_section(
+            tenant_id=int(tenant["id"]),
+            section_id=section_id,
             request=request,
             actor_id=actor,
         )

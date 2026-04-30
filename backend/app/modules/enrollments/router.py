@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Request, status
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -58,7 +59,8 @@ def _raise_enrollments_http_error(exc: Exception) -> HTTPException:
     if isinstance(exc, (IntegrityError, OptimisticLockConflictError)):
         return integrity_error_to_http(exc)
     if isinstance(exc, ValidationError):
-        return HTTPException(status_code=400, detail=exc.errors())
+        # Validation payload may include datetime values in "input"; encode to JSON-safe types.
+        return HTTPException(status_code=400, detail=jsonable_encoder(exc.errors()))
     if isinstance(exc, ValueError):
         return validation_error_to_http(exc)
     raise HTTPException(status_code=400, detail=str(exc))

@@ -13,6 +13,7 @@ class TransportRouteCreatePayload(BaseModel):
     arrival_time: str | None = Field(default=None, max_length=64)
     capacity: int | None = Field(default=None, ge=0)
     assigned_driver: str | None = Field(default=None, max_length=128)
+    notes: str | None = Field(default=None, max_length=512)
 
 
 class TransportRouteResponse(TransportRouteCreatePayload):

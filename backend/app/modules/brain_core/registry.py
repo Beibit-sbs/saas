@@ -9,6 +9,7 @@ from app.modules.brain_core.constants import (
     FACULTY_OVERLOAD_EVENT_TYPES,
     OPERATIONS_EVENT_TYPES,
     PAYMENT_OVERDUE_EVENT_TYPES,
+    PLATFORM_ACTIVITY_EVENT_TYPES,
     PLATFORM_RELIABILITY_EVENT_TYPES,
     PROCUREMENT_EVENT_TYPES,
     PROGRAMS_EVENT_TYPES,
@@ -99,6 +100,11 @@ class SignalRegistry:
             "signal_class": "platform_reliability_risk",
             "scenario": "platform_reliability",
             "context_sources": ["platform", "operations"],
+        },
+        "platform.module.activity.logged": {
+            "signal_class": "platform_activity",
+            "scenario": "platform_activity_observability",
+            "context_sources": ["platform"],
         },
         "research.grant_deadline.approaching": {
             "signal_class": "research_risk",
@@ -200,6 +206,16 @@ class SignalRegistry:
             "scenario": "student_services_escalation",
             "context_sources": ["student_success", "academic"],
         },
+        "admissions.decision.made": {
+            "signal_class": "academic_risk",
+            "scenario": "student_risk",
+            "context_sources": ["academic", "student_success"],
+        },
+        "scheduling.section.scheduled": {
+            "signal_class": "faculty_risk",
+            "scenario": "faculty_overload",
+            "context_sources": ["faculty", "academic"],
+        },
     }
 
     @classmethod
@@ -283,6 +299,11 @@ class DecisionRegistry:
                 "create_platform_reliability_incident": "workflow_task",
                 "notify_platform": "notification",
             },
+        },
+        "platform_activity_observability": {
+            "decision_type": "operational",
+            "allowed_event_types": sorted(PLATFORM_ACTIVITY_EVENT_TYPES),
+            "action_map": {},
         },
         "research_innovation": {
             "decision_type": "preventive",

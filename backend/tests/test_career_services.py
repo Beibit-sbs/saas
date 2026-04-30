@@ -15,6 +15,25 @@ _OPPORTUNITY_PAYLOAD = {
 }
 
 
+def _seed_enrollment_for_student(student_id: int, tenant_id: int = 1) -> None:
+    """Seed an active enrollment to satisfy _check_student_is_actively_enrolled_for_career_opportunity."""
+    from app.modules.university_core.shared import _state, _state_lock
+
+    with _state_lock:
+        _state.data.setdefault("enrollments", {})
+        _state.counters.setdefault("enrollments", 0)
+        _state.counters["enrollments"] += 1
+        eid = _state.counters["enrollments"]
+        _state.data["enrollments"][eid] = {
+            "id": eid,
+            "student_id": student_id,
+            "course_id": 1,
+            "semester": "Fall 2025",
+            "status": "active",
+            "tenant_id": str(tenant_id),
+        }
+
+
 def test_list_career_opportunities_returns_200() -> None:
     resp = client.get(BASE, headers=ADMIN_HEADERS)
     assert resp.status_code == 200
@@ -22,6 +41,7 @@ def test_list_career_opportunities_returns_200() -> None:
 
 
 def test_create_career_opportunity_returns_200() -> None:
+    _seed_enrollment_for_student(210)
     resp = client.post(BASE, headers=ADMIN_HEADERS, json=_OPPORTUNITY_PAYLOAD)
     assert resp.status_code == 200, resp.text
     body = resp.json()["item"]
@@ -30,6 +50,7 @@ def test_create_career_opportunity_returns_200() -> None:
 
 
 def test_update_career_opportunity_status_flow() -> None:
+    _seed_enrollment_for_student(210)
     create_resp = client.post(BASE, headers=ADMIN_HEADERS, json=_OPPORTUNITY_PAYLOAD)
     assert create_resp.status_code == 200, create_resp.text
     opportunity_id = create_resp.json()["item"]["id"]

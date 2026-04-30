@@ -25,6 +25,7 @@ from app.modules.enrollments.schemas import (
     EnrollmentStatusChangeSchema,
 )
 from app.modules.enrollments.service import EnrollmentLifecycleService
+from app.modules.scheduling.models import SectionStatus
 from app.modules.students.models import (
     StudentAdmissionSource,
     StudentProfileModel,
@@ -64,6 +65,13 @@ class ExecuteResult:
 
     def scalars(self) -> ScalarListResult:
         return ScalarListResult(self._scalars)
+
+    def scalar(self) -> object | None:
+        if self._scalar_one is not None:
+            return self._scalar_one
+        if self._scalar_one_or_none is not None:
+            return self._scalar_one_or_none
+        return None
 
 
 @pytest.fixture
@@ -168,6 +176,21 @@ def term_factory():
 
 
 @pytest.fixture
+def section_factory():
+    def factory(**overrides):
+        section = MagicMock()
+        section.id = overrides.get("id", 501)
+        section.tenant_id = overrides.get("tenant_id", 1)
+        section.course_id = overrides.get("course_id", 701)
+        section.term_id = overrides.get("term_id", 1)
+        section.max_capacity = overrides.get("max_capacity", 30)
+        section.status = overrides.get("status", SectionStatus.SCHEDULED)
+        return section
+
+    return factory
+
+
+@pytest.fixture
 def enrollment_factory():
     def factory(**overrides) -> EnrollmentModel:
         now = datetime(2026, 3, 23, 16, 0, 0, tzinfo=UTC)
@@ -204,18 +227,23 @@ class TestEnrollStudent:
         student_profile_factory,
         course_factory,
         term_factory,
+        section_factory,
     ) -> None:
         service = EnrollmentLifecycleService(db_session)
         request = EnrollmentCreateSchema(
             student_profile_id=1001,
             course_id=701,
             term_id=1,
+            section_id=501,
             enrollment_status=EnrollmentStatus.ENROLLED,
         )
         db_session.execute.side_effect = [
             ExecuteResult(scalar_one_or_none=student_profile_factory(id=1001, tenant_id=1)),
             ExecuteResult(scalar_one_or_none=course_factory(id=701, tenant_id="1")),
             ExecuteResult(scalar_one_or_none=term_factory(id=1, tenant_id=1)),
+            ExecuteResult(scalars=[]),
+            ExecuteResult(scalar_one_or_none=section_factory(id=501, tenant_id=1, course_id=701, term_id=1)),
+            ExecuteResult(scalar_one=0),
             ExecuteResult(scalars=[]),
         ]
 
@@ -233,14 +261,14 @@ class TestEnrollStudent:
 
     def test_tenant_missing_fail_closed(self, run_async, db_session) -> None:
         service = EnrollmentLifecycleService(db_session)
-        request = EnrollmentCreateSchema(student_profile_id=1001, course_id=701, term_id=1)
+        request = EnrollmentCreateSchema(student_profile_id=1001, course_id=701, term_id=1, section_id=501)
 
         with pytest.raises(TenantRequiredError):
             run_async(service.enroll_student(tenant_id=None, request=request, actor_id="registrar@example.com"))
 
     def test_student_not_found(self, run_async, db_session) -> None:
         service = EnrollmentLifecycleService(db_session)
-        request = EnrollmentCreateSchema(student_profile_id=1001, course_id=701, term_id=1)
+        request = EnrollmentCreateSchema(student_profile_id=1001, course_id=701, term_id=1, section_id=501)
         db_session.execute.return_value = ExecuteResult(scalar_one_or_none=None)
 
         with pytest.raises(TenantResourceNotFoundError):
@@ -248,7 +276,7 @@ class TestEnrollStudent:
 
     def test_course_placeholder_tenant_mismatch(self, run_async, db_session, student_profile_factory, course_factory) -> None:
         service = EnrollmentLifecycleService(db_session)
-        request = EnrollmentCreateSchema(student_profile_id=1001, course_id=701, term_id=1)
+        request = EnrollmentCreateSchema(student_profile_id=1001, course_id=701, term_id=1, section_id=501)
         db_session.execute.side_effect = [
             ExecuteResult(scalar_one_or_none=student_profile_factory(id=1001, tenant_id=1)),
             ExecuteResult(scalar_one_or_none=course_factory(id=701, tenant_id="9")),
@@ -296,7 +324,7 @@ def test_list_tenant_enrollment_consistency_report_detects_issues(
         enrollment_factory,
     ) -> None:
         service = EnrollmentLifecycleService(db_session)
-        request = EnrollmentCreateSchema(student_profile_id=1001, course_id=701, term_id=1)
+        request = EnrollmentCreateSchema(student_profile_id=1001, course_id=701, term_id=1, section_id=501)
         db_session.execute.side_effect = [
             ExecuteResult(scalar_one_or_none=student_profile_factory(id=1001, tenant_id=1)),
             ExecuteResult(scalar_one_or_none=course_factory(id=701, tenant_id="1")),
@@ -455,7 +483,11 @@ class TestStatusLifecycle:
     def test_drop_enrollment(self, run_async, db_session, audit_mock, enrollment_factory) -> None:
         service = EnrollmentLifecycleService(db_session)
         enrollment = enrollment_factory(enrollment_status=EnrollmentStatus.ENROLLED, version=2)
-        db_session.execute.return_value = ExecuteResult(scalar_one_or_none=enrollment)
+        # First execute: load enrollment; second: _check_drop_deadline term lookup → None (no deadline)
+        db_session.execute.side_effect = [
+            ExecuteResult(scalar_one_or_none=enrollment),
+            ExecuteResult(scalar_one_or_none=None),
+        ]
 
         result = run_async(
             service.drop_enrollment(

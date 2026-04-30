@@ -182,3 +182,71 @@ class FeatureFlagRepository:
 
         with self._lock:
             self._memory.clear()
+
+    def get_flag(self, tenant_id: int, module: str, key: str, *, conn: object | None = None) -> dict[str, object] | None:
+        normalized_tenant_id = int(tenant_id)
+        normalized_module = module.strip().lower()
+        normalized_key = key.strip().lower()
+
+        if conn is None:
+            with transaction() as tx:
+                return self.get_flag(normalized_tenant_id, normalized_module, normalized_key, conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT scope, tenant_id, module, key, enabled, rollout_percentage, updated_at
+                    FROM app_platform_feature_flags
+                    WHERE tenant_id = %s AND module = %s AND key = %s
+                    LIMIT 1
+                    """,
+                    (normalized_tenant_id, normalized_module, normalized_key),
+                )
+                row = cur.fetchone()
+            if row is None:
+                return None
+            return {
+                "scope": str(row[0]),
+                "tenant_id": int(row[1]),
+                "module": str(row[2]),
+                "key": str(row[3]),
+                "enabled": bool(row[4]),
+                "rollout_percentage": int(row[5]),
+                "updated_at": row[6].isoformat() if hasattr(row[6], "isoformat") else str(row[6]),
+            }
+
+        with self._lock:
+            store_key_tenant = ("tenant", normalized_tenant_id, normalized_module, normalized_key)
+            store_key_platform = ("platform", _PLATFORM_TENANT_ID, normalized_module, normalized_key)
+            row = self._memory.get(store_key_tenant) or self._memory.get(store_key_platform)
+            return dict(row) if row else None
+
+    def delete_flag(self, tenant_id: int, module: str, key: str, *, conn: object | None = None) -> bool:
+        normalized_tenant_id = int(tenant_id)
+        normalized_module = module.strip().lower()
+        normalized_key = key.strip().lower()
+
+        if conn is None:
+            with transaction() as tx:
+                return self.delete_flag(normalized_tenant_id, normalized_module, normalized_key, conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    DELETE FROM app_platform_feature_flags
+                    WHERE tenant_id = %s AND module = %s AND key = %s
+                    """,
+                    (normalized_tenant_id, normalized_module, normalized_key),
+                )
+                deleted = cur.rowcount > 0
+            return deleted
+
+        with self._lock:
+            store_key = ("tenant", normalized_tenant_id, normalized_module, normalized_key)
+            if store_key in self._memory:
+                del self._memory[store_key]
+                return True
+            return False
+

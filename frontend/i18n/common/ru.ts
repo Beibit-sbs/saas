@@ -18,6 +18,7 @@ export const ru = {
   "nav.featureFlags": "Флаги функций",
   "nav.jobs": "Задачи",
   "nav.interventions": "Interventions",
+  "nav.expenseControls": "Контроль расходов",
   "nav.notifications": "Уведомления",
   "nav.healthMetrics": "Состояние и метрики",
   "nav.platformOps": "Операции платформы",

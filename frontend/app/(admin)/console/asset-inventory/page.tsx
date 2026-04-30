@@ -173,7 +173,7 @@ export default function AssetInventoryPage() {
                 onClick={() =>
                   updateAssetStatus.mutate(
                     { assetId: row.id, payload: { status: next } },
-                    getHandlers(`Asset moved to ${next}`),
+                    getHandlers({ successTitle: `Asset moved to ${next}` }),
                   )
                 }
               >
@@ -234,7 +234,7 @@ export default function AssetInventoryPage() {
       <div className="space-y-8">
         <PageHeader
           title="Asset Inventory"
-          subtitle="Track campus assets, inventory management, and depreciation lifecycle"
+          description="Track campus assets, inventory management, and depreciation lifecycle"
           icon={Package}
         />
 
@@ -298,10 +298,10 @@ export default function AssetInventoryPage() {
                     status: "active",
                   },
                   {
-                    ...getHandlers("Asset registered"),
+                    ...getHandlers({ successTitle: "Asset registered" }),
                     onSuccess: (...args) => {
                       setAssetForm(EMPTY_ASSET);
-                      getHandlers("Asset registered").onSuccess?.(...args);
+                      getHandlers({ successTitle: "Asset registered" }).onSuccess?.(args[0]);
                     },
                   },
                 );
@@ -384,10 +384,10 @@ export default function AssetInventoryPage() {
                     status: "active",
                   },
                   {
-                    ...getHandlers("Depreciation record added"),
+                    ...getHandlers({ successTitle: "Depreciation record added" }),
                     onSuccess: (...args) => {
                       setDeprForm(EMPTY_DEPR);
-                      getHandlers("Depreciation record added").onSuccess?.(...args);
+                      getHandlers({ successTitle: "Depreciation record added" }).onSuccess?.(args[0]);
                     },
                   },
                 );

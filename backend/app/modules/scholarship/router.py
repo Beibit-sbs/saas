@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.scholarship.schemas import (
@@ -49,9 +50,12 @@ def create_application_endpoint(
     __: Annotated[None, Depends(permission_dependency("operations.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ScholarshipApplicationItemResponse:
-    return ScholarshipApplicationItemResponse(
-        record=create_scholarship_application(payload.model_dump(), int(tenant["id"]))
-    )
+    try:
+        return ScholarshipApplicationItemResponse(
+            record=create_scholarship_application(payload.model_dump(), int(tenant["id"]))
+        )
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/awards", response_model=ScholarshipAwardListResponse)
@@ -73,9 +77,12 @@ def create_award_endpoint(
     __: Annotated[None, Depends(permission_dependency("operations.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ScholarshipAwardItemResponse:
-    return ScholarshipAwardItemResponse(
-        record=create_scholarship_award(payload.model_dump(), int(tenant["id"]))
-    )
+    try:
+        return ScholarshipAwardItemResponse(
+            record=create_scholarship_award(payload.model_dump(), int(tenant["id"]))
+        )
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/brain-context", response_model=ScholarshipBrainContextResponse)

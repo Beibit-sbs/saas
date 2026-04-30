@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.tenant import get_current_tenant
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.procurement.schemas import (
     AssetCreateSchema,
     AssetItemResponseSchema,
@@ -12,6 +13,7 @@ from app.modules.procurement.schemas import (
     ContractCreateSchema,
     ContractItemResponseSchema,
     ContractListResponseSchema,
+    ContractStatusUpdateSchema,
     InventoryItemCreateSchema,
     InventoryItemItemResponseSchema,
     InventoryItemListResponseSchema,
@@ -20,17 +22,7 @@ from app.modules.procurement.schemas import (
     VendorItemResponseSchema,
     VendorListResponseSchema,
 )
-from app.modules.procurement.service import (
-    create_asset,
-    create_contract,
-    create_inventory_item,
-    create_vendor,
-    get_procurement_health_snapshot,
-    list_assets,
-    list_contracts,
-    list_inventory_items,
-    list_vendors,
-)
+import app.modules.procurement.service as _svc
 from app.modules.rbac.security import get_actor, permission_dependency
 
 
@@ -43,7 +35,7 @@ def get_procurement_health_endpoint(
     __: Annotated[None, Depends(permission_dependency("procurement.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ProcurementHealthResponseSchema:
-    item = get_procurement_health_snapshot(int(tenant["id"]))
+    item = _svc.get_procurement_health_snapshot(int(tenant["id"]))
     return ProcurementHealthResponseSchema(item=item)
 
 
@@ -53,7 +45,7 @@ def list_vendors_endpoint(
     __: Annotated[None, Depends(permission_dependency("procurement.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> VendorListResponseSchema:
-    return VendorListResponseSchema(items=list_vendors(int(tenant["id"])))
+    return VendorListResponseSchema(items=_svc.list_vendors(int(tenant["id"])))
 
 
 @router.post("/vendors", response_model=VendorItemResponseSchema)
@@ -64,10 +56,10 @@ def create_vendor_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> VendorItemResponseSchema:
     try:
-        item = create_vendor(int(tenant["id"]), payload, actor)
+        item = _svc.create_vendor(int(tenant["id"]), payload, actor)
         return VendorItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/contracts", response_model=ContractListResponseSchema)
@@ -76,7 +68,7 @@ def list_contracts_endpoint(
     __: Annotated[None, Depends(permission_dependency("procurement.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ContractListResponseSchema:
-    return ContractListResponseSchema(items=list_contracts(int(tenant["id"])))
+    return ContractListResponseSchema(items=_svc.list_contracts(int(tenant["id"])))
 
 
 @router.post("/contracts", response_model=ContractItemResponseSchema)
@@ -87,10 +79,29 @@ def create_contract_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ContractItemResponseSchema:
     try:
-        item = create_contract(int(tenant["id"]), payload, actor)
+        item = _svc.create_contract(int(tenant["id"]), payload, actor)
         return ContractItemResponseSchema(item=item)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.patch("/contracts/{contract_id}/status", response_model=ContractItemResponseSchema)
+def update_contract_status_endpoint(
+    contract_id: int,
+    payload: ContractStatusUpdateSchema,
+    actor: Annotated[str, Depends(get_actor)],
+    _: Annotated[None, Depends(permission_dependency("procurement.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ContractItemResponseSchema:
+    try:
+        item = _svc.update_contract_status(int(tenant["id"]), contract_id, payload, actor)
+    except DomainValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if item is None:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    return ContractItemResponseSchema(item=item)
 
 
 @router.get("/assets", response_model=AssetListResponseSchema)
@@ -99,7 +110,7 @@ def list_assets_endpoint(
     __: Annotated[None, Depends(permission_dependency("procurement.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> AssetListResponseSchema:
-    return AssetListResponseSchema(items=list_assets(int(tenant["id"])))
+    return AssetListResponseSchema(items=_svc.list_assets(int(tenant["id"])))
 
 
 @router.post("/assets", response_model=AssetItemResponseSchema)
@@ -110,10 +121,10 @@ def create_asset_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> AssetItemResponseSchema:
     try:
-        item = create_asset(int(tenant["id"]), payload, actor)
+        item = _svc.create_asset(int(tenant["id"]), payload, actor)
         return AssetItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/inventory-items", response_model=InventoryItemListResponseSchema)
@@ -122,7 +133,7 @@ def list_inventory_items_endpoint(
     __: Annotated[None, Depends(permission_dependency("procurement.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> InventoryItemListResponseSchema:
-    return InventoryItemListResponseSchema(items=list_inventory_items(int(tenant["id"])))
+    return InventoryItemListResponseSchema(items=_svc.list_inventory_items(int(tenant["id"])))
 
 
 @router.post("/inventory-items", response_model=InventoryItemItemResponseSchema)
@@ -133,7 +144,7 @@ def create_inventory_item_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> InventoryItemItemResponseSchema:
     try:
-        item = create_inventory_item(int(tenant["id"]), payload, actor)
+        item = _svc.create_inventory_item(int(tenant["id"]), payload, actor)
         return InventoryItemItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

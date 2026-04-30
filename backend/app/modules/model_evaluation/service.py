@@ -1,9 +1,9 @@
-"""Phase XII-XII4: Model Evaluation service."""
+"""Phase XII-XII4: Model Evaluation service — module-level in-memory store."""
 from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timezone
-from typing import Any
+from threading import Lock
 
 from app.modules.model_evaluation.schemas import (
     EvalMetricSchema,
@@ -13,15 +13,28 @@ from app.modules.model_evaluation.schemas import (
     LeaderboardEntrySchema,
 )
 
-_RUNS: dict[int, list[dict[str, Any]]] = {}  # tenant_id → eval runs
-
-
-def _tenant_store(tenant_id: int) -> list[dict[str, Any]]:
-    return _RUNS.setdefault(tenant_id, [])
+# Module-level store — NOT cleared by clear_university_state()
+_store: dict[str, dict] = {}  # run_id -> record
+_store_lock = Lock()
 
 
 def _gen_run_id(tenant_id: int, model_name: str, ts: str) -> str:
     return hashlib.sha256(f"{tenant_id}:{model_name}:{ts}".encode()).hexdigest()[:16]
+
+
+def _row_to_read(row: dict) -> EvalRunReadSchema:
+    metrics_raw = row.get("metrics") or []
+    return EvalRunReadSchema(
+        run_id=str(row["run_id"]),
+        model_name=str(row["model_name"]),
+        eval_set_name=str(row["eval_set_name"]),
+        status=str(row.get("status", "pending")),
+        metrics=[EvalMetricSchema(**m) for m in metrics_raw],
+        notes=row.get("notes"),
+        created_by=str(row.get("created_by", "")),
+        created_at=str(row.get("created_at", "")),
+        completed_at=row.get("completed_at"),
+    )
 
 
 def create_eval_run(
@@ -32,12 +45,12 @@ def create_eval_run(
 ) -> EvalRunReadSchema:
     ts = datetime.now(timezone.utc).isoformat()
     run_id = _gen_run_id(tenant_id, payload.model_name, ts)
-    record: dict[str, Any] = {
+    record = {
         "run_id": run_id,
         "tenant_id": tenant_id,
         "model_name": payload.model_name,
         "eval_set_name": payload.eval_set_name,
-        "metric_names": payload.metric_names,
+        "metric_names": list(payload.metric_names or []),
         "status": "pending",
         "metrics": [],
         "notes": payload.notes,
@@ -45,12 +58,15 @@ def create_eval_run(
         "created_at": ts,
         "completed_at": None,
     }
-    _tenant_store(tenant_id).append(record)
-    return _to_read(record)
+    with _store_lock:
+        _store[run_id] = record
+    return _row_to_read(record)
 
 
 def list_eval_runs(*, tenant_id: int) -> list[EvalRunReadSchema]:
-    return [_to_read(r) for r in _tenant_store(tenant_id)]
+    with _store_lock:
+        rows = [r for r in _store.values() if r.get("tenant_id") == tenant_id]
+    return [_row_to_read(r) for r in rows]
 
 
 def submit_results(
@@ -59,36 +75,39 @@ def submit_results(
     run_id: str,
     payload: EvalRunSubmitResultSchema,
 ) -> EvalRunReadSchema | None:
-    for record in _tenant_store(tenant_id):
-        if record["run_id"] == run_id:
-            record["metrics"] = [m.model_dump() for m in payload.metrics]
-            record["status"] = "completed"
-            record["completed_at"] = datetime.now(timezone.utc).isoformat()
-            return _to_read(record)
-    return None
+    with _store_lock:
+        existing = _store.get(run_id)
+        if existing is None or existing.get("tenant_id") != tenant_id:
+            return None
+        existing["metrics"] = [m.model_dump() for m in payload.metrics]
+        existing["status"] = "completed"
+        existing["completed_at"] = datetime.now(timezone.utc).isoformat()
+        updated = dict(existing)
+    return _row_to_read(updated)
 
 
 def get_leaderboard(*, tenant_id: int, eval_set_name: str | None = None) -> list[LeaderboardEntrySchema]:
-    store = _tenant_store(tenant_id)
-    completed = [r for r in store if r["status"] == "completed"]
+    with _store_lock:
+        rows = [r for r in _store.values() if r.get("tenant_id") == tenant_id]
+    completed = [r for r in rows if str(r.get("status")) == "completed"]
     if eval_set_name:
-        completed = [r for r in completed if r["eval_set_name"] == eval_set_name]
+        completed = [r for r in completed if str(r.get("eval_set_name")) == eval_set_name]
 
     entries: list[LeaderboardEntrySchema] = []
-    for record in completed:
-        metrics = record.get("metrics", [])
+    for row in completed:
+        metrics = row.get("metrics") or []
         if not metrics:
             continue
         primary = metrics[0]
         entries.append(
             LeaderboardEntrySchema(
                 rank=0,
-                model_name=record["model_name"],
-                eval_set_name=record["eval_set_name"],
+                model_name=str(row["model_name"]),
+                eval_set_name=str(row["eval_set_name"]),
                 primary_metric=primary["metric_name"],
                 primary_score=primary["value"],
-                run_id=record["run_id"],
-                completed_at=record.get("completed_at"),
+                run_id=str(row["run_id"]),
+                completed_at=row.get("completed_at"),
             )
         )
 
@@ -96,17 +115,3 @@ def get_leaderboard(*, tenant_id: int, eval_set_name: str | None = None) -> list
     for i, entry in enumerate(entries, 1):
         entry.rank = i
     return entries
-
-
-def _to_read(record: dict[str, Any]) -> EvalRunReadSchema:
-    return EvalRunReadSchema(
-        run_id=record["run_id"],
-        model_name=record["model_name"],
-        eval_set_name=record["eval_set_name"],
-        status=record["status"],
-        metrics=[EvalMetricSchema(**m) for m in record.get("metrics", [])],
-        notes=record.get("notes"),
-        created_by=record["created_by"],
-        created_at=record["created_at"],
-        completed_at=record.get("completed_at"),
-    )

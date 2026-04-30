@@ -12,7 +12,6 @@ These tests run without Docker and require no DB/network.
 from __future__ import annotations
 
 import importlib
-import sys
 from pathlib import Path
 
 import pytest

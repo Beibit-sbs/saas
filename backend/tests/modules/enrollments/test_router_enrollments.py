@@ -53,6 +53,7 @@ def _enrollment_schema(*, enrollment_id: int = 4001, tenant_id: int = 1) -> Enro
         student_profile_id=1001,
         course_id=701,
         term_id=1,
+        section_id=None,
         enrollment_status=EnrollmentStatus.ENROLLED,
         enrollment_type=EnrollmentType.REGULAR,
         enrolled_at=now,
@@ -90,6 +91,7 @@ def test_post_enrollment_success(
             "student_profile_id": 1001,
             "course_id": 701,
             "term_id": 1,
+            "section_id": 501,
         },
     )
 

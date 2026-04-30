@@ -25,6 +25,26 @@ class AnalyticsRepository:
     def _now_iso(self) -> str:
         return datetime.now(timezone.utc).isoformat()
 
+    @staticmethod
+    def _local_day_bounds_utc(day: date) -> tuple[datetime, datetime]:
+        local_tz = datetime.now().astimezone().tzinfo or timezone.utc
+        start_local = datetime.combine(day, time.min, tzinfo=local_tz)
+        end_local = datetime.combine(day, time.max, tzinfo=local_tz)
+        return start_local.astimezone(timezone.utc), end_local.astimezone(timezone.utc)
+
+    @staticmethod
+    def _to_local_date(value: Any) -> date | None:
+        if not value:
+            return None
+        text = str(value)
+        try:
+            dt = datetime.fromisoformat(text)
+        except ValueError:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone().date()
+
     def clear_state(self) -> None:
         with self._lock:
             self._event_counter = 0
@@ -152,9 +172,19 @@ class AnalyticsRepository:
                     and (event_type is None or r["event_type"] == event_type)
                 ]
                 if date_from is not None:
-                    rows = [r for r in rows if str(r.get("created_at", ""))[:10] >= date_from.isoformat()]
+                    rows = [
+                        r
+                        for r in rows
+                        if self._to_local_date(r.get("created_at")) is not None
+                        and self._to_local_date(r.get("created_at")) >= date_from
+                    ]
                 if date_to is not None:
-                    rows = [r for r in rows if str(r.get("created_at", ""))[:10] <= date_to.isoformat()]
+                    rows = [
+                        r
+                        for r in rows
+                        if self._to_local_date(r.get("created_at")) is not None
+                        and self._to_local_date(r.get("created_at")) <= date_to
+                    ]
                 if cursor_id_lt is not None:
                     rows = [r for r in rows if int(r["id"]) < int(cursor_id_lt)]
                 rows.sort(key=lambda r: r["id"], reverse=True)
@@ -180,11 +210,13 @@ class AnalyticsRepository:
             where_clauses.append("event_type = %s")
             params.append(event_type)
         if date_from is not None:
+            date_from_utc, _ = self._local_day_bounds_utc(date_from)
             where_clauses.append("created_at >= %s")
-            params.append(datetime.combine(date_from, time.min, tzinfo=timezone.utc))
+            params.append(date_from_utc)
         if date_to is not None:
+            _, date_to_utc = self._local_day_bounds_utc(date_to)
             where_clauses.append("created_at <= %s")
-            params.append(datetime.combine(date_to, time.max, tzinfo=timezone.utc))
+            params.append(date_to_utc)
         if cursor_id_lt is not None:
             where_clauses.append("id < %s")
             params.append(int(cursor_id_lt))

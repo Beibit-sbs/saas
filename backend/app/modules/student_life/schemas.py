@@ -8,7 +8,22 @@ from pydantic import BaseModel, Field
 CounselingCaseStatus = Literal["open", "in_progress", "closed"]
 WellbeingCheckinStatus = Literal["stable", "watch", "at_risk"]
 AccessibilitySupportStatus = Literal["requested", "active", "completed", "denied"]
-DisciplinaryCaseStatus = Literal["reported", "under_review", "resolved", "appealed"]
+DisciplinaryCaseStatus = Literal[
+    "reported",
+    "under_review",
+    "hearing_scheduled",
+    "closed",
+    "appealed",
+]
+
+# Allowed state transitions for disciplinary cases
+DISCIPLINARY_ALLOWED_TRANSITIONS: dict[str, list[str]] = {
+    "reported": ["under_review", "closed"],
+    "under_review": ["hearing_scheduled", "closed"],
+    "hearing_scheduled": ["closed", "appealed"],
+    "closed": ["appealed"],
+    "appealed": ["closed"],
+}
 
 
 class CounselingCaseCreateSchema(BaseModel):
@@ -16,6 +31,7 @@ class CounselingCaseCreateSchema(BaseModel):
     student_id: str = Field(min_length=1, max_length=64)
     concern_type: str = Field(min_length=1, max_length=120)
     status: CounselingCaseStatus = "open"
+    priority: str | None = Field(default=None, max_length=32)
 
 
 class CounselingCaseSchema(CounselingCaseCreateSchema):
@@ -52,6 +68,7 @@ class DisciplinaryCaseCreateSchema(BaseModel):
     incident_type: str = Field(min_length=1, max_length=120)
     severity: str = Field(min_length=1, max_length=32)
     status: DisciplinaryCaseStatus = "reported"
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class DisciplinaryCaseSchema(DisciplinaryCaseCreateSchema):
@@ -89,6 +106,11 @@ class AccessibilitySupportItemResponseSchema(BaseModel):
 
 class DisciplinaryCaseItemResponseSchema(BaseModel):
     item: DisciplinaryCaseSchema
+
+
+class DisciplinaryCaseStatusUpdateSchema(BaseModel):
+    status: DisciplinaryCaseStatus
+    reason: str | None = Field(default=None, max_length=512)
 
 
 class StudentLifeHealthSnapshotSchema(BaseModel):

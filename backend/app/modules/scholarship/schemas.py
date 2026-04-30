@@ -13,6 +13,7 @@ class ScholarshipApplicationCreatePayload(BaseModel):
     requested_amount: float = Field(ge=0.0)
     notes: str | None = Field(default=None, max_length=2000)
     integration_source: str | None = Field(default=None, max_length=64)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class ScholarshipApplicationResponse(ScholarshipApplicationCreatePayload):

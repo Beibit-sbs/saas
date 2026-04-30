@@ -81,7 +81,7 @@ def test_procurement_health_snapshot_counts_risk_indicators() -> None:
             "category": "it",
             "sla_breach_rate": 0.24,
             "on_time_delivery_rate": 0.72,
-            "status": "under_review",
+            "status": "active",
         },
     )
     client.post(
@@ -135,3 +135,106 @@ def test_procurement_health_snapshot_counts_risk_indicators() -> None:
     assert item["low_stock_items"] >= 1
     assert item["projected_stockouts_7d"] >= 1
     assert item["auto_reorder_candidates"] >= 1
+
+
+def test_procurement_contract_status_happy_path_to_po_issued() -> None:
+    vendor_resp = client.post(
+        f"{BASE}/vendors",
+        headers=ADMIN_HEADERS,
+        json={
+            "vendor_code": "VEN-001",
+            "name": "North Campus Supplies",
+            "category": "laboratory",
+            "sla_breach_rate": 0.02,
+            "on_time_delivery_rate": 0.98,
+            "status": "active",
+        },
+    )
+    assert vendor_resp.status_code == 200, vendor_resp.text
+
+    create_resp = client.post(
+        f"{BASE}/contracts",
+        headers=ADMIN_HEADERS,
+        json={
+            "contract_code": "CON-PO-001",
+            "vendor_code": "VEN-001",
+            "title": "PO lifecycle contract",
+            "risk_score": 0.10,
+            "sla_target_met": True,
+            "status": "DRAFT",
+        },
+    )
+    assert create_resp.status_code == 200, create_resp.text
+    contract_id = create_resp.json()["item"]["id"]
+
+    submitted = client.patch(
+        f"{BASE}/contracts/{contract_id}/status",
+        headers=ADMIN_HEADERS,
+        json={"status": "SUBMITTED"},
+    )
+    assert submitted.status_code == 200, submitted.text
+    assert submitted.json()["item"]["status"] == "SUBMITTED"
+
+    approved = client.patch(
+        f"{BASE}/contracts/{contract_id}/status",
+        headers=ADMIN_HEADERS,
+        json={"status": "APPROVED"},
+    )
+    assert approved.status_code == 200, approved.text
+    assert approved.json()["item"]["status"] == "APPROVED"
+
+    issued = client.patch(
+        f"{BASE}/contracts/{contract_id}/status",
+        headers=ADMIN_HEADERS,
+        json={"status": "PO_ISSUED"},
+    )
+    assert issued.status_code == 200, issued.text
+    assert issued.json()["item"]["status"] == "PO_ISSUED"
+
+
+def test_procurement_contract_status_rejects_invalid_transition() -> None:
+    vendor_resp = client.post(
+        f"{BASE}/vendors",
+        headers=ADMIN_HEADERS,
+        json={
+            "vendor_code": "VEN-001",
+            "name": "North Campus Supplies",
+            "category": "laboratory",
+            "sla_breach_rate": 0.02,
+            "on_time_delivery_rate": 0.98,
+            "status": "active",
+        },
+    )
+    assert vendor_resp.status_code == 200, vendor_resp.text
+
+    create_resp = client.post(
+        f"{BASE}/contracts",
+        headers=ADMIN_HEADERS,
+        json={
+            "contract_code": "CON-PO-002",
+            "vendor_code": "VEN-001",
+            "title": "PO invalid transition contract",
+            "risk_score": 0.15,
+            "sla_target_met": True,
+            "status": "DRAFT",
+        },
+    )
+    assert create_resp.status_code == 200, create_resp.text
+    contract_id = create_resp.json()["item"]["id"]
+
+    resp = client.patch(
+        f"{BASE}/contracts/{contract_id}/status",
+        headers=ADMIN_HEADERS,
+        json={"status": "APPROVED"},
+    )
+    assert resp.status_code == 400, resp.text
+    assert "Invalid PO transition" in resp.text
+
+
+def test_procurement_contract_status_not_found_returns_404() -> None:
+    resp = client.patch(
+        f"{BASE}/contracts/999999/status",
+        headers=ADMIN_HEADERS,
+        json={"status": "SUBMITTED"},
+    )
+    assert resp.status_code == 404, resp.text

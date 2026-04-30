@@ -20,8 +20,27 @@ def _make_kpi(suffix: str = "X1") -> dict:
     }
 
 
+def _seed_active_contract(faculty_id: str, tenant_id: int = 1) -> None:
+    from app.modules.university_core.shared import _state, _state_lock
+
+    with _state_lock:
+        _state.data.setdefault("faculty_contracts", {})
+        _state.counters.setdefault("faculty_contracts", 0)
+        _state.counters["faculty_contracts"] += 1
+        cid = _state.counters["faculty_contracts"]
+        _state.data["faculty_contracts"][cid] = {
+            "id": cid,
+            "faculty_id": faculty_id,
+            "contract_type": "full_time",
+            "status": "active",
+            "tenant_id": str(tenant_id),
+        }
+
+
 def test_create_kpi_and_get_by_id() -> None:
-    created = client.post(BASE, headers=ADMIN_HEADERS, json=_make_kpi("ID1"))
+    payload = _make_kpi("ID1")
+    _seed_active_contract(payload["faculty_id"])
+    created = client.post(BASE, headers=ADMIN_HEADERS, json=payload)
     assert created.status_code == 200, created.text
     kpi_id = created.json()["item"]["id"]
 
@@ -37,8 +56,12 @@ def test_get_kpi_not_found_returns_404() -> None:
 
 
 def test_list_kpis_returns_records() -> None:
-    client.post(BASE, headers=ADMIN_HEADERS, json=_make_kpi("LIST1"))
-    client.post(BASE, headers=ADMIN_HEADERS, json=_make_kpi("LIST2"))
+    payload1 = _make_kpi("LIST1")
+    payload2 = _make_kpi("LIST2")
+    _seed_active_contract(payload1["faculty_id"])
+    _seed_active_contract(payload2["faculty_id"])
+    client.post(BASE, headers=ADMIN_HEADERS, json=payload1)
+    client.post(BASE, headers=ADMIN_HEADERS, json=payload2)
 
     resp = client.get(BASE, headers=ADMIN_HEADERS)
     assert resp.status_code == 200, resp.text
@@ -46,7 +69,9 @@ def test_list_kpis_returns_records() -> None:
 
 
 def test_update_kpi_status_to_needs_improvement() -> None:
-    created = client.post(BASE, headers=ADMIN_HEADERS, json=_make_kpi("ST1"))
+    payload = _make_kpi("ST1")
+    _seed_active_contract(payload["faculty_id"])
+    created = client.post(BASE, headers=ADMIN_HEADERS, json=payload)
     assert created.status_code == 200, created.text
     kpi_id = created.json()["item"]["id"]
 
@@ -60,7 +85,9 @@ def test_update_kpi_status_to_needs_improvement() -> None:
 
 
 def test_update_kpi_status_to_on_probation() -> None:
-    created = client.post(BASE, headers=ADMIN_HEADERS, json=_make_kpi("ST2"))
+    payload = _make_kpi("ST2")
+    _seed_active_contract(payload["faculty_id"])
+    created = client.post(BASE, headers=ADMIN_HEADERS, json=payload)
     assert created.status_code == 200, created.text
     kpi_id = created.json()["item"]["id"]
 
@@ -87,6 +114,7 @@ def test_create_kpi_with_low_score_succeeds() -> None:
     kpi = _make_kpi("BRAIN1")
     kpi["overall_score"] = 45.0
     kpi["status"] = "needs_improvement"
+    _seed_active_contract(kpi["faculty_id"])
 
     resp = client.post(BASE, headers=ADMIN_HEADERS, json=kpi)
     assert resp.status_code == 200, resp.text
@@ -99,6 +127,7 @@ def test_create_kpi_preserves_scores() -> None:
     kpi["research_score"] = 88.0
     kpi["service_score"] = 75.0
     kpi["overall_score"] = 85.5
+    _seed_active_contract(kpi["faculty_id"])
 
     resp = client.post(BASE, headers=ADMIN_HEADERS, json=kpi)
     assert resp.status_code == 200, resp.text
@@ -113,6 +142,8 @@ def test_list_kpis_filtered_by_department() -> None:
     kpi_a["department_id"] = "DEPT-FILTER-A"
     kpi_b = _make_kpi("DEPT2")
     kpi_b["department_id"] = "DEPT-FILTER-B"
+    _seed_active_contract(kpi_a["faculty_id"])
+    _seed_active_contract(kpi_b["faculty_id"])
     client.post(BASE, headers=ADMIN_HEADERS, json=kpi_a)
     client.post(BASE, headers=ADMIN_HEADERS, json=kpi_b)
 

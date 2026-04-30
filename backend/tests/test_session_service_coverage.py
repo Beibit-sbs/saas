@@ -247,7 +247,7 @@ def test_revoke_all_returns_count():
 
 def test_revoke_all_only_revokes_active():
     s1 = _make_session(user_id="eve", tenant_id=1)
-    s2 = _make_session(user_id="eve", tenant_id=1, device_id="dev-y")
+    _make_session(user_id="eve", tenant_id=1, device_id="dev-y")
     revoke_session(session_id=s1["session_id"])  # pre-revoke one
 
     count = revoke_all_sessions_for_user(user_id="eve", tenant_id=1)

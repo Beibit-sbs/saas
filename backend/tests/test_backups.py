@@ -2,9 +2,13 @@ import os
 
 from tests.conftest import ADMIN_HEADERS, client
 from app.modules.backup import service as backup_service
+from app.modules.billing import service as billing_service
 from app.modules.integrations import service as integrations_service
 from app.modules.jobs import service as jobs_service
 from app.modules.jobs import worker as jobs_worker
+from app.modules.quotas import service as quotas_service
+from app.modules.tenants import service as tenants_service
+from app.core.db import clear_shared_engine
 
 
 def test_backup_settings_reject_path_outside_allowed_roots() -> None:
@@ -62,6 +66,12 @@ def test_backup_settings_and_run_success(monkeypatch, tmp_path) -> None:
     assert save_response.json()["active_profile"] == "localtest"
 
     monkeypatch.setenv("DATABASE_URL", "postgresql://app:change_me@db:5432/app")
+    monkeypatch.setattr(jobs_service, "_use_database", lambda: False)
+    monkeypatch.setattr(billing_service, "_use_database", lambda: False)
+    monkeypatch.setenv("BILLING_DB_ONLY_MODE", "false")
+    monkeypatch.setattr(quotas_service, "_use_database", lambda: False)
+    monkeypatch.setattr(tenants_service, "_use_database", lambda: False)
+    clear_shared_engine()
 
     run_response = client.post("/api/admin/backups/run", headers=ADMIN_HEADERS)
     assert run_response.status_code == 200

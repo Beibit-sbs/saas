@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from sqlalchemy.orm import Session
 
-from tests.conftest import _auth_headers, client
+from tests.conftest import client
 from app.main import app
 from app.modules.interventions.dependencies import get_interventions_db
 from app.modules.auth.token_service import create_access_token

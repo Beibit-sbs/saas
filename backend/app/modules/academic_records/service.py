@@ -4,7 +4,27 @@ from app.modules.university_core.tenant_entity_service import (
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+from app.core.module_helpers.service_validation import DomainValidationError
 
+_ACADEMIC_RECORD_STATUS_MAX_ACTIVE: dict[str, int] = {
+    "published": 2000,
+    "draft": 500,
+    "pending": 300,
+    "archived": 5000,
+    "withdrawn": 1000,
+}
+_ACTIVE_RECORD_STATUSES = frozenset({"published", "draft", "pending"})
+_WITHDRAWAL_RISK_STATUSES = frozenset({"withdrawn"})
+_ENROLLMENT_ELIGIBLE_STATUSES = frozenset({"active", "enrolled", "registered", "completed", "withdrawn"})
+_ACADEMIC_RECORD_STATUS_MAX_ACTIVE: dict[str, int] = {
+    "published": 2000,
+    "draft": 500,
+    "pending": 300,
+    "archived": 5000,
+    "withdrawn": 1000,
+}
+_ACTIVE_RECORD_STATUSES = frozenset({"published", "draft", "pending"})
+_WITHDRAWAL_RISK_STATUSES = frozenset({"withdrawn"})
 
 def _safe_int(value: object) -> int | None:
     try:
@@ -13,16 +33,156 @@ def _safe_int(value: object) -> int | None:
         return None
 
 
+def _check_enrollment_exists_for_academic_record(
+    *,
+    tenant_id: int,
+    student_id: int,
+    course_id: int,
+    semester: str,
+) -> None:
+    """W118: Cross-entity guard — academic_records × enrollments.
+
+    Academic records are official transcript artifacts and may only be created for
+    a verifiable student-course enrollment relationship in the same term.
+
+    FAIL-CLOSED: if enrollments lookup fails, creation is blocked.
+    """
+    try:
+        enrollments = list_entities_for_tenant("enrollments", tenant_id)
+    except Exception as exc:
+        raise DomainValidationError(
+            "Academic record creation blocked: enrollments lookup failed. "
+            f"student_id={student_id}, course_id={course_id}, semester='{semester}'."
+        ) from exc
+
+    target_semester = str(semester or "").strip().lower()
+    matches = []
+    for row in enrollments:
+        row_student_id = _safe_int(row.get("student_id"))
+        row_course_id = _safe_int(row.get("course_id"))
+        if row_student_id != student_id or row_course_id != course_id:
+            continue
+
+        row_status = str(row.get("status") or row.get("enrollment_status") or "").strip().lower()
+        if row_status not in _ENROLLMENT_ELIGIBLE_STATUSES:
+            continue
+
+        row_semester = str(
+            row.get("semester")
+            or row.get("term")
+            or row.get("academic_term")
+            or ""
+        ).strip().lower()
+        if row_semester and target_semester and row_semester != target_semester:
+            continue
+
+        matches.append(row)
+
+    if not matches:
+        raise DomainValidationError(
+            "Academic record creation blocked: no eligible enrollment found for "
+            f"student_id={student_id}, course_id={course_id}, semester='{semester}'. "
+            "Transcript records require a valid enrollment relationship."
+        )
+
+
 def list_records(tenant_id: int) -> list[dict[str, object]]:
     return list_entities_for_tenant("academic_records", tenant_id)
 
 
 def create_record(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+    student_id = _safe_int(payload.get("student_id"))
+    course_id = _safe_int(payload.get("course_id"))
+    semester = str(payload.get("semester") or "").strip()
+    if student_id is None or student_id <= 0:
+        raise ValueError("student_id must be a positive integer")
+    if course_id is None or course_id <= 0:
+        raise ValueError("course_id must be a positive integer")
+    if not semester:
+        raise ValueError("semester is required")
+
+    _check_enrollment_exists_for_academic_record(
+        tenant_id=tenant_id,
+        student_id=student_id,
+        course_id=course_id,
+        semester=semester,
+    )
+
+    record_status = str(payload.get("status") or "pending").strip().lower()
+    all_records = list_entities_for_tenant("academic_records", tenant_id)
+    active_count = sum(
+        1 for r in all_records
+        if str(r.get("status", "")).strip().lower() in _ACTIVE_RECORD_STATUSES
+    )
+    cap = _ACADEMIC_RECORD_STATUS_MAX_ACTIVE.get(record_status, 2000)
+    if active_count >= cap:
+        raise ValueError(
+            f"Active academic record cap reached for status '{record_status}': {active_count}/{cap}"
+        )
     return create_entity_for_tenant("academic_records", payload, tenant_id)
 
 
 def update_record(record_id: int, payload: dict[str, object], tenant_id: int) -> dict[str, object]:
-    return update_entity_for_tenant("academic_records", record_id, payload, tenant_id)
+    _check_record_not_published(record_id, tenant_id)
+    result = update_entity_for_tenant("academic_records", record_id, payload, tenant_id)
+    to_status = str(payload.get("status") or "").strip().lower()
+    if to_status in _WITHDRAWAL_RISK_STATUSES:
+        _ensure_withdrawal_alert_record(record_id, tenant_id)
+    return result
+
+
+def _check_record_not_published(record_id: int, tenant_id: int) -> None:
+    """Immutability guard: a published academic record must not be mutated.
+
+    Published records are official institutional documents. Any correction requires
+    a formal correction workflow — direct update is forbidden once a record reaches
+    'published' status to prevent silent corruption of official academic documentation.
+
+    Silently proceeds when the record cannot be found (not-found is a separate concern).
+    """
+    all_records = list_entities_for_tenant("academic_records", tenant_id)
+    for rec in all_records:
+        if _safe_int(rec.get("id")) == record_id:
+            current_status = str(rec.get("status") or "").strip().lower()
+            if current_status == "published":
+                raise ValueError(
+                    f"Academic record {record_id} is published and immutable: "
+                    "direct update is forbidden. Use a formal correction workflow."
+                )
+            return
+
+
+def _ensure_withdrawal_alert_record(record_id: int, tenant_id: int) -> None:
+    """Idempotently create a withdrawal alert for a withdrawn academic record."""
+    existing = list_entities_for_tenant("academic_withdrawal_alerts", tenant_id)
+    for rec in existing:
+        if (
+            str(rec.get("integration_source") or "").strip() == "academic_records_withdrawal_queue"
+            and str(rec.get("source_entity_id") or "").strip() == str(record_id)
+        ):
+            return
+    create_entity_for_tenant(
+        "academic_withdrawal_alerts",
+        {
+            "record_id": record_id,
+            "alert_type": "record_withdrawn",
+            "integration_source": "academic_records_withdrawal_queue",
+            "source_entity_id": str(record_id),
+        },
+        tenant_id,
+    )
+    from app.platform.events.publisher import EventPublisher
+    EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type="campus.academic_records.withdrawal_risk_detected",
+        aggregate_type="academic_record",
+        aggregate_id=record_id,
+        payload_json={
+            "record_id": record_id,
+            "alert_type": "record_withdrawn",
+            "source_module": "academic_records",
+        },
+    )
 
 
 def delete_record(record_id: int, tenant_id: int) -> dict[str, object]:

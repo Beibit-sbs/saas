@@ -26,6 +26,8 @@ class AlumniRecordCreateSchema(BaseModel):
     employer: str | None = Field(default=None, max_length=120)
     contact_email: str | None = Field(default=None, max_length=120)
     notes: str | None = Field(default=None, max_length=3000)
+    engagement_score: int | None = Field(default=None, ge=1, le=100)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class AlumniRecordStatusUpdateSchema(BaseModel):

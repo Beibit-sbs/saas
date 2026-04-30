@@ -1,17 +1,19 @@
 """Phase V-V2: Expense controls schemas."""
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ExpenseRecordCreatePayload(BaseModel):
-    cost_center_id: int
-    category: str
-    amount: float
-    currency: str = "USD"
-    status: str = "pending"
-    description: str | None = None
-    payroll_ref: str | None = None
+    cost_center_id: int = Field(gt=0)
+    category: str = Field(min_length=1, max_length=64)
+    amount: float = Field(gt=0.0)
+    currency: str = Field(default="USD", min_length=1, max_length=8)
+    status: str = Field(default="pending", min_length=1, max_length=32)
+    description: str | None = Field(default=None, max_length=2000)
+    payroll_ref: str | None = Field(default=None, max_length=128)
+    approval_required: bool | None = Field(default=None)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class ExpenseRecordResponse(BaseModel):
@@ -35,11 +37,11 @@ class ExpenseRecordListResponse(BaseModel):
 
 
 class CostCenterCreatePayload(BaseModel):
-    name: str
-    code: str
-    department_id: str | None = None
-    budget_limit: float
-    currency: str = "USD"
+    name: str = Field(min_length=1, max_length=128)
+    code: str = Field(min_length=1, max_length=64)
+    department_id: str | None = Field(default=None, max_length=64)
+    budget_limit: float = Field(ge=0.0)
+    currency: str = Field(default="USD", min_length=1, max_length=8)
     active: bool = True
 
 

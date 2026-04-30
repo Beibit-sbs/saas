@@ -56,3 +56,12 @@ class GradeLifecycleRules:
                 f"grade_points {normalized_points} do not match grading scale for code '{code}'"
             )
         return normalized_points
+
+    @staticmethod
+    def validate_no_duplicate_grade(existing_submission: object | None, *, enrollment_id: int) -> None:
+        """Raise DomainValidationError if a grade submission already exists for this enrollment."""
+        if existing_submission is not None:
+            raise DomainValidationError(
+                f"A grade submission already exists for enrollment_id={enrollment_id}. "
+                "Use the change-grade endpoint to modify an existing grade."
+            )

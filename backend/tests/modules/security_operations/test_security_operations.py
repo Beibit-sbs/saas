@@ -168,7 +168,7 @@ def test_get_security_operations_brain_context_high_risk(monkeypatch) -> None:
 
 def test_http_list_security_incidents_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "app.modules.security_operations.router.list_security_incidents",
+        "app.modules.security_operations.service.list_security_incidents",
         lambda tenant_id, severity=None, status=None: [],
     )
     resp = test_client.get("/api/admin/security-operations/incidents", headers=dict(ADMIN_HEADERS))
@@ -192,7 +192,7 @@ def test_http_create_security_incident(monkeypatch: pytest.MonkeyPatch) -> None:
         "tenant_id": 1,
     }
     monkeypatch.setattr(
-        "app.modules.security_operations.router.create_security_incident",
+        "app.modules.security_operations.service.create_security_incident",
         lambda payload, tenant_id: created,
     )
     resp = test_client.post(
@@ -212,7 +212,7 @@ def test_http_create_security_incident(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_http_get_security_operations_brain_context(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "app.modules.security_operations.router.get_security_operations_brain_context",
+        "app.modules.security_operations.service.get_security_operations_brain_context",
         lambda tenant_id: {
             "module": "security_operations",
             "tenant_id": 1,

@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.research_ethics.schemas import (
@@ -13,11 +14,7 @@ from app.modules.research_ethics.schemas import (
     EthicsReviewListResponse,
     ResearchEthicsBrainContextResponse,
 )
-from app.modules.research_ethics.service import (
-    create_ethics_review,
-    get_research_ethics_brain_context,
-    list_ethics_reviews,
-)
+import app.modules.research_ethics.service as _svc
 
 router = APIRouter(prefix="/api/admin/research-ethics", tags=["research-ethics"])
 
@@ -31,7 +28,7 @@ def list_ethics_reviews_endpoint(
     risk_level: str | None = None,
 ) -> EthicsReviewListResponse:
     return EthicsReviewListResponse(
-        records=list_ethics_reviews(int(tenant["id"]), status=status, risk_level=risk_level)
+        records=_svc.list_ethics_reviews(int(tenant["id"]), status=status, risk_level=risk_level)
     )
 
 
@@ -42,9 +39,12 @@ def create_ethics_review_endpoint(
     __: Annotated[None, Depends(permission_dependency("research.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> EthicsReviewItemResponse:
-    return EthicsReviewItemResponse(
-        record=create_ethics_review(payload.model_dump(), int(tenant["id"]))
-    )
+    try:
+        return EthicsReviewItemResponse(
+            record=_svc.create_ethics_review(payload.model_dump(), int(tenant["id"]))
+        )
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/brain-context", response_model=ResearchEthicsBrainContextResponse)
@@ -54,5 +54,5 @@ def get_research_ethics_brain_context_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchEthicsBrainContextResponse:
     return ResearchEthicsBrainContextResponse.model_validate(
-        get_research_ethics_brain_context(int(tenant["id"]))
+        _svc.get_research_ethics_brain_context(int(tenant["id"]))
     )

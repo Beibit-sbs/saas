@@ -682,6 +682,51 @@ class RiskClassifier:
                 "reasoning_path": "student_services_escalation_medium",
             }
 
+        if event_type == "admissions.decision.made":
+            payload = signal.get("payload", {})
+            decision_outcome = str(
+                payload.get("decision_outcome") or payload.get("outcome") or ""
+            ).strip().lower()
+            risk_score = payload.get("risk_score")
+            if decision_outcome in {"rejected", "conditional"} or (
+                isinstance(risk_score, (int, float)) and float(risk_score) >= 0.70
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "admissions_decision_high",
+                }
+            return {
+                "situation_type": "academic_risk",
+                "severity": "medium",
+                "urgency": "medium",
+                "reasoning_path": "admissions_decision_medium",
+            }
+
+        if event_type == "scheduling.section.scheduled":
+            payload = signal.get("payload", {})
+            current_sections = payload.get("current_sections")
+            max_sections_threshold = payload.get("max_sections_threshold")
+            overload_flag = bool(payload.get("overload_flag"))
+            if overload_flag or (
+                isinstance(current_sections, int)
+                and isinstance(max_sections_threshold, int)
+                and current_sections > max_sections_threshold
+            ):
+                return {
+                    "situation_type": "faculty_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "scheduling_overload_high",
+                }
+            return {
+                "situation_type": "faculty_risk",
+                "severity": "medium",
+                "urgency": "medium",
+                "reasoning_path": "scheduling_section_scheduled_medium",
+            }
+
         return {
             "situation_type": "operational_risk",
             "severity": "low",

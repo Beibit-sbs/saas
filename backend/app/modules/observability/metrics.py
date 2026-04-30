@@ -66,6 +66,11 @@ _billing_failures_total: int = 0
 _db_connections_active: int | None = None
 _redis_latency_seconds: float | None = None
 
+# Brain Core signal/decision/action counters
+_brain_signals_emitted_total: dict[str, int] = defaultdict(int)
+_brain_decisions_total: dict[tuple[str, str], int] = defaultdict(int)
+_brain_actions_dispatched_total: dict[tuple[str, str], int] = defaultdict(int)
+
 _LATENCY_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
 
 
@@ -440,6 +445,26 @@ def observe_ai_guardrail_blocked(
         _ai_guardrail_blocked_total[(t, d, r)] += 1
 
 
+def record_brain_signal_emitted(tenant_id: str | int | None = None) -> None:
+    t = str(tenant_id if tenant_id is not None else "-").strip() or "-"
+    with _lock:
+        _brain_signals_emitted_total[t] += 1
+
+
+def record_brain_decision_made(tenant_id: str | int | None = None, decision_type: str = "unknown") -> None:
+    t = str(tenant_id if tenant_id is not None else "-").strip() or "-"
+    dt = str(decision_type).strip().lower() or "unknown"
+    with _lock:
+        _brain_decisions_total[(t, dt)] += 1
+
+
+def record_brain_action_dispatched(tenant_id: str | int | None = None, status: str = "unknown") -> None:
+    t = str(tenant_id if tenant_id is not None else "-").strip() or "-"
+    s = str(status).strip().lower() or "unknown"
+    with _lock:
+        _brain_actions_dispatched_total[(t, s)] += 1
+
+
 def clear_metrics_state() -> None:
     with _lock:
         _req_total.clear()
@@ -485,6 +510,9 @@ def clear_metrics_state() -> None:
         _billing_failures_total = 0
         _db_connections_active = None
         _redis_latency_seconds = None
+        _brain_signals_emitted_total.clear()
+        _brain_decisions_total.clear()
+        _brain_actions_dispatched_total.clear()
 
 
 def _escape(s: str) -> str:
@@ -537,6 +565,9 @@ def render_metrics() -> str:
         billing_failures_total = _billing_failures_total
         db_connections_active = _db_connections_active
         redis_latency_seconds = _redis_latency_seconds
+        brain_signals_emitted_total = dict(_brain_signals_emitted_total)
+        brain_decisions_total = dict(_brain_decisions_total)
+        brain_actions_dispatched_total = dict(_brain_actions_dispatched_total)
 
     for (method, path, status, tenant), count in sorted(total_snapshot.items()):
         labels = f'method="{_escape(method)}",path="{_escape(path)}",status="{_escape(status)}",tenant_id="{_escape(tenant)}"'
@@ -822,6 +853,24 @@ def render_metrics() -> str:
     lines.append("# HELP scheduler_last_run_age_seconds Age of the last scheduler run in seconds (-1 if missing).")
     lines.append("# TYPE scheduler_last_run_age_seconds gauge")
     lines.append(f"scheduler_last_run_age_seconds {scheduler_age_seconds:.3f}")
+
+    lines.append("# HELP brain_signals_emitted_total Total Brain signals received and processed per tenant.")
+    lines.append("# TYPE brain_signals_emitted_total counter")
+    for tenant, count in sorted(brain_signals_emitted_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}"'
+        lines.append(f"brain_signals_emitted_total{{{labels}}} {count}")
+
+    lines.append("# HELP brain_decisions_total Total Brain decisions produced by type per tenant.")
+    lines.append("# TYPE brain_decisions_total counter")
+    for (tenant, decision_type), count in sorted(brain_decisions_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",decision_type="{_escape(decision_type)}"'
+        lines.append(f"brain_decisions_total{{{labels}}} {count}")
+
+    lines.append("# HELP brain_actions_dispatched_total Total Brain actions dispatched by status per tenant.")
+    lines.append("# TYPE brain_actions_dispatched_total counter")
+    for (tenant, status), count in sorted(brain_actions_dispatched_total.items()):
+        labels = f'tenant_id="{_escape(tenant)}",status="{_escape(status)}"'
+        lines.append(f"brain_actions_dispatched_total{{{labels}}} {count}")
 
     lines.append("")
     return "\n".join(lines)

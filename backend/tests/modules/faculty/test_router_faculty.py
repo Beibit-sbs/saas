@@ -161,6 +161,68 @@ def test_get_workload_alerts_success(
     assert body["workloads"][0]["alerts"] == ["overload_threshold"]
 
 
+def test_get_workload_metrics_success(
+    monkeypatch: pytest.MonkeyPatch,
+    admin_headers: dict[str, str],
+) -> None:
+    def fake_get_workload_metrics(tenant_id: int, term_id: int):
+        assert tenant_id == 1
+        assert term_id == 20261
+        return {
+            "term_id": "20261",
+            "total_faculty": 2,
+            "average_utilization_pct": 82.5,
+            "alert_count_by_type": {"overload_threshold": 1},
+            "departments": [
+                {"department": "Engineering", "faculty_count": 2, "average_utilization_pct": 82.5}
+            ],
+        }
+
+    monkeypatch.setattr(
+        "app.modules.faculty.router.get_workload_metrics",
+        fake_get_workload_metrics,
+    )
+
+    response = client.get(
+        "/api/admin/org/faculty/workload/metrics?term_id=20261",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["total_faculty"] == 2
+    assert body["alert_count_by_type"]["overload_threshold"] == 1
+
+
+def test_get_faculty_capacity_success(
+    monkeypatch: pytest.MonkeyPatch,
+    admin_headers: dict[str, str],
+) -> None:
+    def fake_get_faculty_capacity(tenant_id: int, faculty_id: str):
+        assert tenant_id == 1
+        assert faculty_id == "FAC-01"
+        return {
+            "faculty_id": "FAC-01",
+            "max_credit_hours": 16,
+            "fte_ratio": 0.8,
+        }
+
+    monkeypatch.setattr(
+        "app.modules.faculty.router.get_faculty_capacity",
+        fake_get_faculty_capacity,
+    )
+
+    response = client.get(
+        "/api/admin/org/faculty/FAC-01/capacity",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["faculty_id"] == "FAC-01"
+    assert body["max_credit_hours"] == 16
+
+
 def test_update_faculty_capacity_success(
     monkeypatch: pytest.MonkeyPatch,
     admin_headers: dict[str, str],

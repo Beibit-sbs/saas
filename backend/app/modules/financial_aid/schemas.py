@@ -28,6 +28,8 @@ class FinancialAidRecordCreateSchema(BaseModel):
     term: str = Field(min_length=1, max_length=32)
     reviewer_id: str | None = Field(default=None, max_length=64)
     notes: str | None = Field(default=None, max_length=3000)
+    source_channel: str | None = Field(default=None, max_length=64)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class FinancialAidRecordStatusUpdateSchema(BaseModel):

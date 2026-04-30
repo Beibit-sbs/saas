@@ -53,6 +53,19 @@ def _seed_student_and_course() -> None:
             "student_number": "STU-REC-001",
             "tenant_id": "1",
         }
+        # Enrollment — required by _check_enrollment_exists_for_academic_record guard
+        _state.counters.setdefault("enrollments", 0)
+        _state.data.setdefault("enrollments", {})
+        _state.counters["enrollments"] += 1
+        eid = _state.counters["enrollments"]
+        _state.data["enrollments"][eid] = {
+            "id": eid,
+            "student_id": 1,
+            "course_id": 1,
+            "semester": "Fall 2025",
+            "status": "active",
+            "tenant_id": "1",
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -136,9 +149,10 @@ def test_create_record_empty_status() -> None:
 
 def test_update_record_returns_200() -> None:
     _seed_student_and_course()
-    create_resp = client.post(BASE_URL, headers=ADMIN_HEADERS, json=_VALID_PAYLOAD)
+    create_payload = {**_VALID_PAYLOAD, "status": "draft"}
+    create_resp = client.post(BASE_URL, headers=ADMIN_HEADERS, json=create_payload)
     rec_id = create_resp.json()["record"]["id"]
-    updated = {**_VALID_PAYLOAD, "grade": "B+"}
+    updated = {**create_payload, "grade": "B+"}
     resp = client.put(f"{BASE_URL}/{rec_id}", headers=ADMIN_HEADERS, json=updated)
     assert resp.status_code == 200
     assert resp.json()["record"]["grade"] == "B+"

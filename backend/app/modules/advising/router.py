@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.advising.schemas import (
@@ -45,8 +46,8 @@ def create_session_endpoint(
     try:
         item = create_advising_session(int(tenant["id"]), payload, actor)
         return AdvisingSessionItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.patch("/{session_id}/status", response_model=AdvisingSessionItemResponseSchema)

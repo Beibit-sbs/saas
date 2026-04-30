@@ -1,10 +1,8 @@
 """Phase VIII-1: Communications module tests."""
 from __future__ import annotations
 
-import pytest
 
 from app.modules.communications import service as comm_service
-from tests.conftest import ADMIN_HEADERS, client as test_client
 
 
 def test_list_messages_empty(monkeypatch) -> None:

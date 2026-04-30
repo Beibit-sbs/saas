@@ -132,7 +132,6 @@ class ActionPlanner:
                         "room_code": room_code,
                         "building_code": building_code,
                         "missed_count": missed_count,
-                        "asset_code": asset_code,
                         "asset_type": asset_type,
                         "days_since_maintenance": days_since_maintenance,
                         "expected_service_interval_days": expected_service_interval_days,

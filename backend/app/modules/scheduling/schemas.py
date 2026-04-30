@@ -23,6 +23,12 @@ class CourseSectionCreateSchema(BaseModel):
     max_capacity: int = Field(ge=0)
 
 
+class CourseSectionUpdateSchema(BaseModel):
+    section_code: str | None = Field(default=None, min_length=1, max_length=32)
+    instructor_id: str | None = Field(default=None, max_length=255)
+    max_capacity: int | None = Field(default=None, ge=0)
+
+
 class SectionScheduleCreateSchema(BaseModel):
     time_slot_id: int = Field(gt=0)
     classroom_id: int = Field(gt=0)

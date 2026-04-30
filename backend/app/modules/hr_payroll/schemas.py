@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 
 HrEmployeeStatus = Literal["active", "on_leave", "terminated", "onboarding", "offboarding"]
-PayrollCycleStatus = Literal["pending", "processing", "completed", "failed"]
+PayrollCycleStatus = Literal["DRAFT", "CALCULATING", "APPROVED", "PAID"]
 
 
 class HrEmployeeCreateSchema(BaseModel):
@@ -15,6 +15,7 @@ class HrEmployeeCreateSchema(BaseModel):
     full_name: str = Field(min_length=1, max_length=200)
     department_id: str = Field(min_length=1, max_length=64)
     role_title: str = Field(min_length=1, max_length=120)
+    contract_type: str | None = Field(default=None, max_length=64)
     status: HrEmployeeStatus = "active"
 
 
@@ -41,7 +42,8 @@ class PayrollCycleCreateSchema(BaseModel):
     total_gross: float = Field(default=0.0, ge=0.0)
     total_net: float = Field(default=0.0, ge=0.0)
     employee_count: int = Field(default=1, ge=1)
-    status: PayrollCycleStatus = "pending"
+    status: PayrollCycleStatus = "DRAFT"
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class PayrollCycleSchema(PayrollCycleCreateSchema):

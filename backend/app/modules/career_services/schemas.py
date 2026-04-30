@@ -28,6 +28,8 @@ class CareerOpportunityCreateSchema(BaseModel):
     owner_id: str | None = Field(default=None, max_length=64)
     start_date: str | None = Field(default=None, max_length=32)
     notes: str | None = Field(default=None, max_length=3000)
+    match_score: int | None = Field(default=None, ge=1, le=100)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class CareerOpportunityStatusUpdateSchema(BaseModel):

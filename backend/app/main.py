@@ -25,6 +25,7 @@ from app.core.config import (
     validate_required_environment,
 )
 from app.core.runtime_schema import bootstrap_runtime_schema
+from app.modules.university_core.entity_impl import validate_entity_tables_impl
 
 from app.modules.admin.router import router as admin_router
 from app.modules.admin.local_users_router import router as admin_local_users_router
@@ -37,6 +38,7 @@ from app.modules.audit.service import log_admin_action, reset_request_tenant_id,
 from app.modules.analytics.router import router as analytics_router
 from app.modules.backup.router import router as backup_router
 from app.modules.brain_core.router import router as brain_core_router
+from app.modules.brain_core.service import brain_core_service
 from app.modules.billing.router import router as billing_router
 from app.modules.courses.router import router as courses_router
 from app.modules.enrollments.router import router as enrollments_router
@@ -75,6 +77,9 @@ from app.modules.model_evaluation.router import router as model_evaluation_route
 from app.modules.operations.router import router as operations_router
 from app.modules.student_life.router import router as student_life_router
 from app.modules.procurement.router import router as procurement_router
+from app.modules.syllabus_governance.router import router as syllabus_governance_router
+from app.modules.exam_governance.router import router as exam_governance_router
+from app.modules.teaching_quality.router import router as teaching_quality_router
 from app.modules.academic_integrity.router import router as academic_integrity_router
 from app.modules.accreditation.router import router as accreditation_router
 from app.modules.transcripts.router import router as transcripts_router
@@ -106,7 +111,6 @@ from app.modules.profiles.router import router as profiles_router
 from app.modules.interventions.router import router as interventions_router
 from app.modules.interventions.playbook_router import router as interventions_playbook_router
 from app.modules.interventions.risk_router import router as interventions_risk_router
-from app.modules.interventions.risk_v1_router import router as interventions_risk_v1_router
 from app.modules.interventions.effectiveness_router import router as interventions_effectiveness_router
 from app.modules.org_structure.router import router as org_structure_router
 from app.modules.workflows.router import router as workflows_router
@@ -128,7 +132,7 @@ from app.modules.observability.logging import (
     tenant_id_var,
     trace_id_var,
 )
-from app.modules.observability.health import deep_payload, live_payload, readiness_payload
+from app.modules.observability.health import comprehensive_payload, deep_payload, live_payload, readiness_payload
 from app.modules.observability.perf_profile import (
     begin_request_profile,
     finish_request_profile,
@@ -142,6 +146,7 @@ from app.modules.observability.perf_profile import (
 from app.modules.observability.trace import generate_trace_id
 from app.modules.observability.metrics import record_request, render_metrics, snapshot_latency_metrics
 from app.modules.observability.security_signals import record_security_signal
+from app.modules.observability.otel import setup_otel, teardown_otel
 from app.platform.runtime_state import get_scheduler_last_run, get_worker_heartbeat
 from app.platform.uow import UnitOfWork
 from app.modules.security.rate_limit import (
@@ -170,10 +175,75 @@ def _schedule_usage_event(tenant_id: int) -> None:
         pass
 
 
+def _extract_admin_module_from_path(path: str) -> str | None:
+    if not path.startswith("/api/admin/"):
+        return None
+    suffix = path[len("/api/admin/"):]
+    parts = [part for part in suffix.split("/") if part]
+    if not parts:
+        return None
+
+    # Keep historical aliases stable where route prefix differs from module name.
+    if parts[0] == "org":
+        return "faculty"
+    if parts[0] == "org-units":
+        return "org_structure"
+    if parts[0] == "research-grants":
+        return "research"
+    if parts[0] == "accreditation-compliance":
+        return "accreditation"
+    if parts[0] == "ops":
+        return "operations"
+    if parts[0] == "university" and len(parts) > 1 and parts[1] == "records":
+        return "academic_records"
+
+    return parts[0].replace("-", "_")
+
+
+def _emit_brain_module_activity_signal(
+    *,
+    request: Request,
+    status_code: int,
+    tenant_id: int,
+    correlation_id: str,
+) -> None:
+    path = request.url.path
+    if not path.startswith("/api/admin/"):
+        return
+    if path.startswith("/api/admin/brain"):
+        return
+    if status_code >= 500:
+        return
+
+    module_name = _extract_admin_module_from_path(path)
+    if not module_name:
+        return
+
+    brain_core_service.process_signal(
+        {
+            "signal_id": str(uuid.uuid4()),
+            "tenant_id": int(tenant_id),
+            "correlation_id": correlation_id,
+            "event_type": "platform.module.activity.logged",
+            "source_module": module_name,
+            "source_entity_type": "http_request",
+            "source_entity_id": correlation_id,
+            "payload": {
+                "path": path,
+                "method": request.method,
+                "status_code": int(status_code),
+                "module": module_name,
+            },
+            "subject": {},
+        }
+    )
+
+
 @asynccontextmanager
 async def lifespan(fastapi_app: FastAPI):
     # Re-apply on process startup so third-party logger setup doesn't override JSON handlers.
     configure_json_logging()
+    setup_otel(fastapi_app)
     validate_token_signing_config()
     # Skip in pytest runs (PYTEST_CURRENT_TEST is set by pytest automatically).
     # Tests use in-memory stores; env validation is verified by a dedicated test.
@@ -185,6 +255,7 @@ async def lifespan(fastapi_app: FastAPI):
     # isolated from infrastructure by skipping this path under pytest.
     if not in_pytest:
         bootstrap_runtime_schema()
+        validate_entity_tables_impl()
 
     # Wire the admissions SQLAlchemy session factory.
     # build_engine() raises RuntimeError when DATABASE_URL is absent; we catch it
@@ -225,8 +296,26 @@ async def lifespan(fastapi_app: FastAPI):
             exc,
         )
 
+    # Seed sensible default Brain Core policy profiles so the engine starts with
+    # a well-configured baseline instead of the bare minimum defaults.
+    brain_core_service.seed_default_policies([1, 2])
+    logger.info("brain_core default policies seeded for tenants [1, 2]")
+
+    # Wire real DB-backed action handlers so Brain Core decisions produce tangible
+    # side-effects (e.g. real intervention cases) instead of in-memory stubs.
+    try:
+        from app.modules.brain_core.action_bridge import wire_action_handlers
+
+        wire_action_handlers(
+            dispatcher=brain_core_service._dispatcher,
+            session_factory=getattr(fastapi_app.state, "admissions_session_factory", None),
+        )
+    except Exception as _bridge_err:
+        logger.warning("brain_core_action_bridge wiring failed: %s", _bridge_err)
+
     yield
 
+    teardown_otel()
     # Release all pooled connections on shutdown.
     if _admissions_engine is not None:
         _admissions_engine.dispose()
@@ -294,12 +383,14 @@ app.include_router(model_evaluation_router)
 app.include_router(operations_router)
 app.include_router(student_life_router)
 app.include_router(procurement_router)
+app.include_router(syllabus_governance_router)
+app.include_router(exam_governance_router)
+app.include_router(teaching_quality_router)
 app.include_router(academic_integrity_router)
 app.include_router(accreditation_router)
 app.include_router(interventions_router)
 app.include_router(interventions_playbook_router)
 app.include_router(interventions_risk_router)
-app.include_router(interventions_risk_v1_router)
 app.include_router(interventions_effectiveness_router)
 app.include_router(org_structure_router)
 app.include_router(analytics_router)
@@ -659,6 +750,16 @@ async def add_request_id(request: Request, call_next):
                 record_request(request.method, raw_path, status_code, duration, metrics_tenant_id)
             if raw_path.startswith("/api/") and int(tenant_id) > 0:
                 _schedule_usage_event(int(tenant_id))
+                try:
+                    _emit_brain_module_activity_signal(
+                        request=request,
+                        status_code=status_code,
+                        tenant_id=int(tenant_id),
+                        correlation_id=request_id,
+                    )
+                except Exception:
+                    # Brain signal wiring must never block request completion.
+                    pass
             error_code = _extract_error_code_from_response(response)
             request.state.error_code = error_code
             with perf_segment("logging.request_log"):
@@ -689,18 +790,7 @@ async def add_request_id(request: Request, call_next):
 
 
 @app.get("/health")
-def health(
-    __: None = Depends(permission_dependency("health.read")),
-) -> JSONResponse:
-    request_logger.warning(
-        "deprecated_endpoint_used use /health/live,/health/ready,/health/deep",
-        extra={
-            "path": "/health",
-            "method": "GET",
-            "status_code": 200,
-            "error_code": "deprecated_endpoint",
-        },
-    )
+def health_root() -> dict[str, Any]:
     return JSONResponse(
         status_code=200,
         content={"status": "ok", "service": "api"},
@@ -798,45 +888,6 @@ def metrics_latency(
     return _collect_latency_metrics()
 
 
-@app.get("/health/comprehensive")
-def health_comprehensive(
-    __: None = Depends(permission_dependency("health.read")),
-) -> JSONResponse:
-    request_logger.warning(
-        "deprecated_endpoint_used use /health/live,/health/ready,/health/deep",
-        extra={
-            "path": "/health/comprehensive",
-            "method": "GET",
-            "status_code": 200,
-            "error_code": "deprecated_endpoint",
-        },
-    )
-    payload = deep_payload(app)
-    ops_metrics = _collect_ops_metrics()
-    latency_metrics = _collect_latency_metrics()
-    payload["metrics"] = {**ops_metrics, **latency_metrics}
-    payload["metrics_detail"] = {
-        "ops": ops_metrics,
-        "latency": latency_metrics,
-    }
-    db_reachable = _basic_database_reachable(app)
-    payload["components"] = {
-        "database": "reachable" if db_reachable else "unreachable",
-        "worker": "reachable" if payload["dependencies"]["worker"]["healthy"] else "unreachable",
-        "scheduler": "reachable" if payload["dependencies"]["scheduler"]["healthy"] else "unreachable",
-    }
-    issues: list[str] = []
-    if not db_reachable:
-        issues.append("database_unreachable")
-    if not payload["dependencies"]["worker"]["healthy"]:
-        issues.append("worker_not_running")
-    if not payload["dependencies"]["scheduler"]["healthy"]:
-        issues.append("scheduler_not_running")
-    payload["issues"] = issues
-    payload["status"] = "healthy" if not issues else "degraded"
-    return JSONResponse(status_code=200, content=payload, headers={"X-Deprecated": "true"})
-
-
 @app.get("/health/deep")
 def health_deep(
     request: Request,
@@ -846,6 +897,18 @@ def health_deep(
     if not payload["deep"]:
         return JSONResponse(status_code=503, content=payload)
     return payload
+
+
+@app.get("/health/comprehensive")
+def health_comprehensive(
+    request: Request,
+    __: None = Depends(permission_dependency("health.read")),
+):
+    return JSONResponse(
+        status_code=200,
+        content=comprehensive_payload(request.app),
+        headers={"X-Deprecated": "true"},
+    )
 
 
 @app.get("/metrics", response_class=PlainTextResponse, include_in_schema=False)

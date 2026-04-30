@@ -7,6 +7,7 @@ class ProgramBase(BaseModel):
     degree_type: str = Field(min_length=1, max_length=64)
     faculty: str = Field(min_length=1, max_length=128)
     status: str = Field(min_length=1, max_length=64)
+    accreditation_body: str | None = Field(default=None, max_length=128)
 
 
 class ProgramCreatePayload(ProgramBase):

@@ -18,25 +18,25 @@ groups:
             sum(rate(http_requests_status_class_total{job="backend",status_class="5xx"}[5m]))
             /
             clamp_min(sum(rate(http_requests_total{job="backend"}[5m])), 0.001)
-          ) > 0.02
+          ) > 0.01
         for: 10m
         labels:
           severity: warning
           service: backend
         annotations:
           summary: "High backend 5xx error rate"
-          description: "5xx ratio is above 2% over the last 5 minutes for at least 10 minutes."
+          description: "5xx ratio is above 1% over the last 5 minutes for at least 10 minutes."
           runbook_url: "docs/runbooks/RECOVERY.md"
 
       - alert: BackendHighLatencyP95
-        expr: http_request_duration_seconds_quantile{job="backend",quantile="0.95"} > 1.0
+        expr: http_request_duration_seconds_quantile{job="backend",quantile="0.95"} > 2.0
         for: 10m
         labels:
           severity: warning
           service: backend
         annotations:
           summary: "High backend latency p95"
-          description: "p95 latency is above 1 second for at least 10 minutes."
+          description: "p95 latency is above 2 seconds for at least 10 minutes."
           runbook_url: "docs/runbooks/RECOVERY.md"
 
       - alert: JobsFailedSpike
@@ -261,3 +261,43 @@ groups:
         annotations:
           summary: "Retry backlog elevated"
           description: "retry_backlog above 200 for 15 minutes — downstream systems may be degraded."
+
+  - name: brain-core
+    rules:
+      - alert: BrainSignalRateDropped
+        expr: sum(rate(brain_signals_emitted_total{job="backend"}[5m])) == 0
+        for: 10m
+        labels:
+          severity: warning
+          service: brain-core
+        annotations:
+          summary: "Brain signal processing rate is zero"
+          description: "No Brain signals have been processed in the last 10 minutes. Check signal ingestion pipeline."
+          runbook_url: "docs/runbooks/RECOVERY.md"
+
+      - alert: BrainActionDispatchFailureHigh
+        expr: |
+          (
+            sum(rate(brain_actions_dispatched_total{job="backend",status="failure"}[5m]))
+            /
+            clamp_min(sum(rate(brain_actions_dispatched_total{job="backend"}[5m])), 0.001)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: critical
+          service: brain-core
+        annotations:
+          summary: "Brain action dispatch failure rate is high"
+          description: "More than 50% of Brain actions failed to dispatch in the last 5 minutes."
+          runbook_url: "docs/runbooks/RECOVERY.md"
+
+      - alert: BrainDecisionRateDropped
+        expr: sum(rate(brain_decisions_total{job="backend"}[10m])) == 0
+        for: 15m
+        labels:
+          severity: warning
+          service: brain-core
+        annotations:
+          summary: "Brain decision output rate is zero"
+          description: "No Brain decisions produced in 15 minutes despite signal activity."
+          runbook_url: "docs/runbooks/RECOVERY.md"

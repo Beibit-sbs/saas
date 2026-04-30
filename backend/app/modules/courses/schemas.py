@@ -7,6 +7,7 @@ class CourseBase(BaseModel):
     credits: int = Field(ge=0)
     program_id: int = Field(gt=0)
     status: str = Field(min_length=1, max_length=64)
+    syllabus_url: str | None = Field(default=None, max_length=512)
 
 
 class CourseCreatePayload(CourseBase):

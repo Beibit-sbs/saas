@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.faculty_performance_kpis.schemas import (
     FacultyKpiCreateSchema,
@@ -13,12 +14,7 @@ from app.modules.faculty_performance_kpis.schemas import (
     FacultyKpiStatus,
     FacultyKpiStatusUpdateSchema,
 )
-from app.modules.faculty_performance_kpis.service import (
-    create_faculty_kpi,
-    get_faculty_kpi,
-    list_faculty_kpis,
-    update_faculty_kpi_status,
-)
+import app.modules.faculty_performance_kpis.service as _svc
 from app.modules.rbac.security import get_actor, permission_dependency
 
 
@@ -33,7 +29,7 @@ def list_faculty_kpis_endpoint(
     department_id: str | None = None,
     status: FacultyKpiStatus | None = None,
 ) -> FacultyKpiListResponseSchema:
-    items = list_faculty_kpis(int(tenant["id"]), department_id=department_id, status=status)
+    items = _svc.list_faculty_kpis(int(tenant["id"]), department_id=department_id, status=status)
     return FacultyKpiListResponseSchema(items=items)
 
 
@@ -44,7 +40,10 @@ def create_faculty_kpi_endpoint(
     __: Annotated[None, Depends(permission_dependency("faculty.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> FacultyKpiItemResponseSchema:
-    item = create_faculty_kpi(int(tenant["id"]), payload, actor)
+    try:
+        item = _svc.create_faculty_kpi(int(tenant["id"]), payload, actor)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return FacultyKpiItemResponseSchema(item=item)
 
 
@@ -55,7 +54,7 @@ def get_faculty_kpi_endpoint(
     __: Annotated[None, Depends(permission_dependency("faculty.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> FacultyKpiItemResponseSchema:
-    item = get_faculty_kpi(int(tenant["id"]), kpi_id)
+    item = _svc.get_faculty_kpi(int(tenant["id"]), kpi_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Faculty KPI record not found")
     return FacultyKpiItemResponseSchema(item=item)
@@ -69,7 +68,7 @@ def update_faculty_kpi_status_endpoint(
     __: Annotated[None, Depends(permission_dependency("faculty.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> FacultyKpiItemResponseSchema:
-    item = update_faculty_kpi_status(int(tenant["id"]), kpi_id, payload, actor)
+    item = _svc.update_faculty_kpi_status(int(tenant["id"]), kpi_id, payload, actor)
     if item is None:
         raise HTTPException(status_code=404, detail="Faculty KPI record not found")
     return FacultyKpiItemResponseSchema(item=item)

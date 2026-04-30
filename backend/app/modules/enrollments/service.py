@@ -34,6 +34,7 @@ from app.modules.enrollments.schemas import (
     EnrollmentReadSchema,
     EnrollmentStatusChangeSchema,
 )
+from app.modules.scheduling.models import CourseSectionModel, SectionStatus
 from app.modules.students.models import StudentProfileModel
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
@@ -166,6 +167,136 @@ class EnrollmentLifecycleService:
         )
         return term
 
+    def _load_section_for_enrollment(
+        self,
+        tenant_id: int,
+        *,
+        section_id: int,
+        course_id: int,
+        term_id: int,
+    ) -> CourseSectionModel:
+        section = self.db.execute(
+            select(CourseSectionModel).where(
+                and_(
+                    CourseSectionModel.tenant_id == tenant_id,
+                    CourseSectionModel.id == section_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if section is None:
+            raise DomainValidationError(
+                f"section_id={section_id} not found for tenant_id={tenant_id}"
+            )
+        if section.course_id != course_id or section.term_id != term_id:
+            raise DomainValidationError(
+                "Enrollment blocked: section linkage mismatch. "
+                f"section_id={section_id} belongs to course_id={section.course_id}, term_id={section.term_id}, "
+                f"but enrollment requested course_id={course_id}, term_id={term_id}"
+            )
+        if section.status == SectionStatus.CANCELLED:
+            raise DomainValidationError(
+                f"Enrollment blocked: section_id={section_id} is cancelled"
+            )
+        return section
+
+    def _check_section_capacity(self, tenant_id: int, section: CourseSectionModel) -> None:
+        """Cross-module capacity guard: concrete section capacity via section_id."""
+        section_capacity = section.max_capacity or 0
+        if section_capacity <= 0:
+            return
+
+        active_count = self.db.execute(
+            select(func.count()).select_from(EnrollmentModel).where(
+                and_(
+                    EnrollmentModel.tenant_id == tenant_id,
+                    EnrollmentModel.section_id == section.id,
+                    EnrollmentModel.enrollment_status.in_(
+                        tuple(EnrollmentLifecycleRules.ACTIVE_ENROLLMENT_STATUSES)
+                    ),
+                )
+            )
+        ).scalar() or 0
+
+        if active_count >= section_capacity:
+            raise DomainValidationError(
+                f"Section is at full capacity ({active_count}/{section_capacity})"
+            )
+
+    def _check_course_prerequisites(self, tenant_id: int, student_profile_id: int, course_id: int) -> None:
+        """Cross-module prerequisite guard: courses.prerequisites → enrollments.completed.
+
+        Before enrolling a student in a course, verify that all declared prerequisite courses
+        have been COMPLETED by the student (any term).  Raises DomainValidationError listing
+        every unmet prerequisite so the student receives actionable feedback.
+        """
+        from app.modules.courses.models import CoursePrerequisiteModel  # noqa: PLC0415
+
+        prereqs = self.db.execute(
+            select(CoursePrerequisiteModel).where(
+                and_(
+                    CoursePrerequisiteModel.tenant_id == tenant_id,
+                    CoursePrerequisiteModel.course_id == course_id,
+                )
+            )
+        ).scalars().all()
+
+        if not prereqs:
+            return
+
+        missing: list[int] = []
+        for prereq in prereqs:
+            completed = self.db.execute(
+                select(func.count()).select_from(EnrollmentModel).where(
+                    and_(
+                        EnrollmentModel.tenant_id == tenant_id,
+                        EnrollmentModel.student_profile_id == student_profile_id,
+                        EnrollmentModel.course_id == prereq.prerequisite_course_id,
+                        EnrollmentModel.enrollment_status == EnrollmentStatus.COMPLETED,
+                    )
+                )
+            ).scalar() or 0
+
+            if completed == 0:
+                missing.append(prereq.prerequisite_course_id)
+
+        if missing:
+            ids = ", ".join(str(cid) for cid in sorted(missing))
+            raise DomainValidationError(
+                f"Prerequisite courses not completed for course_id={course_id}: "
+                f"missing completed enrollment for course_id(s) [{ids}]"
+            )
+
+    def _check_drop_deadline(self, tenant_id: int, term_id: int) -> None:
+        """Cross-entity add/drop deadline guard: enrollments × academic_terms.add_drop_deadline.
+
+        If the term has an add_drop_deadline set and the current UTC time is past it,
+        the drop operation is blocked to enforce institutional policy.
+        Silently proceeds when no deadline is configured on the term.
+        """
+        term = self.db.execute(
+            select(AcademicTermModel).where(
+                and_(
+                    AcademicTermModel.id == term_id,
+                    AcademicTermModel.tenant_id == tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+
+        if term is None or term.add_drop_deadline is None:
+            return
+
+        now = datetime.now(UTC)
+        deadline = term.add_drop_deadline
+        if deadline.tzinfo is None:
+            from datetime import timezone as _tz  # noqa: PLC0415
+            deadline = deadline.replace(tzinfo=_tz.utc)
+
+        if now > deadline:
+            raise DomainValidationError(
+                f"Drop not allowed: term add/drop deadline "
+                f"{deadline.strftime('%Y-%m-%d %H:%M UTC')} has passed"
+            )
+
     def _load_enrollment(self, tenant_id: int, enrollment_id: int) -> EnrollmentModel:
         enrollment = self.db.execute(
             select(EnrollmentModel).where(
@@ -277,11 +408,21 @@ class EnrollmentLifecycleService:
             term_id=request.term_id,
         )
 
+        section = self._load_section_for_enrollment(
+            tenant_id,
+            section_id=request.section_id,
+            course_id=request.course_id,
+            term_id=request.term_id,
+        )
+        self._check_section_capacity(tenant_id, section)
+        self._check_course_prerequisites(tenant_id, request.student_profile_id, request.course_id)
+
         enrollment = EnrollmentModel(
             tenant_id=tenant_id,
             student_profile_id=request.student_profile_id,
             course_id=request.course_id,
             term_id=request.term_id,
+            section_id=request.section_id,
             enrollment_status=request.enrollment_status,
             enrollment_type=request.enrollment_type,
             enrolled_at=request.enrolled_at or _utc_now(),
@@ -319,6 +460,7 @@ class EnrollmentLifecycleService:
                 "student_profile_id": enrollment.student_profile_id,
                 "course_id": enrollment.course_id,
                 "term_id": enrollment.term_id,
+                "section_id": enrollment.section_id,
                 "enrollment_status": enrollment.enrollment_status.value,
                 "created_by": actor_id,
             },
@@ -334,6 +476,7 @@ class EnrollmentLifecycleService:
                 "student_profile_id": enrollment.student_profile_id,
                 "course_id": enrollment.course_id,
                 "term_id": enrollment.term_id,
+                "section_id": enrollment.section_id,
                 "enrollment_status": enrollment.enrollment_status.value,
             },
             tenant_id=tenant_id,
@@ -624,6 +767,62 @@ class EnrollmentLifecycleService:
                 )
             except Exception:
                 pass
+            try:
+                from uuid import uuid4
+                from app.modules.brain_core.service import brain_core_service
+                brain_core_service.process_signal({
+                    "event_type": "enrollments.dropout_risk.detected",
+                    "tenant_id": tenant_id,
+                    "correlation_id": str(uuid4()),
+                    "source_entity_type": "enrollment",
+                    "source_entity_id": str(enrollment.id),
+                    "payload": {
+                        "enrollment_id": enrollment.id,
+                        "student_id": enrollment.student_profile_id,
+                        "course_id": enrollment.course_id,
+                        "from_status": previous_status.value,
+                        "to_status": request.to_status.value,
+                    },
+                })
+            except Exception:
+                pass  # Brain Core errors must never break core flows
+
+            # Cross-module: create intervention case directly (no Brain dependency)
+            try:
+                from app.modules.interventions.models import (
+                    InterventionAssigneeType,
+                    InterventionCaseModel,
+                    InterventionCaseSeverity,
+                    InterventionCaseStatus,
+                    InterventionCaseType,
+                )
+                from datetime import datetime, UTC, timedelta
+
+                intervention = InterventionCaseModel(
+                    tenant_id=tenant_id,
+                    case_type=InterventionCaseType.ACADEMIC_RISK,
+                    student_profile_id=enrollment.student_profile_id,
+                    severity=InterventionCaseSeverity.HIGH,
+                    status=InterventionCaseStatus.OPEN,
+                    title=f"Dropout risk: student {enrollment.student_profile_id} ({request.to_status.value})",
+                    description=(
+                        f"Auto-created on enrollment status change. "
+                        f"Enrollment {enrollment.id}: {previous_status.value} → {request.to_status.value}."
+                    ),
+                    risk_snapshot_json={
+                        "enrollment_id": enrollment.id,
+                        "course_id": enrollment.course_id,
+                        "from_status": previous_status.value,
+                        "to_status": request.to_status.value,
+                    },
+                    assignee_type=InterventionAssigneeType.GROUP,
+                    assignee_ref="student_support",
+                    due_at=datetime.now(UTC) + timedelta(days=3),
+                )
+                self.db.add(intervention)
+                self.db.commit()
+            except Exception:
+                pass  # intervention wiring must never break core enrollment flow
 
         return EnrollmentReadSchema.model_validate(enrollment)
 
@@ -640,6 +839,7 @@ class EnrollmentLifecycleService:
         validate_version_match(enrollment.version, request.expected_version)
         previous_status = EnrollmentStatus(enrollment.enrollment_status)
         EnrollmentLifecycleRules.validate_drop_allowed(previous_status)
+        self._check_drop_deadline(tenant_id, enrollment.term_id)
 
         dropped_at = request.dropped_at or _utc_now()
         merged_metadata = _merge_metadata(enrollment.metadata_json, request.metadata_json)
@@ -693,6 +893,26 @@ class EnrollmentLifecycleService:
             raise DomainValidationError(
                 "Unable to drop enrollment due to constraint violation"
             ) from exc
+
+        try:
+            from uuid import uuid4
+            from app.modules.brain_core.service import brain_core_service
+            brain_core_service.process_signal({
+                "event_type": "enrollments.dropout_risk.detected",
+                "tenant_id": tenant_id,
+                "correlation_id": str(uuid4()),
+                "source_entity_type": "enrollment",
+                "source_entity_id": str(enrollment.id),
+                "payload": {
+                    "enrollment_id": enrollment.id,
+                    "student_id": enrollment.student_profile_id,
+                    "course_id": enrollment.course_id,
+                    "from_status": previous_status.value,
+                    "to_status": EnrollmentStatus.DROPPED.value,
+                },
+            })
+        except Exception:
+            pass  # Brain Core errors must never break core flows
 
         return EnrollmentReadSchema.model_validate(enrollment)
 

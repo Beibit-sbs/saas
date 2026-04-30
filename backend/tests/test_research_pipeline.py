@@ -18,6 +18,13 @@ def _make_grant(suffix: str = "P3") -> dict:
     }
 
 
+def _seed_grant_for_author(author_id: str, suffix: str) -> None:
+    grant = _make_grant(suffix)
+    grant["pi_faculty_id"] = author_id
+    resp = client.post(f"{BASE}/grants", headers=ADMIN_HEADERS, json=grant)
+    assert resp.status_code == 200, resp.text
+
+
 def test_create_grant_and_get_by_id() -> None:
     created = client.post(f"{BASE}/grants", headers=ADMIN_HEADERS, json=_make_grant("ID1"))
     assert created.status_code == 200, created.text
@@ -74,6 +81,7 @@ def test_update_grant_status_not_found_returns_404() -> None:
 
 
 def test_update_publication_status() -> None:
+    _seed_grant_for_author("FAC-P3-002", "PUB01")
     pub = {
         "publication_code": "PUB-P3-01",
         "title": "P3-1 Publication Registry Test",
@@ -96,6 +104,7 @@ def test_update_publication_status() -> None:
 
 
 def test_get_publication_by_id() -> None:
+    _seed_grant_for_author("FAC-P3-003", "PUB02")
     pub = {
         "publication_code": "PUB-P3-02",
         "title": "P3-1 Get Publication Test",
@@ -196,6 +205,7 @@ def test_get_publication_not_found_returns_404() -> None:
 
 
 def test_update_publication_status_draft_to_submitted() -> None:
+    _seed_grant_for_author("FAC-P3-003", "PUB03")
     pub = {
         "publication_code": "PUB-P3-03",
         "title": "P3-3 Publication Draft Submission Test",

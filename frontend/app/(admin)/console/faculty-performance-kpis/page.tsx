@@ -140,7 +140,7 @@ export default function FacultyPerformanceKpisPage() {
                 onClick={() =>
                   updateStatus.mutate(
                     { kpiId: row.id, payload: { status: next } },
-                    getHandlers(`KPI moved to ${next}`),
+                    getHandlers({ successTitle: `KPI moved to ${next}` }),
                   )
                 }
               >
@@ -169,10 +169,10 @@ export default function FacultyPerformanceKpisPage() {
         status: "satisfactory",
       },
       {
-        ...getHandlers("KPI record created"),
+        ...getHandlers({ successTitle: "KPI record created" }),
         onSuccess: (...args) => {
           setForm(EMPTY_FORM);
-          getHandlers("KPI record created").onSuccess?.(...args);
+          getHandlers({ successTitle: "KPI record created" }).onSuccess?.(args[0]);
         },
       },
     );
@@ -183,7 +183,7 @@ export default function FacultyPerformanceKpisPage() {
       <div className="space-y-8">
         <PageHeader
           title="Faculty Performance KPIs"
-          subtitle="Track teaching, research, and service outcomes with workflow status"
+          description="Track teaching, research, and service outcomes with workflow status"
           icon={GaugeCircle}
         />
 

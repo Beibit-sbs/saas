@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from app.modules.dining import service as dining_service
 from tests.conftest import ADMIN_HEADERS, client as test_client

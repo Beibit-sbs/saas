@@ -5,6 +5,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+import app.modules.facilities_work_orders.service as _svc
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.facilities_work_orders.schemas import (
     MaintenanceRequestCreateSchema,
@@ -18,16 +20,6 @@ from app.modules.facilities_work_orders.schemas import (
     WorkOrderStatus,
     WorkOrderStatusUpdateSchema,
     WorkOrderType,
-)
-from app.modules.facilities_work_orders.service import (
-    create_maintenance_request,
-    create_work_order,
-    get_maintenance_request,
-    get_work_order,
-    list_maintenance_requests,
-    list_work_orders,
-    update_maintenance_request_status,
-    update_work_order_status,
 )
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -44,7 +36,7 @@ def list_work_orders_endpoint(
     priority: WorkOrderPriority | None = None,
     work_type: WorkOrderType | None = None,
 ) -> WorkOrderListResponseSchema:
-    items = list_work_orders(int(tenant["id"]), status=status, priority=priority, work_type=work_type)
+    items = _svc.list_work_orders(int(tenant["id"]), status=status, priority=priority, work_type=work_type)
     return WorkOrderListResponseSchema(items=items)
 
 
@@ -55,7 +47,10 @@ def create_work_order_endpoint(
     __: Annotated[None, Depends(permission_dependency("facilities.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> WorkOrderItemResponseSchema:
-    item = create_work_order(int(tenant["id"]), payload, actor)
+    try:
+        item = _svc.create_work_order(int(tenant["id"]), payload, actor)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return WorkOrderItemResponseSchema(item=item)
 
 
@@ -66,7 +61,7 @@ def get_work_order_endpoint(
     __: Annotated[None, Depends(permission_dependency("facilities.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> WorkOrderItemResponseSchema:
-    item = get_work_order(int(tenant["id"]), order_id)
+    item = _svc.get_work_order(int(tenant["id"]), order_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Work order not found")
     return WorkOrderItemResponseSchema(item=item)
@@ -80,7 +75,7 @@ def update_work_order_status_endpoint(
     __: Annotated[None, Depends(permission_dependency("facilities.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> WorkOrderItemResponseSchema:
-    item = update_work_order_status(int(tenant["id"]), order_id, payload, actor)
+    item = _svc.update_work_order_status(int(tenant["id"]), order_id, payload, actor)
     if item is None:
         raise HTTPException(status_code=404, detail="Work order not found")
     return WorkOrderItemResponseSchema(item=item)
@@ -92,7 +87,7 @@ def list_maintenance_requests_endpoint(
     __: Annotated[None, Depends(permission_dependency("facilities.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> MaintenanceRequestListResponseSchema:
-    items = list_maintenance_requests(int(tenant["id"]))
+    items = _svc.list_maintenance_requests(int(tenant["id"]))
     return MaintenanceRequestListResponseSchema(items=items)
 
 
@@ -103,7 +98,10 @@ def create_maintenance_request_endpoint(
     __: Annotated[None, Depends(permission_dependency("facilities.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> MaintenanceRequestItemResponseSchema:
-    item = create_maintenance_request(int(tenant["id"]), payload, actor)
+    try:
+        item = _svc.create_maintenance_request(int(tenant["id"]), payload, actor)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return MaintenanceRequestItemResponseSchema(item=item)
 
 
@@ -114,7 +112,7 @@ def get_maintenance_request_endpoint(
     __: Annotated[None, Depends(permission_dependency("facilities.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> MaintenanceRequestItemResponseSchema:
-    item = get_maintenance_request(int(tenant["id"]), req_id)
+    item = _svc.get_maintenance_request(int(tenant["id"]), req_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Maintenance request not found")
     return MaintenanceRequestItemResponseSchema(item=item)
@@ -128,7 +126,7 @@ def update_maintenance_request_status_endpoint(
     __: Annotated[None, Depends(permission_dependency("facilities.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> MaintenanceRequestItemResponseSchema:
-    item = update_maintenance_request_status(int(tenant["id"]), req_id, payload, actor)
+    item = _svc.update_maintenance_request_status(int(tenant["id"]), req_id, payload, actor)
     if item is None:
         raise HTTPException(status_code=404, detail="Maintenance request not found")
     return MaintenanceRequestItemResponseSchema(item=item)

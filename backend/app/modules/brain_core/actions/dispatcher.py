@@ -19,6 +19,23 @@ class ActionDispatcher:
         self._workflow = InMemoryWorkflowActionDispatcher()
         self._notifications = NotificationActionDispatcher()
         self._on_workflow_case_outcome = on_workflow_case_outcome
+        # Module-level action callbacks registered at startup.
+        # key = action_name, value = callable(tenant_id, decision_id, payload) -> dict
+        self._module_handlers: dict[str, Callable[[int, str, dict[str, Any]], dict[str, Any]]] = {}
+
+    def register_module_handler(
+        self,
+        action_name: str,
+        handler: Callable[[int, str, dict[str, Any]], dict[str, Any]],
+    ) -> None:
+        """Register a real module callback for a Brain Core action name.
+
+        The callback signature is ``(tenant_id: int, decision_id: str, payload: dict) -> dict``.
+        Registered handlers run *instead of* the in-memory workflow sink for matching
+        action names, allowing production code to substitute real DB-backed logic while
+        tests that never register handlers continue to use the fast in-memory stubs.
+        """
+        self._module_handlers[action_name] = handler
 
     def dispatch(self, *, tenant_id: int, decision_id: str, actions: list[dict]) -> list[dict]:
         results: list[dict] = []
@@ -26,6 +43,23 @@ class ActionDispatcher:
         for action in actions:
             name = action.get("name")
             payload = dict(action.get("payload") or {})
+
+            # Module-level handlers registered at startup take priority over the
+            # built-in in-memory sinks.  This allows production wiring to call
+            # real DB-backed services while tests that never register handlers
+            # continue to use the fast in-memory workflow stubs.
+            if name and name in self._module_handlers:
+                module_handler = self._module_handlers[name]
+                _tid = tenant_id
+                _did = decision_id
+                _pl = payload
+                results.append(
+                    self._dispatch_with_retry(
+                        action_name=name,
+                        handler=lambda: module_handler(_tid, _did, _pl),
+                    )
+                )
+                continue
 
             if name == "create_intervention_case":
                 results.append(
@@ -325,6 +359,7 @@ class ActionDispatcher:
                     )
                 )
                 continue
+
 
             results.append({"action": name, "status": "skipped", "reason": "unsupported_action"})
 

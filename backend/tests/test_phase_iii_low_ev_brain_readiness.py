@@ -11,12 +11,10 @@ Covers:
 
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import MagicMock, patch
 
-import pytest
 
-from tests.conftest import ADMIN_HEADERS, TEST_PLATFORM_TENANT_ID, client
+from tests.conftest import ADMIN_HEADERS, client
 
 
 # ---------------------------------------------------------------------------

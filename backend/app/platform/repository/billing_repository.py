@@ -168,6 +168,85 @@ class BillingRepository:
             match = next((item for item in self._plans.values() if str(item.get("code", "")) == normalized_code), None)
         return dict(match) if match is not None else None
 
+    def get_plan_by_id(self, plan_id: int, *, conn: object | None = None) -> dict[str, Any] | None:
+        normalized_id = int(plan_id)
+
+        if conn is None:
+            with transaction() as tx:
+                return self.get_plan_by_id(normalized_id, conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id, code, name, price_cents, features_json, limits_json, active, created_at
+                    FROM app_platform_plans
+                    WHERE id = %s
+                    LIMIT 1
+                    """,
+                    (normalized_id,),
+                )
+                row = cur.fetchone()
+            if row is None:
+                return None
+            return {
+                "id": int(row[0]),
+                "code": str(row[1]),
+                "name": str(row[2]),
+                "price_cents": int(row[3]),
+                "features": dict(row[4] or {}),
+                "limits": {str(k): int(v) for k, v in dict(row[5] or {}).items()},
+                "active": bool(row[6]),
+                "created_at": row[7].isoformat() if hasattr(row[7], "isoformat") else str(row[7]),
+            }
+
+        with self._lock:
+            row = self._plans.get(normalized_id)
+        return dict(row) if row is not None else None
+
+    def update_plan(
+        self,
+        plan_id: int,
+        *,
+        name: str | None = None,
+        active: bool | None = None,
+        conn: object | None = None,
+    ) -> dict[str, Any] | None:
+        normalized_id = int(plan_id)
+
+        if conn is None:
+            with transaction() as tx:
+                return self.update_plan(normalized_id, name=name, active=active, conn=tx)
+
+        if conn is not None and db_available() and psycopg is not None:
+            set_clauses = []
+            params: list[Any] = []
+            if name is not None:
+                set_clauses.append("name = %s")
+                params.append(str(name).strip())
+            if active is not None:
+                set_clauses.append("active = %s")
+                params.append(bool(active))
+            if not set_clauses:
+                return self.get_plan_by_id(normalized_id, conn=conn)
+            params.append(normalized_id)
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"UPDATE app_platform_plans SET {', '.join(set_clauses)} WHERE id = %s",  # noqa: S608
+                    params,
+                )
+            return self.get_plan_by_id(normalized_id, conn=conn)
+
+        with self._lock:
+            row = self._plans.get(normalized_id)
+            if row is None:
+                return None
+            if name is not None:
+                row["name"] = str(name).strip()
+            if active is not None:
+                row["active"] = bool(active)
+        return dict(row)
+
     def assign_subscription(self, tenant_id: int, plan_code: str, *, conn: object | None = None) -> dict[str, Any]:
         normalized_tenant_id = int(tenant_id)
         normalized_plan_code = plan_code.strip().lower()

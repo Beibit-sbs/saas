@@ -25,7 +25,6 @@ from app.modules.grades.schemas import (
     GradeEnrollmentConsistencyReportSchema,
     GradeListResponseSchema,
     GradeMutationResponse,
-    GradeReadSchema,
     GradeSubmitSchema,
 )
 from app.modules.grades.service import GradeLifecycleService

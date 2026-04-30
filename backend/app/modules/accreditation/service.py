@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.module_helpers.audit_helpers import build_audit_action
 from app.modules.accreditation.schemas import (
     AccreditationCreateSchema,
@@ -26,6 +27,59 @@ _ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     "remediation_required": {"evidence_collected", "under_review"},
     "compliant": set(),
 }
+
+# W42: cap on active accreditation records per standard_type per tenant
+_ACCREDITATION_TYPE_MAX_ACTIVE: dict[str, int] = {
+    "institutional": 50,
+    "programmatic": 100,
+    "curriculum": 150,
+    "faculty_qualifications": 80,
+    "learning_outcomes": 120,
+}
+
+_ACTIVE_ACCREDITATION_STATUSES: frozenset[str] = frozenset({
+    "draft", "evidence_requested", "evidence_collected",
+    "under_review", "remediation_required",
+})
+
+# W42: risk levels that trigger a risk-alert side-effect record
+_HIGH_RISK_LEVELS: frozenset[str] = frozenset({"high"})
+
+# W98: guard — accreditation report can only be marked compliant with minimum active faculty
+_ACCREDITATION_COMPLIANT_TARGET_STATUS: str = "compliant"
+_ACTIVE_FACULTY_CONTRACT_STATUSES: frozenset[str] = frozenset({"active"})
+_MIN_ACTIVE_FACULTY_FOR_COMPLIANT: int = 3
+
+
+def _check_minimum_active_faculty_for_accreditation_compliant(
+    *,
+    tenant_id: int,
+    record_id: int,
+    target_status: str,
+) -> None:
+    """Guard: marking an accreditation record compliant requires >= 3 faculty with active contracts."""
+    if target_status != _ACCREDITATION_COMPLIANT_TARGET_STATUS:
+        return
+
+    try:
+        contracts = list_entities_for_tenant("faculty_contracts", tenant_id)
+    except Exception as exc:
+        raise DomainValidationError(
+            f"Accreditation record {record_id} compliant transition blocked: "
+            f"faculty_contracts lookup failed — {exc}"
+        ) from exc
+
+    active_count = sum(
+        1 for c in contracts
+        if str(c.get("status") or "").strip().lower() in _ACTIVE_FACULTY_CONTRACT_STATUSES
+    )
+
+    if active_count < _MIN_ACTIVE_FACULTY_FOR_COMPLIANT:
+        raise DomainValidationError(
+            f"Accreditation record {record_id} compliant transition blocked: "
+            f"found {active_count} active faculty contract(s), minimum required is "
+            f"{_MIN_ACTIVE_FACULTY_FOR_COMPLIANT} — accreditation compliance requires sufficient active faculty"
+        )
 
 
 def _normalize_optional(value: str | None) -> str | None:
@@ -120,6 +174,19 @@ def create_accreditation_record(
     ):
         raise ValueError("standard_code already exists for review cycle")
 
+    # W42: count-cap guard on active records by standard_type
+    standard_type = request.standard_type
+    cap = _ACCREDITATION_TYPE_MAX_ACTIVE.get(standard_type, 100)
+    active_count = sum(
+        1 for r in existing
+        if str(r.get("standard_type") or "") == standard_type
+        and str(r.get("status") or "") in _ACTIVE_ACCREDITATION_STATUSES
+    )
+    if active_count >= cap:
+        raise ValueError(
+            f"Active accreditation cap ({cap}) reached for standard_type '{standard_type}'"
+        )
+
     created = create_entity_for_tenant(
         "accreditation_records",
         {
@@ -131,6 +198,7 @@ def create_accreditation_record(
             "due_date": request.due_date.isoformat() if request.due_date else None,
             "evidence_summary": _normalize_optional(request.evidence_summary),
             "risk_level": request.risk_level,
+            "external_auditor_id": _normalize_optional(request.external_auditor_id),
             "status": "draft",
             "reviewer_notes": None,
             "remediation_plan": None,
@@ -150,7 +218,50 @@ def create_accreditation_record(
         tenant_id=tenant_id,
     )
 
+    # W42: side-effect alert for high-risk records
+    if str(request.risk_level) in _HIGH_RISK_LEVELS:
+        _ensure_high_risk_alert_record(
+            tenant_id=tenant_id,
+            record_id=int(created.get("id") or 0),
+            record_data={
+                "standard_code": standard_code,
+                "standard_type": standard_type,
+                "owner_department": request.owner_department.strip(),
+                "risk_level": request.risk_level,
+            },
+        )
+
     return AccreditationRecordSchema.model_validate(created)
+
+
+def _ensure_high_risk_alert_record(
+    tenant_id: int,
+    record_id: int,
+    record_data: dict,
+) -> None:
+    """Idempotent: create an accreditation_risk_alerts entry for high-risk records."""
+    existing = list_entities_for_tenant("accreditation_risk_alerts", tenant_id)
+    for rec in existing:
+        if (
+            str(rec.get("integration_source")) == "accreditation_risk_queue"
+            and str(rec.get("source_entity_id")) == str(record_id)
+        ):
+            return  # already exists
+    create_entity_for_tenant(
+        "accreditation_risk_alerts",
+        {
+            "accreditation_id": record_id,
+            "standard_code": str(record_data.get("standard_code") or ""),
+            "standard_type": str(record_data.get("standard_type") or ""),
+            "owner_department": str(record_data.get("owner_department") or ""),
+            "risk_level": str(record_data.get("risk_level") or ""),
+            "alert_status": "open",
+            "integration_source": "accreditation_risk_queue",
+            "source_entity_id": str(record_id),
+            "tenant_id": tenant_id,
+        },
+        tenant_id,
+    )
 
 
 def update_accreditation_status(
@@ -168,6 +279,13 @@ def update_accreditation_status(
     next_status = request.status
     if next_status != current_status and next_status not in _ALLOWED_TRANSITIONS.get(current_status, set()):
         raise ValueError(f"invalid status transition: {current_status} -> {next_status}")
+
+    # W98 guard: compliant transition requires minimum active faculty
+    _check_minimum_active_faculty_for_accreditation_compliant(
+        tenant_id=tenant_id,
+        record_id=record_id,
+        target_status=next_status,
+    )
 
     if next_status == "remediation_required" and not _normalize_optional(request.remediation_plan):
         raise ValueError("remediation_plan is required when status is remediation_required")

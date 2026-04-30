@@ -32,3 +32,12 @@ class TranscriptRules:
             return
         if gpa < Decimal("0") or gpa > Decimal("4.50"):
             raise DomainValidationError("calculated GPA is outside allowed range")
+
+    @staticmethod
+    def validate_transcript_not_locked(student_status: str | None, student_profile_id: int) -> None:
+        """Raise DomainValidationError if the student has GRADUATED — transcript is locked."""
+        if str(student_status or "").strip().lower() == "graduated":
+            raise DomainValidationError(
+                f"Transcript for student_profile_id={student_profile_id} is locked: "
+                "student has graduated and the official transcript is immutable"
+            )

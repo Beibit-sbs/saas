@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from typing import Any
 
 from app.platform.event_ingestion import service as event_ingestion_service
@@ -433,7 +433,7 @@ def clear_kpi_state() -> None:
 def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | None = None) -> list[dict[str, Any]]:
     repo = uow.kpi_repository
     conn = getattr(uow, "conn", None)
-    day = snapshot_date or date.today().isoformat()
+    day = snapshot_date or datetime.now(timezone.utc).date().isoformat()
 
     analytics_latest = uow.analytics_repository.get_latest_kpi_snapshot(tenant_id=int(tenant_id), conn=conn)
     analytics_counts = dict((analytics_latest or {}).get("event_counts_json", {}))
@@ -545,7 +545,7 @@ def refresh_tenant_dashboard_snapshot(
 ) -> dict[str, Any]:
     repo = uow.kpi_repository
     conn = getattr(uow, "conn", None)
-    day = snapshot_date or date.today().isoformat()
+    day = snapshot_date or datetime.now(timezone.utc).date().isoformat()
 
     metrics = refresh_tenant_metrics(tenant_id=int(tenant_id), uow=uow, snapshot_date=day)
 

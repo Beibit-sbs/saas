@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.student_life.schemas import (
@@ -16,6 +17,7 @@ from app.modules.student_life.schemas import (
     DisciplinaryCaseCreateSchema,
     DisciplinaryCaseItemResponseSchema,
     DisciplinaryCaseListResponseSchema,
+    DisciplinaryCaseStatusUpdateSchema,
     StudentLifeHealthResponseSchema,
     WellbeingCheckinCreateSchema,
     WellbeingCheckinItemResponseSchema,
@@ -31,6 +33,7 @@ from app.modules.student_life.service import (
     list_counseling_cases,
     list_disciplinary_cases,
     list_wellbeing_checkins,
+    update_disciplinary_case_status,
 )
 
 
@@ -66,8 +69,8 @@ def create_counseling_case_endpoint(
     try:
         item = create_counseling_case(int(tenant["id"]), payload, actor)
         return CounselingCaseItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/wellbeing-checkins", response_model=WellbeingCheckinListResponseSchema)
@@ -89,8 +92,8 @@ def create_wellbeing_checkin_endpoint(
     try:
         item = create_wellbeing_checkin(int(tenant["id"]), payload, actor)
         return WellbeingCheckinItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/accessibility-supports", response_model=AccessibilitySupportListResponseSchema)
@@ -112,8 +115,8 @@ def create_accessibility_support_endpoint(
     try:
         item = create_accessibility_support(int(tenant["id"]), payload, actor)
         return AccessibilitySupportItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/disciplinary-cases", response_model=DisciplinaryCaseListResponseSchema)
@@ -135,5 +138,20 @@ def create_disciplinary_case_endpoint(
     try:
         item = create_disciplinary_case(int(tenant["id"]), payload, actor)
         return DisciplinaryCaseItemResponseSchema(item=item)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.patch("/disciplinary-cases/{case_id}/status", response_model=DisciplinaryCaseItemResponseSchema)
+def update_disciplinary_case_status_endpoint(
+    case_id: int,
+    payload: DisciplinaryCaseStatusUpdateSchema,
+    actor: Annotated[str, Depends(get_actor)],
+    _: Annotated[None, Depends(permission_dependency("student_life.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> DisciplinaryCaseItemResponseSchema:
+    try:
+        item = update_disciplinary_case_status(int(tenant["id"]), case_id, payload, actor)
+        return DisciplinaryCaseItemResponseSchema(item=item)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

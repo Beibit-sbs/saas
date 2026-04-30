@@ -29,6 +29,11 @@ def list_plans() -> list[dict[str, Any]]:
         return uow.billing_repository.list_plans(conn=uow.conn)
 
 
+def update_plan(plan_id: int, *, name: str | None = None, active: bool | None = None) -> dict[str, Any] | None:
+    with UnitOfWork() as uow:
+        return uow.billing_repository.update_plan(int(plan_id), name=name, active=active, conn=uow.conn)
+
+
 def assign_plan(tenant_id: int, plan_code: str) -> dict[str, Any]:
     with UnitOfWork() as uow:
         return uow.billing_repository.assign_subscription(int(tenant_id), str(plan_code), conn=uow.conn)

@@ -16,7 +16,6 @@ import importlib.util
 import os
 import signal
 import sys
-import threading
 from unittest.mock import MagicMock, patch
 
 _SCRIPT = os.path.join(os.path.dirname(__file__), "../scripts/run_worker.py")

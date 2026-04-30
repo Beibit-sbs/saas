@@ -6,9 +6,96 @@ from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     list_entities_for_tenant,
 )
+from app.core.module_helpers.service_validation import DomainValidationError
 
 
 _HIGH_SEVERITIES = {"high", "critical"}
+_SEVERITY_MAX_ACTIVE_INCIDENTS: dict[str, int] = {
+    "critical": 2,
+    "high": 6,
+    "medium": 20,
+    "low": 50,
+}
+_ACTIVE_INCIDENT_STATUSES = frozenset({"open", "investigating"})
+
+# ---------------------------------------------------------------------------
+# W107: Security visitor facility incident guard
+# Visitor check-in blocked when facility has active critical/high incident.
+# Prevents unauthorized access to unsafe facilities during lockdown/chemical hazard.
+# ---------------------------------------------------------------------------
+_BLOCKED_INCIDENT_STATUSES: frozenset[str] = frozenset({"open", "investigating"})
+_BLOCKED_INCIDENT_SEVERITIES: frozenset[str] = frozenset({"critical", "high"})
+
+
+def _check_facility_has_no_active_critical_incident(
+    *,
+    tenant_id: int,
+    facility_code: str,
+) -> None:
+    """W107: Cross-entity guard — security_visitors × security_incidents.
+
+    A visitor check-in is blocked when there is an open critical/high incident
+    for the same facility_code. Prevents unauthorized access to unsafe facilities
+    during lockdown, evacuation, chemical hazard, or other critical security events.
+
+    FAIL-CLOSED: if incident lookup fails (any exception), the visitor check-in is BLOCKED.
+    """
+    try:
+        all_incidents = list_entities_for_tenant("security_incidents", tenant_id)
+    except Exception as exc:
+        raise DomainValidationError(
+            f"Visitor check-in blocked for facility_code='{facility_code}': "
+            f"incident lookup failed — {exc}. Cannot verify facility safety."
+        ) from exc
+
+    blocking = [
+        row for row in all_incidents
+        if str(row.get("facility_code") or "").strip().lower() == str(facility_code).strip().lower()
+        and str(row.get("status") or "").strip().lower() in _BLOCKED_INCIDENT_STATUSES
+        and str(row.get("severity") or "").strip().lower() in _BLOCKED_INCIDENT_SEVERITIES
+    ]
+
+    if blocking:
+        incident = blocking[0]
+        raise DomainValidationError(
+            f"Visitor check-in blocked for facility_code='{facility_code}': "
+            f"active {incident.get('severity')} security incident exists for this facility. "
+            "Visitor access is prohibited during active critical/high security incidents."
+        )
+
+
+def _ensure_incident_escalation_record(
+    incident: dict[str, object],
+    tenant_id: int,
+    response_team: str | None = None,
+) -> None:
+    incident_id = str(incident.get("id") or "").strip()
+    if not incident_id:
+        return
+
+    for row in list_entities_for_tenant("security_incident_escalation_records", tenant_id):
+        if (
+            str(row.get("integration_source") or "").strip() == "security_incident_escalation"
+            and str(row.get("source_entity_id") or "").strip() == incident_id
+        ):
+            return
+
+    incident_code = str(incident.get("incident_code") or "").strip() or f"INC-{incident_id}"
+    create_entity_for_tenant(
+        "security_incident_escalation_records",
+        {
+            "incident_id": incident_id,
+            "incident_code": incident_code,
+            "facility_code": str(incident.get("facility_code") or "").strip(),
+            "category": str(incident.get("category") or "").strip(),
+            "response_team": response_team or "security_command",
+            "escalation_level": "critical",
+            "status": "open",
+            "integration_source": "security_incident_escalation",
+            "source_entity_id": incident_id,
+        },
+        tenant_id,
+    )
 
 
 def list_security_incidents(
@@ -33,6 +120,22 @@ def list_security_incidents(
 
 
 def create_security_incident(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+    severity = str(payload.get("severity") or "").strip().lower()
+    status = str(payload.get("status") or "").strip().lower()
+    if severity:
+        cap = _SEVERITY_MAX_ACTIVE_INCIDENTS.get(severity)
+        if cap is not None and status in _ACTIVE_INCIDENT_STATUSES:
+            active_count = sum(
+                1
+                for row in list_entities_for_tenant("security_incidents", tenant_id)
+                if str(row.get("severity") or "").strip().lower() == severity
+                and str(row.get("status") or "").strip().lower() in _ACTIVE_INCIDENT_STATUSES
+            )
+            if active_count >= cap:
+                raise ValueError(
+                    f"severity='{severity}' active incident cap exceeded; max={cap}"
+                )
+
     record = create_entity_for_tenant("security_incidents", payload, tenant_id)
     severity = str(record.get("severity") or "").strip().lower()
     if severity in _HIGH_SEVERITIES:
@@ -53,6 +156,12 @@ def create_security_incident(payload: dict[str, object], tenant_id: int) -> dict
                 "source_entity_type": "security_incident",
                 "source_entity_id": record_id,
             },
+        )
+    if severity == "critical":
+        _ensure_incident_escalation_record(
+            record,
+            tenant_id,
+            response_team=str(payload.get("response_team") or "").strip() or None,
         )
     return record
 
@@ -79,6 +188,12 @@ def list_security_visitors(
 
 
 def create_security_visitor(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+    # W107: Facility incident guard — no visitor check-in during active critical/high incident
+    facility_code = str(payload.get("facility_code") or "").strip()
+    if facility_code:
+        _check_facility_has_no_active_critical_incident(
+            tenant_id=tenant_id, facility_code=facility_code
+        )
     return create_entity_for_tenant("security_visitors", payload, tenant_id)
 
 

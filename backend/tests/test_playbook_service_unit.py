@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from datetime import datetime, UTC
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -27,7 +27,6 @@ from app.core.module_helpers.service_validation import (
     TenantResourceNotFoundError,
 )
 from app.modules.interventions.playbook_models import (
-    PlaybookAssigneeRole,
     PlaybookExecutionStatus,
     PlaybookStepActionType,
     PlaybookStepExecutionStatus,
@@ -160,7 +159,7 @@ class TestCreatePlaybook:
         service = PlaybookService(db)
         steps = [PlaybookStepCreateSchema(step_order=0, title="Step A", action_type=PlaybookStepActionType.NOTE)]
         payload = _create_payload(steps=steps)
-        result = service.create_playbook(tenant_id=1, actor="owner@test", payload=payload)
+        service.create_playbook(tenant_id=1, actor="owner@test", payload=payload)
         assert db.add.called
         assert db.flush.called
         assert mock_audit.called

@@ -41,7 +41,7 @@ export function useSyllabusList(filters?: { status?: string; department_id?: str
       if (filters?.department_id) params.append('department_id', filters.department_id);
       
       return apiGet<SyllabusListItem[]>(
-        `/api/syllabi?${params.toString()}`
+        `/api/admin/syllabus-governance?${params.toString()}`
       );
     },
     staleTime: 60000,
@@ -58,7 +58,7 @@ export function useSyllabusDetail(syllabusId: string) {
       apiGet<{
         metadata: SyllabusMetadata;
         content: SyllabusContent;
-      }>(`/api/syllabi/${syllabusId}`),
+      }>(`/api/admin/syllabus-governance/${syllabusId}`),
     enabled: !!syllabusId,
     staleTime: 30000,
   });
@@ -71,7 +71,7 @@ export function useApprovalWorkflow(syllabusId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.SYLLABUS_APPROVAL(syllabusId),
     queryFn: () =>
-      apiGet<ApprovalWorkflow>(`/api/syllabi/${syllabusId}/approval-workflow`),
+      apiGet<ApprovalWorkflow>(`/api/admin/syllabus-governance/${syllabusId}/approval-workflow`),
     enabled: !!syllabusId,
     staleTime: 30000,
   });
@@ -84,7 +84,7 @@ export function useSyllabusDashboardSummary() {
   return useQuery({
     queryKey: CACHE_KEYS.DASHBOARD,
     queryFn: () =>
-      apiGet<SyllabusDashboardSummary>(`/api/syllabi/dashboard/summary`),
+      apiGet<SyllabusDashboardSummary>(`/api/admin/syllabus-governance/dashboard/summary`),
     staleTime: 60000,
   });
 }
@@ -96,7 +96,7 @@ export function useSyllabusByDepartment(departmentId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.BY_DEPARTMENT(departmentId),
     queryFn: () =>
-      apiGet<SyllabusListItem[]>(`/api/syllabi/department/${departmentId}`),
+      apiGet<SyllabusListItem[]>(`/api/admin/syllabus-governance/department/${departmentId}`),
     enabled: !!departmentId,
     staleTime: 60000,
   });
@@ -109,7 +109,7 @@ export function useSyllabusByFaculty(facultyId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.BY_FACULTY(facultyId),
     queryFn: () =>
-      apiGet<SyllabusListItem[]>(`/api/syllabi/faculty/${facultyId}`),
+      apiGet<SyllabusListItem[]>(`/api/admin/syllabus-governance/faculty/${facultyId}`),
     enabled: !!facultyId,
     staleTime: 60000,
   });
@@ -123,7 +123,7 @@ export function useCreateSyllabus() {
 
   return useMutation({
     mutationFn: (payload: SyllabusCreatePayload) =>
-      apiPost<SyllabusMetadata>('/api/syllabi', payload),
+      apiPost<SyllabusMetadata>('/api/admin/syllabus-governance', payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.ALL_SYLLABI });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.DASHBOARD });
@@ -140,7 +140,7 @@ export function useUpdateSyllabus(syllabusId: string) {
   return useMutation({
     mutationFn: (payload: SyllabusUpdatePayload) =>
       apiPut<SyllabusContent>(
-        `/api/syllabi/${syllabusId}/content`,
+        `/api/admin/syllabus-governance/${syllabusId}/content`,
         payload
       ),
     onSuccess: () => {
@@ -161,7 +161,7 @@ export function useSubmitForApproval() {
   return useMutation({
     mutationFn: (syllabusId: string) =>
       apiPost<ApprovalWorkflow>(
-        `/api/syllabi/${syllabusId}/submit-for-approval`,
+        `/api/admin/syllabus-governance/${syllabusId}/submit-for-approval`,
         {}
       ),
     onSuccess: (_, syllabusId) => {
@@ -192,7 +192,7 @@ export function useApproveSyllabus() {
       feedback?: string;
     }) =>
       apiPost<ApprovalWorkflow>(
-        `/api/syllabi/${syllabusId}/approve`,
+        `/api/admin/syllabus-governance/${syllabusId}/approve`,
         { feedback }
       ),
     onSuccess: (_, { syllabusId }) => {
@@ -222,7 +222,7 @@ export function useRejectSyllabus() {
       reason: string;
     }) =>
       apiPost<ApprovalWorkflow>(
-        `/api/syllabi/${syllabusId}/reject`,
+        `/api/admin/syllabus-governance/${syllabusId}/reject`,
         { reason }
       ),
     onSuccess: (_, { syllabusId }) => {
@@ -246,7 +246,7 @@ export function usePublishSyllabus() {
   return useMutation({
     mutationFn: (syllabusId: string) =>
       apiPost<SyllabusMetadata>(
-        `/api/syllabi/${syllabusId}/publish`,
+        `/api/admin/syllabus-governance/${syllabusId}/publish`,
         {}
       ),
     onSuccess: (_, syllabusId) => {
@@ -267,7 +267,7 @@ export function useArchiveSyllabus() {
 
   return useMutation({
     mutationFn: (syllabusId: string) =>
-      apiDelete<void>(`/api/syllabi/${syllabusId}/archive`),
+      apiDelete<void>(`/api/admin/syllabus-governance/${syllabusId}/archive`),
     onSuccess: (_, syllabusId) => {
       queryClient.invalidateQueries({
         queryKey: CACHE_KEYS.SYLLABUS_DETAIL(syllabusId),

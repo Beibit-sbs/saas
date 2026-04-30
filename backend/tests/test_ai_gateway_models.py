@@ -10,7 +10,6 @@ limiting.  These tests add coverage for the model registry endpoints:
 from __future__ import annotations
 
 from tests.conftest import ADMIN_HEADERS, _auth_headers, client
-from app.modules.ai_gateway import service as ai_service
 
 
 # ---------------------------------------------------------------------------

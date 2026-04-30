@@ -26,6 +26,8 @@ class HousingRequestCreateSchema(BaseModel):
     room_preference: str | None = Field(default=None, max_length=64)
     manager_id: str | None = Field(default=None, max_length=64)
     notes: str | None = Field(default=None, max_length=3000)
+    floor_preference: int | None = Field(default=None, ge=1, le=50)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class HousingRequestStatusUpdateSchema(BaseModel):

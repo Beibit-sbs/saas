@@ -28,6 +28,7 @@ class WorkOrderCreateSchema(BaseModel):
     facility_code: str = Field(min_length=1, max_length=64)
     summary: str = Field(min_length=1, max_length=220)
     status: WorkOrderStatus = "open"
+    assigned_team: str | None = Field(default=None, max_length=128)
 
 
 class WorkOrderSchema(WorkOrderCreateSchema):

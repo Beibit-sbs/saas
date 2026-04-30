@@ -10,6 +10,15 @@ WorkOrderPriority = Literal["low", "medium", "high", "critical"]
 WorkOrderType = Literal["repair", "maintenance", "installation", "inspection"]
 WorkOrderStatus = Literal["open", "in_progress", "on_hold", "completed", "cancelled"]
 
+# State machine: allowed transitions for work orders
+WO_ALLOWED_TRANSITIONS: dict[str, list[str]] = {
+    "open": ["in_progress", "completed", "cancelled"],
+    "in_progress": ["on_hold", "completed", "cancelled"],
+    "on_hold": ["in_progress", "cancelled"],
+    "completed": [],
+    "cancelled": [],
+}
+
 MaintenanceRequestSeverity = Literal["low", "medium", "high", "critical"]
 MaintenanceRequestIssueType = Literal["plumbing", "electrical", "hvac", "structural", "other"]
 MaintenanceRequestStatus = Literal["pending", "assigned", "in_progress", "resolved", "closed"]
@@ -23,6 +32,8 @@ class WorkOrderCreateSchema(BaseModel):
     priority: WorkOrderPriority = "medium"
     assigned_to: str | None = Field(default=None, max_length=128)
     status: WorkOrderStatus = "open"
+    sla_hours: int | None = Field(default=None, ge=1, le=720)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class WorkOrderSchema(WorkOrderCreateSchema):

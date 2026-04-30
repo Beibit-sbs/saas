@@ -9,9 +9,25 @@ import re
 from datetime import datetime, timezone
 
 from app.modules.university_core import shared as university_shared
+from app.modules.university_core.business_rules import UniversityCoreRules
 
 
 _SQL_IDENTIFIER_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
+
+
+def _is_fail_closed_mode_impl() -> bool:
+    """Return True when university_core should not degrade to in-memory fallback.
+
+    Priority:
+    1) Explicit UNIVERSITY_CORE_FAIL_CLOSED env override.
+    2) Production mode via APP_ENV/ENVIRONMENT.
+    """
+    raw = os.getenv("UNIVERSITY_CORE_FAIL_CLOSED", "").strip().lower()
+    if raw:
+        return raw in {"1", "true", "yes", "on"}
+
+    env_raw = os.getenv("APP_ENV", os.getenv("ENVIRONMENT", "development")).strip().lower()
+    return env_raw in {"prod", "production"}
 
 
 def _db_url_impl() -> str | None:
@@ -23,12 +39,30 @@ def _use_database_impl() -> bool:
 
 
 def _should_fallback_to_memory_impl(exc: Exception) -> bool:
+    # In fail-closed mode (production by default), never degrade to in-memory
+    # for DB/schema class errors because it breaks durable data guarantees.
+    if _is_fail_closed_mode_impl() and university_shared.psycopg is not None and isinstance(
+        exc,
+        (
+            university_shared.psycopg.OperationalError,
+            university_shared.psycopg.InterfaceError,
+            university_shared.psycopg.errors.UndefinedTable,
+            university_shared.psycopg.ProgrammingError,
+        ),
+    ):
+        return False
+
     if isinstance(exc, RuntimeError) and str(exc) == "database unavailable":
         return True
     if isinstance(exc, (ConnectionError, TimeoutError, OSError, ValueError)):
         return True
     if university_shared.psycopg is not None and isinstance(
-        exc, (university_shared.psycopg.OperationalError, university_shared.psycopg.InterfaceError)
+        exc, (
+            university_shared.psycopg.OperationalError,
+            university_shared.psycopg.InterfaceError,
+            university_shared.psycopg.errors.UndefinedTable,
+            university_shared.psycopg.ProgrammingError,
+        )
     ):
         return True
     return False
@@ -39,7 +73,7 @@ def _now_iso_impl() -> str:
 
 
 def _normalize_string_impl(name: str, value: object, max_len: int = 255) -> str:
-    normalized = str(value or "").strip()
+    normalized = ("" if value is None else str(value)).strip()
     if not normalized:
         raise ValueError(f"{name} is required")
     if len(normalized) > max_len:
@@ -95,6 +129,13 @@ def _normalize_payload_impl(entity_name: str, payload: dict[str, object]) -> dic
     email_value = normalized.get("email")
     if isinstance(email_value, str) and "@" not in email_value:
         raise ValueError("email must contain @")
+
+    if "start_date" in config.fields and "end_date" in config.fields:
+        UniversityCoreRules.validate_end_after_start(
+            str(normalized.get("start_date") or "") or None,
+            str(normalized.get("end_date") or "") or None,
+            entity_name=entity_name,
+        )
 
     return normalized
 
@@ -171,7 +212,7 @@ def _sql_identifier_list_impl(names: list[str] | tuple[str, ...]):
     return university_shared.psycopg.sql.SQL(", ").join(_sql_identifier_impl(name) for name in names)
 
 
-def _list_entities_db_impl(entity_name: str) -> list[dict[str, object]]:
+def _list_entities_db_impl(entity_name: str, max_limit: int = 200) -> list[dict[str, object]]:
     if not _db_url_impl() or university_shared.psycopg is None:
         raise RuntimeError("database unavailable")
 
@@ -184,11 +225,11 @@ def _list_entities_db_impl(entity_name: str) -> list[dict[str, object]]:
 
     with university_shared.get_raw_conn() as conn:
         with conn.cursor() as cur:
-            query = university_shared.psycopg.sql.SQL("SELECT {} FROM {} ORDER BY id ASC").format(
+            query = university_shared.psycopg.sql.SQL("SELECT {} FROM {} ORDER BY id ASC LIMIT %s").format(
                 _sql_identifier_list_impl(selected_columns),
                 _sql_identifier_impl(config.table),
             )
-            cur.execute(query)
+            cur.execute(query, (max_limit,))
             rows = cur.fetchall()
 
     return [_row_to_dict_impl(row, config.fields, include_created_at) for row in rows]
@@ -287,13 +328,13 @@ def _delete_entity_db_impl(entity_name: str, item_id: int) -> dict[str, object]:
     return _row_to_dict_impl(row, config.fields, include_created_at)
 
 
-def list_entities_impl(entity_name: str) -> list[dict[str, object]]:
+def list_entities_impl(entity_name: str, max_limit: int = 200) -> list[dict[str, object]]:
     if entity_name not in university_shared.ENTITY_CONFIGS:
         raise ValueError("unknown entity")
 
     if _use_database_impl():
         try:
-            return _list_entities_db_impl(entity_name)
+            return _list_entities_db_impl(entity_name, max_limit=max_limit)
         except Exception as exc:
             if not _should_fallback_to_memory_impl(exc):
                 raise
@@ -301,7 +342,7 @@ def list_entities_impl(entity_name: str) -> list[dict[str, object]]:
     with university_shared._state_lock:
         rows = list(university_shared._state.data[entity_name].values())
     rows.sort(key=lambda row: int(row["id"]))
-    return rows
+    return rows[:max_limit]
 
 
 def create_entity_impl(entity_name: str, payload: dict[str, object]) -> dict[str, object]:
@@ -372,9 +413,77 @@ def delete_entity_impl(entity_name: str, item_id: int) -> dict[str, object]:
         return current
 
 
+def validate_entity_tables_impl() -> dict[str, list[str]]:
+    """Check that every table referenced in ENTITY_CONFIGS exists in the database.
+
+    Returns a dict with two keys:
+      - "missing": table names declared in ENTITY_CONFIGS but absent from the DB.
+      - "present": table names that were found.
+
+    If the database is not configured or psycopg is unavailable the function
+    returns immediately with empty lists (no-op; will be logged by the caller).
+    """
+    import logging as _logging
+
+    _log = _logging.getLogger(__name__)
+
+    missing: list[str] = []
+    present: list[str] = []
+
+    if not _use_database_impl():
+        return {"missing": missing, "present": present}
+
+    db_url = _db_url_impl()
+    assert db_url is not None  # narrowing — _use_database_impl already checked
+
+    try:
+        with university_shared.psycopg.connect(db_url) as conn:
+            conn.autocommit = True
+            rows = conn.execute(
+                university_shared.psycopg.sql.SQL(
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_schema = 'public'"
+                )
+            ).fetchall()
+            db_tables = {r[0] for r in rows}
+    except Exception as exc:  # pragma: no cover
+        if _is_fail_closed_mode_impl():
+            raise RuntimeError(
+                "university_core: table-existence validation failed in fail-closed mode"
+            ) from exc
+        _log.warning("university_core: table-existence validation skipped — DB error: %s", exc)
+        return {"missing": missing, "present": present}
+
+    for _entity_name, cfg in university_shared.ENTITY_CONFIGS.items():
+        if cfg.table in db_tables:
+            present.append(cfg.table)
+        else:
+            missing.append(cfg.table)
+
+    if missing:
+        if _is_fail_closed_mode_impl():
+            raise RuntimeError(
+                "university_core: missing required entity tables in fail-closed mode: "
+                + ", ".join(sorted(missing))
+            )
+        _log.warning(
+            "university_core: %d entity table(s) MISSING from database — "
+            "CRUD calls will fall back to in-memory store: %s",
+            len(missing),
+            ", ".join(sorted(missing)),
+        )
+    else:
+        _log.info(
+            "university_core: all %d entity tables verified in database", len(present)
+        )
+
+    return {"missing": missing, "present": present}
+
+
 __all__ = [
     "_db_url_impl",
     "_use_database_impl",
+    "_is_fail_closed_mode_impl",
     "_should_fallback_to_memory_impl",
     "_now_iso_impl",
     "_row_to_dict_impl",
@@ -395,4 +504,5 @@ __all__ = [
     "create_entity_impl",
     "update_entity_impl",
     "delete_entity_impl",
+    "validate_entity_tables_impl",
 ]

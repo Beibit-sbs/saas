@@ -35,8 +35,10 @@ from app.modules.faculty.service import (
     delete_faculty_member,
     get_department_workload_summary,
     get_faculty_brain_context,
+    get_faculty_capacity,
     get_faculty_consistency_report,
     get_faculty_workload,
+    get_workload_metrics,
     list_faculty,
     list_faculty_contracts,
     list_teaching_quality,
@@ -280,6 +282,16 @@ def get_workload_alerts_endpoint(
     return {"workloads": workloads}
 
 
+@router.get("/workload/metrics")
+def get_workload_metrics_endpoint(
+    term_id: int,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict:
+    return get_workload_metrics(int(tenant["id"]), term_id)
+
+
 @router.get("/teaching-quality", response_model=TeachingQualityListResponse)
 def list_teaching_quality_endpoint(
     _: Annotated[str, Depends(get_actor)],
@@ -309,6 +321,19 @@ def get_faculty_brain_context_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> dict:
     return get_faculty_brain_context(int(tenant["id"]))
+
+
+@router.get("/{faculty_id}/capacity")
+def get_faculty_capacity_endpoint(
+    faculty_id: str,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("admin.faculty.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> dict:
+    try:
+        return get_faculty_capacity(int(tenant["id"]), faculty_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.put("/{faculty_id}/capacity", response_model=FacultyItemResponse)

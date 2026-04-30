@@ -5,8 +5,6 @@ Status: PREP-PHASE (not for production)
 """
 
 import pytest
-from unittest.mock import AsyncMock, patch
-from pydantic import BaseModel, ValidationError
 
 
 class EventTypeRegistry:

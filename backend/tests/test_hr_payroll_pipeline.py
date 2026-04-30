@@ -36,7 +36,7 @@ def _make_cycle(suffix: str = "X2") -> dict:
         "total_gross": 50000.0,
         "total_net": 42000.0,
         "employee_count": 10,
-        "status": "pending",
+        "status": "DRAFT",
     }
 
 
@@ -89,6 +89,8 @@ def test_update_employee_status_not_found_returns_404() -> None:
 
 
 def test_create_payroll_cycle_and_get_by_id() -> None:
+    employee_resp = client.post(f"{BASE}/employees", headers=HR_HEADERS, json=_make_employee("CYCLE1"))
+    assert employee_resp.status_code == 200, employee_resp.text
     created = client.post(f"{BASE}/cycles", headers=HR_HEADERS, json=_make_cycle("ID1"))
     assert created.status_code == 200, created.text
     cycle_id = created.json()["item"]["id"]
@@ -104,25 +106,59 @@ def test_get_payroll_cycle_not_found_returns_404() -> None:
     assert resp.status_code == 404
 
 
-def test_update_payroll_cycle_status_to_completed() -> None:
+def test_update_payroll_cycle_status_happy_path_to_paid() -> None:
+    employee_resp = client.post(f"{BASE}/employees", headers=HR_HEADERS, json=_make_employee("CYCLE2"))
+    assert employee_resp.status_code == 200, employee_resp.text
     created = client.post(f"{BASE}/cycles", headers=HR_HEADERS, json=_make_cycle("ST1"))
+    assert created.status_code == 200, created.text
+    cycle_id = created.json()["item"]["id"]
+
+    calculating = client.patch(
+        f"{BASE}/cycles/{cycle_id}/status",
+        headers=HR_HEADERS,
+        json={"status": "CALCULATING"},
+    )
+    assert calculating.status_code == 200, calculating.text
+    assert calculating.json()["item"]["status"] == "CALCULATING"
+
+    approved = client.patch(
+        f"{BASE}/cycles/{cycle_id}/status",
+        headers=HR_HEADERS,
+        json={"status": "APPROVED"},
+    )
+    assert approved.status_code == 200, approved.text
+    assert approved.json()["item"]["status"] == "APPROVED"
+
+    paid = client.patch(
+        f"{BASE}/cycles/{cycle_id}/status",
+        headers=HR_HEADERS,
+        json={"status": "PAID"},
+    )
+    assert paid.status_code == 200, paid.text
+    assert paid.json()["item"]["status"] == "PAID"
+
+
+def test_update_payroll_cycle_status_rejects_invalid_transition() -> None:
+    employee_resp = client.post(f"{BASE}/employees", headers=HR_HEADERS, json=_make_employee("CYCLE3"))
+    assert employee_resp.status_code == 200, employee_resp.text
+    created = client.post(f"{BASE}/cycles", headers=HR_HEADERS, json=_make_cycle("INV1"))
     assert created.status_code == 200, created.text
     cycle_id = created.json()["item"]["id"]
 
     resp = client.patch(
         f"{BASE}/cycles/{cycle_id}/status",
         headers=HR_HEADERS,
-        json={"status": "completed"},
+        json={"status": "PAID"},
     )
-    assert resp.status_code == 200, resp.text
-    assert resp.json()["item"]["status"] == "completed"
+    assert resp.status_code == 422, resp.text
+    assert "Invalid payroll cycle transition" in resp.json()["detail"]
 
 
 def test_update_payroll_cycle_status_not_found_returns_404() -> None:
     resp = client.patch(
         f"{BASE}/cycles/999999/status",
         headers=HR_HEADERS,
-        json={"status": "completed"},
+        json={"status": "CALCULATING"},
     )
     assert resp.status_code == 404
 

@@ -1,0 +1,27 @@
+..................F...                                                   [100%]
+=================================== FAILURES ===================================
+______________ TestErrorHandling.test_positive_amount_validation _______________
+tests/test_week145_domain_depth.py:330: in test_positive_amount_validation
+    assert "positive" in str(exc_info.value).lower()
+E   AssertionError: assert 'positive' in 'amount must be greater than 0'
+E    +  where 'amount must be greater than 0' = <built-in method lower of str object at 0x7f6b30e2e100>()
+E    +    where <built-in method lower of str object at 0x7f6b30e2e100> = 'amount must be greater than 0'.lower
+E    +      where 'amount must be greater than 0' = str(ValueError('amount must be greater than 0'))
+E    +        where ValueError('amount must be greater than 0') = <ExceptionInfo ValueError('amount must be greater than 0') tblen=2>.value
+=============================== warnings summary ===============================
+.venv/lib64/python3.14/site-packages/pytest_asyncio/plugin.py:179: 876 warnings
+  /home/sbs/AI/backend/.venv/lib64/python3.14/site-packages/pytest_asyncio/plugin.py:179: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    return asyncio.iscoroutinefunction(obj) or inspect.isasyncgenfunction(obj)
+
+.venv/lib64/python3.14/site-packages/pytest_asyncio/plugin.py:450: 22 warnings
+  /home/sbs/AI/backend/.venv/lib64/python3.14/site-packages/pytest_asyncio/plugin.py:450: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    return asyncio.iscoroutinefunction(func)
+
+tests/test_week145_domain_depth.py::TestW145Constants::test_cost_center_required_active_exists
+  /home/sbs/AI/backend/.venv/lib64/python3.14/site-packages/pytest_asyncio/plugin.py:1056: DeprecationWarning: 'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16
+    return asyncio.get_event_loop_policy()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_week145_domain_depth.py::TestErrorHandling::test_positive_amount_validation
+1 failed, 21 passed, 899 warnings in 0.08s

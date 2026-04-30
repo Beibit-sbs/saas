@@ -7,11 +7,10 @@ Covers:
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import patch
 
-import pytest
 
-from tests.conftest import ADMIN_HEADERS, client
+from tests.conftest import client
 
 # ---------------------------------------------------------------------------
 # I2.1 — Enrollments dropout-risk signal

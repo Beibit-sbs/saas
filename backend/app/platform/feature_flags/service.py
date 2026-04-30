@@ -110,3 +110,25 @@ def is_flag_enabled_for_actor(module: str, key: str, actor_id: str, *, tenant_id
     digest = hashlib.sha256(f"{actor_id}:{normalized_module}:{normalized_key}".encode()).digest()
     bucket = int.from_bytes(digest[:4], "big") % 100
     return bucket < rollout_pct
+
+
+def get_tenant_feature(tenant_id: int, module: str, key: str) -> dict[str, object] | None:
+    """Return a single feature flag for a tenant, or None if not found."""
+    normalized_tenant_id = int(tenant_id)
+    normalized_module = module.strip().lower()
+    normalized_key = key.strip().lower()
+    with UnitOfWork() as uow:
+        return uow.feature_flag_repository.get_flag(normalized_tenant_id, normalized_module, normalized_key, conn=uow.conn)
+
+
+def delete_tenant_feature(tenant_id: int, module: str, key: str) -> bool:
+    """Delete a feature flag for a tenant. Returns True if deleted, False if not found."""
+    normalized_tenant_id = int(tenant_id)
+    normalized_module = module.strip().lower()
+    normalized_key = key.strip().lower()
+    with UnitOfWork() as uow:
+        deleted = uow.feature_flag_repository.delete_flag(normalized_tenant_id, normalized_module, normalized_key, conn=uow.conn)
+    if deleted:
+        _invalidate_cache(normalized_tenant_id, normalized_module, normalized_key)
+    return deleted
+

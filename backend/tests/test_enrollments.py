@@ -12,6 +12,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.main import app
+from app.modules.enrollments.business_rules import EnrollmentLifecycleRules
 from app.modules.enrollments.dependencies import get_enrollments_db
 from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 
@@ -142,3 +143,33 @@ def test_viewer_cannot_create_enrollment() -> None:
         json={"student_profile_id": 1, "course_id": 1, "term_id": 1},
     )
     assert resp.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# DATA INTEGRITY: duplicate enrollment guard (unit tests for business rule)
+# ---------------------------------------------------------------------------
+
+def test_validate_no_active_duplicate_raises_when_exists() -> None:
+    """validate_no_active_duplicate raises DomainValidationError when an active enrollment exists."""
+    from app.core.module_helpers.service_validation import DomainValidationError
+
+    existing = MagicMock()  # any truthy value represents an existing enrollment
+    with pytest.raises(DomainValidationError, match="Active enrollment already exists"):
+        EnrollmentLifecycleRules.validate_no_active_duplicate(
+            existing,
+            student_profile_id=42,
+            course_id=10,
+            term_id=5,
+        )
+
+
+def test_validate_no_active_duplicate_passes_when_none() -> None:
+    """validate_no_active_duplicate does NOT raise when no active enrollment exists."""
+    # Should not raise
+    EnrollmentLifecycleRules.validate_no_active_duplicate(
+        None,
+        student_profile_id=42,
+        course_id=10,
+        term_id=5,
+    )
+

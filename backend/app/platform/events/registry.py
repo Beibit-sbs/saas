@@ -70,6 +70,9 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "research.publication_stagnant": EventDefinition(GenericTenantEventPayload),
     # Student Services module events
     "student_services.ticket.escalated": EventDefinition(GenericTenantEventPayload),
+    "campus.student_services.ticket_unresolved_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Career Services module events
+    "campus.career_services.opportunity_stalled_risk_detected": EventDefinition(GenericTenantEventPayload),
     # Interventions module events
     "interventions.case_outcome.recorded": EventDefinition(GenericTenantEventPayload),
     # Campus SLA module events
@@ -85,8 +88,82 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "collections.delinquency.critical_overdue": EventDefinition(GenericTenantEventPayload),
     # Facilities Work Orders module events (Phase XI)
     "facilities.work_order.critical_priority": EventDefinition(GenericTenantEventPayload),
+    "campus.facilities.work_order_overdue_risk_detected": EventDefinition(GenericTenantEventPayload),
     # Asset Inventory module events (Phase XI)
     "asset_inventory.item.condemned_asset": EventDefinition(GenericTenantEventPayload),
+    "campus.asset_inventory.condemned_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Student Life module events (Phase XI / W57)
+    "campus.student_life.disciplinary_escalation_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Alumni module events (W58)
+    "campus.alumni.disengagement_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Campus SLA module events (W59)
+    "campus.campus_sla.breach_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Communications module events (W60)
+    "campus.communications.broadcast_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Security Operations module events (Phase XI)
+    "campus.security_incident.detected": EventDefinition(GenericTenantEventPayload),
+    # Dining module events (Phase XI)
+    "campus.dining.capacity_exceeded": EventDefinition(GenericTenantEventPayload),
+    # Expense Controls module events (W62)
+    "campus.expense_controls.budget_exceeded_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Transport module events (Phase XI)
+    "campus.transport.disruption_detected": EventDefinition(GenericTenantEventPayload),
+    # IP management module events (W31)
+    "campus.ip_management.asset_commercialized": EventDefinition(GenericTenantEventPayload),
+    # Student life module events (W32)
+    "campus.student_life.serious_concern_detected": EventDefinition(GenericTenantEventPayload),
+    # Research ethics module events (W33)
+    "campus.research_ethics.high_risk_flagged": EventDefinition(GenericTenantEventPayload),
+    # Procurement module events (W34)
+    "campus.procurement.high_risk_vendor_detected": EventDefinition(GenericTenantEventPayload),
+    # Exam governance module events (W35)
+    "campus.exam_governance.proctoring_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Syllabus governance module events (W36)
+    "campus.syllabus_governance.review_backlog_detected": EventDefinition(GenericTenantEventPayload),
+    # Communications module events (W37)
+    "campus.communications.large_broadcast_detected": EventDefinition(GenericTenantEventPayload),
+    # Faculty performance KPI module events (W38)
+    "campus.faculty_performance.low_score_alert_detected": EventDefinition(GenericTenantEventPayload),
+    # Financial aid module events (W39)
+    "campus.financial_aid.high_value_disbursement_detected": EventDefinition(GenericTenantEventPayload),
+    # Financial aid disbursement risk events (W64)
+    "campus.financial_aid.disbursement_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Housing maintenance risk events (W65)
+    "campus.housing.maintenance_overdue_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Advising module events (W40)
+    "campus.advising.personal_support_alert_detected": EventDefinition(GenericTenantEventPayload),
+    # Advising no-show risk events (W68)
+    "campus.advising.no_show_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Thesis module events (W41)
+    "campus.thesis.overdue_review_alert_detected": EventDefinition(GenericTenantEventPayload),
+    # Thesis rejection risk events (W69)
+    "campus.thesis.rejection_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Accreditation module events (W42)
+    "campus.accreditation.high_risk_record_detected": EventDefinition(GenericTenantEventPayload),
+    # HR/Payroll module events (W43)
+    "campus.hr.offboarding_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # HR/Payroll cycle risk events (W66)
+    "campus.hr.payroll_cycle_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Delinquency collections legal escalation risk events (W67)
+    "campus.delinquency_collections.legal_escalation_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Programs module events (W44)
+    "campus.programs.sunset_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Courses module events (W45)
+    "campus.courses.retirement_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Budget planning module events (W46)
+    "campus.budget.overrun_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Academic records module events (W47)
+    "campus.academic_records.withdrawal_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Faculty module events (W48)
+    "campus.faculty.contract_termination_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Scholarship module events (W49)
+    "campus.scholarship.award_revocation_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Equipment booking module events (W50)
+    "campus.equipment_booking.overdue_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Academic integrity module events (W51)
+    "campus.academic_integrity.escalation_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Research module events (W52)
+    "campus.research.grant_delay_risk_detected": EventDefinition(GenericTenantEventPayload),
 }
 
 PREFIX_EVENT_REGISTRY: dict[str, EventDefinition] = {

@@ -107,11 +107,12 @@ def test_update_thesis_status_emits_domain_event_on_rejected(monkeypatch: pytest
         )
 
     assert result.status == "rejected"
-    assert len(published) == 1
-    assert published[0]["event_type"] == "thesis.status_changed"
-    assert published[0]["payload_json"]["to_status"] == "rejected"
-    assert published[0]["payload_json"]["student_id"] == "42"
-    assert published[0]["payload_json"]["source_module"] == "thesis"
+    # Filter to the specific canonical status event (rejection_risk side-effect may also publish)
+    status_events = [e for e in published if e.get("event_type") == "thesis.status_changed"]
+    assert len(status_events) == 1
+    assert status_events[0]["payload_json"]["to_status"] == "rejected"
+    assert status_events[0]["payload_json"]["student_id"] == "42"
+    assert status_events[0]["payload_json"]["source_module"] == "thesis"
 
 
 def test_update_thesis_status_does_not_emit_on_non_risk_transition(monkeypatch: pytest.MonkeyPatch) -> None:

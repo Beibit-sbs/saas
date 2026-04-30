@@ -118,6 +118,10 @@ export const PERMISSIONS = {
   STUDENT_SERVICES_READ: "student_services.read",
   STUDENT_SERVICES_WRITE: "student_services.write",
 
+  // Student Life (counseling, wellbeing, accessibility, disciplinary)
+  STUDENT_LIFE_READ: "student_life.read",
+  STUDENT_LIFE_WRITE: "student_life.write",
+
   // Career Services & Employability
   CAREER_SERVICES_READ: "career_services.read",
   CAREER_SERVICES_WRITE: "career_services.write",

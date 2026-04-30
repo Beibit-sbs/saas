@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.research.schemas import (
@@ -30,27 +31,7 @@ from app.modules.research.schemas import (
     ResearchPublicationStatus,
     ResearchPublicationStatusUpdateSchema,
 )
-from app.modules.research.service import (
-    create_research_experiment,
-    create_research_grant,
-    create_research_ip_asset,
-    create_research_lab,
-    create_research_publication,
-    get_research_experiment,
-    get_research_grant,
-    get_research_health_snapshot,
-    get_research_lab,
-    get_research_publication,
-    list_research_experiments,
-    list_research_grants,
-    list_research_ip_assets,
-    list_research_labs,
-    list_research_publications,
-    update_research_experiment_status,
-    update_research_grant_status,
-    update_research_lab_status,
-    update_research_publication_status,
-)
+import app.modules.research.service as _svc
 
 
 router = APIRouter(prefix="/api/admin/research", tags=["research"])
@@ -62,7 +43,7 @@ def get_research_health_endpoint(
     __: Annotated[None, Depends(permission_dependency("research.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchHealthResponseSchema:
-    item = get_research_health_snapshot(int(tenant["id"]))
+    item = _svc.get_research_health_snapshot(int(tenant["id"]))
     return ResearchHealthResponseSchema(item=item)
 
 
@@ -73,7 +54,7 @@ def list_research_grants_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
     status: ResearchGrantStatus | None = None,
 ) -> ResearchGrantListResponseSchema:
-    items = list_research_grants(int(tenant["id"]), status=status)
+    items = _svc.list_research_grants(int(tenant["id"]), status=status)
     return ResearchGrantListResponseSchema(items=items)
 
 
@@ -85,10 +66,10 @@ def create_research_grant_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchGrantItemResponseSchema:
     try:
-        item = create_research_grant(int(tenant["id"]), payload, actor)
+        item = _svc.create_research_grant(int(tenant["id"]), payload, actor)
         return ResearchGrantItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/grants/{grant_id}", response_model=ResearchGrantItemResponseSchema)
@@ -99,7 +80,7 @@ def get_research_grant_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchGrantItemResponseSchema:
     try:
-        item = get_research_grant(int(tenant["id"]), grant_id)
+        item = _svc.get_research_grant(int(tenant["id"]), grant_id)
         return ResearchGrantItemResponseSchema(item=item)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -114,8 +95,10 @@ def update_research_grant_status_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchGrantItemResponseSchema:
     try:
-        item = update_research_grant_status(int(tenant["id"]), grant_id, payload, actor)
+        item = _svc.update_research_grant_status(int(tenant["id"]), grant_id, payload, actor)
         return ResearchGrantItemResponseSchema(item=item)
+    except DomainValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         detail = str(exc)
         status_code = 404 if "not found" in detail else 400
@@ -129,7 +112,7 @@ def list_research_publications_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
     status: ResearchPublicationStatus | None = None,
 ) -> ResearchPublicationListResponseSchema:
-    items = list_research_publications(int(tenant["id"]), status=status)
+    items = _svc.list_research_publications(int(tenant["id"]), status=status)
     return ResearchPublicationListResponseSchema(items=items)
 
 
@@ -141,10 +124,10 @@ def create_research_publication_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchPublicationItemResponseSchema:
     try:
-        item = create_research_publication(int(tenant["id"]), payload, actor)
+        item = _svc.create_research_publication(int(tenant["id"]), payload, actor)
         return ResearchPublicationItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/publications/{publication_id}", response_model=ResearchPublicationItemResponseSchema)
@@ -155,7 +138,7 @@ def get_research_publication_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchPublicationItemResponseSchema:
     try:
-        item = get_research_publication(int(tenant["id"]), publication_id)
+        item = _svc.get_research_publication(int(tenant["id"]), publication_id)
         return ResearchPublicationItemResponseSchema(item=item)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -170,8 +153,10 @@ def update_research_publication_status_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchPublicationItemResponseSchema:
     try:
-        item = update_research_publication_status(int(tenant["id"]), publication_id, payload, actor)
+        item = _svc.update_research_publication_status(int(tenant["id"]), publication_id, payload, actor)
         return ResearchPublicationItemResponseSchema(item=item)
+    except DomainValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         detail = str(exc)
         status_code = 404 if "not found" in detail else 400
@@ -184,7 +169,7 @@ def list_research_labs_endpoint(
     __: Annotated[None, Depends(permission_dependency("research.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchLabListResponseSchema:
-    items = list_research_labs(int(tenant["id"]))
+    items = _svc.list_research_labs(int(tenant["id"]))
     return ResearchLabListResponseSchema(items=items)
 
 
@@ -196,10 +181,10 @@ def create_research_lab_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchLabItemResponseSchema:
     try:
-        item = create_research_lab(int(tenant["id"]), payload, actor)
+        item = _svc.create_research_lab(int(tenant["id"]), payload, actor)
         return ResearchLabItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/labs/{lab_id}", response_model=ResearchLabItemResponseSchema)
@@ -210,7 +195,7 @@ def get_research_lab_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchLabItemResponseSchema:
     try:
-        item = get_research_lab(int(tenant["id"]), lab_id)
+        item = _svc.get_research_lab(int(tenant["id"]), lab_id)
         return ResearchLabItemResponseSchema(item=item)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -225,8 +210,10 @@ def update_research_lab_status_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchLabItemResponseSchema:
     try:
-        item = update_research_lab_status(int(tenant["id"]), lab_id, payload, actor)
+        item = _svc.update_research_lab_status(int(tenant["id"]), lab_id, payload, actor)
         return ResearchLabItemResponseSchema(item=item)
+    except DomainValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         detail = str(exc)
         status_code = 404 if "not found" in detail else 400
@@ -239,7 +226,7 @@ def list_research_ip_assets_endpoint(
     __: Annotated[None, Depends(permission_dependency("research.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchIpAssetListResponseSchema:
-    items = list_research_ip_assets(int(tenant["id"]))
+    items = _svc.list_research_ip_assets(int(tenant["id"]))
     return ResearchIpAssetListResponseSchema(items=items)
 
 
@@ -251,10 +238,10 @@ def create_research_ip_assets_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchIpAssetItemResponseSchema:
     try:
-        item = create_research_ip_asset(int(tenant["id"]), payload, actor)
+        item = _svc.create_research_ip_asset(int(tenant["id"]), payload, actor)
         return ResearchIpAssetItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/experiments", response_model=ResearchExperimentListResponseSchema)
@@ -263,7 +250,7 @@ def list_research_experiments_endpoint(
     __: Annotated[None, Depends(permission_dependency("research.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchExperimentListResponseSchema:
-    items = list_research_experiments(int(tenant["id"]))
+    items = _svc.list_research_experiments(int(tenant["id"]))
     return ResearchExperimentListResponseSchema(items=items)
 
 
@@ -275,10 +262,10 @@ def create_research_experiment_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchExperimentItemResponseSchema:
     try:
-        item = create_research_experiment(int(tenant["id"]), payload, actor)
+        item = _svc.create_research_experiment(int(tenant["id"]), payload, actor)
         return ResearchExperimentItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/experiments/{experiment_id}", response_model=ResearchExperimentItemResponseSchema)
@@ -289,7 +276,7 @@ def get_research_experiment_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchExperimentItemResponseSchema:
     try:
-        item = get_research_experiment(int(tenant["id"]), experiment_id)
+        item = _svc.get_research_experiment(int(tenant["id"]), experiment_id)
         return ResearchExperimentItemResponseSchema(item=item)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -304,8 +291,10 @@ def update_research_experiment_status_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> ResearchExperimentItemResponseSchema:
     try:
-        item = update_research_experiment_status(int(tenant["id"]), experiment_id, payload, actor)
+        item = _svc.update_research_experiment_status(int(tenant["id"]), experiment_id, payload, actor)
         return ResearchExperimentItemResponseSchema(item=item)
+    except DomainValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         detail = str(exc)
         status_code = 404 if "not found" in detail else 400

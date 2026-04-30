@@ -17,6 +17,8 @@ class DelinquencyRecordCreateSchema(BaseModel):
     days_overdue: int = Field(ge=1)
     escalation_stage: EscalationStage = "stage_1"
     status: DelinquencyStatus = "open"
+    penalty_rate: float | None = Field(default=None, ge=0.0, le=1.0)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class DelinquencyRecordSchema(DelinquencyRecordCreateSchema):

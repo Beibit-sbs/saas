@@ -15,7 +15,6 @@ Covers:
 """
 from __future__ import annotations
 
-import pytest
 
 from app.platform.kpi.ministry_kpi import (
     MINISTRY_KPI_AUDIT_ACTION,

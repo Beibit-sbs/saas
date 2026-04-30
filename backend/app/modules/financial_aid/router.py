@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.financial_aid.schemas import (
     AidStatus,
@@ -12,11 +13,7 @@ from app.modules.financial_aid.schemas import (
     FinancialAidRecordListResponseSchema,
     FinancialAidRecordStatusUpdateSchema,
 )
-from app.modules.financial_aid.service import (
-    create_financial_aid_record,
-    list_financial_aid_records,
-    update_financial_aid_status,
-)
+import app.modules.financial_aid.service as _svc
 from app.modules.rbac.security import get_actor, permission_dependency
 
 
@@ -31,7 +28,7 @@ def list_records_endpoint(
     status: AidStatus | None = None,
     student_id: int | None = None,
 ) -> FinancialAidRecordListResponseSchema:
-    items = list_financial_aid_records(int(tenant["id"]), status=status, student_id=student_id)
+    items = _svc.list_financial_aid_records(int(tenant["id"]), status=status, student_id=student_id)
     return FinancialAidRecordListResponseSchema(items=items)
 
 
@@ -43,10 +40,10 @@ def create_record_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> FinancialAidRecordItemResponseSchema:
     try:
-        item = create_financial_aid_record(int(tenant["id"]), payload, actor)
+        item = _svc.create_financial_aid_record(int(tenant["id"]), payload, actor)
         return FinancialAidRecordItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.patch("/{record_id}/status", response_model=FinancialAidRecordItemResponseSchema)
@@ -58,8 +55,10 @@ def update_record_status_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> FinancialAidRecordItemResponseSchema:
     try:
-        item = update_financial_aid_status(int(tenant["id"]), record_id, payload, actor)
+        item = _svc.update_financial_aid_status(int(tenant["id"]), record_id, payload, actor)
         return FinancialAidRecordItemResponseSchema(item=item)
+    except DomainValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         detail = str(exc)
         status_code = 404 if "not found" in detail else 400

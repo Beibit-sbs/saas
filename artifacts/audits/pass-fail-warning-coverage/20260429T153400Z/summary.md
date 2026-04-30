@@ -1,0 +1,36 @@
+# PASS / FAIL / WARNING Coverage Summary
+
+- Timestamp UTC: 20260429T153400Z
+- Profile: fast
+- Pass: 6
+- Fail: 17
+- Warning: 1
+- Skipped: 0
+- Planned: 0
+
+| Batch | Status | Exit | Log | Detail |
+|-------|--------|------|-----|--------|
+| preflight | PASS | 0 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/preflight.log | ok |
+| permission-parity | PASS | 0 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/permission-parity.log | ok |
+| compose-bootstrap | PASS | 0 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/compose-bootstrap.log | ok |
+| backend-lint | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-lint.log | exit=1 |
+| backend-pytest-shard-01 | PASS | 0 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-01.log | ok |
+| backend-pytest-shard-02 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-02.log | exit=1 |
+| backend-pytest-shard-03 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-03.log | exit=1 |
+| backend-pytest-shard-04 | WARNING | 0 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-04.log | exit=0 with warning patterns |
+| backend-pytest-shard-05 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-05.log | exit=1 |
+| backend-pytest-shard-06 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-06.log | exit=1 |
+| backend-pytest-shard-07 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-07.log | exit=1 |
+| backend-pytest-shard-08 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-08.log | exit=1 |
+| backend-pytest-shard-09 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-09.log | exit=1 |
+| backend-pytest-shard-10 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-10.log | exit=1 |
+| backend-pytest-shard-11 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-11.log | exit=1 |
+| backend-pytest-shard-12 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-12.log | exit=1 |
+| backend-pytest-shard-13 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-13.log | exit=1 |
+| backend-pytest-shard-14 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-14.log | exit=1 |
+| backend-pytest-shard-15 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-15.log | exit=1 |
+| backend-pytest-shard-16 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-16.log | exit=1 |
+| backend-pytest-shard-17 | FAIL | 1 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-17.log | exit=1 |
+| backend-pytest-shard-18 | FAIL | 5 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shard-18.log | exit=5 |
+| backend-pytest-shards | PASS | 0 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/backend-pytest-shards.log | 426 files across 18 shards |
+| frontend-lint | PASS | 0 | /home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260429T153400Z/frontend-lint.log | ok |

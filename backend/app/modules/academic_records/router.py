@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from app.core.module_helpers.service_validation import DomainValidationError
 
 from app.modules.academic_records.schemas import (
     AcademicRecordConsistencyReportSchema,
@@ -55,8 +56,8 @@ def create_record_endpoint(
 ) -> RecordItemResponse:
     try:
         record = create_record(payload.model_dump(), int(tenant["id"]))
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     log_admin_action(
         actor=actor,

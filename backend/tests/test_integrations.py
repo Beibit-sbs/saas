@@ -4,7 +4,6 @@ from app.modules.ai_gateway import service as ai_service
 from app.modules.auth.token_service import create_access_token
 from app.modules.integrations import service as integrations_service
 from app.modules.ldap import service as ldap_service
-from app.platform.uow import UnitOfWork
 from uuid import uuid4
 
 

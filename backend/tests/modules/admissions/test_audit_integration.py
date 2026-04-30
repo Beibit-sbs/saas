@@ -31,7 +31,10 @@ def test_all_mutating_services_emit_explicit_tenant_audit_context(
     application_for_decision = application_factory(id=201, stage=ApplicationStage.DECISION_PENDING.value, version=1)
 
     db_session.execute.side_effect = [
+        # create_application: 1) find applicant, 2) check no existing active application
         ExecuteResult(scalar_one_or_none=applicant),
+        ExecuteResult(scalar_one_or_none=None),
+        # attach_document, transition_stage, make_decision
         ExecuteResult(scalar_one_or_none=application_for_document),
         ExecuteResult(scalar_one_or_none=application_for_transition),
         ExecuteResult(scalar_one_or_none=application_for_decision),

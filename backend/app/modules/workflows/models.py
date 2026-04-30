@@ -63,6 +63,8 @@ class WorkflowInstanceStatus(str, Enum):
     IN_PROGRESS = "in_progress"
     APPROVED = "approved"
     REJECTED = "rejected"
+    FAILED = "failed"
+    TIMED_OUT = "timed_out"
     CANCELLED = "cancelled"
     COMPLETED = "completed"
 
@@ -73,6 +75,8 @@ class WorkflowTaskStatus(str, Enum):
     IN_PROGRESS = "in_progress"
     APPROVED = "approved"
     REJECTED = "rejected"
+    FAILED = "failed"
+    TIMED_OUT = "timed_out"
     RETURNED = "returned"
     COMPLETED = "completed"
     CANCELLED = "cancelled"

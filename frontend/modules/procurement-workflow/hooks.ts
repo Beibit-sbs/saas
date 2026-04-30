@@ -18,6 +18,8 @@ import type {
   ProcurementStatusUpdatePayload,
 } from './types';
 
+const PROCUREMENT_BASE = '/api/admin/procurement';
+
 const CACHE_KEYS = {
   DASHBOARD: ['procurement:dashboard'],
   ALL_REQUESTS: ['procurement:all'],
@@ -33,7 +35,7 @@ const CACHE_KEYS = {
 export function useProcurementDashboardSummary() {
   return useQuery({
     queryKey: CACHE_KEYS.DASHBOARD,
-    queryFn: () => apiGet<ProcurementDashboardSummary>('/api/procurement/dashboard/summary'),
+    queryFn: () => apiGet<ProcurementDashboardSummary>(`${PROCUREMENT_BASE}/dashboard/summary`),
     staleTime: 60000,
   });
 }
@@ -45,7 +47,7 @@ export function useProcurementList(filters?: { status?: string; requester_id?: s
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.requester_id) params.append('requester_id', filters.requester_id);
-      return apiGet<ProcurementListItem[]>(`/api/procurement/requests?${params.toString()}`);
+      return apiGet<ProcurementListItem[]>(`${PROCUREMENT_BASE}/requests?${params.toString()}`);
     },
     staleTime: 60000,
   });
@@ -54,7 +56,7 @@ export function useProcurementList(filters?: { status?: string; requester_id?: s
 export function useProcurementDetail(requestId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.REQUEST_DETAIL(requestId),
-    queryFn: () => apiGet<ProcurementRequest>(`/api/procurement/requests/${requestId}`),
+    queryFn: () => apiGet<ProcurementRequest>(`${PROCUREMENT_BASE}/requests/${requestId}`),
     enabled: !!requestId,
     staleTime: 30000,
   });
@@ -63,7 +65,7 @@ export function useProcurementDetail(requestId: string) {
 export function useApprovalSteps(requestId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.APPROVAL_STEPS(requestId),
-    queryFn: () => apiGet<ApprovalStep[]>(`/api/procurement/requests/${requestId}/approvals`),
+    queryFn: () => apiGet<ApprovalStep[]>(`${PROCUREMENT_BASE}/requests/${requestId}/approvals`),
     enabled: !!requestId,
     staleTime: 30000,
   });
@@ -72,7 +74,7 @@ export function useApprovalSteps(requestId: string) {
 export function useProcurementAuditTrail(requestId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.AUDIT_TRAIL(requestId),
-    queryFn: () => apiGet<ProcurementAuditEntry[]>(`/api/procurement/requests/${requestId}/audit-trail`),
+    queryFn: () => apiGet<ProcurementAuditEntry[]>(`${PROCUREMENT_BASE}/requests/${requestId}/audit-trail`),
     enabled: !!requestId,
     staleTime: 30000,
   });
@@ -81,7 +83,7 @@ export function useProcurementAuditTrail(requestId: string) {
 export function useProcurementOrder(requestId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.REQUEST_ORDER(requestId),
-    queryFn: () => apiGet<ProcurementOrder>(`/api/procurement/requests/${requestId}/order`),
+    queryFn: () => apiGet<ProcurementOrder>(`${PROCUREMENT_BASE}/requests/${requestId}/order`),
     enabled: !!requestId,
     staleTime: 30000,
   });
@@ -90,7 +92,7 @@ export function useProcurementOrder(requestId: string) {
 export function useProcurementByStatus(status: string) {
   return useQuery({
     queryKey: CACHE_KEYS.BY_STATUS(status),
-    queryFn: () => apiGet<ProcurementListItem[]>(`/api/procurement/requests/status/${status}`),
+    queryFn: () => apiGet<ProcurementListItem[]>(`${PROCUREMENT_BASE}/requests/status/${status}`),
     enabled: !!status,
     staleTime: 60000,
   });
@@ -99,7 +101,7 @@ export function useProcurementByStatus(status: string) {
 export function useProcurementByRequester(requesterId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.BY_REQUESTER(requesterId),
-    queryFn: () => apiGet<ProcurementListItem[]>(`/api/procurement/requests/requester/${requesterId}`),
+    queryFn: () => apiGet<ProcurementListItem[]>(`${PROCUREMENT_BASE}/requests/requester/${requesterId}`),
     enabled: !!requesterId,
     staleTime: 60000,
   });
@@ -110,7 +112,7 @@ export function useCreateProcurementRequest() {
 
   return useMutation({
     mutationFn: (payload: ProcurementRequestCreatePayload) =>
-      apiPost<ProcurementRequest>('/api/procurement/requests', payload),
+      apiPost<ProcurementRequest>(`${PROCUREMENT_BASE}/requests`, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.ALL_REQUESTS });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.DASHBOARD });
@@ -123,7 +125,7 @@ export function useUpdateProcurementRequest(requestId: string) {
 
   return useMutation({
     mutationFn: (payload: ProcurementRequestUpdatePayload) =>
-      apiPut<ProcurementRequest>(`/api/procurement/requests/${requestId}`, payload),
+      apiPut<ProcurementRequest>(`${PROCUREMENT_BASE}/requests/${requestId}`, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.REQUEST_DETAIL(requestId) });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.ALL_REQUESTS });
@@ -136,7 +138,7 @@ export function useSubmitProcurementRequest() {
 
   return useMutation({
     mutationFn: (requestId: string) =>
-      apiPost<ProcurementRequest>(`/api/procurement/requests/${requestId}/submit`, {}),
+      apiPost<ProcurementRequest>(`${PROCUREMENT_BASE}/requests/${requestId}/submit`, {}),
     onSuccess: (_, requestId) => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.REQUEST_DETAIL(requestId) });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.ALL_REQUESTS });
@@ -155,7 +157,7 @@ export function useUpdateProcurementStatus() {
     }: {
       requestId: string;
       payload: ProcurementStatusUpdatePayload;
-    }) => apiPatch<ProcurementRequest>(`/api/procurement/requests/${requestId}/status`, payload),
+    }) => apiPatch<ProcurementRequest>(`${PROCUREMENT_BASE}/requests/${requestId}/status`, payload),
     onSuccess: (_, { requestId }) => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.REQUEST_DETAIL(requestId) });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.APPROVAL_STEPS(requestId) });
@@ -171,7 +173,7 @@ export function useCreateProcurementOrder() {
 
   return useMutation({
     mutationFn: (payload: ProcurementOrderCreatePayload) =>
-      apiPost<ProcurementOrder>('/api/procurement/orders', payload),
+      apiPost<ProcurementOrder>(`${PROCUREMENT_BASE}/orders`, payload),
     onSuccess: (_, payload) => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.REQUEST_ORDER(payload.request_id) });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.REQUEST_DETAIL(payload.request_id) });
@@ -186,7 +188,7 @@ export function useFulfillProcurementOrder() {
 
   return useMutation({
     mutationFn: (requestId: string) =>
-      apiPost<ProcurementOrder>(`/api/procurement/requests/${requestId}/fulfill`, {}),
+      apiPost<ProcurementOrder>(`${PROCUREMENT_BASE}/requests/${requestId}/fulfill`, {}),
     onSuccess: (_, requestId) => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.REQUEST_ORDER(requestId) });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.REQUEST_DETAIL(requestId) });

@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 from datetime import UTC, datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from app.modules.interventions.models import (
-    InterventionActionType,
     InterventionAssigneeType,
     InterventionCaseSeverity,
     InterventionCaseStatus,
@@ -127,7 +125,7 @@ async def test_update_case_status_to_closed_triggers_brain_core_callback():
             reason="Case archived",
             expected_version=2,
         )
-        result = await service.update_case_status(
+        await service.update_case_status(
             tenant_id=102,
             case_id=43,
             request=request,

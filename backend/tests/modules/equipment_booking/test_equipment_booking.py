@@ -1,7 +1,7 @@
 """Phase VII-VII2: Equipment booking module tests."""
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -36,45 +36,33 @@ def test_list_equipment_bookings_filter_by_status(monkeypatch) -> None:
     assert result[0]["equipment_code"] == "MIC-001"
 
 
-def test_create_equipment_booking_conflict_fires_signal(monkeypatch) -> None:
-    """When another active booking exists for same equipment code, conflict signal fires."""
+def test_create_equipment_booking_conflict_fires_signal_and_blocks_creation(monkeypatch) -> None:
+    """When active booking exists for same code, signal fires and booking is blocked."""
     existing = [
         {"id": 1, "equipment_code": "MIC-001", "requester_id": "USER-1", "start_time": "09:00", "end_time": "11:00", "booking_status": "confirmed", "conflict_flag": False, "tenant_id": 1},
     ]
-    created = {
-        "id": 20,
-        "equipment_code": "MIC-001",
-        "requester_id": "USER-2",
-        "start_time": "10:00",
-        "end_time": "12:00",
-        "booking_status": "pending",
-        "conflict_flag": True,
-        "purpose": None,
-        "integration_source": None,
-        "tenant_id": 1,
-    }
+    equipment = [{"id": 10, "equipment_code": "MIC-001", "tenant_id": 1}]
 
     def fake_list(name: str, tid: int) -> list:
+        if name == "student_enrollments":
+            return [{"student_id": "USER-2", "status": "active"}]
+        if name == "equipment_items":
+            return equipment
         if name == "equipment_bookings":
             return existing
         return []
 
     monkeypatch.setattr(eq_service, "list_entities_for_tenant", fake_list)
-    monkeypatch.setattr(eq_service, "create_entity_for_tenant", lambda name, payload, tid: created)
+    create_mock = MagicMock()
+    monkeypatch.setattr(eq_service, "create_entity_for_tenant", create_mock)
 
-    with patch("app.modules.equipment_booking.service.EventPublisher") as mock_pub_cls:
-        publisher = MagicMock()
-        mock_pub_cls.return_value = publisher
-        record = eq_service.create_equipment_booking(
+    with pytest.raises(ValueError, match="Booking conflict detected"):
+        eq_service.create_equipment_booking(
             {"equipment_code": "MIC-001", "requester_id": "USER-2", "start_time": "10:00", "end_time": "12:00", "booking_status": "pending"},
             tenant_id=1,
         )
 
-    assert record["id"] == 20
-    publisher.publish_event.assert_called_once()
-    call_kwargs = publisher.publish_event.call_args.kwargs
-    assert call_kwargs["event_type"] == "research.equipment.booking_conflict_detected"
-    assert call_kwargs["payload_json"]["equipment_code"] == "MIC-001"
+    create_mock.assert_not_called()
 
 
 def test_create_equipment_booking_no_conflict_no_signal(monkeypatch) -> None:
@@ -91,19 +79,47 @@ def test_create_equipment_booking_no_conflict_no_signal(monkeypatch) -> None:
         "integration_source": None,
         "tenant_id": 2,
     }
-    monkeypatch.setattr(eq_service, "list_entities_for_tenant", lambda name, tid: [])
+    def fake_list(name: str, tid: int) -> list:
+        if name == "student_enrollments":
+            return [{"student_id": "USER-3", "status": "active"}]
+        if name == "equipment_items":
+            return [{"id": 100, "equipment_code": "CEN-001", "tenant_id": tid}]
+        return []
+
+    monkeypatch.setattr(eq_service, "list_entities_for_tenant", fake_list)
     monkeypatch.setattr(eq_service, "create_entity_for_tenant", lambda name, payload, tid: created)
 
-    with patch("app.modules.equipment_booking.service.EventPublisher") as mock_pub_cls:
-        publisher = MagicMock()
-        mock_pub_cls.return_value = publisher
-        record = eq_service.create_equipment_booking(
-            {"equipment_code": "CEN-001", "requester_id": "USER-3", "start_time": "14:00", "end_time": "16:00", "booking_status": "confirmed"},
-            tenant_id=2,
+    record = eq_service.create_equipment_booking(
+        {"equipment_code": "CEN-001", "requester_id": "USER-3", "start_time": "14:00", "end_time": "16:00", "booking_status": "confirmed"},
+        tenant_id=2,
+    )
+
+    assert record["id"] == 21
+
+
+def test_create_equipment_booking_unknown_equipment_blocked(monkeypatch) -> None:
+    def fake_list(name: str, tid: int) -> list:
+        if name == "student_enrollments":
+            return [{"student_id": "USER-77", "status": "active"}]
+        return []
+
+    monkeypatch.setattr(eq_service, "list_entities_for_tenant", fake_list)
+    create_mock = MagicMock()
+    monkeypatch.setattr(eq_service, "create_entity_for_tenant", create_mock)
+
+    with pytest.raises(ValueError, match="Equipment not found"):
+        eq_service.create_equipment_booking(
+            {
+                "equipment_code": "MISSING-001",
+                "requester_id": "USER-77",
+                "start_time": "08:00",
+                "end_time": "09:00",
+                "booking_status": "pending",
+            },
+            tenant_id=1,
         )
 
-    publisher.publish_event.assert_not_called()
-    assert record["id"] == 21
+    create_mock.assert_not_called()
 
 
 def test_get_equipment_booking_brain_context_constrained(monkeypatch) -> None:
@@ -139,7 +155,7 @@ def test_get_equipment_booking_brain_context_empty(monkeypatch) -> None:
 
 def test_http_list_equipment_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "app.modules.equipment_booking.router.list_equipment",
+        "app.modules.equipment_booking.service.list_equipment",
         lambda tenant_id, category=None, status=None: [],
     )
     resp = test_client.get("/api/admin/equipment-booking/equipment", headers=dict(ADMIN_HEADERS))
@@ -161,7 +177,7 @@ def test_http_create_booking(monkeypatch: pytest.MonkeyPatch) -> None:
         "tenant_id": 1,
     }
     monkeypatch.setattr(
-        "app.modules.equipment_booking.router.create_equipment_booking",
+        "app.modules.equipment_booking.service.create_equipment_booking",
         lambda payload, tenant_id: created,
     )
     resp = test_client.post(
@@ -192,7 +208,7 @@ def test_http_brain_context_equipment(monkeypatch: pytest.MonkeyPatch) -> None:
         "availability_status": "constrained",
     }
     monkeypatch.setattr(
-        "app.modules.equipment_booking.router.get_equipment_booking_brain_context",
+        "app.modules.equipment_booking.service.get_equipment_booking_brain_context",
         lambda tenant_id: ctx,
     )
     resp = test_client.get("/api/admin/equipment-booking/brain-context", headers=dict(ADMIN_HEADERS))

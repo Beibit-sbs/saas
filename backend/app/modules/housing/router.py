@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.housing.schemas import (
     HousingRequestCreateSchema,
@@ -45,8 +46,8 @@ def create_request_endpoint(
     try:
         item = create_housing_request(int(tenant["id"]), payload, actor)
         return HousingRequestItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.patch("/{request_id}/status", response_model=HousingRequestItemResponseSchema)
@@ -60,7 +61,7 @@ def update_request_status_endpoint(
     try:
         item = update_housing_request_status(int(tenant["id"]), request_id, payload, actor)
         return HousingRequestItemResponseSchema(item=item)
-    except ValueError as exc:
+    except (ValueError, DomainValidationError) as exc:
         detail = str(exc)
-        status_code = 404 if "not found" in detail else 400
+        status_code = 404 if "not found" in detail else 422
         raise HTTPException(status_code=status_code, detail=detail) from exc

@@ -9,10 +9,8 @@ These tests run in the standard no-DB unit-test environment using monkeypatched
 dependencies.  No external services required.
 """
 
-import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app

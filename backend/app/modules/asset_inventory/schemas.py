@@ -23,6 +23,7 @@ class AssetItemCreateSchema(BaseModel):
     purchase_year: int = Field(ge=2000, le=2100)
     vendor: str | None = Field(default=None, max_length=128)
     status: AssetStatus = "active"
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class AssetItemSchema(AssetItemCreateSchema):
@@ -49,6 +50,7 @@ class DepreciationRecordCreateSchema(BaseModel):
     current_value: float = Field(ge=0.0)
     depreciation_rate: float = Field(ge=0.0, le=1.0)
     status: DepreciationStatus = "active"
+    notes: str | None = Field(default=None, max_length=500)
 
 
 class DepreciationRecordSchema(DepreciationRecordCreateSchema):

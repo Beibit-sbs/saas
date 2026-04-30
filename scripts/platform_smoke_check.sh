@@ -45,6 +45,7 @@ from app.main import app
 from app.modules.auth.token_service import create_access_token
 from app.modules.rbac import service as rbac_service
 from app.modules.students import service as students_service
+from app.modules.university_core.entity_impl import validate_entity_tables_impl
 from app.platform.ai import service as ai_service
 from app.platform.analytics import service as analytics_service
 from app.platform.automation import service as automation_service
@@ -398,6 +399,14 @@ def metrics_check() -> str:
     )
 
 
+def university_core_table_coverage_check() -> str:
+    validation = validate_entity_tables_impl()
+    missing = sorted(validation.get("missing", []))
+    ensure(not missing, f"missing university_core tables: {', '.join(missing)}")
+    present = validation.get("present", [])
+    return f"entity_tables_present={len(present)}"
+
+
 run_check("Health Surfaces", health_check)
 run_check("Outbox Event Processing", outbox_processing_check)
 run_check("Automation Execution", automation_check)
@@ -406,6 +415,7 @@ run_check("KPI Refresh", kpi_refresh_check)
 run_check("AI Copilot Response", ai_copilot_check)
 run_check("Developer Platform Auth Flow", developer_auth_flow_check)
 run_check("Metrics Surfaces", metrics_check)
+run_check("University Core Table Coverage", university_core_table_coverage_check)
 
 passed = sum(1 for _, ok, _ in results if ok)
 failed = len(results) - passed
@@ -414,4 +424,45 @@ print(f"\n[SUMMARY] passed={passed} failed={failed}")
 if failed:
     sys.exit(1)
 PY
+
+echo "[INFO] Running Domain Endpoint DB Round-Trips"
+"${COMPOSE[@]}" build backend-tests >/dev/null
+if "${COMPOSE[@]}" run --no-deps --rm backend-tests \
+    pytest -q -m integration tests/test_domain_module_db_integration.py --no-cov -rA; then
+    echo "[PASS] Domain Endpoint DB Round-Trips: expanded integration matrix"
+else
+    echo "[FAIL] Domain Endpoint DB Round-Trips"
+    popd >/dev/null
+    exit 1
+fi
+
+echo "[INFO] Running Domain Endpoint HTTP 200 Smoke"
+if "${COMPOSE[@]}" run --no-deps --rm backend-tests \
+    pytest -q -m integration tests/test_domain_endpoint_smoke_http200.py --no-cov -rA; then
+    echo "[PASS] Domain Endpoint HTTP 200 Smoke: non-core domain list endpoints"
+else
+    echo "[FAIL] Domain Endpoint HTTP 200 Smoke"
+    popd >/dev/null
+    exit 1
+fi
+
+echo "[INFO] Running E2E Smoke Suite (Playwright)"
+if "${COMPOSE[@]}" run --no-deps --rm \
+    -e E2E_BASE_URL="https://nginx" \
+    -e JWT_SECRET="${JWT_SECRET}" \
+    -e CI=1 \
+    frontend-tests \
+    npx playwright test \
+        e2e/smoke/admin-console.spec.ts \
+        e2e/smoke/billing.spec.ts \
+        e2e/smoke/interventions.spec.ts \
+        e2e/smoke/role-zones.spec.ts \
+        --reporter=line --timeout=30000 2>&1; then
+    echo "[PASS] E2E Smoke Suite: admin-console + billing + interventions + role-zones"
+else
+    echo "[FAIL] E2E Smoke Suite"
+    popd >/dev/null
+    exit 1
+fi
+
 popd >/dev/null

@@ -3,26 +3,22 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.tenant import get_current_tenant
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.equipment_booking.schemas import (
     EquipmentBookingBrainContextResponse,
     EquipmentBookingCreatePayload,
     EquipmentBookingItemResponse,
     EquipmentBookingListResponse,
+    EquipmentBookingStatusUpdatePayload,
     EquipmentItemCreatePayload,
     EquipmentItemItemResponse,
     EquipmentItemListResponse,
 )
-from app.modules.equipment_booking.service import (
-    create_equipment,
-    create_equipment_booking,
-    get_equipment_booking_brain_context,
-    list_equipment,
-    list_equipment_bookings,
-)
+import app.modules.equipment_booking.service as _svc
 
 router = APIRouter(prefix="/api/admin/equipment-booking", tags=["equipment-booking"])
 
@@ -36,7 +32,7 @@ def list_equipment_endpoint(
     status: str | None = None,
 ) -> EquipmentItemListResponse:
     return EquipmentItemListResponse(
-        records=list_equipment(int(tenant["id"]), category=category, status=status)
+        records=_svc.list_equipment(int(tenant["id"]), category=category, status=status)
     )
 
 
@@ -48,7 +44,7 @@ def create_equipment_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> EquipmentItemItemResponse:
     return EquipmentItemItemResponse(
-        record=create_equipment(payload.model_dump(), int(tenant["id"]))
+        record=_svc.create_equipment(payload.model_dump(), int(tenant["id"]))
     )
 
 
@@ -61,7 +57,7 @@ def list_equipment_bookings_endpoint(
     equipment_code: str | None = None,
 ) -> EquipmentBookingListResponse:
     return EquipmentBookingListResponse(
-        records=list_equipment_bookings(
+        records=_svc.list_equipment_bookings(
             int(tenant["id"]), booking_status=booking_status, equipment_code=equipment_code
         )
     )
@@ -74,9 +70,32 @@ def create_equipment_booking_endpoint(
     __: Annotated[None, Depends(permission_dependency("research.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> EquipmentBookingItemResponse:
+    try:
+        record = _svc.create_equipment_booking(payload.model_dump(), int(tenant["id"]))
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return EquipmentBookingItemResponse(
-        record=create_equipment_booking(payload.model_dump(), int(tenant["id"]))
+        record=record
     )
+
+
+@router.patch("/bookings/{booking_id}/status", response_model=EquipmentBookingItemResponse)
+def update_equipment_booking_status_endpoint(
+    booking_id: int,
+    payload: EquipmentBookingStatusUpdatePayload,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("research.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> EquipmentBookingItemResponse:
+    try:
+        record = _svc.update_equipment_booking_status(
+            booking_id=booking_id,
+            status=payload.booking_status,
+            tenant_id=int(tenant["id"]),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return EquipmentBookingItemResponse(record=record)
 
 
 @router.get("/brain-context", response_model=EquipmentBookingBrainContextResponse)
@@ -86,5 +105,5 @@ def get_equipment_booking_brain_context_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> EquipmentBookingBrainContextResponse:
     return EquipmentBookingBrainContextResponse.model_validate(
-        get_equipment_booking_brain_context(int(tenant["id"]))
+        _svc.get_equipment_booking_brain_context(int(tenant["id"]))
     )

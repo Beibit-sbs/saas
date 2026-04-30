@@ -8,11 +8,43 @@ Covers:
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
 
 from tests.conftest import ADMIN_HEADERS, client
+
+
+def _seed_advising_prereqs(student_id: int, advisor_id: str, tenant_id: int = 1) -> None:
+    from app.modules.university_core.shared import _state, _state_lock
+
+    with _state_lock:
+        _state.data.setdefault("faculty", {})
+        _state.counters.setdefault("faculty", 0)
+        _state.counters["faculty"] += 1
+        fid = _state.counters["faculty"]
+        _state.data["faculty"][fid] = {
+            "id": fid,
+            "faculty_id": advisor_id,
+            "first_name": "Test",
+            "last_name": "Advisor",
+            "department": "CS",
+            "email": f"{advisor_id.lower()}@example.edu",
+            "status": "active",
+            "tenant_id": str(tenant_id),
+        }
+
+        _state.data.setdefault("enrollments", {})
+        _state.counters.setdefault("enrollments", 0)
+        _state.counters["enrollments"] += 1
+        eid = _state.counters["enrollments"]
+        _state.data["enrollments"][eid] = {
+            "id": eid,
+            "student_id": student_id,
+            "course_id": 1,
+            "semester": "Fall 2025",
+            "status": "active",
+            "tenant_id": str(tenant_id),
+        }
 
 # ---------------------------------------------------------------------------
 # I1.1 — Thesis canonical signal format
@@ -130,6 +162,7 @@ def test_advising_update_to_completed_emits_signal_via_api() -> None:
             return {}
 
     with patch("app.platform.events.publisher.EventPublisher", return_value=_FakePublisher()):
+        _seed_advising_prereqs(student_id=201, advisor_id="FAC-B")
         # Create session
         create_resp = client.post(
             "/api/admin/advising",
@@ -169,6 +202,7 @@ def test_advising_update_to_no_show_emits_signal() -> None:
             return {}
 
     with patch("app.platform.events.publisher.EventPublisher", return_value=_FakePublisher()):
+        _seed_advising_prereqs(student_id=202, advisor_id="FAC-C")
         create_resp = client.post(
             "/api/admin/advising",
             headers=ADMIN_HEADERS,
@@ -186,7 +220,7 @@ def test_advising_update_to_no_show_emits_signal() -> None:
         patch_resp = client.patch(
             f"/api/admin/advising/{session_id}/status",
             headers=ADMIN_HEADERS,
-            json={"status": "no_show"},
+            json={"status": "no_show", "outcome": "Student absent"},
         )
         assert patch_resp.status_code == 200
 

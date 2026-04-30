@@ -4,6 +4,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
+
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.student_services.schemas import (
@@ -46,8 +48,8 @@ def create_ticket_endpoint(
     try:
         item = create_student_service_ticket(int(tenant["id"]), payload, actor)
         return StudentServiceTicketItemResponseSchema(item=item)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.patch("/{ticket_id}/status", response_model=StudentServiceTicketItemResponseSchema)

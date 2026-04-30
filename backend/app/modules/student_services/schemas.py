@@ -29,6 +29,8 @@ class StudentServiceTicketCreateSchema(BaseModel):
     priority: StudentTicketPriority = "medium"
     owner_id: str | None = Field(default=None, max_length=64)
     channel: str = Field(default="portal", min_length=1, max_length=32)
+    target_resolution_hours: int | None = Field(default=None, ge=1)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class StudentServiceTicketStatusUpdateSchema(BaseModel):

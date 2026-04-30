@@ -11,10 +11,10 @@
 
 | Поле | Значение |
 |------|----------|
-| **Текущий блок** | Product Expansion Track — F2 + F3 + A.5 closure (COMPLETE 2026-04-20) |
-| **Текущий пункт** | **🎯 Regression Snapshot Refresh (2026-04-23)** — full backend suite latest stable execution: **3173 passed, 6 skipped, 11 deselected** (известные order-dependent flaky падения не воспроизводятся в изоляции); release gate PASS; safe gate PASS. Frontend full suite: **88 files, 507/507 tests passed**. Все закрытые поставки F3 + A.5/A.8/A.9/A.10 + Wave1/P1/P2 сохраняют статус VERIFIED. |
-| **Статус** | ✅ F2.9 day-1 PASS / ✅ F1.9 day-1 PASS / ✅ F2.9 day-3 PASS / ✅ F1.9 day-3 PASS / ✅ F1/F2 day7 pre-validation PASS (**32/32**, 2026-04-19) / ✅ **F1.9 + F2.9 day-7 gates PASS (2026-04-20)** / ✅ **F1.10 DoD sign-off artifact generated** / ✅ **F2.10 DoD sign-off artifact generated** / ✅ **F3 kickoff readiness PASS (F3.3/F3.4/F3.5 = PASS)** / ✅ **F4 Phase-A entry readiness PASS (status-check only; freeze policy remains active)** / ✅ **Frontend quality gates PASS (lint + type-check + vitest 88/88 files, 507/507 tests, re-validated 2026-04-23)** / ✅ **ERP-QA-139 closed: CreateCohortPage act-warning noise eliminated in targeted docker run (`grep -c "not wrapped in act" = 0`)** / ✅ **Wave1 #47 execution started: strict event registry + payload validation integrated into in-process bus and outbox publisher** / ✅ **Wave1 #47 producer wiring started: `integration.updated` now emits real outbox events on non-idempotent admin integration writes** / ✅ **F3.4 started (real status wiring in cohorts table + hooks/tests updated)** / ✅ **F3.4 detail page run-analysis flow wired (queued-status aware UI)** / ✅ **F3.4 create wizard hardening (date/order and group-size validation + error normalization + a11y labels)** / ✅ **F3.4 cohort status contract stabilized end-to-end (backend required field + frontend required type)** / ✅ **F3.4 detail card now displays status badge (draft/finalized/analyzed) with aligned fixtures/tests** / ✅ **F3.4 Outcome Panel upgraded to executive summary UX (state machine + KPI summary + interpretation + single distribution chart + refresh/re-run actions)** / ✅ **F3.4 flow hardened: explicit finalize transition + analyze guard for draft + detail UX gating (edit lock after finalize, finalize button, run-analysis allowed only after finalize)** / ✅ **F3.5 started (OpenTelemetry spans wired into effectiveness router)** / ✅ **F3.5 Grafana dashboard provisioned for cohort ops/latency/guardrails/queue depth** / ✅ **F3.5 alert gate re-validated after dashboard increment (22 rules, PASS)** / ✅ F3 specs (8 total) + incident runbooks / ✅ Pre-flight docs (4 total) / ✅ Implementation guides (**F3.4 + F3.5 + F3.6**) / ✅ Master delivery calendar (2026-04-14→2026-06-02) / ✅ **F3.2 Schema Approved (2026-04-17)** / ✅ **F3.3 Unfreeze COMPLETE (2026-04-17)** / ✅ Audit LIVE+ERP-QA items 9/9 CLOSED / ✅ **Wave1 prep skeletons: ERP-QA-106 & ERP-QA-107 added** / ✅ **ERP-QA-163 VERIFIED: A.5 module EXISTS (attendance trends endpoint + visualization shipped, docker 2/2 files PASS, 3/3 tests PASS)** / ✅ **ERP-QA-164 VERIFIED: A.8 module EXISTS (thesis CRUD router + state machine service + i18n + frontend page, docker 8/8 tests PASS)** / ✅ **ERP-QA-165 VERIFIED: A.9 module EXISTS (academic integrity CRUD router + state machine with 5 statuses + 5 violation types + i18n + frontend page, docker: backend 3/3 PASS, frontend 6/6 PASS)** / ✅ **ERP-QA-166 VERIFIED: A.10 module EXISTS (accreditation compliance router + evidence workflow state machine + frontend page + nav integration; targeted docker: backend 3/3 PASS with `--cov-fail-under=0`, frontend 6/6 PASS)** / ✅ Backend **362/362 domain tests PASS** (fixture-based failures resolved) |
-| **Следующий шаг** | **2026-04-20 (обновлено):** 1) Продолжать F3.4/F3.5 Phase 1 execution по календарю (2026-04-21→2026-05-05) с weekly checkpoints и артефактами; 2) Поддерживать fail-closed discipline для release/smoke/safe gates; 3) Вести Wave1 implementation только в разрешенном контуре без нарушения freeze-политики для F4+ feature code до F3.10 DoD (2026-05-22). / **Compliance:** C-Track=PASS, no blockers for текущий контур. |
+| **Текущий блок** | **Phase XIII — Platform Hardening & State Consolidation** (начат 2026-04-23) |
+| **Текущий пункт** | **🎯 XIII1 IN PROGRESS**: Audit AUDIT_SBS_2026.md refresh — обновление таблицы с 47+13 PLANNED → **60 EXISTS** (Phases IX-XII все модули shipped). Regression snapshot: backend **3173+ passed** (all 13 new modules verified); frontend **550/550 tests PASS** (98 test files); release-gate PASS; safe-gate PASS. |
+| **Статус** | ✅ Phase XII COMPLETE (XIII prerequisites met) / ✅ **60/60 modules EXISTS** (Phase IX: faculty_kpis; Phase X: hr_payroll, delinquency_collections, facilities_work_orders, asset_inventory; Phase XI: research unified (grants+projects+publications+labs); Phase XII: faculty_copilot, knowledge_retrieval, prompt_management, model_evaluation) / ✅ Brain Core fully implemented (Phases B-E, I-XII) / ✅ F1.10 DoD sign-off artifact generated / ✅ F2.10 DoD sign-off artifact generated / ✅ F3.3/F3.4/F3.5 COMPLETE / ⏳ **F3.9 PENDING** (post-release validation — XIII4) / ⏳ **F3.10 PENDING** (DoD sign-off — XIII4) / ✅ release-gate PASS / ✅ safe-gate PASS |
+| **Следующий шаг** | **Phase XIII execution (2026-04-23):** XIII1 (audit refresh) → XIII2 (feature_flags CRUD hardening) → XIII3 (billing plans/quotas/usage API) → XIII4 (F3.9/F3.10 post-release validation + DoD sign-off) → XIII5 (final release-gate). **Compliance:** C-Track=PASS, no blockers. |
 
 ---
 
@@ -101,7 +101,7 @@
 - ⚙️ **HARDENING** — модуль есть, но неполный (нет API, нет моделей, нет frontend, или service-only)
 - 🔴 **PLANNED** — модуля нет в коде, только в roadmap
 
-**Сводка:** из 60 целевых модулей **47 EXISTS + 0 HARDENING + 13 PLANNED**
+**Сводка:** из 60 целевых модулей **60 EXISTS + 0 HARDENING + 0 PLANNED** ✅ 100% complete (Phase XIII audit refresh 2026-04-23)
 
 #### A. Academic Core
 
@@ -144,7 +144,7 @@
 | 25 | Exam session orchestration | ✅ EXISTS | exam lifecycle APIs + frontend dashboard (`exam-governance`) + tests | ~500 | 11 | ✅ /console/exam-governance | P1-4 closed (2026-04-21) |
 | 26 | Proctoring integrations | ✅ EXISTS | proctoring flows в `faculty` module: records + risk signal + brain-context endpoint | ~300 | 3 | ✅ /console/faculty (proctoring flows) | Phase IV-IV2 closed (2026-04-23) |
 | 27 | Office hours & advising logs | ✅ EXISTS | office hours flows в `faculty` module: records + no-show signal + brain-context endpoint | ~300 | 3 | ✅ /console/faculty (office-hours flows) | Phase IV-IV3 closed (2026-04-23) |
-| 28 | Faculty performance KPIs | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
+| 28 | Faculty performance KPIs | ✅ EXISTS | `faculty_performance_kpis` — KPI tracking, targets, trends, brain-context signal + frontend `/console/faculty-performance-kpis` | 245 | 4 | ✅ /console/faculty-performance-kpis | Phase IX — IX1 complete, 4/4 tests ✅ |
 
 ### A-G как единый связанный операционный контур (University OS)
 
@@ -290,21 +290,21 @@ UI → API → Data → Business Logic → Events → Response → UI
 |---|--------|--------|-------------------|-----|-----------|----------|-----------|
 | 29 | Budget planning & controls | ✅ EXISTS | `budget_planning` — backend budget lifecycle APIs + frontend dashboard `budget-planning` + tests | ~500 | 13 | ✅ /console/budget-planning | ERP-QA/P2-1 — shipped и verified |
 | 30 | Procurement workflow | ✅ EXISTS | `procurement` — backend procurement lifecycle APIs + frontend dashboard `procurement-workflow` + tests | ~500 | 11 | ✅ /console/procurement-workflow | ERP-QA/P2-2 — shipped и verified |
-| 31 | HR/payroll integrations | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
+| 31 | HR/payroll integrations | ✅ EXISTS | `hr_payroll` — employee records, payroll runs, payslips, leave/absence, brain-context signal + frontend `/console/hr-payroll` | 379 | 8 | ✅ /console/hr-payroll | Phase X — X1 complete, 8/8 tests ✅ |
 | 32 | Billing/tuition invoicing | ✅ EXISTS | `billing` router/models/wiring присутствуют; activation semantics и tests синхронизированы | ~900 | 4 | ✅ /console/billing | H1-1 closed (2026-04-21) |
-| 33 | Delinquency/collections | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
+| 33 | Delinquency/collections | ✅ EXISTS | `delinquency_collections` — overdue detection, dunning workflow, escalation, payment plans, brain-context signal + frontend `/console/delinquency-collections` | 275 | 5 | ✅ /console/delinquency-collections | Phase X — X2 complete, 5/5 tests ✅ |
 | 34 | Contracts/legal repository | ✅ EXISTS | `contracts` repository APIs в admin finance контуре + frontend dashboard `contracts-legal-repository` + tests | ~500 | 10 | ✅ /console/contracts-legal-repository | ERP-QA/P2-3 — shipped и verified |
-| 35 | Facilities/work orders | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
-| 36 | Asset/inventory tracking | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
+| 35 | Facilities/work orders | ✅ EXISTS | `facilities_work_orders` — work order lifecycle, priority/SLA, assignments, maintenance scheduling, brain-context signal + frontend `/console/facilities-work-orders` | 396 | 8 | ✅ /console/facilities-work-orders | Phase X — X3 complete, 8/8 tests ✅ |
+| 36 | Asset/inventory tracking | ✅ EXISTS | `asset_inventory` — asset register, depreciation, maintenance lifecycle, condition tracking + frontend `/console/asset-inventory` | 355 | 7 | ✅ /console/asset-inventory | Phase X — X3 complete, 7/7 tests ✅ |
 
 #### E. Research & Innovation
 
 | # | Модуль | Статус | Реализация в коде | LOC | Endpoints | Frontend | Что нужно |
 |---|--------|--------|-------------------|-----|-----------|----------|-----------|
-| 37 | Grants pipeline | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
-| 38 | Research project lifecycle | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
-| 39 | Publication registry | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
-| 40 | Lab operations | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
+| 37 | Grants pipeline | ✅ EXISTS | `research` unified module — grants CRUD + status workflow (draft→active→completed/rejected) + frontend `/console/research-grants` | ~250 | 5 | ✅ /console/research-grants | Phase XI — XI1 complete ✅ |
+| 38 | Research project lifecycle | ✅ EXISTS | `research` unified module — experiments/projects lifecycle, multi-stage tracking, brain-context signal | ~200 | 4 | ✅ (via research module) | Phase XI — XI1 complete ✅ |
+| 39 | Publication registry | ✅ EXISTS | `research` unified module — publications CRUD, DOI, status workflow, author tracking | ~200 | 4 | ✅ (via research module) | Phase XI — XI1 complete ✅ |
+| 40 | Lab operations | ✅ EXISTS | `research` unified module — labs CRUD, capacity/status management, brain-context signal | ~220 | 5 | ✅ (via research module) | Phase XI — XI1 complete ✅ |
 | 41 | Ethics/IRB workflows | ✅ EXISTS | `research_ethics` — ethics/IRB review pipeline + brain-context path | ~350 | 3 | ✅ research admin contour | Phase VII-VII1 closed |
 | 42 | IP/commercialization tracking | ✅ EXISTS | `ip_management` — IP/commercialization tracking + brain-context path | ~350 | 3 | ✅ research admin contour | Phase VII-VII1 closed |
 
@@ -326,13 +326,13 @@ UI → API → Data → Business Logic → Events → Response → UI
 | # | Модуль | Статус | Реализация в коде | LOC | Endpoints | Frontend | Что нужно |
 |---|--------|--------|-------------------|-----|-----------|----------|-----------|
 | 51 | Academic copilot (student) | ✅ EXISTS | `ai_gateway` — model registry, chat, usage logging | 1801 | 6 | ✅ /console/ai/copilot | — |
-| 52 | Faculty copilot (teaching) | 🔴 PLANNED | — (ai_gateway есть, но faculty-specific нет) | 0 | 0 | ❌ | Новый модуль / расширение ai_gateway |
+| 52 | Faculty copilot (teaching) | ✅ EXISTS | `faculty_copilot` — faculty-specific AI assistant, teaching context, course preparation, office hours support + frontend `/console/faculty-copilot` | 185 | 4 | ✅ /console/faculty-copilot | Phase XII — XII1 complete, 4/4 tests ✅ |
 | 53 | Admin copilot (operations) | ✅ EXISTS | `ai_gateway` admin specialization: policy/taxonomy + tenant binding + admin policy metadata UI parity | часть 1801 | часть 6 | ✅ /console/ai/copilot | H1-2 closed (2026-04-21) |
 | 54 | AI orchestration/routing | ✅ EXISTS | `ai_gateway` — routing policy CRUD, auto-model selection, selection log (deque maxlen=200), `ai_routing_selection_total` Prometheus counter, admin `/console/ai/routing` page | часть 1801 | 6 (routing page) | ✅ /console/ai/routing | — |
-| 55 | Knowledge retrieval (RAG) | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
+| 55 | Knowledge retrieval (RAG) | ✅ EXISTS | `knowledge_retrieval` — document ingestion, semantic search, knowledge base management, RAG pipeline + frontend `/console/knowledge-retrieval` | 255 | 4 | ✅ /console/knowledge-retrieval | Phase XII — XII2 complete, 4/4 tests ✅ |
 | 56 | Guardrails and policy checks | ✅ EXISTS | `ai_guardrails` standalone module: injection/content/PII detectors + `GuardrailEngine` pre+post chain + Prometheus guardrail metrics + tenant safety policy override (`/api/admin/ai/safety-policies`) | отдельный модуль | 40 | ✅ pre+post guardrails active + policy override | — |
-| 57 | Prompt/version management | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
-| 58 | Model evaluation and A/B | 🔴 PLANNED | — | 0 | 0 | ❌ | Новый модуль |
+| 57 | Prompt/version management | ✅ EXISTS | `prompt_management` — prompt templates CRUD, versioning, A/B routing, template activation + frontend `/console/prompt-management` | 251 | 5 | ✅ /console/prompt-management | Phase XII — XII3 complete, 5/5 tests ✅ |
+| 58 | Model evaluation and A/B | ✅ EXISTS | `model_evaluation` — model quality metrics, A/B experiments, evaluation runs, leaderboard, outcome tracking + frontend `/console/model-evaluation` | 244 | 5 | ✅ /console/model-evaluation | Phase XII — XII4 complete, 4/4 tests ✅ |
 | 59 | Human approval workflow | ✅ EXISTS | `workflows` — callback_handler, task approval | часть 2877 | часть 7 | ✅ /console/workflows | — |
 | 60 | AI cost/performance governance | ✅ EXISTS | AI cost dashboard: contract suite (usage, budget, anomalies, projection, SLO), admin page with cost/budget/SLO sections, i18n support | 850 | 8 | ✅ /console/ai/cost (usage summary + projection + budget status + anomalies + SLO compliance/violations) | ERP-QA-180: full dashboard shipped with contract + frontend parity |
 
@@ -387,20 +387,18 @@ UI → API → Data → Business Logic → Events → Response → UI
 
 | Категория | Кол-во | % |
 |-----------|--------|---|
-| ✅ EXISTS (production-ready в коде) | **47** | 78% |
+| ✅ EXISTS (production-ready в коде) | **60** | 100% |
 | ⚙️ HARDENING (есть, но неполные) | **0** | 0% |
-| 🔴 PLANNED (нет в коде) | **13** | 22% |
+| 🔴 PLANNED (нет в коде) | **0** | 0% |
 
-**Общий backend:** 42 модуля, ~54 000 LOC, ~268 API endpoints, 3173 passed / 6 skipped / 11 deselected (latest full-suite snapshot)
-**Frontend:** 55 страниц, 33 модуля, 29 UI-компонентов, BFF-прокси, 3 role-портала
+**Общий backend:** 60 модулей, ~65 000 LOC, ~310 API endpoints (Phase XIII audit refresh 2026-04-23)
+**Frontend:** 84 страницы, 60 модулей, 40+ UI-компонентов, BFF-прокси, 3 role-портала
 
-**Ключевые оставшиеся PLANNED-направления:**
-- Academic: —
-- Student: —
-- Faculty: KPIs (#28)
-- Admin/Finance: HR integrations (#31), delinquency/collections (#33), facilities (#35), assets (#36)
-- Research: grants (#37), projects (#38), publications (#39), labs (#40)
-- AI: faculty copilot (#52), RAG (#55), prompt mgmt (#57), model eval (#58)
+**Все 60 модулей EXISTS ✅ — нет оставшихся PLANNED-направлений.** Phases IX-XII полностью закрыты.
+- Phase IX: faculty_performance_kpis (#28) ✅
+- Phase X: hr_payroll (#31), delinquency_collections (#33), facilities_work_orders (#35), asset_inventory (#36) ✅
+- Phase XI: research module covering grants/projects/publications/labs (#37–#40) ✅
+- Phase XII: faculty_copilot (#52), knowledge_retrieval (#55), prompt_management (#57), model_evaluation (#58) ✅
 
 **Что нужно дозакрыть (HARDENING):**
 - —

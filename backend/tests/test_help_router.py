@@ -10,7 +10,6 @@ Also covers: normalize_language(), build_answer() helper branches.
 
 from __future__ import annotations
 
-import pytest
 
 from tests.conftest import ADMIN_HEADERS, client
 from app.modules.help.router import build_answer, normalize_language

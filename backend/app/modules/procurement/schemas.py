@@ -6,7 +6,18 @@ from pydantic import BaseModel, Field
 
 
 VendorStatus = Literal["active", "under_review", "inactive"]
-ContractStatus = Literal["draft", "active", "expiring", "expired"]
+ContractStatus = Literal[
+    "draft",
+    "active",
+    "expiring",
+    "expired",
+    "DRAFT",
+    "SUBMITTED",
+    "APPROVED",
+    "REJECTED",
+    "PO_ISSUED",
+]
+PurchaseOrderStatus = Literal["DRAFT", "SUBMITTED", "APPROVED", "REJECTED", "PO_ISSUED"]
 AssetStatus = Literal["available", "allocated", "maintenance", "retired"]
 InventoryItemStatus = Literal["healthy", "watch", "critical", "inactive"]
 
@@ -18,6 +29,7 @@ class VendorCreateSchema(BaseModel):
     sla_breach_rate: float = Field(default=0, ge=0, le=1)
     on_time_delivery_rate: float = Field(default=1, ge=0, le=1)
     status: VendorStatus = "active"
+    contact_name: str | None = Field(default=None, max_length=128)
 
 
 class VendorSchema(VendorCreateSchema):
@@ -95,6 +107,10 @@ class VendorItemResponseSchema(BaseModel):
 
 class ContractItemResponseSchema(BaseModel):
     item: ContractSchema
+
+
+class ContractStatusUpdateSchema(BaseModel):
+    status: PurchaseOrderStatus
 
 
 class AssetItemResponseSchema(BaseModel):

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -121,7 +121,7 @@ def test_default_due_at_low():
 def test_create_case_no_student_profile():
     """create_case with student_profile_id=None skips DB student lookup."""
     db = MagicMock()
-    case = _make_case(student_profile_id=None)
+    _make_case(student_profile_id=None)
     # db.flush and db.refresh are needed; db.add must not raise
     db.flush = MagicMock()
     db.refresh = MagicMock(side_effect=lambda obj: None)
@@ -138,7 +138,7 @@ def test_create_case_no_student_profile():
         title="Test case",
         description="Test",
     )
-    created = _run(svc.create_case(tenant_id=1, request=req, actor="admin@e.com"))
+    _run(svc.create_case(tenant_id=1, request=req, actor="admin@e.com"))
     assert db.add.called
     assert db.commit.called
 
@@ -149,8 +149,14 @@ def test_create_case_with_student_profile_found():
     student = MagicMock()
     student.tenant_id = 1
     student.id = 101
-    # execute().scalar_one_or_none() returns student mock
-    db.execute.return_value.scalar_one_or_none.return_value = student
+
+    exec_student = MagicMock()
+    exec_student.scalar_one_or_none.return_value = student
+
+    exec_no_open = MagicMock()
+    exec_no_open.scalar_one_or_none.return_value = None  # no open case
+
+    db.execute.side_effect = [exec_student, exec_no_open]
     db.flush = MagicMock()
     db.refresh = MagicMock()
     db.commit = MagicMock()
@@ -330,7 +336,7 @@ def test_assign_case():
         assignee_type=InterventionAssigneeType.USER,
         assignee_ref="advisor@e.com",
     )
-    result = _run(svc.assign_case(tenant_id=1, case_id=10, request=req, actor="admin@e.com"))
+    _run(svc.assign_case(tenant_id=1, case_id=10, request=req, actor="admin@e.com"))
     assert db.commit.called
 
 
@@ -581,3 +587,105 @@ def test_consistency_report_with_orphaned_action():
     assert report.case_count == 1
     assert report.action_count == 1
     assert report.issue_count >= 1
+
+
+# ---------------------------------------------------------------------------
+# DATA INTEGRITY: duplicate open case guard
+# ---------------------------------------------------------------------------
+
+def test_create_case_duplicate_open_raises():
+    """create_case must reject a second open case for the same student."""
+    from app.modules.interventions.service import DomainValidationError
+
+    db = MagicMock()
+    student = MagicMock()
+    student.tenant_id = 1
+    student.id = 101
+
+    existing_case = _make_case(id=55, student_profile_id=101, status=InterventionCaseStatus.OPEN)
+
+    # First execute → student found; second execute → existing open case found
+    exec_result_student = MagicMock()
+    exec_result_student.scalar_one_or_none.return_value = student
+
+    exec_result_open = MagicMock()
+    exec_result_open.scalar_one_or_none.return_value = existing_case
+
+    db.execute.side_effect = [exec_result_student, exec_result_open]
+    db.flush = MagicMock()
+    db.add = MagicMock()
+
+    svc = _make_service(db)
+    req = InterventionCaseCreateSchema(
+        case_type=InterventionCaseType.ACADEMIC_RISK,
+        student_profile_id=101,
+        severity=InterventionCaseSeverity.HIGH,
+        title="Second case attempt",
+        description="Should be rejected",
+    )
+    with pytest.raises(DomainValidationError, match="already has an open"):
+        _run(svc.create_case(tenant_id=1, request=req, actor="admin@e.com"))
+
+
+def test_create_case_in_progress_also_blocks():
+    """create_case must also reject when an IN_PROGRESS case exists."""
+    from app.modules.interventions.service import DomainValidationError
+
+    db = MagicMock()
+    student = MagicMock()
+    student.tenant_id = 1
+    student.id = 101
+
+    existing_case = _make_case(id=77, student_profile_id=101, status=InterventionCaseStatus.IN_PROGRESS)
+
+    exec_result_student = MagicMock()
+    exec_result_student.scalar_one_or_none.return_value = student
+
+    exec_result_open = MagicMock()
+    exec_result_open.scalar_one_or_none.return_value = existing_case
+
+    db.execute.side_effect = [exec_result_student, exec_result_open]
+    db.flush = MagicMock()
+    db.add = MagicMock()
+
+    svc = _make_service(db)
+    req = InterventionCaseCreateSchema(
+        case_type=InterventionCaseType.ACADEMIC_RISK,
+        student_profile_id=101,
+        severity=InterventionCaseSeverity.MEDIUM,
+        title="Duplicate in-progress",
+        description="Should be rejected",
+    )
+    with pytest.raises(DomainValidationError, match="already has an open"):
+        _run(svc.create_case(tenant_id=1, request=req, actor="admin@e.com"))
+
+
+def test_create_case_no_open_case_proceeds():
+    """create_case proceeds when no open/in-progress case exists for the student."""
+    db = MagicMock()
+    student = MagicMock()
+    student.tenant_id = 1
+    student.id = 101
+
+    exec_result_student = MagicMock()
+    exec_result_student.scalar_one_or_none.return_value = student
+
+    exec_result_open = MagicMock()
+    exec_result_open.scalar_one_or_none.return_value = None  # no open case
+
+    db.execute.side_effect = [exec_result_student, exec_result_open]
+    db.flush = MagicMock()
+    db.refresh = MagicMock()
+    db.commit = MagicMock()
+    db.add = MagicMock()
+
+    svc = _make_service(db)
+    req = InterventionCaseCreateSchema(
+        case_type=InterventionCaseType.ACADEMIC_RISK,
+        student_profile_id=101,
+        severity=InterventionCaseSeverity.LOW,
+        title="First case",
+        description="Should succeed",
+    )
+    _run(svc.create_case(tenant_id=1, request=req, actor="admin@e.com"))
+    assert db.add.called

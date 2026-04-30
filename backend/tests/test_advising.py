@@ -25,6 +25,41 @@ _SESSION_PAYLOAD = {
 }
 
 
+def _seed_advising_prereqs(tenant_id: int = 1) -> None:
+    """Seed faculty FAC-101 and enrollment for student 101 to satisfy guards."""
+    from app.modules.university_core.shared import _state, _state_lock
+
+    with _state_lock:
+        # Faculty — required by _check_advisor_is_active_faculty_for_advising
+        _state.data.setdefault("faculty", {})
+        _state.counters.setdefault("faculty", 0)
+        _state.counters["faculty"] += 1
+        fid = _state.counters["faculty"]
+        _state.data["faculty"][fid] = {
+            "id": fid,
+            "faculty_id": "FAC-101",
+            "first_name": "Test",
+            "last_name": "Advisor",
+            "department": "CS",
+            "email": "fac101@example.edu",
+            "status": "active",
+            "tenant_id": str(tenant_id),
+        }
+        # Enrollment — required by _check_student_has_active_enrollment_for_advising
+        _state.data.setdefault("enrollments", {})
+        _state.counters.setdefault("enrollments", 0)
+        _state.counters["enrollments"] += 1
+        eid = _state.counters["enrollments"]
+        _state.data["enrollments"][eid] = {
+            "id": eid,
+            "student_id": 101,
+            "course_id": 1,
+            "semester": "Fall 2025",
+            "status": "active",
+            "tenant_id": str(tenant_id),
+        }
+
+
 # ---------------------------------------------------------------------------
 # GET /api/admin/advising
 # ---------------------------------------------------------------------------
@@ -58,6 +93,7 @@ def test_list_advising_sessions_invalid_status_passthrough() -> None:
 # ---------------------------------------------------------------------------
 
 def test_create_advising_session_returns_200() -> None:
+    _seed_advising_prereqs()
     resp = client.post(BASE, headers=ADMIN_HEADERS, json=_SESSION_PAYLOAD)
     assert resp.status_code == 200
     body = resp.json()
@@ -67,12 +103,14 @@ def test_create_advising_session_returns_200() -> None:
 
 
 def test_create_advising_session_missing_advisor_id() -> None:
+    _seed_advising_prereqs()
     payload = {**_SESSION_PAYLOAD, "advisor_id": ""}
     resp = client.post(BASE, headers=ADMIN_HEADERS, json=payload)
     assert resp.status_code == 422
 
 
 def test_create_advising_session_invalid_student_id() -> None:
+    _seed_advising_prereqs()
     payload = {**_SESSION_PAYLOAD, "student_id": 0}
     resp = client.post(BASE, headers=ADMIN_HEADERS, json=payload)
     assert resp.status_code == 422
@@ -91,7 +129,7 @@ def test_update_session_status_not_found() -> None:
     resp = client.patch(
         f"{BASE}/99999/status",
         headers=ADMIN_HEADERS,
-        json={"status": "completed"},
+        json={"status": "completed", "outcome": "test reason"},
     )
     assert resp.status_code == 404
 
@@ -107,6 +145,7 @@ def test_update_session_status_invalid_status() -> None:
 
 def test_update_session_status_full_flow() -> None:
     # Create a session, then complete it
+    _seed_advising_prereqs()
     create_resp = client.post(BASE, headers=ADMIN_HEADERS, json=_SESSION_PAYLOAD)
     assert create_resp.status_code == 200
     session_id = create_resp.json()["item"]["id"]
@@ -119,6 +158,35 @@ def test_update_session_status_full_flow() -> None:
     assert update_resp.status_code == 200
     assert update_resp.json()["item"]["status"] == "completed"
     assert update_resp.json()["item"]["outcome"] == "Student cleared for next semester"
+
+
+def test_update_session_status_requires_outcome_when_completed() -> None:
+    _seed_advising_prereqs()
+    create_resp = client.post(BASE, headers=ADMIN_HEADERS, json=_SESSION_PAYLOAD)
+    assert create_resp.status_code == 200
+    session_id = create_resp.json()["item"]["id"]
+
+    update_resp = client.patch(
+        f"{BASE}/{session_id}/status",
+        headers=ADMIN_HEADERS,
+        json={"status": "completed"},
+    )
+    assert update_resp.status_code == 422
+
+
+@pytest.mark.parametrize("closing_status", ["cancelled", "no_show"])
+def test_update_session_status_requires_outcome_for_all_closing_statuses(closing_status: str) -> None:
+    _seed_advising_prereqs()
+    create_resp = client.post(BASE, headers=ADMIN_HEADERS, json=_SESSION_PAYLOAD)
+    assert create_resp.status_code == 200
+    session_id = create_resp.json()["item"]["id"]
+
+    update_resp = client.patch(
+        f"{BASE}/{session_id}/status",
+        headers=ADMIN_HEADERS,
+        json={"status": closing_status},
+    )
+    assert update_resp.status_code == 422
 
 
 def test_update_session_status_requires_auth() -> None:

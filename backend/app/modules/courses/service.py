@@ -6,6 +6,19 @@ from app.modules.university_core.tenant_entity_service import (
 )
 from app.modules.billing.service import assert_billing_write_allowed
 
+# W45: cap on active courses per status per tenant
+_COURSE_STATUS_MAX_ACTIVE: dict[str, int] = {
+    "active": 500,
+    "draft": 200,
+    "inactive": 300,
+    "archived": 1000,
+}
+
+_ACTIVE_COURSE_STATUSES: frozenset[str] = frozenset({"active", "draft"})
+
+# W45: statuses that trigger a course retirement alert
+_RETIREMENT_RISK_STATUSES: frozenset[str] = frozenset({"inactive", "archived"})
+
 
 def list_courses(tenant_id: int) -> list[dict[str, object]]:
     return list_entities_for_tenant("courses", tenant_id)
@@ -13,6 +26,20 @@ def list_courses(tenant_id: int) -> list[dict[str, object]]:
 
 def create_course(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
     assert_billing_write_allowed(int(tenant_id), action="courses.create")
+    existing = list_entities_for_tenant("courses", tenant_id)
+
+    # W45: count-cap guard on active courses by status
+    course_status = str(payload.get("status") or "").strip().lower()
+    cap = _COURSE_STATUS_MAX_ACTIVE.get(course_status, 500)
+    active_count = sum(
+        1 for c in existing
+        if str(c.get("status") or "").strip().lower() in _ACTIVE_COURSE_STATUSES
+    )
+    if active_count >= cap:
+        raise ValueError(
+            f"Active course cap ({cap}) reached; cannot create new course with status '{course_status}'"
+        )
+
     return create_entity_for_tenant("courses", payload, tenant_id)
 
 
@@ -33,7 +60,48 @@ def update_course(course_id: int, payload: dict[str, object], tenant_id: int) ->
                 "source_module": "courses",
             },
         )
+    # W45: side-effect retirement alert for risk statuses
+    if to_status in _RETIREMENT_RISK_STATUSES:
+        _ensure_retirement_alert_record(
+            tenant_id=tenant_id,
+            course_id=course_id,
+            course_data={
+                "course_code": str(payload.get("course_code") or ""),
+                "program_id": str(payload.get("program_id") or ""),
+                "status": to_status,
+            },
+        )
     return result
+
+
+def _ensure_retirement_alert_record(
+    tenant_id: int,
+    course_id: int,
+    course_data: dict,
+) -> None:
+    """Idempotent: create a course_retirement_alerts entry for inactive/archived courses."""
+    src = "courses_retirement_queue"
+    src_id = str(course_id)
+    existing = list_entities_for_tenant("course_retirement_alerts", tenant_id)
+    for rec in existing:
+        if (
+            str(rec.get("integration_source")) == src
+            and str(rec.get("source_entity_id")) == src_id
+        ):
+            return  # already created — idempotent
+    create_entity_for_tenant(
+        "course_retirement_alerts",
+        {
+            "course_id": course_id,
+            "course_code": str(course_data.get("course_code") or ""),
+            "program_id": str(course_data.get("program_id") or ""),
+            "retirement_status": str(course_data.get("status") or ""),
+            "alert_status": "open",
+            "integration_source": src,
+            "source_entity_id": src_id,
+        },
+        tenant_id,
+    )
 
 
 def delete_course(course_id: int, tenant_id: int) -> dict[str, object]:

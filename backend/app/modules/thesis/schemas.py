@@ -32,6 +32,8 @@ class ThesisCreateSchema(BaseModel):
     title: str = Field(min_length=3, max_length=300)
     advisor_faculty_id: str | None = Field(default=None, max_length=64)
     repository_url: str | None = Field(default=None, max_length=500)
+    keywords: str | None = Field(default=None, max_length=256)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class ThesisStatusUpdateSchema(BaseModel):

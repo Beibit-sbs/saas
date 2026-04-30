@@ -42,6 +42,10 @@ PLATFORM_RELIABILITY_EVENT_TYPES = {
     "platform.integration.degraded",
 }
 
+PLATFORM_ACTIVITY_EVENT_TYPES = {
+    "platform.module.activity.logged",
+}
+
 RESEARCH_EVENT_TYPES = {
     "research.grant_deadline.approaching",
     "research.publication_stagnant",
@@ -66,6 +70,14 @@ STUDENT_LIFE_EVENT_TYPES = {
 
 ENROLLMENT_DROPOUT_EVENT_TYPES = {
     "enrollments.dropout_risk.detected",
+}
+
+ADMISSIONS_EVENT_TYPES = {
+    "admissions.decision.made",
+}
+
+SCHEDULING_EVENT_TYPES = {
+    "scheduling.section.scheduled",
 }
 
 ACADEMIC_INTEGRITY_EVENT_TYPES = {
@@ -102,6 +114,7 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | SUPPLY_LOW_EVENT_TYPES
     | ACCREDITATION_EVENT_TYPES
     | PLATFORM_RELIABILITY_EVENT_TYPES
+    | PLATFORM_ACTIVITY_EVENT_TYPES
     | RESEARCH_EVENT_TYPES
     | OPERATIONS_EVENT_TYPES
     | STUDENT_LIFE_EVENT_TYPES
@@ -112,6 +125,8 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | COURSES_EVENT_TYPES
     | TRANSCRIPTS_EVENT_TYPES
     | STUDENT_SERVICES_EVENT_TYPES
+    | ADMISSIONS_EVENT_TYPES
+    | SCHEDULING_EVENT_TYPES
 )
 
 ACTION_CREATE_INTERVENTION_CASE = "create_intervention_case"

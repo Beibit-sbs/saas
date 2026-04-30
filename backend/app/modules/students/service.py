@@ -266,6 +266,23 @@ class StudentLifecycleService:
         validate_version_match(profile.version, request.expected_version)
         StudentLifecycleRules.validate_status_transition(previous_status, request.to_status)
 
+        # Cross-entity graduation eligibility guard: student cannot be marked GRADUATED
+        # without first passing the full degree_progress eligibility check
+        # (credits earned, GPA threshold, all required courses completed).
+        if request.to_status == StudentStatus.GRADUATED:
+            from app.modules.degree_progress.service import DegreeProgressService
+            eligibility = await DegreeProgressService(self.db).is_student_eligible_for_graduation(
+                tenant_id,
+                student_profile_id=student_profile_id,
+                actor_id=actor_id,
+            )
+            if not eligibility.eligible:
+                raise DomainValidationError(
+                    f"student {student_profile_id} is not eligible for graduation: "
+                    f"credits_earned={eligibility.credits_earned}/{eligibility.minimum_credits}, "
+                    f"remaining_required_items={eligibility.remaining_required_items}"
+                )
+
         self.db.add(
             StudentStatusHistoryModel(
                 tenant_id=tenant_id,
@@ -300,6 +317,28 @@ class StudentLifecycleService:
         )
 
         self.db.commit()
+
+        # Fire-and-forget Brain Core signal emission for at-risk status transitions
+        if request.to_status in {StudentStatus.SUSPENDED, StudentStatus.INACTIVE, StudentStatus.WITHDRAWN}:
+            try:
+                from uuid import uuid4
+                from app.modules.brain_core.service import brain_core_service
+                brain_core_service.process_signal({
+                    "event_type": "academic.attendance_risk.detected",
+                    "tenant_id": tenant_id,
+                    "correlation_id": str(uuid4()),
+                    "source_entity_type": "student_profile",
+                    "source_entity_id": str(profile.id),
+                    "payload": {
+                        "student_id": profile.id,
+                        "from_status": previous_status.value,
+                        "to_status": request.to_status.value,
+                        "reason": request.reason,
+                    },
+                })
+            except Exception:
+                pass  # Brain Core errors must never break core flows
+
         return MutationResult(entity=StudentProfileReadSchema.model_validate(profile))
 
     async def bind_student_to_program(

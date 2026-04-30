@@ -238,6 +238,12 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.STUDENT_SERVICES_READ,
       },
       {
+        label: "Student Life",
+        href: "/console/student-life",
+        icon: HeartPulse,
+        permission: PERMISSIONS.STUDENT_LIFE_READ,
+      },
+      {
         label: "Career Services",
         href: "/console/career-services",
         icon: Briefcase,
@@ -264,6 +270,12 @@ export const NAVIGATION: NavGroup[] = [
       {
         label: "Delinquency Collections",
         href: "/console/delinquency-collections",
+        icon: Wallet,
+        permission: PERMISSIONS.FINANCE_READ,
+      },
+      {
+        label: "Expense Controls",
+        href: "/console/expense-controls",
         icon: Wallet,
         permission: PERMISSIONS.FINANCE_READ,
       },

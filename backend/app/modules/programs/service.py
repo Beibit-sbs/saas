@@ -1,3 +1,4 @@
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     delete_entity_for_tenant,
@@ -5,18 +6,92 @@ from app.modules.university_core.tenant_entity_service import (
     update_entity_for_tenant,
 )
 
+# W44: cap on active programs per degree_type per tenant
+_PROGRAM_DEGREE_TYPE_MAX_ACTIVE: dict[str, int] = {
+    "bachelor": 50,
+    "master": 40,
+    "doctorate": 20,
+    "associate": 30,
+    "certificate": 80,
+    "diploma": 60,
+}
+
+_ACTIVE_PROGRAM_STATUSES: frozenset[str] = frozenset({"active", "draft"})
+
+# W44: statuses that trigger a sunset risk alert
+_SUNSET_RISK_STATUSES: frozenset[str] = frozenset({"inactive", "archived"})
+
+# W85: statuses that require at least one active degree requirement
+_ACTIVATION_STATUSES: frozenset[str] = frozenset({"active"})
+
+
+def _check_program_has_active_requirements(tenant_id: int, program_id: int) -> None:
+    """Cross-entity guard: program cannot be activated without at least one active requirement.
+
+    An active program with zero active degree requirements creates every enrolled student
+    with a permanently-unsatisfiable graduation state — remaining_required_items = 0 forever,
+    every student graduates without taking any courses, accreditation violation.
+    
+    HARDENING RULE: NO SILENT FALLBACK — if validation cannot complete, block the action.
+    """
+    try:
+        requirements = list_entities_for_tenant("program_requirements", tenant_id)
+    except (ValueError, KeyError) as e:
+        # Entity "program_requirements" not available in entity service
+        # Cannot enforce invariant without access to requirement data — must block
+        raise DomainValidationError(
+            f"Cannot activate program_id={program_id}: cannot verify active requirements exist. "
+            "Program requirements entity service is unavailable. "
+            "Cannot enforce requirement invariant without access to requirement data."
+        ) from e
+
+    # Check if any active requirement exists for this program
+    active_requirements = [
+        r for r in requirements
+        if int(r.get("program_id") or 0) == program_id
+        and str(r.get("is_active") or "").lower() in {"true", "1", "yes"}
+    ]
+
+    if not active_requirements:
+        raise DomainValidationError(
+            f"Cannot activate program_id={program_id}: no active degree requirements configured. "
+            "A program cannot be activated without a graduation pathway. "
+            "Add at least one active ProgramRequirementModel before activating."
+        )
+
+
 
 def list_programs(tenant_id: int) -> list[dict[str, object]]:
     return list_entities_for_tenant("programs", tenant_id)
 
 
 def create_program(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+    existing = list_entities_for_tenant("programs", tenant_id)
+
+    # W44: count-cap guard on active programs per degree_type
+    degree_type = str(payload.get("degree_type") or "").strip().lower()
+    cap = _PROGRAM_DEGREE_TYPE_MAX_ACTIVE.get(degree_type, 50)
+    active_count = sum(
+        1 for p in existing
+        if str(p.get("status") or "").strip().lower() in _ACTIVE_PROGRAM_STATUSES
+        and str(p.get("degree_type") or "").strip().lower() == degree_type
+    )
+    if active_count >= cap:
+        raise ValueError(
+            f"Active program cap ({cap}) reached for degree_type '{degree_type}'"
+        )
+
     return create_entity_for_tenant("programs", payload, tenant_id)
 
 
 def update_program(program_id: int, payload: dict[str, object], tenant_id: int) -> dict[str, object]:
-    result = update_entity_for_tenant("programs", program_id, payload, tenant_id)
     to_status = str(payload.get("status") or "").strip().lower()
+    
+    # W85: activation requires at least one active requirement
+    if to_status in _ACTIVATION_STATUSES:
+        _check_program_has_active_requirements(tenant_id, program_id)
+    
+    result = update_entity_for_tenant("programs", program_id, payload, tenant_id)
     if to_status in {"inactive", "archived"}:
         from app.platform.events.publisher import EventPublisher
         EventPublisher().publish_event(
@@ -30,7 +105,48 @@ def update_program(program_id: int, payload: dict[str, object], tenant_id: int) 
                 "source_module": "programs",
             },
         )
+    # W44: side-effect sunset alert for risk statuses
+    if to_status in _SUNSET_RISK_STATUSES:
+        _ensure_sunset_alert_record(
+            tenant_id=tenant_id,
+            program_id=program_id,
+            program_data={
+                "program_code": str(payload.get("program_code") or ""),
+                "degree_type": str(payload.get("degree_type") or ""),
+                "status": to_status,
+            },
+        )
     return result
+
+
+def _ensure_sunset_alert_record(
+    tenant_id: int,
+    program_id: int,
+    program_data: dict,
+) -> None:
+    """Idempotent: create a program_sunset_alerts entry for inactive/archived programs."""
+    src = "programs_sunset_queue"
+    src_id = str(program_id)
+    existing = list_entities_for_tenant("program_sunset_alerts", tenant_id)
+    for rec in existing:
+        if (
+            str(rec.get("integration_source")) == src
+            and str(rec.get("source_entity_id")) == src_id
+        ):
+            return  # already created — idempotent
+    create_entity_for_tenant(
+        "program_sunset_alerts",
+        {
+            "program_id": program_id,
+            "program_code": str(program_data.get("program_code") or ""),
+            "degree_type": str(program_data.get("degree_type") or ""),
+            "sunset_status": str(program_data.get("status") or ""),
+            "alert_status": "open",
+            "integration_source": src,
+            "source_entity_id": src_id,
+        },
+        tenant_id,
+    )
 
 
 def delete_program(program_id: int, tenant_id: int) -> dict[str, object]:

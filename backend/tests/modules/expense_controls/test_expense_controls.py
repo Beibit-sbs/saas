@@ -159,12 +159,12 @@ def test_create_expense_record_budget_exceeded_fires_signal(monkeypatch) -> None
     with patch("app.modules.expense_controls.service.EventPublisher") as mock_pub_cls:
         publisher = MagicMock()
         mock_pub_cls.return_value = publisher
-        record = expense_service.create_expense_record(
-            {"cost_center_id": 10, "category": "equipment", "amount": 1500.0, "status": "pending"},
-            tenant_id=1,
-        )
+        with pytest.raises(ValueError, match="budget_limit"):
+            expense_service.create_expense_record(
+                {"cost_center_id": 10, "category": "equipment", "amount": 1500.0, "status": "pending"},
+                tenant_id=1,
+            )
 
-    assert record["id"] == 6
     publisher.publish_event.assert_called_once()
     call_kwargs = publisher.publish_event.call_args.kwargs
     assert call_kwargs["event_type"] == "finance.expense.budget_exceeded"
@@ -226,7 +226,7 @@ def test_get_expense_brain_context_high_risk(monkeypatch) -> None:
 
 def test_http_list_expense_records_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "app.modules.expense_controls.router.list_expense_records",
+        "app.modules.expense_controls.service.list_expense_records",
         lambda tenant_id, cost_center_id=None, status=None: [],
     )
     resp = test_client.get("/api/admin/expense-controls/expenses", headers=dict(ADMIN_HEADERS))
@@ -247,7 +247,7 @@ def test_http_create_expense_record(monkeypatch: pytest.MonkeyPatch) -> None:
         "tenant_id": 1,
     }
     monkeypatch.setattr(
-        "app.modules.expense_controls.router.create_expense_record",
+        "app.modules.expense_controls.service.create_expense_record",
         lambda payload, tenant_id: created,
     )
     payload = {
@@ -276,7 +276,7 @@ def test_http_get_brain_context(monkeypatch: pytest.MonkeyPatch) -> None:
         "risk_level": "low",
     }
     monkeypatch.setattr(
-        "app.modules.expense_controls.router.get_expense_brain_context",
+        "app.modules.expense_controls.service.get_expense_brain_context",
         lambda tenant_id: ctx,
     )
     resp = test_client.get("/api/admin/expense-controls/brain-context", headers=dict(ADMIN_HEADERS))

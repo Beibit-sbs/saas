@@ -27,6 +27,7 @@ class EnrollmentCreateSchema(BaseModel):
     student_profile_id: int = Field(gt=0)
     course_id: int = Field(gt=0)
     term_id: int = Field(gt=0)
+    section_id: int = Field(gt=0)
     enrollment_status: EnrollmentStatus = EnrollmentStatus.ENROLLED
     enrollment_type: EnrollmentType = EnrollmentType.REGULAR
     enrolled_at: datetime | None = None
@@ -41,6 +42,7 @@ class EnrollmentReadSchema(BaseModel):
     student_profile_id: int
     course_id: int
     term_id: int
+    section_id: int | None
     enrollment_status: EnrollmentStatus
     enrollment_type: EnrollmentType
     enrolled_at: datetime

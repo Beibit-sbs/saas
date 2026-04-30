@@ -15,7 +15,6 @@ from __future__ import annotations
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -63,7 +62,7 @@ def test_academic_integrity_signal_emitted_on_escalated() -> None:
             payload=IntegrityCaseStatusUpdateSchema(
                 status=IntegrityCaseStatus.ESCALATED,
                 resolution_notes=None,
-                recommended_action=None,
+                recommended_action="Formal hearing",
             ),
         )
 
@@ -175,8 +174,9 @@ def test_programs_active_status_does_not_emit_signal() -> None:
 
     fake_pub = _FakePublisher()
     with patch("app.platform.events.publisher.EventPublisher", return_value=fake_pub):
-        with patch("app.modules.programs.service.update_entity_for_tenant", return_value={"id": 3, "status": "active"}):
-            update_program(program_id=3, payload={"status": "active"}, tenant_id=10)
+        with patch("app.modules.programs.service._check_program_has_active_requirements", return_value=None):
+            with patch("app.modules.programs.service.update_entity_for_tenant", return_value={"id": 3, "status": "active"}):
+                update_program(program_id=3, payload={"status": "active"}, tenant_id=10)
 
     assert len(fake_pub.events) == 0
 
@@ -248,32 +248,33 @@ def test_student_services_high_priority_ticket_emits_signal() -> None:
 
     fake_pub = _FakePublisher()
     with patch("app.platform.events.publisher.EventPublisher", return_value=fake_pub):
-        with patch("app.modules.student_services.service.create_entity_for_tenant", return_value={
-            "id": 99,
-            "student_id": 42,
-            "category": "academic",
-            "subject": "Need help",
-            "description": "Urgent",
-            "priority": "high",
-            "status": "open",
-            "owner_id": "unassigned",
-            "channel": "portal",
-            "resolution_notes": "pending",
-        }):
-            with patch("app.modules.student_services.service._emit_audit"):
-                create_student_service_ticket(
-                    tenant_id=1,
-                    request=StudentServiceTicketCreateSchema(
-                        student_id=42,
-                        category="academic",
-                        subject="Need help",
-                        description="Urgent",
-                        priority="high",
-                        owner_id=None,
-                        channel="portal",
-                    ),
-                    actor="admin@example.com",
-                )
+        with patch("app.modules.student_services.service._check_student_is_enrolled_for_service_ticket", return_value=None):
+            with patch("app.modules.student_services.service.create_entity_for_tenant", return_value={
+                "id": 99,
+                "student_id": 42,
+                "category": "academic",
+                "subject": "Need help",
+                "description": "Urgent",
+                "priority": "high",
+                "status": "open",
+                "owner_id": "unassigned",
+                "channel": "portal",
+                "resolution_notes": "pending",
+            }):
+                with patch("app.modules.student_services.service._emit_audit"):
+                    create_student_service_ticket(
+                        tenant_id=1,
+                        request=StudentServiceTicketCreateSchema(
+                            student_id=42,
+                            category="academic",
+                            subject="Need help",
+                            description="Urgent",
+                            priority="high",
+                            owner_id=None,
+                            channel="portal",
+                        ),
+                        actor="admin@example.com",
+                    )
 
     assert len(fake_pub.events) == 1
     ev = fake_pub.events[0]
@@ -289,32 +290,33 @@ def test_student_services_medium_priority_ticket_no_signal() -> None:
 
     fake_pub = _FakePublisher()
     with patch("app.platform.events.publisher.EventPublisher", return_value=fake_pub):
-        with patch("app.modules.student_services.service.create_entity_for_tenant", return_value={
-            "id": 100,
-            "student_id": 43,
-            "category": "registrar",
-            "subject": "Question",
-            "description": "No rush",
-            "priority": "medium",
-            "status": "open",
-            "owner_id": "unassigned",
-            "channel": "portal",
-            "resolution_notes": "pending",
-        }):
-            with patch("app.modules.student_services.service._emit_audit"):
-                create_student_service_ticket(
-                    tenant_id=1,
-                    request=StudentServiceTicketCreateSchema(
-                        student_id=43,
-                        category="registrar",
-                        subject="Question",
-                        description="No rush",
-                        priority="medium",
-                        owner_id=None,
-                        channel="portal",
-                    ),
-                    actor="admin@example.com",
-                )
+        with patch("app.modules.student_services.service._check_student_is_enrolled_for_service_ticket", return_value=None):
+            with patch("app.modules.student_services.service.create_entity_for_tenant", return_value={
+                "id": 100,
+                "student_id": 43,
+                "category": "registrar",
+                "subject": "Question",
+                "description": "No rush",
+                "priority": "medium",
+                "status": "open",
+                "owner_id": "unassigned",
+                "channel": "portal",
+                "resolution_notes": "pending",
+            }):
+                with patch("app.modules.student_services.service._emit_audit"):
+                    create_student_service_ticket(
+                        tenant_id=1,
+                        request=StudentServiceTicketCreateSchema(
+                            student_id=43,
+                            category="registrar",
+                            subject="Question",
+                            description="No rush",
+                            priority="medium",
+                            owner_id=None,
+                            channel="portal",
+                        ),
+                        actor="admin@example.com",
+                    )
 
     assert len(fake_pub.events) == 0
 

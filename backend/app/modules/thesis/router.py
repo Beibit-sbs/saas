@@ -41,7 +41,7 @@ def create_thesis_endpoint(
         item = create_thesis_record(int(tenant["id"]), payload, actor)
         return ThesisItemResponseSchema(item=item)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.patch("/{thesis_id}/status", response_model=ThesisItemResponseSchema)

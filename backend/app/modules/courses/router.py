@@ -57,7 +57,7 @@ def create_course_endpoint(
     try:
         course = create_course(payload.model_dump(), int(tenant["id"]))
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     log_admin_action(
         actor=actor,

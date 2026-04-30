@@ -62,6 +62,64 @@ def test_create_budget_plan(monkeypatch) -> None:
     assert result["department_id"] == "DEPT-C"
 
 
+def test_create_budget_plan_rejects_non_draft_initial_status() -> None:
+    with pytest.raises(ValueError, match="must be created in 'draft' status"):
+        budget_service.create_budget_plan(
+            {
+                "department_id": "DEPT-C",
+                "fiscal_year": 2026,
+                "total_amount": 200000.0,
+                "status": "approved",
+            },
+            tenant_id=1,
+        )
+
+
+def test_update_budget_plan_status_happy_path(monkeypatch) -> None:
+    rows = [
+        {
+            "id": 10,
+            "department_id": "DEPT-C",
+            "fiscal_year": 2026,
+            "total_amount": 200000.0,
+            "currency": "USD",
+            "status": "draft",
+            "description": "Annual plan",
+            "tenant_id": "1",
+        }
+    ]
+    monkeypatch.setattr(budget_service, "list_entities_for_tenant", lambda name, tid: rows)
+    monkeypatch.setattr(
+        budget_service,
+        "update_entity_for_tenant",
+        lambda name, item_id, payload, tid: {**payload, "id": item_id, "tenant_id": "1"},
+    )
+
+    updated = budget_service.update_budget_plan_status(tenant_id=1, plan_id=10, status="submitted")
+
+    assert updated is not None
+    assert updated["status"] == "submitted"
+
+
+def test_update_budget_plan_status_rejects_invalid_transition(monkeypatch) -> None:
+    rows = [
+        {
+            "id": 10,
+            "department_id": "DEPT-C",
+            "fiscal_year": 2026,
+            "total_amount": 200000.0,
+            "currency": "USD",
+            "status": "draft",
+            "description": "Annual plan",
+            "tenant_id": "1",
+        }
+    ]
+    monkeypatch.setattr(budget_service, "list_entities_for_tenant", lambda name, tid: rows)
+
+    with pytest.raises(ValueError, match="Invalid budget plan transition"):
+        budget_service.update_budget_plan_status(tenant_id=1, plan_id=10, status="approved")
+
+
 def test_create_budget_allocation_no_signal(monkeypatch) -> None:
     """Allocation with low drift should NOT fire a brain signal."""
     created = {
@@ -75,6 +133,13 @@ def test_create_budget_allocation_no_signal(monkeypatch) -> None:
         "tenant_id": "1",
     }
     monkeypatch.setattr(budget_service, "create_entity_for_tenant", lambda name, payload, tid: created)
+    monkeypatch.setattr(
+        budget_service,
+        "list_entities_for_tenant",
+        lambda name, tid: (
+            [{"id": 10, "total_amount": 100000.0, "status": "approved"}] if name == "budget_plans" else []
+        ),
+    )
 
     with patch("app.modules.budget_planning.service.EventPublisher") as mock_pub_cls:
         publisher = MagicMock()
@@ -101,6 +166,13 @@ def test_create_budget_allocation_drift_fires_signal(monkeypatch) -> None:
         "tenant_id": "1",
     }
     monkeypatch.setattr(budget_service, "create_entity_for_tenant", lambda name, payload, tid: created)
+    monkeypatch.setattr(
+        budget_service,
+        "list_entities_for_tenant",
+        lambda name, tid: (
+            [{"id": 10, "total_amount": 100000.0, "status": "approved"}] if name == "budget_plans" else []
+        ),
+    )
 
     with patch("app.modules.budget_planning.service.EventPublisher") as mock_pub_cls:
         publisher = MagicMock()
@@ -157,7 +229,7 @@ def test_get_budget_brain_context_high_risk(monkeypatch) -> None:
 
 def test_http_list_budget_plans_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "app.modules.budget_planning.router.list_budget_plans",
+        "app.modules.budget_planning.service.list_budget_plans",
         lambda tenant_id, department_id=None, fiscal_year=None: [],
     )
     resp = test_client.get("/api/admin/budget-planning/plans", headers=dict(ADMIN_HEADERS))
@@ -177,7 +249,7 @@ def test_http_create_budget_plan(monkeypatch: pytest.MonkeyPatch) -> None:
         "tenant_id": "1",
     }
     monkeypatch.setattr(
-        "app.modules.budget_planning.router.create_budget_plan",
+        "app.modules.budget_planning.service.create_budget_plan",
         lambda payload, tenant_id: created,
     )
     payload = {
@@ -194,6 +266,51 @@ def test_http_create_budget_plan(monkeypatch: pytest.MonkeyPatch) -> None:
     assert data["record"]["department_id"] == "DEPT-X"
 
 
+def test_http_update_budget_plan_status_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    updated = {
+        "id": 30,
+        "department_id": "DEPT-X",
+        "fiscal_year": 2026,
+        "total_amount": 75000.0,
+        "currency": "USD",
+        "status": "submitted",
+        "description": None,
+        "tenant_id": "1",
+    }
+    monkeypatch.setattr(
+        "app.modules.budget_planning.service.update_budget_plan_status",
+        lambda tenant_id, plan_id, status: updated,
+    )
+
+    resp = test_client.patch(
+        "/api/admin/budget-planning/plans/30/status",
+        json={"status": "submitted"},
+        headers=dict(ADMIN_HEADERS),
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["record"]["status"] == "submitted"
+
+
+def test_http_update_budget_plan_status_rejects_invalid_transition(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise_invalid_transition(tenant_id: int, plan_id: int, status: str) -> dict:
+        raise ValueError("Invalid budget plan transition from 'draft' to 'approved'")
+
+    monkeypatch.setattr(
+        "app.modules.budget_planning.service.update_budget_plan_status",
+        _raise_invalid_transition,
+    )
+
+    resp = test_client.patch(
+        "/api/admin/budget-planning/plans/30/status",
+        json={"status": "approved"},
+        headers=dict(ADMIN_HEADERS),
+    )
+
+    assert resp.status_code == 422
+    assert "Invalid budget plan transition" in resp.json()["detail"]
+
+
 def test_http_get_brain_context(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = {
         "module": "budget_planning",
@@ -208,7 +325,7 @@ def test_http_get_brain_context(monkeypatch: pytest.MonkeyPatch) -> None:
         "risk_level": "low",
     }
     monkeypatch.setattr(
-        "app.modules.budget_planning.router.get_budget_brain_context",
+        "app.modules.budget_planning.service.get_budget_brain_context",
         lambda tenant_id: ctx,
     )
     resp = test_client.get("/api/admin/budget-planning/brain-context", headers=dict(ADMIN_HEADERS))

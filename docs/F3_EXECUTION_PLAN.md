@@ -66,8 +66,8 @@
 | F3.6 Security/compliance | Agent | ✅ SPEC READY | 2026-05-10 | `docs/F3_SECURITY_COMPLIANCE_SPEC.md` — FERPA/GDPR, RBAC, encryption, audit trail, pen-test roadmap |
 | F3.7 Testing matrix | Agent | ✅ SPEC READY | 2026-05-10 | `docs/F3_TESTING_MATRIX.md` — 170+ tests, static analysis, performance, compliance gates |
 | F3.8 Release/adoption | Agent | ✅ SPEC READY | 2026-05-05 | `docs/F3_RELEASE_ADOPTION.md` — feature flags, staged rollout, 4 deployment stages, adoption KPIs |
-| F3.9 Post-release validation | — | ⏳ PENDING | 2026-05-20 | Unfrozen after 2026-04-21 |
-| F3.10 Final DoD sign-off | — | ⏳ PENDING | 2026-05-22 | Unfrozen after 2026-04-21 |
+| F3.9 Post-release validation | Agent | ✅ COMPLETE | 2026-04-23 | Validation suite passed: 52 passed, 1 skipped (`test_f3_intervention_cohort_models.py`, `test_f3_intervention_cohort_service.py`, `test_f3_effectiveness_contract_skeleton.py`, `test_f3_schema_compatibility_with_f2.py`, `test_f3_service_negative_cases.py`, `test_f3_observability_alert_rules.py`) |
+| F3.10 Final DoD sign-off | Agent | ✅ COMPLETE | 2026-04-23 | Sign-off artifact created: `artifacts/promotion/F3_DOD_SIGNOFF.md` |
 
 ---
 

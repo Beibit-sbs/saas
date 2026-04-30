@@ -3,10 +3,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from app.modules.scholarship import service as sc_service
-from tests.conftest import ADMIN_HEADERS, client as test_client
 
 
 def test_list_scholarship_applications_empty(monkeypatch) -> None:

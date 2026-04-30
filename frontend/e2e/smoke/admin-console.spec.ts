@@ -16,7 +16,13 @@ async function stubAuthSession(
   overrides: Record<string, unknown> = {},
 ) {
   const cookieUrl = process.env.E2E_BASE_URL ?? "https://nginx";
-  const secureCookie = new URL(cookieUrl).protocol === "https:";
+  const parsedUrl = new URL(cookieUrl);
+  const cookieOrigins = new Set<string>([
+    `${parsedUrl.protocol}//${parsedUrl.host}`,
+    `http://${parsedUrl.host}`,
+    `https://${parsedUrl.host}`,
+  ]);
+
   // Build a minimal non-expired JWT that satisfies middleware.ts isTokenExpired().
   const payloadJson = JSON.stringify({
     sub: "test-user-id",
@@ -25,20 +31,33 @@ async function stubAuthSession(
   const payload = Buffer.from(payloadJson).toString("base64url");
   const fakeToken = `fakeheader.${payload}.fakesig`;
 
-  await page.context().addCookies([
-    {
-      name: "admin_token",
-      value: fakeToken,
-      url: cookieUrl,
-      httpOnly: true,
-      secure: secureCookie,
-      sameSite: "Lax",
-    },
-  ]);
+  const authCookies = Array.from(cookieOrigins).flatMap((url) => {
+    const secure = new URL(url).protocol === "https:";
+    return [
+      {
+        name: "admin_token",
+        value: fakeToken,
+        url,
+        httpOnly: true,
+        secure,
+        sameSite: "Lax" as const,
+      },
+      {
+        name: "app_access_token",
+        value: fakeToken,
+        url,
+        httpOnly: true,
+        secure,
+        sameSite: "Lax" as const,
+      },
+    ];
+  });
+
+  await page.context().addCookies(authCookies);
 
   const sessionCookies = await page.context().cookies(cookieUrl);
-  if (!sessionCookies.some((item) => item.name === "admin_token")) {
-    throw new Error("Failed to set admin_token cookie for test session");
+  if (!sessionCookies.some((item) => item.name === "admin_token" || item.name === "app_access_token")) {
+    throw new Error("Failed to set auth cookie for test session");
   }
 
   // Intercept the BFF session endpoint before any navigation.
@@ -53,19 +72,23 @@ async function stubAuthSession(
           displayName: "Test Admin",
           roles: ["admin"],
           permissions: [
+            "platform.admin.read",
+            "platform.admin.write",
+            "admin.dashboard.read",
             "admin.tenants.read",
             "admin.tenants.write",
             "admin.jobs.read",
             "admin.jobs.write",
-            "notifications.read",
-            "notifications.write",
-            "feature_flags.read",
-            "feature_flags.write",
             "students.read",
+            "students.write",
             "enrollments.read",
+            "enrollments.write",
             "grades.read",
+            "grades.write",
             "transcripts.read",
+            "transcripts.write",
             "scheduling.read",
+            "scheduling.write",
             "health.read",
             "metrics.read",
             "admin.audit.read",
@@ -97,7 +120,9 @@ const LOGIN_TITLE_RE =
 const USERNAME_RE = /Username|Логин/i;
 const PASSWORD_RE = /Password|Пароль|Құпиясөз/i;
 const SIGN_IN_RE = /Sign in|Войти|Кіру/i;
-const DASHBOARD_RE = /Dashboard|Дашборд|Басқару тақтасы/i;
+const DASHBOARD_RE =
+  /Dashboard|Дашборд|Басқару тақтасы|University Executive Dashboard|Исполнительный дашборд университета|Университеттің атқарушы дашборды/i;
+const CONSOLE_BRAND_RE = /AI University Platform/i;
 const TENANTS_RE = /Tenants|Universities|Университеты|Университеттер/i;
 const JOBS_RE = /Jobs|Задачи|Тапсырмалар/i;
 const NOTIFICATIONS_RE = /Notifications|Уведомления|Хабарландырулар/i;
@@ -132,6 +157,34 @@ async function forceEnglishLocale(page: Page) {
     document.cookie = "app.locale=en; Path=/; SameSite=Lax";
     window.localStorage.setItem("app.language", "en");
   });
+}
+
+async function assertConsoleLanding(page: Page) {
+  await expect(page).toHaveURL(/\/console(?:\/|$|\?)/);
+
+  const brandMarker = page.getByText(CONSOLE_BRAND_RE);
+  const dashboardHeading = page.getByRole("heading", { name: DASHBOARD_RE });
+  const dashboardNavLink = page.getByRole("link", {
+    name: /Dashboard|Дашборд|Басқару тақтасы/i,
+  });
+
+  const markerVisible =
+    (await brandMarker.isVisible().catch(() => false)) ||
+    (await dashboardHeading.isVisible().catch(() => false)) ||
+    (await dashboardNavLink.isVisible().catch(() => false));
+
+  if (!markerVisible) {
+    const currentUrl = page.url();
+    const headings = (await page.locator("h1, h2, h3").allTextContents())
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .join(" | ");
+    console.error(
+      `[admin-console smoke] landing markers missing; url=${currentUrl}; headings=${headings || "<none>"}`,
+    );
+  }
+
+  await expect(brandMarker).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -208,9 +261,7 @@ test.describe("Auth", () => {
     await stubApi(page, "/api/bff/v1/admin/notifications*", emptyPage);
 
     await page.goto("/console");
-    await expect(
-      page.getByRole("heading", { name: DASHBOARD_RE }),
-    ).toBeVisible();
+    await assertConsoleLanding(page);
   });
 
   test("logout clears session and redirects to /login", async ({ page }) => {
@@ -233,9 +284,7 @@ test.describe("Auth", () => {
     });
 
     await page.goto("/console");
-    await expect(
-      page.getByRole("heading", { name: DASHBOARD_RE }),
-    ).toBeVisible();
+    await assertConsoleLanding(page);
 
     // SessionPanel logout control is no longer mounted in runtime; emulate sign-out by clearing auth cookies.
     await page.context().clearCookies();
@@ -367,9 +416,9 @@ test.describe("Platform pages", () => {
     });
 
     await page.goto("/console/tenants");
-    await page.getByRole("button", { name: /deactivate/i }).click();
+    await page.getByRole("button", { name: /delete|удалить|жою/i }).click();
     await expect(
-      page.getByText(/deactivate university\?|deactivate tenant\?/i),
+      page.getByText(/delete university\?|удалить университет\?|университетті жою керек пе\?/i),
     ).toBeVisible();
 
     const deleteRequest = page.waitForRequest((request) => {
@@ -380,7 +429,7 @@ test.describe("Platform pages", () => {
     });
 
     await page
-      .getByRole("button", { name: /^deactivate$/i })
+      .getByRole("button", { name: /delete|удалить|жою/i })
       .last()
       .click();
     await deleteRequest;

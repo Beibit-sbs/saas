@@ -18,6 +18,8 @@ os.environ.setdefault("INTEGRATIONS_ENCRYPTION_KEY", "test-integration-key-not-f
 # cases where tests intentionally remove DATABASE_URL. Force the documented test
 # override even when docker-compose injects BILLING_DB_ONLY_MODE=true.
 os.environ["BILLING_DB_ONLY_MODE"] = "false"
+# Extend token TTL to 24h so long-running test suites don't expire mid-run
+os.environ.setdefault("AUTH_ACCESS_TOKEN_TTL_MINUTES", "1440")
 
 _trusted_hosts_raw = os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1,backend,nginx")
 _trusted_hosts = [item.strip() for item in _trusted_hosts_raw.split(",") if item.strip()]
@@ -45,7 +47,6 @@ from app.modules.auth.session_service import clear_sessions_state
 from app.modules.auth.token_service import create_access_token
 from app.modules.backup import service as backup_service
 from app.modules.billing import service as billing_service
-from app.modules.feature_flags import service as feature_flags_service
 from app.modules.i18n import service as i18n_service
 from app.modules.integrations import service as integrations_service
 from app.modules.jobs import service as jobs_service

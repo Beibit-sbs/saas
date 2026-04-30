@@ -19,6 +19,7 @@ from app.modules.billing.service import assert_billing_write_allowed
 from app.modules.courses.models import CourseModel
 from app.modules.enrollments.models import EnrollmentModel, EnrollmentStatus
 from app.modules.scheduling.business_rules import SchedulingRules
+from app.modules.university_core.tenant_entity_service import list_entities_for_tenant as _list_tenant_entities
 from app.modules.scheduling.models import (
     AttendanceStatus,
     ClassroomModel,
@@ -39,6 +40,7 @@ from app.modules.scheduling.schemas import (
     ConflictReportSchema,
     CourseSectionCreateSchema,
     CourseSectionReadSchema,
+    CourseSectionUpdateSchema,
     DisciplineCreateSchema,
     DisciplineListResponseSchema,
     DisciplineReadSchema,
@@ -75,6 +77,11 @@ def _utc_now() -> datetime:
     return datetime.now(UTC)
 
 
+# Statuses indicating an instructor has a contractually valid employment relationship.
+# An instructor whose ONLY contracts are terminated/expired is blocked from new assignments.
+_INSTRUCTOR_ACTIVE_CONTRACT_STATUSES: frozenset[str] = frozenset({"active", "draft", "pending"})
+
+
 def _time_to_str(value) -> str:
     return value.strftime("%H:%M:%S") if value is not None else "00:00:00"
 
@@ -106,6 +113,41 @@ class SchedulingService:
         ).scalar_one_or_none()
         assert_resource_belongs_to_tenant(section, tenant_id, resource_name="Course section", resource_id=section_id)
         return section
+
+    def _check_instructor_has_active_contract(self, tenant_id: int, instructor_id: str) -> None:
+        """Cross-entity guard: scheduling.InstructorAssignmentModel × faculty_contracts.status.
+
+        An instructor whose ONLY recorded contracts are terminated or expired must not be
+        assigned to a course section — payroll governance and HR compliance require an active
+        contractual relationship before any teaching assignment is created.
+
+        Safe-skip when the instructor has NO contract records at all: this tenant may not use
+        the faculty contract system, and we must not produce false-positive blocks.
+        """
+        try:
+            all_contracts = _list_tenant_entities("faculty_contracts", tenant_id)
+        except Exception:
+            return  # entity service unavailable → allow (no false-positive block)
+
+        instructor_contracts = [
+            row for row in all_contracts
+            if str(row.get("faculty_id") or "").strip() == str(instructor_id).strip()
+        ]
+        if not instructor_contracts:
+            # Instructor not tracked in contracts system → safe-skip
+            return
+
+        has_active = any(
+            str(row.get("status") or "").strip().lower() in _INSTRUCTOR_ACTIVE_CONTRACT_STATUSES
+            for row in instructor_contracts
+        )
+        if not has_active:
+            statuses = [str(row.get("status") or "unknown") for row in instructor_contracts]
+            raise DomainValidationError(
+                f"Instructor '{instructor_id}' cannot be assigned: no active contract found. "
+                f"Existing contract statuses: {statuses}. "
+                f"A contract in status {sorted(_INSTRUCTOR_ACTIVE_CONTRACT_STATUSES)} is required."
+            )
 
     def _calculate_student_attendance_rate(
         self,
@@ -386,6 +428,47 @@ class SchedulingService:
         )
         return CourseSectionReadSchema.model_validate(section)
 
+    async def get_course_section(
+        self,
+        tenant_id: int,
+        section_id: int,
+    ) -> CourseSectionReadSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        section = self._load_course_section(tenant_id, section_id)
+        return CourseSectionReadSchema.model_validate(section)
+
+    async def update_course_section(
+        self,
+        tenant_id: int,
+        section_id: int,
+        request: CourseSectionUpdateSchema,
+        actor_id: str,
+    ) -> CourseSectionReadSchema:
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        section = self._load_course_section(tenant_id, section_id)
+        if request.section_code is not None:
+            section.section_code = request.section_code
+        if request.instructor_id is not None:
+            section.instructor_id = request.instructor_id
+        if request.max_capacity is not None:
+            SchedulingRules.validate_section_capacity(request.max_capacity)
+            section.max_capacity = request.max_capacity
+        section.updated_at = _utc_now()
+        try:
+            self.db.commit()
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise DomainValidationError("Unable to update section due to constraint violation") from exc
+        self.db.refresh(section)
+        _audit(
+            actor_id,
+            build_audit_action("scheduling", "section", "updated"),
+            f"/internal/scheduling/sections/{section.id}",
+            {"section_id": section.id},
+            tenant_id,
+        )
+        return CourseSectionReadSchema.model_validate(section)
+
     async def schedule_section(
         self,
         tenant_id: int,
@@ -489,6 +572,27 @@ class SchedulingService:
             },
             tenant_id,
         )
+
+        # Fire-and-forget Brain Core signal emission
+        try:
+            from uuid import uuid4
+            from app.modules.brain_core.service import brain_core_service
+            brain_core_service.process_signal({
+                "event_type": "scheduling.section.scheduled",
+                "tenant_id": tenant_id,
+                "correlation_id": str(uuid4()),
+                "source_entity_type": "section_schedule",
+                "source_entity_id": str(schedule.id),
+                "payload": {
+                    "section_id": section_id,
+                    "time_slot_id": request.time_slot_id,
+                    "classroom_id": request.classroom_id,
+                    "day_of_week": request.day_of_week.value,
+                },
+            })
+        except Exception:
+            pass  # Brain Core errors must never break core flows
+
         return SectionScheduleReadSchema.model_validate(schedule)
 
     async def assign_instructor(
@@ -500,6 +604,7 @@ class SchedulingService:
     ) -> dict:
         tenant_id = validate_tenant_id_provided(tenant_id)
         section = self._load_course_section(tenant_id, section_id)
+        self._check_instructor_has_active_contract(tenant_id, request.instructor_id)
 
         assignment = InstructorAssignmentModel(
             tenant_id=tenant_id,
@@ -1475,7 +1580,7 @@ class SchedulingService:
                 )
             )
         ).scalars().all()
-        section_ids = {s.id for s in sections}
+        {s.id for s in sections}
 
         # Sections missing a schedule record
         scheduled_section_ids = set(
@@ -1547,7 +1652,7 @@ class SchedulingService:
     ) -> AttendanceTrendSchema:
         """Get attendance trends for a section over the past N weeks."""
         validate_tenant_id_provided(tenant_id)
-        section = self._load_course_section(tenant_id, section_id)
+        self._load_course_section(tenant_id, section_id)
 
         # Get all lessons for this section
         lessons = self.db.execute(

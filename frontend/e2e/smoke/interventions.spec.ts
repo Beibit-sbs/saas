@@ -6,7 +6,12 @@ import { test, expect, type Page } from "@playwright/test";
 
 async function stubAuthSession(page: Page) {
   const cookieUrl = process.env.E2E_BASE_URL ?? "https://nginx";
-  const secureCookie = new URL(cookieUrl).protocol === "https:";
+  const parsedUrl = new URL(cookieUrl);
+  const cookieOrigins = new Set<string>([
+    `${parsedUrl.protocol}//${parsedUrl.host}`,
+    `http://${parsedUrl.host}`,
+    `https://${parsedUrl.host}`,
+  ]);
   const payloadJson = JSON.stringify({
     sub: "test-user-id",
     exp: Math.floor(Date.now() / 1000) + 3600,
@@ -14,16 +19,29 @@ async function stubAuthSession(page: Page) {
   const payload = Buffer.from(payloadJson).toString("base64url");
   const fakeToken = `fakeheader.${payload}.fakesig`;
 
-  await page.context().addCookies([
-    {
-      name: "admin_token",
-      value: fakeToken,
-      url: cookieUrl,
-      httpOnly: true,
-      secure: secureCookie,
-      sameSite: "Lax",
-    },
-  ]);
+  await page.context().addCookies(
+    Array.from(cookieOrigins).flatMap((url) => {
+      const secure = new URL(url).protocol === "https:";
+      return [
+        {
+          name: "admin_token",
+          value: fakeToken,
+          url,
+          httpOnly: true,
+          secure,
+          sameSite: "Lax" as const,
+        },
+        {
+          name: "app_access_token",
+          value: fakeToken,
+          url,
+          httpOnly: true,
+          secure,
+          sameSite: "Lax" as const,
+        },
+      ];
+    }),
+  );
 
   await page.route("**/api/auth/me", async (route) => {
     await route.fulfill({
@@ -36,19 +54,23 @@ async function stubAuthSession(page: Page) {
           displayName: "Test Admin",
           roles: ["admin"],
           permissions: [
+            "platform.admin.read",
+            "platform.admin.write",
+            "admin.dashboard.read",
             "admin.tenants.read",
             "admin.tenants.write",
             "admin.jobs.read",
             "admin.jobs.write",
-            "notifications.read",
-            "notifications.write",
-            "feature_flags.read",
-            "feature_flags.write",
             "students.read",
+            "students.write",
             "enrollments.read",
+            "enrollments.write",
             "grades.read",
+            "grades.write",
             "transcripts.read",
+            "transcripts.write",
             "scheduling.read",
+            "scheduling.write",
             "health.read",
             "metrics.read",
           ],

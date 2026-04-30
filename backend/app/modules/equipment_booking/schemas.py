@@ -36,7 +36,12 @@ class EquipmentBookingCreatePayload(BaseModel):
     booking_status: str = Field(default="pending", min_length=1, max_length=32)
     purpose: str | None = Field(default=None, max_length=512)
     conflict_flag: bool = False
+    cancellation_reason: str | None = Field(default=None, max_length=500)
     integration_source: str | None = Field(default=None, max_length=64)
+
+
+class EquipmentBookingStatusUpdatePayload(BaseModel):
+    booking_status: str = Field(min_length=1, max_length=32)
 
 
 class EquipmentBookingResponse(EquipmentBookingCreatePayload):

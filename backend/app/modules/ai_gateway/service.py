@@ -26,7 +26,7 @@ from app.modules.observability.metrics import (
     observe_ai_guardrail_blocked,
     observe_ai_routing_selection,
 )
-from app.modules.ai_guardrails import GuardrailEngine, GuardrailResult
+from app.modules.ai_guardrails import GuardrailEngine
 from app.modules.ai_guardrails.schemas import GuardrailPolicy
 from app.modules.security.db_tenant_context import set_db_tenant_context
 from app.modules.security.url_validation import validate_external_https_url
@@ -519,7 +519,7 @@ def list_usage_cost_daily_aggregation(*, tenant_id: int, days: int = 30) -> list
         tenant_rows = list(_usage_cost_daily_aggregates.get(normalized_tenant_id, {}).values())
 
     if not tenant_rows:
-        return refresh_usage_cost_daily_aggregation(tenant_id=normalized_tenant_id, days=normalized_days)
+        return []
 
     result: list[dict[str, object]] = []
     for row in tenant_rows:

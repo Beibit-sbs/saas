@@ -251,6 +251,7 @@ class TestGradeSubmission:
         enrollment_factory,
         scale_factory,
         scale_item_factory,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         service = GradeLifecycleService(db_session)
         request = GradeSubmitSchema(
@@ -260,6 +261,9 @@ class TestGradeSubmission:
             grade_points=Decimal("4.00"),
         )
         enrollment = enrollment_factory(id=4001, tenant_id=1, enrollment_status=EnrollmentStatus.COMPLETED)
+
+        monkeypatch.setattr(GradeLifecycleService, "_check_section_not_cancelled", lambda *a, **kw: None)
+        monkeypatch.setattr(GradeLifecycleService, "_check_term_submission_window_open", lambda *a, **kw: None)
 
         db_session.execute.side_effect = [
             ExecuteResult(scalar_one_or_none=enrollment),
@@ -319,6 +323,9 @@ class TestGradeSubmission:
             grade_points=Decimal("1.50"),
         )
         enrollment = enrollment_factory(id=4001, tenant_id=1, enrollment_status=EnrollmentStatus.COMPLETED)
+
+        monkeypatch.setattr(GradeLifecycleService, "_check_section_not_cancelled", lambda *a, **kw: None)
+        monkeypatch.setattr(GradeLifecycleService, "_check_term_submission_window_open", lambda *a, **kw: None)
 
         db_session.execute.side_effect = [
             ExecuteResult(scalar_one_or_none=enrollment),

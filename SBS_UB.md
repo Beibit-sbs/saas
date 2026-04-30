@@ -7,7 +7,7 @@
 
 ## Текущий прогресс (оперативный трекер)
 
-**Обновлено:** 2026-04-23 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII COMPLETE ✅ XII1-XII5: backend 13/13 ✅ + frontend 550/550 ✅ + release-gate PASS ✅)
+**Обновлено:** 2026-04-23 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII COMPLETE ✅ XII1-XII5: backend 13/13 ✅ + frontend 550/550 ✅ + release-gate PASS ✅; Phase XIII IN PROGRESS: XIII1 ✅ audit 60/60 EXISTS; XIII2 ✅ feature_flags CRUD 35 tests; XIII3 ✅ billing PATCH /plans/{id} 11 tests; XIII4 ✅ F3.9/F3.10 complete; XIII5 pending)
 
 **[Предыдущее обновление 2026-04-23]** (Brain Core + integrations regression fixes ✅ `test_student_risk_flow.py` 41 passed; `test_financial_aid.py` + `test_housing.py` + `test_integrations.py` 21 passed; post-Phase-G smoke-gate remains PASS `passed=8`, `failed=0`; access model fixed: tenant-local Brain + ministry KPI layer)
 
@@ -156,6 +156,16 @@
 - [x] XII3: #57 `prompt_management` module — prompt templates, versioning, A/B test routing; backend slice + frontend + tests (backend 5/5 ✅; frontend 4/4 ✅)
 - [x] XII4: #58 `model_evaluation` module — model quality metrics, A/B experiments, evaluation runs, leaderboard; backend slice + frontend + tests (backend 4/4 ✅; frontend 4/4 ✅)
 - [x] XII5: Финальный release-gate после Phase XII — AUDIT 60/60 EXISTS ✅ release-gate PASS ✅
+
+#### Phase XIII — Platform Hardening & State Consolidation
+
+**Цель:** Закрыть все оставшиеся gaps после достижения 60/60 EXISTS: синхронизировать audit-документ, достроить stub/partial platform modules до production-ready, завершить F3 DoD closure.
+
+- [x] XIII1: Синхронизировать `docs/AUDIT_SBS_2026.md` — обновить таблицу с 47+13 PLANNED → 60 EXISTS; отразить достижения Phases IX-XII (#28 faculty_kpis, #31 hr_payroll, #33 delinquency, #35 facilities, #36 assets, #37 grants, #38 projects, #39 publications, #40 labs, #52 faculty_copilot, #55 knowledge_retrieval, #57 prompt_management, #58 model_evaluation); обновить ACTIVE FOCUS и сводную таблицу
+- [x] XIII2: `feature_flags` module hardening — реализовать полноценный CRUD API (`GET/POST/PATCH/DELETE /api/admin/platform/feature-flags`) с tenant-scoped flag management, enable/disable semantics; backend тесты ≥ 4; frontend types/hooks обновить
+- [x] XIII3: Billing platform trio hardening — реализовать API для `plans` (`GET/POST /api/admin/billing/plans`, `PATCH /api/admin/billing/plans/{id}/activate`) + `quotas` (`GET/POST /api/admin/billing/quotas`, `PATCH /api/admin/billing/quotas/{id}`) + `usage` (`GET /api/admin/billing/usage`) — tenant-scoped; тесты ≥ 6 (billing contract suite extension); frontend hooks обновить
+- [x] XIII4: F3.9 post-release validation — прогнать полный F3 тест-пакет (`test_f3_intervention_cohort_models.py` + `test_f3_intervention_cohort_service.py` + `test_f3_effectiveness_contract_skeleton.py`); убедиться что F3.10 DoD sign-off артефакт готов (`artifacts/promotion/F3_DOD_SIGNOFF.md`); обновить F3_EXECUTION_PLAN.md F3.9/F3.10 → COMPLETE
+- [ ] XIII5: Финальный release-gate после Phase XIII
 
 ### Правила обновления трекера
 

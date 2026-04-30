@@ -1,6 +1,8 @@
 """Phase XII-XII1: Faculty Copilot router tests."""
 from __future__ import annotations
 
+import pytest
+
 from app.modules.auth.token_service import create_access_token
 from tests.conftest import client
 
@@ -19,6 +21,14 @@ HEADERS = {
         )
     )
 }
+
+
+@pytest.fixture(autouse=True)
+def _bypass_w129_contract_guard(monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.faculty_copilot.service._check_faculty_has_active_contract_for_copilot",
+        lambda *, tenant_id, faculty_id: None,
+    )
 
 
 def test_health_ok() -> None:

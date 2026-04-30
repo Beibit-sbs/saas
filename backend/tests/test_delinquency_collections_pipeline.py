@@ -17,8 +17,34 @@ def _make_record(suffix: str = "X3", days_overdue: int = 30) -> dict:
     }
 
 
+def _seed_enrollment_string_student(student_id: str, tenant_id: int = 1) -> None:
+    """Seed enrollment record with string student_id to satisfy _check_student_has_enrollment_history."""
+    from app.modules.university_core.shared import _state, _state_lock
+
+    with _state_lock:
+        _state.data.setdefault("enrollments", {})
+        _state.counters.setdefault("enrollments", 0)
+        _state.counters["enrollments"] += 1
+        eid = _state.counters["enrollments"]
+        _state.data["enrollments"][eid] = {
+            "id": eid,
+            "student_id": student_id,
+            "course_id": 1,
+            "semester": "Fall 2025",
+            "status": "active",
+            "tenant_id": str(tenant_id),
+        }
+
+
+def _create_record(suffix: str = "X3", days_overdue: int = 30, extra: dict | None = None):
+    """Seed enrollment and create delinquency record."""
+    payload = {**_make_record(suffix, days_overdue), **(extra or {})}
+    _seed_enrollment_string_student(payload["student_id"])
+    return client.post(BASE, headers=ADMIN_HEADERS, json=payload)
+
+
 def test_create_record_and_get_by_id() -> None:
-    created = client.post(BASE, headers=ADMIN_HEADERS, json=_make_record("ID1"))
+    created = _create_record("ID1")
     assert created.status_code == 200, created.text
     rec_id = created.json()["item"]["id"]
 
@@ -34,8 +60,8 @@ def test_get_record_not_found_returns_404() -> None:
 
 
 def test_list_records_returns_items() -> None:
-    client.post(BASE, headers=ADMIN_HEADERS, json=_make_record("LIST1"))
-    client.post(BASE, headers=ADMIN_HEADERS, json=_make_record("LIST2"))
+    _create_record("LIST1")
+    _create_record("LIST2")
 
     resp = client.get(BASE, headers=ADMIN_HEADERS)
     assert resp.status_code == 200, resp.text
@@ -43,7 +69,7 @@ def test_list_records_returns_items() -> None:
 
 
 def test_update_status_to_resolved() -> None:
-    created = client.post(BASE, headers=ADMIN_HEADERS, json=_make_record("ST1"))
+    created = _create_record("ST1")
     assert created.status_code == 200, created.text
     rec_id = created.json()["item"]["id"]
 
@@ -58,7 +84,7 @@ def test_update_status_not_found_returns_404() -> None:
 
 
 def test_update_escalation_stage() -> None:
-    created = client.post(BASE, headers=ADMIN_HEADERS, json=_make_record("ESC1"))
+    created = _create_record("ESC1")
     assert created.status_code == 200, created.text
     rec_id = created.json()["item"]["id"]
 
@@ -74,17 +100,17 @@ def test_update_escalation_not_found_returns_404() -> None:
 
 def test_create_record_with_critical_overdue_succeeds() -> None:
     """Records with 90+ days overdue should still create (brain signal fires)."""
-    payload = _make_record("CRIT1", days_overdue=120)
-    resp = client.post(BASE, headers=ADMIN_HEADERS, json=payload)
+    resp = _create_record("CRIT1", days_overdue=120)
     assert resp.status_code == 200, resp.text
     assert resp.json()["item"]["days_overdue"] == 120
 
 
 def test_list_records_filtered_by_status() -> None:
-    client.post(BASE, headers=ADMIN_HEADERS, json={**_make_record("FILT1"), "status": "in_review"})
-    client.post(BASE, headers=ADMIN_HEADERS, json={**_make_record("FILT2"), "status": "open"})
+    _create_record("FILT1", extra={"status": "in_review"})
+    _create_record("FILT2", extra={"status": "open"})
 
     resp = client.get(f"{BASE}?status=in_review", headers=ADMIN_HEADERS)
     assert resp.status_code == 200, resp.text
     for item in resp.json()["items"]:
         assert item["status"] == "in_review"
+

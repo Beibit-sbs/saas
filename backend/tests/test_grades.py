@@ -295,3 +295,25 @@ def test_change_grade_viewer_role_blocked() -> None:
         },
     )
     assert resp.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# DATA INTEGRITY: duplicate grade guard (unit tests for business rule)
+# ---------------------------------------------------------------------------
+
+def test_validate_no_duplicate_grade_raises_when_exists() -> None:
+    """validate_no_duplicate_grade raises DomainValidationError when a submission already exists."""
+    from app.modules.grades.business_rules import GradeLifecycleRules
+    from app.core.module_helpers.service_validation import DomainValidationError
+
+    existing = MagicMock()  # any truthy value represents an existing grade submission
+    with pytest.raises(DomainValidationError, match="already exists for enrollment_id=10"):
+        GradeLifecycleRules.validate_no_duplicate_grade(existing, enrollment_id=10)
+
+
+def test_validate_no_duplicate_grade_passes_when_none() -> None:
+    """validate_no_duplicate_grade does NOT raise when no submission exists for this enrollment."""
+    from app.modules.grades.business_rules import GradeLifecycleRules
+
+    # Should not raise
+    GradeLifecycleRules.validate_no_duplicate_grade(None, enrollment_id=10)

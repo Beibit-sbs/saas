@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.hr_payroll.schemas import (
     HrEmployeeCreateSchema,
@@ -18,16 +19,7 @@ from app.modules.hr_payroll.schemas import (
     PayrollCycleStatus,
     PayrollCycleStatusUpdateSchema,
 )
-from app.modules.hr_payroll.service import (
-    create_hr_employee,
-    create_payroll_cycle,
-    get_hr_employee,
-    get_payroll_cycle,
-    list_hr_employees,
-    list_payroll_cycles,
-    update_hr_employee_status,
-    update_payroll_cycle_status,
-)
+import app.modules.hr_payroll.service as _svc
 from app.modules.rbac.security import get_actor, permission_dependency
 
 
@@ -42,7 +34,7 @@ def list_hr_employees_endpoint(
     department_id: str | None = None,
     status: HrEmployeeStatus | None = None,
 ) -> HrEmployeeListResponseSchema:
-    items = list_hr_employees(int(tenant["id"]), department_id=department_id, status=status)
+    items = _svc.list_hr_employees(int(tenant["id"]), department_id=department_id, status=status)
     return HrEmployeeListResponseSchema(items=items)
 
 
@@ -53,8 +45,11 @@ def create_hr_employee_endpoint(
     __: Annotated[None, Depends(permission_dependency("hr.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> HrEmployeeItemResponseSchema:
-    item = create_hr_employee(int(tenant["id"]), payload, actor)
-    return HrEmployeeItemResponseSchema(item=item)
+    try:
+        item = _svc.create_hr_employee(int(tenant["id"]), payload, actor)
+        return HrEmployeeItemResponseSchema(item=item)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/employees/{employee_id}", response_model=HrEmployeeItemResponseSchema)
@@ -64,7 +59,7 @@ def get_hr_employee_endpoint(
     __: Annotated[None, Depends(permission_dependency("hr.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> HrEmployeeItemResponseSchema:
-    item = get_hr_employee(int(tenant["id"]), employee_id)
+    item = _svc.get_hr_employee(int(tenant["id"]), employee_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Employee not found")
     return HrEmployeeItemResponseSchema(item=item)
@@ -78,9 +73,12 @@ def update_hr_employee_status_endpoint(
     __: Annotated[None, Depends(permission_dependency("hr.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> HrEmployeeItemResponseSchema:
-    item = update_hr_employee_status(int(tenant["id"]), employee_id, payload, actor)
-    if item is None:
-        raise HTTPException(status_code=404, detail="Employee not found")
+    try:
+        item = _svc.update_hr_employee_status(int(tenant["id"]), employee_id, payload, actor)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return HrEmployeeItemResponseSchema(item=item)
 
 
@@ -91,7 +89,7 @@ def list_payroll_cycles_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
     status: PayrollCycleStatus | None = None,
 ) -> PayrollCycleListResponseSchema:
-    items = list_payroll_cycles(int(tenant["id"]), status=status)
+    items = _svc.list_payroll_cycles(int(tenant["id"]), status=status)
     return PayrollCycleListResponseSchema(items=items)
 
 
@@ -102,7 +100,10 @@ def create_payroll_cycle_endpoint(
     __: Annotated[None, Depends(permission_dependency("hr.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> PayrollCycleItemResponseSchema:
-    item = create_payroll_cycle(int(tenant["id"]), payload, actor)
+    try:
+        item = _svc.create_payroll_cycle(int(tenant["id"]), payload, actor)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return PayrollCycleItemResponseSchema(item=item)
 
 
@@ -113,7 +114,7 @@ def get_payroll_cycle_endpoint(
     __: Annotated[None, Depends(permission_dependency("hr.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> PayrollCycleItemResponseSchema:
-    item = get_payroll_cycle(int(tenant["id"]), cycle_id)
+    item = _svc.get_payroll_cycle(int(tenant["id"]), cycle_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Payroll cycle not found")
     return PayrollCycleItemResponseSchema(item=item)
@@ -127,7 +128,10 @@ def update_payroll_cycle_status_endpoint(
     __: Annotated[None, Depends(permission_dependency("hr.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> PayrollCycleItemResponseSchema:
-    item = update_payroll_cycle_status(int(tenant["id"]), cycle_id, payload, actor)
+    try:
+        item = _svc.update_payroll_cycle_status(int(tenant["id"]), cycle_id, payload, actor)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     if item is None:
         raise HTTPException(status_code=404, detail="Payroll cycle not found")
     return PayrollCycleItemResponseSchema(item=item)

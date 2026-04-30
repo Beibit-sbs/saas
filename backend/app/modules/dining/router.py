@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.dining.schemas import (
@@ -47,9 +48,12 @@ def create_menu_endpoint(
     __: Annotated[None, Depends(permission_dependency("operations.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> DiningMenuItemResponse:
-    return DiningMenuItemResponse(
-        record=create_dining_menu(payload.model_dump(), int(tenant["id"]))
-    )
+    try:
+        return DiningMenuItemResponse(
+            record=create_dining_menu(payload.model_dump(), int(tenant["id"]))
+        )
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/orders", response_model=DiningOrderListResponse)
@@ -71,9 +75,12 @@ def create_order_endpoint(
     __: Annotated[None, Depends(permission_dependency("operations.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> DiningOrderItemResponse:
-    return DiningOrderItemResponse(
-        record=create_dining_order(payload.model_dump(), int(tenant["id"]))
-    )
+    try:
+        return DiningOrderItemResponse(
+            record=create_dining_order(payload.model_dump(), int(tenant["id"]))
+        )
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/brain-context", response_model=DiningBrainContextResponse)

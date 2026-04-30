@@ -39,6 +39,9 @@ from app.modules.grades.schemas import (
     StudentTranscriptSchema,
     TranscriptItemSchema,
 )
+from datetime import timedelta
+from app.modules.scheduling.models import CourseSectionModel, SectionStatus
+
 from app.modules.rbac.abac import (
     validate_grade_submission,
     validate_grade_modification,
@@ -73,6 +76,11 @@ def _audit(
     )
 
 
+# Institutional late-grade submission grace period after term end_date.
+# Grades cannot be submitted after end_date + grace period.
+_GRADE_SUBMISSION_GRACE_DAYS: int = 30
+
+
 class GradeLifecycleService:
     """Lifecycle service for grade submissions, changes, and transcripts."""
 
@@ -103,6 +111,81 @@ class GradeLifecycleService:
                 f"Enrollment {enrollment_id} not found or does not belong to tenant {tenant_id}"
             )
         return enrollment
+
+    def _check_term_submission_window_open(self, tenant_id: int, term_id: int) -> None:
+        """Cross-entity guard: grades × academic_terms.end_date × utcnow().
+
+        Grade submission is blocked when the term's end_date has passed beyond the
+        institutional grace period (_GRADE_SUBMISSION_GRACE_DAYS). This prevents
+        retroactive grade submission that would corrupt already-issued transcripts,
+        distort financial aid calculations, and violate census-date integrity.
+
+        Safe-skip when no term record found or end_date is None (not all deployments
+        configure term end dates — no false-positive block).
+        """
+        term = self.db.execute(
+            select(AcademicTermModel).where(
+                and_(
+                    AcademicTermModel.id == term_id,
+                    AcademicTermModel.tenant_id == tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if term is None or term.end_date is None:
+            return
+        deadline = term.end_date + timedelta(days=_GRADE_SUBMISSION_GRACE_DAYS)
+        # Make deadline timezone-aware for comparison if needed
+        now = _utc_now()
+        if deadline.tzinfo is None:
+            from datetime import timezone as _tz
+            deadline = deadline.replace(tzinfo=_tz.utc)
+        if now > deadline:
+            raise DomainValidationError(
+                f"Grade submission is locked: term {term_id} ended on "
+                f"{term.end_date.date()} and the {_GRADE_SUBMISSION_GRACE_DAYS}-day "
+                f"grade submission window has closed. "
+                f"Use a formal grade correction workflow."
+            )
+
+    def _check_section_not_cancelled(self, tenant_id: int, enrollment_id: int) -> None:
+        """Cross-entity guard: grades × enrollments.section_id × scheduling.section.status.
+
+        Data-model enforcement for W78: grade submission is allowed only when enrollment
+        is linked to a concrete section and that section is active for grading.
+        """
+        enrollment = self._load_enrollment(tenant_id, enrollment_id)
+        if enrollment.section_id is None:
+            raise DomainValidationError(
+                f"Grade submission blocked: enrollment_id={enrollment_id} has no section_id. "
+                "Enrollment-section linkage is required."
+            )
+
+        section = self.db.execute(
+            select(CourseSectionModel).where(
+                and_(
+                    CourseSectionModel.tenant_id == tenant_id,
+                    CourseSectionModel.id == enrollment.section_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if section is None:
+            raise DomainValidationError(
+                f"Grade submission blocked: section_id={enrollment.section_id} not found for "
+                f"tenant_id={tenant_id}. enrollment_id={enrollment_id}"
+            )
+
+        if section.course_id != enrollment.course_id or section.term_id != enrollment.term_id:
+            raise DomainValidationError(
+                "Grade submission blocked: enrollment-section mismatch. "
+                f"enrollment_id={enrollment_id}, enrollment(course_id={enrollment.course_id}, term_id={enrollment.term_id}) "
+                f"!= section(id={section.id}, course_id={section.course_id}, term_id={section.term_id})"
+            )
+
+        if section.status != SectionStatus.SCHEDULED:
+            raise DomainValidationError(
+                "Grade submission blocked: section is not active for grading. "
+                f"section_id={section.id}, status={section.status}"
+            )
 
     def _load_student(self, tenant_id: int, student_profile_id: int) -> StudentProfileModel:
         student = self.db.execute(
@@ -236,7 +319,8 @@ class GradeLifecycleService:
             course_id=enrollment.course_id,
             tenant_id=tenant_id,
         )
-        
+        self._check_section_not_cancelled(tenant_id, request.enrollment_id)
+        self._check_term_submission_window_open(tenant_id, enrollment.term_id)
         GradeLifecycleRules.validate_grade_submission_allowed(enrollment)
 
         existing = self._load_grade_submission(tenant_id, request.enrollment_id)
@@ -325,6 +409,67 @@ class GradeLifecycleService:
                     "source_entity_id": str(submission.id),
                 },
             )
+            try:
+                from uuid import uuid4
+                from app.modules.brain_core.service import brain_core_service
+                brain_core_service.process_signal({
+                    "event_type": "academic.grade_risk.detected",
+                    "tenant_id": tenant_id,
+                    "correlation_id": str(uuid4()),
+                    "source_entity_type": "grade_submission",
+                    "source_entity_id": str(submission.id),
+                    "payload": {
+                        "student_id": enrollment.student_profile_id,
+                        "course_id": enrollment.course_id,
+                        "current_grade": float(resolved_points),
+                        "grade_trend": "declining",
+                        "risk_level": risk_level,
+                    },
+                })
+            except Exception:
+                pass  # Brain Core errors must never break core flows
+
+            try:
+                from datetime import timedelta
+                from app.modules.interventions.models import (
+                    InterventionAssigneeType,
+                    InterventionCaseModel,
+                    InterventionCaseSeverity,
+                    InterventionCaseStatus,
+                    InterventionCaseType,
+                )
+                _sev = InterventionCaseSeverity.HIGH if risk_level == "high" else InterventionCaseSeverity.MEDIUM
+                _days = 3 if risk_level == "high" else 5
+                _assignee = "dean_office" if risk_level == "high" else "faculty_advisor"
+                _now = datetime.now(UTC)
+                intervention = InterventionCaseModel(
+                    tenant_id=tenant_id,
+                    case_type=InterventionCaseType.ACADEMIC_RISK,
+                    student_profile_id=enrollment.student_profile_id,
+                    severity=_sev,
+                    status=InterventionCaseStatus.OPEN,
+                    title=f"Grade risk ({risk_level}): student {enrollment.student_profile_id}",
+                    description=(
+                        f"Auto-created on grade submission {submission.id}. "
+                        f"Grade: {request.grade_code} ({resolved_points} pts). "
+                        f"Risk threshold: {risk_level}."
+                    ),
+                    risk_snapshot_json={
+                        "grade_code": request.grade_code,
+                        "grade_points": str(resolved_points),
+                        "risk_level": risk_level,
+                        "submission_id": submission.id,
+                        "course_id": enrollment.course_id,
+                    },
+                    assignee_type=InterventionAssigneeType.GROUP,
+                    assignee_ref=_assignee,
+                    due_at=_now + timedelta(days=_days),
+                    created_by=actor_id,
+                    updated_by=actor_id,
+                )
+                self.db.add(intervention)
+            except Exception:
+                pass  # Intervention auto-create errors must never break grade submission
 
         _audit(
             actor=actor_id,

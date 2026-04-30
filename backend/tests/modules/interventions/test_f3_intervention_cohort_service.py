@@ -16,7 +16,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.core.module_helpers.service_validation import (
-    DomainValidationError,
     TenantRequiredError,
     TenantResourceNotFoundError,
 )

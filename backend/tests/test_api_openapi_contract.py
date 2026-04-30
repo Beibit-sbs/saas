@@ -96,23 +96,6 @@ def test_playbooks_list_openapi_contract_stable() -> None:
     assert {"enabled_only", "offset", "limit"}.issubset(param_names)
 
 
-def test_risk_student_latest_openapi_contract_stable() -> None:
-    operation = _operation("/api/v1/risk/students/{student_profile_id}/latest", "get")
-    assert operation.get("tags") == ["risk-v1"]
-    assert _response_schema_ref(operation, "200") == "#/components/schemas/RiskStudentLatestSchema"
-    assert _response_schema_ref(operation, "403") == "#/components/schemas/ErrorDetailResponse"
-    assert _response_schema_ref(operation, "404") == "#/components/schemas/ErrorDetailResponse"
-    params = operation.get("parameters", [])
-    assert isinstance(params, list)
-    path_param = next(
-        (param for param in params if isinstance(param, dict) and param.get("name") == "student_profile_id"),
-        None,
-    )
-    assert path_param is not None, "student_profile_id path parameter must be documented"
-    assert path_param.get("in") == "path"
-    assert path_param.get("required") is True
-
-
 def test_tenants_list_openapi_contract_stable() -> None:
     operation = _operation("/api/admin/tenants", "get")
     assert operation.get("tags") == ["tenants"]

@@ -1,0 +1,5 @@
+=== system audit ===
+timestamp_utc=20260429T102110Z
+[run] bash /home/sbs/AI/scripts/preflight_checks.sh
+[guard] FAIL: active Python virtualenv detected: /home/sbs/AI/backend/.venv
+[guard] Deactivate it first: deactivate

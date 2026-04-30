@@ -26,7 +26,6 @@ from app.modules.transcripts.schemas import (
     TranscriptConsistencyReportSchema,
     TranscriptTenantConsistencyReportSchema,
     TranscriptSnapshotMutationResponse,
-    TranscriptSnapshotSchema,
 )
 from app.modules.transcripts.service import TranscriptService, get_transcripts_brain_context
 

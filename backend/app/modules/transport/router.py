@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.transport.schemas import (
@@ -46,9 +47,12 @@ def create_route_endpoint(
     __: Annotated[None, Depends(permission_dependency("operations.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> TransportRouteItemResponse:
-    return TransportRouteItemResponse(
-        record=create_transport_route(payload.model_dump(), int(tenant["id"]))
-    )
+    try:
+        return TransportRouteItemResponse(
+            record=create_transport_route(payload.model_dump(), int(tenant["id"]))
+        )
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/bookings", response_model=TransportBookingListResponse)
@@ -70,9 +74,12 @@ def create_booking_endpoint(
     __: Annotated[None, Depends(permission_dependency("operations.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> TransportBookingItemResponse:
-    return TransportBookingItemResponse(
-        record=create_transport_booking(payload.model_dump(), int(tenant["id"]))
-    )
+    try:
+        return TransportBookingItemResponse(
+            record=create_transport_booking(payload.model_dump(), int(tenant["id"]))
+        )
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/brain-context", response_model=TransportBrainContextResponse)

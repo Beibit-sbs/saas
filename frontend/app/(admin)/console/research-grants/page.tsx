@@ -132,7 +132,7 @@ export default function ResearchGrantsPage() {
                 onClick={() =>
                   updateStatus.mutate(
                     { grantId: row.id, payload: { status: next as ResearchGrant["status"] } },
-                    getHandlers(`Grant moved to ${next}`),
+                    getHandlers({ successTitle: `Grant moved to ${next}` }),
                   )
                 }
               >
@@ -157,10 +157,10 @@ export default function ResearchGrantsPage() {
         status: "planned",
       },
       {
-        ...getHandlers("Grant created"),
+        ...getHandlers({ successTitle: "Grant created" }),
         onSuccess: (...args) => {
           setForm(EMPTY_FORM);
-          getHandlers("Grant created").onSuccess?.(...args);
+          getHandlers({ successTitle: "Grant created" }).onSuccess?.(args[0]);
         },
       },
     );

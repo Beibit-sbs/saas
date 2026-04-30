@@ -5,7 +5,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+import app.modules.asset_inventory.service as _svc
 from app.core.tenant import get_current_tenant
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.asset_inventory.schemas import (
     AssetCategory,
     AssetCondition,
@@ -18,15 +20,6 @@ from app.modules.asset_inventory.schemas import (
     DepreciationRecordItemResponseSchema,
     DepreciationRecordListResponseSchema,
     DepreciationStatus,
-)
-from app.modules.asset_inventory.service import (
-    create_asset_item,
-    create_depreciation_record,
-    get_asset_item,
-    get_depreciation_record,
-    list_asset_items,
-    list_depreciation_records,
-    update_asset_item_status,
 )
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -43,7 +36,7 @@ def list_asset_items_endpoint(
     category: AssetCategory | None = None,
     condition: AssetCondition | None = None,
 ) -> AssetListResponseSchema:
-    items = list_asset_items(int(tenant["id"]), status=status, category=category, condition=condition)
+    items = _svc.list_asset_items(int(tenant["id"]), status=status, category=category, condition=condition)
     return AssetListResponseSchema(items=items)
 
 
@@ -54,7 +47,10 @@ def create_asset_item_endpoint(
     __: Annotated[None, Depends(permission_dependency("asset_inventory.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> AssetItemResponseSchema:
-    item = create_asset_item(int(tenant["id"]), payload, actor)
+    try:
+        item = _svc.create_asset_item(int(tenant["id"]), payload, actor)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return AssetItemResponseSchema(item=item)
 
 
@@ -65,7 +61,7 @@ def get_asset_item_endpoint(
     __: Annotated[None, Depends(permission_dependency("asset_inventory.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> AssetItemResponseSchema:
-    item = get_asset_item(int(tenant["id"]), asset_id)
+    item = _svc.get_asset_item(int(tenant["id"]), asset_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Asset not found")
     return AssetItemResponseSchema(item=item)
@@ -79,7 +75,7 @@ def update_asset_item_status_endpoint(
     __: Annotated[None, Depends(permission_dependency("asset_inventory.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> AssetItemResponseSchema:
-    item = update_asset_item_status(int(tenant["id"]), asset_id, payload, actor)
+    item = _svc.update_asset_item_status(int(tenant["id"]), asset_id, payload, actor)
     if item is None:
         raise HTTPException(status_code=404, detail="Asset not found")
     return AssetItemResponseSchema(item=item)
@@ -92,7 +88,7 @@ def list_depreciation_records_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
     status: DepreciationStatus | None = None,
 ) -> DepreciationRecordListResponseSchema:
-    items = list_depreciation_records(int(tenant["id"]), status=status)
+    items = _svc.list_depreciation_records(int(tenant["id"]), status=status)
     return DepreciationRecordListResponseSchema(items=items)
 
 
@@ -103,7 +99,10 @@ def create_depreciation_record_endpoint(
     __: Annotated[None, Depends(permission_dependency("asset_inventory.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> DepreciationRecordItemResponseSchema:
-    item = create_depreciation_record(int(tenant["id"]), payload, actor)
+    try:
+        item = _svc.create_depreciation_record(int(tenant["id"]), payload, actor)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return DepreciationRecordItemResponseSchema(item=item)
 
 
@@ -114,7 +113,7 @@ def get_depreciation_record_endpoint(
     __: Annotated[None, Depends(permission_dependency("asset_inventory.read"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> DepreciationRecordItemResponseSchema:
-    item = get_depreciation_record(int(tenant["id"]), record_id)
+    item = _svc.get_depreciation_record(int(tenant["id"]), record_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Depreciation record not found")
     return DepreciationRecordItemResponseSchema(item=item)

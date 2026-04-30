@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.security_operations.schemas import (
@@ -16,13 +17,7 @@ from app.modules.security_operations.schemas import (
     SecurityVisitorItemResponse,
     SecurityVisitorListResponse,
 )
-from app.modules.security_operations.service import (
-    create_security_incident,
-    create_security_visitor,
-    get_security_operations_brain_context,
-    list_security_incidents,
-    list_security_visitors,
-)
+import app.modules.security_operations.service as _svc
 
 
 router = APIRouter(prefix="/api/admin/security-operations", tags=["security-operations"])
@@ -37,7 +32,7 @@ def list_security_incidents_endpoint(
     status: str | None = None,
 ) -> SecurityIncidentListResponse:
     return SecurityIncidentListResponse(
-        records=list_security_incidents(int(tenant["id"]), severity=severity, status=status)
+        records=_svc.list_security_incidents(int(tenant["id"]), severity=severity, status=status)
     )
 
 
@@ -48,7 +43,12 @@ def create_security_incident_endpoint(
     __: Annotated[None, Depends(permission_dependency("operations.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> SecurityIncidentItemResponse:
-    return SecurityIncidentItemResponse(record=create_security_incident(payload.model_dump(), int(tenant["id"])))
+    try:
+        return SecurityIncidentItemResponse(
+            record=_svc.create_security_incident(payload.model_dump(), int(tenant["id"]))
+        )
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/visitors", response_model=SecurityVisitorListResponse)
@@ -60,7 +60,7 @@ def list_security_visitors_endpoint(
     access_status: str | None = None,
 ) -> SecurityVisitorListResponse:
     return SecurityVisitorListResponse(
-        records=list_security_visitors(int(tenant["id"]), status=status, access_status=access_status)
+        records=_svc.list_security_visitors(int(tenant["id"]), status=status, access_status=access_status)
     )
 
 
@@ -71,7 +71,10 @@ def create_security_visitor_endpoint(
     __: Annotated[None, Depends(permission_dependency("operations.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> SecurityVisitorItemResponse:
-    return SecurityVisitorItemResponse(record=create_security_visitor(payload.model_dump(), int(tenant["id"])))
+    try:
+        return SecurityVisitorItemResponse(record=_svc.create_security_visitor(payload.model_dump(), int(tenant["id"])))
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/brain-context", response_model=SecurityOperationsBrainContextResponse)
@@ -81,5 +84,5 @@ def get_security_operations_brain_context_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> SecurityOperationsBrainContextResponse:
     return SecurityOperationsBrainContextResponse.model_validate(
-        get_security_operations_brain_context(int(tenant["id"]))
+        _svc.get_security_operations_brain_context(int(tenant["id"]))
     )

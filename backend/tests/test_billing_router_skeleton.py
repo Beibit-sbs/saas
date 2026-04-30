@@ -6,7 +6,6 @@ Status: PREP-PHASE (not for production)
 
 import pytest
 from datetime import datetime, timezone
-from typing import Optional
 
 
 class BillingPlan:

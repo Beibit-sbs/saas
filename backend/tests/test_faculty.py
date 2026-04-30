@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 

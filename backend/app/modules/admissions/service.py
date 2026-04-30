@@ -318,6 +318,30 @@ class ApplicationService:
         if not applicant:
             raise ValueError(f"Applicant {request.applicant_id} not found in tenant {tenant_id}")
 
+        # Check for existing active application for same applicant+program
+        _active_stages = [
+            ApplicationStage.NEW.value,
+            ApplicationStage.RECEIVED.value,
+            ApplicationStage.UNDER_REVIEW.value,
+            ApplicationStage.DECISION_PENDING.value,
+        ]
+        existing_app = self.db.execute(
+            select(ApplicationModel).where(
+                and_(
+                    ApplicationModel.applicant_id == request.applicant_id,
+                    ApplicationModel.program_id == request.program_id,
+                    ApplicationModel.tenant_id == tenant_id,
+                    ApplicationModel.stage.in_(_active_stages),
+                )
+            )
+        ).scalar_one_or_none()
+
+        if existing_app is not None:
+            raise ValueError(
+                f"Active application already exists for applicant {request.applicant_id} "
+                f"in program {request.program_id}"
+            )
+
         application = ApplicationModel(
             tenant_id=tenant_id,
             applicant_id=request.applicant_id,
@@ -1378,6 +1402,48 @@ class DecisionService:
         )
 
         self.db.commit()
+
+        # Fire-and-forget Brain Core signal emission
+        try:
+            from uuid import uuid4
+            from app.modules.brain_core.service import brain_core_service
+            brain_core_service.process_signal({
+                "event_type": "admissions.decision.made",
+                "tenant_id": tenant_id,
+                "correlation_id": str(uuid4()),
+                "source_entity_type": "application_decision",
+                "source_entity_id": str(decision.id),
+                "payload": {
+                    "application_id": application_id,
+                    "decision_type": request.decision_type.value,
+                    "decided_by": request.decided_by,
+                },
+            })
+        except Exception:
+            pass  # Brain Core errors must never break core flows
+
+        # Wire: ACCEPTED decision → auto-create financial aid record (pending review)
+        if request.decision_type.value == "accepted":
+            try:
+                from app.modules.financial_aid.service import create_financial_aid_record
+                from app.modules.financial_aid.schemas import FinancialAidRecordCreateSchema
+                _student_id = getattr(application, "student_id", None) or getattr(application, "applicant_id", None)
+                if _student_id is not None:
+                    create_financial_aid_record(
+                        tenant_id=tenant_id,
+                        request=FinancialAidRecordCreateSchema(
+                            student_id=int(_student_id),
+                            aid_type="scholarship",
+                            amount=0.01,
+                            currency="USD",
+                            term="pending-review",
+                            reviewer_id="aid-office",
+                            notes=f"Auto-created on admissions acceptance. Application {application_id}, decision {decision.id}.",
+                        ),
+                        actor=request.decided_by,
+                    )
+            except Exception:
+                pass  # Financial aid auto-create must never block admissions decision
 
         return ApplicationDecisionReadSchema.model_validate(decision)
 

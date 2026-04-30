@@ -85,6 +85,7 @@ class FacultyContractBase(BaseModel):
     max_credit_hours: int = Field(ge=1, le=100)
     status: str = Field(min_length=1, max_length=64)
     notes: str | None = Field(default=None, max_length=1000)
+    termination_reason: str | None = Field(default=None, max_length=500)
 
 
 class FacultyContractCreatePayload(FacultyContractBase):

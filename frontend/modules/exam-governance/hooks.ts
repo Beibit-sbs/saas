@@ -45,7 +45,7 @@ export function useExamDashboardSummary() {
   return useQuery({
     queryKey: CACHE_KEYS.DASHBOARD,
     queryFn: () =>
-      apiGet<ExamDashboardSummary>(`/api/exams/dashboard/summary`),
+      apiGet<ExamDashboardSummary>(`/api/admin/exam-governance/dashboard/summary`),
     staleTime: 60000,
   });
 }
@@ -62,7 +62,7 @@ export function useExamsList(filters?: { status?: string; term_id?: string }) {
       if (filters?.term_id) params.append('term_id', filters.term_id);
       
       return apiGet<ExamListItem[]>(
-        `/api/exams?${params.toString()}`
+        `/api/admin/exam-governance?${params.toString()}`
       );
     },
     staleTime: 60000,
@@ -79,7 +79,7 @@ export function useExamDetail(examId: string) {
       apiGet<{
         metadata: ExamMetadata;
         schedule: ExamSchedule;
-      }>(`/api/exams/${examId}`),
+      }>(`/api/admin/exam-governance/${examId}`),
     enabled: !!examId,
     staleTime: 30000,
   });
@@ -92,7 +92,7 @@ export function useExamSessions(examId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.EXAM_SESSIONS(examId),
     queryFn: () =>
-      apiGet<ExamSession[]>(`/api/exams/${examId}/sessions`),
+      apiGet<ExamSession[]>(`/api/admin/exam-governance/${examId}/sessions`),
     enabled: !!examId,
     staleTime: 30000,
   });
@@ -106,7 +106,7 @@ export function useStudentRegistrations(sessionId: string) {
     queryKey: CACHE_KEYS.EXAM_REGISTRATIONS(sessionId),
     queryFn: () =>
       apiGet<StudentExamRegistration[]>(
-        `/api/exams/sessions/${sessionId}/registrations`
+        `/api/admin/exam-governance/sessions/${sessionId}/registrations`
       ),
     enabled: !!sessionId,
     staleTime: 30000,
@@ -120,7 +120,7 @@ export function useExamStatistics(examId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.EXAM_STATISTICS(examId),
     queryFn: () =>
-      apiGet<ExamStatistics>(`/api/exams/${examId}/statistics`),
+      apiGet<ExamStatistics>(`/api/admin/exam-governance/${examId}/statistics`),
     enabled: !!examId,
     staleTime: 60000,
   });
@@ -133,7 +133,7 @@ export function useProctorAssignments(examId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.PROCTOR_ASSIGNMENTS(examId),
     queryFn: () =>
-      apiGet<ProctorAssignment[]>(`/api/exams/${examId}/proctors`),
+      apiGet<ProctorAssignment[]>(`/api/admin/exam-governance/${examId}/proctors`),
     enabled: !!examId,
     staleTime: 30000,
   });
@@ -146,7 +146,7 @@ export function useExamAccommodations(examId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.ACCOMMODATIONS(examId),
     queryFn: () =>
-      apiGet<ExamAccessibility[]>(`/api/exams/${examId}/accommodations`),
+      apiGet<ExamAccessibility[]>(`/api/admin/exam-governance/${examId}/accommodations`),
     enabled: !!examId,
     staleTime: 30000,
   });
@@ -159,7 +159,7 @@ export function useExamsByTerm(termId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.BY_TERM(termId),
     queryFn: () =>
-      apiGet<ExamListItem[]>(`/api/exams/term/${termId}`),
+      apiGet<ExamListItem[]>(`/api/admin/exam-governance/term/${termId}`),
     enabled: !!termId,
     staleTime: 60000,
   });
@@ -172,7 +172,7 @@ export function useExamsByFaculty(facultyId: string) {
   return useQuery({
     queryKey: CACHE_KEYS.BY_FACULTY(facultyId),
     queryFn: () =>
-      apiGet<ExamListItem[]>(`/api/exams/faculty/${facultyId}`),
+      apiGet<ExamListItem[]>(`/api/admin/exam-governance/faculty/${facultyId}`),
     enabled: !!facultyId,
     staleTime: 60000,
   });
@@ -186,7 +186,7 @@ export function useCreateExam() {
 
   return useMutation({
     mutationFn: (payload: ExamCreatePayload) =>
-      apiPost<ExamMetadata>('/api/exams', payload),
+      apiPost<ExamMetadata>('/api/admin/exam-governance', payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.ALL_EXAMS });
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.DASHBOARD });
@@ -202,7 +202,7 @@ export function useUpdateExam(examId: string) {
 
   return useMutation({
     mutationFn: (payload: ExamUpdatePayload) =>
-      apiPut<ExamMetadata>(`/api/exams/${examId}`, payload),
+      apiPut<ExamMetadata>(`/api/admin/exam-governance/${examId}`, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: CACHE_KEYS.EXAM_DETAIL(examId),
@@ -221,7 +221,7 @@ export function useCreateExamSession() {
 
   return useMutation({
     mutationFn: (payload: ExamSessionCreatePayload) =>
-      apiPost<ExamSession>('/api/exams/sessions', payload),
+      apiPost<ExamSession>('/api/admin/exam-governance/sessions', payload),
     onSuccess: (_, payload) => {
       queryClient.invalidateQueries({
         queryKey: CACHE_KEYS.EXAM_SESSIONS(payload.exam_id),
@@ -246,7 +246,7 @@ export function useRegisterStudent() {
       studentId: string;
     }) =>
       apiPost<StudentExamRegistration>(
-        `/api/exams/sessions/${sessionId}/register`,
+        `/api/admin/exam-governance/sessions/${sessionId}/register`,
         { student_id: studentId }
       ),
     onSuccess: (_, { sessionId }) => {
@@ -272,7 +272,7 @@ export function useCheckInStudent() {
       sessionId: string;
     }) =>
       apiPost<StudentExamRegistration>(
-        `/api/exams/registrations/${registrationId}/check-in`,
+        `/api/admin/exam-governance/registrations/${registrationId}/check-in`,
         {}
       ),
     onSuccess: (_, { sessionId }) => {
@@ -300,7 +300,7 @@ export function useAssignProctor() {
       roomId?: string;
     }) =>
       apiPost<ProctorAssignment>(
-        `/api/exams/${examId}/assign-proctor`,
+        `/api/admin/exam-governance/${examId}/assign-proctor`,
         { proctor_id: proctorId, room_id: roomId }
       ),
     onSuccess: (_, { examId }) => {
@@ -321,7 +321,7 @@ export function useCreateAccommodation() {
   return useMutation({
     mutationFn: (payload: Omit<ExamAccessibility, 'accommodation_id' | 'created_at'>) =>
       apiPost<ExamAccessibility>(
-        '/api/exams/accommodations',
+        '/api/admin/exam-governance/accommodations',
         payload
       ),
     onSuccess: (_, payload) => {
@@ -341,7 +341,7 @@ export function useCancelExam() {
 
   return useMutation({
     mutationFn: (examId: string) =>
-      apiDelete<void>(`/api/exams/${examId}/cancel`),
+      apiDelete<void>(`/api/admin/exam-governance/${examId}/cancel`),
     onSuccess: (_, examId) => {
       queryClient.invalidateQueries({
         queryKey: CACHE_KEYS.EXAM_DETAIL(examId),

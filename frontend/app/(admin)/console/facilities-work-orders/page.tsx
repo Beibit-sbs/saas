@@ -186,7 +186,7 @@ export default function FacilitiesWorkOrdersPage() {
                 onClick={() =>
                   updateOrderStatus.mutate(
                     { orderId: row.id, payload: { status: next } },
-                    getHandlers(`Order moved to ${next}`),
+                    getHandlers({ successTitle: `Order moved to ${next}` }),
                   )
                 }
               >
@@ -261,7 +261,7 @@ export default function FacilitiesWorkOrdersPage() {
                 onClick={() =>
                   updateRequestStatus.mutate(
                     { reqId: row.id, payload: { status: next } },
-                    getHandlers(`Request moved to ${next}`),
+                    getHandlers({ successTitle: `Request moved to ${next}` }),
                   )
                 }
               >
@@ -279,7 +279,7 @@ export default function FacilitiesWorkOrdersPage() {
       <div className="space-y-8">
         <PageHeader
           title="Facilities & Work Orders"
-          subtitle="Manage work orders and maintenance requests for campus facilities"
+          description="Manage work orders and maintenance requests for campus facilities"
           icon={Wrench}
         />
 
@@ -330,10 +330,10 @@ export default function FacilitiesWorkOrdersPage() {
                     status: "open",
                   },
                   {
-                    ...getHandlers("Work order created"),
+                    ...getHandlers({ successTitle: "Work order created" }),
                     onSuccess: (...args) => {
                       setOrderForm(EMPTY_ORDER);
-                      getHandlers("Work order created").onSuccess?.(...args);
+                      getHandlers({ successTitle: "Work order created" }).onSuccess?.(args[0]);
                     },
                   },
                 );
@@ -390,10 +390,10 @@ export default function FacilitiesWorkOrdersPage() {
                     status: "pending",
                   },
                   {
-                    ...getHandlers("Maintenance request submitted"),
+                    ...getHandlers({ successTitle: "Maintenance request submitted" }),
                     onSuccess: (...args) => {
                       setRequestForm(EMPTY_REQUEST);
-                      getHandlers("Maintenance request submitted").onSuccess?.(...args);
+                      getHandlers({ successTitle: "Maintenance request submitted" }).onSuccess?.(args[0]);
                     },
                   },
                 );

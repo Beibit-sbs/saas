@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.module_helpers.service_validation import DomainValidationError
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.communications.schemas import (
@@ -13,11 +14,7 @@ from app.modules.communications.schemas import (
     CommunicationMessageListResponse,
     CommunicationsBrainContextResponse,
 )
-from app.modules.communications.service import (
-    create_message,
-    get_communications_brain_context,
-    list_messages,
-)
+import app.modules.communications.service as _svc
 
 router = APIRouter(prefix="/api/admin/communications", tags=["communications"])
 
@@ -31,7 +28,7 @@ def list_messages_endpoint(
     status: str | None = None,
 ) -> CommunicationMessageListResponse:
     return CommunicationMessageListResponse(
-        records=list_messages(int(tenant["id"]), message_type=message_type, status=status)
+        records=_svc.list_messages(int(tenant["id"]), message_type=message_type, status=status)
     )
 
 
@@ -42,9 +39,11 @@ def create_message_endpoint(
     __: Annotated[None, Depends(permission_dependency("operations.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> CommunicationMessageItemResponse:
-    return CommunicationMessageItemResponse(
-        record=create_message(payload.model_dump(), int(tenant["id"]))
-    )
+    try:
+        record = _svc.create_message(payload.model_dump(), int(tenant["id"]))
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return CommunicationMessageItemResponse(record=record)
 
 
 @router.get("/brain-context", response_model=CommunicationsBrainContextResponse)
@@ -54,5 +53,5 @@ def brain_context_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> CommunicationsBrainContextResponse:
     return CommunicationsBrainContextResponse(
-        **get_communications_brain_context(int(tenant["id"]))
+        **_svc.get_communications_brain_context(int(tenant["id"]))
     )

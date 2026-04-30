@@ -16,6 +16,7 @@ class IpAssetCreatePayload(BaseModel):
     licensing_revenue: float | None = Field(default=None, ge=0.0)
     notes: str | None = Field(default=None, max_length=2000)
     integration_source: str | None = Field(default=None, max_length=64)
+    department: str | None = Field(default=None, max_length=128)
 
 
 class IpAssetResponse(IpAssetCreatePayload):

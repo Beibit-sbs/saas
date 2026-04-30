@@ -18,6 +18,7 @@ export const en = {
   "nav.featureFlags": "Feature Flags",
   "nav.jobs": "Jobs",
   "nav.interventions": "Interventions",
+  "nav.expenseControls": "Expense Controls",
   "nav.notifications": "Notifications",
   "nav.healthMetrics": "Health & Metrics",
   "nav.platformOps": "Platform Ops",

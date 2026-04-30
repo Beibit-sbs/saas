@@ -10,8 +10,10 @@ class DiningMenuCreatePayload(BaseModel):
     meal_type: str = Field(min_length=1, max_length=32)
     date: str | None = Field(default=None, max_length=32)
     status: str = Field(default="active", min_length=1, max_length=32)
+    serving_window: str | None = Field(default=None, max_length=64)
     capacity: int | None = Field(default=None, ge=0)
     available_capacity: int | None = Field(default=None)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class DiningMenuResponse(DiningMenuCreatePayload):

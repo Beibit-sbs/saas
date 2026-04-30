@@ -18,6 +18,7 @@ export const kk = {
   "nav.featureFlags": "Функция жалаушалары",
   "nav.jobs": "Тапсырмалар",
   "nav.interventions": "Interventions",
+  "nav.expenseControls": "Шығындарды бақылау",
   "nav.notifications": "Хабарландырулар",
   "nav.healthMetrics": "Жүйе күйі және метрикалар",
   "nav.platformOps": "Платформа операциялары",

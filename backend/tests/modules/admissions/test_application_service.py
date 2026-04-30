@@ -31,7 +31,12 @@ def test_create_application_creates_new_stage_application(
     run_async,
 ) -> None:
     applicant = applicant_factory()
-    db_session.execute.return_value = ExecuteResult(scalar_one_or_none=applicant)
+    # First execute: find applicant → returns applicant.
+    # Second execute: check for existing active application → returns None (no duplicate).
+    db_session.execute.side_effect = [
+        ExecuteResult(scalar_one_or_none=applicant),
+        ExecuteResult(scalar_one_or_none=None),
+    ]
 
     service = ApplicationService(db_session)
     result = run_async(

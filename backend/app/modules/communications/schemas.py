@@ -14,6 +14,8 @@ class CommunicationMessageCreatePayload(BaseModel):
     delivered_count: int = Field(default=0, ge=0)
     opened_count: int = Field(default=0, ge=0)
     integration_source: str | None = Field(default=None, max_length=64)
+    channel: str | None = Field(default=None, max_length=32)
+    reviewer_notes: str | None = Field(default=None, max_length=500)
 
 
 class CommunicationMessageResponse(CommunicationMessageCreatePayload):

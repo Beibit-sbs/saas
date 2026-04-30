@@ -183,3 +183,69 @@ def test_service_set_flag_requires_tenant() -> None:
         assert False, "Expected ValueError"
     except ValueError:
         pass
+
+
+# ---------------------------------------------------------------------------
+# 5. CRUD: GET /{key}, PATCH /{key}, DELETE /{key}
+# ---------------------------------------------------------------------------
+
+
+def test_get_feature_flag_by_key() -> None:
+    client.post(
+        "/api/admin/feature-flags",
+        headers=ADMIN_HEADERS,
+        json={"key": "crud.get_me", "enabled": True},
+    )
+    resp = client.get("/api/admin/feature-flags/crud.get_me", headers=ADMIN_HEADERS)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "flag" in body
+    assert body["flag"]["key"] == "crud.get_me"
+    assert body["flag"]["enabled"] is True
+
+
+def test_get_feature_flag_not_found() -> None:
+    resp = client.get("/api/admin/feature-flags/nonexistent.missing_flag", headers=ADMIN_HEADERS)
+    assert resp.status_code == 404
+
+
+def test_patch_feature_flag_toggle() -> None:
+    client.post(
+        "/api/admin/feature-flags",
+        headers=ADMIN_HEADERS,
+        json={"key": "crud.patch_me", "enabled": True},
+    )
+    resp = client.patch(
+        "/api/admin/feature-flags/crud.patch_me",
+        headers=ADMIN_HEADERS,
+        json={"enabled": False},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["flag"]["enabled"] is False
+
+
+def test_patch_feature_flag_not_found() -> None:
+    resp = client.patch(
+        "/api/admin/feature-flags/crud.does_not_exist",
+        headers=ADMIN_HEADERS,
+        json={"enabled": True},
+    )
+    assert resp.status_code == 404
+
+
+def test_delete_feature_flag() -> None:
+    client.post(
+        "/api/admin/feature-flags",
+        headers=ADMIN_HEADERS,
+        json={"key": "crud.delete_me", "enabled": True},
+    )
+    resp = client.delete("/api/admin/feature-flags/crud.delete_me", headers=ADMIN_HEADERS)
+    assert resp.status_code == 204
+    # Verify it's gone
+    resp2 = client.get("/api/admin/feature-flags/crud.delete_me", headers=ADMIN_HEADERS)
+    assert resp2.status_code == 404
+
+
+def test_delete_feature_flag_not_found() -> None:
+    resp = client.delete("/api/admin/feature-flags/crud.nonexistent_flag", headers=ADMIN_HEADERS)
+    assert resp.status_code == 404

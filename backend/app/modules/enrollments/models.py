@@ -66,6 +66,7 @@ class AcademicTermModel(Base):
     term_name: Mapped[str] = mapped_column(String(255), nullable=False)
     start_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     end_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    add_drop_deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
@@ -122,6 +123,7 @@ class EnrollmentModel(Base):
     student_profile_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     course_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     term_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    section_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     enrollment_status: Mapped[EnrollmentStatus] = mapped_column(
         enrollment_status_enum,
         nullable=False,
@@ -182,6 +184,12 @@ class EnrollmentModel(Base):
             ondelete="RESTRICT",
             name="fk_enrollments_tenant_term_id",
         ),
+        ForeignKeyConstraint(
+            ["tenant_id", "section_id"],
+            ["app_scheduling_course_sections.tenant_id", "app_scheduling_course_sections.id"],
+            ondelete="RESTRICT",
+            name="fk_enrollments_tenant_section_id",
+        ),
         CheckConstraint("version >= 1", name="ck_enrollments_version_positive"),
         CheckConstraint(
             "dropped_at IS NULL OR dropped_at >= enrolled_at",
@@ -205,6 +213,11 @@ class EnrollmentModel(Base):
             "tenant_id",
             "student_profile_id",
             "term_id",
+        ),
+        Index(
+            "ix_enrollments_tenant_section",
+            "tenant_id",
+            "section_id",
         ),
         Index(
             "ix_enrollments_tenant_enrolled_desc",

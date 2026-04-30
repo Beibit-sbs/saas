@@ -18,6 +18,7 @@ from app.modules.billing.schemas import (
     BillingPlanChangeResponseSchema,
     BillingPlanMutationReadSchema,
     BillingPlanReadSchema,
+    BillingPlanUpdateRequestSchema,
     BillingStateReadSchema,
     BillingSubscriptionAssignRequestSchema,
     BillingSubscriptionMutationReadSchema,
@@ -97,6 +98,30 @@ def create_billing_plan(
 @router.get("/plans", response_model=list[BillingPlanReadSchema])
 def list_billing_plans(_: Annotated[str, Depends(get_actor)]) -> list[BillingPlanReadSchema]:
     return [BillingPlanReadSchema.model_validate(item) for item in platform_billing_service.list_plans()]
+
+
+@router.patch("/plans/{plan_id}", response_model=BillingPlanReadSchema)
+def update_billing_plan(
+    plan_id: int,
+    payload: BillingPlanUpdateRequestSchema,
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+) -> BillingPlanReadSchema:
+    updated = platform_billing_service.update_plan(plan_id, name=payload.name, active=payload.active)
+    if updated is None:
+        raise HTTPException(status_code=404, detail=f"Billing plan '{plan_id}' not found")
+    log_admin_action(
+        actor=actor,
+        tenant_id=1,
+        action="billing.plan.update",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="billing",
+        result="success",
+        metadata={"plan_id": plan_id, "name": payload.name, "active": payload.active},
+    )
+    return BillingPlanReadSchema.model_validate(updated)
 
 
 @router.get("/tenants/{tenant_id}/state", response_model=BillingStateReadSchema)

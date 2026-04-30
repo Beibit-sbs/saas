@@ -20,6 +20,7 @@ class ResearchGrantCreateSchema(BaseModel):
     deadline: date
     funding_amount: float = Field(default=0, ge=0)
     status: ResearchGrantStatus = "active"
+    sponsor_notes: str | None = Field(default=None, max_length=500)
 
 
 class ResearchGrantSchema(ResearchGrantCreateSchema):
@@ -34,6 +35,7 @@ class ResearchPublicationCreateSchema(BaseModel):
     target_venue: str = Field(min_length=1, max_length=120)
     last_activity_days: int = Field(default=0, ge=0)
     status: ResearchPublicationStatus = "draft"
+    citation_count: int | None = Field(default=None, ge=0)
 
 
 class ResearchPublicationSchema(ResearchPublicationCreateSchema):

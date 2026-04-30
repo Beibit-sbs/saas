@@ -256,3 +256,34 @@ def test_usage_increment_rejects_zero_value(monkeypatch) -> None:
     )
     # Pydantic ge=1 constraint → FastAPI returns 422 Unprocessable Entity
     assert response.status_code == 422
+
+
+def test_patch_plan_updates_active_flag(monkeypatch) -> None:
+    client = _build_client()
+
+    updated_plan = _plan("pro") | {"active": False}
+    monkeypatch.setattr(
+        billing_router.platform_billing_service,
+        "update_plan",
+        lambda plan_id, *, name, active: updated_plan,
+    )
+
+    response = client.patch("/api/admin/billing/plans/2", json={"active": False})
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["code"] == "pro"
+    assert body["active"] is False
+
+
+def test_patch_plan_returns_404_when_not_found(monkeypatch) -> None:
+    client = _build_client()
+
+    monkeypatch.setattr(
+        billing_router.platform_billing_service,
+        "update_plan",
+        lambda plan_id, *, name, active: None,
+    )
+
+    response = client.patch("/api/admin/billing/plans/999", json={"active": False})
+    assert response.status_code == 404
+

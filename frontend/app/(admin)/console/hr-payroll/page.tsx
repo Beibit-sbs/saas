@@ -187,7 +187,7 @@ export default function HrPayrollPage() {
                 onClick={() =>
                   updateEmployeeStatus.mutate(
                     { employeeId: row.id, payload: { status: next } },
-                    getHandlers(`Employee moved to ${next}`),
+                    getHandlers({ successTitle: `Employee moved to ${next}` }),
                   )
                 }
               >
@@ -254,7 +254,7 @@ export default function HrPayrollPage() {
                 onClick={() =>
                   updateCycleStatus.mutate(
                     { cycleId: row.id, payload: { status: next } },
-                    getHandlers(`Cycle moved to ${next}`),
+                    getHandlers({ successTitle: `Cycle moved to ${next}` }),
                   )
                 }
               >
@@ -279,10 +279,10 @@ export default function HrPayrollPage() {
         status: "onboarding",
       },
       {
-        ...getHandlers("Employee record created"),
+        ...getHandlers({ successTitle: "Employee record created" }),
         onSuccess: (...args) => {
           setEmployeeForm(EMPTY_EMPLOYEE);
-          getHandlers("Employee record created").onSuccess?.(...args);
+          getHandlers({ successTitle: "Employee record created" }).onSuccess?.(args[0]);
         },
       },
     );
@@ -301,10 +301,10 @@ export default function HrPayrollPage() {
         status: "pending",
       },
       {
-        ...getHandlers("Payroll cycle created"),
+        ...getHandlers({ successTitle: "Payroll cycle created" }),
         onSuccess: (...args) => {
           setCycleForm(EMPTY_CYCLE);
-          getHandlers("Payroll cycle created").onSuccess?.(...args);
+          getHandlers({ successTitle: "Payroll cycle created" }).onSuccess?.(args[0]);
         },
       },
     );
@@ -315,7 +315,7 @@ export default function HrPayrollPage() {
       <div className="space-y-8">
         <PageHeader
           title="HR & Payroll"
-          subtitle="Manage employee lifecycle and payroll cycle execution"
+          description="Manage employee lifecycle and payroll cycle execution"
           icon={UsersRound}
         />
 

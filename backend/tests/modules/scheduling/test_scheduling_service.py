@@ -860,7 +860,6 @@ class TestSchedulingConsistency:
         run_async,
         db_session,
     ) -> None:
-        from app.modules.scheduling.schemas import SchedulingConsistencyReportSchema
         from app.modules.scheduling.models import (
             CourseSectionModel,
             LessonAttendanceModel,

@@ -7,12 +7,10 @@ billing state / transition / plan-change endpoints, and the _require_platform_ad
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
 
 from tests.conftest import _auth_headers, client
-from app.main import app
 from app.modules.auth.token_service import create_access_token
 from app.modules.rbac import service as rbac_service
 

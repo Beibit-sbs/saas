@@ -10,6 +10,17 @@ from app.modules.academic_integrity.schemas import (
 )
 
 
+_INTEGRITY_CASE_STATUS_MAX_ACTIVE: dict[str, int] = {
+    "flagged": 400,
+    "under_review": 250,
+    "escalated": 120,
+    "resolved": 2000,
+    "dismissed": 1500,
+}
+_ACTIVE_INTEGRITY_CASE_STATUSES = frozenset({"flagged", "under_review", "escalated"})
+_INTEGRITY_ESCALATION_RISK_STATUSES = frozenset({"escalated"})
+
+
 class _InMemoryEntityAdapter:
     """Minimal adapter that proxies AcademicIntegrityService to in-memory tenant store."""
 
@@ -71,6 +82,17 @@ _ALLOWED_TRANSITIONS = {
     IntegrityCaseStatus.RESOLVED: [],  # Terminal state
     IntegrityCaseStatus.DISMISSED: [],  # Terminal state
 }
+
+# Statuses that require resolution_notes before transition is permitted
+_CLOSURE_REQUIRES_NOTES = frozenset({
+    IntegrityCaseStatus.RESOLVED,
+    IntegrityCaseStatus.DISMISSED,
+})
+
+# Statuses that require recommended_action before transition is permitted
+_ESCALATION_REQUIRES_ACTION = frozenset({
+    IntegrityCaseStatus.ESCALATED,
+})
 
 
 class AcademicIntegrityService:
@@ -138,6 +160,23 @@ class AcademicIntegrityService:
         Returns:
             Created case record
         """
+        existing_cases, _ = await self.tenant_entity_service.list_entities(
+            tenant_id=tenant_id,
+            entity_type="integrity_case",
+            filters={"tenant_id": tenant_id},
+            page=1,
+            page_size=2000,
+        )
+        active_case_count = sum(
+            1
+            for c in existing_cases
+            if str(c.get("status") or "").strip().lower() in _ACTIVE_INTEGRITY_CASE_STATUSES
+        )
+        requested_status = IntegrityCaseStatus.FLAGGED.value
+        case_cap = _INTEGRITY_CASE_STATUS_MAX_ACTIVE.get(requested_status, 400)
+        if active_case_count >= case_cap:
+            raise ValueError("academic_integrity_case active cap reached")
+
         # Create case entity
         case_id = str(uuid.uuid4())
         now = datetime.utcnow()
@@ -211,6 +250,21 @@ class AcademicIntegrityService:
                 f"Cannot transition from {current_status.value} to {new_status.value}"
             )
 
+        # Enforce documentation requirements before state transition
+        if new_status in _CLOSURE_REQUIRES_NOTES:
+            if not (payload.resolution_notes and payload.resolution_notes.strip()):
+                raise ValueError(
+                    f"Cannot transition integrity case to '{new_status.value}' without "
+                    f"resolution_notes: all case closures require documented rationale "
+                    f"for institutional accountability and accreditation compliance."
+                )
+        if new_status in _ESCALATION_REQUIRES_ACTION:
+            if not (payload.recommended_action and payload.recommended_action.strip()):
+                raise ValueError(
+                    "Cannot escalate integrity case without recommended_action: "
+                    "escalation requires a documented action recommendation."
+                )
+
         # Update case
         case["status"] = new_status.value
         case["resolution_notes"] = payload.resolution_notes
@@ -225,7 +279,8 @@ class AcademicIntegrityService:
             entity_data=case,
         )
 
-        if new_status == IntegrityCaseStatus.ESCALATED:
+        if new_status.value in _INTEGRITY_ESCALATION_RISK_STATUSES:
+            await self._ensure_integrity_escalation_alert_record(tenant_id=tenant_id, case=case)
             from app.platform.events.publisher import EventPublisher
             EventPublisher().publish_event(
                 tenant_id=tenant_id,
@@ -241,6 +296,33 @@ class AcademicIntegrityService:
             )
 
         return case
+
+    async def _ensure_integrity_escalation_alert_record(self, tenant_id: str, case: dict) -> None:
+        from app.modules.university_core.tenant_entity_service import list_entities_for_tenant, create_entity_for_tenant
+        try:
+            tid = int(tenant_id)
+        except (ValueError, TypeError):
+            tid = 0
+        existing_alerts = list_entities_for_tenant("integrity_escalation_alerts", tid)
+        case_id = str(case.get("id") or "")
+        already_exists = any(
+            str(r.get("integration_source") or "") == "academic_integrity_escalation_queue"
+            and str(r.get("source_entity_id") or "") == case_id
+            for r in existing_alerts
+        )
+        if already_exists:
+            return
+        create_entity_for_tenant(
+            "integrity_escalation_alerts",
+            {
+                "case_id": case_id,
+                "alert_status": "open",
+                "integration_source": "academic_integrity_escalation_queue",
+                "source_entity_id": case_id,
+                "tenant_id": str(tenant_id),
+            },
+            tid,
+        )
 
     async def get_integrity_case(self, tenant_id: str, case_id: str) -> dict:
         """Get single integrity case by ID."""

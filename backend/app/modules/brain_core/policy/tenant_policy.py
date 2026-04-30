@@ -17,14 +17,21 @@ class TenantPolicyResolver:
 
     def __init__(self) -> None:
         self._profiles: dict[int, TenantPolicyProfile] = {}
+        # Tracks which tenants have been explicitly configured vs. auto-defaulted.
+        self._explicitly_set: set[int] = set()
 
     def get_profile(self, tenant_id: int) -> TenantPolicyProfile:
         if tenant_id not in self._profiles:
             self._profiles[tenant_id] = TenantPolicyProfile(tenant_id=tenant_id)
         return self._profiles[tenant_id]
 
+    def is_default(self, tenant_id: int) -> bool:
+        """Return True when the tenant profile has never been explicitly set."""
+        return tenant_id not in self._explicitly_set
+
     def set_profile(self, profile: TenantPolicyProfile) -> None:
         self._profiles[profile.tenant_id] = profile
+        self._explicitly_set.add(profile.tenant_id)
 
     def set_profile_values(
         self,
@@ -44,6 +51,7 @@ class TenantPolicyResolver:
             enable_ai_reasoning=bool(enable_ai_reasoning),
         )
         self._profiles[profile.tenant_id] = profile
+        self._explicitly_set.add(profile.tenant_id)
         return profile
 
     def profile_dict(self, tenant_id: int) -> dict:

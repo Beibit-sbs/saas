@@ -43,7 +43,7 @@ def test_create_program_and_list() -> None:
     assert "program" in body
     program = body["program"]
     assert program["program_code"] == "TEST-PRG-001"
-    program_id = program["id"]
+    program["id"]
 
     # Verify it appears in list
     list_resp = client.get("/api/admin/org/programs", headers=ADMIN_HEADERS)
@@ -74,12 +74,12 @@ def test_update_program() -> None:
         json={
             "program_code": "TEST-UPD-001",
             "title": "Updated Title",
-            "degree_type": "master",
+            "degree_type": "bachelor",
             "faculty": "Engineering",
-            "status": "active",
+            "status": "draft",
         },
     )
-    assert update_resp.status_code == 200
+    assert update_resp.status_code == 200, update_resp.text
     assert update_resp.json()["program"]["title"] == "Updated Title"
 
 

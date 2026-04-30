@@ -79,7 +79,7 @@ def test_get_ip_management_brain_context_empty(monkeypatch) -> None:
 
 def test_http_list_ip_assets_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "app.modules.ip_management.router.list_ip_assets",
+        "app.modules.ip_management.service.list_ip_assets",
         lambda tenant_id, ip_type=None, status=None: [],
     )
     resp = test_client.get("/api/admin/ip-management/assets", headers=dict(ADMIN_HEADERS))
@@ -104,7 +104,7 @@ def test_http_create_ip_asset(monkeypatch: pytest.MonkeyPatch) -> None:
         "tenant_id": 1,
     }
     monkeypatch.setattr(
-        "app.modules.ip_management.router.create_ip_asset",
+        "app.modules.ip_management.service.create_ip_asset",
         lambda payload, tenant_id: created,
     )
     resp = test_client.post(
@@ -133,7 +133,7 @@ def test_http_brain_context_ip(monkeypatch: pytest.MonkeyPatch) -> None:
         "portfolio_health": "strong",
     }
     monkeypatch.setattr(
-        "app.modules.ip_management.router.get_ip_management_brain_context",
+        "app.modules.ip_management.service.get_ip_management_brain_context",
         lambda tenant_id: ctx,
     )
     resp = test_client.get("/api/admin/ip-management/brain-context", headers=dict(ADMIN_HEADERS))

@@ -94,7 +94,7 @@ def test_get_research_ethics_brain_context_empty(monkeypatch) -> None:
 
 def test_http_list_ethics_reviews_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "app.modules.research_ethics.router.list_ethics_reviews",
+        "app.modules.research_ethics.service.list_ethics_reviews",
         lambda tenant_id, status=None, risk_level=None: [],
     )
     resp = test_client.get("/api/admin/research-ethics/reviews", headers=dict(ADMIN_HEADERS))
@@ -118,7 +118,7 @@ def test_http_create_ethics_review(monkeypatch: pytest.MonkeyPatch) -> None:
         "tenant_id": 1,
     }
     monkeypatch.setattr(
-        "app.modules.research_ethics.router.create_ethics_review",
+        "app.modules.research_ethics.service.create_ethics_review",
         lambda payload, tenant_id: created,
     )
     resp = test_client.post(
@@ -148,7 +148,7 @@ def test_http_brain_context_ethics(monkeypatch: pytest.MonkeyPatch) -> None:
         "compliance_status": "at_risk",
     }
     monkeypatch.setattr(
-        "app.modules.research_ethics.router.get_research_ethics_brain_context",
+        "app.modules.research_ethics.service.get_research_ethics_brain_context",
         lambda tenant_id: ctx,
     )
     resp = test_client.get("/api/admin/research-ethics/brain-context", headers=dict(ADMIN_HEADERS))

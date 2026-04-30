@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.module_helpers.audit_helpers import build_audit_action
 from app.core.module_helpers.service_validation import (
+    DomainValidationError,
     TenantResourceNotFoundError,
     assert_resource_belongs_to_tenant,
     validate_tenant_id_provided,
@@ -81,6 +82,69 @@ def _audit(actor: str, action: str, path: str, metadata: dict, tenant_id: int) -
 class DegreeProgressService:
     def __init__(self, db_session: Session):
         self.db = db_session
+
+    def _check_course_exists_in_tenant(self, tenant_id: int, course_id: int) -> None:
+        """Cross-entity guard: course_id must exist in the tenant's course catalog.
+
+        A requirement item referencing a phantom course creates a permanently-unsatisfiable
+        requirement — every student in the program will have remaining_required_items >= 1
+        forever and can never graduate without admin intervention.
+        
+        HARDENING RULE: NO SILENT FALLBACK — if validation cannot complete, block the action.
+        """
+        try:
+            from app.modules.courses.models import CourseModel  # lazy — avoid circular import risk
+        except ImportError as e:
+            raise DomainValidationError(
+                f"Cannot verify course_id={course_id} exists: courses module unavailable. "
+                "Cannot enforce requirement invariant without access to course catalog."
+            ) from e
+
+        try:
+            course = self.db.execute(
+                select(CourseModel).where(
+                    and_(
+                        CourseModel.id == course_id,
+                        CourseModel.tenant_id == str(tenant_id),
+                    )
+                )
+            ).scalar_one_or_none()
+        except Exception as e:
+            raise DomainValidationError(
+                f"Cannot verify course_id={course_id} exists in tenant_id={tenant_id}: "
+                "database query failed. Cannot enforce requirement invariant."
+            ) from e
+
+        if course is None:
+            raise DomainValidationError(
+                f"Cannot add requirement item: course_id={course_id} does not exist "
+                f"in the course catalog for tenant_id={tenant_id}. "
+                "A phantom course reference creates a permanently unsatisfiable graduation requirement."
+            )
+
+    def create_program_requirement_item(
+        self,
+        tenant_id: int,
+        *,
+        requirement_id: int,
+        course_id: int,
+        credits: int,
+        required: bool = True,
+    ) -> ProgramRequirementItemModel:
+        """Create a requirement item, enforcing course catalog existence guard."""
+        tenant_id = validate_tenant_id_provided(tenant_id)
+        self._check_course_exists_in_tenant(tenant_id, course_id)
+
+        item = ProgramRequirementItemModel(
+            tenant_id=tenant_id,
+            requirement_id=requirement_id,
+            course_id=course_id,
+            credits=credits,
+            required=required,
+        )
+        self.db.add(item)
+        self.db.flush()
+        return item
 
     def _load_student(self, tenant_id: int, student_profile_id: int) -> StudentProfileModel:
         student = self.db.execute(
