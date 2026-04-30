@@ -7,7 +7,7 @@
 
 ## Текущий прогресс (оперативный трекер)
 
-**Обновлено:** 2026-04-23 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII COMPLETE ✅ XII1-XII5: backend 13/13 ✅ + frontend 550/550 ✅ + release-gate PASS ✅; Phase XIII IN PROGRESS: XIII1 ✅ audit 60/60 EXISTS; XIII2 ✅ feature_flags CRUD 35 tests; XIII3 ✅ billing PATCH /plans/{id} 11 tests; XIII4 ✅ F3.9/F3.10 complete; XIII5 pending)
+**Обновлено:** 2026-04-30 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII COMPLETE ✅ XII1-XII5: backend 13/13 ✅ + frontend 550/550 ✅ + release-gate PASS ✅; Phase XIII COMPLETE ✅ XIII1-XIII5: audit 60/60 EXISTS; feature_flags CRUD 35 tests; billing API 11 tests; F3.9/F3.10 DoD signoff; release-gate PASS 440+370+73 ✅; Phase XIV IN PROGRESS)
 
 **[Предыдущее обновление 2026-04-23]** (Brain Core + integrations regression fixes ✅ `test_student_risk_flow.py` 41 passed; `test_financial_aid.py` + `test_housing.py` + `test_integrations.py` 21 passed; post-Phase-G smoke-gate remains PASS `passed=8`, `failed=0`; access model fixed: tenant-local Brain + ministry KPI layer)
 
@@ -165,7 +165,17 @@
 - [x] XIII2: `feature_flags` module hardening — реализовать полноценный CRUD API (`GET/POST/PATCH/DELETE /api/admin/platform/feature-flags`) с tenant-scoped flag management, enable/disable semantics; backend тесты ≥ 4; frontend types/hooks обновить
 - [x] XIII3: Billing platform trio hardening — реализовать API для `plans` (`GET/POST /api/admin/billing/plans`, `PATCH /api/admin/billing/plans/{id}/activate`) + `quotas` (`GET/POST /api/admin/billing/quotas`, `PATCH /api/admin/billing/quotas/{id}`) + `usage` (`GET /api/admin/billing/usage`) — tenant-scoped; тесты ≥ 6 (billing contract suite extension); frontend hooks обновить
 - [x] XIII4: F3.9 post-release validation — прогнать полный F3 тест-пакет (`test_f3_intervention_cohort_models.py` + `test_f3_intervention_cohort_service.py` + `test_f3_effectiveness_contract_skeleton.py`); убедиться что F3.10 DoD sign-off артефакт готов (`artifacts/promotion/F3_DOD_SIGNOFF.md`); обновить F3_EXECUTION_PLAN.md F3.9/F3.10 → COMPLETE
-- [ ] XIII5: Финальный release-gate после Phase XIII
+- [x] XIII5: Финальный release-gate после Phase XIII — PASS: platform 440 passed, domain 370 passed, security 73 passed, frontend 81/91/112 permissions OK, rollback readiness green (2026-04-30)
+
+#### Phase XIV — Domain Depth & Intelligence Hardening
+
+**Цель:** Поднять глубину покрытия бизнес-правил в domain-модулях, закрыть оставшиеся "partial" модули по метрике EV (Execution Value), встроить Week22–Week30 domain-depth тесты и расширить Brain Core сигналы для новых контуров.
+
+- [ ] XIV1: Аудит "partial" модулей — пройтись по `docs/AUDIT_SBS_2026.md`, выделить модули со статусом Partial/Stub, расставить приоритет по EV; составить план до XIV4
+- [ ] XIV2: Week22–Week26 domain-depth hardening — реализовать недостающие guards/caps/cross-entity checks для следующей волны модулей (HR/payroll, assets, research, operations, delinquency — по результатам XIV1)
+- [ ] XIV3: Week27–Week30 domain-depth hardening — продолжение: финансовый контур, admissions pipeline, alumni engagement, transport network
+- [ ] XIV4: Brain Core signal expansion — добавить ≥10 новых сигналов для модулей XIV2-XIV3; обновить events/registry.py и Brain Core classifier/rules
+- [ ] XIV5: Финальный safe-gate + release-gate после Phase XIV
 
 ### Правила обновления трекера
 
