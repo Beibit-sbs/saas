@@ -98,6 +98,18 @@ class PredictRiskRequest(BaseModel):
     horizon_days: int = Field(default=7, ge=1, le=30)
 
 
+class BrainOptimizeDomainSignal(BaseModel):
+    domain: str = Field(..., min_length=1)
+    metric: str = Field(..., min_length=1)
+    value: float
+    threshold: float = 0.0
+
+
+class BrainOptimizeRequest(BaseModel):
+    tenant_id: int = Field(..., gt=0)
+    domain_signals: list[BrainOptimizeDomainSignal] = Field(default_factory=list)
+
+
 class DetectAnomaliesRequest(BaseModel):
     tenant_id: int = Field(..., gt=0)
     metric_name: str = Field(..., min_length=2)
@@ -929,3 +941,25 @@ def get_brain_metrics() -> dict:
 def get_brain_traces(limit: int = 100) -> dict:
     items = brain_core_service.observability_traces(limit=limit)
     return {"total": len(items), "items": items}
+
+
+# ------------------------------------------------------------------
+# Phase XVII — Adaptive Learning & Optimization
+# ------------------------------------------------------------------
+
+@router.get("/learning/evaluate/{tenant_id}")
+def evaluate_learning(tenant_id: int) -> dict:
+    """XVII3 — Detailed learning state evaluation for a tenant."""
+    return brain_core_service.evaluate_learning(tenant_id)
+
+
+@router.post("/optimize")
+def optimize_resources(
+    payload: BrainOptimizeRequest,
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XVII4 — Brain Optimization Engine: resource allocation recommendations."""
+    return brain_core_service.optimize(
+        tenant_id=payload.tenant_id,
+        domain_signals=[s.model_dump() for s in payload.domain_signals],
+    )

@@ -176,6 +176,16 @@
 - [x] XIV4: Brain Core signal expansion — **COMPLETE**: 20+ event signals defined in SUPPORTED_SIGNAL_EVENT_TYPES; domain bridges for financial_aid, housing, platform, research, operations, student_life fully wired
 - [x] XIV5: Финальный release-gate + safe-gate — **PASS ✅**: architecture 7, tenant safety 8, platform 440, domain 370, security 73, data integrity 96, templates 5, frontend safety OK, rollback ready
 
+#### Phase XVII — Brain Core Frontend & Adaptive Intelligence 🎯 IN PROGRESS
+
+**Цель:** Завершить интеллектуальный слой университетского мозга: реализовать Admin UI для Brain Core (предиктивный дашборд, сигналы, решения) и адаптивный движок обучения, который автоматически корректирует tenant-политики на основе накопленных исходов.
+
+- [x] XVII1: Brain Core Admin Dashboard Frontend — страница `/console/ai/brain/intelligence` (Executive KPI cards, Top Risk Signals, Proactive Recommendations); Vitest тесты 5/5 green
+- [x] XVII2: Predictive Intelligence Frontend — hooks useBrainExecutiveKPI, useBrainRecommendations, useBrainPredictRisk, useBrainDetectAnomalies, useBrainLearningEvaluation, useBrainOptimize; TypeScript типы XVII
+- [x] XVII3: Adaptive Learning API — `GET /brain/learning/evaluate/{tenant_id}` (effectiveness_score, policy_drift_detected, learning_ready); backend tests 8/8 green
+- [x] XVII4: Brain Optimization Engine — `BrainOptimizer.optimize()` → resource allocation recommendations; endpoint `POST /brain/optimize`; backend tests 8/8 green
+- [ ] XVII5: Финальный release-gate после Phase XVII — PASS
+
 #### Phase XVI — Predictive Intelligence Core 🎯 COMPLETE
 
 **Цель:** Перейти от реактивного Brain Core (реагирует на сигналы) к проактивному (прогнозирует риски до пересечения порогов). Добавить предиктивный движок, детекцию аномалий, проактивные рекомендации и executive KPI dashboard.

@@ -961,5 +961,55 @@ class BrainCoreService:
             outcomes=outcomes,
         )
 
+    # ------------------------------------------------------------------
+    # Phase XVII — Adaptive Learning & Optimization
+    # ------------------------------------------------------------------
+
+    def evaluate_learning(self, tenant_id: int) -> dict:
+        """XVII3 — Evaluate the learning state for a tenant.
+
+        Returns detailed metrics about outcome effectiveness and whether the
+        policy tuning engine has enough data to make meaningful adjustments.
+        """
+        from datetime import datetime, timezone
+
+        metrics = self._quality_tracker.metrics_for_tenant(tenant_id)
+        total_decisions = int(metrics.get("total_outcomes") or 0)
+        positive = int(metrics.get("positive") or 0)
+        negative = int(metrics.get("negative") or 0)
+        neutral = int(metrics.get("neutral") or 0)
+        positive_rate = float(metrics.get("positive_rate") or 0.0)
+        negative_rate = float(metrics.get("negative_rate") or 0.0)
+
+        # Count raw outcomes for this tenant
+        outcomes = self._outcome_tracker.list_outcomes()
+        tenant_outcomes = [o for o in outcomes if int(o.get("tenant_id") or 0) == tenant_id]
+        tenant_decisions = [d for d in self._decisions if int(d.get("tenant_id") or 0) == tenant_id]
+
+        effectiveness_score = positive_rate * (1.0 - negative_rate)
+        policy_drift_detected = (negative_rate >= 0.5 and total_decisions >= 4) or (
+            positive_rate >= 0.8 and total_decisions >= 5
+        )
+        learning_ready = total_decisions >= 4 or len(tenant_outcomes) >= 4
+
+        return {
+            "tenant_id": tenant_id,
+            "total_decisions": len(tenant_decisions),
+            "total_outcomes": len(tenant_outcomes),
+            "positive_outcomes": positive,
+            "negative_outcomes": negative,
+            "neutral_outcomes": neutral,
+            "effectiveness_score": round(effectiveness_score, 4),
+            "policy_drift_detected": policy_drift_detected,
+            "learning_ready": learning_ready,
+            "evaluated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    def optimize(self, tenant_id: int, domain_signals: list[dict]) -> dict:
+        """XVII4 — Brain Optimization Engine: resource allocation recommendations."""
+        from app.modules.brain_core.reasoning.optimizer import BrainOptimizer
+        optimizer = BrainOptimizer()
+        return optimizer.optimize(tenant_id=tenant_id, domain_signals=domain_signals)
+
 
 brain_core_service = BrainCoreService()

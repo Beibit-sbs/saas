@@ -164,6 +164,12 @@ export const NAVIGATION: NavGroup[] = [
             icon: Settings2,
             permission: PERMISSIONS.DASHBOARD_READ,
           },
+          {
+            label: "Intelligence",
+            href: "/console/ai/brain/intelligence",
+            icon: Bot,
+            permission: PERMISSIONS.DASHBOARD_READ,
+          },
         ],
       },
       {
