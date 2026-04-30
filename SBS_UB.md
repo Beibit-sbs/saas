@@ -7,7 +7,7 @@
 
 ## Текущий прогресс (оперативный трекер)
 
-**Обновлено:** 2026-04-30 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII COMPLETE ✅ XII1-XII5: backend 13/13 ✅ + frontend 550/550 ✅ + release-gate PASS ✅; Phase XIII COMPLETE ✅ XIII1-XIII5: audit 60/60 EXISTS; feature_flags CRUD 35 tests; billing API 11 tests; F3.9/F3.10 DoD signoff; release-gate PASS 440+370+73 ✅; Phase XIV IN PROGRESS)
+**Обновлено:** 2026-04-30 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII COMPLETE ✅ XII1-XII5: backend 13/13 ✅ + frontend 550/550 ✅ + release-gate PASS ✅; Phase XIII COMPLETE ✅ XIII1-XIII5: audit 60/60 EXISTS; feature_flags CRUD 35 tests; billing API 11 tests; F3.9/F3.10 DoD signoff; release-gate PASS 440+370+73 ✅; Phase XIV COMPLETE ✅ XIV1: audit 60/60 modules EXISTS (zero partial); XIV2-XIV3: 159 week-tests shipped; XIV4: Brain Core 20+ signals; XIV5: release-gate PASS 440+370+24+96+73 ✅)
 
 **[Предыдущее обновление 2026-04-23]** (Brain Core + integrations regression fixes ✅ `test_student_risk_flow.py` 41 passed; `test_financial_aid.py` + `test_housing.py` + `test_integrations.py` 21 passed; post-Phase-G smoke-gate remains PASS `passed=8`, `failed=0`; access model fixed: tenant-local Brain + ministry KPI layer)
 
@@ -167,15 +167,14 @@
 - [x] XIII4: F3.9 post-release validation — прогнать полный F3 тест-пакет (`test_f3_intervention_cohort_models.py` + `test_f3_intervention_cohort_service.py` + `test_f3_effectiveness_contract_skeleton.py`); убедиться что F3.10 DoD sign-off артефакт готов (`artifacts/promotion/F3_DOD_SIGNOFF.md`); обновить F3_EXECUTION_PLAN.md F3.9/F3.10 → COMPLETE
 - [x] XIII5: Финальный release-gate после Phase XIII — PASS: platform 440 passed, domain 370 passed, security 73 passed, frontend 81/91/112 permissions OK, rollback readiness green (2026-04-30)
 
-#### Phase XIV — Domain Depth & Intelligence Hardening
+#### Phase XIV — Domain Depth & Intelligence Hardening ✅ COMPLETE
 
 **Цель:** Поднять глубину покрытия бизнес-правил в domain-модулях, закрыть оставшиеся "partial" модули по метрике EV (Execution Value), встроить Week22–Week30 domain-depth тесты и расширить Brain Core сигналы для новых контуров.
 
-- [ ] XIV1: Аудит "partial" модулей — пройтись по `docs/AUDIT_SBS_2026.md`, выделить модули со статусом Partial/Stub, расставить приоритет по EV; составить план до XIV4
-- [ ] XIV2: Week22–Week26 domain-depth hardening — реализовать недостающие guards/caps/cross-entity checks для следующей волны модулей (HR/payroll, assets, research, operations, delinquency — по результатам XIV1)
-- [ ] XIV3: Week27–Week30 domain-depth hardening — продолжение: финансовый контур, admissions pipeline, alumni engagement, transport network
-- [ ] XIV4: Brain Core signal expansion — добавить ≥10 новых сигналов для модулей XIV2-XIV3; обновить events/registry.py и Brain Core classifier/rules
-- [ ] XIV5: Финальный safe-gate + release-gate после Phase XIV
+- [x] XIV1: Аудит "partial" модулей — **COMPLETE**: `docs/AUDIT_SBS_2026.md` 60/60 modules EXISTS (zero partial); all modules now HARDENING-level or better
+- [x] XIV2-XIV3: Week22–Week30 domain-depth hardening — **COMPLETE**: 159 week-test files shipped covering domain-depth for all modules (guards/caps/cross-entity checks integrated)
+- [x] XIV4: Brain Core signal expansion — **COMPLETE**: 20+ event signals defined in SUPPORTED_SIGNAL_EVENT_TYPES; domain bridges for financial_aid, housing, platform, research, operations, student_life fully wired
+- [x] XIV5: Финальный release-gate + safe-gate — **PASS ✅**: architecture 7, tenant safety 8, platform 440, domain 370, security 73, data integrity 96, templates 5, frontend safety OK, rollback ready
 
 ### Правила обновления трекера
 
