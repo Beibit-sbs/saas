@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel, Field
 
 from app.modules.rbac.security import permission_dependency
@@ -247,6 +247,27 @@ class OutcomeRecordRequest(BaseModel):
 
 class PolicyTuningApplyRequest(BaseModel):
     actor: str = Field(default="ops@brain")
+
+
+class LearningApplyRequest(BaseModel):
+    tenant_id: int = Field(..., gt=0)
+    actor: str = Field(default="ops@brain")
+    dry_run: bool = False
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=128)
+
+
+class PolicyDriftAlert(BaseModel):
+    """XVIII3 — Policy drift alert model."""
+    alert_id: str | None = None
+    tenant_id: int
+    type: str = "policy_drift"
+    status: str  # "active", "resolved", "no_drift"
+    severity: str | None = None  # "high", "medium"
+    reason: str
+    threshold: dict | None = None
+    current_metrics: dict
+    created_at: str | None = None
+    resolved_at: str | None = None
 
 
 class PolicyConfigUpdateRequest(BaseModel):
@@ -953,6 +974,20 @@ def evaluate_learning(tenant_id: int) -> dict:
     return brain_core_service.evaluate_learning(tenant_id)
 
 
+@router.post("/learning/apply")
+def apply_learning(
+    payload: LearningApplyRequest,
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XVIII1 — Apply adaptive learning suggestions (supports dry-run + idempotency)."""
+    return brain_core_service.apply_learning(
+        tenant_id=payload.tenant_id,
+        actor=payload.actor,
+        dry_run=payload.dry_run,
+        idempotency_key=payload.idempotency_key,
+    )
+
+
 @router.post("/optimize")
 def optimize_resources(
     payload: BrainOptimizeRequest,
@@ -963,3 +998,24 @@ def optimize_resources(
         tenant_id=payload.tenant_id,
         domain_signals=[s.model_dump() for s in payload.domain_signals],
     )
+
+
+@router.get("/policy-drift/{tenant_id}")
+def get_policy_drift_alerts(
+    tenant_id: Annotated[int, Path(gt=0)],
+    status: str | None = None,
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XVIII3 — Retrieve policy drift alerts for a tenant."""
+    alerts = brain_core_service.get_policy_drift_alerts(tenant_id, status=status)
+    return {"tenant_id": tenant_id, "total": len(alerts), "alerts": alerts}
+
+
+@router.post("/policy-drift/{tenant_id}/detect")
+def detect_policy_drift(
+    tenant_id: Annotated[int, Path(gt=0)],
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XVIII3 — Trigger policy drift detection."""
+    alert = brain_core_service.detect_policy_drift(tenant_id)
+    return alert

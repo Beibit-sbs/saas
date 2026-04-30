@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { BrainCircuit, RefreshCw, Lightbulb, TrendingUp, AlertTriangle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { BrainCircuit, RefreshCw, Lightbulb, TrendingUp, AlertTriangle, Zap, Check } from "lucide-react";
 
 import { useAdminAuth } from "@/shared/auth/context";
 import { PERMISSIONS } from "@/shared/config/permissions";
@@ -13,6 +13,9 @@ import { RequirePermission } from "@/shared/ui/permission-gate";
 import {
   useBrainExecutiveKPI,
   useBrainRecommendations,
+  useBrainLearningEvaluation,
+  useBrainLearningApply,
+  useBrainPolicyProfile,
 } from "@/modules/brain-core/hooks";
 
 function severityVariant(severity: string): "destructive" | "warning" | "secondary" | "outline" {
@@ -40,6 +43,13 @@ export default function BrainIntelligencePage() {
 
   const kpiQuery = useBrainExecutiveKPI(tenantId);
   const recommendationsQuery = useBrainRecommendations(tenantId);
+  const learningEvalQuery = useBrainLearningEvaluation(tenantId);
+  const policyProfileQuery = useBrainPolicyProfile(tenantId);
+  const learningApplyMutation = useBrainLearningApply(tenantId);
+
+  const [showApplyConfirm, setShowApplyConfirm] = useState(false);
+  const [dryRunPreview, setDryRunPreview] = useState<any>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
   const recommendations = useMemo(
     () => recommendationsQuery.data?.recommendations ?? [],
@@ -47,9 +57,37 @@ export default function BrainIntelligencePage() {
   );
 
   const kpi = kpiQuery.data;
+  const learningEval = learningEvalQuery.data;
+  const policyProfile = policyProfileQuery.data;
 
   const anyLoading = kpiQuery.isLoading || recommendationsQuery.isLoading;
   const hasError = kpiQuery.isError && recommendationsQuery.isError;
+
+  const handleDryRun = async () => {
+    setIsPreviewLoading(true);
+    try {
+      const result = await learningApplyMutation.mutateAsync({ 
+        dry_run: true,
+        actor: `${user?.userId || "admin"}@console`,
+      });
+      setDryRunPreview(result);
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
+  const handleApply = async () => {
+    try {
+      await learningApplyMutation.mutateAsync({
+        dry_run: false,
+        actor: `${user?.userId || "admin"}@console`,
+      });
+      setShowApplyConfirm(false);
+      setDryRunPreview(null);
+    } catch (err) {
+      console.error("Apply failed:", err);
+    }
+  };
 
   return (
     <RequirePermission
@@ -68,6 +106,8 @@ export default function BrainIntelligencePage() {
               onClick={() => {
                 void kpiQuery.refetch();
                 void recommendationsQuery.refetch();
+                void learningEvalQuery.refetch();
+                void policyProfileQuery.refetch();
               }}
               disabled={anyLoading}
             >
@@ -216,6 +256,134 @@ export default function BrainIntelligencePage() {
             </div>
           )}
         </section>
+
+        {/* XVIII2 — Governance & Learning Apply */}
+        {learningEval && policyProfile && (
+          <section className="rounded-lg border bg-card" data-testid="brain-governance">
+            <div className="border-b px-4 py-3 flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              <h2 className="text-base font-semibold">Adaptive Governance</h2>
+              <Badge 
+                variant={learningEval.learning_ready ? "default" : "outline"} 
+                className="ml-auto"
+              >
+                {learningEval.learning_ready ? "Ready to Apply" : "Learning"}
+              </Badge>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {/* Current Policy Profile */}
+              <div>
+                <p className="text-sm font-medium mb-2">Current Policy Profile</p>
+                <div className="grid gap-2 grid-cols-2 text-xs">
+                  <div className="rounded border bg-muted/30 p-2">
+                    <span className="text-muted-foreground">Autonomy Level</span>
+                    <p className="font-semibold mt-0.5">{policyProfile.autonomy_level}</p>
+                  </div>
+                  <div className="rounded border bg-muted/30 p-2">
+                    <span className="text-muted-foreground">Require Approval</span>
+                    <p className="font-semibold mt-0.5">{policyProfile.require_approval_for_critical ? "Yes" : "No"}</p>
+                  </div>
+                  <div className="rounded border bg-muted/30 p-2">
+                    <span className="text-muted-foreground">AI Reasoning</span>
+                    <p className="font-semibold mt-0.5">{policyProfile.enable_ai_reasoning ? "Enabled" : "Disabled"}</p>
+                  </div>
+                  <div className="rounded border bg-muted/30 p-2">
+                    <span className="text-muted-foreground">Approval Role</span>
+                    <p className="font-semibold mt-0.5 text-xs">{policyProfile.default_approval_role}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dry-run Preview */}
+              {dryRunPreview && (
+                <div className="rounded border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 p-3">
+                  <p className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-2">Suggested Changes (Dry-run Preview)</p>
+                  {dryRunPreview.preview_profile && (
+                    <div className="grid gap-2 grid-cols-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Autonomy Level</span>
+                        <p className="font-semibold">{policyProfile.autonomy_level} → {dryRunPreview.preview_profile.autonomy_level}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">AI Reasoning</span>
+                        <p className="font-semibold">{policyProfile.enable_ai_reasoning ? "On" : "Off"} → {dryRunPreview.preview_profile.enable_ai_reasoning ? "On" : "Off"}</p>
+                      </div>
+                    </div>
+                  )}
+                  {dryRunPreview.reason && (
+                    <p className="text-xs text-muted-foreground mt-2 italic">Reason: {dryRunPreview.reason}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                {!dryRunPreview ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDryRun}
+                    disabled={isPreviewLoading || !learningEval.learning_ready}
+                    data-testid="btn-dry-run"
+                  >
+                    Preview Changes
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setShowApplyConfirm(true)}
+                      disabled={learningApplyMutation.isPending}
+                      data-testid="btn-apply"
+                    >
+                      <Check className="mr-2 h-4 w-4" />
+                      Apply Changes
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDryRunPreview(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* Apply Confirmation Dialog */}
+              {showApplyConfirm && (
+                <div className="rounded border border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800 p-3">
+                  <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100 mb-2">
+                    Apply learning to policy profile?
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    This will update the tenant&apos;s policy configuration based on recent learning outcomes.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleApply}
+                      disabled={learningApplyMutation.isPending}
+                      data-testid="btn-confirm-apply"
+                    >
+                      {learningApplyMutation.isPending ? "Applying..." : "Confirm"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowApplyConfirm(false)}
+                      disabled={learningApplyMutation.isPending}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
       </div>
     </RequirePermission>
   );

@@ -7,6 +7,8 @@ import type {
   BrainDecision,
   BrainExplanation,
   BrainKPIDashboard,
+  BrainLearningApplyRequest,
+  BrainLearningApplyResult,
   BrainLearningEvaluationResult,
   BrainOptimizationResult,
   BrainOptimizeRequest,
@@ -150,5 +152,23 @@ export function useBrainOptimize() {
   return useMutation({
     mutationFn: (payload: BrainOptimizeRequest) =>
       apiPost<BrainOptimizationResult>(`${BASE}/optimize`, payload),
+  });
+}
+
+// XVIII1 — Learning Apply (Governance)
+export function useBrainLearningApply(tenantId: number) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Omit<BrainLearningApplyRequest, "tenant_id">) =>
+      apiPost<BrainLearningApplyResult>(`${BASE}/learning/apply`, {
+        ...payload,
+        tenant_id: tenantId,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [POLICY_PROFILE_KEY, tenantId] });
+      qc.invalidateQueries({ queryKey: [POLICY_TUNING_KEY, tenantId] });
+      qc.invalidateQueries({ queryKey: ["brain-learning-eval", tenantId] });
+    },
   });
 }

@@ -7,7 +7,7 @@
 
 ## Текущий прогресс (оперативный трекер)
 
-**Обновлено:** 2026-04-30 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII COMPLETE ✅ XII1-XII5: backend 13/13 ✅ + frontend 550/550 ✅ + release-gate PASS ✅; Phase XIII COMPLETE ✅ XIII1-XIII5: audit 60/60 EXISTS; feature_flags CRUD 35 tests; billing API 11 tests; F3.9/F3.10 DoD signoff; release-gate PASS 440+370+73 ✅; Phase XIV COMPLETE ✅ XIV1: audit 60/60 modules EXISTS (zero partial); XIV2-XIV3: 159 week-tests shipped; XIV4: Brain Core 20+ signals; XIV5: release-gate PASS 440+370+24+96+73 ✅; **Phase XV COMPLETE ✅** XV1 LLM Bridge 8/8 commit 1dfa848; XV2 PostgreSQL Persistence 8/8 commit 7838d20; XV3 LLM Explainability 5/5 commit 0c135f7; XV4 Autonomous Pipeline 5/5 commit b99ce75; XV5 release-gate PASS commit 6199e21; **Phase XVI COMPLETE ✅** XVI1 Predictive Risk Engine 6/6 ✅; XVI2 Anomaly Detection 6/6 ✅; XVI3 Proactive Recommendations 5/5 ✅; XVI4 Executive Brain KPI Dashboard 5/5 ✅; XVI5 release-gate PASS ✅)
+**Обновлено:** 2026-04-30 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII COMPLETE ✅ XII1-XII5: backend 13/13 ✅ + frontend 550/550 ✅ + release-gate PASS ✅; Phase XIII COMPLETE ✅ XIII1-XIII5: audit 60/60 EXISTS; feature_flags CRUD 35 tests; billing API 11 tests; F3.9/F3.10 DoD signoff; release-gate PASS 440+370+73 ✅; Phase XIV COMPLETE ✅ XIV1: audit 60/60 modules EXISTS (zero partial); XIV2-XIV3: 159 week-tests shipped; XIV4: Brain Core 20+ signals; XIV5: release-gate PASS 440+370+24+96+73 ✅; **Phase XV COMPLETE ✅** XV1 LLM Bridge 8/8 commit 1dfa848; XV2 PostgreSQL Persistence 8/8 commit 7838d20; XV3 LLM Explainability 5/5 commit 0c135f7; XV4 Autonomous Pipeline 5/5 commit b99ce75; XV5 release-gate PASS commit 6199e21; **Phase XVI COMPLETE ✅** XVI1 Predictive Risk Engine 6/6 ✅; XVI2 Anomaly Detection 6/6 ✅; XVI3 Proactive Recommendations 5/5 ✅; XVI4 Executive Brain KPI Dashboard 5/5 ✅; XVI5 release-gate PASS ✅; **Phase XVII COMPLETE ✅** XVII1 Frontend Intelligence 5/5 ✅; XVII2 hooks+types ✅; XVII3 Adaptive Learning API 8/8 ✅; XVII4 Optimization Engine 8/8 ✅; XVII5 release-gate PASS ✅ (commit 25b4cff))
 
 **[Предыдущее обновление 2026-04-23]** (Brain Core + integrations regression fixes ✅ `test_student_risk_flow.py` 41 passed; `test_financial_aid.py` + `test_housing.py` + `test_integrations.py` 21 passed; post-Phase-G smoke-gate remains PASS `passed=8`, `failed=0`; access model fixed: tenant-local Brain + ministry KPI layer)
 
@@ -176,7 +176,7 @@
 - [x] XIV4: Brain Core signal expansion — **COMPLETE**: 20+ event signals defined in SUPPORTED_SIGNAL_EVENT_TYPES; domain bridges for financial_aid, housing, platform, research, operations, student_life fully wired
 - [x] XIV5: Финальный release-gate + safe-gate — **PASS ✅**: architecture 7, tenant safety 8, platform 440, domain 370, security 73, data integrity 96, templates 5, frontend safety OK, rollback ready
 
-#### Phase XVII — Brain Core Frontend & Adaptive Intelligence 🎯 IN PROGRESS
+#### Phase XVII — Brain Core Frontend & Adaptive Intelligence 🎯 COMPLETE
 
 **Цель:** Завершить интеллектуальный слой университетского мозга: реализовать Admin UI для Brain Core (предиктивный дашборд, сигналы, решения) и адаптивный движок обучения, который автоматически корректирует tenant-политики на основе накопленных исходов.
 
@@ -184,7 +184,17 @@
 - [x] XVII2: Predictive Intelligence Frontend — hooks useBrainExecutiveKPI, useBrainRecommendations, useBrainPredictRisk, useBrainDetectAnomalies, useBrainLearningEvaluation, useBrainOptimize; TypeScript типы XVII
 - [x] XVII3: Adaptive Learning API — `GET /brain/learning/evaluate/{tenant_id}` (effectiveness_score, policy_drift_detected, learning_ready); backend tests 8/8 green
 - [x] XVII4: Brain Optimization Engine — `BrainOptimizer.optimize()` → resource allocation recommendations; endpoint `POST /brain/optimize`; backend tests 8/8 green
-- [ ] XVII5: Финальный release-gate после Phase XVII — PASS
+- [x] XVII5: Финальный release-gate после Phase XVII — PASS ✅ (frontend 98/98, tests 549/549, F3 alert gate PASS, rollback readiness PASS)
+
+#### Phase XVIII — Adaptive Governance & Policy Auto-Apply 🎯 COMPLETE
+
+**Цель:** Закрыть контур adaptive intelligence до fully autonomous governance: применить learning loop к tenant policy profile, добавить audit-safe auto-apply и операторский контроль в Admin UI.
+
+- [x] XVIII1: Adaptive Learning Apply API — `POST /brain/learning/apply` (tenant policy tuning apply + dry-run mode + idempotency); backend tests ≥ 6
+- [x] XVIII2: Governance UI — блок в `/console/ai/brain/intelligence` для review/apply learning changes (dry-run diff + apply action + audit marker); frontend tests ≥ 5
+- [x] XVIII3: Policy Drift Alerting — генерация и хранение drift-alert событий при повторяющемся negative effectiveness; endpoint `GET /brain/policy-drift/{tenant_id}`; tests ≥ 5
+- [x] XVIII4: End-to-End adaptive loop — signal → evaluate → apply → subsequent decision behavior changed (contract/e2e tests ≥ 4)
+- [x] XVIII5: Финальный release-gate после Phase XVIII — PASS
 
 #### Phase XVI — Predictive Intelligence Core 🎯 COMPLETE
 

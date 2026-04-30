@@ -66,6 +66,61 @@ vi.mock("../../modules/brain-core/hooks", () => ({
     isError: false,
     refetch: vi.fn(),
   }),
+  useBrainLearningEvaluation: () => ({
+    data: {
+      tenant_id: 1,
+      total_decisions: 50,
+      total_outcomes: 45,
+      positive_outcomes: 30,
+      negative_outcomes: 10,
+      neutral_outcomes: 5,
+      effectiveness_score: 0.75,
+      policy_drift_detected: false,
+      learning_ready: true,
+      evaluated_at: "2026-04-30T10:00:00Z",
+    },
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+  useBrainPolicyProfile: () => ({
+    data: {
+      tenant_id: 1,
+      autonomy_level: 2,
+      require_approval_for_critical: true,
+      default_approval_role: "approver",
+      enable_ai_reasoning: true,
+    },
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+  useBrainLearningApply: () => ({
+    mutateAsync: vi.fn(async (payload: any) => ({
+      status: payload.dry_run ? "preview" : "applied",
+      dry_run: payload.dry_run,
+      learning_ready: true,
+      changed: true,
+      reason: "Improved decision effectiveness",
+      preview_profile: payload.dry_run ? {
+        tenant_id: 1,
+        autonomy_level: 3,
+        require_approval_for_critical: false,
+        default_approval_role: "approver",
+        enable_ai_reasoning: true,
+      } : undefined,
+      applied_by: payload.actor,
+      applied_at: new Date().toISOString(),
+      profile: !payload.dry_run ? {
+        tenant_id: 1,
+        autonomy_level: 3,
+        require_approval_for_critical: false,
+        default_approval_role: "approver",
+        enable_ai_reasoning: true,
+      } : undefined,
+    })),
+    isPending: false,
+  }),
 }));
 
 vi.mock("../../shared/auth/context", () => ({
@@ -140,5 +195,53 @@ describe("BrainIntelligencePage", () => {
     allowAccess = false;
     render(<BrainIntelligencePage />);
     expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
+  });
+
+  // XVIII2 — Governance UI tests
+  it("renders governance section when learning is ready", () => {
+    render(<BrainIntelligencePage />);
+    expect(screen.getByTestId("brain-governance")).toBeInTheDocument();
+    expect(screen.getByText(/Adaptive Governance/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ready to Apply/i)).toBeInTheDocument();
+  });
+
+  it("displays current policy profile", () => {
+    render(<BrainIntelligencePage />);
+    const governanceSection = screen.getByTestId("brain-governance");
+    expect(governanceSection).toBeInTheDocument();
+    expect(screen.getByText(/Current Policy Profile/i)).toBeInTheDocument();
+    expect(screen.getByText(/Autonomy Level/i)).toBeInTheDocument();
+    expect(screen.getByText("2")).toBeInTheDocument(); // autonomy_level
+    expect(screen.getByText(/AI Reasoning/i)).toBeInTheDocument();
+    expect(screen.getByText(/Enabled/i)).toBeInTheDocument();
+  });
+
+  it("shows preview changes button when learning ready", () => {
+    render(<BrainIntelligencePage />);
+    const previewBtn = screen.getByTestId("btn-dry-run");
+    expect(previewBtn).toBeInTheDocument();
+    expect(previewBtn).toBeEnabled();
+  });
+
+  it("displays dry-run preview after clicking preview button", async () => {
+    const { user } = await import("@testing-library/user-event");
+    const u = user();
+    render(<BrainIntelligencePage />);
+    const previewBtn = screen.getByTestId("btn-dry-run");
+    await u.click(previewBtn);
+    // Preview should show suggested changes
+    expect(screen.getByText(/Suggested Changes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Preview Changes/i)).toBeInTheDocument();
+  });
+
+  it("shows apply confirmation dialog", async () => {
+    const { user } = await import("@testing-library/user-event");
+    const u = user();
+    render(<BrainIntelligencePage />);
+    const previewBtn = screen.getByTestId("btn-dry-run");
+    await u.click(previewBtn);
+    const applyBtn = screen.getByTestId("btn-apply");
+    await u.click(applyBtn);
+    expect(screen.getByText(/Apply learning to policy profile/i)).toBeInTheDocument();
   });
 });

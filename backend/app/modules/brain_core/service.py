@@ -5,6 +5,7 @@ import hashlib
 import logging
 import time
 import uuid
+from copy import deepcopy
 from typing import Callable
 from uuid import uuid4
 
@@ -72,6 +73,8 @@ class BrainCoreService:
         self._signals: list[dict] = []
         self._decisions: list[dict] = []
         self._explanations: dict[str, dict] = {}
+        self._learning_apply_idempotency: dict[str, dict] = {}
+        self._drift_alerts: dict[int, list[dict]] = {}  # XVIII3 — Policy drift tracking by tenant_id
 
     # ------------------------------------------------------------------
     # DB persistence helpers (fire-and-forget; degrade gracefully)
@@ -743,6 +746,72 @@ class BrainCoreService:
         metrics = self._quality_tracker.metrics_for_tenant(tenant_id)
         return self._policy_tuning.suggest(profile=profile, metrics=metrics)
 
+    def _policy_profile_to_dict(self, profile: TenantPolicyProfile) -> dict:
+        return {
+            "tenant_id": profile.tenant_id,
+            "autonomy_level": profile.autonomy_level,
+            "require_approval_for_critical": profile.require_approval_for_critical,
+            "default_approval_role": profile.default_approval_role,
+            "enable_ai_reasoning": profile.enable_ai_reasoning,
+        }
+
+    def apply_learning(
+        self,
+        tenant_id: int,
+        *,
+        actor: str = "system",
+        dry_run: bool = False,
+        idempotency_key: str | None = None,
+    ) -> dict:
+        """XVIII1 — Evaluate+apply adaptive policy tuning with dry-run and idempotency."""
+        cache_key = f"{tenant_id}:{idempotency_key}" if idempotency_key else None
+        if cache_key and cache_key in self._learning_apply_idempotency:
+            replay = deepcopy(self._learning_apply_idempotency[cache_key])
+            replay["idempotent_replay"] = True
+            return replay
+
+        evaluated = self.evaluate_learning(tenant_id)
+        suggestion = self.policy_tuning_suggestion(tenant_id)
+        profile_before = self._policy_resolver.get_profile(tenant_id)
+        before = self._policy_profile_to_dict(profile_before)
+
+        result: dict = {
+            "tenant_id": tenant_id,
+            "actor": actor,
+            "dry_run": dry_run,
+            "learning_ready": bool(evaluated.get("learning_ready")),
+            "evaluation": evaluated,
+            "changed": bool(suggestion.get("changed")),
+            "reason": suggestion.get("reason"),
+            "before_profile": before,
+            "suggested_profile": dict(suggestion.get("suggested_profile") or {}),
+            "idempotent_replay": False,
+            "applied": False,
+            "status": "preview" if dry_run else "skipped",
+            "applied_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        if dry_run:
+            result["status"] = "preview"
+            if not result["learning_ready"]:
+                result["reason"] = "learning_not_ready"
+            result["after_profile"] = before
+        elif not result["learning_ready"]:
+            result["status"] = "skipped"
+            result["reason"] = "learning_not_ready"
+            result["after_profile"] = before
+        else:
+            applied = self.apply_policy_tuning(tenant_id, actor=actor)
+            profile_after = self._policy_resolver.get_profile(tenant_id)
+            result["status"] = "applied"
+            result["applied"] = True
+            result["applied_result"] = applied
+            result["after_profile"] = self._policy_profile_to_dict(profile_after)
+
+        if cache_key:
+            self._learning_apply_idempotency[cache_key] = deepcopy(result)
+        return result
+
     def apply_policy_tuning(self, tenant_id: int, *, actor: str = "system") -> dict:
         suggestion = self.policy_tuning_suggestion(tenant_id)
         suggested = suggestion["suggested_profile"]
@@ -1010,6 +1079,71 @@ class BrainCoreService:
         from app.modules.brain_core.reasoning.optimizer import BrainOptimizer
         optimizer = BrainOptimizer()
         return optimizer.optimize(tenant_id=tenant_id, domain_signals=domain_signals)
+
+    def detect_policy_drift(self, tenant_id: int) -> dict:
+        """XVIII3 — Detect policy drift from repeated negative outcomes."""
+        from app.modules.brain_core.models import BrainOutcomeModel  # local import
+        
+        # Evaluate current learning status
+        evaluated = self.evaluate_learning(tenant_id)
+        negative_rate = float(evaluated.get("effectiveness_score") or 0.0)
+        total_outcomes = int(evaluated.get("total_outcomes") or 0)
+        negative_outcomes = int(evaluated.get("negative_outcomes") or 0)
+        
+        # Initialize alerts list if not present
+        if tenant_id not in self._drift_alerts:
+            self._drift_alerts[tenant_id] = []
+        
+        # Drift detection: negative_rate >= 50% and total_outcomes >= 4
+        drift_detected = (negative_rate < 0.5 and total_outcomes >= 4) or (negative_outcomes >= 3)
+        
+        if drift_detected:
+            alert_id = str(uuid4())
+            alert = {
+                "alert_id": alert_id,
+                "tenant_id": tenant_id,
+                "type": "policy_drift",
+                "severity": "high" if negative_rate < 0.3 else "medium",
+                "status": "active",
+                "reason": f"Detected {negative_outcomes} negative outcomes ({negative_rate:.1%} negative rate)",
+                "threshold": {"negative_rate": 0.5, "min_outcomes": 4},
+                "current_metrics": {
+                    "negative_rate": round(negative_rate, 4),
+                    "total_outcomes": total_outcomes,
+                    "negative_outcomes": negative_outcomes,
+                },
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "resolved_at": None,
+            }
+            # Avoid duplicates: check if similar alert exists
+            existing = [a for a in self._drift_alerts[tenant_id] if a["status"] == "active"]
+            if not existing:
+                self._drift_alerts[tenant_id].append(alert)
+            return alert if not existing else existing[0]
+        
+        return {
+            "alert_id": None,
+            "tenant_id": tenant_id,
+            "type": "policy_drift",
+            "status": "no_drift",
+            "reason": "No policy drift detected",
+            "current_metrics": {
+                "negative_rate": round(negative_rate, 4),
+                "total_outcomes": total_outcomes,
+                "negative_outcomes": negative_outcomes,
+            },
+        }
+
+    def get_policy_drift_alerts(self, tenant_id: int, status: str | None = None) -> list[dict]:
+        """XVIII3 — Retrieve policy drift alerts for a tenant."""
+        if tenant_id not in self._drift_alerts:
+            return []
+        
+        alerts = self._drift_alerts[tenant_id]
+        if status:
+            alerts = [a for a in alerts if a.get("status") == status]
+        
+        return sorted(alerts, key=lambda x: x.get("created_at", ""), reverse=True)
 
 
 brain_core_service = BrainCoreService()

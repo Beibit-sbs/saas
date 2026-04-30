@@ -239,3 +239,24 @@ export interface BrainLearningEvaluationResult {
   learning_ready: boolean;
   evaluated_at: string;
 }
+
+// XVIII1 — Learning Apply (Governance)
+export interface BrainLearningApplyRequest {
+  tenant_id: number;
+  actor?: string;
+  dry_run?: boolean;
+  idempotency_key?: string;
+}
+
+export interface BrainLearningApplyResult {
+  status: "preview" | "applied" | "skipped";
+  dry_run: boolean;
+  learning_ready: boolean;
+  changed: boolean;
+  reason: string;
+  preview_profile?: BrainPolicyProfile;
+  applied_by?: string;
+  applied_at?: string;
+  profile?: BrainPolicyProfile;
+  tenant_id: number;
+}
