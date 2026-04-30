@@ -9,6 +9,7 @@ from typing import Callable
 from uuid import uuid4
 
 from app.core.db import _get_shared_engine, make_session_factory
+from app.platform.ai import llm_bridge
 from app.modules.brain_core.actions.dispatcher import ActionDispatcher
 from app.modules.brain_core.actions.planner import ActionPlanner
 from app.modules.brain_core.classifiers.risk_classifier import RiskClassifier
@@ -19,9 +20,11 @@ from app.modules.brain_core.learning.quality_tracking import DecisionQualityTrac
 from app.modules.brain_core.observability import BrainCoreObservability
 from app.modules.brain_core.policy.decision_policy import DecisionPolicyGuard
 from app.modules.brain_core.policy.tenant_policy import TenantPolicyProfile, TenantPolicyResolver
+from app.modules.brain_core.reasoning.anomaly_detector import AnomalyDetector
 from app.modules.brain_core.reasoning.explanation import ExplanationEngine
 from app.modules.brain_core.reasoning.engine import ReasoningEngine
 from app.modules.brain_core.reasoning.knowledge_retriever import KnowledgeRetriever
+from app.modules.brain_core.reasoning.predictor import PredictiveRiskEngine
 from app.modules.brain_core.registry import SignalRegistry
 from app.modules.observability.metrics import (
     record_brain_action_dispatched,
@@ -61,8 +64,10 @@ class BrainCoreService:
         self._observability = BrainCoreObservability()
         self._policy_guard = DecisionPolicyGuard()
         self._policy_resolver = TenantPolicyResolver()
+        self._anomaly_detector = AnomalyDetector()
         self._explanation = ExplanationEngine()
         self._knowledge = KnowledgeRetriever()
+        self._predictor = PredictiveRiskEngine()
         self._dispatcher = ActionDispatcher(on_workflow_case_outcome=self._record_case_feedback)
         self._signals: list[dict] = []
         self._decisions: list[dict] = []
@@ -832,6 +837,129 @@ class BrainCoreService:
         """
         self._dispatcher.register_module_handler(action_name, handler)
         logger.info("brain_core.module_handler_registered action_name=%s", action_name)
+
+    # ------------------------------------------------------------------
+    # Phase XVI — Predictive Intelligence
+    # ------------------------------------------------------------------
+
+    def predict_risk(
+        self,
+        *,
+        event_type: str,
+        tenant_id: int,
+        entity_id: str,
+        history: list[dict],
+        horizon_days: int = 7,
+    ) -> dict:
+        """Predict future risk level from historical signal scores."""
+        return self._predictor.predict_risk(
+            event_type=event_type,
+            tenant_id=tenant_id,
+            entity_id=entity_id,
+            history=history,
+            horizon_days=horizon_days,
+        )
+
+    def detect_anomalies(
+        self,
+        *,
+        tenant_id: int,
+        metric_name: str,
+        values: list[float],
+        entity_ids: list[str] | None = None,
+        z_threshold: float = 2.0,
+    ) -> dict:
+        return self._anomaly_detector.detect(
+            tenant_id=tenant_id,
+            metric_name=metric_name,
+            values=values,
+            entity_ids=entity_ids,
+            z_threshold=z_threshold,
+        )
+
+    def proactive_recommendations(self, tenant_id: int) -> dict:
+        profile = self._policy_resolver.get_profile(tenant_id)
+        tenant_signals = [signal for signal in self._signals if int(signal.get("tenant_id") or 0) == tenant_id]
+        tenant_decisions = [decision for decision in self._decisions if int(decision.get("tenant_id") or 0) == tenant_id]
+
+        recommendations: list[dict] = []
+        attendance_count = sum(1 for signal in tenant_signals if signal.get("event_type") == "academic.attendance_risk.detected")
+        workload_count = sum(1 for signal in tenant_signals if signal.get("event_type") == "faculty.workload_overload.detected")
+        critical_decisions = sum(1 for decision in tenant_decisions if decision.get("priority") == "critical")
+
+        if attendance_count >= 2:
+            recommendations.append(
+                {
+                    "recommendation_type": "student_retention_playbook",
+                    "priority": "high",
+                    "trigger": "attendance_risk_cluster",
+                    "signals_considered": attendance_count,
+                    "recommended_actions": [
+                        "launch_outreach_campaign",
+                        "pre_open_advising_slots",
+                    ],
+                    "rationale": "Repeated attendance risk signals suggest a proactive student retention intervention before escalation.",
+                }
+            )
+
+        if workload_count >= 2:
+            recommendations.append(
+                {
+                    "recommendation_type": "faculty_capacity_rebalance",
+                    "priority": "high",
+                    "trigger": "faculty_overload_cluster",
+                    "signals_considered": workload_count,
+                    "recommended_actions": [
+                        "review_teaching_load",
+                        "protect_office_hours_capacity",
+                    ],
+                    "rationale": "Multiple workload overload signals indicate a need for proactive staffing or schedule rebalance.",
+                }
+            )
+
+        if critical_decisions >= 2:
+            recommendations.append(
+                {
+                    "recommendation_type": "executive_review",
+                    "priority": "critical",
+                    "trigger": "critical_decision_density",
+                    "signals_considered": critical_decisions,
+                    "recommended_actions": ["schedule_executive_review"],
+                    "rationale": "Critical decisions are accumulating for this tenant and warrant operator review before further automation.",
+                }
+            )
+
+        llm_summary = None
+        if recommendations and profile.enable_ai_reasoning:
+            llm_summary = llm_bridge.generate_explanation(
+                event_type="brain.proactive_recommendations.generated",
+                situation_type="proactive_recommendations",
+                severity=recommendations[0]["priority"],
+                urgency=recommendations[0]["priority"],
+                factors=[item["trigger"] for item in recommendations],
+                actions=[action for item in recommendations for action in item["recommended_actions"]],
+                context_summary=f"tenant_id={tenant_id}; signals={len(tenant_signals)}; decisions={len(tenant_decisions)}",
+            )
+
+        return {
+            "tenant_id": tenant_id,
+            "total": len(recommendations),
+            "items": recommendations,
+            "ai_reasoning_enabled": bool(profile.enable_ai_reasoning),
+            "llm_summary": llm_summary,
+        }
+
+    def get_kpi_dashboard(self, tenant_id: int) -> dict:
+        """XVI4 — Executive Brain KPI Dashboard for a single tenant."""
+        from app.modules.brain_core.reporting.kpi_dashboard import brain_kpi_dashboard
+
+        outcomes = self._outcome_tracker.list_outcomes()
+        return brain_kpi_dashboard.generate(
+            tenant_id=tenant_id,
+            signals=self._signals,
+            decisions=self._decisions,
+            outcomes=outcomes,
+        )
 
 
 brain_core_service = BrainCoreService()

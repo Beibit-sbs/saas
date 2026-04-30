@@ -138,6 +138,43 @@ def test_brain_metrics_and_traces_contract() -> None:
     assert isinstance(traces["items"], list)
 
 
+def test_brain_predict_and_anomalies_contract() -> None:
+    _reset_brain_core_state()
+
+    predict_resp = client.post(
+        "/api/admin/brain/predict",
+        headers=_brain_write_headers(),
+        json={
+            "tenant_id": 101,
+            "event_type": "academic.attendance_risk.detected",
+            "entity_id": "STU-PREDICT-101",
+            "history": [{"score": 0.4}, {"score": 0.5}, {"score": 0.6}, {"score": 0.7}],
+            "horizon_days": 14,
+        },
+    )
+    assert predict_resp.status_code == 200, predict_resp.text
+    prediction = predict_resp.json()
+    assert prediction["tenant_id"] == 101
+    assert prediction["entity_id"] == "STU-PREDICT-101"
+    assert prediction["trajectory"] == "worsening"
+
+    anomalies_resp = client.post(
+        "/api/admin/brain/anomalies",
+        headers=_brain_write_headers(),
+        json={
+            "tenant_id": 101,
+            "metric_name": "attendance_gap_days",
+            "values": [2, 3, 2, 4, 19],
+            "entity_ids": ["a", "b", "c", "d", "e"],
+        },
+    )
+    assert anomalies_resp.status_code == 200, anomalies_resp.text
+    anomalies = anomalies_resp.json()
+    assert anomalies["tenant_id"] == 101
+    assert anomalies["metric_name"] == "attendance_gap_days"
+    assert isinstance(anomalies["anomalies"], list)
+
+
 def test_brain_dispatch_outcome_contract() -> None:
     _reset_brain_core_state()
 

@@ -7,7 +7,7 @@
 
 ## Текущий прогресс (оперативный трекер)
 
-**Обновлено:** 2026-04-30 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII COMPLETE ✅ XII1-XII5: backend 13/13 ✅ + frontend 550/550 ✅ + release-gate PASS ✅; Phase XIII COMPLETE ✅ XIII1-XIII5: audit 60/60 EXISTS; feature_flags CRUD 35 tests; billing API 11 tests; F3.9/F3.10 DoD signoff; release-gate PASS 440+370+73 ✅; Phase XIV COMPLETE ✅ XIV1: audit 60/60 modules EXISTS (zero partial); XIV2-XIV3: 159 week-tests shipped; XIV4: Brain Core 20+ signals; XIV5: release-gate PASS 440+370+24+96+73 ✅)
+**Обновлено:** 2026-04-30 (Phase I COMPLETE: 131/131 тестов ✅; Phase II COMPLETE: 27/27 тестов ✅; Phase III COMPLETE: 23/23 тестов ✅; Phase IV COMPLETE ✅; Phase V COMPLETE ✅; Phase VI COMPLETE ✅; Phase VII COMPLETE ✅; Phase VIII COMPLETE ✅; Phase IX COMPLETE: 5/5 (IX1-IX4 backend: 17/17 tests ✅; IX5 gate: safe-gate PASS ✅ + release-gate PASS ✅); Phase X COMPLETE: backend 28/28 ✅ + frontend 13/13 ✅ + X4 safe-gate PASS ✅; Phase XI COMPLETE ✅; Phase XII COMPLETE ✅ XII1-XII5: backend 13/13 ✅ + frontend 550/550 ✅ + release-gate PASS ✅; Phase XIII COMPLETE ✅ XIII1-XIII5: audit 60/60 EXISTS; feature_flags CRUD 35 tests; billing API 11 tests; F3.9/F3.10 DoD signoff; release-gate PASS 440+370+73 ✅; Phase XIV COMPLETE ✅ XIV1: audit 60/60 modules EXISTS (zero partial); XIV2-XIV3: 159 week-tests shipped; XIV4: Brain Core 20+ signals; XIV5: release-gate PASS 440+370+24+96+73 ✅; **Phase XV COMPLETE ✅** XV1 LLM Bridge 8/8 commit 1dfa848; XV2 PostgreSQL Persistence 8/8 commit 7838d20; XV3 LLM Explainability 5/5 commit 0c135f7; XV4 Autonomous Pipeline 5/5 commit b99ce75; XV5 release-gate PASS commit 6199e21; **Phase XVI COMPLETE ✅** XVI1 Predictive Risk Engine 6/6 ✅; XVI2 Anomaly Detection 6/6 ✅; XVI3 Proactive Recommendations 5/5 ✅; XVI4 Executive Brain KPI Dashboard 5/5 ✅; XVI5 release-gate PASS ✅)
 
 **[Предыдущее обновление 2026-04-23]** (Brain Core + integrations regression fixes ✅ `test_student_risk_flow.py` 41 passed; `test_financial_aid.py` + `test_housing.py` + `test_integrations.py` 21 passed; post-Phase-G smoke-gate remains PASS `passed=8`, `failed=0`; access model fixed: tenant-local Brain + ministry KPI layer)
 
@@ -175,6 +175,30 @@
 - [x] XIV2-XIV3: Week22–Week30 domain-depth hardening — **COMPLETE**: 159 week-test files shipped covering domain-depth for all modules (guards/caps/cross-entity checks integrated)
 - [x] XIV4: Brain Core signal expansion — **COMPLETE**: 20+ event signals defined in SUPPORTED_SIGNAL_EVENT_TYPES; domain bridges for financial_aid, housing, platform, research, operations, student_life fully wired
 - [x] XIV5: Финальный release-gate + safe-gate — **PASS ✅**: architecture 7, tenant safety 8, platform 440, domain 370, security 73, data integrity 96, templates 5, frontend safety OK, rollback ready
+
+#### Phase XVI — Predictive Intelligence Core 🎯 COMPLETE
+
+**Цель:** Перейти от реактивного Brain Core (реагирует на сигналы) к проактивному (прогнозирует риски до пересечения порогов). Добавить предиктивный движок, детекцию аномалий, проактивные рекомендации и executive KPI dashboard.
+
+- [x] XVI1: Predictive Risk Engine — `PredictiveRiskEngine.predict_risk()`: тренд-анализ истории сигналов → прогноз риска на 7/14/30 дней; backend tests 6/6 green
+- [x] XVI2: Anomaly Detection — `AnomalyDetector.detect()`: статистическое обнаружение аномалий (z-score/IQR + MAD fallback) в multi-domain метриках; endpoint `POST /brain/anomalies`; targeted tests 6/6 green
+- [x] XVI3: Proactive Recommendations — Brain Core сканирует текущее состояние tenant-а, генерирует проактивные рекомендации до кризиса; LLM-enriched reasoning; endpoint `GET /brain/recommendations/{tenant_id}`; targeted tests 5/5 green
+- [x] XVI4: Executive Brain KPI Dashboard — агрегированный дашборд Brain Core: decisions/outcomes/effectiveness/top-risks per tenant; endpoint `GET /brain/executive-kpi/{tenant_id}`; тесты ≥ 5
+- [x] XVI5: Финальный release-gate после Phase XVI — PASS
+
+#### Phase XV — AI Intelligence Core + Real Persistence 🎯 IN PROGRESS
+
+**Цель:** Подключить реальный LLM (Ollama/DeepSeek-R1 8B) к Brain Core для настоящего reasoning; верифицировать PostgreSQL persistence в staging; запустить автономный decision pipeline.
+
+**Ресурсы:** `local-ollama` (deepseek-r1:8b 4.9GB) запущен; `DATABASE_URL=postgresql://app:app@db:5432/app` настроен; Brain Core готов.
+
+**✅ COMPLETE** — все 5 шагов закрыты: LLM Bridge + PostgreSQL + Explainability + Autonomous Pipeline + release-gate PASS.
+
+- [x] XV1: LLM Bridge — реализовать `app/platform/ai/llm_bridge.py`: HTTP-клиент к Ollama API (`POST /api/chat`); Brain Core вызывает LLM при `decision_type=autonomous`; ответ LLM → `explanation` поле в решении; тесты ≥ 4 (8/8 ✅ commit 1dfa848)
+- [x] XV2: PostgreSQL persistence verification — запустить staging (`docker-up`), выполнить entity CRUD через API, убедиться что данные сохраняются в PostgreSQL (не in-memory); проверить все 77 миграций применены (8/8 ✅ commit 7838d20)
+- [x] XV3: LLM Decision Explainability — Brain Core `/simulate` эндпоинт возвращает LLM-generated explanation; интеграционный тест с mock Ollama (5/5 ✅ commit 0c135f7)
+- [x] XV4: Autonomous Action Pipeline — Brain Core: signal → LLM classify → decision → action; end-to-end тест с deepseek-r1 (5/5 ✅ commit b99ce75)
+- [x] XV5: Финальный release-gate после Phase XV — PASS ✅ (architecture 7 + tenant 8 + platform 440 + domain 370 + security 73 + data 96 + templates 5 + frontend OK + rollback ready; commit 6199e21)
 
 ### Правила обновления трекера
 

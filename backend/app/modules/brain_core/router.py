@@ -90,6 +90,22 @@ class PaymentOverdueSignalRequest(BaseModel):
     balance_due: float = Field(..., ge=0)
 
 
+class PredictRiskRequest(BaseModel):
+    tenant_id: int = Field(..., gt=0)
+    event_type: str = Field(..., min_length=3)
+    entity_id: str = Field(..., min_length=1)
+    history: list[dict] = Field(default_factory=list)
+    horizon_days: int = Field(default=7, ge=1, le=30)
+
+
+class DetectAnomaliesRequest(BaseModel):
+    tenant_id: int = Field(..., gt=0)
+    metric_name: str = Field(..., min_length=2)
+    values: list[float] = Field(..., min_length=1)
+    entity_ids: list[str] | None = None
+    z_threshold: float = Field(default=2.0, ge=1.0, le=5.0)
+
+
 class BudgetVarianceSignalRequest(BaseModel):
     tenant_id: int = Field(..., gt=0)
     budget_code: str = Field(..., min_length=1)
@@ -315,6 +331,44 @@ def simulate_what_if(
         simulation_label=payload.simulation_label,
         policy_override=payload.policy_override.model_dump() if payload.policy_override else None,
     )
+
+
+@router.post("/predict")
+def predict_risk(
+    payload: PredictRiskRequest,
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    return brain_core_service.predict_risk(
+        event_type=payload.event_type,
+        tenant_id=payload.tenant_id,
+        entity_id=payload.entity_id,
+        history=payload.history,
+        horizon_days=payload.horizon_days,
+    )
+
+
+@router.post("/anomalies")
+def detect_anomalies(
+    payload: DetectAnomaliesRequest,
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    return brain_core_service.detect_anomalies(
+        tenant_id=payload.tenant_id,
+        metric_name=payload.metric_name,
+        values=payload.values,
+        entity_ids=payload.entity_ids,
+        z_threshold=payload.z_threshold,
+    )
+
+
+@router.get("/recommendations/{tenant_id}")
+def get_proactive_recommendations(tenant_id: int) -> dict:
+    return brain_core_service.proactive_recommendations(tenant_id)
+
+
+@router.get("/executive-kpi/{tenant_id}")
+def get_executive_kpi_dashboard(tenant_id: int) -> dict:
+    return brain_core_service.get_kpi_dashboard(tenant_id)
 
 
 @router.post("/simulate/thesis-delay")
