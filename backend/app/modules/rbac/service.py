@@ -238,6 +238,71 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "ops.read",
         "jobs.read",
     },
+    # ------------------------------------------------------------------
+    # Ministry of Education (وزارة التعليم) roles — GCC PDPL / TIER-3
+    # ------------------------------------------------------------------
+    "ministry_observer": {
+        # Read-only cross-tenant view for ministerial oversight
+        "admin.dashboard.read",
+        "admin.audit.read",
+        "admin.students.read",
+        "admin.faculty.read",
+        "admin.programs.read",
+        "admin.courses.read",
+        "admin.enrollments.read",
+        "admin.records.read",
+        "admin.tenants.read",
+        "admissions.read",
+        "profiles.read",
+        "metrics.read",
+        "health.read",
+    },
+    "ministry_auditor": {
+        # All observer permissions plus compliance/audit exports
+        "admin.dashboard.read",
+        "admin.audit.read",
+        "admin.audit.export",
+        "admin.students.read",
+        "admin.faculty.read",
+        "admin.programs.read",
+        "admin.courses.read",
+        "admin.enrollments.read",
+        "admin.records.read",
+        "admin.tenants.read",
+        "admissions.read",
+        "profiles.read",
+        "metrics.read",
+        "health.read",
+        "compliance.read",
+        "compliance.export",
+    },
+    "ministry_admin": {
+        # Full ministry access: observer + auditor + ability to manage tenants
+        "admin.dashboard.read",
+        "admin.audit.read",
+        "admin.audit.export",
+        "admin.students.read",
+        "admin.students.write",
+        "admin.faculty.read",
+        "admin.programs.read",
+        "admin.programs.write",
+        "admin.courses.read",
+        "admin.enrollments.read",
+        "admin.records.read",
+        "admin.records.write",
+        "admin.tenants.read",
+        "admin.tenants.write",
+        "admin.users.manage",
+        "admissions.read",
+        "profiles.read",
+        "profiles.manage",
+        "metrics.read",
+        "health.read",
+        "compliance.read",
+        "compliance.export",
+        "compliance.write",
+        "federation.read",
+    },
 }
 
 @dataclass
@@ -262,9 +327,12 @@ _PLATFORM_ADMIN_ROLE = "superadmin"
 ROLE_HIERARCHY: Dict[str, int] = {
     "superadmin": 100,
     "admin": 50,
+    "ministry_admin": 45,
     "dean": 40,
+    "ministry_auditor": 35,
     "teacher": 20,
     "auditor": 10,
+    "ministry_observer": 8,
     "student": 0,
 }
 

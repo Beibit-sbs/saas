@@ -193,7 +193,11 @@ def _row_to_dict_impl(
         offset += 1
 
     for index, field_name in enumerate(fields):
-        result[field_name] = row[offset + index]
+        value = row[offset + index]
+        # tenant_id is stored as BIGINT in some tables but schemas expect str
+        if field_name == "tenant_id" and isinstance(value, int):
+            value = str(value)
+        result[field_name] = value
     return result
 
 

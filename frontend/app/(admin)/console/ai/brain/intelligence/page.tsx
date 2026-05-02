@@ -11,11 +11,14 @@ import { ErrorState, LoadingState } from "@/shared/ui/page-states";
 import { PageHeader } from "@/shared/ui/page-header";
 import { RequirePermission } from "@/shared/ui/permission-gate";
 import {
+  useBrainCrossTenantRecommendations,
   useBrainExecutiveKPI,
   useBrainRecommendations,
   useBrainLearningEvaluation,
   useBrainLearningApply,
+  useBrainPolicyReasoning,
   useBrainPolicyProfile,
+  useBrainPredictivePolicyOptimization,
 } from "@/modules/brain-core/hooks";
 
 function severityVariant(severity: string): "destructive" | "warning" | "secondary" | "outline" {
@@ -46,6 +49,9 @@ export default function BrainIntelligencePage() {
   const learningEvalQuery = useBrainLearningEvaluation(tenantId);
   const policyProfileQuery = useBrainPolicyProfile(tenantId);
   const learningApplyMutation = useBrainLearningApply(tenantId);
+  const policyReasoningQuery = useBrainPolicyReasoning(tenantId);
+  const crossTenantQuery = useBrainCrossTenantRecommendations(tenantId);
+  const predictiveOptimizationQuery = useBrainPredictivePolicyOptimization(tenantId);
 
   const [showApplyConfirm, setShowApplyConfirm] = useState(false);
   const [dryRunPreview, setDryRunPreview] = useState<any>(null);
@@ -59,6 +65,9 @@ export default function BrainIntelligencePage() {
   const kpi = kpiQuery.data;
   const learningEval = learningEvalQuery.data;
   const policyProfile = policyProfileQuery.data;
+  const policyReasoning = policyReasoningQuery.data;
+  const crossTenant = crossTenantQuery.data;
+  const predictiveOptimization = predictiveOptimizationQuery.data;
 
   const anyLoading = kpiQuery.isLoading || recommendationsQuery.isLoading;
   const hasError = kpiQuery.isError && recommendationsQuery.isError;
@@ -68,7 +77,7 @@ export default function BrainIntelligencePage() {
     try {
       const result = await learningApplyMutation.mutateAsync({ 
         dry_run: true,
-        actor: `${user?.userId || "admin"}@console`,
+        actor: `${user?.sub || "admin"}@console`,
       });
       setDryRunPreview(result);
     } finally {
@@ -80,7 +89,7 @@ export default function BrainIntelligencePage() {
     try {
       await learningApplyMutation.mutateAsync({
         dry_run: false,
-        actor: `${user?.userId || "admin"}@console`,
+        actor: `${user?.sub || "admin"}@console`,
       });
       setShowApplyConfirm(false);
       setDryRunPreview(null);
@@ -108,6 +117,9 @@ export default function BrainIntelligencePage() {
                 void recommendationsQuery.refetch();
                 void learningEvalQuery.refetch();
                 void policyProfileQuery.refetch();
+                void policyReasoningQuery.refetch();
+                void crossTenantQuery.refetch();
+                void predictiveOptimizationQuery.refetch();
               }}
               disabled={anyLoading}
             >
@@ -299,16 +311,23 @@ export default function BrainIntelligencePage() {
               {dryRunPreview && (
                 <div className="rounded border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 p-3">
                   <p className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-2">Suggested Changes (Dry-run Preview)</p>
-                  {dryRunPreview.preview_profile && (
+                  {(dryRunPreview.suggested_profile || dryRunPreview.preview_profile) && (
                     <div className="grid gap-2 grid-cols-2 text-xs">
+                      {(() => {
+                        const previewProfile = dryRunPreview.suggested_profile || dryRunPreview.preview_profile;
+                        return (
+                          <>
                       <div>
                         <span className="text-muted-foreground">Autonomy Level</span>
-                        <p className="font-semibold">{policyProfile.autonomy_level} → {dryRunPreview.preview_profile.autonomy_level}</p>
+                        <p className="font-semibold">{policyProfile.autonomy_level} → {previewProfile.autonomy_level}</p>
                       </div>
                       <div>
                         <span className="text-muted-foreground">AI Reasoning</span>
-                        <p className="font-semibold">{policyProfile.enable_ai_reasoning ? "On" : "Off"} → {dryRunPreview.preview_profile.enable_ai_reasoning ? "On" : "Off"}</p>
+                        <p className="font-semibold">{policyProfile.enable_ai_reasoning ? "On" : "Off"} → {previewProfile.enable_ai_reasoning ? "On" : "Off"}</p>
                       </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   )}
                   {dryRunPreview.reason && (
@@ -381,6 +400,97 @@ export default function BrainIntelligencePage() {
                   </div>
                 </div>
               )}
+            </div>
+          </section>
+        )}
+
+        {policyReasoning && (
+          <section className="rounded-lg border bg-card" data-testid="brain-policy-reasoning">
+            <div className="border-b px-4 py-3 flex items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-primary" />
+              <h2 className="text-base font-semibold">Policy Reasoning</h2>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="rounded border bg-muted/30 p-3 text-sm text-muted-foreground">
+                {policyReasoning.reasoning}
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <p className="text-sm font-medium mb-2">Recommended Adjustments</p>
+                  <div className="space-y-2">
+                    {policyReasoning.recommendations.map((item, index) => (
+                      <div key={`${item.recommendation}-${index}`} className="rounded border p-3 text-sm">
+                        <p className="font-medium">{item.recommendation}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{item.rationale}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-2">Alternative Profiles</p>
+                  <div className="space-y-2">
+                    {policyReasoning.alternative_policies.map((item) => (
+                      <div key={item.name} className="rounded border p-3 text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-medium">{item.name}</p>
+                          <Badge variant="outline">{item.adoption_risk} risk</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{item.rationale}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {crossTenant && predictiveOptimization && (
+          <section className="grid gap-4 md:grid-cols-2" data-testid="brain-policy-optimization-suite">
+            <div className="rounded-lg border bg-card">
+              <div className="border-b px-4 py-3 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <h2 className="text-base font-semibold">Peer Learning Benchmark</h2>
+              </div>
+              <div className="p-4 space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded border bg-muted/30 p-2">
+                    <span className="text-muted-foreground">Peer sample</span>
+                    <p className="font-semibold mt-1">{crossTenant.sample_size}</p>
+                  </div>
+                  <div className="rounded border bg-muted/30 p-2">
+                    <span className="text-muted-foreground">AI reasoning adoption</span>
+                    <p className="font-semibold mt-1">{pct(crossTenant.peer_benchmarks.ai_reasoning_adoption_rate)}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Peer positive rate: {pct(crossTenant.peer_benchmarks.avg_positive_rate)}
+                </p>
+                <div className="space-y-2">
+                  {crossTenant.rationale.map((item, index) => (
+                    <p key={`${item}-${index}`} className="text-xs text-muted-foreground">{item}</p>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-card">
+              <div className="border-b px-4 py-3 flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" />
+                <h2 className="text-base font-semibold">Predictive Policy Optimization</h2>
+                <Badge variant={predictiveOptimization.forecast_band === "high" ? "warning" : "outline"} className="ml-auto">
+                  {predictiveOptimization.forecast_band} forecast
+                </Badge>
+              </div>
+              <div className="p-4 space-y-3 text-sm">
+                <p className="text-xs text-muted-foreground">Risk score: {pct(predictiveOptimization.risk_score)}</p>
+                <div className="space-y-2">
+                  {predictiveOptimization.recommended_actions.map((item, index) => (
+                    <div key={`${item}-${index}`} className="rounded border p-2 text-xs">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
         )}

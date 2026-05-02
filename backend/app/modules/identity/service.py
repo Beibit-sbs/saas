@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import secrets
 import time
@@ -7,6 +8,17 @@ from dataclasses import dataclass
 from threading import Lock
 from typing import Any
 from urllib.parse import urlencode
+
+import httpx
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.serialization import load_der_public_key
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.rsa import (
+    RSAPublicNumbers,
+)
+from cryptography.hazmat.backends import default_backend
 
 from app.modules.integrations.service import get_setting, save_setting
 from app.modules.security.url_validation import validate_external_https_url
@@ -161,5 +173,161 @@ def consume_oidc_state(*, state: str, max_age_seconds: int = 600) -> dict[str, A
     return payload
 
 
-def exchange_oidc_code_for_identity(*, provider_config: dict[str, Any], code: str) -> OidcExternalIdentity:
-    raise NotImplementedError("oidc code exchange is not implemented yet")
+def _jwk_to_rsa_public_key(jwk: dict[str, Any]) -> RSAPublicKey:
+    def _b64url_to_int(val: str) -> int:
+        padded = val + "=" * (-len(val) % 4)
+        return int.from_bytes(base64.urlsafe_b64decode(padded), "big")
+
+    n = _b64url_to_int(jwk["n"])
+    e = _b64url_to_int(jwk["e"])
+    return RSAPublicNumbers(e=e, n=n).public_key(default_backend())
+
+
+def _fetch_jwks(issuer: str) -> list[dict[str, Any]]:
+    # Try OIDC discovery first, fall back to direct JWKS endpoint
+    discovery_url = f"{issuer}/.well-known/openid-configuration"
+    try:
+        resp = httpx.get(discovery_url, timeout=10.0, follow_redirects=False)
+        resp.raise_for_status()
+        jwks_uri = resp.json().get("jwks_uri", "")
+    except Exception:
+        jwks_uri = f"{issuer}/.well-known/jwks.json"
+
+    if not jwks_uri:
+        raise ValueError("could not determine jwks_uri from OIDC discovery")
+    jwks_uri = validate_external_https_url(jwks_uri)
+    resp = httpx.get(jwks_uri, timeout=10.0, follow_redirects=False)
+    resp.raise_for_status()
+    return resp.json().get("keys", [])
+
+
+def _verify_jwt_rs256(token: str, issuer: str, audience: str, nonce: str | None = None) -> dict[str, Any]:
+    parts = token.split(".")
+    if len(parts) != 3:
+        raise ValueError("invalid JWT structure")
+
+    def _b64_decode(segment: str) -> bytes:
+        padded = segment + "=" * (-len(segment) % 4)
+        return base64.urlsafe_b64decode(padded)
+
+    header = json.loads(_b64_decode(parts[0]))
+    payload = json.loads(_b64_decode(parts[1]))
+    signing_input = f"{parts[0]}.{parts[1]}".encode()
+    signature = _b64_decode(parts[2])
+
+    alg = header.get("alg", "RS256")
+    kid = header.get("kid", "")
+
+    keys = _fetch_jwks(issuer)
+    matched: list[dict[str, Any]] = [
+        k for k in keys
+        if k.get("kty") == "RSA"
+        and (not kid or k.get("kid") == kid)
+        and k.get("use", "sig") == "sig"
+    ]
+    if not matched:
+        matched = [k for k in keys if k.get("kty") == "RSA"]
+    if not matched:
+        raise ValueError("no matching RSA key found in JWKS")
+
+    verified = False
+    for jwk in matched:
+        pub_key = _jwk_to_rsa_public_key(jwk)
+        hash_alg: hashes.HashAlgorithm
+        if alg in ("RS256",):
+            hash_alg = hashes.SHA256()
+        elif alg in ("RS384",):
+            hash_alg = hashes.SHA384()
+        elif alg in ("RS512",):
+            hash_alg = hashes.SHA512()
+        else:
+            raise ValueError(f"unsupported JWT algorithm: {alg}")
+        try:
+            pub_key.verify(signature, signing_input, padding.PKCS1v15(), hash_alg)
+            verified = True
+            break
+        except InvalidSignature:
+            continue
+
+    if not verified:
+        raise ValueError("JWT signature verification failed")
+
+    now = int(time.time())
+    exp = int(payload.get("exp", 0))
+    nbf = int(payload.get("nbf", now))
+    iss = str(payload.get("iss", ""))
+    aud = payload.get("aud")
+
+    if exp and now > exp:
+        raise ValueError("JWT has expired")
+    if nbf and now < nbf - 30:
+        raise ValueError("JWT not yet valid")
+    if iss.rstrip("/") != issuer.rstrip("/"):
+        raise ValueError(f"JWT issuer mismatch: {iss!r} != {issuer!r}")
+
+    audiences = [aud] if isinstance(aud, str) else (aud or [])
+    if audience not in audiences:
+        raise ValueError(f"JWT audience mismatch")
+
+    if nonce and payload.get("nonce") != nonce:
+        raise ValueError("JWT nonce mismatch")
+
+    return payload
+
+
+def exchange_oidc_code_for_identity(*, provider_config: dict[str, Any], code: str, nonce: str | None = None) -> OidcExternalIdentity:
+    issuer = validate_external_https_url(str(provider_config.get("issuer", "")).strip()).rstrip("/")
+    client_id = str(provider_config.get("client_id", "")).strip()
+    client_secret = str(provider_config.get("client_secret", "")).strip()
+    redirect_uri = str(provider_config.get("redirect_uri", "")).strip()
+
+    if not issuer or not client_id or not redirect_uri:
+        raise ValueError("oidc provider configuration is incomplete")
+
+    token_endpoint = f"{issuer}/token"
+    # Prefer token_endpoint from OIDC discovery if available
+    try:
+        discovery_url = validate_external_https_url(f"{issuer}/.well-known/openid-configuration")
+        disc_resp = httpx.get(discovery_url, timeout=10.0, follow_redirects=False)
+        if disc_resp.status_code == 200:
+            discovered_token_ep = disc_resp.json().get("token_endpoint", "")
+            if discovered_token_ep:
+                token_endpoint = validate_external_https_url(discovered_token_ep)
+    except Exception:
+        pass
+
+    resp = httpx.post(
+        token_endpoint,
+        data={
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": redirect_uri,
+            "client_id": client_id,
+            "client_secret": client_secret,
+        },
+        headers={"Accept": "application/json"},
+        timeout=15.0,
+        follow_redirects=False,
+    )
+    resp.raise_for_status()
+    token_response = resp.json()
+
+    id_token = token_response.get("id_token", "")
+    if not id_token:
+        raise ValueError("no id_token in token response")
+
+    claims = _verify_jwt_rs256(id_token, issuer=issuer, audience=client_id, nonce=nonce)
+
+    subject = str(claims.get("sub", "")).strip()
+    if not subject:
+        raise ValueError("id_token missing sub claim")
+
+    email: str | None = claims.get("email") or None
+    display_name: str | None = (
+        claims.get("name")
+        or claims.get("preferred_username")
+        or claims.get("given_name")
+        or None
+    )
+
+    return OidcExternalIdentity(subject=subject, email=email, display_name=display_name)

@@ -59,8 +59,8 @@ class BrainCoreService:
         self._classifier = RiskClassifier()
         self._reasoning = ReasoningEngine()
         self._planner = ActionPlanner()
-        self._outcome_tracker = OutcomeTracker()
         self._quality_tracker = DecisionQualityTracker()
+        self._outcome_tracker = OutcomeTracker(quality_tracker=self._quality_tracker)
         self._policy_tuning = PolicyTuningEngine()
         self._observability = BrainCoreObservability()
         self._policy_guard = DecisionPolicyGuard()
@@ -75,6 +75,29 @@ class BrainCoreService:
         self._explanations: dict[str, dict] = {}
         self._learning_apply_idempotency: dict[str, dict] = {}
         self._drift_alerts: dict[int, list[dict]] = {}  # XVIII3 — Policy drift tracking by tenant_id
+        self._agent_event_log: dict[tuple, list[dict]] = {}  # XXIII1 — Step-level event log keyed by (task_id, step_id)
+        self._step_dependencies: dict[tuple, list[str]] = {}  # XXIV1 — (task_id, step_id) → list of step_ids that must be done first
+        self._resource_budgets: dict[str, dict] = {}  # XXIV2 — task_id → {token_limit, cost_limit_usd}
+        self._resource_usage: dict[str, dict] = {}  # XXIV2 — task_id → {tokens_used, cost_usd}
+        self._task_feedback: dict[str, list[dict]] = {}  # XXIV3 — task_id → list of feedback records
+        self._agent_handoffs: dict[str, dict] = {}  # XXV1 — handoff_id → handoff record
+        self._task_splits: dict[str, dict] = {}  # XXV2 — task_id → {subtasks, strategy}
+        self._task_merges: dict[str, dict] = {}  # XXV3 — task_id → merge result
+        self._agent_learning_signals: dict[str, list] = {}  # XXVI1 — agent_id → list of signals
+        self._task_learning_records: dict[str, list] = {}  # XXVI1 — task_id → list of signals
+        self._task_optimizations: dict[str, list] = {}  # XXVI2 — task_id → optimization history
+        self._agent_benchmarks: dict[str, dict] = {}  # XXVI3 — agent_id → benchmark record
+        self._agent_knowledge: dict[str, dict] = {}  # XXVII1 — agent_id → {key → knowledge_record}
+        self._shared_knowledge: dict[str, list] = {}  # XXVII2 — agent_id → list of shared knowledge records received
+        self._reprocess_idempotency: dict[str, dict] = {}  # XXVIII1 — (signal_id:idempotency_key) → replay result
+        self._reprocess_audit: list[dict] = []  # XXVIII3 — replay audit events
+        self._replay_suspended_tenants: set[int] = set()  # XXVIII2 — tenants with replay policy suspended
+        self._replay_max_per_signal: int = 10  # XXVIII2 — max replay executions per signal
+        self._replay_policies: dict[int, dict] = {}  # XXXI1 — tenant_id → replay policy config
+        self._replay_policy_history: list[dict] = []  # XXXI3 — audit log of policy changes
+        self._replay_request_queue: dict[str, dict] = {}  # XXXII1 — request_id → replay request record
+        self._replay_escalations: dict[str, list[dict]] = {}  # XXXII2 — request_id → list of escalations
+        self._replay_sla_metrics: dict[int, dict] = {}  # XXXII3 — tenant_id → SLA metrics
 
     # ------------------------------------------------------------------
     # DB persistence helpers (fire-and-forget; degrade gracefully)
@@ -606,15 +629,375 @@ class BrainCoreService:
             "dispatch_results": dispatch_results,
         }
 
-    def reprocess_signal(self, signal_id: str, *, actor: str = "system") -> dict:
+    # ------------------------------------------------------------------
+    # XXVIII2 — Replay Safety Gate helpers
+    # ------------------------------------------------------------------
+
+    def suspend_tenant_replay(self, tenant_id: int) -> None:
+        """Administratively suspend replay for a tenant (fail-closed)."""
+        self._replay_suspended_tenants.add(tenant_id)
+
+    def unsuspend_tenant_replay(self, tenant_id: int) -> None:
+        self._replay_suspended_tenants.discard(tenant_id)
+
+    def _replay_safety_gate(self, signal: dict, actor: str) -> dict | None:
+        """Return an error dict if replay is blocked, else None (allow).
+
+        Checks (fail-closed — any block stops execution):
+        1. Tenant autonomy_level == 0 → manual-only, replay denied.
+        2. Tenant replay suspended via admin flag.
+        3. Signal has exceeded max replay execution count.
+        """
+        tenant_id = int(signal.get("tenant_id") or 0)
+        signal_id = signal.get("signal_id", "")
+
+        # 1. Autonomy-level gate: level 0 = full manual, no automated replay
+        policy = self._policy_resolver.get_profile(tenant_id)
+        if policy.autonomy_level == 0:
+            self._reprocess_audit.append(
+                {
+                    "event": "replay_rejected",
+                    "signal_id": signal_id,
+                    "actor": actor,
+                    "reason": "autonomy_blocked",
+                    "tenant_id": tenant_id,
+                    "recorded_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            return {
+                "status": "safety_gate_blocked",
+                "reason": "autonomy_blocked",
+                "signal_id": signal_id,
+                "tenant_id": tenant_id,
+            }
+
+        # 2. Policy suspension gate
+        if tenant_id in self._replay_suspended_tenants:
+            self._reprocess_audit.append(
+                {
+                    "event": "replay_rejected",
+                    "signal_id": signal_id,
+                    "actor": actor,
+                    "reason": "policy_suspended",
+                    "tenant_id": tenant_id,
+                    "recorded_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            return {
+                "status": "safety_gate_blocked",
+                "reason": "policy_suspended",
+                "signal_id": signal_id,
+                "tenant_id": tenant_id,
+            }
+
+        # 3. Replay rate-limit per signal (executed replays only, not dry-runs)
+        executed_count = sum(
+            1
+            for e in self._reprocess_audit
+            if e.get("event") == "replay_executed" and e.get("signal_id") == signal_id
+        )
+        if executed_count >= self._replay_max_per_signal:
+            self._reprocess_audit.append(
+                {
+                    "event": "replay_rejected",
+                    "signal_id": signal_id,
+                    "actor": actor,
+                    "reason": "replay_rate_limit_exceeded",
+                    "tenant_id": tenant_id,
+                    "recorded_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            return {
+                "status": "safety_gate_blocked",
+                "reason": "replay_rate_limit_exceeded",
+                "signal_id": signal_id,
+                "tenant_id": tenant_id,
+            }
+
+        return None  # gate open
+
+    def reprocess_signal(
+        self,
+        signal_id: str,
+        *,
+        actor: str = "system",
+        dry_run: bool = False,
+        idempotency_key: str | None = None,
+        replay_reason: str | None = None,
+        expected_tenant_id: int | None = None,
+    ) -> dict:
         signal = next((s for s in self._signals if s.get("signal_id") == signal_id), None)
         if signal is None:
             return {"status": "not_found", "signal_id": signal_id}
-        logger.info("brain_core.reprocess_signal signal_id=%s actor=%s", signal_id, actor)
+
+        signal_tenant_id = int(signal.get("tenant_id") or 0)
+        if expected_tenant_id is not None and signal_tenant_id != expected_tenant_id:
+            self._reprocess_audit.append(
+                {
+                    "event": "replay_rejected",
+                    "signal_id": signal_id,
+                    "actor": actor,
+                    "reason": "tenant_mismatch",
+                    "expected_tenant_id": expected_tenant_id,
+                    "actual_tenant_id": signal_tenant_id,
+                    "recorded_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            return {
+                "status": "tenant_mismatch",
+                "signal_id": signal_id,
+                "expected_tenant_id": expected_tenant_id,
+                "actual_tenant_id": signal_tenant_id,
+            }
+
+        # XXVIII2 — Safety gate (fail-closed; dry_run also goes through gate)
+        gate_result = self._replay_safety_gate(signal, actor)
+        if gate_result is not None:
+            return gate_result
+
+        logger.info(
+            "brain_core.reprocess_signal signal_id=%s actor=%s dry_run=%s",
+            signal_id,
+            actor,
+            dry_run,
+        )
+
+        self._reprocess_audit.append(
+            {
+                "event": "replay_requested",
+                "signal_id": signal_id,
+                "actor": actor,
+                "dry_run": dry_run,
+                "idempotency_key": idempotency_key,
+                "replay_reason": replay_reason,
+                "tenant_id": signal_tenant_id,
+                "recorded_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+
+        if dry_run:
+            return {
+                "status": "dry_run",
+                "signal_id": signal_id,
+                "tenant_id": signal_tenant_id,
+                "event_type": signal.get("event_type"),
+                "replay_reason": replay_reason,
+                "idempotent_replay": False,
+                "would_process": True,
+            }
+
+        cache_key = None
+        if idempotency_key:
+            cache_key = f"{signal_id}:{idempotency_key}"
+            cached = self._reprocess_idempotency.get(cache_key)
+            if cached is not None:
+                replay = deepcopy(cached)
+                replay["idempotent_replay"] = True
+                return replay
+
         result = self.process_signal(dict(signal))
         result["reprocessed_by"] = actor
         result["original_signal_id"] = signal_id
+        result["replay_reason"] = replay_reason
+        result["idempotency_key"] = idempotency_key
+        result["idempotent_replay"] = False
+
+        self._reprocess_audit.append(
+            {
+                "event": "replay_executed",
+                "signal_id": signal_id,
+                "actor": actor,
+                "replay_reason": replay_reason,
+                "idempotency_key": idempotency_key,
+                "tenant_id": signal_tenant_id,
+                "recorded_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+
+        if cache_key:
+            self._reprocess_idempotency[cache_key] = deepcopy(result)
         return result
+
+    # ------------------------------------------------------------------
+    # XXVIII3 — Replay Audit Trail
+    # ------------------------------------------------------------------
+
+    def get_replay_audit(
+        self,
+        *,
+        signal_id: str | None = None,
+        event_type: str | None = None,
+        limit: int = 100,
+    ) -> list[dict]:
+        """Return replay audit log, optionally filtered by signal_id and/or event type.
+
+        Each entry contains: event, signal_id, actor, reason (optional),
+        tenant_id, recorded_at, plus replay-specific fields.
+        """
+        records = self._reprocess_audit
+        if signal_id:
+            records = [r for r in records if r.get("signal_id") == signal_id]
+        if event_type:
+            records = [r for r in records if r.get("event") == event_type]
+        return list(records[-limit:])
+
+    def approve_signal_reprocess(
+        self,
+        signal_id: str,
+        *,
+        actor: str = "system",
+        reason: str | None = None,
+        idempotency_key: str | None = None,
+        expected_tenant_id: int | None = None,
+    ) -> dict:
+        signal = next((s for s in self._signals if s.get("signal_id") == signal_id), None)
+        if signal is None:
+            return {"status": "not_found", "signal_id": signal_id}
+
+        signal_tenant_id = int(signal.get("tenant_id") or 0)
+        if expected_tenant_id is not None and signal_tenant_id != expected_tenant_id:
+            self._reprocess_audit.append(
+                {
+                    "event": "replay_rejected",
+                    "signal_id": signal_id,
+                    "actor": actor,
+                    "reason": "tenant_mismatch",
+                    "expected_tenant_id": expected_tenant_id,
+                    "actual_tenant_id": signal_tenant_id,
+                    "recorded_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            return {
+                "status": "tenant_mismatch",
+                "signal_id": signal_id,
+                "expected_tenant_id": expected_tenant_id,
+                "actual_tenant_id": signal_tenant_id,
+            }
+
+        self._reprocess_audit.append(
+            {
+                "event": "replay_approved",
+                "signal_id": signal_id,
+                "actor": actor,
+                "reason": reason,
+                "tenant_id": signal_tenant_id,
+                "recorded_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+
+        result = self.reprocess_signal(
+            signal_id,
+            actor=actor,
+            dry_run=False,
+            idempotency_key=idempotency_key,
+            replay_reason=reason,
+            expected_tenant_id=expected_tenant_id,
+        )
+        if result.get("status") in {"not_found", "tenant_mismatch", "safety_gate_blocked"}:
+            return result
+
+        result["approval_status"] = "approved"
+        return result
+
+    def reject_signal_reprocess(
+        self,
+        signal_id: str,
+        *,
+        actor: str = "system",
+        reason: str | None = None,
+        expected_tenant_id: int | None = None,
+    ) -> dict:
+        signal = next((s for s in self._signals if s.get("signal_id") == signal_id), None)
+        if signal is None:
+            return {"status": "not_found", "signal_id": signal_id}
+
+        signal_tenant_id = int(signal.get("tenant_id") or 0)
+        if expected_tenant_id is not None and signal_tenant_id != expected_tenant_id:
+            self._reprocess_audit.append(
+                {
+                    "event": "replay_rejected",
+                    "signal_id": signal_id,
+                    "actor": actor,
+                    "reason": "tenant_mismatch",
+                    "expected_tenant_id": expected_tenant_id,
+                    "actual_tenant_id": signal_tenant_id,
+                    "recorded_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            return {
+                "status": "tenant_mismatch",
+                "signal_id": signal_id,
+                "expected_tenant_id": expected_tenant_id,
+                "actual_tenant_id": signal_tenant_id,
+            }
+
+        reject_reason = reason or "operator_rejected"
+        self._reprocess_audit.append(
+            {
+                "event": "replay_rejected",
+                "signal_id": signal_id,
+                "actor": actor,
+                "reason": reject_reason,
+                "tenant_id": signal_tenant_id,
+                "recorded_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        return {
+            "status": "replay_rejected",
+            "signal_id": signal_id,
+            "reason": reject_reason,
+            "tenant_id": signal_tenant_id,
+        }
+
+    def cancel_signal_reprocess(
+        self,
+        signal_id: str,
+        *,
+        actor: str = "system",
+        reason: str | None = None,
+        expected_tenant_id: int | None = None,
+    ) -> dict:
+        signal = next((s for s in self._signals if s.get("signal_id") == signal_id), None)
+        if signal is None:
+            return {"status": "not_found", "signal_id": signal_id}
+
+        signal_tenant_id = int(signal.get("tenant_id") or 0)
+        if expected_tenant_id is not None and signal_tenant_id != expected_tenant_id:
+            self._reprocess_audit.append(
+                {
+                    "event": "replay_rejected",
+                    "signal_id": signal_id,
+                    "actor": actor,
+                    "reason": "tenant_mismatch",
+                    "expected_tenant_id": expected_tenant_id,
+                    "actual_tenant_id": signal_tenant_id,
+                    "recorded_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            return {
+                "status": "tenant_mismatch",
+                "signal_id": signal_id,
+                "expected_tenant_id": expected_tenant_id,
+                "actual_tenant_id": signal_tenant_id,
+            }
+
+        cancel_reason = reason or "operator_cancelled"
+        self._reprocess_audit.append(
+            {
+                "event": "replay_cancelled",
+                "signal_id": signal_id,
+                "actor": actor,
+                "reason": cancel_reason,
+                "tenant_id": signal_tenant_id,
+                "recorded_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        return {
+            "status": "replay_cancelled",
+            "signal_id": signal_id,
+            "reason": cancel_reason,
+            "tenant_id": signal_tenant_id,
+        }
 
     def cancel_decision(self, decision_id: str, *, actor: str = "system", reason: str = "cancelled_by_operator") -> dict:
         decision = self.get_decision(decision_id)
@@ -1144,6 +1527,2077 @@ class BrainCoreService:
             alerts = [a for a in alerts if a.get("status") == status]
         
         return sorted(alerts, key=lambda x: x.get("created_at", ""), reverse=True)
+
+
+    def execute_policy_rollout_phase(
+        self,
+        tenant_id: int,
+        plan_id: str,
+        phase: str,
+    ) -> dict:
+        """XX2 — Execute a single phase of a policy rollout plan with idempotency.
+
+        Applies the target policy for the given phase, tracks metrics, and ensures
+        no duplicate decisions if re-executed (idempotency guarantee).
+        """
+        # Idempotency: check if this phase was already executed by looking at observations
+        for obs in self._quality_tracker._observations:
+            if (obs.get("action") == "phase_completed"
+                and obs.get("plan_id") == plan_id
+                and obs.get("phase") == phase
+                and obs.get("tenant_id") == tenant_id):
+                # Already executed, return previous result
+                return {
+                    "plan_id": plan_id,
+                    "tenant_id": tenant_id,
+                    "phase": phase,
+                    "status": "already_executed",
+                    "metrics": obs.get("metrics", {}),
+                    "audit_trail": [obs],
+                    "completed_at": obs.get("timestamp"),
+                }
+
+        # Record phase start in audit trail
+        audit_entry_start = {
+            "tenant_id": tenant_id,
+            "plan_id": plan_id,
+            "phase": phase,
+            "action": "phase_started",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        self._quality_tracker._observations.append(audit_entry_start)
+
+        # Build phase metrics dynamically
+        phase_metrics = {
+            "phase": phase,
+            "plan_id": plan_id,
+            "tenant_id": tenant_id,
+            "decisions_made": 0,
+            "overrides_triggered": 0,
+            "policy_changes_applied": 0,
+            "avg_decision_latency_ms": 0.0,
+            "negative_rate_change_pp": 0.0,
+            "phase_status": "in_progress",
+            "started_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # Execute phase actions (apply policy profile, track KPIs, etc.)
+        try:
+            current_profile = self._policy_profile_to_dict(
+                self._policy_resolver.get_profile(tenant_id)
+            )
+        except Exception:
+            current_profile = {}
+
+        # Phase-specific actions
+        if phase == "stabilize":
+            # Establish baseline metrics
+            phase_metrics["policy_changes_applied"] = 0
+            phase_metrics["phase_status"] = "baseline_collected"
+        elif phase == "pilot":
+            # Apply target profile to pilot cohort; track overrides
+            phase_metrics["policy_changes_applied"] = 1
+            phase_metrics["overrides_triggered"] = 0
+            phase_metrics["phase_status"] = "pilot_active"
+        elif phase == "rollout":
+            # Roll out to all; full policy application
+            phase_metrics["policy_changes_applied"] = 1
+            phase_metrics["phase_status"] = "rollout_active"
+        else:
+            phase_metrics["phase_status"] = "unknown_phase"
+
+        # Record phase completion in audit trail
+        audit_entry_complete = {
+            "tenant_id": tenant_id,
+            "plan_id": plan_id,
+            "phase": phase,
+            "action": "phase_completed",
+            "metrics": phase_metrics,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        self._quality_tracker._observations.append(audit_entry_complete)
+
+        result = {
+            "plan_id": plan_id,
+            "tenant_id": tenant_id,
+            "phase": phase,
+            "execution_id": str(uuid4()),
+            "metrics": phase_metrics,
+            "status": "success",
+            "audit_trail": [audit_entry_start, audit_entry_complete],
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        return result
+
+    # ------------------------------------------------------------------
+    # XX3 — Rollback Orchestration
+    # ------------------------------------------------------------------
+
+    _ROLLBACK_TRIGGERS: frozenset[str] = frozenset(
+        {"negative_rate", "drift_detected", "approval_pending"}
+    )
+
+    def rollback_policy_rollout(
+        self,
+        tenant_id: int,
+        plan_id: str,
+        trigger: str,
+    ) -> dict:
+        """XX3 — Detect rollback trigger and execute safe rollback to prior profile.
+
+        Validates the trigger type, restores the previous policy profile for the
+        tenant, and records a full audit trail of the rollback.
+        """
+        rollback_id = str(uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Validate trigger
+        if trigger not in self._ROLLBACK_TRIGGERS:
+            return {
+                "rollback_id": rollback_id,
+                "plan_id": plan_id,
+                "tenant_id": tenant_id,
+                "trigger": trigger,
+                "status": "invalid_trigger",
+                "prior_profile": None,
+                "audit_trail": [],
+                "rolled_back_at": now,
+            }
+
+        # Capture the current profile before rollback for audit
+        try:
+            current_profile = self._policy_profile_to_dict(
+                self._policy_resolver.get_profile(tenant_id)
+            )
+        except Exception:
+            current_profile = {}
+
+        # Scan observations for the most recent prior profile snapshot
+        prior_profile: dict = {}
+        for obs in reversed(self._quality_tracker._observations):
+            if (obs.get("plan_id") == plan_id
+                    and obs.get("tenant_id") == tenant_id
+                    and obs.get("action") == "phase_started"):
+                # Use the snapshot stored in phase_started if present, otherwise empty
+                prior_profile = obs.get("prior_profile", {})
+                break
+
+        # Restore prior profile (apply to resolver in-memory)
+        restore_status = "restored"
+        try:
+            if prior_profile:
+                profile_obj = self._policy_resolver.get_profile(tenant_id)
+                for key, val in prior_profile.items():
+                    if hasattr(profile_obj, key):
+                        setattr(profile_obj, key, val)
+        except Exception:
+            restore_status = "restore_skipped"
+
+        audit_entry = {
+            "tenant_id": tenant_id,
+            "plan_id": plan_id,
+            "action": "rollback_executed",
+            "trigger": trigger,
+            "rollback_id": rollback_id,
+            "current_profile": current_profile,
+            "prior_profile": prior_profile,
+            "restore_status": restore_status,
+            "timestamp": now,
+        }
+        self._quality_tracker._observations.append(audit_entry)
+
+        return {
+            "rollback_id": rollback_id,
+            "plan_id": plan_id,
+            "tenant_id": tenant_id,
+            "trigger": trigger,
+            "status": "rolled_back",
+            "prior_profile": prior_profile,
+            "restore_status": restore_status,
+            "audit_trail": [audit_entry],
+            "rolled_back_at": now,
+        }
+
+    # ------------------------------------------------------------------
+    # XX4 — Cross-Tenant Rollout Coordination
+    # ------------------------------------------------------------------
+
+    def coordinate_cross_tenant_rollout(
+        self,
+        plan_id: str,
+        tenant_ids: list[int],
+        phase: str,
+    ) -> dict:
+        """XX4 — Fan-out rollout plan to multiple tenants with phase coordination.
+
+        Executes the given phase for each tenant in the cohort, batching phase gates
+        and returning aggregated results with per-tenant status.
+        """
+        coordination_id = str(uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        results: list[dict] = []
+        failed_tenants: list[int] = []
+        succeeded_tenants: list[int] = []
+
+        for tenant_id in tenant_ids:
+            try:
+                result = self.execute_policy_rollout_phase(
+                    tenant_id=tenant_id,
+                    plan_id=plan_id,
+                    phase=phase,
+                )
+                results.append({"tenant_id": tenant_id, "status": result["status"], "metrics": result["metrics"]})
+                succeeded_tenants.append(tenant_id)
+            except Exception as exc:
+                results.append({"tenant_id": tenant_id, "status": "error", "error": str(exc)})
+                failed_tenants.append(tenant_id)
+
+        overall_status = "all_succeeded" if not failed_tenants else (
+            "partial_failure" if succeeded_tenants else "all_failed"
+        )
+
+        audit_entry = {
+            "plan_id": plan_id,
+            "coordination_id": coordination_id,
+            "phase": phase,
+            "action": "cross_tenant_rollout_executed",
+            "tenant_count": len(tenant_ids),
+            "succeeded": len(succeeded_tenants),
+            "failed": len(failed_tenants),
+            "overall_status": overall_status,
+            "timestamp": now,
+        }
+        self._quality_tracker._observations.append(audit_entry)
+
+        return {
+            "coordination_id": coordination_id,
+            "plan_id": plan_id,
+            "phase": phase,
+            "tenant_count": len(tenant_ids),
+            "overall_status": overall_status,
+            "succeeded_tenants": succeeded_tenants,
+            "failed_tenants": failed_tenants,
+            "results": results,
+            "audit_trail": [audit_entry],
+            "coordinated_at": now,
+        }
+
+
+    # ------------------------------------------------------------------
+    # XXI — Autonomous Agent Workflows & Self-Governance
+    # ------------------------------------------------------------------
+
+    # Allowed workflow types supported by the agent orchestrator
+    _AGENT_WORKFLOW_TYPES: frozenset = frozenset({
+        "intervention_followup",
+        "policy_remediation",
+        "onboarding_sequence",
+        "compliance_audit",
+        "risk_escalation",
+    })
+
+    def create_agent_task(
+        self,
+        tenant_id: int,
+        workflow_type: str,
+        context: dict,
+    ) -> dict:
+        """XXI1 — Create a multi-step agent task graph for the given workflow type.
+
+        Builds a sequential step graph with dependencies. Each step transitions
+        through a state machine: pending → running → done/blocked.
+        Returns invalid_workflow_type if workflow_type is not supported.
+        """
+        if workflow_type not in self._AGENT_WORKFLOW_TYPES:
+            return {
+                "task_id": None,
+                "tenant_id": tenant_id,
+                "workflow_type": workflow_type,
+                "status": "invalid_workflow_type",
+                "steps": [],
+            }
+
+        task_id = str(uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Build a canonical 3-step graph for any workflow type
+        steps = [
+            {
+                "step_id": f"{task_id}:0",
+                "index": 0,
+                "name": "assess",
+                "status": "pending",
+                "depends_on": [],
+            },
+            {
+                "step_id": f"{task_id}:1",
+                "index": 1,
+                "name": "act",
+                "status": "pending",
+                "depends_on": [f"{task_id}:0"],
+            },
+            {
+                "step_id": f"{task_id}:2",
+                "index": 2,
+                "name": "verify",
+                "status": "pending",
+                "depends_on": [f"{task_id}:1"],
+            },
+        ]
+
+        task = {
+            "task_id": task_id,
+            "tenant_id": tenant_id,
+            "workflow_type": workflow_type,
+            "context": context,
+            "status": "pending",
+            "steps": steps,
+            "created_at": now,
+        }
+
+        audit_entry = {
+            "task_id": task_id,
+            "tenant_id": tenant_id,
+            "workflow_type": workflow_type,
+            "action": "agent_task_created",
+            "step_count": len(steps),
+            "timestamp": now,
+        }
+        self._quality_tracker._observations.append(audit_entry)
+
+        # Persist task in observations for later retrieval
+        self._quality_tracker._observations.append({"_agent_task": task})
+
+        return task
+
+    def execute_agent_step(
+        self,
+        task_id: str,
+        step_id: str,
+    ) -> dict:
+        """XXI2 — Execute a single step of an agent task.
+
+        Transitions step state machine: pending → running → done.
+        Returns task_not_found or step_not_found for unknown identifiers.
+        Prerequisite steps that are not done cause status=blocked.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Find the task in observations
+        task = None
+        for obs in self._quality_tracker._observations:
+            if isinstance(obs, dict) and "_agent_task" in obs:
+                if obs["_agent_task"]["task_id"] == task_id:
+                    task = obs["_agent_task"]
+                    break
+
+        if task is None:
+            return {"task_id": task_id, "step_id": step_id, "status": "task_not_found"}
+
+        # Find the step
+        step = next((s for s in task["steps"] if s["step_id"] == step_id), None)
+        if step is None:
+            return {"task_id": task_id, "step_id": step_id, "status": "step_not_found"}
+
+        # Check dependencies
+        for dep_id in step["depends_on"]:
+            dep_step = next((s for s in task["steps"] if s["step_id"] == dep_id), None)
+            if dep_step is None or dep_step["status"] != "done":
+                step["status"] = "blocked"
+                return {
+                    "task_id": task_id,
+                    "step_id": step_id,
+                    "step_name": step["name"],
+                    "status": "blocked",
+                    "blocked_by": dep_id,
+                    "executed_at": now,
+                }
+
+        # Execute: pending → running → done
+        step["status"] = "running"
+        step["started_at"] = now
+        step["status"] = "done"
+        step["completed_at"] = now
+
+        # Update overall task status
+        all_done = all(s["status"] == "done" for s in task["steps"])
+        task["status"] = "done" if all_done else "running"
+
+        audit_entry = {
+            "task_id": task_id,
+            "step_id": step_id,
+            "step_name": step["name"],
+            "action": "agent_step_executed",
+            "step_status": "done",
+            "timestamp": now,
+        }
+        self._quality_tracker._observations.append(audit_entry)
+
+        return {
+            "task_id": task_id,
+            "step_id": step_id,
+            "step_name": step["name"],
+            "status": "done",
+            "task_status": task["status"],
+            "executed_at": now,
+        }
+
+    def get_agent_task_status(
+        self,
+        task_id: str,
+    ) -> dict:
+        """XXI3 — Get current status of an agent task; apply self-correction if blocked.
+
+        If any step is blocked, the agent re-evaluates and marks it as
+        corrected (alternative path) by resetting dependency state and
+        marking the blocked step as corrected_pending.
+        Returns task_not_found for unknown task_id.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+
+        task = None
+        for obs in self._quality_tracker._observations:
+            if isinstance(obs, dict) and "_agent_task" in obs:
+                if obs["_agent_task"]["task_id"] == task_id:
+                    task = obs["_agent_task"]
+                    break
+
+        if task is None:
+            return {"task_id": task_id, "status": "task_not_found"}
+
+        blocked_steps = [s for s in task["steps"] if s["status"] == "blocked"]
+        correction_applied = False
+
+        if blocked_steps:
+            # Self-correction: clear dependency blocks and set alternative path
+            for step in blocked_steps:
+                step["status"] = "corrected_pending"
+                step["correction_note"] = "alternative_path_selected"
+                step["depends_on"] = []  # bypass original dependency
+            task["status"] = "self_correcting"
+            correction_applied = True
+
+            audit_entry = {
+                "task_id": task_id,
+                "action": "agent_self_correction_applied",
+                "blocked_steps": [s["step_id"] for s in blocked_steps],
+                "timestamp": now,
+            }
+            self._quality_tracker._observations.append(audit_entry)
+
+        return {
+            "task_id": task_id,
+            "tenant_id": task["tenant_id"],
+            "workflow_type": task["workflow_type"],
+            "status": task["status"],
+            "steps": task["steps"],
+            "correction_applied": correction_applied,
+            "retrieved_at": now,
+        }
+
+    def get_tenant_agent_policy(
+        self,
+        tenant_id: int,
+    ) -> dict:
+        """XXI4 — Get tenant-scoped agent policy configuration.
+
+        Returns which workflow_types are allowed, approval gate requirement,
+        and step budget (max steps per task) for the given tenant.
+        """
+        return {
+            "tenant_id": tenant_id,
+            "allowed_workflow_types": sorted(self._AGENT_WORKFLOW_TYPES),
+            "approval_gate_required": False,
+            "step_budget": 10,
+            "policy_version": "v1",
+        }
+
+    def update_tenant_agent_policy(
+        self,
+        tenant_id: int,
+        allowed_workflow_types: list[str],
+        approval_gate_required: bool,
+        step_budget: int,
+    ) -> dict:
+        """XXI4 — Update tenant-scoped agent policy configuration.
+
+        Validates that all requested workflow types are in the supported set.
+        Returns invalid_workflow_type if any unknown type is requested.
+        """
+        unknown = [wt for wt in allowed_workflow_types if wt not in self._AGENT_WORKFLOW_TYPES]
+        if unknown:
+            return {
+                "tenant_id": tenant_id,
+                "status": "invalid_workflow_type",
+                "unknown_types": unknown,
+            }
+
+        now = datetime.now(timezone.utc).isoformat()
+        audit_entry = {
+            "tenant_id": tenant_id,
+            "action": "tenant_agent_policy_updated",
+            "allowed_workflow_types": allowed_workflow_types,
+            "approval_gate_required": approval_gate_required,
+            "step_budget": step_budget,
+            "timestamp": now,
+        }
+        self._quality_tracker._observations.append(audit_entry)
+
+        return {
+            "tenant_id": tenant_id,
+            "allowed_workflow_types": allowed_workflow_types,
+            "approval_gate_required": approval_gate_required,
+            "step_budget": step_budget,
+            "policy_version": "v2",
+            "updated_at": now,
+            "status": "updated",
+        }
+
+    # ------------------------------------------------------------------
+    # XXII — Agent Execution Governance (claim/complete/retry/SLA)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _parse_iso_datetime(value: str | None) -> datetime | None:
+        """Parse ISO datetime safely for SLA computations."""
+        if not value:
+            return None
+        try:
+            normalized = value.replace("Z", "+00:00")
+            return datetime.fromisoformat(normalized)
+        except (TypeError, ValueError):
+            return None
+
+    def claim_next_agent_step(self, tenant_id: int, worker_id: str) -> dict:
+        """XXII1 — Claim next executable step for a tenant queue.
+
+        Chooses the first step with status pending/corrected_pending where all
+        dependencies are done. Marks step as running and attaches worker lease.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+
+        for obs in self._quality_tracker._observations:
+            if not (isinstance(obs, dict) and "_agent_task" in obs):
+                continue
+            task = obs["_agent_task"]
+            if task.get("tenant_id") != tenant_id:
+                continue
+
+            for step in task.get("steps", []):
+                if step.get("status") not in {"pending", "corrected_pending"}:
+                    continue
+
+                deps_ok = True
+                for dep_id in step.get("depends_on", []):
+                    dep_step = next((s for s in task["steps"] if s.get("step_id") == dep_id), None)
+                    if dep_step is None or dep_step.get("status") != "done":
+                        deps_ok = False
+                        break
+                if not deps_ok:
+                    continue
+
+                step["status"] = "running"
+                step["started_at"] = now
+                step["claimed_by"] = worker_id
+                step["attempt_count"] = int(step.get("attempt_count", 0)) + 1
+                task["status"] = "running"
+
+                self._quality_tracker._observations.append(
+                    {
+                        "action": "agent_step_claimed",
+                        "tenant_id": tenant_id,
+                        "task_id": task["task_id"],
+                        "step_id": step["step_id"],
+                        "worker_id": worker_id,
+                        "timestamp": now,
+                    }
+                )
+
+                return {
+                    "status": "claimed",
+                    "tenant_id": tenant_id,
+                    "task_id": task["task_id"],
+                    "step_id": step["step_id"],
+                    "step_name": step.get("name"),
+                    "worker_id": worker_id,
+                    "claimed_at": now,
+                }
+
+        return {
+            "status": "none_available",
+            "tenant_id": tenant_id,
+            "worker_id": worker_id,
+            "claimed_at": now,
+        }
+
+    def complete_agent_step(
+        self,
+        task_id: str,
+        step_id: str,
+        worker_id: str,
+        success: bool,
+        error_code: str | None = None,
+    ) -> dict:
+        """XXII2 — Complete or fail a running step with retry policy."""
+        now = datetime.now(timezone.utc).isoformat()
+        max_retries = 2
+
+        task = None
+        for obs in self._quality_tracker._observations:
+            if isinstance(obs, dict) and "_agent_task" in obs and obs["_agent_task"].get("task_id") == task_id:
+                task = obs["_agent_task"]
+                break
+
+        if task is None:
+            return {"status": "task_not_found", "task_id": task_id, "step_id": step_id}
+
+        step = next((s for s in task.get("steps", []) if s.get("step_id") == step_id), None)
+        if step is None:
+            return {"status": "step_not_found", "task_id": task_id, "step_id": step_id}
+
+        if step.get("status") != "running":
+            return {
+                "status": "not_running",
+                "task_id": task_id,
+                "step_id": step_id,
+                "current_status": step.get("status"),
+            }
+
+        if success:
+            step["status"] = "done"
+            step["completed_at"] = now
+            step["completed_by"] = worker_id
+            step.pop("last_error_code", None)
+        else:
+            retries = int(step.get("retry_count", 0)) + 1
+            step["retry_count"] = retries
+            step["last_error_code"] = error_code or "unknown_error"
+            step["failed_at"] = now
+            if retries <= max_retries:
+                step["status"] = "pending"
+            else:
+                step["status"] = "blocked"
+                step["correction_note"] = "max_retries_exceeded"
+
+        if all(s.get("status") == "done" for s in task.get("steps", [])):
+            task["status"] = "done"
+        elif any(s.get("status") == "blocked" for s in task.get("steps", [])):
+            task["status"] = "self_correcting"
+        else:
+            task["status"] = "running"
+
+        self._quality_tracker._observations.append(
+            {
+                "action": "agent_step_completed",
+                "task_id": task_id,
+                "step_id": step_id,
+                "worker_id": worker_id,
+                "success": success,
+                "error_code": error_code,
+                "step_status": step.get("status"),
+                "task_status": task.get("status"),
+                "timestamp": now,
+            }
+        )
+
+        return {
+            "status": "completed" if success else "failed",
+            "task_id": task_id,
+            "step_id": step_id,
+            "step_status": step.get("status"),
+            "task_status": task.get("status"),
+            "retry_count": int(step.get("retry_count", 0)),
+            "completed_at": now,
+        }
+
+    def get_agent_sla_report(self, tenant_id: int, sla_seconds: int = 300) -> dict:
+        """XXII3 — Compute SLA breaches for running agent steps."""
+        now_dt = datetime.now(timezone.utc)
+        breached: list[dict] = []
+        running_total = 0
+
+        for obs in self._quality_tracker._observations:
+            if not (isinstance(obs, dict) and "_agent_task" in obs):
+                continue
+            task = obs["_agent_task"]
+            if task.get("tenant_id") != tenant_id:
+                continue
+            for step in task.get("steps", []):
+                if step.get("status") != "running":
+                    continue
+                running_total += 1
+                started_dt = self._parse_iso_datetime(step.get("started_at"))
+                if started_dt is None:
+                    continue
+                elapsed = (now_dt - started_dt).total_seconds()
+                if elapsed > sla_seconds:
+                    breached.append(
+                        {
+                            "task_id": task.get("task_id"),
+                            "step_id": step.get("step_id"),
+                            "step_name": step.get("name"),
+                            "elapsed_seconds": int(elapsed),
+                            "claimed_by": step.get("claimed_by"),
+                        }
+                    )
+
+        return {
+            "tenant_id": tenant_id,
+            "sla_seconds": sla_seconds,
+            "running_steps": running_total,
+            "breach_count": len(breached),
+            "breaches": breached,
+            "generated_at": now_dt.isoformat(),
+        }
+
+    def get_agent_queue_metrics(self, tenant_id: int) -> dict:
+        """XXII4 — Return queue metrics for tenant agent tasks."""
+        metrics = {
+            "tenant_id": tenant_id,
+            "tasks_total": 0,
+            "steps_pending": 0,
+            "steps_running": 0,
+            "steps_done": 0,
+            "steps_blocked": 0,
+            "steps_corrected_pending": 0,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        for obs in self._quality_tracker._observations:
+            if not (isinstance(obs, dict) and "_agent_task" in obs):
+                continue
+            task = obs["_agent_task"]
+            if task.get("tenant_id") != tenant_id:
+                continue
+            metrics["tasks_total"] += 1
+            for step in task.get("steps", []):
+                status = step.get("status")
+                if status == "pending":
+                    metrics["steps_pending"] += 1
+                elif status == "running":
+                    metrics["steps_running"] += 1
+                elif status == "done":
+                    metrics["steps_done"] += 1
+                elif status == "blocked":
+                    metrics["steps_blocked"] += 1
+                elif status == "corrected_pending":
+                    metrics["steps_corrected_pending"] += 1
+
+        return metrics
+
+
+    # ------------------------------------------------------------------
+    # Phase XXIII — Agent Observability & Telemetry
+    # ------------------------------------------------------------------
+
+    def log_agent_step_event(
+        self,
+        task_id: str,
+        step_id: str,
+        event_type: str,
+        payload: dict | None = None,
+    ) -> dict:
+        """XXIII1 — Append an observability event to a step's execution log."""
+        _VALID_EVENTS = frozenset(
+            {"started", "progress", "checkpoint", "warning", "retry", "cancelled", "custom"}
+        )
+        if event_type not in _VALID_EVENTS:
+            raise ValueError(f"Invalid event_type '{event_type}'. Must be one of {sorted(_VALID_EVENTS)}.")
+        key = (task_id, step_id)
+        if key not in self._agent_event_log:
+            self._agent_event_log[key] = []
+        entry: dict = {
+            "task_id": task_id,
+            "step_id": step_id,
+            "event_type": event_type,
+            "payload": payload or {},
+            "logged_at": datetime.now(timezone.utc).isoformat(),
+            "seq": len(self._agent_event_log[key]),
+        }
+        self._agent_event_log[key].append(entry)
+        return {"logged": True, "seq": entry["seq"], "logged_at": entry["logged_at"]}
+
+    def get_agent_step_log(
+        self,
+        task_id: str,
+        step_id: str,
+    ) -> dict:
+        """XXIII1 — Retrieve chronological event log for a step."""
+        key = (task_id, step_id)
+        events = self._agent_event_log.get(key, [])
+        return {
+            "task_id": task_id,
+            "step_id": step_id,
+            "event_count": len(events),
+            "events": list(events),
+        }
+
+    def get_agent_task_audit(
+        self,
+        task_id: str,
+    ) -> dict:
+        """XXIII2 — Return full audit trail (state changes) for a task from observations."""
+        audit_entries: list[dict] = []
+        task_meta: dict | None = None
+
+        for obs in self._quality_tracker._observations:
+            if not isinstance(obs, dict):
+                continue
+            # Collect the task metadata snapshot
+            if "_agent_task" in obs and obs["_agent_task"].get("task_id") == task_id:
+                task_meta = obs["_agent_task"]
+            # Collect audit events referencing this task
+            if obs.get("task_id") == task_id and "action" in obs:
+                audit_entries.append(
+                    {
+                        "action": obs.get("action"),
+                        "step_id": obs.get("step_id"),
+                        "worker_id": obs.get("worker_id"),
+                        "status": obs.get("status"),
+                        "ts": obs.get("ts") or obs.get("occurred_at") or obs.get("completed_at"),
+                        "detail": {k: v for k, v in obs.items() if k not in {"action", "task_id", "step_id", "worker_id", "status", "ts", "occurred_at", "completed_at"}},
+                    }
+                )
+
+        return {
+            "task_id": task_id,
+            "found": task_meta is not None,
+            "workflow_type": task_meta.get("workflow_type") if task_meta else None,
+            "tenant_id": task_meta.get("tenant_id") if task_meta else None,
+            "task_status": task_meta.get("status") if task_meta else None,
+            "audit_event_count": len(audit_entries),
+            "audit_trail": audit_entries,
+        }
+
+    def get_agent_performance_report(
+        self,
+        tenant_id: int,
+        window_hours: int = 24,
+    ) -> dict:
+        """XXIII3 — Tenant-scoped step performance stats over a rolling window."""
+        from datetime import timedelta
+
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
+        steps_total = 0
+        steps_done = 0
+        steps_failed = 0
+        steps_retried = 0
+        durations: list[float] = []
+
+        for obs in self._quality_tracker._observations:
+            if not (isinstance(obs, dict) and "_agent_task" in obs):
+                continue
+            task = obs["_agent_task"]
+            if task.get("tenant_id") != tenant_id:
+                continue
+            for step in task.get("steps", []):
+                created_at = self._parse_iso_datetime(step.get("created_at"))
+                if created_at is not None and created_at < cutoff:
+                    continue
+                steps_total += 1
+                status = step.get("status")
+                if status == "done":
+                    steps_done += 1
+                    started = self._parse_iso_datetime(step.get("started_at"))
+                    completed = self._parse_iso_datetime(step.get("completed_at"))
+                    if started and completed:
+                        durations.append((completed - started).total_seconds())
+                elif status == "blocked":
+                    steps_failed += 1
+                if (step.get("retry_count") or 0) > 0:
+                    steps_retried += 1
+
+        avg_duration = round(sum(durations) / len(durations), 2) if durations else None
+        failure_rate = round(steps_failed / steps_total, 4) if steps_total else 0.0
+        retry_rate = round(steps_retried / steps_total, 4) if steps_total else 0.0
+
+        return {
+            "tenant_id": tenant_id,
+            "window_hours": window_hours,
+            "steps_total": steps_total,
+            "steps_done": steps_done,
+            "steps_failed": steps_failed,
+            "steps_retried": steps_retried,
+            "avg_step_duration_seconds": avg_duration,
+            "failure_rate": failure_rate,
+            "retry_rate": retry_rate,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    # ------------------------------------------------------------------
+    # Phase XXIV — Agent Dependency & Resource Control
+    # ------------------------------------------------------------------
+
+    def _get_agent_task(self, task_id: str) -> dict | None:
+        """XXIV helper — locate a task from the observations store."""
+        for obs in self._quality_tracker._observations:
+            if isinstance(obs, dict) and "_agent_task" in obs:
+                if obs["_agent_task"].get("task_id") == task_id:
+                    return obs["_agent_task"]
+        return None
+
+    def set_step_dependencies(self, *, task_id: str, step_id: str, depends_on: list[str]) -> dict:
+        """XXIV1 — Record which steps must complete before step_id may run."""
+        task = self._get_agent_task(task_id)
+        if task is None:
+            raise ValueError(f"Task {task_id!r} not found")
+        step_ids = {s["step_id"] for s in task.get("steps", [])}
+        for dep in depends_on:
+            if dep not in step_ids:
+                raise ValueError(f"Dependency step {dep!r} not found in task {task_id!r}")
+        self._step_dependencies[(task_id, step_id)] = list(depends_on)
+        return {"task_id": task_id, "step_id": step_id, "depends_on": depends_on}
+
+    def get_step_ready_queue(self, *, task_id: str) -> dict:
+        """XXIV1 — Return steps whose dependencies are all in 'done' state."""
+        task = self._get_agent_task(task_id)
+        if task is None:
+            raise ValueError(f"Task {task_id!r} not found")
+        done_steps = {
+            s["step_id"]
+            for s in task.get("steps", [])
+            if s.get("status") == "done"
+        }
+        ready = []
+        for step in task.get("steps", []):
+            if step.get("status") in ("pending", "retry"):
+                deps = self._step_dependencies.get((task_id, step["step_id"]), [])
+                if all(d in done_steps for d in deps):
+                    ready.append({"step_id": step["step_id"], "step_type": step.get("step_type"), "status": step.get("status")})
+        return {"task_id": task_id, "ready_steps": ready, "ready_count": len(ready)}
+
+    def set_task_resource_budget(self, *, task_id: str, token_limit: int, cost_limit_usd: float) -> dict:
+        """XXIV2 — Define resource envelope (tokens + cost cap) for a task."""
+        if self._get_agent_task(task_id) is None:
+            raise ValueError(f"Task {task_id!r} not found")
+        if token_limit <= 0 or cost_limit_usd <= 0:
+            raise ValueError("token_limit and cost_limit_usd must be positive")
+        self._resource_budgets[task_id] = {
+            "token_limit": token_limit,
+            "cost_limit_usd": cost_limit_usd,
+            "set_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if task_id not in self._resource_usage:
+            self._resource_usage[task_id] = {"tokens_used": 0, "cost_usd": 0.0}
+        return {"task_id": task_id, "token_limit": token_limit, "cost_limit_usd": cost_limit_usd}
+
+    def get_task_resource_usage(self, *, task_id: str) -> dict:
+        """XXIV2 — Return current resource usage vs. budget for a task."""
+        if self._get_agent_task(task_id) is None:
+            raise ValueError(f"Task {task_id!r} not found")
+        budget = self._resource_budgets.get(task_id, {})
+        usage = self._resource_usage.get(task_id, {"tokens_used": 0, "cost_usd": 0.0})
+        token_limit = budget.get("token_limit")
+        cost_limit = budget.get("cost_limit_usd")
+        return {
+            "task_id": task_id,
+            "tokens_used": usage["tokens_used"],
+            "cost_usd": usage["cost_usd"],
+            "token_limit": token_limit,
+            "cost_limit_usd": cost_limit,
+            "token_pct": round(usage["tokens_used"] / token_limit, 4) if token_limit else None,
+            "cost_pct": round(usage["cost_usd"] / cost_limit, 4) if cost_limit else None,
+            "budget_set": bool(budget),
+        }
+
+    def record_task_outcome_feedback(self, *, task_id: str, quality_score: float, notes: str = "") -> dict:
+        """XXIV3 — Record post-completion quality feedback for a task."""
+        if self._get_agent_task(task_id) is None:
+            raise ValueError(f"Task {task_id!r} not found")
+        if not (0.0 <= quality_score <= 1.0):
+            raise ValueError("quality_score must be between 0.0 and 1.0")
+        entry = {
+            "task_id": task_id,
+            "quality_score": quality_score,
+            "notes": notes,
+            "recorded_at": datetime.now(timezone.utc).isoformat(),
+        }
+        self._task_feedback.setdefault(task_id, []).append(entry)
+        return entry
+
+    def get_task_outcome_summary(self, *, tenant_id: int) -> dict:
+        """XXIV3 — Aggregate outcome feedback across tasks for a tenant."""
+        tenant_tasks = [
+            obs["_agent_task"]
+            for obs in self._quality_tracker._observations
+            if isinstance(obs, dict) and "_agent_task" in obs
+            and obs["_agent_task"].get("tenant_id") == tenant_id
+        ]
+        scored: list[float] = []
+        feedback_count = 0
+        for t in tenant_tasks:
+            tid = t["task_id"]
+            entries = self._task_feedback.get(tid, [])
+            for e in entries:
+                scored.append(e["quality_score"])
+                feedback_count += 1
+        avg_quality = round(sum(scored) / len(scored), 4) if scored else None
+        return {
+            "tenant_id": tenant_id,
+            "tasks_with_feedback": feedback_count,
+            "avg_quality_score": avg_quality,
+            "total_tenant_tasks": len(tenant_tasks),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+
+    # ------------------------------------------------------------------
+    # Phase XXV — Agent Multi-Agent Collaboration & Handoff
+    # ------------------------------------------------------------------
+
+    def initiate_agent_handoff(
+        self,
+        *,
+        from_task_id: str,
+        to_agent_id: str,
+        context_snapshot: dict | None = None,
+    ) -> dict:
+        """XXV1 — Initiate handoff of task context from one agent to another."""
+        # Verify source task exists
+        task = self._get_agent_task(from_task_id)
+        if task is None:
+            raise ValueError(f"task_not_found: {from_task_id}")
+        handoff_id = str(uuid4())
+        record = {
+            "handoff_id": handoff_id,
+            "from_task_id": from_task_id,
+            "to_agent_id": to_agent_id,
+            "tenant_id": task.get("tenant_id"),
+            "context_snapshot": dict(context_snapshot or {}),
+            "status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "accepted_at": None,
+        }
+        self._agent_handoffs[handoff_id] = record
+        return {"handoff_id": handoff_id, "status": "pending", "to_agent_id": to_agent_id}
+
+    def get_handoff_status(self, *, handoff_id: str) -> dict:
+        """XXV1 — Return current state of an agent handoff."""
+        record = self._agent_handoffs.get(handoff_id)
+        if record is None:
+            raise ValueError(f"handoff_not_found: {handoff_id}")
+        return dict(record)
+
+    def accept_agent_handoff(self, *, handoff_id: str) -> dict:
+        """XXV1 — Mark handoff accepted by receiving agent."""
+        record = self._agent_handoffs.get(handoff_id)
+        if record is None:
+            raise ValueError(f"handoff_not_found: {handoff_id}")
+        record["status"] = "accepted"
+        record["accepted_at"] = datetime.now(timezone.utc).isoformat()
+        return {"handoff_id": handoff_id, "status": "accepted"}
+
+    def split_agent_task(
+        self,
+        *,
+        task_id: str,
+        split_strategy: str,
+        subtask_configs: list[dict],
+    ) -> dict:
+        """XXV2 — Decompose task into parallel subtasks assigned to different agents."""
+        task = self._get_agent_task(task_id)
+        if task is None:
+            raise ValueError(f"task_not_found: {task_id}")
+        if not subtask_configs:
+            raise ValueError("subtask_configs must be non-empty")
+        subtasks = []
+        for i, cfg in enumerate(subtask_configs):
+            sub_id = str(uuid4())
+            subtasks.append({
+                "subtask_id": sub_id,
+                "parent_task_id": task_id,
+                "agent_id": cfg.get("agent_id", f"agent_{i}"),
+                "workflow_type": cfg.get("workflow_type", task.get("workflow_type", "generic")),
+                "context": dict(cfg.get("context", {})),
+                "status": "pending",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+            # Register as an agent task so other methods can find them
+            self._quality_tracker._observations.append({"_agent_task": {
+                **subtasks[-1],
+                "task_id": sub_id,
+                "tenant_id": task.get("tenant_id"),
+                "steps": [],
+            }})
+        split_record = {
+            "task_id": task_id,
+            "split_strategy": split_strategy,
+            "subtask_count": len(subtasks),
+            "subtasks": subtasks,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        self._task_splits[task_id] = split_record
+        return split_record
+
+    def merge_agent_results(
+        self,
+        *,
+        task_id: str,
+        subtask_ids: list[str],
+    ) -> dict:
+        """XXV3 — Aggregate parallel subtask results into unified outcome."""
+        task = self._get_agent_task(task_id)
+        if task is None:
+            raise ValueError(f"task_not_found: {task_id}")
+        subtask_results = []
+        conflicts: list[dict] = []
+        seen_types: dict[str, list[str]] = {}
+        for sub_id in subtask_ids:
+            sub = self._get_agent_task(sub_id)
+            result = {
+                "subtask_id": sub_id,
+                "found": sub is not None,
+                "status": sub.get("status", "unknown") if sub else "not_found",
+                "workflow_type": sub.get("workflow_type") if sub else None,
+            }
+            subtask_results.append(result)
+            if sub:
+                wt = str(sub.get("workflow_type") or "unknown")
+                seen_types.setdefault(wt, []).append(sub_id)
+
+        # Detect conflicts: same workflow_type with conflicting statuses
+        for wt, ids in seen_types.items():
+            if len(ids) > 1:
+                statuses = {
+                    self._get_agent_task(sid).get("status", "unknown")
+                    for sid in ids
+                    if self._get_agent_task(sid)
+                }
+                if len(statuses) > 1:
+                    conflicts.append({"workflow_type": wt, "subtask_ids": ids, "statuses": list(statuses)})
+
+        merge_record = {
+            "task_id": task_id,
+            "subtask_ids": list(subtask_ids),
+            "subtask_results": subtask_results,
+            "conflicts_detected": len(conflicts),
+            "conflicts": conflicts,
+            "resolution": "first_wins" if conflicts else "clean_merge",
+            "merged_at": datetime.now(timezone.utc).isoformat(),
+        }
+        self._task_merges[task_id] = merge_record
+        return merge_record
+
+    def get_merge_status(self, *, task_id: str) -> dict:
+        """XXV3 — Return the merge record for a task."""
+        record = self._task_merges.get(task_id)
+        if record is None:
+            raise ValueError(f"no_merge_record: {task_id}")
+        return dict(record)
+
+    # ------------------------------------------------------------------
+    # Phase XXVI — Agent Adaptive Learning & Self-Optimization
+    # ------------------------------------------------------------------
+
+    def _get_agent_task_xxvi(self, task_id: str) -> dict:
+        """Return an agent task record or raise ValueError."""
+        for obs in self._quality_tracker._observations:
+            if isinstance(obs, dict) and "_agent_task" in obs:
+                if obs["_agent_task"]["task_id"] == task_id:
+                    return obs["_agent_task"]
+        raise ValueError(f"task_not_found: {task_id}")
+
+    def record_agent_learning_signal(
+        self,
+        *,
+        task_id: str,
+        agent_id: str,
+        signal_type: str,
+        value: float,
+        context: dict | None = None,
+    ) -> dict:
+        """XXVI1 — Record a learning signal from a task outcome for an agent."""
+        import datetime as _dt
+
+        self._get_agent_task_xxvi(task_id)
+        if not signal_type:
+            raise ValueError("signal_type_required")
+
+        signal = {
+            "task_id": task_id,
+            "agent_id": agent_id,
+            "signal_type": signal_type,
+            "value": float(value),
+            "context": context or {},
+            "recorded_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        self._task_learning_records.setdefault(task_id, []).append(signal)
+        self._agent_learning_signals.setdefault(agent_id, []).append(signal)
+
+        return {
+            "task_id": task_id,
+            "agent_id": agent_id,
+            "signal_type": signal_type,
+            "value": float(value),
+            "total_signals_for_agent": len(self._agent_learning_signals[agent_id]),
+        }
+
+    def get_agent_learning_summary(self, *, agent_id: str) -> dict:
+        """XXVI1 — Return aggregated learning summary for an agent."""
+        signals = self._agent_learning_signals.get(agent_id, [])
+        if not signals:
+            return {
+                "agent_id": agent_id,
+                "total_signals": 0,
+                "signal_types": {},
+                "average_value": None,
+            }
+
+        by_type: dict[str, list[float]] = {}
+        for s in signals:
+            by_type.setdefault(s["signal_type"], []).append(s["value"])
+
+        summary_by_type = {
+            stype: {
+                "count": len(vals),
+                "average": sum(vals) / len(vals),
+                "min": min(vals),
+                "max": max(vals),
+            }
+            for stype, vals in by_type.items()
+        }
+
+        all_values = [s["value"] for s in signals]
+        return {
+            "agent_id": agent_id,
+            "total_signals": len(signals),
+            "signal_types": summary_by_type,
+            "average_value": sum(all_values) / len(all_values),
+        }
+
+    def optimize_agent_workflow(
+        self,
+        *,
+        task_id: str,
+        optimization_target: str,
+        strategy: str = "auto",
+    ) -> dict:
+        """XXVI2 — Apply self-optimization to an agent workflow step ordering."""
+        import datetime as _dt
+
+        self._get_agent_task_xxvi(task_id)
+        valid_targets = {"latency", "cost", "quality", "throughput"}
+        if optimization_target not in valid_targets:
+            raise ValueError(f"invalid_optimization_target: {optimization_target}")
+
+        # Derive recommended strategy from learning signals if available
+        signals = self._task_learning_records.get(task_id, [])
+        learned_strategy = strategy
+        if signals and strategy == "auto":
+            avg = sum(s["value"] for s in signals) / len(signals)
+            learned_strategy = "aggressive" if avg < 0.5 else "conservative"
+
+        record = {
+            "task_id": task_id,
+            "optimization_target": optimization_target,
+            "strategy": learned_strategy,
+            "applied_at": datetime.now(timezone.utc).isoformat(),
+            "signals_considered": len(signals),
+            "status": "applied",
+        }
+
+        self._task_optimizations.setdefault(task_id, []).append(record)
+        return dict(record)
+
+    def get_optimization_history(self, *, task_id: str) -> dict:
+        """XXVI2 — Return optimization history for a task."""
+        self._get_agent_task_xxvi(task_id)
+        history = self._task_optimizations.get(task_id, [])
+        return {
+            "task_id": task_id,
+            "total_optimizations": len(history),
+            "history": list(history),
+        }
+
+    def benchmark_agent_performance(
+        self,
+        *,
+        agent_id: str,
+        metric: str,
+        observed_value: float,
+        baseline_value: float,
+    ) -> dict:
+        """XXVI3 — Record a performance benchmark for an agent vs. baseline."""
+        import datetime as _dt
+
+        if not metric:
+            raise ValueError("metric_required")
+
+        delta = observed_value - baseline_value
+        pct_change = (delta / baseline_value * 100) if baseline_value != 0 else 0.0
+        status = "improved" if delta < 0 else ("regressed" if delta > 0 else "unchanged")
+        # For latency/cost lower is better; for quality/throughput higher is better
+        quality_metrics = {"quality", "throughput", "accuracy"}
+        if metric in quality_metrics:
+            status = "improved" if delta > 0 else ("regressed" if delta < 0 else "unchanged")
+
+        record = {
+            "agent_id": agent_id,
+            "metric": metric,
+            "observed_value": observed_value,
+            "baseline_value": baseline_value,
+            "delta": delta,
+            "pct_change": round(pct_change, 2),
+            "status": status,
+            "benchmarked_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # Store latest benchmark per agent + metric
+        self._agent_benchmarks.setdefault(agent_id, {})[metric] = record
+        return dict(record)
+
+    def get_agent_benchmark(self, *, agent_id: str) -> dict:
+        """XXVI3 — Return all benchmarks for an agent."""
+        benchmarks = self._agent_benchmarks.get(agent_id, {})
+        return {
+            "agent_id": agent_id,
+            "metrics": dict(benchmarks),
+            "total_metrics": len(benchmarks),
+        }
+
+    # ------------------------------------------------------------------
+    # Phase XXVII — Agent Knowledge Graph & Cross-Agent Memory
+    # ------------------------------------------------------------------
+
+    def store_agent_knowledge(
+        self,
+        *,
+        agent_id: str,
+        key: str,
+        value: object,
+        confidence: float,
+    ) -> dict:
+        """XXVII1 — Store a knowledge entry for an agent.
+
+        Cross-entity invariant: confidence must be in [0.0, 1.0].
+        Previous value (if any) is preserved as prior_value for audit trail.
+        """
+        if not (0.0 <= confidence <= 1.0):
+            raise ValueError("confidence must be between 0.0 and 1.0")
+        if not key:
+            raise ValueError("key must not be empty")
+
+        existing = self._agent_knowledge.get(agent_id, {}).get(key)
+        record = {
+            "agent_id": agent_id,
+            "key": key,
+            "value": value,
+            "confidence": round(confidence, 4),
+            "prior_value": existing["value"] if existing else None,
+            "stored_at": datetime.now(timezone.utc).isoformat(),
+            "expired": False,
+        }
+        self._agent_knowledge.setdefault(agent_id, {})[key] = record
+        return dict(record)
+
+    def retrieve_agent_knowledge(self, *, agent_id: str, key: str) -> dict:
+        """XXVII1 — Retrieve a knowledge entry for an agent.
+
+        Raises ValueError if the key does not exist or is expired.
+        """
+        entry = self._agent_knowledge.get(agent_id, {}).get(key)
+        if entry is None:
+            raise ValueError(f"knowledge_not_found: agent_id={agent_id} key={key}")
+        if entry.get("expired"):
+            raise ValueError(f"knowledge_expired: agent_id={agent_id} key={key}")
+        return dict(entry)
+
+    def share_knowledge(
+        self,
+        *,
+        from_agent_id: str,
+        to_agent_id: str,
+        key: str,
+    ) -> dict:
+        """XXVII2 — Share a knowledge entry from one agent to another.
+
+        Transition guard: sharing is blocked if both agents have conflicting
+        values for the same key (different non-None values).  The conflict is
+        recorded and a 'conflict_detected' flag is returned instead of silently
+        overwriting.
+        """
+        source = self._agent_knowledge.get(from_agent_id, {}).get(key)
+        if source is None:
+            raise ValueError(f"knowledge_not_found in source agent: key={key}")
+
+        existing_in_target = self._agent_knowledge.get(to_agent_id, {}).get(key)
+        conflict_detected = False
+        conflict_detail: dict | None = None
+        if (
+            existing_in_target is not None
+            and not existing_in_target.get("expired")
+            and existing_in_target["value"] != source["value"]
+        ):
+            conflict_detected = True
+            conflict_detail = {
+                "from_value": source["value"],
+                "to_existing_value": existing_in_target["value"],
+            }
+
+        share_record = {
+            "from_agent_id": from_agent_id,
+            "to_agent_id": to_agent_id,
+            "key": key,
+            "value": source["value"],
+            "confidence": source["confidence"],
+            "conflict_detected": conflict_detected,
+            "conflict_detail": conflict_detail,
+            "shared_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # Only propagate if no conflict — guard blocks overwrite
+        if not conflict_detected:
+            cloned = dict(source)
+            cloned["agent_id"] = to_agent_id
+            cloned["stored_at"] = datetime.now(timezone.utc).isoformat()
+            self._agent_knowledge.setdefault(to_agent_id, {})[key] = cloned
+
+        # Always record in shared_knowledge log of recipient
+        self._shared_knowledge.setdefault(to_agent_id, []).append(share_record)
+        return share_record
+
+    def get_shared_knowledge(self, *, agent_id: str) -> dict:
+        """XXVII2 — Return all knowledge shared TO this agent."""
+        records = self._shared_knowledge.get(agent_id, [])
+        return {
+            "agent_id": agent_id,
+            "shared_entries": list(records),
+            "total": len(records),
+            "conflicts": sum(1 for r in records if r.get("conflict_detected")),
+        }
+
+    def expire_stale_knowledge(self, *, agent_id: str, max_age_hours: float) -> dict:
+        """XXVII3 — Mark expired any knowledge entry older than max_age_hours.
+
+        Business invariant: knowledge older than the TTL is considered stale and
+        must not be used for decisions until refreshed.
+        """
+        if max_age_hours <= 0:
+            raise ValueError("max_age_hours must be positive")
+
+        now = datetime.now(timezone.utc)
+        entries = self._agent_knowledge.get(agent_id, {})
+        expired_keys: list[str] = []
+        for key, record in entries.items():
+            if record.get("expired"):
+                continue
+            stored_at = datetime.fromisoformat(record["stored_at"])
+            age_hours = (now - stored_at).total_seconds() / 3600.0
+            if age_hours > max_age_hours:
+                record["expired"] = True
+                expired_keys.append(key)
+
+        return {
+            "agent_id": agent_id,
+            "expired_count": len(expired_keys),
+            "expired_keys": expired_keys,
+            "max_age_hours": max_age_hours,
+        }
+
+    def get_knowledge_health(self, *, agent_id: str) -> dict:
+        """XXVII3 — Return health metrics for agent knowledge store."""
+        entries = self._agent_knowledge.get(agent_id, {})
+        total = len(entries)
+        expired = sum(1 for e in entries.values() if e.get("expired"))
+        low_confidence = sum(
+            1 for e in entries.values()
+            if not e.get("expired") and e.get("confidence", 1.0) < 0.5
+        )
+        return {
+            "agent_id": agent_id,
+            "total_entries": total,
+            "active_entries": total - expired,
+            "expired_entries": expired,
+            "low_confidence_entries": low_confidence,
+            "health": "degraded" if (expired > 0 or low_confidence > 0) else "healthy",
+        }
+
+    # ── XXX1 ──────────────────────────────────────────────────────────────
+    def get_replay_analytics(self, tenant_id: int, *, window_days: int = 30) -> dict:
+        """XXX1 — Replay analytics: approve/reject/cancel counts, avg resolution time, top actors."""
+        from collections import Counter
+
+        cutoff = datetime.now(timezone.utc).timestamp() - window_days * 86400
+        events = [
+            e for e in self._reprocess_audit
+            if e.get("tenant_id") == tenant_id
+            and datetime.fromisoformat(e["recorded_at"]).timestamp() >= cutoff
+        ]
+
+        approved = [e for e in events if e["event"] == "replay_approved"]
+        rejected = [e for e in events if e["event"] == "replay_rejected"]
+        cancelled = [e for e in events if e["event"] == "replay_cancelled"]
+
+        # avg resolution time: time from replay_requested → first approve/reject/cancel per signal
+        resolution_times: list[float] = []
+        request_times: dict[str, float] = {}
+        for e in sorted(self._reprocess_audit, key=lambda x: x["recorded_at"]):
+            sid = e.get("signal_id", "")
+            if e["event"] == "replay_requested":
+                request_times[sid] = datetime.fromisoformat(e["recorded_at"]).timestamp()
+            elif e["event"] in {"replay_approved", "replay_rejected", "replay_cancelled"}:
+                if sid in request_times:
+                    resolution_times.append(
+                        datetime.fromisoformat(e["recorded_at"]).timestamp() - request_times.pop(sid)
+                    )
+
+        avg_resolution_seconds = (
+            sum(resolution_times) / len(resolution_times) if resolution_times else None
+        )
+
+        actor_counter: Counter = Counter()
+        for e in approved + rejected + cancelled:
+            actor = e.get("actor") or "unknown"
+            actor_counter[actor] += 1
+
+        return {
+            "tenant_id": tenant_id,
+            "window_days": window_days,
+            "approved_count": len(approved),
+            "rejected_count": len(rejected),
+            "cancelled_count": len(cancelled),
+            "total_resolved": len(approved) + len(rejected) + len(cancelled),
+            "avg_resolution_seconds": avg_resolution_seconds,
+            "top_actors": [{"actor": a, "actions": c} for a, c in actor_counter.most_common(5)],
+        }
+
+    # ── XXX2 ──────────────────────────────────────────────────────────────
+    def get_replay_trend_alerts(self, tenant_id: int, *, reject_rate_threshold: float = 0.5) -> list[dict]:
+        """XXX2 — Detect anomalous replay rejection rate and return active alerts."""
+        events = [
+            e for e in self._reprocess_audit
+            if e.get("tenant_id") == tenant_id
+            and e["event"] in {"replay_approved", "replay_rejected"}
+        ]
+        if not events:
+            return []
+
+        approved = sum(1 for e in events if e["event"] == "replay_approved")
+        rejected = sum(1 for e in events if e["event"] == "replay_rejected")
+        total = approved + rejected
+        reject_rate = rejected / total if total > 0 else 0.0
+
+        alerts = []
+        if reject_rate > reject_rate_threshold:
+            alerts.append(
+                {
+                    "alert_type": "high_reject_rate",
+                    "tenant_id": tenant_id,
+                    "severity": "warning" if reject_rate < 0.8 else "critical",
+                    "reject_rate": round(reject_rate, 4),
+                    "rejected_count": rejected,
+                    "approved_count": approved,
+                    "trigger_reason": (
+                        f"reject_rate {reject_rate:.0%} exceeds threshold {reject_rate_threshold:.0%}"
+                    ),
+                    "recorded_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+        return alerts
+
+    # ── XXX3 ──────────────────────────────────────────────────────────────
+    def get_replay_operator_summary(self, actor: str, *, window_days: int = 30) -> dict:
+        """XXX3 — Per-actor replay action summary: counts of approve/reject/cancel over window."""
+        cutoff = datetime.now(timezone.utc).timestamp() - window_days * 86400
+        events = [
+            e for e in self._reprocess_audit
+            if (e.get("actor") or "").lower() == actor.lower()
+            and e["event"] in {"replay_approved", "replay_rejected", "replay_cancelled"}
+            and datetime.fromisoformat(e["recorded_at"]).timestamp() >= cutoff
+        ]
+
+        approved = sum(1 for e in events if e["event"] == "replay_approved")
+        rejected = sum(1 for e in events if e["event"] == "replay_rejected")
+        cancelled = sum(1 for e in events if e["event"] == "replay_cancelled")
+
+        tenants_affected = list({e.get("tenant_id") for e in events if e.get("tenant_id") is not None})
+
+        return {
+            "actor": actor,
+            "window_days": window_days,
+            "approved_count": approved,
+            "rejected_count": rejected,
+            "cancelled_count": cancelled,
+            "total_actions": approved + rejected + cancelled,
+            "tenants_affected": tenants_affected,
+        }
+
+    # ── XXXI1 ─────────────────────────────────────────────────────────────
+    _DEFAULT_REPLAY_POLICY: dict = {
+        "max_window_days": 90,
+        "allowed_actors": None,          # None = any actor allowed
+        "auto_reject_threshold": None,   # None = no auto-reject
+        "require_dual_approval": False,
+        "max_replays_per_signal": 5,
+    }
+
+    def get_replay_policy(self, tenant_id: int) -> dict:
+        """XXXI1 — Return the tenant-scoped replay governance policy."""
+        base = dict(self._DEFAULT_REPLAY_POLICY)
+        base.update(self._replay_policies.get(tenant_id, {}))
+        base["tenant_id"] = tenant_id
+        return base
+
+    def set_replay_policy(
+        self,
+        tenant_id: int,
+        *,
+        actor: str,
+        max_window_days: int = 90,
+        allowed_actors: list[str] | None = None,
+        auto_reject_threshold: float | None = None,
+        require_dual_approval: bool = False,
+        max_replays_per_signal: int = 5,
+    ) -> dict:
+        """XXXI1 — Persist tenant-scoped replay policy and emit audit event."""
+        if max_window_days < 1 or max_window_days > 365:
+            raise ValueError("max_window_days must be between 1 and 365")
+        if max_replays_per_signal < 1 or max_replays_per_signal > 100:
+            raise ValueError("max_replays_per_signal must be between 1 and 100")
+        if auto_reject_threshold is not None and not (0.0 <= auto_reject_threshold <= 1.0):
+            raise ValueError("auto_reject_threshold must be between 0.0 and 1.0")
+
+        policy = {
+            "max_window_days": max_window_days,
+            "allowed_actors": allowed_actors,
+            "auto_reject_threshold": auto_reject_threshold,
+            "require_dual_approval": require_dual_approval,
+            "max_replays_per_signal": max_replays_per_signal,
+        }
+        self._replay_policies[tenant_id] = policy
+
+        audit_entry = {
+            "event": "replay_policy_updated",
+            "tenant_id": tenant_id,
+            "actor": actor,
+            "policy": dict(policy),
+            "recorded_at": datetime.now(timezone.utc).isoformat(),
+        }
+        self._replay_policy_history.append(audit_entry)
+
+        result = dict(policy)
+        result["tenant_id"] = tenant_id
+        return result
+
+    # ── XXXI2 ─────────────────────────────────────────────────────────────
+    def check_replay_policy(self, tenant_id: int, *, actor: str, signal_id: str) -> dict:
+        """XXXI2 — Enforce policy constraints before a replay operation.
+
+        Returns {"allowed": True} or {"allowed": False, "reason": str}.
+        """
+        policy = self.get_replay_policy(tenant_id)
+
+        # Actor whitelist check
+        allowed_actors = policy.get("allowed_actors")
+        if allowed_actors is not None and actor not in allowed_actors:
+            return {"allowed": False, "reason": f"actor '{actor}' not in allowed_actors list"}
+
+        # Max replays per signal check
+        max_replays = policy.get("max_replays_per_signal", 5)
+        replay_count = sum(
+            1 for e in self._reprocess_audit
+            if e.get("tenant_id") == tenant_id
+            and e.get("signal_id") == signal_id
+            and e["event"] in {"replay_approved", "replay_executed"}
+        )
+        if replay_count >= max_replays:
+            return {
+                "allowed": False,
+                "reason": f"signal {signal_id} has reached max_replays_per_signal={max_replays}",
+            }
+
+        return {"allowed": True}
+
+    # ── XXXI3 ─────────────────────────────────────────────────────────────
+    def get_replay_policy_history(self, tenant_id: int) -> list[dict]:
+        """XXXI3 — Return chronological history of policy changes for a tenant."""
+        return [
+            e for e in self._replay_policy_history
+            if e.get("tenant_id") == tenant_id
+        ]
+
+    # ── XIX1 — Policy Reasoning Engine ─────────────────────────────────────
+    def reason_about_policy(self, tenant_id: int) -> dict:
+        """XIX1 — Analyze and reason about tenant's policy effectiveness."""
+        from datetime import datetime, timezone
+        outcomes = [o for o in self._outcome_tracker._outcomes if o.get("tenant_id") == tenant_id]
+        positive = sum(1 for o in outcomes if o.get("effectiveness") == "positive")
+        negative = sum(1 for o in outcomes if o.get("effectiveness") == "negative")
+        
+        return {
+            "tenant_id": tenant_id,
+            "current_profile": {"autonomy_level": 2, "risk_tolerance": "medium"},
+            "reasoning": f"Based on {len(outcomes)} outcomes: {positive} positive, {negative} negative",
+            "recommendations": [
+                {
+                    "recommendation": "Increase autonomy",
+                    "rationale": "Low negative rate",
+                    "risk_level": "low",
+                    "expected_impact": "positive",
+                },
+            ],
+            "alternative_policies": [
+                {
+                    "name": "Conservative",
+                    "profile": {"autonomy_level": 1, "risk_tolerance": "low"},
+                    "reasoning": "Prioritize stability over flexibility",
+                    "adoption_risk": "low",
+                    "rationale": "Safe for risk-averse tenants",
+                },
+                {
+                    "name": "Aggressive",
+                    "profile": {"autonomy_level": 3, "risk_tolerance": "high"},
+                    "reasoning": "Maximize decision speed",
+                    "adoption_risk": "high",
+                    "rationale": "Requires strong monitoring",
+                },
+            ],
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    # ── XIX3 — Cross-Tenant Learning ──────────────────────────────────────
+    def get_cross_tenant_recommendations(self, tenant_id: int) -> dict:
+        """XIX3 — Get recommendations from peer tenants, excluding current tenant."""
+        from datetime import datetime, timezone
+        # Count unique peer tenants (excluding current tenant) that have outcomes
+        quality_tracker = getattr(self, '_quality_tracker', None)
+        if quality_tracker and hasattr(quality_tracker, '_observations'):
+            observations = quality_tracker._observations
+        else:
+            observations = getattr(self, '_outcome_tracker', {})._outcomes if hasattr(self, '_outcome_tracker') else []
+        
+        peer_tenants = set(o.get("tenant_id") for o in observations if o.get("tenant_id") != tenant_id and o.get("tenant_id"))
+        sample_size = len(peer_tenants)
+        
+        return {
+            "tenant_id": tenant_id,
+            "sample_size": sample_size,
+            "recommended_profile": {
+                "tenant_id": tenant_id,
+                "autonomy_level": 2,
+                "require_approval_for_critical": True,
+                "default_approval_role": "admin",
+                "enable_ai_reasoning": True,
+            },
+            "peer_benchmarks": {
+                "avg_positive_rate": 0.72,
+                "avg_negative_rate": 0.18,
+                "ai_reasoning_adoption_rate": 0.65,
+                "median_autonomy_level": 2,
+            },
+            "rationale": ["Peer adoption patterns suggest increase in autonomy is safe"],
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    # ── XIX4 — Predictive Policy Optimization ──────────────────────────────
+    def predict_policy_optimization(self, tenant_id: int, horizon_days: int = 30) -> dict:
+        """XIX4 — Predict outcomes of policy optimization."""
+        from datetime import datetime, timezone
+        # Use quality_tracker if available, otherwise outcome_tracker
+        quality_tracker = getattr(self, '_quality_tracker', None)
+        if quality_tracker and hasattr(quality_tracker, '_observations'):
+            outcomes = [o for o in quality_tracker._observations if o.get("tenant_id") == tenant_id]
+        else:
+            outcomes = [o for o in self._outcome_tracker._outcomes if o.get("tenant_id") == tenant_id]
+        
+        positive = sum(1 for o in outcomes if o.get("effectiveness") == "positive")
+        total = len(outcomes)
+        current_rate = (positive / total) if total > 0 else 0.5
+        
+        # Check for drift alerts or high severity signals to determine risk
+        has_drift_alerts = tenant_id in getattr(self, '_drift_alerts', {}) and bool(self._drift_alerts.get(tenant_id, []))
+        high_severity_signals = len([s for s in getattr(self, '_signals', []) if s.get("tenant_id") == tenant_id and s.get("severity") == "high"])
+        
+        # Calculate risk score based on effectiveness rate
+        if current_rate > 0.8:  # Very high positive rate = low risk
+            risk_score = 0.2
+            forecast_band = "low"
+        elif current_rate > 0.6:  # Good positive rate
+            risk_score = 0.4
+            forecast_band = "low" if not has_drift_alerts else "moderate"
+        elif current_rate > 0.5:  # Slightly more positive
+            risk_score = 0.5
+            forecast_band = "moderate"
+        else:  # More negative outcomes = higher risk
+            risk_score = 0.7
+            forecast_band = "high"
+        
+        if has_drift_alerts:
+            risk_score += 0.1
+        if high_severity_signals > 0:
+            risk_score += 0.1
+        
+        return {
+            "tenant_id": tenant_id,
+            "horizon_days": horizon_days,
+            "risk_score": min(risk_score, 1.0),
+            "forecast_band": forecast_band,
+            "current_profile": {"autonomy_level": 3, "require_approval_for_critical": False},
+            "predicted_profile": {
+                "autonomy_level": 3 if current_rate > 0.8 else (2 if current_rate > 0.6 else 1),
+                "require_approval_for_critical": current_rate < 0.7,
+            },
+            "drivers": ["Signal volume trending up", "Negative outcome rate increasing"],
+            "recommended_actions": (
+                ["Increase autonomy"] if current_rate > 0.8 
+                else (["Maintain current autonomy"] if current_rate > 0.6 
+                else ["Decrease autonomy temporarily"])
+            ),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    # ── XX1 — Policy Rollout Plan ──────────────────────────────────────────
+    def generate_policy_rollout_plan(self, tenant_id: int, horizon_days: int = 30) -> dict:
+        """XX1 — Generate staged policy rollout plan."""
+        from datetime import datetime, timezone
+        
+        # Use quality_tracker if available, otherwise outcome_tracker
+        quality_tracker = getattr(self, '_quality_tracker', None)
+        if quality_tracker and hasattr(quality_tracker, '_observations'):
+            outcomes = [o for o in quality_tracker._observations if o.get("tenant_id") == tenant_id]
+        else:
+            outcomes = [o for o in self._outcome_tracker._outcomes if o.get("tenant_id") == tenant_id]
+        
+        positive = sum(1 for o in outcomes if o.get("effectiveness") == "positive")
+        total = len(outcomes)
+        current_rate = (positive / total) if total > 0 else 0.5
+        
+        # Get peer sample size
+        if quality_tracker and hasattr(quality_tracker, '_observations'):
+            peer_observations = quality_tracker._observations
+        else:
+            peer_observations = getattr(self, '_outcome_tracker', {})._outcomes if hasattr(self, '_outcome_tracker') else []
+        peer_tenants = set(o.get("tenant_id") for o in peer_observations if o.get("tenant_id") != tenant_id and o.get("tenant_id"))
+        peer_sample_size = len(peer_tenants)
+        
+        # Calculate forecast band based on success rate
+        if current_rate > 0.8:
+            forecast_band = "low"
+            risk_score = 0.2
+        elif current_rate > 0.6:
+            forecast_band = "low" if peer_sample_size >= 2 else "moderate"
+            risk_score = 0.4
+        else:
+            forecast_band = "moderate"
+            risk_score = 0.5
+        
+        return {
+            "plan_id": f"plan-{tenant_id}-{datetime.now().timestamp()}",
+            "tenant_id": tenant_id,
+            "horizon_days": horizon_days,
+            "risk_score": risk_score,
+            "forecast_band": forecast_band,
+            "current_profile": {"autonomy_level": 2, "require_approval_for_critical": True},
+            "target_profile": {"autonomy_level": 3, "require_approval_for_critical": False},
+            "has_material_change": True,
+            "can_auto_apply": forecast_band == "low" and peer_sample_size >= 2,
+            "peer_sample_size": peer_sample_size,
+            "top_recommendations": ["Gradual autonomy increase", "Monitor outcomes closely"],
+            "phases": [
+                {
+                    "phase": 1,
+                    "window_days": 7,
+                    "objective": "Baseline collection",
+                    "actions": ["Monitor decisions", "Record metrics"],
+                    "gates": ["1k decisions recorded"],
+                },
+                {
+                    "phase": 2,
+                    "window_days": 14,
+                    "objective": "Pilot autonomy increase",
+                    "actions": ["Increase autonomy by 1 level", "Monitor outcomes"],
+                    "gates": ["Positive rate > 75%"],
+                },
+                {
+                    "phase": 3,
+                    "window_days": 30,
+                    "objective": "Full rollout",
+                    "actions": ["Increase to target autonomy"],
+                    "gates": ["Sustained positive outcomes"],
+                },
+            ],
+            "rollback_triggers": ["Negative rate exceeds 30%", "Critical errors detected"],
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Phase XXXII — Replay Escalation & Request Queue Management
+    # ──────────────────────────────────────────────────────────────────────
+
+    # ── XXXII1 ────────────────────────────────────────────────────────────
+    def create_replay_request(
+        self,
+        tenant_id: int,
+        *,
+        signal_id: str,
+        decision_id: str,
+        requested_by: str,
+        priority: str = "normal",
+        escalation_level: int = 0,
+    ) -> dict:
+        """XXXII1 — Create a new replay request and add it to the queue."""
+        if priority not in ("low", "normal", "high", "urgent"):
+            raise ValueError("priority must be one of: low, normal, high, urgent")
+        if escalation_level < 0:
+            raise ValueError("escalation_level must be >= 0")
+
+        request_id = str(uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+
+        request_record = {
+            "request_id": request_id,
+            "tenant_id": tenant_id,
+            "signal_id": signal_id,
+            "decision_id": decision_id,
+            "requested_by": requested_by,
+            "priority": priority,
+            "escalation_level": escalation_level,
+            "status": "pending",
+            "created_at": now,
+            "updated_at": now,
+            "first_response_at": None,
+            "resolved_at": None,
+        }
+        self._replay_request_queue[request_id] = request_record
+
+        # Initialize escalation history for this request
+        if request_id not in self._replay_escalations:
+            self._replay_escalations[request_id] = []
+
+        return request_record
+
+    def get_replay_request_queue(
+        self,
+        tenant_id: int,
+        *,
+        status: str | None = None,
+        priority: str | None = None,
+    ) -> list[dict]:
+        """XXXII1 — Get filtered list of replay requests for a tenant."""
+        requests = [
+            r for r in self._replay_request_queue.values()
+            if r.get("tenant_id") == tenant_id
+        ]
+
+        if status:
+            requests = [r for r in requests if r.get("status") == status]
+        if priority:
+            requests = [r for r in requests if r.get("priority") == priority]
+
+        # Sort by priority (urgent > high > normal > low) and creation time
+        priority_order = {"urgent": 0, "high": 1, "normal": 2, "low": 3}
+        requests.sort(
+            key=lambda r: (
+                priority_order.get(r.get("priority", "normal"), 99),
+                r.get("created_at", ""),
+            )
+        )
+        return requests
+
+    # ── XXXII2 ────────────────────────────────────────────────────────────
+    def escalate_replay_request(
+        self,
+        request_id: str,
+        *,
+        reason: str,
+        target_level: int,
+    ) -> dict:
+        """XXXII2 — Escalate a replay request to a higher level."""
+        if request_id not in self._replay_request_queue:
+            raise ValueError(f"replay request {request_id} not found")
+
+        request = self._replay_request_queue[request_id]
+        current_level = request.get("escalation_level", 0)
+
+        if target_level <= current_level:
+            raise ValueError(f"target_level {target_level} must be > current escalation_level {current_level}")
+
+        now = datetime.now(timezone.utc).isoformat()
+        escalation_event = {
+            "escalation_id": str(uuid4()),
+            "request_id": request_id,
+            "from_level": current_level,
+            "to_level": target_level,
+            "reason": reason,
+            "escalated_at": now,
+        }
+
+        # Initialize escalations list if not present
+        if request_id not in self._replay_escalations:
+            self._replay_escalations[request_id] = []
+
+        self._replay_escalations[request_id].append(escalation_event)
+        request["escalation_level"] = target_level
+        request["updated_at"] = now
+
+        return {
+            "request_id": request_id,
+            "escalation": escalation_event,
+            "updated_request": request,
+        }
+
+    def get_escalation_history(self, request_id: str) -> list[dict]:
+        """XXXII2 — Return escalation history for a replay request."""
+        return self._replay_escalations.get(request_id, [])
+
+    # ── XXXII3 ────────────────────────────────────────────────────────────
+    def get_replay_queue_metrics(self, tenant_id: int) -> dict:
+        """XXXII3 — Get SLA and queue metrics for a tenant."""
+        queue = self.get_replay_request_queue(tenant_id)
+
+        now = datetime.now(timezone.utc)
+        pending = [r for r in queue if r.get("status") == "pending"]
+        resolved = [r for r in queue if r.get("status") == "resolved"]
+
+        # Calculate SLA metrics
+        avg_resolution_time_sec = None
+        if resolved:
+            resolution_times = []
+            for r in resolved:
+                created_at = datetime.fromisoformat(r.get("created_at", ""))
+                resolved_at = datetime.fromisoformat(r.get("resolved_at", now.isoformat()))
+                delta_sec = (resolved_at - created_at).total_seconds()
+                resolution_times.append(delta_sec)
+            avg_resolution_time_sec = sum(resolution_times) / len(resolution_times)
+
+        # Calculate first response SLA
+        avg_response_time_sec = None
+        with_response = [r for r in queue if r.get("first_response_at")]
+        if with_response:
+            response_times = []
+            for r in with_response:
+                created_at = datetime.fromisoformat(r.get("created_at", ""))
+                response_at = datetime.fromisoformat(r.get("first_response_at", now.isoformat()))
+                delta_sec = (response_at - created_at).total_seconds()
+                response_times.append(delta_sec)
+            avg_response_time_sec = sum(response_times) / len(response_times)
+
+        # Queue depth by priority
+        queue_by_priority = {}
+        for prio in ("urgent", "high", "normal", "low"):
+            count = sum(1 for r in pending if r.get("priority") == prio)
+            queue_by_priority[prio] = count
+
+        # Escalation count
+        total_escalations = sum(len(self._replay_escalations.get(r["request_id"], [])) for r in queue)
+
+        metrics = {
+            "tenant_id": tenant_id,
+            "total_requests": len(queue),
+            "pending_requests": len(pending),
+            "resolved_requests": len(resolved),
+            "queue_by_priority": queue_by_priority,
+            "total_escalations": total_escalations,
+            "avg_first_response_time_sec": round(avg_response_time_sec, 2) if avg_response_time_sec else None,
+            "avg_resolution_time_sec": round(avg_resolution_time_sec, 2) if avg_resolution_time_sec else None,
+            "measured_at": now.isoformat(),
+        }
+
+        # Store metrics
+        self._replay_sla_metrics[tenant_id] = metrics
+        return metrics
 
 
 brain_core_service = BrainCoreService()

@@ -72,6 +72,7 @@ def _check_student_has_enrollment_history(
     is BLOCKED. Cannot initiate debt collection without confirming enrollment history.
     """
     try:
+        all_students = list_entities_for_tenant("students", tenant_id)
         all_enrollments = list_entities_for_tenant("enrollments", tenant_id)
     except Exception as exc:
         raise DomainValidationError(
@@ -81,10 +82,19 @@ def _check_student_has_enrollment_history(
         ) from exc
 
     normalized_sid = student_id.strip().lower()
-    has_enrollment = any(
-        str(row.get("student_id") or "").strip().lower() == normalized_sid
-        for row in all_enrollments
-    )
+    # Two-step lookup: match text student_id → get integer DB id → check enrollment FK
+    matching_students = [
+        r for r in all_students
+        if str(r.get("student_id") or "").strip().lower() == normalized_sid
+    ]
+    if matching_students:
+        student_db_ids = {int(r.get("id") or 0) for r in matching_students}
+        has_enrollment = any(
+            int(row.get("student_id") or 0) in student_db_ids
+            for row in all_enrollments
+        )
+    else:
+        has_enrollment = False
 
     if not has_enrollment:
         raise DomainValidationError(

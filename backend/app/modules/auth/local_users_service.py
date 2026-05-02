@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import logging
 import os
 import secrets
 from collections.abc import Iterable
@@ -13,6 +14,8 @@ from typing import Dict, List
 from fastapi import HTTPException
 
 from app.core.db import get_raw_conn
+
+_logger = logging.getLogger("app.auth.local_users")
 
 _PBKDF2_ITERATIONS = 200_000
 _PLATFORM_SUPERADMIN_ROLE = "superadmin"
@@ -333,8 +336,8 @@ class LocalUserStore:
             try:
                 from app.modules.usage.service import record_usage_event
                 record_usage_event(normalized_tenant_id, "users_created", 1)
-            except Exception:
-                pass
+            except Exception as _exc:  # noqa: BLE001
+                _logger.warning("auth.usage_event_failed: tenant=%s", normalized_tenant_id, exc_info=_exc)
             return self._public_user(raw)
 
         self._loaded = True
@@ -358,8 +361,8 @@ class LocalUserStore:
         try:
             from app.modules.usage.service import record_usage_event
             record_usage_event(normalized_tenant_id, "users_created", 1)
-        except Exception:
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            _logger.warning("auth.usage_event_failed: tenant=%s", normalized_tenant_id, exc_info=_exc)
         return self._public_user(payload)
 
     def update_user(self, user_id, tenant_id, display_name=None, language=None, roles=None) -> dict:
@@ -463,8 +466,8 @@ class LocalUserStore:
         if self._use_db():
             try:
                 self._db_update(str(user["user_id"]), int(user["tenant_id"]), password_hash=new_hash)
-            except Exception:
-                pass
+            except Exception as _exc:  # noqa: BLE001
+                _logger.warning("auth.password_rehash_db_failed: falling back to memory-only", exc_info=_exc)
         else:
             user["password_hash"] = new_hash
             user.pop("password", None)

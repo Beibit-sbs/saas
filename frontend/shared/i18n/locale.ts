@@ -1,7 +1,7 @@
 export const LOCALE_COOKIE_KEY = "app.locale";
 export const LOCALE_STORAGE_KEY = "app.language";
 
-export const BASE_LOCALES = ["ru", "kk", "en"] as const;
+export const BASE_LOCALES = ["ru", "kk", "en", "ar"] as const;
 export type BaseLocale = (typeof BASE_LOCALES)[number];
 export type AppLocale = BaseLocale | string;
 

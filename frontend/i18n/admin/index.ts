@@ -1,3 +1,4 @@
+import { ar } from "./ar";
 import { en } from "./en";
 import { kk } from "./kk";
 import { ru } from "./ru";
@@ -6,6 +7,7 @@ export const adminTranslations = {
   ru,
   en,
   kk,
+  ar,
 } as const;
 
 export type AdminTranslationKey = keyof typeof ru;

@@ -8,6 +8,7 @@ import pytest
 
 from app.modules.auth.token_service import create_access_token
 from app.modules.auth.local_users_service import local_user_store
+from app.modules.security import rate_limit as rate_limit_service
 from tests.conftest import ADMIN_HEADERS, _auth_headers, client
 
 
@@ -98,6 +99,10 @@ def test_mfa_enable_and_login_enforcement() -> None:
         headers={"X-Tenant-ID": "1"},
     )
     assert denied_login.status_code == 401, denied_login.text
+
+    # Keep this test focused on MFA behavior and avoid interference from
+    # global per-login throttling in long gate runs.
+    rate_limit_service.clear_rate_limit_state()
 
     allowed_login = client.post(
         "/api/auth/login",

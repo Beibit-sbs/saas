@@ -64,8 +64,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // Keep cookie/default fallback when runtime config is unavailable.
   }
 
+  const dir = initialLanguage === "ar" ? "rtl" : "ltr";
+
   return (
-    <html lang={initialLanguage}>
+    <html lang={initialLanguage} dir={dir}>
       <body>
         <AuthProvider>
           <LanguageProvider initialLanguage={initialLanguage}>

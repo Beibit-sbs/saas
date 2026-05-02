@@ -83,12 +83,53 @@ async function stubAuthSession(page: Page) {
 
 async function stubApi(page: Page, path: string, body: unknown, status = 200) {
   const pattern = path.startsWith("**/") ? path : `**${path}`;
-  await page.route(pattern, async (route) => {
-    await route.fulfill({
-      status,
-      contentType: "application/json",
-      body: JSON.stringify(body),
+  const patterns = new Set<string>([pattern]);
+
+  // Mirror shared api client mapping so mocks match both direct and BFF paths.
+  if (pattern.includes("/api/admin/")) {
+    patterns.add(pattern.replace("/api/admin/", "/api/bff/admin/"));
+  }
+  if (pattern.includes("/api/v1/admin/")) {
+    patterns.add(pattern.replace("/api/v1/admin/", "/api/bff/v1/admin/"));
+  }
+  if (pattern.includes("/platform/")) {
+    patterns.add(pattern.replace("/platform/", "/api/bff/platform/"));
+  }
+
+  for (const currentPattern of patterns) {
+    await page.route(currentPattern, async (route) => {
+      await route.fulfill({
+        status,
+        contentType: "application/json",
+        body: JSON.stringify(body),
+      });
     });
+  }
+}
+
+async function forceEnglishLocale(page: Page) {
+  const configuredUrl = process.env.E2E_BASE_URL ?? "https://nginx";
+  const parsedUrl = new URL(configuredUrl);
+  const cookieOrigins = new Set<string>([
+    `${parsedUrl.protocol}//${parsedUrl.host}`,
+    `http://${parsedUrl.host}`,
+    `https://${parsedUrl.host}`,
+  ]);
+
+  await page.context().addCookies(
+    Array.from(cookieOrigins).map((url) => ({
+      name: "app.locale",
+      value: "en",
+      url,
+      httpOnly: false,
+      secure: new URL(url).protocol === "https:",
+      sameSite: "Lax" as const,
+    })),
+  );
+
+  await page.addInitScript(() => {
+    document.cookie = "app.locale=en; Path=/; SameSite=Lax";
+    window.localStorage.setItem("app.language", "en");
   });
 }
 
@@ -143,6 +184,10 @@ const emptyActions = { items: [], total: 0 };
 // Tests
 // ---------------------------------------------------------------------------
 
+test.beforeEach(async ({ page }) => {
+  await forceEnglishLocale(page);
+});
+
 test.describe("Interventions smoke", () => {
   test("page renders the interventions table with cases", async ({ page }) => {
     await stubAuthSession(page);
@@ -188,11 +233,19 @@ test.describe("Interventions smoke", () => {
       "/api/admin/interventions/cases/101/actions*",
       emptyActions,
     );
+    await stubApi(page, "/api/admin/students/9001*", { person_id: 1 });
+    await stubApi(page, "/api/admin/profiles/people/1*", {
+      first_name: "Test",
+      last_name: "Student",
+      email: "test.student@example.edu",
+    });
 
     await page.goto("/console/interventions");
 
-    // Click first row (Case #101)
-    await page.getByText("#101").click();
+    // Click the table row for Case #101
+    const caseRow = page.getByRole("row", { name: /#101/ }).first();
+    await expect(caseRow).toBeVisible();
+    await caseRow.click();
 
     // Drawer should open and show the case details
     await expect(page.getByText("Case #101")).toBeVisible({ timeout: 5000 });
@@ -208,9 +261,17 @@ test.describe("Interventions smoke", () => {
       "/api/admin/interventions/cases/101/actions*",
       emptyActions,
     );
+    await stubApi(page, "/api/admin/students/9001*", { person_id: 1 });
+    await stubApi(page, "/api/admin/profiles/people/1*", {
+      first_name: "Test",
+      last_name: "Student",
+      email: "test.student@example.edu",
+    });
 
     await page.goto("/console/interventions");
-    await page.getByText("#101").click();
+    const caseRow = page.getByRole("row", { name: /#101/ }).first();
+    await expect(caseRow).toBeVisible();
+    await caseRow.click();
 
     // Wait for drawer to open
     await expect(page.getByText("Case #101")).toBeVisible({ timeout: 5000 });

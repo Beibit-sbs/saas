@@ -41,6 +41,164 @@ def _enable_real_db(monkeypatch: pytest.MonkeyPatch) -> None:
     clear_shared_engine()
 
 
+# ---------------------------------------------------------------------------
+# Seed helpers: insert prerequisite DB records for cross-entity guards
+# ---------------------------------------------------------------------------
+
+def _seed_faculty_contract(faculty_id: str, tenant_id: int = 1) -> None:
+    """Seed faculty record + active faculty contract (advising/research/teaching/kpi guards)."""
+    from app.core.db import get_raw_conn as _get_raw_conn
+    safe_id = faculty_id.lower().replace("-", "").replace(".", "")
+    email = f"seed.{safe_id}@test.edu"
+    tid = str(tenant_id)
+    with _get_raw_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO university_faculty"
+                " (faculty_id, first_name, last_name, department, email, status, tenant_id)"
+                " VALUES (%s, 'Seed', 'Faculty', 'CS', %s, 'active', %s)"
+                " ON CONFLICT (faculty_id) DO NOTHING",
+                (faculty_id, email, tid),
+            )
+            cur.execute(
+                "INSERT INTO university_faculty_contracts"
+                " (faculty_id, contract_type, start_date, fte_ratio,"
+                "  max_credit_hours, status, tenant_id)"
+                " SELECT %s, 'full_time', '2020-01-01', '1.0', '12', 'active', %s"
+                " WHERE NOT EXISTS ("
+                "   SELECT 1 FROM university_faculty_contracts"
+                "   WHERE faculty_id = %s AND tenant_id = %s AND status = 'active'"
+                " )",
+                (faculty_id, tid, faculty_id, tid),
+            )
+        conn.commit()
+
+
+def _seed_maintenance_request(facility_code: str, tenant_id: int = 1) -> None:
+    """Seed a maintenance request record (campus_sla guard prerequisite)."""
+    from app.core.db import get_raw_conn as _get_raw_conn
+    with _get_raw_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO university_facilities_maintenance_requests"
+                " (request_code, facility_code, issue_type, severity, status, tenant_id)"
+                " VALUES (%s, %s, 'general', 'low', 'open', %s)"
+                " ON CONFLICT DO NOTHING",
+                (f"MR-SEED-{uuid4().hex[:8]}", facility_code, tenant_id),
+            )
+        conn.commit()
+
+
+def _seed_enrollment_by_int_student_id(int_student_id: int, tenant_id: int = 1) -> None:
+    """Seed program+course+student(id=int)+enrollment for integer-student-id guards.
+
+    Inserts rows with explicit IDs so that enrollment.student_id FK == int_student_id.
+    Uses ON CONFLICT DO NOTHING for idempotency across repeated test runs.
+    """
+    from app.core.db import get_raw_conn as _get_raw_conn
+    tid = str(tenant_id)
+    with _get_raw_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO university_programs"
+                " (id, program_code, title, degree_type, faculty, status, tenant_id)"
+                " VALUES (%s, %s, %s, 'bachelor', 'Seed', 'active', %s)"
+                " ON CONFLICT DO NOTHING",
+                (int_student_id, f"SEED-PROG-{int_student_id}",
+                 f"Seed Prog {int_student_id}", tid),
+            )
+            cur.execute(
+                "INSERT INTO university_courses"
+                " (id, course_code, title, credits, program_id, status, tenant_id)"
+                " VALUES (%s, %s, %s, 3, %s, 'active', %s)"
+                " ON CONFLICT DO NOTHING",
+                (int_student_id, f"SEED-CRS-{int_student_id}",
+                 f"Seed Course {int_student_id}", int_student_id, tid),
+            )
+            cur.execute(
+                "INSERT INTO university_students"
+                " (id, student_id, first_name, last_name, email, status, tenant_id)"
+                " VALUES (%s, %s, 'Seed', 'Student', %s, 'active', %s)"
+                " ON CONFLICT DO NOTHING",
+                (int_student_id, f"STU-SEED-{int_student_id}",
+                 f"stu{int_student_id}@test.edu", tid),
+            )
+            cur.execute(
+                "INSERT INTO university_enrollments"
+                " (student_id, course_id, semester, status, tenant_id)"
+                " VALUES (%s, %s, '2026-01', 'active', %s)"
+                " ON CONFLICT DO NOTHING",
+                (int_student_id, int_student_id, tid),
+            )
+        conn.commit()
+
+
+def _seed_alumni_student(int_student_id: int, tenant_id: int = 1) -> None:
+    """Seed a student with graduated status (alumni guard prerequisite)."""
+    from app.core.db import get_raw_conn as _get_raw_conn
+    tid = str(tenant_id)
+    with _get_raw_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO university_students"
+                " (id, student_id, first_name, last_name, email, status, tenant_id)"
+                " VALUES (%s, %s, 'Alumni', 'Seed', %s, 'graduated', %s)"
+                " ON CONFLICT DO NOTHING",
+                (int_student_id, f"STU-ALUM-{int_student_id}",
+                 f"alum{int_student_id}@test.edu", tid),
+            )
+        conn.commit()
+
+
+def _seed_student_and_enrollment(text_student_id: str, tenant_id: int = 1) -> None:
+    """Seed student (text student_id) + enrollment for text-student-id guards.
+
+    Used by: delinquency_collections (W82), scholarship (W99), communications (W117).
+    """
+    from app.core.db import get_raw_conn as _get_raw_conn
+    tid = str(tenant_id)
+    safe = text_student_id.lower().replace("-", "").replace(".", "")
+    email = f"seed.{safe}@test.edu"
+    with _get_raw_conn() as conn:
+        with conn.cursor() as cur:
+            # Shared seed program (id=999990) — idempotent
+            cur.execute(
+                "INSERT INTO university_programs"
+                " (id, program_code, title, degree_type, faculty, status, tenant_id)"
+                " VALUES (999990, 'SEED-PROG-SHARED', 'Seed Shared Program',"
+                "         'bachelor', 'Seed', 'active', %s)"
+                " ON CONFLICT DO NOTHING",
+                (tid,),
+            )
+            cur.execute(
+                "INSERT INTO university_courses"
+                " (id, course_code, title, credits, program_id, status, tenant_id)"
+                " VALUES (999990, 'SEED-CRS-SHARED', 'Seed Shared Course',"
+                "         3, 999990, 'active', %s)"
+                " ON CONFLICT DO NOTHING",
+                (tid,),
+            )
+            # Upsert student by text student_id, return auto-assigned DB id
+            cur.execute(
+                "INSERT INTO university_students"
+                " (student_id, first_name, last_name, email, status, tenant_id)"
+                " VALUES (%s, 'Seed', 'Student', %s, 'active', %s)"
+                " ON CONFLICT (student_id) DO UPDATE SET status = 'active'"
+                " RETURNING id",
+                (text_student_id, email, tid),
+            )
+            row = cur.fetchone()
+            student_db_id = row[0]
+            cur.execute(
+                "INSERT INTO university_enrollments"
+                " (student_id, course_id, semester, status, tenant_id)"
+                " VALUES (%s, 999990, '2026-01', 'active', %s)"
+                " ON CONFLICT DO NOTHING",
+                (student_db_id, tid),
+            )
+        conn.commit()
+
+
 def test_advising_roundtrip_uses_real_db(monkeypatch: pytest.MonkeyPatch) -> None:
     _enable_real_db(monkeypatch)
 
@@ -52,6 +210,9 @@ def test_advising_roundtrip_uses_real_db(monkeypatch: pytest.MonkeyPatch) -> Non
         "scheduled_at": "2026-05-01T10:00",
         "notes": f"db integration {suffix}",
     }
+
+    _seed_enrollment_by_int_student_id(payload["student_id"])
+    _seed_faculty_contract(payload["advisor_id"])
 
     create_resp = client.post("/api/admin/advising", headers=ADMIN_HEADERS, json=payload)
     assert create_resp.status_code == 200, create_resp.text
@@ -121,6 +282,8 @@ def test_student_services_roundtrip_uses_real_db(monkeypatch: pytest.MonkeyPatch
         "channel": "portal",
     }
 
+    _seed_enrollment_by_int_student_id(payload["student_id"])
+
     create_resp = client.post("/api/admin/student-services/tickets", headers=headers, json=payload)
     assert create_resp.status_code == 200, create_resp.text
     created = create_resp.json()["item"]
@@ -148,6 +311,8 @@ def test_career_services_roundtrip_uses_real_db(monkeypatch: pytest.MonkeyPatch)
         "status": "open",
     }
 
+    _seed_enrollment_by_int_student_id(payload["student_id"])
+
     create_resp = client.post("/api/admin/career-services", headers=headers, json=payload)
     assert create_resp.status_code == 200, create_resp.text
     created = create_resp.json()["item"]
@@ -174,6 +339,8 @@ def test_financial_aid_roundtrip_uses_real_db(monkeypatch: pytest.MonkeyPatch) -
         "currency": "USD",
         "term": f"2026-S1-{suffix[:4]}",
     }
+
+    _seed_enrollment_by_int_student_id(payload["student_id"])
 
     create_resp = client.post("/api/admin/financial-aid", headers=headers, json=payload)
     assert create_resp.status_code == 200, create_resp.text
@@ -227,6 +394,8 @@ def test_alumni_roundtrip_uses_real_db(monkeypatch: pytest.MonkeyPatch) -> None:
         "engagement_type": "event",
         "employer": f"Acme Corp {suffix[:4]}",
     }
+
+    _seed_alumni_student(payload["student_id"])
 
     create_resp = client.post("/api/admin/alumni", headers=headers, json=payload)
     assert create_resp.status_code == 200, create_resp.text
@@ -404,6 +573,10 @@ def test_advising_sessions_pagination_limit(monkeypatch: pytest.MonkeyPatch) -> 
     suffix = uuid4().hex[:8]
     base_student_id = 700000 + int(suffix[:4], 16)
 
+    _seed_enrollment_by_int_student_id(base_student_id)
+    for i in range(3):
+        _seed_faculty_contract(f"FAC-PAG-{suffix}-{i}")
+
     # Create 3 sessions for same student
     for i in range(3):
         payload = {
@@ -462,6 +635,8 @@ def test_financial_aid_create_update_roundtrip(monkeypatch: pytest.MonkeyPatch) 
     }
 
     # CREATE
+    _seed_enrollment_by_int_student_id(payload["student_id"])
+
     create_resp = client.post("/api/admin/financial-aid", headers=headers, json=payload)
     assert create_resp.status_code == 200, create_resp.text
     created = create_resp.json()["item"]
@@ -484,14 +659,16 @@ def test_housing_create_with_multiple_records_same_student(monkeypatch: pytest.M
     suffix = uuid4().hex[:8]
     student_id = 550000 + int(suffix[:4], 16)
 
-    # Create 2 housing records (different years/periods)
-    for year in [2025, 2026]:
+    # Create 2 housing records (different years/periods, different request_types
+    # so the per-student-per-type cap of 1 active assignment is not exceeded)
+    for year, req_type in [(2025, "assignment"), (2026, "maintenance")]:
         year_str = str(year)[-2:]  # Get last 2 digits of year
         payload = {
             "student_id": student_id,
             "housing_year": year,
             "dormitory": f"Block-{year_str}-{suffix[:4]}",
             "room_preference": "double",
+            "request_type": req_type,
         }
         create_resp = client.post("/api/admin/housing", headers=headers, json=payload)
         assert create_resp.status_code == 200, create_resp.text
@@ -544,6 +721,8 @@ def test_delinquency_collections_roundtrip_uses_real_db(monkeypatch: pytest.Monk
         "escalation_stage": "stage_1",
         "status": "open",
     }
+
+    _seed_student_and_enrollment(payload["student_id"])
 
     create_resp = client.post(
         "/api/admin/delinquency-collections", headers=headers, json=payload
@@ -653,6 +832,8 @@ def test_campus_sla_roundtrip_uses_real_db(monkeypatch: pytest.MonkeyPatch) -> N
         "status": "open",
     }
 
+    _seed_maintenance_request(payload["facility_code"])
+
     create_resp = client.post(
         "/api/admin/campus-sla/sla-records", headers=headers, json=payload
     )
@@ -695,6 +876,10 @@ def test_campus_sla_filter_roundtrip_uses_real_db(
         "target_sla_minutes": 90,
         "status": "open",
     }
+
+    _seed_maintenance_request(matching_payload["facility_code"])
+    _seed_maintenance_request(same_service_other_status_payload["facility_code"])
+    _seed_maintenance_request(other_service_same_status_payload["facility_code"])
 
     matching_resp = client.post(
         "/api/admin/campus-sla/sla-records", headers=headers, json=matching_payload
@@ -741,7 +926,7 @@ def test_transport_roundtrip_uses_real_db(monkeypatch: pytest.MonkeyPatch) -> No
         "route_code": f"RT-{suffix[:6]}",
         "route_name": f"Route {suffix}",
         "status": "active",
-        "vehicle_type": "bus",
+        "vehicle_type": f"van-{suffix[:4]}",
     }
 
     create_resp = client.post(
@@ -771,7 +956,7 @@ def test_transport_bookings_filter_roundtrip_uses_real_db(
         "route_code": route_code,
         "route_name": f"Booking Route {suffix}",
         "status": "active",
-        "vehicle_type": "bus",
+        "vehicle_type": f"shuttle-{suffix[:4]}",
     }
 
     create_route_resp = client.post(
@@ -945,6 +1130,8 @@ def test_research_ethics_review_roundtrip_uses_real_db(
         "risk_level": "minimal",
     }
 
+    _seed_faculty_contract(payload["principal_investigator_id"])
+
     create_resp = client.post(
         "/api/admin/research-ethics/reviews", headers=headers, json=payload
     )
@@ -1030,6 +1217,8 @@ def test_scholarship_application_roundtrip_uses_real_db(
         "requested_amount": 5000.0,
     }
 
+    _seed_student_and_enrollment(payload["student_id"])
+
     create_resp = client.post(
         "/api/admin/scholarship/applications", headers=headers, json=payload
     )
@@ -1061,6 +1250,8 @@ def test_communications_message_roundtrip_uses_real_db(
         "delivered_count": 1,
         "opened_count": 1,
     }
+
+    _seed_student_and_enrollment(f"STU-COMM-{uuid4().hex[:6]}")
 
     create_resp = client.post(
         "/api/admin/communications/messages", headers=headers, json=payload
@@ -1184,6 +1375,8 @@ def test_teaching_quality_metric_roundtrip_uses_real_db(
         "measurement_period": "2026-01",
     }
 
+    _seed_faculty_contract(faculty_id)
+
     post_resp = client.post(
         f"/api/admin/teaching-quality/faculty/{faculty_id}/metric",
         headers=headers,
@@ -1250,6 +1443,8 @@ def test_faculty_performance_kpi_create_list_roundtrip_uses_real_db(
         "status": "satisfactory",
     }
 
+    _seed_faculty_contract(payload["faculty_id"])
+
     create_resp = client.post(
         "/api/admin/faculty-performance-kpis",
         headers=headers,
@@ -1291,6 +1486,8 @@ def test_faculty_performance_kpi_status_update_uses_real_db(
         "overall_score": 55.0,
         "status": "satisfactory",
     }
+
+    _seed_faculty_contract(payload["faculty_id"])
 
     create_resp = client.post(
         "/api/admin/faculty-performance-kpis",

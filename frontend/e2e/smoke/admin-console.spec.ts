@@ -416,9 +416,13 @@ test.describe("Platform pages", () => {
     });
 
     await page.goto("/console/tenants");
-    await page.getByRole("button", { name: /delete|удалить|жою/i }).click();
+    await page
+      .getByRole("button", { name: /deactivate|деактивировать|белсенді емес/i })
+      .click();
     await expect(
-      page.getByText(/delete university\?|удалить университет\?|университетті жою керек пе\?/i),
+      page.getByText(
+        /deactivate university\?|деактивировать университет\?|университетті белсенді емес ету керек пе\?/i,
+      ),
     ).toBeVisible();
 
     const deleteRequest = page.waitForRequest((request) => {
@@ -428,10 +432,7 @@ test.describe("Platform pages", () => {
       );
     });
 
-    await page
-      .getByRole("button", { name: /delete|удалить|жою/i })
-      .last()
-      .click();
+    await page.getByRole("button", { name: /confirm|подтвердить|растау/i }).click();
     await deleteRequest;
     await expect.poll(() => deleteCalls).toBeGreaterThan(0);
   });
@@ -920,6 +921,21 @@ test.describe("Academic pages", () => {
 
   test("Scheduling page renders course sections table", async ({ page }) => {
     await stubAuthSession(page);
+    // Stub interventions/risk endpoint to prevent 401 → session-invalid → redirect
+    await stubApi(page, "**/api/bff/admin/interventions/**", {
+      open_cases_total: 0,
+      signals_last_24h: 0,
+      auto_created_cases_last_24h: 0,
+      severity_breakdown: { high: 0, medium: 0, low: 0 },
+    });
+    // Stub sub-path scheduling requests (e.g. attendance-trends with empty sectionId)
+    await stubApi(page, "**/api/bff/admin/scheduling/sections/**", {
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 20,
+    });
+    // Specific sections list stub (higher priority — added last, matches without trailing slash)
     await stubApi(page, "/api/bff/admin/scheduling/sections*", {
       items: [
         {

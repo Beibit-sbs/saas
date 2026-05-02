@@ -59,6 +59,7 @@ def _check_student_is_enrolled_for_scholarship(
     is BLOCKED. An unknown enrollment state must never default to eligible.
     """
     try:
+        all_students = list_entities_for_tenant("students", tenant_id)
         all_enrollments = list_entities_for_tenant("enrollments", tenant_id)
     except Exception as exc:
         raise DomainValidationError(
@@ -67,10 +68,20 @@ def _check_student_is_enrolled_for_scholarship(
             "Cannot verify active enrollment status."
         ) from exc
 
-    student_enrollments = [
-        row for row in all_enrollments
-        if str(row.get("student_id") or "").strip() == str(student_id).strip()
+    normalized_sid = str(student_id).strip()
+    # Two-step lookup: text student_id → integer DB id → enrollment FK
+    matching_students = [
+        r for r in all_students
+        if str(r.get("student_id") or "").strip() == normalized_sid
     ]
+    if matching_students:
+        student_db_ids = {int(r.get("id") or 0) for r in matching_students}
+        student_enrollments = [
+            row for row in all_enrollments
+            if int(row.get("student_id") or 0) in student_db_ids
+        ]
+    else:
+        student_enrollments = []
 
     if not student_enrollments:
         raise DomainValidationError(

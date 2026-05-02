@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 
 from app.modules.rbac.security import permission_dependency
@@ -116,6 +116,32 @@ class DetectAnomaliesRequest(BaseModel):
     values: list[float] = Field(..., min_length=1)
     entity_ids: list[str] | None = None
     z_threshold: float = Field(default=2.0, ge=1.0, le=5.0)
+
+
+class ReprocessSignalRequest(BaseModel):
+    dry_run: bool = False
+    idempotency_key: str | None = Field(default=None, min_length=1)
+    replay_reason: str | None = None
+    expected_tenant_id: int | None = Field(default=None, gt=0)
+
+
+class ReplayApprovalRequest(BaseModel):
+    actor: str = Field(default="operator@brain")
+    reason: str | None = None
+    idempotency_key: str | None = Field(default=None, min_length=1)
+    expected_tenant_id: int | None = Field(default=None, gt=0)
+
+
+class ReplayRejectRequest(BaseModel):
+    actor: str = Field(default="operator@brain")
+    reason: str | None = None
+    expected_tenant_id: int | None = Field(default=None, gt=0)
+
+
+class ReplayCancelRequest(BaseModel):
+    actor: str = Field(default="operator@brain")
+    reason: str | None = None
+    expected_tenant_id: int | None = Field(default=None, gt=0)
 
 
 class BudgetVarianceSignalRequest(BaseModel):
@@ -579,29 +605,6 @@ def simulate_payment_overdue(
     return brain_core_service.process_signal(signal)
 
 
-@router.post("/simulate/supply-low")
-def simulate_supply_low(
-    payload: SupplyLowSignalRequest,
-    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
-) -> dict:
-    signal = {
-        "signal_id": str(uuid4()),
-        "tenant_id": payload.tenant_id,
-        "correlation_id": str(uuid4()),
-        "event_type": "operations.consumable_stock.low",
-        "subject": {},
-        "payload": {
-            "stock_item_id": payload.stock_item_id,
-            "stock_level": payload.stock_level,
-            "threshold": payload.threshold,
-            "source_entity_type": "inventory_item",
-            "source_entity_id": payload.stock_item_id,
-        },
-        "metadata": {"source": "brain_api_simulation"},
-    }
-    return brain_core_service.process_signal(signal)
-
-
 @router.post("/simulate/facility-issue")
 def simulate_facility_issue(
     payload: FacilityIssueSignalRequest,
@@ -842,14 +845,102 @@ def simulate_research_lab_utilization_low(
     return brain_core_service.process_signal(signal)
 
 
+@router.get("/replay-audit")
+def get_replay_audit(
+    signal_id: str | None = None,
+    event_type: str | None = None,
+    limit: int = 100,
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXVIII3 — Replay audit trail. Returns log of replay_requested/executed/rejected events."""
+    records = brain_core_service.get_replay_audit(
+        signal_id=signal_id,
+        event_type=event_type,
+        limit=limit,
+    )
+    return {"total": len(records), "records": records}
+
+
 @router.post("/reprocess/{signal_id}")
 def reprocess_signal(
     signal_id: str,
+    payload: ReprocessSignalRequest = Body(default_factory=ReprocessSignalRequest),
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
-    result = brain_core_service.reprocess_signal(signal_id, actor="operator@brain")
+    result = brain_core_service.reprocess_signal(
+        signal_id,
+        actor="operator@brain",
+        dry_run=payload.dry_run,
+        idempotency_key=payload.idempotency_key,
+        replay_reason=payload.replay_reason,
+        expected_tenant_id=payload.expected_tenant_id,
+    )
     if result.get("status") == "not_found":
         raise HTTPException(status_code=404, detail="signal_not_found")
+    if result.get("status") == "tenant_mismatch":
+        raise HTTPException(status_code=403, detail="tenant_mismatch")
+    if result.get("status") == "safety_gate_blocked":
+        raise HTTPException(status_code=403, detail=result.get("reason", "safety_gate_blocked"))
+    return result
+
+
+@router.post("/reprocess/{signal_id}/approve")
+def approve_reprocess_signal(
+    signal_id: str,
+    payload: ReplayApprovalRequest = Body(default_factory=ReplayApprovalRequest),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    result = brain_core_service.approve_signal_reprocess(
+        signal_id,
+        actor=payload.actor,
+        reason=payload.reason,
+        idempotency_key=payload.idempotency_key,
+        expected_tenant_id=payload.expected_tenant_id,
+    )
+    if result.get("status") == "not_found":
+        raise HTTPException(status_code=404, detail="signal_not_found")
+    if result.get("status") == "tenant_mismatch":
+        raise HTTPException(status_code=403, detail="tenant_mismatch")
+    if result.get("status") == "safety_gate_blocked":
+        raise HTTPException(status_code=403, detail=result.get("reason", "safety_gate_blocked"))
+    return result
+
+
+@router.post("/reprocess/{signal_id}/reject")
+def reject_reprocess_signal(
+    signal_id: str,
+    payload: ReplayRejectRequest = Body(default_factory=ReplayRejectRequest),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    result = brain_core_service.reject_signal_reprocess(
+        signal_id,
+        actor=payload.actor,
+        reason=payload.reason,
+        expected_tenant_id=payload.expected_tenant_id,
+    )
+    if result.get("status") == "not_found":
+        raise HTTPException(status_code=404, detail="signal_not_found")
+    if result.get("status") == "tenant_mismatch":
+        raise HTTPException(status_code=403, detail="tenant_mismatch")
+    return result
+
+
+@router.post("/reprocess/{signal_id}/cancel")
+def cancel_reprocess_signal(
+    signal_id: str,
+    payload: ReplayCancelRequest = Body(default_factory=ReplayCancelRequest),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    result = brain_core_service.cancel_signal_reprocess(
+        signal_id,
+        actor=payload.actor,
+        reason=payload.reason,
+        expected_tenant_id=payload.expected_tenant_id,
+    )
+    if result.get("status") == "not_found":
+        raise HTTPException(status_code=404, detail="signal_not_found")
+    if result.get("status") == "tenant_mismatch":
+        raise HTTPException(status_code=403, detail="tenant_mismatch")
     return result
 
 
@@ -1019,3 +1110,851 @@ def detect_policy_drift(
     """XVIII3 — Trigger policy drift detection."""
     alert = brain_core_service.detect_policy_drift(tenant_id)
     return alert
+
+
+@router.get("/reasoning/policy/{tenant_id}")
+def reason_about_policy(
+    tenant_id: Annotated[int, Path(gt=0)],
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XIX1 — Use LLM to reason about current policy effectiveness and suggest improvements."""
+    result = brain_core_service.reason_about_policy(tenant_id)
+    return result
+
+
+@router.get("/cross-tenant-recommendations/{tenant_id}")
+def get_cross_tenant_recommendations(
+    tenant_id: Annotated[int, Path(gt=0)],
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XIX3 — Privacy-safe peer learning recommendations."""
+    return brain_core_service.get_cross_tenant_recommendations(tenant_id)
+
+
+@router.get("/policy-optimization/{tenant_id}")
+def get_predictive_policy_optimization(
+    tenant_id: Annotated[int, Path(gt=0)],
+    horizon_days: int = 14,
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XIX4 — Predictive policy optimization for the near-term horizon."""
+    return brain_core_service.predict_policy_optimization(tenant_id, horizon_days=horizon_days)
+
+
+@router.get("/policy-rollout-plan/{tenant_id}")
+def get_policy_rollout_plan(
+    tenant_id: Annotated[int, Path(gt=0)],
+    horizon_days: int = 14,
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XX1 — Build a staged rollout plan for safe policy profile transitions."""
+    return brain_core_service.generate_policy_rollout_plan(tenant_id, horizon_days=horizon_days)
+
+
+
+@router.post("/policy-rollout-phase/{tenant_id}/execute")
+def execute_policy_rollout_phase(
+    tenant_id: Annotated[int, Path(gt=0)],
+    plan_id: str = Query(...),
+    phase: str = Query(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XX2 — Execute a single phase of a policy rollout plan with idempotency guarantee."""
+    return brain_core_service.execute_policy_rollout_phase(
+        tenant_id=tenant_id,
+        plan_id=plan_id,
+        phase=phase,
+    )
+
+
+@router.post("/policy-rollout-phase/{tenant_id}/rollback")
+def rollback_policy_rollout(
+    tenant_id: Annotated[int, Path(gt=0)],
+    plan_id: str = Query(...),
+    trigger: str = Query(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XX3 — Detect rollback trigger and execute safe rollback to prior policy profile."""
+    return brain_core_service.rollback_policy_rollout(
+        tenant_id=tenant_id,
+        plan_id=plan_id,
+        trigger=trigger,
+    )
+
+
+@router.post("/policy-rollout-coordination")
+def coordinate_cross_tenant_rollout(
+    plan_id: str = Query(...),
+    phase: str = Query(...),
+    tenant_ids: list[int] = Query(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XX4 — Fan-out rollout plan to multiple tenants with phase coordination."""
+    return brain_core_service.coordinate_cross_tenant_rollout(
+        plan_id=plan_id,
+        tenant_ids=tenant_ids,
+        phase=phase,
+    )
+
+
+# ---------------------------------------------------------------------------
+# XXI — Autonomous Agent Workflows & Self-Governance
+# ---------------------------------------------------------------------------
+
+@router.post("/agent/tasks")
+def create_agent_task(
+    tenant_id: int = Query(..., gt=0),
+    workflow_type: str = Query(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXI1 — Create a multi-step agent task graph for the given workflow type."""
+    return brain_core_service.create_agent_task(
+        tenant_id=tenant_id,
+        workflow_type=workflow_type,
+        context={},
+    )
+
+
+@router.post("/agent/tasks/{task_id}/steps/{step_id}/execute")
+def execute_agent_step(
+    task_id: str = Path(...),
+    step_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXI2 — Execute a single step of an agent task (state machine transition)."""
+    return brain_core_service.execute_agent_step(task_id=task_id, step_id=step_id)
+
+
+@router.get("/agent/tasks/{task_id}/status")
+def get_agent_task_status(
+    task_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXI3 — Get agent task status; apply self-correction if blocked steps detected."""
+    return brain_core_service.get_agent_task_status(task_id=task_id)
+
+
+@router.get("/agent/policy/{tenant_id}")
+def get_tenant_agent_policy(
+    tenant_id: Annotated[int, Path(gt=0)],
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXI4 — Get tenant-scoped agent policy configuration."""
+    return brain_core_service.get_tenant_agent_policy(tenant_id=tenant_id)
+
+
+@router.post("/agent/policy/{tenant_id}")
+def update_tenant_agent_policy(
+    tenant_id: Annotated[int, Path(gt=0)],
+    approval_gate_required: bool = Query(False),
+    step_budget: int = Query(10, gt=0),
+    workflow_types: list[str] = Query(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXI4 — Update tenant-scoped agent policy configuration."""
+    return brain_core_service.update_tenant_agent_policy(
+        tenant_id=tenant_id,
+        allowed_workflow_types=workflow_types,
+        approval_gate_required=approval_gate_required,
+        step_budget=step_budget,
+    )
+
+
+# ---------------------------------------------------------------------------
+# XXII — Agent Execution Governance
+# ---------------------------------------------------------------------------
+
+@router.post("/agent/tasks/claim")
+def claim_next_agent_step(
+    tenant_id: int = Query(..., gt=0),
+    worker_id: str = Query(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXII1 — Claim next executable step from tenant queue."""
+    return brain_core_service.claim_next_agent_step(tenant_id=tenant_id, worker_id=worker_id)
+
+
+@router.post("/agent/tasks/{task_id}/steps/{step_id}/complete")
+def complete_agent_step(
+    task_id: str = Path(...),
+    step_id: str = Path(...),
+    worker_id: str = Query(...),
+    success: bool = Query(...),
+    error_code: str | None = Query(None),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXII2 — Complete/Fail running step with retry policy."""
+    return brain_core_service.complete_agent_step(
+        task_id=task_id,
+        step_id=step_id,
+        worker_id=worker_id,
+        success=success,
+        error_code=error_code,
+    )
+
+
+@router.get("/agent/sla/{tenant_id}")
+def get_agent_sla_report(
+    tenant_id: Annotated[int, Path(gt=0)],
+    sla_seconds: int = Query(300, gt=0),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXII3 — Get SLA breaches report for tenant agent tasks."""
+    return brain_core_service.get_agent_sla_report(tenant_id=tenant_id, sla_seconds=sla_seconds)
+
+
+@router.get("/agent/queue/{tenant_id}")
+def get_agent_queue_metrics(
+    tenant_id: Annotated[int, Path(gt=0)],
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXII4 — Get queue metrics for tenant agent tasks."""
+    return brain_core_service.get_agent_queue_metrics(tenant_id=tenant_id)
+
+
+# ---------------------------------------------------------------------------
+# Phase XXIII — Agent Observability & Telemetry
+# ---------------------------------------------------------------------------
+
+class _StepEventBody(BaseModel):
+    event_type: str = Field(..., description="One of: started, progress, checkpoint, warning, retry, cancelled, custom")
+    payload: dict = Field(default_factory=dict)
+
+
+@router.post("/agent/tasks/{task_id}/steps/{step_id}/log")
+def log_agent_step_event(
+    task_id: str = Path(...),
+    step_id: str = Path(...),
+    body: _StepEventBody = None,
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXIII1 — Append an observability event to a step's execution log."""
+    try:
+        return brain_core_service.log_agent_step_event(
+            task_id=task_id,
+            step_id=step_id,
+            event_type=body.event_type if body else "custom",
+            payload=body.payload if body else {},
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/agent/tasks/{task_id}/steps/{step_id}/log")
+def get_agent_step_log(
+    task_id: str = Path(...),
+    step_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXIII1 — Retrieve chronological event log for a step."""
+    return brain_core_service.get_agent_step_log(task_id=task_id, step_id=step_id)
+
+
+@router.get("/agent/tasks/{task_id}/audit")
+def get_agent_task_audit(
+    task_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXIII2 — Return full audit trail for a task."""
+    return brain_core_service.get_agent_task_audit(task_id=task_id)
+
+
+@router.get("/agent/performance/{tenant_id}")
+def get_agent_performance_report(
+    tenant_id: Annotated[int, Path(gt=0)],
+    window_hours: int = Query(24, gt=0),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXIII3 — Tenant-scoped agent step performance report."""
+    return brain_core_service.get_agent_performance_report(
+        tenant_id=tenant_id, window_hours=window_hours
+    )
+
+
+# ---------------------------------------------------------------------------
+# Phase XXIV — Agent Dependency & Resource Control
+# ---------------------------------------------------------------------------
+
+class _StepDepsBody(BaseModel):
+    depends_on: list[str] = []
+
+
+class _ResourceBudgetBody(BaseModel):
+    token_limit: int
+    cost_limit_usd: float
+
+
+class _OutcomeFeedbackBody(BaseModel):
+    quality_score: float
+    notes: str = ""
+
+
+@router.post("/agent/tasks/{task_id}/steps/{step_id}/dependencies")
+def set_step_dependencies(
+    task_id: str = Path(...),
+    step_id: str = Path(...),
+    body: _StepDepsBody = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXIV1 — Set dependency list for a step (must complete before this step runs)."""
+    try:
+        return brain_core_service.set_step_dependencies(
+            task_id=task_id, step_id=step_id, depends_on=body.depends_on
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/agent/tasks/{task_id}/ready-queue")
+def get_step_ready_queue(
+    task_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXIV1 — Steps whose dependencies are all done (ready to execute)."""
+    try:
+        return brain_core_service.get_step_ready_queue(task_id=task_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/agent/tasks/{task_id}/resources")
+def set_task_resource_budget(
+    task_id: str = Path(...),
+    body: _ResourceBudgetBody = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXIV2 — Set token and cost budget for a task."""
+    try:
+        return brain_core_service.set_task_resource_budget(
+            task_id=task_id, token_limit=body.token_limit, cost_limit_usd=body.cost_limit_usd
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/agent/tasks/{task_id}/resources")
+def get_task_resource_usage(
+    task_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXIV2 — Current resource usage vs. budget for a task."""
+    try:
+        return brain_core_service.get_task_resource_usage(task_id=task_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/agent/tasks/{task_id}/feedback")
+def record_task_outcome_feedback(
+    task_id: str = Path(...),
+    body: _OutcomeFeedbackBody = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXIV3 — Record quality feedback for a completed task."""
+    try:
+        return brain_core_service.record_task_outcome_feedback(
+            task_id=task_id, quality_score=body.quality_score, notes=body.notes
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/agent/outcomes/{tenant_id}")
+def get_task_outcome_summary(
+    tenant_id: Annotated[int, Path(gt=0)],
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXIV3 — Aggregate outcome feedback summary for a tenant."""
+    return brain_core_service.get_task_outcome_summary(tenant_id=tenant_id)
+
+
+# ---------------------------------------------------------------------------
+# Phase XXV — Agent Multi-Agent Collaboration & Handoff
+# ---------------------------------------------------------------------------
+
+class _HandoffBody(BaseModel):
+    to_agent_id: str
+    context_snapshot: dict = Field(default_factory=dict)
+
+
+class _TaskSplitBody(BaseModel):
+    split_strategy: str
+    subtask_configs: list[dict]
+
+
+class _MergeBody(BaseModel):
+    subtask_ids: list[str]
+
+
+@router.post("/agent/handoff/{from_task_id}")
+def initiate_agent_handoff(
+    from_task_id: str = Path(...),
+    body: _HandoffBody = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXV1 — Initiate handoff of task context to another agent."""
+    try:
+        return brain_core_service.initiate_agent_handoff(
+            from_task_id=from_task_id,
+            to_agent_id=body.to_agent_id,
+            context_snapshot=body.context_snapshot,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/agent/handoff/{handoff_id}")
+def get_handoff_status(
+    handoff_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXV1 — Current state of an agent handoff."""
+    try:
+        return brain_core_service.get_handoff_status(handoff_id=handoff_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/agent/handoff/{handoff_id}/accept")
+def accept_agent_handoff(
+    handoff_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXV1 — Mark handoff accepted by receiving agent."""
+    try:
+        return brain_core_service.accept_agent_handoff(handoff_id=handoff_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/agent/tasks/{task_id}/split")
+def split_agent_task(
+    task_id: str = Path(...),
+    body: _TaskSplitBody = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXV2 — Decompose task into parallel subtasks for multiple agents."""
+    try:
+        return brain_core_service.split_agent_task(
+            task_id=task_id,
+            split_strategy=body.split_strategy,
+            subtask_configs=body.subtask_configs,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/agent/tasks/{task_id}/merge")
+def merge_agent_results(
+    task_id: str = Path(...),
+    body: _MergeBody = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXV3 — Merge parallel subtask results into unified outcome."""
+    try:
+        return brain_core_service.merge_agent_results(
+            task_id=task_id,
+            subtask_ids=body.subtask_ids,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/agent/tasks/{task_id}/merge-status")
+def get_merge_status(
+    task_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXV3 — Return the merge record for a task."""
+    try:
+        return brain_core_service.get_merge_status(task_id=task_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+# ---------------------------------------------------------------------------
+# Phase XXVI — Agent Adaptive Learning & Self-Optimization
+# ---------------------------------------------------------------------------
+
+
+@router.post("/agent/tasks/{task_id}/learning")
+def record_agent_learning_signal(
+    task_id: str = Path(...),
+    body: dict = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXVI1 — Record a learning signal from a task outcome for an agent."""
+    try:
+        return brain_core_service.record_agent_learning_signal(
+            task_id=task_id,
+            agent_id=body["agent_id"],
+            signal_type=body["signal_type"],
+            value=float(body["value"]),
+            context=body.get("context"),
+        )
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/agent/learning/{agent_id}")
+def get_agent_learning_summary(
+    agent_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXVI1 — Return aggregated learning summary for an agent."""
+    return brain_core_service.get_agent_learning_summary(agent_id=agent_id)
+
+
+@router.post("/agent/tasks/{task_id}/optimize")
+def optimize_agent_workflow(
+    task_id: str = Path(...),
+    body: dict = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXVI2 — Apply self-optimization to an agent workflow."""
+    try:
+        return brain_core_service.optimize_agent_workflow(
+            task_id=task_id,
+            optimization_target=body["optimization_target"],
+            strategy=body.get("strategy", "auto"),
+        )
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/agent/tasks/{task_id}/optimize-history")
+def get_optimization_history(
+    task_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXVI2 — Return optimization history for a task."""
+    try:
+        return brain_core_service.get_optimization_history(task_id=task_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/agent/benchmark")
+def benchmark_agent_performance(
+    body: dict = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXVI3 — Record a performance benchmark for an agent vs. baseline."""
+    try:
+        return brain_core_service.benchmark_agent_performance(
+            agent_id=body["agent_id"],
+            metric=body["metric"],
+            observed_value=float(body["observed_value"]),
+            baseline_value=float(body["baseline_value"]),
+        )
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/agent/benchmark/{agent_id}")
+def get_agent_benchmark(
+    agent_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXVI3 — Return all benchmarks for an agent."""
+    return brain_core_service.get_agent_benchmark(agent_id=agent_id)
+
+
+# Phase XXVII — Agent Knowledge Graph & Cross-Agent Memory
+
+@router.post("/agent/knowledge")
+def store_agent_knowledge(
+    body: dict = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXVII1 — Store a knowledge entry for an agent."""
+    try:
+        return brain_core_service.store_agent_knowledge(
+            agent_id=body["agent_id"],
+            key=body["key"],
+            value=body["value"],
+            confidence=float(body["confidence"]),
+        )
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/agent/knowledge/share")
+def share_knowledge(
+    body: dict = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXVII2 — Share a knowledge entry between agents (conflict guard)."""
+    try:
+        return brain_core_service.share_knowledge(
+            from_agent_id=body["from_agent_id"],
+            to_agent_id=body["to_agent_id"],
+            key=body["key"],
+        )
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/agent/knowledge/{agent_id}/shared")
+def get_shared_knowledge(
+    agent_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXVII2 — Return all knowledge shared TO this agent."""
+    return brain_core_service.get_shared_knowledge(agent_id=agent_id)
+
+
+@router.post("/agent/knowledge/{agent_id}/expire")
+def expire_stale_knowledge(
+    agent_id: str = Path(...),
+    body: dict = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXVII3 — Expire knowledge entries older than max_age_hours."""
+    try:
+        return brain_core_service.expire_stale_knowledge(
+            agent_id=agent_id,
+            max_age_hours=float(body["max_age_hours"]),
+        )
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/agent/knowledge/{agent_id}/health")
+def get_knowledge_health(
+    agent_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXVII3 — Return knowledge health metrics for an agent."""
+    return brain_core_service.get_knowledge_health(agent_id=agent_id)
+
+
+@router.get("/agent/knowledge/{agent_id}/{key}")
+def retrieve_agent_knowledge(
+    agent_id: str = Path(...),
+    key: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXVII1 — Retrieve a knowledge entry for an agent."""
+    try:
+        return brain_core_service.retrieve_agent_knowledge(agent_id=agent_id, key=key)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+# ── XXX1 — Replay Analytics ───────────────────────────────────────────────
+@router.get("/reprocess/analytics/{tenant_id}")
+def get_replay_analytics(
+    tenant_id: int = Path(...),
+    window_days: int = Query(30, ge=1, le=365),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXX1 — Replay analytics: approve/reject/cancel counts, avg resolution time, top actors."""
+    return brain_core_service.get_replay_analytics(tenant_id=tenant_id, window_days=window_days)
+
+
+# ── XXX2 — Replay Trend Alerts ────────────────────────────────────────────
+@router.get("/reprocess/alerts/{tenant_id}")
+def get_replay_trend_alerts(
+    tenant_id: int = Path(...),
+    reject_rate_threshold: float = Query(0.5, ge=0.0, le=1.0),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> list:
+    """XXX2 — Return active replay trend alerts for tenant."""
+    return brain_core_service.get_replay_trend_alerts(
+        tenant_id=tenant_id,
+        reject_rate_threshold=reject_rate_threshold,
+    )
+
+
+# ── XXX3 — Replay Operator Summary ───────────────────────────────────────
+@router.get("/reprocess/operator-summary/{actor}")
+def get_replay_operator_summary(
+    actor: str = Path(...),
+    window_days: int = Query(30, ge=1, le=365),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXX3 — Per-actor replay action summary."""
+    return brain_core_service.get_replay_operator_summary(actor=actor, window_days=window_days)
+
+
+# ── XXXI1 — Replay Policy Config ──────────────────────────────────────────
+class ReplayPolicyRequest(BaseModel):
+    actor: str = Field(..., min_length=1)
+    max_window_days: int = Field(90, ge=1, le=365)
+    allowed_actors: list[str] | None = Field(None)
+    auto_reject_threshold: float | None = Field(None, ge=0.0, le=1.0)
+    require_dual_approval: bool = Field(False)
+    max_replays_per_signal: int = Field(5, ge=1, le=100)
+
+
+@router.get("/reprocess/policy/{tenant_id}")
+def get_replay_policy(
+    tenant_id: int = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXXI1 — Return tenant-scoped replay governance policy."""
+    return brain_core_service.get_replay_policy(tenant_id=tenant_id)
+
+
+@router.put("/reprocess/policy/{tenant_id}")
+def set_replay_policy(
+    tenant_id: int = Path(...),
+    body: ReplayPolicyRequest = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXXI1 — Update tenant-scoped replay governance policy."""
+    try:
+        return brain_core_service.set_replay_policy(
+            tenant_id,
+            actor=body.actor,
+            max_window_days=body.max_window_days,
+            allowed_actors=body.allowed_actors,
+            auto_reject_threshold=body.auto_reject_threshold,
+            require_dual_approval=body.require_dual_approval,
+            max_replays_per_signal=body.max_replays_per_signal,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+# ── XXXI2 — Replay Policy Enforcement Check ───────────────────────────────
+@router.get("/reprocess/policy/{tenant_id}/check")
+def check_replay_policy(
+    tenant_id: int = Path(...),
+    actor: str = Query(...),
+    signal_id: str = Query(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXXI2 — Check whether a replay action is permitted under current policy."""
+    return brain_core_service.check_replay_policy(tenant_id, actor=actor, signal_id=signal_id)
+
+
+# ── XXXI3 — Replay Policy History ─────────────────────────────────────────
+@router.get("/reprocess/policy/{tenant_id}/history")
+def get_replay_policy_history(
+    tenant_id: int = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> list:
+    """XXXI3 — Return chronological history of replay policy changes for tenant."""
+    return brain_core_service.get_replay_policy_history(tenant_id=tenant_id)
+
+
+# ── XIX1 — Policy Reasoning Engine ────────────────────────────────────────
+@router.get("/reasoning/policy/{tenant_id}")
+def get_policy_reasoning(
+    tenant_id: int = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XIX1 — Analyze and reason about tenant's policy effectiveness."""
+    return brain_core_service.reason_about_policy(tenant_id=tenant_id)
+
+
+# ── XIX4 — Predictive Policy Optimization ────────────────────────────────
+@router.get("/policy-optimization/{tenant_id}")
+def predict_policy_optimization(
+    tenant_id: int = Path(...),
+    horizon_days: int = Query(30),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XIX4 — Predict outcomes of policy optimization."""
+    return brain_core_service.predict_policy_optimization(tenant_id=tenant_id, horizon_days=horizon_days)
+
+
+# ── XX1 — Policy Rollout Plan ─────────────────────────────────────────────
+@router.get("/policy-rollout-plan/{tenant_id}")
+def generate_policy_rollout_plan(
+    tenant_id: int = Path(...),
+    horizon_days: int = Query(30),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XX1 — Generate staged policy rollout plan."""
+    return brain_core_service.generate_policy_rollout_plan(tenant_id=tenant_id, horizon_days=horizon_days)
+
+
+# ── XXXII1 — Replay Request Queue ─────────────────────────────────────────
+class ReplayRequestCreate(BaseModel):
+    signal_id: str = Field(..., min_length=1)
+    decision_id: str = Field(..., min_length=1)
+    requested_by: str = Field(..., min_length=1)
+    priority: str = Field("normal", pattern="^(low|normal|high|urgent)$")
+    escalation_level: int = Field(0, ge=0)
+
+
+@router.post("/reprocess/request")
+def create_replay_request(
+    tenant_id: int = Query(...),
+    body: ReplayRequestCreate = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXXII1 — Create a new replay request and add it to the queue."""
+    try:
+        return brain_core_service.create_replay_request(
+            tenant_id,
+            signal_id=body.signal_id,
+            decision_id=body.decision_id,
+            requested_by=body.requested_by,
+            priority=body.priority,
+            escalation_level=body.escalation_level,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/reprocess/request-queue")
+def get_replay_request_queue(
+    tenant_id: int = Query(...),
+    status: str | None = Query(None, pattern="^(pending|resolved)$"),
+    priority: str | None = Query(None, pattern="^(low|normal|high|urgent)$"),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXXII1 — Get filtered list of replay requests for a tenant."""
+    queue = brain_core_service.get_replay_request_queue(
+        tenant_id,
+        status=status,
+        priority=priority,
+    )
+    return {"total": len(queue), "requests": queue}
+
+
+# ── XXXII2 — Replay Request Escalation ────────────────────────────────────
+class ReplayEscalation(BaseModel):
+    reason: str = Field(..., min_length=1)
+    target_level: int = Field(..., ge=1)
+
+
+@router.post("/reprocess/request/{request_id}/escalate")
+def escalate_replay_request(
+    request_id: str = Path(...),
+    body: ReplayEscalation = Body(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
+) -> dict:
+    """XXXII2 — Escalate a replay request to a higher level."""
+    try:
+        return brain_core_service.escalate_replay_request(
+            request_id,
+            reason=body.reason,
+            target_level=body.target_level,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/reprocess/request/{request_id}/escalations")
+def get_escalation_history(
+    request_id: str = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXXII2 — Return escalation history for a replay request."""
+    escalations = brain_core_service.get_escalation_history(request_id)
+    return {"request_id": request_id, "escalations": escalations}
+
+
+# ── XXXII3 — Replay SLA & Queue Metrics ────────────────────────────────────
+@router.get("/reprocess/queue-metrics/{tenant_id}")
+def get_replay_queue_metrics(
+    tenant_id: int = Path(...),
+    __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
+) -> dict:
+    """XXXII3 — Get SLA and queue metrics for a tenant."""
+    return brain_core_service.get_replay_queue_metrics(tenant_id)

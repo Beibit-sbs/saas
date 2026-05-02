@@ -463,8 +463,8 @@ def clear_jobs_state() -> None:
                 with conn.cursor() as cur:
                     cur.execute("DELETE FROM app_jobs")
                 conn.commit()
-        except Exception:
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            _logger.warning("jobs.clear_all_db_failed: falling back to memory-only clear", exc_info=_exc)
 
     with _jobs_lock:
         _jobs_state.rows.clear()
@@ -535,8 +535,8 @@ def enqueue_job(
         from app.modules.usage.service import record_usage_event
 
         record_usage_event(normalized_tenant_id, "jobs_executed", 1)
-    except Exception:
-        pass
+    except Exception as _exc:  # noqa: BLE001
+        _logger.warning("jobs.usage_event_failed: tenant=%s", normalized_tenant_id, exc_info=_exc)
 
     return created
 
@@ -589,8 +589,8 @@ def get_job_by_id(job_id: int) -> dict[str, Any] | None:
     if _use_database():
         try:
             return _get_job_by_id_db(normalized_job_id)
-        except Exception:
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            _logger.warning("jobs.get_by_id_db_failed: id=%s, falling back to memory", normalized_job_id, exc_info=_exc)
 
     with _jobs_lock:
         row = _jobs_state.rows.get(normalized_job_id)
@@ -603,8 +603,8 @@ def mark_job_running(job_id: int) -> dict[str, Any] | None:
     if _use_database():
         try:
             return _update_status_db(normalized_job_id, ["queued"], "running")
-        except Exception:
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            _logger.warning("jobs.mark_running_db_failed: id=%s, falling back to memory", normalized_job_id, exc_info=_exc)
 
     with _jobs_lock:
         row = _jobs_state.rows.get(normalized_job_id)
@@ -622,8 +622,8 @@ def mark_job_succeeded(job_id: int, result: dict[str, Any]) -> dict[str, Any] | 
     if _use_database():
         try:
             return _mark_succeeded_db(normalized_job_id, safe_result)
-        except Exception:
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            _logger.warning("jobs.mark_succeeded_db_failed: id=%s, falling back to memory", normalized_job_id, exc_info=_exc)
 
     with _jobs_lock:
         row = _jobs_state.rows.get(normalized_job_id)
@@ -644,8 +644,8 @@ def mark_job_failed(job_id: int, error: str) -> dict[str, Any] | None:
     if _use_database():
         try:
             return _mark_failed_db(normalized_job_id, str(error)[:2000])
-        except Exception:
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            _logger.warning("jobs.mark_failed_db_failed: id=%s, falling back to memory", normalized_job_id, exc_info=_exc)
 
     with _jobs_lock:
         row = _jobs_state.rows.get(normalized_job_id)
@@ -665,8 +665,8 @@ def retry_job(job_id: int) -> dict[str, Any] | None:
     if _use_database():
         try:
             return _retry_job_db(normalized_job_id)
-        except Exception:
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            _logger.warning("jobs.retry_db_failed: id=%s, falling back to memory", normalized_job_id, exc_info=_exc)
 
     with _jobs_lock:
         row = _jobs_state.rows.get(normalized_job_id)
@@ -691,8 +691,8 @@ def cancel_job(job_id: int) -> dict[str, Any] | None:
     if _use_database():
         try:
             return _update_status_db(normalized_job_id, ["queued", "running"], "cancelled")
-        except Exception:
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            _logger.warning("jobs.cancel_db_failed: id=%s, falling back to memory", normalized_job_id, exc_info=_exc)
 
     with _jobs_lock:
         row = _jobs_state.rows.get(normalized_job_id)

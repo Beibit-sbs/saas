@@ -1,3 +1,4 @@
+import { ar } from "./ar";
 import { en } from "./en";
 import { kk } from "./kk";
 import { ru } from "./ru";
@@ -6,6 +7,7 @@ export const commonTranslations = {
   ru,
   en,
   kk,
+  ar,
 } as const;
 
 export type CommonTranslationKey = keyof typeof ru;

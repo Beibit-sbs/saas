@@ -328,9 +328,23 @@ test.describe("Billing Plans", () => {
     page,
   }) => {
     await stubAuthSession(page);
+    // Primary data stubs
     await stubApi(page, "**/api/admin/tenants*", TENANTS_STUB);
     await stubApi(page, "**/platform/plans*", { plans: PLANS_STUB });
     await stubApi(page, "**/platform/tenants/1/billing*", BILLING_STATE_STUB);
+    // Secondary stubs — prevent PlatformSectionView's unconditional queries from
+    // hitting the real backend and getting 401 → session-invalid → redirect.
+    await stubApi(page, "**/platform/quotas*", { quotas: [] });
+    await stubApi(page, "**/api/admin/feature-flags*", { flags: [] });
+    await stubApi(page, "**/api/admin/integrations/settings*", { ldap: { enabled: false, configured: false }, ai_providers: [] });
+    await stubApi(page, "**/api/admin/service-accounts*", { accounts: [] });
+    await stubApi(page, "**/api/v1/platform/ops/summary*", { queues: { retry_backlog: 0, dead_webhooks: 0, failed_webhooks: 0, failed_automation_executions: 0 } });
+    // Tenant-dependent queries activated after auto-selecting the first tenant.
+    await stubApi(page, "**/api/admin/audit/events*", { events: [] });
+    await stubApi(page, "**/api/v1/admin/tenants/1/webhooks/subscriptions*", []);
+    await stubApi(page, "**/api/v1/admin/tenants/1/webhooks/deliveries*", { items: [] });
+    await stubApi(page, "**/api/bff/admin/platform/automation/rules*", []);
+    await stubApi(page, "**/api/bff/admin/platform/automation/executions*", []);
 
     await page.goto("/console/billing/plans");
     await expect(page.getByText("Current Subscription")).toBeVisible();
@@ -344,28 +358,26 @@ test.describe("Billing Plans", () => {
     await stubApi(page, "**/api/admin/tenants*", TENANTS_STUB);
     await stubApi(page, "**/platform/plans*", { plans: PLANS_STUB });
     await stubApi(page, "**/platform/tenants/1/billing*", BILLING_STATE_STUB);
-
-    let changeCalls = 0;
-    await page.route(
-      "**/platform/tenants/1/billing/subscription/plan-change*",
-      async (route) => {
-        if (route.request().method() === "POST") {
-          changeCalls += 1;
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify(BILLING_STATE_STUB),
-          });
-          return;
-        }
-        await route.continue();
-      },
-    );
+    // Secondary stubs — prevent unconditional queries from triggering session-invalid
+    await stubApi(page, "**/platform/quotas*", { quotas: [] });
+    await stubApi(page, "**/api/admin/feature-flags*", { flags: [] });
+    await stubApi(page, "**/api/admin/integrations/settings*", { ldap: { enabled: false, configured: false }, ai_providers: [] });
+    await stubApi(page, "**/api/admin/service-accounts*", { accounts: [] });
+    await stubApi(page, "**/api/v1/platform/ops/summary*", { queues: { retry_backlog: 0, dead_webhooks: 0, failed_webhooks: 0, failed_automation_executions: 0 } });
+    await stubApi(page, "**/api/admin/audit/events*", { events: [] });
+    await stubApi(page, "**/api/v1/admin/tenants/1/webhooks/subscriptions*", []);
+    await stubApi(page, "**/api/v1/admin/tenants/1/webhooks/deliveries*", { items: [] });
+    await stubApi(page, "**/api/bff/admin/platform/automation/rules*", []);
+    await stubApi(page, "**/api/bff/admin/platform/automation/executions*", []);
 
     await page.goto("/console/billing/plans");
+    const planChangeRequest = page.waitForRequest(
+      (req) =>
+        req.method() === "POST" &&
+        req.url().includes("/billing/subscription/plan-change"),
+    );
     await page.getByRole("button", { name: /transition to professional/i }).click();
-
-    await expect.poll(() => changeCalls).toBeGreaterThan(0);
+    await planChangeRequest;
   });
 });
 
@@ -407,7 +419,7 @@ test.describe("Billing Subscriptions", () => {
 
     await expect(page.getByText("Current Subscription")).toBeVisible();
     await expect(page.getByText("Billing State")).toBeVisible();
-    await expect(page.getByText("Starter")).toBeVisible();
+    await expect(page.getByText("starter", { exact: true })).toBeVisible();
   });
 
   test("subscriptions page shows usage progress bars after tenant selection", async ({
@@ -426,8 +438,8 @@ test.describe("Billing Subscriptions", () => {
     await page.getByRole("button", { name: /Acme University|Acme Corp/i }).click();
 
     await expect(page.getByText("Usage / Limits")).toBeVisible();
-    // 120 of 500 students
-    await expect(page.getByText(/120\s*\/\s*500|students/i)).toBeVisible();
+    // 120 of 500 students — "students" label is always rendered as its own span
+    await expect(page.getByText("students", { exact: true })).toBeVisible();
   });
 
   test("subscriptions page allows assigning subscription plan", async ({
@@ -463,6 +475,9 @@ test.describe("Billing Subscriptions", () => {
     await page.getByRole("button", { name: /Acme University|Acme Corp/i }).click();
 
     await expect(page.getByText(/change plan/i)).toBeVisible();
+
+    // Select a plan from the "New Plan" dropdown to enable the Assign button
+    await page.locator('select:has(option[value="starter"])').selectOption('starter');
 
     const assignRequest = page.waitForRequest(
       (req) =>
@@ -593,7 +608,7 @@ test.describe("Billing Delinquency", () => {
 
     await expect(page.getByText("Dunning Policy")).toBeVisible();
     // Grace period days from stub
-    await expect(page.getByText(/7/)).toBeVisible();
+    await expect(page.getByText("7 days")).toBeVisible();
   });
 
   test("delinquency page allows resolving a record", async ({ page }) => {
@@ -615,23 +630,6 @@ test.describe("Billing Delinquency", () => {
       DUNNING_POLICY_STUB,
     );
 
-    let resolveCalls = 0;
-    await page.route(
-      "**/api/admin/billing/tenants/1/delinquency/1/resolve",
-      async (route) => {
-        if (route.request().method() === "POST") {
-          resolveCalls += 1;
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ ...DELINQUENCY_RECORDS_STUB.items[0], status: "resolved", resolved_at: "2026-04-24T10:00:00Z" }),
-          });
-          return;
-        }
-        await route.continue();
-      },
-    );
-
     await page.goto("/console/billing/delinquency");
     await page.getByRole("button", { name: /Acme University|Acme Corp/i }).click();
 
@@ -639,6 +637,9 @@ test.describe("Billing Delinquency", () => {
     await page.locator('button[title="Resolve"]').first().click();
     // Modal with resolution selector
     await expect(page.getByText(/Resolve Record #/i)).toBeVisible();
+
+    // Select a resolution type to enable the Resolve button
+    await page.locator('select:has(option[value="paid"])').selectOption('paid');
 
     const resolveRequest = page.waitForRequest(
       (req) =>
@@ -650,6 +651,5 @@ test.describe("Billing Delinquency", () => {
       .last()
       .click();
     await resolveRequest;
-    await expect.poll(() => resolveCalls).toBeGreaterThan(0);
   });
 });

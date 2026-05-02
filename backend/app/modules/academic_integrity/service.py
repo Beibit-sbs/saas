@@ -1,7 +1,7 @@
 """Academic Integrity service layer with business logic and workflow enforcement."""
 
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from app.modules.academic_integrity.schemas import (
     IntegrityCaseCreateSchema,
@@ -179,7 +179,7 @@ class AcademicIntegrityService:
 
         # Create case entity
         case_id = str(uuid.uuid4())
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         case = {
             "id": case_id,
@@ -269,7 +269,7 @@ class AcademicIntegrityService:
         case["status"] = new_status.value
         case["resolution_notes"] = payload.resolution_notes
         case["recommended_action"] = payload.recommended_action
-        case["updated_at"] = datetime.utcnow()
+        case["updated_at"] = datetime.now(timezone.utc)
 
         # Persist update
         await self.tenant_entity_service.update_entity(

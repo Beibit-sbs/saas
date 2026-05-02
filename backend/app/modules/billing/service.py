@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+import logging
 import os
 from threading import Lock
+
+_logger = logging.getLogger("app.billing")
 
 from fastapi import HTTPException
 
@@ -328,8 +331,8 @@ def ensure_tenant_subscription(
                     row = cur.fetchone()
                 conn.commit()
             return _row_to_subscription(row)
-        except Exception:
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            _logger.warning("billing.ensure_subscription_db_failed: tenant=%s, falling back to memory", normalized_tenant_id, exc_info=_exc)
 
     with _state_lock:
         existing = _state.subscriptions.get(normalized_tenant_id)
@@ -508,8 +511,8 @@ def get_tenant_subscription(tenant_id: int) -> dict[str, object] | None:
             if row is None:
                 return None
             return _effective_subscription(row)
-        except Exception:
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            _logger.warning("billing.get_subscription_db_failed: tenant=%s, falling back to memory", normalized_tenant_id, exc_info=_exc)
 
     with _state_lock:
         row = _state.subscriptions.get(normalized_tenant_id)
@@ -745,7 +748,8 @@ def get_usage_snapshot(tenant_id: int, *, since_iso: str | None = None) -> dict[
         from app.modules.auth.local_users_service import local_user_store
 
         active_users = len(local_user_store.list_users(tenant_id=normalized_tenant_id))
-    except Exception:
+    except Exception as _exc:  # noqa: BLE001
+        _logger.warning("billing.usage_snapshot_active_users_failed: tenant=%s, defaulting to 0", normalized_tenant_id, exc_info=_exc)
         active_users = 0
 
     try:
@@ -754,7 +758,8 @@ def get_usage_snapshot(tenant_id: int, *, since_iso: str | None = None) -> dict[
         rows = list_backup_history(tenant_id=normalized_tenant_id)
         total_bytes = sum(max(0, int(item.get("size_bytes") or 0)) for item in rows)
         storage_mb = int(total_bytes / (1024 * 1024))
-    except Exception:
+    except Exception as _exc:  # noqa: BLE001
+        _logger.warning("billing.usage_snapshot_storage_failed: tenant=%s, defaulting to 0", normalized_tenant_id, exc_info=_exc)
         storage_mb = 0
 
     return {

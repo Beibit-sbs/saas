@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import BrainIntelligencePage from "../../app/(admin)/console/ai/brain/intelligence/page";
 
@@ -121,6 +122,107 @@ vi.mock("../../modules/brain-core/hooks", () => ({
     })),
     isPending: false,
   }),
+  useBrainPolicyReasoning: () => ({
+    data: {
+      tenant_id: 1,
+      reasoning: "Fallback reasoning recommends measured policy adjustments.",
+      current_profile: {
+        tenant_id: 1,
+        autonomy_level: 2,
+        require_approval_for_critical: true,
+        default_approval_role: "approver",
+        enable_ai_reasoning: true,
+      },
+      recommendations: [
+        {
+          recommendation: "Keep approval checks for critical decisions",
+          rationale: "Negative outcomes remain below alert threshold but still require oversight.",
+          risk_level: "low",
+          expected_impact: "positive",
+        },
+      ],
+      alternative_policies: [
+        {
+          name: "Balanced Policy",
+          profile: {
+            tenant_id: 1,
+            autonomy_level: 2,
+            require_approval_for_critical: true,
+            default_approval_role: "approver",
+            enable_ai_reasoning: true,
+          },
+          reasoning: "Moderate autonomy with review",
+          adoption_risk: "low",
+          rationale: "Balances speed and oversight",
+        },
+      ],
+      effectiveness_metrics: {
+        tenant_id: 1,
+        total_outcomes: 10,
+        positive: 7,
+        neutral: 1,
+        negative: 2,
+        positive_rate: 0.7,
+        negative_rate: 0.2,
+      },
+      timestamp: "2026-04-30T10:00:00Z",
+    },
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+  useBrainCrossTenantRecommendations: () => ({
+    data: {
+      tenant_id: 1,
+      sample_size: 3,
+      recommended_profile: {
+        tenant_id: 1,
+        autonomy_level: 2,
+        require_approval_for_critical: true,
+        default_approval_role: "approver",
+        enable_ai_reasoning: true,
+      },
+      peer_benchmarks: {
+        avg_positive_rate: 0.72,
+        avg_negative_rate: 0.12,
+        ai_reasoning_adoption_rate: 0.67,
+        median_autonomy_level: 2,
+      },
+      rationale: ["Aggregated 3 peer tenants without exposing identifiers."],
+      generated_at: "2026-04-30T10:00:00Z",
+    },
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+  useBrainPredictivePolicyOptimization: () => ({
+    data: {
+      tenant_id: 1,
+      horizon_days: 14,
+      risk_score: 0.34,
+      forecast_band: "moderate",
+      drivers: ["2 recent high-severity signals"],
+      current_profile: {
+        tenant_id: 1,
+        autonomy_level: 2,
+        require_approval_for_critical: true,
+        default_approval_role: "approver",
+        enable_ai_reasoning: true,
+      },
+      predicted_profile: {
+        tenant_id: 1,
+        autonomy_level: 2,
+        require_approval_for_critical: true,
+        default_approval_role: "approver",
+        enable_ai_reasoning: true,
+      },
+      recommended_actions: ["Keep policy stable and continue monitoring peer benchmarks."],
+      generated_at: "2026-04-30T10:00:00Z",
+    },
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
 }));
 
 vi.mock("../../shared/auth/context", () => ({
@@ -152,8 +254,8 @@ vi.mock("../../shared/ui/badge", () => ({
 }));
 
 vi.mock("../../shared/ui/button", () => ({
-  Button: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
-    <button onClick={onClick}>{children}</button>
+  Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button {...props}>{children}</button>
   ),
 }));
 
@@ -210,9 +312,9 @@ describe("BrainIntelligencePage", () => {
     const governanceSection = screen.getByTestId("brain-governance");
     expect(governanceSection).toBeInTheDocument();
     expect(screen.getByText(/Current Policy Profile/i)).toBeInTheDocument();
-    expect(screen.getByText(/Autonomy Level/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Autonomy Level/i).length).toBeGreaterThan(0);
     expect(screen.getByText("2")).toBeInTheDocument(); // autonomy_level
-    expect(screen.getByText(/AI Reasoning/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/AI Reasoning/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Enabled/i)).toBeInTheDocument();
   });
 
@@ -224,24 +326,36 @@ describe("BrainIntelligencePage", () => {
   });
 
   it("displays dry-run preview after clicking preview button", async () => {
-    const { user } = await import("@testing-library/user-event");
-    const u = user();
+    const u = userEvent.setup();
     render(<BrainIntelligencePage />);
     const previewBtn = screen.getByTestId("btn-dry-run");
     await u.click(previewBtn);
     // Preview should show suggested changes
     expect(screen.getByText(/Suggested Changes/i)).toBeInTheDocument();
-    expect(screen.getByText(/Preview Changes/i)).toBeInTheDocument();
+    expect(screen.getByTestId("btn-apply")).toBeInTheDocument();
   });
 
   it("shows apply confirmation dialog", async () => {
-    const { user } = await import("@testing-library/user-event");
-    const u = user();
+    const u = userEvent.setup();
     render(<BrainIntelligencePage />);
     const previewBtn = screen.getByTestId("btn-dry-run");
     await u.click(previewBtn);
     const applyBtn = screen.getByTestId("btn-apply");
     await u.click(applyBtn);
     expect(screen.getByText(/Apply learning to policy profile/i)).toBeInTheDocument();
+  });
+
+  it("renders policy reasoning section", () => {
+    render(<BrainIntelligencePage />);
+    expect(screen.getByTestId("brain-policy-reasoning")).toBeInTheDocument();
+    expect(screen.getByText(/Policy Reasoning/i)).toBeInTheDocument();
+    expect(screen.getByText(/Fallback reasoning recommends measured policy adjustments/i)).toBeInTheDocument();
+  });
+
+  it("renders peer learning and predictive optimization suite", () => {
+    render(<BrainIntelligencePage />);
+    expect(screen.getByTestId("brain-policy-optimization-suite")).toBeInTheDocument();
+    expect(screen.getByText(/Peer Learning Benchmark/i)).toBeInTheDocument();
+    expect(screen.getByText(/Predictive Policy Optimization/i)).toBeInTheDocument();
   });
 });

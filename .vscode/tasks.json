@@ -147,6 +147,18 @@
 			"type": "shell",
 			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_prompt_management_router.py --no-cov -rA",
 			"isBackground": false
+		},
+		{
+			"label": "phase-xxv-backend-tests",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_agent_collaboration_xxv.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "phase-xxv-backend-tests-log",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_agent_collaboration_xxv.py --no-cov -rA | tee /tmp/phase_xxv_backend_tests.log",
+			"isBackground": false
 		}
 	]
 }
