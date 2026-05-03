@@ -24,16 +24,22 @@ def _validate_tenant(tenant_id: int) -> None:
         raise ValueError("tenant_id must be a positive integer")
 
 
-def _fire(tenant_id: int, event_type: str, payload: dict) -> None:
+def _fire(tenant_id: int, event_type: str, aggregate_id: str, payload: dict) -> None:
     try:
         pub = EventPublisher()
-        pub.publish_event(tenant_id=tenant_id, event_type=event_type, payload=payload)
+        pub.publish_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            aggregate_type="admissions_scoring",
+            aggregate_id=aggregate_id,
+            payload_json=payload,
+        )
     except Exception:
         pass
 
 
 def _get_scoring(tenant_id: int, scoring_id: str) -> dict:
-    for r in list_entities_for_tenant(tenant_id, "admissions_scorings"):
+    for r in list_entities_for_tenant("admissions_scorings", tenant_id):
         if r.get("id") == scoring_id:
             return r
     raise ValueError(f"Scoring {scoring_id!r} not found")
@@ -63,7 +69,6 @@ def submit_for_scoring(tenant_id: int, *, application_id: str, gpa: float, test_
     if essay_length < 0:
         raise ValueError("essay_length must be non-negative")
     row = create_entity_for_tenant(
-        tenant_id,
         "admissions_scorings",
         {
             "application_id": application_id,
@@ -74,6 +79,7 @@ def submit_for_scoring(tenant_id: int, *, application_id: str, gpa: float, test_
             "status": "PENDING",
             "tenant_id": tenant_id,
         },
+        tenant_id,
     )
     return {"scoring_id": row["id"], "status": "PENDING"}
 
@@ -85,7 +91,7 @@ def generate_score(tenant_id: int, *, scoring_id: str) -> dict:
     score = _compute_score(scoring["gpa"], scoring["test_score"], scoring["essay_length"])
     scoring["score"] = score
     scoring["status"] = "SCORED"
-    _fire(tenant_id, "admissions.score_generated", {
+    _fire(tenant_id, "admissions.score_generated", scoring_id, {
         "scoring_id": scoring_id,
         "application_id": scoring.get("application_id"),
         "score": score,
@@ -98,7 +104,7 @@ def detect_anomaly(tenant_id: int, *, scoring_id: str) -> dict:
     scoring = _get_scoring(tenant_id, scoring_id)
     _assert_transition(scoring["status"], "FLAGGED")
     scoring["status"] = "FLAGGED"
-    _fire(tenant_id, "admissions.anomaly_detected", {
+    _fire(tenant_id, "admissions.anomaly_detected", scoring_id, {
         "scoring_id": scoring_id,
         "application_id": scoring.get("application_id"),
         "score": scoring.get("score"),
@@ -111,6 +117,10 @@ def approve_scoring(tenant_id: int, *, scoring_id: str) -> dict:
     scoring = _get_scoring(tenant_id, scoring_id)
     _assert_transition(scoring["status"], "APPROVED")
     scoring["status"] = "APPROVED"
+    _fire(tenant_id, "admissions.scoring_approved", scoring_id, {
+        "scoring_id": scoring_id,
+        "application_id": scoring.get("application_id"),
+    })
     return {"scoring_id": scoring_id, "status": "APPROVED"}
 
 
@@ -119,12 +129,16 @@ def reject_scoring(tenant_id: int, *, scoring_id: str) -> dict:
     scoring = _get_scoring(tenant_id, scoring_id)
     _assert_transition(scoring["status"], "REJECTED")
     scoring["status"] = "REJECTED"
+    _fire(tenant_id, "admissions.scoring_rejected", scoring_id, {
+        "scoring_id": scoring_id,
+        "application_id": scoring.get("application_id"),
+    })
     return {"scoring_id": scoring_id, "status": "REJECTED"}
 
 
 def list_scorings(tenant_id: int, *, status: str | None = None) -> list[dict]:
     _validate_tenant(tenant_id)
-    rows = list_entities_for_tenant(tenant_id, "admissions_scorings")
+    rows = list_entities_for_tenant("admissions_scorings", tenant_id)
     if status:
         rows = [r for r in rows if r.get("status") == status]
     return rows
