@@ -51,7 +51,7 @@ function RequirementTable({
                 {items.map((item) => (
                   <tr key={item.requirement_item_id} className="border-b last:border-0">
                     <td className="py-2 pr-2">#{item.requirement_item_id}</td>
-                    <td className="py-2 pr-2">#{item.course_id}</td>
+                    <td className="py-2 pr-2">{item.course_name ?? `#${item.course_id}`}</td>
                     <td className="py-2 pr-2">{item.credits}</td>
                     <td className="py-2 pr-2">{item.required ? "Yes" : "No"}</td>
                     <td className="py-2 pr-2">{item.completed ? "Yes" : "No"}</td>
@@ -186,7 +186,7 @@ export default function DegreeProgressPage() {
               </div>
               <div className="rounded-lg border bg-card p-3">
                 <p className="text-xs text-muted-foreground">Program</p>
-                <p className="text-lg font-semibold">#{progress.program_id}</p>
+                <p className="text-lg font-semibold">{progress.program_name ?? `#${progress.program_id}`}</p>
               </div>
               <div className="rounded-lg border bg-card p-3">
                 <p className="text-xs text-muted-foreground">Credits</p>

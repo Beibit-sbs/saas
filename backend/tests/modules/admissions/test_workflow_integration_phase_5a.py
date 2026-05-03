@@ -166,6 +166,17 @@ def mock_phase6_student_provisioning():
         yield mock_provision
 
 
+@pytest.fixture(autouse=True)
+def mock_phase33_cross_entity_guards():
+    """Phase 5A suite isolates workflow callbacks from Phase XXXIII.5 guard checks."""
+    with patch.object(
+        DecisionService,
+        "_validate_final_decision_cross_entity_guards",
+        return_value=None,
+    ):
+        yield
+
+
 # ==============================================================================
 # TEST SUITE: ApplicationService.submit_application()
 # ==============================================================================

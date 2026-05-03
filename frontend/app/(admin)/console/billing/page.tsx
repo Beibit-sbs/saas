@@ -4,17 +4,66 @@ import { DollarSign, TrendingUp, AlertCircle } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
+import { ErrorState } from "@/shared/ui/error-state";
 import { AccessDenied } from "@/shared/ui/permission-gate";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { PERMISSIONS } from "@/shared/config/permissions";
+import { formatCurrencyAmount } from "@/shared/utils/format";
+import {
+  useBillingPlans,
+  useTenantBillingState,
+  useTenantDelinquencyDashboard,
+} from "@/modules/billing/hooks";
+import { useTenantLocale } from "@/modules/currency-localization/hooks";
 import Link from "next/link";
 
 export default function BillingIndexPage() {
   const { hasPermission } = usePermissions();
+  const tenantId = 1;
+
+  const plansQuery = useBillingPlans();
+  const stateQuery = useTenantBillingState(tenantId);
+  const delinquencyQuery = useTenantDelinquencyDashboard(tenantId);
+  const localeQuery = useTenantLocale(tenantId);
 
   if (!hasPermission(PERMISSIONS.BILLING_READ)) {
     return <AccessDenied />;
   }
+
+  const hasError = Boolean(plansQuery.error || stateQuery.error || delinquencyQuery.error);
+  const isLoading = plansQuery.isLoading || stateQuery.isLoading || delinquencyQuery.isLoading;
+
+  if (hasError) {
+    return (
+      <ErrorState
+        title="Billing data unavailable"
+        message="Could not load billing summary."
+        onRetry={() => {
+          void plansQuery.refetch();
+          void stateQuery.refetch();
+          void delinquencyQuery.refetch();
+        }}
+      />
+    );
+  }
+
+  const plans = plansQuery.data ?? [];
+  const activePlans = plans.filter((plan) => plan.active).length;
+  const billingState = stateQuery.data;
+  const dashboard = delinquencyQuery.data;
+  const localeProfile = localeQuery.data;
+
+  const currentPlanLabel = billingState?.plan_code
+    ? billingState.plan_code.toUpperCase()
+    : "No plan";
+  const totalOverdueLabel = formatCurrencyAmount(
+    dashboard ? dashboard.total_overdue_cents / 100 : 0,
+    {
+      currencyCode: localeProfile?.currency_code ?? "USD",
+      languageCode: localeProfile?.language_code ?? "en",
+    },
+  );
+  const openDelinquency = dashboard?.open_total ?? 0;
 
   return (
     <div className="space-y-6">
@@ -30,7 +79,7 @@ export default function BillingIndexPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Active Plans</p>
-              <p className="text-2xl font-bold">3</p>
+              <p className="text-2xl font-bold">{isLoading ? "Loading..." : activePlans}</p>
             </div>
             <DollarSign className="w-8 h-8 text-blue-500" />
           </div>
@@ -39,8 +88,8 @@ export default function BillingIndexPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-              <p className="text-2xl font-bold">$12.5K</p>
+              <p className="text-sm text-muted-foreground">Current Plan</p>
+              <p className="text-2xl font-bold">{isLoading ? "Loading..." : currentPlanLabel}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-green-500" />
           </div>
@@ -49,8 +98,11 @@ export default function BillingIndexPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Total Subscriptions</p>
-              <p className="text-2xl font-bold">47</p>
+              <p className="text-sm text-muted-foreground">Total Overdue</p>
+              <p className="text-2xl font-bold">{isLoading ? "Loading..." : totalOverdueLabel}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Tenant currency: {localeProfile?.currency_code ?? "USD"}
+              </p>
             </div>
             <DollarSign className="w-8 h-8 text-purple-500" />
           </div>
@@ -59,8 +111,8 @@ export default function BillingIndexPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Delinquent</p>
-              <p className="text-2xl font-bold">2</p>
+              <p className="text-sm text-muted-foreground">Open Delinquency</p>
+              <p className="text-2xl font-bold">{isLoading ? "Loading..." : openDelinquency}</p>
             </div>
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>

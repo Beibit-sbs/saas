@@ -54,6 +54,11 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "workflow.approved": EventDefinition(GenericTenantEventPayload),
     "file.uploaded": EventDefinition(GenericTenantEventPayload),
     "course.completed": EventDefinition(GenericTenantEventPayload),
+    # Admissions workflow events
+    "admissions.application.submitted": EventDefinition(GenericTenantEventPayload),
+    "admissions.application.stage_changed": EventDefinition(GenericTenantEventPayload),
+    "admissions.application.decision_made": EventDefinition(GenericTenantEventPayload),
+    "admissions.application.workflow_decision_finalized": EventDefinition(GenericTenantEventPayload),
     # Academic chain cross-domain events (Contour v1)
     "thesis.status_changed": EventDefinition(GenericTenantEventPayload),
     "accreditation.status_changed": EventDefinition(GenericTenantEventPayload),
@@ -74,6 +79,8 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     # Career Services module events
     "campus.career_services.opportunity_stalled_risk_detected": EventDefinition(GenericTenantEventPayload),
     # Interventions module events
+    "interventions.case.created": EventDefinition(GenericTenantEventPayload),
+    "interventions.case.status_changed": EventDefinition(GenericTenantEventPayload),
     "interventions.case_outcome.recorded": EventDefinition(GenericTenantEventPayload),
     # Campus SLA module events
     "campus.sla.breach_detected": EventDefinition(GenericTenantEventPayload),
@@ -132,6 +139,8 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "campus.housing.maintenance_overdue_risk_detected": EventDefinition(GenericTenantEventPayload),
     # Advising module events (W40)
     "campus.advising.personal_support_alert_detected": EventDefinition(GenericTenantEventPayload),
+    "advising.session.status_changed": EventDefinition(GenericTenantEventPayload),
+    "advising.session.outcome.recorded": EventDefinition(GenericTenantEventPayload),
     # Advising no-show risk events (W68)
     "campus.advising.no_show_risk_detected": EventDefinition(GenericTenantEventPayload),
     # Thesis module events (W41)
@@ -162,8 +171,203 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "campus.equipment_booking.overdue_risk_detected": EventDefinition(GenericTenantEventPayload),
     # Academic integrity module events (W51)
     "campus.academic_integrity.escalation_risk_detected": EventDefinition(GenericTenantEventPayload),
+    "academic_integrity.case.created": EventDefinition(GenericTenantEventPayload),
+    "academic_integrity.case.status_changed": EventDefinition(GenericTenantEventPayload),
+    "academic_integrity.case.escalated": EventDefinition(GenericTenantEventPayload),
+    "academic_integrity.case.outcome_recorded": EventDefinition(GenericTenantEventPayload),
     # Research module events (W52)
     "campus.research.grant_delay_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # Exam governance lifecycle events (XXXIV.1)
+    "exam.created": EventDefinition(GenericTenantEventPayload),
+    "exam.started": EventDefinition(GenericTenantEventPayload),
+    "exam.submitted": EventDefinition(GenericTenantEventPayload),
+    "exam.graded": EventDefinition(GenericTenantEventPayload),
+    "exam.violation_detected": EventDefinition(GenericTenantEventPayload),
+    # Procurement lifecycle events (XXXIV.2)
+    "procurement.request_created": EventDefinition(GenericTenantEventPayload),
+    "procurement.approved": EventDefinition(GenericTenantEventPayload),
+    "procurement.rejected": EventDefinition(GenericTenantEventPayload),
+    "procurement.po_issued": EventDefinition(GenericTenantEventPayload),
+    "procurement.delivered": EventDefinition(GenericTenantEventPayload),
+    # Budget planning lifecycle events (XXXIV.3)
+    "budget_plan.created": EventDefinition(GenericTenantEventPayload),
+    "budget_plan.review_requested": EventDefinition(GenericTenantEventPayload),
+    "budget_plan.approved": EventDefinition(GenericTenantEventPayload),
+    "budget_plan.locked": EventDefinition(GenericTenantEventPayload),
+    "budget_plan.rejected": EventDefinition(GenericTenantEventPayload),
+    "budget_plan.outcome_recorded": EventDefinition(GenericTenantEventPayload),
+    "budget_allocation.created": EventDefinition(GenericTenantEventPayload),
+    "finance.budget_variance.threshold_reached": EventDefinition(GenericTenantEventPayload),
+    # Syllabus governance lifecycle events (XXXIV.4)
+    "syllabus.created": EventDefinition(GenericTenantEventPayload),
+    "syllabus.review_requested": EventDefinition(GenericTenantEventPayload),
+    "syllabus.approved": EventDefinition(GenericTenantEventPayload),
+    "syllabus.published": EventDefinition(GenericTenantEventPayload),
+    "syllabus.archived": EventDefinition(GenericTenantEventPayload),
+    "syllabus.outcome_recorded": EventDefinition(GenericTenantEventPayload),
+    # Scheduling lifecycle events (XXXIV.5)
+    "scheduling.section.created": EventDefinition(GenericTenantEventPayload),
+    "scheduling.section.scheduled": EventDefinition(GenericTenantEventPayload),
+    "scheduling.section.rescheduled": EventDefinition(GenericTenantEventPayload),
+    "scheduling.section.cancelled": EventDefinition(GenericTenantEventPayload),
+    "scheduling.instructor.assigned": EventDefinition(GenericTenantEventPayload),
+    # Teaching quality lifecycle events (XXXIV.6)
+    "teaching_quality.evaluation.submitted": EventDefinition(GenericTenantEventPayload),
+    "teaching_quality.score.updated": EventDefinition(GenericTenantEventPayload),
+    "teaching_quality.low_score.alert": EventDefinition(GenericTenantEventPayload),
+    # Research ethics lifecycle events (XXXIV.7)
+    "research_ethics.submission.created": EventDefinition(GenericTenantEventPayload),
+    "research_ethics.review.approved": EventDefinition(GenericTenantEventPayload),
+    "research_ethics.review.rejected": EventDefinition(GenericTenantEventPayload),
+    "research_ethics.review.high_risk_flagged": EventDefinition(GenericTenantEventPayload),
+    # Equipment booking lifecycle events (XXXIV.8)
+    "equipment_booking.booking.created": EventDefinition(GenericTenantEventPayload),
+    "equipment_booking.booking.confirmed": EventDefinition(GenericTenantEventPayload),
+    "equipment_booking.booking.cancelled": EventDefinition(GenericTenantEventPayload),
+    "equipment_booking.booking.returned": EventDefinition(GenericTenantEventPayload),
+    "equipment_booking.booking.overdue": EventDefinition(GenericTenantEventPayload),
+    # IP management lifecycle events (XXXIV.9)
+    "ip_management.asset.created": EventDefinition(GenericTenantEventPayload),
+    "ip_management.asset.filed": EventDefinition(GenericTenantEventPayload),
+    "ip_management.asset.granted": EventDefinition(GenericTenantEventPayload),
+    "ip_management.asset.licensed": EventDefinition(GenericTenantEventPayload),
+    # Personnel orders lifecycle events (XXXV.1)
+    "hr.personnel_order.created": EventDefinition(GenericTenantEventPayload),
+    "hr.personnel_order.signed": EventDefinition(GenericTenantEventPayload),
+    "hr.personnel_order.approved": EventDefinition(GenericTenantEventPayload),
+    "hr.personnel_order.executed": EventDefinition(GenericTenantEventPayload),
+    # Interventions cohort analytics events (XXXV.2)
+    "interventions.cohort.analyzed": EventDefinition(GenericTenantEventPayload),
+    "interventions.auto_triggered": EventDefinition(GenericTenantEventPayload),
+    # Library module events (XXXVI)
+    "library.book.issued": EventDefinition(GenericTenantEventPayload),
+    "library.book.returned": EventDefinition(GenericTenantEventPayload),
+    "library.book.reserved": EventDefinition(GenericTenantEventPayload),
+    "library.reservation.cancelled": EventDefinition(GenericTenantEventPayload),
+    "library.item.overdue": EventDefinition(GenericTenantEventPayload),
+    "library.fine.calculated": EventDefinition(GenericTenantEventPayload),
+    # Attendance module events (XXXVII)
+    "attendance.record.marked": EventDefinition(GenericTenantEventPayload),
+    "attendance.absence.recorded": EventDefinition(GenericTenantEventPayload),
+    "attendance.absence.excused": EventDefinition(GenericTenantEventPayload),
+    "attendance.threshold.breached": EventDefinition(GenericTenantEventPayload),
+    # LMS Content module events (XXXVIII)
+    "lms.lesson.completed": EventDefinition(GenericTenantEventPayload),
+    "lms.assignment.submitted": EventDefinition(GenericTenantEventPayload),
+    "lms.grade.posted": EventDefinition(GenericTenantEventPayload),
+    "lms.student.falling_behind": EventDefinition(GenericTenantEventPayload),
+    # Online Payments module events (XXXIX)
+    "payment.initiated": EventDefinition(GenericTenantEventPayload),
+    "payment.completed": EventDefinition(GenericTenantEventPayload),
+    "payment.failed": EventDefinition(GenericTenantEventPayload),
+    "payment.refunded": EventDefinition(GenericTenantEventPayload),
+    "payment.failure_pattern": EventDefinition(GenericTenantEventPayload),
+    # Student Feedback module events (XL)
+    "feedback.submitted": EventDefinition(GenericTenantEventPayload),
+    "feedback.analysis_complete": EventDefinition(GenericTenantEventPayload),
+    "feedback.low_satisfaction": EventDefinition(GenericTenantEventPayload),
+    # Internship module events (XLI)
+    "internship.application_submitted": EventDefinition(GenericTenantEventPayload),
+    "internship.offer_received": EventDefinition(GenericTenantEventPayload),
+    "internship.contract_signed": EventDefinition(GenericTenantEventPayload),
+    "internship.completed": EventDefinition(GenericTenantEventPayload),
+    "internship.completion_risk": EventDefinition(GenericTenantEventPayload),
+    # Events Management + Room Booking (XLII)
+    "event.published": EventDefinition(GenericTenantEventPayload),
+    "event.registration_full": EventDefinition(GenericTenantEventPayload),
+    "event.started": EventDefinition(GenericTenantEventPayload),
+    "booking.approved": EventDefinition(GenericTenantEventPayload),
+    "booking.conflict_detected": EventDefinition(GenericTenantEventPayload),
+    "room.released": EventDefinition(GenericTenantEventPayload),
+    "resource.overload": EventDefinition(GenericTenantEventPayload),
+    # Visitor Management + Access Control (XLIII)
+    "visitor.arrived": EventDefinition(GenericTenantEventPayload),
+    "visitor.unauthorized_attempt": EventDefinition(GenericTenantEventPayload),
+    "access.granted": EventDefinition(GenericTenantEventPayload),
+    "access.denied": EventDefinition(GenericTenantEventPayload),
+    "card.suspended": EventDefinition(GenericTenantEventPayload),
+    "security.anomaly": EventDefinition(GenericTenantEventPayload),
+    # Parking Module (XLIV)
+    "parking.permit_issued": EventDefinition(GenericTenantEventPayload),
+    "parking.violation_recorded": EventDefinition(GenericTenantEventPayload),
+    "parking.lot_full": EventDefinition(GenericTenantEventPayload),
+    "parking.capacity_risk": EventDefinition(GenericTenantEventPayload),
+    # Publications + Patents + Conference (XLV)
+    "publication.submitted": EventDefinition(GenericTenantEventPayload),
+    "publication.accepted": EventDefinition(GenericTenantEventPayload),
+    "publication.published": EventDefinition(GenericTenantEventPayload),
+    "publication.citation_added": EventDefinition(GenericTenantEventPayload),
+    "patent.filed": EventDefinition(GenericTenantEventPayload),
+    "patent.granted": EventDefinition(GenericTenantEventPayload),
+    "patent.licensed": EventDefinition(GenericTenantEventPayload),
+    "conference.paper_accepted": EventDefinition(GenericTenantEventPayload),
+    "conference.presentation_scheduled": EventDefinition(GenericTenantEventPayload),
+    # AI Modules (XLVI)
+    "tutor_session.started": EventDefinition(GenericTenantEventPayload),
+    "learning.breakthrough_detected": EventDefinition(GenericTenantEventPayload),
+    "student.needs_intervention": EventDefinition(GenericTenantEventPayload),
+    "scan.complete": EventDefinition(GenericTenantEventPayload),
+    "plagiarism.detected": EventDefinition(GenericTenantEventPayload),
+    "admissions.score_generated": EventDefinition(GenericTenantEventPayload),
+    "admissions.anomaly_detected": EventDefinition(GenericTenantEventPayload),
+    # Digital Signature + Certificate (XLVII)
+    "document.signed": EventDefinition(GenericTenantEventPayload),
+    "certificate.issued": EventDefinition(GenericTenantEventPayload),
+    "verification.requested": EventDefinition(GenericTenantEventPayload),
+    # Personnel Orders + Contracts HR (XLVIII)
+    "order.created": EventDefinition(GenericTenantEventPayload),
+    "order.signed": EventDefinition(GenericTenantEventPayload),
+    "order.executed": EventDefinition(GenericTenantEventPayload),
+    "hr.anomaly_detected": EventDefinition(GenericTenantEventPayload),
+    # Student Portal (XLIX)
+    "request.submitted": EventDefinition(GenericTenantEventPayload),
+    "request.ready": EventDefinition(GenericTenantEventPayload),
+    # Mobile App (LI)
+    "mobile.device_registered": EventDefinition(GenericTenantEventPayload),
+    "mobile.notification_sent": EventDefinition(GenericTenantEventPayload),
+    "mobile.notification_failed": EventDefinition(GenericTenantEventPayload),
+    # Student ID Card (LII)
+    "id_card.issued": EventDefinition(GenericTenantEventPayload),
+    "id_card.suspended": EventDefinition(GenericTenantEventPayload),
+    "id_card.revoked": EventDefinition(GenericTenantEventPayload),
+    "id_card.access_denied": EventDefinition(GenericTenantEventPayload),
+    # Counseling / Mental Health (LIII)
+    "counseling.appointment_requested": EventDefinition(GenericTenantEventPayload),
+    "counseling.session_completed": EventDefinition(GenericTenantEventPayload),
+    "counseling.high_risk_case_opened": EventDefinition(GenericTenantEventPayload),
+    "counseling.case_escalated": EventDefinition(GenericTenantEventPayload),
+    "counseling.crisis_reported": EventDefinition(GenericTenantEventPayload),
+    # 2FA SMS + TOTP (LIV)
+    "twofa.enrollment_started": EventDefinition(GenericTenantEventPayload),
+    "twofa.enrollment_activated": EventDefinition(GenericTenantEventPayload),
+    "twofa.verified": EventDefinition(GenericTenantEventPayload),
+    "twofa.verification_failed": EventDefinition(GenericTenantEventPayload),
+    # SSO SAML 2.0 (LV)
+    "sso.idp_registered": EventDefinition(GenericTenantEventPayload),
+    "sso.login_success": EventDefinition(GenericTenantEventPayload),
+    "sso.logout": EventDefinition(GenericTenantEventPayload),
+    # Exam Proctoring (LVI)
+    "proctoring.session_started": EventDefinition(GenericTenantEventPayload),
+    "proctoring.session_ended": EventDefinition(GenericTenantEventPayload),
+    "proctoring.violation_detected": EventDefinition(GenericTenantEventPayload),
+    # Blockchain Diploma Verification (LVII)
+    "blockchain_diploma.issued": EventDefinition(GenericTenantEventPayload),
+    "blockchain_diploma.revoked": EventDefinition(GenericTenantEventPayload),
+    "blockchain_diploma.verified": EventDefinition(GenericTenantEventPayload),
+    # Parent Portal (LVIII)
+    "parent_portal.parent_registered": EventDefinition(GenericTenantEventPayload),
+    "parent_portal.student_linked": EventDefinition(GenericTenantEventPayload),
+    "parent_portal.alert_pushed": EventDefinition(GenericTenantEventPayload),
+    "parent_portal.alert_acknowledged": EventDefinition(GenericTenantEventPayload),
+    # Alumni Donation Portal (LIX)
+    "alumni_donation.campaign_created": EventDefinition(GenericTenantEventPayload),
+    "alumni_donation.donation_recorded": EventDefinition(GenericTenantEventPayload),
+    "alumni_donation.donation_paid": EventDefinition(GenericTenantEventPayload),
+    "alumni_donation.campaign_closed": EventDefinition(GenericTenantEventPayload),
+    # Multi-currency / Multi-language (LX)
+    "localization.exchange_rate_updated": EventDefinition(GenericTenantEventPayload),
+    "localization.locale_updated": EventDefinition(GenericTenantEventPayload),
+    "localization.amount_converted": EventDefinition(GenericTenantEventPayload),
 }
 
 PREFIX_EVENT_REGISTRY: dict[str, EventDefinition] = {

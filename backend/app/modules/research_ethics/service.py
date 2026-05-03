@@ -11,6 +11,7 @@ from app.modules.university_core.tenant_entity_service import (
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+from app.platform.events.publisher import EventPublisher
 
 
 _REVIEW_TYPE_MAX_ACTIVE_REVIEWS: dict[str, int] = {
@@ -132,9 +133,44 @@ def create_ethics_review(payload: dict[str, object], tenant_id: int) -> dict[str
 
     created = create_entity_for_tenant("ethics_reviews", payload, tenant_id)
 
+    # XXXIV.7: fire submission event (fire-and-forget)
+    try:
+        EventPublisher().publish_event(
+            "research_ethics.submission.created",
+            {"tenant_id": tenant_id, "review_id": str(created.get("id", "")),
+             "review_type": review_type, "pi_id": pi_id},
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+    # XXXIV.7: persist action log (fire-and-forget)
+    try:
+        create_entity_for_tenant(
+            "research_ethics_action_logs",
+            {
+                "review_id": str(created.get("id", "")),
+                "action_type": "submission_created",
+                "pi_id": pi_id,
+                "review_type": review_type,
+                "tenant_id": tenant_id,
+            },
+            tenant_id,
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
     risk_level = str(payload.get("risk_level") or "").strip().lower()
     if risk_level in _HIGH_RISK_LEVELS:
         _ensure_ethics_alert_record(created, tenant_id)
+        # XXXIV.7: high-risk alert event (fire-and-forget)
+        try:
+            EventPublisher().publish_event(
+                "research_ethics.review.high_risk_flagged",
+                {"tenant_id": tenant_id, "review_id": str(created.get("id", "")),
+                 "risk_level": risk_level},
+            )
+        except Exception:  # noqa: BLE001
+            pass
 
     return created
 
@@ -265,7 +301,34 @@ def update_ethics_review_status(
         } if request.notes is not None else {})},
         tenant_id,
     )
+
+    # XXXIV.7: fire approved/rejected lifecycle events (fire-and-forget)
+    _fire_review_lifecycle_event(updated, request.status, tenant_id)
+
     return updated
+
+
+def _fire_review_lifecycle_event(
+    review: dict[str, object],
+    new_status: str,
+    tenant_id: int,
+) -> None:
+    """XXXIV.7: fire approved/rejected event fire-and-forget."""
+    status = str(new_status or "").strip().lower()
+    if status == "approved":
+        event_type = "research_ethics.review.approved"
+    elif status in {"rejected", "denied"}:
+        event_type = "research_ethics.review.rejected"
+    else:
+        return
+    try:
+        EventPublisher().publish_event(
+            event_type,
+            {"tenant_id": tenant_id, "review_id": str(review.get("id", "")),
+             "status": status},
+        )
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def get_research_ethics_brain_context(tenant_id: int) -> dict[str, object]:

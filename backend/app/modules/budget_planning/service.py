@@ -10,14 +10,24 @@ from app.modules.university_core.tenant_entity_service import (
 from app.core.module_helpers.service_validation import DomainValidationError
 
 
-_BUDGET_PLAN_STATUSES = {"draft", "submitted", "approved", "rejected"}
-_BUDGET_PLAN_STATUS_MAX_ACTIVE: dict[str, int] = {"draft": 50, "submitted": 30, "approved": 100, "rejected": 200}
-_ACTIVE_PLAN_STATUSES = frozenset({"draft", "submitted"})
+_BUDGET_PLAN_STATUSES = {"draft", "review", "submitted", "approved", "locked", "rejected"}
+_BUDGET_PLAN_STATUS_ALIASES: dict[str, str] = {"submitted": "review"}
+_BUDGET_PLAN_STATUS_MAX_ACTIVE: dict[str, int] = {
+    "draft": 50,
+    "review": 30,
+    "submitted": 30,
+    "approved": 100,
+    "locked": 100,
+    "rejected": 200,
+}
+_ACTIVE_PLAN_STATUSES = frozenset({"draft", "review", "submitted"})
 _OVERRUN_RISK_STATUSES = frozenset({"rejected"})
 _ALLOWED_BUDGET_PLAN_TRANSITIONS: dict[str, set[str]] = {
-    "draft": {"submitted"},
-    "submitted": {"approved", "rejected"},
-    "approved": set(),
+    "draft": {"review", "submitted"},
+    "review": {"approved", "rejected"},
+    "submitted": {"approved", "rejected", "review"},
+    "approved": {"locked"},
+    "locked": set(),
     "rejected": set(),
 }
 
@@ -26,6 +36,90 @@ _APPROVAL_UNIQUENESS_STATUSES: frozenset[str] = frozenset({"approved"})
 
 # W113: only approved plans may receive allocations
 _APPROVED_PLAN_STATUS_FOR_ALLOCATION: frozenset[str] = frozenset({"approved"})
+
+
+def _normalize_status_for_transition(status: str) -> str:
+    return _BUDGET_PLAN_STATUS_ALIASES.get(status, status)
+
+
+def _event_type_for_status(status: str) -> str | None:
+    return {
+        "review": "budget_plan.review_requested",
+        "submitted": "budget_plan.review_requested",
+        "approved": "budget_plan.approved",
+        "locked": "budget_plan.locked",
+        "rejected": "budget_plan.rejected",
+    }.get(status)
+
+
+def _publish_budget_event(
+    *,
+    tenant_id: int,
+    event_type: str,
+    aggregate_type: str,
+    aggregate_id: int,
+    payload_json: dict[str, object],
+) -> None:
+    EventPublisher().publish_event(
+        tenant_id=tenant_id,
+        event_type=event_type,
+        aggregate_type=aggregate_type,
+        aggregate_id=aggregate_id,
+        payload_json=payload_json,
+    )
+
+
+def _create_plan_lock_outcome_record(
+    *,
+    tenant_id: int,
+    plan_id: int,
+    actor: str,
+) -> None:
+    create_entity_for_tenant(
+        "budget_overrun_alerts",
+        {
+            "plan_id": plan_id,
+            "alert_type": "plan_locked_outcome_recorded",
+            "integration_source": "budget_plan_workflow",
+            "source_entity_id": str(plan_id),
+            "tenant_id": str(tenant_id),
+        },
+        tenant_id,
+    )
+    _publish_budget_event(
+        tenant_id=tenant_id,
+        event_type="budget_plan.outcome_recorded",
+        aggregate_type="budget_plan",
+        aggregate_id=plan_id,
+        payload_json={
+            "plan_id": plan_id,
+            "outcome": "locked",
+            "actor": actor,
+            "source_module": "budget_planning",
+        },
+    )
+
+
+def _ensure_lock_action_path(plan: dict[str, object], tenant_id: int) -> None:
+    """Fail-closed check: lock transition requires an auditable expense record."""
+    department_id = str(plan.get("department_id") or "GENERAL").strip() or "GENERAL"
+    fiscal_year = str(plan.get("fiscal_year") or "0000").strip() or "0000"
+    payload = {
+        "cost_center_id": f"BP-{department_id}-{fiscal_year}"[:64],
+        "category": "budget_lock",
+        "amount": max(float(plan.get("total_amount") or 0.0), 0.0),
+        "currency": str(plan.get("currency") or "USD").strip() or "USD",
+        "status": "locked",
+        "description": f"Budget plan {plan.get('id')} locked for execution",
+        "tenant_id": str(tenant_id),
+    }
+    try:
+        create_entity_for_tenant("expense_records", payload, tenant_id)
+    except Exception as exc:
+        raise DomainValidationError(
+            f"Cannot lock budget plan_id={plan.get('id')}: failed to persist lock action record. "
+            f"Reason: {exc}"
+        ) from exc
 
 
 def _check_budget_plan_approved_for_allocation(
@@ -100,6 +194,7 @@ def list_budget_plans(
 def create_budget_plan(
     payload: dict[str, object],
     tenant_id: int,
+    actor: str = "system",
 ) -> dict[str, object]:
     status = _normalize_budget_plan_status(payload.get("status") or "draft")
     if status != "draft":
@@ -114,7 +209,22 @@ def create_budget_plan(
         raise ValueError(
             f"Active budget plan cap reached for status '{status}': {active_count}/{cap}"
         )
-    return create_entity_for_tenant("budget_plans", {**payload, "status": status}, tenant_id)
+    record = create_entity_for_tenant("budget_plans", {**payload, "status": status}, tenant_id)
+    _publish_budget_event(
+        tenant_id=tenant_id,
+        event_type="budget_plan.created",
+        aggregate_type="budget_plan",
+        aggregate_id=int(record.get("id") or 0),
+        payload_json={
+            "plan_id": int(record.get("id") or 0),
+            "department_id": record.get("department_id"),
+            "fiscal_year": record.get("fiscal_year"),
+            "status": record.get("status"),
+            "actor": actor,
+            "source_module": "budget_planning",
+        },
+    )
+    return record
 
 
 def _ensure_cost_center_for_approved_plan(plan: dict[str, object], tenant_id: int) -> None:
@@ -209,6 +319,7 @@ def update_budget_plan_status(
     tenant_id: int,
     plan_id: int,
     status: str,
+    actor: str = "system",
 ) -> dict[str, object] | None:
     rows = list_entities_for_tenant("budget_plans", tenant_id)
     existing = next((row for row in rows if int(row.get("id") or 0) == plan_id), None)
@@ -217,19 +328,24 @@ def update_budget_plan_status(
 
     current_status = _normalize_budget_plan_status(existing.get("status") or "draft")
     next_status = _normalize_budget_plan_status(status)
-    if next_status not in _ALLOWED_BUDGET_PLAN_TRANSITIONS.get(current_status, set()):
+    current_transition_status = _normalize_status_for_transition(current_status)
+    next_transition_status = _normalize_status_for_transition(next_status)
+    if next_transition_status not in _ALLOWED_BUDGET_PLAN_TRANSITIONS.get(current_transition_status, set()):
         raise ValueError(
             f"Invalid budget plan transition from '{current_status}' to '{next_status}'"
         )
 
     # W88: enforce uniqueness — one approved plan per (department_id, fiscal_year)
-    if next_status in _APPROVAL_UNIQUENESS_STATUSES:
+    if next_transition_status in _APPROVAL_UNIQUENESS_STATUSES:
         _check_no_duplicate_approved_plan(
             tenant_id=tenant_id,
             plan_id=plan_id,
             department_id=str(existing.get("department_id") or ""),
             fiscal_year=existing.get("fiscal_year"),
         )
+
+    if next_transition_status == "locked":
+        _ensure_lock_action_path(existing, tenant_id)
 
     updated = update_entity_for_tenant(
         "budget_plans",
@@ -238,11 +354,33 @@ def update_budget_plan_status(
         tenant_id,
     )
 
-    if next_status == "approved" and updated is not None:
+    if next_transition_status == "approved" and updated is not None:
         _ensure_cost_center_for_approved_plan(updated, tenant_id)
 
-    if next_status in _OVERRUN_RISK_STATUSES and updated is not None:
+    if next_transition_status in _OVERRUN_RISK_STATUSES and updated is not None:
         _ensure_overrun_alert_record(plan_id, tenant_id)
+
+    if updated is not None:
+        event_type = _event_type_for_status(next_status)
+        if event_type:
+            _publish_budget_event(
+                tenant_id=tenant_id,
+                event_type=event_type,
+                aggregate_type="budget_plan",
+                aggregate_id=plan_id,
+                payload_json={
+                    "plan_id": plan_id,
+                    "from_status": current_status,
+                    "to_status": next_status,
+                    "department_id": updated.get("department_id"),
+                    "fiscal_year": updated.get("fiscal_year"),
+                    "actor": actor,
+                    "source_module": "budget_planning",
+                },
+            )
+
+    if next_transition_status == "locked" and updated is not None:
+        _create_plan_lock_outcome_record(tenant_id=tenant_id, plan_id=plan_id, actor=actor)
 
     return updated
 
@@ -301,6 +439,7 @@ def list_budget_allocations(
 def create_budget_allocation(
     payload: dict[str, object],
     tenant_id: int,
+    actor: str = "system",
 ) -> dict[str, object]:
     """Create a budget allocation and fire signal if drift threshold exceeded."""
     plan_id_val = int(payload.get("plan_id") or 0)
@@ -349,6 +488,22 @@ def create_budget_allocation(
         )
 
     record = create_entity_for_tenant("budget_allocations", payload, tenant_id)
+    record_id = int(record.get("id") or 0)
+    _publish_budget_event(
+        tenant_id=tenant_id,
+        event_type="budget_allocation.created",
+        aggregate_type="budget_allocation",
+        aggregate_id=record_id,
+        payload_json={
+            "allocation_id": record_id,
+            "plan_id": int(record.get("plan_id") or 0),
+            "category": record.get("category"),
+            "allocated_amount": record.get("allocated_amount"),
+            "spent_amount": record.get("spent_amount"),
+            "actor": actor,
+            "source_module": "budget_planning",
+        },
+    )
 
     try:
         allocated = float(record.get("allocated_amount") or 0)
@@ -359,21 +514,21 @@ def create_budget_allocation(
 
     drift_rate = spent / max(allocated, 0.01)
     if drift_rate > 0.9:
-        record_id = str(record.get("id") or "unknown")
-        plan_id_val = str(record.get("plan_id") or "unknown")
-        EventPublisher().publish_event(
+        plan_id_str = str(record.get("plan_id") or "unknown")
+        _publish_budget_event(
             tenant_id=tenant_id,
-            event_type="finance.budget_drift.critical_threshold",
+            event_type="finance.budget_variance.threshold_reached",
             aggregate_type="budget_allocation",
             aggregate_id=record_id,
             payload_json={
-                "plan_id": plan_id_val,
+                "plan_id": plan_id_str,
                 "category": record.get("category"),
                 "allocated_amount": allocated,
                 "spent_amount": spent,
                 "drift_rate": round(drift_rate, 4),
                 "source_entity_type": "budget_allocation",
-                "source_entity_id": record_id,
+                "source_entity_id": str(record_id),
+                "actor": actor,
             },
         )
     return record

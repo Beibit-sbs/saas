@@ -54,10 +54,11 @@ def test_create_budget_plan(monkeypatch) -> None:
         "tenant_id": "1",
     }
     monkeypatch.setattr(budget_service, "create_entity_for_tenant", lambda name, payload, tid: created)
-    result = budget_service.create_budget_plan(
-        {"department_id": "DEPT-C", "fiscal_year": 2026, "total_amount": 200000.0, "status": "draft"},
-        tenant_id=1,
-    )
+    with patch("app.modules.budget_planning.service.EventPublisher"):
+        result = budget_service.create_budget_plan(
+            {"department_id": "DEPT-C", "fiscal_year": 2026, "total_amount": 200000.0, "status": "draft"},
+            tenant_id=1,
+        )
     assert result["id"] == 10
     assert result["department_id"] == "DEPT-C"
 
@@ -95,7 +96,8 @@ def test_update_budget_plan_status_happy_path(monkeypatch) -> None:
         lambda name, item_id, payload, tid: {**payload, "id": item_id, "tenant_id": "1"},
     )
 
-    updated = budget_service.update_budget_plan_status(tenant_id=1, plan_id=10, status="submitted")
+    with patch("app.modules.budget_planning.service.EventPublisher"):
+        updated = budget_service.update_budget_plan_status(tenant_id=1, plan_id=10, status="submitted")
 
     assert updated is not None
     assert updated["status"] == "submitted"
@@ -150,11 +152,12 @@ def test_create_budget_allocation_no_signal(monkeypatch) -> None:
         )
 
     assert record["id"] == 20
-    publisher.publish_event.assert_not_called()
+    assert publisher.publish_event.call_count == 1
+    assert publisher.publish_event.call_args.kwargs["event_type"] == "budget_allocation.created"
 
 
 def test_create_budget_allocation_drift_fires_signal(monkeypatch) -> None:
-    """Allocation with spent/allocated > 0.9 should fire finance.budget_drift.critical_threshold."""
+    """Allocation with spent/allocated > 0.9 should fire finance.budget_variance.threshold_reached."""
     created = {
         "id": 21,
         "plan_id": 10,
@@ -183,12 +186,120 @@ def test_create_budget_allocation_drift_fires_signal(monkeypatch) -> None:
         )
 
     assert record["id"] == 21
-    publisher.publish_event.assert_called_once()
-    call_kwargs = publisher.publish_event.call_args.kwargs
-    assert call_kwargs["event_type"] == "finance.budget_drift.critical_threshold"
-    assert call_kwargs["tenant_id"] == 1
-    assert call_kwargs["payload_json"]["category"] == "equipment"
-    assert call_kwargs["payload_json"]["drift_rate"] > 0.9
+    assert publisher.publish_event.call_count == 2
+    first_call = publisher.publish_event.call_args_list[0].kwargs
+    second_call = publisher.publish_event.call_args_list[1].kwargs
+    assert first_call["event_type"] == "budget_allocation.created"
+    assert second_call["event_type"] == "finance.budget_variance.threshold_reached"
+    assert second_call["tenant_id"] == 1
+    assert second_call["payload_json"]["category"] == "equipment"
+    assert second_call["payload_json"]["drift_rate"] > 0.9
+
+
+def test_update_budget_plan_status_review_to_approved_to_locked(monkeypatch) -> None:
+    rows = [
+        {
+            "id": 10,
+            "department_id": "DEPT-C",
+            "fiscal_year": 2026,
+            "total_amount": 200000.0,
+            "currency": "USD",
+            "status": "review",
+            "description": "Annual plan",
+            "tenant_id": "1",
+        }
+    ]
+
+    def _fake_list(name: str, tid: int) -> list[dict[str, object]]:
+        if name == "budget_plans":
+            return rows
+        return []
+
+    def _fake_update(name: str, item_id: int, payload: dict[str, object], tid: int) -> dict[str, object]:
+        rows[0] = {**payload, "id": item_id, "tenant_id": "1"}
+        return rows[0]
+
+    created_entities: list[tuple[str, dict[str, object]]] = []
+
+    def _fake_create(name: str, payload: dict[str, object], tid: int) -> dict[str, object]:
+        created_entities.append((name, payload))
+        return {"id": 500 + len(created_entities), **payload}
+
+    monkeypatch.setattr(budget_service, "list_entities_for_tenant", _fake_list)
+    monkeypatch.setattr(budget_service, "update_entity_for_tenant", _fake_update)
+    monkeypatch.setattr(budget_service, "create_entity_for_tenant", _fake_create)
+
+    with patch("app.modules.budget_planning.service.EventPublisher") as mock_pub_cls:
+        publisher = MagicMock()
+        mock_pub_cls.return_value = publisher
+
+        approved = budget_service.update_budget_plan_status(tenant_id=1, plan_id=10, status="approved")
+        assert approved is not None
+        assert approved["status"] == "approved"
+
+        locked = budget_service.update_budget_plan_status(tenant_id=1, plan_id=10, status="locked")
+        assert locked is not None
+        assert locked["status"] == "locked"
+
+    event_types = [call.kwargs["event_type"] for call in publisher.publish_event.call_args_list]
+    assert "budget_plan.approved" in event_types
+    assert "budget_plan.locked" in event_types
+    assert "budget_plan.outcome_recorded" in event_types
+    assert any(name == "expense_records" for name, _ in created_entities)
+    assert any(name == "budget_overrun_alerts" for name, _ in created_entities)
+
+
+def test_update_budget_plan_status_legacy_submitted_maps_to_review(monkeypatch) -> None:
+    rows = [
+        {
+            "id": 10,
+            "department_id": "DEPT-C",
+            "fiscal_year": 2026,
+            "total_amount": 200000.0,
+            "currency": "USD",
+            "status": "draft",
+            "description": "Annual plan",
+            "tenant_id": "1",
+        }
+    ]
+    monkeypatch.setattr(budget_service, "list_entities_for_tenant", lambda name, tid: rows)
+    monkeypatch.setattr(
+        budget_service,
+        "update_entity_for_tenant",
+        lambda name, item_id, payload, tid: {**payload, "id": item_id, "tenant_id": "1"},
+    )
+
+    with patch("app.modules.budget_planning.service.EventPublisher"):
+        updated = budget_service.update_budget_plan_status(tenant_id=1, plan_id=10, status="submitted")
+
+    assert updated is not None
+    assert updated["status"] == "submitted"
+
+
+def test_update_budget_plan_status_lock_fails_closed_when_action_record_fails(monkeypatch) -> None:
+    rows = [
+        {
+            "id": 10,
+            "department_id": "DEPT-C",
+            "fiscal_year": 2026,
+            "total_amount": 200000.0,
+            "currency": "USD",
+            "status": "approved",
+            "description": "Annual plan",
+            "tenant_id": "1",
+        }
+    ]
+    monkeypatch.setattr(budget_service, "list_entities_for_tenant", lambda name, tid: rows if name == "budget_plans" else [])
+
+    def _create_fail(name: str, payload: dict[str, object], tid: int) -> dict[str, object]:
+        if name == "expense_records":
+            raise RuntimeError("storage unavailable")
+        return {"id": 1, **payload}
+
+    monkeypatch.setattr(budget_service, "create_entity_for_tenant", _create_fail)
+
+    with pytest.raises(Exception, match="failed to persist lock action record"):
+        budget_service.update_budget_plan_status(tenant_id=1, plan_id=10, status="locked")
 
 
 def test_get_budget_brain_context_empty(monkeypatch) -> None:
@@ -250,7 +361,7 @@ def test_http_create_budget_plan(monkeypatch: pytest.MonkeyPatch) -> None:
     }
     monkeypatch.setattr(
         "app.modules.budget_planning.service.create_budget_plan",
-        lambda payload, tenant_id: created,
+        lambda payload, tenant_id, actor="system": created,
     )
     payload = {
         "department_id": "DEPT-X",
@@ -279,7 +390,7 @@ def test_http_update_budget_plan_status_happy_path(monkeypatch: pytest.MonkeyPat
     }
     monkeypatch.setattr(
         "app.modules.budget_planning.service.update_budget_plan_status",
-        lambda tenant_id, plan_id, status: updated,
+        lambda tenant_id, plan_id, status, actor="system": updated,
     )
 
     resp = test_client.patch(
@@ -293,7 +404,7 @@ def test_http_update_budget_plan_status_happy_path(monkeypatch: pytest.MonkeyPat
 
 
 def test_http_update_budget_plan_status_rejects_invalid_transition(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _raise_invalid_transition(tenant_id: int, plan_id: int, status: str) -> dict:
+    def _raise_invalid_transition(tenant_id: int, plan_id: int, status: str, actor: str = "system") -> dict:
         raise ValueError("Invalid budget plan transition from 'draft' to 'approved'")
 
     monkeypatch.setattr(

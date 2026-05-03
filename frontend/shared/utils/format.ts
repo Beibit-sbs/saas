@@ -34,6 +34,43 @@ export function formatNumber(n: number | null | undefined): string {
   return new Intl.NumberFormat().format(n);
 }
 
+function normalizeLocale(languageCode?: string | null): string {
+  switch ((languageCode ?? "").toLowerCase()) {
+    case "kk":
+      return "kk-KZ";
+    case "ru":
+      return "ru-RU";
+    case "en":
+      return "en-US";
+    default:
+      return languageCode && languageCode.trim().length > 0 ? languageCode : "en-US";
+  }
+}
+
+export function formatCurrencyAmount(
+  amount: number | null | undefined,
+  options?: {
+    currencyCode?: string | null;
+    languageCode?: string | null;
+  },
+): string {
+  if (amount == null) return "—";
+
+  const currency = (options?.currencyCode ?? "USD").toUpperCase();
+  const locale = normalizeLocale(options?.languageCode);
+
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    currencyDisplay: "code",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+    .format(amount)
+    .replace(/\u00a0/g, " ")
+    .trim();
+}
+
 export function formatBytes(bytes: number | null | undefined): string {
   if (bytes == null) return "—";
   const units = ["B", "KB", "MB", "GB", "TB"];

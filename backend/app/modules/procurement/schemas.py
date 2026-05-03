@@ -16,8 +16,9 @@ ContractStatus = Literal[
     "APPROVED",
     "REJECTED",
     "PO_ISSUED",
+    "DELIVERED",
 ]
-PurchaseOrderStatus = Literal["DRAFT", "SUBMITTED", "APPROVED", "REJECTED", "PO_ISSUED"]
+PurchaseOrderStatus = Literal["DRAFT", "SUBMITTED", "APPROVED", "REJECTED", "PO_ISSUED", "DELIVERED"]
 AssetStatus = Literal["available", "allocated", "maintenance", "retired"]
 InventoryItemStatus = Literal["healthy", "watch", "critical", "inactive"]
 

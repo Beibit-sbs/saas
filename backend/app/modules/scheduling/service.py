@@ -70,6 +70,7 @@ from app.modules.scheduling.schemas import (
     AttendanceTrendDataPointSchema,
 )
 from app.modules.students.models import StudentProfileModel
+from app.modules.university_core.tenant_entity_service import create_entity_for_tenant as _create_tenant_entity
 from app.platform.events.publisher import EventPublisher
 
 
@@ -426,6 +427,26 @@ class SchedulingService:
             {"section_id": section.id, "course_id": request.course_id, "term_id": request.term_id},
             tenant_id,
         )
+
+        # Publish section.created event (fire-and-forget)
+        try:
+            EventPublisher(db_session=self.db).publish_event(
+                tenant_id=tenant_id,
+                event_type="scheduling.section.created",
+                aggregate_type="course_section",
+                aggregate_id=section.id,
+                payload_json={
+                    "section_id": section.id,
+                    "course_id": request.course_id,
+                    "term_id": request.term_id,
+                    "section_code": request.section_code,
+                    "actor": actor_id,
+                    "tenant_id": tenant_id,
+                },
+            )
+        except Exception:
+            pass
+
         return CourseSectionReadSchema.model_validate(section)
 
     async def get_course_section(
@@ -573,6 +594,50 @@ class SchedulingService:
             tenant_id,
         )
 
+        # Publish section.scheduled event (fire-and-forget)
+        try:
+            EventPublisher(db_session=self.db).publish_event(
+                tenant_id=tenant_id,
+                event_type="scheduling.section.scheduled",
+                aggregate_type="course_section",
+                aggregate_id=section_id,
+                payload_json={
+                    "section_id": section_id,
+                    "schedule_id": schedule.id,
+                    "time_slot_id": request.time_slot_id,
+                    "classroom_id": request.classroom_id,
+                    "day_of_week": request.day_of_week.value,
+                    "actor": actor_id,
+                    "tenant_id": tenant_id,
+                },
+            )
+        except Exception:
+            pass
+
+        # Record action log and outcome (fire-and-forget)
+        try:
+            _create_tenant_entity("scheduling_section_action_logs", tenant_id, {
+                "section_id": section_id,
+                "action_type": "schedule",
+                "actor": actor_id,
+                "time_slot_id": request.time_slot_id,
+                "classroom_id": request.classroom_id,
+                "day_of_week": request.day_of_week.value,
+            })
+        except Exception:
+            pass
+
+        try:
+            _create_tenant_entity("scheduling_section_outcomes", tenant_id, {
+                "section_id": section_id,
+                "outcome": "scheduled",
+                "actor": actor_id,
+                "source_entity_type": "section_schedule",
+                "source_entity_id": str(schedule.id),
+            })
+        except Exception:
+            pass
+
         # Fire-and-forget Brain Core signal emission
         try:
             from uuid import uuid4
@@ -641,6 +706,25 @@ class SchedulingService:
             },
             tenant_id,
         )
+
+        # Publish instructor.assigned event (fire-and-forget)
+        try:
+            EventPublisher(db_session=self.db).publish_event(
+                tenant_id=tenant_id,
+                event_type="scheduling.instructor.assigned",
+                aggregate_type="instructor_assignment",
+                aggregate_id=assignment.id,
+                payload_json={
+                    "assignment_id": assignment.id,
+                    "section_id": section_id,
+                    "instructor_id": request.instructor_id,
+                    "role": request.role.value,
+                    "actor": actor_id,
+                    "tenant_id": tenant_id,
+                },
+            )
+        except Exception:
+            pass
 
         return {
             "id": assignment.id,
@@ -742,6 +826,26 @@ class SchedulingService:
             tenant_id,
         )
 
+        # Publish section.rescheduled event (fire-and-forget)
+        try:
+            EventPublisher(db_session=self.db).publish_event(
+                tenant_id=tenant_id,
+                event_type="scheduling.section.rescheduled",
+                aggregate_type="course_section",
+                aggregate_id=section_id,
+                payload_json={
+                    "section_id": section_id,
+                    "schedule_id": schedule.id,
+                    "time_slot_id": request.time_slot_id,
+                    "classroom_id": request.classroom_id,
+                    "day_of_week": request.day_of_week.value,
+                    "actor": actor_id,
+                    "tenant_id": tenant_id,
+                },
+            )
+        except Exception:
+            pass
+
         return SectionScheduleReadSchema.model_validate(schedule)
 
     async def cancel_section(
@@ -778,6 +882,35 @@ class SchedulingService:
             },
             tenant_id,
         )
+
+        # Publish section.cancelled event (fire-and-forget)
+        try:
+            EventPublisher(db_session=self.db).publish_event(
+                tenant_id=tenant_id,
+                event_type="scheduling.section.cancelled",
+                aggregate_type="course_section",
+                aggregate_id=section_id,
+                payload_json={
+                    "section_id": section_id,
+                    "actor": actor_id,
+                    "tenant_id": tenant_id,
+                    "reason": getattr(request, 'reason', None),
+                },
+            )
+        except Exception:
+            pass
+
+        # Record cancellation outcome (fire-and-forget)
+        try:
+            _create_tenant_entity("scheduling_section_outcomes", tenant_id, {
+                "section_id": section_id,
+                "outcome": "cancelled",
+                "actor": actor_id,
+                "source_entity_type": "course_section",
+                "source_entity_id": str(section_id),
+            })
+        except Exception:
+            pass
 
         return CourseSectionReadSchema.model_validate(section)
 

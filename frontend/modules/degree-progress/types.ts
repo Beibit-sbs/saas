@@ -1,6 +1,7 @@
 export interface RequirementStatus {
   requirement_item_id: number;
   course_id: number;
+  course_name?: string | null;
   required: boolean;
   credits: number;
   completed: boolean;
@@ -9,6 +10,7 @@ export interface RequirementStatus {
 export interface DegreeProgress {
   student_profile_id: number;
   program_id: number;
+  program_name?: string | null;
   requirement_id: number;
   requirement_name: string;
   credits_earned: number;

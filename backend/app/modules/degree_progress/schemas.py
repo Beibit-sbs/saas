@@ -8,6 +8,7 @@ from pydantic import BaseModel
 class RequirementStatusSchema(BaseModel):
     requirement_item_id: int
     course_id: int
+    course_name: str | None = None
     required: bool
     credits: int
     completed: bool
@@ -16,6 +17,7 @@ class RequirementStatusSchema(BaseModel):
 class DegreeProgressSchema(BaseModel):
     student_profile_id: int
     program_id: int
+    program_name: str | None = None
     requirement_id: int
     requirement_name: str
     credits_earned: int

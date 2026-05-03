@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 import logging
+from collections.abc import Callable
 
 from sqlalchemy import and_, asc, desc, func, select
 from sqlalchemy.exc import IntegrityError
@@ -15,6 +16,10 @@ from app.core.module_helpers.service_validation import (
     validate_version_match,
 )
 from app.modules.audit.service import log_admin_action
+from app.modules.university_core.tenant_entity_api import (
+    create_entity_for_tenant,
+    list_entities_for_tenant,
+)
 from app.modules.interventions.models import (
     InterventionActionModel,
     InterventionActionType,
@@ -35,10 +40,30 @@ from app.modules.interventions.schemas import (
     InterventionConsistencyReportSchema,
 )
 from app.modules.students.models import StudentProfileModel
+from app.modules.usage.service import record_usage_event
 from app.platform.events.publisher import EventPublisher
 
 
 logger = logging.getLogger(__name__)
+
+
+_ALLOWED_STATUS_TRANSITIONS: dict[InterventionCaseStatus, set[InterventionCaseStatus]] = {
+    InterventionCaseStatus.OPEN: {
+        InterventionCaseStatus.IN_PROGRESS,
+        InterventionCaseStatus.RESOLVED,
+        InterventionCaseStatus.CLOSED,
+    },
+    InterventionCaseStatus.IN_PROGRESS: {
+        InterventionCaseStatus.OPEN,
+        InterventionCaseStatus.RESOLVED,
+        InterventionCaseStatus.CLOSED,
+    },
+    InterventionCaseStatus.RESOLVED: {
+        InterventionCaseStatus.CLOSED,
+        InterventionCaseStatus.OPEN,
+    },
+    InterventionCaseStatus.CLOSED: set(),
+}
 
 
 def _utc_now() -> datetime:
@@ -77,9 +102,29 @@ def _default_due_at(severity: InterventionCaseSeverity) -> datetime:
 
 
 class InterventionService:
-    def __init__(self, db_session: Session, on_case_outcome: callable | None = None):
+    def __init__(self, db_session: Session, on_case_outcome: Callable[..., object] | None = None):
         self.db = db_session
         self._on_case_outcome = on_case_outcome
+
+    @staticmethod
+    def _normalized_tenant_id(tenant_id: int) -> int:
+        return int(tenant_id)
+
+    @staticmethod
+    def _emit_case_event(
+        *,
+        tenant_id: int,
+        event_type: str,
+        case: InterventionCaseModel,
+        payload: dict,
+    ) -> None:
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            aggregate_type="intervention_case",
+            aggregate_id=str(case.id),
+            payload_json=payload,
+        )
 
     async def create_case(
         self,
@@ -183,6 +228,28 @@ class InterventionService:
         except IntegrityError as exc:
             self.db.rollback()
             raise DomainValidationError("Unable to create intervention case due to constraint violation") from exc
+
+        # Event emission strictly after successful persistence.
+        self._emit_case_event(
+            tenant_id=tenant_id,
+            event_type="interventions.case.created",
+            case=case,
+            payload={
+                "case_id": str(case.id),
+                "case_type": case.case_type.value,
+                "status": case.status.value,
+                "severity": case.severity.value,
+                "student_profile_id": str(case.student_profile_id) if case.student_profile_id else None,
+                "source_entity_type": "intervention_case",
+                "source_entity_id": str(case.id),
+                "source_module": "interventions",
+            },
+        )
+        record_usage_event(
+            tenant_id=self._normalized_tenant_id(tenant_id),
+            metric="interventions_cases_created",
+            value=1,
+        )
 
         return case
 
@@ -322,6 +389,12 @@ class InterventionService:
         validate_version_match(case.version, request.expected_version)
 
         old_status = case.status
+        allowed_statuses = _ALLOWED_STATUS_TRANSITIONS.get(old_status, set())
+        if request.status != old_status and request.status not in allowed_statuses:
+            raise DomainValidationError(
+                f"Intervention status transition not allowed: {old_status.value} -> {request.status.value}"
+            )
+
         case.status = request.status
         if request.status in (InterventionCaseStatus.RESOLVED, InterventionCaseStatus.CLOSED):
             case.resolved_at = _utc_now()
@@ -351,17 +424,38 @@ class InterventionService:
         self.db.refresh(case)
         self.db.commit()
 
+        self._emit_case_event(
+            tenant_id=tenant_id,
+            event_type="interventions.case.status_changed",
+            case=case,
+            payload={
+                "case_id": str(case.id),
+                "case_type": case.case_type.value,
+                "old_status": old_status.value,
+                "new_status": request.status.value,
+                "severity": case.severity.value,
+                "student_profile_id": str(case.student_profile_id) if case.student_profile_id else None,
+                "source_entity_type": "intervention_case",
+                "source_entity_id": str(case.id),
+                "source_module": "interventions",
+            },
+        )
+        record_usage_event(
+            tenant_id=self._normalized_tenant_id(tenant_id),
+            metric="interventions_case_status_updates",
+            value=1,
+        )
+
         # Emit outcome event to Brain Core learning loop when case is completed
         if request.status in (InterventionCaseStatus.RESOLVED, InterventionCaseStatus.CLOSED):
             effectiveness = "positive" if request.status == InterventionCaseStatus.RESOLVED else "neutral"
-            EventPublisher().publish_event(
+            self._emit_case_event(
                 tenant_id=tenant_id,
                 event_type="interventions.case_outcome.recorded",
-                aggregate_type="intervention_case",
-                aggregate_id=str(case.id),
-                payload_json={
+                case=case,
+                payload={
                     "case_id": str(case.id),
-                    "case_type": case.case_type,
+                    "case_type": case.case_type.value,
                     "status": request.status.value,
                     "severity": case.severity.value,
                     "outcome_type": request.status.value,
@@ -371,6 +465,11 @@ class InterventionService:
                     "source_entity_type": "intervention_case",
                     "source_entity_id": str(case.id),
                 },
+            )
+            record_usage_event(
+                tenant_id=self._normalized_tenant_id(tenant_id),
+                metric="interventions_case_outcomes_recorded",
+                value=1,
             )
             
             # Immediately ingest outcome into Brain Core if callback is registered
@@ -523,3 +622,136 @@ class InterventionService:
             issue_count=len(issues),
             issues=issues,
         )
+
+
+# ─── XXXV.2: Cohort-based risk analytics ──────────────────────────────────────
+
+_DEFAULT_RISK_THRESHOLD: float = 0.7
+
+
+def _segment_students_by_risk(
+    students: list[dict[str, object]],
+    threshold: float,
+) -> dict[str, list[dict[str, object]]]:
+    """Segment students into high / medium / low risk groups."""
+    high, medium, low = [], [], []
+    for s in students:
+        try:
+            score = float(s.get("risk_score") or 0.0)
+        except (TypeError, ValueError):
+            score = 0.0
+        if score >= threshold:
+            high.append(s)
+        elif score >= threshold * 0.5:
+            medium.append(s)
+        else:
+            low.append(s)
+    return {"high": high, "medium": medium, "low": low}
+
+
+def analyze_cohort_risk(
+    tenant_id: int,
+    cohort_id: str | None = None,
+    threshold: float = _DEFAULT_RISK_THRESHOLD,
+) -> dict[str, object]:
+    """Analyse risk distribution across a student cohort.
+
+    Reads students from the entity store, segments them by risk_score, and
+    persists a snapshot in `cohort_risk_snapshots`.  For high-risk students
+    an auto-triggered intervention is also persisted.
+
+    Returns the analysis result dict.
+    """
+    if tenant_id is None or tenant_id <= 0:
+        raise ValueError("tenant_id must be a positive integer.")
+
+    students = list_entities_for_tenant("students", tenant_id)
+    if cohort_id:
+        students = [s for s in students if str(s.get("cohort_id") or "") == str(cohort_id)]
+
+    segments = _segment_students_by_risk(students, threshold)
+    high_risk = segments["high"]
+
+    # Persist snapshot
+    snapshot = create_entity_for_tenant(
+        "cohort_risk_snapshots",
+        {
+            "tenant_id": tenant_id,
+            "cohort_id": cohort_id or "all",
+            "total_students": len(students),
+            "high_risk_count": len(high_risk),
+            "medium_risk_count": len(segments["medium"]),
+            "low_risk_count": len(segments["low"]),
+            "threshold": str(threshold),
+        },
+        tenant_id,
+    )
+
+    # Publish cohort.analyzed event (fire-and-forget)
+    try:
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="interventions.cohort.analyzed",
+            aggregate_type="cohort_risk_snapshots",
+            aggregate_id=str(snapshot.get("id", "")),
+            payload_json={
+                "cohort_id": cohort_id or "all",
+                "high_risk_count": len(high_risk),
+                "threshold": threshold,
+            },
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Auto-trigger interventions for high-risk students
+    auto_triggered: list[dict[str, object]] = []
+    for student in high_risk:
+        student_id = str(student.get("id") or student.get("student_id") or "")
+        if not student_id:
+            continue
+        try:
+            record = create_entity_for_tenant(
+                "auto_triggered_interventions",
+                {
+                    "tenant_id": tenant_id,
+                    "student_id": student_id,
+                    "cohort_id": cohort_id or "all",
+                    "trigger_score": str(student.get("risk_score") or 0.0),
+                    "status": "pending",
+                },
+                tenant_id,
+            )
+            auto_triggered.append(record)
+
+            # fire auto-trigger event (fire-and-forget)
+            try:
+                EventPublisher().publish_event(
+                    tenant_id=tenant_id,
+                    event_type="interventions.auto_triggered",
+                    aggregate_type="auto_triggered_interventions",
+                    aggregate_id=str(record.get("id", "")),
+                    payload_json={"student_id": student_id, "trigger_score": float(student.get("risk_score") or 0.0)},
+                )
+            except Exception:  # noqa: BLE001
+                pass
+        except Exception:  # noqa: BLE001
+            pass  # non-blocking per-student failure
+
+    return {
+        "snapshot_id": snapshot.get("id"),
+        "cohort_id": cohort_id or "all",
+        "total_students": len(students),
+        "segments": {k: len(v) for k, v in segments.items()},
+        "auto_triggered_count": len(auto_triggered),
+    }
+
+
+def get_cohort_risk_snapshots(
+    tenant_id: int,
+    cohort_id: str | None = None,
+) -> list[dict[str, object]]:
+    """Return persisted cohort risk snapshots for a tenant."""
+    rows = list_entities_for_tenant("cohort_risk_snapshots", tenant_id)
+    if cohort_id:
+        rows = [r for r in rows if str(r.get("cohort_id") or "") == str(cohort_id)]
+    return rows

@@ -140,9 +140,14 @@ class EnrollmentLifecycleService:
         )
         return profile
 
-    def _load_course_placeholder(self, tenant_id: int, course_id: int) -> object:
+    def _load_course(self, tenant_id: int, course_id: int) -> CourseModel:
         course = self.db.execute(
-            select(CourseModel).where(CourseModel.id == course_id)
+            select(CourseModel).where(
+                and_(
+                    CourseModel.id == course_id,
+                    CourseModel.tenant_id == tenant_id,
+                )
+            )
         ).scalar_one_or_none()
         EnrollmentLifecycleRules.validate_course_reference(
             course,
@@ -392,7 +397,7 @@ class EnrollmentLifecycleService:
 
         profile = self._load_student_profile(tenant_id, request.student_profile_id)
         EnrollmentLifecycleRules.validate_student_is_enrollable(profile, tenant_id)
-        self._load_course_placeholder(tenant_id, request.course_id)
+        self._load_course(tenant_id, request.course_id)
         self._load_term(tenant_id, request.term_id)
 
         existing_active = await self.get_active_enrollment_for_student_course_term(
@@ -441,7 +446,7 @@ class EnrollmentLifecycleService:
             actor_id=actor_id,
             reason="initial_enrollment_creation",
             metadata_json={
-                "course_validation": "placeholder_existing_course_model",
+                "course_validation": "real_course_reference_validated",
                 "term_reference_strategy": "canonical_term_id",
             },
             version=enrollment.version,
@@ -449,22 +454,6 @@ class EnrollmentLifecycleService:
 
         self.db.flush()
         self.db.refresh(enrollment)
-
-        EventPublisher(db_session=self.db).publish_event(
-            tenant_id=tenant_id,
-            event_type="enrollment.created",
-            aggregate_type="enrollment",
-            aggregate_id=enrollment.id,
-            payload_json={
-                "enrollment_id": enrollment.id,
-                "student_profile_id": enrollment.student_profile_id,
-                "course_id": enrollment.course_id,
-                "term_id": enrollment.term_id,
-                "section_id": enrollment.section_id,
-                "enrollment_status": enrollment.enrollment_status.value,
-                "created_by": actor_id,
-            },
-        )
 
         _audit(
             actor=actor_id,
@@ -497,6 +486,28 @@ class EnrollmentLifecycleService:
             raise DomainValidationError(
                 "Unable to create enrollment due to constraint violation"
             ) from exc
+
+        EventPublisher(db_session=self.db).publish_event(
+            tenant_id=tenant_id,
+            event_type="enrollment.created",
+            aggregate_type="enrollment",
+            aggregate_id=enrollment.id,
+            payload_json={
+                "enrollment_id": enrollment.id,
+                "student_profile_id": enrollment.student_profile_id,
+                "course_id": enrollment.course_id,
+                "term_id": enrollment.term_id,
+                "section_id": enrollment.section_id,
+                "enrollment_status": enrollment.enrollment_status.value,
+                "created_by": actor_id,
+            },
+        )
+
+        try:
+            from app.modules.usage.service import record_usage_event
+            record_usage_event(tenant_id, "enrollments_created", 1)
+        except Exception:
+            pass
 
         return EnrollmentReadSchema.model_validate(enrollment)
 
@@ -653,7 +664,7 @@ class EnrollmentLifecycleService:
         status: EnrollmentStatus | None = None,
     ) -> EnrollmentListResponseSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
-        self._load_course_placeholder(tenant_id, course_id)
+        self._load_course(tenant_id, course_id)
 
         filters = [
             EnrollmentModel.tenant_id == tenant_id,
@@ -893,6 +904,12 @@ class EnrollmentLifecycleService:
             raise DomainValidationError(
                 "Unable to drop enrollment due to constraint violation"
             ) from exc
+
+        try:
+            from app.modules.usage.service import record_usage_event
+            record_usage_event(tenant_id, "enrollments_dropped", 1)
+        except Exception:
+            pass
 
         try:
             from uuid import uuid4

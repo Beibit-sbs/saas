@@ -43,7 +43,7 @@ def create_budget_plan_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> BudgetPlanItemResponse:
     try:
-        record = _svc.create_budget_plan(payload.model_dump(), int(tenant["id"]))
+        record = _svc.create_budget_plan(payload.model_dump(), int(tenant["id"]), actor=_)
     except (ValueError, DomainValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return BudgetPlanItemResponse(record=record)
@@ -58,7 +58,7 @@ def update_budget_plan_status_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> BudgetPlanItemResponse:
     try:
-        record = _svc.update_budget_plan_status(int(tenant["id"]), plan_id, payload.status)
+        record = _svc.update_budget_plan_status(int(tenant["id"]), plan_id, payload.status, actor=_)
     except DomainValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
@@ -87,7 +87,7 @@ def create_budget_allocation_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> BudgetAllocationItemResponse:
     try:
-        record = _svc.create_budget_allocation(payload.model_dump(), int(tenant["id"]))
+        record = _svc.create_budget_allocation(payload.model_dump(), int(tenant["id"]), actor=_)
     except (ValueError, DomainValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return BudgetAllocationItemResponse(record=record)

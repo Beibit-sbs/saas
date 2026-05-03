@@ -7,6 +7,7 @@ from app.modules.university_core.tenant_entity_service import (
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+from app.platform.events.publisher import EventPublisher
 
 _EQUIPMENT_BOOKING_STATUS_MAX_ACTIVE: dict[str, int] = {
     "pending": 100,
@@ -166,6 +167,32 @@ def create_equipment_booking(payload: dict[str, object], tenant_id: int) -> dict
 
     record = create_entity_for_tenant("equipment_bookings", enriched_payload, tenant_id)
 
+    # XXXIV.8: fire booking.created event (fire-and-forget)
+    try:
+        EventPublisher().publish_event(
+            "equipment_booking.booking.created",
+            {"tenant_id": tenant_id, "booking_id": str(record.get("id", "")),
+             "equipment_code": new_code, "requester_id": requester_id},
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+    # XXXIV.8: persist action log (fire-and-forget)
+    try:
+        create_entity_for_tenant(
+            "equipment_booking_action_logs",
+            {
+                "booking_id": str(record.get("id", "")),
+                "action_type": "booking_created",
+                "requester_id": requester_id,
+                "equipment_code": new_code,
+                "tenant_id": tenant_id,
+            },
+            tenant_id,
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
     return record
 
 
@@ -194,7 +221,36 @@ def update_equipment_booking_status(booking_id: int, status: str, tenant_id: int
     record = update_entity_for_tenant("equipment_bookings", booking_id, {"booking_status": next_status}, tenant_id)
     if next_status in _OVERDUE_BOOKING_RISK_STATUSES:
         _ensure_overdue_booking_alert_record(booking_id, tenant_id)
+
+    # XXXIV.8: fire lifecycle events (fire-and-forget)
+    _fire_booking_lifecycle_event(record, next_status, tenant_id)
+
     return record
+
+
+def _fire_booking_lifecycle_event(
+    record: dict[str, object],
+    new_status: str,
+    tenant_id: int,
+) -> None:
+    """XXXIV.8: fire confirmed/cancelled/completed/overdue event fire-and-forget."""
+    _STATUS_EVENT_MAP = {
+        "confirmed": "equipment_booking.booking.confirmed",
+        "cancelled": "equipment_booking.booking.cancelled",
+        "completed": "equipment_booking.booking.returned",
+        "overdue": "equipment_booking.booking.overdue",
+    }
+    event_type = _STATUS_EVENT_MAP.get(new_status)
+    if not event_type:
+        return
+    try:
+        EventPublisher().publish_event(
+            event_type,
+            {"tenant_id": tenant_id, "booking_id": str(record.get("id", "")),
+             "status": new_status},
+        )
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _ensure_overdue_booking_alert_record(booking_id: int, tenant_id: int) -> None:

@@ -9,6 +9,8 @@ from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.exam_governance.schemas import (
     ExamCreateSchema,
     ExamDashboardSummarySchema,
+    ExamGradeInputSchema,
+    ExamGradeResponseSchema,
     ExamItemResponseSchema,
     ExamListResponseSchema,
     ExamStatisticsSchema,
@@ -18,6 +20,7 @@ from app.modules.exam_governance.service import (
     create_exam,
     get_exam_dashboard_summary,
     get_exam_statistics,
+    grade_exam,
     list_exams,
     update_exam,
 )
@@ -101,5 +104,29 @@ def get_exam_statistics_endpoint(
     try:
         data = get_exam_statistics(int(tenant["id"]), exam_id)
         return ExamStatisticsSchema(**data)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/{exam_id}/grade", response_model=ExamGradeResponseSchema)
+def grade_exam_endpoint(
+    exam_id: int,
+    payload: ExamGradeInputSchema,
+    actor: Annotated[str, Depends(get_actor)],
+    _: Annotated[None, Depends(permission_dependency("exams.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ExamGradeResponseSchema:
+    from app.core.module_helpers.service_validation import DomainValidationError
+    try:
+        data = grade_exam(
+            int(tenant["id"]),
+            exam_id,
+            payload.average_score,
+            payload.pass_rate,
+            actor,
+        )
+        return ExamGradeResponseSchema(**data)
+    except DomainValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

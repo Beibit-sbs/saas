@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-BudgetPlanStatus = Literal["draft", "submitted", "approved", "rejected"]
+BudgetPlanStatus = Literal["draft", "review", "submitted", "approved", "locked", "rejected"]
 
 
 class BudgetPlanCreatePayload(BaseModel):

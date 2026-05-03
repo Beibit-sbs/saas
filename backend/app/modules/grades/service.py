@@ -375,60 +375,8 @@ class GradeLifecycleService:
         self.db.flush()
         self.db.refresh(submission)
 
-        publisher = EventPublisher(db_session=self.db)
-        publisher.publish_event(
-            tenant_id=tenant_id,
-            event_type="grade.submitted",
-            aggregate_type="grade_submission",
-            aggregate_id=submission.id,
-            payload_json={
-                "submission_id": submission.id,
-                "enrollment_id": submission.enrollment_id,
-                "student_profile_id": enrollment.student_profile_id,
-                "grade_code": submission.grade_code,
-                "grade_points": str(resolved_points),
-                "submitted_by": actor_id,
-            },
-        )
-
         risk_level = self._derive_grade_risk_level(resolved_points)
         if risk_level is not None:
-            publisher.publish_event(
-                tenant_id=tenant_id,
-                event_type="academic.grade_risk.detected",
-                aggregate_type="grade_submission",
-                aggregate_id=submission.id,
-                payload_json={
-                    "student_id": enrollment.student_profile_id,
-                    "course_id": enrollment.course_id,
-                    "section_id": None,
-                    "current_grade": float(resolved_points),
-                    "grade_trend": "declining",
-                    "risk_level": risk_level,
-                    "source_entity_type": "grade_submission",
-                    "source_entity_id": str(submission.id),
-                },
-            )
-            try:
-                from uuid import uuid4
-                from app.modules.brain_core.service import brain_core_service
-                brain_core_service.process_signal({
-                    "event_type": "academic.grade_risk.detected",
-                    "tenant_id": tenant_id,
-                    "correlation_id": str(uuid4()),
-                    "source_entity_type": "grade_submission",
-                    "source_entity_id": str(submission.id),
-                    "payload": {
-                        "student_id": enrollment.student_profile_id,
-                        "course_id": enrollment.course_id,
-                        "current_grade": float(resolved_points),
-                        "grade_trend": "declining",
-                        "risk_level": risk_level,
-                    },
-                })
-            except Exception:
-                pass  # Brain Core errors must never break core flows
-
             try:
                 from datetime import timedelta
                 from app.modules.interventions.models import (
@@ -499,6 +447,59 @@ class GradeLifecycleService:
         except IntegrityError as exc:
             self.db.rollback()
             raise DomainValidationError("Unable to submit grade due to constraint violation") from exc
+
+        publisher = EventPublisher(db_session=self.db)
+        publisher.publish_event(
+            tenant_id=tenant_id,
+            event_type="grade.submitted",
+            aggregate_type="grade_submission",
+            aggregate_id=submission.id,
+            payload_json={
+                "submission_id": submission.id,
+                "enrollment_id": submission.enrollment_id,
+                "student_profile_id": enrollment.student_profile_id,
+                "grade_code": submission.grade_code,
+                "grade_points": str(resolved_points),
+                "submitted_by": actor_id,
+            },
+        )
+
+        if risk_level is not None:
+            publisher.publish_event(
+                tenant_id=tenant_id,
+                event_type="academic.grade_risk.detected",
+                aggregate_type="grade_submission",
+                aggregate_id=submission.id,
+                payload_json={
+                    "student_id": enrollment.student_profile_id,
+                    "course_id": enrollment.course_id,
+                    "section_id": None,
+                    "current_grade": float(resolved_points),
+                    "grade_trend": "declining",
+                    "risk_level": risk_level,
+                    "source_entity_type": "grade_submission",
+                    "source_entity_id": str(submission.id),
+                },
+            )
+            try:
+                from uuid import uuid4
+                from app.modules.brain_core.service import brain_core_service
+                brain_core_service.process_signal({
+                    "event_type": "academic.grade_risk.detected",
+                    "tenant_id": tenant_id,
+                    "correlation_id": str(uuid4()),
+                    "source_entity_type": "grade_submission",
+                    "source_entity_id": str(submission.id),
+                    "payload": {
+                        "student_id": enrollment.student_profile_id,
+                        "course_id": enrollment.course_id,
+                        "current_grade": float(resolved_points),
+                        "grade_trend": "declining",
+                        "risk_level": risk_level,
+                    },
+                })
+            except Exception:
+                pass  # Brain Core errors must never break core flows
 
         record_usage_event(tenant_id=tenant_id, metric="grades_submitted", value=1)
 

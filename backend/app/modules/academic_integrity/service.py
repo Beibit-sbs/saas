@@ -3,11 +3,15 @@
 from typing import Optional
 from datetime import datetime, timezone
 import uuid
+from app.core.module_helpers.audit_helpers import build_audit_action
+from app.core.module_helpers.service_validation import DomainValidationError
+from app.modules.audit.service import log_admin_action
 from app.modules.academic_integrity.schemas import (
     IntegrityCaseCreateSchema,
     IntegrityCaseStatusUpdateSchema,
     IntegrityCaseStatus,
 )
+from app.modules.usage.service import record_usage_event
 
 
 _INTEGRITY_CASE_STATUS_MAX_ACTIVE: dict[str, int] = {
@@ -19,6 +23,7 @@ _INTEGRITY_CASE_STATUS_MAX_ACTIVE: dict[str, int] = {
 }
 _ACTIVE_INTEGRITY_CASE_STATUSES = frozenset({"flagged", "under_review", "escalated"})
 _INTEGRITY_ESCALATION_RISK_STATUSES = frozenset({"escalated"})
+_INTEGRITY_OUTCOME_STATUSES = frozenset({"resolved", "dismissed"})
 
 
 class _InMemoryEntityAdapter:
@@ -102,6 +107,35 @@ class AcademicIntegrityService:
         """Initialize service with tenant entity service."""
         self.tenant_entity_service = tenant_entity_service
 
+    @staticmethod
+    def _normalize_tenant_id(tenant_id: str) -> int:
+        try:
+            return int(tenant_id)
+        except (TypeError, ValueError):
+            return 1
+
+    def _emit_audit(self, *, actor: str, action: str, path: str, metadata: dict, tenant_id: str) -> None:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=path,
+            client_ip="service",
+            entity="integrity_case",
+            metadata=metadata,
+            tenant_id=self._normalize_tenant_id(tenant_id),
+        )
+
+    def _emit_event(self, *, tenant_id: str, event_type: str, case_id: str, payload: dict) -> None:
+        from app.platform.events.publisher import EventPublisher
+
+        EventPublisher().publish_event(
+            tenant_id=self._normalize_tenant_id(tenant_id),
+            event_type=event_type,
+            aggregate_type="integrity_case",
+            aggregate_id=case_id,
+            payload_json=payload,
+        )
+
     async def list_integrity_cases(
         self,
         tenant_id: str,
@@ -175,7 +209,7 @@ class AcademicIntegrityService:
         requested_status = IntegrityCaseStatus.FLAGGED.value
         case_cap = _INTEGRITY_CASE_STATUS_MAX_ACTIVE.get(requested_status, 400)
         if active_case_count >= case_cap:
-            raise ValueError("academic_integrity_case active cap reached")
+            raise DomainValidationError("academic_integrity_case active cap reached")
 
         # Create case entity
         case_id = str(uuid.uuid4())
@@ -204,6 +238,39 @@ class AcademicIntegrityService:
             tenant_id=tenant_id,
             entity_type="integrity_case",
             entity_data=case,
+        )
+
+        self._emit_event(
+            tenant_id=tenant_id,
+            event_type="academic_integrity.case.created",
+            case_id=case_id,
+            payload={
+                "case_id": case_id,
+                "student_id": payload.student_id,
+                "course_id": payload.course_id,
+                "case_type": payload.case_type.value,
+                "priority": payload.priority,
+                "status": IntegrityCaseStatus.FLAGGED.value,
+                "source_module": "academic_integrity",
+            },
+        )
+        record_usage_event(
+            tenant_id=self._normalize_tenant_id(tenant_id),
+            metric="academic_integrity_cases_created",
+            value=1,
+        )
+        self._emit_audit(
+            actor=actor,
+            action=build_audit_action("academic_integrity", "integrity_case", "created"),
+            path="/internal/academic-integrity/cases",
+            metadata={
+                "resource_id": case_id,
+                "student_id": payload.student_id,
+                "course_id": payload.course_id,
+                "case_type": payload.case_type.value,
+                "status": IntegrityCaseStatus.FLAGGED.value,
+            },
+            tenant_id=tenant_id,
         )
 
         return case
@@ -246,24 +313,26 @@ class AcademicIntegrityService:
 
         allowed = _ALLOWED_TRANSITIONS.get(current_status, [])
         if new_status not in allowed:
-            raise ValueError(
+            raise DomainValidationError(
                 f"Cannot transition from {current_status.value} to {new_status.value}"
             )
 
         # Enforce documentation requirements before state transition
         if new_status in _CLOSURE_REQUIRES_NOTES:
             if not (payload.resolution_notes and payload.resolution_notes.strip()):
-                raise ValueError(
+                raise DomainValidationError(
                     f"Cannot transition integrity case to '{new_status.value}' without "
                     f"resolution_notes: all case closures require documented rationale "
                     f"for institutional accountability and accreditation compliance."
                 )
         if new_status in _ESCALATION_REQUIRES_ACTION:
             if not (payload.recommended_action and payload.recommended_action.strip()):
-                raise ValueError(
+                raise DomainValidationError(
                     "Cannot escalate integrity case without recommended_action: "
                     "escalation requires a documented action recommendation."
                 )
+
+        old_status = current_status.value
 
         # Update case
         case["status"] = new_status.value
@@ -279,20 +348,89 @@ class AcademicIntegrityService:
             entity_data=case,
         )
 
+        self._emit_event(
+            tenant_id=tenant_id,
+            event_type="academic_integrity.case.status_changed",
+            case_id=case_id,
+            payload={
+                "case_id": case_id,
+                "student_id": case.get("student_id"),
+                "case_type": case.get("case_type"),
+                "old_status": old_status,
+                "new_status": new_status.value,
+                "source_module": "academic_integrity",
+            },
+        )
+        record_usage_event(
+            tenant_id=self._normalize_tenant_id(tenant_id),
+            metric="academic_integrity_case_status_updates",
+            value=1,
+        )
+        self._emit_audit(
+            actor=actor,
+            action=build_audit_action("academic_integrity", "integrity_case", "status_update"),
+            path=f"/internal/academic-integrity/cases/{case_id}/status",
+            metadata={
+                "resource_id": case_id,
+                "old_status": old_status,
+                "new_status": new_status.value,
+            },
+            tenant_id=tenant_id,
+        )
+
         if new_status.value in _INTEGRITY_ESCALATION_RISK_STATUSES:
             await self._ensure_integrity_escalation_alert_record(tenant_id=tenant_id, case=case)
-            from app.platform.events.publisher import EventPublisher
-            EventPublisher().publish_event(
+            self._emit_event(
                 tenant_id=tenant_id,
                 event_type="academic_integrity.case.escalated",
-                aggregate_type="integrity_case",
-                aggregate_id=case_id,
-                payload_json={
+                case_id=case_id,
+                payload={
                     "case_id": case_id,
                     "case_type": case.get("case_type"),
                     "student_id": case.get("student_id"),
                     "source_module": "academic_integrity",
                 },
+            )
+            self._emit_event(
+                tenant_id=tenant_id,
+                event_type="campus.academic_integrity.escalation_risk_detected",
+                case_id=case_id,
+                payload={
+                    "case_id": case_id,
+                    "case_type": case.get("case_type"),
+                    "student_id": case.get("student_id"),
+                    "source_module": "academic_integrity",
+                },
+            )
+
+        if new_status.value in _INTEGRITY_OUTCOME_STATUSES:
+            from app.modules.brain_core.service import brain_core_service
+
+            outcome = brain_core_service.record_dispatch_outcome(
+                case_id,
+                payload={
+                    "outcome_type": new_status.value,
+                    "effectiveness": "neutral" if new_status.value == "dismissed" else "positive",
+                    "source_module": "academic_integrity",
+                    "case_id": case_id,
+                },
+                actor=actor,
+            )
+            self._emit_event(
+                tenant_id=tenant_id,
+                event_type="academic_integrity.case.outcome_recorded",
+                case_id=case_id,
+                payload={
+                    "case_id": case_id,
+                    "outcome_status": new_status.value,
+                    "outcome_result": outcome.get("status"),
+                    "source_module": "academic_integrity",
+                },
+            )
+            record_usage_event(
+                tenant_id=self._normalize_tenant_id(tenant_id),
+                metric="academic_integrity_case_outcomes_recorded",
+                value=1,
             )
 
         return case

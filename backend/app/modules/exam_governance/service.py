@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.audit.service import log_admin_action
+from app.modules.usage.service import record_usage_event
+from app.platform.events.publisher import EventPublisher
 from app.modules.exam_governance.schemas import (
     ExamCreateSchema,
     ExamSchema,
@@ -156,6 +158,21 @@ def _ensure_proctoring_alert_record(
         },
         tenant_id,
     )
+    try:
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="exam.violation_detected",
+            aggregate_type="exam",
+            aggregate_id=exam_id,
+            payload_json={
+                "exam_id": exam_id,
+                "course_code": str(exam_data.get("course_code") or ""),
+                "proctoring_mode": str(exam_data.get("proctoring_mode") or "remote"),
+                "violation_type": "proctoring_risk",
+            },
+        )
+    except Exception:  # noqa: BLE001 — events must never break core flow
+        pass
 
 
 def create_exam(tenant_id: int, payload: ExamCreateSchema, actor: str) -> ExamSchema:
@@ -195,7 +212,25 @@ def create_exam(tenant_id: int, payload: ExamCreateSchema, actor: str) -> ExamSc
             },
         )
 
-    return _to_schema(row)
+    schema = _to_schema(row)
+    try:
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="exam.created",
+            aggregate_type="exam",
+            aggregate_id=schema.id,
+            payload_json={
+                "exam_id": schema.id,
+                "course_code": schema.course_code,
+                "exam_type": schema.exam_type,
+                "term_id": schema.term_id,
+                "actor": actor,
+            },
+        )
+    except Exception:  # noqa: BLE001 — events must never break core flow
+        pass
+    record_usage_event(tenant_id, "exams_created", 1)
+    return schema
 
 
 def update_exam(
@@ -245,7 +280,25 @@ def update_exam(
         metadata={"exam_id": exam_id, "updates": list(updates.keys())},
         tenant_id=tenant_id,
     )
-    return _to_schema(row)
+    schema = _to_schema(row)
+    if payload.status in {"in_progress", "completed"}:
+        event_type = "exam.started" if payload.status == "in_progress" else "exam.submitted"
+        try:
+            EventPublisher().publish_event(
+                tenant_id=tenant_id,
+                event_type=event_type,
+                aggregate_type="exam",
+                aggregate_id=exam_id,
+                payload_json={
+                    "exam_id": exam_id,
+                    "status": payload.status,
+                    "actor": actor,
+                },
+            )
+        except Exception:  # noqa: BLE001 — events must never break core flow
+            pass
+    record_usage_event(tenant_id, "exam_status_updates", 1)
+    return schema
 
 
 def get_exam_dashboard_summary(tenant_id: int) -> dict:
@@ -287,4 +340,72 @@ def get_exam_statistics(tenant_id: int, exam_id: int) -> dict:
         "completion_rate": 0.0,
         "average_score": None,
         "pass_rate": None,
+    }
+
+
+def grade_exam(
+    tenant_id: int,
+    exam_id: int,
+    average_score: float,
+    pass_rate: float,
+    actor: str,
+) -> dict:
+    """Record grade summary for a completed exam and publish exam.graded event."""
+    rows = list_entities_for_tenant(_ENTITY, tenant_id)
+    row = next((r for r in rows if r["id"] == exam_id), None)
+    if row is None:
+        raise ValueError(f"Exam {exam_id} not found")
+    if str(row.get("status") or "") != "completed":
+        raise DomainValidationError(
+            f"Cannot grade exam_id={exam_id}: exam must be in 'completed' status "
+            f"(current: {row.get('status')!r}). Complete the exam before grading."
+        )
+    log_admin_action(
+        actor=actor,
+        action="exam.grade",
+        path=f"/api/admin/exam-governance/{exam_id}/grade",
+        client_ip="service",
+        entity="exam",
+        metadata={"exam_id": exam_id, "average_score": average_score, "pass_rate": pass_rate},
+        tenant_id=tenant_id,
+    )
+    try:
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="exam.graded",
+            aggregate_type="exam",
+            aggregate_id=exam_id,
+            payload_json={
+                "exam_id": exam_id,
+                "average_score": average_score,
+                "pass_rate": pass_rate,
+                "actor": actor,
+            },
+        )
+    except Exception:  # noqa: BLE001 — events must never break core flow
+        pass
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            exam_id,
+            payload={
+                "outcome_type": "exam_graded",
+                "effectiveness": "positive" if pass_rate >= 0.5 else "neutral",
+                "source_module": "exam_governance",
+                "exam_id": exam_id,
+                "average_score": average_score,
+                "pass_rate": pass_rate,
+            },
+            actor=actor,
+        )
+    except Exception:  # noqa: BLE001 — brain core must never break core flow
+        pass
+    record_usage_event(tenant_id, "exams_graded", 1)
+    return {
+        "exam_id": exam_id,
+        "average_score": average_score,
+        "pass_rate": pass_rate,
+        "graded_by": actor,
+        "status": "graded",
     }

@@ -74,10 +74,12 @@ from app.modules.faculty_copilot.router import router as faculty_copilot_router
 from app.modules.knowledge_retrieval.router import router as knowledge_retrieval_router
 from app.modules.prompt_management.router import router as prompt_management_router
 from app.modules.model_evaluation.router import router as model_evaluation_router
+from app.modules.currency_localization.router import router as currency_localization_router
 from app.modules.operations.router import router as operations_router
 from app.modules.student_life.router import router as student_life_router
 from app.modules.procurement.router import router as procurement_router
 from app.modules.syllabus_governance.router import router as syllabus_governance_router
+from app.modules.pdpl.router import router as pdpl_router
 from app.modules.exam_governance.router import router as exam_governance_router
 from app.modules.teaching_quality.router import router as teaching_quality_router
 from app.modules.academic_integrity.router import router as academic_integrity_router
@@ -113,6 +115,8 @@ from app.modules.interventions.playbook_router import router as interventions_pl
 from app.modules.interventions.risk_router import router as interventions_risk_router
 from app.modules.interventions.effectiveness_router import router as interventions_effectiveness_router
 from app.modules.org_structure.router import router as org_structure_router
+from app.modules.plans.router import router as plans_router
+from app.modules.subscriptions.router import router as subscriptions_router
 from app.modules.workflows.router import router as workflows_router
 from app.modules.rbac.router import router as rbac_router
 from app.modules.rbac.security import get_actor
@@ -380,6 +384,7 @@ app.include_router(faculty_copilot_router)
 app.include_router(knowledge_retrieval_router)
 app.include_router(prompt_management_router)
 app.include_router(model_evaluation_router)
+app.include_router(currency_localization_router)
 app.include_router(operations_router)
 app.include_router(student_life_router)
 app.include_router(procurement_router)
@@ -388,11 +393,14 @@ app.include_router(exam_governance_router)
 app.include_router(teaching_quality_router)
 app.include_router(academic_integrity_router)
 app.include_router(accreditation_router)
+app.include_router(pdpl_router)
 app.include_router(interventions_router)
 app.include_router(interventions_playbook_router)
 app.include_router(interventions_risk_router)
 app.include_router(interventions_effectiveness_router)
 app.include_router(org_structure_router)
+app.include_router(plans_router)
+app.include_router(subscriptions_router)
 app.include_router(analytics_router)
 app.include_router(transcripts_router)
 app.include_router(degree_progress_router)

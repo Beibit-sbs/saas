@@ -6,6 +6,7 @@ from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     list_entities_for_tenant,
 )
+from app.platform.events.publisher import EventPublisher
 
 # --- W31: active-asset cap by IP type ---
 _IP_TYPE_MAX_ACTIVE_ASSETS: dict[str, int] = {
@@ -156,7 +157,66 @@ def create_ip_asset(payload: dict[str, object], tenant_id: int) -> dict[str, obj
     if commercialization_status in _COMMERCIAL_STATUSES:
         _ensure_ip_licensing_record(record, tenant_id)
 
+    # XXXIV.9: fire lifecycle events (fire-and-forget)
+    _fire_ip_asset_events(record, status, commercialization_status, tenant_id)
+
+    # XXXIV.9: persist action log (fire-and-forget)
+    try:
+        create_entity_for_tenant(
+            "ip_asset_action_logs",
+            {
+                "asset_id": str(record.get("id", "")),
+                "action_type": "asset_created",
+                "ip_type": ip_type,
+                "status": status,
+                "tenant_id": tenant_id,
+            },
+            tenant_id,
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
     return record
+
+
+def _fire_ip_asset_events(
+    record: dict[str, object],
+    status: str,
+    commercialization_status: str,
+    tenant_id: int,
+) -> None:
+    """XXXIV.9: fire ip_management lifecycle events fire-and-forget."""
+    asset_id = str(record.get("id", ""))
+    # always fire asset.created
+    try:
+        EventPublisher().publish_event(
+            "ip_management.asset.created",
+            {"tenant_id": tenant_id, "asset_id": asset_id, "status": status},
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+    # fire filed / granted events
+    if status in {"filed", "granted"}:
+        event_type = f"ip_management.asset.{status}"
+        try:
+            EventPublisher().publish_event(
+                event_type,
+                {"tenant_id": tenant_id, "asset_id": asset_id, "status": status},
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+    # fire licensed event for commercial transitions
+    if commercialization_status in _COMMERCIAL_STATUSES:
+        try:
+            EventPublisher().publish_event(
+                "ip_management.asset.licensed",
+                {"tenant_id": tenant_id, "asset_id": asset_id,
+                 "commercialization_status": commercialization_status},
+            )
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def _ensure_ip_licensing_record(asset: dict[str, object], tenant_id: int) -> None:

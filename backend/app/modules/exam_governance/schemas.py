@@ -71,3 +71,16 @@ class ExamStatisticsSchema(BaseModel):
     completion_rate: float
     average_score: float | None = None
     pass_rate: float | None = None
+
+
+class ExamGradeInputSchema(BaseModel):
+    average_score: float = Field(ge=0.0, le=100.0)
+    pass_rate: float = Field(ge=0.0, le=1.0)
+
+
+class ExamGradeResponseSchema(BaseModel):
+    exam_id: int
+    average_score: float
+    pass_rate: float
+    graded_by: str
+    status: str

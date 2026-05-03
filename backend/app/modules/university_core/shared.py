@@ -843,6 +843,402 @@ ENTITY_CONFIGS: dict[str, EntityConfig] = {
         required=("faculty_id", "course_id", "term_id", "quality_score", "kpi_score"),
         fk_fields=(),
     ),
+    # XXXIV.6: teaching quality action logs
+    "teaching_quality_action_logs": EntityConfig(
+        table="university_teaching_quality_action_logs",
+        fields=("record_id", "action_type", "faculty_id", "course_id", "term_id", "tenant_id"),
+        required=("record_id", "action_type", "faculty_id"),
+        fk_fields=(),
+    ),
+    # XXXIV.7: research ethics action logs
+    "research_ethics_action_logs": EntityConfig(
+        table="university_research_ethics_action_logs",
+        fields=("review_id", "action_type", "pi_id", "review_type", "tenant_id"),
+        required=("review_id", "action_type", "pi_id"),
+        fk_fields=(),
+    ),
+    # XXXIV.8: equipment booking action logs
+    "equipment_booking_action_logs": EntityConfig(
+        table="university_equipment_booking_action_logs",
+        fields=("booking_id", "action_type", "requester_id", "equipment_code", "tenant_id"),
+        required=("booking_id", "action_type", "requester_id"),
+        fk_fields=(),
+    ),
+    # XXXIV.9: ip management action logs
+    "ip_asset_action_logs": EntityConfig(
+        table="university_ip_asset_action_logs",
+        fields=("asset_id", "action_type", "ip_type", "status", "tenant_id"),
+        required=("asset_id", "action_type", "ip_type"),
+        fk_fields=(),
+    ),
+    # XXXV.1: personnel orders (HIRE/DISMISS/TRANSFER/SALARY_CHANGE, FSM DRAFT→SIGNED→APPROVED→EXECUTED)
+    "personnel_orders": EntityConfig(
+        table="university_personnel_orders",
+        fields=(
+            "order_type", "order_number", "employee_id", "status",
+            "ecds_signature", "new_department_id", "effective_date",
+            "notes", "tenant_id",
+        ),
+        required=("order_type",),
+        fk_fields=(),
+    ),
+    # XXXV.2: cohort risk analytics snapshots and auto-triggered interventions
+    "cohort_risk_snapshots": EntityConfig(
+        table="university_cohort_risk_snapshots",
+        fields=("cohort_id", "total_students", "high_risk_count", "medium_risk_count", "low_risk_count", "threshold", "tenant_id"),
+        required=("cohort_id", "total_students"),
+        fk_fields=(),
+    ),
+    "auto_triggered_interventions": EntityConfig(
+        table="university_auto_triggered_interventions",
+        fields=("student_id", "cohort_id", "trigger_score", "status", "tenant_id"),
+        required=("student_id", "status"),
+        fk_fields=(),
+    ),
+    # Phase XXXVI: Library module entities
+    "library_items": EntityConfig(
+        table="library_items",
+        fields=("title", "author", "isbn", "category", "status", "tenant_id"),
+        required=("title", "status"),
+        fk_fields=(),
+    ),
+    "library_loans": EntityConfig(
+        table="library_loans",
+        fields=("item_id", "borrower_id", "issued_at", "due_date", "status", "tenant_id"),
+        required=("item_id", "borrower_id", "status"),
+        fk_fields=(),
+    ),
+    "library_reservations": EntityConfig(
+        table="library_reservations",
+        fields=("item_id", "borrower_id", "reserved_at", "status", "tenant_id"),
+        required=("item_id", "borrower_id", "status"),
+        fk_fields=(),
+    ),
+    "library_returns": EntityConfig(
+        table="library_returns",
+        fields=("loan_id", "item_id", "borrower_id", "returned_at", "fine_amount", "tenant_id"),
+        required=("loan_id", "item_id", "borrower_id"),
+        fk_fields=(),
+    ),
+    "library_fines": EntityConfig(
+        table="library_fines",
+        fields=("loan_id", "borrower_id", "fine_amount", "overdue_days", "calculated_at", "tenant_id"),
+        required=("loan_id", "fine_amount"),
+        fk_fields=(),
+    ),
+    "library_overdue_records": EntityConfig(
+        table="library_overdue_records",
+        fields=("item_id", "marked_at", "tenant_id"),
+        required=("item_id", "marked_at"),
+        fk_fields=(),
+    ),
+    # Attendance module (XXXVII)
+    "attendance_records": EntityConfig(
+        table="attendance_records",
+        fields=("session_id", "student_id", "status", "recorded_at", "tenant_id"),
+        required=("session_id", "student_id", "status"),
+        fk_fields=(),
+    ),
+    "attendance_sessions": EntityConfig(
+        table="attendance_sessions",
+        fields=("course_id", "session_date", "topic", "tenant_id"),
+        required=("course_id", "session_date"),
+        fk_fields=(),
+    ),
+    "attendance_excuses": EntityConfig(
+        table="attendance_excuses",
+        fields=("record_id", "student_id", "session_id", "reason", "excused_at", "tenant_id"),
+        required=("record_id", "student_id", "reason"),
+        fk_fields=(),
+    ),
+    "attendance_risk_records": EntityConfig(
+        table="attendance_risk_records",
+        fields=("student_id", "course_id", "attendance_pct", "threshold", "detected_at", "tenant_id"),
+        required=("student_id", "course_id", "attendance_pct"),
+        fk_fields=(),
+    ),
+    # LMS Content module (XXXVIII)
+    "lms_courses": EntityConfig(
+        table="lms_courses",
+        fields=("title", "instructor_id", "created_at", "tenant_id"),
+        required=("title", "instructor_id"),
+        fk_fields=(),
+    ),
+    "lms_lessons": EntityConfig(
+        table="lms_lessons",
+        fields=("course_id", "title", "content_type", "created_at", "tenant_id"),
+        required=("course_id", "title", "content_type"),
+        fk_fields=(),
+    ),
+    "lms_lesson_progress": EntityConfig(
+        table="lms_lesson_progress",
+        fields=("lesson_id", "student_id", "status", "completed_at", "tenant_id"),
+        required=("lesson_id", "student_id", "status"),
+        fk_fields=(),
+    ),
+    "lms_submissions": EntityConfig(
+        table="lms_submissions",
+        fields=("assignment_id", "student_id", "content", "status", "submitted_at", "tenant_id"),
+        required=("assignment_id", "student_id", "status"),
+        fk_fields=(),
+    ),
+    "lms_grades": EntityConfig(
+        table="lms_grades",
+        fields=("submission_id", "student_id", "assignment_id", "grade", "feedback", "graded_at", "tenant_id"),
+        required=("submission_id", "student_id", "grade"),
+        fk_fields=(),
+    ),
+    "lms_returned_submissions": EntityConfig(
+        table="lms_returned_submissions",
+        fields=("submission_id", "student_id", "feedback", "returned_at", "tenant_id"),
+        required=("submission_id", "student_id", "feedback"),
+        fk_fields=(),
+    ),
+    "lms_risk_records": EntityConfig(
+        table="lms_risk_records",
+        fields=("student_id", "course_id", "completion_pct", "threshold", "detected_at", "tenant_id"),
+        required=("student_id", "course_id", "completion_pct"),
+        fk_fields=(),
+    ),
+    # Online Payments module (XXXIX)
+    "payment_orders": EntityConfig(
+        table="payment_orders",
+        fields=("student_id", "amount", "currency", "method", "description", "status", "created_at", "tenant_id"),
+        required=("student_id", "amount", "method", "status"),
+        fk_fields=(),
+    ),
+    "payment_transactions": EntityConfig(
+        table="payment_transactions",
+        fields=("payment_id", "student_id", "amount", "currency", "transaction_ref", "completed_at", "tenant_id"),
+        required=("payment_id", "student_id", "amount", "transaction_ref"),
+        fk_fields=(),
+    ),
+    "payment_failures": EntityConfig(
+        table="payment_failures",
+        fields=("payment_id", "student_id", "reason", "failed_at", "tenant_id"),
+        required=("payment_id", "student_id", "reason"),
+        fk_fields=(),
+    ),
+    "payment_refunds": EntityConfig(
+        table="payment_refunds",
+        fields=("payment_id", "student_id", "amount", "reason", "refunded_at", "tenant_id"),
+        required=("payment_id", "student_id", "amount", "reason"),
+        fk_fields=(),
+    ),
+    "payment_processing_log": EntityConfig(
+        table="payment_processing_log",
+        fields=("payment_id", "started_at", "tenant_id"),
+        required=("payment_id", "started_at"),
+        fk_fields=(),
+    ),
+    "payment_failure_alerts": EntityConfig(
+        table="payment_failure_alerts",
+        fields=("student_id", "failure_count", "threshold", "detected_at", "tenant_id"),
+        required=("student_id", "failure_count"),
+        fk_fields=(),
+    ),
+    # Student Feedback module (XL)
+    "feedback_forms": EntityConfig(
+        table="feedback_forms",
+        fields=("course_id", "title", "anonymous", "status", "created_at", "tenant_id"),
+        required=("course_id", "title", "status"),
+        fk_fields=(),
+    ),
+    "feedback_responses": EntityConfig(
+        table="feedback_responses",
+        fields=("form_id", "student_hash", "rating", "comment", "submitted_at", "tenant_id"),
+        required=("form_id", "student_hash", "rating"),
+        fk_fields=(),
+    ),
+    "feedback_analytics": EntityConfig(
+        table="feedback_analytics",
+        fields=("form_id", "course_id", "avg_rating", "response_count", "analyzed_at", "tenant_id"),
+        required=("form_id", "avg_rating", "response_count"),
+        fk_fields=(),
+    ),
+    # Internship module (XLI)
+    "internship_postings": EntityConfig(
+        table="internship_postings",
+        fields=("company_id", "title", "description", "slots", "status", "created_at", "tenant_id"),
+        required=("company_id", "title", "slots", "status"),
+        fk_fields=(),
+    ),
+    "internship_applications": EntityConfig(
+        table="internship_applications",
+        fields=("posting_id", "student_id", "cover_letter", "status", "applied_at", "tenant_id"),
+        required=("posting_id", "student_id", "status"),
+        fk_fields=(),
+    ),
+    "internship_interviews": EntityConfig(
+        table="internship_interviews",
+        fields=("application_id", "interview_date", "tenant_id"),
+        required=("application_id", "interview_date"),
+        fk_fields=(),
+    ),
+    "internship_contracts": EntityConfig(
+        table="internship_contracts",
+        fields=("application_id", "student_id", "company_id", "start_date", "end_date", "status", "created_at", "tenant_id"),
+        required=("student_id", "company_id", "start_date", "end_date", "status"),
+        fk_fields=(),
+    ),
+    # Events Management + Room Booking (XLII)
+    "campus_events": EntityConfig(
+        table="campus_events",
+        fields=("title", "category_id", "capacity", "start_time", "end_time", "status", "registered_count", "tenant_id"),
+        required=("title", "category_id", "capacity", "start_time", "end_time", "status"),
+        fk_fields=(),
+    ),
+    "event_registrations": EntityConfig(
+        table="event_registrations",
+        fields=("event_id", "student_id", "registered_at", "tenant_id"),
+        required=("event_id", "student_id"),
+        fk_fields=(),
+    ),
+    "campus_rooms": EntityConfig(
+        table="campus_rooms",
+        fields=("name", "capacity", "location", "tenant_id"),
+        required=("name", "capacity"),
+        fk_fields=(),
+    ),
+    "room_bookings": EntityConfig(
+        table="room_bookings",
+        fields=("room_id", "requester_id", "start_time", "end_time", "purpose", "status", "tenant_id"),
+        required=("room_id", "requester_id", "start_time", "end_time", "status"),
+        fk_fields=(),
+    ),
+    # Visitor Management + Access Control (XLIII)
+    "visit_requests": EntityConfig(
+        table="visit_requests",
+        fields=("name", "host_id", "purpose", "visit_date", "status", "badge_id", "tenant_id"),
+        required=("name", "host_id", "visit_date", "status"),
+        fk_fields=(),
+    ),
+    "visit_logs": EntityConfig(
+        table="visit_logs",
+        fields=("visitor_name", "zone", "event", "tenant_id"),
+        required=("visitor_name", "event"),
+        fk_fields=(),
+    ),
+    "access_cards": EntityConfig(
+        table="access_cards",
+        fields=("holder_id", "zones", "status", "tenant_id"),
+        required=("holder_id", "zones", "status"),
+        fk_fields=(),
+    ),
+    "access_logs": EntityConfig(
+        table="access_logs",
+        fields=("card_id", "zone", "result", "tenant_id"),
+        required=("card_id", "zone", "result"),
+        fk_fields=(),
+    ),
+    # Parking Module (XLIV)
+    "parking_lots": EntityConfig(
+        table="parking_lots",
+        fields=("name", "capacity", "occupancy", "tenant_id"),
+        required=("name", "capacity"),
+        fk_fields=(),
+    ),
+    "parking_permits": EntityConfig(
+        table="parking_permits",
+        fields=("holder_id", "lot_id", "vehicle_plate", "valid_from", "valid_until", "status", "tenant_id"),
+        required=("holder_id", "lot_id", "vehicle_plate", "valid_from", "valid_until", "status"),
+        fk_fields=(),
+    ),
+    "parking_sessions": EntityConfig(
+        table="parking_sessions",
+        fields=("permit_id", "lot_id", "spot", "status", "tenant_id"),
+        required=("permit_id", "lot_id", "status"),
+        fk_fields=(),
+    ),
+    "parking_violations": EntityConfig(
+        table="parking_violations",
+        fields=("vehicle_plate", "lot_id", "violation_type", "fine_amount", "tenant_id"),
+        required=("vehicle_plate", "violation_type"),
+        fk_fields=(),
+    ),
+    # Phase XLV: Publications + Patents + Conference
+    "publications": EntityConfig(
+        table="publications",
+        fields=("title", "authors", "journal", "status", "tenant_id"),
+        required=("title", "authors", "status"),
+        fk_fields=(),
+    ),
+    "citations": EntityConfig(
+        table="citations",
+        fields=("pub_id", "cited_by", "tenant_id"),
+        required=("pub_id", "cited_by"),
+        fk_fields=(),
+    ),
+    "patents": EntityConfig(
+        table="patents",
+        fields=("title", "inventors", "status", "tenant_id"),
+        required=("title", "inventors", "status"),
+        fk_fields=(),
+    ),
+    "conferences": EntityConfig(
+        table="conferences",
+        fields=("name", "venue", "date", "tenant_id"),
+        required=("name", "date"),
+        fk_fields=(),
+    ),
+    "conference_papers": EntityConfig(
+        table="conference_papers",
+        fields=("conference_id", "title", "author_id", "status", "tenant_id"),
+        required=("title", "author_id", "conference_id", "status"),
+        fk_fields=(),
+    ),
+    # Phase XLVI: AI Modules
+    "tutor_sessions": EntityConfig(
+        table="tutor_sessions",
+        fields=("student_id", "topic", "status", "struggle_count", "tenant_id"),
+        required=("student_id", "topic", "status"),
+        fk_fields=(),
+    ),
+    "scan_requests": EntityConfig(
+        table="scan_requests",
+        fields=("document_id", "content_length", "status", "similarity_score", "verdict", "tenant_id"),
+        required=("document_id", "status"),
+        fk_fields=(),
+    ),
+    "admissions_scorings": EntityConfig(
+        table="admissions_scorings",
+        fields=("application_id", "gpa", "test_score", "essay_length", "score", "status", "tenant_id"),
+        required=("application_id", "status"),
+        fk_fields=(),
+    ),
+    # Digital Documents (XLVII)
+    "digital_documents": EntityConfig(
+        table="digital_documents",
+        fields=("title", "doc_type", "content", "status", "qr_code", "signed_by", "tenant_id"),
+        required=("title", "doc_type", "status"),
+        fk_fields=(),
+    ),
+    "certificates": EntityConfig(
+        table="certificates",
+        fields=("student_id", "cert_type", "data", "qr_code", "tenant_id"),
+        required=("student_id", "cert_type"),
+        fk_fields=(),
+    ),
+    # Personnel Orders + Contracts HR (XLVIII)
+    "personnel_orders": EntityConfig(
+        table="personnel_orders",
+        fields=("order_type", "employee_id", "description", "status", "signed_by", "tenant_id"),
+        required=("order_type", "employee_id", "status"),
+        fk_fields=(),
+    ),
+    "hr_contracts": EntityConfig(
+        table="hr_contracts",
+        fields=("employee_id", "position", "salary", "start_date", "status", "termination_reason", "tenant_id"),
+        required=("employee_id", "position", "salary", "status"),
+        fk_fields=(),
+    ),
+    # Student Portal (XLIX)
+    "portal_requests": EntityConfig(
+        table="portal_requests",
+        fields=("student_id", "request_type", "details", "status", "tenant_id"),
+        required=("student_id", "request_type", "status"),
+        fk_fields=(),
+    ),
     # Phase IV-IV2: proctoring / exam supervision
     "proctoring_records": EntityConfig(
         table="university_proctoring_records",
@@ -1425,6 +1821,77 @@ ENTITY_CONFIGS: dict[str, EntityConfig] = {
         required=("syllabus_id", "course_code", "department_id", "backlog_status", "integration_source", "source_entity_id"),
         fk_fields=(),
     ),
+    "syllabus_approval_workflows": EntityConfig(
+        table="university_syllabus_approval_workflows",
+        fields=(
+            "syllabus_id",
+            "workflow_status",
+            "current_step",
+            "total_steps",
+            "initiated_by",
+            "completed_at",
+            "rejection_reason",
+            "tenant_id",
+        ),
+        required=("syllabus_id", "workflow_status", "current_step", "total_steps", "initiated_by"),
+        fk_fields=(),
+    ),
+    "syllabus_approval_actions": EntityConfig(
+        table="university_syllabus_approval_actions",
+        fields=(
+            "workflow_id",
+            "syllabus_id",
+            "step_order",
+            "step_type",
+            "assigned_to",
+            "action_type",
+            "action_status",
+            "course_code",
+            "department_id",
+            "tenant_id",
+        ),
+        required=("workflow_id", "syllabus_id", "step_order", "step_type", "assigned_to", "action_type", "action_status"),
+        fk_fields=(),
+    ),
+    "syllabus_approval_outcomes": EntityConfig(
+        table="university_syllabus_approval_outcomes",
+        fields=(
+            "syllabus_id",
+            "outcome",
+            "recorded_by",
+            "tenant_id",
+        ),
+        required=("syllabus_id", "outcome", "recorded_by"),
+        fk_fields=(),
+    ),
+    # Scheduling lifecycle action/outcome entity configs (XXXIV.5)
+    "scheduling_section_action_logs": EntityConfig(
+        table="university_scheduling_section_action_logs",
+        fields=(
+            "section_id",
+            "action_type",
+            "actor",
+            "time_slot_id",
+            "classroom_id",
+            "day_of_week",
+            "tenant_id",
+        ),
+        required=("section_id", "action_type", "actor"),
+        fk_fields=(),
+    ),
+    "scheduling_section_outcomes": EntityConfig(
+        table="university_scheduling_section_outcomes",
+        fields=(
+            "section_id",
+            "outcome",
+            "actor",
+            "source_entity_type",
+            "source_entity_id",
+            "tenant_id",
+        ),
+        required=("section_id", "outcome", "actor"),
+        fk_fields=(),
+    ),
     # Exam Governance — orphan frontend page backend
     "exams": EntityConfig(
         table="app_exams",
@@ -1496,6 +1963,166 @@ ENTITY_CONFIGS: dict[str, EntityConfig] = {
             "tenant_id",
         ),
         required=("template_id", "name", "template_text", "created_by"),
+        fk_fields=(),
+    ),
+    # Phase LI: Mobile App
+    "device_tokens": EntityConfig(
+        table="mobile_device_tokens",
+        fields=("student_id", "platform", "token", "status", "tenant_id"),
+        required=("student_id", "platform", "token", "status"),
+        fk_fields=(),
+    ),
+    "push_notifications": EntityConfig(
+        table="mobile_push_notifications",
+        fields=("student_id", "notification_type", "title", "body", "status", "tenant_id"),
+        required=("student_id", "notification_type", "title", "status"),
+        fk_fields=(),
+    ),
+    # Phase LII: Student ID Card
+    "student_id_cards": EntityConfig(
+        table="student_id_cards",
+        fields=("student_id", "card_type", "card_number", "qr_code", "nfc_uid", "status", "tenant_id"),
+        required=("student_id", "card_type", "card_number", "qr_code", "status"),
+        fk_fields=(),
+    ),
+    "card_scans": EntityConfig(
+        table="student_id_card_scans",
+        fields=("card_number", "location", "result", "student_id", "tenant_id"),
+        required=("card_number", "location", "result"),
+        fk_fields=(),
+    ),
+    # Phase LIII: Counseling / Mental Health
+    "counseling_appointments": EntityConfig(
+        table="counseling_appointments",
+        fields=("student_id", "counselor_id", "session_type", "scheduled_at", "status", "notes", "tenant_id"),
+        required=("student_id", "counselor_id", "session_type", "scheduled_at", "status"),
+        fk_fields=(),
+    ),
+    "counseling_cases": EntityConfig(
+        table="counseling_cases",
+        fields=("student_id", "counselor_id", "risk_level", "status", "tenant_id"),
+        required=("student_id", "counselor_id", "risk_level", "status"),
+        fk_fields=(),
+    ),
+    "crisis_reports": EntityConfig(
+        table="crisis_reports",
+        fields=("student_id", "risk_level", "description", "status", "tenant_id"),
+        required=("student_id", "risk_level", "description", "status"),
+        fk_fields=(),
+    ),
+    # Phase LIV: 2FA SMS + TOTP
+    "twofa_enrollments": EntityConfig(
+        table="twofa_enrollments",
+        fields=("user_id", "method", "secret", "is_active", "status", "tenant_id"),
+        required=("user_id", "method", "is_active", "status"),
+        fk_fields=(),
+    ),
+    "twofa_challenges": EntityConfig(
+        table="twofa_challenges",
+        fields=("user_id", "method", "code", "status", "tenant_id"),
+        required=("user_id", "method", "status"),
+        fk_fields=(),
+    ),
+    # Phase LV: SSO SAML 2.0
+    "saml_identity_providers": EntityConfig(
+        table="saml_identity_providers",
+        fields=("entity_id", "sso_url", "slo_url", "certificate", "binding", "status", "tenant_id"),
+        required=("entity_id", "sso_url", "certificate", "binding", "status"),
+        fk_fields=(),
+    ),
+    "saml_sessions": EntityConfig(
+        table="saml_sessions",
+        fields=("idp_id", "user_id", "status", "relay_state", "request_id", "name_id", "tenant_id"),
+        required=("idp_id", "status"),
+        fk_fields=(),
+    ),
+    "saml_attribute_mappings": EntityConfig(
+        table="saml_attribute_mappings",
+        fields=("idp_id", "saml_attribute", "local_field", "tenant_id"),
+        required=("idp_id", "saml_attribute", "local_field"),
+        fk_fields=(),
+    ),
+    # Phase LVI: Exam Proctoring
+    "proctoring_sessions": EntityConfig(
+        table="proctoring_sessions",
+        fields=("exam_id", "student_id", "status", "abort_reason", "tenant_id"),
+        required=("exam_id", "student_id", "status"),
+        fk_fields=(),
+    ),
+    "proctoring_violations": EntityConfig(
+        table="proctoring_violations",
+        fields=("session_id", "violation_type", "confidence", "snapshot_ref", "reviewed", "resolution", "tenant_id"),
+        required=("session_id", "violation_type", "confidence"),
+        fk_fields=(),
+    ),
+    "proctoring_configs": EntityConfig(
+        table="proctoring_configs",
+        fields=("exam_id", "rules", "tenant_id"),
+        required=("exam_id", "rules"),
+        fk_fields=(),
+    ),
+    # Phase LVII: Blockchain Diploma Verification
+    "blockchain_diplomas": EntityConfig(
+        table="blockchain_diplomas",
+        fields=("student_id", "degree", "specialization", "issued_year", "gpa", "certificate_hash", "tx_hash", "status", "tenant_id"),
+        required=("student_id", "degree", "issued_year", "certificate_hash", "tx_hash", "status"),
+        fk_fields=(),
+    ),
+    "diploma_verifications": EntityConfig(
+        table="diploma_verifications",
+        fields=("diploma_id", "certificate_hash", "result", "verifier_id", "tenant_id"),
+        required=("certificate_hash", "result"),
+        fk_fields=(),
+    ),
+    "diploma_revocations": EntityConfig(
+        table="diploma_revocations",
+        fields=("diploma_id", "reason", "tenant_id"),
+        required=("diploma_id", "reason"),
+        fk_fields=(),
+    ),
+    # Phase LVIII: Parent Portal
+    "parent_profiles": EntityConfig(
+        table="parent_profiles",
+        fields=("parent_external_id", "full_name", "email", "phone", "status", "tenant_id"),
+        required=("parent_external_id", "full_name", "email", "status"),
+        fk_fields=(),
+    ),
+    "parent_student_links": EntityConfig(
+        table="parent_student_links",
+        fields=("parent_profile_id", "student_id", "relationship", "status", "unlink_reason", "tenant_id"),
+        required=("parent_profile_id", "student_id", "relationship", "status"),
+        fk_fields=(),
+    ),
+    "parent_alerts": EntityConfig(
+        table="parent_alerts",
+        fields=("parent_profile_id", "student_id", "alert_type", "message", "severity", "status", "tenant_id"),
+        required=("parent_profile_id", "student_id", "alert_type", "message", "severity", "status"),
+        fk_fields=(),
+    ),
+    # Phase LIX: Alumni Donation Portal
+    "alumni_donation_campaigns": EntityConfig(
+        table="alumni_donation_campaigns",
+        fields=("title", "target_amount", "description", "status", "tenant_id"),
+        required=("title", "target_amount", "status"),
+        fk_fields=(),
+    ),
+    "alumni_donations": EntityConfig(
+        table="alumni_donations",
+        fields=("campaign_id", "donor_id", "amount", "payment_method", "status", "tenant_id"),
+        required=("campaign_id", "donor_id", "amount", "payment_method", "status"),
+        fk_fields=(),
+    ),
+    # Phase LX: Multi-currency / Multi-language
+    "currency_exchange_rates": EntityConfig(
+        table="currency_exchange_rates",
+        fields=("base_currency", "quote_currency", "rate", "active", "tenant_id"),
+        required=("base_currency", "quote_currency", "rate", "active"),
+        fk_fields=(),
+    ),
+    "tenant_localization_profiles": EntityConfig(
+        table="tenant_localization_profiles",
+        fields=("currency_code", "language_code", "timezone", "tenant_id"),
+        required=("currency_code", "language_code", "timezone"),
         fk_fields=(),
     ),
 }

@@ -25,6 +25,7 @@ import {
   Settings2,
   Wrench,
   Package,
+  Globe2,
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS, type Permission } from "./permissions";
@@ -597,6 +598,12 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
         label: "Languages",
         href: "/console/languages",
         icon: Code2,
+        permission: PERMISSIONS.I18N_MANAGE,
+      },
+      {
+        label: "Currency Localization",
+        href: "/console/currency-localization",
+        icon: Globe2,
         permission: PERMISSIONS.I18N_MANAGE,
       },
       {

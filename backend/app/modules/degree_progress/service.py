@@ -193,6 +193,47 @@ class DegreeProgressService:
         DegreeProgressRules.validate_program_requirement(requirement)
         return requirement
 
+    def _resolve_course_names(self, tenant_id: int, course_ids: list[int]) -> dict[int, str]:
+        """Return {course_id: title} for the given ids within the tenant."""
+        if not course_ids:
+            return {}
+        try:
+            from app.modules.courses.models import CourseModel  # lazy import
+        except ImportError:
+            return {}
+        try:
+            rows = self.db.execute(
+                select(CourseModel).where(
+                    and_(
+                        CourseModel.id.in_(course_ids),
+                        CourseModel.tenant_id == str(tenant_id),
+                    )
+                )
+            ).scalars().all()
+        except Exception:
+            # Keep degree-progress APIs resilient when catalog lookup is mocked/incomplete.
+            return {}
+        return {int(row.id): row.title for row in rows}
+
+    def _resolve_program_name(self, tenant_id: int, program_id: int) -> str | None:
+        """Return program title or None if not found."""
+        try:
+            from app.modules.programs.models import ProgramModel  # lazy import
+        except ImportError:
+            return None
+        try:
+            row = self.db.execute(
+                select(ProgramModel.title).where(
+                    and_(
+                        ProgramModel.id == program_id,
+                        ProgramModel.tenant_id == str(tenant_id),
+                    )
+                )
+            ).scalar_one_or_none()
+            return row if isinstance(row, str) else None
+        except Exception:
+            return None
+
     def _load_requirement_items(self, tenant_id: int, requirement_id: int) -> list[ProgramRequirementItemModel]:
         return self.db.execute(
             select(ProgramRequirementItemModel)
@@ -231,12 +272,17 @@ class DegreeProgressService:
         }
         earned_credits = int(transcript.total_credits)
 
+        all_course_ids = [item.course_id for item in req_items]
+        course_names = self._resolve_course_names(tenant_id, all_course_ids)
+        program_name = self._resolve_program_name(tenant_id, binding.program_id)
+
         completed: list[RequirementStatusSchema] = []
         remaining: list[RequirementStatusSchema] = []
         for item in req_items:
             status = RequirementStatusSchema(
                 requirement_item_id=item.id,
                 course_id=item.course_id,
+                course_name=course_names.get(item.course_id),
                 required=bool(item.required),
                 credits=int(item.credits),
                 completed=item.course_id in completed_course_ids,
@@ -257,6 +303,7 @@ class DegreeProgressService:
         progress = DegreeProgressSchema(
             student_profile_id=student_profile_id,
             program_id=binding.program_id,
+            program_name=program_name,
             requirement_id=requirement.id,
             requirement_name=requirement.name,
             credits_earned=earned_credits,

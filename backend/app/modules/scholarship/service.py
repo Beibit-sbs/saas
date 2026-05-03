@@ -233,29 +233,33 @@ def _is_award_at_risk(row: dict[str, object]) -> bool:
 def create_scholarship_award(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
     """Create award and emit signal if award is at risk."""
     record = create_entity_for_tenant("scholarship_awards", payload, tenant_id)
-    at_risk = _is_award_at_risk(payload)
+    at_risk = _is_award_at_risk(record)
     enriched = {**record, "at_risk": at_risk}
 
     if at_risk:
-        record_id = str(record.get("id") or "unknown")
-        EventPublisher().publish_event(
-            tenant_id=tenant_id,
-            event_type="scholarship.award.at_risk_detected",
-            aggregate_type="scholarship_award",
-            aggregate_id=record_id,
-            payload_json={
-                "award_code": record.get("award_code"),
-                "student_id": record.get("student_id"),
-                "current_gpa": record.get("current_gpa"),
-                "gpa_threshold": record.get("gpa_threshold"),
-                "status": record.get("status"),
-                "source_entity_type": "scholarship_award",
-                "source_entity_id": record_id,
-            },
-        )
+        record_id = int(record.get("id") or 0)
+        # Persist alert projection before emitting events to keep downstream views consistent.
+        _ensure_revocation_alert_record(record_id, tenant_id)
+        try:
+            EventPublisher().publish_event(
+                tenant_id=tenant_id,
+                event_type="scholarship.award.at_risk_detected",
+                aggregate_type="scholarship_award",
+                aggregate_id=str(record_id),
+                payload_json={
+                    "award_code": record.get("award_code"),
+                    "student_id": record.get("student_id"),
+                    "current_gpa": record.get("current_gpa"),
+                    "gpa_threshold": record.get("gpa_threshold"),
+                    "status": record.get("status"),
+                    "source_entity_type": "scholarship_award",
+                    "source_entity_id": str(record_id),
+                },
+            )
+        except Exception:
+            # Fire-and-forget: award and alert are already persisted.
+            pass
 
-    if at_risk:
-        _ensure_revocation_alert_record(int(record.get("id") or 0), tenant_id)
     return enriched
 
 
@@ -276,10 +280,17 @@ def _ensure_revocation_alert_record(award_id: int, tenant_id: int) -> None:
         "tenant_id": tenant_id,
     }
     create_entity_for_tenant("scholarship_revocation_alerts", alert_payload, tenant_id)
-    EventPublisher.publish(
-        "campus.scholarship.award_revocation_risk_detected",
-        {"award_id": award_id, "tenant_id": tenant_id},
-    )
+    try:
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type="campus.scholarship.award_revocation_risk_detected",
+            aggregate_type="scholarship_revocation_alert",
+            aggregate_id=str(award_id),
+            payload_json={"award_id": award_id, "tenant_id": tenant_id},
+        )
+    except Exception:
+        # Fire-and-forget: alert persistence is authoritative.
+        pass
 
 
 def get_scholarship_brain_context(tenant_id: int) -> dict[str, object]:

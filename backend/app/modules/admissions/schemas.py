@@ -8,7 +8,7 @@ All schemas include explicit tenant_id validation and audit trail fields.
 No implicit defaults; fail-closed contract on tenant scope.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -328,7 +328,7 @@ class ErrorResponseSchema(BaseModel):
     """Standard error response."""
     error: ErrorDetailSchema
     request_id: Optional[str] = Field(None, description="Correlation ID for debugging")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ==============================================================================

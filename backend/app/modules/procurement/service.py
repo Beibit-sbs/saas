@@ -15,6 +15,7 @@ from app.modules.procurement.schemas import (
     VendorCreateSchema,
     VendorSchema,
 )
+from app.platform.events.publisher import EventPublisher
 from app.modules.university_core.tenant_entity_service import create_entity_for_tenant, list_entities_for_tenant, update_entity_for_tenant
 
 
@@ -27,7 +28,8 @@ _PO_ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     "SUBMITTED": {"APPROVED", "REJECTED"},
     "APPROVED": {"PO_ISSUED"},
     "REJECTED": set(),
-    "PO_ISSUED": set(),
+    "PO_ISSUED": {"DELIVERED"},
+    "DELIVERED": set(),
 }
 
 # W34: cap on active vendors per category
@@ -51,7 +53,21 @@ _PO_STATUS_ALIASES: dict[str, str] = {
     "approved": "APPROVED",
     "rejected": "REJECTED",
     "po_issued": "PO_ISSUED",
+    "delivered": "DELIVERED",
 }
+
+
+def _emit_procurement_event(*, tenant_id: int, event_type: str, aggregate_id: int, payload: dict) -> None:
+    try:
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            aggregate_type="procurement_contract",
+            aggregate_id=aggregate_id,
+            payload_json=payload,
+        )
+    except Exception:  # noqa: BLE001 - events must never break primary business flow
+        pass
 
 
 def _check_vendor_active_for_contract(
@@ -258,6 +274,20 @@ def create_contract(tenant_id: int, request: ContractCreateSchema, actor: str) -
             },
         )
 
+    contract_id = int(created.get("id") or 0)
+    _emit_procurement_event(
+        tenant_id=tenant_id,
+        event_type="procurement.request_created",
+        aggregate_id=contract_id,
+        payload={
+            "contract_id": contract_id,
+            "contract_code": request.contract_code,
+            "vendor_code": request.vendor_code,
+            "status": str(request.status),
+            "actor": actor,
+        },
+    )
+
     return ContractSchema.model_validate(created)
 
 
@@ -317,6 +347,27 @@ def update_contract_status(
         },
         tenant_id=tenant_id,
     )
+
+    event_map = {
+        "APPROVED": "procurement.approved",
+        "REJECTED": "procurement.rejected",
+        "PO_ISSUED": "procurement.po_issued",
+        "DELIVERED": "procurement.delivered",
+    }
+    event_type = event_map.get(next_status)
+    if event_type is not None:
+        _emit_procurement_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            aggregate_id=contract_id,
+            payload={
+                "contract_id": contract_id,
+                "contract_code": str(existing.get("contract_code") or ""),
+                "old_status": current_status,
+                "new_status": next_status,
+                "actor": actor,
+            },
+        )
 
     return ContractSchema.model_validate(updated)
 

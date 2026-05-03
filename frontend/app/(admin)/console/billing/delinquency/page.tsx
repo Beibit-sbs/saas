@@ -12,6 +12,8 @@ import { ErrorState } from "@/shared/ui/error-state";
 import { RequirePermission } from "@/shared/ui/permission-gate";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
+import { formatCurrencyAmount } from "@/shared/utils/format";
+import { useTenantLocale } from "@/modules/currency-localization/hooks";
 import {
   useTenantDelinquencyRecords,
   useTenantDelinquencyDashboard,
@@ -48,10 +50,6 @@ const STATUS_COLORS: Record<string, "default" | "warning" | "destructive" | "suc
   closed: "default",
 };
 
-function formatCents(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
-}
-
 export default function BillingDelinquencyPage() {
   const [selectedTenantId, setSelectedTenantId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -67,6 +65,9 @@ export default function BillingDelinquencyPage() {
     isLoading: recordsLoading,
     error: recordsError,
   } = useTenantDelinquencyRecords(selectedTenantId ?? 0, statusFilter || undefined);
+
+  const localeQuery = useTenantLocale(selectedTenantId ?? 0);
+  const localeProfile = localeQuery.data;
 
   const escalate = useEscalateDelinquency(selectedTenantId ?? 0);
   const resolve = useResolveDelinquency(selectedTenantId ?? 0);
@@ -90,7 +91,10 @@ export default function BillingDelinquencyPage() {
     {
       key: "amount_cents",
       header: "Amount",
-      cell: (r) => formatCents(r.amount_cents),
+      cell: (r) => formatCurrencyAmount(r.amount_cents / 100, {
+        currencyCode: localeProfile?.currency_code ?? "USD",
+        languageCode: localeProfile?.language_code ?? "en",
+      }),
     },
     {
       key: "opened_at",
@@ -198,7 +202,13 @@ export default function BillingDelinquencyPage() {
                 <Card className="p-4">
                   <p className="text-xs text-muted-foreground">Total Overdue</p>
                   <p className="text-2xl font-bold text-red-600">
-                    {formatCents(dashboard.total_overdue_cents)}
+                    {formatCurrencyAmount(dashboard.total_overdue_cents / 100, {
+                      currencyCode: localeProfile?.currency_code ?? "USD",
+                      languageCode: localeProfile?.language_code ?? "en",
+                    })}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Tenant currency: {localeProfile?.currency_code ?? "USD"}
                   </p>
                 </Card>
                 <Card className="p-4">
