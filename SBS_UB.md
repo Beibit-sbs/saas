@@ -2001,7 +2001,16 @@ validate -> guard -> cross-entity check -> persist -> publish_event -> brain sig
 - Added event firing in `issue_card()` (persist-first pattern)
 - 4/4 hardening tests green in Docker
 
-## NEXT PHASE START: XC (TBD)
+## Phase XC — Blockchain Diploma Service Hardening ✅ COMPLETE (4/4 backend targeted)
+
+**Target:** `backend/app/modules/blockchain_diploma/service.py`
+**Tests:** `backend/tests/modules/blockchain_diploma/test_service_hardening_xc.py`
+
+- Fixed `EventPublisher.publish(...)` → canonical `EventPublisher().publish_event(...)` with aggregate_type/aggregate_id
+- All `create_entity_for_tenant`, `list_entities_for_tenant`, `update_entity_for_tenant` already use positional args
+- 4/4 hardening tests green in Docker
+
+## NEXT PHASE START: XCI (TBD)
 
 **Начать с**: определить scope Phase LXXXVIII (следующий блок)
 **Формат работы**: каждый шаг — validate/guard/checks/persist/event/brain/action/outcome + тесты + обновление audit table
