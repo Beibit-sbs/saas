@@ -26,14 +26,19 @@ def _validate_tenant(tenant_id: int) -> None:
 
 def _fire(tenant_id: int, event_type: str, payload: dict) -> None:
     try:
-        pub = EventPublisher()
-        pub.publish_event(tenant_id=tenant_id, event_type=event_type, payload=payload)
+        EventPublisher().publish_event(
+            tenant_id=int(tenant_id),
+            event_type=event_type,
+            aggregate_type="access_control",
+            aggregate_id=str(payload.get("card_id") or ""),
+            payload_json=payload,
+        )
     except Exception:
         pass
 
 
 def _get_card(tenant_id: int, card_id: str) -> dict:
-    rows = list_entities_for_tenant(tenant_id, "access_cards")
+    rows = list_entities_for_tenant("access_cards", tenant_id)
     for r in rows:
         if r.get("id") == card_id:
             return r
@@ -60,10 +65,11 @@ def issue_card(
     if not zones:
         raise ValueError("zones must not be empty")
     row = create_entity_for_tenant(
-        tenant_id,
         "access_cards",
         {"holder_id": holder_id, "zones": zones, "status": "ACTIVE", "tenant_id": tenant_id},
+        tenant_id,
     )
+    _fire(tenant_id, "card.issued", {"card_id": row["id"], "holder_id": holder_id, "zones": zones})
     return {"card_id": row["id"], "holder_id": holder_id, "status": "ACTIVE", "zones": zones}
 
 
@@ -122,9 +128,9 @@ def attempt_access(
 
     # grant
     create_entity_for_tenant(
-        tenant_id,
         "access_logs",
         {"card_id": card_id, "zone": zone, "result": "GRANTED", "tenant_id": tenant_id},
+        tenant_id,
     )
     _fire(tenant_id, "access.granted", {"card_id": card_id, "zone": zone})
     return {"granted": True}
@@ -132,15 +138,15 @@ def attempt_access(
 
 def _check_security_anomaly(tenant_id: int, *, card_id: str, zone: str) -> None:
     """Fire security.anomaly if card has >= REPEATED_DENIAL_THRESHOLD recent denials."""
-    logs = list_entities_for_tenant(tenant_id, "access_logs")
+    logs = list_entities_for_tenant("access_logs", tenant_id)
     denials = [
         lg for lg in logs
         if lg.get("card_id") == card_id and lg.get("result") == "DENIED"
     ]
     create_entity_for_tenant(
-        tenant_id,
         "access_logs",
         {"card_id": card_id, "zone": zone, "result": "DENIED", "tenant_id": tenant_id},
+        tenant_id,
     )
     if len(denials) + 1 >= REPEATED_DENIAL_THRESHOLD:
         _fire(tenant_id, "security.anomaly", {"card_id": card_id, "denial_count": len(denials) + 1})
@@ -148,7 +154,7 @@ def _check_security_anomaly(tenant_id: int, *, card_id: str, zone: str) -> None:
 
 def list_cards(tenant_id: int, *, status: str | None = None) -> list[dict]:
     _validate_tenant(tenant_id)
-    rows = list_entities_for_tenant(tenant_id, "access_cards")
+    rows = list_entities_for_tenant("access_cards", tenant_id)
     if status:
         rows = [r for r in rows if r.get("status") == status]
     return rows
@@ -156,7 +162,7 @@ def list_cards(tenant_id: int, *, status: str | None = None) -> list[dict]:
 
 def list_access_logs(tenant_id: int, *, card_id: str | None = None, zone: str | None = None) -> list[dict]:
     _validate_tenant(tenant_id)
-    rows = list_entities_for_tenant(tenant_id, "access_logs")
+    rows = list_entities_for_tenant("access_logs", tenant_id)
     if card_id:
         rows = [r for r in rows if r.get("card_id") == card_id]
     if zone:
