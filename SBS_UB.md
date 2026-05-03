@@ -1980,7 +1980,17 @@ validate -> guard -> cross-entity check -> persist -> publish_event -> brain sig
 | LXXXVI | Scholarship Service Hardening (10-step contract) | ✅ COMPLETE (4/4 backend targeted) |
 | LXXXVII | Student Portal Service Hardening (10-step contract) | ✅ COMPLETE (4/4 backend targeted) |
 
-## NEXT PHASE START: LXXXVIII (TBD)
+## Phase LXXXVIII — Attendance Service Hardening ✅ COMPLETE (4/4 backend targeted)
+
+**Target:** `backend/app/modules/attendance/service.py`
+**Tests:** `backend/tests/modules/attendance/test_service_hardening_lxxxviii.py`
+
+- Fixed `_fire()` → canonical `EventPublisher().publish_event(...)` (no `tenant_id` in constructor)
+- Fixed all `create_entity_for_tenant(...)` to positional args: `(entity_name, payload_dict, tenant_id)`
+- Fixed all `list_entities_for_tenant(...)` to positional args: `(entity_name, tenant_id)`
+- 4/4 hardening tests green in Docker
+
+## NEXT PHASE START: LXXXIX (TBD)
 
 **Начать с**: определить scope Phase LXXXVIII (следующий блок)
 **Формат работы**: каждый шаг — validate/guard/checks/persist/event/brain/action/outcome + тесты + обновление audit table

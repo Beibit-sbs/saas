@@ -42,9 +42,15 @@ def _utc_now() -> datetime:
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
 def _fire(tenant_id: int, event_type: str, payload: dict) -> None:
+    """Best-effort event publish — never raises."""
     try:
-        pub = EventPublisher(tenant_id=tenant_id)
-        pub.publish_event(event_type=event_type, payload=payload)
+        EventPublisher().publish_event(
+            tenant_id=int(tenant_id),
+            event_type=event_type,
+            aggregate_type="attendance",
+            aggregate_id=str(payload.get("record_id") or payload.get("risk_record_id") or ""),
+            payload_json=payload,
+        )
     except Exception:
         pass
 
@@ -74,14 +80,14 @@ def mark_attendance(
 
     record = create_entity_for_tenant(
         "attendance_records",
-        tenant_id=tenant_id,
-        data={
+        {
             "session_id": session_id,
             "student_id": student_id,
             "status": status,
             "recorded_at": _utc_now().isoformat(),
             "tenant_id": tenant_id,
         },
+        tenant_id,
     )
 
     event_type = "attendance.absence.recorded" if status == "ABSENT" else "attendance.record.marked"
@@ -116,7 +122,7 @@ def excuse_absence(
     if not reason:
         raise ValueError("reason is required")
 
-    records = list_entities_for_tenant("attendance_records", tenant_id=tenant_id)
+    records = list_entities_for_tenant("attendance_records", tenant_id)
     record = next((r for r in records if str(r.get("id", "")) == str(record_id)), None)
     if record is None:
         raise LookupError(f"Attendance record {record_id} not found for tenant {tenant_id}")
@@ -125,8 +131,7 @@ def excuse_absence(
 
     excuse = create_entity_for_tenant(
         "attendance_excuses",
-        tenant_id=tenant_id,
-        data={
+        {
             "record_id": record_id,
             "student_id": record.get("student_id"),
             "session_id": record.get("session_id"),
@@ -134,6 +139,7 @@ def excuse_absence(
             "excused_at": _utc_now().isoformat(),
             "tenant_id": tenant_id,
         },
+        tenant_id,
     )
 
     _fire(tenant_id, "attendance.absence.excused", {
@@ -164,12 +170,12 @@ def get_attendance_summary(
     if not student_id:
         raise ValueError("student_id is required")
 
-    records = list_entities_for_tenant("attendance_records", tenant_id=tenant_id)
+    records = list_entities_for_tenant("attendance_records", tenant_id)
     student_records = [r for r in records if str(r.get("student_id", "")) == str(student_id)]
 
     if course_id:
         # Filter by course via sessions
-        sessions = list_entities_for_tenant("attendance_sessions", tenant_id=tenant_id)
+        sessions = list_entities_for_tenant("attendance_sessions", tenant_id)
         course_session_ids = {
             str(s.get("id", ""))
             for s in sessions
@@ -220,8 +226,7 @@ def check_low_attendance_risk(
     if summary["low_risk"]:
         risk_record = create_entity_for_tenant(
             "attendance_risk_records",
-            tenant_id=tenant_id,
-            data={
+            {
                 "student_id": student_id,
                 "course_id": course_id,
                 "attendance_pct": summary["attendance_pct"],
@@ -229,6 +234,7 @@ def check_low_attendance_risk(
                 "detected_at": _utc_now().isoformat(),
                 "tenant_id": tenant_id,
             },
+            tenant_id,
         )
 
         _fire(tenant_id, "attendance.threshold.breached", {
@@ -254,7 +260,7 @@ def list_attendance_records(
     student_id: str | None = None,
 ) -> list[dict]:
     _validate_tenant(tenant_id)
-    rows = list_entities_for_tenant("attendance_records", tenant_id=tenant_id)
+    rows = list_entities_for_tenant("attendance_records", tenant_id)
     if session_id:
         rows = [r for r in rows if str(r.get("session_id", "")) == str(session_id)]
     if student_id:
