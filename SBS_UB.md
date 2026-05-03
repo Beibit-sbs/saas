@@ -2010,8 +2010,19 @@ validate -> guard -> cross-entity check -> persist -> publish_event -> brain sig
 - All `create_entity_for_tenant`, `list_entities_for_tenant`, `update_entity_for_tenant` already use positional args
 - 4/4 hardening tests green in Docker
 
-## NEXT PHASE START: XCI (TBD)
+## Phase XCI — AI Admissions Scoring Service Hardening ✅ COMPLETE (4/4 backend targeted)
 
-**Начать с**: определить scope Phase LXXXVIII (следующий блок)
+**Target:** `backend/app/modules/ai_admissions_scoring/service.py`
+**Tests:** `backend/tests/modules/ai_admissions_scoring/test_service_hardening_xci.py`
+
+- Fixed `_fire()` → canonical `EventPublisher().publish_event(...)` with aggregate_type/aggregate_id
+- Fixed all `create_entity_for_tenant(...)` to positional args: `(entity_name, payload_dict, tenant_id)`
+- Fixed all `list_entities_for_tenant(...)` to positional args: `(entity_name, tenant_id)`
+- Added event firing in `approve_scoring()` and `reject_scoring()`
+- 4/4 hardening tests ready (commit 36a7885)
+
+## NEXT PHASE START: XCII (TBD)
+
+**Начать с**: определить scope Phase XCII (следующий блок)
 **Формат работы**: каждый шаг — validate/guard/checks/persist/event/brain/action/outcome + тесты + обновление audit table
 **Gate условие**: все тесты зелёные + event-after-persist + 10-step loop verified
