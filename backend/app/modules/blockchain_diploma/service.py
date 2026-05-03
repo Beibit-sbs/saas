@@ -107,10 +107,12 @@ def issue_diploma(
     )
 
     try:
-        EventPublisher.publish(
+        EventPublisher().publish_event(
             tenant_id=tenant_id,
             event_type="blockchain_diploma.issued",
-            payload={
+            aggregate_type="blockchain_diploma",
+            aggregate_id=record["id"],
+            payload_json={
                 "diploma_id": record["id"],
                 "student_id": student_id,
                 "tx_hash": tx_hash,
@@ -157,10 +159,12 @@ def revoke_diploma(*, diploma_id: int, reason: str, tenant_id: int) -> Diploma:
     )
 
     try:
-        EventPublisher.publish(
+        EventPublisher().publish_event(
             tenant_id=tenant_id,
             event_type="blockchain_diploma.revoked",
-            payload={"diploma_id": diploma_id, "reason": reason},
+            aggregate_type="blockchain_diploma",
+            aggregate_id=diploma_id,
+            payload_json={"diploma_id": diploma_id, "reason": reason},
         )
     except Exception:
         pass
@@ -259,10 +263,12 @@ def verify_diploma(
     )
 
     try:
-        EventPublisher.publish(
+        EventPublisher().publish_event(
             tenant_id=tenant_id,
             event_type="blockchain_diploma.verified",
-            payload={
+            aggregate_type="blockchain_diploma",
+            aggregate_id=record["id"],
+            payload_json={
                 "verification_id": record["id"],
                 "certificate_hash": certificate_hash,
                 "result": result,
