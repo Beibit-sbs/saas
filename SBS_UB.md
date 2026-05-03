@@ -1978,9 +1978,10 @@ validate -> guard -> cross-entity check -> persist -> publish_event -> brain sig
 | LXXXIV | Grades Service Hardening (10-step contract) | ✅ COMPLETE (4/4 backend targeted) |
 | LXXXV | Admissions Service Hardening (10-step contract) | ✅ COMPLETE (4/4 backend targeted) |
 | LXXXVI | Scholarship Service Hardening (10-step contract) | ✅ COMPLETE (4/4 backend targeted) |
+| LXXXVII | Student Portal Service Hardening (10-step contract) | ✅ COMPLETE (4/4 backend targeted) |
 
-## NEXT PHASE START: LXXXVII (TBD)
+## NEXT PHASE START: LXXXVIII (TBD)
 
-**Начать с**: определить scope Phase LXXXVII (следующий блок)
+**Начать с**: определить scope Phase LXXXVIII (следующий блок)
 **Формат работы**: каждый шаг — validate/guard/checks/persist/event/brain/action/outcome + тесты + обновление audit table
 **Gate условие**: все тесты зелёные + event-after-persist + 10-step loop verified
