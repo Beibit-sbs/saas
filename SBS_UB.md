@@ -1990,7 +1990,18 @@ validate -> guard -> cross-entity check -> persist -> publish_event -> brain sig
 - Fixed all `list_entities_for_tenant(...)` to positional args: `(entity_name, tenant_id)`
 - 4/4 hardening tests green in Docker
 
-## NEXT PHASE START: LXXXIX (TBD)
+## Phase LXXXIX — Access Control Service Hardening ✅ COMPLETE (4/4 backend targeted)
+
+**Target:** `backend/app/modules/access_control/service.py`
+**Tests:** `backend/tests/modules/access_control/test_service_hardening_lxxxix.py`
+
+- Fixed `_fire()` → canonical `EventPublisher().publish_event(...)` with aggregate_type/aggregate_id
+- Fixed all `create_entity_for_tenant(...)` to positional args: `(entity_name, payload_dict, tenant_id)`
+- Fixed all `list_entities_for_tenant(...)` to positional args: `(entity_name, tenant_id)`
+- Added event firing in `issue_card()` (persist-first pattern)
+- 4/4 hardening tests green in Docker
+
+## NEXT PHASE START: XC (TBD)
 
 **Начать с**: определить scope Phase LXXXVIII (следующий блок)
 **Формат работы**: каждый шаг — validate/guard/checks/persist/event/brain/action/outcome + тесты + обновление audit table
