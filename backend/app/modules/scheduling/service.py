@@ -16,6 +16,7 @@ from app.core.module_helpers.service_validation import (
 )
 from app.modules.audit.service import log_admin_action
 from app.modules.billing.service import assert_billing_write_allowed
+from app.modules.usage.service import record_usage_event
 from app.modules.courses.models import CourseModel
 from app.modules.enrollments.models import EnrollmentModel, EnrollmentStatus
 from app.modules.scheduling.business_rules import SchedulingRules
@@ -97,6 +98,13 @@ def _audit(actor: str, action: str, path: str, metadata: dict, tenant_id: int) -
         metadata=metadata,
         tenant_id=tenant_id,
     )
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        pass
 
 
 class SchedulingService:
@@ -430,7 +438,7 @@ class SchedulingService:
 
         # Publish section.created event (fire-and-forget)
         try:
-            EventPublisher(db_session=self.db).publish_event(
+            EventPublisher().publish_event(
                 tenant_id=tenant_id,
                 event_type="scheduling.section.created",
                 aggregate_type="course_section",
@@ -446,6 +454,7 @@ class SchedulingService:
             )
         except Exception:
             pass
+        _metric(tenant_id, "scheduling_sections_created", 1)
 
         return CourseSectionReadSchema.model_validate(section)
 
@@ -596,7 +605,7 @@ class SchedulingService:
 
         # Publish section.scheduled event (fire-and-forget)
         try:
-            EventPublisher(db_session=self.db).publish_event(
+            EventPublisher().publish_event(
                 tenant_id=tenant_id,
                 event_type="scheduling.section.scheduled",
                 aggregate_type="course_section",
@@ -657,6 +666,7 @@ class SchedulingService:
             })
         except Exception:
             pass  # Brain Core errors must never break core flows
+        _metric(tenant_id, "scheduling_sections_scheduled", 1)
 
         return SectionScheduleReadSchema.model_validate(schedule)
 
@@ -709,7 +719,7 @@ class SchedulingService:
 
         # Publish instructor.assigned event (fire-and-forget)
         try:
-            EventPublisher(db_session=self.db).publish_event(
+            EventPublisher().publish_event(
                 tenant_id=tenant_id,
                 event_type="scheduling.instructor.assigned",
                 aggregate_type="instructor_assignment",
@@ -725,6 +735,7 @@ class SchedulingService:
             )
         except Exception:
             pass
+        _metric(tenant_id, "scheduling_instructor_assignments", 1)
 
         return {
             "id": assignment.id,
@@ -828,7 +839,7 @@ class SchedulingService:
 
         # Publish section.rescheduled event (fire-and-forget)
         try:
-            EventPublisher(db_session=self.db).publish_event(
+            EventPublisher().publish_event(
                 tenant_id=tenant_id,
                 event_type="scheduling.section.rescheduled",
                 aggregate_type="course_section",
@@ -845,6 +856,7 @@ class SchedulingService:
             )
         except Exception:
             pass
+        _metric(tenant_id, "scheduling_sections_rescheduled", 1)
 
         return SectionScheduleReadSchema.model_validate(schedule)
 
@@ -885,7 +897,7 @@ class SchedulingService:
 
         # Publish section.cancelled event (fire-and-forget)
         try:
-            EventPublisher(db_session=self.db).publish_event(
+            EventPublisher().publish_event(
                 tenant_id=tenant_id,
                 event_type="scheduling.section.cancelled",
                 aggregate_type="course_section",
@@ -911,6 +923,7 @@ class SchedulingService:
             })
         except Exception:
             pass
+        _metric(tenant_id, "scheduling_sections_cancelled", 1)
 
         return CourseSectionReadSchema.model_validate(section)
 
@@ -1353,7 +1366,7 @@ class SchedulingService:
             )
             risk_level = self._derive_attendance_risk_level(attendance_rate)
             if risk_level is not None:
-                EventPublisher(db_session=self.db).publish_event(
+                EventPublisher().publish_event(
                     tenant_id=tenant_id,
                     event_type="academic.attendance_risk.detected",
                     aggregate_type="lesson_attendance",

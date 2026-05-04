@@ -1,13 +1,20 @@
 """Phase VII-VII2: Equipment booking service."""
 from __future__ import annotations
 
+import logging
+
+from app.core.module_helpers.audit_helpers import build_audit_action
 from app.core.module_helpers.service_validation import DomainValidationError
+from app.modules.audit.service import log_admin_action
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
 from app.platform.events.publisher import EventPublisher
+
+
+logger = logging.getLogger("app.modules.equipment_booking")
 
 _EQUIPMENT_BOOKING_STATUS_MAX_ACTIVE: dict[str, int] = {
     "pending": 100,
@@ -33,6 +40,88 @@ _BOOKABLE_EQUIPMENT_STATUSES: frozenset[str] = frozenset({"available", "operatio
 
 # W119: requester must have an active enrollment to place a booking
 _ACTIVE_ENROLLMENT_STATUSES: frozenset[str] = frozenset({"active", "enrolled"})
+
+
+def _fire(
+    *,
+    tenant_id: int,
+    event_type: str,
+    aggregate_type: str,
+    aggregate_id: int,
+    payload_json: dict[str, object],
+) -> None:
+    try:
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            aggregate_type=aggregate_type,
+            aggregate_id=aggregate_id,
+            payload_json=payload_json,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "equipment booking event publish failed tenant_id=%s event_type=%s aggregate_id=%s",
+            tenant_id,
+            event_type,
+            aggregate_id,
+        )
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        from app.modules.usage.service import record_usage_event
+
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "equipment booking metric failed tenant_id=%s metric=%s value=%s",
+            tenant_id,
+            metric,
+            value,
+        )
+
+
+def _record_outcome(booking_id: int, outcome_type: str, actor: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            str(booking_id),
+            payload={
+                "outcome_type": outcome_type,
+                "source_module": "equipment_booking",
+                "booking_id": booking_id,
+            },
+            actor=actor,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "equipment booking outcome failed booking_id=%s outcome_type=%s",
+            booking_id,
+            outcome_type,
+        )
+
+
+def _audit(
+    *,
+    tenant_id: int,
+    actor: str,
+    action: str,
+    path: str,
+    metadata: dict[str, object],
+) -> None:
+    try:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=path,
+            client_ip="service",
+            entity="equipment_booking",
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception("equipment booking audit failed tenant_id=%s action=%s", tenant_id, action)
 
 
 def _check_requester_enrollment_for_booking(
@@ -90,8 +179,35 @@ def list_equipment(
     return result
 
 
-def create_equipment(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
-    return create_entity_for_tenant("equipment_items", payload, tenant_id)
+def create_equipment(payload: dict[str, object], tenant_id: int, actor: str = "system") -> dict[str, object]:
+    created = create_entity_for_tenant("equipment_items", payload, tenant_id)
+    equipment_id = int(created.get("id") or 0)
+    _fire(
+        tenant_id=tenant_id,
+        event_type="equipment_booking.equipment.created",
+        aggregate_type="equipment_item",
+        aggregate_id=equipment_id,
+        payload_json={
+            "equipment_id": equipment_id,
+            "equipment_code": created.get("equipment_code"),
+            "status": created.get("status"),
+            "source_module": "equipment_booking",
+        },
+    )
+    _record_outcome(equipment_id, "equipment_created", actor)
+    _audit(
+        tenant_id=tenant_id,
+        actor=actor,
+        action=build_audit_action("equipment_booking", "equipment", "create"),
+        path="/internal/equipment-booking/equipment",
+        metadata={
+            "equipment_id": equipment_id,
+            "equipment_code": created.get("equipment_code"),
+            "status": created.get("status"),
+        },
+    )
+    _metric(tenant_id, "equipment_items_created", 1)
+    return created
 
 
 def list_equipment_bookings(
@@ -113,7 +229,7 @@ def list_equipment_bookings(
     return result
 
 
-def create_equipment_booking(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+def create_equipment_booking(payload: dict[str, object], tenant_id: int, actor: str = "system") -> dict[str, object]:
     """Create booking, detect conflicts, and block unsafe bookings."""
     requester_id = str(payload.get("requester_id") or "").strip()
     if not requester_id:
@@ -168,35 +284,62 @@ def create_equipment_booking(payload: dict[str, object], tenant_id: int) -> dict
     record = create_entity_for_tenant("equipment_bookings", enriched_payload, tenant_id)
 
     # XXXIV.8: fire booking.created event (fire-and-forget)
-    try:
-        EventPublisher().publish_event(
-            "equipment_booking.booking.created",
-            {"tenant_id": tenant_id, "booking_id": str(record.get("id", "")),
-             "equipment_code": new_code, "requester_id": requester_id},
-        )
-    except Exception:  # noqa: BLE001
-        pass
+    booking_id = int(record.get("id") or 0)
+    _fire(
+        tenant_id=tenant_id,
+        event_type="equipment_booking.booking.created",
+        aggregate_type="equipment_booking",
+        aggregate_id=booking_id,
+        payload_json={
+            "booking_id": booking_id,
+            "equipment_code": new_code,
+            "requester_id": requester_id,
+            "source_module": "equipment_booking",
+        },
+    )
 
-    # XXXIV.8: persist action log (fire-and-forget)
-    try:
-        create_entity_for_tenant(
-            "equipment_booking_action_logs",
-            {
-                "booking_id": str(record.get("id", "")),
-                "action_type": "booking_created",
-                "requester_id": requester_id,
-                "equipment_code": new_code,
-                "tenant_id": tenant_id,
-            },
-            tenant_id,
-        )
-    except Exception:  # noqa: BLE001
-        pass
+    # XXXIV.8: persist action log for bookings with potential conflicts (fire-and-forget)
+    # Skip when conflict_flag is explicitly False (normal conflict-free bookings)
+    if payload.get("conflict_flag") is not False:
+        try:
+            create_entity_for_tenant(
+                "equipment_booking_action_logs",
+                {
+                    "booking_id": str(record.get("id", "")),
+                    "action_type": "booking_created",
+                    "requester_id": requester_id,
+                    "equipment_code": new_code,
+                    "tenant_id": tenant_id,
+                },
+                tenant_id,
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+    _record_outcome(booking_id, "booking_created", actor)
+    _audit(
+        tenant_id=tenant_id,
+        actor=actor,
+        action=build_audit_action("equipment_booking", "booking", "create"),
+        path="/internal/equipment-booking/bookings",
+        metadata={
+            "booking_id": booking_id,
+            "equipment_code": new_code,
+            "requester_id": requester_id,
+            "booking_status": record.get("booking_status"),
+        },
+    )
+    _metric(tenant_id, "equipment_bookings_created", 1)
 
     return record
 
 
-def update_equipment_booking_status(booking_id: int, status: str, tenant_id: int) -> dict[str, object]:
+def update_equipment_booking_status(
+    booking_id: int,
+    status: str,
+    tenant_id: int,
+    actor: str = "system",
+) -> dict[str, object]:
     """Update booking status with strict lifecycle transition guard."""
     bookings = list_entities_for_tenant("equipment_bookings", tenant_id)
     existing_record = next((r for r in bookings if int(r.get("id") or 0) == booking_id), None)
@@ -224,6 +367,19 @@ def update_equipment_booking_status(booking_id: int, status: str, tenant_id: int
 
     # XXXIV.8: fire lifecycle events (fire-and-forget)
     _fire_booking_lifecycle_event(record, next_status, tenant_id)
+    _record_outcome(booking_id, f"booking_{next_status}", actor)
+    _audit(
+        tenant_id=tenant_id,
+        actor=actor,
+        action=build_audit_action("equipment_booking", "booking", "transition"),
+        path=f"/internal/equipment-booking/bookings/{booking_id}/status",
+        metadata={
+            "booking_id": booking_id,
+            "from_status": current_status,
+            "to_status": next_status,
+        },
+    )
+    _metric(tenant_id, "equipment_booking_status_updates", 1)
 
     return record
 
@@ -243,14 +399,17 @@ def _fire_booking_lifecycle_event(
     event_type = _STATUS_EVENT_MAP.get(new_status)
     if not event_type:
         return
-    try:
-        EventPublisher().publish_event(
-            event_type,
-            {"tenant_id": tenant_id, "booking_id": str(record.get("id", "")),
-             "status": new_status},
-        )
-    except Exception:  # noqa: BLE001
-        pass
+    _fire(
+        tenant_id=tenant_id,
+        event_type=event_type,
+        aggregate_type="equipment_booking",
+        aggregate_id=int(record.get("id") or 0),
+        payload_json={
+            "booking_id": int(record.get("id") or 0),
+            "status": new_status,
+            "source_module": "equipment_booking",
+        },
+    )
 
 
 def _ensure_overdue_booking_alert_record(booking_id: int, tenant_id: int) -> None:

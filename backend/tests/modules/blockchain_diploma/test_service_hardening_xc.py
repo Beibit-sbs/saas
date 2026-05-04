@@ -80,9 +80,13 @@ def test_issue_diploma_survives_publish_failure():
             f"{MODULE}.EventPublisher.publish_event",
             side_effect=RuntimeError("kafka down"),
         ),
+        patch("app.modules.brain_core.service.brain_core_service") as mock_brain,
+        patch(f"{MODULE}.log_admin_action") as mock_audit,
+        patch(f"{MODULE}.record_usage_event") as mock_metric,
     ):
         from app.modules.blockchain_diploma import service as svc
 
+        mock_brain.record_dispatch_outcome.side_effect = RuntimeError("brain down")
         result = svc.issue_diploma(
             student_id=1,
             degree="MS",
@@ -94,6 +98,8 @@ def test_issue_diploma_survives_publish_failure():
 
     assert result.diploma_id == 99
     assert result.status == "issued"
+    mock_audit.assert_called_once()
+    mock_metric.assert_called_once()
 
 
 # ─── test 3 ───────────────────────────────────────────────────────────────────
@@ -172,6 +178,8 @@ def test_revoke_diploma_persist_before_event_no_rollback():
             f"{MODULE}.EventPublisher.publish_event",
             side_effect=Exception("broker unavailable"),
         ),
+        patch(f"{MODULE}.log_admin_action") as mock_audit,
+        patch(f"{MODULE}.record_usage_event") as mock_metric,
     ):
         from app.modules.blockchain_diploma import service as svc
 
@@ -183,3 +191,5 @@ def test_revoke_diploma_persist_before_event_no_rollback():
     assert len(args) == 4, "update_entity_for_tenant must use positional args"
     # Result must reflect the revocation.
     assert result.status == "revoked"
+    mock_audit.assert_called_once()
+    mock_metric.assert_called_once()

@@ -223,3 +223,23 @@ def reset_shared_state(monkeypatch):
     _reset_template_state()
     yield
     _reset_template_state()
+
+
+@pytest.fixture(autouse=True)
+def _ensure_asyncio_event_loop():
+    """Ensure an asyncio event loop is set for sync tests that call asyncio.get_event_loop().
+
+    Python 3.12+ raises RuntimeError when get_event_loop() is called with no running loop.
+    pytest-asyncio handles loops for async test functions; this fixture ensures sync tests
+    also have a usable loop without conflicting with pytest-asyncio.
+    """
+    import asyncio
+
+    try:
+        loop = asyncio.get_event_loop_policy().get_event_loop()
+        if loop.is_closed():
+            raise RuntimeError("existing loop is closed")
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    yield

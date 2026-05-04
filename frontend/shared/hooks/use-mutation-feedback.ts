@@ -14,7 +14,7 @@ export function useMutationFeedback() {
   const { toast } = useToast();
 
   const getHandlers = useCallback(
-    <TResult,>({ successTitle, successDescription, errorTitle }: FeedbackOptions<TResult>) => ({
+    <TResult = unknown>({ successTitle, successDescription, errorTitle }: FeedbackOptions<TResult>) => ({
       onSuccess: (result: TResult) => {
         toast({
           variant: "success",

@@ -34,12 +34,35 @@ FSM контракта (Contract):
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import logging
 
 from app.modules.university_core.tenant_entity_api import (
     create_entity_for_tenant,
     list_entities_for_tenant,
 )
+from app.modules.usage.service import record_usage_event
 from app.platform.events.publisher import EventPublisher
+
+logger = logging.getLogger("app.modules.internship")
+
+
+def _record_outcome(entity_id: object, outcome_type: str, actor_id: str) -> None:
+    try:
+        from app.modules.brain_core import service as brain_core_service  # noqa: PLC0415
+        brain_core_service.record_dispatch_outcome(
+            entity_id=entity_id,
+            outcome_type=outcome_type,
+            actor_id=str(actor_id),
+        )
+    except Exception:
+        logger.exception("internship outcome failed entity_id=%s outcome=%s", entity_id, outcome_type)
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        logger.exception("internship metric failed metric=%s", metric)
 
 # ─── constants ────────────────────────────────────────────────────────────────
 
@@ -144,6 +167,8 @@ def create_posting(
             "tenant_id": tenant_id,
         },
     )
+    _record_outcome(posting.get("id"), "internship_posting_created", str(company_id))
+    _metric(tenant_id, "internship_postings_created")
     return {"posting_id": posting.get("id"), "status": "OPEN", "slots": slots}
 
 
@@ -283,6 +308,8 @@ def create_contract(
             "tenant_id": tenant_id,
         },
     )
+    _record_outcome(contract.get("id"), "internship_contract_created", str(student_id))
+    _metric(tenant_id, "internship_contracts_created")
     return {"contract_id": contract.get("id"), "status": "DRAFT"}
 
 

@@ -203,13 +203,13 @@ class DegreeProgressService:
             return {}
         try:
             rows = self.db.execute(
-                select(CourseModel).where(
+                select(CourseModel.id, CourseModel.title).where(
                     and_(
                         CourseModel.id.in_(course_ids),
                         CourseModel.tenant_id == str(tenant_id),
                     )
                 )
-            ).scalars().all()
+            ).all()
         except Exception:
             # Keep degree-progress APIs resilient when catalog lookup is mocked/incomplete.
             return {}

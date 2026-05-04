@@ -140,6 +140,7 @@ def test_grade_submission_success():
     with (
         patch("app.modules.lms_content.service.list_entities_for_tenant", return_value=[sub]),
         patch("app.modules.lms_content.service.create_entity_for_tenant", return_value={"id": "g1"}),
+        patch("app.modules.lms_content.service.update_entity_for_tenant", return_value={**sub, "status": "GRADED"}),
         patch("app.modules.lms_content.service.EventPublisher") as mock_pub,
     ):
         result = grade_submission(TENANT, submission_id="sub1", grade=85.0, feedback="Good job")
@@ -179,6 +180,7 @@ def test_return_submission_success():
     with (
         patch("app.modules.lms_content.service.list_entities_for_tenant", return_value=[sub]),
         patch("app.modules.lms_content.service.create_entity_for_tenant", return_value={"id": "ret1"}),
+        patch("app.modules.lms_content.service.update_entity_for_tenant", return_value={**sub, "status": "RETURNED"}),
     ):
         result = return_submission(TENANT, submission_id="sub1", feedback="Please revise section 2")
     assert result["status"] == "RETURNED"

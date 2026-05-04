@@ -22,15 +22,17 @@ def get_brain_health() -> dict:
     return {"status": "ok", "module": "brain_core", "phase": "skeleton"}
 
 
-@router.get("/signals")
-def list_signals() -> dict:
-    items = brain_core_service.list_signals()
+@router.get("/tenants/{tenant_id}/signals")
+def list_signals(tenant_id: int = Path(..., gt=0)) -> dict:
+    """List signals for specific tenant (CRITICAL: A-009 tenant isolation fix)."""
+    items = brain_core_service.list_signals(tenant_id=tenant_id)
     return {"total": len(items), "items": items}
 
 
-@router.get("/decisions")
-def list_decisions() -> dict:
-    items = brain_core_service.list_decisions()
+@router.get("/tenants/{tenant_id}/decisions")
+def list_decisions(tenant_id: int = Path(..., gt=0)) -> dict:
+    """List decisions for specific tenant (CRITICAL: A-009 tenant isolation fix)."""
+    items = brain_core_service.list_decisions(tenant_id=tenant_id)
     return {"total": len(items), "items": items}
 
 

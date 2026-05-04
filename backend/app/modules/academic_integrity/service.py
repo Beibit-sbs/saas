@@ -348,19 +348,6 @@ class AcademicIntegrityService:
             entity_data=case,
         )
 
-        self._emit_event(
-            tenant_id=tenant_id,
-            event_type="academic_integrity.case.status_changed",
-            case_id=case_id,
-            payload={
-                "case_id": case_id,
-                "student_id": case.get("student_id"),
-                "case_type": case.get("case_type"),
-                "old_status": old_status,
-                "new_status": new_status.value,
-                "source_module": "academic_integrity",
-            },
-        )
         record_usage_event(
             tenant_id=self._normalize_tenant_id(tenant_id),
             metric="academic_integrity_case_status_updates",
@@ -383,17 +370,6 @@ class AcademicIntegrityService:
             self._emit_event(
                 tenant_id=tenant_id,
                 event_type="academic_integrity.case.escalated",
-                case_id=case_id,
-                payload={
-                    "case_id": case_id,
-                    "case_type": case.get("case_type"),
-                    "student_id": case.get("student_id"),
-                    "source_module": "academic_integrity",
-                },
-            )
-            self._emit_event(
-                tenant_id=tenant_id,
-                event_type="campus.academic_integrity.escalation_risk_detected",
                 case_id=case_id,
                 payload={
                     "case_id": case_id,

@@ -189,6 +189,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "federation.write",
         "developer_platform.read",
         "developer_platform.write",
+        "exams.read",
+        "exams.write",
     }
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS,
     "auditor": {

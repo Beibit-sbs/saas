@@ -1,14 +1,19 @@
 """Phase LIII — Counseling / Mental Health service."""
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
+from app.modules.audit.service import log_admin_action
 from app.modules.university_core.tenant_entity_api import (
     create_entity_for_tenant,
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+from app.modules.usage.service import record_usage_event
 from app.platform.events.publisher import EventPublisher
+
+logger = logging.getLogger("app.modules.counseling")
 
 APPOINTMENT_STATES = {"requested", "confirmed", "completed", "cancelled", "no_show"}
 SESSION_TYPES = {"individual", "group", "crisis", "follow_up"}
@@ -18,6 +23,32 @@ CASE_STATES = {"open", "active", "on_hold", "closed"}
 
 class CounselingError(Exception):
     """Raised on invalid counseling service input."""
+
+
+def _audit(tenant_id: int, action: str, actor_id: str, entity_id: object = None, detail: object = None) -> None:
+    try:
+        log_admin_action(tenant_id=tenant_id, action=action, actor_id=actor_id, entity_id=entity_id, detail=detail)
+    except Exception:
+        logger.exception("counseling audit failed action=%s", action)
+
+
+def _record_outcome(entity_id: object, outcome_type: str, actor_id: str) -> None:
+    try:
+        from app.modules.brain_core import service as brain_core_service  # noqa: PLC0415
+        brain_core_service.record_dispatch_outcome(
+            entity_id=entity_id,
+            outcome_type=outcome_type,
+            actor_id=str(actor_id),
+        )
+    except Exception:
+        logger.exception("counseling outcome failed entity_id=%s outcome=%s", entity_id, outcome_type)
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        logger.exception("counseling metric failed metric=%s", metric)
 
 
 @dataclass
@@ -89,12 +120,14 @@ def request_appointment(
         EventPublisher.publish(
             tenant_id=tenant_id,
             event_type="counseling.appointment_requested",
-            payload={"student_id": student_id, "session_type": session_type},
+            aggregate_type="counseling_appointment",
+            aggregate_id=str(record["id"]),
+            payload_json={"student_id": student_id, "session_type": session_type},
         )
     except Exception:
         pass
 
-    return CounselingAppointment(
+    result = CounselingAppointment(
         appointment_id=record["id"],
         student_id=student_id,
         counselor_id=counselor_id,
@@ -103,6 +136,9 @@ def request_appointment(
         scheduled_at=scheduled_at.strip(),
         tenant_id=tenant_id,
     )
+    _record_outcome(record["id"], "counseling_appointment_requested", str(student_id))
+    _metric(tenant_id, "counseling_appointments_requested")
+    return result
 
 
 def confirm_appointment(*, appointment_id: int, tenant_id: int) -> CounselingAppointment:
@@ -165,7 +201,9 @@ def complete_appointment(*, appointment_id: int, notes: str, tenant_id: int) -> 
         EventPublisher.publish(
             tenant_id=tenant_id,
             event_type="counseling.session_completed",
-            payload={"student_id": appt["student_id"], "appointment_id": appointment_id},
+            aggregate_type="counseling_appointment",
+            aggregate_id=str(appointment_id),
+            payload_json={"student_id": appt["student_id"], "appointment_id": appointment_id},
         )
     except Exception:
         pass
@@ -264,12 +302,14 @@ def open_case(
             EventPublisher.publish(
                 tenant_id=tenant_id,
                 event_type="counseling.high_risk_case_opened",
-                payload={"student_id": student_id, "risk_level": risk_level},
+                aggregate_type="counseling_case",
+                aggregate_id=str(record["id"]),
+                payload_json={"student_id": student_id, "risk_level": risk_level},
             )
         except Exception:
             pass
 
-    return CounselingCase(
+    result = CounselingCase(
         case_id=record["id"],
         student_id=student_id,
         counselor_id=counselor_id,
@@ -277,6 +317,9 @@ def open_case(
         status="open",
         tenant_id=tenant_id,
     )
+    _record_outcome(record["id"], "counseling_case_opened", str(student_id))
+    _metric(tenant_id, "counseling_cases_opened")
+    return result
 
 
 def escalate_case(*, case_id: int, risk_level: str, tenant_id: int) -> CounselingCase:
@@ -301,7 +344,9 @@ def escalate_case(*, case_id: int, risk_level: str, tenant_id: int) -> Counselin
         EventPublisher.publish(
             tenant_id=tenant_id,
             event_type="counseling.case_escalated",
-            payload={"student_id": case["student_id"], "risk_level": risk_level},
+            aggregate_type="counseling_case",
+            aggregate_id=str(case_id),
+            payload_json={"student_id": case["student_id"], "risk_level": risk_level},
         )
     except Exception:
         pass
@@ -374,15 +419,20 @@ def report_crisis(
         EventPublisher.publish(
             tenant_id=tenant_id,
             event_type="counseling.crisis_reported",
-            payload={"student_id": student_id, "risk_level": risk_level},
+            aggregate_type="crisis_report",
+            aggregate_id=str(record["id"]),
+            payload_json={"student_id": student_id, "risk_level": risk_level},
         )
     except Exception:
         pass
 
-    return CrisisReport(
+    result = CrisisReport(
         report_id=record["id"],
         student_id=student_id,
         risk_level=risk_level,
         description=description.strip(),
         tenant_id=tenant_id,
     )
+    _record_outcome(record["id"], "crisis_report_created", str(student_id))
+    _metric(tenant_id, "crisis_reports_created")
+    return result

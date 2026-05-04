@@ -179,7 +179,7 @@ export default function PaymentsPage() {
               variant="outline"
               aria-label={`Process ${r.payment_id}`}
               onClick={() =>
-                processPayment.mutate(r.payment_id, getHandlers())
+                processPayment.mutate(r.payment_id, getHandlers({ successTitle: "Payment processed" }))
               }
             >
               Process
@@ -348,10 +348,9 @@ export default function PaymentsPage() {
                         completePayment.mutate(
                           { paymentId: completingId, transactionRef },
                           {
-                            ...getHandlers(),
+                            ...getHandlers({ successTitle: "Payment completed" }),
                             onSuccess: () => {
                               setCompletingId(null);
-                              getHandlers().onSuccess?.();
                             },
                           }
                         );
@@ -390,10 +389,9 @@ export default function PaymentsPage() {
                         failPayment.mutate(
                           { paymentId: failingId, reason: failReason },
                           {
-                            ...getHandlers(),
+                            ...getHandlers({ successTitle: "Payment failed" }),
                             onSuccess: () => {
                               setFailingId(null);
-                              getHandlers().onSuccess?.();
                             },
                           }
                         );
@@ -432,10 +430,9 @@ export default function PaymentsPage() {
                         refundPayment.mutate(
                           { paymentId: refundingId, reason: refundReason },
                           {
-                            ...getHandlers(),
+                            ...getHandlers({ successTitle: "Payment refunded" }),
                             onSuccess: () => {
                               setRefundingId(null);
-                              getHandlers().onSuccess?.();
                             },
                           }
                         );

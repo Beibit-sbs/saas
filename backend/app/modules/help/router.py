@@ -3,9 +3,14 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends
 
-from app.modules.rbac.security import get_actor
+from app.modules.rbac.security import get_actor, permission_dependency
 
-router = APIRouter(prefix="/api/help", tags=["help"])
+router = APIRouter(
+    prefix="/api/help",
+    tags=["help"],
+    # A-009 Phase 2.1: Add permission_dependency guard (HIGH severity fix for 64 unguarded endpoints)
+    dependencies=[Depends(permission_dependency("help.admin.read"))],
+)
 
 
 TOPICS = {

@@ -53,15 +53,44 @@ def _normalize_optional(value: str | None) -> str | None:
 
 
 def _emit_audit(*, actor: str, action: str, path: str, metadata: dict, tenant_id: int) -> None:
-    log_admin_action(
-        actor=actor,
-        action=action,
-        path=path,
-        client_ip="service",
-        entity="thesis_record",
-        metadata=metadata,
-        tenant_id=tenant_id,
-    )
+    try:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=path,
+            client_ip="service",
+            entity="thesis_record",
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception("thesis audit failed action=%s path=%s", action, path)
+
+
+def _record_outcome(*, thesis_id: int, outcome_type: str, actor: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            str(thesis_id),
+            payload={
+                "outcome_type": outcome_type,
+                "source_module": "thesis",
+                "thesis_id": str(thesis_id),
+            },
+            actor=actor,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception("thesis outcome failed thesis_id=%s outcome=%s", thesis_id, outcome_type)
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        from app.modules.usage.service import record_usage_event
+
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:  # noqa: BLE001
+        logger.exception("thesis metric failed tenant_id=%s metric=%s", tenant_id, metric)
 
 
 def _emit_domain_event(
@@ -161,6 +190,18 @@ def create_thesis_record(
         tenant_id=tenant_id,
     )
 
+    created_id = int(created.get("id") or 0)
+    _emit_domain_event(
+        tenant_id=tenant_id,
+        thesis_id=created_id,
+        student_id=int(created.get("student_id") or 0),
+        advisor_faculty_id=str(created.get("advisor_faculty_id") or ""),
+        from_status="",
+        to_status="draft",
+    )
+    _record_outcome(thesis_id=created_id, outcome_type="thesis_created", actor=actor)
+    _metric(tenant_id, "thesis_records_created", 1)
+
     return ThesisRecordSchema.model_validate(created)
 
 
@@ -229,6 +270,8 @@ def update_thesis_status(
         to_status=next_status,
         days_since_last_milestone=days_since_last_milestone,
     )
+    _record_outcome(thesis_id=thesis_id, outcome_type=f"thesis_status_{next_status}", actor=actor)
+    _metric(tenant_id, "thesis_status_updates", 1)
 
     # W41: side-effect overdue alert for high-risk statuses
     if next_status in _HIGH_RISK_THESIS_STATUSES:

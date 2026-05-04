@@ -14,6 +14,17 @@ from app.modules.procurement.schemas import (
     ProcurementHealthSnapshotSchema,
     VendorCreateSchema,
     VendorSchema,
+    # A-009 Phase 2.3: Request lifecycle schemas
+    ApprovalStepSchema,
+    ProcurementAuditEntrySchema,
+    ProcurementDashboardSummarySchema,
+    ProcurementListItemSchema,
+    ProcurementOrderCreateSchema,
+    ProcurementOrderSchema,
+    ProcurementRequestCreateSchema,
+    ProcurementRequestSchema,
+    ProcurementRequestUpdateSchema,
+    ProcurementStatusUpdateSchema,
 )
 from app.platform.events.publisher import EventPublisher
 from app.modules.university_core.tenant_entity_service import create_entity_for_tenant, list_entities_for_tenant, update_entity_for_tenant
@@ -575,4 +586,324 @@ def get_procurement_health_snapshot(tenant_id: int) -> ProcurementHealthSnapshot
         low_stock_items=low_stock_items,
         projected_stockouts_7d=projected_stockouts_7d,
         auto_reorder_candidates=auto_reorder_candidates,
+    )
+
+
+# ─── A-009 Phase 2.3: Request lifecycle (in-memory store, tenant-scoped) ─────
+
+import threading as _threading
+import uuid as _uuid
+from datetime import datetime as _dt, timezone as _tz
+
+_requests_lock = _threading.Lock()
+_requests_store: dict[str, dict] = {}
+_orders_store: dict[str, dict] = {}
+_approvals_store: dict[str, list[dict]] = {}
+_audit_store: dict[str, list[dict]] = {}
+
+_REQUEST_STATUS_TRANSITIONS: dict[str, set[str]] = {
+    "draft": {"submitted", "cancelled"},
+    "submitted": {"under_review", "cancelled"},
+    "under_review": {"approved", "rejected"},
+    "approved": {"ordered", "cancelled"},
+    "rejected": set(),
+    "ordered": {"fulfilled", "cancelled"},
+    "fulfilled": set(),
+    "cancelled": set(),
+}
+
+
+def _now_iso() -> str:
+    return _dt.now(_tz.utc).isoformat()
+
+
+def _request_key(tenant_id: int, request_id: str) -> str:
+    return f"{tenant_id}:{request_id}"
+
+
+def _gen_request_number(tenant_id: int) -> str:
+    with _requests_lock:
+        count = sum(1 for k in _requests_store if k.startswith(f"{tenant_id}:"))
+    return f"PR-{tenant_id}-{count + 1:05d}"
+
+
+def _append_audit(request_id: str, *, actor_id: str, action: str,
+                  from_status: str | None = None, to_status: str | None = None,
+                  metadata: dict | None = None) -> None:
+    entry = {
+        "audit_id": str(_uuid.uuid4()),
+        "request_id": request_id,
+        "action": action,
+        "actor_id": actor_id,
+        "actor_name": actor_id,
+        "from_status": from_status,
+        "to_status": to_status,
+        "timestamp": _now_iso(),
+        "metadata": metadata or {},
+    }
+    _audit_store.setdefault(request_id, []).append(entry)
+
+
+def _to_list_item(req: dict) -> ProcurementListItemSchema:
+    return ProcurementListItemSchema(
+        request_id=req["request_id"],
+        request_number=req["request_number"],
+        title=req["title"],
+        requester_name=req["requester_name"],
+        department_name=req.get("department_name", req.get("department_id", "")),
+        status=req["status"],
+        priority=req["priority"],
+        estimated_total=req["estimated_total"],
+        created_at=req["created_at"],
+        updated_at=req["updated_at"],
+    )
+
+
+def create_procurement_request(
+    tenant_id: int, payload: ProcurementRequestCreateSchema, actor: str
+) -> ProcurementRequestSchema:
+    request_id = str(_uuid.uuid4())
+    now = _now_iso()
+    estimated_total = sum(i.quantity * i.unit_price for i in payload.items)
+    req = {
+        "request_id": request_id,
+        "request_number": _gen_request_number(tenant_id),
+        "requester_id": actor,
+        "requester_name": actor,
+        "department_id": payload.department_id,
+        "department_name": payload.department_id,
+        "title": payload.title,
+        "description": payload.description,
+        "status": "draft",
+        "priority": payload.priority,
+        "estimated_total": estimated_total,
+        "currency": "KZT",
+        "needed_by_date": payload.needed_by_date,
+        "created_at": now,
+        "updated_at": now,
+        "submitted_at": None,
+        "tenant_id": tenant_id,
+    }
+    with _requests_lock:
+        _requests_store[_request_key(tenant_id, request_id)] = req
+    _append_audit(request_id, actor_id=actor, action="created", to_status="draft")
+    return ProcurementRequestSchema.model_validate(req)
+
+
+def list_procurement_requests(
+    tenant_id: int,
+    status: str | None = None,
+    requester_id: str | None = None,
+) -> list[ProcurementListItemSchema]:
+    with _requests_lock:
+        rows = [v for k, v in _requests_store.items() if v.get("tenant_id") == tenant_id]
+    if status:
+        rows = [r for r in rows if r["status"] == status]
+    if requester_id:
+        rows = [r for r in rows if r["requester_id"] == requester_id]
+    return [_to_list_item(r) for r in rows]
+
+
+def get_procurement_request(tenant_id: int, request_id: str) -> ProcurementRequestSchema | None:
+    req = _requests_store.get(_request_key(tenant_id, request_id))
+    if req is None:
+        return None
+    return ProcurementRequestSchema.model_validate(req)
+
+
+def update_procurement_request(
+    tenant_id: int, request_id: str, payload: ProcurementRequestUpdateSchema, actor: str
+) -> ProcurementRequestSchema | None:
+    key = _request_key(tenant_id, request_id)
+    with _requests_lock:
+        req = _requests_store.get(key)
+        if req is None:
+            return None
+        if payload.title is not None:
+            req["title"] = payload.title
+        if payload.description is not None:
+            req["description"] = payload.description
+        if payload.priority is not None:
+            req["priority"] = payload.priority
+        if payload.needed_by_date is not None:
+            req["needed_by_date"] = payload.needed_by_date
+        req["updated_at"] = _now_iso()
+        _requests_store[key] = req
+    _append_audit(request_id, actor_id=actor, action="updated")
+    return ProcurementRequestSchema.model_validate(req)
+
+
+def submit_procurement_request(tenant_id: int, request_id: str, actor: str) -> ProcurementRequestSchema | None:
+    key = _request_key(tenant_id, request_id)
+    with _requests_lock:
+        req = _requests_store.get(key)
+        if req is None:
+            return None
+        if req["status"] not in _REQUEST_STATUS_TRANSITIONS or "submitted" not in _REQUEST_STATUS_TRANSITIONS[req["status"]]:
+            raise ValueError(f"Cannot submit request with status '{req['status']}'")
+        from_status = req["status"]
+        now = _now_iso()
+        req["status"] = "submitted"
+        req["submitted_at"] = now
+        req["updated_at"] = now
+        _requests_store[key] = req
+    _append_audit(request_id, actor_id=actor, action="submitted", from_status=from_status, to_status="submitted")
+    return ProcurementRequestSchema.model_validate(req)
+
+
+def update_procurement_status(
+    tenant_id: int, request_id: str, payload: ProcurementStatusUpdateSchema, actor: str
+) -> ProcurementRequestSchema | None:
+    key = _request_key(tenant_id, request_id)
+    with _requests_lock:
+        req = _requests_store.get(key)
+        if req is None:
+            return None
+        current = req["status"]
+        allowed = _REQUEST_STATUS_TRANSITIONS.get(current, set())
+        if payload.status not in allowed:
+            raise ValueError(f"Transition '{current}' → '{payload.status}' is not allowed")
+        from_status = current
+        req["status"] = payload.status
+        req["updated_at"] = _now_iso()
+        _requests_store[key] = req
+    _append_audit(request_id, actor_id=actor, action="status_changed",
+                  from_status=from_status, to_status=payload.status,
+                  metadata={"comment": payload.comment})
+    return ProcurementRequestSchema.model_validate(req)
+
+
+def get_approval_steps(tenant_id: int, request_id: str) -> list[ApprovalStepSchema]:
+    # Ensure request belongs to this tenant
+    req = _requests_store.get(_request_key(tenant_id, request_id))
+    if req is None:
+        return []
+    steps = _approvals_store.get(request_id, [])
+    # Auto-generate default approval chain if empty
+    if not steps:
+        steps = [
+            {
+                "step_id": str(_uuid.uuid4()),
+                "request_id": request_id,
+                "sequence": 1,
+                "approver_id": "dept_head",
+                "approver_name": "Department Head",
+                "status": "pending",
+                "decision_at": None,
+                "comment": None,
+            },
+            {
+                "step_id": str(_uuid.uuid4()),
+                "request_id": request_id,
+                "sequence": 2,
+                "approver_id": "finance_director",
+                "approver_name": "Finance Director",
+                "status": "pending",
+                "decision_at": None,
+                "comment": None,
+            },
+        ]
+        _approvals_store[request_id] = steps
+    return [ApprovalStepSchema.model_validate(s) for s in steps]
+
+
+def get_audit_trail(tenant_id: int, request_id: str) -> list[ProcurementAuditEntrySchema]:
+    req = _requests_store.get(_request_key(tenant_id, request_id))
+    if req is None:
+        return []
+    entries = _audit_store.get(request_id, [])
+    return [ProcurementAuditEntrySchema.model_validate(e) for e in entries]
+
+
+def get_request_order(tenant_id: int, request_id: str) -> ProcurementOrderSchema | None:
+    req = _requests_store.get(_request_key(tenant_id, request_id))
+    if req is None:
+        return None
+    for order in _orders_store.values():
+        if order["request_id"] == request_id and order.get("tenant_id") == tenant_id:
+            return ProcurementOrderSchema.model_validate(order)
+    return None
+
+
+def create_procurement_order(
+    tenant_id: int, payload: ProcurementOrderCreateSchema, actor: str
+) -> ProcurementOrderSchema:
+    order_id = str(_uuid.uuid4())
+    now = _now_iso()
+    # Resolve vendor name
+    vendor_rows = list_entities_for_tenant("procurement_vendors", tenant_id)
+    vendor_name = payload.vendor_id
+    for v in vendor_rows:
+        if str(v.get("id")) == payload.vendor_id or v.get("vendor_code") == payload.vendor_id:
+            vendor_name = str(v.get("name", payload.vendor_id))
+            break
+    # Calculate total from linked request items
+    total_amount = 0.0
+    req = _requests_store.get(_request_key(tenant_id, payload.request_id))
+    if req:
+        total_amount = float(req.get("estimated_total", 0))
+    order = {
+        "order_id": order_id,
+        "request_id": payload.request_id,
+        "vendor_id": payload.vendor_id,
+        "vendor_name": vendor_name,
+        "order_number": payload.order_number,
+        "order_date": now,
+        "expected_delivery_date": payload.expected_delivery_date,
+        "total_amount": total_amount,
+        "currency": "KZT",
+        "status": "issued",
+        "tenant_id": tenant_id,
+    }
+    _orders_store[order_id] = order
+    _append_audit(payload.request_id, actor_id=actor, action="order_created",
+                  metadata={"order_id": order_id, "order_number": payload.order_number})
+    return ProcurementOrderSchema.model_validate(order)
+
+
+def fulfill_procurement_request(tenant_id: int, request_id: str, actor: str) -> ProcurementOrderSchema | None:
+    key = _request_key(tenant_id, request_id)
+    with _requests_lock:
+        req = _requests_store.get(key)
+        if req is None:
+            return None
+        allowed = _REQUEST_STATUS_TRANSITIONS.get(req["status"], set())
+        if "fulfilled" not in allowed:
+            raise ValueError(f"Cannot fulfill request with status '{req['status']}'")
+        from_status = req["status"]
+        req["status"] = "fulfilled"
+        req["updated_at"] = _now_iso()
+        _requests_store[key] = req
+    _append_audit(request_id, actor_id=actor, action="fulfilled",
+                  from_status=from_status, to_status="fulfilled")
+    return get_request_order(tenant_id, request_id)
+
+
+def get_procurement_dashboard_summary(tenant_id: int) -> ProcurementDashboardSummarySchema:
+    with _requests_lock:
+        rows = [v for v in _requests_store.values() if v.get("tenant_id") == tenant_id]
+    status_breakdown: dict[str, int] = {
+        "draft": 0, "submitted": 0, "under_review": 0,
+        "approved": 0, "rejected": 0, "ordered": 0, "fulfilled": 0,
+    }
+    total_ordered_value = 0.0
+    overdue = 0
+    now_str = _now_iso()
+    for r in rows:
+        s = r.get("status", "draft")
+        if s in status_breakdown:
+            status_breakdown[s] += 1
+        if s == "ordered":
+            total_ordered_value += float(r.get("estimated_total", 0))
+        nbd = r.get("needed_by_date")
+        if nbd and s not in ("fulfilled", "cancelled", "rejected") and nbd < now_str:
+            overdue += 1
+    pending_approvals = sum(1 for r in rows if r.get("status") in ("submitted", "under_review"))
+    return ProcurementDashboardSummarySchema(
+        total_requests=len(rows),
+        status_breakdown=status_breakdown,
+        total_pending_approvals=pending_approvals,
+        total_ordered_value=total_ordered_value,
+        overdue_requests=overdue,
+        last_updated=_now_iso(),
     )

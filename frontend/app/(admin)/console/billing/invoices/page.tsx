@@ -173,7 +173,7 @@ export default function InvoicesPage() {
               variant="outline"
               aria-label={`Finalize ${r.invoice_number}`}
               onClick={() =>
-                finalize.mutate(r.invoice_id, getHandlers())
+                finalize.mutate(r.invoice_id, getHandlers({ successTitle: "Invoice finalized" }))
               }
             >
               <FileText className="w-3 h-3 mr-1" /> Finalize
@@ -185,7 +185,7 @@ export default function InvoicesPage() {
               variant="outline"
               aria-label={`Send ${r.invoice_number}`}
               onClick={() =>
-                send.mutate(r.invoice_id, getHandlers())
+                send.mutate(r.invoice_id, getHandlers({ successTitle: "Invoice sent" }))
               }
             >
               <Send className="w-3 h-3 mr-1" /> Send
@@ -326,10 +326,9 @@ export default function InvoicesPage() {
                         voidInv.mutate(
                           { invoiceId: voidingId, reason: voidReason },
                           {
-                            ...getHandlers(),
+                            ...getHandlers({ successTitle: "Invoice voided" }),
                             onSuccess: () => {
                               setVoidingId(null);
-                              getHandlers().onSuccess?.();
                             },
                           }
                         );

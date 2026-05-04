@@ -99,7 +99,7 @@ def _get_syllabus_row(*, tenant_id: int, syllabus_id: int) -> dict[str, object]:
     rows = list_entities_for_tenant(_ENTITY, tenant_id)
     row = next((r for r in rows if int(r.get("id") or 0) == syllabus_id), None)
     if row is None:
-        raise ValueError(f"Syllabus {syllabus_id} not found")
+        raise DomainValidationError(f"Syllabus {syllabus_id} not found")
     return row
 
 

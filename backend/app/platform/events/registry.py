@@ -163,6 +163,9 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "campus.budget.overrun_risk_detected": EventDefinition(GenericTenantEventPayload),
     # Academic records module events (W47)
     "campus.academic_records.withdrawal_risk_detected": EventDefinition(GenericTenantEventPayload),
+    "academic_records.record.created": EventDefinition(GenericTenantEventPayload),
+    "academic_records.record.updated": EventDefinition(GenericTenantEventPayload),
+    "academic_records.record.deleted": EventDefinition(GenericTenantEventPayload),
     # Faculty module events (W48)
     "campus.faculty.contract_termination_risk_detected": EventDefinition(GenericTenantEventPayload),
     # Scholarship module events (W49)
@@ -226,6 +229,7 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "equipment_booking.booking.cancelled": EventDefinition(GenericTenantEventPayload),
     "equipment_booking.booking.returned": EventDefinition(GenericTenantEventPayload),
     "equipment_booking.booking.overdue": EventDefinition(GenericTenantEventPayload),
+    "equipment_booking.equipment.created": EventDefinition(GenericTenantEventPayload),
     # IP management lifecycle events (XXXIV.9)
     "ip_management.asset.created": EventDefinition(GenericTenantEventPayload),
     "ip_management.asset.filed": EventDefinition(GenericTenantEventPayload),
@@ -368,6 +372,16 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "localization.exchange_rate_updated": EventDefinition(GenericTenantEventPayload),
     "localization.locale_updated": EventDefinition(GenericTenantEventPayload),
     "localization.amount_converted": EventDefinition(GenericTenantEventPayload),
+    # A-009 CRITICAL: Brain Core Missing Event Registrations (emitted but not previously registered)
+    "alumni.engagement.risk_detected": EventDefinition(GenericTenantEventPayload),
+    "career_services.opportunity.at_risk": EventDefinition(GenericTenantEventPayload),
+    "degree_progress.graduation_risk.detected": EventDefinition(GenericTenantEventPayload),
+    "enrollments.dropout_risk.detected": EventDefinition(GenericTenantEventPayload),
+    "faculty.office_hours.no_show_detected": EventDefinition(GenericTenantEventPayload),
+    "faculty.proctoring.violation_detected": EventDefinition(GenericTenantEventPayload),
+    "finance.expense.budget_exceeded": EventDefinition(GenericTenantEventPayload),
+    "programs.status.risk_detected": EventDefinition(GenericTenantEventPayload),
+    "transcripts.inconsistency.detected": EventDefinition(GenericTenantEventPayload),
 }
 
 PREFIX_EVENT_REGISTRY: dict[str, EventDefinition] = {

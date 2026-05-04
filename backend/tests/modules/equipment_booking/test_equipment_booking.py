@@ -178,7 +178,7 @@ def test_http_create_booking(monkeypatch: pytest.MonkeyPatch) -> None:
     }
     monkeypatch.setattr(
         "app.modules.equipment_booking.service.create_equipment_booking",
-        lambda payload, tenant_id: created,
+        lambda payload, tenant_id, actor="system": created,
     )
     resp = test_client.post(
         "/api/admin/equipment-booking/bookings",

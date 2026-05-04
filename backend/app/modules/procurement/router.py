@@ -21,6 +21,17 @@ from app.modules.procurement.schemas import (
     VendorCreateSchema,
     VendorItemResponseSchema,
     VendorListResponseSchema,
+    # A-009 Phase 2.3: Request lifecycle schemas
+    ApprovalStepSchema,
+    ProcurementAuditEntrySchema,
+    ProcurementDashboardSummarySchema,
+    ProcurementListItemSchema,
+    ProcurementOrderCreateSchema,
+    ProcurementOrderSchema,
+    ProcurementRequestCreateSchema,
+    ProcurementRequestSchema,
+    ProcurementRequestUpdateSchema,
+    ProcurementStatusUpdateSchema,
 )
 import app.modules.procurement.service as _svc
 from app.modules.rbac.security import get_actor, permission_dependency
@@ -146,5 +157,180 @@ def create_inventory_item_endpoint(
     try:
         item = _svc.create_inventory_item(int(tenant["id"]), payload, actor)
         return InventoryItemItemResponseSchema(item=item)
+    except (ValueError, DomainValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+# ─── A-009 Phase 2.3: Request lifecycle endpoints ─────────────────────────────
+
+
+@router.get("/dashboard/summary", response_model=ProcurementDashboardSummarySchema)
+def get_dashboard_summary_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("procurement.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ProcurementDashboardSummarySchema:
+    return _svc.get_procurement_dashboard_summary(int(tenant["id"]))
+
+
+@router.get("/requests/status/{status}", response_model=list[ProcurementListItemSchema])
+def list_requests_by_status_endpoint(
+    status: str,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("procurement.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> list[ProcurementListItemSchema]:
+    return _svc.list_procurement_requests(int(tenant["id"]), status=status)
+
+
+@router.get("/requests/requester/{requester_id}", response_model=list[ProcurementListItemSchema])
+def list_requests_by_requester_endpoint(
+    requester_id: str,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("procurement.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> list[ProcurementListItemSchema]:
+    return _svc.list_procurement_requests(int(tenant["id"]), requester_id=requester_id)
+
+
+@router.get("/requests", response_model=list[ProcurementListItemSchema])
+def list_requests_endpoint(
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("procurement.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+    status: str | None = None,
+    requester_id: str | None = None,
+) -> list[ProcurementListItemSchema]:
+    return _svc.list_procurement_requests(int(tenant["id"]), status=status, requester_id=requester_id)
+
+
+@router.post("/requests", response_model=ProcurementRequestSchema, status_code=201)
+def create_request_endpoint(
+    payload: ProcurementRequestCreateSchema,
+    actor: Annotated[str, Depends(get_actor)],
+    _: Annotated[None, Depends(permission_dependency("procurement.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ProcurementRequestSchema:
+    return _svc.create_procurement_request(int(tenant["id"]), payload, actor)
+
+
+@router.get("/requests/{request_id}/approvals", response_model=list[ApprovalStepSchema])
+def get_approval_steps_endpoint(
+    request_id: str,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("procurement.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> list[ApprovalStepSchema]:
+    return _svc.get_approval_steps(int(tenant["id"]), request_id)
+
+
+@router.get("/requests/{request_id}/audit-trail", response_model=list[ProcurementAuditEntrySchema])
+def get_audit_trail_endpoint(
+    request_id: str,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("procurement.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> list[ProcurementAuditEntrySchema]:
+    return _svc.get_audit_trail(int(tenant["id"]), request_id)
+
+
+@router.get("/requests/{request_id}/order", response_model=ProcurementOrderSchema)
+def get_request_order_endpoint(
+    request_id: str,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("procurement.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ProcurementOrderSchema:
+    order = _svc.get_request_order(int(tenant["id"]), request_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="No order found for this request")
+    return order
+
+
+@router.get("/requests/{request_id}", response_model=ProcurementRequestSchema)
+def get_request_endpoint(
+    request_id: str,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency("procurement.read"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ProcurementRequestSchema:
+    req = _svc.get_procurement_request(int(tenant["id"]), request_id)
+    if req is None:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return req
+
+
+@router.put("/requests/{request_id}", response_model=ProcurementRequestSchema)
+def update_request_endpoint(
+    request_id: str,
+    payload: ProcurementRequestUpdateSchema,
+    actor: Annotated[str, Depends(get_actor)],
+    _: Annotated[None, Depends(permission_dependency("procurement.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ProcurementRequestSchema:
+    req = _svc.update_procurement_request(int(tenant["id"]), request_id, payload, actor)
+    if req is None:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return req
+
+
+@router.post("/requests/{request_id}/submit", response_model=ProcurementRequestSchema)
+def submit_request_endpoint(
+    request_id: str,
+    actor: Annotated[str, Depends(get_actor)],
+    _: Annotated[None, Depends(permission_dependency("procurement.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ProcurementRequestSchema:
+    try:
+        req = _svc.submit_procurement_request(int(tenant["id"]), request_id, actor)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if req is None:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return req
+
+
+@router.patch("/requests/{request_id}/status", response_model=ProcurementRequestSchema)
+def update_request_status_endpoint(
+    request_id: str,
+    payload: ProcurementStatusUpdateSchema,
+    actor: Annotated[str, Depends(get_actor)],
+    _: Annotated[None, Depends(permission_dependency("procurement.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ProcurementRequestSchema:
+    try:
+        req = _svc.update_procurement_status(int(tenant["id"]), request_id, payload, actor)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if req is None:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return req
+
+
+@router.post("/requests/{request_id}/fulfill", response_model=ProcurementOrderSchema)
+def fulfill_request_endpoint(
+    request_id: str,
+    actor: Annotated[str, Depends(get_actor)],
+    _: Annotated[None, Depends(permission_dependency("procurement.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ProcurementOrderSchema:
+    try:
+        order = _svc.fulfill_procurement_request(int(tenant["id"]), request_id, actor)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if order is None:
+        raise HTTPException(status_code=404, detail="Request not found or no order exists")
+    return order
+
+
+@router.post("/orders", response_model=ProcurementOrderSchema, status_code=201)
+def create_order_endpoint(
+    payload: ProcurementOrderCreateSchema,
+    actor: Annotated[str, Depends(get_actor)],
+    _: Annotated[None, Depends(permission_dependency("procurement.write"))],
+    tenant: Annotated[dict, Depends(get_current_tenant)],
+) -> ProcurementOrderSchema:
+    try:
+        return _svc.create_procurement_order(int(tenant["id"]), payload, actor)
     except (ValueError, DomainValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

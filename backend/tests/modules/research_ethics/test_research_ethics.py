@@ -119,7 +119,7 @@ def test_http_create_ethics_review(monkeypatch: pytest.MonkeyPatch) -> None:
     }
     monkeypatch.setattr(
         "app.modules.research_ethics.service.create_ethics_review",
-        lambda payload, tenant_id: created,
+        lambda payload, tenant_id, actor="system": created,
     )
     resp = test_client.post(
         "/api/admin/research-ethics/reviews",

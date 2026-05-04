@@ -1,10 +1,16 @@
+import logging
+
 from app.core.module_helpers.service_validation import DomainValidationError
+from app.modules.audit.service import log_admin_action
+from app.modules.usage.service import record_usage_event
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     delete_entity_for_tenant,
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+
+logger = logging.getLogger("app.modules.programs")
 
 # W44: cap on active programs per degree_type per tenant
 _PROGRAM_DEGREE_TYPE_MAX_ACTIVE: dict[str, int] = {
@@ -23,6 +29,32 @@ _SUNSET_RISK_STATUSES: frozenset[str] = frozenset({"inactive", "archived"})
 
 # W85: statuses that require at least one active degree requirement
 _ACTIVATION_STATUSES: frozenset[str] = frozenset({"active"})
+
+
+def _audit(tenant_id: int, action: str, actor_id: str, entity_id: object = None, detail: object = None) -> None:
+    try:
+        log_admin_action(tenant_id=tenant_id, action=action, actor_id=actor_id, entity_id=entity_id, detail=detail)
+    except Exception:
+        logger.exception("programs audit failed action=%s", action)
+
+
+def _record_outcome(entity_id: object, outcome_type: str, actor_id: str) -> None:
+    try:
+        from app.modules.brain_core import service as brain_core_service  # noqa: PLC0415
+        brain_core_service.record_dispatch_outcome(
+            entity_id=entity_id,
+            outcome_type=outcome_type,
+            actor_id=str(actor_id),
+        )
+    except Exception:
+        logger.exception("programs outcome failed entity_id=%s outcome=%s", entity_id, outcome_type)
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        logger.exception("programs metric failed metric=%s", metric)
 
 
 def _check_program_has_active_requirements(tenant_id: int, program_id: int) -> None:
@@ -81,7 +113,10 @@ def create_program(payload: dict[str, object], tenant_id: int) -> dict[str, obje
             f"Active program cap ({cap}) reached for degree_type '{degree_type}'"
         )
 
-    return create_entity_for_tenant("programs", payload, tenant_id)
+    result = create_entity_for_tenant("programs", payload, tenant_id)
+    _record_outcome(result.get("id"), "program_created", str(payload.get("actor_id") or "system"))
+    _metric(tenant_id, "programs_created")
+    return result
 
 
 def update_program(program_id: int, payload: dict[str, object], tenant_id: int) -> dict[str, object]:
@@ -116,6 +151,8 @@ def update_program(program_id: int, payload: dict[str, object], tenant_id: int) 
                 "status": to_status,
             },
         )
+    _record_outcome(program_id, "program_updated", str(payload.get("actor_id") or "system"))
+    _metric(tenant_id, "programs_updated")
     return result
 
 

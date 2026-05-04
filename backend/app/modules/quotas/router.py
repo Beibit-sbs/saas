@@ -10,10 +10,11 @@ Endpoints:
 """
 from __future__ import annotations
 
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.modules.rbac.security import permission_dependency
 from app.modules.quotas.schemas import (
     PlanQuotaConsistencyReportSchema,
     PlanQuotaPayload,
@@ -30,7 +31,12 @@ from app.modules.quotas.service import (
     update_plan_quotas,
 )
 
-router = APIRouter(prefix="/api/quotas", tags=["quotas"])
+router = APIRouter(
+    prefix="/api/quotas",
+    tags=["quotas"],
+    # A-009 Phase 2.1: Add permission_dependency guard (HIGH severity fix for 64 unguarded endpoints)
+    dependencies=[Depends(permission_dependency("billing.admin.read"))],
+)
 
 MODULE = "app.modules.quotas.router"
 

@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from app.modules.rbac.security import permission_dependency
 from app.modules.invoices.service import (
     InvoiceError,
     add_item,
@@ -19,7 +20,12 @@ from app.modules.invoices.service import (
     void_invoice,
 )
 
-router = APIRouter(prefix="/api/invoices", tags=["invoices"])
+router = APIRouter(
+    prefix="/api/invoices",
+    tags=["invoices"],
+    # A-009 Phase 2.1: Add permission_dependency guard (HIGH severity fix for 64 unguarded endpoints)
+    dependencies=[Depends(permission_dependency("invoicing.admin.write"))],
+)
 
 
 class CreateInvoicePayload(BaseModel):

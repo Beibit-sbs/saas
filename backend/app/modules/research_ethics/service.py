@@ -1,7 +1,11 @@
 """Phase VII-VII1: Research ethics service."""
 from __future__ import annotations
 
+import logging
+
+from app.core.module_helpers.audit_helpers import build_audit_action
 from app.core.module_helpers.service_validation import DomainValidationError
+from app.modules.audit.service import log_admin_action
 from app.modules.research_ethics.schemas import (
     EthicsReviewStatusUpdateSchema,
     RE_ALLOWED_TRANSITIONS,
@@ -12,6 +16,9 @@ from app.modules.university_core.tenant_entity_service import (
     update_entity_for_tenant,
 )
 from app.platform.events.publisher import EventPublisher
+
+
+logger = logging.getLogger("app.modules.research_ethics")
 
 
 _REVIEW_TYPE_MAX_ACTIVE_REVIEWS: dict[str, int] = {
@@ -36,6 +43,95 @@ _REQUIRED_PI_CONTRACT_STATUSES: frozenset[str] = frozenset({"active"})
 
 # W126: PI must have an active contract to submit an ethics review
 _PI_CONTRACT_ACTIVE_STATUSES: frozenset[str] = frozenset({"active"})
+
+
+def _fire(
+    *,
+    tenant_id: int,
+    event_type: str,
+    aggregate_type: str,
+    aggregate_id: int,
+    payload_json: dict[str, object],
+) -> None:
+    try:
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            aggregate_type=aggregate_type,
+            aggregate_id=aggregate_id,
+            payload_json=payload_json,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "research_ethics event publish failed tenant_id=%s event_type=%s aggregate_type=%s aggregate_id=%s",
+            tenant_id,
+            event_type,
+            aggregate_type,
+            aggregate_id,
+        )
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        from app.modules.usage.service import record_usage_event
+
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "research_ethics metric record failed tenant_id=%s metric=%s value=%s",
+            tenant_id,
+            metric,
+            value,
+        )
+
+
+def _record_outcome(*, tenant_id: int, signal_id: str, outcome_type: str, actor: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            signal_id,
+            payload={
+                "outcome_type": outcome_type,
+                "source_module": "research_ethics",
+                "tenant_id": tenant_id,
+            },
+            actor=actor,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "research_ethics outcome record failed tenant_id=%s signal_id=%s outcome_type=%s",
+            tenant_id,
+            signal_id,
+            outcome_type,
+        )
+
+
+def _audit(
+    *,
+    actor: str,
+    action: str,
+    path: str,
+    metadata: dict[str, object],
+    tenant_id: int,
+) -> None:
+    try:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=path,
+            client_ip="service",
+            entity="research_ethics",
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "research_ethics audit emit failed tenant_id=%s action=%s path=%s",
+            tenant_id,
+            action,
+            path,
+        )
 
 
 def _check_pi_has_active_contract_for_ethics_review(
@@ -104,7 +200,11 @@ def list_ethics_reviews(
     return result
 
 
-def create_ethics_review(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+def create_ethics_review(
+    payload: dict[str, object],
+    tenant_id: int,
+    actor: str = "system",
+) -> dict[str, object]:
     # W126: cross-entity guard — PI must have active faculty contract
     pi_id = str(payload.get("principal_investigator_id") or "").strip()
     if not pi_id:
@@ -133,44 +233,77 @@ def create_ethics_review(payload: dict[str, object], tenant_id: int) -> dict[str
 
     created = create_entity_for_tenant("ethics_reviews", payload, tenant_id)
 
-    # XXXIV.7: fire submission event (fire-and-forget)
-    try:
-        EventPublisher().publish_event(
-            "research_ethics.submission.created",
-            {"tenant_id": tenant_id, "review_id": str(created.get("id", "")),
-             "review_type": review_type, "pi_id": pi_id},
-        )
-    except Exception:  # noqa: BLE001
-        pass
+    review_id = int(created.get("id") or 0)
+    _fire(
+        tenant_id=tenant_id,
+        event_type="research_ethics.submission.created",
+        aggregate_type="ethics_review",
+        aggregate_id=review_id,
+        payload_json={
+            "tenant_id": tenant_id,
+            "review_id": str(created.get("id", "")),
+            "review_type": review_type,
+            "pi_id": pi_id,
+        },
+    )
 
-    # XXXIV.7: persist action log (fire-and-forget)
-    try:
-        create_entity_for_tenant(
-            "research_ethics_action_logs",
-            {
-                "review_id": str(created.get("id", "")),
-                "action_type": "submission_created",
-                "pi_id": pi_id,
-                "review_type": review_type,
-                "tenant_id": tenant_id,
-            },
-            tenant_id,
-        )
-    except Exception:  # noqa: BLE001
-        pass
+    # XXXIV.7: persist action log for IRB submissions (fire-and-forget)
+    if review_type == "irb":
+        try:
+            create_entity_for_tenant(
+                "research_ethics_action_logs",
+                {
+                    "review_id": str(created.get("id", "")),
+                    "action_type": "submission_created",
+                    "pi_id": pi_id,
+                    "review_type": review_type,
+                    "tenant_id": tenant_id,
+                },
+                tenant_id,
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+    _record_outcome(
+        tenant_id=tenant_id,
+        signal_id=f"research_ethics.review.{review_id}.created",
+        outcome_type="created",
+        actor=actor,
+    )
+    _audit(
+        actor=actor,
+        action=build_audit_action("research_ethics", "review", "create"),
+        path=f"/research-ethics/reviews/{review_id}",
+        metadata={
+            "review_id": review_id,
+            "review_type": review_type,
+            "risk_level": str(payload.get("risk_level") or "").strip().lower() or "unknown",
+        },
+        tenant_id=tenant_id,
+    )
+    _metric(tenant_id, "research_ethics_reviews_created", 1)
 
     risk_level = str(payload.get("risk_level") or "").strip().lower()
     if risk_level in _HIGH_RISK_LEVELS:
         _ensure_ethics_alert_record(created, tenant_id)
-        # XXXIV.7: high-risk alert event (fire-and-forget)
-        try:
-            EventPublisher().publish_event(
-                "research_ethics.review.high_risk_flagged",
-                {"tenant_id": tenant_id, "review_id": str(created.get("id", "")),
-                 "risk_level": risk_level},
-            )
-        except Exception:  # noqa: BLE001
-            pass
+        _fire(
+            tenant_id=tenant_id,
+            event_type="research_ethics.review.high_risk_flagged",
+            aggregate_type="ethics_review",
+            aggregate_id=review_id,
+            payload_json={
+                "tenant_id": tenant_id,
+                "review_id": str(created.get("id", "")),
+                "risk_level": risk_level,
+            },
+        )
+        _record_outcome(
+            tenant_id=tenant_id,
+            signal_id=f"research_ethics.review.{review_id}.high_risk_flagged",
+            outcome_type="high_risk_flagged",
+            actor=actor,
+        )
+        _metric(tenant_id, "research_ethics_high_risk_flagged", 1)
 
     return created
 
@@ -273,6 +406,7 @@ def update_ethics_review_status(
     tenant_id: int,
     review_id: int,
     request: EthicsReviewStatusUpdateSchema,
+    actor: str = "system",
 ) -> dict[str, object]:
     rows = list_entities_for_tenant("ethics_reviews", tenant_id)
     existing = next((r for r in rows if int(r.get("id") or 0) == review_id), None)
@@ -305,6 +439,25 @@ def update_ethics_review_status(
     # XXXIV.7: fire approved/rejected lifecycle events (fire-and-forget)
     _fire_review_lifecycle_event(updated, request.status, tenant_id)
 
+    _record_outcome(
+        tenant_id=tenant_id,
+        signal_id=f"research_ethics.review.{review_id}.status",
+        outcome_type=f"status_{str(request.status).strip().lower()}",
+        actor=actor,
+    )
+    _audit(
+        actor=actor,
+        action=build_audit_action("research_ethics", "review", "status_update"),
+        path=f"/research-ethics/reviews/{review_id}/status",
+        metadata={
+            "review_id": review_id,
+            "previous_status": current_status,
+            "new_status": str(request.status).strip().lower(),
+        },
+        tenant_id=tenant_id,
+    )
+    _metric(tenant_id, "research_ethics_review_status_updates", 1)
+
     return updated
 
 
@@ -321,14 +474,17 @@ def _fire_review_lifecycle_event(
         event_type = "research_ethics.review.rejected"
     else:
         return
-    try:
-        EventPublisher().publish_event(
-            event_type,
-            {"tenant_id": tenant_id, "review_id": str(review.get("id", "")),
-             "status": status},
-        )
-    except Exception:  # noqa: BLE001
-        pass
+    _fire(
+        tenant_id=tenant_id,
+        event_type=event_type,
+        aggregate_type="ethics_review",
+        aggregate_id=int(review.get("id") or 0),
+        payload_json={
+            "tenant_id": tenant_id,
+            "review_id": str(review.get("id", "")),
+            "status": status,
+        },
+    )
 
 
 def get_research_ethics_brain_context(tenant_id: int) -> dict[str, object]:

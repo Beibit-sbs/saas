@@ -146,7 +146,7 @@ export default function ReconciliationsPage() {
         reason: cancelReason,
       },
       {
-        ...getHandlers("Reconciliation cancelled"),
+        ...getHandlers({ successTitle: "Reconciliation cancelled" }),
         onSuccess: () => {
           invalidate();
           setCancelTarget(null);
@@ -160,7 +160,7 @@ export default function ReconciliationsPage() {
     autoMutation.mutate(
       { tenantId, invoiceId: autoInvoiceId },
       {
-        ...getHandlers("Auto-reconciled successfully"),
+        ...getHandlers({ successTitle: "Auto-reconciled successfully" }),
         onSuccess: () => {
           invalidate();
           setAutoModalOpen(false);

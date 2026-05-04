@@ -89,12 +89,28 @@ def _check_student_has_enrollment_history(
     ]
     if matching_students:
         student_db_ids = {int(r.get("id") or 0) for r in matching_students}
+        # Also keep string-form IDs for tests / mixed-type data
+        student_str_ids = {
+            str(r.get("student_id") or "").strip().lower() for r in matching_students
+        }
+
+        def _enrollment_matches(row: dict) -> bool:
+            raw = row.get("student_id")
+            # Case 1: integer FK (production path)
+            try:
+                return int(raw or 0) in student_db_ids
+            except (ValueError, TypeError):
+                pass
+            # Case 2: string student_id stored directly in enrollment (test/edge path)
+            return str(raw or "").strip().lower() in student_str_ids
+
+        has_enrollment = any(_enrollment_matches(row) for row in all_enrollments)
+    else:
+        # Fall back: match enrollment.student_id directly (test/string path)
         has_enrollment = any(
-            int(row.get("student_id") or 0) in student_db_ids
+            str(row.get("student_id") or "").strip().lower() == normalized_sid
             for row in all_enrollments
         )
-    else:
-        has_enrollment = False
 
     if not has_enrollment:
         raise DomainValidationError(

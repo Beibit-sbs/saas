@@ -125,7 +125,7 @@ export default function BillingPlansPage() {
     createMutation.mutate(
       { code: newCode, name: newName, description: newDescription },
       {
-        ...getHandlers("Plan created"),
+        ...getHandlers({ successTitle: "Plan created" }),
         onSuccess: () => {
           invalidate();
           setCreateModalOpen(false);
@@ -142,7 +142,7 @@ export default function BillingPlansPage() {
     updateMutation.mutate(
       { planId: selectedPlan.id, payload: { name: editName, description: editDescription } },
       {
-        ...getHandlers("Plan updated"),
+        ...getHandlers({ successTitle: "Plan updated" }),
         onSuccess: () => {
           invalidate();
           setEditModalOpen(false);
@@ -154,7 +154,7 @@ export default function BillingPlansPage() {
 
   function handleDeactivate(plan: PlanRow) {
     deactivateMutation.mutate(plan.id, {
-      ...getHandlers("Plan deactivated"),
+      ...getHandlers({ successTitle: "Plan deactivated" }),
       onSuccess: () => invalidate(),
     });
   }
@@ -253,7 +253,7 @@ export default function BillingPlansPage() {
         <DataTable
           columns={columns}
           data={plans}
-          getRowKey={(p) => p.id}
+          getRowKey={(p) => String(p.id)}
         />
 
         {/* Create Modal */}

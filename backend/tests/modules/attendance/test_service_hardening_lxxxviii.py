@@ -80,6 +80,8 @@ def test_mark_attendance_survives_publish_failure():
             f"{MODULE}.EventPublisher.publish_event",
             side_effect=RuntimeError("kafka down"),
         ),
+        patch(f"{MODULE}.log_admin_action") as mock_audit,
+        patch(f"{MODULE}.record_usage_event") as mock_metric,
     ):
         from app.modules.attendance import service as svc
 
@@ -89,6 +91,8 @@ def test_mark_attendance_survives_publish_failure():
 
     assert result["status"] == "PRESENT"
     assert result["record_id"] == "rec-7"
+    mock_audit.assert_called_once()
+    mock_metric.assert_called_once()
 
 
 # ─── test 3 ───────────────────────────────────────────────────────────────────
@@ -156,9 +160,13 @@ def test_excuse_absence_persist_before_event_no_rollback():
             f"{MODULE}.EventPublisher.publish_event",
             side_effect=Exception("broker unavailable"),
         ),
+        patch("app.modules.brain_core.service.brain_core_service") as mock_brain,
+        patch(f"{MODULE}.log_admin_action") as mock_audit,
+        patch(f"{MODULE}.record_usage_event") as mock_metric,
     ):
         from app.modules.attendance import service as svc
 
+        mock_brain.record_dispatch_outcome.side_effect = RuntimeError("brain down")
         result = svc.excuse_absence(1, record_id="rec-1", reason="medical")
 
     # create_entity_for_tenant must have been called with positional args.
@@ -169,3 +177,5 @@ def test_excuse_absence_persist_before_event_no_rollback():
     # Result must reflect the persisted excuse.
     assert result["excuse_id"] == "exc-1"
     assert result["status"] == "EXCUSED"
+    mock_audit.assert_called_once()
+    mock_metric.assert_called_once()

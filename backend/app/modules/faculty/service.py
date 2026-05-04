@@ -1,12 +1,43 @@
+import logging
 from statistics import pstdev
 
 from app.platform.events.publisher import EventPublisher
+from app.modules.audit.service import log_admin_action
+from app.modules.usage.service import record_usage_event
+
+logger = logging.getLogger("app.modules.faculty")
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     delete_entity_for_tenant,
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+
+
+def _audit(tenant_id: int, action: str, actor_id: str, entity_id: object = None, detail: object = None) -> None:
+    try:
+        log_admin_action(tenant_id=tenant_id, action=action, actor_id=actor_id, entity_id=entity_id, detail=detail)
+    except Exception:
+        logger.exception("faculty audit failed action=%s", action)
+
+
+def _record_outcome(entity_id: object, outcome_type: str, actor_id: str) -> None:
+    try:
+        from app.modules.brain_core import service as brain_core_service  # noqa: PLC0415
+        brain_core_service.record_dispatch_outcome(
+            entity_id=entity_id,
+            outcome_type=outcome_type,
+            actor_id=str(actor_id),
+        )
+    except Exception:
+        logger.exception("faculty outcome failed entity_id=%s outcome=%s", entity_id, outcome_type)
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        logger.exception("faculty metric failed metric=%s", metric)
 
 
 _FACULTY_CONTRACT_STATUS_MAX_ACTIVE: dict[str, int] = {
@@ -109,7 +140,10 @@ def create_faculty_contract(payload: dict[str, object], tenant_id: int) -> dict[
     cap = _FACULTY_CONTRACT_STATUS_MAX_ACTIVE.get(contract_status, 200)
     if active_count >= cap:
         raise ValueError("faculty_contract active cap reached")
-    return create_entity_for_tenant("faculty_contracts", payload, tenant_id)
+    result = create_entity_for_tenant("faculty_contracts", payload, tenant_id)
+    _record_outcome(result.get("id"), "faculty_contract_created", str(payload.get("actor_id") or "system"))
+    _metric(tenant_id, "faculty_contracts_created")
+    return result
 
 
 def update_faculty_contract_status(
@@ -130,6 +164,8 @@ def update_faculty_contract_status(
     result = update_entity_for_tenant("faculty_contracts", contract_id, updated_payload, tenant_id)
     if status in _CONTRACT_TERMINATION_RISK_STATUSES:
         _ensure_contract_termination_alert_record(contract_id, tenant_id)
+    _record_outcome(contract_id, "faculty_contract_status_updated", str(notes or "system"))
+    _metric(tenant_id, "faculty_contract_status_updates")
     return result
 
 
@@ -157,7 +193,10 @@ def _ensure_contract_termination_alert_record(contract_id: int, tenant_id: int) 
 
 
 def create_faculty_member(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
-    return create_entity_for_tenant("faculty", payload, tenant_id)
+    result = create_entity_for_tenant("faculty", payload, tenant_id)
+    _record_outcome(result.get("id"), "faculty_member_created", str(payload.get("actor_id") or "system"))
+    _metric(tenant_id, "faculty_members_created")
+    return result
 
 
 def update_faculty_member(faculty_row_id: int, payload: dict[str, object], tenant_id: int) -> dict[str, object]:
@@ -522,6 +561,8 @@ def create_teaching_quality_record(
     tenant_id: int,
 ) -> dict[str, object]:
     record = create_entity_for_tenant("teaching_quality_records", payload, tenant_id)
+    _record_outcome(record.get("id"), "teaching_quality_record_created", str(payload.get("actor_id") or "system"))
+    _metric(tenant_id, "teaching_quality_records_created")
     quality_score = float(record.get("quality_score") or 100.0)
     kpi_score = float(record.get("kpi_score") or 100.0)
     if quality_score < _QUALITY_ALERT_THRESHOLD or kpi_score < _QUALITY_ALERT_THRESHOLD:

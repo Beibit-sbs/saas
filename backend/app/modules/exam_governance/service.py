@@ -102,11 +102,19 @@ def _check_faculty_has_active_contract_for_exam_activation(
             f"Reason: {exc}"
         ) from exc
 
+    faculty_contracts = [
+        c for c in all_contracts if str(c.get("faculty_id") or "") == faculty_id
+    ]
+
+    # Only enforce if there ARE contracts for this faculty (tracking is set up).
+    # If no contracts exist at all, the system is not tracking employment for this faculty.
+    if not faculty_contracts:
+        return
+
     active_contracts = [
         c
-        for c in all_contracts
-        if str(c.get("faculty_id") or "") == faculty_id
-        and str(c.get("status") or "") in _FACULTY_ACTIVE_CONTRACT_STATUSES
+        for c in faculty_contracts
+        if str(c.get("status") or "") in _FACULTY_ACTIVE_CONTRACT_STATUSES
     ]
 
     if not active_contracts:
@@ -237,20 +245,18 @@ def update_exam(
     tenant_id: int, exam_id: int, payload: ExamUpdateSchema, actor: str
 ) -> ExamSchema:
     updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+
+    # Always read current row to enable merged updates (required field validation)
+    all_rows = list_entities_for_tenant(_ENTITY, tenant_id)
+    current_row = next((r for r in all_rows if r["id"] == exam_id), None)
+    if current_row is None:
+        raise ValueError(f"Exam {exam_id} not found")
+
     if not updates:
-        rows = list_entities_for_tenant(_ENTITY, tenant_id)
-        row = next((r for r in rows if r["id"] == exam_id), None)
-        if row is None:
-            raise ValueError(f"Exam {exam_id} not found")
-        return _to_schema(row)
+        return _to_schema(current_row)
 
     # W93: FSM transition guard + cross-entity faculty contract validation
     if payload.status is not None:
-        # Read current state to enforce FSM
-        all_rows = list_entities_for_tenant(_ENTITY, tenant_id)
-        current_row = next((r for r in all_rows if r["id"] == exam_id), None)
-        if current_row is None:
-            raise ValueError(f"Exam {exam_id} not found")
         current_status = str(current_row.get("status") or "scheduled")
         allowed_next = _ALLOWED_EXAM_STATUS_TRANSITIONS.get(current_status, frozenset())
         if payload.status not in allowed_next:
@@ -268,7 +274,10 @@ def update_exam(
             target_status=payload.status,
         )
 
-    row = update_entity_for_tenant(_ENTITY, exam_id, updates, tenant_id)
+    # Merge current row data with updates to satisfy required field validation
+    merged_payload = {k: v for k, v in current_row.items() if k != "id"}
+    merged_payload.update(updates)
+    row = update_entity_for_tenant(_ENTITY, exam_id, merged_payload, tenant_id)
     if row is None:
         raise ValueError(f"Exam {exam_id} not found")
     log_admin_action(

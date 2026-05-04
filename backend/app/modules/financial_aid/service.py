@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from uuid import uuid4
 
 from app.core.module_helpers.audit_helpers import build_audit_action
@@ -16,6 +17,28 @@ from app.modules.university_core.tenant_entity_service import (
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+from app.modules.usage.service import record_usage_event
+
+logger = logging.getLogger("app.modules.financial_aid")
+
+
+def _record_outcome(entity_id: object, outcome_type: str, actor_id: str) -> None:
+    try:
+        from app.modules.brain_core import service as brain_core_service  # noqa: PLC0415
+        brain_core_service.record_dispatch_outcome(
+            entity_id=entity_id,
+            outcome_type=outcome_type,
+            actor_id=str(actor_id),
+        )
+    except Exception:
+        logger.exception("financial_aid outcome failed entity_id=%s outcome=%s", entity_id, outcome_type)
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        logger.exception("financial_aid metric failed metric=%s", metric)
 
 
 _AID_TYPE_MAX_AMOUNT: dict[str, float] = {
@@ -202,6 +225,15 @@ def create_financial_aid_record(
                 "term": request.term,
             },
         )
+
+    try:
+        _record_outcome(created.get("id"), "financial_aid_record_created", str(actor or "system"))
+    except Exception:
+        logger.exception("financial_aid create outcome failed")
+    try:
+        _metric(tenant_id, "financial_aid_records_created")
+    except Exception:
+        logger.exception("financial_aid create metric failed")
 
     return FinancialAidRecordSchema.model_validate(created)
 
@@ -441,6 +473,15 @@ def update_financial_aid_status(
 
     if request.status == "disbursed":
         _ensure_disbursement_record(tenant_id, record_id, updated)
+
+    try:
+        _record_outcome(record_id, "financial_aid_status_updated", str(actor or "system"))
+    except Exception:
+        logger.exception("financial_aid update outcome failed")
+    try:
+        _metric(tenant_id, "financial_aid_records_updated")
+    except Exception:
+        logger.exception("financial_aid update metric failed")
 
     return FinancialAidRecordSchema.model_validate(updated)
 

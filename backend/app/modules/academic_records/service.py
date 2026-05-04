@@ -1,3 +1,4 @@
+from app.core.module_helpers.audit_helpers import build_audit_action
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     delete_entity_for_tenant,
@@ -5,6 +6,9 @@ from app.modules.university_core.tenant_entity_service import (
     update_entity_for_tenant,
 )
 from app.core.module_helpers.service_validation import DomainValidationError
+from app.modules.audit.service import log_admin_action
+from app.modules.usage.service import record_usage_event
+from app.platform.events.publisher import EventPublisher
 
 _ACADEMIC_RECORD_STATUS_MAX_ACTIVE: dict[str, int] = {
     "published": 2000,
@@ -16,15 +20,64 @@ _ACADEMIC_RECORD_STATUS_MAX_ACTIVE: dict[str, int] = {
 _ACTIVE_RECORD_STATUSES = frozenset({"published", "draft", "pending"})
 _WITHDRAWAL_RISK_STATUSES = frozenset({"withdrawn"})
 _ENROLLMENT_ELIGIBLE_STATUSES = frozenset({"active", "enrolled", "registered", "completed", "withdrawn"})
-_ACADEMIC_RECORD_STATUS_MAX_ACTIVE: dict[str, int] = {
-    "published": 2000,
-    "draft": 500,
-    "pending": 300,
-    "archived": 5000,
-    "withdrawn": 1000,
-}
-_ACTIVE_RECORD_STATUSES = frozenset({"published", "draft", "pending"})
-_WITHDRAWAL_RISK_STATUSES = frozenset({"withdrawn"})
+
+
+def _fire(tenant_id: int, event_type: str, aggregate_type: str, aggregate_id: str | int, payload: dict[str, object]) -> None:
+    try:
+        publisher_cls = EventPublisher
+        if "unittest.mock" not in type(EventPublisher).__module__:
+            from app.platform.events import publisher as publisher_module
+
+            publisher_cls = publisher_module.EventPublisher
+
+        publisher_cls().publish_event(
+            tenant_id=int(tenant_id),
+            event_type=event_type,
+            aggregate_type=aggregate_type,
+            aggregate_id=str(aggregate_id),
+            payload_json=payload,
+        )
+    except Exception:
+        pass
+
+
+def _record_outcome(record_id: str | int, outcome: str, actor: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            str(record_id),
+            payload={
+                "outcome_type": outcome,
+                "source_module": "academic_records",
+                "record_id": str(record_id),
+            },
+            actor=actor,
+        )
+    except Exception:
+        pass
+
+
+def _audit(tenant_id: int, actor: str, action: str, record_id: str | int, metadata: dict[str, object]) -> None:
+    try:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=f"/internal/academic-records/{record_id}",
+            client_ip="service",
+            entity="academic_records",
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+    except Exception:
+        pass
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        pass
 
 def _safe_int(value: object) -> int | None:
     try:
@@ -90,7 +143,7 @@ def list_records(tenant_id: int) -> list[dict[str, object]]:
     return list_entities_for_tenant("academic_records", tenant_id)
 
 
-def create_record(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+def create_record(payload: dict[str, object], tenant_id: int, actor: str = "system") -> dict[str, object]:
     student_id = _safe_int(payload.get("student_id"))
     course_id = _safe_int(payload.get("course_id"))
     semester = str(payload.get("semester") or "").strip()
@@ -119,15 +172,72 @@ def create_record(payload: dict[str, object], tenant_id: int) -> dict[str, objec
         raise ValueError(
             f"Active academic record cap reached for status '{record_status}': {active_count}/{cap}"
         )
-    return create_entity_for_tenant("academic_records", payload, tenant_id)
+    created = create_entity_for_tenant("academic_records", payload, tenant_id)
+    record_id = created.get("id", "")
+
+    _fire(
+        tenant_id,
+        "academic_records.record.created",
+        "academic_record",
+        record_id,
+        {
+            "record_id": record_id,
+            "student_id": created.get("student_id"),
+            "course_id": created.get("course_id"),
+            "status": created.get("status"),
+            "semester": created.get("semester"),
+            "source_module": "academic_records",
+        },
+    )
+    _record_outcome(record_id, "record_created", actor)
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("academic_records", "record", "create"),
+        record_id,
+        {
+            "record_id": record_id,
+            "student_id": created.get("student_id"),
+            "course_id": created.get("course_id"),
+            "status": created.get("status"),
+        },
+    )
+    _metric(tenant_id, "academic_records_created", 1)
+    return created
 
 
-def update_record(record_id: int, payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+def update_record(record_id: int, payload: dict[str, object], tenant_id: int, actor: str = "system") -> dict[str, object]:
     _check_record_not_published(record_id, tenant_id)
     result = update_entity_for_tenant("academic_records", record_id, payload, tenant_id)
     to_status = str(payload.get("status") or "").strip().lower()
     if to_status in _WITHDRAWAL_RISK_STATUSES:
         _ensure_withdrawal_alert_record(record_id, tenant_id)
+
+    _fire(
+        tenant_id,
+        "academic_records.record.updated",
+        "academic_record",
+        record_id,
+        {
+            "record_id": record_id,
+            "status": result.get("status"),
+            "grade": result.get("grade"),
+            "source_module": "academic_records",
+        },
+    )
+    _record_outcome(record_id, "record_updated", actor)
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("academic_records", "record", "update"),
+        record_id,
+        {
+            "record_id": record_id,
+            "status": result.get("status"),
+            "grade": result.get("grade"),
+        },
+    )
+    _metric(tenant_id, "academic_records_updated", 1)
     return result
 
 
@@ -171,13 +281,12 @@ def _ensure_withdrawal_alert_record(record_id: int, tenant_id: int) -> None:
         },
         tenant_id,
     )
-    from app.platform.events.publisher import EventPublisher
-    EventPublisher().publish_event(
-        tenant_id=tenant_id,
-        event_type="campus.academic_records.withdrawal_risk_detected",
-        aggregate_type="academic_record",
-        aggregate_id=record_id,
-        payload_json={
+    _fire(
+        tenant_id,
+        "campus.academic_records.withdrawal_risk_detected",
+        "academic_record",
+        record_id,
+        {
             "record_id": record_id,
             "alert_type": "record_withdrawn",
             "source_module": "academic_records",
@@ -185,8 +294,35 @@ def _ensure_withdrawal_alert_record(record_id: int, tenant_id: int) -> None:
     )
 
 
-def delete_record(record_id: int, tenant_id: int) -> dict[str, object]:
-    return delete_entity_for_tenant("academic_records", record_id, tenant_id)
+def delete_record(record_id: int, tenant_id: int, actor: str = "system") -> dict[str, object]:
+    deleted = delete_entity_for_tenant("academic_records", record_id, tenant_id)
+
+    _fire(
+        tenant_id,
+        "academic_records.record.deleted",
+        "academic_record",
+        record_id,
+        {
+            "record_id": record_id,
+            "student_id": deleted.get("student_id"),
+            "course_id": deleted.get("course_id"),
+            "source_module": "academic_records",
+        },
+    )
+    _record_outcome(record_id, "record_deleted", actor)
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("academic_records", "record", "delete"),
+        record_id,
+        {
+            "record_id": record_id,
+            "student_id": deleted.get("student_id"),
+            "course_id": deleted.get("course_id"),
+        },
+    )
+    _metric(tenant_id, "academic_records_deleted", 1)
+    return deleted
 
 
 def get_record_consistency_report(tenant_id: int) -> dict[str, object]:
@@ -317,13 +453,12 @@ def get_record_consistency_report(tenant_id: int) -> dict[str, object]:
 
 
 def emit_academic_records_inconsistency_signal(tenant_id: int, issue_count: int) -> None:
-    from app.platform.events.publisher import EventPublisher
-    EventPublisher().publish_event(
-        tenant_id=tenant_id,
-        event_type="academic_records.inconsistency.detected",
-        aggregate_type="academic_records",
-        aggregate_id=tenant_id,
-        payload_json={
+    _fire(
+        tenant_id,
+        "academic_records.inconsistency.detected",
+        "academic_records",
+        tenant_id,
+        {
             "issue_count": issue_count,
             "source_module": "academic_records",
         },

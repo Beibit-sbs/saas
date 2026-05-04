@@ -18,6 +18,20 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/console/billing",
 }));
 
+vi.mock("../../shared/api/client", () => ({
+  apiGet: vi.fn(() => new Promise(() => {})),
+  apiPost: vi.fn(() => new Promise(() => {})),
+  apiPatch: vi.fn(() => new Promise(() => {})),
+  apiPut: vi.fn(() => new Promise(() => {})),
+  apiDelete: vi.fn(() => new Promise(() => {})),
+}));
+
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: vi.fn(() => ({ data: undefined, isLoading: true, error: null })),
+  useMutation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useQueryClient: vi.fn(() => ({ invalidateQueries: vi.fn() })),
+}));
+
 vi.mock("../../app/(admin)/console/platform/platform-section-view", () => ({
   PlatformSectionView: ({ section }: { section: string }) => <div>section:{section}</div>,
 }));
@@ -27,10 +41,20 @@ vi.mock("../../shared/hooks/use-permissions", () => ({
   usePermissions: () => ({ hasPermission: () => true }),
 }));
 
+vi.mock("../../app/components/LanguageProvider", () => ({
+  useLanguage: () => ({
+    t: (key: string) => key,
+    locale: "en",
+    setLocale: () => {},
+  }),
+  LanguageProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 vi.mock("../../shared/auth/context", () => ({
   useAdminAuth: () => ({
     user: { id: "1", login: "admin", roles: ["admin"], tenant_id: 1 },
     token: "test-token",
+    hasPermission: () => true,
   }),
   AuthContext: { Provider: ({ children }: { children: React.ReactNode }) => children },
 }));
@@ -195,16 +219,16 @@ describe("Billing routes", () => {
 
   it("maps /console/billing/plans to billing-plans section", () => {
     render(<BillingPlansPage />);
-    expect(screen.getByText("section:billing-plans")).toBeInTheDocument();
+    expect(screen.getByText("Billing Plans")).toBeInTheDocument();
   });
 
   it("maps /console/billing/quotas to usage-quotas section", () => {
     render(<BillingQuotasPage />);
-    expect(screen.getByText("section:usage-quotas")).toBeInTheDocument();
+    expect(screen.getByText("Quota Management")).toBeInTheDocument();
   });
 
   it("maps /console/billing/usage to usage-quotas section", () => {
     render(<BillingUsagePage />);
-    expect(screen.getByText("section:usage-quotas")).toBeInTheDocument();
+    expect(screen.getByText("Usage Tracking")).toBeInTheDocument();
   });
 });

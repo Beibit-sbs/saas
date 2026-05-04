@@ -56,7 +56,7 @@ def test_create_ethics_review_publishes_submission_created() -> None:
         result = svc.create_ethics_review(_REVIEW_PAYLOAD.copy(), tenant_id=1)
 
     assert result["id"] == 1
-    event_types = [c.args[0] for c in mock_pub.publish_event.call_args_list]
+    event_types = [c.kwargs.get("event_type") for c in mock_pub.publish_event.call_args_list]
     assert "research_ethics.submission.created" in event_types
 
 
@@ -89,7 +89,7 @@ def test_create_ethics_review_high_risk_fires_high_risk_flagged() -> None:
 
         svc.create_ethics_review(payload, tenant_id=1)
 
-    event_types = [c.args[0] for c in mock_pub.publish_event.call_args_list]
+    event_types = [c.kwargs.get("event_type") for c in mock_pub.publish_event.call_args_list]
     assert "research_ethics.submission.created" in event_types
     assert "research_ethics.review.high_risk_flagged" in event_types
 
@@ -123,7 +123,7 @@ def test_create_ethics_review_low_risk_no_high_risk_event() -> None:
 
         svc.create_ethics_review(payload, tenant_id=1)
 
-    event_types = [c.args[0] for c in mock_pub.publish_event.call_args_list]
+    event_types = [c.kwargs.get("event_type") for c in mock_pub.publish_event.call_args_list]
     assert "research_ethics.review.high_risk_flagged" not in event_types
 
 
@@ -209,7 +209,7 @@ def test_update_ethics_review_status_approved_fires_approved_event() -> None:
 
         svc.update_ethics_review_status(tenant_id=1, review_id=10, request=request)
 
-    event_types = [c.args[0] for c in mock_pub.publish_event.call_args_list]
+    event_types = [c.kwargs.get("event_type") for c in mock_pub.publish_event.call_args_list]
     assert "research_ethics.review.approved" in event_types
 
 
@@ -244,7 +244,7 @@ def test_update_ethics_review_status_rejected_fires_rejected_event() -> None:
 
         svc.update_ethics_review_status(tenant_id=1, review_id=11, request=request)
 
-    event_types = [c.args[0] for c in mock_pub.publish_event.call_args_list]
+    event_types = [c.kwargs.get("event_type") for c in mock_pub.publish_event.call_args_list]
     assert "research_ethics.review.rejected" in event_types
 
 

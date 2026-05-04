@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 
 from sqlalchemy import and_, select
@@ -33,21 +34,54 @@ from app.modules.transcripts.schemas import (
 )
 from app.modules.usage.service import record_usage_event
 
+logger = logging.getLogger("app.modules.transcripts")
+
 
 def _utc_now() -> datetime:
     return datetime.now(UTC)
 
 
 def _audit(actor: str, action: str, path: str, metadata: dict, tenant_id: int) -> None:
-    log_admin_action(
-        actor=actor,
-        action=action,
-        path=path,
-        client_ip="service",
-        entity="transcript",
-        metadata=metadata,
-        tenant_id=tenant_id,
-    )
+    try:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=path,
+            client_ip="service",
+            entity="transcript",
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception("transcripts audit failed action=%s path=%s", action, path)
+
+
+def _record_outcome(entity_id: int, outcome_type: str, actor_id: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            str(entity_id),
+            payload={
+                "outcome_type": outcome_type,
+                "source_module": "transcripts",
+                "entity_id": str(entity_id),
+            },
+            actor=actor_id,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "transcripts outcome failed entity_id=%s outcome=%s",
+            entity_id,
+            outcome_type,
+        )
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:  # noqa: BLE001
+        logger.exception("transcripts metric failed tenant_id=%s metric=%s", tenant_id, metric)
 
 
 class TranscriptService:
@@ -210,7 +244,8 @@ class TranscriptService:
             self.db.rollback()
             raise DomainValidationError("Unable to generate transcript due to constraint violation") from exc
 
-        record_usage_event(tenant_id=tenant_id, metric="transcripts_generated", value=1)
+        _record_outcome(student_profile_id, "transcript_generated", actor_id)
+        _metric(tenant_id, "transcripts_generated", 1)
 
         _audit(
             actor_id,
@@ -317,6 +352,9 @@ class TranscriptService:
         except IntegrityError as exc:
             self.db.rollback()
             raise DomainValidationError("Unable to create transcript snapshot due to constraint violation") from exc
+
+        _record_outcome(snapshot.id, "transcript_snapshot_created", actor_id)
+        _metric(tenant_id, "transcript_snapshots_created", 1)
 
         _audit(
             actor_id,

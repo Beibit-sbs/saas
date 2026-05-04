@@ -1,0 +1,11 @@
+batch	status	exit_code	log	detail
+preflight	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260504T043428Z/preflight.log	ok
+permission-parity	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260504T043428Z/permission-parity.log	ok
+compose-bootstrap	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260504T043428Z/compose-bootstrap.log	ok
+backend-lint	FAIL	1	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260504T043428Z/backend-lint.log	exit=1
+backend-pytest-shard-01	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260504T043428Z/backend-pytest-shard-01.log	ok
+backend-pytest-shard-02	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260504T043428Z/backend-pytest-shard-02.log	ok
+backend-pytest-shard-03	WARNING	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260504T043428Z/backend-pytest-shard-03.log	exit=0 with warning patterns
+backend-pytest-shard-04	PASS	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260504T043428Z/backend-pytest-shard-04.log	ok
+backend-pytest-shard-05	WARNING	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260504T043428Z/backend-pytest-shard-05.log	exit=0 with warning patterns
+backend-pytest-shard-06	WARNING	0	/home/sbs/AI/artifacts/audits/pass-fail-warning-coverage/20260504T043428Z/backend-pytest-shard-06.log	exit=0 with warning patterns

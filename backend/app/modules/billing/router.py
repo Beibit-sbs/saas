@@ -41,7 +41,7 @@ from app.modules.billing.service import (
     transition_subscription_status,
     update_dunning_policy,
 )
-from app.modules.rbac.security import get_actor
+from app.modules.rbac.security import get_actor, permission_dependency
 from app.platform.billing import service as platform_billing_service
 
 router = APIRouter(prefix="/api/admin/billing", tags=["billing"])
@@ -52,6 +52,7 @@ def create_billing_plan(
     payload: BillingPlanCreateRequestSchema,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.manage"))] = None,
 ) -> BillingPlanMutationReadSchema:
     existing = None
     for item in platform_billing_service.list_plans():
@@ -96,7 +97,10 @@ def create_billing_plan(
 
 
 @router.get("/plans", response_model=list[BillingPlanReadSchema])
-def list_billing_plans(_: Annotated[str, Depends(get_actor)]) -> list[BillingPlanReadSchema]:
+def list_billing_plans(
+    _actor: Annotated[str, Depends(get_actor)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.manage"))] = None,
+) -> list[BillingPlanReadSchema]:
     return [BillingPlanReadSchema.model_validate(item) for item in platform_billing_service.list_plans()]
 
 
@@ -106,6 +110,7 @@ def update_billing_plan(
     payload: BillingPlanUpdateRequestSchema,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.manage"))] = None,
 ) -> BillingPlanReadSchema:
     updated = platform_billing_service.update_plan(plan_id, name=payload.name, active=payload.active)
     if updated is None:

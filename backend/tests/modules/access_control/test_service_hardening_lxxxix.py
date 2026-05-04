@@ -78,6 +78,8 @@ def test_issue_card_survives_publish_failure():
             f"{MODULE}.EventPublisher.publish_event",
             side_effect=RuntimeError("kafka down"),
         ),
+        patch(f"{MODULE}.log_admin_action") as mock_audit,
+        patch(f"{MODULE}.record_usage_event") as mock_metric,
     ):
         from app.modules.access_control import service as svc
 
@@ -85,6 +87,8 @@ def test_issue_card_survives_publish_failure():
 
     assert result["card_id"] == "card-99"
     assert result["status"] == "ACTIVE"
+    mock_audit.assert_called_once()
+    mock_metric.assert_called_once()
 
 
 # ─── test 3 ───────────────────────────────────────────────────────────────────
@@ -151,9 +155,13 @@ def test_check_security_anomaly_persist_before_event_no_rollback():
             f"{MODULE}.EventPublisher.publish_event",
             side_effect=Exception("broker unavailable"),
         ),
+        patch("app.modules.brain_core.service.brain_core_service") as mock_brain,
+        patch(f"{MODULE}.log_admin_action") as mock_audit,
+        patch(f"{MODULE}.record_usage_event") as mock_metric,
     ):
         from app.modules.access_control import service as svc
 
+        mock_brain.record_dispatch_outcome.side_effect = RuntimeError("brain down")
         # attempt_access should trigger _check_security_anomaly when card is not ACTIVE or zone denied
         # Actually, let's trigger it directly if possible. Since it's internal, call attempt_access
         # with a card that will cause denial and trigger anomaly check
@@ -164,3 +172,5 @@ def test_check_security_anomaly_persist_before_event_no_rollback():
     assert mock_create.called, "create_entity_for_tenant should have been called"
     # The function should survive the event publish failure
     assert result["granted"] is False
+    assert mock_metric.called
+    assert mock_audit.called

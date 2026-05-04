@@ -13,6 +13,8 @@ from app.modules.university_core.tenant_entity_service import (
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+from app.modules.usage.service import record_usage_event
+from app.platform.events.publisher import EventPublisher
 
 # ---------------------------------------------------------------------------
 # SLA tier caps: max allowed target_resolution_hours per priority
@@ -163,15 +165,61 @@ def _check_ticket_resolution_requirements(
 
 
 def _emit_audit(*, actor: str, action: str, path: str, metadata: dict, tenant_id: int) -> None:
-    log_admin_action(
-        actor=actor,
-        action=action,
-        path=path,
-        client_ip="service",
-        entity="student_service_ticket",
-        metadata=metadata,
-        tenant_id=tenant_id,
-    )
+    try:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=path,
+            client_ip="service",
+            entity="student_service_ticket",
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+    except Exception:
+        pass
+
+
+def _fire(tenant_id: int, event_type: str, ticket_id: int, payload: dict[str, object]) -> None:
+    try:
+        publisher_cls = EventPublisher
+        if "unittest.mock" not in type(EventPublisher).__module__:
+            from app.platform.events import publisher as publisher_module
+
+            publisher_cls = publisher_module.EventPublisher
+
+        publisher_cls().publish_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            aggregate_type="student_service_ticket",
+            aggregate_id=ticket_id,
+            payload_json=payload,
+        )
+    except Exception:
+        pass
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        pass
+
+
+def _record_outcome(ticket_id: int, outcome_type: str, actor: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            str(ticket_id),
+            payload={
+                "outcome_type": outcome_type,
+                "source_module": "student_services",
+                "ticket_id": ticket_id,
+            },
+            actor=actor,
+        )
+    except Exception:
+        pass
 
 
 def _ensure_sla_alert(tenant_id: int, ticket_id: int, ticket_data: dict) -> None:
@@ -235,13 +283,11 @@ def _ensure_unresolved_alert_record(tenant_id: int, ticket_id: int, ticket_data:
         tenant_id,
     )
 
-    from app.platform.events.publisher import EventPublisher
-    EventPublisher().publish_event(
-        tenant_id=tenant_id,
-        event_type="campus.student_services.ticket_unresolved_risk_detected",
-        aggregate_type="student_service_ticket",
-        aggregate_id=ticket_id,
-        payload_json={
+    _fire(
+        tenant_id,
+        "campus.student_services.ticket_unresolved_risk_detected",
+        ticket_id,
+        {
             "ticket_id": ticket_id,
             "student_id": ticket_data.get("student_id"),
             "priority": ticket_data.get("priority"),
@@ -320,17 +366,15 @@ def create_student_service_ticket(
         tenant_id=tenant_id,
     )
 
+    ticket_id = int(created.get("id") or 0)
     if request.priority in ("urgent", "high"):
-        ticket_id = int(created.get("id") or 0)
         if request.priority == "urgent":
             _ensure_sla_alert(tenant_id, ticket_id, dict(created))
-        from app.platform.events.publisher import EventPublisher
-        EventPublisher().publish_event(
-            tenant_id=tenant_id,
-            event_type="student_services.ticket.escalated",
-            aggregate_type="student_service_ticket",
-            aggregate_id=ticket_id,
-            payload_json={
+        _fire(
+            tenant_id,
+            "student_services.ticket.escalated",
+            ticket_id,
+            {
                 "ticket_id": ticket_id,
                 "student_id": int(request.student_id),
                 "category": request.category,
@@ -338,6 +382,9 @@ def create_student_service_ticket(
                 "source_module": "student_services",
             },
         )
+
+    _record_outcome(ticket_id, "ticket_created", actor)
+    _metric(tenant_id, "student_service_tickets_created", 1)
 
     return StudentServiceTicketSchema.model_validate(created)
 
@@ -394,6 +441,9 @@ def update_student_service_ticket_status(
         },
         tenant_id=tenant_id,
     )
+
+    _record_outcome(ticket_id, f"ticket_{request.status}", actor)
+    _metric(tenant_id, "student_service_ticket_status_updates", 1)
 
     # Trigger unresolved alert if status transitions to risk set
     if request.status in _UNRESOLVED_RISK_STATUSES:

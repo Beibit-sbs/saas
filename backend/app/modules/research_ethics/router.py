@@ -35,13 +35,17 @@ def list_ethics_reviews_endpoint(
 @router.post("/reviews", response_model=EthicsReviewItemResponse, status_code=201)
 def create_ethics_review_endpoint(
     payload: EthicsReviewCreatePayload,
-    _: Annotated[str, Depends(get_actor)],
+    actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("research.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> EthicsReviewItemResponse:
     try:
         return EthicsReviewItemResponse(
-            record=_svc.create_ethics_review(payload.model_dump(), int(tenant["id"]))
+            record=_svc.create_ethics_review(
+                payload.model_dump(),
+                int(tenant["id"]),
+                actor=actor,
+            )
         )
     except (ValueError, DomainValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

@@ -1017,11 +1017,13 @@ class BrainCoreService:
         decision["cancel_reason"] = reason
         return {"status": "cancelled", "decision": decision}
 
-    def list_signals(self) -> list[dict]:
-        return list(self._signals)
+    def list_signals(self, tenant_id: int) -> list[dict]:
+        """Return only signals for the specified tenant (CRITICAL: A-009 tenant isolation fix)."""
+        return [s for s in self._signals if s.get("tenant_id") == tenant_id]
 
-    def list_decisions(self) -> list[dict]:
-        return list(self._decisions)
+    def list_decisions(self, tenant_id: int) -> list[dict]:
+        """Return only decisions for the specified tenant (CRITICAL: A-009 tenant isolation fix)."""
+        return [d for d in self._decisions if d.get("tenant_id") == tenant_id]
 
     def dispatch_snapshot(self) -> dict:
         return self._dispatcher.snapshot()

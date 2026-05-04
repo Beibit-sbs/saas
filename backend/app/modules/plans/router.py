@@ -10,8 +10,11 @@ Endpoints:
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query, Response
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+
+from app.modules.rbac.security import permission_dependency
 from app.modules.plans.schemas import (
     PlanCreatePayload,
     PlanItemResponse,
@@ -27,7 +30,12 @@ from app.modules.plans.service import (
     update_plan,
 )
 
-router = APIRouter(prefix="/api/billing/plans", tags=["billing-plans"])
+router = APIRouter(
+    prefix="/api/billing/plans",
+    tags=["billing-plans"],
+    # A-009 Phase 2.1: Add permission_dependency guard (HIGH severity fix for 64 unguarded endpoints)
+    dependencies=[Depends(permission_dependency("billing.admin.manage"))],
+)
 
 MODULE = "app.modules.plans.router"
 

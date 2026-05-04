@@ -118,3 +118,28 @@ class EventPublisher:
                 causation_id=causation_id,
                 conn=uow.conn,
             )
+
+    @classmethod
+    def publish(
+        cls,
+        *,
+        tenant_id: int,
+        event_type: str,
+        aggregate_type: str,
+        aggregate_id: int | str,
+        payload_json: dict[str, Any],
+        available_at: datetime | None = None,
+        correlation_id: str | None = None,
+        causation_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Convenience class-level wrapper around publish_event."""
+        return cls().publish_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            aggregate_type=aggregate_type,
+            aggregate_id=aggregate_id,
+            payload_json=payload_json,
+            available_at=available_at,
+            correlation_id=correlation_id,
+            causation_id=causation_id,
+        )

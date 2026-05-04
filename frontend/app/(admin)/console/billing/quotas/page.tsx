@@ -173,7 +173,7 @@ export default function QuotasPage() {
     updateMutation.mutate(
       { planId: editPlanId, quotas: { [editKey]: editValue } },
       {
-        ...getHandlers("Quota updated"),
+        ...getHandlers({ successTitle: "Quota updated" }),
         onSuccess: () => {
           invalidate();
           setEditModalOpen(false);

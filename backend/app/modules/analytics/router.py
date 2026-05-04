@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 
 from app.core.tenant import get_current_tenant
-from app.modules.rbac.security import get_actor
+from app.modules.rbac.security import get_actor, permission_dependency
 from app.platform.developer.auth import require_developer_scope
 from app.platform.event_ingestion import service as event_ingestion_service
 from app.platform.event_ingestion.types import ANALYTICS_EVENT_READ, ANALYTICS_KPI_READ
@@ -26,7 +26,12 @@ from .schemas import (
 from app.modules.usage.service import get_usage_brain_context
 
 
-router = APIRouter(prefix="/api/analytics", tags=["analytics-kpi"])
+router = APIRouter(
+    prefix="/api/analytics",
+    tags=["analytics-kpi"],
+    # A-009 Phase 2.1: Add permission_dependency guard (HIGH severity fix for 64 unguarded endpoints)
+    dependencies=[Depends(permission_dependency("analytics.data.read"))],
+)
 
 
 async def _resolve_kpi_read_access(
@@ -83,6 +88,7 @@ def get_tenant_analytics_kpis(
 def refresh_tenant_analytics_kpis(
     _actor: Annotated[str, Depends(get_actor)],
     tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _write_perm: Annotated[None, Depends(permission_dependency("analytics.data.write"))] = None,
 ) -> TenantAnalyticsKpiRefreshReadSchema:
     tenant_id = int(tenant.get("id") or 0)
     with UnitOfWork() as uow:

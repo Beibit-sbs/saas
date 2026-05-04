@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from app.core.module_helpers.audit_helpers import build_audit_action
 from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.alumni.schemas import (
@@ -14,7 +16,29 @@ from app.modules.university_core.tenant_entity_service import (
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+from app.modules.usage.service import record_usage_event
 from app.platform.events.publisher import EventPublisher
+
+logger = logging.getLogger("app.modules.alumni")
+
+
+def _record_outcome(entity_id: object, outcome_type: str, actor_id: str) -> None:
+    try:
+        from app.modules.brain_core import service as brain_core_service  # noqa: PLC0415
+        brain_core_service.record_dispatch_outcome(
+            entity_id=entity_id,
+            outcome_type=outcome_type,
+            actor_id=str(actor_id),
+        )
+    except Exception:
+        logger.exception("alumni outcome failed entity_id=%s outcome=%s", entity_id, outcome_type)
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        logger.exception("alumni metric failed metric=%s", metric)
 
 
 _ALLOWED_TRANSITIONS: dict[str, set[str]] = {
@@ -235,6 +259,16 @@ def create_alumni_record(
         },
         tenant_id=tenant_id,
     )
+
+    try:
+        _record_outcome(created.get("id"), "alumni_record_created", str(actor or "system"))
+    except Exception:
+        logger.exception("alumni create outcome failed")
+    try:
+        _metric(tenant_id, "alumni_records_created")
+    except Exception:
+        logger.exception("alumni create metric failed")
+
     return AlumniRecordSchema.model_validate(created)
 
 
@@ -281,7 +315,11 @@ def update_alumni_status(
     )
 
     if request.status == "engaged":
-        _ensure_engagement_event(tenant_id, record_id, updated)
+        _ensure_engagement_event(
+            tenant_id=tenant_id,
+            record_id=record_id,
+            record_data=updated,
+        )
 
     if request.status in _DISENGAGEMENT_TRIGGER_STATUSES:
         try:
@@ -298,6 +336,15 @@ def update_alumni_status(
     # W58 — idempotent disengagement risk alert
     if request.status in _ALUMNI_INACTIVE_RISK_STATUSES:
         _ensure_alumni_disengagement_risk_alert(tenant_id, record_id, dict(updated))
+
+    try:
+        _record_outcome(record_id, "alumni_record_status_updated", str(actor or "system"))
+    except Exception:
+        logger.exception("alumni update outcome failed")
+    try:
+        _metric(tenant_id, "alumni_records_updated")
+    except Exception:
+        logger.exception("alumni update metric failed")
 
     return AlumniRecordSchema.model_validate(updated)
 

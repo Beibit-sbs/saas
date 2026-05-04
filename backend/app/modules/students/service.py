@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 
 from sqlalchemy import and_, case, desc, func, select
@@ -45,6 +46,9 @@ from app.modules.university_core.tenant_entity_service import (
 from app.platform.events.publisher import EventPublisher
 
 
+logger = logging.getLogger("app.modules.students")
+
+
 def _utc_now() -> datetime:
     return datetime.now(UTC)
 
@@ -58,15 +62,48 @@ def _audit(
     metadata: dict,
     tenant_id: int,
 ) -> None:
-    log_admin_action(
-        actor=actor,
-        action=action,
-        path=path,
-        client_ip="service",
-        entity=entity,
-        metadata=metadata,
-        tenant_id=tenant_id,
-    )
+    try:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=path,
+            client_ip="service",
+            entity=entity,
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception("students audit failed action=%s path=%s", action, path)
+
+
+def _record_outcome(student_profile_id: int, outcome_type: str, actor_id: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            str(student_profile_id),
+            payload={
+                "outcome_type": outcome_type,
+                "source_module": "students",
+                "student_profile_id": str(student_profile_id),
+            },
+            actor=actor_id,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "students outcome failed student_profile_id=%s outcome=%s",
+            student_profile_id,
+            outcome_type,
+        )
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        from app.modules.usage.service import record_usage_event
+
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:  # noqa: BLE001
+        logger.exception("students metric failed tenant_id=%s metric=%s", tenant_id, metric)
 
 
 class StudentLifecycleService:
@@ -170,6 +207,9 @@ class StudentLifecycleService:
         except IntegrityError as exc:
             self.db.rollback()
             raise DomainValidationError("Unable to create student profile due to constraint violation") from exc
+
+        _record_outcome(profile.id, "student_profile_created", created_by)
+        _metric(tenant_id, "student_profiles_created", 1)
 
         return MutationResult(entity=StudentProfileReadSchema.model_validate(profile))
 
@@ -338,6 +378,9 @@ class StudentLifecycleService:
                 })
             except Exception:
                 pass  # Brain Core errors must never break core flows
+
+        _record_outcome(profile.id, f"student_status_{request.to_status.value}", actor_id)
+        _metric(tenant_id, "student_status_updates", 1)
 
         return MutationResult(entity=StudentProfileReadSchema.model_validate(profile))
 

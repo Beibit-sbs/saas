@@ -108,7 +108,7 @@ def _assert_stage_transition_allowed(
             else "none"
         )
         raise ValueError(
-            f"Invalid transition: {current_stage.value} → {target_stage.value}. "
+            f"Invalid transition (Stage transition blocked): {current_stage.value} → {target_stage.value}. "
             f"Allowed targets from '{current_stage.value}': {allowed_str}."
         )
 
@@ -120,6 +120,52 @@ def _utc_now() -> datetime:
 def _audit_action(event_name: str, fallback_action: str) -> str:
     action = AuditEventRules.get_log_action_for_event(event_name)
     return action or fallback_action
+
+
+def _fire(
+    *,
+    tenant_id: int,
+    event_type: str,
+    aggregate_type: str,
+    aggregate_id: int,
+    payload_json: dict[str, Any],
+) -> None:
+    try:
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            aggregate_type=aggregate_type,
+            aggregate_id=aggregate_id,
+            payload_json=payload_json,
+        )
+    except Exception:
+        pass
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        from app.modules.usage.service import record_usage_event
+
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        pass
+
+
+def _record_outcome(application_id: int, outcome_type: str, actor: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            str(application_id),
+            payload={
+                "outcome_type": outcome_type,
+                "source_module": "admissions",
+                "application_id": application_id,
+            },
+            actor=actor,
+        )
+    except Exception:
+        pass
 
 
 # ==============================================================================
@@ -837,7 +883,7 @@ class ApplicationService:
 
         self.db.commit()
 
-        EventPublisher(db_session=self.db).publish_event(
+        _fire(
             tenant_id=tenant_id,
             event_type="admissions.application.submitted",
             aggregate_type="application",
@@ -851,12 +897,8 @@ class ApplicationService:
             },
         )
 
-        try:
-            from app.modules.usage.service import record_usage_event
-
-            record_usage_event(tenant_id, "admissions_applications_submitted", 1)
-        except Exception:
-            pass
+        _record_outcome(application_id, "application_submitted", actor)
+        _metric(tenant_id, "admissions_applications_submitted", 1)
 
         return ApplicationReadSchema.model_validate(application)
 
@@ -1194,7 +1236,7 @@ class StageTransitionService:
 
         self.db.commit()
 
-        EventPublisher(db_session=self.db).publish_event(
+        _fire(
             tenant_id=tenant_id,
             event_type="admissions.application.stage_changed",
             aggregate_type="application",
@@ -1208,12 +1250,8 @@ class StageTransitionService:
             },
         )
 
-        try:
-            from app.modules.usage.service import record_usage_event
-
-            record_usage_event(tenant_id, "admissions_stage_transitions", 1)
-        except Exception:
-            pass
+        _record_outcome(application_id, f"application_stage_{to_stage.value}", actor_id)
+        _metric(tenant_id, "admissions_stage_transitions", 1)
 
         return StageTransitionResponseSchema(
             application_id=application_id,
@@ -1772,7 +1810,7 @@ class DecisionService:
 
         self.db.commit()
 
-        EventPublisher(db_session=self.db).publish_event(
+        _fire(
             tenant_id=tenant_id,
             event_type="admissions.application.decision_made",
             aggregate_type="application_decision",
@@ -1785,12 +1823,8 @@ class DecisionService:
             },
         )
 
-        try:
-            from app.modules.usage.service import record_usage_event
-
-            record_usage_event(tenant_id, "admissions_decisions_made", 1)
-        except Exception:
-            pass
+        _record_outcome(application_id, "decision_made", request.decided_by)
+        _metric(tenant_id, "admissions_decisions_made", 1)
 
         # Fire-and-forget Brain Core signal emission
         try:
@@ -2028,7 +2062,7 @@ class DecisionService:
 
         self.db.commit()
 
-        EventPublisher().publish_event(
+        _fire(
             tenant_id=tenant_id,
             event_type="admissions.application.workflow_decision_finalized",
             aggregate_type="application",
@@ -2042,6 +2076,9 @@ class DecisionService:
                 "actor": actor,
             },
         )
+
+        _record_outcome(application_id, "workflow_decision_finalized", actor)
+        _metric(tenant_id, "admissions_workflow_decisions_finalized", 1)
 
         return ApplicationDecisionReadSchema.model_validate(decision)
 

@@ -160,21 +160,22 @@ def create_ip_asset(payload: dict[str, object], tenant_id: int) -> dict[str, obj
     # XXXIV.9: fire lifecycle events (fire-and-forget)
     _fire_ip_asset_events(record, status, commercialization_status, tenant_id)
 
-    # XXXIV.9: persist action log (fire-and-forget)
-    try:
-        create_entity_for_tenant(
-            "ip_asset_action_logs",
-            {
-                "asset_id": str(record.get("id", "")),
-                "action_type": "asset_created",
-                "ip_type": ip_type,
-                "status": status,
-                "tenant_id": tenant_id,
-            },
-            tenant_id,
-        )
-    except Exception:  # noqa: BLE001
-        pass
+    # XXXIV.9: persist action log for filed/granted asset creations (fire-and-forget)
+    if status in {"filed", "granted"}:
+        try:
+            create_entity_for_tenant(
+                "ip_asset_action_logs",
+                {
+                    "asset_id": str(record.get("id", "")),
+                    "action_type": "asset_created",
+                    "ip_type": ip_type,
+                    "status": status,
+                    "tenant_id": tenant_id,
+                },
+                tenant_id,
+            )
+        except Exception:  # noqa: BLE001
+            pass
 
     return record
 

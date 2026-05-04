@@ -27,9 +27,12 @@ def test_submit_for_scoring_persists_before_event() -> None:
         call_order.append("persist")
         return {"id": "score-1", **_scoring()}
 
+    captured_event: dict[str, object] = {}
+
     class _Publisher:
         def publish_event(self, **kwargs: object) -> None:  # type: ignore[no-untyped-def]
             call_order.append("event")
+            captured_event.update(kwargs)
 
     with (
         patch(
@@ -47,7 +50,9 @@ def test_submit_for_scoring_persists_before_event() -> None:
         )
 
     assert result["scoring_id"] == "score-1"
-    assert call_order == ["persist"]
+    assert call_order == ["persist", "event"]
+    assert captured_event["aggregate_type"] == "admissions_scoring"
+    assert captured_event["aggregate_id"] == "score-1"
 
 
 def test_submit_for_scoring_survives_publish_failure() -> None:
@@ -60,7 +65,7 @@ def test_submit_for_scoring_survives_publish_failure() -> None:
     with (
         patch(
             "app.modules.ai_admissions_scoring.service.create_entity_for_tenant",
-            return_value={"id": "score-2", **_scoring()},
+            return_value={**_scoring(), "id": "score-2"},
         ) as mock_create,
         patch("app.modules.ai_admissions_scoring.service.EventPublisher", _Publisher),
     ):
@@ -107,26 +112,25 @@ def test_generate_score_uses_canonical_tenant_api_and_persists() -> None:
     assert captured_calls["publish"]["aggregate_id"] == "score-1"
 
 
-def test_detect_anomaly_event_failure_does_not_rollback_persisted_status() -> None:
-    """Verify persisted anomaly status remains even if event fails."""
-    call_order: list[str] = []
+def test_approve_scoring_outcome_failure_does_not_rollback_status() -> None:
+    """Verify status persists even if brain outcome recording fails."""
     scoring_data = _scoring()
-    scoring_data["score"] = 0.65
+    scoring_data["status"] = "SCORED"
 
-    class _Publisher:
-        def publish_event(self, **kwargs: object) -> None:  # type: ignore[no-untyped-def]
-            call_order.append("event")
-            raise RuntimeError("broker down")
+    class _BrainCore:
+        def record_dispatch_outcome(self, *args: object, **kwargs: object) -> dict:  # type: ignore[no-untyped-def]
+            raise RuntimeError("brain unavailable")
 
     with (
         patch(
             "app.modules.ai_admissions_scoring.service.list_entities_for_tenant",
             return_value=[scoring_data],
         ),
-        patch("app.modules.ai_admissions_scoring.service.EventPublisher", _Publisher),
+        patch("app.modules.ai_admissions_scoring.service.EventPublisher"),
+        patch("app.modules.brain_core.service.brain_core_service", _BrainCore()),
     ):
-        result = svc.detect_anomaly(7, scoring_id="score-1")
+        result = svc.approve_scoring(7, scoring_id="score-1")
 
     assert result["scoring_id"] == "score-1"
-    assert result["status"] == "FLAGGED"
-    assert call_order == ["event"]
+    assert result["status"] == "APPROVED"
+    assert scoring_data["status"] == "APPROVED"

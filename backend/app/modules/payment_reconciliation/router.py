@@ -9,11 +9,12 @@ Endpoints:
 """
 from __future__ import annotations
 
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from app.modules.rbac.security import permission_dependency
 from app.modules.payment_reconciliation.service import (
     auto_reconcile,
     get_reconciliation,
@@ -22,7 +23,12 @@ from app.modules.payment_reconciliation.service import (
     unreconcile,
 )
 
-router = APIRouter(prefix="/api/reconciliations", tags=["reconciliations"])
+router = APIRouter(
+    prefix="/api/reconciliations",
+    tags=["reconciliations"],
+    # A-009 Phase 2.1: Add permission_dependency guard (HIGH severity fix for 64 unguarded endpoints)
+    dependencies=[Depends(permission_dependency("payment_reconciliation.admin.write"))],
+)
 
 
 # ─── schemas ──────────────────────────────────────────────────────────────────

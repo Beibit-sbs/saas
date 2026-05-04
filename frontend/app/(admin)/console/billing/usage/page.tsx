@@ -138,7 +138,7 @@ export default function UsagePage() {
     recordMutation.mutate(
       { tenantId, metric: newMetric, value: newValue },
       {
-        ...getHandlers("Usage event recorded"),
+        ...getHandlers({ successTitle: "Usage event recorded" }),
         onSuccess: () => {
           invalidate();
           setRecordModalOpen(false);
@@ -169,7 +169,7 @@ export default function UsagePage() {
       <div className="space-y-6">
         <PageHeader
           title="Usage Tracking"
-          subtitle="Monitor tenant usage metrics"
+          description="Monitor tenant usage metrics"
           icon={BarChart2}
           actions={
             tenantId > 0 ? (

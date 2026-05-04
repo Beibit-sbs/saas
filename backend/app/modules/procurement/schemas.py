@@ -140,3 +140,139 @@ class ProcurementHealthSnapshotSchema(BaseModel):
 
 class ProcurementHealthResponseSchema(BaseModel):
     item: ProcurementHealthSnapshotSchema
+
+
+# ─── Request Lifecycle Schemas (A-009 Phase 2.3: Missing frontend contract endpoints) ────
+
+
+ProcurementRequestStatus = Literal[
+    "draft", "submitted", "under_review", "approved", "rejected", "ordered", "fulfilled", "cancelled"
+]
+ProcurementPriority = Literal["low", "medium", "high", "critical"]
+ProcurementCategory = Literal["equipment", "software", "services", "facilities", "supplies", "other"]
+ProcurementOrderStatus = Literal["issued", "partially_received", "received", "cancelled"]
+ApprovalStepStatus = Literal["pending", "approved", "rejected", "skipped"]
+
+
+class RequestItemCreateSchema(BaseModel):
+    description: str = Field(min_length=1, max_length=512)
+    quantity: int = Field(gt=0)
+    unit_price: float = Field(ge=0)
+    category: ProcurementCategory = "supplies"
+    sku: str | None = None
+
+
+class RequestItemSchema(BaseModel):
+    item_id: str
+    request_id: str
+    sku: str | None = None
+    description: str
+    quantity: int
+    unit_price: float
+    total_price: float
+    category: ProcurementCategory
+
+
+class ProcurementRequestCreateSchema(BaseModel):
+    department_id: str = Field(min_length=1, max_length=64)
+    title: str = Field(min_length=1, max_length=220)
+    description: str | None = None
+    priority: ProcurementPriority = "medium"
+    needed_by_date: str | None = None
+    items: list[RequestItemCreateSchema] = Field(default_factory=list)
+
+
+class ProcurementRequestUpdateSchema(BaseModel):
+    title: str | None = Field(default=None, max_length=220)
+    description: str | None = None
+    priority: ProcurementPriority | None = None
+    needed_by_date: str | None = None
+
+
+class ProcurementStatusUpdateSchema(BaseModel):
+    status: ProcurementRequestStatus
+    comment: str | None = None
+
+
+class ProcurementRequestSchema(BaseModel):
+    request_id: str
+    request_number: str
+    requester_id: str
+    requester_name: str
+    department_id: str
+    department_name: str
+    title: str
+    description: str | None = None
+    status: ProcurementRequestStatus
+    priority: ProcurementPriority
+    estimated_total: float
+    currency: str = "KZT"
+    needed_by_date: str | None = None
+    created_at: str
+    updated_at: str
+    submitted_at: str | None = None
+
+
+class ProcurementListItemSchema(BaseModel):
+    request_id: str
+    request_number: str
+    title: str
+    requester_name: str
+    department_name: str
+    status: ProcurementRequestStatus
+    priority: ProcurementPriority
+    estimated_total: float
+    created_at: str
+    updated_at: str
+
+
+class ApprovalStepSchema(BaseModel):
+    step_id: str
+    request_id: str
+    sequence: int
+    approver_id: str
+    approver_name: str
+    status: ApprovalStepStatus
+    decision_at: str | None = None
+    comment: str | None = None
+
+
+class ProcurementAuditEntrySchema(BaseModel):
+    audit_id: str
+    request_id: str
+    action: str
+    actor_id: str
+    actor_name: str
+    from_status: ProcurementRequestStatus | None = None
+    to_status: ProcurementRequestStatus | None = None
+    timestamp: str
+    metadata: dict | None = None
+
+
+class ProcurementOrderCreateSchema(BaseModel):
+    request_id: str = Field(min_length=1)
+    vendor_id: str = Field(min_length=1)
+    order_number: str = Field(min_length=1, max_length=64)
+    expected_delivery_date: str | None = None
+
+
+class ProcurementOrderSchema(BaseModel):
+    order_id: str
+    request_id: str
+    vendor_id: str
+    vendor_name: str
+    order_number: str
+    order_date: str
+    expected_delivery_date: str | None = None
+    total_amount: float
+    currency: str = "KZT"
+    status: ProcurementOrderStatus
+
+
+class ProcurementDashboardSummarySchema(BaseModel):
+    total_requests: int
+    status_breakdown: dict[str, int]
+    total_pending_approvals: int
+    total_ordered_value: float
+    overdue_requests: int
+    last_updated: str

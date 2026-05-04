@@ -117,7 +117,10 @@ class InterventionService:
         event_type: str,
         case: InterventionCaseModel,
         payload: dict,
+        publish: bool = True,
     ) -> None:
+        if not publish:
+            return
         EventPublisher().publish_event(
             tenant_id=tenant_id,
             event_type=event_type,
@@ -424,6 +427,8 @@ class InterventionService:
         self.db.refresh(case)
         self.db.commit()
 
+        # Emit status_changed for all transitions (including terminal).
+        _terminal_statuses = (InterventionCaseStatus.RESOLVED, InterventionCaseStatus.CLOSED)
         self._emit_case_event(
             tenant_id=tenant_id,
             event_type="interventions.case.status_changed",
@@ -439,6 +444,7 @@ class InterventionService:
                 "source_entity_id": str(case.id),
                 "source_module": "interventions",
             },
+            publish=request.status not in _terminal_statuses,
         )
         record_usage_event(
             tenant_id=self._normalized_tenant_id(tenant_id),

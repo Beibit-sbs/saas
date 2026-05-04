@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.modules.rbac.security import permission_dependency
 from app.modules.currency_localization.service import (
     LocalizationError,
     convert_amount,
@@ -15,7 +17,12 @@ from app.modules.currency_localization.service import (
     upsert_exchange_rate,
 )
 
-router = APIRouter(prefix="/api/admin/currency-localization", tags=["currency-localization"])
+router = APIRouter(
+    prefix="/api/admin/currency-localization",
+    tags=["currency-localization"],
+    # A-009 Phase 2.1: Add permission_dependency guard (HIGH severity fix for 64 unguarded endpoints)
+    dependencies=[Depends(permission_dependency("currency.admin.manage"))],
+)
 
 
 class ExchangeRateUpsertPayload(BaseModel):

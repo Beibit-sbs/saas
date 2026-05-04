@@ -1,12 +1,18 @@
 """Phase VIII-1: Communications service."""
 from __future__ import annotations
 
+import logging
+
 from app.core.module_helpers.service_validation import DomainValidationError
+from app.modules.usage.service import record_usage_event
 from app.platform.events.publisher import EventPublisher
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     list_entities_for_tenant,
 )
+
+
+logger = logging.getLogger("app.modules.communications")
 
 # W37: cap on active (draft/pending/sending) messages per message_type
 _MESSAGE_TYPE_MAX_ACTIVE: dict[str, int] = {
@@ -29,6 +35,30 @@ _BROADCAST_RISK_STATUSES: frozenset[str] = frozenset({"sent", "delivered"})
 # W117: student audience must be validated against active enrollment population
 _STUDENT_AUDIENCE_TARGETS: frozenset[str] = frozenset({"students", "student", "all_students"})
 _ACTIVE_ENROLLMENT_STATUSES: frozenset[str] = frozenset({"active", "enrolled", "registered"})
+
+
+def _record_outcome(entity_id: int, outcome_type: str, actor_id: str = "system") -> None:
+    try:
+        from app.modules.brain_core import service as brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            signal_id=str(entity_id),
+            outcome=outcome_type,
+            metadata={"actor_id": actor_id, "module": "communications"},
+        )
+    except Exception:
+        logger.exception(
+            "communications outcome failed entity_id=%s outcome=%s",
+            entity_id,
+            outcome_type,
+        )
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        logger.exception("communications metric failed metric=%s", metric)
 
 
 def _check_student_audience_population(
@@ -125,6 +155,8 @@ def create_message(payload: dict[str, object], tenant_id: int) -> dict[str, obje
         )
 
     record = create_entity_for_tenant("communication_messages", payload, tenant_id)
+    _record_outcome(int(record.get("id") or 0), "communication_message_created")
+    _metric(tenant_id, "communication_messages_created", 1)
 
     if recipients >= _LARGE_AUDIENCE_THRESHOLD:
         _ensure_broadcast_audit_record(

@@ -52,7 +52,7 @@ def test_create_equipment_booking_publishes_booking_created() -> None:
         result = svc.create_equipment_booking(_BOOKING_PAYLOAD.copy(), tenant_id=1)
 
     assert result["id"] == 1
-    event_types = [c.args[0] for c in mock_pub.publish_event.call_args_list]
+    event_types = [c.kwargs.get("event_type") for c in mock_pub.publish_event.call_args_list]
     assert "equipment_booking.booking.created" in event_types
 
 
@@ -130,7 +130,7 @@ def test_update_equipment_booking_status_confirmed_fires_confirmed_event() -> No
 
         svc.update_equipment_booking_status(5, "confirmed", tenant_id=1)
 
-    event_types = [c.args[0] for c in mock_pub.publish_event.call_args_list]
+    event_types = [c.kwargs.get("event_type") for c in mock_pub.publish_event.call_args_list]
     assert "equipment_booking.booking.confirmed" in event_types
 
 
@@ -159,7 +159,7 @@ def test_update_equipment_booking_status_cancelled_fires_cancelled_event() -> No
 
         svc.update_equipment_booking_status(6, "cancelled", tenant_id=1)
 
-    event_types = [c.args[0] for c in mock_pub.publish_event.call_args_list]
+    event_types = [c.kwargs.get("event_type") for c in mock_pub.publish_event.call_args_list]
     assert "equipment_booking.booking.cancelled" in event_types
 
 
@@ -188,7 +188,7 @@ def test_update_equipment_booking_status_completed_fires_returned_event() -> Non
 
         svc.update_equipment_booking_status(7, "completed", tenant_id=1)
 
-    event_types = [c.args[0] for c in mock_pub.publish_event.call_args_list]
+    event_types = [c.kwargs.get("event_type") for c in mock_pub.publish_event.call_args_list]
     assert "equipment_booking.booking.returned" in event_types
 
 
@@ -223,7 +223,7 @@ def test_update_equipment_booking_status_overdue_fires_overdue_event() -> None:
 
         svc.update_equipment_booking_status(8, "overdue", tenant_id=1)
 
-    event_types = [c.args[0] for c in mock_pub.publish_event.call_args_list]
+    event_types = [c.kwargs.get("event_type") for c in mock_pub.publish_event.call_args_list]
     assert "equipment_booking.booking.overdue" in event_types
 
 

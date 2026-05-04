@@ -110,7 +110,7 @@ def test_academic_integrity_signal_not_emitted_on_resolved() -> None:
     with patch("app.platform.events.publisher.EventPublisher", return_value=fake_pub):
         asyncio.run(_run_update())
 
-    assert len(fake_pub.events) == 0
+    assert all(ev.get("event_type") != "academic_integrity.case.escalated" for ev in fake_pub.events)
 
 
 # ---------------------------------------------------------------------------

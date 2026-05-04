@@ -1,11 +1,12 @@
 """Phase LXVIII — Online Payments Router."""
 from __future__ import annotations
 
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from app.modules.rbac.security import permission_dependency
 from app.modules.online_payments.service import (
     check_failure_pattern,
     complete_payment,
@@ -17,7 +18,12 @@ from app.modules.online_payments.service import (
     refund_payment,
 )
 
-router = APIRouter(prefix="/api/payments", tags=["payments"])
+router = APIRouter(
+    prefix="/api/payments",
+    tags=["payments"],
+    # A-009 Phase 2.1: Add permission_dependency guard (HIGH severity fix for 64 unguarded endpoints)
+    dependencies=[Depends(permission_dependency("payments.admin.write"))],
+)
 
 
 class CreatePaymentPayload(BaseModel):

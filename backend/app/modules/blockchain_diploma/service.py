@@ -5,6 +5,9 @@ import hashlib
 import secrets
 from dataclasses import dataclass
 
+from app.core.module_helpers.audit_helpers import build_audit_action
+from app.modules.audit.service import log_admin_action
+from app.modules.usage.service import record_usage_event
 from app.modules.university_core.tenant_entity_api import (
     create_entity_for_tenant,
     list_entities_for_tenant,
@@ -66,6 +69,45 @@ def _generate_tx_hash() -> str:
     return "0x" + secrets.token_hex(32)
 
 
+def _audit(tenant_id: int, actor: str, action: str, path: str, metadata: dict) -> None:
+    try:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=path,
+            client_ip="service",
+            entity="blockchain_diploma",
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+    except Exception:
+        pass
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        pass
+
+
+def _record_outcome(record_id: str, outcome_type: str, actor: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            record_id,
+            payload={
+                "outcome_type": outcome_type,
+                "source_module": "blockchain_diploma",
+                "record_id": record_id,
+            },
+            actor=actor,
+        )
+    except Exception:
+        pass
+
+
 # ---------------------------------------------------------------------------
 # Diploma issuance
 # ---------------------------------------------------------------------------
@@ -79,6 +121,7 @@ def issue_diploma(
     issued_year: int,
     gpa: float | None,
     tenant_id: int,
+    actor: str = "system",
 ) -> Diploma:
     """Issue a new blockchain-anchored diploma."""
     if student_id <= 0:
@@ -107,7 +150,7 @@ def issue_diploma(
     )
 
     try:
-        EventPublisher().publish_event(
+        EventPublisher.publish(
             tenant_id=tenant_id,
             event_type="blockchain_diploma.issued",
             aggregate_type="blockchain_diploma",
@@ -121,6 +164,15 @@ def issue_diploma(
         )
     except Exception:
         pass
+    _record_outcome(str(record.get("id") or ""), "diploma_issued", actor)
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("blockchain_diploma", "diploma", "issue"),
+        f"/internal/blockchain-diploma/{record.get('id')}/issue",
+        {"diploma_id": record.get("id"), "student_id": student_id},
+    )
+    _metric(tenant_id, "diploma_issued", 1)
 
     return Diploma(
         diploma_id=record["id"],
@@ -134,7 +186,7 @@ def issue_diploma(
     )
 
 
-def revoke_diploma(*, diploma_id: int, reason: str, tenant_id: int) -> Diploma:
+def revoke_diploma(*, diploma_id: int, reason: str, tenant_id: int, actor: str = "system") -> Diploma:
     """Revoke a previously issued diploma."""
     if not reason or not reason.strip():
         raise BlockchainDiplomaError("reason is required")
@@ -159,7 +211,7 @@ def revoke_diploma(*, diploma_id: int, reason: str, tenant_id: int) -> Diploma:
     )
 
     try:
-        EventPublisher().publish_event(
+        EventPublisher.publish(
             tenant_id=tenant_id,
             event_type="blockchain_diploma.revoked",
             aggregate_type="blockchain_diploma",
@@ -168,6 +220,15 @@ def revoke_diploma(*, diploma_id: int, reason: str, tenant_id: int) -> Diploma:
         )
     except Exception:
         pass
+    _record_outcome(str(diploma_id), "diploma_revoked", actor)
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("blockchain_diploma", "diploma", "revoke"),
+        f"/internal/blockchain-diploma/{diploma_id}/revoke",
+        {"diploma_id": diploma_id, "reason": reason.strip()},
+    )
+    _metric(tenant_id, "diploma_revoked", 1)
 
     return Diploma(
         diploma_id=diploma_id,
@@ -230,6 +291,7 @@ def verify_diploma(
     certificate_hash: str,
     verifier_id: int | None,
     tenant_id: int,
+    actor: str = "system",
 ) -> VerificationRecord:
     """Verify a diploma by its certificate hash."""
     if not certificate_hash or not certificate_hash.strip():
@@ -263,7 +325,7 @@ def verify_diploma(
     )
 
     try:
-        EventPublisher().publish_event(
+        EventPublisher.publish(
             tenant_id=tenant_id,
             event_type="blockchain_diploma.verified",
             aggregate_type="blockchain_diploma",
@@ -276,6 +338,19 @@ def verify_diploma(
         )
     except Exception:
         pass
+    _record_outcome(str(diploma_id or record.get("id") or ""), f"diploma_verify_{result}", actor)
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("blockchain_diploma", "diploma", "verify"),
+        f"/internal/blockchain-diploma/verify/{record.get('id')}",
+        {
+            "verification_id": record.get("id"),
+            "diploma_id": diploma_id,
+            "result": result,
+        },
+    )
+    _metric(tenant_id, f"diploma_verify_{result}", 1)
 
     return VerificationRecord(
         record_id=record["id"],

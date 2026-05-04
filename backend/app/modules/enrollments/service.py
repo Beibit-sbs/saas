@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from copy import deepcopy
 from datetime import UTC, datetime
 
@@ -42,7 +43,10 @@ from app.modules.university_core.tenant_entity_service import (
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+from app.modules.usage.service import record_usage_event
 from app.platform.events.publisher import EventPublisher
+
+logger = logging.getLogger("app.modules.enrollments")
 
 
 def _utc_now() -> datetime:
@@ -115,6 +119,25 @@ def _merge_metadata(existing: dict | None, incoming: dict | None) -> dict:
         else:
             base[key] = deepcopy(value)
     return base
+
+
+def _record_outcome(entity_id: object, outcome_type: str, actor_id: str) -> None:
+    try:
+        from app.modules.brain_core import service as brain_core_service  # noqa: PLC0415
+        brain_core_service.record_dispatch_outcome(
+            entity_id=entity_id,
+            outcome_type=outcome_type,
+            actor_id=str(actor_id),
+        )
+    except Exception:
+        logger.exception("enrollments outcome failed entity_id=%s outcome=%s", entity_id, outcome_type)
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        logger.exception("enrollments metric failed metric=%s", metric)
 
 
 class EnrollmentLifecycleService:
@@ -945,11 +968,17 @@ def list_enrollments(tenant_id: int) -> list[dict[str, object]]:
 
 def create_enrollment(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
     assert_billing_write_allowed(int(tenant_id), action="enrollments.create")
-    return create_entity_for_tenant("enrollments", payload, tenant_id)
+    result = create_entity_for_tenant("enrollments", payload, tenant_id)
+    _record_outcome(result.get("id"), "enrollment_created", str(payload.get("actor_id") or "system"))
+    _metric(tenant_id, "enrollments_created")
+    return result
 
 
 def update_enrollment(enrollment_id: int, payload: dict[str, object], tenant_id: int) -> dict[str, object]:
-    return update_entity_for_tenant("enrollments", enrollment_id, payload, tenant_id)
+    result = update_entity_for_tenant("enrollments", enrollment_id, payload, tenant_id)
+    _record_outcome(enrollment_id, "enrollment_updated", str(payload.get("actor_id") or "system"))
+    _metric(tenant_id, "enrollments_updated")
+    return result
 
 
 def delete_enrollment(enrollment_id: int, tenant_id: int) -> dict[str, object]:

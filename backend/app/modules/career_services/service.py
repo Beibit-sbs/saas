@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from app.core.module_helpers.audit_helpers import build_audit_action
 from app.core.module_helpers.service_validation import DomainValidationError
 from app.modules.audit.service import log_admin_action
@@ -14,6 +16,28 @@ from app.modules.university_core.tenant_entity_service import (
     list_entities_for_tenant,
     update_entity_for_tenant,
 )
+from app.modules.usage.service import record_usage_event
+
+logger = logging.getLogger("app.modules.career_services")
+
+
+def _record_outcome(entity_id: object, outcome_type: str, actor_id: str) -> None:
+    try:
+        from app.modules.brain_core import service as brain_core_service  # noqa: PLC0415
+        brain_core_service.record_dispatch_outcome(
+            entity_id=entity_id,
+            outcome_type=outcome_type,
+            actor_id=str(actor_id),
+        )
+    except Exception:
+        logger.exception("career_services outcome failed entity_id=%s outcome=%s", entity_id, outcome_type)
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        logger.exception("career_services metric failed metric=%s", metric)
 
 
 _ALLOWED_TRANSITIONS: dict[str, set[str]] = {
@@ -291,6 +315,10 @@ def create_career_opportunity(
         },
         tenant_id=tenant_id,
     )
+
+    _record_outcome(created.get("id"), "career_opportunity_created", str(actor or "system"))
+    _metric(tenant_id, "career_opportunities_created")
+
     return CareerOpportunitySchema.model_validate(created)
 
 
@@ -351,6 +379,9 @@ def update_career_opportunity_status(
             )
         except Exception:  # noqa: BLE001
             pass
+
+    _record_outcome(opportunity_id, "career_opportunity_status_updated", str(actor or "system"))
+    _metric(tenant_id, "career_opportunities_updated")
 
     return CareerOpportunitySchema.model_validate(updated)
 

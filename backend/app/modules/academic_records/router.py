@@ -55,7 +55,7 @@ def create_record_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> RecordItemResponse:
     try:
-        record = create_record(payload.model_dump(), int(tenant["id"]))
+        record = create_record(payload.model_dump(), int(tenant["id"]), actor=actor)
     except (ValueError, DomainValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
@@ -83,7 +83,7 @@ def update_record_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> RecordItemResponse:
     try:
-        record = update_record(record_id, payload.model_dump(), int(tenant["id"]))
+        record = update_record(record_id, payload.model_dump(), int(tenant["id"]), actor=actor)
     except ValueError as exc:
         detail = str(exc)
         status = 404 if "not found" in detail else 400
@@ -112,7 +112,7 @@ def delete_record_endpoint(
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> RecordDeleteResponse:
     try:
-        record = delete_record(record_id, int(tenant["id"]))
+        record = delete_record(record_id, int(tenant["id"]), actor=actor)
     except ValueError as exc:
         detail = str(exc)
         status = 404 if "not found" in detail else 400

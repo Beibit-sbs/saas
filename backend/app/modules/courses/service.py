@@ -1,3 +1,5 @@
+import logging
+
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     delete_entity_for_tenant,
@@ -5,6 +7,85 @@ from app.modules.university_core.tenant_entity_service import (
     update_entity_for_tenant,
 )
 from app.modules.billing.service import assert_billing_write_allowed
+
+logger = logging.getLogger("app.modules.courses")
+
+
+# ---------------------------------------------------------------------------
+# Canonical fail-safe helpers (Steps 5 / 8 / 9 / 10)
+# ---------------------------------------------------------------------------
+
+def _fire(
+    tenant_id: int,
+    event_type: str,
+    aggregate_type: str,
+    aggregate_id: int | str,
+    payload_json: dict,
+) -> None:
+    try:
+        from app.platform.events.publisher import EventPublisher
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            aggregate_type=aggregate_type,
+            aggregate_id=aggregate_id,
+            payload_json=payload_json,
+        )
+    except Exception:
+        logger.exception(
+            "courses event publish failed tenant_id=%s event_type=%s aggregate_id=%s",
+            tenant_id, event_type, aggregate_id,
+        )
+
+
+def _record_outcome(
+    tenant_id: int,
+    entity_id: int | str,
+    outcome_type: str,
+) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+        brain_core_service.record_dispatch_outcome(
+            tenant_id=tenant_id,
+            entity_id=str(entity_id),
+            outcome_type=outcome_type,
+        )
+    except Exception:
+        logger.exception(
+            "courses outcome failed entity_id=%s outcome_type=%s",
+            entity_id, outcome_type,
+        )
+
+
+def _audit(
+    actor: str,
+    action: str,
+    entity: str,
+    entity_id: int | str,
+    path: str,
+) -> None:
+    try:
+        from app.modules.audit.service import log_admin_action, build_audit_action
+        log_admin_action(
+            build_audit_action(
+                user=actor,
+                action=action,
+                entity=entity,
+                path=path,
+                result="success",
+                correlation_id=str(entity_id),
+            )
+        )
+    except Exception:
+        logger.exception("courses audit failed action=%s entity_id=%s", action, entity_id)
+
+
+def _metric(tenant_id: int, metric_name: str, value: int = 1) -> None:
+    try:
+        from app.modules.usage.service import record_usage_event
+        record_usage_event(tenant_id, metric_name, value)
+    except Exception:
+        logger.exception("courses metric failed metric_name=%s", metric_name)
 
 # W45: cap on active courses per status per tenant
 _COURSE_STATUS_MAX_ACTIVE: dict[str, int] = {
@@ -24,7 +105,11 @@ def list_courses(tenant_id: int) -> list[dict[str, object]]:
     return list_entities_for_tenant("courses", tenant_id)
 
 
-def create_course(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+def create_course(
+    payload: dict[str, object],
+    tenant_id: int,
+    actor: str = "system",
+) -> dict[str, object]:
     assert_billing_write_allowed(int(tenant_id), action="courses.create")
     existing = list_entities_for_tenant("courses", tenant_id)
 
@@ -40,25 +125,37 @@ def create_course(payload: dict[str, object], tenant_id: int) -> dict[str, objec
             f"Active course cap ({cap}) reached; cannot create new course with status '{course_status}'"
         )
 
-    return create_entity_for_tenant("courses", payload, tenant_id)
+    result = create_entity_for_tenant("courses", payload, tenant_id)
+    course_id = result.get("id", 0)
+
+    # Step 5: event
+    _fire(tenant_id, "courses.course.created", "course", course_id, {"course_id": course_id, "status": course_status})
+    # Step 8: outcome
+    _record_outcome(tenant_id, course_id, "course_created")
+    # Step 9: audit
+    _audit(actor, "courses.create", "course", course_id, "/internal/courses")
+    # Step 10: metric
+    _metric(tenant_id, "courses_created")
+
+    return result
 
 
-def update_course(course_id: int, payload: dict[str, object], tenant_id: int) -> dict[str, object]:
+def update_course(
+    course_id: int,
+    payload: dict[str, object],
+    tenant_id: int,
+    actor: str = "system",
+) -> dict[str, object]:
     assert_billing_write_allowed(int(tenant_id), action="courses.update")
     result = update_entity_for_tenant("courses", course_id, payload, tenant_id)
     to_status = str(payload.get("status") or "").strip().lower()
     if to_status in {"inactive", "archived"}:
-        from app.platform.events.publisher import EventPublisher
-        EventPublisher().publish_event(
-            tenant_id=tenant_id,
-            event_type="courses.status.risk_detected",
-            aggregate_type="course",
-            aggregate_id=course_id,
-            payload_json={
-                "course_id": course_id,
-                "to_status": to_status,
-                "source_module": "courses",
-            },
+        _fire(
+            tenant_id,
+            "courses.status.risk_detected",
+            "course",
+            course_id,
+            {"course_id": course_id, "to_status": to_status, "source_module": "courses"},
         )
     # W45: side-effect retirement alert for risk statuses
     if to_status in _RETIREMENT_RISK_STATUSES:
@@ -71,6 +168,14 @@ def update_course(course_id: int, payload: dict[str, object], tenant_id: int) ->
                 "status": to_status,
             },
         )
+
+    # Step 8: outcome
+    _record_outcome(tenant_id, course_id, "course_updated")
+    # Step 9: audit
+    _audit(actor, "courses.update", "course", course_id, f"/internal/courses/{course_id}")
+    # Step 10: metric
+    _metric(tenant_id, "courses_updated")
+
     return result
 
 

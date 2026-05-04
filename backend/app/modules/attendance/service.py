@@ -23,6 +23,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+from app.core.module_helpers.audit_helpers import build_audit_action
+from app.modules.audit.service import log_admin_action
+from app.modules.usage.service import record_usage_event
 from app.modules.university_core.tenant_entity_api import (
     create_entity_for_tenant,
     list_entities_for_tenant,
@@ -60,6 +63,45 @@ def _validate_tenant(tenant_id: int) -> None:
         raise ValueError("tenant_id must be a positive integer")
 
 
+def _audit(tenant_id: int, actor: str, action: str, path: str, metadata: dict) -> None:
+    try:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=path,
+            client_ip="service",
+            entity="attendance",
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+    except Exception:
+        pass
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        pass
+
+
+def _record_outcome(record_id: str, outcome_type: str, actor: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            record_id,
+            payload={
+                "outcome_type": outcome_type,
+                "source_module": "attendance",
+                "record_id": record_id,
+            },
+            actor=actor,
+        )
+    except Exception:
+        pass
+
+
 # ─── mark_attendance ─────────────────────────────────────────────────────────
 
 def mark_attendance(
@@ -68,6 +110,7 @@ def mark_attendance(
     session_id: str,
     student_id: str,
     status: str,
+    actor: str = "system",
 ) -> dict:
     """Record attendance for a student in a session."""
     _validate_tenant(tenant_id)
@@ -98,6 +141,19 @@ def mark_attendance(
         "record_id": record.get("id"),
         "tenant_id": tenant_id,
     })
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("attendance", "record", "mark"),
+        f"/internal/attendance/{record.get('id')}/mark",
+        {
+            "record_id": record.get("id"),
+            "session_id": session_id,
+            "student_id": student_id,
+            "status": status,
+        },
+    )
+    _metric(tenant_id, "attendance_records_marked", 1)
 
     return {
         "record_id": record.get("id"),
@@ -114,6 +170,7 @@ def excuse_absence(
     *,
     record_id: str,
     reason: str,
+    actor: str = "system",
 ) -> dict:
     """Excuse an absence record."""
     _validate_tenant(tenant_id)
@@ -149,6 +206,15 @@ def excuse_absence(
         "reason": reason,
         "tenant_id": tenant_id,
     })
+    _record_outcome(str(record_id), "absence_excused", actor)
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("attendance", "absence", "excuse"),
+        f"/internal/attendance/{record_id}/excuse",
+        {"record_id": record_id, "excuse_id": excuse.get("id")},
+    )
+    _metric(tenant_id, "attendance_absences_excused", 1)
 
     return {
         "record_id": record_id,
@@ -218,6 +284,7 @@ def check_low_attendance_risk(
     *,
     student_id: str,
     course_id: str,
+    actor: str = "system",
 ) -> dict:
     """Check if student is at low-attendance risk and fire event if threshold breached."""
     _validate_tenant(tenant_id)
@@ -245,6 +312,20 @@ def check_low_attendance_risk(
             "risk_record_id": risk_record.get("id"),
             "tenant_id": tenant_id,
         })
+        _record_outcome(str(risk_record.get("id") or ""), "threshold_breached", actor)
+        _audit(
+            tenant_id,
+            actor,
+            build_audit_action("attendance", "risk", "detect"),
+            f"/internal/attendance/risk/{risk_record.get('id')}",
+            {
+                "risk_record_id": risk_record.get("id"),
+                "student_id": student_id,
+                "course_id": course_id,
+                "attendance_pct": summary["attendance_pct"],
+            },
+        )
+        _metric(tenant_id, "attendance_threshold_breaches", 1)
 
         return {**summary, "risk_record_id": risk_record.get("id"), "event_fired": True}
 

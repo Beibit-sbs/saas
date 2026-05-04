@@ -39,12 +39,12 @@ def list_equipment_endpoint(
 @router.post("/equipment", response_model=EquipmentItemItemResponse, status_code=201)
 def create_equipment_endpoint(
     payload: EquipmentItemCreatePayload,
-    _: Annotated[str, Depends(get_actor)],
+    actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("research.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> EquipmentItemItemResponse:
     return EquipmentItemItemResponse(
-        record=_svc.create_equipment(payload.model_dump(), int(tenant["id"]))
+        record=_svc.create_equipment(payload.model_dump(), int(tenant["id"]), actor=actor)
     )
 
 
@@ -66,12 +66,12 @@ def list_equipment_bookings_endpoint(
 @router.post("/bookings", response_model=EquipmentBookingItemResponse, status_code=201)
 def create_equipment_booking_endpoint(
     payload: EquipmentBookingCreatePayload,
-    _: Annotated[str, Depends(get_actor)],
+    actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("research.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> EquipmentBookingItemResponse:
     try:
-        record = _svc.create_equipment_booking(payload.model_dump(), int(tenant["id"]))
+        record = _svc.create_equipment_booking(payload.model_dump(), int(tenant["id"]), actor=actor)
     except (ValueError, DomainValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return EquipmentBookingItemResponse(
@@ -83,7 +83,7 @@ def create_equipment_booking_endpoint(
 def update_equipment_booking_status_endpoint(
     booking_id: int,
     payload: EquipmentBookingStatusUpdatePayload,
-    _: Annotated[str, Depends(get_actor)],
+    actor: Annotated[str, Depends(get_actor)],
     __: Annotated[None, Depends(permission_dependency("research.write"))],
     tenant: Annotated[dict, Depends(get_current_tenant)],
 ) -> EquipmentBookingItemResponse:
@@ -92,6 +92,7 @@ def update_equipment_booking_status_endpoint(
             booking_id=booking_id,
             status=payload.booking_status,
             tenant_id=int(tenant["id"]),
+            actor=actor,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

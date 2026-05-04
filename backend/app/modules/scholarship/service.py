@@ -1,14 +1,38 @@
 """Phase VIII-1: Scholarship service."""
 from __future__ import annotations
 
+import logging
 from uuid import uuid4
 
 from app.core.module_helpers.service_validation import DomainValidationError
+from app.modules.usage.service import record_usage_event
 from app.platform.events.publisher import EventPublisher
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     list_entities_for_tenant,
 )
+
+logger = logging.getLogger("app.modules.scholarship")
+
+
+def _record_outcome(entity_id: object, outcome_type: str, actor_id: str) -> None:
+    try:
+        from app.modules.brain_core import service as brain_core_service  # noqa: PLC0415
+
+        brain_core_service.record_dispatch_outcome(
+            entity_id=entity_id,
+            outcome_type=outcome_type,
+            actor_id=str(actor_id),
+        )
+    except Exception:
+        logger.exception("scholarship outcome failed entity_id=%s outcome=%s", entity_id, outcome_type)
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        logger.exception("scholarship metric failed metric=%s", metric)
 
 # Minimum GPA per scholarship type for eligibility enforcement
 _GPA_MINIMUMS: dict[str, float] = {
@@ -59,8 +83,8 @@ def _check_student_is_enrolled_for_scholarship(
     is BLOCKED. An unknown enrollment state must never default to eligible.
     """
     try:
-        all_students = list_entities_for_tenant("students", tenant_id)
         all_enrollments = list_entities_for_tenant("enrollments", tenant_id)
+        all_students = list_entities_for_tenant("students", tenant_id)
     except Exception as exc:
         raise DomainValidationError(
             f"Scholarship application blocked for student_id='{student_id}' "
@@ -74,14 +98,35 @@ def _check_student_is_enrolled_for_scholarship(
         r for r in all_students
         if str(r.get("student_id") or "").strip() == normalized_sid
     ]
+
+    student_str_ids = {
+        str(r.get("student_id") or "").strip().lower()
+        for r in matching_students
+        if str(r.get("student_id") or "").strip()
+    }
+
+    def _enrollment_matches(row: dict[str, object]) -> bool:
+        raw_student_id = row.get("student_id")
+        try:
+            row_student_db_id = int(raw_student_id or 0)
+        except (TypeError, ValueError):
+            row_student_db_id = None
+        if row_student_db_id is not None and row_student_db_id in student_db_ids:
+            return True
+        return str(raw_student_id or "").strip().lower() in student_str_ids
+
     if matching_students:
         student_db_ids = {int(r.get("id") or 0) for r in matching_students}
         student_enrollments = [
             row for row in all_enrollments
-            if int(row.get("student_id") or 0) in student_db_ids
+            if _enrollment_matches(row)
         ]
     else:
-        student_enrollments = []
+        student_enrollments = [
+            row
+            for row in all_enrollments
+            if str(row.get("student_id") or "").strip() == normalized_sid
+        ]
 
     if not student_enrollments:
         raise DomainValidationError(
@@ -155,6 +200,13 @@ def create_scholarship_application(payload: dict[str, object], tenant_id: int) -
     if active_app_count >= app_cap:
         raise ValueError("scholarship_application active cap reached")
     record = create_entity_for_tenant("scholarship_applications", payload, tenant_id)
+
+    _record_outcome(
+        record.get("id"),
+        "scholarship_application_created",
+        str(payload.get("student_id") or "system"),
+    )
+    _metric(tenant_id, "scholarship_applications_created")
 
     if str(payload.get("status") or "").strip().lower() == "approved":
         student_id = str(payload.get("student_id") or "")
@@ -233,6 +285,14 @@ def _is_award_at_risk(row: dict[str, object]) -> bool:
 def create_scholarship_award(payload: dict[str, object], tenant_id: int) -> dict[str, object]:
     """Create award and emit signal if award is at risk."""
     record = create_entity_for_tenant("scholarship_awards", payload, tenant_id)
+
+    _record_outcome(
+        record.get("id"),
+        "scholarship_award_created",
+        str(payload.get("student_id") or "system"),
+    )
+    _metric(tenant_id, "scholarship_awards_created")
+
     at_risk = _is_award_at_risk(record)
     enriched = {**record, "at_risk": at_risk}
 
@@ -280,17 +340,6 @@ def _ensure_revocation_alert_record(award_id: int, tenant_id: int) -> None:
         "tenant_id": tenant_id,
     }
     create_entity_for_tenant("scholarship_revocation_alerts", alert_payload, tenant_id)
-    try:
-        EventPublisher().publish_event(
-            tenant_id=tenant_id,
-            event_type="campus.scholarship.award_revocation_risk_detected",
-            aggregate_type="scholarship_revocation_alert",
-            aggregate_id=str(award_id),
-            payload_json={"award_id": award_id, "tenant_id": tenant_id},
-        )
-    except Exception:
-        # Fire-and-forget: alert persistence is authoritative.
-        pass
 
 
 def get_scholarship_brain_context(tenant_id: int) -> dict[str, object]:

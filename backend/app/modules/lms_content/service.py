@@ -30,9 +30,13 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+from app.core.module_helpers.audit_helpers import build_audit_action
+from app.modules.audit.service import log_admin_action
+from app.modules.usage.service import record_usage_event
 from app.modules.university_core.tenant_entity_api import (
     create_entity_for_tenant,
     list_entities_for_tenant,
+    update_entity_for_tenant,
 )
 from app.platform.events.publisher import EventPublisher
 
@@ -58,8 +62,19 @@ def _utc_now() -> datetime:
 
 def _fire(tenant_id: int, event_type: str, payload: dict) -> None:
     try:
-        pub = EventPublisher(tenant_id=tenant_id)
-        pub.publish_event(event_type=event_type, payload=payload)
+        EventPublisher().publish_event(
+            tenant_id=int(tenant_id),
+            event_type=event_type,
+            aggregate_type="lms_content",
+            aggregate_id=str(
+                payload.get("submission_id")
+                or payload.get("progress_id")
+                or payload.get("risk_record_id")
+                or payload.get("grade_record_id")
+                or ""
+            ),
+            payload_json=payload,
+        )
     except Exception:
         pass
 
@@ -67,6 +82,45 @@ def _fire(tenant_id: int, event_type: str, payload: dict) -> None:
 def _validate_tenant(tenant_id: int) -> None:
     if not tenant_id or tenant_id <= 0:
         raise ValueError("tenant_id must be a positive integer")
+
+
+def _audit(tenant_id: int, actor: str, action: str, path: str, metadata: dict) -> None:
+    try:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=path,
+            client_ip="service",
+            entity="lms_content",
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+    except Exception:
+        pass
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:
+        pass
+
+
+def _record_outcome(record_id: str, outcome_type: str, actor: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            record_id,
+            payload={
+                "outcome_type": outcome_type,
+                "source_module": "lms_content",
+                "record_id": record_id,
+            },
+            actor=actor,
+        )
+    except Exception:
+        pass
 
 
 # ─── create_course ────────────────────────────────────────────────────────────
@@ -134,6 +188,7 @@ def complete_lesson(
     *,
     lesson_id: str,
     student_id: str,
+    actor: str = "system",
 ) -> dict:
     _validate_tenant(tenant_id)
     if not lesson_id:
@@ -143,14 +198,14 @@ def complete_lesson(
 
     progress = create_entity_for_tenant(
         "lms_lesson_progress",
-        tenant_id=tenant_id,
-        data={
+        {
             "lesson_id": lesson_id,
             "student_id": student_id,
             "status": "COMPLETED",
             "completed_at": _utc_now().isoformat(),
             "tenant_id": tenant_id,
         },
+        tenant_id,
     )
 
     _fire(tenant_id, "lms.lesson.completed", {
@@ -159,6 +214,14 @@ def complete_lesson(
         "progress_id": progress.get("id"),
         "tenant_id": tenant_id,
     })
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("lms_content", "lesson", "complete"),
+        f"/internal/lms-content/lessons/{lesson_id}/complete",
+        {"progress_id": progress.get("id"), "student_id": student_id},
+    )
+    _metric(tenant_id, "lms_lessons_completed", 1)
 
     return {"progress_id": progress.get("id"), "lesson_id": lesson_id, "student_id": student_id, "status": "COMPLETED"}
 
@@ -171,6 +234,7 @@ def submit_assignment(
     assignment_id: str,
     student_id: str,
     content: str,
+    actor: str = "system",
 ) -> dict:
     _validate_tenant(tenant_id)
     if not assignment_id:
@@ -182,8 +246,7 @@ def submit_assignment(
 
     submission = create_entity_for_tenant(
         "lms_submissions",
-        tenant_id=tenant_id,
-        data={
+        {
             "assignment_id": assignment_id,
             "student_id": student_id,
             "content": content,
@@ -191,6 +254,7 @@ def submit_assignment(
             "submitted_at": _utc_now().isoformat(),
             "tenant_id": tenant_id,
         },
+        tenant_id,
     )
 
     _fire(tenant_id, "lms.assignment.submitted", {
@@ -199,6 +263,14 @@ def submit_assignment(
         "submission_id": submission.get("id"),
         "tenant_id": tenant_id,
     })
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("lms_content", "assignment", "submit"),
+        f"/internal/lms-content/assignments/{assignment_id}/submit",
+        {"submission_id": submission.get("id"), "student_id": student_id},
+    )
+    _metric(tenant_id, "lms_assignments_submitted", 1)
 
     return {"submission_id": submission.get("id"), "status": "SUBMITTED"}
 
@@ -211,6 +283,7 @@ def grade_submission(
     submission_id: str,
     grade: float,
     feedback: str = "",
+    actor: str = "system",
 ) -> dict:
     _validate_tenant(tenant_id)
     if not submission_id:
@@ -218,7 +291,7 @@ def grade_submission(
     if grade < 0 or grade > 100:
         raise ValueError("grade must be between 0 and 100")
 
-    submissions = list_entities_for_tenant("lms_submissions", tenant_id=tenant_id)
+    submissions = list_entities_for_tenant("lms_submissions", tenant_id)
     sub = next((s for s in submissions if str(s.get("id", "")) == str(submission_id)), None)
     if sub is None:
         raise LookupError(f"Submission {submission_id} not found for tenant {tenant_id}")
@@ -227,8 +300,7 @@ def grade_submission(
 
     grade_record = create_entity_for_tenant(
         "lms_grades",
-        tenant_id=tenant_id,
-        data={
+        {
             "submission_id": submission_id,
             "student_id": sub.get("student_id"),
             "assignment_id": sub.get("assignment_id"),
@@ -237,6 +309,13 @@ def grade_submission(
             "graded_at": _utc_now().isoformat(),
             "tenant_id": tenant_id,
         },
+        tenant_id,
+    )
+    update_entity_for_tenant(
+        "lms_submissions",
+        submission_id,
+        {**sub, "status": "GRADED", "graded_at": _utc_now().isoformat()},
+        tenant_id,
     )
 
     _fire(tenant_id, "lms.grade.posted", {
@@ -246,6 +325,15 @@ def grade_submission(
         "grade_record_id": grade_record.get("id"),
         "tenant_id": tenant_id,
     })
+    _record_outcome(str(submission_id), "submission_graded", actor)
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("lms_content", "submission", "grade"),
+        f"/internal/lms-content/submissions/{submission_id}/grade",
+        {"submission_id": submission_id, "grade": grade},
+    )
+    _metric(tenant_id, "lms_submissions_graded", 1)
 
     return {"grade_record_id": grade_record.get("id"), "submission_id": submission_id, "grade": grade, "status": "GRADED"}
 
@@ -257,6 +345,7 @@ def return_submission(
     *,
     submission_id: str,
     feedback: str,
+    actor: str = "system",
 ) -> dict:
     _validate_tenant(tenant_id)
     if not submission_id:
@@ -264,7 +353,7 @@ def return_submission(
     if not feedback:
         raise ValueError("feedback is required")
 
-    submissions = list_entities_for_tenant("lms_submissions", tenant_id=tenant_id)
+    submissions = list_entities_for_tenant("lms_submissions", tenant_id)
     sub = next((s for s in submissions if str(s.get("id", "")) == str(submission_id)), None)
     if sub is None:
         raise LookupError(f"Submission {submission_id} not found for tenant {tenant_id}")
@@ -273,15 +362,30 @@ def return_submission(
 
     returned = create_entity_for_tenant(
         "lms_returned_submissions",
-        tenant_id=tenant_id,
-        data={
+        {
             "submission_id": submission_id,
             "student_id": sub.get("student_id"),
             "feedback": feedback,
             "returned_at": _utc_now().isoformat(),
             "tenant_id": tenant_id,
         },
+        tenant_id,
     )
+    update_entity_for_tenant(
+        "lms_submissions",
+        submission_id,
+        {**sub, "status": "RETURNED", "returned_at": _utc_now().isoformat()},
+        tenant_id,
+    )
+    _record_outcome(str(submission_id), "submission_returned", actor)
+    _audit(
+        tenant_id,
+        actor,
+        build_audit_action("lms_content", "submission", "return"),
+        f"/internal/lms-content/submissions/{submission_id}/return",
+        {"submission_id": submission_id, "returned_id": returned.get("id")},
+    )
+    _metric(tenant_id, "lms_submissions_returned", 1)
 
     return {"returned_id": returned.get("id"), "submission_id": submission_id, "status": "RETURNED"}
 
@@ -300,7 +404,7 @@ def get_course_progress(
     if not student_id:
         raise ValueError("student_id is required")
 
-    lessons = list_entities_for_tenant("lms_lessons", tenant_id=tenant_id)
+    lessons = list_entities_for_tenant("lms_lessons", tenant_id)
     course_lessons = [l for l in lessons if str(l.get("course_id", "")) == str(course_id)]
 
     if not course_lessons:
@@ -313,7 +417,7 @@ def get_course_progress(
             "falling_behind": False,
         }
 
-    progress_records = list_entities_for_tenant("lms_lesson_progress", tenant_id=tenant_id)
+    progress_records = list_entities_for_tenant("lms_lesson_progress", tenant_id)
     student_completed = {
         str(p.get("lesson_id", ""))
         for p in progress_records
@@ -341,6 +445,7 @@ def check_falling_behind(
     *,
     course_id: str,
     student_id: str,
+    actor: str = "system",
 ) -> dict:
     _validate_tenant(tenant_id)
     progress = get_course_progress(tenant_id, course_id=course_id, student_id=student_id)
@@ -348,8 +453,7 @@ def check_falling_behind(
     if progress["falling_behind"]:
         risk = create_entity_for_tenant(
             "lms_risk_records",
-            tenant_id=tenant_id,
-            data={
+            {
                 "student_id": student_id,
                 "course_id": course_id,
                 "completion_pct": progress["completion_pct"],
@@ -357,6 +461,7 @@ def check_falling_behind(
                 "detected_at": _utc_now().isoformat(),
                 "tenant_id": tenant_id,
             },
+            tenant_id,
         )
 
         _fire(tenant_id, "lms.student.falling_behind", {
@@ -367,6 +472,20 @@ def check_falling_behind(
             "risk_record_id": risk.get("id"),
             "tenant_id": tenant_id,
         })
+        _record_outcome(str(risk.get("id") or ""), "student_falling_behind", actor)
+        _audit(
+            tenant_id,
+            actor,
+            build_audit_action("lms_content", "risk", "detect"),
+            f"/internal/lms-content/risk/{risk.get('id')}",
+            {
+                "risk_record_id": risk.get("id"),
+                "student_id": student_id,
+                "course_id": course_id,
+                "completion_pct": progress["completion_pct"],
+            },
+        )
+        _metric(tenant_id, "lms_students_falling_behind", 1)
 
         return {**progress, "risk_record_id": risk.get("id"), "event_fired": True}
 
@@ -382,7 +501,7 @@ def list_submissions(
     student_id: str | None = None,
 ) -> list[dict]:
     _validate_tenant(tenant_id)
-    rows = list_entities_for_tenant("lms_submissions", tenant_id=tenant_id)
+    rows = list_entities_for_tenant("lms_submissions", tenant_id)
     if assignment_id:
         rows = [r for r in rows if str(r.get("assignment_id", "")) == str(assignment_id)]
     if student_id:

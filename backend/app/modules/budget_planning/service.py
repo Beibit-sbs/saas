@@ -1,6 +1,8 @@
 """Phase V-V1: Budget planning service — budget plans, allocations, drift tracking."""
 from __future__ import annotations
 
+import logging
+
 from app.platform.events.publisher import EventPublisher
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
@@ -8,6 +10,11 @@ from app.modules.university_core.tenant_entity_service import (
     update_entity_for_tenant,
 )
 from app.core.module_helpers.service_validation import DomainValidationError
+from app.core.module_helpers.audit_helpers import build_audit_action
+from app.modules.audit.service import log_admin_action
+
+
+logger = logging.getLogger("app.modules.budget_planning")
 
 
 _BUDGET_PLAN_STATUSES = {"draft", "review", "submitted", "approved", "locked", "rejected"}
@@ -60,13 +67,85 @@ def _publish_budget_event(
     aggregate_id: int,
     payload_json: dict[str, object],
 ) -> None:
-    EventPublisher().publish_event(
-        tenant_id=tenant_id,
-        event_type=event_type,
-        aggregate_type=aggregate_type,
-        aggregate_id=aggregate_id,
-        payload_json=payload_json,
-    )
+    try:
+        EventPublisher().publish_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            aggregate_type=aggregate_type,
+            aggregate_id=aggregate_id,
+            payload_json=payload_json,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "budget event publish failed tenant_id=%s event_type=%s aggregate_type=%s aggregate_id=%s",
+            tenant_id,
+            event_type,
+            aggregate_type,
+            aggregate_id,
+        )
+
+
+def _metric(tenant_id: int, metric: str, value: int = 1) -> None:
+    try:
+        from app.modules.usage.service import record_usage_event
+
+        record_usage_event(tenant_id=tenant_id, metric=metric, value=value)
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "budget metric record failed tenant_id=%s metric=%s value=%s",
+            tenant_id,
+            metric,
+            value,
+        )
+
+
+def _record_outcome(*, tenant_id: int, signal_id: str, outcome_type: str, actor: str) -> None:
+    try:
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.record_dispatch_outcome(
+            signal_id,
+            payload={
+                "outcome_type": outcome_type,
+                "source_module": "budget_planning",
+                "tenant_id": tenant_id,
+            },
+            actor=actor,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "budget outcome record failed tenant_id=%s signal_id=%s outcome_type=%s",
+            tenant_id,
+            signal_id,
+            outcome_type,
+        )
+
+
+def _emit_audit(
+    *,
+    actor: str,
+    action: str,
+    path: str,
+    metadata: dict[str, object],
+    tenant_id: int,
+) -> None:
+    try:
+        log_admin_action(
+            actor=actor,
+            action=action,
+            path=path,
+            client_ip="service",
+            entity="budget_planning",
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "budget audit emit failed tenant_id=%s action=%s path=%s",
+            tenant_id,
+            action,
+            path,
+        )
 
 
 def _create_plan_lock_outcome_record(
@@ -210,13 +289,14 @@ def create_budget_plan(
             f"Active budget plan cap reached for status '{status}': {active_count}/{cap}"
         )
     record = create_entity_for_tenant("budget_plans", {**payload, "status": status}, tenant_id)
+    plan_id = int(record.get("id") or 0)
     _publish_budget_event(
         tenant_id=tenant_id,
         event_type="budget_plan.created",
         aggregate_type="budget_plan",
-        aggregate_id=int(record.get("id") or 0),
+        aggregate_id=plan_id,
         payload_json={
-            "plan_id": int(record.get("id") or 0),
+            "plan_id": plan_id,
             "department_id": record.get("department_id"),
             "fiscal_year": record.get("fiscal_year"),
             "status": record.get("status"),
@@ -224,6 +304,25 @@ def create_budget_plan(
             "source_module": "budget_planning",
         },
     )
+    _record_outcome(
+        tenant_id=tenant_id,
+        signal_id=f"budget_plan:{plan_id}",
+        outcome_type="plan_created",
+        actor=actor,
+    )
+    _emit_audit(
+        actor=actor,
+        action=build_audit_action("budget_planning", "budget_plan", "create"),
+        path="/internal/budget-planning/plans",
+        metadata={
+            "plan_id": plan_id,
+            "department_id": record.get("department_id"),
+            "fiscal_year": record.get("fiscal_year"),
+            "status": record.get("status"),
+        },
+        tenant_id=tenant_id,
+    )
+    _metric(tenant_id, "budget_plans_created", 1)
     return record
 
 
@@ -378,6 +477,24 @@ def update_budget_plan_status(
                     "source_module": "budget_planning",
                 },
             )
+        _record_outcome(
+            tenant_id=tenant_id,
+            signal_id=f"budget_plan:{plan_id}",
+            outcome_type=f"status_{next_transition_status}",
+            actor=actor,
+        )
+        _emit_audit(
+            actor=actor,
+            action=build_audit_action("budget_planning", "budget_plan", "transition"),
+            path=f"/internal/budget-planning/plans/{plan_id}/status",
+            metadata={
+                "plan_id": plan_id,
+                "from_status": current_status,
+                "to_status": next_status,
+            },
+            tenant_id=tenant_id,
+        )
+        _metric(tenant_id, "budget_plan_status_transitions", 1)
 
     if next_transition_status == "locked" and updated is not None:
         _create_plan_lock_outcome_record(tenant_id=tenant_id, plan_id=plan_id, actor=actor)
@@ -531,6 +648,25 @@ def create_budget_allocation(
                 "actor": actor,
             },
         )
+    _record_outcome(
+        tenant_id=tenant_id,
+        signal_id=f"budget_allocation:{record_id}",
+        outcome_type="allocation_created",
+        actor=actor,
+    )
+    _emit_audit(
+        actor=actor,
+        action=build_audit_action("budget_planning", "budget_allocation", "create"),
+        path="/internal/budget-planning/allocations",
+        metadata={
+            "allocation_id": record_id,
+            "plan_id": int(record.get("plan_id") or 0),
+            "allocated_amount": record.get("allocated_amount"),
+            "spent_amount": record.get("spent_amount"),
+        },
+        tenant_id=tenant_id,
+    )
+    _metric(tenant_id, "budget_allocations_created", 1)
     return record
 
 
