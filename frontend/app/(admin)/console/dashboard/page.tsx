@@ -129,7 +129,7 @@ export default function RectorDashboardPage() {
             {!isLoading && !isError && data && data.cards.length > 0 && (
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                 {data.cards.map((card) => (
-                  <KpiCard key={card.metric_key} title={card.title} value={card.value} trendPoints={card.trend_7d} />
+                  <KpiCard key={card.metric_key} title={card.title} value={card.value} trendPoints={card.trend_7d} severityLevel={(card.metadata_json?.severity_level as "warning" | "critical" | null) ?? null} />
                 ))}
               </div>
             )}
@@ -188,7 +188,7 @@ export default function RectorDashboardPage() {
       {!isLoading && !isError && data && data.cards.length > 0 && (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3" data-testid="kpi-cards-grid">
           {data.cards.map((card) => (
-            <KpiCard key={card.metric_key} title={card.title} value={card.value} trendPoints={card.trend_7d} />
+            <KpiCard key={card.metric_key} title={card.title} value={card.value} trendPoints={card.trend_7d} severityLevel={(card.metadata_json?.severity_level as "warning" | "critical" | null) ?? null} />
           ))}
         </div>
       )}

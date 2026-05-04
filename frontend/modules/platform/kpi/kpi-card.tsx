@@ -11,6 +11,7 @@ interface KpiCardProps {
   title: string;
   value: number;
   trendPoints: RectorTrendPoint[];
+  severityLevel?: "warning" | "critical" | null;
 }
 
 function toDirection(points: RectorTrendPoint[]): TrendDirection {
@@ -64,13 +65,18 @@ function TrendBadge({ direction }: { direction: TrendDirection }) {
   );
 }
 
-export function KpiCard({ title, value, trendPoints }: KpiCardProps) {
+export function KpiCard({ title, value, trendPoints, severityLevel }: KpiCardProps) {
   const direction = toDirection(trendPoints);
   const values = trendPoints.map((point) => Number(point.value ?? 0));
   const polyline = toPolylinePoints(values, 100, 28);
 
   return (
-    <Card>
+    <Card
+      className={cn(
+        severityLevel === "critical" && "border-l-4 border-l-rose-500",
+        severityLevel === "warning" && "border-l-4 border-l-amber-500",
+      )}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <p className="text-sm font-medium text-muted-foreground">{title}</p>
         <TrendBadge direction={direction} />

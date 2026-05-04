@@ -13,6 +13,8 @@ from app.modules.invoices.service import Invoice, InvoiceError, InvoiceItem, Inv
 
 app = FastAPI()
 app.include_router(router)
+# A-009 added router-level permission_dependency — override in unit tests.
+app.dependency_overrides = {dep.dependency: lambda: None for dep in router.dependencies}
 client = TestClient(app)
 
 MODULE = "app.modules.invoices.router"

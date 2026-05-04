@@ -19,5 +19,17 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         ANALYTICS_KPI_READ,
         BILLING_USAGE_RECORDED,
         KPI_REFRESH_EXECUTED,
+        # A-013.5 Wave 1 KPI extension — student success / early warning
+        "academic.attendance_risk.detected",
+        "academic.grade_risk.detected",
+        # A-013.5 Wave 1 KPI extension — intervention pipeline
+        "interventions.case.created",
+        "interventions.case_outcome.recorded",
+        "interventions.auto_triggered",
+        # A-013.5 Wave 1 KPI extension — scheduling / enrollment capacity
+        "scheduling.section.created",
+        "scheduling.section.conflict_detected",
+        "enrollment.created",
+        "enrollment.capacity_risk.detected",
     }
 )

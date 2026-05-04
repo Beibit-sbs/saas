@@ -80,6 +80,15 @@ SCHEDULING_EVENT_TYPES = {
     "scheduling.section.scheduled",
 }
 
+# A-013.3: Scheduling conflict and enrollment capacity risk signals
+SECTION_CONFLICT_EVENT_TYPES = {
+    "scheduling.section.conflict_detected",
+}
+
+ENROLLMENT_CAPACITY_RISK_EVENT_TYPES = {
+    "enrollment.capacity_risk.detected",
+}
+
 ACADEMIC_INTEGRITY_EVENT_TYPES = {
     "academic_integrity.case.escalated",
 }
@@ -127,6 +136,8 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | STUDENT_SERVICES_EVENT_TYPES
     | ADMISSIONS_EVENT_TYPES
     | SCHEDULING_EVENT_TYPES
+    | SECTION_CONFLICT_EVENT_TYPES
+    | ENROLLMENT_CAPACITY_RISK_EVENT_TYPES
 )
 
 ACTION_CREATE_INTERVENTION_CASE = "create_intervention_case"

@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.modules.auth.token_service import create_access_token
 from app.modules.billing import router as billing_router
 
 
@@ -11,6 +12,28 @@ def _build_client() -> TestClient:
     app.include_router(billing_router.router)
     app.dependency_overrides[billing_router.get_actor] = lambda: "admin@example.com"
     return TestClient(app)
+
+
+def _headers(
+    *,
+    tenant_id: int = 1,
+    permissions: list[str] | None = None,
+) -> dict[str, str]:
+    granted = permissions or [
+        "billing.admin.read",
+        "billing.admin.write",
+        "billing.admin.manage",
+        "platform.admin.read",
+        "platform.admin.write",
+    ]
+    token = create_access_token(
+        user_id="admin@example.com",
+        roles=["admin"],
+        auth_source="test",
+        tenant_id=tenant_id,
+        permissions=granted,
+    )
+    return {"Authorization": f"Bearer {token}"}
 
 
 def _subscription(tenant_id: int = 1, plan_code: str = "pro", status: str = "active") -> dict[str, object]:
@@ -63,7 +86,7 @@ def test_get_state_returns_contract_shape(monkeypatch) -> None:
         },
     )
 
-    response = client.get("/api/admin/billing/tenants/7/state")
+    response = client.get("/api/admin/billing/tenants/7/state", headers=_headers())
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["tenant_id"] == 7
@@ -81,6 +104,7 @@ def test_plan_change_maps_service_error_to_400(monkeypatch) -> None:
 
     response = client.post(
         "/api/admin/billing/tenants/1/subscription/plan-change",
+        headers=_headers(),
         json={"plan_code": "pro", "effective": "invalid"},
     )
     assert response.status_code == 400
@@ -99,7 +123,11 @@ def test_usage_snapshot_passes_since_iso(monkeypatch) -> None:
 
     monkeypatch.setattr(billing_router, "get_usage_snapshot", _usage)
 
-    response = client.get("/api/admin/billing/tenants/3/usage", params={"since_iso": "2026-04-01T00:00:00+00:00"})
+    response = client.get(
+        "/api/admin/billing/tenants/3/usage",
+        headers=_headers(),
+        params={"since_iso": "2026-04-01T00:00:00+00:00"},
+    )
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["tenant_id"] == 3
@@ -137,6 +165,7 @@ def test_transition_endpoint_returns_updated_state(monkeypatch) -> None:
 
     response = client.post(
         "/api/admin/billing/tenants/9/subscription/transition",
+        headers=_headers(),
         json={"status": "suspended"},
     )
     assert response.status_code == 200, response.text
@@ -153,7 +182,7 @@ def test_list_plans_returns_router_contract(monkeypatch) -> None:
         lambda: [_plan("pro"), _plan("enterprise") | {"id": 3, "name": "Enterprise"}],
     )
 
-    response = client.get("/api/admin/billing/plans")
+    response = client.get("/api/admin/billing/plans", headers=_headers())
     assert response.status_code == 200, response.text
     body = response.json()
     assert len(body) == 2
@@ -174,6 +203,7 @@ def test_create_plan_returns_idempotent_replay_for_same_payload(monkeypatch) -> 
 
     response = client.post(
         "/api/admin/billing/plans",
+        headers=_headers(),
         json={
             "code": "pro",
             "name": "Pro",
@@ -201,6 +231,7 @@ def test_assign_subscription_returns_idempotent_replay_when_same_plan(monkeypatc
 
     response = client.put(
         "/api/admin/billing/tenants/12/subscription",
+        headers=_headers(),
         json={"plan_code": "pro"},
     )
     assert response.status_code == 200, response.text
@@ -232,6 +263,7 @@ def test_usage_increment_calls_platform_service(monkeypatch) -> None:
 
     response = client.post(
         "/api/admin/billing/tenants/5/usage/api_calls",
+        headers=_headers(),
         json={"value": 3},
     )
     assert response.status_code == 200, response.text
@@ -252,6 +284,7 @@ def test_usage_increment_rejects_zero_value(monkeypatch) -> None:
 
     response = client.post(
         "/api/admin/billing/tenants/5/usage/api_calls",
+        headers=_headers(),
         json={"value": 0},
     )
     # Pydantic ge=1 constraint → FastAPI returns 422 Unprocessable Entity
@@ -268,7 +301,7 @@ def test_patch_plan_updates_active_flag(monkeypatch) -> None:
         lambda plan_id, *, name, active: updated_plan,
     )
 
-    response = client.patch("/api/admin/billing/plans/2", json={"active": False})
+    response = client.patch("/api/admin/billing/plans/2", headers=_headers(), json={"active": False})
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["code"] == "pro"
@@ -284,6 +317,6 @@ def test_patch_plan_returns_404_when_not_found(monkeypatch) -> None:
         lambda plan_id, *, name, active: None,
     )
 
-    response = client.patch("/api/admin/billing/plans/999", json={"active": False})
+    response = client.patch("/api/admin/billing/plans/999", headers=_headers(), json={"active": False})
     assert response.status_code == 404
 

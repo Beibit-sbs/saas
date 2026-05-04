@@ -6,6 +6,10 @@ import DelinquencyCollectionsPage from "../../app/(admin)/console/delinquency-co
 const useRecordsMock = vi.fn();
 let allowAccess = true;
 
+vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
+  Wave1KpiBar: () => <div data-testid="wave1-kpi-bar-mock" />,
+}));
+
 vi.mock("../../modules/delinquency-collections/hooks", () => ({
   useDelinquencyRecords: (...args: unknown[]) => useRecordsMock(...args),
   useCreateDelinquencyRecord: () => ({ mutate: vi.fn(), isPending: false }),

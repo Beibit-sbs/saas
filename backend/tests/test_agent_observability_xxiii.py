@@ -187,16 +187,16 @@ class TestXXIII3PerformanceReport:
 
     def test_performance_report_with_tasks(self) -> None:
         _reset()
-        _create_task(tenant_id=2)
-        _create_task(tenant_id=2)
+        _create_task(tenant_id=1)
+        _create_task(tenant_id=1)
 
         resp = client.get(
-            "/api/admin/brain/agent/performance/2?window_hours=24",
+            "/api/admin/brain/agent/performance/1?window_hours=24",
             headers=_headers_read(),
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["tenant_id"] == 2
+        assert data["tenant_id"] == 1
         assert data["steps_total"] >= 2  # at least 1 step per task
         assert "failure_rate" in data
         assert "retry_rate" in data

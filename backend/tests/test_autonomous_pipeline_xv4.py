@@ -152,8 +152,8 @@ class TestAutonomousActionPipeline:
             result = svc.process_signal(_attendance_risk_signal(source_id="SEC003"))
 
         assert result["status"] == "processed"
-        assert result["decision"]["decision_type"] in {"risk", "action", "escalation"}, (
-            f"Decision type must be risk-related; got: {result['decision']['decision_type']}"
+        assert result["decision"]["decision_type"] in {"risk", "action", "escalation", "intervention"}, (
+            f"Decision type must reflect active pipeline contracts; got: {result['decision']['decision_type']}"
         )
         print(
             f"\n[XV4] LLM classify: risk_level={llm_classification['risk_level']}, "

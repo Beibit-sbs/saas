@@ -6,6 +6,10 @@ import InterventionsPage from "../../app/(admin)/console/interventions/page";
 
 let allowAccess = true;
 
+vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
+  Wave1KpiBar: () => <div data-testid="wave1-kpi-bar-mock" />,
+}));
+
 vi.mock("../../shared/ui/permission-gate", () => ({
   PermissionGate: ({ children }: { children: ReactNode }) =>
     allowAccess ? <>{children}</> : null,

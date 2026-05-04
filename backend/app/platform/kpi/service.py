@@ -33,6 +33,18 @@ METRIC_TITLES: dict[str, str] = {
     "analytics_events_reads_from_events_total": "Analytics Events Reads (Event-Derived) Total",
     "analytics_kpi_reads_from_events_total": "Analytics KPI Reads (Event-Derived) Total",
     "billing_usage_recorded_from_events_total": "Billing Usage Recorded (Event-Derived) Total",
+    "high_risk_students_count": "High Risk Students Count",
+    "intervention_resolution_rate": "Intervention Resolution Rate (%)",
+    "intervention_auto_created_count": "Intervention Auto-Create Count",
+    "composite_risk_average": "Composite Risk Average",
+    "critical_risk_students_count": "Critical Risk Students Count",
+    "sweep_coverage_rate": "Early-Warning Sweep Coverage Rate (%)",
+    "delinquency_recovery_rate": "Delinquency Recovery Rate (%)",
+    "overdue_amount_at_risk": "Overdue Amount At Risk (Cents)",
+    "delinquency_cases_active": "Delinquency Cases Active",
+    "course_fill_rate": "Course Fill Rate (%)",
+    "capacity_risk_sections_count": "Enrollment Capacity Risk Count",
+    "scheduling_conflicts_count": "Scheduling Conflict Count",
 }
 
 
@@ -47,6 +59,33 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "analytics_events_reads_from_events_total": [ANALYTICS_EVENT_READ],
     "analytics_kpi_reads_from_events_total": [ANALYTICS_KPI_READ],
     "billing_usage_recorded_from_events_total": [BILLING_USAGE_RECORDED],
+    "intervention_auto_created_count": ["interventions.auto_triggered"],
+    "intervention_resolution_rate": ["interventions.case.created", "interventions.case_outcome.recorded"],
+    "high_risk_students_count": [
+        "academic.attendance_risk.detected",
+        "academic.grade_risk.detected",
+        "finance.payment_overdue.detected",
+        "student.needs_intervention",
+    ],
+    "composite_risk_average": [
+        "academic.attendance_risk.detected",
+        "academic.grade_risk.detected",
+        "finance.payment_overdue.detected",
+        "enrollment.capacity_risk.detected",
+    ],
+    "critical_risk_students_count": [
+        "collections.delinquency.critical_overdue",
+        "student.needs_intervention",
+    ],
+    "sweep_coverage_rate": [
+        "academic.attendance_risk.detected",
+        "academic.grade_risk.detected",
+        "finance.payment_overdue.detected",
+        "student.needs_intervention",
+    ],
+    "course_fill_rate": ["scheduling.section.created", "enrollment.created"],
+    "capacity_risk_sections_count": ["enrollment.capacity_risk.detected"],
+    "scheduling_conflicts_count": ["scheduling.section.conflict_detected"],
 }
 
 
@@ -502,6 +541,66 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     metric_values["analytics_kpi_reads_from_events_total"] = int(event_counts.get(ANALYTICS_KPI_READ, 0) or 0)
     metric_values["billing_usage_recorded_from_events_total"] = int(event_counts.get(BILLING_USAGE_RECORDED, 0) or 0)
 
+    # A-013.5 Wave 1 KPI extension: additive metrics derived from existing event stream + billing delinquency service.
+    attendance_risk = int(event_counts.get("academic.attendance_risk.detected", 0) or 0)
+    grade_risk = int(event_counts.get("academic.grade_risk.detected", 0) or 0)
+    payment_overdue = int(event_counts.get("finance.payment_overdue.detected", 0) or 0)
+    student_needs_intervention = int(event_counts.get("student.needs_intervention", 0) or 0)
+    critical_overdue = int(event_counts.get("collections.delinquency.critical_overdue", 0) or 0)
+    intervention_created = int(event_counts.get("interventions.case.created", 0) or 0)
+    intervention_outcomes = int(event_counts.get("interventions.case_outcome.recorded", 0) or 0)
+    intervention_auto = int(event_counts.get("interventions.auto_triggered", 0) or 0)
+    scheduling_sections_created = int(event_counts.get("scheduling.section.created", 0) or 0)
+    scheduling_conflicts = int(event_counts.get("scheduling.section.conflict_detected", 0) or 0)
+    enrollment_capacity_risk = int(event_counts.get("enrollment.capacity_risk.detected", 0) or 0)
+
+    total_students = int(metric_values.get("total_students", 0) or 0)
+    total_enrollments = int(event_counts.get("enrollment.created", 0) or 0)
+
+    high_risk_students = attendance_risk + grade_risk + payment_overdue + student_needs_intervention
+    metric_values["high_risk_students_count"] = high_risk_students
+    metric_values["critical_risk_students_count"] = critical_overdue + student_needs_intervention
+    metric_values["intervention_auto_created_count"] = intervention_auto
+    metric_values["intervention_resolution_rate"] = (
+        int(round((intervention_outcomes * 100.0) / intervention_created))
+        if intervention_created > 0
+        else 0
+    )
+
+    weighted_risk_sum = (
+        attendance_risk * 35
+        + grade_risk * 30
+        + payment_overdue * 20
+        + enrollment_capacity_risk * 15
+    )
+    metric_values["composite_risk_average"] = int(min(100, round(weighted_risk_sum / max(1, total_students))))
+    metric_values["sweep_coverage_rate"] = int(min(100, round((high_risk_students * 100.0) / max(1, total_students))))
+
+    metric_values["course_fill_rate"] = (
+        int(min(100, round((total_enrollments * 100.0) / scheduling_sections_created)))
+        if scheduling_sections_created > 0
+        else 0
+    )
+    metric_values["capacity_risk_sections_count"] = enrollment_capacity_risk
+    metric_values["scheduling_conflicts_count"] = scheduling_conflicts
+
+    from app.modules.billing.service import get_delinquency_dashboard, list_delinquency_records  # noqa: PLC0415
+
+    delinquency_dashboard = get_delinquency_dashboard(int(tenant_id))
+    delinquency_records = list_delinquency_records(int(tenant_id))
+    delinquency_total = len(delinquency_records)
+    delinquency_resolved = sum(1 for item in delinquency_records if item.get("resolved_at"))
+
+    open_total_raw = delinquency_dashboard.get("open_total")
+    overdue_amount_raw = delinquency_dashboard.get("total_overdue_cents")
+    metric_values["delinquency_cases_active"] = int(open_total_raw) if isinstance(open_total_raw, int | float) else 0
+    metric_values["overdue_amount_at_risk"] = int(overdue_amount_raw) if isinstance(overdue_amount_raw, int | float) else 0
+    metric_values["delinquency_recovery_rate"] = (
+        int(round((delinquency_resolved * 100.0) / delinquency_total))
+        if delinquency_total > 0
+        else 0
+    )
+
     rows: list[dict[str, Any]] = []
     for metric_key, metric_value in metric_values.items():
         lineage = _lineage_for_metric(metric_key)
@@ -525,6 +624,15 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
                         "analytics_events_reads_from_events_total",
                         "analytics_kpi_reads_from_events_total",
                         "billing_usage_recorded_from_events_total",
+                        "high_risk_students_count",
+                        "intervention_resolution_rate",
+                        "intervention_auto_created_count",
+                        "composite_risk_average",
+                        "critical_risk_students_count",
+                        "sweep_coverage_rate",
+                        "course_fill_rate",
+                        "capacity_risk_sections_count",
+                        "scheduling_conflicts_count",
                     } else "platform_core",
                     "analytics_today": int(analytics_counts.get(_metric_key_to_event(metric_key), 0)),
                     "lineage": lineage,
@@ -1043,6 +1151,36 @@ KPI_SEVERITY_RULES: dict[str, dict[str, Any]] = {
         "low_warning_lte": 20,
         "high_warning_gte": 80,
         "policy_pack": "analytics_adoption_v1",
+    },
+    "high_risk_students_count": {
+        "basis": "count",
+        "warning_gte": 10,
+        "critical_gte": 25,
+        "policy_pack": "student_success_wave1_v1",
+    },
+    "critical_risk_students_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "early_warning_wave1_v1",
+    },
+    "delinquency_cases_active": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 10,
+        "policy_pack": "finance_delinquency_wave1_v1",
+    },
+    "scheduling_conflicts_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "scheduling_wave1_v1",
+    },
+    "capacity_risk_sections_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "scheduling_wave1_v1",
     },
 }
 

@@ -10,9 +10,23 @@ Also covers: normalize_language(), build_answer() helper branches.
 
 from __future__ import annotations
 
-
+from app.modules.auth.token_service import create_access_token
 from tests.conftest import ADMIN_HEADERS, client
 from app.modules.help.router import build_answer, normalize_language
+
+
+def _help_admin_headers() -> dict[str, str]:
+    token = create_access_token(
+        user_id="help.admin@example.com",
+        roles=["admin"],
+        auth_source="test",
+        tenant_id=1,
+        permissions=["help.admin.read"],
+    )
+    return {"Authorization": f"Bearer {token}"}
+
+
+HELP_HEADERS = _help_admin_headers()
 
 
 # ---------------------------------------------------------------------------
@@ -144,7 +158,7 @@ class TestBuildAnswerDefault:
 
 class TestGetTopics:
     def test_topics_happy(self):
-        r = client.get("/api/help/topics", headers=ADMIN_HEADERS)
+        r = client.get("/api/help/topics", headers=HELP_HEADERS)
         assert r.status_code == 200
         data = r.json()
         assert "topics" in data
@@ -167,7 +181,7 @@ class TestGetTopics:
 class TestAskHelp:
     def test_ask_happy_default(self):
         payload = {"question": "Как заполнить форму?"}
-        r = client.post("/api/help/ask", json=payload, headers=ADMIN_HEADERS)
+        r = client.post("/api/help/ask", json=payload, headers=HELP_HEADERS)
         assert r.status_code == 200
         data = r.json()
         assert "answer" in data
@@ -181,7 +195,7 @@ class TestAskHelp:
             "field": "role_name",
             "language": "ru",
         }
-        r = client.post("/api/help/ask", json=payload, headers=ADMIN_HEADERS)
+        r = client.post("/api/help/ask", json=payload, headers=HELP_HEADERS)
         assert r.status_code == 200
         data = r.json()
         assert "Поле: role_name" in data["answer"]
@@ -191,7 +205,7 @@ class TestAskHelp:
             "question": "How to configure LDAP?",
             "language": "en",
         }
-        r = client.post("/api/help/ask", json=payload, headers=ADMIN_HEADERS)
+        r = client.post("/api/help/ask", json=payload, headers=HELP_HEADERS)
         assert r.status_code == 200
         assert r.json()["context"]["language"] == "en"
 
@@ -200,7 +214,7 @@ class TestAskHelp:
             "question": "LDAP кантип курам?",
             "language": "kk",
         }
-        r = client.post("/api/help/ask", json=payload, headers=ADMIN_HEADERS)
+        r = client.post("/api/help/ask", json=payload, headers=HELP_HEADERS)
         assert r.status_code == 200
         assert r.json()["context"]["language"] == "kk"
 
@@ -209,13 +223,13 @@ class TestAskHelp:
             "question": "Comment configurer?",
             "language": "fr",
         }
-        r = client.post("/api/help/ask", json=payload, headers=ADMIN_HEADERS)
+        r = client.post("/api/help/ask", json=payload, headers=HELP_HEADERS)
         assert r.status_code == 200
         assert r.json()["context"]["language"] == "ru"
 
     def test_ask_question_too_short(self):
         payload = {"question": "ab"}
-        r = client.post("/api/help/ask", json=payload, headers=ADMIN_HEADERS)
+        r = client.post("/api/help/ask", json=payload, headers=HELP_HEADERS)
         assert r.status_code == 422
 
     def test_ask_no_auth(self):
@@ -228,6 +242,6 @@ class TestAskHelp:
             "question": "Как проверить статус интеграции?",
             "page": "ai",
         }
-        r = client.post("/api/help/ask", json=payload, headers=ADMIN_HEADERS)
+        r = client.post("/api/help/ask", json=payload, headers=HELP_HEADERS)
         assert r.status_code == 200
         assert "API" in r.json()["answer"]

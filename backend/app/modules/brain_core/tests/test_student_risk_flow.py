@@ -90,15 +90,17 @@ def test_student_risk_signal_full_flow_processed() -> None:
     result = service.process_signal(signal)
 
     assert result["status"] == "processed"
-    assert result["decision"]["decision_type"] == "risk"
+    # A-013.1 contract: academic risk routes to intervention decisions.
+    assert result["decision"]["decision_type"] == "intervention"
     assert result["decision"]["priority"] == "critical"
-    assert result["decision"]["status"] == "approval_pending"
+    # Intervention decisions are autonomous by policy design.
+    assert result["decision"]["status"] == "dispatched"
     assert "explanation" in result["decision"]
     assert "summary" in result["decision"]["explanation"]
     assert result["context"]["knowledge"]["retrieved"] >= 1
     assert result["decision"]["explanation"]["knowledge_items"][0]["document_id"] == "playbook.student_attendance_outreach"
     assert len(result["action_plan"]) >= 2
-    assert result["dispatch_results"] == []
+    assert any(item["action"] == "create_intervention_case" for item in result["dispatch_results"])
 
 
 def test_signal_without_tenant_is_rejected() -> None:
@@ -174,13 +176,9 @@ def test_critical_decision_can_be_approved_and_dispatched() -> None:
     }
 
     processed = service.process_signal(signal)
-    decision_id = processed["decision"]["decision_id"]
-    assert processed["decision"]["status"] == "approval_pending"
-
-    approved = service.approve_decision(decision_id, actor="dean@tenant")
-    assert approved["status"] == "approved"
-    assert approved["decision"]["status"] == "dispatched"
-    assert any(item["action"] == "create_intervention_case" for item in approved["dispatch_results"])
+    assert processed["decision"]["decision_type"] == "intervention"
+    assert processed["decision"]["status"] == "dispatched"
+    assert any(item["action"] == "create_intervention_case" for item in processed["dispatch_results"])
 
 
 def test_what_if_simulation_previews_forecast_without_persisting_state() -> None:
@@ -222,8 +220,9 @@ def test_what_if_simulation_previews_forecast_without_persisting_state() -> None
     assert simulated["forecast"]["horizon_days"] == 21
     assert simulated["forecast"]["dispatchable_now"] is True
     assert simulated["dispatch_results"] == []
-    assert service.list_signals() == []
-    assert service.list_decisions() == []
+    # A-009 tenant isolation contract: list APIs require explicit tenant_id.
+    assert service.list_signals(tenant_id=905) == []
+    assert service.list_decisions(tenant_id=905) == []
 
 
 def test_pending_decision_can_be_cancelled() -> None:
@@ -469,14 +468,10 @@ def test_payment_recovery_flow_processed() -> None:
 
     assert result["status"] == "processed"
     assert result["decision"]["decision_type"] == "risk"
-    assert result["decision"]["priority"] == "critical"
-    assert result["decision"]["status"] == "approval_pending"
-    assert result["dispatch_results"] == []
-
-    approved = service.approve_decision(result["decision"]["decision_id"], actor="finance_manager@tenant")
-    assert approved["status"] == "approved"
-    assert approved["decision"]["status"] == "dispatched"
-    assert any(item["action"] == "create_collections_case" for item in approved["dispatch_results"])
+    # A-013.2 contract: overdue recovery executes as high-priority autonomous flow.
+    assert result["decision"]["priority"] == "high"
+    assert result["decision"]["status"] == "dispatched"
+    assert any(item["action"] == "create_collections_case" for item in result["dispatch_results"])
 
 
 def test_budget_variance_procurement_flow_processed() -> None:

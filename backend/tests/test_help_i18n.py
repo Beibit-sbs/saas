@@ -12,8 +12,19 @@ def _tenant_admin_headers(tenant_id: int) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
+def _help_headers() -> dict[str, str]:
+    token = create_access_token(
+        user_id="help.admin@example.com",
+        roles=["admin"],
+        auth_source="test",
+        tenant_id=1,
+        permissions=["help.admin.read"],
+    )
+    return {"Authorization": f"Bearer {token}"}
+
+
 def test_help_topics_endpoint() -> None:
-    response = client.get("/api/help/topics")
+    response = client.get("/api/help/topics", headers=_help_headers())
     assert response.status_code == 200
     assert "topics" in response.json()
 
@@ -26,7 +37,7 @@ def test_help_ask_endpoint() -> None:
         "field": "role_name",
         "language": "ru",
     }
-    response = client.post("/api/help/ask", json=payload, headers=ADMIN_HEADERS)
+    response = client.post("/api/help/ask", json=payload, headers=_help_headers())
     assert response.status_code == 200
     body = response.json()
     assert "answer" in body
@@ -41,7 +52,7 @@ def test_help_ask_endpoint_english() -> None:
         "field": "role_name",
         "language": "en",
     }
-    response = client.post("/api/help/ask", json=payload, headers=ADMIN_HEADERS)
+    response = client.post("/api/help/ask", json=payload, headers=_help_headers())
     assert response.status_code == 200
     body = response.json()
     assert body["context"]["language"] == "en"

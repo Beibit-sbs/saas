@@ -17,6 +17,8 @@ except ImportError:  # pragma: no cover
 _CANONICAL_PLATFORM_ADMIN_PERMISSIONS: Set[str] = {
     "platform.admin.read",
     "platform.admin.write",
+    "analytics.data.read",
+    "analytics.data.write",
     "health.read",
     "metrics.read",
     "ops.read",
@@ -216,6 +218,7 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "grades.read",
         "transcripts.read",
         "scheduling.read",
+        "analytics.data.read",
     },
     "teacher": {
         "profiles.read",

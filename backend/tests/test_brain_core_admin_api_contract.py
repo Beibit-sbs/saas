@@ -37,7 +37,7 @@ def test_brain_health_contract() -> None:
 def test_brain_collections_contract() -> None:
     _reset_brain_core_state()
 
-    decisions_resp = client.get("/api/admin/brain/decisions", headers=ADMIN_HEADERS)
+    decisions_resp = client.get("/api/admin/brain/tenants/1/decisions", headers=ADMIN_HEADERS)
     assert decisions_resp.status_code == 200, decisions_resp.text
     decisions = decisions_resp.json()
     assert "total" in decisions
@@ -55,7 +55,7 @@ def test_brain_collections_contract() -> None:
 def test_brain_policy_read_update_contract() -> None:
     _reset_brain_core_state()
 
-    tenant_id = 101
+    tenant_id = 1
 
     get_resp = client.get(f"/api/admin/brain/policy/{tenant_id}", headers=ADMIN_HEADERS)
     assert get_resp.status_code == 200, get_resp.text
@@ -93,7 +93,7 @@ def test_brain_explanation_endpoint_contract() -> None:
         "/api/admin/brain/simulate/student-risk",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "student_id": "STU-101",
             "attendance_rate": 0.55,
             "grade_trend": "declining",
@@ -145,7 +145,7 @@ def test_brain_predict_and_anomalies_contract() -> None:
         "/api/admin/brain/predict",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "event_type": "academic.attendance_risk.detected",
             "entity_id": "STU-PREDICT-101",
             "history": [{"score": 0.4}, {"score": 0.5}, {"score": 0.6}, {"score": 0.7}],
@@ -154,7 +154,7 @@ def test_brain_predict_and_anomalies_contract() -> None:
     )
     assert predict_resp.status_code == 200, predict_resp.text
     prediction = predict_resp.json()
-    assert prediction["tenant_id"] == 101
+    assert prediction["tenant_id"] == 1
     assert prediction["entity_id"] == "STU-PREDICT-101"
     assert prediction["trajectory"] == "worsening"
 
@@ -162,7 +162,7 @@ def test_brain_predict_and_anomalies_contract() -> None:
         "/api/admin/brain/anomalies",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "metric_name": "attendance_gap_days",
             "values": [2, 3, 2, 4, 19],
             "entity_ids": ["a", "b", "c", "d", "e"],
@@ -170,7 +170,7 @@ def test_brain_predict_and_anomalies_contract() -> None:
     )
     assert anomalies_resp.status_code == 200, anomalies_resp.text
     anomalies = anomalies_resp.json()
-    assert anomalies["tenant_id"] == 101
+    assert anomalies["tenant_id"] == 1
     assert anomalies["metric_name"] == "attendance_gap_days"
     assert isinstance(anomalies["anomalies"], list)
 
@@ -182,7 +182,7 @@ def test_brain_dispatch_outcome_contract() -> None:
         "/api/admin/brain/simulate/student-risk",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "student_id": "STU-DISPATCH-101",
             "attendance_rate": 0.3,
             "grade_trend": "declining",
@@ -236,7 +236,7 @@ def test_brain_research_simulation_contract() -> None:
         "/api/admin/brain/simulate/research-grant-deadline",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "grant_id": "GRANT-101",
             "research_project_id": "RP-101",
             "days_to_deadline": 12,
@@ -252,7 +252,7 @@ def test_brain_research_simulation_contract() -> None:
         "/api/admin/brain/simulate/research-publication-stagnant",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "publication_id": "PUB-101",
             "research_project_id": "RP-101",
             "days_without_progress": 30,
@@ -272,7 +272,7 @@ def test_brain_research_advanced_intelligence_simulation_contract() -> None:
         "/api/admin/brain/simulate/research-grant-pipeline-risk",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "grant_id": "GRANT-PIPE-101",
             "research_project_id": "RP-PIPE-101",
             "pipeline_risk_score": 0.84,
@@ -289,7 +289,7 @@ def test_brain_research_advanced_intelligence_simulation_contract() -> None:
         "/api/admin/brain/simulate/research-lab-utilization-low",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "lab_code": "LAB-101",
             "research_project_id": "RP-LAB-101",
             "utilization_rate": 0.58,
@@ -310,7 +310,7 @@ def test_brain_operations_simulation_contract() -> None:
         "/api/admin/brain/simulate/facility-issue",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "facility_code": "BLDG-A-HVAC",
             "issue_type": "hvac_failure",
             "severity": "high",
@@ -326,7 +326,7 @@ def test_brain_operations_simulation_contract() -> None:
         "/api/admin/brain/simulate/cleaning-service-missed",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "room_code": "ROOM-101",
             "building_code": "BLDG-A",
             "missed_count": 1,
@@ -346,7 +346,7 @@ def test_brain_operations_advanced_intelligence_simulation_contract() -> None:
         "/api/admin/brain/simulate/maintenance-predicted-due",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "asset_code": "MA-101",
             "facility_code": "BLDG-A-HVAC",
             "asset_type": "hvac",
@@ -365,7 +365,7 @@ def test_brain_operations_advanced_intelligence_simulation_contract() -> None:
         "/api/admin/brain/simulate/utilities-spike",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "meter_code": "MTR-101",
             "building_code": "BLDG-A",
             "utility_type": "electricity",
@@ -386,7 +386,7 @@ def test_brain_procurement_simulation_contract() -> None:
     _reset_brain_core_state()
 
     policy_resp = client.put(
-        "/api/admin/brain/policy/101",
+        "/api/admin/brain/policy/1",
         headers=_brain_write_headers(),
         json={
             "autonomy_level": 4,
@@ -402,7 +402,7 @@ def test_brain_procurement_simulation_contract() -> None:
         "/api/admin/brain/simulate/budget-variance",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "budget_code": "BUD-101",
             "variance_amount": 28000,
             "variance_ratio": 0.18,
@@ -425,7 +425,7 @@ def test_brain_procurement_vendor_intelligence_simulation_contract() -> None:
         "/api/admin/brain/simulate/vendor-sla-degraded",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "vendor_code": "VEN-INTEL-101",
             "sla_breach_rate": 0.21,
             "on_time_delivery_rate": 0.74,
@@ -441,7 +441,7 @@ def test_brain_procurement_vendor_intelligence_simulation_contract() -> None:
         "/api/admin/brain/simulate/contract-risk-high",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "contract_code": "CON-INTEL-101",
             "vendor_code": "VEN-INTEL-101",
             "risk_score": 0.73,
@@ -459,7 +459,7 @@ def test_brain_supply_forecast_simulation_contract() -> None:
     _reset_brain_core_state()
 
     policy_resp = client.put(
-        "/api/admin/brain/policy/101",
+        "/api/admin/brain/policy/1",
         headers=_brain_write_headers(),
         json={
             "autonomy_level": 4,
@@ -475,7 +475,7 @@ def test_brain_supply_forecast_simulation_contract() -> None:
         "/api/admin/brain/simulate/supply-low",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "stock_item_id": "ITEM-201",
             "stock_level": 16,
             "threshold": 10,
@@ -498,7 +498,7 @@ def test_brain_what_if_simulation_contract() -> None:
         "/api/admin/brain/simulate/what-if",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "event_type": "research.grant_pipeline.at_risk",
             "subject": {},
             "payload": {
@@ -537,7 +537,7 @@ def test_brain_student_life_simulation_contract() -> None:
         "/api/admin/brain/simulate/student-life-wellbeing",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "student_id": "STU-501",
             "wellbeing_score": 25,
             "concern_type": "burnout",
@@ -553,7 +553,7 @@ def test_brain_student_life_simulation_contract() -> None:
         "/api/admin/brain/simulate/student-life-disciplinary",
         headers=_brain_write_headers(),
         json={
-            "tenant_id": 101,
+            "tenant_id": 1,
             "student_id": "STU-501",
             "incident_type": "code_of_conduct",
             "incident_severity": "medium",

@@ -171,4 +171,60 @@ describe("RectorDashboardPage", () => {
 
     expect(screen.getByText(/Access Denied/i)).toBeInTheDocument();
   });
+
+  it("renders Wave 1 KPI cards with severity indicators", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-04",
+        generated_at: "2026-05-04T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [
+          {
+            metric_key: "high_risk_students_count",
+            title: "High Risk Students",
+            value: 18,
+            trend_7d: [
+              { snapshot_date: "2026-04-27", value: 12 },
+              { snapshot_date: "2026-05-04", value: 18 },
+            ],
+            metadata_json: { severity_level: "warning", policy_pack: "student_success_wave1_v1" },
+          },
+          {
+            metric_key: "critical_risk_students_count",
+            title: "Critical Risk Students",
+            value: 7,
+            trend_7d: [
+              { snapshot_date: "2026-04-27", value: 3 },
+              { snapshot_date: "2026-05-04", value: 7 },
+            ],
+            metadata_json: { severity_level: "critical", policy_pack: "early_warning_wave1_v1" },
+          },
+          {
+            metric_key: "course_fill_rate",
+            title: "Course Fill Rate",
+            value: 82,
+            trend_7d: [
+              { snapshot_date: "2026-04-27", value: 80 },
+              { snapshot_date: "2026-05-04", value: 82 },
+            ],
+            metadata_json: {},
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    expect(screen.getByTestId("kpi-cards-grid")).toBeInTheDocument();
+    expect(screen.getByText("High Risk Students")).toBeInTheDocument();
+    expect(screen.getByText("Critical Risk Students")).toBeInTheDocument();
+    expect(screen.getByText("Course Fill Rate")).toBeInTheDocument();
+    expect(screen.getByText("18")).toBeInTheDocument();
+    expect(screen.getByText("7")).toBeInTheDocument();
+    expect(screen.getByText("82")).toBeInTheDocument();
+  });
 });

@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.modules.auth.token_service import create_access_token
 from app.modules.billing import router as billing_router
 
 
@@ -11,6 +12,28 @@ def _build_client() -> TestClient:
     app.include_router(billing_router.router)
     app.dependency_overrides[billing_router.get_actor] = lambda: "admin@example.com"
     return TestClient(app)
+
+
+def _headers(
+    *,
+    tenant_id: int = 1,
+    permissions: list[str] | None = None,
+) -> dict[str, str]:
+    granted = permissions or [
+        "billing.admin.read",
+        "billing.admin.write",
+        "billing.admin.manage",
+        "platform.admin.read",
+        "platform.admin.write",
+    ]
+    token = create_access_token(
+        user_id="admin@example.com",
+        roles=["admin"],
+        auth_source="test",
+        tenant_id=tenant_id,
+        permissions=granted,
+    )
+    return {"Authorization": f"Bearer {token}"}
 
 
 def _record(record_id: int = 7, status: str = "grace_period") -> dict[str, object]:
@@ -52,7 +75,7 @@ def test_get_dunning_policy_returns_default_contract(monkeypatch) -> None:
         },
     )
 
-    response = client.get("/api/admin/billing/tenants/1/delinquency/policy")
+    response = client.get("/api/admin/billing/tenants/1/delinquency/policy", headers=_headers())
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["grace_period_days"] == 7
@@ -70,6 +93,7 @@ def test_put_dunning_policy_updates_contract(monkeypatch) -> None:
 
     response = client.put(
         "/api/admin/billing/tenants/1/delinquency/policy",
+        headers=_headers(),
         json={
             "grace_period_days": 5,
             "overdue_period_days": 20,
@@ -93,7 +117,7 @@ def test_list_delinquency_records_returns_items(monkeypatch) -> None:
         lambda tenant_id, status=None: [_record(7, "overdue")],
     )
 
-    response = client.get("/api/admin/billing/tenants/1/delinquency?status=overdue")
+    response = client.get("/api/admin/billing/tenants/1/delinquency?status=overdue", headers=_headers())
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["total"] == 1
@@ -104,7 +128,7 @@ def test_get_delinquency_record_returns_detail(monkeypatch) -> None:
     client = _build_client()
     monkeypatch.setattr(billing_router, "get_delinquency_record", lambda tenant_id, record_id: _record(record_id))
 
-    response = client.get("/api/admin/billing/tenants/1/delinquency/7")
+    response = client.get("/api/admin/billing/tenants/1/delinquency/7", headers=_headers())
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["id"] == 7
@@ -121,6 +145,7 @@ def test_escalate_delinquency_record_advances_status(monkeypatch) -> None:
 
     response = client.post(
         "/api/admin/billing/tenants/1/delinquency/7/escalate",
+        headers=_headers(),
         json={"notes": "manual escalation"},
     )
     assert response.status_code == 200, response.text
@@ -140,6 +165,7 @@ def test_resolve_delinquency_record_sets_resolution(monkeypatch) -> None:
 
     response = client.post(
         "/api/admin/billing/tenants/1/delinquency/7/resolve",
+        headers=_headers(),
         json={"resolution": "paid", "notes": "invoice settled"},
     )
     assert response.status_code == 200, response.text
@@ -161,6 +187,7 @@ def test_send_reminder_increments_counter(monkeypatch) -> None:
 
     response = client.post(
         "/api/admin/billing/tenants/1/delinquency/7/reminder",
+        headers=_headers(),
         json={"notes": "second reminder"},
     )
     assert response.status_code == 200, response.text
@@ -182,7 +209,7 @@ def test_dashboard_returns_summary(monkeypatch) -> None:
         },
     )
 
-    response = client.get("/api/admin/billing/tenants/1/delinquency/dashboard")
+    response = client.get("/api/admin/billing/tenants/1/delinquency/dashboard", headers=_headers())
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["total"] == 3

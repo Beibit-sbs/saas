@@ -23,6 +23,19 @@ import type {
   DelinquencyStatus,
   EscalationStage,
 } from "@/modules/delinquency-collections/types";
+import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
+
+const DELINQUENCY_KPI_KEYS = [
+  "delinquency_cases_active",
+  "overdue_amount_at_risk",
+  "delinquency_recovery_rate",
+] as const;
+
+const DELINQUENCY_KPI_LABELS: Record<string, string> = {
+  delinquency_cases_active: "Active Cases",
+  overdue_amount_at_risk: "At-Risk Amount (cents)",
+  delinquency_recovery_rate: "Recovery Rate (%)",
+};
 
 interface DelinquencyFormState {
   student_id: string;
@@ -214,6 +227,8 @@ export default function DelinquencyCollectionsPage() {
           description="Track overdue invoices and escalation workflow"
           icon={Wallet}
         />
+
+        <Wave1KpiBar metricKeys={[...DELINQUENCY_KPI_KEYS]} labels={DELINQUENCY_KPI_LABELS} />
 
         <RequirePermission permission={PERMISSIONS.FINANCE_WRITE}>
           <div className="rounded-lg border bg-card p-6">

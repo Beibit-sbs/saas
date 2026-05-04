@@ -8,6 +8,7 @@ from typing import Callable
 
 from app.modules.observability.metrics import observe_job_execution
 from app.core.db import build_engine, make_session_factory
+from app.modules.brain_core.early_warning_sweep import run_composite_early_warning_sweep
 from app.modules.interventions.risk_service import run_daily_detection_for_all_tenants
 from app.platform.application.notification_dispatch_service import NotificationDispatchService
 from app.platform.application.subscription_rollover_service import SubscriptionRolloverService
@@ -50,6 +51,7 @@ class PlatformWorkerScheduler:
         self.register_task("kpi_metrics_refresh", interval_seconds=24 * 60 * 60, task=self._kpi_metrics_refresh)
         self.register_task("context_rebuild", interval_seconds=24 * 60 * 60, task=self._context_rebuild)
         self.register_task("academic_risk_detection", interval_seconds=24 * 60 * 60, task=self._academic_risk_detection)
+        self.register_task("composite_early_warning_sweep", interval_seconds=24 * 60 * 60, task=self._composite_early_warning_sweep)
 
     def register_task(self, name: str, *, interval_seconds: int, task: SchedulerTask) -> None:
         normalized = name.strip().lower()
@@ -139,6 +141,17 @@ class PlatformWorkerScheduler:
         try:
             with session_factory() as session:
                 return run_daily_detection_for_all_tenants(db_session=session, actor="risk-engine")
+        finally:
+            engine.dispose()
+
+    def _composite_early_warning_sweep(self) -> dict[str, int]:
+        engine = build_engine()
+        session_factory = make_session_factory(engine)
+        try:
+            with session_factory() as session:
+                return run_composite_early_warning_sweep(
+                    db_session=session, actor="composite-early-warning-sweep"
+                )
         finally:
             engine.dispose()
 

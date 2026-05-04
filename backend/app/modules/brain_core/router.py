@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.modules.rbac.security import permission_dependency
 from app.modules.brain_core.service import brain_core_service
+from app.core.tenant import get_current_tenant
 
 
 router = APIRouter(
@@ -17,21 +18,35 @@ router = APIRouter(
 )
 
 
+def _assert_tenant_match(payload_tenant_id: int, current_tenant: dict) -> None:
+    """A-011.1 — Fail-closed: payload/path tenant_id must match authenticated tenant."""
+    if payload_tenant_id != current_tenant["id"]:
+        raise HTTPException(status_code=403, detail="tenant_id_mismatch")
+
+
 @router.get("/health")
 def get_brain_health() -> dict:
     return {"status": "ok", "module": "brain_core", "phase": "skeleton"}
 
 
 @router.get("/tenants/{tenant_id}/signals")
-def list_signals(tenant_id: int = Path(..., gt=0)) -> dict:
+def list_signals(
+    tenant_id: int = Path(..., gt=0),
+    current_tenant: Annotated[dict, Depends(get_current_tenant)] = None,
+) -> dict:
     """List signals for specific tenant (CRITICAL: A-009 tenant isolation fix)."""
+    _assert_tenant_match(tenant_id, current_tenant)
     items = brain_core_service.list_signals(tenant_id=tenant_id)
     return {"total": len(items), "items": items}
 
 
 @router.get("/tenants/{tenant_id}/decisions")
-def list_decisions(tenant_id: int = Path(..., gt=0)) -> dict:
+def list_decisions(
+    tenant_id: int = Path(..., gt=0),
+    current_tenant: Annotated[dict, Depends(get_current_tenant)] = None,
+) -> dict:
     """List decisions for specific tenant (CRITICAL: A-009 tenant isolation fix)."""
+    _assert_tenant_match(tenant_id, current_tenant)
     items = brain_core_service.list_decisions(tenant_id=tenant_id)
     return {"total": len(items), "items": items}
 
@@ -327,8 +342,10 @@ class WhatIfSimulationRequest(BaseModel):
 def update_policy_profile(
     tenant_id: int,
     payload: PolicyConfigUpdateRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(tenant_id, current_tenant)
     return brain_core_service.update_policy_profile(
         tenant_id=tenant_id,
         autonomy_level=payload.autonomy_level,
@@ -339,11 +356,15 @@ def update_policy_profile(
     )
 
 
+
+
 @router.post("/simulate/student-risk")
 def simulate_student_risk(
     payload: StudentRiskSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     correlation_id = str(uuid4())
     signal = {
         "signal_id": str(uuid4()),
@@ -375,8 +396,10 @@ def simulate_student_risk(
 @router.post("/simulate/what-if")
 def simulate_what_if(
     payload: WhatIfSimulationRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -397,8 +420,10 @@ def simulate_what_if(
 @router.post("/predict")
 def predict_risk(
     payload: PredictRiskRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     return brain_core_service.predict_risk(
         event_type=payload.event_type,
         tenant_id=payload.tenant_id,
@@ -411,8 +436,10 @@ def predict_risk(
 @router.post("/anomalies")
 def detect_anomalies(
     payload: DetectAnomaliesRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     return brain_core_service.detect_anomalies(
         tenant_id=payload.tenant_id,
         metric_name=payload.metric_name,
@@ -435,8 +462,10 @@ def get_executive_kpi_dashboard(tenant_id: int) -> dict:
 @router.post("/simulate/thesis-delay")
 def simulate_thesis_delay(
     payload: ThesisDelaySignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     correlation_id = str(uuid4())
     signal = {
         "signal_id": str(uuid4()),
@@ -466,8 +495,10 @@ def simulate_thesis_delay(
 @router.post("/simulate/faculty-overload")
 def simulate_faculty_overload(
     payload: FacultyOverloadSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -488,8 +519,10 @@ def simulate_faculty_overload(
 @router.post("/simulate/budget-variance")
 def simulate_budget_variance(
     payload: BudgetVarianceSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -514,8 +547,10 @@ def simulate_budget_variance(
 @router.post("/simulate/vendor-sla-degraded")
 def simulate_vendor_sla_degraded(
     payload: VendorSLADegradedSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -537,8 +572,10 @@ def simulate_vendor_sla_degraded(
 @router.post("/simulate/contract-risk-high")
 def simulate_contract_risk_high(
     payload: ContractRiskHighSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -561,8 +598,10 @@ def simulate_contract_risk_high(
 @router.post("/simulate/supply-low")
 def simulate_supply_low(
     payload: SupplyLowSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -587,8 +626,10 @@ def simulate_supply_low(
 @router.post("/simulate/payment-overdue")
 def simulate_payment_overdue(
     payload: PaymentOverdueSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -610,8 +651,10 @@ def simulate_payment_overdue(
 @router.post("/simulate/facility-issue")
 def simulate_facility_issue(
     payload: FacilityIssueSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -633,8 +676,10 @@ def simulate_facility_issue(
 @router.post("/simulate/cleaning-service-missed")
 def simulate_cleaning_service_missed(
     payload: CleaningServiceMissedSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -656,8 +701,10 @@ def simulate_cleaning_service_missed(
 @router.post("/simulate/maintenance-predicted-due")
 def simulate_maintenance_predicted_due(
     payload: MaintenancePredictedDueSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -682,8 +729,10 @@ def simulate_maintenance_predicted_due(
 @router.post("/simulate/utilities-spike")
 def simulate_utilities_spike(
     payload: UtilitiesSpikeSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -709,8 +758,10 @@ def simulate_utilities_spike(
 @router.post("/simulate/student-life-wellbeing")
 def simulate_student_life_wellbeing(
     payload: StudentLifeWellbeingSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -732,8 +783,10 @@ def simulate_student_life_wellbeing(
 @router.post("/simulate/student-life-disciplinary")
 def simulate_student_life_disciplinary(
     payload: StudentLifeDisciplinarySignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -756,8 +809,10 @@ def simulate_student_life_disciplinary(
 @router.post("/simulate/research-grant-deadline")
 def simulate_research_grant_deadline(
     payload: ResearchGrantDeadlineSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -779,8 +834,10 @@ def simulate_research_grant_deadline(
 @router.post("/simulate/research-publication-stagnant")
 def simulate_research_publication_stagnant(
     payload: ResearchPublicationStagnantSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -802,8 +859,10 @@ def simulate_research_publication_stagnant(
 @router.post("/simulate/research-grant-pipeline-risk")
 def simulate_research_grant_pipeline_risk(
     payload: ResearchGrantPipelineRiskSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -826,8 +885,10 @@ def simulate_research_grant_pipeline_risk(
 @router.post("/simulate/research-lab-utilization-low")
 def simulate_research_lab_utilization_low(
     payload: ResearchLabUtilizationLowSignalRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     signal = {
         "signal_id": str(uuid4()),
         "tenant_id": payload.tenant_id,
@@ -1041,8 +1102,10 @@ def get_policy_tuning(tenant_id: int) -> dict:
 def apply_policy_tuning(
     tenant_id: int,
     payload: PolicyTuningApplyRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
+    _assert_tenant_match(tenant_id, current_tenant)
     return brain_core_service.apply_policy_tuning(tenant_id, actor=payload.actor)
 
 
@@ -1070,9 +1133,11 @@ def evaluate_learning(tenant_id: int) -> dict:
 @router.post("/learning/apply")
 def apply_learning(
     payload: LearningApplyRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
     """XVIII1 — Apply adaptive learning suggestions (supports dry-run + idempotency)."""
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     return brain_core_service.apply_learning(
         tenant_id=payload.tenant_id,
         actor=payload.actor,
@@ -1084,9 +1149,11 @@ def apply_learning(
 @router.post("/optimize")
 def optimize_resources(
     payload: BrainOptimizeRequest,
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.read"))] = None,
 ) -> dict:
     """XVII4 — Brain Optimization Engine: resource allocation recommendations."""
+    _assert_tenant_match(payload.tenant_id, current_tenant)
     return brain_core_service.optimize(
         tenant_id=payload.tenant_id,
         domain_signals=[s.model_dump() for s in payload.domain_signals],
@@ -1107,9 +1174,11 @@ def get_policy_drift_alerts(
 @router.post("/policy-drift/{tenant_id}/detect")
 def detect_policy_drift(
     tenant_id: Annotated[int, Path(gt=0)],
+    current_tenant: Annotated[dict, Depends(get_current_tenant)],
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
     """XVIII3 — Trigger policy drift detection."""
+    _assert_tenant_match(tenant_id, current_tenant)
     alert = brain_core_service.detect_policy_drift(tenant_id)
     return alert
 
@@ -1159,9 +1228,11 @@ def execute_policy_rollout_phase(
     tenant_id: Annotated[int, Path(gt=0)],
     plan_id: str = Query(...),
     phase: str = Query(...),
+    current_tenant: Annotated[dict, Depends(get_current_tenant)] = None,
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
     """XX2 — Execute a single phase of a policy rollout plan with idempotency guarantee."""
+    _assert_tenant_match(tenant_id, current_tenant)
     return brain_core_service.execute_policy_rollout_phase(
         tenant_id=tenant_id,
         plan_id=plan_id,
@@ -1174,9 +1245,11 @@ def rollback_policy_rollout(
     tenant_id: Annotated[int, Path(gt=0)],
     plan_id: str = Query(...),
     trigger: str = Query(...),
+    current_tenant: Annotated[dict, Depends(get_current_tenant)] = None,
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
     """XX3 — Detect rollback trigger and execute safe rollback to prior policy profile."""
+    _assert_tenant_match(tenant_id, current_tenant)
     return brain_core_service.rollback_policy_rollout(
         tenant_id=tenant_id,
         plan_id=plan_id,
@@ -1207,9 +1280,11 @@ def coordinate_cross_tenant_rollout(
 def create_agent_task(
     tenant_id: int = Query(..., gt=0),
     workflow_type: str = Query(...),
+    current_tenant: Annotated[dict, Depends(get_current_tenant)] = None,
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
     """XXI1 — Create a multi-step agent task graph for the given workflow type."""
+    _assert_tenant_match(tenant_id, current_tenant)
     return brain_core_service.create_agent_task(
         tenant_id=tenant_id,
         workflow_type=workflow_type,
@@ -1251,9 +1326,11 @@ def update_tenant_agent_policy(
     approval_gate_required: bool = Query(False),
     step_budget: int = Query(10, gt=0),
     workflow_types: list[str] = Query(...),
+    current_tenant: Annotated[dict, Depends(get_current_tenant)] = None,
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
     """XXI4 — Update tenant-scoped agent policy configuration."""
+    _assert_tenant_match(tenant_id, current_tenant)
     return brain_core_service.update_tenant_agent_policy(
         tenant_id=tenant_id,
         allowed_workflow_types=workflow_types,
@@ -1270,9 +1347,11 @@ def update_tenant_agent_policy(
 def claim_next_agent_step(
     tenant_id: int = Query(..., gt=0),
     worker_id: str = Query(...),
+    current_tenant: Annotated[dict, Depends(get_current_tenant)] = None,
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
     """XXII1 — Claim next executable step from tenant queue."""
+    _assert_tenant_match(tenant_id, current_tenant)
     return brain_core_service.claim_next_agent_step(tenant_id=tenant_id, worker_id=worker_id)
 
 
@@ -1803,9 +1882,11 @@ def get_replay_policy(
 def set_replay_policy(
     tenant_id: int = Path(...),
     body: ReplayPolicyRequest = Body(...),
+    current_tenant: Annotated[dict, Depends(get_current_tenant)] = None,
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
     """XXXI1 — Update tenant-scoped replay governance policy."""
+    _assert_tenant_match(tenant_id, current_tenant)
     try:
         return brain_core_service.set_replay_policy(
             tenant_id,
@@ -1887,9 +1968,11 @@ class ReplayRequestCreate(BaseModel):
 def create_replay_request(
     tenant_id: int = Query(...),
     body: ReplayRequestCreate = Body(...),
+    current_tenant: Annotated[dict, Depends(get_current_tenant)] = None,
     __: Annotated[None, Depends(permission_dependency("admin.dashboard.write"))] = None,
 ) -> dict:
     """XXXII1 — Create a new replay request and add it to the queue."""
+    _assert_tenant_match(tenant_id, current_tenant)
     try:
         return brain_core_service.create_replay_request(
             tenant_id,

@@ -11,6 +11,8 @@ from app.modules.quotas.router import router
 
 app = FastAPI()
 app.include_router(router)
+# A-009 added router-level permission_dependency — override in unit tests.
+app.dependency_overrides = {dep.dependency: lambda: None for dep in router.dependencies}
 client = TestClient(app)
 
 MODULE = "app.modules.quotas.router"

@@ -214,6 +214,9 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "scheduling.section.rescheduled": EventDefinition(GenericTenantEventPayload),
     "scheduling.section.cancelled": EventDefinition(GenericTenantEventPayload),
     "scheduling.instructor.assigned": EventDefinition(GenericTenantEventPayload),
+    # A-013.3: Scheduling conflict + enrollment capacity risk signals
+    "scheduling.section.conflict_detected": EventDefinition(GenericTenantEventPayload),
+    "enrollment.capacity_risk.detected": EventDefinition(GenericTenantEventPayload),
     # Teaching quality lifecycle events (XXXIV.6)
     "teaching_quality.evaluation.submitted": EventDefinition(GenericTenantEventPayload),
     "teaching_quality.score.updated": EventDefinition(GenericTenantEventPayload),

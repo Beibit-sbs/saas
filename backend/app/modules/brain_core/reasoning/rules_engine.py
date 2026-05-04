@@ -51,7 +51,10 @@ class RulesEngine:
             if reasoning_path == "payment_overdue_high":
                 return {
                     "decision_type": "risk",
-                    "priority": "critical",
+                    # A-013.2: keep delinquency recovery autonomous under standard L2 policy.
+                    # Critical risk decisions are approval-gated by policy guard, which blocks
+                    # recovery action dispatch. Use high priority for overdue-recovery execution.
+                    "priority": "high",
                     "recommended_actions": [
                         "create_collections_case",
                         "notify_finance",
@@ -293,6 +296,31 @@ class RulesEngine:
                 "requires_approval": False,
             }
 
+        # A-013.1: Handle academic_risk (attendance/grade) BEFORE generic risk handler
+        # to route to decision_type="intervention" instead of "risk".
+        if situation_type == "academic_risk" and reasoning_path in {"risk_high", "risk_medium"}:
+            if reasoning_path == "risk_high":
+                return {
+                    "decision_type": "intervention",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "create_intervention_case",
+                        "notify_advisor",
+                        "notify_faculty",
+                    ],
+                    "requires_approval": False,
+                }
+            # reasoning_path == "risk_medium"
+            return {
+                "decision_type": "intervention",
+                "priority": "high",
+                "recommended_actions": [
+                    "create_intervention_case",
+                    "notify_advisor",
+                ],
+                "requires_approval": False,
+            }
+
         if reasoning_path in {"risk_high", "risk_medium", "risk_low"}:
             if reasoning_path == "risk_high":
                 return {
@@ -492,32 +520,41 @@ class RulesEngine:
                 "requires_approval": False,
             }
 
-        if situation_type == "academic_risk":
-            if severity == "high":
+        # A-013.3: Scheduling conflict rules
+        if reasoning_path in {"section_conflict_high", "section_conflict_medium"}:
+            if reasoning_path == "section_conflict_high":
                 return {
-                    "decision_type": "risk",
-                    "priority": "critical",
-                    "recommended_actions": [
-                        "create_intervention_case",
-                        "notify_advisor",
-                        "notify_faculty",
-                    ],
-                    "requires_approval": False,
-                }
-            if severity == "medium":
-                return {
-                    "decision_type": "risk",
+                    "decision_type": "operational",
                     "priority": "high",
                     "recommended_actions": [
-                        "create_intervention_case",
-                        "notify_advisor",
+                        "create_section_conflict_task",
+                        "notify_scheduling_office",
                     ],
                     "requires_approval": False,
                 }
             return {
-                "decision_type": "preventive",
+                "decision_type": "operational",
                 "priority": "medium",
-                "recommended_actions": ["notify_advisor"],
+                "recommended_actions": ["create_section_conflict_task"],
+                "requires_approval": False,
+            }
+
+        # A-013.3: Enrollment capacity risk rules
+        if reasoning_path in {"enrollment_capacity_risk_high", "enrollment_capacity_risk_medium"}:
+            if reasoning_path == "enrollment_capacity_risk_high":
+                return {
+                    "decision_type": "risk",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "create_enrollment_capacity_task",
+                        "notify_enrollment_office",
+                    ],
+                    "requires_approval": False,
+                }
+            return {
+                "decision_type": "risk",
+                "priority": "medium",
+                "recommended_actions": ["create_enrollment_capacity_task"],
                 "requires_approval": False,
             }
 

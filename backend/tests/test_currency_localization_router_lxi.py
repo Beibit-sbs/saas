@@ -12,6 +12,8 @@ from app.modules.currency_localization.service import ExchangeRate, Localization
 
 app = FastAPI()
 app.include_router(router)
+# A-009 added router-level permission_dependency — override in unit tests.
+app.dependency_overrides = {dep.dependency: lambda: None for dep in router.dependencies}
 client = TestClient(app)
 
 

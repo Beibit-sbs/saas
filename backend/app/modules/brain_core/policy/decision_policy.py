@@ -57,6 +57,18 @@ class DecisionPolicyGuard:
                 approval_role=profile.default_approval_role,
             )
 
+        # A-013.1: Intervention decisions are autonomous by design.
+        # Intervention case creation is a safeguard (not a severe action), and the intervention
+        # system itself has tenant isolation, audit, and approval gates at the case/action level.
+        # Allow autonomous dispatch for intervention decisions regardless of priority or autonomy level.
+        if decision_type == "intervention":
+            return PolicyValidationResult(
+                approved=True,
+                requires_approval=False,
+                reason="intervention_decision_autonomous_by_design",
+                approval_role=None,
+            )
+
         if profile.require_approval_for_critical and priority == "critical":
             return PolicyValidationResult(
                 approved=False,

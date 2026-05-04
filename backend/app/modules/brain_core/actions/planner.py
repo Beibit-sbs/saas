@@ -17,11 +17,19 @@ class ActionPlanner:
         subject = dict(signal.get("subject") or {})
         payload = dict(signal.get("payload") or {})
         actor_student_id = subject.get("student_id") or payload.get("student_id")
+        customer_id = payload.get("customer_id")
         advisor_id = payload.get("advisor_id") or payload.get("assigned_advisor_id")
         faculty_id = subject.get("faculty_id") or payload.get("faculty_id")
         thesis_id = payload.get("thesis_id")
-        delinquency_days = payload.get("delinquency_days")
+        delinquency_days = payload.get("delinquency_days") or payload.get("overdue_days") or payload.get("days_overdue")
+        amount_cents = payload.get("amount_cents")
         balance_due = payload.get("balance_due")
+        if balance_due is None and isinstance(amount_cents, (int, float)):
+            balance_due = float(amount_cents) / 100.0
+        invoice_id = payload.get("invoice_id")
+        invoice_code = payload.get("invoice_code")
+        source_entity_type = signal.get("source_entity_type") or payload.get("source_entity_type")
+        source_entity_id = signal.get("source_entity_id") or payload.get("source_entity_id")
         budget_code = payload.get("budget_code")
         variance_amount = payload.get("variance_amount")
         variance_ratio = payload.get("variance_ratio")
@@ -95,11 +103,18 @@ class ActionPlanner:
                     "requires_approval": bool(reasoning.get("requires_approval", False)),
                     "payload": {
                         "student_id": actor_student_id,
+                        "customer_id": customer_id,
                         "advisor_id": advisor_id,
                         "faculty_id": faculty_id,
                         "thesis_id": thesis_id,
                         "delinquency_days": delinquency_days,
+                        "overdue_days": delinquency_days,
                         "balance_due": balance_due,
+                        "amount_cents": amount_cents,
+                        "invoice_id": invoice_id,
+                        "invoice_code": invoice_code,
+                        "source_entity_type": source_entity_type,
+                        "source_entity_id": source_entity_id,
                         "budget_code": budget_code,
                         "variance_amount": variance_amount,
                         "variance_ratio": variance_ratio,

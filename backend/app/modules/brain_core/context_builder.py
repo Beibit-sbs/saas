@@ -8,6 +8,7 @@ from app.modules.brain_core.context_sources.finance import fetch_finance_context
 from app.modules.brain_core.context_sources.operations import fetch_operations_context
 from app.modules.brain_core.context_sources.platform import fetch_platform_context
 from app.modules.brain_core.context_sources.student_success import fetch_student_success_context
+from app.modules.brain_core.context_sources.scheduling import fetch_scheduling_context
 
 
 class ContextBuilder:
@@ -32,4 +33,5 @@ class ContextBuilder:
             "finance": fetch_finance_context(tenant_id=tenant_id, subject=subject, payload=payload),
             "operations": fetch_operations_context(tenant_id=tenant_id, subject=subject, payload=payload),
             "platform": fetch_platform_context(tenant_id=tenant_id, subject=subject, payload=payload),
+            "scheduling": fetch_scheduling_context(tenant_id=tenant_id, subject=subject, payload=payload),
         }

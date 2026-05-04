@@ -29,6 +29,19 @@ import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
+import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
+
+const SCHEDULING_KPI_KEYS = [
+  "scheduling_conflicts_count",
+  "capacity_risk_sections_count",
+  "course_fill_rate",
+] as const;
+
+const SCHEDULING_KPI_LABELS: Record<string, string> = {
+  scheduling_conflicts_count: "Scheduling Conflicts",
+  capacity_risk_sections_count: "Capacity-Risk Sections",
+  course_fill_rate: "Fill Rate (%)",
+};
 
 const FILTER_FIELDS = [
   { key: "semester", label: "Semester", type: "text" as const, placeholder: "e.g. 2024-spring" },
@@ -184,6 +197,8 @@ export default function SchedulingPage() {
         description={t("console.scheduling.description")}
         icon={Calendar}
       />
+
+      <Wave1KpiBar metricKeys={[...SCHEDULING_KPI_KEYS]} labels={SCHEDULING_KPI_LABELS} />
 
       <FilterBar
         fields={FILTER_FIELDS}

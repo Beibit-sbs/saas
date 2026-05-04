@@ -74,7 +74,7 @@ class TestXXI1AgentTaskOrchestrator:
     def test_create_task_step_graph_dependencies(self):
         _reset()
         resp = client.post(
-            "/api/admin/brain/agent/tasks?tenant_id=2&workflow_type=policy_remediation",
+            "/api/admin/brain/agent/tasks?tenant_id=1&workflow_type=policy_remediation",
             headers=_headers(),
         )
         assert resp.status_code == 200

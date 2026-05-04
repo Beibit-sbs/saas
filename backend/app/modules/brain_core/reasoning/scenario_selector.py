@@ -26,4 +26,9 @@ class ScenarioSelector:
             return "procurement_supply_chain"
         if reasoning_path.startswith("student_life_"):
             return "advanced_student_life"
+        # A-013.3: Scheduling conflict + enrollment capacity risk
+        if reasoning_path.startswith("section_conflict_"):
+            return "section_conflict"
+        if reasoning_path.startswith("enrollment_capacity_risk_"):
+            return "enrollment_capacity_risk"
         return self._MAP.get(situation_type, "student_risk")

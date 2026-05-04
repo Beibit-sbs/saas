@@ -11,6 +11,7 @@ from app.modules.plans.router import router
 
 app = FastAPI()
 app.include_router(router)
+app.dependency_overrides = {dep.dependency: lambda: None for dep in router.dependencies}
 client = TestClient(app)
 
 MODULE = "app.modules.plans.router"

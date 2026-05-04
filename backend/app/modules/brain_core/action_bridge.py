@@ -218,6 +218,107 @@ def _make_create_student_support_case_handler() -> Callable[[int, str, dict[str,
     return handler
 
 
+def _make_create_collections_case_handler() -> Callable[[int, str, dict[str, Any]], dict[str, Any]]:
+    """Return a delinquency-collections backed handler for ``create_collections_case``.
+
+    The handler ensures idempotent record creation for the same student/invoice pair
+    within a tenant and routes all writes through delinquency_collections service.
+    """
+
+    def handler(tenant_id: int, decision_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        from app.modules.delinquency_collections.schemas import DelinquencyRecordCreateSchema
+        from app.modules.delinquency_collections.service import (
+            create_delinquency_record,
+            list_delinquency_records,
+        )
+
+        try:
+            student_id = str(payload.get("student_id") or payload.get("customer_id") or "").strip()
+            if not student_id:
+                return {"status": "failed", "reason": "student_id is required"}
+
+            invoice_code = str(
+                payload.get("invoice_code")
+                or payload.get("invoice_id")
+                or payload.get("source_entity_id")
+                or _message_code("INV", decision_id)
+            ).strip()
+            if not invoice_code:
+                invoice_code = _message_code("INV", decision_id)
+
+            raw_days = (
+                payload.get("delinquency_days")
+                or payload.get("overdue_days")
+                or payload.get("days_overdue")
+                or 1
+            )
+            try:
+                days_overdue = int(raw_days)
+            except (TypeError, ValueError):
+                days_overdue = 1
+            days_overdue = max(days_overdue, 1)
+
+            raw_amount = payload.get("balance_due")
+            if raw_amount is None:
+                cents = payload.get("amount_cents")
+                if isinstance(cents, (int, float)):
+                    raw_amount = float(cents) / 100.0
+            if raw_amount is None:
+                raw_amount = payload.get("amount_due")
+            try:
+                amount_due = float(raw_amount)
+            except (TypeError, ValueError):
+                amount_due = 0.0
+            amount_due = max(amount_due, 0.01)
+
+            existing = list_delinquency_records(int(tenant_id))
+            for row in existing:
+                row_student = str(getattr(row, "student_id", "") or "").strip()
+                row_invoice = str(getattr(row, "invoice_code", "") or "").strip()
+                if row_student == student_id and row_invoice == invoice_code:
+                    return {
+                        "status": "ensured",
+                        "idempotent_replay": True,
+                        "item": {
+                            "record_id": int(getattr(row, "id")),
+                            "student_id": student_id,
+                            "invoice_code": invoice_code,
+                            "source": "delinquency_collections_module",
+                        },
+                    }
+
+            request = DelinquencyRecordCreateSchema(
+                student_id=student_id,
+                invoice_code=invoice_code,
+                amount_due=amount_due,
+                days_overdue=days_overdue,
+                escalation_stage="stage_1",
+                status="open",
+            )
+            created = create_delinquency_record(int(tenant_id), request, "brain_core")
+            return {
+                "status": "created",
+                "item": {
+                    "record_id": int(getattr(created, "id")),
+                    "student_id": str(getattr(created, "student_id", student_id)),
+                    "invoice_code": str(getattr(created, "invoice_code", invoice_code)),
+                    "source": "delinquency_collections_module",
+                },
+            }
+        except Exception as exc:
+            logger.warning(
+                "brain_core_action_create_collections_case_failed",
+                extra={
+                    "tenant_id": tenant_id,
+                    "decision_id": decision_id,
+                    "error": str(exc),
+                },
+            )
+            return {"status": "failed", "reason": str(exc)}
+
+    return handler
+
+
 def _module_action_handlers() -> dict[str, Callable[[int, str, dict[str, Any]], dict[str, Any]]]:
     """Return module-backed handlers for Brain workflow actions."""
 
@@ -260,18 +361,7 @@ def _module_action_handlers() -> dict[str, Callable[[int, str, dict[str, Any]], 
                 "status": "needs_improvement",
             },
         ),
-        "create_collections_case": _make_entity_action_handler(
-            action_name="create_collections_case",
-            entity_name="delinquency_records",
-            payload_builder=lambda _tid, did, pl: {
-                "student_id": str(pl.get("student_id") or "UNKNOWN-STUDENT"),
-                "invoice_code": _message_code("INV", did),
-                "amount_due": float(pl.get("balance_due") or 0),
-                "days_overdue": int(pl.get("delinquency_days") or 0),
-                "escalation_stage": "stage_1",
-                "status": "open",
-            },
-        ),
+        "create_collections_case": _make_create_collections_case_handler(),
         "create_replenishment_task": _make_entity_action_handler(
             action_name="create_replenishment_task",
             entity_name="procurement_inventory_items",

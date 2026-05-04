@@ -32,7 +32,22 @@ import {
   useStudentName,
 } from "@/modules/platform/interventions/hooks";
 import { InterventionsSummaryStats } from "@/modules/platform/interventions/summary-stats";
+import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
 import type { InterventionCase, InterventionAction, InterventionActionType } from "@/modules/platform/interventions/types";
+
+const INTERVENTION_KPI_KEYS = [
+  "high_risk_students_count",
+  "critical_risk_students_count",
+  "intervention_auto_created_count",
+  "intervention_resolution_rate",
+] as const;
+
+const INTERVENTION_KPI_LABELS: Record<string, string> = {
+  high_risk_students_count: "High Risk Students",
+  critical_risk_students_count: "Critical Risk Students",
+  intervention_auto_created_count: "Auto-Triggered",
+  intervention_resolution_rate: "Resolution Rate (%)",
+};
 
 function SeverityBadge({ severity }: { severity: InterventionCase["severity"] }) {
   const { t } = useLanguage();
@@ -193,6 +208,8 @@ export default function InterventionsPage() {
       />
 
       <InterventionsSummaryStats />
+
+      <Wave1KpiBar metricKeys={[...INTERVENTION_KPI_KEYS]} labels={INTERVENTION_KPI_LABELS} />
 
       <FilterBar fields={FILTER_FIELDS} values={table.filters} onChange={table.setFilter} onReset={table.resetFilters} />
 

@@ -727,6 +727,49 @@ class RiskClassifier:
                 "reasoning_path": "scheduling_section_scheduled_medium",
             }
 
+        # A-013.3: Scheduling conflict signal
+        if event_type == "scheduling.section.conflict_detected":
+            payload = signal.get("payload", {})
+            conflict_type = str(payload.get("conflict_type") or "").strip().lower()
+            if conflict_type in {"room_conflict", "instructor_conflict"}:
+                return {
+                    "situation_type": "operational_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "section_conflict_high",
+                }
+            return {
+                "situation_type": "operational_risk",
+                "severity": "medium",
+                "urgency": "medium",
+                "reasoning_path": "section_conflict_medium",
+            }
+
+        # A-013.3: Enrollment capacity risk signal
+        if event_type == "enrollment.capacity_risk.detected":
+            payload = signal.get("payload", {})
+            fill_rate = payload.get("fill_rate")
+            enrolled_count = payload.get("enrolled_count")
+            max_capacity = payload.get("max_capacity")
+            if fill_rate is None and enrolled_count is not None and max_capacity:
+                try:
+                    fill_rate = float(enrolled_count) / float(max_capacity)
+                except (ZeroDivisionError, TypeError, ValueError):
+                    fill_rate = None
+            if fill_rate is not None and float(fill_rate) >= 0.90:
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "enrollment_capacity_risk_high",
+                }
+            return {
+                "situation_type": "academic_risk",
+                "severity": "medium",
+                "urgency": "medium",
+                "reasoning_path": "enrollment_capacity_risk_medium",
+            }
+
         return {
             "situation_type": "operational_risk",
             "severity": "low",

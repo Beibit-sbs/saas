@@ -5,6 +5,10 @@ import SchedulingPage from "../../app/(admin)/console/scheduling/page";
 
 const hasPermissionMock = vi.fn();
 
+vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
+  Wave1KpiBar: () => <div data-testid="wave1-kpi-bar-mock" />,
+}));
+
 vi.mock("../../shared/hooks/use-permissions", () => ({
   usePermissions: () => ({
     hasPermission: hasPermissionMock,

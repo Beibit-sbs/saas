@@ -21,6 +21,9 @@ from app.modules.brain_core.constants import (
     SUPPLY_LOW_EVENT_TYPES,
     THESIS_DELAY_EVENT_TYPES,
     TRANSCRIPTS_EVENT_TYPES,
+    TRANSCRIPTS_EVENT_TYPES,
+    SECTION_CONFLICT_EVENT_TYPES,
+    ENROLLMENT_CAPACITY_RISK_EVENT_TYPES,
 )
 
 
@@ -216,6 +219,17 @@ class SignalRegistry:
             "scenario": "faculty_overload",
             "context_sources": ["faculty", "academic"],
         },
+        # A-013.3: Scheduling conflict + enrollment capacity risk
+        "scheduling.section.conflict_detected": {
+            "signal_class": "operational_risk",
+            "scenario": "section_conflict",
+            "context_sources": ["scheduling", "academic", "faculty"],
+        },
+        "enrollment.capacity_risk.detected": {
+            "signal_class": "academic_risk",
+            "scenario": "enrollment_capacity_risk",
+            "context_sources": ["scheduling", "academic"],
+        },
     }
 
     @classmethod
@@ -385,6 +399,23 @@ class DecisionRegistry:
             "action_map": {
                 "create_student_support_case": "workflow_task",
                 "notify_student_success_team": "notification",
+            },
+        },
+        # A-013.3: Scheduling conflict + enrollment capacity risk decisions
+        "section_conflict": {
+            "decision_type": "operational",
+            "allowed_event_types": sorted(SECTION_CONFLICT_EVENT_TYPES),
+            "action_map": {
+                "create_section_conflict_task": "workflow_task",
+                "notify_scheduling_office": "notification",
+            },
+        },
+        "enrollment_capacity_risk": {
+            "decision_type": "risk",
+            "allowed_event_types": sorted(ENROLLMENT_CAPACITY_RISK_EVENT_TYPES),
+            "action_map": {
+                "create_enrollment_capacity_task": "workflow_task",
+                "notify_enrollment_office": "notification",
             },
         },
     }

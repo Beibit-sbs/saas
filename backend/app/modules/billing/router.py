@@ -4,6 +4,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
+from app.core.tenant import get_current_tenant
+from app.modules.auth.token_service import parse_access_token_from_request
 from app.modules.audit.service import log_admin_action
 from app.modules.billing.schemas import (
     BillingDelinquencyDashboardSchema,
@@ -45,6 +47,56 @@ from app.modules.rbac.security import get_actor, permission_dependency
 from app.platform.billing import service as platform_billing_service
 
 router = APIRouter(prefix="/api/admin/billing", tags=["billing"])
+
+
+def _platform_override_permission_for_method(method: str) -> str:
+    normalized = method.upper()
+    if normalized in {"POST", "PUT", "PATCH", "DELETE"}:
+        return "platform.admin.write"
+    return "platform.admin.read"
+
+
+def _assert_tenant_access(
+    *,
+    request: Request,
+    actor: str,
+    tenant_id: int,
+    current_tenant: dict[str, object],
+) -> None:
+    if int(tenant_id) <= 0:
+        raise HTTPException(status_code=400, detail="invalid tenant_id")
+
+    effective_tenant_id = int(current_tenant.get("id", 0) or 0)
+    if effective_tenant_id <= 0:
+        raise HTTPException(status_code=403, detail="invalid tenant context")
+
+    if int(tenant_id) == effective_tenant_id:
+        return
+
+    claims = parse_access_token_from_request(request, request.headers.get("Authorization"))
+    if claims is None:
+        raise HTTPException(status_code=401, detail="valid authentication is required")
+
+    override_permission = _platform_override_permission_for_method(request.method)
+    granted_permissions = {str(item).strip() for item in claims.permissions if str(item).strip()}
+    if override_permission not in granted_permissions:
+        raise HTTPException(status_code=403, detail="tenant_id_mismatch")
+
+    log_admin_action(
+        actor=actor,
+        tenant_id=effective_tenant_id,
+        action="billing.cross_tenant.override",
+        path=str(request.url.path),
+        client_ip=request.client.host if request.client else "unknown",
+        correlation_id=getattr(request.state, "request_id", None),
+        entity="billing",
+        result="success",
+        metadata={
+            "requested_tenant_id": int(tenant_id),
+            "effective_tenant_id": effective_tenant_id,
+            "required_platform_permission": override_permission,
+        },
+    )
 
 
 @router.post("/plans", response_model=BillingPlanMutationReadSchema, status_code=201)
@@ -132,8 +184,12 @@ def update_billing_plan(
 @router.get("/tenants/{tenant_id}/state", response_model=BillingStateReadSchema)
 def get_billing_state(
     tenant_id: int,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.read"))] = None,
 ) -> BillingStateReadSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         row = get_tenant_billing_state(int(tenant_id))
     except ValueError as exc:
@@ -149,7 +205,10 @@ def transition_billing_subscription(
     payload: BillingTransitionRequestSchema,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.write"))] = None,
 ) -> BillingStateReadSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         transition_subscription_status(
             int(tenant_id),
@@ -183,7 +242,10 @@ def change_billing_subscription_plan(
     payload: BillingPlanChangeRequestSchema,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.write"))] = None,
 ) -> BillingPlanChangeResponseSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         changed = change_subscription_plan(
             int(tenant_id),
@@ -217,7 +279,10 @@ def assign_billing_subscription(
     payload: BillingSubscriptionAssignRequestSchema,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.write"))] = None,
 ) -> BillingSubscriptionMutationReadSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     existing = platform_billing_service.get_subscription(int(tenant_id))
     if existing is not None and str(existing.get("plan_code", "")).strip().lower() == payload.plan_code.strip().lower():
         log_admin_action(
@@ -263,7 +328,10 @@ def increment_billing_usage(
     payload: BillingUsageIncrementRequestSchema,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.write"))] = None,
 ) -> BillingUsageCounterReadSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     row = platform_billing_service.increment_usage(int(tenant_id), metric, payload.value)
     log_admin_action(
         actor=actor,
@@ -282,9 +350,13 @@ def increment_billing_usage(
 @router.get("/tenants/{tenant_id}/usage", response_model=BillingUsageReadSchema)
 def get_billing_usage(
     tenant_id: int,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.read"))] = None,
     since_iso: Annotated[str | None, Query()] = None,
 ) -> BillingUsageReadSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         usage = get_usage_snapshot(int(tenant_id), since_iso=since_iso)
     except ValueError as exc:
@@ -297,9 +369,13 @@ def get_billing_usage(
 @router.get("/tenants/{tenant_id}/delinquency", response_model=BillingDelinquencyListResponseSchema)
 def list_tenant_delinquency(
     tenant_id: int,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.read"))] = None,
     status: Annotated[str | None, Query()] = None,
 ) -> BillingDelinquencyListResponseSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         items = list_delinquency_records(int(tenant_id), status=status)
     except ValueError as exc:
@@ -313,8 +389,12 @@ def list_tenant_delinquency(
 def get_tenant_delinquency_record(
     tenant_id: int,
     record_id: int,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.read"))] = None,
 ) -> BillingDelinquencyRecordReadSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         record = get_delinquency_record(int(tenant_id), int(record_id))
     except ValueError as exc:
@@ -331,7 +411,10 @@ def escalate_tenant_delinquency_record(
     payload: BillingDelinquencyEscalateRequestSchema,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.write"))] = None,
 ) -> BillingDelinquencyRecordReadSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         record = escalate_delinquency_record(int(tenant_id), int(record_id), actor=actor, notes=payload.notes)
     except ValueError as exc:
@@ -359,7 +442,10 @@ def resolve_tenant_delinquency_record(
     payload: BillingDelinquencyResolveRequestSchema,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.write"))] = None,
 ) -> BillingDelinquencyRecordReadSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         record = resolve_delinquency_record(
             int(tenant_id),
@@ -393,7 +479,10 @@ def reminder_tenant_delinquency_record(
     payload: BillingDelinquencyReminderRequestSchema,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.write"))] = None,
 ) -> BillingDelinquencyRecordReadSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         record = send_delinquency_reminder(int(tenant_id), int(record_id), actor=actor, notes=payload.notes)
     except ValueError as exc:
@@ -417,8 +506,12 @@ def reminder_tenant_delinquency_record(
 @router.get("/tenants/{tenant_id}/delinquency/policy", response_model=BillingDunningPolicySchema)
 def get_tenant_dunning_policy(
     tenant_id: int,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.read"))] = None,
 ) -> BillingDunningPolicySchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         policy = get_dunning_policy(int(tenant_id))
     except ValueError as exc:
@@ -434,7 +527,10 @@ def put_tenant_dunning_policy(
     payload: BillingDunningPolicySchema,
     request: Request,
     actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.write"))] = None,
 ) -> BillingDunningPolicySchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         policy = update_dunning_policy(int(tenant_id), payload.model_dump(), actor=actor)
     except ValueError as exc:
@@ -458,8 +554,12 @@ def put_tenant_dunning_policy(
 @router.get("/tenants/{tenant_id}/delinquency/dashboard", response_model=BillingDelinquencyDashboardSchema)
 def get_tenant_delinquency_dashboard(
     tenant_id: int,
-    _: Annotated[str, Depends(get_actor)],
+    request: Request,
+    actor: Annotated[str, Depends(get_actor)],
+    current_tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+    _perm: Annotated[None, Depends(permission_dependency("billing.admin.read"))] = None,
 ) -> BillingDelinquencyDashboardSchema:
+    _assert_tenant_access(request=request, actor=actor, tenant_id=tenant_id, current_tenant=current_tenant)
     try:
         dashboard = get_delinquency_dashboard(int(tenant_id))
     except ValueError as exc:
