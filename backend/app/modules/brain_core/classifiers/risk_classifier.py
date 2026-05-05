@@ -1105,6 +1105,98 @@ class RiskClassifier:
                 "reasoning_path": "inventory_low_stock_low",
             }
 
+        # A-016.2 Thesis Governance + Supervisor Assignment — deterministic severity
+        _THESIS_GOVERNANCE_EVENTS = frozenset({
+            "thesis.submission.created",
+            "thesis.submission.pending_review",
+            "thesis.supervisor.assignment_needed",
+            "thesis.supervisor.overloaded",
+            "thesis.review.delayed",
+            "thesis.governance.risk_detected",
+        })
+        if event_type in _THESIS_GOVERNANCE_EVENTS:
+            payload = signal.get("payload", {})
+            thesis_id = str(payload.get("thesis_id") or signal.get("source_entity_id") or "").strip()
+            supervisor_id = str(payload.get("supervisor_id") or "").strip()
+            risk_level = str(payload.get("risk_level") or "").strip().lower()
+            days_without_supervisor = payload.get("days_without_supervisor")
+            days_in_review = payload.get("days_in_review")
+            supervisor_overloaded = bool(
+                payload.get("supervisor_overloaded")
+                or event_type == "thesis.supervisor.overloaded"
+            )
+            supervisor_load_pct = payload.get("supervisor_load_pct")
+            thesis_status = str(payload.get("status") or "").strip().lower()
+
+            if not thesis_id:
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "low",
+                    "urgency": "low",
+                    "reasoning_path": "thesis_governance_low",
+                }
+
+            # Critical: explicit level, or no supervisor beyond critical threshold,
+            # or severely overdue review
+            if (
+                risk_level == "critical"
+                or (
+                    not supervisor_id
+                    and isinstance(days_without_supervisor, (int, float))
+                    and float(days_without_supervisor) >= 30
+                )
+                or (isinstance(days_in_review, (int, float)) and float(days_in_review) >= 90)
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "critical",
+                    "urgency": "critical",
+                    "reasoning_path": "thesis_governance_critical",
+                }
+
+            # High: explicit level, no supervisor beyond normal threshold,
+            # rejected thesis, supervisor overloaded, or overdue review
+            if (
+                risk_level == "high"
+                or (
+                    not supervisor_id
+                    and isinstance(days_without_supervisor, (int, float))
+                    and float(days_without_supervisor) >= 14
+                )
+                or thesis_status == "rejected"
+                or supervisor_overloaded
+                or (isinstance(days_in_review, (int, float)) and float(days_in_review) >= 60)
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "thesis_governance_high",
+                }
+
+            # Medium: explicit level, supervisor missing (no days info),
+            # review pending too long, or supervisor load warning
+            if (
+                risk_level == "medium"
+                or not supervisor_id
+                or (isinstance(days_in_review, (int, float)) and float(days_in_review) >= 30)
+                or (isinstance(supervisor_load_pct, (int, float)) and float(supervisor_load_pct) >= 80)
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "thesis_governance_medium",
+                }
+
+            # Low (default — supervisor present, no escalation indicators)
+            return {
+                "situation_type": "academic_risk",
+                "severity": "low",
+                "urgency": "low",
+                "reasoning_path": "thesis_governance_low",
+            }
+
         return {
             "situation_type": "operational_risk",
             "severity": "low",

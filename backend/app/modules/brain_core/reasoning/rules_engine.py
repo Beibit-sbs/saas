@@ -789,6 +789,55 @@ class RulesEngine:
                 "requires_approval": False,
             }
 
+        # A-016.2 Thesis Governance + Supervisor Assignment rules
+        _THESIS_GOVERNANCE_PATHS = {
+            "thesis_governance_critical",
+            "thesis_governance_high",
+            "thesis_governance_medium",
+            "thesis_governance_low",
+        }
+        if reasoning_path in _THESIS_GOVERNANCE_PATHS:
+            if reasoning_path == "thesis_governance_critical":
+                return {
+                    "decision_type": "thesis_supervisor_assignment",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "assign_supervisor",
+                        "escalate_to_academic_office",
+                        "notify_department",
+                        "notify_academic_office",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "thesis_governance_high":
+                return {
+                    "decision_type": "thesis_supervisor_assignment",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "assign_supervisor",
+                        "request_supervisor_review",
+                        "notify_department",
+                    ],
+                    "requires_approval": False,
+                }
+            if reasoning_path == "thesis_governance_medium":
+                return {
+                    "decision_type": "thesis_supervisor_assignment",
+                    "priority": "medium",
+                    "recommended_actions": [
+                        "request_supervisor_review",
+                        "notify_department",
+                    ],
+                    "requires_approval": False,
+                }
+            # low — informational only
+            return {
+                "decision_type": "thesis_supervisor_assignment",
+                "priority": "low",
+                "recommended_actions": ["notify_department"],
+                "requires_approval": False,
+            }
+
         return {
             "decision_type": "operational",
             "priority": "low",

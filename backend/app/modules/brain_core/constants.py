@@ -120,6 +120,22 @@ ACADEMIC_INTEGRITY_EVENT_TYPES = {
     "academic_integrity.case.escalated",
 }
 
+# A-016.2 Thesis Governance + Supervisor Assignment events
+THESIS_GOVERNANCE_EVENT_TYPES = frozenset({
+    "thesis.submission.created",
+    "thesis.submission.pending_review",
+    "thesis.supervisor.assignment_needed",
+    "thesis.supervisor.overloaded",
+    "thesis.review.delayed",
+    "thesis.governance.risk_detected",
+})
+
+# A-016.2 Actions
+ACTION_ASSIGN_SUPERVISOR = "assign_supervisor"
+ACTION_REQUEST_SUPERVISOR_REVIEW = "request_supervisor_review"
+ACTION_NOTIFY_DEPARTMENT = "notify_department"
+ACTION_ESCALATE_TO_ACADEMIC_OFFICE = "escalate_to_academic_office"
+
 # A-016.1 Academic Integrity Violation Detection Brain events
 ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES = {
     "academic_integrity.violation.detected",
@@ -189,6 +205,7 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | SECTION_CONFLICT_EVENT_TYPES
     | ENROLLMENT_CAPACITY_RISK_EVENT_TYPES
     | PROCUREMENT_APPROVAL_EVENT_TYPES
+    | THESIS_GOVERNANCE_EVENT_TYPES
 )
 
 ACTION_CREATE_INTERVENTION_CASE = "create_intervention_case"

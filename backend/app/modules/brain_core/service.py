@@ -72,6 +72,18 @@ _ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES = frozenset(
     }
 )
 
+# A-016.2 — Thesis Governance + Supervisor Assignment Brain event types
+_THESIS_GOVERNANCE_EVENT_TYPES = frozenset(
+    {
+        "thesis.submission.created",
+        "thesis.submission.pending_review",
+        "thesis.supervisor.assignment_needed",
+        "thesis.supervisor.overloaded",
+        "thesis.review.delayed",
+        "thesis.governance.risk_detected",
+    }
+)
+
 
 def _coerce_uuid(value: object) -> uuid.UUID:
     """Convert a string/UUID to uuid.UUID, generating a new one on failure."""
@@ -224,7 +236,7 @@ class BrainCoreService:
 
     # Priorities and types that warrant an immediate in-app notification.
     _NOTIFIABLE_PRIORITIES: frozenset[str] = frozenset({"critical", "high"})
-    _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance", "academic_integrity_review"})
+    _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance", "academic_integrity_review", "thesis_supervisor_assignment"})
 
     def _normalize_degree_progress_signal(self, signal: dict) -> tuple[dict, str | None]:
         """Normalize graduation-risk signals to canonical student/source fields.
@@ -469,6 +481,57 @@ class BrainCoreService:
 
         return normalized, None
 
+    def _normalize_thesis_governance_signal(self, signal: dict) -> tuple[dict, str | None]:
+        """Fail-closed normalization for thesis governance signals (A-016.2).
+
+        Ensures required tenant + thesis_id context, attaches origin/evidence metadata,
+        and normalizes optional supervisor/days fields for downstream risk classification.
+        Does NOT make any punitive academic or thesis status changes.
+        """
+        event_type = str(signal.get("event_type") or "")
+        if event_type not in _THESIS_GOVERNANCE_EVENT_TYPES:
+            return signal, None
+
+        normalized = dict(signal)
+        payload = dict(normalized.get("payload") or {})
+
+        # Fail-closed: tenant_id required
+        tenant_id = int(normalized.get("tenant_id") or 0)
+        if tenant_id <= 0:
+            return normalized, "missing_tenant_context"
+
+        # Fail-closed: thesis_id required
+        thesis_id = str(
+            payload.get("thesis_id")
+            or normalized.get("source_entity_id")
+            or ""
+        ).strip()
+        if not thesis_id:
+            return normalized, "missing_thesis_id"
+
+        # Attach evidence / audit metadata
+        payload.setdefault("risk_source", event_type)
+        payload.setdefault("correlation_id", str(normalized.get("correlation_id") or ""))
+        payload.setdefault("thesis_id", thesis_id)
+
+        # Optional fields: do NOT crash if absent — just record absence in evidence
+        student_id = str(payload.get("student_id") or "").strip()
+        supervisor_id = str(payload.get("supervisor_id") or "").strip()
+        if not supervisor_id:
+            payload.setdefault("supervisor_assignment_evidence", "supervisor_id_not_provided")
+        if not student_id:
+            payload.setdefault("student_id_evidence", "student_id_not_provided")
+
+        normalized["payload"] = payload
+        if str(normalized.get("source_entity_type") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_type"] = str(payload.get("source_entity_type") or "thesis")
+        if str(normalized.get("source_entity_id") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_id"] = thesis_id
+        if not normalized.get("source_module"):
+            normalized["source_module"] = str(payload.get("source_module") or "thesis_governance")
+
+        return normalized, None
+
     def _resolve_decision_scenario(self, *, event_type: str, classification: dict) -> str:
         """Resolve the decision scenario, allowing additive routing overrides."""
         scenario = SignalRegistry.signals[event_type]["scenario"]
@@ -646,6 +709,11 @@ class BrainCoreService:
             return {"status": "rejected", "reason": normalization_rejection}
 
         signal, normalization_rejection = self._normalize_academic_integrity_violation_signal(signal)
+        if normalization_rejection is not None:
+            self._observability.increment("signals_rejected_total")
+            return {"status": "rejected", "reason": normalization_rejection}
+
+        signal, normalization_rejection = self._normalize_thesis_governance_signal(signal)
         if normalization_rejection is not None:
             self._observability.increment("signals_rejected_total")
             return {"status": "rejected", "reason": normalization_rejection}

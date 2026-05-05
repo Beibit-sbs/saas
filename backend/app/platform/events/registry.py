@@ -147,6 +147,13 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "campus.thesis.overdue_review_alert_detected": EventDefinition(GenericTenantEventPayload),
     # Thesis rejection risk events (W69)
     "campus.thesis.rejection_risk_detected": EventDefinition(GenericTenantEventPayload),
+    # A-016.2 Thesis Governance + Supervisor Assignment events
+    "thesis.submission.created": EventDefinition(GenericTenantEventPayload),
+    "thesis.submission.pending_review": EventDefinition(GenericTenantEventPayload),
+    "thesis.supervisor.assignment_needed": EventDefinition(GenericTenantEventPayload),
+    "thesis.supervisor.overloaded": EventDefinition(GenericTenantEventPayload),
+    "thesis.review.delayed": EventDefinition(GenericTenantEventPayload),
+    "thesis.governance.risk_detected": EventDefinition(GenericTenantEventPayload),
     # Accreditation module events (W42)
     "campus.accreditation.high_risk_record_detected": EventDefinition(GenericTenantEventPayload),
     # HR/Payroll module events (W43)

@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-05-06 (A-016.1 Academic Integrity Violation Detection Brain)
+- run_id: OP-AUDIT-2026-05-05-07 (A-016.2 Thesis Submission Pipeline + Supervisor Assignment Automation Brain)
 - status: in_progress_A-016
-- current_stage: A-016.1 CLOSED; next = A-016.2
-- last_completed_action_id: A-016.1
-- next_action_id: A-016.2
-- updated_at: 2026-05-05 (A-016.1 complete; 6 violation event types registered in Brain Core; 22/22 tests passed; deterministic 4-level severity classifier; no punitive actions; full tenant isolation)
+- current_stage: A-016.2 CLOSED; next = A-016.3
+- last_completed_action_id: A-016.2
+- next_action_id: A-016.3
+- updated_at: 2026-05-05 (A-016.2 complete; 6 thesis governance event types registered in Brain Core; 24/24 tests passed; deterministic 4-level severity classifier; no punitive actions; full tenant isolation; supervisor assignment automation with human-in-the-loop approval for critical decisions)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -253,6 +253,38 @@
     - A-016.1 focused suite: **22/22 PASS** (`tests/test_a016_1_academic_integrity_violation_brain.py`)
 - Decision: **A-016.1 CLOSED - PASS**.
 - Next action: **A-016.2** (Thesis Submission Pipeline + Supervisor Assignment Automation).
+
+---
+
+#### A-016.2 — Thesis Submission Pipeline + Supervisor Assignment Automation Brain
+
+- Date: 2026-05-05
+- Scope: Implement thesis governance Brain Core module — supervisor assignment automation, submission risk detection, review delay escalation.
+- Files modified:
+    - `backend/app/modules/brain_core/constants.py` — added `THESIS_GOVERNANCE_EVENT_TYPES` (6 events) + 4 action constants
+    - `backend/app/platform/events/registry.py` — registered 6 thesis governance events
+    - `backend/app/platform/event_ingestion/types.py` — added 6 events to `VALID_EVENT_TYPES`
+    - `backend/app/modules/brain_core/registry.py` — added 6 signal entries + `thesis_supervisor_assignment` DecisionRegistry entry
+    - `backend/app/modules/brain_core/classifiers/risk_classifier.py` — 4-level severity classifier for thesis governance
+    - `backend/app/modules/brain_core/reasoning/rules_engine.py` — 4 reasoning path rules → `thesis_supervisor_assignment` decisions
+    - `backend/app/modules/brain_core/service.py` — `_normalize_thesis_governance_signal()` with fail-closed; added `thesis_supervisor_assignment` to notifiable types
+    - `backend/tests/test_a016_2_thesis_governance_brain.py` — **NEW** 24-test suite
+- Severity model:
+    - CRITICAL: `risk_level="critical"` OR no supervisor ≥30 days OR `days_in_review ≥ 90`
+    - HIGH: `risk_level="high"` OR no supervisor ≥14 days OR thesis rejected OR supervisor overloaded OR `days_in_review ≥ 60`
+    - MEDIUM: `risk_level="medium"` OR no supervisor (no day info) OR `days_in_review ≥ 30` OR `supervisor_load_pct ≥ 80`
+    - LOW: default
+- Security guarantees:
+    - Fail-closed on missing `tenant_id` → rejected
+    - Fail-closed on missing `thesis_id` → rejected
+    - Cross-tenant isolation verified (separate `list_decisions()` results per tenant)
+    - Duplicate deduplication working
+    - No punitive actions in any decision tier
+    - CRITICAL decisions have `requires_approval=True` — human-in-the-loop mandatory
+- Validation results:
+    - A-016.2 focused suite: **24/24 PASS** (`tests/test_a016_2_thesis_governance_brain.py`)
+- Decision: **A-016.2 CLOSED - PASS**.
+- Next action: **A-016.3** (Exam Proctoring Violation Workflow).
 
 ---
 

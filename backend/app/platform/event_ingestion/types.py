@@ -38,6 +38,13 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "financial_aid.warning.detected",
         # A-014.6 Wave 2 KPI extension — thesis completion risk
         "thesis.status_changed",
+        # A-016.2 Thesis Governance + Supervisor Assignment events
+        "thesis.submission.created",
+        "thesis.submission.pending_review",
+        "thesis.supervisor.assignment_needed",
+        "thesis.supervisor.overloaded",
+        "thesis.review.delayed",
+        "thesis.governance.risk_detected",
         # A-015.6 Wave 3 KPI extension — budget overrun / finance
         "finance.expense.budget_exceeded",
         "campus.budget.overrun_risk_detected",

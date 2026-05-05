@@ -29,6 +29,7 @@ from app.modules.brain_core.constants import (
     SECTION_CONFLICT_EVENT_TYPES,
     ENROLLMENT_CAPACITY_RISK_EVENT_TYPES,
     ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES,
+    THESIS_GOVERNANCE_EVENT_TYPES,
 )
 
 
@@ -250,6 +251,37 @@ class SignalRegistry:
             "signal_class": "academic_risk",
             "scenario": "academic_integrity_violation",
             "context_sources": ["academic", "student_success"],
+        },
+        # A-016.2 Thesis Governance + Supervisor Assignment signals
+        "thesis.submission.created": {
+            "signal_class": "academic_risk",
+            "scenario": "thesis_governance",
+            "context_sources": ["academic", "faculty", "student_success"],
+        },
+        "thesis.submission.pending_review": {
+            "signal_class": "academic_risk",
+            "scenario": "thesis_governance",
+            "context_sources": ["academic", "faculty", "student_success"],
+        },
+        "thesis.supervisor.assignment_needed": {
+            "signal_class": "academic_risk",
+            "scenario": "thesis_governance",
+            "context_sources": ["academic", "faculty", "student_success"],
+        },
+        "thesis.supervisor.overloaded": {
+            "signal_class": "academic_risk",
+            "scenario": "thesis_governance",
+            "context_sources": ["academic", "faculty", "student_success"],
+        },
+        "thesis.review.delayed": {
+            "signal_class": "academic_risk",
+            "scenario": "thesis_governance",
+            "context_sources": ["academic", "faculty", "student_success"],
+        },
+        "thesis.governance.risk_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "thesis_governance",
+            "context_sources": ["academic", "faculty", "student_success"],
         },
         "academic_records.inconsistency.detected": {
             "signal_class": "compliance_risk",
@@ -494,6 +526,18 @@ class DecisionRegistry:
                 "notify_academic_office": "notification",
                 "request_manual_review": "workflow_task",
                 "escalate_to_committee": "workflow_task",
+            },
+        },
+        # A-016.2 Thesis Governance + Supervisor Assignment
+        "thesis_governance": {
+            "decision_type": "thesis_supervisor_assignment",
+            "allowed_event_types": sorted(THESIS_GOVERNANCE_EVENT_TYPES),
+            "action_map": {
+                "assign_supervisor": "workflow_task",
+                "request_supervisor_review": "workflow_task",
+                "notify_department": "notification",
+                "notify_academic_office": "notification",
+                "escalate_to_academic_office": "workflow_task",
             },
         },
         "academic_records_audit": {
