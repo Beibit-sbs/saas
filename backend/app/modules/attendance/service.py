@@ -327,6 +327,31 @@ def check_low_attendance_risk(
         )
         _metric(tenant_id, "attendance_threshold_breaches", 1)
 
+        # A-014.3: Direct Brain Core signal for attendance recovery loop.
+        # Same fire-and-forget pattern used by grade/thesis/admissions services.
+        try:
+            from uuid import uuid4 as _uuid4
+            from app.modules.brain_core.service import brain_core_service as _bcs
+            _bcs.process_signal({
+                "signal_id": str(_uuid4()),
+                "tenant_id": int(tenant_id),
+                "correlation_id": str(risk_record.get("id") or _uuid4()),
+                "event_type": "academic.attendance_risk.detected",
+                "source_entity_type": "section_attendance",
+                "source_entity_id": str(risk_record.get("id") or course_id),
+                "subject": {"student_id": student_id, "course_id": course_id},
+                "payload": {
+                    "student_id": student_id,
+                    "attendance_rate": summary["attendance_pct"],
+                    "course_id": course_id,
+                    "source_entity_type": "section_attendance",
+                    "source_entity_id": str(risk_record.get("id") or course_id),
+                },
+                "metadata": {},
+            })
+        except Exception:
+            pass  # Brain Core errors must never break attendance service
+
         return {**summary, "risk_record_id": risk_record.get("id"), "event_fired": True}
 
     return {**summary, "event_fired": False}

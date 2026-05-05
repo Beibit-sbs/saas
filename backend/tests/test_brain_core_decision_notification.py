@@ -35,6 +35,7 @@ def _make_service() -> BrainCoreService:
     svc._outcome_tracker = MagicMock()
     svc._quality_tracker = MagicMock()
     svc._policy_tuner = MagicMock()
+    svc._signal_dedup_cache = {}
     return svc
 
 

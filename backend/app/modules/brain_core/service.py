@@ -71,6 +71,7 @@ class BrainCoreService:
         self._predictor = PredictiveRiskEngine()
         self._dispatcher = ActionDispatcher(on_workflow_case_outcome=self._record_case_feedback)
         self._signals: list[dict] = []
+        self._signal_dedup_cache: dict[tuple[int, str], tuple[uuid.UUID, float]] = {}
         self._decisions: list[dict] = []
         self._explanations: dict[str, dict] = {}
         self._learning_apply_idempotency: dict[str, dict] = {}
@@ -112,6 +113,14 @@ class BrainCoreService:
     ) -> uuid.UUID | None:
         """Return existing signal_id if an identical signal was received within the window; None otherwise."""
         from sqlalchemy import text as sa_text  # local import to avoid circular
+
+        cached = self._signal_dedup_cache.get((tenant_id, dedup_key))
+        now = time.perf_counter()
+        if cached is not None:
+            cached_signal_id, cached_at = cached
+            if now - cached_at <= float(window_seconds):
+                return cached_signal_id
+            self._signal_dedup_cache.pop((tenant_id, dedup_key), None)
 
         engine = _get_shared_engine()
         if engine is None:
@@ -175,6 +184,89 @@ class BrainCoreService:
     # Priorities and types that warrant an immediate in-app notification.
     _NOTIFIABLE_PRIORITIES: frozenset[str] = frozenset({"critical", "high"})
     _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance"})
+
+    def _normalize_degree_progress_signal(self, signal: dict) -> tuple[dict, str | None]:
+        """Normalize graduation-risk signals to canonical student/source fields.
+
+        Returns a tuple: (normalized_signal, rejection_reason). If rejection_reason
+        is set, the caller must fail-closed.
+        """
+        event_type = str(signal.get("event_type") or "")
+        if event_type != "degree_progress.graduation_risk.detected":
+            return signal, None
+
+        normalized = dict(signal)
+        payload = dict(normalized.get("payload") or {})
+        subject = dict(normalized.get("subject") or {})
+
+        student_id = (
+            payload.get("student_id")
+            or payload.get("student_profile_id")
+            or subject.get("student_id")
+            or normalized.get("student_id")
+        )
+        if student_id in (None, ""):
+            return normalized, "missing_student_context"
+
+        normalized["student_id"] = student_id
+        subject["student_id"] = student_id
+        normalized["subject"] = subject
+
+        payload["student_id"] = student_id
+        payload.setdefault("source_module", "degree_progress")
+        payload.setdefault("source_entity_type", "student_graduation_progress")
+        payload.setdefault("source_entity_id", str(student_id))
+        normalized["payload"] = payload
+
+        source_module = str(payload.get("source_module") or "degree_progress")
+        source_entity_type = str(payload.get("source_entity_type") or "student_graduation_progress")
+        source_entity_id = str(payload.get("source_entity_id") or student_id)
+        if not normalized.get("source_module"):
+            normalized["source_module"] = source_module
+        if str(normalized.get("source_entity_type") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_type"] = source_entity_type
+        if str(normalized.get("source_entity_id") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_id"] = source_entity_id
+        return normalized, None
+
+    def _normalize_scholarship_award_risk_signal(self, signal: dict) -> tuple[dict, str | None]:
+        """Fail-closed normalization for scholarship award at-risk signals."""
+        event_type = str(signal.get("event_type") or "")
+        if event_type != "scholarship.award.at_risk_detected":
+            return signal, None
+
+        normalized = dict(signal)
+        payload = dict(normalized.get("payload") or {})
+        subject = dict(normalized.get("subject") or {})
+
+        student_id = (
+            payload.get("student_id")
+            or subject.get("student_id")
+            or normalized.get("student_id")
+        )
+        if student_id in (None, ""):
+            return normalized, "missing_student_context"
+
+        normalized["student_id"] = student_id
+        subject["student_id"] = student_id
+        normalized["subject"] = subject
+        payload["student_id"] = student_id
+        normalized["payload"] = payload
+        return normalized, None
+
+    def _resolve_decision_scenario(self, *, event_type: str, classification: dict) -> str:
+        """Resolve the decision scenario, allowing additive routing overrides."""
+        scenario = SignalRegistry.signals[event_type]["scenario"]
+        reasoning_path = str(classification.get("reasoning_path") or "")
+
+        # Graduation risk can also be inferred from transcript signals when the
+        # classifier marks the same reasoning path.
+        if (
+            event_type == "transcripts.inconsistency.detected"
+            and reasoning_path.startswith("graduation_risk_")
+        ):
+            return "graduation_degree_progress_risk"
+        return scenario
 
     def _ensure_intervention_action_for_intervention_decisions(
         self,
@@ -318,6 +410,16 @@ class BrainCoreService:
         started = time.perf_counter()
         self._observability.increment("signals_received_total")
 
+        signal, normalization_rejection = self._normalize_degree_progress_signal(signal)
+        if normalization_rejection is not None:
+            self._observability.increment("signals_rejected_total")
+            return {"status": "rejected", "reason": normalization_rejection}
+
+        signal, normalization_rejection = self._normalize_scholarship_award_risk_signal(signal)
+        if normalization_rejection is not None:
+            self._observability.increment("signals_rejected_total")
+            return {"status": "rejected", "reason": normalization_rejection}
+
         event_type = str(signal.get("event_type") or "")
         if not SignalRegistry.is_supported(event_type):
             self._observability.increment("signals_ignored_total")
@@ -332,8 +434,17 @@ class BrainCoreService:
             self._observability.increment("signals_rejected_total")
             return {"status": "rejected", "reason": "missing_tenant_context"}
 
-        source_entity_type = str(signal.get("source_entity_type") or "")
-        source_entity_id = str(signal.get("source_entity_id") or "")
+        payload = dict(signal.get("payload") or {})
+        source_entity_type = str(
+            signal.get("source_entity_type")
+            or payload.get("source_entity_type")
+            or ""
+        )
+        source_entity_id = str(
+            signal.get("source_entity_id")
+            or payload.get("source_entity_id")
+            or ""
+        )
         dedup_key = _compute_dedup_key(event_type, tenant_id, source_entity_type, source_entity_id)
         existing_id = self._check_duplicate_signal(tenant_id=tenant_id, dedup_key=dedup_key)
         if existing_id is not None:
@@ -347,6 +458,7 @@ class BrainCoreService:
         signal_id = uuid4()
         signal.setdefault("signal_id", str(signal_id))
         self._signals.append(signal)
+        self._signal_dedup_cache[(tenant_id, dedup_key)] = (signal_id, time.perf_counter())
 
         context_started = time.perf_counter()
         context = self._context_builder.build_context(signal)
@@ -371,7 +483,7 @@ class BrainCoreService:
         )
 
         decision_id = str(uuid4())
-        scenario = SignalRegistry.signals[event_type]["scenario"]
+        scenario = self._resolve_decision_scenario(event_type=event_type, classification=classification)
         action_plan = self._planner.build_plan(
             decision_scenario=scenario,
             reasoning=reasoning,
@@ -1058,10 +1170,31 @@ class BrainCoreService:
             "policy_tuning": policy_tuning,
         }
 
-    def record_dispatch_outcome(self, case_id: str, *, payload: dict, actor: str = "system") -> dict:
+    def record_dispatch_outcome(
+        self,
+        case_id: str | None = None,
+        *,
+        payload: dict | None = None,
+        actor: str = "system",
+        tenant_id: int | None = None,
+        entity_id: str | int | None = None,
+        outcome_type: str | None = None,
+        actor_id: str | None = None,
+    ) -> dict:
+        if case_id is None:
+            legacy_actor = actor_id or actor
+            return {
+                "status": "ignored",
+                "reason": "legacy_dispatch_outcome_without_case_id",
+                "tenant_id": tenant_id,
+                "entity_id": None if entity_id is None else str(entity_id),
+                "outcome_type": outcome_type,
+                "actor": legacy_actor,
+            }
+
         result = self._dispatcher.record_workflow_case_outcome(
             case_id=case_id,
-            payload=payload,
+            payload=dict(payload or {}),
             actor=actor,
         )
         if result.get("status") == "not_found":
@@ -3603,3 +3736,8 @@ class BrainCoreService:
 
 
 brain_core_service = BrainCoreService()
+
+
+def record_dispatch_outcome(*args, **kwargs) -> dict:
+    """Backward-compatible module proxy for legacy Brain Core callers."""
+    return brain_core_service.record_dispatch_outcome(*args, **kwargs)

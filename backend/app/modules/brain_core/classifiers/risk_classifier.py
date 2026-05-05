@@ -59,6 +59,44 @@ class RiskClassifier:
                 "reasoning_path": "financial_aid_warning_medium",
             }
 
+        if event_type == "scholarship.award.at_risk_detected":
+            payload = signal.get("payload", {})
+            risk_level = str(payload.get("risk_level") or "").strip().lower()
+            current_gpa = payload.get("current_gpa")
+            gpa_threshold = payload.get("gpa_threshold")
+            status = str(payload.get("status") or "").strip().lower()
+            if risk_level in {"critical", "high"}:
+                return {
+                    "situation_type": "student_success_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "scholarship_award_risk_high",
+                }
+            if (
+                isinstance(current_gpa, (int, float))
+                and isinstance(gpa_threshold, (int, float))
+                and float(current_gpa) < float(gpa_threshold)
+            ):
+                return {
+                    "situation_type": "student_success_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "scholarship_award_risk_high",
+                }
+            if status == "at_risk" or risk_level == "medium":
+                return {
+                    "situation_type": "student_success_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "scholarship_award_risk_medium",
+                }
+            return {
+                "situation_type": "student_success_risk",
+                "severity": "medium",
+                "urgency": "medium",
+                "reasoning_path": "scholarship_award_risk_medium",
+            }
+
         if event_type == "housing.status.risk_detected":
             payload = signal.get("payload", {})
             to_status = str(payload.get("to_status") or "").strip().lower()
@@ -480,7 +518,29 @@ class RiskClassifier:
             }
 
         if event_type == "thesis.status_changed":
-            days_since_last_milestone = signal.get("payload", {}).get("days_since_last_milestone")
+            payload = signal.get("payload", {})
+            subject = signal.get("subject", {})
+            days_since_last_milestone = payload.get("days_since_last_milestone")
+            thesis_id = payload.get("thesis_id") or signal.get("source_entity_id")
+            student_id = payload.get("student_id") or subject.get("student_id")
+            to_status = str(payload.get("to_status") or "").strip().lower()
+
+            if not thesis_id or not student_id:
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "low",
+                    "urgency": "low",
+                    "reasoning_path": "thesis_delay_low",
+                }
+
+            if to_status == "rejected":
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "thesis_delay_high",
+                }
+
             if isinstance(days_since_last_milestone, int) and days_since_last_milestone > 60:
                 return {
                     "situation_type": "academic_risk",
@@ -500,14 +560,32 @@ class RiskClassifier:
             attendance_rate = academic.get("attendance_rate")
             if not isinstance(attendance_rate, (int, float)):
                 attendance_rate = payload.get("attendance_rate")
+            # A-014.3: Dedicated attendance reasoning paths for recovery loop
             if isinstance(attendance_rate, (int, float)) and attendance_rate < 0.40:
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "attendance_risk_high",
+                }
+            if isinstance(attendance_rate, (int, float)) and attendance_rate < 0.60:
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "attendance_risk_medium",
+                }
+
+            # Grade-risk signals carry `risk_level` instead of `attendance_rate`
+            risk_level_raw = str(payload.get("risk_level") or "").lower()
+            if risk_level_raw == "high":
                 return {
                     "situation_type": "academic_risk",
                     "severity": "high",
                     "urgency": "high",
                     "reasoning_path": "risk_high",
                 }
-            if isinstance(attendance_rate, (int, float)) and attendance_rate < 0.60:
+            if risk_level_raw == "medium":
                 return {
                     "situation_type": "academic_risk",
                     "severity": "medium",
@@ -650,6 +728,21 @@ class RiskClassifier:
 
         if event_type == "transcripts.inconsistency.detected":
             payload = signal.get("payload", {})
+            if bool(payload.get("graduation_risk_detected")):
+                issue_count = payload.get("issue_count")
+                if isinstance(issue_count, int) and issue_count >= 3:
+                    return {
+                        "situation_type": "academic_risk",
+                        "severity": "high",
+                        "urgency": "high",
+                        "reasoning_path": "graduation_risk_high",
+                    }
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "graduation_risk_medium",
+                }
             issue_count = payload.get("issue_count")
             if isinstance(issue_count, int) and issue_count >= 3:
                 return {

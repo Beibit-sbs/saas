@@ -19,6 +19,17 @@ import { formatDate } from "@/shared/utils/format";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { useLanguage } from "@/app/components/LanguageProvider";
 import { BarChart2 } from "lucide-react";
+import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
+
+const GRADES_KPI_KEYS = [
+  "grade_decline_risk_count",
+  "grade_intervention_cases_count",
+] as const;
+
+const GRADES_KPI_LABELS: Record<string, string> = {
+  grade_decline_risk_count: "Grade Decline Risk",
+  grade_intervention_cases_count: "Intervention Cases",
+};
 
 const FILTER_FIELDS = [
   { key: "student_id", label: "Student ID", type: "text" as const, placeholder: "Student ID…" },
@@ -99,6 +110,8 @@ export default function GradesPage() {
           </PermissionGate>
         }
       />
+
+      <Wave1KpiBar metricKeys={[...GRADES_KPI_KEYS]} labels={GRADES_KPI_LABELS} />
 
       <FilterBar
         fields={FILTER_FIELDS}

@@ -3,6 +3,10 @@ import { render, screen } from "@testing-library/react";
 
 import FinancialAidPage from "../../app/(admin)/console/financial-aid/page";
 
+vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
+  Wave1KpiBar: () => <div data-testid="wave1-kpi-bar-mock" />,
+}));
+
 const useAidMock = vi.fn();
 let allowAccess = true;
 

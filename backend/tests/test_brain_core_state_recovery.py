@@ -184,7 +184,7 @@ class TestSignalProcessingAfterRecovery:
         svc.seed_default_policies([1], autonomy_level=3)
 
         for i in range(3):
-            result = svc.process_signal({**_SUPPORTED_SIGNAL, "signal_id": f"sig-r-{i}"})
+            result = svc.process_signal({**_SUPPORTED_SIGNAL, "signal_id": f"sig-r-{i}", "source_entity_id": f"stu-dr-{i}"})
             assert result["status"] == "processed"
 
         counters = svc.observability_metrics().get("counters", {})

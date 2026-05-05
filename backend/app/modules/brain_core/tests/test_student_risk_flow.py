@@ -148,10 +148,11 @@ def test_thesis_delay_full_flow_processed() -> None:
     result = service.process_signal(signal)
 
     assert result["status"] == "processed"
-    assert result["decision"]["decision_type"] == "preventive"
+    assert result["decision"]["decision_type"] == "intervention"
     assert result["decision"]["priority"] == "high"
     assert result["decision"]["status"] == "dispatched"
     assert "explanation" in result["decision"]
+    assert any(item["action"] == "create_intervention_case" for item in result["dispatch_results"])
     assert any(item["action"] == "create_supervision_task" for item in result["dispatch_results"])
 
 

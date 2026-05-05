@@ -360,6 +360,18 @@ class ActionDispatcher:
                 )
                 continue
 
+            if name == "create_attendance_recovery_plan":
+                results.append(
+                    self._dispatch_with_retry(
+                        action_name=name,
+                        handler=lambda: self._workflow.create_attendance_recovery_plan(
+                            tenant_id=tenant_id,
+                            decision_id=decision_id,
+                            payload=payload,
+                        ),
+                    )
+                )
+                continue
 
             results.append({"action": name, "status": "skipped", "reason": "unsupported_action"})
 

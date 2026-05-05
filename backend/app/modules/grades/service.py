@@ -386,36 +386,50 @@ class GradeLifecycleService:
                     InterventionCaseStatus,
                     InterventionCaseType,
                 )
-                _sev = InterventionCaseSeverity.HIGH if risk_level == "high" else InterventionCaseSeverity.MEDIUM
-                _days = 3 if risk_level == "high" else 5
-                _assignee = "dean_office" if risk_level == "high" else "faculty_advisor"
-                _now = datetime.now(UTC)
-                intervention = InterventionCaseModel(
-                    tenant_id=tenant_id,
-                    case_type=InterventionCaseType.ACADEMIC_RISK,
-                    student_profile_id=enrollment.student_profile_id,
-                    severity=_sev,
-                    status=InterventionCaseStatus.OPEN,
-                    title=f"Grade risk ({risk_level}): student {enrollment.student_profile_id}",
-                    description=(
-                        f"Auto-created on grade submission {submission.id}. "
-                        f"Grade: {request.grade_code} ({resolved_points} pts). "
-                        f"Risk threshold: {risk_level}."
-                    ),
-                    risk_snapshot_json={
-                        "grade_code": request.grade_code,
-                        "grade_points": str(resolved_points),
-                        "risk_level": risk_level,
-                        "submission_id": submission.id,
-                        "course_id": enrollment.course_id,
-                    },
-                    assignee_type=InterventionAssigneeType.GROUP,
-                    assignee_ref=_assignee,
-                    due_at=_now + timedelta(days=_days),
-                    created_by=actor_id,
-                    updated_by=actor_id,
-                )
-                self.db.add(intervention)
+                from sqlalchemy import and_, select
+                _existing = self.db.execute(
+                    select(InterventionCaseModel).where(
+                        and_(
+                            InterventionCaseModel.tenant_id == tenant_id,
+                            InterventionCaseModel.student_profile_id == enrollment.student_profile_id,
+                            InterventionCaseModel.case_type == InterventionCaseType.ACADEMIC_RISK,
+                            InterventionCaseModel.status.in_(
+                                (InterventionCaseStatus.OPEN, InterventionCaseStatus.IN_PROGRESS)
+                            ),
+                        )
+                    )
+                ).scalar_one_or_none()
+                if _existing is None:
+                    _sev = InterventionCaseSeverity.HIGH if risk_level == "high" else InterventionCaseSeverity.MEDIUM
+                    _days = 3 if risk_level == "high" else 5
+                    _assignee = "dean_office" if risk_level == "high" else "faculty_advisor"
+                    _now = datetime.now(UTC)
+                    intervention = InterventionCaseModel(
+                        tenant_id=tenant_id,
+                        case_type=InterventionCaseType.ACADEMIC_RISK,
+                        student_profile_id=enrollment.student_profile_id,
+                        severity=_sev,
+                        status=InterventionCaseStatus.OPEN,
+                        title=f"Grade risk ({risk_level}): student {enrollment.student_profile_id}",
+                        description=(
+                            f"Auto-created on grade submission {submission.id}. "
+                            f"Grade: {request.grade_code} ({resolved_points} pts). "
+                            f"Risk threshold: {risk_level}."
+                        ),
+                        risk_snapshot_json={
+                            "grade_code": request.grade_code,
+                            "grade_points": str(resolved_points),
+                            "risk_level": risk_level,
+                            "submission_id": submission.id,
+                            "course_id": enrollment.course_id,
+                        },
+                        assignee_type=InterventionAssigneeType.GROUP,
+                        assignee_ref=_assignee,
+                        due_at=_now + timedelta(days=_days),
+                        created_by=actor_id,
+                        updated_by=actor_id,
+                    )
+                    self.db.add(intervention)
             except Exception:
                 pass  # Intervention auto-create errors must never break grade submission
 

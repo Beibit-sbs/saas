@@ -78,6 +78,9 @@ class ActionPlanner:
         incident_severity = payload.get("incident_severity")
         concern_type = payload.get("concern_type")
         incident_type = payload.get("incident_type")
+        award_id = payload.get("award_id")
+        application_id = payload.get("application_id")
+        record_id = payload.get("record_id")
         grant_id = payload.get("grant_id")
         publication_id = payload.get("publication_id")
         research_project_id = payload.get("research_project_id")
@@ -172,6 +175,9 @@ class ActionPlanner:
                         "lab_code": lab_code,
                         "utilization_rate": utilization_rate,
                         "idle_days": idle_days,
+                        "award_id": award_id,
+                        "application_id": application_id,
+                        "record_id": record_id,
                         "event_type": signal.get("event_type"),
                     },
                 }

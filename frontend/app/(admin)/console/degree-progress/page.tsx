@@ -2,6 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { ClipboardList, Search } from "lucide-react";
+import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
+
+const DEGREE_KPI_KEYS = [
+  "graduation_risk_students_count",
+  "degree_progress_intervention_cases_count",
+] as const;
+
+const DEGREE_KPI_LABELS: Record<string, string> = {
+  graduation_risk_students_count: "Graduation Risk Students",
+  degree_progress_intervention_cases_count: "Degree Progress Cases",
+};
 import { PageHeader } from "@/shared/ui/page-header";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -105,6 +116,8 @@ export default function DegreeProgressPage() {
         description="Check student graduation readiness, requirement completion, and tenant-level consistency."
         icon={ClipboardList}
       />
+
+      <Wave1KpiBar metricKeys={[...DEGREE_KPI_KEYS]} labels={DEGREE_KPI_LABELS} />
 
       <Card>
         <CardHeader>

@@ -31,5 +31,12 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "scheduling.section.conflict_detected",
         "enrollment.created",
         "enrollment.capacity_risk.detected",
+        # A-014.6 Wave 2 KPI extension — graduation / degree progress
+        "degree_progress.graduation_risk.detected",
+        # A-014.6 Wave 2 KPI extension — scholarship / financial aid risk
+        "scholarship.award.at_risk_detected",
+        "financial_aid.warning.detected",
+        # A-014.6 Wave 2 KPI extension — thesis completion risk
+        "thesis.status_changed",
     }
 )

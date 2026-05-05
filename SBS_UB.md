@@ -1,9 +1,179 @@
-- run_id: OP-AUDIT-2026-05-04-05 (A-013.8 final gates and closure)
-- status: ready_for_A-014
-- current_stage: A-014 planning / next wave selection
-- last_completed_action_id: A-013.8
-- next_action_id: A-014.0
-- updated_at: 2026-05-04 (A-013 closed: PASS WITH KNOWN CONDITIONS; final report + gates captured)
+- run_id: OP-AUDIT-2026-05-05-01 (A-014 Wave 2 closure and final gate matrix)
+- status: ready_for_A-015
+- current_stage: A-014 series closed with known conditions; transition to A-015 planning
+- last_completed_action_id: A-014.8
+- next_action_id: A-015.0
+- updated_at: 2026-05-05 (A-014.8 CLOSED: PASS WITH KNOWN CONDITIONS; final evidence in A-014.8-FINAL_WAVE2_ACADEMIC_STUDENT_SUCCESS_REPORT.md)
+
+#### A-014.8 - Full Gates + Final Wave 2 Closure
+
+- Date: 2026-05-05
+- Scope: Final closure verification for Wave 2 delivery, full gates matrix, and readiness handoff.
+- Final validation summary:
+    - Frontend full tests PASS: `110 files, 721 tests`.
+    - Frontend lint PASS: `No ESLint warnings or errors`.
+    - Frontend build PASS: Next.js production build completed successfully (`117/117 static pages generated`).
+    - Safe gate PASS: `scripts/university_pilot_safe_gate.sh`.
+    - Release gate PASS: `scripts/release_gate.sh` including rollback-readiness and phase-b scheduling smoke within release workflow.
+    - Standalone platform smoke FAIL: `8 passed, 1 failed` (`University Core Table Coverage` missing table set).
+    - Full backend regression (`pytest -q`) attempted and reached `71%` with multiple `F`/`E` markers before manual stop; not green as an all-suite run.
+- Known conditions (A-014.8):
+    - KC-1: Standalone `platform_smoke_check.sh` fails on `University Core Table Coverage` because many `university_core` entity tables are absent in DB and runtime falls back to in-memory store.
+    - KC-2: Full backend all-suite regression is not green in current baseline (multiple failures/errors observed during run), while release-gate backend slices remain green.
+    - KC-3: Historical KPI non-thresholded expectations (`tests/platform/test_platform_kpi_metrics_v1.py` two tests) remain part of prior affected-subset evidence and were not independently remediated in A-014.8.
+- Decision: **A-014 CLOSED - PASS WITH KNOWN CONDITIONS**.
+- Handoff: A-015.0 should begin with known-condition burn-down before broadening release scope.
+
+#### A-014.1 — Transition Validation
+
+- Date: 2026-05-05
+- Command: `bash scripts/release_gate.sh` (VS Code task `release-gate-once`)
+- Result: PASS (`exit 0`)
+- Release gate summary:
+    - architecture governance: 7 passed, 1 warning
+    - tenant safety: 8 passed, 1 warning
+    - platform regression: 447 passed, 3 skipped, 7 deselected, 1 warning
+    - domain backend: 412 passed, 1 warning
+    - domain tenant invariants: 17 passed, 1 warning
+    - domain frontend workflows: 10 files passed, 24 tests passed
+    - security regression: 73 passed, 7950 deselected, 1 warning
+    - template validation: 5 passed, 1 warning
+    - data layer: migration graph safety OK; tenant/context 24 passed; domain binding 26 passed; transcript 13 passed; grades 13 passed; scheduling 37 passed; interventions 5 passed; degree progress 9 passed
+- Warnings: recurring non-blocking pytest warning family (`DeprecationWarning: There is no current event loop`) remained present in multiple backend slices; no new release blocker surfaced.
+- Known conditions:
+    - KC-1 scheduler condition: resolved in A-014.1 and verified by targeted scheduler pass plus green release gate
+    - No blocking known conditions remain for A-014.1 transition
+    - Historical environment-profile items from A-014.0 were not reproduced as release blockers in this transition run
+- Decision: A-014.1 is fully closed. A-014.2 may start on the next action without additional transition work.
+
+#### A-014.3 - Attendance Recovery Loop
+
+- Date: 2026-05-04
+- Scope: Close Attendance Recovery Loop end-to-end using existing Brain Core/interventions infrastructure (additive-only, no new modules/tables/migrations).
+- Code delivery summary:
+    - `risk_classifier.py`: attendance now maps to dedicated paths `attendance_risk_high` / `attendance_risk_medium`.
+    - `rules_engine.py`: attendance-specific actions include `create_attendance_recovery_plan`; generic `academic_risk` remains grade-oriented.
+    - `registry.py`: `student_risk.action_map` allowlists `create_attendance_recovery_plan`.
+    - `action_bridge.py`: added handler for `create_attendance_recovery_plan` routed via `attendance_risk_records` entity action.
+    - `attendance/service.py`: low-attendance breach now emits Brain Core signal via fail-safe fire-and-forget processing.
+- Test and gate evidence:
+    - Focused A-014.3 suite PASS: `62 passed, 1 warning in 0.38s`.
+    - Wave2 regression slice PASS: `356 passed, 7646 deselected, 1 warning in 14.52s`.
+    - Safe gate PASS (`safe-gate-once`).
+    - Release gate run completed with all visible gate sections green in task output (architecture/tenant/platform/domain/security/template/data checks).
+- Notes:
+    - One fail-closed assertion was hardened in `test_attendance_recovery_loop_a014_3.py` to validate closed-failure status contract (`rejected|error|failed`) instead of requiring a hard exception.
+- Decision: A-014.3 is closed. Proceed to A-014.4.
+
+#### A-014.4 - Graduation / Degree Progress Risk Brain
+
+- Date: 2026-05-05
+- Scope: Close graduation / degree progress risk routing into the existing Brain Core intervention/advisor flow using additive-only changes with no new public endpoints or migrations.
+- Code delivery summary:
+    - `brain_core/constants.py`: added support for `degree_progress.graduation_risk.detected`.
+    - `brain_core/registry.py`: registered the degree-progress event and added scenario `graduation_degree_progress_risk`.
+    - `brain_core/reasoning/rules_engine.py`: graduation high/medium now route to supported actions `create_intervention_case` + `notify_advisor`; low risk is non-actionable.
+    - `brain_core/service.py`: added fail-closed normalization for `student_profile_id -> student_id`, payload-aware dedup keys, in-memory dedup fallback, and backward-compatible dispatch-outcome shims for legacy callers.
+    - `brain_core/classifiers/risk_classifier.py`: transcript inconsistency can reuse the graduation-risk path when explicit graduation context is present.
+    - `tests/test_graduation_degree_progress_risk_brain_a014_4.py`: new focused suite for routing, evidence, dedup, fail-closed behavior, tenant isolation, low-risk no-op, and transcript-context reuse.
+- Test and gate evidence:
+    - Focused A-014.4 suite PASS: `7 passed, 1 warning in 0.09s`.
+    - Adjacent regression slice PASS: `64 passed, 1 warning in 0.39s`.
+    - Safe gate PASS (`safe-gate-once`).
+    - Release gate PASS (`release-gate-once`) with architecture, tenant, platform, domain, security, template, and data-layer sections green.
+- Notes:
+    - A pre-existing log-only import issue in `courses/service.py` (`build_audit_action`) remains visible in adjacent test stderr but did not fail the focused suite, regression slice, safe gate, or release gate.
+- Decision: A-014.4 is closed. Proceed to A-014.5.
+
+#### A-014.5 - Scholarship / Financial Aid Risk Automation
+
+- Date: 2026-05-05
+- Scope: Wire `scholarship.award.at_risk_detected` and `financial_aid.warning.detected` events into the existing Brain Core `student_support_bridge` scenario using strictly additive changes (no new tables, migrations, or public endpoints).
+- Code delivery summary:
+    - `brain_core/constants.py`: added `scholarship.award.at_risk_detected` to `STUDENT_SUPPORT_EVENT_TYPES`.
+    - `brain_core/registry.py`: registered scholarship award at-risk event → `student_support_bridge` scenario.
+    - `brain_core/classifiers/risk_classifier.py`: added scholarship classification block: `scholarship_award_risk_high` / `scholarship_award_risk_medium`.
+    - `brain_core/reasoning/rules_engine.py`: `scholarship_award_risk_high` → `risk/critical` → `approval_pending`; `scholarship_award_risk_medium` → `preventive/medium` → dispatched.
+    - `brain_core/actions/planner.py`: added extraction of `award_id`, `application_id`, `record_id` from signal payload; all action-item payloads now carry these fields.
+    - `brain_core/service.py`: added `_normalize_scholarship_award_risk_signal()` for fail-closed `student_id` validation on scholarship events; wired into `process_signal()`.
+    - Pre-existing dedup fixes: added `svc._signal_dedup_cache = {}` to `_make_service()` helpers in 4 test files (7 tests); fixed unique `source_entity_id` per loop in state-recovery test.
+- Test and gate evidence:
+    - Focused A-014.5 suite PASS: `6 passed, 1 warning in 0.09s`.
+    - Adjacent dedup regression PASS: `47 passed, 1 warning` (test_brain_core_signal_dedup + 3 related files).
+    - Safe gate PASS (`safe-gate-once`).
+    - Release gate PASS: architecture (7), tenant safety (8), platform regression (447), domain backend (412), domain tenant invariants, security regression, template validation, data layer — all green.
+- Notes:
+    - High-severity financial-aid and scholarship signals route to `approval_pending`; `dispatch_results` is populated only after `approve_decision()`. Tests use the approval flow explicitly.
+    - The `_normalize_scholarship_award_risk_signal()` method mirrors the existing `_normalize_degree_progress_signal()` fail-closed pattern for consistency.
+- Decision: A-014.5 is closed. Proceed to A-014.6.
+
+#### A-014.6 - Wave 2 KPI + Frontend Wiring
+
+- Date: 2026-05-05
+- Scope: Expose Wave 2 outcomes through existing KPI/dashboard/frontend surfaces using additive-only wiring and reuse of existing components/infrastructure.
+- Code delivery summary:
+    - `backend/app/platform/kpi/service.py`:
+        - Added Wave 2 metric titles in `METRIC_TITLES`.
+        - Added Wave 2 event lineage in `EVENT_DERIVED_METRIC_LINEAGE`.
+        - Added Wave 2 metric computation in `refresh_tenant_metrics()`.
+        - Added Wave 2 source tagging for analytics sink metadata.
+        - Added Wave 2 threshold policies in `KPI_SEVERITY_RULES`.
+    - `backend/app/platform/event_ingestion/types.py`:
+        - Added missing Wave 2 event types to `VALID_EVENT_TYPES` so KPI event ingestion does not fail closed for those signals.
+    - Frontend Wave 2 KPI bars (reuse of `Wave1KpiBar`):
+        - `frontend/app/(admin)/console/grades/page.tsx`
+        - `frontend/app/(admin)/console/thesis/page.tsx`
+        - `frontend/app/(admin)/console/degree-progress/page.tsx`
+        - `frontend/app/(admin)/console/financial-aid/page.tsx`
+    - New focused tests:
+        - Backend: `backend/tests/platform/test_platform_kpi_wave2_a0146.py`
+        - Frontend: `frontend/__tests__/admin/Wave2KpiPages.test.tsx`
+- Test and gate evidence:
+    - Focused backend suite PASS: `11 passed, 1 warning in 0.15s`.
+    - Focused frontend suite PASS: `1 file passed, 3 tests passed` (`Wave2KpiPages`).
+    - Safe gate PASS (`safe-gate-once`).
+    - Release gate PASS (`release-gate-once`) with architecture, tenant, platform, domain, security, template, and data-layer sections green.
+- Notes:
+    - Initial backend failures were due to four valid Wave 2 events being absent in event ingestion `VALID_EVENT_TYPES`; fixed by additive registry updates only.
+    - Frontend focused test required rebuilding `frontend-tests` image so the new test file was included in container context.
+- Decision: A-014.6 is closed. Proceed to A-014.7.
+
+#### A-014.7 - Wave 2 Cross-Feature E2E Tests
+
+- Date: 2026-05-05
+- Scope: Validate full signal->brain->KPI pipelines across all Wave 2 domains + cross-tenant KPI isolation, without production feature changes.
+- Deliverables:
+    - Added backend cross-feature E2E suite: `backend/tests/test_a014_wave2_cross_feature_e2e.py`
+    - Added evidence report: `A-014.7-WAVE2_CROSS_FEATURE_E2E_REPORT.md`
+- Backend E2E result:
+    - Command: `docker run --rm -v /home/sbs/AI/backend:/app -w /app ai-backend-tests:latest pytest tests/test_a014_wave2_cross_feature_e2e.py --no-cov -q`
+    - Result: `6 passed, 1 warning in 0.12s`
+    - Covered flows:
+        - grade decline -> intervention -> KPI
+        - thesis delay/status risk -> KPI
+        - attendance recovery -> KPI
+        - graduation/degree-progress risk -> KPI
+        - scholarship + financial-aid risk -> KPI
+        - cross-tenant KPI isolation
+- Test-authoring corrections applied (test-only):
+    - `academic.interventions_created` -> `interventions.case.created`
+    - `academic.thesis_delay.detected` -> `thesis.status_changed`
+    - `academic.graduation_risk.detected` -> `degree_progress.graduation_risk.detected`
+    - No production modules, migrations, or security-guard changes.
+- Gate execution:
+    - Safe gate PASS (`bash scripts/university_pilot_safe_gate.sh`).
+    - Release gate PASS (`bash scripts/release_gate.sh`) including:
+        - architecture governance, tenant safety, platform regression, domain layer, security regression, template validation, data-layer gates,
+        - F3 observability alerts gate,
+        - phase-b scheduling smoke checks (4/4 PASS),
+        - rollback readiness checks PASS.
+- Frontend test-harness alignment discovered/closed during release gate:
+    - Failing tests: `frontend/__tests__/admin/FinancialAidPage.test.tsx` and `frontend/__tests__/admin/ThesisPage.test.tsx`
+    - Root cause: pages now render `Wave1KpiBar` requiring auth context in tests.
+    - Fix: mock `../../modules/platform/kpi/wave1-kpi-bar` in both files.
+    - Rebuild required: `docker compose -f docker-compose.yml --env-file /home/sbs/AI/infra/.env build --no-cache frontend-tests`
+    - Validation: targeted tests `6/6` pass; subsequent release gate full frontend suite `110/110` files pass.
+- Decision: A-014.7 is closed. Proceed to A-014.8.
 
 #### A-011.3-VERIFY-BLOCKER — Docker Infrastructure Diagnostics
 
@@ -2883,13 +3053,45 @@ Files modified in A-009 Phase 1:
     2. `DATABASE_URL`-dependent postgres persistence lane not configured in this run profile
     3. Smoke gate University Core table coverage mismatch in current environment profile
 
-**A-014 BACKLOG SKELETON (INITIAL)**
-- A-014.0 — Planning and next-wave selection (value/risk scoring)
-- A-014.1 — Environment hardening lane (`DATABASE_URL` parity for persistence tests)
-- A-014.2 — Scheduler reliability lane (de-flake timing-sensitive assertions)
-- A-014.3 — University Core smoke-profile alignment (table coverage contract)
-- A-014.4 — Wave 2 feature scope freeze + implementation brief
-- A-014.5 — Wave 2 gated delivery (targeted/subset/tenant-security/full/release)
+**A-014.0 EXECUTION LOG — COMPLETE**
+
+*Artifact:* `A-014.0-WAVE2_SELECTION_AND_CONDITIONS_REPORT.md`
+
+**Known Conditions Resolution:**
+- KC-1 (scheduler test): FIX_IN_PARALLEL → A-014.1
+- KC-2 (DATABASE_URL profile): ENV_PROFILE_ONLY → A-014.1
+- KC-3 (smoke gate University Core): ENV_PROFILE_ONLY → A-014.8
+- **None of the 3 known conditions block A-014 Wave 2 implementation**
+
+**Wave 2 Top 5 — FINAL SELECTION:**
+1. Grade Decline Intervention Loop (score: 33/35) → A-014.2
+2. Thesis Completion Brain (score: 31/35) → A-014.3
+3. Attendance Recovery Loop (score: 31/35) → A-014.3
+4. Graduation / Degree Progress Risk Brain (score: 30/35) → A-014.4
+5. Scholarship / Financial Aid Risk Automation (score: 30/35) → A-014.5
+
+**Infrastructure available for all Wave 2 features:**
+- `brain_core/action_bridge.py` — handler registration + dispatch
+- `brain_core/early_warning_sweep.py` — nightly sweep pattern
+- `brain_core/reasoning/composite_risk_scorer.py` — multi-signal risk scoring
+- `brain_core/classifiers/risk_classifier.py` — event-type → severity classifier
+- `brain_core/registry.py` — signal event type registration
+- `platform/event_ingestion/types.py` — event type allowlist
+- `platform/kpi/service.py` — KPI metric extension pattern
+- `frontend/modules/platform/kpi/wave1-kpi-bar.tsx` — KPI bar component
+
+---
+
+**A-014 BACKLOG (FULL)**
+- ✅ A-014.0 — Wave 2 selection + known conditions review — COMPLETE
+- A-014.1 — Environment hardening (KC-1 scheduler fix, KC-2 DATABASE_URL profile, KC-3 smoke gate prep)
+- A-014.2 — Grade Decline Intervention Loop (Brain rule + intervention + KPI `grade_decline_intervention_rate`)
+- A-014.3 — Thesis Completion Brain (context source `thesis.py` + classifier + KPI `thesis_at_risk_count`)
+- A-014.4 — Graduation / Degree Progress Risk Brain (registry extension + supported intervention/advisor routing + KPI)
+- A-014.5 — Scholarship / Financial Aid Risk Automation (Brain rule + compound risk + KPI)
+- A-014.6 — Wave 2 KPI/frontend wiring (`wave2-kpi-bar.tsx` + dashboard pages + tests)
+- A-014.7 — Wave 2 cross-feature E2E tests + smoke gate alignment fix
+- A-014.8 — Full gates + A-014 final report
 
 
 

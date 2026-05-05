@@ -43,6 +43,9 @@ class AcademicChainEventHandler:
 
     def _handle_thesis(self, event: OutboxEventRead) -> dict[str, Any]:
         payload = dict(event.payload_json or {})
+        if payload.get("brain_core_routed") is True:
+            return {"handler": self.name, "status": "skipped", "reason": "brain_core_routed"}
+
         to_status = str(payload.get("to_status") or "")
         if to_status not in _THESIS_TRIGGER_STATUSES:
             return {"handler": self.name, "status": "skipped", "reason": "non_risk_status", "to_status": to_status}

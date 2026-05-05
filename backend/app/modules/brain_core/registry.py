@@ -5,6 +5,7 @@ from app.modules.brain_core.constants import (
     ACADEMIC_RECORDS_EVENT_TYPES,
     ACCREDITATION_EVENT_TYPES,
     COURSES_EVENT_TYPES,
+    DEGREE_PROGRESS_EVENT_TYPES,
     ENROLLMENT_DROPOUT_EVENT_TYPES,
     FACULTY_OVERLOAD_EVENT_TYPES,
     OPERATIONS_EVENT_TYPES,
@@ -20,7 +21,6 @@ from app.modules.brain_core.constants import (
     STUDENT_RISK_EVENT_TYPES,
     SUPPLY_LOW_EVENT_TYPES,
     THESIS_DELAY_EVENT_TYPES,
-    TRANSCRIPTS_EVENT_TYPES,
     TRANSCRIPTS_EVENT_TYPES,
     SECTION_CONFLICT_EVENT_TYPES,
     ENROLLMENT_CAPACITY_RISK_EVENT_TYPES,
@@ -60,6 +60,11 @@ class SignalRegistry:
             "context_sources": ["finance", "student_success"],
         },
         "financial_aid.warning.detected": {
+            "signal_class": "student_success_risk",
+            "scenario": "student_support_bridge",
+            "context_sources": ["finance", "student_success", "academic"],
+        },
+        "scholarship.award.at_risk_detected": {
             "signal_class": "student_success_risk",
             "scenario": "student_support_bridge",
             "context_sources": ["finance", "student_success", "academic"],
@@ -199,6 +204,11 @@ class SignalRegistry:
             "scenario": "courses_status_risk",
             "context_sources": ["academic", "platform"],
         },
+        "degree_progress.graduation_risk.detected": {
+            "signal_class": "academic_risk",
+            "scenario": "graduation_degree_progress_risk",
+            "context_sources": ["academic", "student_success"],
+        },
         "transcripts.inconsistency.detected": {
             "signal_class": "compliance_risk",
             "scenario": "transcripts_audit",
@@ -244,6 +254,7 @@ class DecisionRegistry:
             "allowed_event_types": sorted(STUDENT_RISK_EVENT_TYPES),
             "action_map": {
                 "create_intervention_case": "workflow_task",
+                "create_attendance_recovery_plan": "workflow_task",
                 "notify_advisor": "notification",
                 "notify_faculty": "notification",
             },
@@ -252,7 +263,9 @@ class DecisionRegistry:
             "decision_type": "preventive",
             "allowed_event_types": sorted(THESIS_DELAY_EVENT_TYPES),
             "action_map": {
+                "create_intervention_case": "workflow_task",
                 "create_supervision_task": "workflow_task",
+                "notify_advisor": "notification",
                 "notify_faculty": "notification",
             },
         },
@@ -383,6 +396,14 @@ class DecisionRegistry:
             "action_map": {
                 "create_course_review_task": "workflow_task",
                 "notify_academic_dean": "notification",
+            },
+        },
+        "graduation_degree_progress_risk": {
+            "decision_type": "risk",
+            "allowed_event_types": sorted(DEGREE_PROGRESS_EVENT_TYPES),
+            "action_map": {
+                "create_intervention_case": "workflow_task",
+                "notify_advisor": "notification",
             },
         },
         "transcripts_audit": {

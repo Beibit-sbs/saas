@@ -256,6 +256,30 @@ class InMemoryWorkflowActionDispatcher:
         self._cases.append(case)
         return {"status": "created", "item": case}
 
+    def create_attendance_recovery_plan(self, *, tenant_id: int, decision_id: str, payload: dict) -> dict:
+        case = {
+            "case_id": str(uuid4()),
+            "tenant_id": int(tenant_id),
+            "decision_id": decision_id,
+            "case_type": "attendance_recovery",
+            "student_id": payload.get("student_id"),
+            "attendance_rate": payload.get("attendance_rate"),
+            "course_id": payload.get("course_id"),
+            "section_id": payload.get("section_id") or payload.get("source_entity_id"),
+            "advisor_id": payload.get("advisor_id"),
+            "source": "attendance_risk",
+            "recommended_action": "attendance_recovery_plan",
+            "status": "open",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "metadata": {
+                "source": "brain_core",
+                "event_type": payload.get("event_type"),
+                "idempotency_key": f"{tenant_id}:{payload.get('student_id')}:{payload.get('source_entity_id')}",
+            },
+        }
+        self._cases.append(case)
+        return {"status": "created", "item": case}
+
     def record_case_outcome(self, *, case_id: str, payload: dict, actor: str) -> dict:
         case = next((item for item in self._cases if item.get("case_id") == case_id), None)
         if case is None:

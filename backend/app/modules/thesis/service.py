@@ -102,6 +102,7 @@ def _emit_domain_event(
     from_status: str,
     to_status: str,
     days_since_last_milestone: int = 0,
+    brain_core_routed: bool = False,
 ) -> None:
     """Fire-and-forget: publish thesis.status_changed to the outbox for B-domain consumers.
 
@@ -129,6 +130,7 @@ def _emit_domain_event(
                 "from_status": from_status,
                 "to_status": to_status,
                 "source_module": "thesis",
+                "brain_core_routed": brain_core_routed,
             },
         )
     except Exception:  # noqa: BLE001
@@ -269,7 +271,43 @@ def update_thesis_status(
         from_status=current_status,
         to_status=next_status,
         days_since_last_milestone=days_since_last_milestone,
+        brain_core_routed=True,
     )
+    try:
+        from uuid import uuid4
+
+        from app.modules.brain_core.service import brain_core_service
+
+        brain_core_service.process_signal(
+            {
+                "event_type": "thesis.status_changed",
+                "tenant_id": tenant_id,
+                "correlation_id": str(uuid4()),
+                "source_entity_type": "thesis",
+                "source_entity_id": str(thesis_id),
+                "subject": {
+                    "student_id": str(current.get("student_id") or ""),
+                    "faculty_id": str(current.get("advisor_faculty_id") or ""),
+                },
+                "payload": {
+                    "student_id": str(current.get("student_id") or ""),
+                    "thesis_id": str(thesis_id),
+                    "advisor_id": str(current.get("advisor_faculty_id") or ""),
+                    "faculty_id": str(current.get("advisor_faculty_id") or ""),
+                    "days_since_last_milestone": days_since_last_milestone,
+                    "source_entity_type": "thesis",
+                    "source_entity_id": str(thesis_id),
+                    "from_status": current_status,
+                    "to_status": next_status,
+                },
+            }
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "thesis brain_core routing failed silently tenant_id=%s thesis_id=%s",
+            tenant_id,
+            thesis_id,
+        )
     _record_outcome(thesis_id=thesis_id, outcome_type=f"thesis_status_{next_status}", actor=actor)
     _metric(tenant_id, "thesis_status_updates", 1)
 

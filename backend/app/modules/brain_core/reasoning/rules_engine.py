@@ -11,13 +11,24 @@ class RulesEngine:
         severity = classification.get("severity")
         reasoning_path = classification.get("reasoning_path")
 
-        if reasoning_path in {"thesis_delay_medium", "thesis_delay_low"}:
+        if reasoning_path in {"thesis_delay_high", "thesis_delay_medium", "thesis_delay_low"}:
+            if reasoning_path == "thesis_delay_high":
+                return {
+                    "decision_type": "intervention",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "notify_advisor",
+                        "notify_faculty",
+                    ],
+                    "requires_approval": False,
+                }
             if reasoning_path == "thesis_delay_medium":
                 return {
-                    "decision_type": "preventive",
+                    "decision_type": "intervention",
                     "priority": "high",
                     "recommended_actions": [
                         "create_supervision_task",
+                        "notify_advisor",
                         "notify_faculty",
                     ],
                     "requires_approval": False,
@@ -71,10 +82,16 @@ class RulesEngine:
         if reasoning_path in {
             "financial_aid_warning_high",
             "financial_aid_warning_medium",
+            "scholarship_award_risk_high",
+            "scholarship_award_risk_medium",
             "housing_status_high",
             "housing_status_medium",
         }:
-            if reasoning_path in {"financial_aid_warning_high", "housing_status_high"}:
+            if reasoning_path in {
+                "financial_aid_warning_high",
+                "scholarship_award_risk_high",
+                "housing_status_high",
+            }:
                 return {
                     "decision_type": "risk",
                     "priority": "critical",
@@ -296,7 +313,33 @@ class RulesEngine:
                 "requires_approval": False,
             }
 
-        # A-013.1: Handle academic_risk (attendance/grade) BEFORE generic risk handler
+        # A-014.3: Attendance recovery loop — dedicated reasoning paths with recovery plan
+        if reasoning_path in {"attendance_risk_high", "attendance_risk_medium"}:
+            if reasoning_path == "attendance_risk_high":
+                return {
+                    "decision_type": "intervention",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "create_intervention_case",
+                        "create_attendance_recovery_plan",
+                        "notify_advisor",
+                        "notify_faculty",
+                    ],
+                    "requires_approval": False,
+                }
+            # attendance_risk_medium
+            return {
+                "decision_type": "intervention",
+                "priority": "high",
+                "recommended_actions": [
+                    "create_intervention_case",
+                    "create_attendance_recovery_plan",
+                    "notify_advisor",
+                ],
+                "requires_approval": False,
+            }
+
+        # A-013.1: Handle academic_risk (grade decline etc.) BEFORE generic risk handler
         # to route to decision_type="intervention" instead of "risk".
         if situation_type == "academic_risk" and reasoning_path in {"risk_high", "risk_medium"}:
             if reasoning_path == "risk_high":
@@ -353,29 +396,28 @@ class RulesEngine:
         if reasoning_path in {"graduation_risk_high", "graduation_risk_medium", "graduation_risk_low"}:
             if reasoning_path == "graduation_risk_high":
                 return {
-                    "decision_type": "risk",
+                    "decision_type": "intervention",
                     "priority": "critical",
                     "recommended_actions": [
-                        "create_graduation_audit_case",
-                        "notify_academic_advisor",
-                        "escalate_to_dean",
+                        "create_intervention_case",
+                        "notify_advisor",
                     ],
                     "requires_approval": False,
                 }
             if reasoning_path == "graduation_risk_medium":
                 return {
-                    "decision_type": "preventive",
+                    "decision_type": "intervention",
                     "priority": "high",
                     "recommended_actions": [
-                        "create_graduation_audit_case",
-                        "notify_academic_advisor",
+                        "create_intervention_case",
+                        "notify_advisor",
                     ],
                     "requires_approval": False,
                 }
             return {
                 "decision_type": "preventive",
                 "priority": "low",
-                "recommended_actions": ["notify_academic_advisor"],
+                "recommended_actions": [],
                 "requires_approval": False,
             }
 

@@ -35,6 +35,8 @@ from app.modules.interventions.models import (
 def _make_mock_session_factory(side_effect: Exception | None = None):
     """Return a callable that produces a mock SQLAlchemy session."""
     session = MagicMock()
+    # Default lookup behavior: no existing intervention case (non-idempotent path).
+    session.execute.return_value.scalar_one_or_none.return_value = None
     if side_effect:
         session.commit.side_effect = side_effect
     factory = MagicMock(return_value=session)
@@ -127,6 +129,10 @@ class TestMakeCreateInterventionCaseHandler:
         side_effect: Exception | None = None,
     ):
         factory, session = _make_mock_session_factory(side_effect=side_effect)
+        # Ensure idempotency lookup does not short-circuit these creation-path tests.
+        query_result = MagicMock()
+        query_result.scalar_one_or_none = MagicMock(return_value=None)
+        session.execute.return_value = query_result
         # Make session.refresh() populate case.id so the return dict can be built
         fake_case = MagicMock(spec=InterventionCaseModel)
         fake_case.id = 42

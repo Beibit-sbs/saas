@@ -96,6 +96,38 @@ def _make_create_intervention_case_handler(
 
         session = session_factory()
         try:
+            from sqlalchemy import and_, select
+
+            student_id = payload.get("student_id")
+            if student_id is not None:
+                existing = session.execute(
+                    select(InterventionCaseModel).where(
+                        and_(
+                            InterventionCaseModel.tenant_id == tenant_id,
+                            InterventionCaseModel.student_profile_id == student_id,
+                            InterventionCaseModel.case_type == InterventionCaseType.ACADEMIC_RISK,
+                            InterventionCaseModel.status.in_(
+                                (InterventionCaseStatus.OPEN, InterventionCaseStatus.IN_PROGRESS)
+                            ),
+                        )
+                    )
+                ).scalar_one_or_none()
+                if existing is not None:
+                    logger.info(
+                        "brain_core_action_intervention_case_ensured",
+                        extra={
+                            "tenant_id": tenant_id,
+                            "decision_id": decision_id,
+                            "case_id": str(existing.id),
+                            "reason": "idempotent_replay",
+                        },
+                    )
+                    return {
+                        "status": "ensured",
+                        "idempotent_replay": True,
+                        "item": {"case_id": str(existing.id), "source": "real_db"},
+                    }
+
             risk_level = str(payload.get("risk_level") or "medium").lower()
             severity = InterventionCaseSeverity(
                 risk_level if risk_level in {"high", "medium", "low"} else "medium"
@@ -703,6 +735,19 @@ def _module_action_handlers() -> dict[str, Callable[[int, str, dict[str, Any]], 
                 "status": "breached",
                 "reported_at": datetime.now(UTC).isoformat(),
                 "integration_source": "brain_core",
+            },
+        ),
+        # ── attendance recovery (A-014.3) ─────────────────────────────────────
+        "create_attendance_recovery_plan": _make_entity_action_handler(
+            action_name="create_attendance_recovery_plan",
+            entity_name="attendance_risk_records",
+            payload_builder=lambda _tid, did, pl: {
+                "student_id": str(pl.get("student_id") or "UNKNOWN-STUDENT"),
+                "course_id": str(pl.get("course_id") or pl.get("source_entity_id") or "UNKNOWN-COURSE"),
+                "attendance_pct": float(pl.get("attendance_rate") or 0.0),
+                "threshold": 0.60,
+                "detected_at": datetime.now(UTC).isoformat(),
+                "tenant_id": _tid,
             },
         ),
     }

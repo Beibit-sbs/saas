@@ -2,6 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { Wallet } from "lucide-react";
+import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
+
+const FINANCIAL_AID_KPI_KEYS = [
+  "scholarship_risk_cases_count",
+  "financial_aid_risk_cases_count",
+] as const;
+
+const FINANCIAL_AID_KPI_LABELS: Record<string, string> = {
+  scholarship_risk_cases_count: "Scholarship Risk Cases",
+  financial_aid_risk_cases_count: "Financial Aid Risk Cases",
+};
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DataTable, type Column } from "@/shared/ui/data-table";
@@ -127,6 +138,8 @@ export default function FinancialAidPage() {
           description="Manage scholarship and aid awards lifecycle by student and term."
           icon={Wallet}
         />
+
+        <Wave1KpiBar metricKeys={[...FINANCIAL_AID_KPI_KEYS]} labels={FINANCIAL_AID_KPI_LABELS} />
 
         <div className="grid gap-3 rounded-lg border p-4 md:grid-cols-3">
           <div className="space-y-1">

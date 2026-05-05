@@ -2,6 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { ScrollText } from "lucide-react";
+import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
+
+const THESIS_KPI_KEYS = [
+  "thesis_completion_risk_count",
+  "thesis_intervention_cases_count",
+] as const;
+
+const THESIS_KPI_LABELS: Record<string, string> = {
+  thesis_completion_risk_count: "Thesis Completion Risk",
+  thesis_intervention_cases_count: "Intervention Cases",
+};
 import { Button } from "@/shared/ui/button";
 import { DataTable, type Column } from "@/shared/ui/data-table";
 import { ErrorState } from "@/shared/ui/error-state";
@@ -107,6 +118,8 @@ export default function ThesisPage() {
           description="Manage thesis lifecycle from draft to defense."
           icon={ScrollText}
         />
+
+        <Wave1KpiBar metricKeys={[...THESIS_KPI_KEYS]} labels={THESIS_KPI_LABELS} />
 
         <div className="grid gap-3 rounded-lg border p-4 md:grid-cols-4">
           <div className="space-y-1">

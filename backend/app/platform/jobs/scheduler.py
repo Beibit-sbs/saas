@@ -89,8 +89,8 @@ class PlatformWorkerScheduler:
                 failed += 1
                 observe_job_execution(outcome="failed")
             finally:
-                item.last_run_at = now
                 record_scheduler_run(item.name)
+                item.last_run_at = _now_utc()
 
         return {"triggered": triggered, "succeeded": succeeded, "failed": failed}
 

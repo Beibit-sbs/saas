@@ -45,6 +45,16 @@ METRIC_TITLES: dict[str, str] = {
     "course_fill_rate": "Course Fill Rate (%)",
     "capacity_risk_sections_count": "Enrollment Capacity Risk Count",
     "scheduling_conflicts_count": "Scheduling Conflict Count",
+    # A-014.6 Wave 2 metrics
+    "grade_decline_risk_count": "Grade Decline Risk Count",
+    "grade_intervention_cases_count": "Grade Intervention Cases",
+    "thesis_completion_risk_count": "Thesis Completion Risk Count",
+    "thesis_intervention_cases_count": "Thesis Intervention Cases",
+    "attendance_recovery_actions_count": "Attendance Recovery Actions",
+    "graduation_risk_students_count": "Graduation Risk Students Count",
+    "degree_progress_intervention_cases_count": "Degree Progress Intervention Cases",
+    "scholarship_risk_cases_count": "Scholarship Risk Cases",
+    "financial_aid_risk_cases_count": "Financial Aid Risk Cases",
 }
 
 
@@ -86,6 +96,16 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "course_fill_rate": ["scheduling.section.created", "enrollment.created"],
     "capacity_risk_sections_count": ["enrollment.capacity_risk.detected"],
     "scheduling_conflicts_count": ["scheduling.section.conflict_detected"],
+    # A-014.6 Wave 2 event lineage
+    "grade_decline_risk_count": ["academic.grade_risk.detected"],
+    "grade_intervention_cases_count": ["interventions.case.created"],
+    "thesis_completion_risk_count": ["thesis.status_changed"],
+    "thesis_intervention_cases_count": ["interventions.case.created"],
+    "attendance_recovery_actions_count": ["academic.attendance_risk.detected"],
+    "graduation_risk_students_count": ["degree_progress.graduation_risk.detected"],
+    "degree_progress_intervention_cases_count": ["interventions.case.created"],
+    "scholarship_risk_cases_count": ["scholarship.award.at_risk_detected"],
+    "financial_aid_risk_cases_count": ["financial_aid.warning.detected"],
 }
 
 
@@ -584,6 +604,24 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     metric_values["capacity_risk_sections_count"] = enrollment_capacity_risk
     metric_values["scheduling_conflicts_count"] = scheduling_conflicts
 
+    # A-014.6 Wave 2: derive KPI-friendly counters from Wave 2 event stream.
+    grade_decline_risk = int(event_counts.get("academic.grade_risk.detected", 0) or 0)
+    thesis_risk = int(event_counts.get("thesis.status_changed", 0) or 0)
+    attendance_recovery = int(event_counts.get("academic.attendance_risk.detected", 0) or 0)
+    graduation_risk = int(event_counts.get("degree_progress.graduation_risk.detected", 0) or 0)
+    scholarship_risk = int(event_counts.get("scholarship.award.at_risk_detected", 0) or 0)
+    financial_aid_risk = int(event_counts.get("financial_aid.warning.detected", 0) or 0)
+
+    metric_values["grade_decline_risk_count"] = grade_decline_risk
+    metric_values["grade_intervention_cases_count"] = intervention_created
+    metric_values["thesis_completion_risk_count"] = thesis_risk
+    metric_values["thesis_intervention_cases_count"] = intervention_created
+    metric_values["attendance_recovery_actions_count"] = attendance_recovery
+    metric_values["graduation_risk_students_count"] = graduation_risk
+    metric_values["degree_progress_intervention_cases_count"] = intervention_created
+    metric_values["scholarship_risk_cases_count"] = scholarship_risk
+    metric_values["financial_aid_risk_cases_count"] = financial_aid_risk
+
     from app.modules.billing.service import get_delinquency_dashboard, list_delinquency_records  # noqa: PLC0415
 
     delinquency_dashboard = get_delinquency_dashboard(int(tenant_id))
@@ -633,6 +671,16 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
                         "course_fill_rate",
                         "capacity_risk_sections_count",
                         "scheduling_conflicts_count",
+                        # A-014.6 Wave 2
+                        "grade_decline_risk_count",
+                        "grade_intervention_cases_count",
+                        "thesis_completion_risk_count",
+                        "thesis_intervention_cases_count",
+                        "attendance_recovery_actions_count",
+                        "graduation_risk_students_count",
+                        "degree_progress_intervention_cases_count",
+                        "scholarship_risk_cases_count",
+                        "financial_aid_risk_cases_count",
                     } else "platform_core",
                     "analytics_today": int(analytics_counts.get(_metric_key_to_event(metric_key), 0)),
                     "lineage": lineage,
@@ -1181,6 +1229,61 @@ KPI_SEVERITY_RULES: dict[str, dict[str, Any]] = {
         "warning_gte": 1,
         "critical_gte": 5,
         "policy_pack": "scheduling_wave1_v1",
+    },
+    # A-014.6 Wave 2 severity rules
+    "grade_decline_risk_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 10,
+        "policy_pack": "academic_risk_wave2_v1",
+    },
+    "grade_intervention_cases_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 10,
+        "policy_pack": "academic_risk_wave2_v1",
+    },
+    "thesis_completion_risk_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "thesis_risk_wave2_v1",
+    },
+    "thesis_intervention_cases_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "thesis_risk_wave2_v1",
+    },
+    "attendance_recovery_actions_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 10,
+        "policy_pack": "attendance_recovery_wave2_v1",
+    },
+    "graduation_risk_students_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "graduation_risk_wave2_v1",
+    },
+    "degree_progress_intervention_cases_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "graduation_risk_wave2_v1",
+    },
+    "scholarship_risk_cases_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "scholarship_risk_wave2_v1",
+    },
+    "financial_aid_risk_cases_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "financial_aid_risk_wave2_v1",
     },
 }
 

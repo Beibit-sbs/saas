@@ -345,6 +345,34 @@ def test_handler_creates_intervention_case_for_rejected_thesis() -> None:
     assert "rejected" in call_kwargs["title"]
 
 
+def test_handler_skips_thesis_event_when_brain_core_already_routed() -> None:
+    """Legacy handler must skip thesis events already routed through Brain Core."""
+    from app.platform.events.handlers.academic_chain_handler import AcademicChainEventHandler
+
+    handler = AcademicChainEventHandler()
+    event = _make_outbox_event(
+        "thesis.status_changed",
+        1,
+        {
+            "thesis_id": 10,
+            "student_id": 55,
+            "advisor_faculty_id": "FAC-3",
+            "from_status": "under_review",
+            "to_status": "rejected",
+            "source_module": "thesis",
+            "brain_core_routed": True,
+        },
+    )
+    uow = MagicMock()
+
+    with patch("app.platform.events.handlers.academic_chain_handler._create_intervention_case") as mock_create:
+        result = handler.handle(event, uow=uow)
+
+    assert result["status"] == "skipped"
+    assert result["reason"] == "brain_core_routed"
+    mock_create.assert_not_called()
+
+
 def test_handler_creates_intervention_case_for_accreditation_remediation() -> None:
     """Handler calls _create_intervention_case for accreditation.status_changed with remediation_required."""
     from app.platform.events.handlers.academic_chain_handler import AcademicChainEventHandler

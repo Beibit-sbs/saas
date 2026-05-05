@@ -21,6 +21,7 @@ PAYMENT_OVERDUE_EVENT_TYPES = {
 STUDENT_SUPPORT_EVENT_TYPES = {
     "financial_aid.warning.detected",
     "housing.status.risk_detected",
+    "scholarship.award.at_risk_detected",
 }
 
 PROCUREMENT_EVENT_TYPES = {
@@ -109,6 +110,10 @@ TRANSCRIPTS_EVENT_TYPES = {
     "transcripts.inconsistency.detected",
 }
 
+DEGREE_PROGRESS_EVENT_TYPES = {
+    "degree_progress.graduation_risk.detected",
+}
+
 STUDENT_SERVICES_EVENT_TYPES = {
     "student_services.ticket.escalated",
 }
@@ -133,6 +138,7 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | PROGRAMS_EVENT_TYPES
     | COURSES_EVENT_TYPES
     | TRANSCRIPTS_EVENT_TYPES
+    | DEGREE_PROGRESS_EVENT_TYPES
     | STUDENT_SERVICES_EVENT_TYPES
     | ADMISSIONS_EVENT_TYPES
     | SCHEDULING_EVENT_TYPES

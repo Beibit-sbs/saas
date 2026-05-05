@@ -3,6 +3,10 @@ import { render, screen } from "@testing-library/react";
 
 import ThesisPage from "../../app/(admin)/console/thesis/page";
 
+vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
+  Wave1KpiBar: () => <div data-testid="wave1-kpi-bar-mock" />,
+}));
+
 const useThesisMock = vi.fn();
 let allowAccess = true;
 

@@ -298,6 +298,15 @@ def create_scholarship_award(payload: dict[str, object], tenant_id: int) -> dict
 
     if at_risk:
         record_id = int(record.get("id") or 0)
+        try:
+            current_gpa = float(record.get("current_gpa") or 0.0)
+        except (TypeError, ValueError):
+            current_gpa = 0.0
+        try:
+            gpa_threshold = float(record.get("gpa_threshold") or 0.0)
+        except (TypeError, ValueError):
+            gpa_threshold = 0.0
+        risk_level = "high" if current_gpa < gpa_threshold else "medium"
         # Persist alert projection before emitting events to keep downstream views consistent.
         _ensure_revocation_alert_record(record_id, tenant_id)
         try:
@@ -307,11 +316,20 @@ def create_scholarship_award(payload: dict[str, object], tenant_id: int) -> dict
                 aggregate_type="scholarship_award",
                 aggregate_id=str(record_id),
                 payload_json={
+                    "award_id": str(record_id),
                     "award_code": record.get("award_code"),
                     "student_id": record.get("student_id"),
                     "current_gpa": record.get("current_gpa"),
                     "gpa_threshold": record.get("gpa_threshold"),
                     "status": record.get("status"),
+                    "risk_level": risk_level,
+                    "reason": "scholarship_gpa_threshold_breach",
+                    "evidence": {
+                        "current_gpa": record.get("current_gpa"),
+                        "gpa_threshold": record.get("gpa_threshold"),
+                        "status": record.get("status"),
+                    },
+                    "correlation_id": f"scholarship-award-risk:{tenant_id}:{record_id}",
                     "source_entity_type": "scholarship_award",
                     "source_entity_id": str(record_id),
                 },
