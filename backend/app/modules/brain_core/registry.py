@@ -28,6 +28,7 @@ from app.modules.brain_core.constants import (
     TRANSCRIPTS_EVENT_TYPES,
     SECTION_CONFLICT_EVENT_TYPES,
     ENROLLMENT_CAPACITY_RISK_EVENT_TYPES,
+    ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES,
 )
 
 
@@ -217,6 +218,37 @@ class SignalRegistry:
         "academic_integrity.case.escalated": {
             "signal_class": "academic_risk",
             "scenario": "academic_integrity_escalation",
+            "context_sources": ["academic", "student_success"],
+        },
+        # A-016.1 Academic Integrity Violation Detection Brain signals
+        "academic_integrity.violation.detected": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_violation",
+            "context_sources": ["academic", "student_success"],
+        },
+        "academic_integrity.risk_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_violation",
+            "context_sources": ["academic", "student_success"],
+        },
+        "plagiarism.similarity.high_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_violation",
+            "context_sources": ["academic", "student_success"],
+        },
+        "exam.proctoring.violation_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_violation",
+            "context_sources": ["academic", "student_success"],
+        },
+        "coursework.submission.suspicious_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_violation",
+            "context_sources": ["academic", "student_success"],
+        },
+        "ai_plagiarism.risk_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_violation",
             "context_sources": ["academic", "student_success"],
         },
         "academic_records.inconsistency.detected": {
@@ -451,6 +483,17 @@ class DecisionRegistry:
             "action_map": {
                 "create_integrity_review_case": "workflow_task",
                 "notify_registrar": "notification",
+            },
+        },
+        # A-016.1 Academic Integrity Violation Detection Brain
+        "academic_integrity_violation": {
+            "decision_type": "academic_integrity_review",
+            "allowed_event_types": sorted(ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES),
+            "action_map": {
+                "integrity_review": "workflow_task",
+                "notify_academic_office": "notification",
+                "request_manual_review": "workflow_task",
+                "escalate_to_committee": "workflow_task",
             },
         },
         "academic_records_audit": {

@@ -755,6 +755,76 @@ class RiskClassifier:
                 "reasoning_path": "academic_integrity_medium",
             }
 
+        # A-016.1 Academic Integrity Violation Detection Brain — deterministic severity
+        _INTEGRITY_VIOLATION_EVENTS = {
+            "academic_integrity.violation.detected",
+            "academic_integrity.risk_detected",
+            "plagiarism.similarity.high_detected",
+            "exam.proctoring.violation_detected",
+            "coursework.submission.suspicious_detected",
+            "ai_plagiarism.risk_detected",
+        }
+        if event_type in _INTEGRITY_VIOLATION_EVENTS:
+            payload = signal.get("payload", {})
+            # Normalize similarity_score: accept 0-100 (percent) or 0.0-1.0 (ratio)
+            raw_score = payload.get("similarity_score")
+            similarity_pct: float | None = None
+            if isinstance(raw_score, (int, float)):
+                if raw_score <= 1.0:
+                    similarity_pct = float(raw_score) * 100.0
+                else:
+                    similarity_pct = float(raw_score)
+            risk_level = str(payload.get("risk_level") or "").strip().lower()
+            confirmed = bool(payload.get("confirmed_violation", False))
+            repeated = bool(payload.get("repeated_incident", False))
+            proctoring_flags = payload.get("proctoring_flags") or []
+            flag_count = len(proctoring_flags) if isinstance(proctoring_flags, (list, tuple, set)) else 0
+            # CRITICAL: confirmed violation, similarity >= 90, severe flags, repeated
+            if (
+                confirmed
+                or risk_level == "critical"
+                or (similarity_pct is not None and similarity_pct >= 90.0)
+                or repeated
+                or flag_count >= 3
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "critical",
+                    "urgency": "critical",
+                    "reasoning_path": "academic_integrity_violation_critical",
+                }
+            # HIGH: similarity >= 75, strong suspicious, multiple flags
+            if (
+                risk_level == "high"
+                or (similarity_pct is not None and similarity_pct >= 75.0)
+                or flag_count >= 2
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "academic_integrity_violation_high",
+                }
+            # MEDIUM: similarity >= 50, moderate suspicion, one flag
+            if (
+                risk_level == "medium"
+                or (similarity_pct is not None and similarity_pct >= 50.0)
+                or flag_count >= 1
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "academic_integrity_violation_medium",
+                }
+            # LOW: weak suspicion / warning only
+            return {
+                "situation_type": "academic_risk",
+                "severity": "low",
+                "urgency": "low",
+                "reasoning_path": "academic_integrity_violation_low",
+            }
+
         if event_type == "academic_records.inconsistency.detected":
             payload = signal.get("payload", {})
             issue_count = payload.get("issue_count")

@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-05-04 (A-015.8 Final Wave 3 Gates + Closure)
-- status: ready_for_A-016
-- current_stage: A-015 CLOSED; A-016 planning / Wave 4 selection next
-- last_completed_action_id: A-015.8
-- next_action_id: A-016.0
-- updated_at: 2026-05-05 (A-015 CLOSED — PASS; all Wave 3 gates green, frontend fixes applied, 16/16 E2E, 111/724 frontend, release-gate PASS)
+- run_id: OP-AUDIT-2026-05-05-06 (A-016.1 Academic Integrity Violation Detection Brain)
+- status: in_progress_A-016
+- current_stage: A-016.1 CLOSED; next = A-016.2
+- last_completed_action_id: A-016.1
+- next_action_id: A-016.2
+- updated_at: 2026-05-05 (A-016.1 complete; 6 violation event types registered in Brain Core; 22/22 tests passed; deterministic 4-level severity classifier; no punitive actions; full tenant isolation)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -223,6 +223,58 @@
     - Student services + advising workflow automation
     - HR/payroll + faculty performance convergence
     - Multi-tenant federated identity orchestration
+
+---
+
+#### A-016.1 — Academic Integrity Violation Detection Brain
+
+- Date: 2026-05-05
+- Scope: Full Brain Core integration for academic integrity violation signal detection and automated review routing. No punitive academic status changes; all actions are review/notification/escalation only.
+- Files changed:
+    - `backend/app/modules/brain_core/constants.py` — `ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES` (6 events) + 4 action constants + extended `SUPPORTED_SIGNAL_EVENT_TYPES`
+    - `backend/app/platform/events/registry.py` — 6 new event type entries
+    - `backend/app/platform/event_ingestion/types.py` — 6 events added to `VALID_EVENT_TYPES`
+    - `backend/app/modules/brain_core/registry.py` — 6 signal entries + `academic_integrity_violation` decision registry entry
+    - `backend/app/modules/brain_core/classifiers/risk_classifier.py` — 4-level deterministic classifier for all 6 events
+    - `backend/app/modules/brain_core/reasoning/rules_engine.py` — 4 reasoning path rules → `decision_type="academic_integrity_review"`
+    - `backend/app/modules/brain_core/service.py` — `_normalize_academic_integrity_violation_signal()` + normalizer call in `process_signal()` + `academic_integrity_review` in `_NOTIFIABLE_DECISION_TYPES`
+- Tests added: `backend/tests/test_a016_1_academic_integrity_violation_brain.py` (22 tests)
+- Severity model (deterministic, no LLM):
+    - CRITICAL: `confirmed_violation=True` OR `risk_level="critical"` OR `similarity_pct >= 90` OR `repeated_incident=True` OR `flag_count >= 3`
+    - HIGH: `risk_level="high"` OR `similarity_pct >= 75` OR `flag_count >= 2`
+    - MEDIUM: `risk_level="medium"` OR `similarity_pct >= 50` OR `flag_count >= 1`
+    - LOW: default
+- Security guarantees:
+    - Fail-closed on missing `tenant_id` → rejected
+    - Cross-tenant isolation verified (separate `list_decisions()` results per tenant)
+    - Duplicate deduplication working
+    - No punitive actions (`suspend_student`, `expel_student`, `apply_grade_penalty`, etc.) in any decision
+- Validation results:
+    - A-016.1 focused suite: **22/22 PASS** (`tests/test_a016_1_academic_integrity_violation_brain.py`)
+- Decision: **A-016.1 CLOSED - PASS**.
+- Next action: **A-016.2** (Thesis Submission Pipeline + Supervisor Assignment Automation).
+
+---
+
+#### A-016.0 — Wave 4 Selection + Known Conditions Review
+
+- Date: 2026-05-05
+- Scope: Planning/selection only for Wave 4 (no code/endpoints/migrations/production-logic changes).
+- Theme selected: **Academic Integrity + Thesis Governance Autonomy**
+- Known conditions review decisions:
+    - KC-1 (`test_rate_limit.py` 7 failures): ACCEPTED_KNOWN_CONDITION — pre-existing Redis config gap, does not block A-016; defer to post-Wave 4 KC lane.
+    - KC-2 (`test_postgres_persistence_xv2.py` 8 errors in no-deps): ACCEPTED_KNOWN_CONDITION — environment-gated, not a correctness defect; defer to post-Wave 4 KC lane.
+    - KC-3 (University Core table coverage smoke): CLOSED — burned down in A-015.1.
+- Wave 4 Top 5 selected:
+    1. A-016.1 — Academic Integrity Violation Detection + Response Automation
+    2. A-016.2 — Thesis Submission Pipeline + Supervisor Assignment Automation
+    3. A-016.3 — Academic Calendar + Deadline Enforcement Brain
+    4. A-016.4 — Grade Review + Appeals Workflow Automation
+    5. A-016.5 — Academic Performance Monitoring + Early Warning System
+- A-016 backlog skeleton approved:
+    - A-016.1 Feature 1, A-016.2 Feature 2, A-016.3 Feature 3, A-016.4 Feature 4, A-016.5 Feature 5, A-016.6 KPI/frontend wiring (4 academic pages), A-016.7 cross-feature E2E (≥16 tests), A-016.8 full gates + final report.
+- Evidence: `A-016.0-WAVE4_SELECTION_AND_CONDITIONS_REPORT.md`
+- Decision: A-016.0 CLOSED (planning complete). Proceed to **A-016.1**.
 
 ---
 

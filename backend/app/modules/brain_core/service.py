@@ -60,6 +60,18 @@ _FINANCE_OPERATIONS_HEALTH_EVENT_TYPES = frozenset(
     }
 )
 
+# A-016.1 — Academic Integrity Violation Detection Brain event types
+_ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES = frozenset(
+    {
+        "academic_integrity.violation.detected",
+        "academic_integrity.risk_detected",
+        "plagiarism.similarity.high_detected",
+        "exam.proctoring.violation_detected",
+        "coursework.submission.suspicious_detected",
+        "ai_plagiarism.risk_detected",
+    }
+)
+
 
 def _coerce_uuid(value: object) -> uuid.UUID:
     """Convert a string/UUID to uuid.UUID, generating a new one on failure."""
@@ -212,7 +224,7 @@ class BrainCoreService:
 
     # Priorities and types that warrant an immediate in-app notification.
     _NOTIFIABLE_PRIORITIES: frozenset[str] = frozenset({"critical", "high"})
-    _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance"})
+    _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance", "academic_integrity_review"})
 
     def _normalize_degree_progress_signal(self, signal: dict) -> tuple[dict, str | None]:
         """Normalize graduation-risk signals to canonical student/source fields.
@@ -403,6 +415,60 @@ class BrainCoreService:
 
         return normalized, None
 
+    def _normalize_academic_integrity_violation_signal(self, signal: dict) -> tuple[dict, str | None]:
+        """Fail-closed normalization for academic integrity violation signals (A-016.1).
+
+        Ensures required tenant context, attaches origin/evidence metadata for
+        downstream audit/workflow payloads, and normalizes similarity_score to a
+        consistent percentage representation (0–100).
+        Does NOT make any punitive academic status changes.
+        """
+        event_type = str(signal.get("event_type") or "")
+        if event_type not in _ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES:
+            return signal, None
+
+        normalized = dict(signal)
+        payload = dict(normalized.get("payload") or {})
+
+        # Fail-closed: tenant_id and at least one subject identifier required
+        tenant_id = int(normalized.get("tenant_id") or 0)
+        if tenant_id <= 0:
+            return normalized, "missing_tenant_context"
+
+        student_id = str(payload.get("student_id") or "").strip()
+        source_entity_id = str(
+            normalized.get("source_entity_id")
+            or payload.get("source_entity_id")
+            or payload.get("submission_id")
+            or payload.get("exam_id")
+            or ""
+        ).strip()
+        if not student_id and not source_entity_id:
+            return normalized, "missing_subject_identifier"
+
+        # Normalize similarity_score to percentage float (0–100)
+        raw_score = payload.get("similarity_score")
+        if isinstance(raw_score, (int, float)):
+            if raw_score <= 1.0:
+                payload["similarity_score"] = round(float(raw_score) * 100.0, 2)
+            else:
+                payload["similarity_score"] = round(float(raw_score), 2)
+
+        # Attach evidence metadata for audit
+        payload.setdefault("risk_source", event_type)
+        payload.setdefault("correlation_id", str(normalized.get("correlation_id") or ""))
+        payload.setdefault("student_id", student_id)
+
+        normalized["payload"] = payload
+        if str(normalized.get("source_entity_type") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_type"] = str(payload.get("source_entity_type") or "integrity_submission")
+        if str(normalized.get("source_entity_id") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_id"] = source_entity_id or "unknown"
+        if not normalized.get("source_module"):
+            normalized["source_module"] = str(payload.get("source_module") or "academic_integrity")
+
+        return normalized, None
+
     def _resolve_decision_scenario(self, *, event_type: str, classification: dict) -> str:
         """Resolve the decision scenario, allowing additive routing overrides."""
         scenario = SignalRegistry.signals[event_type]["scenario"]
@@ -575,6 +641,11 @@ class BrainCoreService:
             return {"status": "rejected", "reason": normalization_rejection}
 
         signal, normalization_rejection = self._normalize_procurement_approval_signal(signal)
+        if normalization_rejection is not None:
+            self._observability.increment("signals_rejected_total")
+            return {"status": "rejected", "reason": normalization_rejection}
+
+        signal, normalization_rejection = self._normalize_academic_integrity_violation_signal(signal)
         if normalization_rejection is not None:
             self._observability.increment("signals_rejected_total")
             return {"status": "rejected", "reason": normalization_rejection}

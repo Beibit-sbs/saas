@@ -178,6 +178,13 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "academic_integrity.case.status_changed": EventDefinition(GenericTenantEventPayload),
     "academic_integrity.case.escalated": EventDefinition(GenericTenantEventPayload),
     "academic_integrity.case.outcome_recorded": EventDefinition(GenericTenantEventPayload),
+    # A-016.1 Academic Integrity Violation Detection Brain events
+    "academic_integrity.violation.detected": EventDefinition(GenericTenantEventPayload),
+    "academic_integrity.risk_detected": EventDefinition(GenericTenantEventPayload),
+    "plagiarism.similarity.high_detected": EventDefinition(GenericTenantEventPayload),
+    "exam.proctoring.violation_detected": EventDefinition(GenericTenantEventPayload),
+    "coursework.submission.suspicious_detected": EventDefinition(GenericTenantEventPayload),
+    "ai_plagiarism.risk_detected": EventDefinition(GenericTenantEventPayload),
     # Research module events (W52)
     "campus.research.grant_delay_risk_detected": EventDefinition(GenericTenantEventPayload),
     # Exam governance lifecycle events (XXXIV.1)

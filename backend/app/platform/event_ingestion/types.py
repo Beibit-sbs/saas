@@ -56,5 +56,12 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "inventory.reorder_needed",
         "supply.risk.detected",
         "procurement.inventory_gap.detected",
+        # A-016.1 Wave 4 KPI extension — academic integrity violation signals
+        "academic_integrity.violation.detected",
+        "academic_integrity.risk_detected",
+        "plagiarism.similarity.high_detected",
+        "exam.proctoring.violation_detected",
+        "coursework.submission.suspicious_detected",
+        "ai_plagiarism.risk_detected",
     }
 )

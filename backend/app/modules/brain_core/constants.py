@@ -120,6 +120,22 @@ ACADEMIC_INTEGRITY_EVENT_TYPES = {
     "academic_integrity.case.escalated",
 }
 
+# A-016.1 Academic Integrity Violation Detection Brain events
+ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES = {
+    "academic_integrity.violation.detected",
+    "academic_integrity.risk_detected",
+    "plagiarism.similarity.high_detected",
+    "exam.proctoring.violation_detected",
+    "coursework.submission.suspicious_detected",
+    "ai_plagiarism.risk_detected",
+}
+
+# A-016.1 Actions
+ACTION_NOTIFY_ACADEMIC_OFFICE = "notify_academic_office"
+ACTION_CREATE_INTEGRITY_REVIEW = "create_integrity_review"
+ACTION_REQUEST_MANUAL_REVIEW = "request_manual_review"
+ACTION_ESCALATE_TO_COMMITTEE = "escalate_to_committee"
+
 ACADEMIC_RECORDS_EVENT_TYPES = {
     "academic_records.inconsistency.detected",
 }
@@ -161,6 +177,7 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | STUDENT_LIFE_EVENT_TYPES
     | ENROLLMENT_DROPOUT_EVENT_TYPES
     | ACADEMIC_INTEGRITY_EVENT_TYPES
+    | ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES
     | ACADEMIC_RECORDS_EVENT_TYPES
     | PROGRAMS_EVENT_TYPES
     | COURSES_EVENT_TYPES

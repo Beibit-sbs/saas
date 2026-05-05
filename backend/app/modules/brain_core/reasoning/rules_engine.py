@@ -517,6 +517,56 @@ class RulesEngine:
                 "requires_approval": False,
             }
 
+        # A-016.1 Academic Integrity Violation Detection Brain rules
+        _INTEGRITY_VIOLATION_PATHS = {
+            "academic_integrity_violation_critical",
+            "academic_integrity_violation_high",
+            "academic_integrity_violation_medium",
+            "academic_integrity_violation_low",
+        }
+        if reasoning_path in _INTEGRITY_VIOLATION_PATHS:
+            if reasoning_path == "academic_integrity_violation_critical":
+                return {
+                    "decision_type": "academic_integrity_review",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "integrity_review",
+                        "escalate_to_committee",
+                        "notify_academic_office",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "academic_integrity_violation_high":
+                return {
+                    "decision_type": "academic_integrity_review",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "integrity_review",
+                        "notify_academic_office",
+                        "request_manual_review",
+                    ],
+                    "requires_approval": False,
+                }
+            if reasoning_path == "academic_integrity_violation_medium":
+                return {
+                    "decision_type": "academic_integrity_review",
+                    "priority": "medium",
+                    "recommended_actions": [
+                        "integrity_review",
+                        "notify_academic_office",
+                    ],
+                    "requires_approval": False,
+                }
+            # low
+            return {
+                "decision_type": "academic_integrity_review",
+                "priority": "low",
+                "recommended_actions": [
+                    "integrity_review",
+                ],
+                "requires_approval": False,
+            }
+
         if reasoning_path in {
             "academic_records_inconsistency_high",
             "academic_records_inconsistency_medium",
