@@ -29,6 +29,20 @@ vi.mock("@/shared/providers/LanguageProvider", () => ({
   }),
 }));
 
+vi.mock("@/modules/platform/kpi/wave1-kpi-bar", () => ({
+  Wave1KpiBar: () => <div data-testid="wave1-kpi-bar-mock" />,
+}));
+
+vi.mock("@/shared/auth/context", () => ({
+  useAdminAuth: () => ({
+    adminToken: "test-admin-token",
+    isAuthenticated: true,
+    isLoading: false,
+    login: vi.fn(),
+    logout: vi.fn(),
+  }),
+}));
+
 // Mock the hooks
 vi.mock("@/modules/academic-integrity/hooks", () => ({
   useIntegrityCases: vi.fn(() => ({

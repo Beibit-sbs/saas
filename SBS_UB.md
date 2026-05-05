@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-05-11 (A-016.6 Wave 4 KPI + Frontend Wiring)
-- status: in_progress_A-016
-- current_stage: A-016.6 CLOSED; next = A-016.7
-- last_completed_action_id: A-016.6
-- next_action_id: A-016.7
-- updated_at: 2026-05-05 (A-016.6 complete; Wave 4 KPI backend wiring landed; dashboard + academic-integrity + exam-governance + thesis pages wired with existing Wave1KpiBar; backend focused 23/23 pass; frontend full 724/724 pass; safe gate pass; release gate pass including rollback readiness)
+- run_id: OP-AUDIT-2026-05-05-14 (A-017.0 Module Maturity Refresh + Fast-Win Selection)
+- status: ready_for_A-017
+- current_stage: A-017.0 module maturity refresh / fast-win selection
+- last_completed_action_id: A-016.8
+- next_action_id: A-017.1
+- updated_at: 2026-05-05 (A-017.0 complete; module maturity table refreshed against current repo state; old SBS audit misclassifications corrected for attendance/scheduling/research_ethics/exam_proctoring/budget_planning; A-017 Top 5 selected; backlog updated to concrete module-completion wave)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -384,6 +384,109 @@
     - `frontend/app/(admin)/console/research-ethics` page is currently absent; Wave 4 research ethics KPI visibility is covered in executive dashboard Wave 4 section.
 - Decision: **A-016.6 CLOSED - PASS**.
 - Next action: **A-016.7** (cross-feature E2E, >=16 tests).
+
+#### A-016.7 - Wave 4 Cross-Feature E2E Tests
+
+- Date: 2026-05-05
+- Scope: Additive-only cross-feature E2E validation for Wave 4 integrity/thesis/ethics governance loops, tenant isolation, and no-punitive-action safeguards. No new modules, no DB schema changes, no endpoint surface expansion.
+- Changes:
+    - New backend suite:
+        - `backend/tests/test_a016_wave4_cross_feature_e2e.py` (6 deterministic E2E scenarios with context-source stubs).
+    - Frontend contract smoke extensions:
+        - `frontend/__tests__/admin/Wave4KpiPages.test.tsx` (optional/missing payload resilience checks).
+        - `frontend/__tests__/admin/RectorDashboardPage.test.tsx` (dashboard Wave 4 KPI section contract assertion).
+    - Full-suite regression harness stabilization:
+        - `frontend/__tests__/admin/AcademicIntegrityPage.test.tsx` (Wave1KpiBar/auth test mocks).
+        - `frontend/__tests__/admin/ExamGovernancePage.test.tsx` (Wave1KpiBar/auth test mocks).
+- Validation results:
+    - A-016.7 backend focused suite: **6/6 PASS** (`tests/test_a016_wave4_cross_feature_e2e.py`).
+    - Backend wave4/cross-feature filtered subset: **29/29 PASS** (`tests/test_a016_wave4_cross_feature_e2e.py` + `tests/platform/test_platform_kpi_wave4_a0166.py`, `-k 'wave4 or cross_tenant or punitive'`).
+    - Affected backend KPI contract subset: **184/184 PASS** (`tests/platform/test_platform_kpi_metrics_v1.py`).
+    - Frontend targeted suites: `RectorDashboardPage` **6/6 PASS**, `Wave4KpiPages` **8/8 PASS**, regression-targeted `AcademicIntegrityPage + ExamGovernancePage` **24/24 PASS**.
+    - Frontend full suite: **112 files, 733 tests PASS**.
+    - Frontend lint: **PASS**.
+    - Safe gate: **PASS** (`scripts/university_pilot_safe_gate.sh`).
+    - Release gate: **PASS** (`scripts/release_gate.sh`).
+- Safety/invariants proof:
+    - Tenant isolation asserted in dedicated cross-tenant E2E case.
+    - No punitive automatic actions asserted via explicit deny-set in case-resolution governance test.
+    - Human-in-loop invariant preserved (`requires_approval=True` on high/critical resolution paths).
+- Artifact:
+    - `A-016.7-WAVE4_CROSS_FEATURE_E2E_REPORT.md`
+- Decision: **A-016.7 CLOSED - PASS**.
+- Next action: **A-016.8** (full gates consolidation + final Wave 4 package/report).
+
+#### A-016.8 - Full Gates + Final Wave 4 Academic Integrity / Thesis Governance Closure
+
+- Date: 2026-05-05
+- Scope: Final Wave 4 closure with full validation matrix, release/safety gates, evidence consolidation, and handoff readiness. No new feature/module/migration work in this phase.
+- Final validation summary:
+    - Backend Wave 4 + cross-feature subset: **29/29 PASS**.
+    - Backend affected slice (academic_integrity/exam_proctoring/thesis_governance/research_ethics/case_resolution/kpi/brain_core): **723/723 PASS**.
+    - Backend tenant/security slice: **878 PASS, 1 skipped**.
+    - Backend full all-suite: **8334 PASS, 13 skipped, 8 errors** (known environment condition: postgres persistence profile requires `DATABASE_URL`).
+    - Frontend targeted Wave 4/regression suites: **39/39 PASS**.
+    - Frontend full suite: **112 files, 733 tests PASS**.
+    - Frontend lint: **PASS**.
+    - Frontend build: **PASS**.
+- Gate summary:
+    - Safe gate: **PASS** (`scripts/university_pilot_safe_gate.sh`).
+    - Release gate: **PASS** (`scripts/release_gate.sh`).
+    - Embedded release sub-gates: **PASS** for F3 observability alerts, phase-b scheduling smoke (4/4), and rollback readiness checks.
+    - Standalone smoke gate: **FAIL** (`passed=8 failed=1`) on `University Core Table Coverage` only; classified as known inherited condition.
+- Human governance / safety evidence:
+    - Human-in-the-loop preserved for high/critical governance outcomes (`requires_approval=True` paths remain intact).
+    - No punitive automation introduced (no auto grade penalties/suspensions/expulsions in Wave 4 closure scope).
+    - Tenant isolation remains enforced and validated in dedicated cross-feature coverage.
+- Artifacts:
+    - `A-016.7-WAVE4_CROSS_FEATURE_E2E_REPORT.md`
+    - `A-016.8-FINAL_WAVE4_ACADEMIC_INTEGRITY_THESIS_GOVERNANCE_REPORT.md`
+- Known conditions at closure:
+    - KC-1: Full backend all-suite non-green in no-deps profile due to postgres persistence env prerequisite (`DATABASE_URL` not set).
+    - KC-2: Standalone platform smoke university_core table coverage check fails in current environment (fallback mode warning set).
+    - Both conditions are classified as environment/baseline constraints, not Wave 4 feature regressions.
+- Decision: **A-016 CLOSED - PASS WITH KNOWN CONDITIONS**.
+- Transition: **ready_for_A-017**.
+
+#### A-017 BACKLOG SKELETON
+
+- Next action: **A-017.0 — Planning / module maturity refresh / fast-win selection**.
+- Initial backlog skeleton:
+    1. A-017.1 budget_planning maturity closure (brain/KPI/E2E alignment)
+    2. A-017.2 research_ethics frontend + contract coverage
+    3. A-017.3 exam_governance brain-readiness alignment
+    4. A-017.4 exam_proctoring frontend integration completion
+    5. A-017.5 billing frontend hardcoded cleanup + contract polish
+    6. A-017.6 KPI/dashboard consolidation for A-017 modules
+    7. A-017.7 cross-feature E2E
+    8. A-017.8 full gates + final report
+
+#### A-017.0 - Module Maturity Refresh + Fast-Win Selection
+
+- Date: 2026-05-05
+- Scope: Planning/audit only. No code changes, no endpoints, no migrations, no production-logic modifications.
+- Required context executed:
+    - `git status --short`
+    - `git log --oneline -8`
+- Repo state classification:
+    - Committed baseline includes A-016 wave commits through A-016.6 on `main`.
+    - Dirty tracked files include coverage artifacts, `SBS_UB.md`, and several frontend test files.
+    - Untracked files include historical A-011/A-012/A-016 reporting artifacts and local runtime outputs.
+    - Local/cache class includes `.coverage`, `backend/.coverage`, and `infra/nohup.out`.
+- Maturity refresh result:
+    - Old `Audit Table - All Modules` was corrected using current repository evidence.
+    - Major corrections: `attendance`, `scheduling`, `budget_planning`, `research_ethics`, `exam_proctoring`, `ai_plagiarism`.
+    - FULL set from target module list now includes: `attendance`, `procurement`, `academic_integrity`, `thesis`, `degree_progress`, `financial_aid`, `scholarship`, `asset_inventory`, `scheduling`.
+- Fast-win candidates selected (A-017 Top 5):
+    1. `budget_planning`
+    2. `research_ethics`
+    3. `exam_governance`
+    4. `exam_proctoring`
+    5. `billing`
+- Artifact:
+    - `A-017.0-MODULE_MATURITY_REFRESH_AND_FAST_WIN_SELECTION.md`
+- Decision: **A-017.0 CLOSED - PASS (planning complete)**.
+- Next action: **A-017.1**.
 
 ---
 

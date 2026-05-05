@@ -28,6 +28,20 @@ vi.mock('@/shared/ui/badge', () => ({
   ),
 }));
 
+vi.mock("@/modules/platform/kpi/wave1-kpi-bar", () => ({
+  Wave1KpiBar: () => <div data-testid="wave1-kpi-bar-mock" />,
+}));
+
+vi.mock("@/shared/auth/context", () => ({
+  useAdminAuth: () => ({
+    adminToken: "test-admin-token",
+    isAuthenticated: true,
+    isLoading: false,
+    login: vi.fn(),
+    logout: vi.fn(),
+  }),
+}));
+
 vi.mock('@/modules/exam-governance/hooks', () => ({
   useExamDashboardSummary: vi.fn(),
   useExamsList: vi.fn(),

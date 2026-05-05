@@ -14,7 +14,9 @@ vi.mock("../../modules/platform/kpi/use-dashboard", () => ({
 }));
 
 vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
-  Wave1KpiBar: () => null,
+  Wave1KpiBar: ({ metricKeys }: { metricKeys: string[] }) => (
+    <div data-testid="wave1-kpi-bar-mock" data-keys={metricKeys.join(",")} />
+  ),
 }));
 
 vi.mock("../../shared/auth/context", () => ({
@@ -231,5 +233,42 @@ describe("RectorDashboardPage", () => {
     expect(screen.getByText("18")).toBeInTheDocument();
     expect(screen.getByText("7")).toBeInTheDocument();
     expect(screen.getByText("82")).toBeInTheDocument();
+  });
+
+  it("includes Wave 4 KPI section for dashboard contract consumption", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-05",
+        generated_at: "2026-05-05T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [
+          {
+            metric_key: "total_students",
+            title: "Total Students",
+            value: 1000,
+            trend_7d: [],
+            metadata_json: {},
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+    const bars = screen.getAllByTestId("wave1-kpi-bar-mock");
+    const wave4 = bars.find((node) => {
+      const keys = node.getAttribute("data-keys") ?? "";
+      return (
+        keys.includes("academic_integrity_risk_count")
+        && keys.includes("exam_proctoring_violations_count")
+        && keys.includes("thesis_governance_risk_count")
+        && keys.includes("research_ethics_review_cases_count")
+        && keys.includes("integrity_case_resolution_sla_risk_count")
+      );
+    });
+    expect(wave4).toBeTruthy();
   });
 });

@@ -6,6 +6,41 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
+const useIntegrityCasesMock = vi.fn(() => ({
+  data: { cases: [], total: 0, page: 1, page_size: 20 },
+  isLoading: false,
+  error: null,
+}));
+
+const useExamDashboardSummaryMock = vi.fn(() => ({
+  data: {
+    total_exams: 0,
+    status_breakdown: {},
+    proctoring_summary: {},
+    accommodation_summary: {},
+  },
+  isLoading: false,
+  isError: false,
+}));
+
+const useExamsListMock = vi.fn(() => ({
+  data: { items: [], total: 0 },
+  isLoading: false,
+  refetch: vi.fn(),
+}));
+
+const useExamStatisticsMock = vi.fn(() => ({
+  data: null,
+  isLoading: false,
+}));
+
+const useThesisMock = vi.fn(() => ({
+  data: { items: [], total: 0 },
+  isLoading: false,
+  isError: false,
+  refetch: vi.fn(),
+}));
+
 // ─── shared mock helpers ────────────────────────────────────────────────────
 
 vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
@@ -50,11 +85,7 @@ vi.mock("../../shared/hooks/use-mutation-feedback", () => ({
 // ─── AcademicIntegrityPage ───────────────────────────────────────────────────
 
 vi.mock("../../modules/academic-integrity/hooks", () => ({
-  useIntegrityCases: () => ({
-    data: { cases: [], total: 0, page: 1, page_size: 20 },
-    isLoading: false,
-    error: null,
-  }),
+  useIntegrityCases: () => useIntegrityCasesMock(),
   useCreateIntegrityCase: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateIntegrityCaseStatus: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
@@ -85,25 +116,9 @@ describe("AcademicIntegrityPage Wave4 KPI wiring", () => {
 // ─── ExamGovernancePage ──────────────────────────────────────────────────────
 
 vi.mock("../../modules/exam-governance/hooks", () => ({
-  useExamDashboardSummary: () => ({
-    data: {
-      total_exams: 0,
-      status_breakdown: {},
-      proctoring_summary: {},
-      accommodation_summary: {},
-    },
-    isLoading: false,
-    isError: false,
-  }),
-  useExamsList: () => ({
-    data: { items: [], total: 0 },
-    isLoading: false,
-    refetch: vi.fn(),
-  }),
-  useExamStatistics: () => ({
-    data: null,
-    isLoading: false,
-  }),
+  useExamDashboardSummary: () => useExamDashboardSummaryMock(),
+  useExamsList: () => useExamsListMock(),
+  useExamStatistics: () => useExamStatisticsMock(),
 }));
 
 import ExamGovernancePage from "../../app/(admin)/console/exam-governance/page";
@@ -124,17 +139,23 @@ describe("ExamGovernancePage Wave4 KPI wiring", () => {
     render(<ExamGovernancePage />);
     expect(screen.getByTestId("wave4-exam-proctoring-kpi-section")).toBeInTheDocument();
   });
+
+  it("does not crash when optional dashboard fields are missing", () => {
+    useExamDashboardSummaryMock.mockReturnValueOnce({
+      data: undefined as any,
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<ExamGovernancePage />);
+    expect(screen.getByTestId("wave4-exam-proctoring-kpi-section")).toBeInTheDocument();
+  });
 });
 
 // ─── ThesisPage ──────────────────────────────────────────────────────────────
 
 vi.mock("../../modules/thesis/hooks", () => ({
-  useThesis: () => ({
-    data: { items: [], total: 0 },
-    isLoading: false,
-    isError: false,
-    refetch: vi.fn(),
-  }),
+  useThesis: () => useThesisMock(),
   useCreateThesis: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateThesisStatus: () => ({ mutate: vi.fn(), isPending: false }),
 }));
@@ -159,5 +180,17 @@ describe("ThesisPage Wave4 KPI wiring", () => {
     const keys = bar.getAttribute("data-keys") ?? "";
     expect(keys).toContain("thesis_completion_risk_count");
     expect(keys).toContain("thesis_intervention_cases_count");
+  });
+
+  it("renders safely when thesis list payload is absent", () => {
+    useThesisMock.mockReturnValueOnce({
+      data: undefined as any,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<ThesisPage />);
+    expect(screen.getByTestId("wave4-kpi-bar-mock")).toBeInTheDocument();
   });
 });
