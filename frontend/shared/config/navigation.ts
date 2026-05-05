@@ -233,6 +233,12 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.TRANSCRIPTS_READ,
       },
       {
+        label: "Research Ethics",
+        href: "/console/research-ethics",
+        icon: ShieldCheck,
+        permission: PERMISSIONS.RESEARCH_READ,
+      },
+      {
         label: "Advising",
         href: "/console/advising",
         icon: MessageSquare,

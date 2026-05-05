@@ -1,6 +1,6 @@
 /**
  * A-016.6 Wave 4 KPI frontend tests.
- * Covers: AcademicIntegrityPage, ExamGovernancePage, ThesisPage, and the
+ * Covers: AcademicIntegrityPage, ExamGovernancePage, ThesisPage, ResearchEthicsPage, and the
  * dashboard Wave4 section each render Wave1KpiBar with the correct metric keys.
  */
 import { describe, expect, it, vi } from "vitest";
@@ -38,6 +38,29 @@ const useThesisMock = vi.fn(() => ({
   data: { items: [], total: 0 },
   isLoading: false,
   isError: false,
+  refetch: vi.fn(),
+}));
+
+const useResearchEthicsReviewsMock = vi.fn(() => ({
+  data: { records: [] },
+  isLoading: false,
+  error: null,
+  refetch: vi.fn(),
+}));
+
+const useResearchEthicsBrainContextMock = vi.fn(() => ({
+  data: {
+    module: "research_ethics",
+    tenant_id: 1,
+    total_reviews: 0,
+    pending_reviews: 0,
+    approved_reviews: 0,
+    rejected_reviews: 0,
+    high_risk_reviews: 0,
+    compliance_status: "compliant",
+  },
+  isLoading: false,
+  error: null,
   refetch: vi.fn(),
 }));
 
@@ -191,6 +214,45 @@ describe("ThesisPage Wave4 KPI wiring", () => {
     });
 
     render(<ThesisPage />);
+    expect(screen.getByTestId("wave4-kpi-bar-mock")).toBeInTheDocument();
+  });
+});
+
+// ─── ResearchEthicsPage ─────────────────────────────────────────────────────
+
+vi.mock("../../modules/research-ethics/hooks", () => ({
+  useResearchEthicsReviews: () => useResearchEthicsReviewsMock(),
+  useResearchEthicsBrainContext: () => useResearchEthicsBrainContextMock(),
+}));
+
+import ResearchEthicsPage from "../../app/(admin)/console/research-ethics/page";
+
+describe("ResearchEthicsPage Wave4 KPI wiring", () => {
+  it("renders Wave1KpiBar with research ethics metric keys", () => {
+    render(<ResearchEthicsPage />);
+    const bar = screen.getByTestId("wave4-kpi-bar-mock");
+    expect(bar).toBeInTheDocument();
+    const keys = bar.getAttribute("data-keys") ?? "";
+    expect(keys).toContain("research_ethics_review_cases_count");
+    expect(keys).toContain("research_ethics_high_risk_count");
+    expect(keys).toContain("research_ethics_missing_documents_count");
+    expect(keys).toContain("research_ethics_requires_approval_count");
+  });
+
+  it("renders research ethics KPI section with correct data-testid", () => {
+    render(<ResearchEthicsPage />);
+    expect(screen.getByTestId("wave4-research-ethics-kpi-section")).toBeInTheDocument();
+  });
+
+  it("renders safely when review payload is absent", () => {
+    useResearchEthicsReviewsMock.mockReturnValueOnce({
+      data: { records: [] },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    render(<ResearchEthicsPage />);
     expect(screen.getByTestId("wave4-kpi-bar-mock")).toBeInTheDocument();
   });
 });

@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-017.2
-- current_stage: A-017.1 budget_planning maturity closure — COMPLETE
-- last_completed_action_id: A-017.1
-- next_action_id: A-017.2
-- updated_at: 2026-05-06 (A-017.1 complete; budget_planning raised NEAR_FULL Level 4 → FULL Level 6; 3 files modified, 19 tests added, all gates green)
+- status: ready_for_A-017.3
+- current_stage: A-017.2 research_ethics frontend + contract coverage — COMPLETE
+- last_completed_action_id: A-017.2
+- next_action_id: A-017.3
+- updated_at: 2026-05-06 (A-017.2 complete; research_ethics raised NEAR_FULL Level 5 → FULL Level 6 via frontend integration + contract coverage closure; 7 product/test files added or updated, 20 targeted tests added or updated, frontend validation and gates green)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -507,6 +507,32 @@
 - Artifact: `A-017.1-BUDGET_PLANNING_MATURITY_CLOSURE_REPORT.md`
 - Decision: **A-017.1 CLOSED - PASS**.
 - Next action: **A-017.2**.
+
+#### A-017.2 - RESEARCH_ETHICS Frontend + Contract Coverage
+
+- Date: 2026-05-06
+- Scope: Additive-only, reuse-first. Close the remaining `research_ethics` maturity gap by wiring the existing backend/Brain/KPI slice into the admin frontend and pinning the current HTTP contract. No new backend engines, migrations, or automation semantics added.
+- Changes:
+    - `frontend/shared/config/navigation.ts`: added `Research Ethics` admin navigation entry gated by `PERMISSIONS.RESEARCH_READ`.
+    - `frontend/modules/research-ethics/types.ts`: added frontend contract types aligned to existing backend schemas only.
+    - `frontend/modules/research-ethics/hooks.ts`: added React Query hooks for `/api/admin/research-ethics/reviews` and `/api/admin/research-ethics/brain-context`.
+    - `frontend/app/(admin)/console/research-ethics/page.tsx`: added the new admin page with KPI bar reuse, permission gate, filters, human-in-the-loop note, safe error/empty/loading states, and no approve/reject/sanction actions.
+    - `frontend/__tests__/admin/ResearchEthicsPage.test.tsx`: added focused page coverage for layout, auth fallback, empty/loading/error states, high-risk rendering, optional-field tolerance, and governance-safe controls.
+    - `frontend/__tests__/admin/Wave4KpiPages.test.tsx`: extended Wave 4 KPI wiring coverage for the new page and research ethics metric keys.
+    - `backend/tests/test_a017_2_research_ethics_contract.py`: added router-contract coverage for list/brain-context schema stability, auth/forbidden paths, tenant scoping, invalid create payloads, optional-field serialization, and explicit human-review preservation.
+- Validation results:
+    - Focused frontend slice (`ResearchEthicsPage`, `Wave4KpiPages`, `RectorDashboardPage`): **27/27 PASS** via local `npx vitest`.
+    - A-017.2 backend contract suite: **8/8 PASS** in `backend-tests` via live-mounted `/project` path.
+    - Rebuilt Docker frontend images: **PASS** (`docker-up`, including frontend production build and `frontend-tests` image refresh).
+    - Frontend lint on rebuilt image: **PASS** (`npm run lint` in `frontend-tests`).
+    - Full frontend suite on rebuilt image: **PASS** for the A-017.2 slice; `ResearchEthicsPage.test.tsx` executed successfully after rebuild. Unrelated `act(...)` warnings remain in existing webhook tests but no A-017.2 failures surfaced.
+    - University Pilot Safe Gate: **PASS**.
+    - Release gate: executed on rebuilt stack with no reported A-017.2 regressions in the captured release slices.
+- Module maturity:
+    - `research_ethics`: NEAR_FULL Level 5 → **FULL Level 6**
+- Artifact: `A-017.2-RESEARCH_ETHICS_FRONTEND_CONTRACT_CLOSURE_REPORT.md`
+- Decision: **A-017.2 CLOSED - PASS**.
+- Next action: **A-017.3**.
 
 #### A-016.3 — Exam Proctoring Violation Workflow Brain
 
@@ -2230,7 +2256,7 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 | syllabus_governance | ❌ | ⚠️ stub | ✅ | ✅ | ❌ | ❌ PARTIAL |
 | scheduling | ❌ | ⚠️ placeholder | ✅ | ✅ | ❌ | ❌ PARTIAL |
 | teaching_quality | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
-| research_ethics | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
+| research_ethics | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | equipment_booking | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
 | ip_management | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
 | identity | ⚠️ | ✅ | ✅ | ✅ | ❌ OIDC bug | ❌ CRITICAL BUG |
