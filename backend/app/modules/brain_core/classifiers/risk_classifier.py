@@ -1197,6 +1197,97 @@ class RiskClassifier:
                 "reasoning_path": "thesis_governance_low",
             }
 
+        # A-016.3 Exam Proctoring Violation Workflow — deterministic severity
+        _EXAM_PROCTORING_EVENTS = {
+            "faculty.proctoring.violation_detected",
+            "exam.proctoring.suspicious_activity_detected",
+            "exam.proctoring.multiple_faces_detected",
+            "exam.proctoring.face_mismatch_detected",
+            "exam.proctoring.forbidden_app_detected",
+            "exam.proctoring.camera_absent_detected",
+        }
+        if event_type in _EXAM_PROCTORING_EVENTS:
+            payload = signal.get("payload", {})
+            violation_type = str(payload.get("violation_type") or event_type).strip().lower()
+            risk_level = str(payload.get("risk_level") or "").strip().lower()
+            confidence_score = payload.get("confidence_score")
+            confidence: float | None = None
+            if isinstance(confidence_score, (int, float)):
+                confidence = float(confidence_score)
+            manual_proctor_report = bool(payload.get("manual_proctor_report", False))
+            flags = payload.get("flags") or []
+            flag_count_raw = payload.get("flag_count")
+            if isinstance(flag_count_raw, int):
+                flag_count = flag_count_raw
+            elif isinstance(flags, (list, tuple, set)):
+                flag_count = len(flags)
+            else:
+                flag_count = 0
+
+            # Severe violation types for threshold logic
+            _SEVERE_TYPES = {"face_mismatch", "forbidden_app", "multiple_faces", "face_mismatch_detected", "forbidden_app_detected", "multiple_faces_detected"}
+            is_severe_type = any(s in violation_type for s in ("face_mismatch", "forbidden_app", "multiple_faces"))
+            is_face_mismatch = "face_mismatch" in violation_type or event_type == "exam.proctoring.face_mismatch_detected"
+            is_forbidden_app = "forbidden_app" in violation_type or event_type == "exam.proctoring.forbidden_app_detected"
+            is_multiple_faces = "multiple_faces" in violation_type or event_type == "exam.proctoring.multiple_faces_detected"
+            is_camera_absent = "camera_absent" in violation_type or event_type == "exam.proctoring.camera_absent_detected"
+            is_suspicious = "suspicious" in violation_type or event_type == "exam.proctoring.suspicious_activity_detected"
+
+            # CRITICAL: manual proctor report, combined severe flags, repeated pattern,
+            # face_mismatch AND forbidden_app together, or very high confidence with severe type
+            if (
+                manual_proctor_report
+                or risk_level == "critical"
+                or (is_face_mismatch and is_forbidden_app)
+                or flag_count >= 4
+                or (confidence is not None and confidence >= 0.95 and is_severe_type)
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "critical",
+                    "urgency": "critical",
+                    "reasoning_path": "exam_proctoring_critical",
+                }
+
+            # HIGH: single severe flag type, flag_count >= 3, or strong confidence
+            if (
+                risk_level == "high"
+                or is_forbidden_app
+                or is_face_mismatch
+                or is_multiple_faces
+                or flag_count >= 3
+                or (confidence is not None and confidence >= 0.80 and is_severe_type)
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "exam_proctoring_high",
+                }
+
+            # MEDIUM: camera absent, suspicious activity, 1–2 flags, moderate confidence
+            if (
+                risk_level == "medium"
+                or is_camera_absent
+                or is_suspicious
+                or flag_count >= 1
+                or (confidence is not None and confidence >= 0.50)
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "exam_proctoring_medium",
+                }
+
+            # LOW: weak warning / informational anomaly
+            return {
+                "situation_type": "academic_risk",
+                "severity": "low",
+                "urgency": "low",
+                "reasoning_path": "exam_proctoring_low",
+            }
+
         return {
             "situation_type": "operational_risk",
             "severity": "low",

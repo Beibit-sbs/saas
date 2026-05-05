@@ -30,6 +30,7 @@ from app.modules.brain_core.constants import (
     ENROLLMENT_CAPACITY_RISK_EVENT_TYPES,
     ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES,
     THESIS_GOVERNANCE_EVENT_TYPES,
+    EXAM_PROCTORING_EVENT_TYPES,
 )
 
 
@@ -282,6 +283,37 @@ class SignalRegistry:
             "signal_class": "academic_risk",
             "scenario": "thesis_governance",
             "context_sources": ["academic", "faculty", "student_success"],
+        },
+        # A-016.3 Exam Proctoring Violation Workflow signals
+        "faculty.proctoring.violation_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "exam_proctoring_violation",
+            "context_sources": ["academic", "exam", "student_success"],
+        },
+        "exam.proctoring.suspicious_activity_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "exam_proctoring_violation",
+            "context_sources": ["academic", "exam", "student_success"],
+        },
+        "exam.proctoring.multiple_faces_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "exam_proctoring_violation",
+            "context_sources": ["academic", "exam", "student_success"],
+        },
+        "exam.proctoring.face_mismatch_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "exam_proctoring_violation",
+            "context_sources": ["academic", "exam", "student_success"],
+        },
+        "exam.proctoring.forbidden_app_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "exam_proctoring_violation",
+            "context_sources": ["academic", "exam", "student_success"],
+        },
+        "exam.proctoring.camera_absent_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "exam_proctoring_violation",
+            "context_sources": ["academic", "exam", "student_success"],
         },
         "academic_records.inconsistency.detected": {
             "signal_class": "compliance_risk",
@@ -538,6 +570,18 @@ class DecisionRegistry:
                 "notify_department": "notification",
                 "notify_academic_office": "notification",
                 "escalate_to_academic_office": "workflow_task",
+            },
+        },
+        # A-016.3 Exam Proctoring Violation Workflow
+        "exam_proctoring_violation": {
+            "decision_type": "exam_integrity_review",
+            "allowed_event_types": sorted(EXAM_PROCTORING_EVENT_TYPES),
+            "action_map": {
+                "create_integrity_review": "workflow_task",
+                "request_manual_proctor_review": "workflow_task",
+                "notify_exam_office": "notification",
+                "escalate_to_academic_integrity_committee": "workflow_task",
+                "collect_additional_evidence": "workflow_task",
             },
         },
         "academic_records_audit": {

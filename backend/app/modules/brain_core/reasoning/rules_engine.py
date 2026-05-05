@@ -838,6 +838,58 @@ class RulesEngine:
                 "requires_approval": False,
             }
 
+        # A-016.3 Exam Proctoring Violation Workflow rules
+        _EXAM_PROCTORING_PATHS = {
+            "exam_proctoring_critical",
+            "exam_proctoring_high",
+            "exam_proctoring_medium",
+            "exam_proctoring_low",
+        }
+        if reasoning_path in _EXAM_PROCTORING_PATHS:
+            if reasoning_path == "exam_proctoring_critical":
+                return {
+                    "decision_type": "exam_integrity_review",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "create_integrity_review",
+                        "escalate_to_academic_integrity_committee",
+                        "notify_exam_office",
+                        "request_manual_proctor_review",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "exam_proctoring_high":
+                return {
+                    "decision_type": "exam_integrity_review",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "create_integrity_review",
+                        "request_manual_proctor_review",
+                        "notify_exam_office",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "exam_proctoring_medium":
+                return {
+                    "decision_type": "exam_integrity_review",
+                    "priority": "medium",
+                    "recommended_actions": [
+                        "create_integrity_review",
+                        "collect_additional_evidence",
+                        "notify_exam_office",
+                    ],
+                    "requires_approval": False,
+                }
+            # low — informational, gather evidence only
+            return {
+                "decision_type": "exam_integrity_review",
+                "priority": "low",
+                "recommended_actions": [
+                    "collect_additional_evidence",
+                ],
+                "requires_approval": False,
+            }
+
         return {
             "decision_type": "operational",
             "priority": "low",

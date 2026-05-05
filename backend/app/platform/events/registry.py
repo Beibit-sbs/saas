@@ -190,6 +190,12 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "academic_integrity.risk_detected": EventDefinition(GenericTenantEventPayload),
     "plagiarism.similarity.high_detected": EventDefinition(GenericTenantEventPayload),
     "exam.proctoring.violation_detected": EventDefinition(GenericTenantEventPayload),
+    # A-016.3 Exam Proctoring Violation Workflow dedicated events
+    "exam.proctoring.suspicious_activity_detected": EventDefinition(GenericTenantEventPayload),
+    "exam.proctoring.multiple_faces_detected": EventDefinition(GenericTenantEventPayload),
+    "exam.proctoring.face_mismatch_detected": EventDefinition(GenericTenantEventPayload),
+    "exam.proctoring.forbidden_app_detected": EventDefinition(GenericTenantEventPayload),
+    "exam.proctoring.camera_absent_detected": EventDefinition(GenericTenantEventPayload),
     "coursework.submission.suspicious_detected": EventDefinition(GenericTenantEventPayload),
     "ai_plagiarism.risk_detected": EventDefinition(GenericTenantEventPayload),
     # Research module events (W52)

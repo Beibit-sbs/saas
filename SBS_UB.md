@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-05-07 (A-016.2 Thesis Submission Pipeline + Supervisor Assignment Automation Brain)
+- run_id: OP-AUDIT-2026-05-05-08 (A-016.3 Exam Proctoring Violation Workflow Brain)
 - status: in_progress_A-016
-- current_stage: A-016.2 CLOSED; next = A-016.3
-- last_completed_action_id: A-016.2
-- next_action_id: A-016.3
-- updated_at: 2026-05-05 (A-016.2 complete; 6 thesis governance event types registered in Brain Core; 24/24 tests passed; deterministic 4-level severity classifier; no punitive actions; full tenant isolation; supervisor assignment automation with human-in-the-loop approval for critical decisions)
+- current_stage: A-016.3 CLOSED; next = A-016.4
+- last_completed_action_id: A-016.3
+- next_action_id: A-016.4
+- updated_at: 2026-05-05 (A-016.3 complete; 6 exam proctoring event types registered in Brain Core; 32/32 tests passed; deterministic 4-level severity classifier; no punitive actions; full tenant isolation; human-in-the-loop approval for high/critical proctoring decisions)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -285,6 +285,37 @@
     - A-016.2 focused suite: **24/24 PASS** (`tests/test_a016_2_thesis_governance_brain.py`)
 - Decision: **A-016.2 CLOSED - PASS**.
 - Next action: **A-016.3** (Exam Proctoring Violation Workflow).
+
+#### A-016.3 — Exam Proctoring Violation Workflow Brain
+
+- Date: 2026-05-05
+- Scope: Brain Core full pipeline wiring for 6 dedicated exam proctoring event types. New `exam_integrity_review` decision type. Extends Wave 4 Academic Integrity series.
+- Changes:
+    - `brain_core/constants.py`: `EXAM_PROCTORING_EVENT_TYPES` frozenset (6 events) + 4 action constants; merged into `SUPPORTED_SIGNAL_EVENT_TYPES`.
+    - `platform/events/registry.py`: 5 new event definitions (faculty.proctoring.violation_detected already existed).
+    - `platform/event_ingestion/types.py`: 6 A-016.3 events added to `VALID_EVENT_TYPES`.
+    - `brain_core/registry.py`: 6 `SignalRegistry` entries (scenario: `exam_proctoring_violation`) + 1 `DecisionRegistry` entry.
+    - `brain_core/classifiers/risk_classifier.py`: Exam proctoring 4-level deterministic severity block.
+    - `brain_core/reasoning/rules_engine.py`: 4 exam proctoring reasoning path rules (`exam_proctoring_critical/high/medium/low`).
+    - `brain_core/service.py`: `_normalize_exam_proctoring_signal()` normalizer, `_EXAM_PROCTORING_EVENT_TYPES` inline set, `exam_integrity_review` added to `_NOTIFIABLE_DECISION_TYPES`.
+    - `tests/test_a016_3_exam_proctoring_violation_brain.py`: 32 new tests (NEW FILE).
+- Brain Core proctoring severity model:
+    - CRITICAL: `manual_proctor_report=True` OR `risk_level=="critical"` OR face_mismatch+forbidden_app combined OR `flag_count >= 4` OR high-confidence severe type. Requires human approval.
+    - HIGH: `risk_level=="high"` OR forbidden_app OR face_mismatch OR multiple_faces OR `flag_count >= 3`. Requires human approval.
+    - MEDIUM: `risk_level=="medium"` OR camera_absent OR suspicious_activity OR `flag_count >= 1`. No auto-approval.
+    - LOW: Default (no flags). No auto-approval.
+- Safety guarantees:
+    - NO punitive academic actions automatically (no grade changes, no suspensions, no expulsions)
+    - CRITICAL + HIGH always `requires_approval=True` — human-in-the-loop mandatory
+    - Fail-closed on missing `tenant_id` or both `student_id` and `exam_id` empty
+    - Deduplication by `signal_id` — no duplicate decisions
+    - Full cross-tenant isolation verified
+- Validation results:
+    - A-016.3 focused suite: **32/32 PASS** (`tests/test_a016_3_exam_proctoring_violation_brain.py`)
+    - A-016.1 and A-016.2 regression tests: PASS (verified in suite)
+    - All 6 proctoring event types → `exam_integrity_review` (parametrized): 6/6 PASS
+- Decision: **A-016.3 CLOSED - PASS**.
+- Next action: **A-016.4** (Research Ethics / Compliance Review Brain).
 
 ---
 

@@ -152,6 +152,22 @@ ACTION_CREATE_INTEGRITY_REVIEW = "create_integrity_review"
 ACTION_REQUEST_MANUAL_REVIEW = "request_manual_review"
 ACTION_ESCALATE_TO_COMMITTEE = "escalate_to_committee"
 
+# A-016.3 Exam Proctoring Violation Workflow events
+EXAM_PROCTORING_EVENT_TYPES = frozenset({
+    "faculty.proctoring.violation_detected",
+    "exam.proctoring.suspicious_activity_detected",
+    "exam.proctoring.multiple_faces_detected",
+    "exam.proctoring.face_mismatch_detected",
+    "exam.proctoring.forbidden_app_detected",
+    "exam.proctoring.camera_absent_detected",
+})
+
+# A-016.3 Actions
+ACTION_REQUEST_MANUAL_PROCTOR_REVIEW = "request_manual_proctor_review"
+ACTION_NOTIFY_EXAM_OFFICE = "notify_exam_office"
+ACTION_ESCALATE_TO_ACADEMIC_INTEGRITY_COMMITTEE = "escalate_to_academic_integrity_committee"
+ACTION_COLLECT_ADDITIONAL_EVIDENCE = "collect_additional_evidence"
+
 ACADEMIC_RECORDS_EVENT_TYPES = {
     "academic_records.inconsistency.detected",
 }
@@ -206,6 +222,7 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | ENROLLMENT_CAPACITY_RISK_EVENT_TYPES
     | PROCUREMENT_APPROVAL_EVENT_TYPES
     | THESIS_GOVERNANCE_EVENT_TYPES
+    | EXAM_PROCTORING_EVENT_TYPES
 )
 
 ACTION_CREATE_INTERVENTION_CASE = "create_intervention_case"

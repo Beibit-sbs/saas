@@ -84,6 +84,18 @@ _THESIS_GOVERNANCE_EVENT_TYPES = frozenset(
     }
 )
 
+# A-016.3 — Exam Proctoring Violation Workflow event types
+_EXAM_PROCTORING_EVENT_TYPES = frozenset(
+    {
+        "faculty.proctoring.violation_detected",
+        "exam.proctoring.suspicious_activity_detected",
+        "exam.proctoring.multiple_faces_detected",
+        "exam.proctoring.face_mismatch_detected",
+        "exam.proctoring.forbidden_app_detected",
+        "exam.proctoring.camera_absent_detected",
+    }
+)
+
 
 def _coerce_uuid(value: object) -> uuid.UUID:
     """Convert a string/UUID to uuid.UUID, generating a new one on failure."""
@@ -236,7 +248,7 @@ class BrainCoreService:
 
     # Priorities and types that warrant an immediate in-app notification.
     _NOTIFIABLE_PRIORITIES: frozenset[str] = frozenset({"critical", "high"})
-    _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance", "academic_integrity_review", "thesis_supervisor_assignment"})
+    _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance", "academic_integrity_review", "thesis_supervisor_assignment", "exam_integrity_review"})
 
     def _normalize_degree_progress_signal(self, signal: dict) -> tuple[dict, str | None]:
         """Normalize graduation-risk signals to canonical student/source fields.
@@ -532,6 +544,60 @@ class BrainCoreService:
 
         return normalized, None
 
+    def _normalize_exam_proctoring_signal(self, signal: dict) -> tuple[dict, str | None]:
+        """Fail-closed normalization for exam proctoring violation signals (A-016.3).
+
+        Ensures required tenant + subject context, attaches origin/evidence metadata
+        for downstream audit/workflow payloads.
+        Does NOT make any punitive academic status changes (no grade change, no
+        exam failure, no disciplinary sanction).
+        """
+        event_type = str(signal.get("event_type") or "")
+        if event_type not in _EXAM_PROCTORING_EVENT_TYPES:
+            return signal, None
+
+        normalized = dict(signal)
+        payload = dict(normalized.get("payload") or {})
+
+        # Fail-closed: tenant_id required
+        tenant_id = int(normalized.get("tenant_id") or 0)
+        if tenant_id <= 0:
+            return normalized, "missing_tenant_context"
+
+        # Fail-closed: student_id OR exam_id required as subject identifier
+        student_id = str(payload.get("student_id") or "").strip()
+        exam_id = str(
+            payload.get("exam_id")
+            or normalized.get("source_entity_id")
+            or ""
+        ).strip()
+        if not student_id and not exam_id:
+            return normalized, "missing_subject_identifier"
+
+        # Attach evidence / audit metadata — do not crash on missing optional fields
+        payload.setdefault("risk_source", event_type)
+        payload.setdefault("correlation_id", str(normalized.get("correlation_id") or ""))
+        payload.setdefault("student_id", student_id)
+        payload.setdefault("exam_id", exam_id)
+
+        # Record absence of optional fields in evidence (no crash)
+        if not str(payload.get("violation_type") or "").strip():
+            payload.setdefault("violation_type_evidence", "violation_type_not_provided")
+        if not str(payload.get("proctoring_session_id") or "").strip():
+            payload.setdefault("proctoring_session_id_evidence", "proctoring_session_id_not_provided")
+        if payload.get("confidence_score") is None:
+            payload.setdefault("confidence_score_evidence", "confidence_score_not_provided")
+
+        normalized["payload"] = payload
+        if str(normalized.get("source_entity_type") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_type"] = str(payload.get("source_entity_type") or "exam_proctoring")
+        if str(normalized.get("source_entity_id") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_id"] = exam_id or student_id or "unknown"
+        if not normalized.get("source_module"):
+            normalized["source_module"] = str(payload.get("source_module") or "exam_proctoring")
+
+        return normalized, None
+
     def _resolve_decision_scenario(self, *, event_type: str, classification: dict) -> str:
         """Resolve the decision scenario, allowing additive routing overrides."""
         scenario = SignalRegistry.signals[event_type]["scenario"]
@@ -714,6 +780,11 @@ class BrainCoreService:
             return {"status": "rejected", "reason": normalization_rejection}
 
         signal, normalization_rejection = self._normalize_thesis_governance_signal(signal)
+        if normalization_rejection is not None:
+            self._observability.increment("signals_rejected_total")
+            return {"status": "rejected", "reason": normalization_rejection}
+
+        signal, normalization_rejection = self._normalize_exam_proctoring_signal(signal)
         if normalization_rejection is not None:
             self._observability.increment("signals_rejected_total")
             return {"status": "rejected", "reason": normalization_rejection}

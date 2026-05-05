@@ -70,5 +70,12 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "exam.proctoring.violation_detected",
         "coursework.submission.suspicious_detected",
         "ai_plagiarism.risk_detected",
+        # A-016.3 Exam Proctoring Violation Workflow dedicated signals
+        "faculty.proctoring.violation_detected",
+        "exam.proctoring.suspicious_activity_detected",
+        "exam.proctoring.multiple_faces_detected",
+        "exam.proctoring.face_mismatch_detected",
+        "exam.proctoring.forbidden_app_detected",
+        "exam.proctoring.camera_absent_detected",
     }
 )
