@@ -16,6 +16,7 @@ import { RequirePermission } from '@/shared/auth/permission-gate';
 import { PageHeader } from '@/shared/ui/page-header';
 import { LoadingState, ErrorState } from '@/shared/ui/page-states';
 import { Badge } from '@/shared/ui/badge';
+import { Wave1KpiBar } from '@/modules/platform/kpi/wave1-kpi-bar';
 
 export default function ExamGovernancePage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -45,6 +46,23 @@ export default function ExamGovernancePage() {
         <PageHeader title="Exam Governance" />
 
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+          {/* Wave 4 Exam Proctoring KPI Bar */}
+          <section data-testid="wave4-exam-proctoring-kpi-section">
+            <Wave1KpiBar
+              metricKeys={[
+                "exam_proctoring_violations_count",
+                "exam_integrity_reviews_count",
+                "exam_integrity_high_risk_count",
+                "exam_integrity_requires_approval_count",
+              ]}
+              labels={{
+                exam_proctoring_violations_count: "Proctoring Violations",
+                exam_integrity_reviews_count: "Integrity Reviews",
+                exam_integrity_high_risk_count: "High Risk",
+                exam_integrity_requires_approval_count: "Approval Needed",
+              }}
+            />
+          </section>
           {/* Dashboard Summary Section */}
           <section data-testid="dashboard-summary-section">
             <h2 className="text-xl font-semibold mb-4">Summary Overview</h2>

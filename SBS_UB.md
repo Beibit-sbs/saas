@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-05-10 (A-016.5 Academic Integrity Case Resolution Automation Brain)
+- run_id: OP-AUDIT-2026-05-05-11 (A-016.6 Wave 4 KPI + Frontend Wiring)
 - status: in_progress_A-016
-- current_stage: A-016.5 CLOSED; next = A-016.6
-- last_completed_action_id: A-016.5
-- next_action_id: A-016.6
-- updated_at: 2026-07-02 (A-016.5 complete; 6 academic integrity case resolution event types registered in Brain Core; 39/39 focused tests passed; 153 Wave4 regression passed; release gate PASS through all stages; deterministic 4-level severity classifier; no automatic sanctions; human-in-the-loop mandatory for high/critical; fail-closed on missing tenant/case reference)
+- current_stage: A-016.6 CLOSED; next = A-016.7
+- last_completed_action_id: A-016.6
+- next_action_id: A-016.7
+- updated_at: 2026-05-05 (A-016.6 complete; Wave 4 KPI backend wiring landed; dashboard + academic-integrity + exam-governance + thesis pages wired with existing Wave1KpiBar; backend focused 23/23 pass; frontend full 724/724 pass; safe gate pass; release gate pass including rollback readiness)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -353,6 +353,37 @@
     - Release gate: **PASS** (`scripts/release_gate.sh`) — architecture 7p, tenant 8p, platform 480p, domain 412+17+23p, security passed, data layer green; `[release-gate] PASS: release gate and rollback readiness are green`
 - Decision: **A-016.5 CLOSED - PASS**.
 - Next action: **A-016.6** (next Wave 4 brain feature).
+
+#### A-016.6 - Wave 4 KPI + Frontend Wiring
+
+- Date: 2026-05-05
+- Scope: Additive-only KPI/event/frontend wiring for Wave 4 academic integrity, exam governance, thesis governance, and research ethics outcomes. No new modules, no DB schema changes, no new endpoints.
+- Changes:
+    - `backend/app/platform/kpi/service.py`
+        - Added 21 Wave 4 KPI titles in `METRIC_TITLES`.
+        - Added Wave 4 lineage in `EVENT_DERIVED_METRIC_LINEAGE`.
+        - Added Wave 4 KPI computation block in `refresh_tenant_metrics()`.
+        - Added Wave 4 keys to analytics sink source set.
+        - Added severity rules for 17 thresholded Wave 4 KPI keys in `KPI_SEVERITY_RULES`.
+    - Frontend pages (reusing existing `Wave1KpiBar`):
+        - `frontend/app/(admin)/console/dashboard/page.tsx`: new Wave 4 executive KPI section.
+        - `frontend/app/(admin)/console/academic-integrity/page.tsx`: new Wave 4 KPI section.
+        - `frontend/app/(admin)/console/exam-governance/page.tsx`: new Wave 4 KPI section.
+        - `frontend/app/(admin)/console/thesis/page.tsx`: extended existing thesis KPI key/label sets with Wave 4 governance keys.
+    - Tests added:
+        - `backend/tests/platform/test_platform_kpi_wave4_a0166.py` (23 focused backend tests).
+        - `frontend/__tests__/admin/Wave4KpiPages.test.tsx` (Wave 4 page wiring assertions).
+    - Regression guard update:
+        - `backend/tests/platform/test_platform_kpi_metrics_v1.py`: updated non-thresholded exclusion sets to include Wave 4 thresholded KPI keys (fix for release-gate regression slice).
+- Validation results:
+    - Wave 4 backend focused suite: **23/23 PASS**.
+    - Frontend full suite: **111 files, 724 tests PASS**.
+    - Safe gate: **PASS** (`scripts/university_pilot_safe_gate.sh`).
+    - Release gate: **PASS** (`scripts/release_gate.sh`) including phase-b scheduling smoke and rollback readiness checks.
+- Notes:
+    - `frontend/app/(admin)/console/research-ethics` page is currently absent; Wave 4 research ethics KPI visibility is covered in executive dashboard Wave 4 section.
+- Decision: **A-016.6 CLOSED - PASS**.
+- Next action: **A-016.7** (cross-feature E2E, >=16 tests).
 
 ---
 

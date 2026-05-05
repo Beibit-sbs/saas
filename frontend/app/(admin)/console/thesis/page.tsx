@@ -7,11 +7,19 @@ import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
 const THESIS_KPI_KEYS = [
   "thesis_completion_risk_count",
   "thesis_intervention_cases_count",
+  "thesis_governance_risk_count",
+  "thesis_supervisor_assignment_needed_count",
+  "thesis_review_delayed_count",
+  "thesis_governance_requires_approval_count",
 ] as const;
 
 const THESIS_KPI_LABELS: Record<string, string> = {
   thesis_completion_risk_count: "Thesis Completion Risk",
   thesis_intervention_cases_count: "Intervention Cases",
+  thesis_governance_risk_count: "Governance Risk",
+  thesis_supervisor_assignment_needed_count: "Supervisor Needed",
+  thesis_review_delayed_count: "Review Delayed",
+  thesis_governance_requires_approval_count: "Approval Needed",
 };
 import { Button } from "@/shared/ui/button";
 import { DataTable, type Column } from "@/shared/ui/data-table";

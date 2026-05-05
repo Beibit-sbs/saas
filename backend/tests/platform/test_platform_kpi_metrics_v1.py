@@ -1373,6 +1373,16 @@ def test_kpi_policy_pack_non_thresholded_kpis_are_null(reset_shared_state) -> No
         "asset_conversion_gap_count",
         "inventory_low_stock_items_count", "critical_supply_risk_count",
         "reorder_recommendations_count", "supply_risk_actions_count",
+        # A-016.6 Wave 4 thresholded KPIs
+        "academic_integrity_risk_count", "academic_integrity_high_risk_count",
+        "academic_integrity_cases_pending_review", "exam_proctoring_violations_count",
+        "exam_integrity_high_risk_count", "exam_integrity_requires_approval_count",
+        "thesis_governance_risk_count", "thesis_supervisor_assignment_needed_count",
+        "thesis_review_delayed_count", "thesis_governance_requires_approval_count",
+        "research_ethics_review_cases_count", "research_ethics_high_risk_count",
+        "research_ethics_missing_documents_count", "research_ethics_requires_approval_count",
+        "integrity_cases_open_count", "integrity_cases_escalated_count",
+        "integrity_case_resolution_sla_risk_count",
     }]
     assert len(non_thresholded) > 0, "expected at least one non-thresholded KPI"
     for key in non_thresholded:
@@ -1528,6 +1538,16 @@ def test_kpi_actionability_non_thresholded_kpis_are_null(reset_shared_state) -> 
         "asset_conversion_gap_count",
         "inventory_low_stock_items_count", "critical_supply_risk_count",
         "reorder_recommendations_count", "supply_risk_actions_count",
+        # A-016.6 Wave 4 thresholded KPIs
+        "academic_integrity_risk_count", "academic_integrity_high_risk_count",
+        "academic_integrity_cases_pending_review", "exam_proctoring_violations_count",
+        "exam_integrity_high_risk_count", "exam_integrity_requires_approval_count",
+        "thesis_governance_risk_count", "thesis_supervisor_assignment_needed_count",
+        "thesis_review_delayed_count", "thesis_governance_requires_approval_count",
+        "research_ethics_review_cases_count", "research_ethics_high_risk_count",
+        "research_ethics_missing_documents_count", "research_ethics_requires_approval_count",
+        "integrity_cases_open_count", "integrity_cases_escalated_count",
+        "integrity_case_resolution_sla_risk_count",
     }]
     assert len(non_thresholded) > 0, "expected at least one non-thresholded KPI"
     for key in non_thresholded:

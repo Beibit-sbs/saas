@@ -13,6 +13,7 @@ import {
   IntegrityCaseCreateRequest,
 } from "@/modules/academic-integrity/types";
 import { useLanguage } from "@/shared/providers/LanguageProvider";
+import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
 import {
   Table,
   TableBody,
@@ -176,6 +177,32 @@ export default function AcademicIntegrityPage() {
 
   return (
     <div className="space-y-6">
+      <section data-testid="wave4-academic-integrity-kpi-section">
+        <Wave1KpiBar
+          metricKeys={[
+            "academic_integrity_risk_count",
+            "academic_integrity_review_cases_count",
+            "academic_integrity_high_risk_count",
+            "academic_integrity_cases_pending_review",
+            "integrity_cases_open_count",
+            "integrity_cases_escalated_count",
+            "integrity_cases_resolved_count",
+            "integrity_cases_evidence_requested_count",
+            "integrity_case_resolution_sla_risk_count",
+          ]}
+          labels={{
+            academic_integrity_risk_count: "Integrity Risk",
+            academic_integrity_review_cases_count: "Review Cases",
+            academic_integrity_high_risk_count: "High Risk",
+            academic_integrity_cases_pending_review: "Pending Review",
+            integrity_cases_open_count: "Cases Open",
+            integrity_cases_escalated_count: "Cases Escalated",
+            integrity_cases_resolved_count: "Cases Resolved",
+            integrity_cases_evidence_requested_count: "Evidence Requested",
+            integrity_case_resolution_sla_risk_count: "SLA Risk",
+          }}
+        />
+      </section>
       <Card>
         <CardHeader>
           <CardTitle>{language === "ru" ? "Академическая честность" : "Academic Integrity"}</CardTitle>

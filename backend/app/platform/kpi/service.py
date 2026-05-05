@@ -80,6 +80,32 @@ METRIC_TITLES: dict[str, str] = {
     "critical_supply_risk_count": "Critical Supply Risk Count",
     "reorder_recommendations_count": "Reorder Recommendations Count",
     "supply_risk_actions_count": "Supply Risk Actions Count",
+    # A-016.6 Wave 4 metrics — Academic Integrity
+    "academic_integrity_risk_count": "Academic Integrity Risk Count",
+    "academic_integrity_review_cases_count": "Academic Integrity Review Cases",
+    "academic_integrity_high_risk_count": "Academic Integrity High Risk Count",
+    "academic_integrity_cases_pending_review": "Academic Integrity Cases Pending Review",
+    # A-016.6 Wave 4 metrics — Exam Proctoring
+    "exam_proctoring_violations_count": "Exam Proctoring Violations Count",
+    "exam_integrity_reviews_count": "Exam Integrity Reviews Count",
+    "exam_integrity_high_risk_count": "Exam Integrity High Risk Count",
+    "exam_integrity_requires_approval_count": "Exam Integrity Requires Approval Count",
+    # A-016.6 Wave 4 metrics — Thesis Governance
+    "thesis_governance_risk_count": "Thesis Governance Risk Count",
+    "thesis_supervisor_assignment_needed_count": "Thesis Supervisor Assignment Needed",
+    "thesis_review_delayed_count": "Thesis Review Delayed Count",
+    "thesis_governance_requires_approval_count": "Thesis Governance Requires Approval",
+    # A-016.6 Wave 4 metrics — Research Ethics / Compliance
+    "research_ethics_review_cases_count": "Research Ethics Review Cases",
+    "research_ethics_high_risk_count": "Research Ethics High Risk Count",
+    "research_ethics_missing_documents_count": "Research Ethics Missing Documents",
+    "research_ethics_requires_approval_count": "Research Ethics Requires Approval",
+    # A-016.6 Wave 4 metrics — Case Resolution
+    "integrity_cases_open_count": "Integrity Cases Open",
+    "integrity_cases_escalated_count": "Integrity Cases Escalated",
+    "integrity_cases_resolved_count": "Integrity Cases Resolved",
+    "integrity_cases_evidence_requested_count": "Integrity Cases Evidence Requested",
+    "integrity_case_resolution_sla_risk_count": "Integrity Case Resolution SLA Risk",
 }
 
 
@@ -169,6 +195,65 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "critical_supply_risk_count": ["inventory.low_stock.detected", "supply.risk.detected"],
     "reorder_recommendations_count": ["inventory.reorder_needed"],
     "supply_risk_actions_count": ["supply.risk.detected", "procurement.inventory_gap.detected"],
+    # A-016.6 Wave 4 event lineage — Academic Integrity
+    "academic_integrity_risk_count": [
+        "academic_integrity.violation.detected",
+        "academic_integrity.risk_detected",
+    ],
+    "academic_integrity_review_cases_count": [
+        "academic_integrity.case.opened",
+        "academic_integrity.case.review_required",
+    ],
+    "academic_integrity_high_risk_count": [
+        "academic_integrity.violation.detected",
+        "academic_integrity.case.review_required",
+    ],
+    "academic_integrity_cases_pending_review": ["academic_integrity.case.review_required"],
+    # A-016.6 Wave 4 event lineage — Exam Proctoring
+    "exam_proctoring_violations_count": [
+        "exam.proctoring.violation_detected",
+        "faculty.proctoring.violation_detected",
+    ],
+    "exam_integrity_reviews_count": [
+        "exam.proctoring.suspicious_activity_detected",
+        "exam.proctoring.multiple_faces_detected",
+        "exam.proctoring.face_mismatch_detected",
+        "exam.proctoring.forbidden_app_detected",
+        "exam.proctoring.camera_absent_detected",
+    ],
+    "exam_integrity_high_risk_count": [
+        "exam.proctoring.multiple_faces_detected",
+        "exam.proctoring.face_mismatch_detected",
+    ],
+    "exam_integrity_requires_approval_count": ["exam.proctoring.violation_detected"],
+    # A-016.6 Wave 4 event lineage — Thesis Governance
+    "thesis_governance_risk_count": ["thesis.governance.risk_detected"],
+    "thesis_supervisor_assignment_needed_count": ["thesis.supervisor.assignment_needed"],
+    "thesis_review_delayed_count": ["thesis.review.delayed"],
+    "thesis_governance_requires_approval_count": [
+        "thesis.supervisor.overloaded",
+        "thesis.governance.risk_detected",
+    ],
+    # A-016.6 Wave 4 event lineage — Research Ethics / Compliance
+    "research_ethics_review_cases_count": [
+        "research_ethics.application.submitted",
+        "research_ethics.review.overdue",
+    ],
+    "research_ethics_high_risk_count": [
+        "research_ethics.high_risk.detected",
+        "research_ethics.missing_consent.detected",
+    ],
+    "research_ethics_missing_documents_count": ["research_ethics.document_missing.detected"],
+    "research_ethics_requires_approval_count": [
+        "research_ethics.high_risk.detected",
+        "research_ethics.missing_consent.detected",
+    ],
+    # A-016.6 Wave 4 event lineage — Case Resolution
+    "integrity_cases_open_count": ["academic_integrity.case.opened"],
+    "integrity_cases_escalated_count": ["academic_integrity.case.review_required"],
+    "integrity_cases_resolved_count": ["academic_integrity.case.resolved"],
+    "integrity_cases_evidence_requested_count": ["academic_integrity.case.evidence_requested"],
+    "integrity_case_resolution_sla_risk_count": ["academic_integrity.case.review_required"],
 }
 
 
@@ -728,6 +813,60 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     metric_values["reorder_recommendations_count"] = inv_reorder_needed_w3
     metric_values["supply_risk_actions_count"] = supply_risk_w3 + inv_gap_w3
 
+    # A-016.6 Wave 4 KPI extension: academic integrity / thesis governance / research ethics / case resolution
+    # Group A — Academic Integrity
+    ai_violation_w4 = int(event_counts.get("academic_integrity.violation.detected", 0) or 0)
+    ai_risk_w4 = int(event_counts.get("academic_integrity.risk_detected", 0) or 0)
+    ai_case_opened_w4 = int(event_counts.get("academic_integrity.case.opened", 0) or 0)
+    ai_case_review_required_w4 = int(event_counts.get("academic_integrity.case.review_required", 0) or 0)
+    metric_values["academic_integrity_risk_count"] = ai_violation_w4 + ai_risk_w4
+    metric_values["academic_integrity_review_cases_count"] = ai_case_opened_w4 + ai_case_review_required_w4
+    metric_values["academic_integrity_high_risk_count"] = ai_violation_w4 + ai_case_review_required_w4
+    metric_values["academic_integrity_cases_pending_review"] = ai_case_review_required_w4
+    # Group B — Exam Proctoring
+    ep_violation_w4 = int(event_counts.get("exam.proctoring.violation_detected", 0) or 0)
+    ep_faculty_w4 = int(event_counts.get("faculty.proctoring.violation_detected", 0) or 0)
+    ep_suspicious_w4 = int(event_counts.get("exam.proctoring.suspicious_activity_detected", 0) or 0)
+    ep_multi_face_w4 = int(event_counts.get("exam.proctoring.multiple_faces_detected", 0) or 0)
+    ep_face_mismatch_w4 = int(event_counts.get("exam.proctoring.face_mismatch_detected", 0) or 0)
+    ep_forbidden_app_w4 = int(event_counts.get("exam.proctoring.forbidden_app_detected", 0) or 0)
+    ep_camera_absent_w4 = int(event_counts.get("exam.proctoring.camera_absent_detected", 0) or 0)
+    metric_values["exam_proctoring_violations_count"] = ep_violation_w4 + ep_faculty_w4
+    metric_values["exam_integrity_reviews_count"] = (
+        ep_suspicious_w4 + ep_multi_face_w4 + ep_face_mismatch_w4 + ep_forbidden_app_w4 + ep_camera_absent_w4
+    )
+    metric_values["exam_integrity_high_risk_count"] = ep_multi_face_w4 + ep_face_mismatch_w4
+    metric_values["exam_integrity_requires_approval_count"] = ep_violation_w4
+    # Group C — Thesis Governance
+    thesis_gov_risk_w4 = int(event_counts.get("thesis.governance.risk_detected", 0) or 0)
+    thesis_supervisor_needed_w4 = int(event_counts.get("thesis.supervisor.assignment_needed", 0) or 0)
+    thesis_review_delayed_w4 = int(event_counts.get("thesis.review.delayed", 0) or 0)
+    thesis_supervisor_overloaded_w4 = int(event_counts.get("thesis.supervisor.overloaded", 0) or 0)
+    metric_values["thesis_governance_risk_count"] = thesis_gov_risk_w4
+    metric_values["thesis_supervisor_assignment_needed_count"] = thesis_supervisor_needed_w4
+    metric_values["thesis_review_delayed_count"] = thesis_review_delayed_w4
+    metric_values["thesis_governance_requires_approval_count"] = thesis_supervisor_overloaded_w4 + thesis_gov_risk_w4
+    # Group D — Research Ethics / Compliance
+    re_submitted_w4 = int(event_counts.get("research_ethics.application.submitted", 0) or 0)
+    re_overdue_w4 = int(event_counts.get("research_ethics.review.overdue", 0) or 0)
+    re_high_risk_w4 = int(event_counts.get("research_ethics.high_risk.detected", 0) or 0)
+    re_missing_consent_w4 = int(event_counts.get("research_ethics.missing_consent.detected", 0) or 0)
+    re_doc_missing_w4 = int(event_counts.get("research_ethics.document_missing.detected", 0) or 0)
+    metric_values["research_ethics_review_cases_count"] = re_submitted_w4 + re_overdue_w4
+    metric_values["research_ethics_high_risk_count"] = re_high_risk_w4 + re_missing_consent_w4
+    metric_values["research_ethics_missing_documents_count"] = re_doc_missing_w4
+    metric_values["research_ethics_requires_approval_count"] = re_high_risk_w4 + re_missing_consent_w4
+    # Group E — Case Resolution
+    cr_opened_w4 = int(event_counts.get("academic_integrity.case.opened", 0) or 0)
+    cr_review_required_w4 = int(event_counts.get("academic_integrity.case.review_required", 0) or 0)
+    cr_resolved_w4 = int(event_counts.get("academic_integrity.case.resolved", 0) or 0)
+    cr_evidence_w4 = int(event_counts.get("academic_integrity.case.evidence_requested", 0) or 0)
+    metric_values["integrity_cases_open_count"] = cr_opened_w4
+    metric_values["integrity_cases_escalated_count"] = cr_review_required_w4
+    metric_values["integrity_cases_resolved_count"] = cr_resolved_w4
+    metric_values["integrity_cases_evidence_requested_count"] = cr_evidence_w4
+    metric_values["integrity_case_resolution_sla_risk_count"] = cr_review_required_w4
+
     from app.modules.billing.service import get_delinquency_dashboard, list_delinquency_records  # noqa: PLC0415
 
     delinquency_dashboard = get_delinquency_dashboard(int(tenant_id))
@@ -787,8 +926,29 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
                         "degree_progress_intervention_cases_count",
                         "scholarship_risk_cases_count",
                         "financial_aid_risk_cases_count",
-                    } else "platform_core",
-                    "analytics_today": int(analytics_counts.get(_metric_key_to_event(metric_key), 0)),
+                        # A-016.6 Wave 4
+                        "academic_integrity_risk_count",
+                        "academic_integrity_review_cases_count",
+                        "academic_integrity_high_risk_count",
+                        "academic_integrity_cases_pending_review",
+                        "exam_proctoring_violations_count",
+                        "exam_integrity_reviews_count",
+                        "exam_integrity_high_risk_count",
+                        "exam_integrity_requires_approval_count",
+                        "thesis_governance_risk_count",
+                        "thesis_supervisor_assignment_needed_count",
+                        "thesis_review_delayed_count",
+                        "thesis_governance_requires_approval_count",
+                        "research_ethics_review_cases_count",
+                        "research_ethics_high_risk_count",
+                        "research_ethics_missing_documents_count",
+                        "research_ethics_requires_approval_count",
+                        "integrity_cases_open_count",
+                        "integrity_cases_escalated_count",
+                        "integrity_cases_resolved_count",
+                        "integrity_cases_evidence_requested_count",
+                        "integrity_case_resolution_sla_risk_count",
+                    } else "platform_core",                    "analytics_today": int(analytics_counts.get(_metric_key_to_event(metric_key), 0)),
                     "lineage": lineage,
                 },
                 conn=conn,
@@ -1448,6 +1608,113 @@ KPI_SEVERITY_RULES: dict[str, dict[str, Any]] = {
         "warning_gte": 1,
         "critical_gte": 5,
         "policy_pack": "supply_risk_wave3_v1",
+    },
+    # A-016.6 Wave 4 severity rules — Academic Integrity
+    "academic_integrity_risk_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "academic_integrity_wave4_v1",
+    },
+    "academic_integrity_high_risk_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 3,
+        "policy_pack": "academic_integrity_wave4_v1",
+    },
+    "academic_integrity_cases_pending_review": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "academic_integrity_wave4_v1",
+    },
+    # A-016.6 Wave 4 severity rules — Exam Proctoring
+    "exam_proctoring_violations_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "exam_integrity_wave4_v1",
+    },
+    "exam_integrity_high_risk_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 3,
+        "policy_pack": "exam_integrity_wave4_v1",
+    },
+    "exam_integrity_requires_approval_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "exam_integrity_wave4_v1",
+    },
+    # A-016.6 Wave 4 severity rules — Thesis Governance
+    "thesis_governance_risk_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "thesis_governance_wave4_v1",
+    },
+    "thesis_supervisor_assignment_needed_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "thesis_governance_wave4_v1",
+    },
+    "thesis_review_delayed_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "thesis_governance_wave4_v1",
+    },
+    "thesis_governance_requires_approval_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 3,
+        "policy_pack": "thesis_governance_wave4_v1",
+    },
+    # A-016.6 Wave 4 severity rules — Research Ethics / Compliance
+    "research_ethics_review_cases_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "research_ethics_wave4_v1",
+    },
+    "research_ethics_high_risk_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 3,
+        "policy_pack": "research_ethics_wave4_v1",
+    },
+    "research_ethics_missing_documents_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "research_ethics_wave4_v1",
+    },
+    "research_ethics_requires_approval_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 3,
+        "policy_pack": "research_ethics_wave4_v1",
+    },
+    # A-016.6 Wave 4 severity rules — Case Resolution
+    "integrity_cases_open_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 10,
+        "policy_pack": "case_resolution_wave4_v1",
+    },
+    "integrity_cases_escalated_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "case_resolution_wave4_v1",
+    },
+    "integrity_case_resolution_sla_risk_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 3,
+        "policy_pack": "case_resolution_wave4_v1",
     },
 }
 

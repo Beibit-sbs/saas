@@ -210,6 +210,57 @@ export default function RectorDashboardPage() {
         />
       </section>
 
+      <section data-testid="wave4-academic-integrity-kpi-section">
+        <Wave1KpiBar
+          metricKeys={[
+            "academic_integrity_risk_count",
+            "academic_integrity_review_cases_count",
+            "academic_integrity_high_risk_count",
+            "academic_integrity_cases_pending_review",
+            "exam_proctoring_violations_count",
+            "exam_integrity_reviews_count",
+            "exam_integrity_high_risk_count",
+            "exam_integrity_requires_approval_count",
+            "thesis_governance_risk_count",
+            "thesis_supervisor_assignment_needed_count",
+            "thesis_review_delayed_count",
+            "thesis_governance_requires_approval_count",
+            "research_ethics_review_cases_count",
+            "research_ethics_high_risk_count",
+            "research_ethics_missing_documents_count",
+            "research_ethics_requires_approval_count",
+            "integrity_cases_open_count",
+            "integrity_cases_escalated_count",
+            "integrity_cases_resolved_count",
+            "integrity_cases_evidence_requested_count",
+            "integrity_case_resolution_sla_risk_count",
+          ]}
+          labels={{
+            academic_integrity_risk_count: "Integrity Risk",
+            academic_integrity_review_cases_count: "Review Cases",
+            academic_integrity_high_risk_count: "High Risk",
+            academic_integrity_cases_pending_review: "Pending Review",
+            exam_proctoring_violations_count: "Proctoring Violations",
+            exam_integrity_reviews_count: "Exam Reviews",
+            exam_integrity_high_risk_count: "Exam High Risk",
+            exam_integrity_requires_approval_count: "Exam Approval Needed",
+            thesis_governance_risk_count: "Thesis Risk",
+            thesis_supervisor_assignment_needed_count: "Supervisor Needed",
+            thesis_review_delayed_count: "Review Delayed",
+            thesis_governance_requires_approval_count: "Thesis Approval Needed",
+            research_ethics_review_cases_count: "Ethics Review Cases",
+            research_ethics_high_risk_count: "Ethics High Risk",
+            research_ethics_missing_documents_count: "Missing Documents",
+            research_ethics_requires_approval_count: "Ethics Approval Needed",
+            integrity_cases_open_count: "Cases Open",
+            integrity_cases_escalated_count: "Cases Escalated",
+            integrity_cases_resolved_count: "Cases Resolved",
+            integrity_cases_evidence_requested_count: "Evidence Requested",
+            integrity_case_resolution_sla_risk_count: "SLA Risk",
+          }}
+        />
+      </section>
+
       <AutomationOverviewWidget tenantId={tenantId} />
     </div>
   );
