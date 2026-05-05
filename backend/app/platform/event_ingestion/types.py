@@ -77,5 +77,16 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "exam.proctoring.face_mismatch_detected",
         "exam.proctoring.forbidden_app_detected",
         "exam.proctoring.camera_absent_detected",
+        # A-016.4 Research Ethics / Compliance Review signals
+        "research_ethics.application.submitted",
+        "research_ethics.review.overdue",
+        "research_ethics.high_risk.detected",
+        "research_ethics.missing_consent.detected",
+        "research_ethics.document_missing.detected",
+        "research_ethics.conflict_of_interest.detected",
+        "research_ethics.violation.reported",
+        "research.compliance.risk_detected",
+        "research.data_privacy.risk_detected",
+        "compliance.review.required",
     }
 )

@@ -31,6 +31,7 @@ from app.modules.brain_core.constants import (
     ACADEMIC_INTEGRITY_VIOLATION_EVENT_TYPES,
     THESIS_GOVERNANCE_EVENT_TYPES,
     EXAM_PROCTORING_EVENT_TYPES,
+    RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES,
 )
 
 
@@ -315,6 +316,57 @@ class SignalRegistry:
             "scenario": "exam_proctoring_violation",
             "context_sources": ["academic", "exam", "student_success"],
         },
+        # A-016.4 Research Ethics / Compliance Review signals
+        "research_ethics.application.submitted": {
+            "signal_class": "compliance_risk",
+            "scenario": "research_ethics_compliance",
+            "context_sources": ["academic", "faculty", "platform"],
+        },
+        "research_ethics.review.overdue": {
+            "signal_class": "compliance_risk",
+            "scenario": "research_ethics_compliance",
+            "context_sources": ["academic", "faculty", "platform"],
+        },
+        "research_ethics.high_risk.detected": {
+            "signal_class": "compliance_risk",
+            "scenario": "research_ethics_compliance",
+            "context_sources": ["academic", "faculty", "platform"],
+        },
+        "research_ethics.missing_consent.detected": {
+            "signal_class": "compliance_risk",
+            "scenario": "research_ethics_compliance",
+            "context_sources": ["academic", "faculty", "platform"],
+        },
+        "research_ethics.document_missing.detected": {
+            "signal_class": "compliance_risk",
+            "scenario": "research_ethics_compliance",
+            "context_sources": ["academic", "faculty", "platform"],
+        },
+        "research_ethics.conflict_of_interest.detected": {
+            "signal_class": "compliance_risk",
+            "scenario": "research_ethics_compliance",
+            "context_sources": ["academic", "faculty", "platform"],
+        },
+        "research_ethics.violation.reported": {
+            "signal_class": "compliance_risk",
+            "scenario": "research_ethics_compliance",
+            "context_sources": ["academic", "faculty", "platform"],
+        },
+        "research.compliance.risk_detected": {
+            "signal_class": "compliance_risk",
+            "scenario": "research_ethics_compliance",
+            "context_sources": ["academic", "faculty", "platform"],
+        },
+        "research.data_privacy.risk_detected": {
+            "signal_class": "compliance_risk",
+            "scenario": "research_ethics_compliance",
+            "context_sources": ["academic", "faculty", "platform"],
+        },
+        "compliance.review.required": {
+            "signal_class": "compliance_risk",
+            "scenario": "research_ethics_compliance",
+            "context_sources": ["academic", "faculty", "platform"],
+        },
         "academic_records.inconsistency.detected": {
             "signal_class": "compliance_risk",
             "scenario": "academic_records_audit",
@@ -581,6 +633,21 @@ class DecisionRegistry:
                 "request_manual_proctor_review": "workflow_task",
                 "notify_exam_office": "notification",
                 "escalate_to_academic_integrity_committee": "workflow_task",
+                "collect_additional_evidence": "workflow_task",
+            },
+        },
+        # A-016.4 Research Ethics / Compliance Review
+        "research_ethics_compliance": {
+            "decision_type": "research_ethics_review",
+            "allowed_event_types": sorted(RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES),
+            "action_map": {
+                "request_ethics_review": "workflow_task",
+                "notify_ethics_committee": "notification",
+                "request_missing_documents": "workflow_task",
+                "request_consent_review": "workflow_task",
+                "request_data_privacy_review": "workflow_task",
+                "request_conflict_of_interest_review": "workflow_task",
+                "escalate_to_compliance_officer": "workflow_task",
                 "collect_additional_evidence": "workflow_task",
             },
         },

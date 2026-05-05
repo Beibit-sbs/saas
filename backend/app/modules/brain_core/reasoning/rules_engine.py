@@ -890,6 +890,59 @@ class RulesEngine:
                 "requires_approval": False,
             }
 
+        # A-016.4 Research Ethics / Compliance Review rules
+        _RESEARCH_ETHICS_COMPLIANCE_PATHS = {
+            "research_ethics_compliance_critical",
+            "research_ethics_compliance_high",
+            "research_ethics_compliance_medium",
+            "research_ethics_compliance_low",
+        }
+        if reasoning_path in _RESEARCH_ETHICS_COMPLIANCE_PATHS:
+            if reasoning_path == "research_ethics_compliance_critical":
+                return {
+                    "decision_type": "research_ethics_review",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "request_ethics_review",
+                        "escalate_to_compliance_officer",
+                        "notify_ethics_committee",
+                        "request_data_privacy_review",
+                        "request_consent_review",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "research_ethics_compliance_high":
+                return {
+                    "decision_type": "research_ethics_review",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "request_ethics_review",
+                        "notify_ethics_committee",
+                        "request_missing_documents",
+                        "request_conflict_of_interest_review",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "research_ethics_compliance_medium":
+                return {
+                    "decision_type": "research_ethics_review",
+                    "priority": "medium",
+                    "recommended_actions": [
+                        "request_ethics_review",
+                        "request_missing_documents",
+                        "collect_additional_evidence",
+                    ],
+                    "requires_approval": False,
+                }
+            return {
+                "decision_type": "research_ethics_review",
+                "priority": "low",
+                "recommended_actions": [
+                    "collect_additional_evidence",
+                ],
+                "requires_approval": False,
+            }
+
         return {
             "decision_type": "operational",
             "priority": "low",

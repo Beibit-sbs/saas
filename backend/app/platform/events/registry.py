@@ -198,6 +198,17 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "exam.proctoring.camera_absent_detected": EventDefinition(GenericTenantEventPayload),
     "coursework.submission.suspicious_detected": EventDefinition(GenericTenantEventPayload),
     "ai_plagiarism.risk_detected": EventDefinition(GenericTenantEventPayload),
+    # A-016.4 Research Ethics / Compliance Review events
+    "research_ethics.application.submitted": EventDefinition(GenericTenantEventPayload),
+    "research_ethics.review.overdue": EventDefinition(GenericTenantEventPayload),
+    "research_ethics.high_risk.detected": EventDefinition(GenericTenantEventPayload),
+    "research_ethics.missing_consent.detected": EventDefinition(GenericTenantEventPayload),
+    "research_ethics.document_missing.detected": EventDefinition(GenericTenantEventPayload),
+    "research_ethics.conflict_of_interest.detected": EventDefinition(GenericTenantEventPayload),
+    "research_ethics.violation.reported": EventDefinition(GenericTenantEventPayload),
+    "research.compliance.risk_detected": EventDefinition(GenericTenantEventPayload),
+    "research.data_privacy.risk_detected": EventDefinition(GenericTenantEventPayload),
+    "compliance.review.required": EventDefinition(GenericTenantEventPayload),
     # Research module events (W52)
     "campus.research.grant_delay_risk_detected": EventDefinition(GenericTenantEventPayload),
     # Exam governance lifecycle events (XXXIV.1)

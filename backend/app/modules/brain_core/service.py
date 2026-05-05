@@ -96,6 +96,22 @@ _EXAM_PROCTORING_EVENT_TYPES = frozenset(
     }
 )
 
+# A-016.4 — Research Ethics / Compliance Review event types
+_RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES = frozenset(
+    {
+        "research_ethics.application.submitted",
+        "research_ethics.review.overdue",
+        "research_ethics.high_risk.detected",
+        "research_ethics.missing_consent.detected",
+        "research_ethics.document_missing.detected",
+        "research_ethics.conflict_of_interest.detected",
+        "research_ethics.violation.reported",
+        "research.compliance.risk_detected",
+        "research.data_privacy.risk_detected",
+        "compliance.review.required",
+    }
+)
+
 
 def _coerce_uuid(value: object) -> uuid.UUID:
     """Convert a string/UUID to uuid.UUID, generating a new one on failure."""
@@ -248,7 +264,7 @@ class BrainCoreService:
 
     # Priorities and types that warrant an immediate in-app notification.
     _NOTIFIABLE_PRIORITIES: frozenset[str] = frozenset({"critical", "high"})
-    _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance", "academic_integrity_review", "thesis_supervisor_assignment", "exam_integrity_review"})
+    _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance", "academic_integrity_review", "thesis_supervisor_assignment", "exam_integrity_review", "research_ethics_review"})
 
     def _normalize_degree_progress_signal(self, signal: dict) -> tuple[dict, str | None]:
         """Normalize graduation-risk signals to canonical student/source fields.
@@ -598,6 +614,72 @@ class BrainCoreService:
 
         return normalized, None
 
+    def _normalize_research_ethics_compliance_signal(self, signal: dict) -> tuple[dict, str | None]:
+        """Fail-closed normalization for research ethics/compliance signals (A-016.4).
+
+        Ensures required tenant + subject context, attaches origin/evidence metadata
+        for downstream audit/workflow payloads.
+        Does NOT approve/reject/sanction research automatically.
+        """
+        event_type = str(signal.get("event_type") or "")
+        if event_type not in _RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES:
+            return signal, None
+
+        normalized = dict(signal)
+        payload = dict(normalized.get("payload") or {})
+
+        tenant_id = int(normalized.get("tenant_id") or 0)
+        if tenant_id <= 0:
+            return normalized, "missing_tenant_context"
+
+        researcher_id = str(payload.get("researcher_id") or payload.get("faculty_id") or "").strip()
+        student_id = str(payload.get("student_id") or "").strip()
+        project_id = str(payload.get("project_id") or "").strip()
+        grant_id = str(payload.get("grant_id") or "").strip()
+        ethics_application_id = str(payload.get("ethics_application_id") or "").strip()
+        source_entity_id = str(
+            normalized.get("source_entity_id")
+            or payload.get("source_entity_id")
+            or ethics_application_id
+            or project_id
+            or grant_id
+            or ""
+        ).strip()
+
+        if not any([researcher_id, student_id, project_id, grant_id, ethics_application_id, source_entity_id]):
+            return normalized, "missing_subject_identifier"
+
+        payload.setdefault("risk_source", event_type)
+        payload.setdefault("correlation_id", str(normalized.get("correlation_id") or ""))
+        payload.setdefault("researcher_id", researcher_id)
+        payload.setdefault("faculty_id", str(payload.get("faculty_id") or researcher_id))
+        payload.setdefault("student_id", student_id)
+        payload.setdefault("project_id", project_id)
+        payload.setdefault("grant_id", grant_id)
+        payload.setdefault("ethics_application_id", ethics_application_id)
+        payload.setdefault("committee_id", str(payload.get("committee_id") or ""))
+
+        if payload.get("documents_missing") is None:
+            payload.setdefault("documents_missing_evidence", "documents_missing_not_provided")
+        if payload.get("consent_required") is None:
+            payload.setdefault("consent_required_evidence", "consent_required_not_provided")
+        if payload.get("consent_present") is None:
+            payload.setdefault("consent_present_evidence", "consent_present_not_provided")
+        if payload.get("data_privacy_risk") is None:
+            payload.setdefault("data_privacy_risk_evidence", "data_privacy_risk_not_provided")
+        if payload.get("conflict_of_interest") is None:
+            payload.setdefault("conflict_of_interest_evidence", "conflict_of_interest_not_provided")
+
+        normalized["payload"] = payload
+        if str(normalized.get("source_entity_type") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_type"] = str(payload.get("source_entity_type") or "research_ethics_review")
+        if str(normalized.get("source_entity_id") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_id"] = source_entity_id or researcher_id or student_id or "unknown"
+        if not normalized.get("source_module"):
+            normalized["source_module"] = str(payload.get("source_module") or "research_ethics")
+
+        return normalized, None
+
     def _resolve_decision_scenario(self, *, event_type: str, classification: dict) -> str:
         """Resolve the decision scenario, allowing additive routing overrides."""
         scenario = SignalRegistry.signals[event_type]["scenario"]
@@ -785,6 +867,11 @@ class BrainCoreService:
             return {"status": "rejected", "reason": normalization_rejection}
 
         signal, normalization_rejection = self._normalize_exam_proctoring_signal(signal)
+        if normalization_rejection is not None:
+            self._observability.increment("signals_rejected_total")
+            return {"status": "rejected", "reason": normalization_rejection}
+
+        signal, normalization_rejection = self._normalize_research_ethics_compliance_signal(signal)
         if normalization_rejection is not None:
             self._observability.increment("signals_rejected_total")
             return {"status": "rejected", "reason": normalization_rejection}

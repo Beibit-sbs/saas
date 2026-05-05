@@ -168,6 +168,29 @@ ACTION_NOTIFY_EXAM_OFFICE = "notify_exam_office"
 ACTION_ESCALATE_TO_ACADEMIC_INTEGRITY_COMMITTEE = "escalate_to_academic_integrity_committee"
 ACTION_COLLECT_ADDITIONAL_EVIDENCE = "collect_additional_evidence"
 
+# A-016.4 Research Ethics / Compliance Review events
+RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES = frozenset({
+    "research_ethics.application.submitted",
+    "research_ethics.review.overdue",
+    "research_ethics.high_risk.detected",
+    "research_ethics.missing_consent.detected",
+    "research_ethics.document_missing.detected",
+    "research_ethics.conflict_of_interest.detected",
+    "research_ethics.violation.reported",
+    "research.compliance.risk_detected",
+    "research.data_privacy.risk_detected",
+    "compliance.review.required",
+})
+
+# A-016.4 Actions
+ACTION_REQUEST_ETHICS_REVIEW = "request_ethics_review"
+ACTION_NOTIFY_ETHICS_COMMITTEE = "notify_ethics_committee"
+ACTION_REQUEST_MISSING_DOCUMENTS = "request_missing_documents"
+ACTION_REQUEST_CONSENT_REVIEW = "request_consent_review"
+ACTION_REQUEST_DATA_PRIVACY_REVIEW = "request_data_privacy_review"
+ACTION_REQUEST_CONFLICT_OF_INTEREST_REVIEW = "request_conflict_of_interest_review"
+ACTION_ESCALATE_TO_COMPLIANCE_OFFICER = "escalate_to_compliance_officer"
+
 ACADEMIC_RECORDS_EVENT_TYPES = {
     "academic_records.inconsistency.detected",
 }
@@ -223,6 +246,7 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | PROCUREMENT_APPROVAL_EVENT_TYPES
     | THESIS_GOVERNANCE_EVENT_TYPES
     | EXAM_PROCTORING_EVENT_TYPES
+    | RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES
 )
 
 ACTION_CREATE_INTERVENTION_CASE = "create_intervention_case"

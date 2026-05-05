@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-05-08 (A-016.3 Exam Proctoring Violation Workflow Brain)
+- run_id: OP-AUDIT-2026-05-05-09 (A-016.4 Research Ethics / Compliance Review Brain)
 - status: in_progress_A-016
-- current_stage: A-016.3 CLOSED; next = A-016.4
-- last_completed_action_id: A-016.3
-- next_action_id: A-016.4
-- updated_at: 2026-05-05 (A-016.3 complete; 6 exam proctoring event types registered in Brain Core; 32/32 tests passed; deterministic 4-level severity classifier; no punitive actions; full tenant isolation; human-in-the-loop approval for high/critical proctoring decisions)
+- current_stage: A-016.4 CLOSED; next = A-016.5
+- last_completed_action_id: A-016.4
+- next_action_id: A-016.5
+- updated_at: 2026-05-05 (A-016.4 complete; 10 research ethics/compliance event types registered in Brain Core; 36/36 focused tests passed; 319 Wave4 regression passed; 874 tenant/security slice passed; release gate PASS through all stages; deterministic 4-level severity classifier; no auto-approval/rejection/sanction; human-in-the-loop mandatory for high/critical ethics risk; fail-closed on missing tenant/identifiers)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -285,6 +285,42 @@
     - A-016.2 focused suite: **24/24 PASS** (`tests/test_a016_2_thesis_governance_brain.py`)
 - Decision: **A-016.2 CLOSED - PASS**.
 - Next action: **A-016.3** (Exam Proctoring Violation Workflow).
+
+#### A-016.4 — Research Ethics / Compliance Review Brain
+
+- Date: 2026-05-05
+- Scope: Brain Core full pipeline wiring for 10 dedicated research ethics and compliance event types. New `research_ethics_review` decision type. Extends Wave 4 Academic Integrity series.
+- Changes:
+    - `brain_core/constants.py`: `RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES` frozenset (10 events) + action constants; merged into `SUPPORTED_SIGNAL_EVENT_TYPES`.
+    - `platform/events/registry.py`: 10 new A-016.4 event definitions with generic tenant payload.
+    - `platform/event_ingestion/types.py`: 10 A-016.4 events added to `VALID_EVENT_TYPES`.
+    - `brain_core/registry.py`: 10 `SignalRegistry` entries (scenario: `research_ethics_compliance`) + 1 `DecisionRegistry` entry (`decision_type="research_ethics_review"`).
+    - `brain_core/classifiers/risk_classifier.py`: Research ethics/compliance 4-level deterministic severity block.
+    - `brain_core/reasoning/rules_engine.py`: 4 research ethics reasoning path rules (`research_ethics_compliance_critical/high/medium/low`); `requires_approval=True` for high/critical.
+    - `brain_core/service.py`: `_normalize_research_ethics_compliance_signal()` normalizer; `research_ethics_review` added to `_NOTIFIABLE_DECISION_TYPES`.
+    - `tests/test_a016_4_research_ethics_compliance_brain.py`: 36 new tests (NEW FILE).
+- Brain Core research ethics severity model:
+    - CRITICAL: `missing_consent=True` AND human subjects research, OR `risk_level=="critical"`, OR `review_overdue_days >= 60`, OR `document_missing_count >= 3`. Requires human approval.
+    - HIGH: `risk_level=="high"` OR `review_overdue_days >= 30` OR `document_missing_count >= 2` OR privacy risk detected. Requires human approval.
+    - MEDIUM: `risk_level=="medium"` OR single missing document OR conflict-of-interest detected OR `review_overdue_days >= 1`. No auto-action.
+    - LOW: Default (new application / minor compliance signal). No auto-action.
+- Safety guarantees:
+    - NO automatic ethics approval, rejection, or sanction — human-in-the-loop mandatory for high/critical
+    - CRITICAL + HIGH always `requires_approval=True`
+    - Fail-closed on missing `tenant_id` or missing both `research_project_id` and `researcher_id`
+    - Deduplication by `signal_id` — no duplicate decisions
+    - Full A-016.1 / A-016.2 / A-016.3 regression checks embedded and passing
+- Validation results:
+    - A-016.4 focused suite: **36/36 PASS** (`tests/test_a016_4_research_ethics_compliance_brain.py`)
+    - Targeted Brain Core slice (`-k research_ethics or brain_core`): **206 passed, 8124 deselected, 1 warning**
+    - Wave4 regression (`-k academic_integrity or exam_proctoring or thesis_governance or research_ethics or brain_core`): **319 passed, 8011 deselected, 1 warning**
+    - Tenant/security slice (`-k tenant or security`): **874 passed, 1 skipped, 7455 deselected, 1 warning**
+    - Safe gate: **PASS** (`scripts/university_pilot_safe_gate.sh`)
+    - Release gate: **PASS** (`scripts/release_gate.sh`) — architecture 7p, tenant 8p, platform 480p, domain 412+17+24p, security 73p, template 5p, data layer green
+- Decision: **A-016.4 CLOSED - PASS**.
+- Next action: **A-016.5** (next Wave 4 brain feature).
+
+---
 
 #### A-016.3 — Exam Proctoring Violation Workflow Brain
 

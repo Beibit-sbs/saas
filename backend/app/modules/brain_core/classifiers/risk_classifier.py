@@ -1288,6 +1288,108 @@ class RiskClassifier:
                 "reasoning_path": "exam_proctoring_low",
             }
 
+        # A-016.4 Research Ethics / Compliance Review — deterministic severity
+        _RESEARCH_ETHICS_COMPLIANCE_EVENTS = {
+            "research_ethics.application.submitted",
+            "research_ethics.review.overdue",
+            "research_ethics.high_risk.detected",
+            "research_ethics.missing_consent.detected",
+            "research_ethics.document_missing.detected",
+            "research_ethics.conflict_of_interest.detected",
+            "research_ethics.violation.reported",
+            "research.compliance.risk_detected",
+            "research.data_privacy.risk_detected",
+            "compliance.review.required",
+        }
+        if event_type in _RESEARCH_ETHICS_COMPLIANCE_EVENTS:
+            payload = signal.get("payload", {})
+            risk_level = str(payload.get("risk_level") or "").strip().lower()
+            study_type = str(payload.get("study_type") or "").strip().lower()
+            risk_category = str(payload.get("risk_category") or "").strip().lower()
+            violation_confirmed = bool(payload.get("violation_confirmed") or payload.get("confirmed_violation"))
+            consent_required = bool(payload.get("consent_required", False))
+            consent_present = bool(payload.get("consent_present", False))
+            data_privacy_risk = bool(payload.get("data_privacy_risk", False))
+            conflict_of_interest = bool(payload.get("conflict_of_interest", False))
+            conflict_confirmed = bool(payload.get("conflict_confirmed", False))
+
+            documents_missing = payload.get("documents_missing")
+            doc_count = 0
+            if isinstance(documents_missing, (list, tuple, set)):
+                doc_count = len(documents_missing)
+            elif isinstance(documents_missing, str) and documents_missing.strip():
+                doc_count = 1
+
+            days_pending = payload.get("days_pending")
+            overdue_days = 0
+            if isinstance(days_pending, (int, float)):
+                overdue_days = int(days_pending)
+
+            is_human_subjects = study_type in {"human_subjects", "human_subject", "clinical", "clinical_trial"}
+            has_missing_consent = (event_type == "research_ethics.missing_consent.detected") or (
+                consent_required and not consent_present
+            )
+            severe_data_privacy = event_type == "research.data_privacy.risk_detected" and (
+                data_privacy_risk or risk_level in {"high", "critical"}
+            )
+            high_risk_study = event_type == "research_ethics.high_risk.detected" or risk_level in {"high", "critical"}
+
+            if (
+                risk_level == "critical"
+                or (event_type == "research_ethics.violation.reported" and violation_confirmed)
+                or (is_human_subjects and has_missing_consent)
+                or severe_data_privacy
+                or (high_risk_study and doc_count >= 1)
+                or overdue_days >= 60
+                or (conflict_of_interest and conflict_confirmed)
+            ):
+                return {
+                    "situation_type": "compliance_risk",
+                    "severity": "critical",
+                    "urgency": "critical",
+                    "reasoning_path": "research_ethics_compliance_critical",
+                }
+
+            if (
+                risk_level == "high"
+                or event_type == "research_ethics.high_risk.detected"
+                or has_missing_consent
+                or doc_count >= 2
+                or overdue_days >= 30
+                or data_privacy_risk
+                or event_type == "research.compliance.risk_detected"
+            ):
+                return {
+                    "situation_type": "compliance_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "research_ethics_compliance_high",
+                }
+
+            if (
+                risk_level == "medium"
+                or event_type == "research_ethics.document_missing.detected"
+                or doc_count == 1
+                or overdue_days >= 7
+                or event_type == "research_ethics.conflict_of_interest.detected"
+                or conflict_of_interest
+                or event_type == "compliance.review.required"
+                or risk_category in {"committee_delay", "review_delay"}
+            ):
+                return {
+                    "situation_type": "compliance_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "research_ethics_compliance_medium",
+                }
+
+            return {
+                "situation_type": "compliance_risk",
+                "severity": "low",
+                "urgency": "low",
+                "reasoning_path": "research_ethics_compliance_low",
+            }
+
         return {
             "situation_type": "operational_risk",
             "severity": "low",
