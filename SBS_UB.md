@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-05-14 (A-017.0 Module Maturity Refresh + Fast-Win Selection)
-- status: ready_for_A-017
-- current_stage: A-017.0 module maturity refresh / fast-win selection
-- last_completed_action_id: A-016.8
-- next_action_id: A-017.1
-- updated_at: 2026-05-05 (A-017.0 complete; module maturity table refreshed against current repo state; old SBS audit misclassifications corrected for attendance/scheduling/research_ethics/exam_proctoring/budget_planning; A-017 Top 5 selected; backlog updated to concrete module-completion wave)
+- run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
+- status: ready_for_A-017.2
+- current_stage: A-017.1 budget_planning maturity closure — COMPLETE
+- last_completed_action_id: A-017.1
+- next_action_id: A-017.2
+- updated_at: 2026-05-06 (A-017.1 complete; budget_planning raised NEAR_FULL Level 4 → FULL Level 6; 3 files modified, 19 tests added, all gates green)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -488,7 +488,25 @@
 - Decision: **A-017.0 CLOSED - PASS (planning complete)**.
 - Next action: **A-017.1**.
 
----
+#### A-017.1 - BUDGET_PLANNING Maturity Closure
+
+- Date: 2026-05-06
+- Scope: Additive-only, reuse-first. No new engines, migrations, or endpoints. Fill Brain/KPI/E2E alignment gaps using existing Wave 3 budget and finance infrastructure.
+- Changes:
+    - `platform/event_ingestion/types.py`: Added 7 missing event types to `VALID_EVENT_TYPES` (`budget_plan.*` lifecycle + `finance.budget_variance.threshold_reached`).
+    - `platform/kpi/service.py`: Added `finance.budget_variance.threshold_reached` to `EVENT_DERIVED_METRIC_LINEAGE` for `budget_overrun_risk_count` and `budget_review_actions_count`; added `budget_variance_threshold_w3` term to computation; added `_compute_budget_kpi_values()` testability helper.
+    - `brain_core/registry.py`: Added `budget_plan.approved` and `budget_plan.rejected` → `budget_overrun_prevention` scenario.
+- Test coverage: 19 targeted tests in `tests/test_a017_1_budget_planning_maturity_closure.py`.
+- Validation results:
+    - A-017.1 targeted tests: **19/19 PASS**
+    - KPI/Brain regression (`-k kpi or budget or finance_operations_health or brain_core`): **653 passed, 2 skipped, 0 failed**
+    - Tenant/security non-regression: **878 passed, 1 skipped, 0 failed**
+    - University Pilot Safe Gate: **PASS** (tenant isolation 8, guardrails 7, readiness/auth 39, frontend 3 — all green)
+- Module maturity:
+    - `budget_planning`: NEAR_FULL Level 4 → **FULL Level 6**
+- Artifact: `A-017.1-BUDGET_PLANNING_MATURITY_CLOSURE_REPORT.md`
+- Decision: **A-017.1 CLOSED - PASS**.
+- Next action: **A-017.2**.
 
 #### A-016.3 — Exam Proctoring Violation Workflow Brain
 

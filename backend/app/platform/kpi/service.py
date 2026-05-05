@@ -158,15 +158,18 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "scholarship_risk_cases_count": ["scholarship.award.at_risk_detected"],
     "financial_aid_risk_cases_count": ["financial_aid.warning.detected"],
     # A-015.6 Wave 3 event lineage — Budget
+    # A-017.1 budget_planning maturity: finance.budget_variance.threshold_reached added
     "budget_overrun_risk_count": [
         "finance.expense.budget_exceeded",
         "campus.budget.overrun_risk_detected",
         "campus.expense_controls.budget_exceeded_risk_detected",
+        "finance.budget_variance.threshold_reached",
     ],
     "budget_overrun_amount_at_risk": ["finance.expense.budget_exceeded"],
     "budget_review_actions_count": [
         "campus.budget.overrun_risk_detected",
         "campus.expense_controls.budget_exceeded_risk_detected",
+        "finance.budget_variance.threshold_reached",
     ],
     # A-015.6 Wave 3 event lineage — Procurement
     "procurement_requests_pending_approval": [
@@ -637,6 +640,24 @@ def clear_kpi_state() -> None:
     _kpi_repository.clear_state()
 
 
+def _compute_budget_kpi_values(event_counts: dict[str, int]) -> dict[str, int]:
+    """Return budget-domain KPI values derived from raw event_counts.
+
+    Extracted for unit-testability. Mirrors the Wave 3 budget computation in
+    refresh_tenant_metrics() — keep in sync if that block changes.
+    A-017.1: budget_variance_threshold_w3 contributes to overrun count and review actions.
+    """
+    budget_exceeded = int(event_counts.get("finance.expense.budget_exceeded", 0) or 0)
+    overrun_risk = int(event_counts.get("campus.budget.overrun_risk_detected", 0) or 0)
+    controls_exceeded = int(event_counts.get("campus.expense_controls.budget_exceeded_risk_detected", 0) or 0)
+    variance_threshold = int(event_counts.get("finance.budget_variance.threshold_reached", 0) or 0)
+    return {
+        "budget_overrun_risk_count": budget_exceeded + overrun_risk + controls_exceeded + variance_threshold,
+        "budget_overrun_amount_at_risk": budget_exceeded,
+        "budget_review_actions_count": overrun_risk + controls_exceeded + variance_threshold,
+    }
+
+
 def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | None = None) -> list[dict[str, Any]]:
     repo = uow.kpi_repository
     conn = getattr(uow, "conn", None)
@@ -771,9 +792,11 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     metric_values["financial_aid_risk_cases_count"] = financial_aid_risk
 
     # A-015.6 Wave 3 KPI extension: finance/procurement/asset/inventory risk metrics
+    # A-017.1 budget_planning maturity: budget variance drift signal included
     budget_exceeded_w3 = int(event_counts.get("finance.expense.budget_exceeded", 0) or 0)
     budget_overrun_risk_w3 = int(event_counts.get("campus.budget.overrun_risk_detected", 0) or 0)
     budget_controls_exceeded_w3 = int(event_counts.get("campus.expense_controls.budget_exceeded_risk_detected", 0) or 0)
+    budget_variance_threshold_w3 = int(event_counts.get("finance.budget_variance.threshold_reached", 0) or 0)
     procurement_submitted_w3 = int(event_counts.get("procurement.request_submitted", 0) or 0)
     procurement_approval_required_w3 = int(event_counts.get("procurement.approval_required", 0) or 0)
     procurement_po_issued_w3 = int(event_counts.get("procurement.po_issued", 0) or 0)
@@ -784,10 +807,10 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     inv_reorder_needed_w3 = int(event_counts.get("inventory.reorder_needed", 0) or 0)
     supply_risk_w3 = int(event_counts.get("supply.risk.detected", 0) or 0)
     inv_gap_w3 = int(event_counts.get("procurement.inventory_gap.detected", 0) or 0)
-    # Group A — Budget
-    metric_values["budget_overrun_risk_count"] = budget_exceeded_w3 + budget_overrun_risk_w3 + budget_controls_exceeded_w3
+    # Group A — Budget (A-017.1: budget_variance_threshold_w3 contributes to overrun count and review actions)
+    metric_values["budget_overrun_risk_count"] = budget_exceeded_w3 + budget_overrun_risk_w3 + budget_controls_exceeded_w3 + budget_variance_threshold_w3
     metric_values["budget_overrun_amount_at_risk"] = budget_exceeded_w3
-    metric_values["budget_review_actions_count"] = budget_overrun_risk_w3 + budget_controls_exceeded_w3
+    metric_values["budget_review_actions_count"] = budget_overrun_risk_w3 + budget_controls_exceeded_w3 + budget_variance_threshold_w3
     # Group B — Procurement
     metric_values["procurement_requests_pending_approval"] = procurement_submitted_w3 + procurement_approval_required_w3
     metric_values["procurement_approval_automation_count"] = procurement_submitted_w3

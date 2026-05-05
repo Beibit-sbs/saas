@@ -49,6 +49,15 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "finance.expense.budget_exceeded",
         "campus.budget.overrun_risk_detected",
         "campus.expense_controls.budget_exceeded_risk_detected",
+        # A-017.1 budget_planning maturity closure — budget plan lifecycle events
+        "budget_plan.created",
+        "budget_plan.review_requested",
+        "budget_plan.approved",
+        "budget_plan.locked",
+        "budget_plan.rejected",
+        "budget_plan.outcome_recorded",
+        # A-017.1 budget_planning maturity closure — budget variance drift signal
+        "finance.budget_variance.threshold_reached",
         # A-015.6 Wave 3 KPI extension — procurement
         "procurement.request_submitted",
         "procurement.approval_required",

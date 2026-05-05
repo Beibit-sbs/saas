@@ -83,6 +83,17 @@ class SignalRegistry:
             "scenario": "budget_overrun_prevention",
             "context_sources": ["finance", "operations", "procurement"],
         },
+        # A-017.1 budget_planning maturity closure — plan lifecycle signals route to budget_overrun_prevention
+        "budget_plan.approved": {
+            "signal_class": "financial_risk",
+            "scenario": "budget_overrun_prevention",
+            "context_sources": ["finance", "operations"],
+        },
+        "budget_plan.rejected": {
+            "signal_class": "financial_risk",
+            "scenario": "budget_overrun_prevention",
+            "context_sources": ["finance", "operations"],
+        },
         "financial_aid.warning.detected": {
             "signal_class": "student_success_risk",
             "scenario": "student_support_bridge",
