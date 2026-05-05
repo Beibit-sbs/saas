@@ -88,5 +88,12 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "research.compliance.risk_detected",
         "research.data_privacy.risk_detected",
         "compliance.review.required",
+        # A-016.5 Academic Integrity Case Resolution Automation signals
+        "academic_integrity.case.opened",
+        "academic_integrity.case.evidence_requested",
+        "academic_integrity.case.review_required",
+        "academic_integrity.case.resolved",
+        "academic_integrity.case.dismissed",
+        "integrity.resolution.workflow_needed",
     }
 )

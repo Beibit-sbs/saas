@@ -32,6 +32,7 @@ from app.modules.brain_core.constants import (
     THESIS_GOVERNANCE_EVENT_TYPES,
     EXAM_PROCTORING_EVENT_TYPES,
     RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES,
+    ACADEMIC_INTEGRITY_CASE_RESOLUTION_EVENT_TYPES,
 )
 
 
@@ -367,6 +368,37 @@ class SignalRegistry:
             "scenario": "research_ethics_compliance",
             "context_sources": ["academic", "faculty", "platform"],
         },
+        # A-016.5 Academic Integrity Case Resolution Automation signals
+        "academic_integrity.case.opened": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_case_resolution",
+            "context_sources": ["academic", "student_success"],
+        },
+        "academic_integrity.case.evidence_requested": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_case_resolution",
+            "context_sources": ["academic", "student_success"],
+        },
+        "academic_integrity.case.review_required": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_case_resolution",
+            "context_sources": ["academic", "student_success"],
+        },
+        "academic_integrity.case.resolved": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_case_resolution",
+            "context_sources": ["academic", "student_success"],
+        },
+        "academic_integrity.case.dismissed": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_case_resolution",
+            "context_sources": ["academic", "student_success"],
+        },
+        "integrity.resolution.workflow_needed": {
+            "signal_class": "academic_risk",
+            "scenario": "academic_integrity_case_resolution",
+            "context_sources": ["academic", "student_success"],
+        },
         "academic_records.inconsistency.detected": {
             "signal_class": "compliance_risk",
             "scenario": "academic_records_audit",
@@ -649,6 +681,21 @@ class DecisionRegistry:
                 "request_conflict_of_interest_review": "workflow_task",
                 "escalate_to_compliance_officer": "workflow_task",
                 "collect_additional_evidence": "workflow_task",
+            },
+        },
+        # A-016.5 Academic Integrity Case Resolution Automation
+        "academic_integrity_case_resolution": {
+            "decision_type": "integrity_case_resolution",
+            "allowed_event_types": sorted(ACADEMIC_INTEGRITY_CASE_RESOLUTION_EVENT_TYPES),
+            "action_map": {
+                "open_review_case": "workflow_task",
+                "request_evidence": "workflow_task",
+                "assign_reviewer": "workflow_task",
+                "notify_committee": "notification",
+                "escalate_overdue_case": "workflow_task",
+                "mark_ready_for_human_decision": "workflow_task",
+                "close_as_dismissed_requires_approval": "workflow_task",
+                "close_as_violation_requires_approval": "workflow_task",
             },
         },
         "academic_records_audit": {

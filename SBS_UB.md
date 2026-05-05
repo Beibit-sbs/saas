@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-05-09 (A-016.4 Research Ethics / Compliance Review Brain)
+- run_id: OP-AUDIT-2026-05-05-10 (A-016.5 Academic Integrity Case Resolution Automation Brain)
 - status: in_progress_A-016
-- current_stage: A-016.4 CLOSED; next = A-016.5
-- last_completed_action_id: A-016.4
-- next_action_id: A-016.5
-- updated_at: 2026-05-05 (A-016.4 complete; 10 research ethics/compliance event types registered in Brain Core; 36/36 focused tests passed; 319 Wave4 regression passed; 874 tenant/security slice passed; release gate PASS through all stages; deterministic 4-level severity classifier; no auto-approval/rejection/sanction; human-in-the-loop mandatory for high/critical ethics risk; fail-closed on missing tenant/identifiers)
+- current_stage: A-016.5 CLOSED; next = A-016.6
+- last_completed_action_id: A-016.5
+- next_action_id: A-016.6
+- updated_at: 2026-07-02 (A-016.5 complete; 6 academic integrity case resolution event types registered in Brain Core; 39/39 focused tests passed; 153 Wave4 regression passed; release gate PASS through all stages; deterministic 4-level severity classifier; no automatic sanctions; human-in-the-loop mandatory for high/critical; fail-closed on missing tenant/case reference)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -318,7 +318,41 @@
     - Safe gate: **PASS** (`scripts/university_pilot_safe_gate.sh`)
     - Release gate: **PASS** (`scripts/release_gate.sh`) — architecture 7p, tenant 8p, platform 480p, domain 412+17+24p, security 73p, template 5p, data layer green
 - Decision: **A-016.4 CLOSED - PASS**.
-- Next action: **A-016.5** (next Wave 4 brain feature).
+- Next action: **A-016.5** (Academic Integrity Case Resolution Automation).
+
+#### A-016.5 — Academic Integrity Case Resolution Automation Brain
+
+- Date: 2026-07-02
+- Scope: Brain Core full pipeline wiring for 6 dedicated academic integrity case resolution event types. New `integrity_case_resolution` decision type. Extends Wave 4 Academic Integrity series.
+- Changes:
+    - `brain_core/constants.py`: `ACADEMIC_INTEGRITY_CASE_RESOLUTION_EVENT_TYPES` frozenset (6 events) + action constants; merged into `SUPPORTED_SIGNAL_EVENT_TYPES`.
+    - `platform/events/registry.py`: 6 new A-016.5 event definitions with `GenericTenantEventPayload`.
+    - `platform/event_ingestion/types.py`: 6 A-016.5 events added to `VALID_EVENT_TYPES`.
+    - `brain_core/registry.py`: 6 `SignalRegistry` entries (scenario: `academic_integrity_case_resolution`) + 1 `DecisionRegistry` entry (`decision_type="integrity_case_resolution"`) with 8-action action_map.
+    - `brain_core/classifiers/risk_classifier.py`: Academic integrity case resolution 4-level deterministic severity block; explicit `risk_level` takes priority over contextual signals.
+    - `brain_core/reasoning/rules_engine.py`: 4 integrity case resolution path rules (`integrity_case_resolution_critical/high/medium/low`); `requires_approval=True` for high/critical.
+    - `brain_core/service.py`: `_normalize_academic_integrity_case_resolution_signal()` normalizer; `integrity_case_resolution` added to `_NOTIFIABLE_DECISION_TYPES`.
+    - `tests/test_a016_5_academic_integrity_case_resolution_brain.py`: 39 new tests (NEW FILE).
+- Brain Core case resolution severity model:
+    - CRITICAL: Explicit `risk_level="critical"` OR `days_open >= 30`. Requires human approval. Actions: open_review_case, notify_committee, escalate_overdue_case, mark_ready_for_human_decision.
+    - HIGH: Explicit `risk_level="high"` OR `days_open >= 14` OR source_decision_type in {academic_integrity_review, exam_integrity_review, research_ethics_review} (when no explicit risk_level). Requires human approval. Actions: open_review_case, assign_reviewer, notify_committee, mark_ready_for_human_decision.
+    - MEDIUM: Explicit `risk_level="medium"` OR `evidence_missing=True` (when no explicit risk_level). No auto-action. Actions: open_review_case, request_evidence, assign_reviewer.
+    - LOW: Default. Actions: open_review_case.
+- Safety guarantees:
+    - NO automatic sanctions — no grade change, no exam invalidation, no thesis rejection, no ethics outcome written automatically
+    - CRITICAL + HIGH always `requires_approval=True`; `mark_ready_for_human_decision` action emitted for both
+    - Fail-closed on invalid `tenant_id` (≤0) → `reason="invalid_tenant"`
+    - Fail-closed on missing case reference (no `case_id`, `source_decision_id`, or `source_entity_id`) → `reason="missing_case_reference"`
+    - Deduplication by `signal_id` — second call returns `status="deduplicated"`
+    - Tenant isolation — signals from different tenants processed independently
+    - Full A-016.1 / A-016.2 / A-016.3 / A-016.4 regression checks embedded and passing
+- Validation results:
+    - A-016.5 focused suite: **39/39 PASS** (`tests/test_a016_5_academic_integrity_case_resolution_brain.py`)
+    - Wave4 regression (A-016.1–5 combined): **153/153 PASS**
+    - Safe gate: **PASS** (`scripts/university_pilot_safe_gate.sh`)
+    - Release gate: **PASS** (`scripts/release_gate.sh`) — architecture 7p, tenant 8p, platform 480p, domain 412+17+23p, security passed, data layer green; `[release-gate] PASS: release gate and rollback readiness are green`
+- Decision: **A-016.5 CLOSED - PASS**.
+- Next action: **A-016.6** (next Wave 4 brain feature).
 
 ---
 

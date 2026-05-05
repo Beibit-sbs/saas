@@ -943,6 +943,58 @@ class RulesEngine:
                 "requires_approval": False,
             }
 
+        # A-016.5 Academic Integrity Case Resolution Automation
+        if reasoning_path in {
+            "integrity_case_resolution_critical",
+            "integrity_case_resolution_high",
+            "integrity_case_resolution_medium",
+            "integrity_case_resolution_low",
+        }:
+            if reasoning_path == "integrity_case_resolution_critical":
+                return {
+                    "decision_type": "integrity_case_resolution",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "open_review_case",
+                        "notify_committee",
+                        "escalate_overdue_case",
+                        "mark_ready_for_human_decision",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "integrity_case_resolution_high":
+                return {
+                    "decision_type": "integrity_case_resolution",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "open_review_case",
+                        "assign_reviewer",
+                        "notify_committee",
+                        "mark_ready_for_human_decision",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "integrity_case_resolution_medium":
+                return {
+                    "decision_type": "integrity_case_resolution",
+                    "priority": "medium",
+                    "recommended_actions": [
+                        "open_review_case",
+                        "request_evidence",
+                        "assign_reviewer",
+                    ],
+                    "requires_approval": False,
+                }
+            # low
+            return {
+                "decision_type": "integrity_case_resolution",
+                "priority": "low",
+                "recommended_actions": [
+                    "open_review_case",
+                ],
+                "requires_approval": False,
+            }
+
         return {
             "decision_type": "operational",
             "priority": "low",

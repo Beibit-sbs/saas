@@ -209,6 +209,13 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "research.compliance.risk_detected": EventDefinition(GenericTenantEventPayload),
     "research.data_privacy.risk_detected": EventDefinition(GenericTenantEventPayload),
     "compliance.review.required": EventDefinition(GenericTenantEventPayload),
+    # A-016.5 Academic Integrity Case Resolution Automation events
+    "academic_integrity.case.opened": EventDefinition(GenericTenantEventPayload),
+    "academic_integrity.case.evidence_requested": EventDefinition(GenericTenantEventPayload),
+    "academic_integrity.case.review_required": EventDefinition(GenericTenantEventPayload),
+    "academic_integrity.case.resolved": EventDefinition(GenericTenantEventPayload),
+    "academic_integrity.case.dismissed": EventDefinition(GenericTenantEventPayload),
+    "integrity.resolution.workflow_needed": EventDefinition(GenericTenantEventPayload),
     # Research module events (W52)
     "campus.research.grant_delay_risk_detected": EventDefinition(GenericTenantEventPayload),
     # Exam governance lifecycle events (XXXIV.1)

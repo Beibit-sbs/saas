@@ -1390,6 +1390,70 @@ class RiskClassifier:
                 "reasoning_path": "research_ethics_compliance_low",
             }
 
+        # A-016.5 Academic Integrity Case Resolution Automation — deterministic severity
+        if event_type in {
+            "academic_integrity.case.opened",
+            "academic_integrity.case.evidence_requested",
+            "academic_integrity.case.review_required",
+            "academic_integrity.case.resolved",
+            "academic_integrity.case.dismissed",
+            "integrity.resolution.workflow_needed",
+        }:
+            payload = signal.get("payload", {})
+            risk_level = str(payload.get("risk_level") or "").strip().lower()
+            days_open = payload.get("days_open")
+            source_decision_type = str(payload.get("source_decision_type") or "").strip().lower()
+            evidence_items = payload.get("evidence_items") or []
+            evidence_missing = not evidence_items
+
+            # CRITICAL: explicit critical risk OR long-overdue case
+            if risk_level == "critical" or (
+                isinstance(days_open, (int, float)) and float(days_open) >= 30
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "critical",
+                    "urgency": "critical",
+                    "reasoning_path": "integrity_case_resolution_critical",
+                }
+
+            # HIGH: high risk level OR overdue >= 14 days OR high-risk source type
+            # (source_decision_type only escalates when explicit risk_level is not provided)
+            if risk_level == "high" or (
+                isinstance(days_open, (int, float)) and float(days_open) >= 14
+            ) or (
+                not risk_level and source_decision_type in {
+                    "academic_integrity_review",
+                    "exam_integrity_review",
+                    "research_ethics_review",
+                }
+            ):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "integrity_case_resolution_high",
+                }
+
+            # MEDIUM: medium risk, open >= 1 day, or evidence missing
+            # (evidence_missing only escalates when explicit risk_level is not provided)
+            if risk_level == "medium" or (
+                isinstance(days_open, (int, float)) and float(days_open) >= 1
+            ) or (not risk_level and evidence_missing):
+                return {
+                    "situation_type": "academic_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "integrity_case_resolution_medium",
+                }
+
+            return {
+                "situation_type": "academic_risk",
+                "severity": "low",
+                "urgency": "low",
+                "reasoning_path": "integrity_case_resolution_low",
+            }
+
         return {
             "situation_type": "operational_risk",
             "severity": "low",

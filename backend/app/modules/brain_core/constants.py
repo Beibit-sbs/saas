@@ -191,6 +191,26 @@ ACTION_REQUEST_DATA_PRIVACY_REVIEW = "request_data_privacy_review"
 ACTION_REQUEST_CONFLICT_OF_INTEREST_REVIEW = "request_conflict_of_interest_review"
 ACTION_ESCALATE_TO_COMPLIANCE_OFFICER = "escalate_to_compliance_officer"
 
+# A-016.5 Academic Integrity Case Resolution Automation events
+ACADEMIC_INTEGRITY_CASE_RESOLUTION_EVENT_TYPES = frozenset({
+    "academic_integrity.case.opened",
+    "academic_integrity.case.evidence_requested",
+    "academic_integrity.case.review_required",
+    "academic_integrity.case.resolved",
+    "academic_integrity.case.dismissed",
+    "integrity.resolution.workflow_needed",
+})
+
+# A-016.5 Actions
+ACTION_OPEN_REVIEW_CASE = "open_review_case"
+ACTION_REQUEST_EVIDENCE = "request_evidence"
+ACTION_ASSIGN_REVIEWER = "assign_reviewer"
+ACTION_NOTIFY_COMMITTEE = "notify_committee"
+ACTION_ESCALATE_OVERDUE_CASE = "escalate_overdue_case"
+ACTION_MARK_READY_FOR_HUMAN_DECISION = "mark_ready_for_human_decision"
+ACTION_CLOSE_AS_DISMISSED_REQUIRES_APPROVAL = "close_as_dismissed_requires_approval"
+ACTION_CLOSE_AS_VIOLATION_REQUIRES_APPROVAL = "close_as_violation_requires_approval"
+
 ACADEMIC_RECORDS_EVENT_TYPES = {
     "academic_records.inconsistency.detected",
 }
@@ -247,6 +267,7 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | THESIS_GOVERNANCE_EVENT_TYPES
     | EXAM_PROCTORING_EVENT_TYPES
     | RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES
+    | ACADEMIC_INTEGRITY_CASE_RESOLUTION_EVENT_TYPES
 )
 
 ACTION_CREATE_INTERVENTION_CASE = "create_intervention_case"

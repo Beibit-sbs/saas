@@ -112,6 +112,18 @@ _RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES = frozenset(
     }
 )
 
+# A-016.5 — Academic Integrity Case Resolution Automation event types
+_ACADEMIC_INTEGRITY_CASE_RESOLUTION_EVENT_TYPES = frozenset(
+    {
+        "academic_integrity.case.opened",
+        "academic_integrity.case.evidence_requested",
+        "academic_integrity.case.review_required",
+        "academic_integrity.case.resolved",
+        "academic_integrity.case.dismissed",
+        "integrity.resolution.workflow_needed",
+    }
+)
+
 
 def _coerce_uuid(value: object) -> uuid.UUID:
     """Convert a string/UUID to uuid.UUID, generating a new one on failure."""
@@ -264,7 +276,7 @@ class BrainCoreService:
 
     # Priorities and types that warrant an immediate in-app notification.
     _NOTIFIABLE_PRIORITIES: frozenset[str] = frozenset({"critical", "high"})
-    _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance", "academic_integrity_review", "thesis_supervisor_assignment", "exam_integrity_review", "research_ethics_review"})
+    _NOTIFIABLE_DECISION_TYPES: frozenset[str] = frozenset({"risk", "preventive", "compliance", "academic_integrity_review", "thesis_supervisor_assignment", "exam_integrity_review", "research_ethics_review", "integrity_case_resolution"})
 
     def _normalize_degree_progress_signal(self, signal: dict) -> tuple[dict, str | None]:
         """Normalize graduation-risk signals to canonical student/source fields.
@@ -680,6 +692,61 @@ class BrainCoreService:
 
         return normalized, None
 
+    def _normalize_integrity_case_resolution_signal(self, signal: dict) -> tuple[dict, str | None]:
+        """Fail-closed normalization for academic integrity case resolution signals (A-016.5).
+
+        Ensures required tenant + case reference context.
+        Does NOT approve, reject, sanction, or change grades/exam status automatically.
+        Final outcome always requires human decision/approval.
+        """
+        event_type = str(signal.get("event_type") or "")
+        if event_type not in _ACADEMIC_INTEGRITY_CASE_RESOLUTION_EVENT_TYPES:
+            return signal, None
+
+        normalized = dict(signal)
+        payload = dict(normalized.get("payload") or {})
+
+        tenant_id = int(normalized.get("tenant_id") or 0)
+        if tenant_id <= 0:
+            return normalized, "missing_tenant_context"
+
+        # Require at least one case reference identifier
+        source_decision_id = str(payload.get("source_decision_id") or "").strip()
+        case_id = str(payload.get("case_id") or "").strip()
+        source_entity_id = str(
+            normalized.get("source_entity_id")
+            or payload.get("source_entity_id")
+            or ""
+        ).strip()
+
+        if not any([source_decision_id, case_id, source_entity_id]):
+            return normalized, "missing_case_reference"
+
+        # Enrich with defaults — do NOT set any punitive outcome fields
+        payload.setdefault("risk_source", event_type)
+        payload.setdefault("correlation_id", str(normalized.get("correlation_id") or ""))
+        payload.setdefault("source_decision_id", source_decision_id)
+        payload.setdefault("case_id", case_id)
+        payload.setdefault("source_scenario", str(payload.get("source_scenario") or ""))
+        payload.setdefault("source_decision_type", str(payload.get("source_decision_type") or ""))
+        payload.setdefault("student_id", str(payload.get("student_id") or ""))
+        payload.setdefault("researcher_id", str(payload.get("researcher_id") or ""))
+        payload.setdefault("faculty_id", str(payload.get("faculty_id") or ""))
+        payload.setdefault("reviewer_id", str(payload.get("reviewer_id") or ""))
+        payload.setdefault("committee_id", str(payload.get("committee_id") or ""))
+        payload.setdefault("current_status", str(payload.get("current_status") or "opened"))
+        payload.setdefault("evidence_items", payload.get("evidence_items") or [])
+
+        normalized["payload"] = payload
+        if str(normalized.get("source_entity_type") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_type"] = str(payload.get("source_entity_type") or "integrity_case")
+        if str(normalized.get("source_entity_id") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_id"] = source_entity_id or case_id or source_decision_id or "unknown"
+        if not normalized.get("source_module"):
+            normalized["source_module"] = str(payload.get("source_module") or "academic_integrity")
+
+        return normalized, None
+
     def _resolve_decision_scenario(self, *, event_type: str, classification: dict) -> str:
         """Resolve the decision scenario, allowing additive routing overrides."""
         scenario = SignalRegistry.signals[event_type]["scenario"]
@@ -872,6 +939,11 @@ class BrainCoreService:
             return {"status": "rejected", "reason": normalization_rejection}
 
         signal, normalization_rejection = self._normalize_research_ethics_compliance_signal(signal)
+        if normalization_rejection is not None:
+            self._observability.increment("signals_rejected_total")
+            return {"status": "rejected", "reason": normalization_rejection}
+
+        signal, normalization_rejection = self._normalize_integrity_case_resolution_signal(signal)
         if normalization_rejection is not None:
             self._observability.increment("signals_rejected_total")
             return {"status": "rejected", "reason": normalization_rejection}
