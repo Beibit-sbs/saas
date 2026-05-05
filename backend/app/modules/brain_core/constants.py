@@ -18,6 +18,12 @@ PAYMENT_OVERDUE_EVENT_TYPES = {
     "finance.payment_overdue.detected",
 }
 
+BUDGET_OVERRUN_EVENT_TYPES = {
+    "finance.expense.budget_exceeded",
+    "campus.budget.overrun_risk_detected",
+    "campus.expense_controls.budget_exceeded_risk_detected",
+}
+
 STUDENT_SUPPORT_EVENT_TYPES = {
     "financial_aid.warning.detected",
     "housing.status.risk_detected",
@@ -30,8 +36,28 @@ PROCUREMENT_EVENT_TYPES = {
     "procurement.contract_risk.high",
 }
 
+# A-015.2 Procurement Approval Automation events
+PROCUREMENT_APPROVAL_EVENT_TYPES = {
+    "procurement.request_submitted",
+    "procurement.approval_required",
+}
+
+# A-015.4 Finance Operations Health Brain events
+FINANCE_OPERATIONS_HEALTH_EVENT_TYPES = {
+    "finance.operations.health_check",
+    "finance.operations.risk_detected",
+}
+
 SUPPLY_LOW_EVENT_TYPES = {
     "operations.consumable_stock.low",
+}
+
+# A-015.5 Inventory Low Stock / Supply Risk Brain events
+INVENTORY_LOW_STOCK_EVENT_TYPES = {
+    "inventory.low_stock.detected",
+    "inventory.reorder_needed",
+    "supply.risk.detected",
+    "procurement.inventory_gap.detected",
 }
 
 ACCREDITATION_EVENT_TYPES = {
@@ -123,6 +149,7 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | THESIS_DELAY_EVENT_TYPES
     | FACULTY_OVERLOAD_EVENT_TYPES
     | PAYMENT_OVERDUE_EVENT_TYPES
+    | BUDGET_OVERRUN_EVENT_TYPES
     | STUDENT_SUPPORT_EVENT_TYPES
     | PROCUREMENT_EVENT_TYPES
     | SUPPLY_LOW_EVENT_TYPES
@@ -144,6 +171,7 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | SCHEDULING_EVENT_TYPES
     | SECTION_CONFLICT_EVENT_TYPES
     | ENROLLMENT_CAPACITY_RISK_EVENT_TYPES
+    | PROCUREMENT_APPROVAL_EVENT_TYPES
 )
 
 ACTION_CREATE_INTERVENTION_CASE = "create_intervention_case"
@@ -156,6 +184,8 @@ ACTION_NOTIFY_FINANCE = "notify_finance"
 ACTION_NOTIFY_PROCUREMENT_TEAM = "notify_procurement_team"
 ACTION_CREATE_REPLENISHMENT_TASK = "create_replenishment_task"
 ACTION_INITIATE_PROCUREMENT_REQUEST = "initiate_procurement_request"
+# A-015.2
+ACTION_CREATE_PROCUREMENT_APPROVAL_CASE = "create_procurement_approval_case"
 ACTION_NOTIFY_OPERATIONS = "notify_operations"
 ACTION_CREATE_ACCREDITATION_REMEDIATION_WORKFLOW = "create_accreditation_remediation_workflow"
 ACTION_NOTIFY_COMPLIANCE = "notify_compliance"

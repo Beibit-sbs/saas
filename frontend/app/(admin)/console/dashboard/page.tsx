@@ -11,6 +11,7 @@ import { formatDate, formatRelative } from "@/shared/utils/format";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { LayoutDashboard, RefreshCw, CalendarDays, BarChart3, FileText, GraduationCap, BookOpen, ClipboardCheck } from "lucide-react";
 import { KpiCard } from "@/modules/platform/kpi/kpi-card";
+import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
 import { useRectorDashboard } from "@/modules/platform/kpi/use-dashboard";
 import { AutomationOverviewWidget } from "@/modules/platform/automation/automation-overview-widget";
 import Link from "next/link";
@@ -192,6 +193,22 @@ export default function RectorDashboardPage() {
           ))}
         </div>
       )}
+
+      <section data-testid="wave3-finance-kpi-section">
+        <Wave1KpiBar
+          metricKeys={["budget_overrun_risk_count","budget_review_actions_count","active_finance_risk_signals_count","finance_operations_actionability_count","asset_conversion_gap_count","inventory_low_stock_items_count","critical_supply_risk_count","supply_risk_actions_count"]}
+          labels={{
+            budget_overrun_risk_count: "Budget Overrun Risk",
+            budget_review_actions_count: "Budget Review Actions",
+            active_finance_risk_signals_count: "Finance Risk Signals",
+            finance_operations_actionability_count: "Finance Actionability",
+            asset_conversion_gap_count: "Asset Conversion Gap",
+            inventory_low_stock_items_count: "Low Stock Items",
+            critical_supply_risk_count: "Critical Supply Risk",
+            supply_risk_actions_count: "Supply Risk Actions",
+          }}
+        />
+      </section>
 
       <AutomationOverviewWidget tenantId={tenantId} />
     </div>

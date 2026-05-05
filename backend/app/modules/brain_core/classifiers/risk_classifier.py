@@ -42,6 +42,58 @@ class RiskClassifier:
                 "reasoning_path": "payment_overdue_medium",
             }
 
+        if event_type in {
+            "finance.expense.budget_exceeded",
+            "campus.budget.overrun_risk_detected",
+            "campus.expense_controls.budget_exceeded_risk_detected",
+        }:
+            payload = signal.get("payload", {})
+            risk_level = str(payload.get("risk_level") or "").strip().lower()
+            overrun_amount = payload.get("overrun_amount")
+            overrun_percent = payload.get("overrun_percent")
+            if overrun_percent is None:
+                overrun_percent = payload.get("overrun_ratio")
+
+            if risk_level in {"critical", "high"}:
+                return {
+                    "situation_type": "financial_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "budget_overrun_high",
+                }
+
+            if (
+                isinstance(overrun_percent, (int, float))
+                and float(overrun_percent) >= 0.10
+            ) or (
+                isinstance(overrun_amount, (int, float))
+                and float(overrun_amount) >= 10000.0
+            ):
+                return {
+                    "situation_type": "financial_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "budget_overrun_high",
+                }
+
+            if risk_level == "low" or (
+                isinstance(overrun_percent, (int, float))
+                and float(overrun_percent) < 0.03
+            ):
+                return {
+                    "situation_type": "financial_risk",
+                    "severity": "low",
+                    "urgency": "low",
+                    "reasoning_path": "budget_overrun_low",
+                }
+
+            return {
+                "situation_type": "financial_risk",
+                "severity": "medium",
+                "urgency": "medium",
+                "reasoning_path": "budget_overrun_medium",
+            }
+
         if event_type == "financial_aid.warning.detected":
             payload = signal.get("payload", {})
             to_status = str(payload.get("to_status") or "").strip().lower()
@@ -181,6 +233,35 @@ class RiskClassifier:
                 "severity": "medium",
                 "urgency": "medium",
                 "reasoning_path": "procurement_contract_risk_medium",
+            }
+
+        if event_type in ("procurement.request_submitted", "procurement.approval_required"):
+            payload = signal.get("payload", {})
+            estimated_total = payload.get("estimated_total")
+            priority = str(payload.get("priority") or "").lower()
+            try:
+                total_f = float(estimated_total) if estimated_total is not None else 0.0
+            except (TypeError, ValueError):
+                total_f = 0.0
+            if total_f >= 50000.0 or priority in {"critical", "high"}:
+                return {
+                    "situation_type": "procurement_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "procurement_approval_high",
+                }
+            if total_f >= 10000.0 or priority == "medium":
+                return {
+                    "situation_type": "procurement_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "procurement_approval_medium",
+                }
+            return {
+                "situation_type": "procurement_risk",
+                "severity": "low",
+                "urgency": "low",
+                "reasoning_path": "procurement_approval_low",
             }
 
         if event_type == "operations.consumable_stock.low":
@@ -861,6 +942,97 @@ class RiskClassifier:
                 "severity": "medium",
                 "urgency": "medium",
                 "reasoning_path": "enrollment_capacity_risk_medium",
+            }
+
+        # A-015.4 — Finance Operations Health Brain
+        if event_type in ("finance.operations.health_check", "finance.operations.risk_detected"):
+            payload = signal.get("payload", {})
+            risk_level = str(payload.get("risk_level") or payload.get("overall_risk_level") or "").strip().lower()
+            overall_score = payload.get("overall_score")
+
+            if risk_level in {"critical"} or (
+                isinstance(overall_score, (int, float)) and float(overall_score) < 40
+            ):
+                return {
+                    "situation_type": "financial_risk",
+                    "severity": "critical",
+                    "urgency": "high",
+                    "reasoning_path": "finance_operations_health_critical",
+                }
+            if risk_level in {"high"} or (
+                isinstance(overall_score, (int, float)) and float(overall_score) < 60
+            ):
+                return {
+                    "situation_type": "financial_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "finance_operations_health_high",
+                }
+            if risk_level in {"medium"} or (
+                isinstance(overall_score, (int, float)) and float(overall_score) < 75
+            ):
+                return {
+                    "situation_type": "financial_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "finance_operations_health_medium",
+                }
+            return {
+                "situation_type": "financial_risk",
+                "severity": "low",
+                "urgency": "low",
+                "reasoning_path": "finance_operations_health_low",
+            }
+
+        if event_type in (
+            "inventory.low_stock.detected",
+            "inventory.reorder_needed",
+            "supply.risk.detected",
+            "procurement.inventory_gap.detected",
+        ):
+            payload = signal.get("payload", {})
+            risk_level = str(payload.get("risk_level") or "").strip().lower()
+            current_quantity = payload.get("current_quantity")
+            reorder_threshold = payload.get("reorder_threshold")
+
+            # Explicit risk_level in payload takes precedence
+            if risk_level == "critical" or (
+                isinstance(current_quantity, (int, float)) and float(current_quantity) <= 0
+            ):
+                return {
+                    "situation_type": "supply_risk",
+                    "severity": "critical",
+                    "urgency": "critical",
+                    "reasoning_path": "inventory_low_stock_critical",
+                }
+            if risk_level == "high" or (
+                isinstance(current_quantity, (int, float))
+                and isinstance(reorder_threshold, (int, float))
+                and float(reorder_threshold) > 0
+                and float(current_quantity) < float(reorder_threshold) * 0.5
+            ):
+                return {
+                    "situation_type": "supply_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "inventory_low_stock_high",
+                }
+            if risk_level == "medium" or (
+                isinstance(current_quantity, (int, float))
+                and isinstance(reorder_threshold, (int, float))
+                and float(current_quantity) < float(reorder_threshold)
+            ):
+                return {
+                    "situation_type": "supply_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "inventory_low_stock_medium",
+                }
+            return {
+                "situation_type": "supply_risk",
+                "severity": "low",
+                "urgency": "low",
+                "reasoning_path": "inventory_low_stock_low",
             }
 
         return {

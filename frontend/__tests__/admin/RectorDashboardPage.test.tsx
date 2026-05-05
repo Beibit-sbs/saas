@@ -10,6 +10,11 @@ let allowAccess = true;
 
 vi.mock("../../modules/platform/kpi/use-dashboard", () => ({
   useRectorDashboard: (...args: unknown[]) => useRectorDashboardMock(...args),
+  useTenantKpiMetrics: () => ({ data: null, isLoading: false }),
+}));
+
+vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
+  Wave1KpiBar: () => null,
 }));
 
 vi.mock("../../shared/auth/context", () => ({

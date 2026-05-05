@@ -15,6 +15,7 @@ import { RequirePermission } from '@/shared/auth/permission-gate';
 import { PageHeader } from '@/shared/ui/page-header';
 import { LoadingState, ErrorState } from '@/shared/ui/page-states';
 import { Badge } from '@/shared/ui/badge';
+import { Wave1KpiBar } from '@/modules/platform/kpi/wave1-kpi-bar';
 
 export default function BudgetPlanningPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -42,6 +43,15 @@ export default function BudgetPlanningPage() {
     <RequirePermission permission={PERMISSIONS.DASHBOARD_READ}>
       <div className="min-h-screen bg-gray-50">
         <PageHeader title="Budget Planning & Controls" />
+
+          <Wave1KpiBar
+            metricKeys={["budget_overrun_risk_count","budget_overrun_amount_at_risk","budget_review_actions_count"]}
+            labels={{
+              budget_overrun_risk_count: "Overrun Risk",
+              budget_overrun_amount_at_risk: "Amount At Risk",
+              budget_review_actions_count: "Review Actions",
+            }}
+          />
 
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
           {/* Dashboard Summary Section */}

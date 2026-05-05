@@ -31,6 +31,18 @@ class ActionPlanner:
         source_entity_type = signal.get("source_entity_type") or payload.get("source_entity_type")
         source_entity_id = signal.get("source_entity_id") or payload.get("source_entity_id")
         budget_code = payload.get("budget_code")
+        budget_id = payload.get("budget_id")
+        budget_plan_id = payload.get("budget_plan_id")
+        department_id = payload.get("department_id")
+        project_id = payload.get("project_id")
+        grant_id = payload.get("grant_id")
+        amount = payload.get("amount")
+        budget_limit = payload.get("budget_limit")
+        overrun_amount = payload.get("overrun_amount")
+        overrun_percent = payload.get("overrun_percent")
+        risk_origin = payload.get("budget_risk_origin")
+        risk_evidence = payload.get("budget_risk_evidence")
+        correlation_id = signal.get("correlation_id") or payload.get("correlation_id")
         variance_amount = payload.get("variance_amount")
         variance_ratio = payload.get("variance_ratio")
         vendor_code = payload.get("vendor_code")
@@ -81,7 +93,6 @@ class ActionPlanner:
         award_id = payload.get("award_id")
         application_id = payload.get("application_id")
         record_id = payload.get("record_id")
-        grant_id = payload.get("grant_id")
         publication_id = payload.get("publication_id")
         research_project_id = payload.get("research_project_id")
         days_to_deadline = payload.get("days_to_deadline")
@@ -91,6 +102,13 @@ class ActionPlanner:
         lab_code = payload.get("lab_code")
         utilization_rate = payload.get("utilization_rate")
         idle_days = payload.get("idle_days")
+        # A-015.2 — Procurement Approval fields
+        request_id = payload.get("request_id")
+        estimated_total = payload.get("estimated_total")
+        procurement_priority = payload.get("priority")
+        procurement_risk_origin = payload.get("procurement_risk_origin")
+        procurement_risk_evidence = payload.get("procurement_risk_evidence")
+
 
         for action_name in reasoning.get("recommended_actions") or []:
             if not action_name:
@@ -119,6 +137,18 @@ class ActionPlanner:
                         "source_entity_type": source_entity_type,
                         "source_entity_id": source_entity_id,
                         "budget_code": budget_code,
+                        "budget_id": budget_id,
+                        "budget_plan_id": budget_plan_id,
+                        "department_id": department_id,
+                        "project_id": project_id,
+                        "grant_id": grant_id,
+                        "amount": amount,
+                        "budget_limit": budget_limit,
+                        "overrun_amount": overrun_amount,
+                        "overrun_percent": overrun_percent,
+                        "budget_risk_origin": risk_origin,
+                        "budget_risk_evidence": risk_evidence,
+                        "correlation_id": correlation_id,
                         "variance_amount": variance_amount,
                         "variance_ratio": variance_ratio,
                         "vendor_code": vendor_code,
@@ -165,7 +195,6 @@ class ActionPlanner:
                         "incident_severity": incident_severity,
                         "concern_type": concern_type,
                         "incident_type": incident_type,
-                        "grant_id": grant_id,
                         "publication_id": publication_id,
                         "research_project_id": research_project_id,
                         "days_to_deadline": days_to_deadline,
@@ -179,6 +208,12 @@ class ActionPlanner:
                         "application_id": application_id,
                         "record_id": record_id,
                         "event_type": signal.get("event_type"),
+                        # A-015.2 — Procurement Approval fields
+                        "request_id": request_id,
+                        "estimated_total": estimated_total,
+                        "priority": procurement_priority,
+                        "procurement_risk_origin": procurement_risk_origin,
+                        "procurement_risk_evidence": procurement_risk_evidence,
                     },
                 }
             )

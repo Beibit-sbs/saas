@@ -79,6 +79,33 @@ class RulesEngine:
                 "requires_approval": False,
             }
 
+        if reasoning_path in {"budget_overrun_high", "budget_overrun_medium", "budget_overrun_low"}:
+            if reasoning_path == "budget_overrun_high":
+                return {
+                    "decision_type": "risk",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "create_intervention_case",
+                        "notify_finance",
+                    ],
+                    "requires_approval": False,
+                }
+            if reasoning_path == "budget_overrun_medium":
+                return {
+                    "decision_type": "preventive",
+                    "priority": "medium",
+                    "recommended_actions": [
+                        "create_intervention_case",
+                    ],
+                    "requires_approval": False,
+                }
+            return {
+                "decision_type": "preventive",
+                "priority": "low",
+                "recommended_actions": [],
+                "requires_approval": False,
+            }
+
         if reasoning_path in {
             "financial_aid_warning_high",
             "financial_aid_warning_medium",
@@ -138,6 +165,33 @@ class RulesEngine:
                 "decision_type": "procurement",
                 "priority": "medium",
                 "recommended_actions": ["initiate_procurement_request"],
+                "requires_approval": False,
+            }
+
+        # A-015.2 — Procurement Approval Automation rules
+        if reasoning_path in {"procurement_approval_high", "procurement_approval_medium", "procurement_approval_low"}:
+            if reasoning_path == "procurement_approval_high":
+                return {
+                    "decision_type": "procurement",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "create_procurement_approval_case",
+                        "notify_procurement_team",
+                    ],
+                    "requires_approval": False,
+                }
+            if reasoning_path == "procurement_approval_medium":
+                return {
+                    "decision_type": "procurement",
+                    "priority": "medium",
+                    "recommended_actions": ["create_procurement_approval_case"],
+                    "requires_approval": False,
+                }
+            # low — no action needed
+            return {
+                "decision_type": "preventive",
+                "priority": "low",
+                "recommended_actions": [],
                 "requires_approval": False,
             }
 
@@ -597,6 +651,91 @@ class RulesEngine:
                 "decision_type": "risk",
                 "priority": "medium",
                 "recommended_actions": ["create_enrollment_capacity_task"],
+                "requires_approval": False,
+            }
+
+        # A-015.4 — Finance Operations Health Brain rules
+        if reasoning_path in {
+            "finance_operations_health_critical",
+            "finance_operations_health_high",
+            "finance_operations_health_medium",
+            "finance_operations_health_low",
+        }:
+            if reasoning_path == "finance_operations_health_critical":
+                return {
+                    "decision_type": "finance_health",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "create_finance_health_review_task",
+                        "notify_finance",
+                        "notify_procurement_team",
+                    ],
+                    "requires_approval": False,
+                }
+            if reasoning_path == "finance_operations_health_high":
+                return {
+                    "decision_type": "finance_health",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "create_finance_health_review_task",
+                        "notify_finance",
+                    ],
+                    "requires_approval": False,
+                }
+            if reasoning_path == "finance_operations_health_medium":
+                return {
+                    "decision_type": "finance_health",
+                    "priority": "medium",
+                    "recommended_actions": ["create_finance_health_review_task"],
+                    "requires_approval": False,
+                }
+            # low — no action needed
+            return {
+                "decision_type": "finance_health",
+                "priority": "low",
+                "recommended_actions": [],
+                "requires_approval": False,
+            }
+
+        if reasoning_path in (
+            "inventory_low_stock_critical",
+            "inventory_low_stock_high",
+            "inventory_low_stock_medium",
+            "inventory_low_stock_low",
+        ):
+            if reasoning_path == "inventory_low_stock_critical":
+                return {
+                    "decision_type": "supply_risk",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "create_procurement_request",
+                        "vendor_followup",
+                        "budget_review",
+                    ],
+                    "requires_approval": False,
+                }
+            if reasoning_path == "inventory_low_stock_high":
+                return {
+                    "decision_type": "supply_risk",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "create_procurement_request",
+                        "vendor_followup",
+                    ],
+                    "requires_approval": False,
+                }
+            if reasoning_path == "inventory_low_stock_medium":
+                return {
+                    "decision_type": "supply_risk",
+                    "priority": "medium",
+                    "recommended_actions": ["reorder_review"],
+                    "requires_approval": False,
+                }
+            # low — monitor only
+            return {
+                "decision_type": "supply_risk",
+                "priority": "low",
+                "recommended_actions": [],
                 "requires_approval": False,
             }
 

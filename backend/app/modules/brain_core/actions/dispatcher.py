@@ -152,6 +152,20 @@ class ActionDispatcher:
                 )
                 continue
 
+            # A-015.2 — Procurement Approval Automation
+            if name == "create_procurement_approval_case":
+                results.append(
+                    self._dispatch_with_retry(
+                        action_name=name,
+                        handler=lambda: self._workflow.create_procurement_approval_case(
+                            tenant_id=tenant_id,
+                            decision_id=decision_id,
+                            payload=payload,
+                        ),
+                    )
+                )
+                continue
+
             if name == "create_accreditation_remediation_workflow":
                 results.append(
                     self._dispatch_with_retry(

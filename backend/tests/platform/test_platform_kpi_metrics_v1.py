@@ -1361,6 +1361,18 @@ def test_kpi_policy_pack_non_thresholded_kpis_are_null(reset_shared_state) -> No
         # A-013.5 Wave 1 thresholded KPIs
         "high_risk_students_count", "critical_risk_students_count", "delinquency_cases_active",
         "scheduling_conflicts_count", "capacity_risk_sections_count",
+        # A-014.6 Wave 2 thresholded KPIs
+        "grade_decline_risk_count", "grade_intervention_cases_count",
+        "thesis_completion_risk_count", "thesis_intervention_cases_count",
+        "attendance_recovery_actions_count", "graduation_risk_students_count",
+        "degree_progress_intervention_cases_count", "scholarship_risk_cases_count",
+        "financial_aid_risk_cases_count",
+        # A-015.6 Wave 3 thresholded KPIs
+        "budget_overrun_risk_count", "budget_review_actions_count",
+        "active_finance_risk_signals_count", "finance_operations_actionability_count",
+        "asset_conversion_gap_count",
+        "inventory_low_stock_items_count", "critical_supply_risk_count",
+        "reorder_recommendations_count", "supply_risk_actions_count",
     }]
     assert len(non_thresholded) > 0, "expected at least one non-thresholded KPI"
     for key in non_thresholded:
@@ -1504,6 +1516,18 @@ def test_kpi_actionability_non_thresholded_kpis_are_null(reset_shared_state) -> 
         # A-013.5 Wave 1 thresholded KPIs
         "high_risk_students_count", "critical_risk_students_count", "delinquency_cases_active",
         "scheduling_conflicts_count", "capacity_risk_sections_count",
+        # A-014.6 Wave 2 thresholded KPIs
+        "grade_decline_risk_count", "grade_intervention_cases_count",
+        "thesis_completion_risk_count", "thesis_intervention_cases_count",
+        "attendance_recovery_actions_count", "graduation_risk_students_count",
+        "degree_progress_intervention_cases_count", "scholarship_risk_cases_count",
+        "financial_aid_risk_cases_count",
+        # A-015.6 Wave 3 thresholded KPIs
+        "budget_overrun_risk_count", "budget_review_actions_count",
+        "active_finance_risk_signals_count", "finance_operations_actionability_count",
+        "asset_conversion_gap_count",
+        "inventory_low_stock_items_count", "critical_supply_risk_count",
+        "reorder_recommendations_count", "supply_risk_actions_count",
     }]
     assert len(non_thresholded) > 0, "expected at least one non-thresholded KPI"
     for key in non_thresholded:

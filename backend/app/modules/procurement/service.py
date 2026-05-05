@@ -336,9 +336,14 @@ def update_contract_status(
                         "Resolve vendor SLA issues before approving."
                     )
 
-    # W91: fail-closed guard — PO issuance must have a corresponding asset_inventory record.
-    if next_status == "PO_ISSUED":
-        _ensure_asset_inventory_registration_for_po_issue(existing, tenant_id, actor)
+    asset_delivery_result: dict | None = None
+    # A-015.3: asset inventory registration is delivery-based, not PO-issued.
+    if next_status == "DELIVERED":
+        asset_delivery_result = _ensure_asset_inventory_registration_for_po_delivery(
+            {**existing, "status": "DELIVERED"},
+            tenant_id,
+            actor,
+        )
 
     updated = update_entity_for_tenant(
         "procurement_contracts",
@@ -355,6 +360,8 @@ def update_contract_status(
             "resource_id": str(contract_id),
             "old_status": current_status,
             "new_status": next_status,
+            "asset_code": (asset_delivery_result or {}).get("asset_code"),
+            "asset_created": (asset_delivery_result or {}).get("created"),
         },
         tenant_id=tenant_id,
     )
@@ -383,20 +390,31 @@ def update_contract_status(
     return ContractSchema.model_validate(updated)
 
 
-def _ensure_asset_inventory_registration_for_po_issue(
+def _ensure_asset_inventory_registration_for_po_delivery(
     contract: dict,
     tenant_id: int,
     actor: str,
-) -> None:
-    """Ensure a PO-issued contract is represented in asset_inventory (fail-closed).
+) -> dict:
+    """Ensure a delivered procurement contract is represented in asset inventory.
 
-    On PO_ISSUED transition, a contract must have a corresponding
-    asset_inventory_items record with asset_code=PROC-{contract_code}.
+    This is fail-closed: a DELIVERED transition is blocked if asset inventory
+    lookup or creation cannot be completed.
     """
+    if not tenant_id:
+        raise DomainValidationError(
+            "Cannot record delivery: tenant_id is required for asset inventory registration"
+        )
+
+    contract_id = _to_int(contract.get("id"))
+    if contract_id is None:
+        raise DomainValidationError(
+            "Cannot record delivery: contract id is missing; asset lineage cannot be enforced"
+        )
+
     contract_code = str(contract.get("contract_code") or "").strip()
     if not contract_code:
         raise DomainValidationError(
-            "Cannot issue purchase order: contract_code is missing; "
+            "Cannot record delivery: contract_code is missing; "
             "asset inventory registration cannot be enforced"
         )
 
@@ -406,15 +424,25 @@ def _ensure_asset_inventory_registration_for_po_issue(
         inventory_rows = list_entities_for_tenant("asset_inventory_items", tenant_id)
     except Exception as exc:  # pragma: no cover - tested via monkeypatch
         raise DomainValidationError(
-            "Cannot issue purchase order: asset_inventory lookup failed. "
-            "Registration must be verified before PO_ISSUED"
+            "Cannot record delivery: asset_inventory lookup failed. "
+            "Registration must be verified before DELIVERED"
         ) from exc
 
-    already_registered = any(
-        str(row.get("asset_code") or "").strip() == asset_code for row in inventory_rows
+    already_registered = next(
+        (
+            row for row in inventory_rows
+            if str(row.get("asset_code") or "").strip() == asset_code
+        ),
+        None,
     )
-    if already_registered:
-        return
+    if already_registered is not None:
+        return {
+            "created": False,
+            "asset_code": asset_code,
+            "asset_id": _to_int(already_registered.get("id")),
+            "contract_id": contract_id,
+            "contract_code": contract_code,
+        }
 
     try:
         from datetime import datetime  # noqa: PLC0415
@@ -424,13 +452,13 @@ def _ensure_asset_inventory_registration_for_po_issue(
         title = str(contract.get("title") or "Procured Asset")
         vendor_code = str(contract.get("vendor_code") or "")
 
-        create_asset_item(
+        created_item = create_asset_item(
             tenant_id=tenant_id,
             request=AssetItemCreateSchema(
                 asset_code=asset_code,
                 name=title[:200],
                 category="equipment",
-                location="procurement",
+                location="receiving",
                 condition="good",
                 purchase_year=datetime.now().year,
                 vendor=vendor_code[:128] if vendor_code else None,
@@ -440,9 +468,64 @@ def _ensure_asset_inventory_registration_for_po_issue(
         )
     except Exception as exc:  # pragma: no cover - tested via monkeypatch
         raise DomainValidationError(
-            f"Cannot issue purchase order for contract '{contract_code}': "
+            f"Cannot record delivery for contract '{contract_code}': "
             "asset inventory registration failed"
         ) from exc
+
+    created_asset_id = _to_int(getattr(created_item, "id", None))
+    _emit_audit(
+        actor=actor,
+        action=build_audit_action("procurement", "asset", "create"),
+        path=f"/internal/procurement/contracts/{contract_id}/delivery",
+        metadata={
+            "resource_id": str(contract_id),
+            "contract_id": contract_id,
+            "contract_code": contract_code,
+            "asset_id": created_asset_id,
+            "asset_code": asset_code,
+            "delivery_status": "DELIVERED",
+            "origin_event": "procurement.delivered",
+        },
+        tenant_id=tenant_id,
+    )
+    _emit_procurement_event(
+        tenant_id=tenant_id,
+        event_type="procurement.asset_created",
+        aggregate_id=contract_id,
+        payload={
+            "contract_id": contract_id,
+            "contract_code": contract_code,
+            "asset_id": created_asset_id,
+            "asset_code": asset_code,
+            "vendor_code": str(contract.get("vendor_code") or ""),
+            "delivery_status": "DELIVERED",
+            "source_entity_type": "procurement_contract",
+            "source_entity_id": str(contract_id),
+        },
+    )
+    return {
+        "created": True,
+        "asset_code": asset_code,
+        "asset_id": created_asset_id,
+        "contract_id": contract_id,
+        "contract_code": contract_code,
+    }
+
+
+def _ensure_asset_inventory_registration_for_po_issue(
+    contract: dict,
+    tenant_id: int,
+    actor: str,
+) -> None:
+    """Backward-compatible wrapper kept for older tests and references.
+
+    A-015.3 moves operational asset creation to the DELIVERED transition.
+    """
+    _ensure_asset_inventory_registration_for_po_delivery(
+        {**contract, "status": "DELIVERED"},
+        tenant_id,
+        actor,
+    )
 
 
 
@@ -748,6 +831,22 @@ def submit_procurement_request(tenant_id: int, request_id: str, actor: str) -> P
         req["updated_at"] = now
         _requests_store[key] = req
     _append_audit(request_id, actor_id=actor, action="submitted", from_status=from_status, to_status="submitted")
+    # A-015.2 — emit Brain Core signal for approval automation
+    _emit_procurement_event(
+        tenant_id=tenant_id,
+        event_type="procurement.request_submitted",
+        aggregate_id=tenant_id,
+        payload={
+            "request_id": request_id,
+            "department_id": req.get("department_id"),
+            "title": req.get("title"),
+            "estimated_total": req.get("estimated_total"),
+            "priority": req.get("priority"),
+            "status": "submitted",
+            "source_entity_type": "procurement_request",
+            "source_entity_id": request_id,
+        },
+    )
     return ProcurementRequestSchema.model_validate(req)
 
 
@@ -770,6 +869,21 @@ def update_procurement_status(
     _append_audit(request_id, actor_id=actor, action="status_changed",
                   from_status=from_status, to_status=payload.status,
                   metadata={"comment": payload.comment})
+    # A-015.2 — emit events for approval lifecycle transitions
+    if payload.status in {"approved", "rejected"}:
+        _emit_procurement_event(
+            tenant_id=tenant_id,
+            event_type=f"procurement.{payload.status}",
+            aggregate_id=tenant_id,
+            payload={
+                "request_id": request_id,
+                "status": payload.status,
+                "actor": actor,
+                "comment": payload.comment,
+                "source_entity_type": "procurement_request",
+                "source_entity_id": request_id,
+            },
+        )
     return ProcurementRequestSchema.model_validate(req)
 
 
@@ -858,6 +972,21 @@ def create_procurement_order(
     _orders_store[order_id] = order
     _append_audit(payload.request_id, actor_id=actor, action="order_created",
                   metadata={"order_id": order_id, "order_number": payload.order_number})
+    # A-015.2 — emit po_issued event
+    _emit_procurement_event(
+        tenant_id=tenant_id,
+        event_type="procurement.po_issued",
+        aggregate_id=tenant_id,
+        payload={
+            "request_id": payload.request_id,
+            "order_id": order_id,
+            "order_number": payload.order_number,
+            "vendor_id": payload.vendor_id,
+            "total_amount": total_amount,
+            "source_entity_type": "procurement_order",
+            "source_entity_id": order_id,
+        },
+    )
     return ProcurementOrderSchema.model_validate(order)
 
 
@@ -907,3 +1036,80 @@ def get_procurement_dashboard_summary(tenant_id: int) -> ProcurementDashboardSum
         overdue_requests=overdue,
         last_updated=_now_iso(),
     )
+
+
+# ---------------------------------------------------------------------------
+# A-015.2 — Procurement Approval Automation helpers
+# ---------------------------------------------------------------------------
+
+
+def ensure_procurement_approval_action(
+    tenant_id: int, request_id: str, actor: str
+) -> dict:
+    """Idempotently transition a submitted procurement request to under_review
+    and ensure its approval steps exist.
+
+    Returns ``{"idempotent": False, "steps": [...]}`` on first call and
+    ``{"idempotent": True, "steps": [...]}`` if already under_review or further.
+
+    Raises ValueError if tenant_id is invalid or the request is not found.
+    """
+    if not tenant_id:
+        raise ValueError("tenant_id is required")
+    req_data = _requests_store.get(_request_key(tenant_id, request_id))
+    if req_data is None:
+        raise ValueError(f"Procurement request '{request_id}' not found for tenant {tenant_id}")
+
+    already_progressed = req_data["status"] in {"under_review", "approved", "rejected", "ordered", "fulfilled", "cancelled"}
+    if already_progressed:
+        steps = get_approval_steps(tenant_id, request_id)
+        return {"idempotent": True, "steps": [s.model_dump() for s in steps]}
+
+    # Transition submitted → under_review
+    update_procurement_status(
+        tenant_id,
+        request_id,
+        ProcurementStatusUpdateSchema(status="under_review"),
+        actor,
+    )
+    steps = get_approval_steps(tenant_id, request_id)
+    return {"idempotent": False, "steps": [s.model_dump() for s in steps]}
+
+
+def ensure_po_on_approved_request(
+    tenant_id: int, request_id: str, actor: str
+) -> dict | None:
+    """Idempotently create a PO order for an approved procurement request.
+
+    Returns the order dict (new or existing) or None if the request is not in
+    ``approved`` status (e.g. rejected).  Does NOT raise for non-approved status
+    so that callers can treat the None result as a no-op.
+
+    Raises ValueError if tenant_id is invalid or request is not found.
+    """
+    if not tenant_id:
+        raise ValueError("tenant_id is required")
+    req_data = _requests_store.get(_request_key(tenant_id, request_id))
+    if req_data is None:
+        raise ValueError(f"Procurement request '{request_id}' not found for tenant {tenant_id}")
+
+    if req_data["status"] != "approved":
+        return None
+
+    # Idempotency check — return existing order if already issued
+    existing = get_request_order(tenant_id, request_id)
+    if existing is not None:
+        return {"order_id": existing.order_id, "idempotent": True, "order": existing.model_dump()}
+
+    # Auto-generate a PO order number
+    order_number = f"PO-{tenant_id}-{request_id[:8].upper()}"
+    order = create_procurement_order(
+        tenant_id,
+        ProcurementOrderCreateSchema(
+            request_id=request_id,
+            vendor_id="system",
+            order_number=order_number,
+        ),
+        actor,
+    )
+    return {"order_id": order.order_id, "idempotent": False, "order": order.model_dump()}

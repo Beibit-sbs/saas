@@ -1,4 +1,4 @@
-"""W91 — procurement: PO_ISSUED requires asset_inventory registration (fail-closed)."""
+"""W91 — procurement: DELIVERED requires asset_inventory registration (fail-closed)."""
 from __future__ import annotations
 
 import pytest
@@ -24,14 +24,14 @@ def _make_contract(*, contract_code: str = "C-101", status: str = "APPROVED") ->
 
 
 def test_w91_guard_function_exists_and_callable():
-    from app.modules.procurement.service import _ensure_asset_inventory_registration_for_po_issue
+    from app.modules.procurement.service import _ensure_asset_inventory_registration_for_po_delivery
 
-    assert callable(_ensure_asset_inventory_registration_for_po_issue)
+    assert callable(_ensure_asset_inventory_registration_for_po_delivery)
 
 
 
 def test_w91_blocked_when_contract_code_missing(monkeypatch):
-    contract = _make_contract(contract_code="", status="APPROVED")
+    contract = _make_contract(contract_code="", status="PO_ISSUED")
 
     def _list(entity_name, _tenant_id):
         if entity_name == "procurement_contracts":
@@ -44,14 +44,14 @@ def test_w91_blocked_when_contract_code_missing(monkeypatch):
         update_contract_status(
             tenant_id=1,
             contract_id=1,
-            request=ContractStatusUpdateSchema(status="PO_ISSUED"),
+            request=ContractStatusUpdateSchema(status="DELIVERED"),
             actor="test",
         )
 
 
 
 def test_w91_blocked_when_asset_inventory_lookup_fails(monkeypatch):
-    contract = _make_contract(status="APPROVED")
+    contract = _make_contract(status="PO_ISSUED")
 
     def _list(entity_name, _tenant_id):
         if entity_name == "procurement_contracts":
@@ -66,21 +66,21 @@ def test_w91_blocked_when_asset_inventory_lookup_fails(monkeypatch):
         update_contract_status(
             tenant_id=1,
             contract_id=1,
-            request=ContractStatusUpdateSchema(status="PO_ISSUED"),
+            request=ContractStatusUpdateSchema(status="DELIVERED"),
             actor="test",
         )
 
 
 
-def test_w91_po_issued_allowed_when_asset_already_registered(monkeypatch):
-    contract = _make_contract(contract_code="C-111", status="APPROVED")
-    updated_contract = {**contract, "status": "PO_ISSUED", "tenant_id": "1"}
+def test_w91_delivered_allowed_when_asset_already_registered(monkeypatch):
+    contract = _make_contract(contract_code="C-111", status="PO_ISSUED")
+    updated_contract = {**contract, "status": "DELIVERED", "tenant_id": "1"}
 
     def _list(entity_name, _tenant_id):
         if entity_name == "procurement_contracts":
             return [contract]
         if entity_name == "asset_inventory_items":
-            return [{"asset_code": "PROC-C-111"}]
+            return [{"id": 77, "asset_code": "PROC-C-111", "tenant_id": "1"}]
         return []
 
     monkeypatch.setattr("app.modules.procurement.service.list_entities_for_tenant", _list)
@@ -90,16 +90,15 @@ def test_w91_po_issued_allowed_when_asset_already_registered(monkeypatch):
     result = update_contract_status(
         tenant_id=1,
         contract_id=1,
-        request=ContractStatusUpdateSchema(status="PO_ISSUED"),
+        request=ContractStatusUpdateSchema(status="DELIVERED"),
         actor="test",
     )
-    assert result.status == "PO_ISSUED"
+    assert result.status == "DELIVERED"
 
 
-
-def test_w91_po_issued_creates_asset_when_missing(monkeypatch):
-    contract = _make_contract(contract_code="C-121", status="APPROVED")
-    updated_contract = {**contract, "status": "PO_ISSUED", "tenant_id": "1"}
+def test_w91_delivered_creates_asset_when_missing(monkeypatch):
+    contract = _make_contract(contract_code="C-121", status="PO_ISSUED")
+    updated_contract = {**contract, "status": "DELIVERED", "tenant_id": "1"}
 
     calls: dict[str, int] = {"create_asset": 0}
 
@@ -134,17 +133,17 @@ def test_w91_po_issued_creates_asset_when_missing(monkeypatch):
     result = update_contract_status(
         tenant_id=1,
         contract_id=1,
-        request=ContractStatusUpdateSchema(status="PO_ISSUED"),
+        request=ContractStatusUpdateSchema(status="DELIVERED"),
         actor="test",
     )
 
-    assert result.status == "PO_ISSUED"
+    assert result.status == "DELIVERED"
     assert calls["create_asset"] == 1
 
 
 
 def test_w91_blocked_when_asset_creation_fails(monkeypatch):
-    contract = _make_contract(contract_code="C-131", status="APPROVED")
+    contract = _make_contract(contract_code="C-131", status="PO_ISSUED")
 
     def _list(entity_name, _tenant_id):
         if entity_name == "procurement_contracts":
@@ -164,13 +163,13 @@ def test_w91_blocked_when_asset_creation_fails(monkeypatch):
         update_contract_status(
             tenant_id=1,
             contract_id=1,
-            request=ContractStatusUpdateSchema(status="PO_ISSUED"),
+            request=ContractStatusUpdateSchema(status="DELIVERED"),
             actor="test",
         )
 
 
 
-def test_w91_non_po_issued_transition_skips_asset_inventory_lookup(monkeypatch):
+def test_w91_non_delivered_transition_skips_asset_inventory_lookup(monkeypatch):
     contract = _make_contract(status="SUBMITTED")
     updated_contract = {**contract, "status": "APPROVED", "tenant_id": "1"}
     calls: list[str] = []
@@ -192,7 +191,7 @@ def test_w91_non_po_issued_transition_skips_asset_inventory_lookup(monkeypatch):
     result = update_contract_status(
         tenant_id=1,
         contract_id=1,
-        request=ContractStatusUpdateSchema(status="APPROVED"),
+            request=ContractStatusUpdateSchema(status="APPROVED"),
         actor="test",
     )
     assert result.status == "APPROVED"
@@ -201,7 +200,7 @@ def test_w91_non_po_issued_transition_skips_asset_inventory_lookup(monkeypatch):
 
 
 def test_w91_error_message_contains_contract_code(monkeypatch):
-    contract = _make_contract(contract_code="C-141", status="APPROVED")
+    contract = _make_contract(contract_code="C-141", status="PO_ISSUED")
 
     def _list(entity_name, _tenant_id):
         if entity_name == "procurement_contracts":
@@ -221,7 +220,7 @@ def test_w91_error_message_contains_contract_code(monkeypatch):
         update_contract_status(
             tenant_id=1,
             contract_id=1,
-            request=ContractStatusUpdateSchema(status="PO_ISSUED"),
+            request=ContractStatusUpdateSchema(status="DELIVERED"),
             actor="test",
         )
 

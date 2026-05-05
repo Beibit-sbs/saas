@@ -2,7 +2,7 @@
 
 Tests:
   W11.1 – scheduling → enrollments capacity check
-  W11.2 – procurement.contract PO_ISSUED → asset_inventory wiring
+    W11.2 – procurement.contract DELIVERED → asset_inventory wiring
 """
 from __future__ import annotations
 
@@ -178,13 +178,13 @@ class TestSchedulingEnrollmentsCapacityCheck:
 # ---------------------------------------------------------------------------
 
 class TestProcurementAssetInventoryWiring:
-    """When contract reaches PO_ISSUED, asset_inventory entry is auto-created."""
+    """When contract reaches DELIVERED, asset_inventory entry is auto-created."""
 
     def test_wire_function_exists(self):
-        """_ensure_asset_inventory_registration_for_po_issue helper must exist."""
+        """Delivery-based ensure helper must exist."""
         from app.modules.procurement import service as svc
-        assert hasattr(svc, "_ensure_asset_inventory_registration_for_po_issue"), (
-            "_ensure_asset_inventory_registration_for_po_issue must exist in procurement.service"
+        assert hasattr(svc, "_ensure_asset_inventory_registration_for_po_delivery"), (
+            "_ensure_asset_inventory_registration_for_po_delivery must exist in procurement.service"
         )
 
     def test_source_references_asset_inventory(self):
@@ -195,35 +195,35 @@ class TestProcurementAssetInventoryWiring:
             "update_contract_status must reference asset_inventory for cross-module wiring"
         )
 
-    def test_source_triggers_on_po_issued(self):
-        """Wire function must be triggered when next_status is PO_ISSUED."""
+    def test_source_triggers_on_delivered(self):
+        """Wire function must be triggered when next_status is DELIVERED."""
         from app.modules.procurement import service as svc
         src = inspect.getsource(svc.update_contract_status)
-        assert "PO_ISSUED" in src, (
-            "update_contract_status must check for PO_ISSUED status"
+        assert "DELIVERED" in src, (
+            "update_contract_status must check for DELIVERED status"
         )
-        assert "_ensure_asset_inventory_registration_for_po_issue" in src, (
-            "_ensure_asset_inventory_registration_for_po_issue must be called from update_contract_status"
+        assert "_ensure_asset_inventory_registration_for_po_delivery" in src, (
+            "_ensure_asset_inventory_registration_for_po_delivery must be called from update_contract_status"
         )
 
     def test_wire_function_references_create_asset_item(self):
-        """PO issue guard helper must call create_asset_item."""
+        """Delivery guard helper must call create_asset_item."""
         from app.modules.procurement import service as svc
-        src = inspect.getsource(svc._ensure_asset_inventory_registration_for_po_issue)
+        src = inspect.getsource(svc._ensure_asset_inventory_registration_for_po_delivery)
         assert "create_asset_item" in src, (
-            "_ensure_asset_inventory_registration_for_po_issue must call create_asset_item"
+            "_ensure_asset_inventory_registration_for_po_delivery must call create_asset_item"
         )
 
     def test_wire_function_is_guarded_by_try_except(self):
         """Wiring guard must convert lower-level failures to DomainValidationError."""
         from app.modules.procurement import service as svc
-        src = inspect.getsource(svc._ensure_asset_inventory_registration_for_po_issue)
+        src = inspect.getsource(svc._ensure_asset_inventory_registration_for_po_delivery)
         assert "except" in src and "DomainValidationError" in src, (
-            "_ensure_asset_inventory_registration_for_po_issue must map failures to DomainValidationError"
+            "_ensure_asset_inventory_registration_for_po_delivery must map failures to DomainValidationError"
         )
 
-    def test_update_contract_status_po_issued_creates_asset(self):
-        """When contract is transitioned to PO_ISSUED, asset_inventory entry is created."""
+    def test_update_contract_status_delivered_creates_asset(self):
+        """When contract is transitioned to DELIVERED, asset_inventory entry is created."""
         from app.modules.procurement import service as svc
         from app.modules.procurement.schemas import ContractStatusUpdateSchema
         from app.modules.university_core.tenant_entity_service import (
@@ -245,17 +245,17 @@ class TestProcurementAssetInventoryWiring:
                 "title": "Network Equipment Procurement",
                 "risk_score": "0.2",
                 "sla_target_met": "true",
-                "status": "APPROVED",
+                "status": "PO_ISSUED",
             },
             tenant_id,
         )
         contract_id = int(contract["id"])
 
-        req = ContractStatusUpdateSchema(status="PO_ISSUED")
+        req = ContractStatusUpdateSchema(status="DELIVERED")
         result = svc.update_contract_status(tenant_id, contract_id, req, "admin")
 
         assert result is not None
-        assert result.status == "PO_ISSUED"
+        assert result.status == "DELIVERED"
 
         # Verify asset_inventory entry was auto-created
         asset_rows = api_list("asset_inventory_items", tenant_id)
@@ -264,11 +264,11 @@ class TestProcurementAssetInventoryWiring:
             if "CTR-W11-001" in str(r.get("asset_code") or "")
         ]
         assert len(contract_assets) >= 1, (
-            "PO_ISSUED transition must auto-create an asset_inventory_items entry"
+            "DELIVERED transition must auto-create an asset_inventory_items entry"
         )
 
-    def test_update_contract_status_non_po_issued_no_asset(self):
-        """Non-PO_ISSUED transitions must NOT create asset_inventory entries."""
+    def test_update_contract_status_non_delivered_no_asset(self):
+        """Non-DELIVERED transitions must NOT create asset_inventory entries."""
         from app.modules.procurement import service as svc
         from app.modules.procurement.schemas import ContractStatusUpdateSchema
         from app.modules.university_core.tenant_entity_service import create_entity_for_tenant
@@ -305,7 +305,7 @@ class TestProcurementAssetInventoryWiring:
             if "CTR-W11-002" in str(r.get("asset_code") or "")
         ]
         assert len(contract_assets) == 0, (
-            "Non-PO_ISSUED transitions must not create asset_inventory entries"
+            "Non-DELIVERED transitions must not create asset_inventory entries"
         )
 
     def test_asset_created_with_contract_code_prefix(self):
@@ -327,13 +327,13 @@ class TestProcurementAssetInventoryWiring:
                 "title": "Lab Equipment",
                 "risk_score": "0.3",
                 "sla_target_met": "false",
-                "status": "APPROVED",
+                "status": "PO_ISSUED",
             },
             tenant_id,
         )
         contract_id = int(contract["id"])
 
-        req = ContractStatusUpdateSchema(status="PO_ISSUED")
+        req = ContractStatusUpdateSchema(status="DELIVERED")
         svc.update_contract_status(tenant_id, contract_id, req, "admin")
 
         asset_rows = api_list("asset_inventory_items", tenant_id)

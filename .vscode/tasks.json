@@ -159,6 +159,18 @@
 			"type": "shell",
 			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_agent_collaboration_xxv.py --no-cov -rA | tee /tmp/phase_xxv_backend_tests.log",
 			"isBackground": false
+		},
+		{
+			"label": "a0130-baseline-core",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"attendance or interventions or brain_core or events or notification\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0130-baseline-tenant-security",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"tenant or security\" --no-cov -rA",
+			"isBackground": false
 		}
 	]
 }

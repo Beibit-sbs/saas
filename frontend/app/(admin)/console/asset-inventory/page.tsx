@@ -12,6 +12,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { RequirePermission } from "@/shared/ui/permission-gate";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { useMutationFeedback } from "@/shared/hooks/use-mutation-feedback";
+import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
 import {
   useAssetItems,
   useCreateAssetItem,
@@ -236,6 +237,19 @@ export default function AssetInventoryPage() {
           title="Asset Inventory"
           description="Track campus assets, inventory management, and depreciation lifecycle"
           icon={Package}
+        />
+
+        <Wave1KpiBar
+          metricKeys={["po_delivery_completion_rate","delivered_po_asset_conversion_rate","asset_conversion_gap_count","inventory_low_stock_items_count","critical_supply_risk_count","reorder_recommendations_count","supply_risk_actions_count"]}
+          labels={{
+            po_delivery_completion_rate: "PO Delivery Rate (%)",
+            delivered_po_asset_conversion_rate: "Asset Conversion Rate (%)",
+            asset_conversion_gap_count: "Conversion Gap",
+            inventory_low_stock_items_count: "Low Stock Items",
+            critical_supply_risk_count: "Critical Supply Risk",
+            reorder_recommendations_count: "Reorder Needed",
+            supply_risk_actions_count: "Supply Risk Actions",
+          }}
         />
 
         <RequirePermission permission={PERMISSIONS.ASSET_INVENTORY_WRITE}>

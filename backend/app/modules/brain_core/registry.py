@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.modules.brain_core.constants import (
+    BUDGET_OVERRUN_EVENT_TYPES,
     ACADEMIC_INTEGRITY_EVENT_TYPES,
     ACADEMIC_RECORDS_EVENT_TYPES,
     ACCREDITATION_EVENT_TYPES,
@@ -8,10 +9,13 @@ from app.modules.brain_core.constants import (
     DEGREE_PROGRESS_EVENT_TYPES,
     ENROLLMENT_DROPOUT_EVENT_TYPES,
     FACULTY_OVERLOAD_EVENT_TYPES,
+    FINANCE_OPERATIONS_HEALTH_EVENT_TYPES,
+    INVENTORY_LOW_STOCK_EVENT_TYPES,
     OPERATIONS_EVENT_TYPES,
     PAYMENT_OVERDUE_EVENT_TYPES,
     PLATFORM_ACTIVITY_EVENT_TYPES,
     PLATFORM_RELIABILITY_EVENT_TYPES,
+    PROCUREMENT_APPROVAL_EVENT_TYPES,
     PROCUREMENT_EVENT_TYPES,
     PROGRAMS_EVENT_TYPES,
     RESEARCH_EVENT_TYPES,
@@ -59,6 +63,21 @@ class SignalRegistry:
             "scenario": "payment_recovery",
             "context_sources": ["finance", "student_success"],
         },
+        "finance.expense.budget_exceeded": {
+            "signal_class": "financial_risk",
+            "scenario": "budget_overrun_prevention",
+            "context_sources": ["finance", "operations", "procurement"],
+        },
+        "campus.budget.overrun_risk_detected": {
+            "signal_class": "financial_risk",
+            "scenario": "budget_overrun_prevention",
+            "context_sources": ["finance", "operations", "procurement"],
+        },
+        "campus.expense_controls.budget_exceeded_risk_detected": {
+            "signal_class": "financial_risk",
+            "scenario": "budget_overrun_prevention",
+            "context_sources": ["finance", "operations", "procurement"],
+        },
         "financial_aid.warning.detected": {
             "signal_class": "student_success_risk",
             "scenario": "student_support_bridge",
@@ -87,6 +106,17 @@ class SignalRegistry:
         "procurement.contract_risk.high": {
             "signal_class": "procurement_risk",
             "scenario": "procurement_supply_chain",
+            "context_sources": ["finance", "operations"],
+        },
+        # A-015.2 — Procurement Approval Automation
+        "procurement.request_submitted": {
+            "signal_class": "procurement_risk",
+            "scenario": "procurement_approval_automation",
+            "context_sources": ["finance", "operations"],
+        },
+        "procurement.approval_required": {
+            "signal_class": "procurement_risk",
+            "scenario": "procurement_approval_automation",
             "context_sources": ["finance", "operations"],
         },
         "operations.consumable_stock.low": {
@@ -240,6 +270,38 @@ class SignalRegistry:
             "scenario": "enrollment_capacity_risk",
             "context_sources": ["scheduling", "academic"],
         },
+        # A-015.4 — Finance Operations Health Brain
+        "finance.operations.health_check": {
+            "signal_class": "financial_risk",
+            "scenario": "finance_operations_health",
+            "context_sources": ["finance", "operations", "procurement"],
+        },
+        "finance.operations.risk_detected": {
+            "signal_class": "financial_risk",
+            "scenario": "finance_operations_health",
+            "context_sources": ["finance", "operations", "procurement"],
+        },
+        # A-015.5 — Inventory Low Stock / Supply Risk Brain
+        "inventory.low_stock.detected": {
+            "signal_class": "supply_risk",
+            "scenario": "inventory_low_stock",
+            "context_sources": ["operations", "procurement", "finance"],
+        },
+        "inventory.reorder_needed": {
+            "signal_class": "supply_risk",
+            "scenario": "inventory_low_stock",
+            "context_sources": ["operations", "procurement", "finance"],
+        },
+        "supply.risk.detected": {
+            "signal_class": "supply_risk",
+            "scenario": "inventory_low_stock",
+            "context_sources": ["operations", "procurement", "finance"],
+        },
+        "procurement.inventory_gap.detected": {
+            "signal_class": "supply_risk",
+            "scenario": "inventory_low_stock",
+            "context_sources": ["operations", "procurement", "finance"],
+        },
     }
 
     @classmethod
@@ -285,6 +347,14 @@ class DecisionRegistry:
                 "notify_finance": "notification",
             },
         },
+        "budget_overrun_prevention": {
+            "decision_type": "risk",
+            "allowed_event_types": sorted(BUDGET_OVERRUN_EVENT_TYPES),
+            "action_map": {
+                "create_intervention_case": "workflow_task",
+                "notify_finance": "notification",
+            },
+        },
         "student_support_bridge": {
             "decision_type": "risk",
             "allowed_event_types": sorted(STUDENT_SUPPORT_EVENT_TYPES),
@@ -299,6 +369,15 @@ class DecisionRegistry:
             "allowed_event_types": sorted(PROCUREMENT_EVENT_TYPES),
             "action_map": {
                 "initiate_procurement_request": "workflow_task",
+                "notify_procurement_team": "notification",
+            },
+        },
+        # A-015.2 — Procurement Approval Automation
+        "procurement_approval_automation": {
+            "decision_type": "procurement",
+            "allowed_event_types": sorted(PROCUREMENT_APPROVAL_EVENT_TYPES),
+            "action_map": {
+                "create_procurement_approval_case": "workflow_task",
                 "notify_procurement_team": "notification",
             },
         },
@@ -437,6 +516,27 @@ class DecisionRegistry:
             "action_map": {
                 "create_enrollment_capacity_task": "workflow_task",
                 "notify_enrollment_office": "notification",
+            },
+        },
+        # A-015.4 — Finance Operations Health Brain
+        "finance_operations_health": {
+            "decision_type": "finance_health",
+            "allowed_event_types": sorted(FINANCE_OPERATIONS_HEALTH_EVENT_TYPES),
+            "action_map": {
+                "create_finance_health_review_task": "workflow_task",
+                "notify_finance": "notification",
+                "notify_procurement_team": "notification",
+            },
+        },
+        # A-015.5 — Inventory Low Stock / Supply Risk Brain
+        "inventory_low_stock": {
+            "decision_type": "supply_risk",
+            "allowed_event_types": sorted(INVENTORY_LOW_STOCK_EVENT_TYPES),
+            "action_map": {
+                "create_procurement_request": "workflow_task",
+                "reorder_review": "workflow_task",
+                "vendor_followup": "notification",
+                "budget_review": "notification",
             },
         },
     }

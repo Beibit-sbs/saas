@@ -188,10 +188,21 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "exam.violation_detected": EventDefinition(GenericTenantEventPayload),
     # Procurement lifecycle events (XXXIV.2)
     "procurement.request_created": EventDefinition(GenericTenantEventPayload),
+    "procurement.request_submitted": EventDefinition(GenericTenantEventPayload),  # A-015.2
+    "procurement.approval_required": EventDefinition(GenericTenantEventPayload),  # A-015.2
     "procurement.approved": EventDefinition(GenericTenantEventPayload),
     "procurement.rejected": EventDefinition(GenericTenantEventPayload),
     "procurement.po_issued": EventDefinition(GenericTenantEventPayload),
     "procurement.delivered": EventDefinition(GenericTenantEventPayload),
+    "procurement.asset_created": EventDefinition(GenericTenantEventPayload),
+    # A-015.4 Finance Operations Health Brain events
+    "finance.operations.health_check": EventDefinition(GenericTenantEventPayload),
+    "finance.operations.risk_detected": EventDefinition(GenericTenantEventPayload),
+    # A-015.5 Inventory Low Stock / Supply Risk Brain events
+    "inventory.low_stock.detected": EventDefinition(GenericTenantEventPayload),
+    "inventory.reorder_needed": EventDefinition(GenericTenantEventPayload),
+    "supply.risk.detected": EventDefinition(GenericTenantEventPayload),
+    "procurement.inventory_gap.detected": EventDefinition(GenericTenantEventPayload),
     # Budget planning lifecycle events (XXXIV.3)
     "budget_plan.created": EventDefinition(GenericTenantEventPayload),
     "budget_plan.review_requested": EventDefinition(GenericTenantEventPayload),

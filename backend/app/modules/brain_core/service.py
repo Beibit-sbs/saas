@@ -36,6 +36,30 @@ from app.modules.observability.metrics import (
 
 logger = logging.getLogger(__name__)
 
+_BUDGET_OVERRUN_EVENT_TYPES = frozenset(
+    {
+        "finance.expense.budget_exceeded",
+        "campus.budget.overrun_risk_detected",
+        "campus.expense_controls.budget_exceeded_risk_detected",
+    }
+)
+
+# A-015.2 — Procurement Approval Automation event types
+_PROCUREMENT_APPROVAL_EVENT_TYPES = frozenset(
+    {
+        "procurement.request_submitted",
+        "procurement.approval_required",
+    }
+)
+
+# A-015.4 — Finance Operations Health Brain event types
+_FINANCE_OPERATIONS_HEALTH_EVENT_TYPES = frozenset(
+    {
+        "finance.operations.health_check",
+        "finance.operations.risk_detected",
+    }
+)
+
 
 def _coerce_uuid(value: object) -> uuid.UUID:
     """Convert a string/UUID to uuid.UUID, generating a new one on failure."""
@@ -114,13 +138,18 @@ class BrainCoreService:
         """Return existing signal_id if an identical signal was received within the window; None otherwise."""
         from sqlalchemy import text as sa_text  # local import to avoid circular
 
-        cached = self._signal_dedup_cache.get((tenant_id, dedup_key))
+        cache = getattr(self, "_signal_dedup_cache", None)
+        if cache is None:
+            cache = {}
+            setattr(self, "_signal_dedup_cache", cache)
+
+        cached = cache.get((tenant_id, dedup_key))
         now = time.perf_counter()
         if cached is not None:
             cached_signal_id, cached_at = cached
             if now - cached_at <= float(window_seconds):
                 return cached_signal_id
-            self._signal_dedup_cache.pop((tenant_id, dedup_key), None)
+            cache.pop((tenant_id, dedup_key), None)
 
         engine = _get_shared_engine()
         if engine is None:
@@ -252,6 +281,126 @@ class BrainCoreService:
         normalized["subject"] = subject
         payload["student_id"] = student_id
         normalized["payload"] = payload
+        return normalized, None
+
+    def _normalize_procurement_approval_signal(self, signal: dict) -> tuple[dict, str | None]:
+        """A-015.2 — Fail-closed normalization for procurement approval signals.
+
+        Rejects if both request_id and estimated_total are missing.
+        Attaches procurement_risk_origin and procurement_risk_evidence metadata.
+        """
+        event_type = str(signal.get("event_type") or "")
+        if event_type not in _PROCUREMENT_APPROVAL_EVENT_TYPES:
+            return signal, None
+
+        normalized = dict(signal)
+        payload = dict(normalized.get("payload") or {})
+
+        request_id = payload.get("request_id")
+        estimated_total = payload.get("estimated_total")
+
+        # Fail-closed: must have at least request_id OR estimated_total
+        if not request_id and estimated_total is None:
+            return normalized, "missing_procurement_request_context"
+
+        # Canonicalise numeric field
+        try:
+            estimated_total_f = float(estimated_total) if estimated_total is not None else None
+        except (TypeError, ValueError):
+            estimated_total_f = None
+
+        payload["procurement_risk_origin"] = event_type
+        payload["procurement_risk_evidence"] = {
+            "request_id": request_id,
+            "estimated_total": estimated_total_f,
+            "priority": payload.get("priority"),
+            "department_id": payload.get("department_id"),
+        }
+        payload.setdefault("source_module", "procurement")
+        payload.setdefault("source_entity_type", "procurement_request")
+        payload.setdefault("source_entity_id", str(request_id or "unknown"))
+
+        normalized["payload"] = payload
+        if str(normalized.get("source_entity_type") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_type"] = str(payload.get("source_entity_type") or "procurement_request")
+        if str(normalized.get("source_entity_id") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_id"] = str(payload.get("source_entity_id") or "unknown")
+        if not normalized.get("source_module"):
+            normalized["source_module"] = str(payload.get("source_module") or "procurement")
+
+        return normalized, None
+
+    def _normalize_budget_overrun_signal(self, signal: dict) -> tuple[dict, str | None]:
+        """Fail-closed normalization for budget overrun signals.
+
+        Ensures canonical numeric fields needed for safe risk processing and
+        attaches origin/evidence metadata for downstream audit/workflow payloads.
+        """
+        event_type = str(signal.get("event_type") or "")
+        if event_type not in _BUDGET_OVERRUN_EVENT_TYPES:
+            return signal, None
+
+        normalized = dict(signal)
+        payload = dict(normalized.get("payload") or {})
+
+        amount = payload.get("amount")
+        budget_limit = payload.get("budget_limit")
+        attempted_total = payload.get("attempted_total")
+        current_total = payload.get("current_total")
+        overrun_amount = payload.get("overrun_amount")
+        overrun_percent = payload.get("overrun_percent")
+
+        # Derive canonical overrun metrics where possible.
+        try:
+            attempted_f = float(attempted_total) if attempted_total is not None else None
+        except (TypeError, ValueError):
+            attempted_f = None
+        try:
+            limit_f = float(budget_limit) if budget_limit is not None else None
+        except (TypeError, ValueError):
+            limit_f = None
+        try:
+            current_f = float(current_total) if current_total is not None else None
+        except (TypeError, ValueError):
+            current_f = None
+
+        if overrun_amount is None and attempted_f is not None and limit_f is not None:
+            overrun_amount = attempted_f - limit_f
+        if overrun_percent is None and overrun_amount is not None and limit_f and limit_f > 0:
+            try:
+                overrun_percent = float(overrun_amount) / float(limit_f)
+            except (TypeError, ValueError, ZeroDivisionError):
+                overrun_percent = None
+
+        # Fail-closed: at least one budget magnitude and one threshold magnitude must exist.
+        has_amount_signal = any(v is not None for v in (amount, attempted_f, current_f, overrun_amount))
+        has_threshold_signal = any(v is not None for v in (budget_limit, overrun_percent))
+        if not has_amount_signal or not has_threshold_signal:
+            return normalized, "missing_budget_amount_or_threshold"
+
+        payload["budget_risk_origin"] = event_type
+        payload["overrun_amount"] = overrun_amount
+        payload["overrun_percent"] = overrun_percent
+        payload.setdefault("source_module", "expense_controls")
+        payload.setdefault("source_entity_type", "budget_risk")
+        payload.setdefault("source_entity_id", str(payload.get("budget_id") or payload.get("budget_plan_id") or payload.get("cost_center_id") or "unknown"))
+        payload["budget_risk_evidence"] = {
+            "amount": amount,
+            "current_total": current_total,
+            "attempted_total": attempted_total,
+            "budget_limit": budget_limit,
+            "overrun_amount": overrun_amount,
+            "overrun_percent": overrun_percent,
+        }
+
+        normalized["payload"] = payload
+        if str(normalized.get("source_entity_type") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_type"] = str(payload.get("source_entity_type") or "budget_risk")
+        if str(normalized.get("source_entity_id") or "").strip().lower() in {"", "unknown"}:
+            normalized["source_entity_id"] = str(payload.get("source_entity_id") or "unknown")
+        if not normalized.get("source_module"):
+            normalized["source_module"] = str(payload.get("source_module") or "expense_controls")
+
         return normalized, None
 
     def _resolve_decision_scenario(self, *, event_type: str, classification: dict) -> str:
@@ -420,6 +569,16 @@ class BrainCoreService:
             self._observability.increment("signals_rejected_total")
             return {"status": "rejected", "reason": normalization_rejection}
 
+        signal, normalization_rejection = self._normalize_budget_overrun_signal(signal)
+        if normalization_rejection is not None:
+            self._observability.increment("signals_rejected_total")
+            return {"status": "rejected", "reason": normalization_rejection}
+
+        signal, normalization_rejection = self._normalize_procurement_approval_signal(signal)
+        if normalization_rejection is not None:
+            self._observability.increment("signals_rejected_total")
+            return {"status": "rejected", "reason": normalization_rejection}
+
         event_type = str(signal.get("event_type") or "")
         if not SignalRegistry.is_supported(event_type):
             self._observability.increment("signals_ignored_total")
@@ -458,7 +617,11 @@ class BrainCoreService:
         signal_id = uuid4()
         signal.setdefault("signal_id", str(signal_id))
         self._signals.append(signal)
-        self._signal_dedup_cache[(tenant_id, dedup_key)] = (signal_id, time.perf_counter())
+        cache = getattr(self, "_signal_dedup_cache", None)
+        if cache is None:
+            cache = {}
+            setattr(self, "_signal_dedup_cache", cache)
+        cache[(tenant_id, dedup_key)] = (signal_id, time.perf_counter())
 
         context_started = time.perf_counter()
         context = self._context_builder.build_context(signal)
@@ -1547,6 +1710,146 @@ class BrainCoreService:
             decisions=self._decisions,
             outcomes=outcomes,
         )
+
+    # A-015.4 — Finance Operations Health Brain
+    def compute_finance_operations_health(
+        self,
+        tenant_id: int,
+        *,
+        correlation_id: str | None = None,
+    ) -> dict:
+        """Compute and return Finance Operations Health Brain decision for a tenant.
+
+        Fetches live budget/expense/procurement/asset data, runs deterministic
+        health scoring across 5 dimensions, and returns a Brain-compatible
+        decision dict with recommended actions and KPI-ready summary.
+
+        Fail-closed: raises ValueError for missing/invalid tenant_id.
+        """
+        from app.modules.brain_core.finance_operations_health import compute_finance_operations_health
+        from app.modules.budget_planning.service import get_budget_brain_context
+        from app.modules.expense_controls.service import get_expense_brain_context
+        from app.modules.procurement.service import get_procurement_health_snapshot
+        from app.modules.asset_inventory.service import list_asset_items
+
+        if not tenant_id or tenant_id <= 0:
+            raise ValueError("tenant_id is required and must be > 0")
+
+        # Collect data — each source is individually guarded; missing data produces
+        # neutral/unknown dimension scores rather than false green or hard crash.
+        try:
+            budget_ctx = get_budget_brain_context(tenant_id)
+        except Exception:
+            budget_ctx = None
+
+        try:
+            expense_ctx = get_expense_brain_context(tenant_id)
+        except Exception:
+            expense_ctx = None
+
+        try:
+            snap = get_procurement_health_snapshot(tenant_id)
+            procurement_snapshot = snap.model_dump() if hasattr(snap, "model_dump") else dict(snap)
+        except Exception:
+            procurement_snapshot = None
+
+        try:
+            asset_rows = [item.model_dump() if hasattr(item, "model_dump") else dict(item)
+                          for item in (list_asset_items(tenant_id=tenant_id) or [])]
+        except Exception:
+            asset_rows = None
+
+        # Count active finance/procurement risk signals for this tenant from
+        # the in-memory decision log.
+        active_risk_signals = sum(
+            1 for d in self._decisions
+            if int(d.get("tenant_id") or 0) == tenant_id
+            and str(d.get("scenario") or "") in {
+                "budget_overrun_prevention",
+                "procurement_supply_chain",
+                "procurement_approval_automation",
+                "finance_operations_health",
+            }
+        )
+
+        result = compute_finance_operations_health(
+            tenant_id=tenant_id,
+            budget_context=budget_ctx,
+            expense_context=expense_ctx,
+            procurement_snapshot=procurement_snapshot,
+            asset_inventory_rows=asset_rows,
+            active_risk_signals=active_risk_signals,
+            correlation_id=correlation_id,
+        )
+
+        # Record decision in in-memory log for KPI dashboard aggregation
+        decision_record = {
+            "tenant_id": tenant_id,
+            "decision_type": result["decision_type"],
+            "scenario": result["scenario"],
+            "risk_level": result["risk_level"],
+            "overall_score": result["overall_score"],
+            "recommended_actions": result["recommended_actions"],
+            "correlation_id": result["correlation_id"],
+        }
+        self._decisions.append(decision_record)
+
+        return result
+
+    # ------------------------------------------------------------------
+    # A-015.5 — Inventory Low Stock / Supply Risk Brain
+    # ------------------------------------------------------------------
+
+    def compute_inventory_supply_risk(
+        self,
+        tenant_id: int,
+        *,
+        item_id: str | None = None,
+        item_name: str | None = None,
+        current_quantity: float | int | None = None,
+        reorder_threshold: float | int | None = None,
+        required_quantity: float | int | None = None,
+        department: str | None = None,
+        location: str | None = None,
+        vendor_id: str | None = None,
+        budget_id: str | None = None,
+        correlation_id: str | None = None,
+    ) -> dict:
+        """Compute and record a deterministic Inventory / Supply Risk Brain decision.
+
+        Fail-closed: raises ValueError if tenant_id <= 0 or item_id is missing.
+        Returns a Brain-Core-compatible decision dict with supply risk classification.
+        """
+        from app.modules.brain_core.inventory_low_stock_brain import (
+            compute_inventory_supply_risk as _compute,
+        )
+
+        result = _compute(
+            tenant_id=tenant_id,
+            item_id=item_id,
+            item_name=item_name,
+            current_quantity=current_quantity,
+            reorder_threshold=reorder_threshold,
+            required_quantity=required_quantity,
+            department=department,
+            location=location,
+            vendor_id=vendor_id,
+            budget_id=budget_id,
+            correlation_id=correlation_id,
+        )
+
+        decision_record = {
+            "tenant_id": tenant_id,
+            "decision_type": result["decision_type"],
+            "scenario": result["scenario"],
+            "risk_level": result["risk_level"],
+            "item_id": result["item_id"],
+            "recommended_actions": result["recommended_actions"],
+            "correlation_id": result["correlation_id"],
+        }
+        self._decisions.append(decision_record)
+
+        return result
 
     # ------------------------------------------------------------------
     # Phase XVII — Adaptive Learning & Optimization

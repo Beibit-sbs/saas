@@ -43,6 +43,10 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
+  Wave1KpiBar: () => null,
+}));
+
 const SAMPLE_ASSET = {
   id: 1,
   tenant_id: "1",

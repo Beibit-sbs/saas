@@ -38,5 +38,23 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "financial_aid.warning.detected",
         # A-014.6 Wave 2 KPI extension — thesis completion risk
         "thesis.status_changed",
+        # A-015.6 Wave 3 KPI extension — budget overrun / finance
+        "finance.expense.budget_exceeded",
+        "campus.budget.overrun_risk_detected",
+        "campus.expense_controls.budget_exceeded_risk_detected",
+        # A-015.6 Wave 3 KPI extension — procurement
+        "procurement.request_submitted",
+        "procurement.approval_required",
+        "procurement.po_issued",
+        # A-015.6 Wave 3 KPI extension — PO delivery / asset
+        "procurement.asset_created",
+        # A-015.6 Wave 3 KPI extension — finance operations health
+        "finance.operations.health_check",
+        "finance.operations.risk_detected",
+        # A-015.6 Wave 3 KPI extension — inventory / supply risk
+        "inventory.low_stock.detected",
+        "inventory.reorder_needed",
+        "supply.risk.detected",
+        "procurement.inventory_gap.detected",
     }
 )

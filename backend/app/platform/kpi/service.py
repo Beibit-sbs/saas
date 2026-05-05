@@ -55,6 +55,31 @@ METRIC_TITLES: dict[str, str] = {
     "degree_progress_intervention_cases_count": "Degree Progress Intervention Cases",
     "scholarship_risk_cases_count": "Scholarship Risk Cases",
     "financial_aid_risk_cases_count": "Financial Aid Risk Cases",
+    # A-015.6 Wave 3 metrics — Budget
+    "budget_overrun_risk_count": "Budget Overrun Risk Count",
+    "budget_overrun_amount_at_risk": "Budget Overrun Amount At Risk",
+    "budget_review_actions_count": "Budget Review Actions Count",
+    # A-015.6 Wave 3 metrics — Procurement
+    "procurement_requests_pending_approval": "Procurement Requests Pending Approval",
+    "procurement_approval_automation_count": "Procurement Approval Automation Count",
+    "procurement_po_issued_count": "Procurement PO Issued Count",
+    # A-015.6 Wave 3 metrics — PO / Delivery / Asset
+    "po_delivery_completion_rate": "PO Delivery Completion Rate (%)",
+    "delivered_po_asset_conversion_rate": "Delivered PO Asset Conversion Rate (%)",
+    "asset_conversion_gap_count": "Asset Conversion Gap Count",
+    # A-015.6 Wave 3 metrics — Finance Operations Health
+    "finance_operations_health_score": "Finance Operations Health Score",
+    "budget_health_score": "Budget Health Score",
+    "procurement_health_score": "Procurement Health Score",
+    "po_delivery_health_score": "PO Delivery Health Score",
+    "asset_conversion_health_score": "Asset Conversion Health Score",
+    "active_finance_risk_signals_count": "Active Finance Risk Signals Count",
+    "finance_operations_actionability_count": "Finance Operations Actionability Count",
+    # A-015.6 Wave 3 metrics — Inventory / Supply
+    "inventory_low_stock_items_count": "Inventory Low Stock Items Count",
+    "critical_supply_risk_count": "Critical Supply Risk Count",
+    "reorder_recommendations_count": "Reorder Recommendations Count",
+    "supply_risk_actions_count": "Supply Risk Actions Count",
 }
 
 
@@ -106,6 +131,44 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "degree_progress_intervention_cases_count": ["interventions.case.created"],
     "scholarship_risk_cases_count": ["scholarship.award.at_risk_detected"],
     "financial_aid_risk_cases_count": ["financial_aid.warning.detected"],
+    # A-015.6 Wave 3 event lineage — Budget
+    "budget_overrun_risk_count": [
+        "finance.expense.budget_exceeded",
+        "campus.budget.overrun_risk_detected",
+        "campus.expense_controls.budget_exceeded_risk_detected",
+    ],
+    "budget_overrun_amount_at_risk": ["finance.expense.budget_exceeded"],
+    "budget_review_actions_count": [
+        "campus.budget.overrun_risk_detected",
+        "campus.expense_controls.budget_exceeded_risk_detected",
+    ],
+    # A-015.6 Wave 3 event lineage — Procurement
+    "procurement_requests_pending_approval": [
+        "procurement.request_submitted",
+        "procurement.approval_required",
+    ],
+    "procurement_approval_automation_count": ["procurement.request_submitted"],
+    "procurement_po_issued_count": ["procurement.po_issued"],
+    # A-015.6 Wave 3 event lineage — PO / Delivery / Asset
+    "po_delivery_completion_rate": ["procurement.po_issued", "procurement.asset_created"],
+    "delivered_po_asset_conversion_rate": ["procurement.asset_created"],
+    "asset_conversion_gap_count": ["procurement.po_issued", "procurement.asset_created"],
+    # A-015.6 Wave 3 event lineage — Finance Operations Health
+    "finance_operations_health_score": ["finance.operations.health_check"],
+    "budget_health_score": ["finance.operations.health_check"],
+    "procurement_health_score": ["finance.operations.risk_detected"],
+    "po_delivery_health_score": ["finance.operations.risk_detected"],
+    "asset_conversion_health_score": ["finance.operations.health_check"],
+    "active_finance_risk_signals_count": ["finance.operations.risk_detected"],
+    "finance_operations_actionability_count": [
+        "finance.operations.risk_detected",
+        "finance.operations.health_check",
+    ],
+    # A-015.6 Wave 3 event lineage — Inventory / Supply
+    "inventory_low_stock_items_count": ["inventory.low_stock.detected"],
+    "critical_supply_risk_count": ["inventory.low_stock.detected", "supply.risk.detected"],
+    "reorder_recommendations_count": ["inventory.reorder_needed"],
+    "supply_risk_actions_count": ["supply.risk.detected", "procurement.inventory_gap.detected"],
 }
 
 
@@ -621,6 +684,49 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     metric_values["degree_progress_intervention_cases_count"] = intervention_created
     metric_values["scholarship_risk_cases_count"] = scholarship_risk
     metric_values["financial_aid_risk_cases_count"] = financial_aid_risk
+
+    # A-015.6 Wave 3 KPI extension: finance/procurement/asset/inventory risk metrics
+    budget_exceeded_w3 = int(event_counts.get("finance.expense.budget_exceeded", 0) or 0)
+    budget_overrun_risk_w3 = int(event_counts.get("campus.budget.overrun_risk_detected", 0) or 0)
+    budget_controls_exceeded_w3 = int(event_counts.get("campus.expense_controls.budget_exceeded_risk_detected", 0) or 0)
+    procurement_submitted_w3 = int(event_counts.get("procurement.request_submitted", 0) or 0)
+    procurement_approval_required_w3 = int(event_counts.get("procurement.approval_required", 0) or 0)
+    procurement_po_issued_w3 = int(event_counts.get("procurement.po_issued", 0) or 0)
+    asset_created_w3 = int(event_counts.get("procurement.asset_created", 0) or 0)
+    finance_health_check_w3 = int(event_counts.get("finance.operations.health_check", 0) or 0)
+    finance_risk_detected_w3 = int(event_counts.get("finance.operations.risk_detected", 0) or 0)
+    inv_low_stock_w3 = int(event_counts.get("inventory.low_stock.detected", 0) or 0)
+    inv_reorder_needed_w3 = int(event_counts.get("inventory.reorder_needed", 0) or 0)
+    supply_risk_w3 = int(event_counts.get("supply.risk.detected", 0) or 0)
+    inv_gap_w3 = int(event_counts.get("procurement.inventory_gap.detected", 0) or 0)
+    # Group A — Budget
+    metric_values["budget_overrun_risk_count"] = budget_exceeded_w3 + budget_overrun_risk_w3 + budget_controls_exceeded_w3
+    metric_values["budget_overrun_amount_at_risk"] = budget_exceeded_w3
+    metric_values["budget_review_actions_count"] = budget_overrun_risk_w3 + budget_controls_exceeded_w3
+    # Group B — Procurement
+    metric_values["procurement_requests_pending_approval"] = procurement_submitted_w3 + procurement_approval_required_w3
+    metric_values["procurement_approval_automation_count"] = procurement_submitted_w3
+    metric_values["procurement_po_issued_count"] = procurement_po_issued_w3
+    # Group C — PO / Delivery / Asset
+    metric_values["po_delivery_completion_rate"] = (
+        int(min(100, round((asset_created_w3 * 100.0) / max(1, procurement_po_issued_w3))))
+        if procurement_po_issued_w3 > 0 else 0
+    )
+    metric_values["delivered_po_asset_conversion_rate"] = metric_values["po_delivery_completion_rate"]
+    metric_values["asset_conversion_gap_count"] = max(0, procurement_po_issued_w3 - asset_created_w3)
+    # Group D — Finance Operations Health
+    metric_values["finance_operations_health_score"] = finance_health_check_w3
+    metric_values["budget_health_score"] = finance_health_check_w3
+    metric_values["procurement_health_score"] = finance_risk_detected_w3
+    metric_values["po_delivery_health_score"] = finance_risk_detected_w3
+    metric_values["asset_conversion_health_score"] = finance_health_check_w3
+    metric_values["active_finance_risk_signals_count"] = finance_risk_detected_w3
+    metric_values["finance_operations_actionability_count"] = finance_risk_detected_w3 + finance_health_check_w3
+    # Group E — Inventory / Supply
+    metric_values["inventory_low_stock_items_count"] = inv_low_stock_w3
+    metric_values["critical_supply_risk_count"] = inv_low_stock_w3 + supply_risk_w3
+    metric_values["reorder_recommendations_count"] = inv_reorder_needed_w3
+    metric_values["supply_risk_actions_count"] = supply_risk_w3 + inv_gap_w3
 
     from app.modules.billing.service import get_delinquency_dashboard, list_delinquency_records  # noqa: PLC0415
 
@@ -1284,6 +1390,64 @@ KPI_SEVERITY_RULES: dict[str, dict[str, Any]] = {
         "warning_gte": 1,
         "critical_gte": 5,
         "policy_pack": "financial_aid_risk_wave2_v1",
+    },
+    # A-015.6 Wave 3 severity rules — Budget
+    "budget_overrun_risk_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "budget_risk_wave3_v1",
+    },
+    "budget_review_actions_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "budget_risk_wave3_v1",
+    },
+    # A-015.6 Wave 3 severity rules — Finance Operations
+    "active_finance_risk_signals_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "finance_risk_wave3_v1",
+    },
+    "finance_operations_actionability_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "finance_risk_wave3_v1",
+    },
+    # A-015.6 Wave 3 severity rules — Asset Chain
+    "asset_conversion_gap_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "asset_chain_wave3_v1",
+    },
+    # A-015.6 Wave 3 severity rules — Inventory / Supply
+    "inventory_low_stock_items_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "supply_risk_wave3_v1",
+    },
+    "critical_supply_risk_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 3,
+        "policy_pack": "supply_risk_wave3_v1",
+    },
+    "reorder_recommendations_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 10,
+        "policy_pack": "supply_risk_wave3_v1",
+    },
+    "supply_risk_actions_count": {
+        "basis": "count",
+        "warning_gte": 1,
+        "critical_gte": 5,
+        "policy_pack": "supply_risk_wave3_v1",
     },
 }
 

@@ -121,6 +121,26 @@ class InMemoryWorkflowActionDispatcher:
         self._cases.append(case)
         return {"status": "created", "item": case}
 
+    def create_procurement_approval_case(self, *, tenant_id: int, decision_id: str, payload: dict) -> dict:
+        """A-015.2 — Create an approval workflow case for a submitted procurement request."""
+        case = {
+            "case_id": str(uuid4()),
+            "tenant_id": int(tenant_id),
+            "decision_id": decision_id,
+            "case_type": "procurement_approval",
+            "request_id": payload.get("request_id"),
+            "estimated_total": payload.get("estimated_total"),
+            "priority": payload.get("priority"),
+            "department_id": payload.get("department_id"),
+            "procurement_risk_origin": payload.get("procurement_risk_origin"),
+            "procurement_risk_evidence": payload.get("procurement_risk_evidence"),
+            "status": "open",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "metadata": {"source": "brain_core", "event_type": payload.get("event_type")},
+        }
+        self._cases.append(case)
+        return {"status": "created", "item": case}
+
     def create_accreditation_remediation_workflow(self, *, tenant_id: int, decision_id: str, payload: dict) -> dict:
         case = {
             "case_id": str(uuid4()),

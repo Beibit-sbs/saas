@@ -15,6 +15,7 @@ import { RequirePermission } from '@/shared/auth/permission-gate';
 import { PageHeader } from '@/shared/ui/page-header';
 import { LoadingState, ErrorState } from '@/shared/ui/page-states';
 import { Badge } from '@/shared/ui/badge';
+import { Wave1KpiBar } from '@/modules/platform/kpi/wave1-kpi-bar';
 
 export default function ProcurementWorkflowPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -38,6 +39,15 @@ export default function ProcurementWorkflowPage() {
     <RequirePermission permission={PERMISSIONS.DASHBOARD_READ}>
       <div className="min-h-screen bg-gray-50">
         <PageHeader title="Procurement Workflow" />
+
+          <Wave1KpiBar
+            metricKeys={["procurement_requests_pending_approval","procurement_approval_automation_count","procurement_po_issued_count"]}
+            labels={{
+              procurement_requests_pending_approval: "Pending Approvals",
+              procurement_approval_automation_count: "Auto-Approved",
+              procurement_po_issued_count: "POs Issued",
+            }}
+          />
 
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
           <section data-testid="dashboard-summary-section">

@@ -33,6 +33,10 @@ vi.mock('@/modules/budget-planning/hooks', () => ({
   useBudgetsList: vi.fn(),
 }));
 
+vi.mock('@/modules/platform/kpi/wave1-kpi-bar', () => ({
+  Wave1KpiBar: () => null,
+}));
+
 import * as hooks from '@/modules/budget-planning/hooks';
 
 const DEFAULT_DASHBOARD = {
