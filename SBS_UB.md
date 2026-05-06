@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-017.4
-- current_stage: A-017.3 exam_governance brain-readiness alignment — COMPLETE
-- last_completed_action_id: A-017.3
-- next_action_id: A-017.4
-- updated_at: 2026-05-06 (A-017.3 complete; exam_governance raised Level 5 EVENT LAYER DONE → Level 6 FULL via additive Brain/KPI/ingestion alignment, no-punitive/human-review invariants preserved, targeted backend/frontend/tenant-security validations green, safe gate and release gate green)
+- status: ready_for_A-017.5
+- current_stage: A-017.4 exam_proctoring frontend integration — COMPLETE
+- last_completed_action_id: A-017.4
+- next_action_id: A-017.5
+- updated_at: 2026-05-06 (A-017.4 complete; exam_proctoring raised to Level 6 FULL via additive pure-frontend integration — page, hooks, types, nav entries, Wave4KpiPages coverage — reusing exam-governance API contract; no-punitive/human-review invariants preserved; 55 frontend tests green; safe gate PASS)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -563,6 +563,37 @@
 - Artifact: `A-017.3-EXAM_GOVERNANCE_BRAIN_READINESS_ALIGNMENT_REPORT.md`
 - Decision: **A-017.3 CLOSED - PASS**.
 - Next action: **A-017.4**.
+
+#### A-017.4 - EXAM_PROCTORING Frontend Integration Completion
+
+- Date: 2026-05-06
+- Scope: Pure frontend integration. Additive-only, reuse-first. No new backend endpoints, no migrations, no schema changes. Raises `exam_proctoring` to Level 6 FULL by adding missing admin console page, hooks module, types module, navigation entries, and Wave4 KPI test coverage.
+- Backend API reused: `/api/admin/exam-governance` (exam-governance router) — no separate exam_proctoring router needed.
+- Changes:
+    - `frontend/app/(admin)/console/exam-proctoring/page.tsx`: NEW — admin oversight page with Wave1KpiBar (4 KPI keys), human-review governance note, summary cards (total/scheduled/in_progress/completed), proctored exams table with status filter, loading/error/empty/AccessDenied states.
+    - `frontend/modules/exam-proctoring/hooks.ts`: NEW — `useProctoredExamsList` and `useExamProctoringDashboard` React Query hooks reusing `/api/admin/exam-governance` endpoints.
+    - `frontend/modules/exam-proctoring/types.ts`: NEW — TypeScript interfaces: `ProctoringSessionRecord`, `ProctoredExamItem`, `ExamProctoringDashboardContext`, `ProctoredExamListResponse`, etc.
+    - `frontend/shared/config/navigation.ts`: MODIFIED — added `Exam Governance` and `Exam Proctoring` nav entries in Academic section.
+    - `frontend/__tests__/admin/ExamProctoringPage.test.tsx`: NEW — 22 tests: KPI bar keys, KPI section testid, page header, human-review note (no punitive wording), summary cards, exam rows, course code/title/mode/datetime, empty/loading/error/AccessDenied states, filter dropdown.
+    - `frontend/__tests__/admin/Wave4KpiPages.test.tsx`: MODIFIED — added ExamProctoringPage Wave4 KPI section (3 tests).
+- Safety invariants preserved:
+    - No punitive wording in page UI.
+    - Human-review note always renders for exam proctoring decisions.
+    - `RequirePermission` guard with `PERMISSIONS.DASHBOARD_READ` + AccessDenied fallback.
+    - Wave4 KPI keys: `exam_proctoring_violations_count`, `exam_integrity_reviews_count`, `exam_integrity_high_risk_count`, `exam_integrity_requires_approval_count`.
+- Validation results:
+    - ExamProctoringPage.test.tsx: **22/22 PASS**.
+    - Wave4KpiPages.test.tsx: **11/11 PASS** (8 prior + 3 new).
+    - ExamGovernancePage.test.tsx regression: **18/18 PASS**.
+    - navigation-clean.test.ts: **PASS**.
+    - Total frontend targeted: **55/55 PASS**.
+    - Lint: **PASS** (useMemo placement corrected — must precede conditional returns).
+    - Safe gate: **PASS**.
+- Module maturity:
+    - `exam_proctoring`: **Level 6 / FULL**.
+- Artifact: `A-017.4-EXAM_PROCTORING_FRONTEND_INTEGRATION_CLOSURE_REPORT.md`
+- Decision: **A-017.4 CLOSED - PASS**.
+- Next action: **A-017.5**.
 
 #### A-016.3 — Exam Proctoring Violation Workflow Brain
 
@@ -2281,6 +2312,7 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 | accreditation | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | communications | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | exam_governance | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
+| exam_proctoring | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | procurement | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ EVENT LAYER DONE |
 | budget_planning | ❌ | ⚠️ | ✅ | ✅ | ❌ | ❌ PARTIAL |
 | syllabus_governance | ❌ | ⚠️ stub | ✅ | ✅ | ❌ | ❌ PARTIAL |

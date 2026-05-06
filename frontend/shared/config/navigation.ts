@@ -227,6 +227,18 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.SCHEDULING_READ,
       },
       {
+        label: "Exam Governance",
+        href: "/console/exam-governance",
+        icon: ClipboardCheck,
+        permission: PERMISSIONS.DASHBOARD_READ,
+      },
+      {
+        label: "Exam Proctoring",
+        href: "/console/exam-proctoring",
+        icon: ShieldCheck,
+        permission: PERMISSIONS.DASHBOARD_READ,
+      },
+      {
         label: "Thesis",
         href: "/console/thesis",
         icon: BookOpen,

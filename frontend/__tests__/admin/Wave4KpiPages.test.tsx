@@ -1,7 +1,8 @@
 /**
- * A-016.6 Wave 4 KPI frontend tests.
- * Covers: AcademicIntegrityPage, ExamGovernancePage, ThesisPage, ResearchEthicsPage, and the
- * dashboard Wave4 section each render Wave1KpiBar with the correct metric keys.
+ * A-016.6 / A-017.4 Wave 4 KPI frontend tests.
+ * Covers: AcademicIntegrityPage, ExamGovernancePage, ExamProctoringPage, ThesisPage,
+ * ResearchEthicsPage, and the dashboard Wave4 section each render Wave1KpiBar
+ * with the correct metric keys.
  */
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -254,5 +255,62 @@ describe("ResearchEthicsPage Wave4 KPI wiring", () => {
 
     render(<ResearchEthicsPage />);
     expect(screen.getByTestId("wave4-kpi-bar-mock")).toBeInTheDocument();
+  });
+});
+
+// ─── ExamProctoringPage ─────────────────────────────────────────────────────
+
+const useProctoredExamsListMock = vi.fn(() => ({
+  data: { items: [] },
+  isLoading: false,
+  error: null,
+  refetch: vi.fn(),
+}));
+
+const useExamProctoringDashboardMock = vi.fn(() => ({
+  data: { total_exams: 0, status_breakdown: {} },
+  isLoading: false,
+  error: null,
+  refetch: vi.fn(),
+}));
+
+vi.mock("../../modules/exam-proctoring/hooks", () => ({
+  useProctoredExamsList: () => useProctoredExamsListMock(),
+  useExamProctoringDashboard: () => useExamProctoringDashboardMock(),
+}));
+
+vi.mock("../../shared/ui/empty-state", () => ({
+  EmptyState: ({ title }: { title?: string }) => <div data-testid="empty-state">{title}</div>,
+}));
+
+import ExamProctoringPage from "../../app/(admin)/console/exam-proctoring/page";
+
+describe("ExamProctoringPage Wave4 KPI wiring", () => {
+  it("renders Wave1KpiBar with exam proctoring metric keys", () => {
+    render(<ExamProctoringPage />);
+    const bar = screen.getByTestId("wave4-kpi-bar-mock");
+    expect(bar).toBeInTheDocument();
+    const keys = bar.getAttribute("data-keys") ?? "";
+    expect(keys).toContain("exam_proctoring_violations_count");
+    expect(keys).toContain("exam_integrity_reviews_count");
+    expect(keys).toContain("exam_integrity_high_risk_count");
+    expect(keys).toContain("exam_integrity_requires_approval_count");
+  });
+
+  it("renders Wave4 exam proctoring KPI section with correct data-testid", () => {
+    render(<ExamProctoringPage />);
+    expect(screen.getByTestId("wave4-exam-proctoring-kpi-section")).toBeInTheDocument();
+  });
+
+  it("does not crash when optional dashboard fields are missing", () => {
+    useExamProctoringDashboardMock.mockReturnValueOnce({
+      data: undefined,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    render(<ExamProctoringPage />);
+    expect(screen.getByTestId("wave4-exam-proctoring-kpi-section")).toBeInTheDocument();
   });
 });
