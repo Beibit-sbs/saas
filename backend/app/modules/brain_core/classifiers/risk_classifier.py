@@ -1199,6 +1199,7 @@ class RiskClassifier:
 
         # A-016.3 Exam Proctoring Violation Workflow — deterministic severity
         _EXAM_PROCTORING_EVENTS = {
+            "exam.violation_detected",
             "faculty.proctoring.violation_detected",
             "exam.proctoring.suspicious_activity_detected",
             "exam.proctoring.multiple_faces_detected",
@@ -1232,6 +1233,7 @@ class RiskClassifier:
             is_multiple_faces = "multiple_faces" in violation_type or event_type == "exam.proctoring.multiple_faces_detected"
             is_camera_absent = "camera_absent" in violation_type or event_type == "exam.proctoring.camera_absent_detected"
             is_suspicious = "suspicious" in violation_type or event_type == "exam.proctoring.suspicious_activity_detected"
+            is_exam_governance_violation = event_type == "exam.violation_detected"
 
             # CRITICAL: manual proctor report, combined severe flags, repeated pattern,
             # face_mismatch AND forbidden_app together, or very high confidence with severe type
@@ -1252,6 +1254,7 @@ class RiskClassifier:
             # HIGH: single severe flag type, flag_count >= 3, or strong confidence
             if (
                 risk_level == "high"
+                or is_exam_governance_violation
                 or is_forbidden_app
                 or is_face_mismatch
                 or is_multiple_faces

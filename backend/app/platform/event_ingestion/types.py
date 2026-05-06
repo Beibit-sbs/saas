@@ -76,6 +76,7 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "academic_integrity.violation.detected",
         "academic_integrity.risk_detected",
         "plagiarism.similarity.high_detected",
+        "exam.violation_detected",
         "exam.proctoring.violation_detected",
         "coursework.submission.suspicious_detected",
         "ai_plagiarism.risk_detected",

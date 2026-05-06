@@ -87,6 +87,7 @@ _THESIS_GOVERNANCE_EVENT_TYPES = frozenset(
 # A-016.3 — Exam Proctoring Violation Workflow event types
 _EXAM_PROCTORING_EVENT_TYPES = frozenset(
     {
+        "exam.violation_detected",
         "faculty.proctoring.violation_detected",
         "exam.proctoring.suspicious_activity_detected",
         "exam.proctoring.multiple_faces_detected",
@@ -618,11 +619,17 @@ class BrainCoreService:
 
         normalized["payload"] = payload
         if str(normalized.get("source_entity_type") or "").strip().lower() in {"", "unknown"}:
-            normalized["source_entity_type"] = str(payload.get("source_entity_type") or "exam_proctoring")
+            if event_type == "exam.violation_detected":
+                normalized["source_entity_type"] = str(payload.get("source_entity_type") or "exam_governance")
+            else:
+                normalized["source_entity_type"] = str(payload.get("source_entity_type") or "exam_proctoring")
         if str(normalized.get("source_entity_id") or "").strip().lower() in {"", "unknown"}:
             normalized["source_entity_id"] = exam_id or student_id or "unknown"
         if not normalized.get("source_module"):
-            normalized["source_module"] = str(payload.get("source_module") or "exam_proctoring")
+            if event_type == "exam.violation_detected":
+                normalized["source_module"] = str(payload.get("source_module") or "exam_governance")
+            else:
+                normalized["source_module"] = str(payload.get("source_module") or "exam_proctoring")
 
         return normalized, None
 

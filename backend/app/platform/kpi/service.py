@@ -214,6 +214,7 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "academic_integrity_cases_pending_review": ["academic_integrity.case.review_required"],
     # A-016.6 Wave 4 event lineage — Exam Proctoring
     "exam_proctoring_violations_count": [
+        "exam.violation_detected",
         "exam.proctoring.violation_detected",
         "faculty.proctoring.violation_detected",
     ],
@@ -228,7 +229,10 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
         "exam.proctoring.multiple_faces_detected",
         "exam.proctoring.face_mismatch_detected",
     ],
-    "exam_integrity_requires_approval_count": ["exam.proctoring.violation_detected"],
+    "exam_integrity_requires_approval_count": [
+        "exam.violation_detected",
+        "exam.proctoring.violation_detected",
+    ],
     # A-016.6 Wave 4 event lineage — Thesis Governance
     "thesis_governance_risk_count": ["thesis.governance.risk_detected"],
     "thesis_supervisor_assignment_needed_count": ["thesis.supervisor.assignment_needed"],
@@ -847,6 +851,7 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     metric_values["academic_integrity_high_risk_count"] = ai_violation_w4 + ai_case_review_required_w4
     metric_values["academic_integrity_cases_pending_review"] = ai_case_review_required_w4
     # Group B — Exam Proctoring
+    ep_governance_violation_w4 = int(event_counts.get("exam.violation_detected", 0) or 0)
     ep_violation_w4 = int(event_counts.get("exam.proctoring.violation_detected", 0) or 0)
     ep_faculty_w4 = int(event_counts.get("faculty.proctoring.violation_detected", 0) or 0)
     ep_suspicious_w4 = int(event_counts.get("exam.proctoring.suspicious_activity_detected", 0) or 0)
@@ -854,12 +859,12 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     ep_face_mismatch_w4 = int(event_counts.get("exam.proctoring.face_mismatch_detected", 0) or 0)
     ep_forbidden_app_w4 = int(event_counts.get("exam.proctoring.forbidden_app_detected", 0) or 0)
     ep_camera_absent_w4 = int(event_counts.get("exam.proctoring.camera_absent_detected", 0) or 0)
-    metric_values["exam_proctoring_violations_count"] = ep_violation_w4 + ep_faculty_w4
+    metric_values["exam_proctoring_violations_count"] = ep_governance_violation_w4 + ep_violation_w4 + ep_faculty_w4
     metric_values["exam_integrity_reviews_count"] = (
         ep_suspicious_w4 + ep_multi_face_w4 + ep_face_mismatch_w4 + ep_forbidden_app_w4 + ep_camera_absent_w4
     )
     metric_values["exam_integrity_high_risk_count"] = ep_multi_face_w4 + ep_face_mismatch_w4
-    metric_values["exam_integrity_requires_approval_count"] = ep_violation_w4
+    metric_values["exam_integrity_requires_approval_count"] = ep_governance_violation_w4 + ep_violation_w4
     # Group C — Thesis Governance
     thesis_gov_risk_w4 = int(event_counts.get("thesis.governance.risk_detected", 0) or 0)
     thesis_supervisor_needed_w4 = int(event_counts.get("thesis.supervisor.assignment_needed", 0) or 0)

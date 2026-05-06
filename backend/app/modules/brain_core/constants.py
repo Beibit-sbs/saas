@@ -154,6 +154,7 @@ ACTION_ESCALATE_TO_COMMITTEE = "escalate_to_committee"
 
 # A-016.3 Exam Proctoring Violation Workflow events
 EXAM_PROCTORING_EVENT_TYPES = frozenset({
+    "exam.violation_detected",
     "faculty.proctoring.violation_detected",
     "exam.proctoring.suspicious_activity_detected",
     "exam.proctoring.multiple_faces_detected",

@@ -298,6 +298,11 @@ class SignalRegistry:
             "context_sources": ["academic", "faculty", "student_success"],
         },
         # A-016.3 Exam Proctoring Violation Workflow signals
+        "exam.violation_detected": {
+            "signal_class": "academic_risk",
+            "scenario": "exam_proctoring_violation",
+            "context_sources": ["academic", "exam", "student_success"],
+        },
         "faculty.proctoring.violation_detected": {
             "signal_class": "academic_risk",
             "scenario": "exam_proctoring_violation",

@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-017.3
-- current_stage: A-017.2 research_ethics frontend + contract coverage — COMPLETE
-- last_completed_action_id: A-017.2
-- next_action_id: A-017.3
-- updated_at: 2026-05-06 (A-017.2 complete; research_ethics raised NEAR_FULL Level 5 → FULL Level 6 via frontend integration + contract coverage closure; 7 product/test files added or updated, 20 targeted tests added or updated, frontend validation and gates green)
+- status: ready_for_A-017.4
+- current_stage: A-017.3 exam_governance brain-readiness alignment — COMPLETE
+- last_completed_action_id: A-017.3
+- next_action_id: A-017.4
+- updated_at: 2026-05-06 (A-017.3 complete; exam_governance raised Level 5 EVENT LAYER DONE → Level 6 FULL via additive Brain/KPI/ingestion alignment, no-punitive/human-review invariants preserved, targeted backend/frontend/tenant-security validations green, safe gate and release gate green)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -532,7 +532,37 @@
     - `research_ethics`: NEAR_FULL Level 5 → **FULL Level 6**
 - Artifact: `A-017.2-RESEARCH_ETHICS_FRONTEND_CONTRACT_CLOSURE_REPORT.md`
 - Decision: **A-017.2 CLOSED - PASS**.
-- Next action: **A-017.3**.
+- Next action: **A-017.4**.
+
+#### A-017.3 - EXAM_GOVERNANCE Brain-Readiness Alignment
+
+- Date: 2026-05-06
+- Scope: Reuse-first, additive-only closure to align `exam_governance` with existing Brain Core + event ingestion + KPI lineage path. No new engine/migrations, no scope expansion, no weakening tenant/RBAC/security guarantees.
+- Gap closed:
+    - Existing decision path already present (`exam_proctoring_violation -> exam_integrity_review`), but canonical governance event compatibility and KPI lineage alignment were incomplete for `exam.violation_detected`.
+- Changes:
+    - `backend/app/modules/brain_core/constants.py`: included `exam.violation_detected` in `EXAM_PROCTORING_EVENT_TYPES` canonical set.
+    - `backend/app/modules/brain_core/registry.py`: registered `exam.violation_detected` in `SignalRegistry` mapped to existing `exam_proctoring_violation` scenario.
+    - `backend/app/modules/brain_core/service.py`: extended `_EXAM_PROCTORING_EVENT_TYPES` and `_normalize_exam_proctoring_signal()` defaults for governance source context.
+    - `backend/app/modules/brain_core/classifiers/risk_classifier.py`: routed governance violations into existing `exam_proctoring_high` branch (human approval required).
+    - `backend/app/platform/event_ingestion/types.py`: added `exam.violation_detected` to `VALID_EVENT_TYPES` allowlist.
+    - `backend/app/platform/kpi/service.py`: aligned lineage and Wave-4 arithmetic so governance violations contribute to `exam_proctoring_violations_count` and `exam_integrity_requires_approval_count`.
+    - `backend/tests/test_a017_3_exam_governance_brain_readiness.py`: added focused closure suite for routing/decision/no-punitive/fail-closed/lineage assertions.
+- Safety invariants preserved:
+    - No punitive automatic actions added.
+    - Human approval remains mandatory for high-risk governance/proctoring integrity decisions.
+    - Fail-closed tenant validation and cross-tenant isolation remain unchanged.
+- Validation results:
+    - A-017.3 targeted backend tests: **73 passed, 2 warnings**.
+    - Targeted frontend readiness tests: **36 passed**.
+    - Tenant/security regression slice: **880 passed, 1 skipped, 7544 deselected, 1 warning**.
+    - Safe gate: **PASS**.
+    - Release gate + rollback readiness: **PASS**.
+- Module maturity:
+    - `exam_governance`: **Level 6 / FULL**.
+- Artifact: `A-017.3-EXAM_GOVERNANCE_BRAIN_READINESS_ALIGNMENT_REPORT.md`
+- Decision: **A-017.3 CLOSED - PASS**.
+- Next action: **A-017.4**.
 
 #### A-016.3 — Exam Proctoring Violation Workflow Brain
 
@@ -2250,7 +2280,7 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 | research | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | accreditation | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | communications | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| exam_governance | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ EVENT LAYER DONE |
+| exam_governance | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | procurement | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ EVENT LAYER DONE |
 | budget_planning | ❌ | ⚠️ | ✅ | ✅ | ❌ | ❌ PARTIAL |
 | syllabus_governance | ❌ | ⚠️ stub | ✅ | ✅ | ❌ | ❌ PARTIAL |
