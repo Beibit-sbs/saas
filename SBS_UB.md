@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-017.5
-- current_stage: A-017.4 exam_proctoring frontend integration — COMPLETE
-- last_completed_action_id: A-017.4
-- next_action_id: A-017.5
-- updated_at: 2026-05-06 (A-017.4 complete; exam_proctoring raised to Level 6 FULL via additive pure-frontend integration — page, hooks, types, nav entries, Wave4KpiPages coverage — reusing exam-governance API contract; no-punitive/human-review invariants preserved; 55 frontend tests green; safe gate PASS)
+- status: ready_for_A-017.6
+- current_stage: A-017.5 billing frontend hardcoded cleanup + contract polish — COMPLETE
+- last_completed_action_id: A-017.5
+- next_action_id: A-017.6
+- updated_at: 2026-05-08 (A-017.5 complete; billing raised to Level 6 FULL via additive frontend contract polish: removed hardcoded tenant assumption, aligned billing index with auth tenant context, reused shared Wave KPI bar, preserved permission/tenant guards, targeted + full frontend tests green, safe gate PASS)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -594,6 +594,28 @@
 - Artifact: `A-017.4-EXAM_PROCTORING_FRONTEND_INTEGRATION_CLOSURE_REPORT.md`
 - Decision: **A-017.4 CLOSED - PASS**.
 - Next action: **A-017.5**.
+
+#### A-017.5 - BILLING Frontend Hardcoded Cleanup + Contract Polish
+
+- Date: 2026-05-08
+- Scope: Frontend-only contract cleanup for `billing`. Reuse-first, additive-only. No backend endpoint/schema/brain/kpi service changes, no migrations.
+- Gap closed:
+    - Production billing summary page used hardcoded `tenantId = 1`, creating tenant-context drift.
+- Changes:
+    - `frontend/app/(admin)/console/billing/page.tsx`: removed hardcoded tenant, now uses authenticated tenant context (`user?.tenantId ?? 0`); added safe empty state when tenant context is unavailable; expanded error/loading handling to include locale query; added shared billing KPI section using `Wave1KpiBar`.
+    - `frontend/__tests__/admin/BillingRoutes.test.tsx`: updated mocks to tenant-aware hook signatures; added assertions that billing hooks are called with auth tenant id; added KPI section contract assertions; added missing-tenant empty-state assertion.
+- Backend impact:
+    - **None** (backend contracts already sufficient and reused as-is).
+- Validation results:
+    - Targeted frontend regression slice: **54/54 PASS** (6 files).
+    - Full frontend suite: **770/770 PASS** (114 files).
+    - Frontend lint: **PASS**.
+    - Safe gate: **PASS**.
+- Module maturity:
+    - `billing`: **Level 6 / FULL**.
+- Artifact: `A-017.5-BILLING_FRONTEND_CONTRACT_POLISH_REPORT.md`
+- Decision: **A-017.5 CLOSED - PASS**.
+- Next action: **A-017.6**.
 
 #### A-016.3 — Exam Proctoring Violation Workflow Brain
 
@@ -2294,7 +2316,7 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 | scholarship | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | delinquency_collections | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | expense_controls | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| billing | ✅ | ✅ | ✅ | ⚠️ hardcoded | ✅ | ⚠️ |
+| billing | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | hr_payroll | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | faculty_performance_kpis | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | interventions | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |

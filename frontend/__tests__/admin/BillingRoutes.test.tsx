@@ -11,6 +11,7 @@ const mockUseBillingPlans = vi.fn();
 const mockUseTenantBillingState = vi.fn();
 const mockUseTenantDelinquencyDashboard = vi.fn();
 const mockUseTenantLocale = vi.fn();
+const useAdminAuthMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
@@ -51,25 +52,37 @@ vi.mock("../../app/components/LanguageProvider", () => ({
 }));
 
 vi.mock("../../shared/auth/context", () => ({
-  useAdminAuth: () => ({
-    user: { id: "1", login: "admin", roles: ["admin"], tenant_id: 1 },
-    token: "test-token",
-    hasPermission: () => true,
-  }),
+  useAdminAuth: (...args: unknown[]) => useAdminAuthMock(...args),
   AuthContext: { Provider: ({ children }: { children: React.ReactNode }) => children },
+}));
+
+vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
+  Wave1KpiBar: ({ metricKeys }: { metricKeys: string[] }) => (
+    <div data-testid="wave1-kpi-bar-mock" data-keys={metricKeys.join(",")} />
+  ),
 }));
 
 vi.mock("../../modules/billing/hooks", () => ({
   useBillingPlans: () => mockUseBillingPlans(),
-  useTenantBillingState: () => mockUseTenantBillingState(),
-  useTenantDelinquencyDashboard: () => mockUseTenantDelinquencyDashboard(),
+  useTenantBillingState: (tenantId: number) => mockUseTenantBillingState(tenantId),
+  useTenantDelinquencyDashboard: (tenantId: number) => mockUseTenantDelinquencyDashboard(tenantId),
 }));
 
 vi.mock("../../modules/currency-localization/hooks", () => ({
-  useTenantLocale: () => mockUseTenantLocale(),
+  useTenantLocale: (tenantId: number) => mockUseTenantLocale(tenantId),
 }));
 
 beforeEach(() => {
+  useAdminAuthMock.mockReturnValue({
+    user: { sub: "1", displayName: "Admin", roles: ["admin"], permissions: [], tenantId: 7 },
+    isLoading: false,
+    isAuthenticated: true,
+    refreshSession: vi.fn(),
+    logout: vi.fn(),
+    hasPermission: () => true,
+    hasAnyPermission: () => true,
+  });
+
   mockUseBillingPlans.mockReturnValue({
     data: [
       {
@@ -153,6 +166,19 @@ describe("Billing routes", () => {
     expect(screen.getByText("STARTER")).toBeInTheDocument();
     expect(screen.getByText(formatCurrencyAmount(50, { currencyCode: "KZT", languageCode: "kk" }))).toBeInTheDocument();
     expect(screen.getByText("Tenant currency: KZT")).toBeInTheDocument();
+    expect(mockUseTenantBillingState).toHaveBeenCalledWith(7);
+    expect(mockUseTenantDelinquencyDashboard).toHaveBeenCalledWith(7);
+    expect(mockUseTenantLocale).toHaveBeenCalledWith(7);
+  });
+
+  it("renders billing KPI section from shared KPI bar", () => {
+    render(<BillingIndexPage />);
+    const kpi = screen.getByTestId("wave1-kpi-bar-mock");
+    expect(kpi).toBeInTheDocument();
+    expect(kpi.getAttribute("data-keys")).toContain("total_active_subscriptions");
+    expect(kpi.getAttribute("data-keys")).toContain("delinquency_cases_active");
+    expect(kpi.getAttribute("data-keys")).toContain("overdue_amount_at_risk");
+    expect(kpi.getAttribute("data-keys")).toContain("delinquency_recovery_rate");
   });
 
   it("shows loading state for billing summary cards", () => {
@@ -215,6 +241,21 @@ describe("Billing routes", () => {
     render(<BillingIndexPage />);
     expect(screen.getByText(formatCurrencyAmount(50, { currencyCode: "USD", languageCode: "en" }))).toBeInTheDocument();
     expect(screen.getByText("Tenant currency: USD")).toBeInTheDocument();
+  });
+
+  it("shows empty state when tenant context is missing", () => {
+    useAdminAuthMock.mockReturnValue({
+      user: null,
+      isLoading: false,
+      isAuthenticated: false,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: () => true,
+      hasAnyPermission: () => true,
+    });
+
+    render(<BillingIndexPage />);
+    expect(screen.getByText("Billing tenant context unavailable")).toBeInTheDocument();
   });
 
   it("maps /console/billing/plans to billing-plans section", () => {

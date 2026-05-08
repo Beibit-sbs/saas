@@ -5,21 +5,25 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { ErrorState } from "@/shared/ui/error-state";
+import { EmptyState } from "@/shared/ui/empty-state";
 import { AccessDenied } from "@/shared/ui/permission-gate";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { PERMISSIONS } from "@/shared/config/permissions";
 import { formatCurrencyAmount } from "@/shared/utils/format";
+import { useAdminAuth } from "@/shared/auth/context";
 import {
   useBillingPlans,
   useTenantBillingState,
   useTenantDelinquencyDashboard,
 } from "@/modules/billing/hooks";
+import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
 import { useTenantLocale } from "@/modules/currency-localization/hooks";
 import Link from "next/link";
 
 export default function BillingIndexPage() {
+  const { user } = useAdminAuth();
   const { hasPermission } = usePermissions();
-  const tenantId = 1;
+  const tenantId = user?.tenantId ?? 0;
 
   const plansQuery = useBillingPlans();
   const stateQuery = useTenantBillingState(tenantId);
@@ -30,8 +34,27 @@ export default function BillingIndexPage() {
     return <AccessDenied />;
   }
 
-  const hasError = Boolean(plansQuery.error || stateQuery.error || delinquencyQuery.error);
-  const isLoading = plansQuery.isLoading || stateQuery.isLoading || delinquencyQuery.isLoading;
+  if (tenantId <= 0) {
+    return (
+      <EmptyState
+        title="Billing tenant context unavailable"
+        description="No tenant is attached to your session. Billing summary cannot be loaded."
+      />
+    );
+  }
+
+  const hasError = Boolean(
+    plansQuery.error
+      || stateQuery.error
+      || delinquencyQuery.error
+      || localeQuery.error,
+  );
+  const isLoading = (
+    plansQuery.isLoading
+    || stateQuery.isLoading
+    || delinquencyQuery.isLoading
+    || localeQuery.isLoading
+  );
 
   if (hasError) {
     return (
@@ -72,6 +95,23 @@ export default function BillingIndexPage() {
         description="Manage plans, subscriptions, usage, and payment status"
         icon={DollarSign}
       />
+
+      <section data-testid="wave5-billing-kpi-section">
+        <Wave1KpiBar
+          metricKeys={[
+            "total_active_subscriptions",
+            "delinquency_cases_active",
+            "overdue_amount_at_risk",
+            "delinquency_recovery_rate",
+          ]}
+          labels={{
+            total_active_subscriptions: "Active Subscriptions",
+            delinquency_cases_active: "Active Delinquency Cases",
+            overdue_amount_at_risk: "Overdue Amount At Risk",
+            delinquency_recovery_rate: "Delinquency Recovery Rate",
+          }}
+        />
+      </section>
 
       {/* Quick Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
