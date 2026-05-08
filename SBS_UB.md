@@ -3,7 +3,7 @@
 - current_stage: A-018.7 CAMPUS OPERATIONS CROSS-FEATURE E2E — COMPLETE
 - last_completed_action_id: A-018.7
 - next_action_id: A-018.8
-- updated_at: 2026-05-08 (A-018.7 complete; added backend cross-feature validation suite (7 tests), expanded rector dashboard campus ops KPI section + frontend contracts, targeted suite PASS 7/7, tenant/security slice PASS 913 passed + 1 skipped, frontend lint PASS, frontend tests PASS 115 files/777 tests, safe gate PASS; release gate passed major stages but failed at template validation (FFF) in this invocation, so no final release PASS banner for A-018.7 evidence; artifact A-018.7-CAMPUS_OPERATIONS_CROSS_FEATURE_E2E_REPORT.md created; ready for A-018.8)
+- updated_at: 2026-05-08 (A-018.7R triage complete; template validation reproduced with exact release-check command and passes 5/5; failures classified as environment/profile + compose lifecycle drift (wrong env-file context, active backend venv guard fail, transient db container missing), not A-018.7 contract regression; docker-up recovery applied; full release gate rerun reached final banner `[release-gate] PASS: release gate and rollback readiness are green`; artifact addendum updated; ready for A-018.8)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -22,6 +22,27 @@
     - Frontend tests: **115 files / 777 tests PASS**
     - Safe gate: **PASS**
 - Decision: **A-018.7 COMPLETE (scope validation PASS)**. Proceed to A-018.8.
+
+#### A-018.7R — Release Gate Template Validation Triage
+
+- Date: 2026-05-08
+- Scope: release-gate triage only (no feature additions, no gate weakening, no template skips)
+- Reproduction:
+    - Exact release template step: `docker compose --env-file .env run --rm --no-deps backend-tests pytest -q --no-cov --disable-warnings tests/test_template_validation.py -rA`
+    - Result: **5 passed, 1 warning**
+- Failure classification:
+    - Env-file path misuse from workspace root (`/home/sbs/AI/.env` missing) → **environment/profile issue**
+    - Active backend venv blocked by guard (`[guard] FAIL: active Python virtualenv detected`) → **environment/profile issue**
+    - Transient compose DB dependency error (`No such container ...`) during rerun → **container lifecycle drift**
+- Remediation:
+    - enforce infra-scoped compose invocation
+    - deactivate backend venv before gate
+    - recover stack with `docker-up`
+    - rerun full release gate
+- Final evidence:
+    - Template validation gate: **PASS (5 passed)**
+    - Release gate final banner: **`[release-gate] PASS: release gate and rollback readiness are green`**
+- Decision: **A-018.7R COMPLETE - PASS**. Continue with A-018.8.
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
