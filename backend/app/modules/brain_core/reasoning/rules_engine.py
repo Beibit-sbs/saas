@@ -995,6 +995,58 @@ class RulesEngine:
                 "requires_approval": False,
             }
 
+        # A-019.3 — Security Operations Incident Brain: deterministic review/escalation loop.
+        if reasoning_path in {
+            "security_incident_critical",
+            "security_incident_high",
+            "security_incident_medium",
+            "security_incident_low",
+        }:
+            if reasoning_path == "security_incident_critical":
+                return {
+                    "decision_type": "security_incident_escalation",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "assign_security_reviewer",
+                        "escalate_to_security_officer",
+                        "request_evidence_review",
+                        "mark_for_human_review",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "security_incident_high":
+                return {
+                    "decision_type": "security_incident_review",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "assign_security_reviewer",
+                        "request_evidence_review",
+                        "notify_security_team",
+                        "mark_for_human_review",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "security_incident_medium":
+                return {
+                    "decision_type": "security_incident_review",
+                    "priority": "medium",
+                    "recommended_actions": [
+                        "assign_security_reviewer",
+                        "request_evidence_review",
+                        "notify_security_team",
+                    ],
+                    "requires_approval": False,
+                }
+            return {
+                "decision_type": "security_incident_review",
+                "priority": "low",
+                "recommended_actions": [
+                    "request_evidence_review",
+                    "notify_security_team",
+                ],
+                "requires_approval": False,
+            }
+
         return {
             "decision_type": "operational",
             "priority": "low",

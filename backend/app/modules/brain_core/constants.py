@@ -320,8 +320,18 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | EVENTS_MANAGEMENT_EVENT_TYPES
     | ACCESS_CONTROL_EVENT_TYPES
 )
+# A-019.3: extend supported signal types with visitor + security operations events
+SUPPORTED_SIGNAL_EVENT_TYPES |= VISITOR_MANAGEMENT_EVENT_TYPES | SECURITY_OPERATIONS_EVENT_TYPES
 
 ACTION_CREATE_INTERVENTION_CASE = "create_intervention_case"
+# A-019.3 Security Operations Incident Brain action constants
+ACTION_CREATE_SECURITY_INCIDENT = "create_security_incident"
+ACTION_ASSIGN_SECURITY_REVIEWER = "assign_security_reviewer"
+ACTION_REQUEST_EVIDENCE_REVIEW = "request_evidence_review"
+ACTION_ESCALATE_TO_SECURITY_OFFICER = "escalate_to_security_officer"
+ACTION_NOTIFY_SECURITY_TEAM = "notify_security_team"
+ACTION_MARK_FOR_HUMAN_REVIEW = "mark_for_human_review"
+
 ACTION_NOTIFY_ADVISOR = "notify_advisor"
 ACTION_NOTIFY_FACULTY = "notify_faculty"
 ACTION_CREATE_SUPERVISION_TASK = "create_supervision_task"

@@ -457,16 +457,16 @@ class RiskClassifier:
             severity = str(payload.get("severity") or "").strip().lower()
             if severity in {"critical", "high"}:
                 return {
-                    "situation_type": "operational_risk",
+                    "situation_type": "security_risk",
                     "severity": "high",
                     "urgency": "high",
-                    "reasoning_path": "operations_facility_issue_high",
+                    "reasoning_path": "security_incident_high",
                 }
             return {
-                "situation_type": "operational_risk",
+                "situation_type": "security_risk",
                 "severity": "medium",
                 "urgency": "medium",
-                "reasoning_path": "operations_facility_issue_medium",
+                "reasoning_path": "security_incident_medium",
             }
 
         if event_type == "campus.transport.disruption_detected":
@@ -1515,6 +1515,94 @@ class RiskClassifier:
                 "severity": "low",
                 "urgency": "low",
                 "reasoning_path": "integrity_case_resolution_low",
+            }
+
+
+        # A-019.3 — Security Operations Incident Brain: deterministic risk classification.
+        # Handles security incident, visitor unauthorized attempt, access denied, anomaly signals.
+        if event_type in {
+            "security.incident.opened",
+            "security.incident.escalated",
+            "security.incident.acknowledged",
+            "security.incident.resolved",
+            "security.incident.dismissed",
+            "visitor.unauthorized_attempt",
+            "access.denied",
+            "security.anomaly",
+            "campus.security_incident.detected",
+        }:
+            payload = signal.get("payload", {})
+            severity = str(payload.get("severity") or "").strip().lower()
+            risk_level = str(payload.get("risk_level") or "").strip().lower()
+
+            # Escalated signals are always at least high.
+            if event_type == "security.incident.escalated":
+                if severity == "critical" or risk_level == "critical":
+                    return {
+                        "situation_type": "security_risk",
+                        "severity": "critical",
+                        "urgency": "critical",
+                        "reasoning_path": "security_incident_critical",
+                    }
+                return {
+                    "situation_type": "security_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "security_incident_high",
+                }
+
+            # Explicit severity/risk_level in payload.
+            effective = severity or risk_level
+            if effective == "critical":
+                return {
+                    "situation_type": "security_risk",
+                    "severity": "critical",
+                    "urgency": "critical",
+                    "reasoning_path": "security_incident_critical",
+                }
+            if effective == "high":
+                return {
+                    "situation_type": "security_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "security_incident_high",
+                }
+            if effective == "low":
+                return {
+                    "situation_type": "security_risk",
+                    "severity": "low",
+                    "urgency": "low",
+                    "reasoning_path": "security_incident_low",
+                }
+
+            # visitor.unauthorized_attempt and security.anomaly default to high.
+            if event_type in {"visitor.unauthorized_attempt", "security.anomaly"}:
+                return {
+                    "situation_type": "security_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "security_incident_high",
+                }
+
+            # access.denied and resolved/dismissed default to medium.
+            if event_type in {
+                "access.denied",
+                "security.incident.resolved",
+                "security.incident.dismissed",
+            }:
+                return {
+                    "situation_type": "security_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "security_incident_medium",
+                }
+
+            # Default: medium for other security signals.
+            return {
+                "situation_type": "security_risk",
+                "severity": "medium",
+                "urgency": "medium",
+                "reasoning_path": "security_incident_medium",
             }
 
         return {

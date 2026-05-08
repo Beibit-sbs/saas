@@ -7,10 +7,23 @@ from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     list_entities_for_tenant,
 )
+from app.modules.university_core.tenant_entity_api import update_entity_for_tenant
 from app.core.module_helpers.service_validation import DomainValidationError
 
 
 _HIGH_SEVERITIES = {"high", "critical"}
+
+# ---------------------------------------------------------------------------
+# A-019.3: Incident lifecycle FSM
+# ---------------------------------------------------------------------------
+_INCIDENT_FSM: dict[str, frozenset[str]] = {
+    "open": frozenset({"acknowledged", "escalated", "resolved", "dismissed"}),
+    "acknowledged": frozenset({"escalated", "resolved", "dismissed"}),
+    "escalated": frozenset({"resolved", "dismissed"}),
+    "resolved": frozenset(),
+    "dismissed": frozenset(),
+}
+_TERMINAL_INCIDENT_STATES = frozenset({"resolved", "dismissed"})
 _SEVERITY_MAX_ACTIVE_INCIDENTS: dict[str, int] = {
     "critical": 2,
     "high": 6,
@@ -261,3 +274,95 @@ def get_security_operations_brain_context(tenant_id: int) -> dict[str, object]:
         "denied_access_events": denied_access_events,
         "risk_level": risk_level,
     }
+
+
+# ---------------------------------------------------------------------------
+# A-019.3: Incident lifecycle helper + FSM transition functions
+# ---------------------------------------------------------------------------
+
+def _get_incident_for_tenant(incident_id: str | int, tenant_id: int) -> dict[str, object]:
+    """Return the incident row or raise DomainValidationError if not found."""
+    target_id = str(incident_id).strip()
+    rows = list_entities_for_tenant("security_incidents", tenant_id)
+    for row in rows:
+        if str(row.get("id") or "").strip() == target_id:
+            return row
+    raise DomainValidationError(f"Security incident id={incident_id!r} not found for tenant_id={tenant_id}")
+
+
+def _do_incident_transition(
+    incident_id: str | int,
+    tenant_id: int,
+    target_status: str,
+    event_type: str,
+    extra_payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    """Validate FSM transition, update record, and emit lifecycle event."""
+    incident = _get_incident_for_tenant(incident_id, tenant_id)
+    current_status = str(incident.get("status") or "").strip().lower()
+    allowed = _INCIDENT_FSM.get(current_status, frozenset())
+    if target_status not in allowed:
+        raise DomainValidationError(
+            f"Invalid incident transition: {current_status!r} → {target_status!r}"
+        )
+    record_id = int(incident["id"])
+    # tenant_entity update performs full normalization (required fields included),
+    # so transition updates must preserve existing required fields.
+    update_payload = dict(incident)
+    update_payload["status"] = target_status
+    updated = update_entity_for_tenant(
+        "security_incidents", record_id, update_payload, tenant_id
+    )
+    try:
+        payload: dict[str, object] = {
+            "incident_id": str(record_id),
+            "severity": str(incident.get("severity") or ""),
+            "from_status": current_status,
+            "to_status": target_status,
+        }
+        if extra_payload:
+            payload.update(extra_payload)
+        event_ingestion_service.record_event(
+            tenant_id=tenant_id,
+            event_type=event_type,
+            payload=payload,
+        )
+    except Exception:
+        pass
+    return updated
+
+
+def acknowledge_incident(incident_id: str | int, tenant_id: int) -> dict[str, object]:
+    """Transition a security incident to ACKNOWLEDGED (open → acknowledged)."""
+    return _do_incident_transition(
+        incident_id, tenant_id, "acknowledged", "security.incident.acknowledged"
+    )
+
+
+def escalate_incident(
+    incident_id: str | int,
+    tenant_id: int,
+    response_team: str | None = None,
+) -> dict[str, object]:
+    """Transition a security incident to ESCALATED and ensure escalation record."""
+    result = _do_incident_transition(
+        incident_id, tenant_id, "escalated", "security.incident.escalated",
+        extra_payload={"response_team": response_team or "security_command"},
+    )
+    # Ensure escalation record for evidence audit trail.
+    _ensure_incident_escalation_record(result, tenant_id, response_team=response_team)
+    return result
+
+
+def resolve_incident(incident_id: str | int, tenant_id: int) -> dict[str, object]:
+    """Transition a security incident to RESOLVED."""
+    return _do_incident_transition(
+        incident_id, tenant_id, "resolved", "security.incident.resolved"
+    )
+
+
+def dismiss_incident(incident_id: str | int, tenant_id: int) -> dict[str, object]:
+    """Transition a security incident to DISMISSED (human review decision)."""
+    return _do_incident_transition(
+        incident_id, tenant_id, "dismissed", "security.incident.dismissed"
+    )
