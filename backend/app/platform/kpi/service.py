@@ -877,6 +877,7 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     visitor_unauthorized = int(event_counts.get("visitor.unauthorized_attempt", 0) or 0)
     security_incidents_opened = int(event_counts.get("security.incident.opened", 0) or 0)
     security_incidents_escalated = int(event_counts.get("security.incident.escalated", 0) or 0)
+    security_incidents_resolved = int(event_counts.get("security.incident.resolved", 0) or 0)
 
     visitor_checked_out = int(event_counts.get("visitor.checked_out", 0) or 0)
     visitor_cancelled = int(event_counts.get("visitor.cancelled", 0) or 0)
@@ -888,6 +889,9 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     metric_values["visitor_visits_cancelled_count"] = visitor_cancelled
     metric_values["security_incidents_open_count"] = security_incidents_opened
     metric_values["security_incidents_escalated_count"] = security_incidents_escalated
+    metric_values["security_incidents_resolved_count"] = security_incidents_resolved
+    metric_values["security_incident_review_required_count"] = security_incidents_opened
+    metric_values["security_high_risk_incidents_count"] = security_incidents_escalated
 
     # A-014.6 Wave 2: derive KPI-friendly counters from Wave 2 event stream.
     grade_decline_risk = int(event_counts.get("academic.grade_risk.detected", 0) or 0)
@@ -1109,6 +1113,9 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
                         "visitor_visits_cancelled_count",
                         "security_incidents_open_count",
                         "security_incidents_escalated_count",
+                        "security_incidents_resolved_count",
+                        "security_incident_review_required_count",
+                        "security_high_risk_incidents_count",
                     }
                     else "platform_core",
                     "analytics_today": int(analytics_counts.get(_metric_key_to_event(metric_key), 0)),

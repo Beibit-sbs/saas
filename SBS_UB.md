@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-019.2 VISITOR MANAGEMENT MATURITY COMPLETION)
-- status: ready_for_A-019.6
-- current_stage: A-019.5 CLOSED - PASS (security operations KPI dashboard integration complete)
-- last_completed_action_id: A-019.5
-- next_action_id: A-019.6
-- updated_at: 2026-05-09 (A-019.5 complete; KPI service extended with 5 metrics; dashboard Wave1KpiBar updated; 18 test assertions PASS; visitor/access/security safety verified; transition approved to A-019.6)
+- status: ready_for_A-019.7
+- current_stage: A-019.6 CLOSED - PASS (dashboard tenant context and KPI aggregation hardened)
+- last_completed_action_id: A-019.6
+- next_action_id: A-019.7
+- updated_at: 2026-05-09 (A-019.5 hash c0f7fab confirmed; KPI refresh mappings hardened; dashboard tenant-context/tests validated; frontend build/tests/lint PASS; safe gate PASS; transition approved to A-019.7)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -298,6 +298,50 @@
     - Incident lifecycle unchanged; human review preserved
     - Tenant safety maintained; no cross-tenant data exposure
 - Decision: **A-019.5 CLOSED - PASS**. Proceed to `A-019.6`.
+
+---
+
+#### A-019.6 — Dashboard Tenant Context / KPI Aggregation
+
+- Date: 2026-05-09
+- Scope: Harden tenant-safe KPI aggregation and dashboard/admin contract validation across security, access-control, and visitor metrics. Additive-only; no modules/migrations/hardware ACS/physical door control/destructive automation.
+- A-019.5 hash confirmation:
+    - `git log --oneline -1` => `c0f7fab (HEAD -> main) feat(wave7): add security operations KPI dashboard integration`
+    - `git status --short` snapshot captured before A-019.6 closeout.
+- Artifact: `A-019.6-DASHBOARD_TENANT_CONTEXT_KPI_AGGREGATION_REPORT.md`
+- Files changed:
+    - `backend/app/platform/kpi/service.py`
+    - `backend/tests/platform/test_platform_kpi_security_tenant_context_a0196.py`
+    - `frontend/app/(admin)/console/access-control/page.tsx`
+    - `frontend/__tests__/admin/AccessControlPage.test.tsx`
+    - `frontend/__tests__/admin/SecurityOperationsPage.test.tsx`
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx`
+    - `A-019.6-DASHBOARD_TENANT_CONTEXT_KPI_AGGREGATION_REPORT.md`
+    - `SBS_UB.md`
+- Backend KPI hardening:
+    - Added refresh-time computed values:
+        - `security_incidents_resolved_count` <- `security.incident.resolved`
+        - `security_incident_review_required_count` <- `security.incident.opened`
+        - `security_high_risk_incidents_count` <- `security.incident.escalated`
+    - Added these keys into analytics-derived metadata/source-set classification.
+- Frontend hardening:
+    - Added additive read-only `/console/access-control` contract page (lifecycle + event visibility only).
+    - Strengthened dashboard contract tests for A-019.5 completion metrics and authenticated tenant-context query behavior.
+    - Added dedicated access-control and security-operations wording safety tests.
+- Validation results:
+    - Backend A-019.6 suite: **6 passed, 1 warning**
+    - Frontend targeted admin suites: **4 files passed, 33 tests passed**
+    - Frontend full suite: **118 files passed, 798 tests passed**
+    - Frontend lint: **PASS**
+    - Frontend build: **PASS** (Next.js build completed, route table includes `/console/access-control`)
+    - Safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Policy evidence:
+    - No hardware ACS integration
+    - No physical door control actions
+    - No auto-lockout/ban/blacklist
+    - No punitive/destructive automation
+    - Security lifecycle remains human-review controlled
+- Decision: **A-019.6 CLOSED - PASS**. Proceed to `A-019.7`.
 
 ---
 

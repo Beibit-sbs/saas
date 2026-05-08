@@ -411,7 +411,11 @@ describe("RectorDashboardPage", () => {
     const bars = screen.getAllByTestId("wave1-kpi-bar-mock");
     const campusOps = bars.find((node) => {
       const keys = node.getAttribute("data-keys") ?? "";
-      return keys.includes("scheduling_conflicts_count") && keys.includes("security_incidents_open_count");
+      return (
+        keys.includes("scheduling_conflicts_count")
+        && keys.includes("security_incidents_open_count")
+        && keys.includes("security_incidents_resolved_count")
+      );
     });
     expect(campusOps).toBeTruthy();
   });
@@ -434,7 +438,7 @@ describe("RectorDashboardPage", () => {
     const bars = screen.getAllByTestId("wave1-kpi-bar-mock");
     const campusOps = bars.find((node) => {
       const keys = node.getAttribute("data-keys") ?? "";
-      return keys.includes("scheduling_conflicts_count") && keys.includes("security_incidents_open_count");
+      return keys.includes("scheduling_conflicts_count") && keys.includes("security_incidents_resolved_count");
     });
 
     expect(campusOps).toBeTruthy();
@@ -443,5 +447,62 @@ describe("RectorDashboardPage", () => {
     expect(labels).not.toContain("lockout");
     expect(labels).not.toContain("ban");
     expect(labels).not.toContain("disciplin");
+  });
+
+  it("includes A-019.5 completion metrics in campus operations section", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-10",
+        generated_at: "2026-05-10T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+    const bars = screen.getAllByTestId("wave1-kpi-bar-mock");
+    const campusOps = bars.find((node) => {
+      const keys = node.getAttribute("data-keys") ?? "";
+      return (
+        keys.includes("visitor_visits_completed_count")
+        && keys.includes("visitor_visits_cancelled_count")
+        && keys.includes("security_incidents_resolved_count")
+        && keys.includes("security_incident_review_required_count")
+        && keys.includes("security_high_risk_incidents_count")
+      );
+    });
+    expect(campusOps).toBeTruthy();
+  });
+
+  it("uses authenticated tenant context for dashboard query", () => {
+    useAdminAuthMock.mockReturnValue({
+      user: { tenantId: 42, roles: ["admin"], permissions: [] },
+      isLoading: false,
+      isAuthenticated: true,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: vi.fn(() => true),
+      hasAnyPermission: vi.fn(() => true),
+    });
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 42,
+        snapshot_date: "2026-05-10",
+        generated_at: "2026-05-10T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    expect(useRectorDashboardMock).toHaveBeenCalledWith(42);
   });
 });
