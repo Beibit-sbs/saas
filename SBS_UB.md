@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-018.1
-- current_stage: A-017.8 final Wave 5 closure — COMPLETE
-- last_completed_action_id: A-017.8
+- status: A-018.0_selection_complete
+- current_stage: A-018 Wave 6 — Campus Operations Autonomy selection complete
+- last_completed_action_id: A-018.0
 - next_action_id: A-018.1
-- updated_at: 2026-05-08 (A-017.8 complete; Wave 5 full closure evidence pack committed; all 5 modules at Level 6 FULL maturity; targeted backend 647 PASS, tenant/security 882 PASS, frontend full 772 PASS, lint PASS, build PASS, type-check PASS, safe gate PASS, release gate PASS; Wave 5 CLOSED)
+- updated_at: 2026-05-08 (A-018.0 complete; Wave 6 selection done; Theme=Campus Operations Autonomy; Top 5: scheduling brain closure, room booking, access control, events management, campus ops KPI dashboard; all conditions reviewed; A-018.0-WAVE6_SELECTION_AND_CONDITIONS_REPORT.md created; ready for A-018.1)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -706,6 +706,64 @@
 - Artifact: `A-017.8-WAVE5_FINAL_CLOSURE_REPORT.md`
 - Decision: **A-017.8 CLOSED - PASS. Wave 5 FULLY CLOSED.**
 - Next action: **A-018.1**.
+
+---
+
+#### A-018.0 — Wave 6 Selection + Known Conditions Review
+
+- Date: 2026-05-08
+- Scope: Planning only. No code. No endpoints. No migrations. No production logic changes.
+- Theme selected: **Campus Operations Autonomy**
+- Repo state:
+    - HEAD: `e25df46` — `chore(wave5): close A-017 maturity evidence pack`
+    - Tracked dirty: `.coverage`, `backend/.coverage` (binary, pre-existing, ACCEPTED).
+    - Untracked: 9 historical docs (A-011.x, A-012.x, A-017.0, A009_AUTH, nohup.out) — FIX_IN_PARALLEL, not blocking.
+- Known conditions review decisions:
+    - KC-1 (`test_rate_limit.py` 7 failures): ACCEPTED_KNOWN_CONDITION — pre-existing Redis config gap, deferred to post-Wave 6 KC lane.
+    - KC-2 (`test_postgres_persistence_xv2.py` 8 errors --no-deps): ACCEPTED_KNOWN_CONDITION — environment-gated, deferred.
+    - KC-3 (`.coverage` dirty binaries): ACCEPTED_KNOWN_CONDITION — exclude from A-018 commits.
+    - KC-4 (untracked historical docs): FIX_IN_PARALLEL — archive cleanup lane.
+    - KC-5/KC-6 (frontend `act()` warnings, backend DeprecationWarning): ACCEPTED — non-blocking.
+    - KC-7 (Docker image rebuild required after test edits): ENV_PROFILE_ONLY — checklist item.
+    - **No conditions block A-018.1 start.**
+- Candidate module audit summary:
+    - `scheduling`: Level 5 / BRAIN_READY — 1875-line service, 647-line router, 601-line models, business_rules; 4 test files / 46 test fns; full frontend module; dedicated Brain context source; scheduling KPIs wired.
+    - `access_control`: Level 1 / STUB_SERVICE+ABAC — 302-line service; ABAC/audit/KPI/Brain hooks; no router/schemas/tests.
+    - `room_booking`: Level 1 / STUB_SERVICE — 176-line service; FSM+events; no router/schemas/tests/frontend.
+    - `events_management`: Level 1 / STUB_SERVICE — 184-line service; 5-state FSM; no router/schemas/tests/frontend.
+    - `visitor_management`: Level 1 / STUB_SERVICE — 148-line service; 5-state FSM; deferred to A-018.6.
+    - `equipment_booking`: Level 3 / BACKEND_TESTED — 471-line service; FSM+ABAC+brain+KPI+8 tests; no frontend.
+    - `facilities_work_orders`: Level 3 / BACKEND_TESTED — router+ABAC+frontend page+9 tests; no brain/KPI.
+    - `security_operations`: Level 2 / BACKEND_BRAIN_STUB — brain refs (×9), 6 event types, W107 guard; no tests/frontend.
+    - `campus_sla`: Level 2 / BACKEND_BRAIN_STUB — brain refs (×9), router; no FSM/tests/frontend.
+    - `parking`: Level 1 / STUB_SERVICE — deferred to Wave 7+.
+- Candidate scoring (Top 5 by score):
+    1. Scheduling + Room Allocation Brain — Score: **33** (Level 5 ready, fastest win)
+    2. Campus Ops KPI / Dashboard Consolidation — Score: **32** (caps the wave)
+    3. Access Control Maturity Closure — Score: **28** (richest stub, high ops value)
+    4. Room Booking Maturity Closure — Score: **27** (FSM+events ready, scheduling integration)
+    5. Events Management Maturity Closure — Score: **27** (same pattern as room_booking)
+- **A-018 Top 5 selected:**
+    1. `A-018.1` — Scheduling Brain Maturity Closure (Level 5 → 6 / E2E_PROVEN)
+    2. `A-018.2` — Room Booking Maturity Closure (Level 1 → 4 / FRONTEND_INTEGRATED)
+    3. `A-018.3` — Access Control Maturity Closure (Level 1 → 4+ / BRAIN_PARTIAL)
+    4. `A-018.4` — Events Management Maturity Closure (Level 1 → 4 / FRONTEND_INTEGRATED)
+    5. `A-018.5` — Campus Operations KPI / Dashboard Consolidation (rector dashboard)
+- A-018 backlog skeleton:
+    - `A-018.0` — Wave 6 selection + known conditions review ✅ COMPLETE
+    - `A-018.1` — Scheduling Brain Maturity Closure (implementation)
+    - `A-018.2` — Room Booking Maturity Closure (implementation)
+    - `A-018.3` — Access Control Maturity Closure (implementation)
+    - `A-018.4` — Events Management Maturity Closure (implementation)
+    - `A-018.5` — Campus Operations KPI / Dashboard Consolidation (frontend+KPI)
+    - `A-018.6` — Secondary campus ops: visitor_management + security_operations (implementation)
+    - `A-018.7` — Cross-feature campus ops E2E (E2E)
+    - `A-018.8` — Full gates + final A-018 report (closure)
+- Artifact: `A-018.0-WAVE6_SELECTION_AND_CONDITIONS_REPORT.md`
+- Decision: **A-018.0 CLOSED. Wave 6 selection complete. Campus Operations Autonomy theme confirmed.**
+- Next action: **A-018.1 — Scheduling Brain Maturity Closure**.
+
+---
 
 #### A-016.3 — Exam Proctoring Violation Workflow Brain
 
