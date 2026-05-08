@@ -261,6 +261,39 @@ export default function RectorDashboardPage() {
         />
       </section>
 
+      <section data-testid="a0185-campus-operations-kpi-section">
+        <Wave1KpiBar
+          metricKeys={[
+            "scheduling_conflicts_count",
+            "room_conflict_count",
+            "access_denied_count",
+            "unauthorized_attempts_count",
+            "active_access_cards_count",
+            "suspended_access_cards_count",
+            "security_access_anomaly_count",
+            "events_published_count",
+            "events_started_count",
+            "events_completed_count",
+            "events_cancelled_count",
+            "events_registration_full_count",
+          ]}
+          labels={{
+            scheduling_conflicts_count: "Scheduling Conflicts",
+            room_conflict_count: "Room Conflicts",
+            access_denied_count: "Access Denied",
+            unauthorized_attempts_count: "Unauthorized Attempts",
+            active_access_cards_count: "Active Access Cards",
+            suspended_access_cards_count: "Suspended Access Cards",
+            security_access_anomaly_count: "Security Anomalies",
+            events_published_count: "Events Published",
+            events_started_count: "Events Started",
+            events_completed_count: "Events Completed",
+            events_cancelled_count: "Events Cancelled",
+            events_registration_full_count: "Registration Full",
+          }}
+        />
+      </section>
+
       <section data-testid="a017-consolidation-kpi-section">
         <Wave1KpiBar
           metricKeys={[

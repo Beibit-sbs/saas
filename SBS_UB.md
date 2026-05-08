@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-018.5
-- current_stage: A-018.4 Events Management maturity closure — COMPLETE
-- last_completed_action_id: A-018.4
-- next_action_id: A-018.5
-- updated_at: 2026-05-08 (A-018.4 complete; events_management raised to Level 4 via API contract, lifecycle/events hardening, Brain/KPI/event alignment, frontend readiness page, and closure test suite validation; artifact A-018.4-EVENTS_MANAGEMENT_MATURITY_CLOSURE_REPORT.md created; ready for A-018.5)
+- status: ready_for_A-018.6
+- current_stage: A-018.5 Campus Operations KPI / Dashboard consolidation — COMPLETE
+- last_completed_action_id: A-018.5
+- next_action_id: A-018.6
+- updated_at: 2026-05-08 (A-018.5 complete; campus operations KPI consolidation delivered for scheduling/room-booking/access-control/events-management via backend KPI refresh derivation + rector dashboard campus-ops section + targeted backend/frontend tests; artifact A-018.5-CAMPUS_OPERATIONS_KPI_DASHBOARD_REPORT.md created; ready for A-018.6)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -924,6 +924,43 @@
 - Artifact: `A-018.4-EVENTS_MANAGEMENT_MATURITY_CLOSURE_REPORT.md`
 - Decision: **A-018.4 CLOSED — events_management raised to Level 4 minimum (frontend integrated + contracted + validated).**
 - Next action: **A-018.5 — Campus Operations KPI / Dashboard Consolidation.**
+
+---
+
+#### A-018.5 — Campus Operations KPI / Dashboard Consolidation
+
+- Date: 2026-05-08
+- Scope: KPI/dashboard consolidation only for A-018.1..A-018.4 surfaces (scheduling, room booking, access control, events management); additive-only; no new domain modules or migrations.
+- Implementation summary:
+    - Backend KPI refresh consolidation in `backend/app/platform/kpi/service.py`:
+        - added concrete metric derivation for:
+            - `room_conflict_count`
+            - `access_denied_count`
+            - `unauthorized_attempts_count`
+            - `active_access_cards_count`
+            - `suspended_access_cards_count`
+            - `security_access_anomaly_count`
+            - `events_published_count`
+            - `events_started_count`
+            - `events_completed_count`
+            - `events_cancelled_count`
+            - `events_registration_full_count`
+        - extended `analytics_sink_v1` source-tag list for campus operations consolidated KPI keys.
+    - Frontend rector dashboard consolidation:
+        - `frontend/app/(admin)/console/dashboard/page.tsx`:
+            - added section `data-testid="a0185-campus-operations-kpi-section"` using existing `Wave1KpiBar`
+            - wired consolidated metric keys for scheduling/room/access/events campus-ops view.
+    - Tests:
+        - NEW backend test file `backend/tests/platform/test_platform_kpi_campus_ops_a0185.py`.
+        - UPDATED frontend test `frontend/__tests__/admin/RectorDashboardPage.test.tsx` to assert A-018.5 section key wiring.
+- Validation results:
+    - A-018.5 backend targeted (`tests/platform/test_platform_kpi_campus_ops_a0185.py`): **2 passed, 1 warning**.
+    - A-018.5 frontend targeted (`RectorDashboardPage.test.tsx`): **1 file passed / 10 tests passed**.
+    - Safe gate (`scripts/university_pilot_safe_gate.sh`): **PASS**.
+    - Release gate (`scripts/release_gate.sh`): captured output showed all displayed sub-gates green through data-layer progression; tool snapshot truncated before explicit final PASS banner.
+- Artifact: `A-018.5-CAMPUS_OPERATIONS_KPI_DASHBOARD_REPORT.md`
+- Decision: **A-018.5 CLOSED — campus operations KPI/dashboard consolidation delivered with additive backend/rector-dashboard wiring and targeted validation.**
+- Next action: **A-018.6 — next Wave 6 maturity closure item.**
 
 ---
 

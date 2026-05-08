@@ -783,7 +783,21 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     intervention_auto = int(event_counts.get("interventions.auto_triggered", 0) or 0)
     scheduling_sections_created = int(event_counts.get("scheduling.section.created", 0) or 0)
     scheduling_conflicts = int(event_counts.get("scheduling.section.conflict_detected", 0) or 0)
+    room_conflicts = int(event_counts.get("scheduling.room_conflict.detected", 0) or 0)
+    room_allocation_required = int(event_counts.get("scheduling.room_allocation.required", 0) or 0)
     enrollment_capacity_risk = int(event_counts.get("enrollment.capacity_risk.detected", 0) or 0)
+
+    access_denied = int(event_counts.get("access.denied", 0) or 0)
+    security_anomalies = int(event_counts.get("security.anomaly", 0) or 0)
+    card_issued = int(event_counts.get("card.issued", 0) or 0)
+    card_reactivated = int(event_counts.get("card.reactivated", 0) or 0)
+    card_suspended = int(event_counts.get("card.suspended", 0) or 0)
+
+    events_published = int(event_counts.get("event.published", 0) or 0)
+    events_started = int(event_counts.get("event.started", 0) or 0)
+    events_completed = int(event_counts.get("event.completed", 0) or 0)
+    events_cancelled = int(event_counts.get("event.cancelled", 0) or 0)
+    events_registration_full = int(event_counts.get("event.registration_full", 0) or 0)
 
     total_students = int(metric_values.get("total_students", 0) or 0)
     total_enrollments = int(event_counts.get("enrollment.created", 0) or 0)
@@ -814,6 +828,20 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     )
     metric_values["capacity_risk_sections_count"] = enrollment_capacity_risk
     metric_values["scheduling_conflicts_count"] = scheduling_conflicts
+    metric_values["room_conflict_count"] = room_conflicts + room_allocation_required
+
+    # A-018.5 Wave 6 consolidation: campus operations KPI counters from existing event stream.
+    metric_values["access_denied_count"] = access_denied
+    metric_values["unauthorized_attempts_count"] = access_denied + security_anomalies
+    metric_values["active_access_cards_count"] = card_issued + card_reactivated
+    metric_values["suspended_access_cards_count"] = card_suspended
+    metric_values["security_access_anomaly_count"] = security_anomalies
+
+    metric_values["events_published_count"] = events_published
+    metric_values["events_started_count"] = events_started
+    metric_values["events_completed_count"] = events_completed
+    metric_values["events_cancelled_count"] = events_cancelled
+    metric_values["events_registration_full_count"] = events_registration_full
 
     # A-014.6 Wave 2: derive KPI-friendly counters from Wave 2 event stream.
     grade_decline_risk = int(event_counts.get("academic.grade_risk.detected", 0) or 0)
@@ -982,6 +1010,18 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
                         "course_fill_rate",
                         "capacity_risk_sections_count",
                         "scheduling_conflicts_count",
+                        "room_conflict_count",
+                        # A-018.5 Wave 6 consolidation
+                        "access_denied_count",
+                        "unauthorized_attempts_count",
+                        "active_access_cards_count",
+                        "suspended_access_cards_count",
+                        "security_access_anomaly_count",
+                        "events_published_count",
+                        "events_started_count",
+                        "events_completed_count",
+                        "events_cancelled_count",
+                        "events_registration_full_count",
                         # A-014.6 Wave 2
                         "grade_decline_risk_count",
                         "grade_intervention_cases_count",
@@ -1014,7 +1054,9 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
                         "integrity_cases_resolved_count",
                         "integrity_cases_evidence_requested_count",
                         "integrity_case_resolution_sla_risk_count",
-                    } else "platform_core",                    "analytics_today": int(analytics_counts.get(_metric_key_to_event(metric_key), 0)),
+                    }
+                    else "platform_core",
+                    "analytics_today": int(analytics_counts.get(_metric_key_to_event(metric_key), 0)),
                     "lineage": lineage,
                 },
                 conn=conn,

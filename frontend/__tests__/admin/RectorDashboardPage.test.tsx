@@ -339,4 +339,48 @@ describe("RectorDashboardPage", () => {
     });
     expect(a017).toBeTruthy();
   });
+
+  it("includes A-018.5 campus operations consolidation section", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-10",
+        generated_at: "2026-05-10T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [
+          {
+            metric_key: "total_students",
+            title: "Total Students",
+            value: 1000,
+            trend_7d: [],
+            metadata_json: {},
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+    const bars = screen.getAllByTestId("wave1-kpi-bar-mock");
+    const a0185 = bars.find((node) => {
+      const keys = node.getAttribute("data-keys") ?? "";
+      return (
+        keys.includes("scheduling_conflicts_count")
+        && keys.includes("room_conflict_count")
+        && keys.includes("access_denied_count")
+        && keys.includes("unauthorized_attempts_count")
+        && keys.includes("active_access_cards_count")
+        && keys.includes("suspended_access_cards_count")
+        && keys.includes("security_access_anomaly_count")
+        && keys.includes("events_published_count")
+        && keys.includes("events_started_count")
+        && keys.includes("events_completed_count")
+        && keys.includes("events_cancelled_count")
+        && keys.includes("events_registration_full_count")
+      );
+    });
+    expect(a0185).toBeTruthy();
+  });
 });
