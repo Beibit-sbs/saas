@@ -1,9 +1,27 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-018.7
-- current_stage: A-018.6 VISITOR_MANAGEMENT + SECURITY_OPERATIONS Readiness Closure — COMPLETE
-- last_completed_action_id: A-018.6
-- next_action_id: A-018.7
-- updated_at: 2026-05-08 (A-018.6 complete; visitor_management raised L1→L4 (FSM, 8 events, 3 KPI metrics, HTTP router, frontend page, brain signals+decision); security_operations raised L2→L4 (5 events, 2 KPI metrics, brain signals+decision, frontend page); 20/20 targeted tests green; safe gate PASS; release gate PASS; artifact A-018.6-VISITOR_SECURITY_READINESS_CLOSURE_REPORT.md created; ready for A-018.7)
+- status: ready_for_A-018.8
+- current_stage: A-018.7 CAMPUS OPERATIONS CROSS-FEATURE E2E — COMPLETE
+- last_completed_action_id: A-018.7
+- next_action_id: A-018.8
+- updated_at: 2026-05-08 (A-018.7 complete; added backend cross-feature validation suite (7 tests), expanded rector dashboard campus ops KPI section + frontend contracts, targeted suite PASS 7/7, tenant/security slice PASS 913 passed + 1 skipped, frontend lint PASS, frontend tests PASS 115 files/777 tests, safe gate PASS; release gate run advanced through major checks but final PASS banner not captured in this invocation due output stall at template validation container creation; artifact A-018.7-CAMPUS_OPERATIONS_CROSS_FEATURE_E2E_REPORT.md created; ready for A-018.8)
+
+#### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
+
+- Date: 2026-05-08
+- Scope: Cross-feature validation/evidence only (no new modules, no migrations, no optimizer/hardware ACS integration, no destructive automation).
+- Deliverables:
+    - `backend/tests/test_a018_7_campus_operations_cross_feature_e2e.py` (7 scenario contracts)
+    - `frontend/app/(admin)/console/dashboard/page.tsx` (campus ops KPI visibility extension)
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx` (dashboard contract assertions)
+    - `A-018.7-CAMPUS_OPERATIONS_CROSS_FEATURE_E2E_REPORT.md` (evidence pack)
+- Validation summary:
+    - Targeted A-018.7 backend suite: **7 passed, 1 warning**
+    - Broad legacy backend filter (informational): **6 failed, 289 passed, 8223 deselected** (`test_visitor_access_control_module_xliii.py` failures, outside A-018.7 new test file)
+    - Tenant/security regression slice: **913 passed, 1 skipped, 7604 deselected**
+    - Frontend lint: **PASS**
+    - Frontend tests: **115 files / 777 tests PASS**
+    - Safe gate: **PASS**
+- Decision: **A-018.7 COMPLETE (scope validation PASS)**. Proceed to A-018.8.
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 

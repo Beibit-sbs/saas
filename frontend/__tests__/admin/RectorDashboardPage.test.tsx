@@ -14,8 +14,12 @@ vi.mock("../../modules/platform/kpi/use-dashboard", () => ({
 }));
 
 vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
-  Wave1KpiBar: ({ metricKeys }: { metricKeys: string[] }) => (
-    <div data-testid="wave1-kpi-bar-mock" data-keys={metricKeys.join(",")} />
+  Wave1KpiBar: ({ metricKeys, labels }: { metricKeys: string[]; labels: Record<string, string> }) => (
+    <div
+      data-testid="wave1-kpi-bar-mock"
+      data-keys={metricKeys.join(",")}
+      data-labels={Object.values(labels).join("|")}
+    />
   ),
 }));
 
@@ -379,8 +383,65 @@ describe("RectorDashboardPage", () => {
         && keys.includes("events_completed_count")
         && keys.includes("events_cancelled_count")
         && keys.includes("events_registration_full_count")
+        && keys.includes("visitor_requests_pending_count")
+        && keys.includes("visitors_checked_in_count")
+        && keys.includes("visitor_unauthorized_attempts_count")
+        && keys.includes("security_incidents_open_count")
+        && keys.includes("security_incidents_escalated_count")
       );
     });
     expect(a0185).toBeTruthy();
+  });
+
+  it("keeps campus operations section stable when optional KPI values are missing", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-10",
+        generated_at: "2026-05-10T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+    const bars = screen.getAllByTestId("wave1-kpi-bar-mock");
+    const campusOps = bars.find((node) => {
+      const keys = node.getAttribute("data-keys") ?? "";
+      return keys.includes("scheduling_conflicts_count") && keys.includes("security_incidents_open_count");
+    });
+    expect(campusOps).toBeTruthy();
+  });
+
+  it("campus operations labels remain non-destructive and non-hardware", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-10",
+        generated_at: "2026-05-10T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+    const bars = screen.getAllByTestId("wave1-kpi-bar-mock");
+    const campusOps = bars.find((node) => {
+      const keys = node.getAttribute("data-keys") ?? "";
+      return keys.includes("scheduling_conflicts_count") && keys.includes("security_incidents_open_count");
+    });
+
+    expect(campusOps).toBeTruthy();
+    const labels = (campusOps?.getAttribute("data-labels") ?? "").toLowerCase();
+    expect(labels).not.toContain("hardware");
+    expect(labels).not.toContain("lockout");
+    expect(labels).not.toContain("ban");
+    expect(labels).not.toContain("disciplin");
   });
 });

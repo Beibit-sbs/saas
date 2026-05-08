@@ -276,6 +276,11 @@ export default function RectorDashboardPage() {
             "events_completed_count",
             "events_cancelled_count",
             "events_registration_full_count",
+            "visitor_requests_pending_count",
+            "visitors_checked_in_count",
+            "visitor_unauthorized_attempts_count",
+            "security_incidents_open_count",
+            "security_incidents_escalated_count",
           ]}
           labels={{
             scheduling_conflicts_count: "Scheduling Conflicts",
@@ -290,6 +295,11 @@ export default function RectorDashboardPage() {
             events_completed_count: "Events Completed",
             events_cancelled_count: "Events Cancelled",
             events_registration_full_count: "Registration Full",
+            visitor_requests_pending_count: "Visitor Requests Pending",
+            visitors_checked_in_count: "Visitors Checked-In",
+            visitor_unauthorized_attempts_count: "Visitor Unauthorized Attempts",
+            security_incidents_open_count: "Security Incidents Open",
+            security_incidents_escalated_count: "Security Incidents Escalated",
           }}
         />
       </section>
