@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-019.2 VISITOR MANAGEMENT MATURITY COMPLETION)
-- status: ready_for_A-019.4
-- current_stage: A-019.3 CLOSED - PASS (security_operations maturity Level 5 achieved)
-- last_completed_action_id: A-019.3
-- next_action_id: A-019.4
-- updated_at: 2026-05-08 (A-019.3 complete; deterministic Security Operations Incident Brain implemented; targeted A-019.3 suite 40 passed; visitor/access/security regression 147 passed; safe gate PASS; transition approved to A-019.4)
+- status: ready_for_A-019.5
+- current_stage: A-019.4 CLOSED - PASS (visitor access workflow integration stabilized and validated)
+- last_completed_action_id: A-019.4
+- next_action_id: A-019.5
+- updated_at: 2026-05-08 (A-019.4 complete; targeted workflow slice 144 passed; visitor/access/security regression 133 passed; tenant/security regression 962 passed, 1 skipped; transition approved to A-019.5)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -213,6 +213,33 @@
     - No automatic disciplinary sanctions
     - High/critical paths require human review/approval controls
 - Decision: **A-019.3 CLOSED - PASS**. Proceed to `A-019.4`.
+
+---
+
+#### A-019.4 — Visitor Access Workflow Integration
+
+- Date: 2026-05-08
+- Scope: Validate software-only integration across `visitor_management`, `access_control`, and `security_operations` brain routing with strict non-destructive and tenant-safety constraints. Additive-only; no migrations; no hardware ACS/physical door control/auto-ban or disciplinary automation.
+- Artifact: `A-019.4-VISITOR_ACCESS_WORKFLOW_INTEGRATION_REPORT.md`
+- Files changed:
+    - `backend/tests/test_a019_4_visitor_access_workflow_integration.py`
+    - `A-019.4-VISITOR_ACCESS_WORKFLOW_INTEGRATION_REPORT.md`
+    - `SBS_UB.md`
+- Validation results:
+    - Targeted workflow slice (`a019_4 or visitor_access_workflow or visitor_management or access_control or security_operations`): **144 passed, 8455 deselected, 1 warning**
+    - Required visitor/access/security regression (`visitor_management or access_control or security_operations or a019_2 or a019_3 or a018_3 or visitor_access_control_module_xliii`): **133 passed, 8466 deselected, 1 warning**
+    - Required tenant/security regression (`tenant or security`): **962 passed, 1 skipped, 7636 deselected, 1 warning**
+- Stabilization notes:
+    - Fixed card id type mismatch in A-019.4 integration test (native `card_id` usage).
+    - Replaced brittle `event_ingestion` assertion for grant path with direct access-log evidence assertion (`GRANTED`).
+    - Preserved KPI assertions on canonical `metric_key` outputs.
+- Policy evidence:
+    - No hardware ACS actions
+    - No physical door control
+    - No auto lockout/ban/blacklist
+    - No automatic disciplinary sanctions
+    - High/critical security paths remain human-review/approval controlled
+- Decision: **A-019.4 CLOSED - PASS**. Proceed to `A-019.5`.
 
 ---
 
