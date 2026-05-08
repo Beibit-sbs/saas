@@ -261,6 +261,41 @@ export default function RectorDashboardPage() {
         />
       </section>
 
+      <section data-testid="a017-consolidation-kpi-section">
+        <Wave1KpiBar
+          metricKeys={[
+            "budget_overrun_risk_count",
+            "budget_overrun_amount_at_risk",
+            "budget_health_score",
+            "total_active_subscriptions",
+            "delinquency_cases_active",
+            "overdue_amount_at_risk",
+            "delinquency_recovery_rate",
+            "academic_integrity_review_cases_count",
+            "exam_proctoring_violations_count",
+            "exam_integrity_reviews_count",
+            "exam_integrity_requires_approval_count",
+            "research_ethics_review_cases_count",
+            "research_ethics_requires_approval_count",
+          ]}
+          labels={{
+            budget_overrun_risk_count: "Budget Overrun Risk",
+            budget_overrun_amount_at_risk: "Budget Amount At Risk",
+            budget_health_score: "Budget Health Score",
+            total_active_subscriptions: "Active Subscriptions",
+            delinquency_cases_active: "Active Delinquency Cases",
+            overdue_amount_at_risk: "Overdue Amount At Risk",
+            delinquency_recovery_rate: "Delinquency Recovery Rate",
+            academic_integrity_review_cases_count: "Integrity Review Cases",
+            exam_proctoring_violations_count: "Proctoring Violations",
+            exam_integrity_reviews_count: "Exam Integrity Reviews",
+            exam_integrity_requires_approval_count: "Exam Approval Needed",
+            research_ethics_review_cases_count: "Research Ethics Cases",
+            research_ethics_requires_approval_count: "Ethics Approval Needed",
+          }}
+        />
+      </section>
+
       <AutomationOverviewWidget tenantId={tenantId} />
     </div>
   );

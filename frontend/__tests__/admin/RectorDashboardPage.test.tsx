@@ -271,4 +271,49 @@ describe("RectorDashboardPage", () => {
     });
     expect(wave4).toBeTruthy();
   });
+
+  it("includes A-017 consolidation KPI section with budget, billing, and integrity metrics", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-08",
+        generated_at: "2026-05-08T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [
+          {
+            metric_key: "total_students",
+            title: "Total Students",
+            value: 1000,
+            trend_7d: [],
+            metadata_json: {},
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+    const bars = screen.getAllByTestId("wave1-kpi-bar-mock");
+    const a017 = bars.find((node) => {
+      const keys = node.getAttribute("data-keys") ?? "";
+      return (
+        keys.includes("budget_overrun_risk_count")
+        && keys.includes("budget_overrun_amount_at_risk")
+        && keys.includes("budget_health_score")
+        && keys.includes("total_active_subscriptions")
+        && keys.includes("delinquency_cases_active")
+        && keys.includes("overdue_amount_at_risk")
+        && keys.includes("delinquency_recovery_rate")
+        && keys.includes("academic_integrity_review_cases_count")
+        && keys.includes("exam_proctoring_violations_count")
+        && keys.includes("exam_integrity_reviews_count")
+        && keys.includes("exam_integrity_requires_approval_count")
+        && keys.includes("research_ethics_review_cases_count")
+        && keys.includes("research_ethics_requires_approval_count")
+      );
+    });
+    expect(a017).toBeTruthy();
+  });
 });

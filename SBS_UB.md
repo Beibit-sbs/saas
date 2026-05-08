@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-017.6
-- current_stage: A-017.5 billing frontend hardcoded cleanup + contract polish — COMPLETE
-- last_completed_action_id: A-017.5
-- next_action_id: A-017.6
-- updated_at: 2026-05-08 (A-017.5 complete; billing raised to Level 6 FULL via additive frontend contract polish: removed hardcoded tenant assumption, aligned billing index with auth tenant context, reused shared Wave KPI bar, preserved permission/tenant guards, targeted + full frontend tests green, safe gate PASS)
+- status: ready_for_A-017.7
+- current_stage: A-017.6 KPI/dashboard consolidation for module maturity wave — COMPLETE
+- last_completed_action_id: A-017.6
+- next_action_id: A-017.7
+- updated_at: 2026-05-08 (A-017.6 complete; executive dashboard now includes additive A-017 consolidation KPI bar covering budget+billing+academic integrity/research ethics module metrics via shared Wave1KpiBar; no backend contract changes; targeted + full frontend tests green, lint PASS, docker-up --build PASS, safe gate PASS)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -616,6 +616,31 @@
 - Artifact: `A-017.5-BILLING_FRONTEND_CONTRACT_POLISH_REPORT.md`
 - Decision: **A-017.5 CLOSED - PASS**.
 - Next action: **A-017.6**.
+
+#### A-017.6 - KPI / Dashboard Consolidation For Module Maturity Wave
+
+- Date: 2026-05-08
+- Scope: Frontend-only KPI/dashboard consolidation for A-017 modules (`budget_planning`, `billing`, `exam_governance`, `exam_proctoring`, `research_ethics`). Reuse-first, additive-only, no backend endpoint/schema/brain service changes.
+- Contract review completed:
+    - `backend/app/platform/kpi/schemas.py` reviewed (no schema drift required).
+    - `backend/app/platform/kpi/repository.py` reviewed (no persistence/repository drift required).
+    - `frontend/shared/config/navigation.ts` reviewed (A-017 module routes remain visible/stable).
+- Changes:
+    - `frontend/app/(admin)/console/dashboard/page.tsx`: added `a017-consolidation-kpi-section` reusing `Wave1KpiBar` and consolidating KPI visibility for all 5 A-017 modules. Included budget health/risk metrics, billing delinquency/subscription metrics, and academic integrity/research ethics metrics.
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx`: added contract test asserting presence of consolidation KPI bar and all expected metric keys.
+- Backend impact:
+    - **None** (existing KPI contracts reused as-is).
+- Validation results:
+    - Targeted frontend regression slice (dashboard + A-017 module pages): **98/98 PASS**.
+    - Full frontend suite: **770/770 PASS** (114 files).
+    - Frontend lint: **PASS**.
+    - Frontend container build path (`docker-up --build`): **PASS**.
+    - Safe gate: **PASS**.
+- Module maturity outcome:
+    - A-017 module wave dashboard/KPI visibility consolidated without scope expansion.
+- Artifact: `A-017.6-KPI_DASHBOARD_CONSOLIDATION_REPORT.md`
+- Decision: **A-017.6 CLOSED - PASS**.
+- Next action: **A-017.7**.
 
 #### A-016.3 — Exam Proctoring Violation Workflow Brain
 
