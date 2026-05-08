@@ -11,22 +11,29 @@ import app.modules.visitor_management.service as vm_svc
 
 
 def _vm_mocks(existing_visits=None):
-    """Return (create_mock, list_mock, pub_mock)."""
+    """Return (create_mock, list_mock, update_mock, pub_mock)."""
     existing = list(existing_visits or [])
     counter = {"n": 0}
 
-    def _create(tid, table, data):
+    def _create(table, data, tenant_id):
         counter["n"] += 1
-        row = {"id": f"vis-{counter['n']}", **data}
+        row = {"id": str(counter["n"]), **data}
         existing.append(row)
         return row
 
-    def _list(tid, table):
+    def _list(table, tenant_id):
         return list(existing)
+
+    def _update(table, item_id, payload, tenant_id):
+        for row in existing:
+            if str(row.get("id")) == str(item_id):
+                row.update(payload)
+                return row
+        raise ValueError(f"{table.rstrip('s')} not found")
 
     pub = MagicMock()
     pub.return_value.publish_event = MagicMock()
-    return _create, _list, pub, existing
+    return _create, _list, _update, pub, existing
 
 
 # 1) VISIT_STATES constant
@@ -40,9 +47,10 @@ def test_visit_states_constant():
 
 # 2) register_visitor success
 def test_register_visitor_success():
-    create, lst, pub, _ = _vm_mocks()
+    create, lst, upd, pub, _ = _vm_mocks()
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
         result = vm_svc.register_visitor(1, name="Alice", host_id="h1", visit_date="2025-01-01")
     assert result["status"] == "REQUESTED"
@@ -51,9 +59,10 @@ def test_register_visitor_success():
 
 # 3) register_visitor missing name
 def test_register_visitor_missing_name():
-    create, lst, pub, _ = _vm_mocks()
+    create, lst, upd, pub, _ = _vm_mocks()
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
         with pytest.raises(ValueError, match="name"):
             vm_svc.register_visitor(1, name="", host_id="h1", visit_date="2025-01-01")
@@ -61,9 +70,10 @@ def test_register_visitor_missing_name():
 
 # 4) register_visitor missing host
 def test_register_visitor_missing_host():
-    create, lst, pub, _ = _vm_mocks()
+    create, lst, upd, pub, _ = _vm_mocks()
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
         with pytest.raises(ValueError, match="host_id"):
             vm_svc.register_visitor(1, name="Alice", host_id="", visit_date="2025-01-01")
@@ -71,9 +81,10 @@ def test_register_visitor_missing_host():
 
 # 5) register_visitor missing visit_date
 def test_register_visitor_missing_date():
-    create, lst, pub, _ = _vm_mocks()
+    create, lst, upd, pub, _ = _vm_mocks()
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
         with pytest.raises(ValueError, match="visit_date"):
             vm_svc.register_visitor(1, name="Alice", host_id="h1", visit_date="")
@@ -81,9 +92,10 @@ def test_register_visitor_missing_date():
 
 # 6) register_visitor invalid tenant
 def test_register_visitor_invalid_tenant():
-    create, lst, pub, _ = _vm_mocks()
+    create, lst, upd, pub, _ = _vm_mocks()
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
         with pytest.raises(ValueError, match="tenant_id"):
             vm_svc.register_visitor(0, name="Alice", host_id="h1", visit_date="2025-01-01")
@@ -91,89 +103,97 @@ def test_register_visitor_invalid_tenant():
 
 # 7) approve_visit success
 def test_approve_visit_success():
-    existing = [{"id": "v1", "status": "REQUESTED", "host_id": "h1"}]
-    create, lst, pub, _ = _vm_mocks(existing)
+    existing = [{"id": "1", "name": "Alice", "host_id": "h1", "visit_date": "2025-01-01", "status": "REQUESTED"}]
+    create, lst, upd, pub, _ = _vm_mocks(existing)
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
-        result = vm_svc.approve_visit(1, visit_id="v1")
+        result = vm_svc.approve_visit(1, visit_id="1")
     assert result["status"] == "APPROVED"
 
 
 # 8) approve_visit wrong status
 def test_approve_visit_wrong_status():
-    existing = [{"id": "v1", "status": "CHECKED_IN", "host_id": "h1"}]
-    create, lst, pub, _ = _vm_mocks(existing)
+    existing = [{"id": "1", "name": "Alice", "host_id": "h1", "visit_date": "2025-01-01", "status": "CHECKED_IN"}]
+    create, lst, upd, pub, _ = _vm_mocks(existing)
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
         with pytest.raises(ValueError):
-            vm_svc.approve_visit(1, visit_id="v1")
+            vm_svc.approve_visit(1, visit_id="1")
 
 
-# 9) check_in_visitor fires visitor.arrived
+# 9) check_in_visitor fires visitor.checked_in
 def test_check_in_visitor_fires_event():
-    existing = [{"id": "v1", "status": "APPROVED", "host_id": "h1"}]
-    create, lst, pub, _ = _vm_mocks(existing)
+    existing = [{"id": "1", "name": "Alice", "host_id": "h1", "visit_date": "2025-01-01", "status": "APPROVED"}]
+    create, lst, upd, pub, _ = _vm_mocks(existing)
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
-        result = vm_svc.check_in_visitor(1, visit_id="v1", badge_number="B42")
+        result = vm_svc.check_in_visitor(1, visit_id="1", badge_number="B42")
     assert result["status"] == "CHECKED_IN"
     pub.return_value.publish_event.assert_called_once()
     call_kwargs = pub.return_value.publish_event.call_args.kwargs
-    assert call_kwargs["event_type"] == "visitor.arrived"
+    assert call_kwargs["event_type"] == "visitor.checked_in"
 
 
 # 10) check_in_visitor missing badge
 def test_check_in_visitor_missing_badge():
-    existing = [{"id": "v1", "status": "APPROVED"}]
-    create, lst, pub, _ = _vm_mocks(existing)
+    existing = [{"id": "1", "name": "Alice", "host_id": "h1", "visit_date": "2025-01-01", "status": "APPROVED"}]
+    create, lst, upd, pub, _ = _vm_mocks(existing)
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
         with pytest.raises(ValueError, match="badge"):
-            vm_svc.check_in_visitor(1, visit_id="v1", badge_number="")
+            vm_svc.check_in_visitor(1, visit_id="1", badge_number="")
 
 
 # 11) check_out_visitor success
 def test_check_out_visitor_success():
-    existing = [{"id": "v1", "status": "CHECKED_IN"}]
-    create, lst, pub, _ = _vm_mocks(existing)
+    existing = [{"id": "1", "name": "Alice", "host_id": "h1", "visit_date": "2025-01-01", "status": "CHECKED_IN"}]
+    create, lst, upd, pub, _ = _vm_mocks(existing)
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
-        result = vm_svc.check_out_visitor(1, visit_id="v1")
+        result = vm_svc.check_out_visitor(1, visit_id="1")
     assert result["status"] == "CHECKED_OUT"
 
 
 # 12) expire_visit success
 def test_expire_visit_success():
-    existing = [{"id": "v1", "status": "REQUESTED"}]
-    create, lst, pub, _ = _vm_mocks(existing)
+    existing = [{"id": "1", "name": "Alice", "host_id": "h1", "visit_date": "2025-01-01", "status": "REQUESTED"}]
+    create, lst, upd, pub, _ = _vm_mocks(existing)
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
-        result = vm_svc.expire_visit(1, visit_id="v1")
+        result = vm_svc.expire_visit(1, visit_id="1")
     assert result["status"] == "EXPIRED"
 
 
 # 13) expire_visit blocks terminal state
 def test_expire_visit_blocks_terminal():
-    existing = [{"id": "v1", "status": "CHECKED_OUT"}]
-    create, lst, pub, _ = _vm_mocks(existing)
+    existing = [{"id": "1", "name": "Alice", "host_id": "h1", "visit_date": "2025-01-01", "status": "CHECKED_OUT"}]
+    create, lst, upd, pub, _ = _vm_mocks(existing)
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
         with pytest.raises(ValueError, match="terminal"):
-            vm_svc.expire_visit(1, visit_id="v1")
+            vm_svc.expire_visit(1, visit_id="1")
 
 
 # 14) record_unauthorized_attempt fires event
 def test_record_unauthorized_attempt_fires_event():
-    create, lst, pub, _ = _vm_mocks()
+    create, lst, upd, pub, _ = _vm_mocks()
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
         result = vm_svc.record_unauthorized_attempt(1, visitor_name="Bob", zone="SERVER_ROOM")
     assert "log_id" in result
@@ -185,16 +205,17 @@ def test_record_unauthorized_attempt_fires_event():
 # 15) list_visits filter by status
 def test_list_visits_by_status():
     existing = [
-        {"id": "v1", "status": "REQUESTED"},
-        {"id": "v2", "status": "APPROVED"},
+        {"id": "1", "name": "A", "host_id": "h1", "visit_date": "2025-01-01", "status": "REQUESTED"},
+        {"id": "2", "name": "B", "host_id": "h2", "visit_date": "2025-01-02", "status": "APPROVED"},
     ]
-    create, lst, pub, _ = _vm_mocks(existing)
+    create, lst, upd, pub, _ = _vm_mocks(existing)
     with patch("app.modules.visitor_management.service.create_entity_for_tenant", create), \
          patch("app.modules.visitor_management.service.list_entities_for_tenant", lst), \
+         patch("app.modules.visitor_management.service.update_entity_for_tenant", upd), \
          patch("app.modules.visitor_management.service.EventPublisher", pub):
         result = vm_svc.list_visits(1, status="REQUESTED")
     assert len(result) == 1
-    assert result[0]["id"] == "v1"
+    assert result[0]["id"] == "1"
 
 
 # ─── access_control ───────────────────────────────────────────────────────────

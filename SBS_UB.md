@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-06-01 (A-019.0 WAVE 7 SELECTION + KNOWN CONDITIONS REVIEW)
-- status: A-019.0_selection_complete
-- current_stage: A-019 Wave 7 selection / campus security + visitor operations planning
-- last_completed_action_id: A-019.0
-- next_action_id: A-019.1
-- updated_at: 2026-05-08 (A-019.0 planning complete; Wave 7 theme selected as Campus Security + Visitor Operations Autonomy; repo hygiene snapshot confirmed unchanged A-018 known conditions; candidate module audit and feature scoring completed; KC-NEW `test_visitor_access_control_module_xliii.py` reclassified to SHOULD_BE_A019_1_CANDIDATE; A-019 Top 5 selected; backlog expanded through A-019.8; transition approved to A-019.1)
+- run_id: OP-AUDIT-2026-05-06-01 (A-019.1 VISITOR + ACCESS LEGACY CONTRACT STABILIZATION)
+- status: ready_for_A-019.2
+- current_stage: A-019.1 CLOSED - PASS (legacy visitor/access contract stabilized)
+- last_completed_action_id: A-019.1
+- next_action_id: A-019.2
+- updated_at: 2026-05-08 (A-019.1 complete; `tests/test_visitor_access_control_module_xliii.py` stale legacy contract fully stabilized with test-only fixes; legacy target 23 passed; A-018 visitor/access/security slice 77 passed; tenant/security 913 passed, 1 skipped; safe gate PASS; no production/router/security logic changes; KC-NEW closed; transition approved to A-019.2)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -118,7 +118,7 @@
     - KC-4: untracked historical docs — FIX_IN_PARALLEL
     - KC-5/6: `act()` + DeprecationWarning — ACCEPTED_KNOWN_CONDITION
     - KC-7: Docker rebuild after test edits — ENV_PROFILE_ONLY
-    - KC-NEW: `test_visitor_access_control_module_xliii.py` 6 failures — ACCEPTED_KNOWN_CONDITION (pre-existing stale contract)
+    - KC-NEW: `test_visitor_access_control_module_xliii.py` 6 failures — CLOSED in A-019.1 (legacy contract stabilized)
 
 ---
 
@@ -155,6 +155,40 @@
 - Policy lock:
     - No hardware ACS integration, no physical door control, no auto-lockout/ban, no auto-disciplinary sanctions, no destructive automation; high/critical security actions require human review/escalation.
 - Decision: **A-019.0 COMPLETE - PASS (planning only)**. Proceed to `A-019.1`.
+
+---
+
+#### A-019.1 — Visitor + Access Legacy Contract Stabilization
+
+- Date: 2026-05-08
+- Scope: legacy contract triage/stabilization only (no feature additions, no new modules, no migrations, no production-logic changes).
+- Primary target: `backend/tests/test_visitor_access_control_module_xliii.py`
+- Artifact: `A-019.1-VISITOR_ACCESS_LEGACY_CONTRACT_STABILIZATION_REPORT.md`
+- Repo hygiene snapshot:
+    - Tracked dirty (out-of-scope): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical/local: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+    - A-019.1 scope file: `backend/tests/test_visitor_access_control_module_xliii.py`
+- Failure reproduction (pre-fix):
+    - `tests/test_visitor_access_control_module_xliii.py` => **6 failed, 17 passed**
+    - Failure classes: stale mocked tenant-entity API signature, stale non-numeric visit IDs (`v1`), stale event expectation (`visitor.arrived`), stale fixture schema for `visit_requests` required fields.
+- Fix strategy:
+    - Test-only updates in legacy file:
+        - align mocked `create_entity_for_tenant(table, data, tenant_id)` signature
+        - add mocked `update_entity_for_tenant(...)` persistence path for visitor lifecycle transitions
+        - align fixture IDs and required fields to current `visit_requests` contract
+        - align event assertion to `visitor.checked_in`
+    - No production code changes.
+- Validation results (post-fix):
+    - Legacy target: **23 passed, 1 warning**
+    - A-018 visitor/access/security slice (`a018_3 or a018_6 or visitor_management or access_control or security_operations`): **77 passed, 8441 deselected, 1 warning**
+    - Tenant/security slice (`tenant or security`): **913 passed, 1 skipped, 7604 deselected, 1 warning**
+    - Safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+    - Release gate: skipped (no production/router/security contract code modified)
+- Policy evidence:
+    - Non-destructive security policy preserved (no hardware ACS, no physical door control, no auto lockout/ban/disciplinary/blacklist actions).
+- Known condition decision:
+    - **KC-NEW CLOSED** (stale legacy visitor/access contract failures burned down in-scope).
+- Decision: **A-019.1 CLOSED - PASS**. Proceed to `A-019.2`.
 
 ---
 
