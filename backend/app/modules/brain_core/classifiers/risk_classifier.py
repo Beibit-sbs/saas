@@ -976,13 +976,35 @@ class RiskClassifier:
             "scheduling.section.conflict_detected",
             "scheduling.room_conflict.detected",
             "scheduling.room_allocation.required",
+            "booking.conflict_detected",
+            "resource.overload",
         }:
             payload = signal.get("payload", {})
             conflict_type = str(payload.get("conflict_type") or "").strip().lower()
             if not conflict_type and event_type == "scheduling.room_conflict.detected":
                 conflict_type = "room_conflict"
+            if not conflict_type and event_type == "booking.conflict_detected":
+                conflict_type = "room_conflict"
             room_capacity = payload.get("room_capacity")
             required_capacity = payload.get("required_capacity") or payload.get("enrolled_count")
+            if event_type == "resource.overload":
+                utilization = payload.get("utilization")
+                try:
+                    if utilization is not None and float(utilization) >= 1.0:
+                        return {
+                            "situation_type": "operational_risk",
+                            "severity": "high",
+                            "urgency": "high",
+                            "reasoning_path": "section_conflict_high",
+                        }
+                except (TypeError, ValueError):
+                    pass
+                return {
+                    "situation_type": "operational_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "section_conflict_medium",
+                }
             if event_type == "scheduling.room_allocation.required":
                 try:
                     if room_capacity is not None and required_capacity is not None and int(required_capacity) > int(room_capacity):

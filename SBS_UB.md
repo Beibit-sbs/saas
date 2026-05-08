@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-018.2
-- current_stage: A-018.1 Scheduling Brain maturity closure — COMPLETE
-- last_completed_action_id: A-018.1
-- next_action_id: A-018.2
-- updated_at: 2026-05-08 (A-018.1 complete; scheduling raised from Level 5 BRAIN_READY to Level 6 FULL; room-readiness Brain signal contracts aligned; KPI lineage expanded; targeted backend slice 309 PASS, tenant/security 882 PASS, frontend scheduling+dashboard contract tests PASS, safe gate PASS; A-018.1-SCHEDULING_BRAIN_MATURITY_CLOSURE_REPORT.md created; ready for A-018.2)
+- status: ready_for_A-018.3
+- current_stage: A-018.2 Room Booking maturity closure — COMPLETE
+- last_completed_action_id: A-018.2
+- next_action_id: A-018.3
+- updated_at: 2026-05-08 (A-018.2 complete; room_booking raised to Level 4 minimum via router+schemas+event/brain/kpi alignment; targeted + regression slice 48 PASS; artifact A-018.2-ROOM_BOOKING_MATURITY_CLOSURE_REPORT.md created; ready for A-018.3)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -793,6 +793,41 @@
 - Artifact: `A-018.1-SCHEDULING_BRAIN_MATURITY_CLOSURE_REPORT.md`
 - Decision: **A-018.1 CLOSED — scheduling raised to Level 6 / FULL.**
 - Next action: **A-018.2 — Room Booking Maturity Closure**.
+
+---
+
+#### A-018.2 — Room Booking Maturity Closure
+
+- Date: 2026-05-08
+- Scope: Raise `room_booking` from Level 1 to Level 4 minimum with additive-only changes (reuse existing scheduling/Brain/KPI contracts; no migrations).
+- Key closure work performed:
+    - Added API contract surface:
+        - `backend/app/modules/room_booking/router.py`
+        - `backend/app/modules/room_booking/schemas.py`
+        - registered router in `backend/app/main.py`.
+    - Upgraded `backend/app/modules/room_booking/service.py`:
+        - added capacity readiness helper `assess_room_allocation(...)`.
+        - extended `request_booking(...)` with optional capacity validation path.
+        - on conflict now emits both legacy and scheduling namespace events (`booking.conflict_detected` + `scheduling.room_conflict.detected`).
+        - utilization overload keeps legacy `resource.overload` and emits scheduling readiness signal.
+        - preserved backward compatibility for legacy XLII behavior.
+    - Brain/event alignment:
+        - `brain_core/constants.py`: `booking.conflict_detected` + `resource.overload` included in section conflict event family.
+        - `brain_core/registry.py`: mapped both room-booking events to existing `section_conflict` scenario.
+        - `brain_core/classifiers/risk_classifier.py`: deterministic classification for both events.
+        - `platform/event_ingestion/types.py`: room-booking lifecycle events added to `VALID_EVENT_TYPES`.
+        - `platform/kpi/service.py`: additive lineage extension for `scheduling_conflicts_count` and `capacity_risk_sections_count`.
+    - Added closure tests:
+        - `backend/tests/test_a018_2_room_booking_maturity_closure.py`.
+- Validation results:
+    - Targeted + regression slice:
+        - `tests/test_a018_2_room_booking_maturity_closure.py`
+        - `tests/test_a018_1_scheduling_brain_maturity_closure.py`
+        - `tests/test_events_room_booking_module_xlii.py`
+    - Result: **48 passed, 0 failed** (warnings only).
+- Artifact: `A-018.2-ROOM_BOOKING_MATURITY_CLOSURE_REPORT.md`
+- Decision: **A-018.2 CLOSED — room_booking raised to Level 4 minimum.**
+- Next action: **A-018.3 — Access Control Maturity Closure**.
 
 ---
 

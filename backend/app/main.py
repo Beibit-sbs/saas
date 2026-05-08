@@ -60,6 +60,7 @@ from app.modules.campus_sla.router import router as campus_sla_router
 from app.modules.research_ethics.router import router as research_ethics_router
 from app.modules.ip_management.router import router as ip_management_router
 from app.modules.equipment_booking.router import router as equipment_booking_router
+from app.modules.room_booking.router import router as room_booking_router
 from app.modules.scholarship.router import router as scholarship_router
 from app.modules.communications.router import router as communications_router
 from app.modules.housing.router import router as housing_router
@@ -370,6 +371,7 @@ app.include_router(campus_sla_router)
 app.include_router(research_ethics_router)
 app.include_router(ip_management_router)
 app.include_router(equipment_booking_router)
+app.include_router(room_booking_router)
 app.include_router(scholarship_router)
 app.include_router(communications_router)
 app.include_router(housing_router)

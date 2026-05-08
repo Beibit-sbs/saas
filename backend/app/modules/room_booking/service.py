@@ -41,6 +41,14 @@ def _get_booking(tenant_id: int, booking_id: str) -> dict:
     raise ValueError(f"Booking {booking_id!r} not found")
 
 
+def _get_room(tenant_id: int, room_id: str) -> dict:
+    rows = list_entities_for_tenant(tenant_id, "campus_rooms")
+    for r in rows:
+        if r.get("id") == room_id:
+            return r
+    raise ValueError(f"Room {room_id!r} not found")
+
+
 def _assert_transition(current: str, target: str) -> None:
     allowed = _BOOKING_FSM.get(current, frozenset())
     if target not in allowed:
@@ -76,6 +84,7 @@ def request_booking(
     requester_id: str,
     start_time: str,
     end_time: str,
+    required_capacity: int | None = None,
     purpose: str = "",
 ) -> dict:
     _validate_tenant(tenant_id)
@@ -88,6 +97,28 @@ def request_booking(
     if not end_time:
         raise ValueError("end_time is required")
 
+    room_capacity = None
+    if required_capacity is not None:
+        room = _get_room(tenant_id, room_id)
+        room_capacity = room.get("capacity")
+
+    if required_capacity is not None:
+        try:
+            required_capacity_int = int(required_capacity)
+            room_capacity_int = int(room_capacity)
+        except (TypeError, ValueError):
+            raise ValueError("required_capacity and room capacity must be numeric")
+
+        if required_capacity_int > room_capacity_int:
+            payload = {
+                "room_id": room_id,
+                "required_capacity": required_capacity_int,
+                "room_capacity": room_capacity_int,
+            }
+            _fire(tenant_id, "scheduling.room_allocation.required", payload)
+            _fire(tenant_id, "scheduling.capacity_mismatch.detected", payload)
+            raise ValueError("Room capacity is insufficient for requested capacity")
+
     # conflict check: look for APPROVED or OCCUPIED bookings for the same room
     existing = list_entities_for_tenant(tenant_id, "room_bookings")
     conflict = any(
@@ -96,7 +127,15 @@ def request_booking(
         for r in existing
     )
     if conflict:
-        _fire(tenant_id, "booking.conflict_detected", {"room_id": room_id, "start_time": start_time})
+        conflict_payload = {
+            "room_id": room_id,
+            "start_time": start_time,
+            "conflict_type": "room_conflict",
+            "room_capacity": room_capacity,
+            "required_capacity": required_capacity,
+        }
+        _fire(tenant_id, "booking.conflict_detected", conflict_payload)
+        _fire(tenant_id, "scheduling.room_conflict.detected", conflict_payload)
         raise ValueError("Booking conflict detected for this room/time")
 
     row = create_entity_for_tenant(
@@ -107,12 +146,18 @@ def request_booking(
             "requester_id": requester_id,
             "start_time": start_time,
             "end_time": end_time,
+            "required_capacity": required_capacity,
             "purpose": purpose,
             "status": "REQUESTED",
             "tenant_id": tenant_id,
         },
     )
-    return {"booking_id": row["id"], "room_id": room_id, "status": "REQUESTED"}
+    return {
+        "booking_id": row["id"],
+        "room_id": room_id,
+        "status": "REQUESTED",
+        "room_capacity": room_capacity,
+    }
 
 
 def approve_booking(tenant_id: int, *, booking_id: str) -> dict:
@@ -149,8 +194,42 @@ def check_utilization(tenant_id: int, *, room_id: str, total_slots: int, occupie
     utilization = occupied_slots / total_slots
     overload = utilization > UTILIZATION_THRESHOLD
     if overload:
-        _fire(tenant_id, "resource.overload", {"room_id": room_id, "utilization": utilization})
+        payload = {"room_id": room_id, "utilization": utilization}
+        _fire(tenant_id, "scheduling.room_allocation.required", payload)
+        _fire(tenant_id, "resource.overload", payload)
     return {"room_id": room_id, "utilization": utilization, "overload": overload}
+
+
+def assess_room_allocation(tenant_id: int, *, room_id: str, required_capacity: int) -> dict:
+    """Evaluate whether a room can satisfy required capacity and emit scheduling readiness signals."""
+    _validate_tenant(tenant_id)
+    if required_capacity <= 0:
+        raise ValueError("required_capacity must be > 0")
+
+    room = _get_room(tenant_id, room_id)
+    room_capacity = room.get("capacity")
+    allocation_required = False
+    try:
+        allocation_required = int(required_capacity) > int(room_capacity)
+    except (TypeError, ValueError):
+        allocation_required = True
+
+    payload = {
+        "room_id": room_id,
+        "required_capacity": required_capacity,
+        "room_capacity": room_capacity,
+    }
+
+    if allocation_required:
+        _fire(tenant_id, "scheduling.room_allocation.required", payload)
+        _fire(tenant_id, "scheduling.capacity_mismatch.detected", payload)
+
+    return {
+        "room_id": room_id,
+        "required_capacity": required_capacity,
+        "room_capacity": room_capacity,
+        "room_allocation_required": allocation_required,
+    }
 
 
 def list_rooms(tenant_id: int) -> list[dict]:

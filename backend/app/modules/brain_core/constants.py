@@ -112,6 +112,8 @@ SECTION_CONFLICT_EVENT_TYPES = {
     "scheduling.section.conflict_detected",
     "scheduling.room_conflict.detected",
     "scheduling.room_allocation.required",
+    "booking.conflict_detected",
+    "resource.overload",
 }
 
 ENROLLMENT_CAPACITY_RISK_EVENT_TYPES = {

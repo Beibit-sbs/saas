@@ -32,6 +32,10 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "scheduling.room_conflict.detected",
         "scheduling.room_allocation.required",
         "scheduling.capacity_mismatch.detected",
+        "booking.approved",
+        "booking.conflict_detected",
+        "room.released",
+        "resource.overload",
         "enrollment.created",
         "enrollment.capacity_risk.detected",
         # A-014.6 Wave 2 KPI extension — graduation / degree progress

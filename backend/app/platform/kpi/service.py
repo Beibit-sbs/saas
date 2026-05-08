@@ -149,11 +149,13 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "capacity_risk_sections_count": [
         "enrollment.capacity_risk.detected",
         "scheduling.capacity_mismatch.detected",
+        "resource.overload",
     ],
     "scheduling_conflicts_count": [
         "scheduling.section.conflict_detected",
         "scheduling.room_conflict.detected",
         "scheduling.room_allocation.required",
+        "booking.conflict_detected",
     ],
     "room_conflict_count": [
         "scheduling.room_conflict.detected",

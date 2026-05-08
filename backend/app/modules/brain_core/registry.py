@@ -471,6 +471,16 @@ class SignalRegistry:
             "scenario": "section_conflict",
             "context_sources": ["scheduling", "academic", "operations"],
         },
+        "booking.conflict_detected": {
+            "signal_class": "operational_risk",
+            "scenario": "section_conflict",
+            "context_sources": ["scheduling", "operations"],
+        },
+        "resource.overload": {
+            "signal_class": "operational_risk",
+            "scenario": "section_conflict",
+            "context_sources": ["scheduling", "operations"],
+        },
         "enrollment.capacity_risk.detected": {
             "signal_class": "academic_risk",
             "scenario": "enrollment_capacity_risk",
