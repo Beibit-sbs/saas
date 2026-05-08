@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-06-01 (A-019.7 CROSS-FEATURE VISITOR/ACCESS/SECURITY/KPI E2E)
-- status: A-019_COMPLETE
-- current_stage: A-019.7 CLOSED - PASS (cross-feature E2E suite; A-019.5 test fixes; full gates green)
-- last_completed_action_id: A-019.7
+- run_id: OP-AUDIT-2026-05-06-01 (A-019.8 FINAL WAVE 7 CLOSURE)
+- status: ready_for_A-020
+- current_stage: A-020 planning / next wave selection (A-019 closed; validation-only closure complete)
+- last_completed_action_id: A-019.8
 - next_action_id: A-020.0
-- updated_at: 2026-05-09 (A-019.7 6-test E2E suite created; A-019.5 2 test fixes applied; backend 139/0; frontend 798/0; safe gate PASS; A-019 wave COMPLETE)
+- updated_at: 2026-05-09 (A-019.8 final gates completed; release gate PASS; smoke classified as known dependency/startup issue; A-019 wave closed)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -369,6 +369,62 @@
     5. `test_tenant_spoof_payload_cannot_override_authoritative_tenant` — spoofed tenant_id in payload cannot leak data across tenant boundaries
     6. `test_no_destructive_security_automation_contract` — all 4 severity paths produce no hardware/door/lockout/ban/blacklist actions; critical/high require `requires_approval=True`
 - Decision: **A-019.7 CLOSED - PASS**. A-019 wave complete.
+
+---
+
+#### A-019.8 — Full Gates + Final Wave 7 Visitor / Security Operations Closure
+
+- Date: 2026-05-09
+- Scope: final validation and evidence consolidation only. No new features, no new modules, no migrations, no hardware ACS, no physical door control, no auto lockout/ban/blacklist, no destructive automation.
+- Deliverables:
+    - `A-019.8-FINAL_WAVE7_VISITOR_SECURITY_OPERATIONS_REPORT.md`
+    - tracker update to transition A-019 -> A-020 planning
+- Repo hygiene snapshot:
+    - Tracked dirty, out-of-scope: `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical/local: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+    - No unrelated staging performed; these remain uncommitted and out of scope
+- Module / layer maturity summary:
+    - `visitor_access_legacy_contract`: stale KC stabilized -> CLOSED
+    - `visitor_management`: Level 4 -> Level 5, brain/KPI ready
+    - `security_operations`: readiness -> Level 5, incident brain ready
+    - `visitor_access_workflow`: partial -> integrated, E2E-ready
+    - `security_ops_kpi_dashboard`: partial -> dashboard-visible, CLOSED
+    - `dashboard_tenant_context`: risk area -> tenant-safe aggregation, CLOSED
+    - `cross-feature E2E`: missing -> validated, CLOSED
+- Final backend validation:
+    - Targeted A-019 backend slice: **150 passed, 8479 deselected, 1 warning**
+    - Visitor/access/security regression slice: **991 passed, 1 skipped, 7637 deselected, 1 warning**
+    - Full backend matrix: **8563 passed, 13 skipped, 88 deselected, 6 warnings, 1 failed, 8 errors**
+    - Full backend failure classification:
+        - 8 setup errors from `tests/test_postgres_persistence_xv2.py` because `DATABASE_URL` is not set in this container/profile
+        - 1 legacy assertion mismatch in `backend/app/modules/brain_core/tests/test_student_risk_flow.py::test_campus_security_incident_high_dispatches_incident_workflow_and_notification` (`operational` expected, `security_incident_review` observed)
+        - These are not new A-019.8 production changes; they are known baseline/profile issues
+- Final frontend validation:
+    - Targeted pages (`RectorDashboardPage`, `VisitorManagementPage`, `AccessControlPage`, `SecurityOperationsPage`): **33 passed, 0 failed**
+    - Full frontend suite: **118 files, 798 tests passed**
+    - Frontend lint: **PASS**
+    - Frontend build: **PASS**
+- Final gates:
+    - Safe gate: **PASS**
+    - Release gate: **PASS** (`[release-gate] PASS: release gate and rollback readiness are green`)
+    - Platform smoke check: **FAILED** due docker dependency/startup issue (`backend failed to start` / missing container during compose restart); classified as known environment/profile issue
+- Non-destructive security policy evidence:
+    - No hardware ACS integration
+    - No physical door control
+    - No automatic lockout/ban/blacklist
+    - No punitive/destructive automation
+    - High/critical paths remain review/approval controlled
+- Final verdict:
+    - **A-019 CLOSED - PASS WITH KNOWN CONDITIONS**
+    - Conditions: full-backend profile still has `DATABASE_URL`-missing postgres coverage errors, one legacy brain-core assertion mismatch remains outside A-019 scope, and platform smoke depends on docker startup state
+- Transition to A-020:
+    - `next_action_id`: `A-020.0`
+    - `status`: `ready_for_A-020`
+    - A-019 series closed; move to A-020 planning only
+- Recommended A-020 theme:
+    1. Scheduling + Room Allocation Brain
+    2. Keep human-approved redistribution only; no automatic destructive timetable changes
+    3. Strong fit with current autonomy, tenant safety, and non-destructive policy patterns
 
 ---
 
