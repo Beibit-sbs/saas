@@ -267,7 +267,14 @@ const useProctoredExamsListMock = vi.fn(() => ({
   refetch: vi.fn(),
 }));
 
-const useExamProctoringDashboardMock = vi.fn(() => ({
+type ExamProctoringDashboardState = {
+  data: { total_exams: number; status_breakdown: Record<string, number> } | undefined;
+  isLoading: boolean;
+  error: unknown;
+  refetch: ReturnType<typeof vi.fn>;
+};
+
+const useExamProctoringDashboardMock = vi.fn((): ExamProctoringDashboardState => ({
   data: { total_exams: 0, status_breakdown: {} },
   isLoading: false,
   error: null,
@@ -304,7 +311,7 @@ describe("ExamProctoringPage Wave4 KPI wiring", () => {
 
   it("does not crash when optional dashboard fields are missing", () => {
     useExamProctoringDashboardMock.mockReturnValueOnce({
-      data: undefined,
+      data: undefined as unknown as { total_exams: number; status_breakdown: {} },
       isLoading: false,
       error: null,
       refetch: vi.fn(),

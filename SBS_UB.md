@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-017.8
-- current_stage: A-017.7 cross-module e2e for module maturity wave — COMPLETE
-- last_completed_action_id: A-017.7
-- next_action_id: A-017.8
-- updated_at: 2026-05-08 (A-017.7 complete; additive cross-module backend/frontend contract validation added for budget_planning + research_ethics + exam_governance + exam_proctoring + billing + executive dashboard consolidation; targeted backend/frontend, tenant-security slice, full frontend, lint, build, and safe gate green; no business-scope expansion)
+- status: ready_for_A-018.1
+- current_stage: A-017.8 final Wave 5 closure — COMPLETE
+- last_completed_action_id: A-017.8
+- next_action_id: A-018.1
+- updated_at: 2026-05-08 (A-017.8 complete; Wave 5 full closure evidence pack committed; all 5 modules at Level 6 FULL maturity; targeted backend 647 PASS, tenant/security 882 PASS, frontend full 772 PASS, lint PASS, build PASS, type-check PASS, safe gate PASS, release gate PASS; Wave 5 CLOSED)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -673,6 +673,39 @@
 - Artifact: `A-017.7-CROSS_MODULE_MATURITY_E2E_REPORT.md`
 - Decision: **A-017.7 CLOSED - PASS**.
 - Next action: **A-017.8**.
+
+#### A-017.8 — WAVE 5 FINAL CLOSURE & EXECUTIVE EVIDENCE PACK
+
+- Date: 2026-05-08
+- Scope: Final Wave 5 closure documentation and executive evidence pack. No new features, migrations, or business-scope changes. TypeScript type fix in `Wave4KpiPages.test.tsx` (release gate type-check fix only).
+- Repo hygiene snapshot before A-017.8 edits:
+    - Tracked dirty: `.coverage`, `backend/.coverage`, `frontend/__tests__/admin/Wave4KpiPages.test.tsx` (type fix).
+    - Untracked historical artifacts: `A-011.3-*`, `A-011.4-*`, `A-012.*`, `A-017.0-*`, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`.
+    - Decision: stage only `Wave4KpiPages.test.tsx`, `A-017.8-WAVE5_FINAL_CLOSURE_REPORT.md`, `SBS_UB.md`.
+- Changes:
+    - `frontend/__tests__/admin/Wave4KpiPages.test.tsx`: added explicit `ExamProctoringDashboardState` type alias with `data: ... | undefined`; annotated `useExamProctoringDashboardMock` factory return type to fix TS2322 error in release gate type-check step.
+    - `A-017.8-WAVE5_FINAL_CLOSURE_REPORT.md`: NEW — full Wave 5 executive evidence pack with A-017.1→A-017.8 evidence map and authoritative gate results.
+    - `SBS_UB.md`: top tracker updated to `ready_for_A-018.1`; this A-017.8 execution block added.
+- Validation results:
+    - Backend targeted A-017 slice: **647 passed, 2 skipped, 7784 deselected, 1 warning** (18.18s).
+    - Tenant/security backend slice: **882 passed, 1 skipped, 7550 deselected, 1 warning** (20.87s).
+    - Frontend targeted A-017 pages/dashboard slice: **61/61 PASS** (5 files).
+    - Frontend full suite: **772/772 PASS** (114 files).
+    - Frontend lint: **PASS** (No ESLint warnings or errors).
+    - Frontend build: **PASS** (Next.js 14.2.35, 119 static routes).
+    - Frontend type-check: **PASS** (exit 0 after image rebuild).
+    - Safe gate (`university_pilot_safe_gate.sh`): **PASS**.
+    - Release gate (`release_gate.sh`): **PASS** — `[release-gate] PASS: release gate and rollback readiness are green` (exit 0).
+        - Architecture governance: 7 passed; Tenant safety: 8 passed; Platform regression: 503 passed, 3 skipped; Domain: 412+17+24; Security: 73; Template: 5; Data layer: PASS (head yp24qr56st78); F3 alert gate: PASS (25 rules); Phase B smoke: 4/4; Rollback readiness: PASS.
+- Wave 5 module maturity final status:
+    - `budget_planning`: **Level 6 / FULL**.
+    - `research_ethics`: **Level 6 / FULL**.
+    - `exam_governance`: **Level 6 / FULL**.
+    - `exam_proctoring`: **Level 6 / FULL**.
+    - `billing`: **Level 6 / FULL**.
+- Artifact: `A-017.8-WAVE5_FINAL_CLOSURE_REPORT.md`
+- Decision: **A-017.8 CLOSED - PASS. Wave 5 FULLY CLOSED.**
+- Next action: **A-018.1**.
 
 #### A-016.3 — Exam Proctoring Violation Workflow Brain
 
