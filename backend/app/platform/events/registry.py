@@ -344,7 +344,10 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "visitor.unauthorized_attempt": EventDefinition(GenericTenantEventPayload),
     "access.granted": EventDefinition(GenericTenantEventPayload),
     "access.denied": EventDefinition(GenericTenantEventPayload),
+    "card.issued": EventDefinition(GenericTenantEventPayload),
     "card.suspended": EventDefinition(GenericTenantEventPayload),
+    "card.revoked": EventDefinition(GenericTenantEventPayload),
+    "card.reactivated": EventDefinition(GenericTenantEventPayload),
     "security.anomaly": EventDefinition(GenericTenantEventPayload),
     # Parking Module (XLIV)
     "parking.permit_issued": EventDefinition(GenericTenantEventPayload),

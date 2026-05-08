@@ -107,6 +107,12 @@ METRIC_TITLES: dict[str, str] = {
     "integrity_cases_resolved_count": "Integrity Cases Resolved",
     "integrity_cases_evidence_requested_count": "Integrity Cases Evidence Requested",
     "integrity_case_resolution_sla_risk_count": "Integrity Case Resolution SLA Risk",
+    # A-018.3 Wave 6 metrics — Access Control
+    "access_denied_count": "Access Denied Count",
+    "unauthorized_attempts_count": "Unauthorized Attempts Count",
+    "active_access_cards_count": "Active Access Cards Count",
+    "suspended_access_cards_count": "Suspended Access Cards Count",
+    "security_access_anomaly_count": "Security Access Anomaly Count",
 }
 
 
@@ -275,6 +281,12 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "integrity_cases_resolved_count": ["academic_integrity.case.resolved"],
     "integrity_cases_evidence_requested_count": ["academic_integrity.case.evidence_requested"],
     "integrity_case_resolution_sla_risk_count": ["academic_integrity.case.review_required"],
+    # A-018.3 Wave 6 event lineage — Access Control
+    "access_denied_count": ["access.denied"],
+    "unauthorized_attempts_count": ["access.denied", "security.anomaly"],
+    "active_access_cards_count": ["card.issued", "card.reactivated"],
+    "suspended_access_cards_count": ["card.suspended"],
+    "security_access_anomaly_count": ["security.anomaly"],
 }
 
 

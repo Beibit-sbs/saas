@@ -180,6 +180,7 @@ def reactivate_card(tenant_id: int, *, card_id: str, actor: str = "system") -> d
     card = _get_card(tenant_id, card_id)
     _assert_card_transition(card["status"], "ACTIVE")
     card["status"] = "ACTIVE"
+    _fire(tenant_id, "card.reactivated", {"card_id": card_id})
     _audit(
         tenant_id,
         actor,
@@ -198,6 +199,7 @@ def revoke_card(tenant_id: int, *, card_id: str, actor: str = "system") -> dict:
         raise ValueError("Card already revoked")
     _assert_card_transition(card["status"], "REVOKED")
     card["status"] = "REVOKED"
+    _fire(tenant_id, "card.revoked", {"card_id": card_id})
     _record_outcome(card_id, "card_revoked", actor)
     _audit(
         tenant_id,

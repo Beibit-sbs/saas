@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.modules.brain_core.constants import (
+    ACCESS_CONTROL_EVENT_TYPES,
     BUDGET_OVERRUN_EVENT_TYPES,
     ACADEMIC_INTEGRITY_EVENT_TYPES,
     ACADEMIC_RECORDS_EVENT_TYPES,
@@ -189,6 +190,27 @@ class SignalRegistry:
             "signal_class": "operational_risk",
             "scenario": "campus_operations",
             "context_sources": ["operations", "platform"],
+        },
+        # A-018.3 — Access Control signals
+        "security.anomaly": {
+            "signal_class": "security_threat",
+            "scenario": "campus_security",
+            "context_sources": ["access_control", "operations", "security"],
+        },
+        "access.denied": {
+            "signal_class": "security_threat",
+            "scenario": "campus_security",
+            "context_sources": ["access_control", "operations"],
+        },
+        "card.suspended": {
+            "signal_class": "security_event",
+            "scenario": "campus_security",
+            "context_sources": ["access_control"],
+        },
+        "card.revoked": {
+            "signal_class": "security_event",
+            "scenario": "campus_security",
+            "context_sources": ["access_control"],
         },
         "campus.transport.disruption_detected": {
             "signal_class": "operational_risk",
@@ -823,6 +845,16 @@ class DecisionRegistry:
                 "reorder_review": "workflow_task",
                 "vendor_followup": "notification",
                 "budget_review": "notification",
+            },
+        },
+        # A-018.3 — Campus Security / Access Control Brain
+        "campus_security": {
+            "decision_type": "security_risk",
+            "allowed_event_types": sorted(ACCESS_CONTROL_EVENT_TYPES),
+            "action_map": {
+                "notify_security_team": "notification",
+                "create_security_incident_task": "workflow_task",
+                "suspend_card": "workflow_task",
             },
         },
     }

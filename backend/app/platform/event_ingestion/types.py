@@ -112,5 +112,13 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "academic_integrity.case.resolved",
         "academic_integrity.case.dismissed",
         "integrity.resolution.workflow_needed",
+        # A-018.3 Access Control maturity closure — card lifecycle + access events
+        "access.granted",
+        "access.denied",
+        "card.issued",
+        "card.suspended",
+        "card.revoked",
+        "card.reactivated",
+        "security.anomaly",
     }
 )

@@ -116,6 +116,17 @@ SECTION_CONFLICT_EVENT_TYPES = {
     "resource.overload",
 }
 
+# A-018.3: Access Control maturity closure — card lifecycle + security anomaly signals
+ACCESS_CONTROL_EVENT_TYPES = frozenset({
+    "access.denied",
+    "access.granted",
+    "card.issued",
+    "card.suspended",
+    "card.revoked",
+    "card.reactivated",
+    "security.anomaly",
+})
+
 ENROLLMENT_CAPACITY_RISK_EVENT_TYPES = {
     "enrollment.capacity_risk.detected",
     "scheduling.capacity_mismatch.detected",
@@ -274,6 +285,7 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | EXAM_PROCTORING_EVENT_TYPES
     | RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES
     | ACADEMIC_INTEGRITY_CASE_RESOLUTION_EVENT_TYPES
+    | ACCESS_CONTROL_EVENT_TYPES
 )
 
 ACTION_CREATE_INTERVENTION_CASE = "create_intervention_case"
