@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-09-01 (A-020.1 READINESS CONTRACT STABILIZATION)
-- status: ready_for_A-020.2
-- current_stage: A-020 Wave 8 execution / Scheduling + Room Allocation Brain (A-020.1 contract stabilization complete)
-- last_completed_action_id: A-020.1
-- next_action_id: A-020.2
-- updated_at: 2026-05-09 (A-020.1 room allocation readiness contract stabilized; tenants safe; non-destructive policy proven; A-020.2 queued)
+- run_id: OP-AUDIT-2026-05-09-02 (A-020.2 ROOM CAPABILITY CONTRACT)
+- status: ready_for_A-020.3
+- current_stage: A-020 Wave 8 execution / Scheduling + Room Allocation Brain (A-020.2 room inventory capability contract complete)
+- last_completed_action_id: A-020.2
+- next_action_id: A-020.3
+- updated_at: 2026-05-09 (A-020.2 room inventory/capability contract stabilized; readiness compatibility proven; non-destructive policy preserved; A-020.3 queued)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -194,14 +194,59 @@
     - ❌ Cross-feature regression: **EXPECTED** (tests confirm A-018 baseline)
 - Decision: **A-020.1 COMPLETE - PASS**. Room allocation readiness contract stable, tenant-safe, non-destructive. Proceed to `A-020.2`.
 
+#### A-020.2 — Room Inventory / Room Capability Contract
+
+- Date: 2026-05-09
+- Scope: Define stable room inventory/capability contract for scheduling + room booking + brain compatibility. Reuse-first, additive-only, non-destructive.
+- Artifacts:
+    - `A-020.2-ROOM_CAPABILITY_GAP_MATRIX.md`
+    - `backend/app/modules/scheduling/room_allocation_readiness.py` (extended with RoomCapability and compatibility helpers)
+    - `backend/tests/test_a020_2_room_inventory_capability_contract.py` (20+ tests)
+    - `A-020.2-ROOM_INVENTORY_CAPABILITY_CONTRACT_REPORT.md`
+- Contract delivered:
+    - `RoomCapability` schema
+      - identity/location: tenant_id, room_id, room_code, room_name, campus, building, floor
+      - capability: room_type, capacity, computers_count, equipment_available, supported_lesson_types, accessibility_features
+      - operational status: availability_status, booking_status, maintenance_status, restrictions, is_active
+      - traceability: evidence, source_entity_type, source_entity_id
+    - compatibility helpers
+      - `to_room_allocation_availability()`
+      - `assess_room_capability_against_requirement()`
+      - `build_room_capability_evidence()`
+    - standards (safe/minimal)
+      - `STANDARD_ROOM_TYPES`
+      - `STANDARD_LESSON_TYPES`
+- Evidence-only matching output:
+    - `capacity_ok`, `computers_ok`, `equipment_ok`, `room_type_ok`, `availability_ok`, `restrictions_ok`
+    - `missing_equipment`, `equipment_match_score`, `mismatch_reasons`, `room_allocation_required`
+- Tenant/security guarantees:
+    - authoritative tenant mismatch rejected (`ValueError`)
+    - no tenant spoof override
+    - no guard weakening across room/scheduling/brain paths
+- Non-destructive guarantees:
+    - no schedule mutation
+    - no room booking mutation
+    - no auto-assignment
+    - no recommendation ranking output
+    - no optimizer/auto-apply scope expansion
+- Validation summary (Docker):
+    - A-020.2 + A-020.1 targeted: **50 passed, 2 warnings**
+    - Scheduling/room focused regression: **99 passed, 8580 deselected, 2 warnings**
+    - Tenant/security regression: **999 passed, 1 skipped, 7679 deselected, 2 warnings**
+    - Safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Known-condition handling:
+    - initial direct command attempt showed container/run instability (`exit 137`) before pytest start
+    - classified as environment/profile behavior; mitigated by rebuilding `backend-tests` image and rerunning suites successfully
+- Decision: **A-020.2 COMPLETE - PASS**. Room inventory/capability contract is stable, tested, tenant-safe, and non-destructive. Proceed to `A-020.3`.
+
 ---
 
 #### A-020 BACKLOG SKELETON (Updated)
 
-- Next action: **A-020.2 — Room Inventory / Room Capability Contract**
+- Next action: **A-020.3 — Scheduling Conflict Detection Enhancement**
 - Top 5 A-020 tasks:
     1. ✅ **A-020.1** — Room Allocation Readiness Contract Stabilization (COMPLETE)
-    2. **A-020.2** — Room Inventory / Room Capability Contract
+    2. ✅ **A-020.2** — Room Inventory / Room Capability Contract (COMPLETE)
     3. **A-020.3** — Scheduling Conflict Detection Enhancement
     4. **A-020.4** — Capacity Matching Brain
     5. **A-020.5** — Room Allocation Recommendation Engine
