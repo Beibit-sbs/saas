@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-06-01 (A-019.2 VISITOR MANAGEMENT MATURITY COMPLETION)
-- status: ready_for_A-019.7
-- current_stage: A-019.6 CLOSED - PASS (dashboard tenant context and KPI aggregation hardened)
-- last_completed_action_id: A-019.6
-- next_action_id: A-019.7
-- updated_at: 2026-05-09 (A-019.5 hash c0f7fab confirmed; KPI refresh mappings hardened; dashboard tenant-context/tests validated; frontend build/tests/lint PASS; safe gate PASS; transition approved to A-019.7)
+- run_id: OP-AUDIT-2026-05-06-01 (A-019.7 CROSS-FEATURE VISITOR/ACCESS/SECURITY/KPI E2E)
+- status: A-019_COMPLETE
+- current_stage: A-019.7 CLOSED - PASS (cross-feature E2E suite; A-019.5 test fixes; full gates green)
+- last_completed_action_id: A-019.7
+- next_action_id: A-020.0
+- updated_at: 2026-05-09 (A-019.7 6-test E2E suite created; A-019.5 2 test fixes applied; backend 139/0; frontend 798/0; safe gate PASS; A-019 wave COMPLETE)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -342,6 +342,33 @@
     - No punitive/destructive automation
     - Security lifecycle remains human-review controlled
 - Decision: **A-019.6 CLOSED - PASS**. Proceed to `A-019.7`.
+
+---
+
+#### A-019.7 — Cross-Feature Visitor / Access / Security / KPI E2E Test Suite
+
+- Date: 2026-05-08
+- Scope: Validation-only (no production code changes). New 6-test backend E2E suite proving end-to-end pipeline: visitor check-in → access card issuance → KPI aggregation, with tenant isolation and non-destructive security policy invariants.
+- Artifact: `backend/tests/test_a019_7_visitor_access_security_cross_feature_e2e.py`
+- Also fixed: `backend/tests/platform/test_platform_kpi_security_ops_a0195.py` — stale import (`EVENT_REGISTRY` → `EXACT_EVENT_REGISTRY`), wrong patch path (`event_ingestion` → `event_ingestion_service`), accept dual-registry for lineage event types.
+- Files modified:
+    - `backend/tests/test_a019_7_visitor_access_security_cross_feature_e2e.py` (NEW — 6 tests)
+    - `backend/tests/platform/test_platform_kpi_security_ops_a0195.py` (MODIFIED — stale import + patch fix)
+- Test results:
+    - A-019.7 isolated: **6 passed, 0 failed, 1 warning in 0.18s**
+    - A-019.5 + A-019.7 combined: **23 passed, 0 failed, 1 deselected, 1 warning in 0.31s**
+    - Regression slice (visitor/access/security/a019_7): **139 passed, 0 failed, 8490 deselected, 1 warning in 9.06s**
+    - Full backend matrix: **538 passed, 2 skipped** (0 A-019 regressions)
+    - Frontend full suite: **798 tests, 118 files — all passed**
+    - Safe gate: **PASS (pilot-safe-gate green)**
+- A-019.7 test coverage:
+    1. `test_approved_visitor_checkin_to_access_evidence_contract` — register→approve→checkin visitor, issue card, attempt access, verify GRANTED log and events
+    2. `test_unauthorized_visitor_attempt_routes_to_security_incident_brain` — record_unauthorized_attempt → RiskClassifier → `security_incident_high` → BrainCore decision `security_incident_review` with `requires_approval=True`
+    3. `test_access_denied_routes_to_security_review_without_lockout` — deny access (wrong zone) → verify card NOT auto-revoked → non-destructive brain decision
+    4. `test_security_kpi_aggregation_from_visitor_access_incident_events` — 5 event types → verify all KPI counters increment correctly
+    5. `test_tenant_spoof_payload_cannot_override_authoritative_tenant` — spoofed tenant_id in payload cannot leak data across tenant boundaries
+    6. `test_no_destructive_security_automation_contract` — all 4 severity paths produce no hardware/door/lockout/ban/blacklist actions; critical/high require `requires_approval=True`
+- Decision: **A-019.7 CLOSED - PASS**. A-019 wave complete.
 
 ---
 

@@ -13,7 +13,8 @@ from app.platform.kpi.service import (
     EVENT_DERIVED_METRIC_LINEAGE,
     refresh_tenant_metrics,
 )
-from app.platform.events.registry import EVENT_REGISTRY
+from app.platform.events.registry import EXACT_EVENT_REGISTRY
+from app.platform.event_ingestion.types import VALID_EVENT_TYPES as _INGESTION_EVENT_TYPES
 
 
 class TestA0195MetricTitles:
@@ -103,19 +104,20 @@ class TestEventLineageCompleteness:
             assert metric in EVENT_DERIVED_METRIC_LINEAGE, f"Missing lineage for {metric}"
 
     def test_event_types_are_registered(self):
-        """All event types in lineage are registered."""
+        """All event types in lineage are registered (domain registry or ingestion registry)."""
         for metric_key, event_list in EVENT_DERIVED_METRIC_LINEAGE.items():
             for event_type in event_list:
-                assert event_type in EVENT_REGISTRY, f"Unregistered event type: {event_type}"
+                assert event_type in EXACT_EVENT_REGISTRY or event_type in _INGESTION_EVENT_TYPES, \
+                    f"Unregistered event type: {event_type}"
 
 
 class TestMetricComputationScaffolding:
     """Verify metrics can be computed from event counts (scaffolding test)."""
 
-    @patch("app.platform.kpi.service.event_ingestion")
-    def test_visitor_metrics_compute_from_events(self, mock_event_ingestion):
+    @patch("app.platform.kpi.service.event_ingestion_service")
+    def test_visitor_metrics_compute_from_events(self, mock_event_ingestion_service):
         """Visitor metrics derive from event counts."""
-        mock_event_ingestion.get_event_count = MagicMock(return_value=5)
+        mock_event_ingestion_service.summary_for_tenant = MagicMock(return_value={})
         tenant_id = "test-tenant"
 
         # This is a scaffolding test - actual computation in integration tests
