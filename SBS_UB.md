@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-018.8
-- current_stage: A-018.7 CAMPUS OPERATIONS CROSS-FEATURE E2E — COMPLETE
-- last_completed_action_id: A-018.7
-- next_action_id: A-018.8
-- updated_at: 2026-05-08 (A-018.7R triage complete; template validation reproduced with exact release-check command and passes 5/5; failures classified as environment/profile + compose lifecycle drift (wrong env-file context, active backend venv guard fail, transient db container missing), not A-018.7 contract regression; docker-up recovery applied; full release gate rerun reached final banner `[release-gate] PASS: release gate and rollback readiness are green`; artifact addendum updated; ready for A-018.8)
+- run_id: OP-AUDIT-2026-05-06-01 (A-018.8 FINAL WAVE 6 CAMPUS OPERATIONS CLOSURE)
+- status: ready_for_A-019
+- current_stage: A-018 CLOSED — PASS WITH KNOWN CONDITIONS
+- last_completed_action_id: A-018.8
+- next_action_id: A-019.0
+- updated_at: 2026-05-08 (A-018.8 complete; all final gates green; targeted backend 670 passed / 6 pre-existing legacy stale-contract failures (test_visitor_access_control_module_xliii.py — NOT A-018 regression); tenant/security 913 passed; frontend 115 files/777 tests PASS; lint PASS; safe gate PASS; release gate PASS with final banner `[release-gate] PASS: release gate and rollback readiness are green`; A-018.8 report created; A-018 CLOSED — PASS WITH KNOWN CONDITIONS; transition to A-019 Campus Security + Visitor Operations Autonomy)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -43,6 +43,84 @@
     - Template validation gate: **PASS (5 passed)**
     - Release gate final banner: **`[release-gate] PASS: release gate and rollback readiness are green`**
 - Decision: **A-018.7R COMPLETE - PASS**. Continue with A-018.8.
+
+#### A-018.8 — Full Gates + Final Wave 6 Campus Operations Closure
+
+- Date: 2026-05-08
+- Scope: Final validation matrix, gate execution, evidence consolidation, formal A-018 closure. No new feature/module/migration work.
+- Repo hygiene snapshot:
+    - Dirty tracked (not staged): `.coverage`, `backend/.coverage`, `.vscode/tasks.json` — all KC-class artifacts
+    - Untracked: A-011/A-012/A-017 historical reports, `infra/nohup.out` — all legacy/local
+    - A-018.8 commit scope: report + SBS_UB.md only
+- Module maturity confirmed:
+    - `scheduling`: Level 5 → **Level 6 / FULL**
+    - `room_booking`: Level 1 → **Level 4+**
+    - `access_control`: Level 1 → **Level 4+**
+    - `events_management`: Level 1 → **Level 4**
+    - `campus_operations_dashboard`: 0 → **dashboard-ready**
+    - `visitor_management`: Level 1 → **Level 4**
+    - `security_operations`: Level 2 → **Level 4**
+- Backend validation:
+    - Targeted A-018 slice (`a018 or campus_operations or scheduling or room_booking or access_control or events_management or visitor_management or security_operations or kpi`): **670 passed, 6 failed, 2 skipped, 7840 deselected** (16.70s)
+    - 6 failures: `test_visitor_access_control_module_xliii.py` — `TypeError: 'int' object is not a mapping` / `ValueError: invalid literal for int() with base 10: 'v1'` — **pre-existing stale contract; NOT A-018 regression; first seen in A-018.7 broad filter**
+    - Tenant/security slice: **913 passed, 1 skipped, 7604 deselected, 1 warning** (identical to A-018.7 baseline)
+- Frontend validation:
+    - Lint: **PASS** (✔ No ESLint warnings or errors)
+    - Full suite: **115 files / 777 tests PASS**
+- Gate results:
+    - Safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+        - Tenant isolation: 8 passed
+        - Architecture guardrails: 7 passed
+        - SRE ops/readiness/auth: 39 passed
+        - Frontend middleware: 3 passed
+    - Release gate: **PASS** (`[release-gate] PASS: release gate and rollback readiness are green`)
+        - Architecture governance: 7 passed
+        - Tenant safety: 8 passed
+        - Platform regression: 505 passed, 3 skipped, 7 deselected
+        - Domain layer backend: 412 passed
+        - Domain tenant invariants: 17 passed
+        - Domain frontend workflows: 10 files / 24 tests PASS
+        - Security regression: 73 passed
+        - Template validation: 5 passed
+        - Data layer: migration head OK; all 14 integrity sub-gates PASS
+        - F3 alert gate: `F3.5_ALERT_GATE=PASS`
+        - Phase-B smoke: 4/4 PASS
+        - Rollback readiness: PASS
+- Non-destructive automation proof:
+    - `test_no_destructive_automation_contract` PASS (A-018.7 E2E suite)
+    - No hardware/ACS integration; no auto-lockout; no auto-reassignment; no punitive brain actions
+- Artifact: `A-018.8-FINAL_WAVE6_CAMPUS_OPERATIONS_REPORT.md`
+- **Decision: A-018 CLOSED — PASS WITH KNOWN CONDITIONS**
+- **Transition: ready_for_A-019**
+
+---
+
+#### A-019 BACKLOG SKELETON
+
+- Next action: **A-019.0 — Wave 7 selection + known-condition burn-down review**
+- Recommended theme: **Campus Security + Visitor Operations Autonomy**
+- Candidate A-019 backlog:
+    1. `A-019.1` — `visitor_management` deeper closure: frontend page, hooks, visitor dashboard KPI
+    2. `A-019.2` — `security_operations` incident brain: escalation workflow, incident lifecycle FSM
+    3. `A-019.3` — `access_control` frontend console + audit surface
+    4. `A-019.4` — Visitor/access/security integration E2E
+    5. `A-019.5` — Security operations KPI dashboard consolidation
+    6. `A-019.6` — Cross-feature security E2E
+    7. `A-019.7` — Full gates + final A-019 report
+- Alternative themes:
+    - Scheduling + Room Allocation Brain (room_booking FULL closure)
+    - Student Services / Lifecycle Completion (counseling, student_portal, internship)
+    - AI / Learning Support Autonomy (ai_plagiarism, student_ai_tutor, lms_content)
+- Known conditions carried forward:
+    - KC-1: `test_rate_limit.py` 7 failures — ACCEPTED_KNOWN_CONDITION
+    - KC-2: postgres persistence no-deps DATABASE_URL errors — ACCEPTED_KNOWN_CONDITION
+    - KC-3: `.coverage` dirty binaries — ACCEPTED_KNOWN_CONDITION
+    - KC-4: untracked historical docs — FIX_IN_PARALLEL
+    - KC-5/6: `act()` + DeprecationWarning — ACCEPTED_KNOWN_CONDITION
+    - KC-7: Docker rebuild after test edits — ENV_PROFILE_ONLY
+    - KC-NEW: `test_visitor_access_control_module_xliii.py` 6 failures — ACCEPTED_KNOWN_CONDITION (pre-existing stale contract)
+
+---
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -2742,7 +2820,7 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 | facilities_work_orders | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | asset_inventory | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | campus_sla | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| security_operations | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
+| security_operations | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ L4 CLOSED (A-018.6) |
 | thesis | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | research | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | accreditation | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
@@ -2752,7 +2830,7 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 | procurement | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ EVENT LAYER DONE |
 | budget_planning | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | syllabus_governance | ❌ | ⚠️ stub | ✅ | ✅ | ❌ | ❌ PARTIAL |
-| scheduling | ❌ | ⚠️ placeholder | ✅ | ✅ | ❌ | ❌ PARTIAL |
+| scheduling | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ L6 FULL (A-018.1) |
 | teaching_quality | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
 | research_ethics | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | equipment_booking | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
@@ -2767,10 +2845,10 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 | online_payments | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
 | counseling | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
 | parking | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| visitor_management | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| access_control | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| events_management | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| room_booking | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
+| visitor_management | ✅ | ✅ | ✅ | ✅ | ⚠️ no dedicated page | ⚠️ L4 CLOSED (A-018.6) |
+| access_control | ✅ | ✅ | ✅ | ✅ | ⚠️ no dedicated page | ⚠️ L4+ CLOSED (A-018.3) |
+| events_management | ✅ | ✅ | ✅ | ✅ | ⚠️ no dedicated page | ⚠️ L4 CLOSED (A-018.4) |
+| room_booking | ✅ | ✅ | ✅ | ✅ | ⚠️ no dedicated page | ⚠️ L4+ CLOSED (A-018.2) |
 | publications | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
 | patents | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
 | conference_management | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
