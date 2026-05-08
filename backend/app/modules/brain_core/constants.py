@@ -259,6 +259,27 @@ DEGREE_PROGRESS_EVENT_TYPES = {
     "degree_progress.graduation_risk.detected",
 }
 
+# A-018.6 Visitor Management lifecycle events
+VISITOR_MANAGEMENT_EVENT_TYPES = frozenset({
+    "visitor.registered",
+    "visitor.approved",
+    "visitor.rejected",
+    "visitor.checked_in",
+    "visitor.checked_out",
+    "visitor.expired",
+    "visitor.cancelled",
+    "visitor.unauthorized_attempt",
+})
+
+# A-018.6 Security Operations incident lifecycle events
+SECURITY_OPERATIONS_EVENT_TYPES = frozenset({
+    "security.incident.opened",
+    "security.incident.acknowledged",
+    "security.incident.escalated",
+    "security.incident.resolved",
+    "security.incident.dismissed",
+})
+
 STUDENT_SERVICES_EVENT_TYPES = {
     "student_services.ticket.escalated",
 }

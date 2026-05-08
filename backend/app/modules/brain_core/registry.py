@@ -35,6 +35,8 @@ from app.modules.brain_core.constants import (
     RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES,
     ACADEMIC_INTEGRITY_CASE_RESOLUTION_EVENT_TYPES,
     EVENTS_MANAGEMENT_EVENT_TYPES,
+    VISITOR_MANAGEMENT_EVENT_TYPES,
+    SECURITY_OPERATIONS_EVENT_TYPES,
 )
 
 
@@ -248,6 +250,73 @@ class SignalRegistry:
             "signal_class": "security_event",
             "scenario": "campus_security",
             "context_sources": ["access_control"],
+        },
+        # A-018.6 — Visitor Management signals
+        "visitor.registered": {
+            "signal_class": "operational_event",
+            "scenario": "campus_operations",
+            "context_sources": ["visitor_management", "operations"],
+        },
+        "visitor.approved": {
+            "signal_class": "operational_event",
+            "scenario": "campus_operations",
+            "context_sources": ["visitor_management", "operations"],
+        },
+        "visitor.rejected": {
+            "signal_class": "operational_event",
+            "scenario": "campus_operations",
+            "context_sources": ["visitor_management"],
+        },
+        "visitor.checked_in": {
+            "signal_class": "operational_event",
+            "scenario": "campus_operations",
+            "context_sources": ["visitor_management", "access_control"],
+        },
+        "visitor.checked_out": {
+            "signal_class": "operational_event",
+            "scenario": "campus_operations",
+            "context_sources": ["visitor_management"],
+        },
+        "visitor.expired": {
+            "signal_class": "operational_risk",
+            "scenario": "campus_operations",
+            "context_sources": ["visitor_management"],
+        },
+        "visitor.cancelled": {
+            "signal_class": "operational_event",
+            "scenario": "campus_operations",
+            "context_sources": ["visitor_management"],
+        },
+        "visitor.unauthorized_attempt": {
+            "signal_class": "security_threat",
+            "scenario": "campus_security",
+            "context_sources": ["visitor_management", "security_operations"],
+        },
+        # A-018.6 — Security Operations incident lifecycle signals
+        "security.incident.opened": {
+            "signal_class": "security_threat",
+            "scenario": "campus_security",
+            "context_sources": ["security_operations", "operations"],
+        },
+        "security.incident.acknowledged": {
+            "signal_class": "security_event",
+            "scenario": "campus_security",
+            "context_sources": ["security_operations"],
+        },
+        "security.incident.escalated": {
+            "signal_class": "security_threat",
+            "scenario": "campus_security",
+            "context_sources": ["security_operations", "operations"],
+        },
+        "security.incident.resolved": {
+            "signal_class": "security_event",
+            "scenario": "campus_security",
+            "context_sources": ["security_operations"],
+        },
+        "security.incident.dismissed": {
+            "signal_class": "security_event",
+            "scenario": "campus_security",
+            "context_sources": ["security_operations"],
         },
         "campus.transport.disruption_detected": {
             "signal_class": "operational_risk",
@@ -892,6 +961,26 @@ class DecisionRegistry:
                 "notify_security_team": "notification",
                 "create_security_incident_task": "workflow_task",
                 "suspend_card": "workflow_task",
+            },
+        },
+        # A-018.6 — Visitor Management Brain
+        "visitor_management_ops": {
+            "decision_type": "visitor_risk",
+            "allowed_event_types": sorted(VISITOR_MANAGEMENT_EVENT_TYPES),
+            "action_map": {
+                "notify_security_team": "notification",
+                "create_visitor_incident_task": "workflow_task",
+                "alert_host": "notification",
+            },
+        },
+        # A-018.6 — Security Operations Incident Brain
+        "security_operations_ops": {
+            "decision_type": "security_incident_risk",
+            "allowed_event_types": sorted(SECURITY_OPERATIONS_EVENT_TYPES),
+            "action_map": {
+                "escalate_incident": "workflow_task",
+                "notify_response_team": "notification",
+                "create_follow_up_task": "workflow_task",
             },
         },
     }

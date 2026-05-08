@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-018.6
-- current_stage: A-018.5 Campus Operations KPI / Dashboard consolidation — COMPLETE
-- last_completed_action_id: A-018.5
-- next_action_id: A-018.6
-- updated_at: 2026-05-08 (A-018.5 complete; campus operations KPI consolidation delivered for scheduling/room-booking/access-control/events-management via backend KPI refresh derivation + rector dashboard campus-ops section + targeted backend/frontend tests; artifact A-018.5-CAMPUS_OPERATIONS_KPI_DASHBOARD_REPORT.md created; ready for A-018.6)
+- status: ready_for_A-018.7
+- current_stage: A-018.6 VISITOR_MANAGEMENT + SECURITY_OPERATIONS Readiness Closure — COMPLETE
+- last_completed_action_id: A-018.6
+- next_action_id: A-018.7
+- updated_at: 2026-05-08 (A-018.6 complete; visitor_management raised L1→L4 (FSM, 8 events, 3 KPI metrics, HTTP router, frontend page, brain signals+decision); security_operations raised L2→L4 (5 events, 2 KPI metrics, brain signals+decision, frontend page); 18/18 tests green; artifact A-018.6-VISITOR_SECURITY_READINESS_CLOSURE_REPORT.md created; ready for A-018.7)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -961,6 +961,32 @@
 - Artifact: `A-018.5-CAMPUS_OPERATIONS_KPI_DASHBOARD_REPORT.md`
 - Decision: **A-018.5 CLOSED — campus operations KPI/dashboard consolidation delivered with additive backend/rector-dashboard wiring and targeted validation.**
 - Next action: **A-018.6 — next Wave 6 maturity closure item.**
+
+---
+
+#### A-018.6 — VISITOR_MANAGEMENT + SECURITY_OPERATIONS Readiness Closure
+
+- Date: 2026-05-08
+- Scope: Raise `visitor_management` Level 1→Level 4 and `security_operations` Level 2→Level 4. Additive-only. No hardware/ACS integration, no automatic lockout/disciplinary actions.
+- Changes:
+    - `backend/app/modules/visitor_management/service.py`: Extended FSM with 7 states (REQUESTED, APPROVED, REJECTED, CHECKED_IN, CHECKED_OUT, EXPIRED, CANCELLED), 4 terminal states, transition guard; `register_visitor`, `approve_visit`, `reject_visit`, `cancel_visit`, `check_in_visit`, `check_out_visit`, `expire_visit`, `record_unauthorized_attempt` functions; `event_ingestion_service` wired for all state transitions.
+    - `backend/app/modules/visitor_management/schemas.py`: Created — Pydantic schemas for visitor management HTTP API.
+    - `backend/app/modules/visitor_management/router.py`: Created — 8 endpoints under `/api/admin/visitor-management`, RBAC via `operations.write`/`operations.read`.
+    - `backend/app/modules/security_operations/service.py`: Wired `event_ingestion_service` for `security.incident.opened` and `security.incident.escalated`.
+    - `backend/app/main.py`: Registered `visitor_management_router`.
+    - `backend/app/platform/event_ingestion/types.py`: 13 new events added (`visitor.*` × 8, `security.incident.*` × 5).
+    - `backend/app/platform/events/registry.py`: 13 new `EventDefinition` entries.
+    - `backend/app/platform/kpi/service.py`: 5 new metrics (`visitor_requests_pending_count`, `visitors_checked_in_count`, `visitor_unauthorized_attempts_count`, `security_incidents_open_count`, `security_incidents_escalated_count`) in METRIC_TITLES, lineage, refresh function, and analytics_sink_v1 set.
+    - `backend/app/modules/brain_core/constants.py`: `VISITOR_MANAGEMENT_EVENT_TYPES` (8 events) + `SECURITY_OPERATIONS_EVENT_TYPES` (5 events) frozensets.
+    - `backend/app/modules/brain_core/registry.py`: 8 visitor + 5 security incident signal mappings; `visitor_management_ops` (decision_type: `visitor_risk`) + `security_operations_ops` (decision_type: `security_incident_risk`) decision entries.
+    - `frontend/app/(admin)/console/visitor-management/page.tsx`: Created — lifecycle states + events display.
+    - `frontend/app/(admin)/console/security-operations/page.tsx`: Created — incident states + events display.
+    - `backend/tests/test_a018_6_visitor_security_readiness_closure.py`: Created — 18 validation tests.
+- Validation results:
+    - A-018.6 targeted tests (`tests/test_a018_6_visitor_security_readiness_closure.py`): **18/18 passed (EXIT: 0)**.
+- Artifact: `A-018.6-VISITOR_SECURITY_READINESS_CLOSURE_REPORT.md`
+- Decision: **A-018.6 CLOSED — visitor_management raised L1→L4, security_operations raised L2→L4; all targeted tests green; additive-only constraints respected.**
+- Next action: **A-018.7 — next Wave 6 maturity closure item.**
 
 ---
 

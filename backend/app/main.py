@@ -55,6 +55,7 @@ from app.modules.financial_aid.router import router as financial_aid_router
 from app.modules.budget_planning.router import router as budget_planning_router
 from app.modules.expense_controls.router import router as expense_controls_router
 from app.modules.security_operations.router import router as security_operations_router
+from app.modules.visitor_management.router import router as visitor_management_router
 from app.modules.transport.router import router as transport_router
 from app.modules.dining.router import router as dining_router
 from app.modules.campus_sla.router import router as campus_sla_router
@@ -368,6 +369,7 @@ app.include_router(financial_aid_router)
 app.include_router(budget_planning_router)
 app.include_router(expense_controls_router)
 app.include_router(security_operations_router)
+app.include_router(visitor_management_router)
 app.include_router(transport_router)
 app.include_router(dining_router)
 app.include_router(campus_sla_router)

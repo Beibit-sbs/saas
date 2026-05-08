@@ -128,5 +128,20 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "event.started",
         "event.completed",
         "event.cancelled",
+        # A-018.6 Visitor Management lifecycle events
+        "visitor.registered",
+        "visitor.approved",
+        "visitor.rejected",
+        "visitor.checked_in",
+        "visitor.checked_out",
+        "visitor.expired",
+        "visitor.cancelled",
+        "visitor.unauthorized_attempt",
+        # A-018.6 Security Operations incident lifecycle events
+        "security.incident.opened",
+        "security.incident.acknowledged",
+        "security.incident.escalated",
+        "security.incident.resolved",
+        "security.incident.dismissed",
     }
 )

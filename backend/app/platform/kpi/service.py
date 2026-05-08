@@ -119,6 +119,13 @@ METRIC_TITLES: dict[str, str] = {
     "events_completed_count": "Events Completed Count",
     "events_cancelled_count": "Events Cancelled Count",
     "events_registration_full_count": "Events Registration Full Count",
+    # A-018.6 Wave 6 metrics — Visitor Management
+    "visitor_requests_pending_count": "Visitor Requests Pending Count",
+    "visitors_checked_in_count": "Visitors Checked In Count",
+    "visitor_unauthorized_attempts_count": "Visitor Unauthorized Attempts Count",
+    # A-018.6 Wave 6 metrics — Security Operations
+    "security_incidents_open_count": "Security Incidents Open Count",
+    "security_incidents_escalated_count": "Security Incidents Escalated Count",
 }
 
 
@@ -299,6 +306,13 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "events_completed_count": ["event.completed"],
     "events_cancelled_count": ["event.cancelled"],
     "events_registration_full_count": ["event.registration_full"],
+    # A-018.6 Wave 6 event lineage — Visitor Management
+    "visitor_requests_pending_count": ["visitor.registered"],
+    "visitors_checked_in_count": ["visitor.checked_in"],
+    "visitor_unauthorized_attempts_count": ["visitor.unauthorized_attempt"],
+    # A-018.6 Wave 6 event lineage — Security Operations
+    "security_incidents_open_count": ["security.incident.opened"],
+    "security_incidents_escalated_count": ["security.incident.escalated"],
 }
 
 
@@ -843,6 +857,19 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     metric_values["events_cancelled_count"] = events_cancelled
     metric_values["events_registration_full_count"] = events_registration_full
 
+    # A-018.6 Wave 6 consolidation: visitor management + security operations KPI counters.
+    visitor_registered = int(event_counts.get("visitor.registered", 0) or 0)
+    visitor_checked_in = int(event_counts.get("visitor.checked_in", 0) or 0)
+    visitor_unauthorized = int(event_counts.get("visitor.unauthorized_attempt", 0) or 0)
+    security_incidents_opened = int(event_counts.get("security.incident.opened", 0) or 0)
+    security_incidents_escalated = int(event_counts.get("security.incident.escalated", 0) or 0)
+
+    metric_values["visitor_requests_pending_count"] = visitor_registered
+    metric_values["visitors_checked_in_count"] = visitor_checked_in
+    metric_values["visitor_unauthorized_attempts_count"] = visitor_unauthorized
+    metric_values["security_incidents_open_count"] = security_incidents_opened
+    metric_values["security_incidents_escalated_count"] = security_incidents_escalated
+
     # A-014.6 Wave 2: derive KPI-friendly counters from Wave 2 event stream.
     grade_decline_risk = int(event_counts.get("academic.grade_risk.detected", 0) or 0)
     thesis_risk = int(event_counts.get("thesis.status_changed", 0) or 0)
@@ -1054,6 +1081,12 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
                         "integrity_cases_resolved_count",
                         "integrity_cases_evidence_requested_count",
                         "integrity_case_resolution_sla_risk_count",
+                        # A-018.6 Wave 6 — Visitor Management + Security Operations
+                        "visitor_requests_pending_count",
+                        "visitors_checked_in_count",
+                        "visitor_unauthorized_attempts_count",
+                        "security_incidents_open_count",
+                        "security_incidents_escalated_count",
                     }
                     else "platform_core",
                     "analytics_today": int(analytics_counts.get(_metric_key_to_event(metric_key), 0)),

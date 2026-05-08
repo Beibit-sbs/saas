@@ -1,7 +1,8 @@
-"""Phase VI-VI1: Security operations service."""
+"""Phase VI-VI1: Security operations service (A-018.6 readiness closure)."""
 from __future__ import annotations
 
 from app.platform.events.publisher import EventPublisher
+from app.platform.event_ingestion import service as event_ingestion_service
 from app.modules.university_core.tenant_entity_service import (
     create_entity_for_tenant,
     list_entities_for_tenant,
@@ -138,8 +139,25 @@ def create_security_incident(payload: dict[str, object], tenant_id: int) -> dict
 
     record = create_entity_for_tenant("security_incidents", payload, tenant_id)
     severity = str(record.get("severity") or "").strip().lower()
+    record_id = str(record.get("id") or "unknown")
+    incident_status = str(record.get("status") or "").strip().lower()
+
+    # A-018.6: Emit incident lifecycle event to event_ingestion for KPI tracking.
+    try:
+        event_ingestion_service.record_event(
+            tenant_id=tenant_id,
+            event_type="security.incident.opened",
+            payload={
+                "incident_id": record_id,
+                "severity": severity,
+                "status": incident_status,
+                "facility_code": record.get("facility_code"),
+            },
+        )
+    except Exception:
+        pass
+
     if severity in _HIGH_SEVERITIES:
-        record_id = str(record.get("id") or "unknown")
         EventPublisher().publish_event(
             tenant_id=tenant_id,
             event_type="campus.security_incident.detected",
@@ -163,6 +181,15 @@ def create_security_incident(payload: dict[str, object], tenant_id: int) -> dict
             tenant_id,
             response_team=str(payload.get("response_team") or "").strip() or None,
         )
+        # A-018.6: Emit escalation event for KPI tracking.
+        try:
+            event_ingestion_service.record_event(
+                tenant_id=tenant_id,
+                event_type="security.incident.escalated",
+                payload={"incident_id": record_id, "severity": severity},
+            )
+        except Exception:
+            pass
     return record
 
 

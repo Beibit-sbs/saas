@@ -343,9 +343,22 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "booking.conflict_detected": EventDefinition(GenericTenantEventPayload),
     "room.released": EventDefinition(GenericTenantEventPayload),
     "resource.overload": EventDefinition(GenericTenantEventPayload),
-    # Visitor Management + Access Control (XLIII)
+    # Visitor Management + Access Control (XLIII / A-018.6)
     "visitor.arrived": EventDefinition(GenericTenantEventPayload),
+    "visitor.registered": EventDefinition(GenericTenantEventPayload),
+    "visitor.approved": EventDefinition(GenericTenantEventPayload),
+    "visitor.rejected": EventDefinition(GenericTenantEventPayload),
+    "visitor.checked_in": EventDefinition(GenericTenantEventPayload),
+    "visitor.checked_out": EventDefinition(GenericTenantEventPayload),
+    "visitor.expired": EventDefinition(GenericTenantEventPayload),
+    "visitor.cancelled": EventDefinition(GenericTenantEventPayload),
     "visitor.unauthorized_attempt": EventDefinition(GenericTenantEventPayload),
+    # Security Operations incident lifecycle (A-018.6)
+    "security.incident.opened": EventDefinition(GenericTenantEventPayload),
+    "security.incident.acknowledged": EventDefinition(GenericTenantEventPayload),
+    "security.incident.escalated": EventDefinition(GenericTenantEventPayload),
+    "security.incident.resolved": EventDefinition(GenericTenantEventPayload),
+    "security.incident.dismissed": EventDefinition(GenericTenantEventPayload),
     "access.granted": EventDefinition(GenericTenantEventPayload),
     "access.denied": EventDefinition(GenericTenantEventPayload),
     "card.issued": EventDefinition(GenericTenantEventPayload),
