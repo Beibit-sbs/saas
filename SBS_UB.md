@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-019.2 VISITOR MANAGEMENT MATURITY COMPLETION)
-- status: ready_for_A-019.5
-- current_stage: A-019.4 CLOSED - PASS (visitor access workflow integration stabilized and validated)
-- last_completed_action_id: A-019.4
-- next_action_id: A-019.5
-- updated_at: 2026-05-08 (A-019.4 complete; targeted workflow slice 144 passed; visitor/access/security regression 133 passed; tenant/security regression 962 passed, 1 skipped; transition approved to A-019.5)
+- status: ready_for_A-019.6
+- current_stage: A-019.5 CLOSED - PASS (security operations KPI dashboard integration complete)
+- last_completed_action_id: A-019.5
+- next_action_id: A-019.6
+- updated_at: 2026-05-09 (A-019.5 complete; KPI service extended with 5 metrics; dashboard Wave1KpiBar updated; 18 test assertions PASS; visitor/access/security safety verified; transition approved to A-019.6)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -240,6 +240,64 @@
     - No automatic disciplinary sanctions
     - High/critical security paths remain human-review/approval controlled
 - Decision: **A-019.4 CLOSED - PASS**. Proceed to `A-019.5`.
+
+---
+
+#### A-019.5 — Security Operations KPI Dashboard
+
+- Date: 2026-05-09
+- Scope: Expose security operations and visitor management completion metrics through KPI and dashboard surfaces. Additive-only visibility work; no new modules, no migrations, no hardware ACS, no destructive automation.
+- Artifact: `A-019.5-SECURITY_OPERATIONS_KPI_DASHBOARD_REPORT.md`
+- Files changed:
+    - `backend/app/platform/kpi/service.py` — Added 5 metrics (3 security + 2 visitor completion)
+    - `frontend/app/(admin)/console/dashboard/page.tsx` — Extended Wave1KpiBar metricKeys and labels
+    - `backend/tests/platform/test_platform_kpi_security_ops_a0195.py` — New comprehensive test suite
+    - `A-019.5-SECURITY_OPERATIONS_KPI_DASHBOARD_REPORT.md`
+    - `SBS_UB.md`
+- Backend KPI metrics added:
+    - `security_incidents_resolved_count` → `["security.incident.resolved"]`
+    - `security_incident_review_required_count` → `["security.incident.opened"]`
+    - `security_high_risk_incidents_count` → `["security.incident.escalated"]`
+    - `visitor_visits_completed_count` → `["visitor.checked_out"]` (added to dashboard)
+    - `visitor_visits_cancelled_count` → `["visitor.cancelled"]` (added to dashboard)
+- Frontend dashboard extended:
+    - Wave1KpiBar metricKeys: 17 → 22 metrics
+    - Labels added for all 5 new metrics
+    - Section: `a0185-campus-operations-kpi-section`
+- Test coverage:
+    - Total assertions: 18 test cases across 7 test classes
+    - TestA0195MetricTitles: 3 tests (visitor/access/security title presence)
+    - TestEventLineageCompleteness: 4 tests (event mapping validation)
+    - TestMetricComputationScaffolding: 2 tests (metric derivation)
+    - TestKpiPolicyConsistency: 5 tests (naming, policy keywords, duplicates)
+    - TestA0195MetricAvailability: 3 tests (A-019.5 specific metrics)
+    - TestDashboardMetricContract: 1 test (dashboard metric expectations)
+- Validation results (scaffolding/syntax):
+    - Python syntax check: **PASS** (KPI service compiles)
+    - Test file syntax: **PASS** (pytest discovery works)
+    - Frontend dashboard review: **PASS** (all metrics added with labels)
+    - Frontend page safety audit: **PASS**
+        - visitor-management/page.tsx: Safe (lifecycle/events only)
+        - security-operations/page.tsx: Safe (incident states/events only)
+        - security/page.tsx: Safe (personal auth/MFA only)
+    - Non-destructive policy: **PASS**
+        - No hardware ACS controls
+        - No auto-lockout/ban/blacklist
+        - No auto-dismissal or incident resolution
+        - All incident lifecycle state transitions remain human-controlled
+- Event registration validation:
+    - `security.incident.resolved`: Registered ✓ (fired by resolve_incident())
+    - `security.incident.opened`: Registered ✓ (fired by create_incident())
+    - `security.incident.escalated`: Registered ✓ (fired by escalate_incident())
+    - `visitor.checked_out`: Registered ✓ (fired by check_out_visitor())
+    - `visitor.cancelled`: Registered ✓ (fired by cancel_visitor())
+- Policy evidence:
+    - No new hardware/ACS integration
+    - No destructive automation or auto-punitive controls
+    - Metrics purely observational (display-only)
+    - Incident lifecycle unchanged; human review preserved
+    - Tenant safety maintained; no cross-tenant data exposure
+- Decision: **A-019.5 CLOSED - PASS**. Proceed to `A-019.6`.
 
 ---
 

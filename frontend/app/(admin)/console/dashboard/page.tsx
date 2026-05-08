@@ -279,8 +279,13 @@ export default function RectorDashboardPage() {
             "visitor_requests_pending_count",
             "visitors_checked_in_count",
             "visitor_unauthorized_attempts_count",
+            "visitor_visits_completed_count",
+            "visitor_visits_cancelled_count",
             "security_incidents_open_count",
             "security_incidents_escalated_count",
+            "security_incidents_resolved_count",
+            "security_incident_review_required_count",
+            "security_high_risk_incidents_count",
           ]}
           labels={{
             scheduling_conflicts_count: "Scheduling Conflicts",
@@ -298,8 +303,13 @@ export default function RectorDashboardPage() {
             visitor_requests_pending_count: "Visitor Requests Pending",
             visitors_checked_in_count: "Visitors Checked-In",
             visitor_unauthorized_attempts_count: "Visitor Unauthorized Attempts",
+            visitor_visits_completed_count: "Visitor Visits Completed",
+            visitor_visits_cancelled_count: "Visitor Visits Cancelled",
             security_incidents_open_count: "Security Incidents Open",
             security_incidents_escalated_count: "Security Incidents Escalated",
+            security_incidents_resolved_count: "Security Incidents Resolved",
+            security_incident_review_required_count: "Security Review Required",
+            security_high_risk_incidents_count: "Security High-Risk Incidents",
           }}
         />
       </section>

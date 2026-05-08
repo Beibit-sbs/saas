@@ -129,6 +129,10 @@ METRIC_TITLES: dict[str, str] = {
     # A-018.6 Wave 6 metrics — Security Operations
     "security_incidents_open_count": "Security Incidents Open Count",
     "security_incidents_escalated_count": "Security Incidents Escalated Count",
+    # A-019.5 Wave 7 metrics — Security Operations completion
+    "security_incidents_resolved_count": "Security Incidents Resolved Count",
+    "security_incident_review_required_count": "Security Incidents Review Required Count",
+    "security_high_risk_incidents_count": "Security High-Risk Incidents Count",
 }
 
 
@@ -319,6 +323,10 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     # A-018.6 Wave 6 event lineage — Security Operations
     "security_incidents_open_count": ["security.incident.opened"],
     "security_incidents_escalated_count": ["security.incident.escalated"],
+    # A-019.5 Wave 7 event lineage — Security Operations completion
+    "security_incidents_resolved_count": ["security.incident.resolved"],
+    "security_incident_review_required_count": ["security.incident.opened"],
+    "security_high_risk_incidents_count": ["security.incident.escalated"],
 }
 
 
