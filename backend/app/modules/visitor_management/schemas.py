@@ -42,6 +42,8 @@ class VisitCheckInPayload(BaseModel):
 class UnauthorizedAttemptPayload(BaseModel):
     visitor_name: str = Field(min_length=1, max_length=128)
     zone: str = Field(min_length=1, max_length=64)
+    access_point_id: str | None = Field(default=None, max_length=64)
+    reason: str | None = Field(default=None, max_length=256)
 
 
 class UnauthorizedAttemptResponse(BaseModel):

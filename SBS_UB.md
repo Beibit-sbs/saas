@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-06-01 (A-019.1 VISITOR + ACCESS LEGACY CONTRACT STABILIZATION)
-- status: ready_for_A-019.2
-- current_stage: A-019.1 CLOSED - PASS (legacy visitor/access contract stabilized)
-- last_completed_action_id: A-019.1
-- next_action_id: A-019.2
-- updated_at: 2026-05-08 (A-019.1 complete; `tests/test_visitor_access_control_module_xliii.py` stale legacy contract fully stabilized with test-only fixes; legacy target 23 passed; A-018 visitor/access/security slice 77 passed; tenant/security 913 passed, 1 skipped; safe gate PASS; no production/router/security logic changes; KC-NEW closed; transition approved to A-019.2)
+- run_id: OP-AUDIT-2026-05-06-01 (A-019.2 VISITOR MANAGEMENT MATURITY COMPLETION)
+- status: ready_for_A-019.3
+- current_stage: A-019.2 CLOSED - PASS (visitor_management maturity Level 5 achieved)
+- last_completed_action_id: A-019.2
+- next_action_id: A-019.3
+- updated_at: 2026-05-08 (A-019.2 complete; 30 backend maturity tests + 8 frontend tests added; KPI visitor_visits_completed_count + visitor_visits_cancelled_count added; audit evidence enriched with access_point_id/reason; visitor regression 73 passed; tenant/security 916 passed; safe gate PASS; transition approved to A-019.3)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -155,6 +155,37 @@
 - Policy lock:
     - No hardware ACS integration, no physical door control, no auto-lockout/ban, no auto-disciplinary sanctions, no destructive automation; high/critical security actions require human review/escalation.
 - Decision: **A-019.0 COMPLETE - PASS (planning only)**. Proceed to `A-019.1`.
+
+---
+
+#### A-019.2 — Visitor Management Maturity Completion
+
+- Date: 2026-05-08
+- Scope: Visitor management maturity completion — additive KPI metrics, audit evidence enrichment, 30-test maturity suite, 8 frontend tests. No new modules, no migrations, no hardware/ACS/physical control, no auto-ban/disciplinary actions.
+- Artifact: `A-019.2-VISITOR_MANAGEMENT_MATURITY_COMPLETION_REPORT.md`
+- Files changed:
+    - `backend/app/platform/kpi/service.py` — added `visitor_visits_completed_count`, `visitor_visits_cancelled_count` (KPI labels, lineage, computation, analytics-sink whitelist)
+    - `backend/app/modules/visitor_management/schemas.py` — added optional `access_point_id`, `reason` to `UnauthorizedAttemptPayload`
+    - `backend/app/modules/visitor_management/service.py` — extended `record_unauthorized_attempt` with optional `access_point_id`, `reason`
+    - `backend/app/modules/visitor_management/router.py` — pass-through new optional fields
+    - `backend/tests/test_a019_2_visitor_management_maturity_completion.py` — 30 maturity tests (new)
+    - `frontend/__tests__/admin/VisitorManagementPage.test.tsx` — 8 frontend tests (new)
+- Validation results:
+    - A-019.2 targeted: **30 passed, 1 warning**
+    - Visitor regression (3 files: a019_2 + a018_6 + xliii): **73 passed, 1 warning**
+    - Tenant/security slice (`tenant or security`): **916 passed, 1 skipped, 7631 deselected, 1 warning**
+    - Safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+    - Release gate: skipped (no production router/security/platform auth contracts changed)
+- Maturity delta:
+    - `visitor_management`: Level 4 → **Level 5**
+    - KPI coverage: 3 visitor KPIs → **5 visitor KPIs**
+    - Audit evidence: basic fields → **+access_point_id, +reason**
+    - Tests: A-018.6 + xliii suites → **+30 backend + 8 frontend**
+- Non-destructive policy confirmed:
+    - No hardware ACS, no physical door control, no auto lockout/ban, no auto-disciplinary sanctions, no automatic blacklist.
+    - `test_check_in_does_not_open_physical_door` PASS
+    - `test_unauthorized_attempt_returns_evidence_not_disciplinary_action` PASS
+- Decision: **A-019.2 CLOSED - PASS**. Proceed to `A-019.3`.
 
 ---
 

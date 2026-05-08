@@ -123,6 +123,9 @@ METRIC_TITLES: dict[str, str] = {
     "visitor_requests_pending_count": "Visitor Requests Pending Count",
     "visitors_checked_in_count": "Visitors Checked In Count",
     "visitor_unauthorized_attempts_count": "Visitor Unauthorized Attempts Count",
+    # A-019.2 Wave 7 maturity — Visitor Management completion
+    "visitor_visits_completed_count": "Visitor Visits Completed Count",
+    "visitor_visits_cancelled_count": "Visitor Visits Cancelled Count",
     # A-018.6 Wave 6 metrics — Security Operations
     "security_incidents_open_count": "Security Incidents Open Count",
     "security_incidents_escalated_count": "Security Incidents Escalated Count",
@@ -310,6 +313,9 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "visitor_requests_pending_count": ["visitor.registered"],
     "visitors_checked_in_count": ["visitor.checked_in"],
     "visitor_unauthorized_attempts_count": ["visitor.unauthorized_attempt"],
+    # A-019.2 Wave 7 maturity — Visitor Management completion
+    "visitor_visits_completed_count": ["visitor.checked_out"],
+    "visitor_visits_cancelled_count": ["visitor.cancelled"],
     # A-018.6 Wave 6 event lineage — Security Operations
     "security_incidents_open_count": ["security.incident.opened"],
     "security_incidents_escalated_count": ["security.incident.escalated"],
@@ -864,9 +870,14 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     security_incidents_opened = int(event_counts.get("security.incident.opened", 0) or 0)
     security_incidents_escalated = int(event_counts.get("security.incident.escalated", 0) or 0)
 
+    visitor_checked_out = int(event_counts.get("visitor.checked_out", 0) or 0)
+    visitor_cancelled = int(event_counts.get("visitor.cancelled", 0) or 0)
+
     metric_values["visitor_requests_pending_count"] = visitor_registered
     metric_values["visitors_checked_in_count"] = visitor_checked_in
     metric_values["visitor_unauthorized_attempts_count"] = visitor_unauthorized
+    metric_values["visitor_visits_completed_count"] = visitor_checked_out
+    metric_values["visitor_visits_cancelled_count"] = visitor_cancelled
     metric_values["security_incidents_open_count"] = security_incidents_opened
     metric_values["security_incidents_escalated_count"] = security_incidents_escalated
 
@@ -1085,6 +1096,9 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
                         "visitor_requests_pending_count",
                         "visitors_checked_in_count",
                         "visitor_unauthorized_attempts_count",
+                        # A-019.2 Wave 7 — Visitor Management completion
+                        "visitor_visits_completed_count",
+                        "visitor_visits_cancelled_count",
                         "security_incidents_open_count",
                         "security_incidents_escalated_count",
                     }

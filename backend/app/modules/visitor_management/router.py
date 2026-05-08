@@ -145,6 +145,8 @@ def record_unauthorized_attempt_endpoint(
             int(tenant["id"]),
             visitor_name=payload.visitor_name,
             zone=payload.zone,
+            access_point_id=payload.access_point_id,
+            reason=payload.reason,
         )
         return UnauthorizedAttemptResponse(**result)
     except ValueError as exc:

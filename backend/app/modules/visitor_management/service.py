@@ -161,14 +161,34 @@ def expire_visit(tenant_id: int, *, visit_id: str) -> dict:
     return {"visit_id": visit_id, "status": "EXPIRED"}
 
 
-def record_unauthorized_attempt(tenant_id: int, *, visitor_name: str, zone: str) -> dict:
+def record_unauthorized_attempt(
+    tenant_id: int,
+    *,
+    visitor_name: str,
+    zone: str,
+    access_point_id: str | None = None,
+    reason: str | None = None,
+) -> dict:
     _validate_tenant(tenant_id)
     if not visitor_name:
         raise ValueError("visitor_name is required")
-    _fire(tenant_id, "visitor.unauthorized_attempt", {"visitor": visitor_name, "zone": zone})
+    evidence: dict = {
+        "visitor": visitor_name,
+        "zone": zone,
+        "access_point_id": access_point_id,
+        "reason": reason,
+    }
+    _fire(tenant_id, "visitor.unauthorized_attempt", evidence)
     row = create_entity_for_tenant(
         "visit_logs",
-        {"visitor_name": visitor_name, "zone": zone, "event": "UNAUTHORIZED_ATTEMPT", "tenant_id": tenant_id},
+        {
+            "visitor_name": visitor_name,
+            "zone": zone,
+            "access_point_id": access_point_id,
+            "reason": reason,
+            "event": "UNAUTHORIZED_ATTEMPT",
+            "tenant_id": tenant_id,
+        },
         tenant_id,
     )
     return {"log_id": row["id"], "event": "UNAUTHORIZED_ATTEMPT"}
