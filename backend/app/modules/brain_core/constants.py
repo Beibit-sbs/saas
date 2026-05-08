@@ -107,13 +107,16 @@ SCHEDULING_EVENT_TYPES = {
     "scheduling.section.scheduled",
 }
 
-# A-013.3: Scheduling conflict and enrollment capacity risk signals
+# A-013.3/A-018.1: Scheduling conflict and enrollment/room capacity risk signals
 SECTION_CONFLICT_EVENT_TYPES = {
     "scheduling.section.conflict_detected",
+    "scheduling.room_conflict.detected",
+    "scheduling.room_allocation.required",
 }
 
 ENROLLMENT_CAPACITY_RISK_EVENT_TYPES = {
     "enrollment.capacity_risk.detected",
+    "scheduling.capacity_mismatch.detected",
 }
 
 ACADEMIC_INTEGRITY_EVENT_TYPES = {

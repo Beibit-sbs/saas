@@ -455,16 +455,31 @@ class SignalRegistry:
             "scenario": "faculty_overload",
             "context_sources": ["faculty", "academic"],
         },
-        # A-013.3: Scheduling conflict + enrollment capacity risk
+        # A-013.3/A-018.1: Scheduling conflict + enrollment/room capacity risk
         "scheduling.section.conflict_detected": {
             "signal_class": "operational_risk",
             "scenario": "section_conflict",
             "context_sources": ["scheduling", "academic", "faculty"],
         },
+        "scheduling.room_conflict.detected": {
+            "signal_class": "operational_risk",
+            "scenario": "section_conflict",
+            "context_sources": ["scheduling", "academic", "faculty", "operations"],
+        },
+        "scheduling.room_allocation.required": {
+            "signal_class": "operational_risk",
+            "scenario": "section_conflict",
+            "context_sources": ["scheduling", "academic", "operations"],
+        },
         "enrollment.capacity_risk.detected": {
             "signal_class": "academic_risk",
             "scenario": "enrollment_capacity_risk",
             "context_sources": ["scheduling", "academic"],
+        },
+        "scheduling.capacity_mismatch.detected": {
+            "signal_class": "academic_risk",
+            "scenario": "enrollment_capacity_risk",
+            "context_sources": ["scheduling", "academic", "operations"],
         },
         # A-015.4 — Finance Operations Health Brain
         "finance.operations.health_check": {

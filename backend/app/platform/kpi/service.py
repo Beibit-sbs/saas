@@ -45,6 +45,7 @@ METRIC_TITLES: dict[str, str] = {
     "course_fill_rate": "Course Fill Rate (%)",
     "capacity_risk_sections_count": "Enrollment Capacity Risk Count",
     "scheduling_conflicts_count": "Scheduling Conflict Count",
+    "room_conflict_count": "Room Conflict Count",
     # A-014.6 Wave 2 metrics
     "grade_decline_risk_count": "Grade Decline Risk Count",
     "grade_intervention_cases_count": "Grade Intervention Cases",
@@ -145,8 +146,19 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
         "student.needs_intervention",
     ],
     "course_fill_rate": ["scheduling.section.created", "enrollment.created"],
-    "capacity_risk_sections_count": ["enrollment.capacity_risk.detected"],
-    "scheduling_conflicts_count": ["scheduling.section.conflict_detected"],
+    "capacity_risk_sections_count": [
+        "enrollment.capacity_risk.detected",
+        "scheduling.capacity_mismatch.detected",
+    ],
+    "scheduling_conflicts_count": [
+        "scheduling.section.conflict_detected",
+        "scheduling.room_conflict.detected",
+        "scheduling.room_allocation.required",
+    ],
+    "room_conflict_count": [
+        "scheduling.room_conflict.detected",
+        "scheduling.room_allocation.required",
+    ],
     # A-014.6 Wave 2 event lineage
     "grade_decline_risk_count": ["academic.grade_risk.detected"],
     "grade_intervention_cases_count": ["interventions.case.created"],

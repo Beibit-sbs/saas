@@ -971,10 +971,35 @@ class RiskClassifier:
                 "reasoning_path": "scheduling_section_scheduled_medium",
             }
 
-        # A-013.3: Scheduling conflict signal
-        if event_type == "scheduling.section.conflict_detected":
+        # A-013.3/A-018.1: Scheduling conflict + room allocation readiness signals
+        if event_type in {
+            "scheduling.section.conflict_detected",
+            "scheduling.room_conflict.detected",
+            "scheduling.room_allocation.required",
+        }:
             payload = signal.get("payload", {})
             conflict_type = str(payload.get("conflict_type") or "").strip().lower()
+            if not conflict_type and event_type == "scheduling.room_conflict.detected":
+                conflict_type = "room_conflict"
+            room_capacity = payload.get("room_capacity")
+            required_capacity = payload.get("required_capacity") or payload.get("enrolled_count")
+            if event_type == "scheduling.room_allocation.required":
+                try:
+                    if room_capacity is not None and required_capacity is not None and int(required_capacity) > int(room_capacity):
+                        return {
+                            "situation_type": "operational_risk",
+                            "severity": "high",
+                            "urgency": "high",
+                            "reasoning_path": "section_conflict_high",
+                        }
+                except (TypeError, ValueError):
+                    pass
+                return {
+                    "situation_type": "operational_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "section_conflict_medium",
+                }
             if conflict_type in {"room_conflict", "instructor_conflict"}:
                 return {
                     "situation_type": "operational_risk",
@@ -989,17 +1014,30 @@ class RiskClassifier:
                 "reasoning_path": "section_conflict_medium",
             }
 
-        # A-013.3: Enrollment capacity risk signal
-        if event_type == "enrollment.capacity_risk.detected":
+        # A-013.3/A-018.1: Enrollment capacity risk + room capacity mismatch
+        if event_type in {"enrollment.capacity_risk.detected", "scheduling.capacity_mismatch.detected"}:
             payload = signal.get("payload", {})
             fill_rate = payload.get("fill_rate")
             enrolled_count = payload.get("enrolled_count")
             max_capacity = payload.get("max_capacity")
+            required_capacity = payload.get("required_capacity") or enrolled_count
+            room_capacity = payload.get("room_capacity")
             if fill_rate is None and enrolled_count is not None and max_capacity:
                 try:
                     fill_rate = float(enrolled_count) / float(max_capacity)
                 except (ZeroDivisionError, TypeError, ValueError):
                     fill_rate = None
+            if event_type == "scheduling.capacity_mismatch.detected":
+                try:
+                    if room_capacity is not None and required_capacity is not None and int(required_capacity) > int(room_capacity):
+                        return {
+                            "situation_type": "academic_risk",
+                            "severity": "high",
+                            "urgency": "high",
+                            "reasoning_path": "enrollment_capacity_risk_high",
+                        }
+                except (TypeError, ValueError):
+                    pass
             if fill_rate is not None and float(fill_rate) >= 0.90:
                 return {
                     "situation_type": "academic_risk",

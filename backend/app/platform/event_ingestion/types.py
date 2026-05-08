@@ -29,6 +29,9 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         # A-013.5 Wave 1 KPI extension — scheduling / enrollment capacity
         "scheduling.section.created",
         "scheduling.section.conflict_detected",
+        "scheduling.room_conflict.detected",
+        "scheduling.room_allocation.required",
+        "scheduling.capacity_mismatch.detected",
         "enrollment.created",
         "enrollment.capacity_risk.detected",
         # A-014.6 Wave 2 KPI extension — graduation / degree progress

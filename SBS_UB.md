@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: A-018.0_selection_complete
-- current_stage: A-018 Wave 6 — Campus Operations Autonomy selection complete
-- last_completed_action_id: A-018.0
-- next_action_id: A-018.1
-- updated_at: 2026-05-08 (A-018.0 complete; Wave 6 selection done; Theme=Campus Operations Autonomy; Top 5: scheduling brain closure, room booking, access control, events management, campus ops KPI dashboard; all conditions reviewed; A-018.0-WAVE6_SELECTION_AND_CONDITIONS_REPORT.md created; ready for A-018.1)
+- status: ready_for_A-018.2
+- current_stage: A-018.1 Scheduling Brain maturity closure — COMPLETE
+- last_completed_action_id: A-018.1
+- next_action_id: A-018.2
+- updated_at: 2026-05-08 (A-018.1 complete; scheduling raised from Level 5 BRAIN_READY to Level 6 FULL; room-readiness Brain signal contracts aligned; KPI lineage expanded; targeted backend slice 309 PASS, tenant/security 882 PASS, frontend scheduling+dashboard contract tests PASS, safe gate PASS; A-018.1-SCHEDULING_BRAIN_MATURITY_CLOSURE_REPORT.md created; ready for A-018.2)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -762,6 +762,37 @@
 - Artifact: `A-018.0-WAVE6_SELECTION_AND_CONDITIONS_REPORT.md`
 - Decision: **A-018.0 CLOSED. Wave 6 selection complete. Campus Operations Autonomy theme confirmed.**
 - Next action: **A-018.1 — Scheduling Brain Maturity Closure**.
+
+---
+
+#### A-018.1 — Scheduling Brain Maturity Closure
+
+- Date: 2026-05-08
+- Scope: Maturity closure only (reuse-first, additive-only). No new scheduling engine. No migrations.
+- Old module status: `scheduling` = **Level 5 / BRAIN_READY**.
+- Target module status: `scheduling` = **Level 6 / FULL**.
+- Key closure work performed:
+    - `brain_core/context_sources/scheduling.py`: added room-readiness evidence fields (`room_capacity`, `required_capacity`, `room_allocation_required`) while preserving authoritative tenant scoping.
+    - `brain_core/constants.py`: expanded scheduling event sets with `scheduling.room_conflict.detected`, `scheduling.room_allocation.required`, `scheduling.capacity_mismatch.detected`.
+    - `brain_core/registry.py`: mapped new scheduling room-readiness signals into existing scenarios (`section_conflict`, `enrollment_capacity_risk`) — no new scenario family added.
+    - `brain_core/classifiers/risk_classifier.py`: extended existing section-conflict/capacity-risk branches to classify new scheduling signals deterministically.
+    - `platform/event_ingestion/types.py` + `platform/events/registry.py`: aligned canonical event contracts for new signals.
+    - `platform/kpi/service.py`: added `room_conflict_count` metric title and lineage; expanded scheduling KPI lineage for room readiness events.
+    - `tests/test_a018_1_scheduling_brain_maturity_closure.py`: new maturity closure suite for room-readiness contracts, KPI lineage, tenant safety, and non-destructive action behavior.
+- Validation results:
+    - Targeted backend slice (`a018_1 or scheduling or room_allocation or capacity_risk or brain_core`): **309 passed, 8124 deselected, 1 warning**.
+    - Tenant/security slice (`tenant or security`): **882 passed, 1 skipped, 7550 deselected, 1 warning**.
+    - Frontend targeted contracts:
+        - `SchedulingPage.test.tsx`: **6 passed**.
+        - `RectorDashboardPage.test.tsx`: **9 passed**.
+    - Safe gate (`university_pilot_safe_gate.sh`): **PASS**.
+- Known conditions handling for this action:
+    - KC-3 (`.coverage`, `backend/.coverage`) excluded from scope commits.
+    - KC-4 historical untracked docs excluded from scope commits.
+    - `.vscode/tasks.json` (local tooling mutation) excluded from scope commits.
+- Artifact: `A-018.1-SCHEDULING_BRAIN_MATURITY_CLOSURE_REPORT.md`
+- Decision: **A-018.1 CLOSED — scheduling raised to Level 6 / FULL.**
+- Next action: **A-018.2 — Room Booking Maturity Closure**.
 
 ---
 

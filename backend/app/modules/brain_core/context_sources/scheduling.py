@@ -21,7 +21,7 @@ def fetch_scheduling_context(
     Fields sourced from signal subject/payload:
     - section_id, course_id, term_id
     - faculty_id / instructor_id (aliased)
-    - room_id
+    - room_id, room_capacity, required_capacity
     - enrolled_count, max_capacity → fill_rate (auto-computed if not present)
     - conflict_type, conflicting_section_id
     - prerequisite_violations
@@ -40,6 +40,8 @@ def fetch_scheduling_context(
         or subject.get("faculty_id")
     )
     room_id = payload.get("room_id") or subject.get("room_id")
+    room_capacity = payload.get("room_capacity")
+    required_capacity = payload.get("required_capacity") or payload.get("enrolled_count")
 
     enrolled_count = payload.get("enrolled_count")
     max_capacity = payload.get("max_capacity")
@@ -58,12 +60,24 @@ def fetch_scheduling_context(
         else computed_fill_rate
     )
 
+    room_allocation_required = False
+    if room_id is None and required_capacity is not None:
+        room_allocation_required = True
+    elif room_capacity is not None and required_capacity is not None:
+        try:
+            room_allocation_required = int(required_capacity) > int(room_capacity)
+        except (TypeError, ValueError):
+            room_allocation_required = False
+
     return {
         "section_id": section_id,
         "course_id": course_id,
         "term_id": term_id,
         "faculty_id": faculty_id,
         "room_id": room_id,
+        "room_capacity": room_capacity,
+        "required_capacity": required_capacity,
+        "room_allocation_required": room_allocation_required,
         "enrolled_count": enrolled_count,
         "max_capacity": max_capacity,
         "fill_rate": fill_rate,
