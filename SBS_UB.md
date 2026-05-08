@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-06-01 (A-018.8 FINAL WAVE 6 CAMPUS OPERATIONS CLOSURE)
-- status: ready_for_A-019
-- current_stage: A-018 CLOSED — PASS WITH KNOWN CONDITIONS
-- last_completed_action_id: A-018.8
-- next_action_id: A-019.0
-- updated_at: 2026-05-08 (A-018.8 complete; all final gates green; targeted backend 670 passed / 6 pre-existing legacy stale-contract failures (test_visitor_access_control_module_xliii.py — NOT A-018 regression); tenant/security 913 passed; frontend 115 files/777 tests PASS; lint PASS; safe gate PASS; release gate PASS with final banner `[release-gate] PASS: release gate and rollback readiness are green`; A-018.8 report created; A-018 CLOSED — PASS WITH KNOWN CONDITIONS; transition to A-019 Campus Security + Visitor Operations Autonomy)
+- run_id: OP-AUDIT-2026-05-06-01 (A-019.0 WAVE 7 SELECTION + KNOWN CONDITIONS REVIEW)
+- status: A-019.0_selection_complete
+- current_stage: A-019 Wave 7 selection / campus security + visitor operations planning
+- last_completed_action_id: A-019.0
+- next_action_id: A-019.1
+- updated_at: 2026-05-08 (A-019.0 planning complete; Wave 7 theme selected as Campus Security + Visitor Operations Autonomy; repo hygiene snapshot confirmed unchanged A-018 known conditions; candidate module audit and feature scoring completed; KC-NEW `test_visitor_access_control_module_xliii.py` reclassified to SHOULD_BE_A019_1_CANDIDATE; A-019 Top 5 selected; backlog expanded through A-019.8; transition approved to A-019.1)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -119,6 +119,42 @@
     - KC-5/6: `act()` + DeprecationWarning — ACCEPTED_KNOWN_CONDITION
     - KC-7: Docker rebuild after test edits — ENV_PROFILE_ONLY
     - KC-NEW: `test_visitor_access_control_module_xliii.py` 6 failures — ACCEPTED_KNOWN_CONDITION (pre-existing stale contract)
+
+---
+
+#### A-019.0 — Wave 7 Selection + Known Conditions Review
+
+- Date: 2026-05-08
+- Scope: Planning and selection only (no code/endpoints/migrations/production-logic changes).
+- Artifact: `A-019.0-WAVE7_SELECTION_AND_CONDITIONS_REPORT.md`
+- Repo context:
+    - HEAD commit confirmed: `b0e9d63` (`docs(wave6): close A-018 campus operations autonomy`)
+    - Dirty tracked (out-of-scope): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical/local: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+- Known conditions review decision:
+    - KC-1: ACCEPTED_KNOWN_CONDITION
+    - KC-2: ENV_PROFILE_ONLY
+    - KC-3: ACCEPTED_KNOWN_CONDITION
+    - KC-4: FIX_IN_PARALLEL
+    - KC-5/6: ACCEPTED_KNOWN_CONDITION
+    - KC-7: ENV_PROFILE_ONLY
+    - KC-NEW (`test_visitor_access_control_module_xliii.py`): **SHOULD_BE_A019_1_CANDIDATE**
+- Wave 7 theme evaluation:
+    - Selected: **Campus Security + Visitor Operations Autonomy**
+    - Alternatives reviewed: Scheduling+Room Allocation Brain; Student Services/Lifecycle Completion; AI/Learning Support; Legal/Contract Governance
+- A-019 Top 5 selected:
+    1. `A-019.1` — Visitor + Access Legacy Contract Stabilization (KC-NEW burn-down)
+    2. `A-019.2` — Visitor Management Maturity Completion
+    3. `A-019.3` — Security Operations Incident Brain
+    4. `A-019.4` — Visitor Access Workflow Integration
+    5. `A-019.5` — Security Operations KPI / Dashboard
+- Finalized A-019 backlog:
+    - `A-019.6` — KPI/frontend/dashboard consolidation + navigation hardening
+    - `A-019.7` — Campus security cross-feature E2E
+    - `A-019.8` — Full gates + final A-019 report
+- Policy lock:
+    - No hardware ACS integration, no physical door control, no auto-lockout/ban, no auto-disciplinary sanctions, no destructive automation; high/critical security actions require human review/escalation.
+- Decision: **A-019.0 COMPLETE - PASS (planning only)**. Proceed to `A-019.1`.
 
 ---
 
