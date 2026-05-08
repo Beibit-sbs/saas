@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-019.8 FINAL WAVE 7 CLOSURE)
-- status: ready_for_A-020
-- current_stage: A-020 planning / next wave selection (A-019 closed; validation-only closure complete)
-- last_completed_action_id: A-019.8
-- next_action_id: A-020.0
-- updated_at: 2026-05-09 (A-019.8 final gates completed; release gate PASS; smoke classified as known dependency/startup issue; A-019 wave closed)
+- status: ready_for_A-020.1
+- current_stage: A-020 Wave 8 selection / scheduling + room allocation planning (A-020.0 selection complete)
+- last_completed_action_id: A-020.0
+- next_action_id: A-020.1
+- updated_at: 2026-05-09 (A-020.0 wave 8 selection complete; A-019 known conditions preserved; A-020.1 queued)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -92,6 +92,43 @@
 - Artifact: `A-018.8-FINAL_WAVE6_CAMPUS_OPERATIONS_REPORT.md`
 - **Decision: A-018 CLOSED — PASS WITH KNOWN CONDITIONS**
 - **Transition: ready_for_A-019**
+
+#### A-020.0 — Wave 8 Selection + Known Conditions Review
+
+- Date: 2026-05-09
+- Scope: planning and selection only. No code, no endpoints, no migrations, no production-logic changes.
+- Artifact: `A-020.0-WAVE8_SELECTION_AND_CONDITIONS_REPORT.md`
+- Repo context:
+    - HEAD commit confirmed: `6d8bae6` (`docs(wave7): close A-019 visitor security operations`)
+    - Dirty tracked (out-of-scope): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical/local: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+- Known conditions review decision:
+    - Smoke docker dependency/startup issue: `ENV_PROFILE_ONLY`
+    - Full-backend missing `DATABASE_URL` postgres profile errors: `ENV_PROFILE_ONLY`
+    - Legacy brain-core assertion mismatch: `ACCEPTED_KNOWN_CONDITION`
+    - Dirty coverage binaries and local tooling state: `ACCEPTED_KNOWN_CONDITION` / `FIX_IN_PARALLEL`
+    - Warning/deprecation noise: `ACCEPTED_KNOWN_CONDITION`
+- Theme evaluation:
+    - Selected theme: **Scheduling + Room Allocation Brain**
+    - Alternatives reviewed: Ministry / Rector Governance Dashboard; Student Services / Lifecycle Completion; AI / Learning Support Autonomy; Legal / Contract Governance; Facilities / SLA / Maintenance Ops
+- A-020 Top 5 selected:
+    1. Room Allocation Readiness Contract Stabilization
+    2. Room Inventory / Room Capability Contract
+    3. Scheduling Conflict Detection Enhancement
+    4. Capacity Matching Brain
+    5. Room Allocation Recommendation Engine
+- A-020 backlog skeleton:
+    - `A-020.6` — KPI/frontend/dashboard consolidation
+    - `A-020.7` — Cross-feature E2E
+    - `A-020.8` — Full gates + final A-020 report
+- Policy lock:
+    - no automatic mass room reassignment
+    - no destructive timetable mutation
+    - no unapproved teacher/group schedule changes
+    - no silent override of room booking constraints
+    - no cross-tenant timetable leakage
+    - no fake optimization result
+- Decision: **A-020.0 COMPLETE - PASS (selection only)**. Proceed to `A-020.1`.
 
 ---
 
