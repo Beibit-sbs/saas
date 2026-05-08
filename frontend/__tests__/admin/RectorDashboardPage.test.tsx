@@ -316,4 +316,27 @@ describe("RectorDashboardPage", () => {
     });
     expect(a017).toBeTruthy();
   });
+
+  it("keeps A-017 consolidation section stable when optional dashboard payload is empty", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-08",
+        generated_at: "2026-05-08T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+    const bars = screen.getAllByTestId("wave1-kpi-bar-mock");
+    const a017 = bars.find((node) => {
+      const keys = node.getAttribute("data-keys") ?? "";
+      return keys.includes("budget_overrun_risk_count") && keys.includes("research_ethics_requires_approval_count");
+    });
+    expect(a017).toBeTruthy();
+  });
 });

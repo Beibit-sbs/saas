@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-017.7
-- current_stage: A-017.6 KPI/dashboard consolidation for module maturity wave — COMPLETE
-- last_completed_action_id: A-017.6
-- next_action_id: A-017.7
-- updated_at: 2026-05-08 (A-017.6 complete; executive dashboard now includes additive A-017 consolidation KPI bar covering budget+billing+academic integrity/research ethics module metrics via shared Wave1KpiBar; no backend contract changes; targeted + full frontend tests green, lint PASS, docker-up --build PASS, safe gate PASS)
+- status: ready_for_A-017.8
+- current_stage: A-017.7 cross-module e2e for module maturity wave — COMPLETE
+- last_completed_action_id: A-017.7
+- next_action_id: A-017.8
+- updated_at: 2026-05-08 (A-017.7 complete; additive cross-module backend/frontend contract validation added for budget_planning + research_ethics + exam_governance + exam_proctoring + billing + executive dashboard consolidation; targeted backend/frontend, tenant-security slice, full frontend, lint, build, and safe gate green; no business-scope expansion)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -641,6 +641,38 @@
 - Artifact: `A-017.6-KPI_DASHBOARD_CONSOLIDATION_REPORT.md`
 - Decision: **A-017.6 CLOSED - PASS**.
 - Next action: **A-017.7**.
+
+#### A-017.7 - CROSS-MODULE E2E FOR MODULE MATURITY WAVE
+
+- Date: 2026-05-08
+- Scope: Cross-module validation and evidence only for completed A-017 modules (`budget_planning`, `research_ethics`, `exam_governance`, `exam_proctoring`, `billing`) plus executive dashboard consolidation. No new business features/modules/migrations.
+- Repo hygiene snapshot before A-017.7 edits:
+    - Tracked dirty: `.coverage`, `backend/.coverage`.
+    - Untracked historical artifacts: `A-011.3-...`, `A-011.4-...`, `A-012.*`, `A-017.0-...`, `A009_AUTH_HARNESS_STABILIZATION.md`.
+    - Local/runtime artifact: `infra/nohup.out`.
+    - Decision: exclude all unrelated dirty files from A-017.7 staging.
+- Changes:
+    - `backend/tests/test_a017_module_maturity_cross_module_e2e.py`: NEW cross-module backend contract suite covering budget lineage availability, exam governance brain compatibility/no-punitive path, research ethics + billing contract availability, no duplicate scenario drift, tenant fail-closed/isolation checks.
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx`: added A-017.7 resilience assertion that consolidation KPI section remains stable when optional dashboard payload is empty.
+    - `SBS_UB.md`: corrected stale matrix row for `budget_planning` to `✅ FULL` to align with completed A-017.1 closure evidence.
+- Validation results:
+    - Backend targeted A-017 slice: **647 passed, 2 skipped, 7784 deselected, 1 warning**.
+    - Tenant/security backend slice: **882 passed, 1 skipped, 7550 deselected, 1 warning**.
+    - Frontend targeted A-017 pages/dashboard slice: **61/61 PASS** (5 files).
+    - Frontend full suite: **771/771 PASS** (114 files).
+    - Frontend lint: **PASS**.
+    - Frontend build: **PASS** (Next.js production build complete).
+    - Safe gate (`university_pilot_safe_gate.sh`): **PASS**.
+    - Release gate note: attempted for additional evidence; mandatory release-gate promotion was not required for this action because runtime backend/KPI contracts were not changed (validation-only scope).
+- Maturity evidence confirmation:
+    - `budget_planning`: **Level 6 / FULL**.
+    - `research_ethics`: **Level 6 / FULL**.
+    - `exam_governance`: **Level 6 / FULL**.
+    - `exam_proctoring`: **Level 6 / FULL**.
+    - `billing`: **Level 6 / FULL**.
+- Artifact: `A-017.7-CROSS_MODULE_MATURITY_E2E_REPORT.md`
+- Decision: **A-017.7 CLOSED - PASS**.
+- Next action: **A-017.8**.
 
 #### A-016.3 — Exam Proctoring Violation Workflow Brain
 
@@ -2361,7 +2393,7 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 | exam_governance | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | exam_proctoring | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | procurement | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ EVENT LAYER DONE |
-| budget_planning | ❌ | ⚠️ | ✅ | ✅ | ❌ | ❌ PARTIAL |
+| budget_planning | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | syllabus_governance | ❌ | ⚠️ stub | ✅ | ✅ | ❌ | ❌ PARTIAL |
 | scheduling | ❌ | ⚠️ placeholder | ✅ | ✅ | ❌ | ❌ PARTIAL |
 | teaching_quality | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
