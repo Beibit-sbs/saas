@@ -3,7 +3,7 @@
 - current_stage: A-018.6 VISITOR_MANAGEMENT + SECURITY_OPERATIONS Readiness Closure — COMPLETE
 - last_completed_action_id: A-018.6
 - next_action_id: A-018.7
-- updated_at: 2026-05-08 (A-018.6 complete; visitor_management raised L1→L4 (FSM, 8 events, 3 KPI metrics, HTTP router, frontend page, brain signals+decision); security_operations raised L2→L4 (5 events, 2 KPI metrics, brain signals+decision, frontend page); 18/18 tests green; artifact A-018.6-VISITOR_SECURITY_READINESS_CLOSURE_REPORT.md created; ready for A-018.7)
+- updated_at: 2026-05-08 (A-018.6 complete; visitor_management raised L1→L4 (FSM, 8 events, 3 KPI metrics, HTTP router, frontend page, brain signals+decision); security_operations raised L2→L4 (5 events, 2 KPI metrics, brain signals+decision, frontend page); 20/20 targeted tests green; safe gate PASS; release gate PASS; artifact A-018.6-VISITOR_SECURITY_READINESS_CLOSURE_REPORT.md created; ready for A-018.7)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -981,9 +981,11 @@
     - `backend/app/modules/brain_core/registry.py`: 8 visitor + 5 security incident signal mappings; `visitor_management_ops` (decision_type: `visitor_risk`) + `security_operations_ops` (decision_type: `security_incident_risk`) decision entries.
     - `frontend/app/(admin)/console/visitor-management/page.tsx`: Created — lifecycle states + events display.
     - `frontend/app/(admin)/console/security-operations/page.tsx`: Created — incident states + events display.
-    - `backend/tests/test_a018_6_visitor_security_readiness_closure.py`: Created — 18 validation tests.
+    - `backend/tests/test_a018_6_visitor_security_readiness_closure.py`: Created — 20 validation tests.
 - Validation results:
-    - A-018.6 targeted tests (`tests/test_a018_6_visitor_security_readiness_closure.py`): **18/18 passed (EXIT: 0)**.
+    - A-018.6 targeted tests (`tests/test_a018_6_visitor_security_readiness_closure.py`): **20/20 passed (EXIT: 0)**.
+    - Safe gate (`scripts/university_pilot_safe_gate.sh`): **PASS**.
+    - Release gate (`scripts/release_gate.sh`): **PASS** with final banner `release gate and rollback readiness are green`.
 - Artifact: `A-018.6-VISITOR_SECURITY_READINESS_CLOSURE_REPORT.md`
 - Decision: **A-018.6 CLOSED — visitor_management raised L1→L4, security_operations raised L2→L4; all targeted tests green; additive-only constraints respected.**
 - Next action: **A-018.7 — next Wave 6 maturity closure item.**
