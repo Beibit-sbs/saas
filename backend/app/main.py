@@ -46,6 +46,7 @@ from app.modules.faculty.router import router as faculty_router
 from app.modules.feature_flags.router import router as feature_flags_router
 from app.modules.grades.router import router as grades_router
 from app.modules.scheduling.router import router as scheduling_router
+from app.modules.events_management.router import router as events_management_router
 from app.modules.thesis.router import router as thesis_router
 from app.modules.advising.router import router as advising_router
 from app.modules.student_services.router import router as student_services_router
@@ -358,6 +359,7 @@ app.include_router(courses_router)
 app.include_router(enrollments_router)
 app.include_router(grades_router)
 app.include_router(scheduling_router)
+app.include_router(events_management_router)
 app.include_router(thesis_router)
 app.include_router(advising_router)
 app.include_router(student_services_router)

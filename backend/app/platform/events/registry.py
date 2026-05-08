@@ -332,9 +332,13 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "internship.completed": EventDefinition(GenericTenantEventPayload),
     "internship.completion_risk": EventDefinition(GenericTenantEventPayload),
     # Events Management + Room Booking (XLII)
+    "event.created": EventDefinition(GenericTenantEventPayload),
     "event.published": EventDefinition(GenericTenantEventPayload),
+    "event.registration_opened": EventDefinition(GenericTenantEventPayload),
     "event.registration_full": EventDefinition(GenericTenantEventPayload),
     "event.started": EventDefinition(GenericTenantEventPayload),
+    "event.completed": EventDefinition(GenericTenantEventPayload),
+    "event.cancelled": EventDefinition(GenericTenantEventPayload),
     "booking.approved": EventDefinition(GenericTenantEventPayload),
     "booking.conflict_detected": EventDefinition(GenericTenantEventPayload),
     "room.released": EventDefinition(GenericTenantEventPayload),

@@ -116,6 +116,17 @@ SECTION_CONFLICT_EVENT_TYPES = {
     "resource.overload",
 }
 
+# A-018.4: Events Management lifecycle and readiness signals
+EVENTS_MANAGEMENT_EVENT_TYPES = frozenset({
+    "event.created",
+    "event.published",
+    "event.registration_opened",
+    "event.registration_full",
+    "event.started",
+    "event.completed",
+    "event.cancelled",
+})
+
 # A-018.3: Access Control maturity closure — card lifecycle + security anomaly signals
 ACCESS_CONTROL_EVENT_TYPES = frozenset({
     "access.denied",
@@ -285,6 +296,7 @@ SUPPORTED_SIGNAL_EVENT_TYPES = set(
     | EXAM_PROCTORING_EVENT_TYPES
     | RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES
     | ACADEMIC_INTEGRITY_CASE_RESOLUTION_EVENT_TYPES
+    | EVENTS_MANAGEMENT_EVENT_TYPES
     | ACCESS_CONTROL_EVENT_TYPES
 )
 

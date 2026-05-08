@@ -63,6 +63,7 @@ def test_create_event_success():
     with patch("app.modules.events_management.service.create_entity_for_tenant",
                return_value={"id": "e1"}):
         result = create_event(TENANT, title="Tech Talk", category_id="cat1",
+                              organizer_id="org1",
                               capacity=100, start_time="2026-06-01T10:00",
                               end_time="2026-06-01T12:00")
     assert result["event_id"] == "e1"
@@ -71,19 +72,19 @@ def test_create_event_success():
 
 def test_create_event_missing_title():
     with pytest.raises(ValueError, match="title"):
-        create_event(TENANT, title="", category_id="cat1", capacity=50,
+        create_event(TENANT, title="", category_id="cat1", organizer_id="org1", capacity=50,
                      start_time="2026-06-01T10:00", end_time="2026-06-01T12:00")
 
 
 def test_create_event_zero_capacity():
     with pytest.raises(ValueError, match="capacity"):
-        create_event(TENANT, title="Talk", category_id="cat1", capacity=0,
+        create_event(TENANT, title="Talk", category_id="cat1", organizer_id="org1", capacity=0,
                      start_time="2026-06-01T10:00", end_time="2026-06-01T12:00")
 
 
 def test_create_event_invalid_tenant():
     with pytest.raises(ValueError, match="tenant_id"):
-        create_event(0, title="Talk", category_id="cat1", capacity=50,
+        create_event(0, title="Talk", category_id="cat1", organizer_id="org1", capacity=50,
                      start_time="2026-06-01T10:00", end_time="2026-06-01T12:00")
 
 

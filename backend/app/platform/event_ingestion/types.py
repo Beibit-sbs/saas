@@ -120,5 +120,13 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "card.revoked",
         "card.reactivated",
         "security.anomaly",
+        # A-018.4 Events Management maturity closure — lifecycle + registration events
+        "event.created",
+        "event.published",
+        "event.registration_opened",
+        "event.registration_full",
+        "event.started",
+        "event.completed",
+        "event.cancelled",
     }
 )

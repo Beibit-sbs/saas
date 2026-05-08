@@ -34,6 +34,7 @@ from app.modules.brain_core.constants import (
     EXAM_PROCTORING_EVENT_TYPES,
     RESEARCH_ETHICS_COMPLIANCE_EVENT_TYPES,
     ACADEMIC_INTEGRITY_CASE_RESOLUTION_EVENT_TYPES,
+    EVENTS_MANAGEMENT_EVENT_TYPES,
 )
 
 
@@ -190,6 +191,42 @@ class SignalRegistry:
             "signal_class": "operational_risk",
             "scenario": "campus_operations",
             "context_sources": ["operations", "platform"],
+        },
+        # A-018.4 — Events Management signals
+        "event.created": {
+            "signal_class": "operational_event",
+            "scenario": "campus_operations",
+            "context_sources": ["events_management", "operations", "academic"],
+        },
+        "event.published": {
+            "signal_class": "operational_event",
+            "scenario": "campus_operations",
+            "context_sources": ["events_management", "operations", "academic"],
+        },
+        "event.registration_opened": {
+            "signal_class": "operational_event",
+            "scenario": "campus_operations",
+            "context_sources": ["events_management", "operations", "student_success"],
+        },
+        "event.registration_full": {
+            "signal_class": "operational_risk",
+            "scenario": "campus_operations",
+            "context_sources": ["events_management", "operations", "student_success"],
+        },
+        "event.started": {
+            "signal_class": "operational_event",
+            "scenario": "campus_operations",
+            "context_sources": ["events_management", "operations"],
+        },
+        "event.completed": {
+            "signal_class": "operational_event",
+            "scenario": "campus_operations",
+            "context_sources": ["events_management", "operations"],
+        },
+        "event.cancelled": {
+            "signal_class": "operational_risk",
+            "scenario": "campus_operations",
+            "context_sources": ["events_management", "operations"],
         },
         # A-018.3 — Access Control signals
         "security.anomaly": {
@@ -664,7 +701,7 @@ class DecisionRegistry:
         },
         "campus_operations": {
             "decision_type": "operational",
-            "allowed_event_types": sorted(OPERATIONS_EVENT_TYPES),
+            "allowed_event_types": sorted(OPERATIONS_EVENT_TYPES | EVENTS_MANAGEMENT_EVENT_TYPES),
             "action_map": {
                 "create_facility_incident_workflow": "workflow_task",
                 "create_cleaning_recovery_task": "workflow_task",

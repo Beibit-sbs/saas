@@ -227,6 +227,12 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.SCHEDULING_READ,
       },
       {
+        label: "Events Management",
+        href: "/console/events-management",
+        icon: CalendarDays,
+        permission: PERMISSIONS.SCHEDULING_READ,
+      },
+      {
         label: "Exam Governance",
         href: "/console/exam-governance",
         icon: ClipboardCheck,

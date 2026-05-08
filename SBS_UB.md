@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-06-01 (A-017.1 BUDGET_PLANNING Maturity Closure)
-- status: ready_for_A-018.4
-- current_stage: A-018.3 Access Control maturity closure — COMPLETE
-- last_completed_action_id: A-018.3
-- next_action_id: A-018.4
-- updated_at: 2026-05-08 (A-018.3 complete; access_control raised to Level 4+ via API contract, card lifecycle events, Brain/KPI/event alignment, and closure test suite hardening; artifact A-018.3-ACCESS_CONTROL_MATURITY_CLOSURE_REPORT.md created; ready for A-018.4)
+- status: ready_for_A-018.5
+- current_stage: A-018.4 Events Management maturity closure — COMPLETE
+- last_completed_action_id: A-018.4
+- next_action_id: A-018.5
+- updated_at: 2026-05-08 (A-018.4 complete; events_management raised to Level 4 via API contract, lifecycle/events hardening, Brain/KPI/event alignment, frontend readiness page, and closure test suite validation; artifact A-018.4-EVENTS_MANAGEMENT_MATURITY_CLOSURE_REPORT.md created; ready for A-018.5)
 
 #### A-015.0 - WAVE 3 SELECTION + KNOWN CONDITIONS REVIEW
 
@@ -877,6 +877,53 @@
 - Artifact: `A-018.3-ACCESS_CONTROL_MATURITY_CLOSURE_REPORT.md`
 - Decision: **A-018.3 CLOSED — access_control raised to Level 4+ minimum (contracted + integrated + validated on closure deltas).**
 - Next action: **A-018.4 — next Wave 6 maturity closure item.**
+
+---
+
+#### A-018.4 — Events Management Maturity Closure
+
+- Date: 2026-05-08
+- Scope: Raise `events_management` from Level 1 / STUB_SERVICE to Level 4 minimum with additive-only changes (API contract, lifecycle/FSM closure, event/Brain/KPI alignment, frontend readiness; no migrations).
+- Key closure work performed:
+    - Added API contract surface:
+        - `backend/app/modules/events_management/router.py`
+        - `backend/app/modules/events_management/schemas.py`
+        - registered router in `backend/app/main.py` under `/api/admin/events-management`.
+    - Hardened `backend/app/modules/events_management/service.py`:
+        - required non-empty validation for `title`, `category_id`, `organizer_id`, `start_time`, `end_time`.
+        - ISO datetime parsing and schedule window guard (`start_time < end_time`).
+        - compatibility wrappers for tenant entity API call signatures.
+        - lifecycle event emissions completed for:
+            - `event.created`
+            - `event.published`
+            - `event.registration_opened`
+            - `event.registration_full`
+            - `event.started`
+            - `event.completed`
+            - `event.cancelled`
+        - duplicate registration guard + numeric capacity parsing + capacity reached guard.
+        - additive audit/usage metric hooks (fail-safe).
+    - Event contract alignment:
+        - `backend/app/platform/events/registry.py`: added missing events_management canonical events.
+        - `backend/app/platform/event_ingestion/types.py`: added full events_management lifecycle family to `VALID_EVENT_TYPES`.
+    - Brain/KPI alignment:
+        - `backend/app/modules/brain_core/constants.py`: added `EVENTS_MANAGEMENT_EVENT_TYPES`; merged into supported signal set.
+        - `backend/app/modules/brain_core/registry.py`: mapped all 7 events to `campus_operations`; expanded decision allowed events.
+        - `backend/app/platform/kpi/service.py`: added events_management metric titles and event-derived lineage.
+    - Frontend readiness:
+        - added `frontend/app/(admin)/console/events-management/page.tsx`.
+        - added nav entry in `frontend/shared/config/navigation.ts`.
+        - added page test `frontend/__tests__/admin/EventsManagementPage.test.tsx`.
+    - Regression update:
+        - updated `backend/tests/test_events_room_booking_module_xlii.py` for required `organizer_id`.
+- Validation results:
+    - A-018.4 backend closure suite (`backend/tests/test_a018_4_events_management_maturity_closure.py`): **12 passed**.
+    - Legacy XLII regression (`backend/tests/test_events_room_booking_module_xlii.py`): **30 passed**.
+    - Frontend readiness page test (`frontend/__tests__/admin/EventsManagementPage.test.tsx` via docker profile): **1 file passed / 2 tests passed**.
+    - Safe gate (`scripts/university_pilot_safe_gate.sh`): **PASS**.
+- Artifact: `A-018.4-EVENTS_MANAGEMENT_MATURITY_CLOSURE_REPORT.md`
+- Decision: **A-018.4 CLOSED — events_management raised to Level 4 minimum (frontend integrated + contracted + validated).**
+- Next action: **A-018.5 — Campus Operations KPI / Dashboard Consolidation.**
 
 ---
 

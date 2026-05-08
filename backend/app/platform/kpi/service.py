@@ -113,6 +113,12 @@ METRIC_TITLES: dict[str, str] = {
     "active_access_cards_count": "Active Access Cards Count",
     "suspended_access_cards_count": "Suspended Access Cards Count",
     "security_access_anomaly_count": "Security Access Anomaly Count",
+    # A-018.4 Wave 6 metrics — Events Management
+    "events_published_count": "Events Published Count",
+    "events_started_count": "Events Started Count",
+    "events_completed_count": "Events Completed Count",
+    "events_cancelled_count": "Events Cancelled Count",
+    "events_registration_full_count": "Events Registration Full Count",
 }
 
 
@@ -287,6 +293,12 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "active_access_cards_count": ["card.issued", "card.reactivated"],
     "suspended_access_cards_count": ["card.suspended"],
     "security_access_anomaly_count": ["security.anomaly"],
+    # A-018.4 Wave 6 event lineage — Events Management
+    "events_published_count": ["event.published"],
+    "events_started_count": ["event.started"],
+    "events_completed_count": ["event.completed"],
+    "events_cancelled_count": ["event.cancelled"],
+    "events_registration_full_count": ["event.registration_full"],
 }
 
 
