@@ -1,9 +1,43 @@
-- run_id: OP-AUDIT-2026-05-09-06 (A-020.6 KPI / FRONTEND / DASHBOARD CONSOLIDATION)
-- status: ready_for_A-020.7
-- current_stage: A-020 Wave 8 execution / Scheduling + Room Allocation Brain (A-020.6 KPI + dashboard consolidation complete)
-- last_completed_action_id: A-020.6
-- next_action_id: A-020.7
-- updated_at: 2026-05-09 (A-020.6 KPI/event/dashboard consolidation delivered; new room allocation intelligence KPI lineage and event registration added; admin dashboard section + non-destructive advisory added; backend A-020.6 suite 12 passed; wide backend regression 903 passed/2 skipped; tenant/security 1005 passed; frontend targeted 22 passed; frontend full 118 files/800 tests passed; lint/build pass; safe gate and release gate pass.)
+- run_id: OP-AUDIT-2026-05-09-07 (A-020.7 ROOM ALLOCATION CROSS-FEATURE E2E)
+- status: ready_for_A-020.8
+- current_stage: A-020 Wave 8 execution / Scheduling + Room Allocation Brain (A-020.7 cross-feature validation complete)
+- last_completed_action_id: A-020.7
+- next_action_id: A-020.8
+- updated_at: 2026-05-09 (A-020.7 validation/evidence-only cross-feature E2E completed; backend E2E suite added with 6 integrated flow tests; backend targeted 56 passed; A-020/scheduling/room/brain/kpi regression 921 passed/2 skipped; tenant/security 1006 passed/1 skipped; frontend targeted 22 passed; frontend full 118 files/800 tests passed; lint/build pass; safe gate pass; non-destructive policy preserved; no new runtime module/migration/feature introduced.)
+
+#### A-020.7 — Room Allocation Cross-Feature E2E
+
+- Date: 2026-05-09
+- Scope: Validation/evidence-only integration proof for A-020.1…A-020.6 room allocation foundation. No new features/modules/migrations.
+- Deliverables:
+    - `backend/tests/test_a020_7_room_allocation_cross_feature_e2e.py` (6 required cross-feature tests)
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx` (explicit fake-optimization wording guard)
+    - `A-020.7-ROOM_ALLOCATION_CROSS_FEATURE_E2E_REPORT.md` (evidence pack)
+- Cross-feature flows validated:
+    - Requirement -> Capability -> Capacity Match -> Recommendation (advisory only)
+    - Requirement/context -> Conflict Evidence (no mutation)
+    - Multi-candidate deterministic ranking + human-review path
+    - Event -> KPI aggregation -> dashboard intelligence contract
+    - Cross-tenant rejection + no KPI leakage
+    - Non-destructive contract (no assign/reserve/mutate/override/auto-apply/fake-optimization)
+- Validation summary:
+    - Backend targeted (`a020_7|room_allocation_cross_feature|room_allocation_recommendation|capacity_matching`): **56 passed, 8723 deselected, 2 warnings**
+    - Wide A-020/scheduling/room/brain/kpi regression: **921 passed, 2 skipped, 7856 deselected, 2 warnings**
+    - Tenant/security slice: **1006 passed, 1 skipped, 7772 deselected, 2 warnings**
+    - Frontend targeted (`RectorDashboardPage`, `SchedulingPage`): **2 files / 22 tests PASS**
+    - Frontend full suite: **118 files / 800 tests PASS**
+    - Frontend lint: **PASS**
+    - Frontend build: **PASS**
+    - Safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Maturity evidence check:
+    - A-020.1 readiness contract: complete
+    - A-020.2 room capability contract: complete
+    - A-020.3 conflict detection: complete
+    - A-020.4 capacity matching brain: complete
+    - A-020.5 recommendation engine: complete
+    - A-020.6 KPI/dashboard consolidation: complete
+    - A-020.7 integrated cross-feature validation: complete
+- Decision: **A-020.7 CLOSED - PASS**. Proceed to `A-020.8`.
 
 #### A-020.6 — KPI / Frontend / Dashboard Consolidation for Room Allocation Brain
 

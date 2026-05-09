@@ -566,6 +566,7 @@ describe("RectorDashboardPage", () => {
     expect(pageText).not.toContain("room changed");
     expect(pageText).not.toContain("schedule updated automatically");
     expect(pageText).not.toContain("optimization applied");
+    expect(pageText).not.toContain("fake optimization");
     expect(pageText).not.toContain("booking overridden");
   });
 });
