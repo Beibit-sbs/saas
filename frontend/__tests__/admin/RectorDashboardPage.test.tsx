@@ -505,4 +505,67 @@ describe("RectorDashboardPage", () => {
 
     expect(useRectorDashboardMock).toHaveBeenCalledWith(42);
   });
+
+  it("includes A-020.6 room allocation scheduling intelligence KPI section", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-11",
+        generated_at: "2026-05-11T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    const bars = screen.getAllByTestId("wave1-kpi-bar-mock");
+    const roomAllocation = bars.find((node) => {
+      const keys = node.getAttribute("data-keys") ?? "";
+      return (
+        keys.includes("room_allocation_recommendations_count")
+        && keys.includes("room_allocation_review_required_count")
+        && keys.includes("room_allocation_no_viable_candidate_count")
+        && keys.includes("room_allocation_candidate_evaluated_count")
+        && keys.includes("room_capacity_mismatch_count")
+        && keys.includes("room_equipment_mismatch_count")
+        && keys.includes("room_computer_shortage_count")
+        && keys.includes("room_type_mismatch_count")
+      );
+    });
+
+    expect(roomAllocation).toBeTruthy();
+  });
+
+  it("renders non-destructive advisory wording for room allocation section", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-11",
+        generated_at: "2026-05-11T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    expect(screen.getByText("Room Allocation / Scheduling Intelligence")).toBeInTheDocument();
+    expect(screen.getByText(/Recommendation and Review required insights are evidence-only/i)).toBeInTheDocument();
+    expect(screen.getByText(/No automatic assignment\. No auto-apply\./i)).toBeInTheDocument();
+
+    const pageText = document.body.textContent?.toLowerCase() ?? "";
+    expect(pageText).not.toContain("assigned automatically");
+    expect(pageText).not.toContain("auto-applied");
+    expect(pageText).not.toContain("room changed");
+    expect(pageText).not.toContain("schedule updated automatically");
+    expect(pageText).not.toContain("optimization applied");
+    expect(pageText).not.toContain("booking overridden");
+  });
 });

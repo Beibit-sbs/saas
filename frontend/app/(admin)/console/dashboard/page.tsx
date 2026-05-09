@@ -314,6 +314,44 @@ export default function RectorDashboardPage() {
         />
       </section>
 
+      <section data-testid="a0206-room-allocation-intelligence-section" className="space-y-3">
+        <div className="rounded-md border bg-muted/20 p-3">
+          <p className="text-sm font-medium">Room Allocation / Scheduling Intelligence</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Recommendation and Review required insights are evidence-only. Evidence is provided for human approval when risk exists.
+            No automatic assignment. No auto-apply.
+          </p>
+        </div>
+        <Wave1KpiBar
+          metricKeys={[
+            "room_allocation_recommendations_count",
+            "room_allocation_review_required_count",
+            "room_allocation_no_viable_candidate_count",
+            "room_allocation_candidate_evaluated_count",
+            "room_capacity_mismatch_count",
+            "room_equipment_mismatch_count",
+            "room_computer_shortage_count",
+            "room_type_mismatch_count",
+            "scheduling_conflicts_count",
+            "room_conflict_count",
+            "capacity_risk_sections_count",
+          ]}
+          labels={{
+            room_allocation_recommendations_count: "Recommendation",
+            room_allocation_review_required_count: "Review required",
+            room_allocation_no_viable_candidate_count: "No viable candidate",
+            room_allocation_candidate_evaluated_count: "Candidate evaluated",
+            room_capacity_mismatch_count: "Capacity mismatch",
+            room_equipment_mismatch_count: "Equipment mismatch",
+            room_computer_shortage_count: "Computer shortage",
+            room_type_mismatch_count: "Room type mismatch",
+            scheduling_conflicts_count: "Scheduling conflicts",
+            room_conflict_count: "Room conflicts",
+            capacity_risk_sections_count: "Capacity-risk sections",
+          }}
+        />
+      </section>
+
       <section data-testid="a017-consolidation-kpi-section">
         <Wave1KpiBar
           metricKeys={[

@@ -268,7 +268,12 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "scheduling.room_conflict.detected": EventDefinition(GenericTenantEventPayload),
     "scheduling.room_allocation.required": EventDefinition(GenericTenantEventPayload),
     "scheduling.room_allocation.recommendation_generated": EventDefinition(GenericTenantEventPayload),
+    "scheduling.room_allocation.review_required": EventDefinition(GenericTenantEventPayload),
     "scheduling.room_allocation.no_viable_candidate": EventDefinition(GenericTenantEventPayload),
+    "scheduling.room_allocation.candidate_ranked": EventDefinition(GenericTenantEventPayload),
+    "scheduling.equipment_mismatch.detected": EventDefinition(GenericTenantEventPayload),
+    "scheduling.room_type_mismatch.detected": EventDefinition(GenericTenantEventPayload),
+    "scheduling.computer_shortage.detected": EventDefinition(GenericTenantEventPayload),
     "scheduling.capacity_mismatch.detected": EventDefinition(GenericTenantEventPayload),
     "enrollment.capacity_risk.detected": EventDefinition(GenericTenantEventPayload),
     # Teaching quality lifecycle events (XXXIV.6)

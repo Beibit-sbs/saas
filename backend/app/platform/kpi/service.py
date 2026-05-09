@@ -46,6 +46,16 @@ METRIC_TITLES: dict[str, str] = {
     "capacity_risk_sections_count": "Enrollment Capacity Risk Count",
     "scheduling_conflicts_count": "Scheduling Conflict Count",
     "room_conflict_count": "Room Conflict Count",
+    "room_allocation_recommendations_count": "Room Allocation Recommendations Count",
+    "room_allocation_review_required_count": "Room Allocation Review Required Count",
+    "room_allocation_no_viable_candidate_count": "Room Allocation No Viable Candidate Count",
+    "room_allocation_candidate_evaluated_count": "Room Allocation Candidate Evaluated Count",
+    "room_capacity_mismatch_count": "Room Capacity Mismatch Count",
+    "room_equipment_mismatch_count": "Room Equipment Mismatch Count",
+    "room_computer_shortage_count": "Room Computer Shortage Count",
+    "room_type_mismatch_count": "Room Type Mismatch Count",
+    # A-020.5 compatibility keys kept for backward compatibility
+    "room_allocation_recommendations_generated_count": "Room Allocation Recommendations Generated Count",
     # A-014.6 Wave 2 metrics
     "grade_decline_risk_count": "Grade Decline Risk Count",
     "grade_intervention_cases_count": "Grade Intervention Cases",
@@ -187,11 +197,33 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
         "scheduling.room_conflict.detected",
         "scheduling.room_allocation.required",
     ],
-    "room_allocation_recommendations_generated_count": [
+    "room_allocation_recommendations_count": [
         "scheduling.room_allocation.recommendation_generated",
+    ],
+    "room_allocation_review_required_count": [
+        "scheduling.room_allocation.review_required",
     ],
     "room_allocation_no_viable_candidate_count": [
         "scheduling.room_allocation.no_viable_candidate",
+    ],
+    "room_allocation_candidate_evaluated_count": [
+        "scheduling.room_allocation.candidate_ranked",
+    ],
+    "room_capacity_mismatch_count": [
+        "scheduling.capacity_mismatch.detected",
+    ],
+    "room_equipment_mismatch_count": [
+        "scheduling.equipment_mismatch.detected",
+    ],
+    "room_computer_shortage_count": [
+        "scheduling.computer_shortage.detected",
+    ],
+    "room_type_mismatch_count": [
+        "scheduling.room_type_mismatch.detected",
+    ],
+    # A-020.5 compatibility keys kept for backward compatibility
+    "room_allocation_recommendations_generated_count": [
+        "scheduling.room_allocation.recommendation_generated",
     ],
     # A-014.6 Wave 2 event lineage
     "grade_decline_risk_count": ["academic.grade_risk.detected"],
@@ -819,6 +851,14 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     scheduling_conflicts = int(event_counts.get("scheduling.section.conflict_detected", 0) or 0)
     room_conflicts = int(event_counts.get("scheduling.room_conflict.detected", 0) or 0)
     room_allocation_required = int(event_counts.get("scheduling.room_allocation.required", 0) or 0)
+    room_allocation_recommendations = int(event_counts.get("scheduling.room_allocation.recommendation_generated", 0) or 0)
+    room_allocation_review_required = int(event_counts.get("scheduling.room_allocation.review_required", 0) or 0)
+    room_allocation_no_viable_candidate = int(event_counts.get("scheduling.room_allocation.no_viable_candidate", 0) or 0)
+    room_allocation_candidate_evaluated = int(event_counts.get("scheduling.room_allocation.candidate_ranked", 0) or 0)
+    room_capacity_mismatch = int(event_counts.get("scheduling.capacity_mismatch.detected", 0) or 0)
+    room_equipment_mismatch = int(event_counts.get("scheduling.equipment_mismatch.detected", 0) or 0)
+    room_computer_shortage = int(event_counts.get("scheduling.computer_shortage.detected", 0) or 0)
+    room_type_mismatch = int(event_counts.get("scheduling.room_type_mismatch.detected", 0) or 0)
     enrollment_capacity_risk = int(event_counts.get("enrollment.capacity_risk.detected", 0) or 0)
 
     access_denied = int(event_counts.get("access.denied", 0) or 0)
@@ -863,6 +903,17 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     metric_values["capacity_risk_sections_count"] = enrollment_capacity_risk
     metric_values["scheduling_conflicts_count"] = scheduling_conflicts
     metric_values["room_conflict_count"] = room_conflicts + room_allocation_required
+    metric_values["room_allocation_recommendations_count"] = room_allocation_recommendations
+    metric_values["room_allocation_review_required_count"] = room_allocation_review_required
+    metric_values["room_allocation_no_viable_candidate_count"] = room_allocation_no_viable_candidate
+    metric_values["room_allocation_candidate_evaluated_count"] = room_allocation_candidate_evaluated
+    metric_values["room_capacity_mismatch_count"] = room_capacity_mismatch
+    metric_values["room_equipment_mismatch_count"] = room_equipment_mismatch
+    metric_values["room_computer_shortage_count"] = room_computer_shortage
+    metric_values["room_type_mismatch_count"] = room_type_mismatch
+
+    # A-020.5 compatibility values preserved for existing contracts
+    metric_values["room_allocation_recommendations_generated_count"] = room_allocation_recommendations
 
     # A-018.5 Wave 6 consolidation: campus operations KPI counters from existing event stream.
     metric_values["access_denied_count"] = access_denied

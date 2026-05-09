@@ -1,9 +1,42 @@
-- run_id: OP-AUDIT-2026-05-09-05 (A-020.5 ROOM ALLOCATION RECOMMENDATION ENGINE)
-- status: ready_for_A-020.6
-- current_stage: A-020 Wave 8 execution / Scheduling + Room Allocation Brain (A-020.5 recommendation engine complete)
-- last_completed_action_id: A-020.5
-- next_action_id: A-020.6
-- updated_at: 2026-05-09 (A-020.5 deterministic room allocation recommendation engine added; ranked candidates/status/score/reasons/warnings/human-review contract + helper delivered; 24 A-020.5 tests passing; focused regression 59 passed/7 skipped; tenant/security 1005 passed; safe gate green; non-destructive policy preserved; A-020.6 queued)
+- run_id: OP-AUDIT-2026-05-09-06 (A-020.6 KPI / FRONTEND / DASHBOARD CONSOLIDATION)
+- status: ready_for_A-020.7
+- current_stage: A-020 Wave 8 execution / Scheduling + Room Allocation Brain (A-020.6 KPI + dashboard consolidation complete)
+- last_completed_action_id: A-020.6
+- next_action_id: A-020.7
+- updated_at: 2026-05-09 (A-020.6 KPI/event/dashboard consolidation delivered; new room allocation intelligence KPI lineage and event registration added; admin dashboard section + non-destructive advisory added; backend A-020.6 suite 12 passed; wide backend regression 903 passed/2 skipped; tenant/security 1005 passed; frontend targeted 22 passed; frontend full 118 files/800 tests passed; lint/build pass; safe gate and release gate pass.)
+
+#### A-020.6 — KPI / Frontend / Dashboard Consolidation for Room Allocation Brain
+
+- Date: 2026-05-09
+- Scope: Consolidate room allocation intelligence KPI contracts, event registration, and admin dashboard visibility. Additive-only and non-destructive.
+- Deliverables:
+    - `backend/app/platform/kpi/service.py` (A-020.6 metric titles/lineage + deterministic event-count derivations)
+    - `backend/app/platform/event_ingestion/types.py` (new valid A-020.6 event types)
+    - `backend/app/platform/events/registry.py` (new exact event definitions)
+    - `backend/tests/platform/test_platform_kpi_room_allocation_a0206.py` (new contract suite)
+    - `frontend/app/(admin)/console/dashboard/page.tsx` (A-020.6 room-allocation-intelligence KPI section)
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx` (dashboard contract assertions)
+    - `A-020.6-KPI_FRONTEND_DASHBOARD_CONSOLIDATION_REPORT.md` (full evidence pack)
+- Gap-closure highlights:
+    - Added metrics: recommendations, review_required, no_viable, candidate_evaluated, capacity/equipment/computer/type mismatch counts.
+    - Preserved A-020.5 compatibility key: `room_allocation_recommendations_generated_count`.
+    - Added event contracts: `scheduling.room_allocation.review_required`, `scheduling.room_allocation.candidate_ranked`, `scheduling.equipment_mismatch.detected`, `scheduling.room_type_mismatch.detected`, `scheduling.computer_shortage.detected`.
+    - Dashboard now includes dedicated A-020.6 section with explicit evidence-only/non-destructive advisory text.
+- Validation summary:
+    - Backend targeted filter: **50 passed, 8711 deselected, 2 warnings**
+    - Backend A-020.6 dedicated suite: **12 passed, 1 warning**
+    - Backend wide A-020/scheduling/room/brain/kpi regression: **903 passed, 2 skipped, 7856 deselected, 2 warnings**
+    - Backend tenant/security slice: **1005 passed, 1 skipped, 7767 deselected, 2 warnings**
+    - Frontend targeted dashboard/scheduling: **2 files passed, 22 tests passed**
+    - Frontend full suite: **118 files / 800 tests PASS**
+    - Frontend lint: **PASS**
+    - Frontend build: **PASS**
+    - Safe gate: **PASS**
+    - Release gate: **PASS** (`[release-gate] PASS: release gate and rollback readiness are green`)
+- Missing-file handling:
+    - Requested room-booking frontend paths (`frontend/app/(admin)/console/room-booking/page.tsx`, `frontend/modules/room-booking/types.ts`, `frontend/modules/room-booking/hooks.ts`, `frontend/__tests__/admin/RoomBookingPage.test.tsx`) do not exist in this workspace.
+    - Applied dashboard-only consolidation per existing architecture; no synthetic module creation.
+- Decision: **A-020.6 COMPLETE - PASS**. Proceed to `A-020.7`.
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
