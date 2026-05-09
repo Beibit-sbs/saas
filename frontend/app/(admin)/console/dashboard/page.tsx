@@ -60,6 +60,40 @@ type RiskHeatmapDomainConfig = {
   optional?: boolean;
 };
 
+type GovernanceAlertDomainConfig = {
+  domainId: string;
+  domainTitle: string;
+  title: string;
+  description: string;
+  metricKeys: string[];
+  criticalMetricKeys: string[];
+  highMetricKeys: string[];
+  mediumMetricKeys: string[];
+  reviewMetricKeys: string[];
+  watchMetricKeys: string[];
+  resolvedMetricKeys?: string[];
+  sourceDomains: string[];
+  recommendedHumanAction: string;
+  dataQualityNote: string;
+  optional?: boolean;
+};
+
+type GovernanceReviewAlert = {
+  alertId: string;
+  domainId: string;
+  domainTitle: string;
+  title: string;
+  severity: "low" | "medium" | "high" | "critical" | "unavailable";
+  reviewStatus: "review_required" | "watch" | "evidence_only" | "unavailable" | "resolved";
+  evidenceSummary: string;
+  sourceMetrics: string[];
+  sourceDomains: string[];
+  recommendedHumanAction: string;
+  dataQualityNote: string;
+  tenantScoped: true;
+  readonly: true;
+};
+
 const EXECUTIVE_KPI_SECTIONS: ExecutiveKpiSectionConfig[] = [
   {
     testId: "wave3-finance-kpi-section",
@@ -576,6 +610,203 @@ const CROSS_DOMAIN_RISK_HEATMAP: RiskHeatmapDomainConfig[] = [
   },
 ];
 
+const GOVERNANCE_ALERT_QUEUE_DOMAINS: GovernanceAlertDomainConfig[] = [
+  {
+    domainId: "academic-governance",
+    domainTitle: "Academic Governance",
+    title: "Academic governance review pressure",
+    description: "Integrity, exam, thesis, and ethics evidence requiring rector-level review.",
+    metricKeys: [
+      "academic_integrity_high_risk_count",
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_high_risk_count",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_risk_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_high_risk_count",
+      "research_ethics_requires_approval_count",
+      "integrity_cases_resolved_count",
+    ],
+    criticalMetricKeys: ["academic_integrity_high_risk_count", "exam_integrity_high_risk_count", "research_ethics_high_risk_count"],
+    highMetricKeys: ["thesis_governance_risk_count"],
+    mediumMetricKeys: ["academic_integrity_cases_pending_review", "exam_integrity_requires_approval_count", "thesis_governance_requires_approval_count", "research_ethics_requires_approval_count"],
+    reviewMetricKeys: ["academic_integrity_cases_pending_review", "exam_integrity_requires_approval_count", "thesis_governance_requires_approval_count", "research_ethics_requires_approval_count"],
+    watchMetricKeys: [],
+    resolvedMetricKeys: ["integrity_cases_resolved_count"],
+    sourceDomains: ["Academic Integrity", "Exam Governance", "Thesis", "Research Ethics"],
+    recommendedHumanAction: "Review integrity and governance evidence, then assign an academic review owner.",
+    dataQualityNote: "Uses tenant KPI evidence only; unresolved metrics are surfaced for human review.",
+  },
+  {
+    domainId: "finance-procurement-assets",
+    domainTitle: "Finance / Procurement / Assets",
+    title: "Finance and procurement review pressure",
+    description: "Budget variance, procurement backlog, and asset-conversion risk indicators.",
+    metricKeys: [
+      "budget_overrun_risk_count",
+      "active_finance_risk_signals_count",
+      "asset_conversion_gap_count",
+      "procurement_requests_pending_approval",
+      "budget_review_actions_count",
+      "finance_operations_actionability_count",
+    ],
+    criticalMetricKeys: ["budget_overrun_risk_count"],
+    highMetricKeys: ["active_finance_risk_signals_count", "asset_conversion_gap_count"],
+    mediumMetricKeys: ["budget_review_actions_count", "finance_operations_actionability_count"],
+    reviewMetricKeys: ["budget_review_actions_count"],
+    watchMetricKeys: ["procurement_requests_pending_approval"],
+    sourceDomains: ["Finance", "Procurement", "Assets"],
+    recommendedHumanAction: "Validate financial risk evidence and route procurement/asset exceptions to responsible reviewers.",
+    dataQualityNote: "Approval actions are never auto-executed; this queue is evidence-only.",
+  },
+  {
+    domainId: "campus-operations",
+    domainTitle: "Campus Operations",
+    title: "Campus operations anomalies",
+    description: "Scheduling and campus-operations anomalies requiring oversight.",
+    metricKeys: [
+      "scheduling_conflicts_count",
+      "room_conflict_count",
+      "capacity_risk_sections_count",
+      "events_cancelled_count",
+      "events_registration_full_count",
+    ],
+    criticalMetricKeys: ["capacity_risk_sections_count"],
+    highMetricKeys: ["scheduling_conflicts_count", "room_conflict_count"],
+    mediumMetricKeys: [],
+    reviewMetricKeys: [],
+    watchMetricKeys: ["events_cancelled_count", "events_registration_full_count"],
+    sourceDomains: ["Scheduling", "Events", "Operations"],
+    recommendedHumanAction: "Review campus operations conflicts and prioritize manual remediation.",
+    dataQualityNote: "Operational pressures are shown as review evidence only.",
+  },
+  {
+    domainId: "security-visitor-operations",
+    domainTitle: "Security / Visitor Operations",
+    title: "Security and visitor review queue",
+    description: "Security incidents and visitor anomalies requiring human review.",
+    metricKeys: [
+      "security_high_risk_incidents_count",
+      "security_incident_review_required_count",
+      "security_incidents_escalated_count",
+      "access_denied_count",
+      "visitor_unauthorized_attempts_count",
+      "security_incidents_resolved_count",
+    ],
+    criticalMetricKeys: ["security_high_risk_incidents_count"],
+    highMetricKeys: ["security_incidents_escalated_count"],
+    mediumMetricKeys: ["security_incident_review_required_count"],
+    reviewMetricKeys: ["security_incident_review_required_count", "visitor_unauthorized_attempts_count"],
+    watchMetricKeys: ["access_denied_count"],
+    resolvedMetricKeys: ["security_incidents_resolved_count"],
+    sourceDomains: ["Security Operations", "Visitor Management", "Access Control"],
+    recommendedHumanAction: "Perform security incident review and confirm visitor/access evidence with operations leadership.",
+    dataQualityNote: "No lockout or ban is triggered from this queue.",
+  },
+  {
+    domainId: "room-allocation-scheduling-intelligence",
+    domainTitle: "Room Allocation / Scheduling Intelligence",
+    title: "Room allocation review-required signals",
+    description: "Allocation mismatches and no-viable-candidate evidence requiring scheduling review.",
+    metricKeys: [
+      "room_allocation_review_required_count",
+      "room_allocation_no_viable_candidate_count",
+      "room_capacity_mismatch_count",
+      "room_equipment_mismatch_count",
+      "room_type_mismatch_count",
+      "room_computer_shortage_count",
+      "room_conflict_count",
+    ],
+    criticalMetricKeys: ["room_allocation_no_viable_candidate_count"],
+    highMetricKeys: ["room_capacity_mismatch_count", "room_conflict_count"],
+    mediumMetricKeys: ["room_equipment_mismatch_count", "room_type_mismatch_count", "room_computer_shortage_count"],
+    reviewMetricKeys: ["room_allocation_review_required_count"],
+    watchMetricKeys: [],
+    sourceDomains: ["Room Allocation", "Scheduling"],
+    recommendedHumanAction: "Review room-allocation evidence and approve manual scheduling decisions.",
+    dataQualityNote: "Read-only recommendations only; no automatic room assignment or schedule mutation.",
+  },
+  {
+    domainId: "brain-review-required",
+    domainTitle: "Brain / Review Required",
+    title: "Cross-domain brain review queue",
+    description: "Brain-driven review-required signals aggregated across governance domains.",
+    metricKeys: [
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_requires_approval_count",
+      "security_incident_review_required_count",
+      "budget_review_actions_count",
+      "finance_operations_actionability_count",
+    ],
+    criticalMetricKeys: [],
+    highMetricKeys: ["finance_operations_actionability_count"],
+    mediumMetricKeys: [
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_requires_approval_count",
+      "security_incident_review_required_count",
+      "budget_review_actions_count",
+    ],
+    reviewMetricKeys: [
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_requires_approval_count",
+      "security_incident_review_required_count",
+      "budget_review_actions_count",
+    ],
+    watchMetricKeys: [],
+    sourceDomains: ["Brain Core", "Governance Review", "Actionability"],
+    recommendedHumanAction: "Triage review-required backlog and assign human owners by domain.",
+    dataQualityNote: "Queue entries are evidence-backed and do not auto-resolve.",
+  },
+  {
+    domainId: "student-risk-interventions",
+    domainTitle: "Student Risk / Interventions",
+    title: "Student intervention pressure",
+    description: "Student-risk and intervention load indicators, when available.",
+    metricKeys: [
+      "critical_risk_students_count",
+      "high_risk_students_count",
+      "intervention_auto_created_count",
+      "intervention_resolution_rate",
+    ],
+    criticalMetricKeys: ["critical_risk_students_count"],
+    highMetricKeys: ["high_risk_students_count"],
+    mediumMetricKeys: ["intervention_auto_created_count"],
+    reviewMetricKeys: [],
+    watchMetricKeys: ["intervention_resolution_rate"],
+    sourceDomains: ["Student Success", "Interventions"],
+    recommendedHumanAction: "Prioritize high-risk student cohorts and validate intervention outcomes.",
+    dataQualityNote: "Optional domain; unavailable if tenant does not emit intervention KPIs.",
+    optional: true,
+  },
+  {
+    domainId: "research-accreditation-quality",
+    domainTitle: "Research / Accreditation / Quality",
+    title: "Research and quality review pressure",
+    description: "Research ethics and quality governance indicators, when available.",
+    metricKeys: [
+      "research_ethics_high_risk_count",
+      "research_ethics_review_cases_count",
+      "research_ethics_requires_approval_count",
+      "thesis_governance_risk_count",
+    ],
+    criticalMetricKeys: ["research_ethics_high_risk_count"],
+    highMetricKeys: ["thesis_governance_risk_count"],
+    mediumMetricKeys: ["research_ethics_requires_approval_count"],
+    reviewMetricKeys: ["research_ethics_requires_approval_count"],
+    watchMetricKeys: ["research_ethics_review_cases_count"],
+    sourceDomains: ["Research Ethics", "Accreditation", "Quality"],
+    recommendedHumanAction: "Validate ethics/quality evidence and route for committee review.",
+    dataQualityNote: "Optional domain; shown as unavailable when tenant evidence is missing.",
+    optional: true,
+  },
+];
+
 function ExecutiveKpiSection({ section }: { section: ExecutiveKpiSectionConfig }) {
   return (
     <section data-testid={section.testId} className="space-y-3">
@@ -808,6 +1039,157 @@ function CrossDomainRiskHeatmap({
   );
 }
 
+function GovernanceAlertReviewQueue({
+  data,
+  tenantId,
+}: {
+  data: { cards: DashboardCardSnapshot[] } | undefined;
+  tenantId: number;
+}) {
+  const cardByMetricKey = useMemo(() => {
+    const entries = (data?.cards ?? []).map((card) => [card.metric_key, card] as const);
+    return new Map(entries);
+  }, [data?.cards]);
+
+  const readMetricValue = (metricKey: string) => {
+    const card = cardByMetricKey.get(metricKey);
+    if (!card) return null;
+    const value = Number(card.value);
+    return Number.isFinite(value) ? value : null;
+  };
+
+  const hasPositiveValue = (metricKeys: string[]) => metricKeys.some((metricKey) => {
+    const value = readMetricValue(metricKey);
+    return value !== null && value > 0;
+  });
+
+  const positiveMetricSummaries = (metricKeys: string[]) => metricKeys
+    .filter((metricKey) => {
+      const value = readMetricValue(metricKey);
+      return value !== null && value > 0;
+    })
+    .slice(0, 3)
+    .map((metricKey) => {
+      const card = cardByMetricKey.get(metricKey);
+      return `${card?.title ?? metricKey}: ${(readMetricValue(metricKey) ?? 0).toLocaleString()}`;
+    });
+
+  const alerts: GovernanceReviewAlert[] = GOVERNANCE_ALERT_QUEUE_DOMAINS.map((domain) => {
+    const availableMetricKeys = domain.metricKeys.filter((metricKey) => cardByMetricKey.has(metricKey));
+    const hasEvidence = availableMetricKeys.length > 0;
+
+    let severity: GovernanceReviewAlert["severity"] = "low";
+    if (!hasEvidence) {
+      severity = "unavailable";
+    } else if (hasPositiveValue(domain.criticalMetricKeys)) {
+      severity = "critical";
+    } else if (hasPositiveValue(domain.highMetricKeys)) {
+      severity = "high";
+    } else if (hasPositiveValue(domain.mediumMetricKeys) || hasPositiveValue(domain.reviewMetricKeys)) {
+      severity = "medium";
+    }
+
+    let reviewStatus: GovernanceReviewAlert["reviewStatus"] = "evidence_only";
+    if (!hasEvidence) {
+      reviewStatus = "unavailable";
+    } else if (hasPositiveValue(domain.reviewMetricKeys) || hasPositiveValue(domain.criticalMetricKeys) || hasPositiveValue(domain.highMetricKeys)) {
+      reviewStatus = "review_required";
+    } else if (hasPositiveValue(domain.watchMetricKeys)) {
+      reviewStatus = "watch";
+    } else if (domain.resolvedMetricKeys && hasPositiveValue(domain.resolvedMetricKeys)) {
+      reviewStatus = "resolved";
+    }
+
+    const evidenceRows = positiveMetricSummaries(availableMetricKeys);
+    const evidenceSummary = evidenceRows.length > 0
+      ? evidenceRows.join(" | ")
+      : hasEvidence
+        ? "Evidence available with no elevated queue signal."
+        : "Domain evidence unavailable in this tenant snapshot.";
+
+    return {
+      alertId: `queue-${domain.domainId}`,
+      domainId: domain.domainId,
+      domainTitle: domain.domainTitle,
+      title: domain.title,
+      severity,
+      reviewStatus,
+      evidenceSummary,
+      sourceMetrics: availableMetricKeys,
+      sourceDomains: domain.sourceDomains,
+      recommendedHumanAction: domain.recommendedHumanAction,
+      dataQualityNote: domain.dataQualityNote,
+      tenantScoped: true,
+      readonly: true,
+    };
+  });
+
+  const criticalCount = alerts.filter((alert) => alert.severity === "critical").length;
+  const reviewRequiredCount = alerts.filter((alert) => alert.reviewStatus === "review_required").length;
+
+  const severityClass: Record<GovernanceReviewAlert["severity"], string> = {
+    critical: "bg-red-100 text-red-700",
+    high: "bg-amber-100 text-amber-700",
+    medium: "bg-blue-100 text-blue-700",
+    low: "bg-emerald-100 text-emerald-700",
+    unavailable: "bg-muted text-muted-foreground",
+  };
+
+  return (
+    <section className="space-y-4" data-testid="governance-alert-review-queue">
+      <div className="rounded-lg border bg-card p-4">
+        <p className="text-sm font-semibold">Governance Alert / Review Queue</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Read-only queue showing what needs human attention now, why it matters, and which domain emitted supporting evidence.
+          Review required items are evidence-backed and remain human-managed.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Tenant {tenantId} context only • Human review required • Evidence-backed • Read-only • No automatic action
+        </p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <div className="rounded-md border bg-muted/20 p-3">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Total alerts</p>
+            <p className="mt-1 text-sm font-medium">{alerts.length.toLocaleString()}</p>
+          </div>
+          <div className="rounded-md border bg-muted/20 p-3">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Critical count</p>
+            <p className="mt-1 text-sm font-medium">{criticalCount.toLocaleString()}</p>
+          </div>
+          <div className="rounded-md border bg-muted/20 p-3">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Review required count</p>
+            <p className="mt-1 text-sm font-medium">{reviewRequiredCount.toLocaleString()}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {alerts.map((alert) => (
+          <article key={alert.alertId} data-testid={`governance-alert-domain-${alert.domainId}`} className="rounded-lg border bg-card p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-semibold">{alert.domainTitle}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">{alert.title}</p>
+              </div>
+              <span className={`rounded-full px-2 py-1 text-[11px] font-medium ${severityClass[alert.severity]}`}>{alert.severity}</span>
+            </div>
+
+            <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+              <p>Review status: {alert.reviewStatus}</p>
+              <p>Evidence: {alert.evidenceSummary}</p>
+              <p>Source domains: {alert.sourceDomains.join(" / ")}</p>
+              <p>Source metrics: {alert.sourceMetrics.length > 0 ? alert.sourceMetrics.slice(0, 3).join(", ") : "unavailable"}</p>
+              <p>Recommended human action: {alert.recommendedHumanAction}</p>
+              <p>Read-only: {alert.readonly ? "yes" : "no"}</p>
+              <p>Tenant-scoped: {alert.tenantScoped ? "yes" : "no"}</p>
+              <p>Data quality note: {alert.dataQualityNote}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function DashboardSkeletonGrid() {
   return (
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3" data-testid="kpi-loading-grid">
@@ -986,6 +1368,8 @@ export default function RectorDashboardPage() {
       {EXECUTIVE_KPI_SECTIONS.map((section) => (
         <ExecutiveKpiSection key={section.testId} section={section} />
       ))}
+
+      <GovernanceAlertReviewQueue data={data} tenantId={tenantId} />
 
       <CrossDomainRiskHeatmap data={data} tenantId={tenantId} />
 

@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-021.1 RECTOR EXECUTIVE COMMAND CENTER CONSOLIDATION)
-- status: ready_for_A-021.4
-- current_stage: A-021 Wave 9 implementation (A-021.3 complete)
-- last_completed_action_id: A-021.3
-- next_action_id: A-021.4
-- updated_at: 2026-05-09 (A-021.2 hash confirmed: 3dc3f3b. A-021.3 complete: cross-domain risk heatmap added to rector dashboard using existing KPI evidence, tenant/unavailable safety coverage added, and targeted/full frontend + lint + build + safe-gate validations passed.)
+- status: ready_for_A-021.5
+- current_stage: A-021 Wave 9 implementation (A-021.4 complete)
+- last_completed_action_id: A-021.4
+- next_action_id: A-021.5
+- updated_at: 2026-05-09 (A-021.4 complete: governance alert/review queue added as read-only tenant-scoped evidence surface, with deterministic domain severity/review mapping, unavailable fallback safety, and targeted/full frontend + lint + build + safe-gate validations passing.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -115,6 +115,40 @@
 - Deliverable:
     - `A-021.3-CROSS_DOMAIN_RISK_HEATMAP_REPORT.md`
 - Decision: **A-021.3 CLOSED - PASS**. Proceed to `A-021.4`.
+
+#### A-021.4 - Governance Alert / Review Queue
+
+- Date: 2026-05-09
+- Scope: Additive-only, frontend-only governance alert/review queue over existing rector KPI snapshot evidence (`data.cards`). No migrations, no new endpoints, no destructive automation.
+- Implementation delivered:
+    - `frontend/app/(admin)/console/dashboard/page.tsx`
+        - Added queue model types (`GovernanceReviewAlert` + domain config)
+        - Added deterministic queue derivation by domain (`severity` + `reviewStatus`) from existing KPI evidence
+        - Added queue UI card set with domain, evidence summary, source metrics/domains, recommended human action, and data quality notes
+        - Added explicit governance language: `Human review required`, `Evidence-backed`, `Read-only`, `No automatic action`
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx`
+        - Added queue rendering/safety/tenant-context test coverage
+        - Added unavailable fallback coverage for missing optional metrics/domain evidence
+        - Added forbidden wording assertions for auto-action and fake/demo semantics
+- Validation summary:
+    - Targeted rector dashboard tests:
+        - `cd infra && docker compose --env-file .env run --rm frontend-tests npm exec vitest -- run __tests__/admin/RectorDashboardPage.test.tsx --reporter=dot`
+        - Result: **PASS** (`1 file`, `16 tests`)
+    - Full frontend tests:
+        - `cd infra && docker compose --env-file .env run --rm frontend-tests npm run test:frontend`
+        - Result: **PASS** (`118 files`, `800 tests`)
+    - Frontend lint:
+        - `cd infra && docker compose --env-file .env run --rm frontend-tests npm run lint`
+        - Result: **PASS**
+    - Frontend build:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --rm frontend-tests npm run build`
+        - Result: **PASS** (`Compiled successfully`, type/lint checks, static pages, build traces)
+    - Safe gate:
+        - `unset VIRTUAL_ENV && bash scripts/university_pilot_safe_gate.sh`
+        - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Deliverable:
+    - `A-021.4-GOVERNANCE_ALERT_REVIEW_QUEUE_REPORT.md`
+- Decision: **A-021.4 CLOSED - PASS**. Proceed to `A-021.5`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 
