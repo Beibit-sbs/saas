@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-022.3
-- current_stage: A-022.2 complete / A-022.3 ready to start
-- last_completed_action_id: A-022.2
-- next_action_id: A-022.3
-- updated_at: 2026-05-09 (A-022.2 complete: timetable change simulation/preview contract delivered with tenant-safe schema + before/after snapshot + conflict/affected/risk delta + audit evidence; non-destructive policy locked (no apply/mutation/reservation/override/auto-apply fields); targeted and regression validation green.)
+- status: ready_for_A-022.4
+- current_stage: A-022.3 complete / A-022.4 ready to start
+- last_completed_action_id: A-022.3
+- next_action_id: A-022.4
+- updated_at: 2026-05-09 (A-022.3 complete: room recommendation -> proposal bridge delivered with tenant-safe candidate selection + proposal/simulation compatibility + bridge audit evidence; non-destructive policy preserved; focused/targeted/regression/tenant-security/safe-gate validations green.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -529,6 +529,54 @@
         - `unset VIRTUAL_ENV && bash scripts/university_pilot_safe_gate.sh`
         - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
 - Decision: **A-022.2 COMPLETE — PASS**. Transition to `A-022.3`.
+
+#### A-022.3 — Room Recommendation -> Proposal Bridge
+
+- Date: 2026-05-09
+- Scope: Additive bridge-only integration from A-020 recommendation output into A-022 proposal/simulation contracts. No apply pipeline, no schedule mutation, no room reservation, no booking override.
+- Repo hygiene snapshot:
+    - Dirty tracked (out-of-scope, not staged): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical artifacts retained: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+    - A-022.2 baseline commit confirmed: `ee1354c`
+- Implementation delivered:
+    - `backend/app/modules/scheduling/timetable_recommendation_bridge.py`
+        - Added bridge contracts/helpers:
+            - `RoomRecommendationToProposalBridgeInput`
+            - `RoomRecommendationToProposalBridgeResult`
+            - `build_recommendation_to_proposal_evidence(...)`
+            - `build_proposal_from_room_allocation_recommendation(...)`
+            - `build_timetable_proposal_from_room_recommendation` (alias)
+        - Enforced policy/guard behavior:
+            - `tenant_id > 0` required (fail-closed)
+            - authoritative tenant must match recommendation tenant
+            - candidate tenant mismatch rejected (cross-tenant block)
+            - no-viable candidate rejected by default; optional review-only path via `allow_review_only_no_viable`
+            - `NOT_RECOMMENDED` / unavailable candidates require `explicit_review_reason`
+            - bridge audit evidence appended (`bridge_from_room_recommendation`)
+            - simulation input generated with hardened affected room list (no `None` entries)
+        - Hardening fix during validation:
+            - replaced invalid `capacity_match_evidence.capacity_ok/equipment_ok/room_type_ok` reads with deterministic booleans derived from `CapacityMismatchReason` set
+    - `backend/tests/test_a022_3_room_recommendation_to_proposal_bridge.py`
+        - Added A-022.3 bridge contract suite (29 checks; includes required coverage and compatibility guards)
+    - `A-022.3-ROOM_RECOMMENDATION_TO_PROPOSAL_BRIDGE_REPORT.md`
+        - Added A-022.3 evidence package (implementation + defect fix + validation matrix)
+- Validation summary:
+    - Focused A-022.3 suite:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/test_a022_3_room_recommendation_to_proposal_bridge.py --no-cov -rA`
+        - Result: **29 passed, 0 failed**
+    - Targeted A-022 compatibility slice:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k "a022_3 or room_recommendation_to_proposal or timetable_change_proposal or timetable_change_simulation" --no-cov -rA`
+        - Result: **107 passed, 0 failed, 8779 deselected**
+    - Broad A-020/A-022 scheduling regression slice:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k "a020 or a022_1 or a022_2 or a022_3 or scheduling or room_booking or room_allocation or timetable_change" --no-cov -rA`
+        - Result: **471 passed, 0 failed, 8415 deselected**
+    - Tenant/security regression slice:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest tests/ -k "tenant or security" --no-cov --tb=line -q`
+        - Result: **1022 passed, 1 skipped, 0 failed, 7863 deselected**
+    - Safe gate:
+        - `bash scripts/university_pilot_safe_gate.sh`
+        - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Decision: **A-022.3 COMPLETE — PASS**. Transition to `A-022.4`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 
