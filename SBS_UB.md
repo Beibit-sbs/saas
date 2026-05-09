@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-025.2
-- current_stage: A-025.1 complete / Killer workflow prioritization and first execution set
-- last_completed_action_id: A-025.1
-- next_action_id: A-025.2
-- updated_at: 2026-05-09 (A-025.1 complete: killer workflow prioritization finalized; baseline and extension metrics remain separated and unchanged)
+- status: ready_for_A-025.3
+- current_stage: A-025.2 complete / Selected killer workflow contracts and evidence map
+- last_completed_action_id: A-025.2
+- next_action_id: A-025.3
+- updated_at: 2026-05-09 (A-025.2 complete: selected killer workflow contracts defined; baseline and extension metrics remain separated and unchanged)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -946,6 +946,43 @@
     - no fake Brain autonomy claims
 - Decision: **A-025.1 COMPLETE — PASS (prioritization-only)**.
 - Next action: `A-025.2`.
+
+#### A-025.2 — Selected Killer Workflow Contract / Evidence Map
+
+- Date: 2026-05-09
+- Scope: contract/spec/evidence-map only. No runtime code, no endpoints/migrations, no maturity inflation.
+- Authoritative deliverable:
+    - `A-025.2-SELECTED_KILLER_WORKFLOW_CONTRACT_AND_EVIDENCE_MAP.md`
+- Source-of-truth confirmation:
+    - A-025.1 selected five P0 workflows consumed as the implementation focus
+    - A-024 readiness backbone consumed for module/API/dashboard reuse
+    - A-021/A-022 governance and timetable evidence consumed for safe workflow modeling
+- Selected workflows contracted:
+    - Student risk intervention playbook approval
+    - Rector KPI drilldown to domain-level evidence
+    - Billing reconciliation discrepancy closure loop
+    - Vendor risk assessment before procurement approval
+    - Brain signal to human queue closed-loop decision trail
+- Contract outcome:
+    - each selected workflow now has workflow identity, scope, module map, trigger/input contract, state/decision contract, output contract, evidence contract, safety contract, test contract, and maturity impact definition
+- A-025.3 candidate:
+    - primary: Rector KPI drilldown to domain-level evidence
+    - backup: Student risk intervention playbook approval
+- A-025.3 minimum implementation slice defined:
+    - read-only drilldown/evidence path with tenant-scoped KPI lineage and audit trail
+- A-026/A-027/A-028 mapping defined:
+    - A-026: Brain/KPI/event integration wave
+    - A-027: dashboard/frontend UX consolidation wave
+    - A-028: hardening / E2E / evidence pack
+- Metrics integrity:
+    - baseline 150 maturity metrics: **UNCHANGED** (`L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2, sum=150, maturity_arithmetic_check=PASS`)
+    - extension metrics: **UNCHANGED AND SEPARATE** (`extension_total_count=25`, `total_tracked_modules=175`)
+- Anti-inflation review: PASS
+    - no runtime implementation performed
+    - no baseline metric mutation
+    - no fake Brain/SaaS/readiness claims
+- Decision: **A-025.2 COMPLETE — PASS (contract/spec/evidence-map only)**.
+- Next action: `A-025.3`.
 
 
 
