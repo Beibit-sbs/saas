@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-024.6
-- current_stage: A-024.5 complete / University Core Level 4 operational readiness
-- last_completed_action_id: A-024.5
-- next_action_id: A-024.6
-- updated_at: 2026-05-09 (A-024.5 completed: university_core lifted L3->L4 readiness visibility with tenant-safe summary API and backend-tested evidence; next=A-024.6)
+- status: ready_for_A-024.7
+- current_stage: A-024.6 complete / SaaS readiness consolidation
+- last_completed_action_id: A-024.6
+- next_action_id: A-024.7
+- updated_at: 2026-05-09 (A-024.6 completed: operational backbone SaaS readiness consolidation with tenant-safe read-only summary API; next=A-024.7)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -557,6 +557,75 @@
     - no fake smoke gate PASS claim
     - no module count expansion
 - Decision: **A-024.5 CLOSED — PASS**. Proceed to `A-024.6`.
+
+#### A-024.6 — SaaS Readiness Consolidation / Operational Backbone Integration
+
+- Date: 2026-05-09
+- Scope: Consolidation-only readiness action across 8 A-024 operational modules. No maturity inflation, no L5/L6 claim, no runtime mutation.
+- Selected operational backbone modules:
+    - `ai_routing_control` (L3)
+    - `platform_health` (L3)
+    - `ai_copilot_ops` (L3)
+    - `procurement_approval_workflow` (L3)
+    - `observability` (L4)
+    - `attendance` (L4)
+    - `student_portal` (L4)
+    - `university_core` (L4)
+- Consolidation evidence delivered:
+    - deterministic readiness contract module:
+        - `backend/app/modules/platform/saas_readiness.py`
+        - `validate_saas_readiness_tenant(...)`
+        - `build_saas_readiness_module_summary(...)`
+        - `build_a024_operational_backbone_summary(...)`
+        - `classify_operational_backbone_status(...)`
+    - visible read-only consolidation surface:
+        - `GET /api/admin/saas-readiness/summary`
+    - explicit readiness dimensions tracked per module:
+        - tenant isolation
+        - visible surface
+        - evidence payload
+        - event readiness
+        - KPI readiness
+        - feature flag readiness
+        - billing/plan readiness
+        - audit readiness
+        - governance readiness
+        - Brain signal readiness
+    - explicit anti-inflation safety flags:
+        - `no_fake_saas_claim`
+        - `no_fake_brain_claim`
+        - `no_full_production_claim`
+        - `no_level5_or_level6_claim`
+        - `no_fake_kpi_values`
+        - `no_automatic_action`
+        - `no_db_mutation`
+- Visible surface inventory consolidated:
+    - `/api/admin/observability/summary`
+    - `/api/admin/attendance/summary`
+    - `/api/admin/student-portal/summary`
+    - `/api/admin/university-core/readiness`
+    - `/api/admin/saas-readiness/summary`
+- Feature flag / billing-plan compatibility review:
+    - enforced as readiness classification only (`ready_for_mapping`/`deferred`), no fake enforcement.
+- Event/KPI/Brain decision:
+    - readiness mapping delivered in A-024.6 contract.
+    - runtime registry/ingestion mutation deferred to next slice to avoid fake completion claims.
+- Validation evidence:
+    - `git diff --check` PASS
+    - `pytest -q tests/test_a0246_saas_readiness_consolidation.py --no-cov -rA` -> **18 passed, 1 warning**
+    - import check: `A-024.6 SaaS readiness import validation OK`
+    - tenant/security slice (`-k "tenant or security"`) -> **1073 passed, 1 skipped, 8083 deselected, 2 warnings**
+- Metrics transition (A-024.6):
+    - no maturity level movement
+    - L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2
+    - sum=150, `maturity_arithmetic_check=PASS`
+    - `foundation_gap_count=37`, `level_2_gap_count=24`, `level_4_plus_count=89`
+- Anti-inflation review: PASS
+    - no Level 5/6 claim
+    - no fake SaaS production readiness claim
+    - no fake Brain autonomy claim
+    - no module expansion beyond canonical 150
+- Decision: **A-024.6 CLOSED — PASS**. Proceed to `A-024.7`.
 
 
 
@@ -1399,9 +1468,9 @@
 - level_2_gap_count = 24
 - arithmetic_check = 4+20+13+24+66+21+2=150
 - maturity_arithmetic_check = PASS
-- exact_counts_verified_at = 2026-05-09 (A-024.5 closure)
-- evidence_source = A-024.5-UNIVERSITY_CORE_OPERATIONAL_READINESS_REPORT.md + A-024.0 selection report + A-023.8 foundation report
-- updated_at = 2026-05-09 (A-024.5: university_core moved L3->L4 readiness visibility with tested tenant-safe evidence)
+- exact_counts_verified_at = 2026-05-09 (A-024.6 closure)
+- evidence_source = A-024.6-SAAS_READINESS_CONSOLIDATION_REPORT.md + A-024.5-UNIVERSITY_CORE_OPERATIONAL_READINESS_REPORT.md + A-024.0 selection report + A-023.8 foundation report
+- updated_at = 2026-05-09 (A-024.6: SaaS readiness consolidation completed with tenant-safe read-only operational backbone summary)
 - mandatory_rule = Keep exact counts synchronized with canonical 150-module inventory.
 - rule = Coverage does not equal full maturity.
 - coverage_not_equal_full_maturity = true

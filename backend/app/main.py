@@ -109,6 +109,7 @@ from app.modules.jobs.router import router as jobs_router
 from app.modules.programs.router import router as programs_router
 from app.modules.platform.router import router as platform_router
 from app.modules.platform.self_service_router import router as platform_self_service_router
+from app.modules.platform.saas_readiness import build_a024_operational_backbone_summary
 from app.platform.router_admin import router as platform_v1_admin_router
 from app.platform.router_public import router as platform_v1_public_router
 from app.platform.router_developer_api import router as platform_developer_api_router
@@ -1144,6 +1145,18 @@ def admin_university_core_readiness(
     )
     summary["visible_surface"] = "/api/admin/university-core/readiness"
     summary["event_readiness_decision"] = "deferred_to_a0246"
+    return summary
+
+
+@app.get("/api/admin/saas-readiness/summary")
+def admin_saas_readiness_summary(
+    request: Request,
+    __: None = Depends(permission_dependency("metrics.read")),
+) -> dict[str, object]:
+    """Tenant-safe read-only A-024 operational backbone SaaS readiness summary."""
+    tenant_id = _resolve_metrics_tenant_id(request)
+    summary = build_a024_operational_backbone_summary(tenant_id=tenant_id)
+    summary["visible_surface"] = "/api/admin/saas-readiness/summary"
     return summary
 
 
