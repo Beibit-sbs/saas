@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: A-024.8.B1_baseline_established_with_blocking_regression
-- current_stage: A-024.8.B1 complete / Full regression + coverage + gates baseline captured (blocking backend regression present)
-- last_completed_action_id: A-024.8.B1
-- next_action_id: A-024.8.B2
-- updated_at: 2026-05-09 (A-024.8.B1 completed: baseline evidence captured across backend/frontend/gates; backend full regression blocked by postgres persistence failures; next=A-024.8.B2)
+- status: ready_for_A-025.0
+- current_stage: A-024.8.B3 complete / Quality baseline confirmed after remediation
+- last_completed_action_id: A-024.8.B3
+- next_action_id: A-025.0
+- updated_at: 2026-05-09 (A-024.8.B3 complete: quality baseline confirmed; backend/frontend/gates validated with no blocking regressions)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -782,6 +782,82 @@
     - B1 still closes as an evidence baseline action because all required baseline checks were executed and classified.
 - Decision: **A-024.8.B1 CLOSED — BASELINE ESTABLISHED WITH BLOCKING REGRESSION**.
 - Next action: `A-024.8.B2` (remediate `tests/test_postgres_persistence_xv2.py` failures, rerun full backend regression+coverage, reconfirm baseline classification).
+
+#### A-024.8.B2 — Blocking Regression Remediation
+
+- Date: 2026-05-09
+- Scope: Remediate B1 blocking regression in `tests/test_postgres_persistence_xv2.py`, rerun authoritative backend full regression + coverage, and close blocker only if evidence is green.
+- Root-cause confirmation:
+    - `DATABASE_URL` was being cleared by global test reset flow; XV2 fixture path required explicit restore before `build_engine()`.
+    - `backend-tests` stale Docker image layers can produce false outcomes after test-file changes.
+- Authoritative B2 backend evidence:
+    - command context: `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --rm backend-tests pytest tests/ --cov=app --cov-report=term-missing --cov-report=xml --cov-report=html -rA`
+    - result: **PASS**
+    - totals: **9070 passed, 28 skipped, 88 deselected, 7 warnings**
+    - exit code: **0**
+    - previous XV2 blocker no longer reproduces.
+- Decision: **A-024.8.B2 CLOSED — BLOCKING REGRESSION REMEDIATED**.
+- Next action: `A-024.8.B3` (quality baseline confirmation / remaining gates check).
+
+#### A-024.8.B3 — Quality Baseline Confirmation / Remaining Gates Check
+
+- Date: 2026-05-09
+- Scope: Validation/evidence-only closure check after B2. No feature work. No maturity changes. No gate bypass.
+- Repo hygiene snapshot (B3 start):
+    - unrelated dirty files preserved (not staged): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`, multiple unrelated backend/frontend changes and historical reports.
+    - B3 scoped files: `SBS_UB.md`, `A-024.8.B3-QUALITY_BASELINE_CONFIRMATION_REPORT.md`.
+    - must-not-stage artifacts excluded by policy: coverage binaries, local tasks/nohup/cache and unrelated historical files.
+- Source-of-truth review outcome:
+    - B1 captured full baseline with blocker.
+    - B2 captured authoritative backend remediation (9070/28/88/7, exit 0).
+    - B3 required post-remediation confirmation for remaining baseline components.
+- Test image rebuild evidence:
+    - `backend-tests` image rebuild: **PASS**
+    - `frontend-tests` image rebuild: **PASS**
+    - stale-layer risk for B3 validation: **CLEARED**
+- B3 executed checks and outcomes:
+    - backend full regression + coverage: **PASS (reused authoritative B2 evidence)**
+        - `9070 passed, 28 skipped, 88 deselected, 7 warnings`, exit `0`
+        - coverage baseline from B1/B2 evidence: `87.07%` (>= 80% threshold)
+    - tenant/security regression (post-rebuild rerun): **PASS**
+        - `1080 passed, 1 skipped, 8105 deselected, 2 warnings`
+    - A-024 targeted continuity pack (post-rebuild rerun): **PASS**
+        - `185 passed, 1 warning`
+    - frontend full tests (B3 rerun): **PASS_WITH_ACCEPTED_WARNINGS**
+        - `118 files passed, 814 tests passed`
+        - non-blocking repeated React `act(...)` warning in `WebhookSubscriptionsUI`
+    - frontend lint (B3 rerun): **PASS**
+        - `No ESLint warnings or errors`
+    - frontend build (B3 rerun): **PASS**
+        - Next.js production build completed with static generation summary
+    - safe gate (B3 rerun): **PASS**
+        - `[pilot-safe-gate] PASS: non-destructive pilot gate is green`
+    - smoke gate (B3 rerun): **PASS**
+        - domain endpoint HTTP 200 smoke: `27 passed, 1 warning`
+        - Playwright smoke suite: `50 passed`
+    - release gate / rollback readiness:
+        - release gate suite evidence: architecture, tenant safety, platform regression, domain layer, security, template, and data-layer slices green in B3 runs
+        - classification: **PASS_WITH_ACCEPTED_WARNINGS** (orphan-container warning only; no blocking failures observed)
+- Final B3 baseline classification:
+
+| Area | Result | Classification | Blocks A-025? |
+|---|---|---|---|
+| backend full regression + coverage | PASS | PASS | No |
+| tenant/security regression | PASS | PASS | No |
+| A-024 targeted continuity | PASS | PASS | No |
+| frontend full tests | PASS | PASS_WITH_ACCEPTED_WARNINGS | No |
+| frontend lint | PASS | PASS | No |
+| frontend build | PASS | PASS | No |
+| safe gate | PASS | PASS | No |
+| smoke gate | PASS | PASS | No |
+| release gate / rollback readiness | PASS | PASS_WITH_ACCEPTED_WARNINGS | No |
+| stale image risk | CLEARED | PASS | No |
+| known warnings | PRESENT | PASS_WITH_ACCEPTED_WARNINGS | No |
+| coverage threshold/baseline | PASS | PASS | No |
+
+- Maturity metrics: **UNCHANGED** (`L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2, sum=150, maturity_arithmetic_check=PASS`).
+- Decision: **A-024.8.B3 COMPLETE — QUALITY BASELINE CONFIRMED**.
+- Next action: `A-025.0`.
 
 
 
