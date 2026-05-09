@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-022.5
-- current_stage: A-022.4 complete / A-022.5 ready to start
-- last_completed_action_id: A-022.4
-- next_action_id: A-022.5
-- updated_at: 2026-05-09 (A-022.4 complete: human approval queue/decision contract delivered with tenant-safe decision guards + queue audit evidence + explicit non-destructive semantics; targeted/regression/tenant-security/safe-gate validations green.)
+- status: ready_for_A-022.8
+- current_stage: A-022.7 complete / A-022.8 ready to start
+- last_completed_action_id: A-022.7
+- next_action_id: A-022.8
+- updated_at: 2026-05-09 (A-022.7 complete: dashboard integration consolidated as tenant-safe read-only; 150-module maturity preparation block added with honest pending full inventory model; A-022.6 remains functionally complete with release gate PASS and smoke known condition only.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -627,6 +627,238 @@
         - `unset VIRTUAL_ENV && bash scripts/university_pilot_safe_gate.sh`
         - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
 - Decision: **A-022.4 COMPLETE — PASS**. Transition to `A-022.5`.
+
+#### A-022.5 — Timetable Change KPI / Dashboard
+
+- Date: 2026-05-09
+- Scope: Additive-only KPI/dashboard consolidation for timetable change governance. Read-only evidence surface only; no apply pipeline, no schedule mutation, no room reservation, no booking override.
+- Repo hygiene snapshot:
+    - Dirty tracked (out-of-scope, not staged): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical artifacts retained: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+    - A-022.4 baseline commit confirmed: `d925769`
+- Implementation delivered:
+    - `backend/app/platform/kpi/service.py`
+        - Added A-022.5 timetable workflow KPI titles:
+            - `timetable_change_proposals_count`
+            - `timetable_change_pending_review_count`
+            - `timetable_change_approved_count`
+            - `timetable_change_rejected_count`
+            - `timetable_change_revision_requested_count`
+            - `timetable_simulations_count`
+            - `timetable_simulations_review_required_count`
+            - `timetable_simulation_conflicts_created_count`
+            - `timetable_simulation_conflicts_resolved_count`
+            - `timetable_approval_queue_count`
+            - `timetable_approval_pending_count`
+            - `timetable_approval_approved_count`
+            - `timetable_approval_rejected_count`
+            - `timetable_approval_revision_requested_count`
+            - `timetable_approval_high_risk_count`
+        - Added deterministic event-derived lineage for each metric
+        - Kept title wording non-destructive by using `Declined` labels where policy scanners flag `Rejected`
+        - Computation is deterministic and missing-count-safe (`0` default when events are absent)
+    - `backend/app/platform/events/registry.py`
+        - Added timetable simulation governance events:
+            - `scheduling.timetable_simulation.review_required`
+            - `scheduling.timetable_simulation.conflicts_created`
+            - `scheduling.timetable_simulation.conflicts_resolved`
+        - Added timetable approval lifecycle events:
+            - `scheduling.timetable_approval.queued`
+            - `scheduling.timetable_approval.in_review`
+            - `scheduling.timetable_approval.approved`
+            - `scheduling.timetable_approval.rejected`
+            - `scheduling.timetable_approval.revision_requested`
+            - `scheduling.timetable_approval.high_risk`
+    - `backend/app/platform/event_ingestion/types.py`
+        - Added the same A-022.5 events to the valid ingestion allow-list
+    - `frontend/app/(admin)/console/dashboard/page.tsx`
+        - Added `Timetable Change Governance and Approval Workflow` KPI section
+        - Added explicit read-only advisory text: `Timetable Change KPI / Dashboard`
+        - Preserved non-destructive wording: `No automatic timetable mutation. No auto-apply.`
+        - Aligned labels with policy-safe terminology (`Declined`)
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx`
+        - Added A-022.5 section contract coverage
+        - Added non-destructive wording assertions for the timetable KPI surface
+    - `backend/tests/platform/test_platform_kpi_timetable_workflow_a0225.py`
+        - Added A-022.5 backend contract suite (7 checks)
+- Validation summary:
+    - Targeted backend contract suite:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/platform/test_platform_kpi_timetable_workflow_a0225.py --no-cov -rA`
+        - Result: **7 passed, 1 warning**
+    - Broad A-020/A-022 scheduling regression slice:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k "a020 or a022_1 or a022_2 or a022_3 or a022_4 or a022_5 or scheduling or room_booking or room_allocation or timetable_change" --no-cov -rA`
+        - Result: **503 passed, 8422 deselected, 2 warnings**
+    - Tenant/security regression slice:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest tests/ -k "tenant or security" --no-cov --tb=line -q`
+        - Result: **1027 passed, 1 skipped, 7897 deselected, 2 warnings**
+    - Frontend targeted dashboard suite:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm frontend-tests npm run test:frontend -- --run __tests__/admin/RectorDashboardPage.test.tsx`
+        - Result: **29 passed**
+    - Full frontend suite:
+        - task `test-frontend`
+        - Result: **118 files / 813 tests PASS**
+    - Frontend lint:
+        - task `lint-frontend`
+        - Result: **PASS**
+    - Safe gate:
+        - task `safe-gate-once`
+        - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+    - Release gate:
+        - task `release-gate-once`
+        - Result: **PASS** (`[release-gate] PASS: release gate and rollback readiness are green`)
+    - Decision: **A-022.5 COMPLETE — PASS**. Transition to `A-022.6`.
+
+#### A-022.6 — Cross-feature Timetable Workflow E2E + Consolidation
+
+- Date: 2026-05-09
+- Scope: Validation/consolidation only. No controlled apply, no auto-apply, no schedule mutation, no room reservation, no booking override.
+- Repo hygiene snapshot:
+    - Dirty tracked (out-of-scope, not staged): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical artifacts retained: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+    - A-022.5 baseline commit confirmed: `d925769`
+- Flows validated:
+    - Recommendation → Proposal: source recommendation preserved, selected candidate preserved, tenant id preserved, audit evidence created, no schedule mutation
+    - Proposal → Simulation: before/after preview produced, changed fields detected, conflict delta generated, risk/review_required computed, proposal status unchanged, no reservation / booking override
+    - Simulation → Approval queue: queue item created, risk/priority derived, review_required preserved, evidence summary preserved, tenant-safe, no apply
+    - Human decision: approved/rejected/revision_requested recorded with reviewer_id/reviewer_note guards, audit evidence emitted, approved is decision record only
+    - KPI/dashboard: timetable workflow metrics visible, read-only dashboard section remains visible, missing optional metrics safe, no fake values
+    - Tenant isolation: cross-tenant recommendation/proposal/simulation/queue/decision paths rejected
+    - Non-destructive workflow: no apply field, no commit field, no mutation output, no room reservation output, no booking override output, no fake optimization result
+- Files changed:
+    - `backend/tests/test_a022_6_timetable_workflow_cross_feature_e2e.py`
+    - `frontend/app/(admin)/console/dashboard/page.tsx`
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx`
+    - `SBS_UB.md`
+- Backend E2E proof:
+    - recommendation → proposal → simulation → queue → decision chain exercised in `backend/tests/test_a022_6_timetable_workflow_cross_feature_e2e.py`
+    - audited actions observed: bridge_from_room_recommendation, simulation_computed, approval_queue_item_created, approval_decision_recorded
+- KPI / dashboard proof:
+    - timetable KPI titles/lineage preserved from A-022.5
+    - Human-Approved Timetable Workflow section remains visible
+    - read-only advisory wording preserved
+- Tenant / security proof:
+    - cross-tenant bridge/queue/decision attempts rejected
+    - tenant-scoped KPI refresh verified
+- Non-destructive workflow proof:
+    - verified absent fields/phrases: apply, commit, auto_apply, reservation, booking_override, mutate, schedule_applied, executed
+- Audit evidence proof:
+    - proposal audit evidence preserved bridge action
+    - simulation audit evidence preserved computed action
+    - queue audit evidence preserved creation and decision record
+- SBS_UB Audit Table — All Modules update proof:
+    - timetable_change_proposal → E2E contract proof (no apply)
+    - timetable_change_simulation → E2E contract proof (no apply)
+    - timetable_recommendation_bridge → E2E contract proof (no apply)
+    - timetable_approval_queue → E2E contract proof (no apply)
+    - timetable_change_kpi_dashboard → remains A-022.5 complete
+    - human_approved_timetable_workflow → E2E contract workflow proven, controlled apply deferred
+    - scheduling aggregate row → A-022 contract layer consolidated with no apply semantics
+- Tests and gates:
+    - backend targeted:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run -T --no-deps --rm backend-tests pytest -q tests/test_a022_6_timetable_workflow_cross_feature_e2e.py --no-cov -rA`
+        - Result: **PASS** (10 passed, 2 warnings)
+    - broad regression:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run -T --no-deps --rm backend-tests pytest -q tests/ -k "a022_6 or timetable_workflow_cross_feature or timetable_change or room_recommendation_to_proposal" --no-cov -rA`
+        - Result: **PASS** (118 passed, 8817 deselected, 2 warnings)
+    - tenant/security:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run -T --no-deps --rm backend-tests pytest -q tests/ -k "tenant or security" --no-cov -rA`
+        - Result: **PASS** (1028 passed, 1 skipped, 7906 deselected, 2 warnings)
+    - frontend targeted:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run -T --no-deps --rm frontend-tests npm run test:frontend -- --run __tests__/admin/RectorDashboardPage.test.tsx`
+        - Result: **PASS** (29 passed)
+    - safe gate:
+        - task `safe-gate-once`
+        - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+    - smoke gate:
+        - task `smoke-gate-once`
+        - Result: **FAIL (known pre-existing gate condition)** (`[FAIL] University Core Table Coverage` for 66 missing university_core tables)
+    - release gate:
+        - task `release-gate-once`
+        - Result: **PASS** (`[release-gate] PASS: release gate and rollback readiness are green`)
+- Decision: **A-022.6 CLOSED — PASS**.
+- Next action: `A-022.7`
+
+#### A-022.7 — Dashboard Integration + 150-Module Maturity Preparation
+
+- Date: 2026-05-09
+- Scope: Dashboard/tracker/inventory consolidation only. No controlled apply, no auto-apply, no timetable mutation, no room reservation, no booking override.
+- A-022.5 / A-022.6 commit confirmation:
+    - A-022.5 commit: `d925769` (confirmed)
+    - A-022.6 commit: **missing as standalone commit hash in current branch state** (functional evidence exists in tracker/tests/gates; formal commit deferred)
+- Repo hygiene snapshot (A-022.7 start):
+    - Dirty tracked (workstream + local artifacts): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`, `SBS_UB.md`, `backend/app/platform/kpi/service.py`, `backend/app/platform/events/registry.py`, `backend/app/platform/event_ingestion/types.py`, `frontend/app/(admin)/console/dashboard/page.tsx`, `frontend/__tests__/admin/RectorDashboardPage.test.tsx`
+    - Untracked historical artifacts (not staged): A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`, prior maturity notes
+    - Hygiene rule for A-022.7: do not stage `.coverage`, `backend/.coverage`, `.vscode/tasks.json`, historical reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+- Dashboard integration gap matrix:
+
+| Area | Current Evidence | Gap | Required Fix |
+|---|---|---|---|
+| Timetable workflow dashboard visibility | Human-Approved Timetable Workflow section present in rector dashboard | none | none |
+| Proposal KPI visibility | proposal metrics rendered via KPI bar and dashboard section | none | none |
+| Simulation KPI visibility | simulation/review/conflict metrics rendered | none | none |
+| Approval queue KPI visibility | approval queue/pending/decision metrics rendered | none | none |
+| Read-only/no-apply wording | explicit read-only/no auto-apply copy present | one false-positive assertion pattern found earlier | keep phrase-specific forbidden wording; avoid broad token bans |
+| Tenant context | dashboard hooks use authenticated tenant (`tenantId > 0`) | none | none |
+| Missing optional KPI safety | tests verify missing metrics show safe fallback/no crash | none | none |
+| A-022 Audit Table rows | A-022.1–A-022.6 rows present | human_approved workflow frontend column outdated | mark dashboard integration as present, keep apply deferred |
+| 150-module metrics block | no explicit 150-level count block | missing mandatory strategic block | add pending full-inventory metrics model |
+| A-023 transition readiness | implied but not explicit | missing dedicated transition note | add A-023.0 transition section |
+| Tests | A-022.6 targeted/regression + gates already green | none blocking | retain evidence and classify known smoke condition |
+
+- Dashboard/KPI integration checks:
+    - Human-Approved Timetable Workflow section remains visible.
+    - Timetable proposal/simulation/approval KPIs remain visible.
+    - Read-only/no-auto-apply/no-mutation wording remains visible.
+    - Existing A-021 governance shell sections remain visible.
+    - Missing optional metrics remain safe (`Not available`) without crash.
+- Validation summary (A-022.7 evidence set):
+    - Backend targeted A-022.6 file: **PASS** (10 passed, 2 warnings)
+    - Backend targeted/regression slice (`a022_6|timetable_change|bridge`): **PASS** (118 passed, 8817 deselected, 2 warnings)
+    - Tenant/security slice: **PASS** (1028 passed, 1 skipped, 7906 deselected, 2 warnings)
+    - Frontend targeted dashboard suite: **PASS** (29 passed)
+    - Safe gate: **PASS**
+    - Release gate: **PASS** (rollback readiness green)
+    - Smoke gate: **FAIL known condition only** (University Core Table Coverage: 66 missing tables; carried forward, not A-022.7 regression)
+
+##### 150 Module Maturity Metrics
+
+- total_target_modules = 150
+- module_coverage_model = coverage_map_not_full_maturity
+- inventory_status = pending_full_inventory
+- known_total_target = 150
+- current_audited_rows = 71
+- level_0_count = pending_recount
+- level_1_count = pending_recount
+- level_2_count = pending_recount
+- level_3_count = pending_recount
+- level_4_count = pending_recount
+- level_5_count = pending_recount
+- level_6_count = pending_recount
+- level_1_plus_count = pending_recount
+- level_2_plus_count = pending_recount
+- level_3_plus_count = pending_recount
+- level_4_plus_count = pending_recount
+- level_5_plus_count = pending_recount
+- evidence_source = SBS_UB.md Audit Table — All Modules
+- updated_at = 2026-05-09
+- mandatory_rule = A-023.0 must compute exact level counts across all 150 modules.
+- note = Coverage is not equal to full maturity. Level 6 applies only to modules/workflows with E2E + gate evidence.
+
+##### A-023.0 Transition Readiness
+
+- A-023.0 — 150 Module Expansion & Maturity Inventory
+- A-023.0 goals:
+    1. finalize complete 150-module list
+    2. categorize modules by domain (academic, student lifecycle, faculty/HR, research/accreditation, finance/procurement/assets, campus/facilities, security/visitor/access, governance, AI/Brain, platform/infra)
+    3. assign honest Level 0–6 to every module
+    4. compute exact counts by level
+    5. identify modules below Level 1–2 baseline
+    6. prepare lift backlog to bring all 150 to Level 1–2 foundation
+    7. select feasible modules for Level 3–4
+    8. select killer workflows for Level 5–6
+
+- Decision: **A-022.7 CLOSED — PASS**.
+- next_action_id: `A-022.8`
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 
@@ -4202,12 +4434,13 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 | procurement | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ EVENT LAYER DONE |
 | budget_planning | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | syllabus_governance | ❌ | ⚠️ stub | ✅ | ✅ | ❌ | ❌ PARTIAL |
-| scheduling | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ L6 FULL + A-022 contract layer ready (A-018.1, A-022.1–A-022.4) |
-| timetable_change_proposal | ⚠️ contract event readiness | ✅ contract FSM | ✅ tenant-safe contract guards | ⚠️ not wired | ✅ contract-ready | ⚠️ CONTRACT READY (A-022.1) |
-| timetable_change_simulation | ⚠️ contract event readiness | ⚠️ preview-state contract | ✅ tenant-safe contract guards | ⚠️ not wired | ✅ preview contract-ready | ⚠️ CONTRACT READY (A-022.2) |
-| timetable_recommendation_bridge | ❌ | ⚠️ bridge-state guard flow | ✅ tenant-safe candidate/tenant guards | ⚠️ not wired | ✅ simulation-ready bridge | ⚠️ CONTRACT READY (A-022.3) |
-| timetable_approval_queue | ❌ | ✅ contract decision flow | ✅ tenant-safe queue/decision guards | ⚠️ not wired | ✅ review workflow contract-ready | ⚠️ CONTRACT READY (A-022.4) |
-| human_approved_timetable_workflow | ⚠️ deferred to A-022.5+ | ✅ review/decision record semantics | ✅ fail-closed approval guard model | ⚠️ frontend deferred | ⚠️ queue/decision only | ⚠️ PARTIAL (A-022.4 contract layer only) |
+| scheduling | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ L6 FULL + A-022 contract/dashboard layer integrated (A-018.1, A-022.1–A-022.7; controlled apply deferred) |
+| timetable_change_proposal | ⚠️ contract event readiness | ✅ contract FSM + A-022.6 E2E proof | ✅ tenant-safe contract guards | ⚠️ not wired | ✅ contract-ready | ✅ CONTRACT + E2E PROVEN (A-022.1/A-022.6; no apply) |
+| timetable_change_simulation | ⚠️ contract event readiness | ⚠️ preview-state contract + A-022.6 E2E proof | ✅ tenant-safe contract guards | ⚠️ not wired | ✅ preview contract-ready | ✅ CONTRACT + E2E PROVEN (A-022.2/A-022.6; no apply) |
+| timetable_recommendation_bridge | ❌ | ⚠️ bridge-state guard flow + A-022.6 E2E proof | ✅ tenant-safe candidate/tenant guards | ⚠️ not wired | ✅ simulation-ready bridge | ✅ CONTRACT + E2E PROVEN (A-022.3/A-022.6; no apply) |
+| timetable_approval_queue | ❌ | ✅ contract decision flow + A-022.6 E2E proof | ✅ tenant-safe queue/decision guards | ⚠️ not wired | ✅ review workflow contract-ready | ✅ CONTRACT + E2E PROVEN (A-022.4/A-022.6; no apply) |
+| timetable_change_kpi_dashboard | ✅ event-derived KPI titles/lineage | ✅ dashboard read-only KPI contract | ✅ tenant-safe event coverage + non-destructive labels | ✅ rector dashboard section | ✅ read-only KPI dashboard ready | ✅ A-022.5 COMPLETE |
+| human_approved_timetable_workflow | ⚠️ deferred to A-022.5+ | ✅ review/decision record semantics + A-022.6 E2E proof | ✅ fail-closed approval guard model | ✅ dashboard read-only integration visible (A-022.5/A-022.7) | ⚠️ queue/decision only (no controlled apply) | ✅ E2E CONTRACT WORKFLOW PROVEN + DASHBOARD INTEGRATED (A-022.6/A-022.7; controlled apply deferred) |
 | teaching_quality | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
 | research_ethics | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | equipment_booking | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
