@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-022.8
-- current_stage: A-022.7 complete / A-022.8 ready to start
-- last_completed_action_id: A-022.7
-- next_action_id: A-022.8
-- updated_at: 2026-05-09 (A-022.7 complete: dashboard integration consolidated as tenant-safe read-only; 150-module maturity preparation block added with honest pending full inventory model; A-022.6 remains functionally complete with release gate PASS and smoke known condition only.)
+- status: ready_for_A-023
+- current_stage: A-022 CLOSED / A-023 planning
+- last_completed_action_id: A-022.8
+- next_action_id: A-023.0
+- updated_at: 2026-05-09 (A-022.8 final closure complete: full validation/gate consolidation finished; final verdict A-022 CLOSED — PASS WITH KNOWN CONDITIONS; smoke known condition remains University Core Table Coverage 66 missing tables, not A-022 regression.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -823,9 +823,12 @@
 ##### 150 Module Maturity Metrics
 
 - total_target_modules = 150
+- coverage_model = coverage_map_not_full_maturity
 - module_coverage_model = coverage_map_not_full_maturity
 - inventory_status = pending_full_inventory
 - known_total_target = 150
+- current_level_counts_status = pending_full_inventory
+- exact_level_counts_due = A-023.0
 - current_audited_rows = 71
 - level_0_count = pending_recount
 - level_1_count = pending_recount
@@ -842,6 +845,7 @@
 - evidence_source = SBS_UB.md Audit Table — All Modules
 - updated_at = 2026-05-09
 - mandatory_rule = A-023.0 must compute exact level counts across all 150 modules.
+- coverage_not_equal_full_maturity = true
 - note = Coverage is not equal to full maturity. Level 6 applies only to modules/workflows with E2E + gate evidence.
 
 ##### A-023.0 Transition Readiness
@@ -859,6 +863,89 @@
 
 - Decision: **A-022.7 CLOSED — PASS**.
 - next_action_id: `A-022.8`
+
+#### A-022.8 — Full Gates + Final A-022 Human-Approved Timetable Workflow Report
+
+- Date: 2026-05-09
+- Scope: Final validation/evidence closure only. No new business features, no controlled apply, no auto-apply, no timetable mutation, no room reservation, no booking override.
+
+- Repo hygiene snapshot (Task 0):
+    - Dirty tracked (not staged): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`, `backend/app/platform/kpi/service.py`, `backend/app/platform/events/registry.py`, `backend/app/platform/event_ingestion/types.py`, `frontend/app/(admin)/console/dashboard/page.tsx`, `frontend/__tests__/admin/RectorDashboardPage.test.tsx`
+    - Untracked historical/local artifacts: A-011/A-012/A-017 docs, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`, previous A-022 docs/tests
+    - A-022.8 commit scope rule: stage only final A-022.8 report + `SBS_UB.md`
+
+- Commit continuity reconciliation (Task 1):
+
+| Action | Expected Commit | Found Commit | Evidence Source | Status | Notes |
+|---|---|---|---|---|---|
+| A-022.0 | 7c6e691 | 7c6e691 | git + SBS | OK | Wave 10 selection/planning commit present |
+| A-022.1 | e4cbe03 | e4cbe03 | git + SBS | OK | Proposal contract commit present |
+| A-022.2 | ee1354c | ee1354c | git + SBS | OK | Simulation contract commit present |
+| A-022.3 | daf20e2 | daf20e2 | git + SBS | OK | Bridge commit present |
+| A-022.4 | d925769 | d925769 | git + SBS | OK | Approval queue commit present |
+| A-022.5 | unknown/verify | d925769 (shared baseline reference) | SBS + tests + KPI/dashboard files | needs_reconciliation | evidence_available_commit_gap, not runtime blocker |
+| A-022.6 | unknown/verify | standalone commit not found | SBS + tests + gate evidence | needs_reconciliation | evidence_available_commit_gap, not runtime blocker |
+| A-022.7 | 2561b57 | 2561b57 | git + SBS + report | OK | docs(a022.7) commit present |
+
+- A-022 maturity/layer final state (Task 2):
+
+| Layer | Start State | Final State | Status |
+|---|---|---|---|
+| Timetable Change Proposal | absent | contract + FSM + audit evidence | CLOSED |
+| Simulation / Preview | absent | before/after + delta preview | CLOSED |
+| Recommendation → Proposal Bridge | absent | A-020 recommendation to proposal bridge | CLOSED |
+| Human Approval Queue | absent | decision record + audit evidence | CLOSED |
+| Timetable Workflow KPI / Dashboard | absent/partial | visible read-only workflow metrics | CLOSED |
+| Cross-feature Timetable E2E | missing | validated contract E2E | CLOSED |
+| Dashboard / 150-module prep | missing | maturity block + A-023 transition scaffolding | CLOSED |
+
+- Final backend validation (Task 3):
+    - targeted A-022/timetable slice:
+        - command: `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k "a022 or timetable_change or timetable_workflow or room_recommendation_to_proposal" --no-cov -rA`
+        - result: **PASS** (156 passed, 8779 deselected, 2 warnings)
+    - broad scheduling/A-020/A-022 regression:
+        - command: `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k "a020 or a022 or scheduling or room_booking or room_allocation or timetable_change" --no-cov -rA`
+        - result: **PASS** (520 passed, 8415 deselected, 2 warnings)
+    - tenant/security:
+        - command: `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest tests/ -k "tenant or security" --no-cov --tb=line -q`
+        - result: **PASS** (1028 passed, 1 skipped, 7906 deselected, 2 warnings)
+    - full backend (feasible run):
+        - task: `shell: test-backend`
+        - result: **NOT GREEN / ENV_PROFILE_ONLY** (8870 passed, 13 skipped, 88 deselected, 8 errors)
+        - error class: `DATABASE_URL environment variable is not set` in postgres persistence tests
+        - classification: known baseline env-profile condition; not an A-022 timetable regression
+
+- Final frontend validation (Task 4):
+    - targeted rector dashboard:
+        - command: `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run -T --no-deps --rm frontend-tests npm run test:frontend -- --run __tests__/admin/RectorDashboardPage.test.tsx`
+        - result: **PASS** (29 passed)
+        - note: stale frontend image had a transient assertion mismatch; rebuild restored deterministic PASS
+    - full frontend evidence (from release gate): **PASS** (118 files, 813 tests)
+
+- Final gates (Task 5):
+    - safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+    - release gate: **PASS** (`[release-gate] PASS: release gate and rollback readiness are green`)
+    - smoke gate: **FAIL** (`University Core Table Coverage` missing 66 `university_core` tables)
+
+- Smoke known-condition disposition (Task 6):
+
+| Smoke Check | Result | Root Cause | A-022 Impact | Decision | Future Action |
+|---|---|---|---|---|---|
+| University Core Table Coverage | FAIL | 66 missing `university_core` tables | Not A-022 timetable workflow regression | Residual known condition | A-023/A-parallel university_core remediation |
+
+- A-022 non-destructive policy proof (Task 6/14):
+    - human-approved workflow = decision contract + evidence + KPI visibility
+    - approved means decision record, not applied schedule
+    - controlled apply remains explicitly deferred
+    - no mutation/reservation/override/auto-apply capability introduced by A-022
+
+- Final A-022 series verdict:
+    - **A-022 CLOSED — PASS WITH KNOWN CONDITIONS**
+    - reason: smoke gate remains red on pre-existing University Core Table Coverage condition; all A-022 target/regression/tenant/security/safe/release checks are green
+
+- A-023 transition pointer (Task 10/11):
+    - next action: `A-023.0 — 150 Module Expansion & Maturity Inventory`
+    - planning only in A-022.8; no A-023 implementation started here
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 
