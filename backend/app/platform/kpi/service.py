@@ -187,6 +187,12 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
         "scheduling.room_conflict.detected",
         "scheduling.room_allocation.required",
     ],
+    "room_allocation_recommendations_generated_count": [
+        "scheduling.room_allocation.recommendation_generated",
+    ],
+    "room_allocation_no_viable_candidate_count": [
+        "scheduling.room_allocation.no_viable_candidate",
+    ],
     # A-014.6 Wave 2 event lineage
     "grade_decline_risk_count": ["academic.grade_risk.detected"],
     "grade_intervention_cases_count": ["interventions.case.created"],

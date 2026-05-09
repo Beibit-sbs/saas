@@ -704,6 +704,48 @@ class RulesEngine:
                 "requires_approval": False,
             }
 
+        # A-020.5: Room allocation recommendation rules (review-only actions)
+        if reasoning_path in {
+            "room_allocation_recommendation_critical",
+            "room_allocation_recommendation_high",
+            "room_allocation_recommendation_medium",
+            "room_allocation_recommendation_low",
+        }:
+            if reasoning_path == "room_allocation_recommendation_critical":
+                return {
+                    "decision_type": "operational",
+                    "priority": "critical",
+                    "recommended_actions": [
+                        "review_room_allocation_recommendations",
+                        "request_room_allocation_human_review",
+                        "notify_scheduling_office",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "room_allocation_recommendation_high":
+                return {
+                    "decision_type": "operational",
+                    "priority": "high",
+                    "recommended_actions": [
+                        "review_room_allocation_recommendations",
+                        "request_room_allocation_human_review",
+                    ],
+                    "requires_approval": True,
+                }
+            if reasoning_path == "room_allocation_recommendation_medium":
+                return {
+                    "decision_type": "operational",
+                    "priority": "medium",
+                    "recommended_actions": ["review_room_allocation_recommendations"],
+                    "requires_approval": False,
+                }
+            return {
+                "decision_type": "operational",
+                "priority": "low",
+                "recommended_actions": ["review_room_allocation_recommendations"],
+                "requires_approval": False,
+            }
+
         # A-015.4 — Finance Operations Health Brain rules
         if reasoning_path in {
             "finance_operations_health_critical",

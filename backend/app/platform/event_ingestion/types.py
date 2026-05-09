@@ -31,6 +31,8 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "scheduling.section.conflict_detected",
         "scheduling.room_conflict.detected",
         "scheduling.room_allocation.required",
+        "scheduling.room_allocation.recommendation_generated",
+        "scheduling.room_allocation.no_viable_candidate",
         "scheduling.capacity_mismatch.detected",
         "booking.approved",
         "booking.conflict_detected",

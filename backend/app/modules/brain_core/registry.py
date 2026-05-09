@@ -37,6 +37,7 @@ from app.modules.brain_core.constants import (
     EVENTS_MANAGEMENT_EVENT_TYPES,
     VISITOR_MANAGEMENT_EVENT_TYPES,
     SECURITY_OPERATIONS_EVENT_TYPES,
+    ROOM_ALLOCATION_RECOMMENDATION_EVENT_TYPES,
 )
 
 
@@ -619,6 +620,17 @@ class SignalRegistry:
             "scenario": "enrollment_capacity_risk",
             "context_sources": ["scheduling", "academic", "operations"],
         },
+        # A-020.5: Room allocation recommendation signal
+        "scheduling.room_allocation.recommendation_generated": {
+            "signal_class": "operational_risk",
+            "scenario": "room_allocation_recommendation",
+            "context_sources": ["scheduling", "academic", "operations"],
+        },
+        "scheduling.room_allocation.no_viable_candidate": {
+            "signal_class": "operational_risk",
+            "scenario": "room_allocation_recommendation",
+            "context_sources": ["scheduling", "academic", "operations"],
+        },
         # A-015.4 — Finance Operations Health Brain
         "finance.operations.health_check": {
             "signal_class": "financial_risk",
@@ -930,6 +942,16 @@ class DecisionRegistry:
             "action_map": {
                 "create_enrollment_capacity_task": "workflow_task",
                 "notify_enrollment_office": "notification",
+            },
+        },
+        # A-020.5: Room allocation recommendation decisioning (review-only)
+        "room_allocation_recommendation": {
+            "decision_type": "operational",
+            "allowed_event_types": sorted(ROOM_ALLOCATION_RECOMMENDATION_EVENT_TYPES),
+            "action_map": {
+                "review_room_allocation_recommendations": "workflow_task",
+                "request_room_allocation_human_review": "workflow_task",
+                "notify_scheduling_office": "notification",
             },
         },
         # A-015.4 — Finance Operations Health Brain

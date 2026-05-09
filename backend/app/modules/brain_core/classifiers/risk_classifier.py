@@ -1074,6 +1074,46 @@ class RiskClassifier:
                 "reasoning_path": "enrollment_capacity_risk_medium",
             }
 
+        # A-020.5: Recommendation generation severity routing
+        if event_type in {
+            "scheduling.room_allocation.recommendation_generated",
+            "scheduling.room_allocation.no_viable_candidate",
+        }:
+            payload = signal.get("payload", {})
+            status = str(payload.get("recommendation_status") or "").strip().lower()
+            required_human_review = bool(payload.get("required_human_review"))
+
+            if event_type == "scheduling.room_allocation.no_viable_candidate" or status == "no_viable_candidate":
+                return {
+                    "situation_type": "operational_risk",
+                    "severity": "critical",
+                    "urgency": "high",
+                    "reasoning_path": "room_allocation_recommendation_critical",
+                }
+
+            if required_human_review or status == "review_required":
+                return {
+                    "situation_type": "operational_risk",
+                    "severity": "high",
+                    "urgency": "high",
+                    "reasoning_path": "room_allocation_recommendation_high",
+                }
+
+            if status in {"fallback", "acceptable"}:
+                return {
+                    "situation_type": "operational_risk",
+                    "severity": "medium",
+                    "urgency": "medium",
+                    "reasoning_path": "room_allocation_recommendation_medium",
+                }
+
+            return {
+                "situation_type": "operational_risk",
+                "severity": "low",
+                "urgency": "low",
+                "reasoning_path": "room_allocation_recommendation_low",
+            }
+
         # A-015.4 — Finance Operations Health Brain
         if event_type in ("finance.operations.health_check", "finance.operations.risk_detected"):
             payload = signal.get("payload", {})

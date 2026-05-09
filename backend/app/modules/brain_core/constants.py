@@ -143,6 +143,12 @@ ENROLLMENT_CAPACITY_RISK_EVENT_TYPES = {
     "scheduling.capacity_mismatch.detected",
 }
 
+# A-020.5: Room allocation recommendation signals
+ROOM_ALLOCATION_RECOMMENDATION_EVENT_TYPES = {
+    "scheduling.room_allocation.recommendation_generated",
+    "scheduling.room_allocation.no_viable_candidate",
+}
+
 ACADEMIC_INTEGRITY_EVENT_TYPES = {
     "academic_integrity.case.escalated",
 }

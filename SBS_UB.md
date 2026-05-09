@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-09-04 (A-020.4 CAPACITY MATCHING BRAIN)
-- status: ready_for_A-020.5
-- current_stage: A-020 Wave 8 execution / Scheduling + Room Allocation Brain (A-020.4 capacity matching brain complete)
-- last_completed_action_id: A-020.4
-- next_action_id: A-020.5
-- updated_at: 2026-05-09 (A-020.4 deterministic capacity matching brain added; score/status/risk/human-review evidence contract + helper delivered; 26 A-020.4 tests passing; focused A-020 regression 108 passing; tenant/security 1003 passing; safe gate green; non-destructive policy preserved; A-020.5 queued)
+- run_id: OP-AUDIT-2026-05-09-05 (A-020.5 ROOM ALLOCATION RECOMMENDATION ENGINE)
+- status: ready_for_A-020.6
+- current_stage: A-020 Wave 8 execution / Scheduling + Room Allocation Brain (A-020.5 recommendation engine complete)
+- last_completed_action_id: A-020.5
+- next_action_id: A-020.6
+- updated_at: 2026-05-09 (A-020.5 deterministic room allocation recommendation engine added; ranked candidates/status/score/reasons/warnings/human-review contract + helper delivered; 24 A-020.5 tests passing; focused regression 59 passed/7 skipped; tenant/security 1005 passed; safe gate green; non-destructive policy preserved; A-020.6 queued)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -316,17 +316,54 @@
     - Safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
 - Decision: **A-020.4 COMPLETE - PASS**. Capacity matching brain is deterministic, tested, tenant-safe, non-destructive, and recommendation-ready. Proceed to `A-020.5`.
 
+#### A-020.5 — Room Allocation Recommendation Engine
+
+- Date: 2026-05-09
+- Scope: Deterministic recommendation-only ranking engine for room allocation candidates. Reuse-first/additive-only over A-020.1/A-020.2/A-020.3/A-020.4 contracts.
+- Artifacts:
+    - `backend/app/modules/scheduling/room_allocation_readiness.py` (A-020.5 recommendation contracts + ranking helper)
+    - `backend/tests/test_a020_5_room_allocation_recommendation_engine.py` (24 tests)
+    - `A-020.5-ROOM_ALLOCATION_RECOMMENDATION_ENGINE_REPORT.md`
+- Contracts delivered:
+    - `RoomAllocationRecommendationStatus`
+    - `RoomAllocationCandidate`
+    - `RoomAllocationRecommendationEvidence`
+    - `RoomAllocationRecommendationResult`
+    - `build_room_allocation_recommendation_result()` deterministic ranking helper
+- Deterministic ranking policy:
+    - primary: `recommendation_score` (desc)
+    - tie-breakers: lower risk, fewer conflicts, fewer mismatches, smaller non-negative capacity delta, `room_id` asc
+    - fail-closed on candidate/conflict tenant mismatch
+- Safety/non-destructive guarantees:
+    - recommendation only (no assignment/reservation output)
+    - no schedule mutation
+    - no booking mutation
+    - no auto-apply or optimizer side effects
+    - no cross-tenant leakage
+- Brain/KPI/event minimal additive mapping:
+    - Brain constants/registry/classifier/rules wired for:
+        - `scheduling.room_allocation.recommendation_generated`
+        - `scheduling.room_allocation.no_viable_candidate`
+    - Event ingestion/registry includes both event types
+    - KPI lineage includes recommendation/no-viable counters
+- Validation summary (Docker):
+    - A-020.5 targeted: **24 passed, 2 warnings**
+    - Focused regression (A-020.4 + A-020.5 + integration slices): **59 passed, 7 skipped, 2 warnings**
+    - Tenant/security regression: **1005 passed, 1 skipped, 7755 deselected, 2 warnings**
+    - Safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Decision: **A-020.5 COMPLETE - PASS**. Recommendation engine is deterministic, tenant-safe, and non-destructive. Proceed to `A-020.6`.
+
 ---
 
 #### A-020 BACKLOG SKELETON (Updated)
 
-- Next action: **A-020.5 — Room Allocation Recommendation Engine**
+- Next action: **A-020.6 — KPI/frontend/dashboard consolidation**
 - Top 5 A-020 tasks:
     1. ✅ **A-020.1** — Room Allocation Readiness Contract Stabilization (COMPLETE)
     2. ✅ **A-020.2** — Room Inventory / Room Capability Contract (COMPLETE)
     3. ✅ **A-020.3** — Scheduling Conflict Detection Enhancement (COMPLETE)
     4. ✅ **A-020.4** — Capacity Matching Brain (COMPLETE)
-    5. **A-020.5** — Room Allocation Recommendation Engine
+    5. ✅ **A-020.5** — Room Allocation Recommendation Engine (COMPLETE)
 - Additional A-020 tasks:
     - **A-020.6** — KPI/frontend/dashboard consolidation
     - **A-020.7** — Cross-feature E2E

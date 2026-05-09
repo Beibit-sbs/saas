@@ -1,4 +1,4 @@
-"""Room Allocation Readiness Contract — A-020.1 / A-020.2 / A-020.3.
+"""Room Allocation Readiness Contract — A-020.1 / A-020.2 / A-020.3 / A-020.4 / A-020.5.
 
 Lightweight schema for normalizing room allocation readiness evidence
 across scheduling, room_booking, Brain Core, KPI and frontend surfaces.
@@ -1345,4 +1345,315 @@ def build_capacity_matching_result(
         source_entity_id=capacity_evidence.source_entity_id,
         capacity_match_evidence=capacity_evidence,
         decision=decision,
+    )
+
+
+# ─── A-020.5 Room Allocation Recommendation Engine ──────────────────────────
+
+
+class RoomAllocationRecommendationStatus(str, Enum):
+    """Recommendation status for ranked candidate rooms."""
+
+    RECOMMENDED = "recommended"
+    ACCEPTABLE = "acceptable"
+    FALLBACK = "fallback"
+    REVIEW_REQUIRED = "review_required"
+    NOT_RECOMMENDED = "not_recommended"
+    NO_VIABLE_CANDIDATE = "no_viable_candidate"
+    UNKNOWN = "unknown"
+
+
+class RoomAllocationCandidate(BaseModel):
+    """Ranked recommendation candidate for one room option."""
+
+    tenant_id: int = Field(gt=0)
+    room_id: str | int
+    room_capability: RoomCapability
+    capacity_match: CapacityMatchingResult
+    conflict_evidence: list[SchedulingConflictEvidence] = Field(default_factory=list)
+    recommendation_score: int = Field(ge=0, le=100)
+    recommendation_rank: int = Field(ge=1)
+    recommendation_status: RoomAllocationRecommendationStatus
+    reasons: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    required_human_review: bool
+    evidence: dict[str, Any] = Field(default_factory=dict)
+
+
+class RoomAllocationRecommendationEvidence(BaseModel):
+    """Top-level evidence payload for recommendation runs."""
+
+    ranked_room_ids: list[str | int] = Field(default_factory=list)
+    ranking_basis: list[str] = Field(default_factory=list)
+    tie_breaker: str = "room_id_asc"
+    no_auto_apply: bool = True
+    no_schedule_mutation: bool = True
+    no_booking_mutation: bool = True
+    notes: list[str] = Field(default_factory=list)
+
+
+class RoomAllocationRecommendationResult(BaseModel):
+    """Recommendation result with ranked candidates (no assignment/mutation)."""
+
+    tenant_id: int = Field(gt=0)
+    section_id: int
+    course_id: int
+    group_id: Optional[int] = None
+    teacher_id: Optional[str] = None
+    candidates: list[RoomAllocationCandidate] = Field(default_factory=list)
+    best_candidate_id: Optional[str | int] = None
+    best_candidate_score: Optional[int] = None
+    has_viable_candidate: bool = False
+    recommendation_status: RoomAllocationRecommendationStatus
+    required_human_review: bool
+    evidence: RoomAllocationRecommendationEvidence
+    source_entity_type: Optional[str] = None
+    source_entity_id: Optional[str | int] = None
+
+
+def _risk_rank(level: CapacityRiskLevel) -> int:
+    order = {
+        CapacityRiskLevel.LOW: 0,
+        CapacityRiskLevel.MEDIUM: 1,
+        CapacityRiskLevel.HIGH: 2,
+        CapacityRiskLevel.CRITICAL: 3,
+    }
+    return order.get(level, 4)
+
+
+def _derive_recommendation_status(
+    *,
+    recommendation_score: int,
+    capacity_result: CapacityMatchingResult,
+) -> RoomAllocationRecommendationStatus:
+    if capacity_result.match_status in {
+        CapacityMatchStatus.UNAVAILABLE,
+        CapacityMatchStatus.NOT_SUITABLE,
+    }:
+        return RoomAllocationRecommendationStatus.NOT_RECOMMENDED
+
+    if capacity_result.risk_level in {CapacityRiskLevel.HIGH, CapacityRiskLevel.CRITICAL}:
+        return RoomAllocationRecommendationStatus.REVIEW_REQUIRED
+
+    if recommendation_score >= 85 and capacity_result.match_status in {
+        CapacityMatchStatus.EXCELLENT_MATCH,
+        CapacityMatchStatus.GOOD_MATCH,
+    }:
+        return RoomAllocationRecommendationStatus.RECOMMENDED
+
+    if recommendation_score >= 70:
+        return RoomAllocationRecommendationStatus.ACCEPTABLE
+
+    if recommendation_score >= 50:
+        return RoomAllocationRecommendationStatus.FALLBACK
+
+    return RoomAllocationRecommendationStatus.NOT_RECOMMENDED
+
+
+def _capacity_delta(required_capacity: int, room_capacity: Optional[int]) -> int:
+    if room_capacity is None:
+        return 10**6
+    delta = int(room_capacity) - int(required_capacity)
+    if delta < 0:
+        return 10**6 + abs(delta)
+    return delta
+
+
+def _build_candidate_recommendation_score(
+    capacity_result: CapacityMatchingResult,
+    conflicts: list[SchedulingConflictEvidence],
+) -> int:
+    score = int(capacity_result.match_score)
+
+    risk_penalty = {
+        CapacityRiskLevel.LOW: 0,
+        CapacityRiskLevel.MEDIUM: 8,
+        CapacityRiskLevel.HIGH: 20,
+        CapacityRiskLevel.CRITICAL: 35,
+    }
+    score -= risk_penalty.get(capacity_result.risk_level, 0)
+
+    if capacity_result.match_status in {CapacityMatchStatus.UNAVAILABLE, CapacityMatchStatus.NOT_SUITABLE}:
+        score -= 30
+
+    conflict_penalty = min(20, len(conflicts) * 5)
+    score -= conflict_penalty
+
+    mismatch_penalty = min(30, len(capacity_result.mismatch_reasons) * 6)
+    if CapacityMismatchReason.EQUIPMENT_MISMATCH in capacity_result.mismatch_reasons:
+        mismatch_penalty += 6
+    if CapacityMismatchReason.COMPUTERS_SHORTAGE in capacity_result.mismatch_reasons:
+        mismatch_penalty += 8
+    if CapacityMismatchReason.CAPACITY_SHORTAGE in capacity_result.mismatch_reasons:
+        mismatch_penalty += 10
+    score -= mismatch_penalty
+
+    return _clamp_score(score)
+
+
+def build_room_allocation_recommendation_result(
+    tenant_id: int,
+    requirement: RoomAllocationRequirement,
+    candidates: list[RoomCapability],
+    *,
+    conflicts_by_room_id: Optional[dict[str, list[SchedulingConflictEvidence]]] = None,
+    capability_match_by_room_id: Optional[dict[str, RoomCapabilityMatchEvidence]] = None,
+) -> RoomAllocationRecommendationResult:
+    """Build ranked room recommendations using deterministic capacity matching.
+
+    Safety and policy guarantees:
+    - recommendation/ranking only (no assignment)
+    - no room reservation
+    - no schedule or booking mutation
+    - no auto-apply actions
+    """
+    if not isinstance(tenant_id, int) or tenant_id <= 0:
+        raise ValueError("tenant_id must be a positive integer")
+
+    conflicts_map = conflicts_by_room_id or {}
+    match_map = capability_match_by_room_id or {}
+
+    ranked_candidates: list[RoomAllocationCandidate] = []
+    required_capacity = int(requirement.students_count)
+
+    for capability in candidates:
+        if int(capability.tenant_id) != int(tenant_id):
+            raise ValueError("candidate capability tenant_id mismatch")
+
+        room_key = str(capability.room_id)
+        room_conflicts = list(conflicts_map.get(room_key, []))
+        if any(int(c.tenant_id) != int(tenant_id) for c in room_conflicts):
+            raise ValueError("conflict evidence tenant_id mismatch for candidate")
+
+        precomputed_match = match_map.get(room_key)
+
+        capacity_result = build_capacity_matching_result(
+            tenant_id,
+            requirement,
+            capability=capability,
+            capability_match=precomputed_match,
+            conflicts=room_conflicts,
+        )
+
+        recommendation_score = _build_candidate_recommendation_score(capacity_result, room_conflicts)
+        recommendation_status = _derive_recommendation_status(
+            recommendation_score=recommendation_score,
+            capacity_result=capacity_result,
+        )
+
+        reasons = [
+            f"match_status={capacity_result.match_status.value}",
+            f"risk_level={capacity_result.risk_level.value}",
+            f"capacity_score={capacity_result.match_score}",
+            f"conflict_count={len(room_conflicts)}",
+        ]
+        warnings = [reason.value for reason in capacity_result.mismatch_reasons]
+        if recommendation_status == RoomAllocationRecommendationStatus.REVIEW_REQUIRED:
+            warnings.append("human_review_required")
+
+        candidate = RoomAllocationCandidate(
+            tenant_id=tenant_id,
+            room_id=capability.room_id,
+            room_capability=capability,
+            capacity_match=capacity_result,
+            conflict_evidence=room_conflicts,
+            recommendation_score=recommendation_score,
+            recommendation_rank=1,
+            recommendation_status=recommendation_status,
+            reasons=reasons,
+            warnings=sorted(set(warnings)),
+            required_human_review=(
+                capacity_result.required_human_review
+                or recommendation_status == RoomAllocationRecommendationStatus.REVIEW_REQUIRED
+            ),
+            evidence={
+                "score_basis": {
+                    "capacity_match_score": capacity_result.match_score,
+                    "risk_level": capacity_result.risk_level.value,
+                    "mismatch_count": len(capacity_result.mismatch_reasons),
+                    "conflict_count": len(room_conflicts),
+                },
+                "source_entity_type": capability.source_entity_type,
+                "source_entity_id": capability.source_entity_id,
+            },
+        )
+        ranked_candidates.append(candidate)
+
+    ranked_candidates.sort(
+        key=lambda c: (
+            -int(c.recommendation_score),
+            _risk_rank(c.capacity_match.risk_level),
+            len(c.conflict_evidence),
+            len(c.capacity_match.mismatch_reasons),
+            _capacity_delta(required_capacity, c.room_capability.capacity),
+            str(c.room_id),
+        )
+    )
+
+    for index, candidate in enumerate(ranked_candidates, start=1):
+        candidate.recommendation_rank = index
+
+    viable_statuses = {
+        RoomAllocationRecommendationStatus.RECOMMENDED,
+        RoomAllocationRecommendationStatus.ACCEPTABLE,
+        RoomAllocationRecommendationStatus.FALLBACK,
+        RoomAllocationRecommendationStatus.REVIEW_REQUIRED,
+    }
+
+    has_viable_candidate = any(c.recommendation_status in viable_statuses for c in ranked_candidates)
+    best = ranked_candidates[0] if ranked_candidates else None
+
+    if not ranked_candidates:
+        result_status = RoomAllocationRecommendationStatus.NO_VIABLE_CANDIDATE
+    elif not has_viable_candidate:
+        result_status = RoomAllocationRecommendationStatus.NO_VIABLE_CANDIDATE
+    else:
+        result_status = best.recommendation_status
+
+    required_human_review = bool(
+        result_status in {
+            RoomAllocationRecommendationStatus.REVIEW_REQUIRED,
+            RoomAllocationRecommendationStatus.NO_VIABLE_CANDIDATE,
+        }
+        or any(c.required_human_review for c in ranked_candidates)
+    )
+
+    best_candidate_id: Optional[str | int] = None
+    best_candidate_score: Optional[int] = None
+    if best is not None and has_viable_candidate:
+        best_candidate_id = best.room_id
+        best_candidate_score = int(best.recommendation_score)
+
+    recommendation_evidence = RoomAllocationRecommendationEvidence(
+        ranked_room_ids=[c.room_id for c in ranked_candidates],
+        ranking_basis=[
+            "higher recommendation_score first",
+            "lower risk_level first",
+            "fewer conflicts first",
+            "fewer mismatches first",
+            "smaller non-negative capacity delta first",
+        ],
+        tie_breaker="room_id_asc",
+        notes=[
+            "recommendation only; no assignment applied",
+            "no schedule mutation performed",
+            "no booking mutation or reservation performed",
+        ],
+    )
+
+    return RoomAllocationRecommendationResult(
+        tenant_id=tenant_id,
+        section_id=requirement.section_id,
+        course_id=requirement.course_id,
+        group_id=requirement.group_id,
+        teacher_id=requirement.teacher_id,
+        candidates=ranked_candidates,
+        best_candidate_id=best_candidate_id,
+        best_candidate_score=best_candidate_score,
+        has_viable_candidate=has_viable_candidate,
+        recommendation_status=result_status,
+        required_human_review=required_human_review,
+        evidence=recommendation_evidence,
+        source_entity_type="section",
+        source_entity_id=requirement.section_id,
     )
