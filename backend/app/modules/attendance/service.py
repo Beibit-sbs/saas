@@ -37,6 +37,9 @@ from app.platform.events.publisher import EventPublisher
 VALID_STATUSES = frozenset({"PRESENT", "ABSENT", "EXCUSED", "LATE"})
 LOW_ATTENDANCE_THRESHOLD: float = 0.75  # 75%
 
+ATTENDANCE_VISIBILITY_STATUSES = frozenset({"present", "absent", "late", "excused", "unknown"})
+ATTENDANCE_VISIBILITY_RISK_LEVELS: tuple[str, ...] = ("low", "medium", "high", "critical")
+
 
 def _utc_now() -> datetime:
     return datetime.now(UTC)
@@ -61,6 +64,143 @@ def _fire(tenant_id: int, event_type: str, payload: dict) -> None:
 def _validate_tenant(tenant_id: int) -> None:
     if not tenant_id or tenant_id <= 0:
         raise ValueError("tenant_id must be a positive integer")
+
+
+def _visibility_risk_rank(level: str) -> int:
+    return ATTENDANCE_VISIBILITY_RISK_LEVELS.index(level)
+
+
+def _max_visibility_risk(current: str, candidate: str) -> str:
+    return candidate if _visibility_risk_rank(candidate) > _visibility_risk_rank(current) else current
+
+
+def build_attendance_evidence_item(
+    *,
+    tenant_id: int,
+    record: dict,
+    source_entity_type: str,
+    source_entity_id: str,
+) -> dict:
+    """Normalize an attendance record into deterministic visibility evidence."""
+    _validate_tenant(tenant_id)
+    if int(record.get("tenant_id", tenant_id) or tenant_id) != tenant_id:
+        raise ValueError("attendance record tenant_id mismatch")
+
+    status_raw = str(record.get("status", "")).strip().lower()
+    status = status_raw if status_raw in ATTENDANCE_VISIBILITY_STATUSES else "unknown"
+    return {
+        "record_id": str(record.get("id", "")),
+        "student_id": str(record.get("student_id", "")),
+        "session_id": str(record.get("session_id", "")),
+        "status": status,
+        "source_entity_type": source_entity_type,
+        "source_entity_id": source_entity_id,
+    }
+
+
+def classify_attendance_visibility_risk(
+    *,
+    total_records: int,
+    absent_count: int,
+    late_count: int,
+    unknown_count: int,
+) -> tuple[str, bool]:
+    """Classify attendance visibility risk with deterministic thresholds."""
+    if total_records <= 0:
+        return "medium", True
+
+    absence_ratio = absent_count / total_records
+    late_ratio = late_count / total_records
+
+    risk = "low"
+    review_required = False
+
+    if absence_ratio >= 0.45:
+        risk = _max_visibility_risk(risk, "critical")
+        review_required = True
+    elif absence_ratio >= 0.30:
+        risk = _max_visibility_risk(risk, "high")
+        review_required = True
+    elif absence_ratio >= 0.15:
+        risk = _max_visibility_risk(risk, "medium")
+
+    if late_ratio >= 0.25:
+        risk = _max_visibility_risk(risk, "high")
+        review_required = True
+    elif late_ratio >= 0.12:
+        risk = _max_visibility_risk(risk, "medium")
+
+    if unknown_count > 0:
+        risk = _max_visibility_risk(risk, "high")
+        review_required = True
+
+    return risk, review_required
+
+
+def build_attendance_visibility_summary(
+    *,
+    tenant_id: int,
+    records: list[dict],
+    source_entity_type: str,
+    source_entity_id: str,
+) -> dict:
+    """Build deterministic tenant-safe attendance operational visibility summary."""
+    _validate_tenant(tenant_id)
+    if not source_entity_type:
+        raise ValueError("source_entity_type is required")
+    if not source_entity_id:
+        raise ValueError("source_entity_id is required")
+
+    normalized = [
+        build_attendance_evidence_item(
+            tenant_id=tenant_id,
+            record=record,
+            source_entity_type=source_entity_type,
+            source_entity_id=source_entity_id,
+        )
+        for record in records
+    ]
+
+    total_records = len(normalized)
+    present_count = sum(1 for item in normalized if item["status"] == "present")
+    absent_count = sum(1 for item in normalized if item["status"] == "absent")
+    late_count = sum(1 for item in normalized if item["status"] == "late")
+    excused_count = sum(1 for item in normalized if item["status"] == "excused")
+    unknown_count = sum(1 for item in normalized if item["status"] == "unknown")
+
+    risk_level, review_required = classify_attendance_visibility_risk(
+        total_records=total_records,
+        absent_count=absent_count,
+        late_count=late_count,
+        unknown_count=unknown_count,
+    )
+
+    data_quality_note: str | None = None
+    if total_records == 0:
+        data_quality_note = "no attendance records available"
+    elif unknown_count > 0:
+        data_quality_note = "attendance records include unknown statuses"
+
+    return {
+        "tenant_id": tenant_id,
+        "total_records": total_records,
+        "present_count": present_count,
+        "absent_count": absent_count,
+        "late_count": late_count,
+        "excused_count": excused_count,
+        "unknown_count": unknown_count,
+        "risk_level": risk_level,
+        "review_required": review_required,
+        "evidence_items": sorted(
+            normalized,
+            key=lambda item: (item["student_id"], item["session_id"], item["record_id"]),
+        ),
+        "source_entity_type": source_entity_type,
+        "source_entity_id": source_entity_id,
+        "data_quality_note": data_quality_note,
+        "no_fake_attendance_data": True,
+        "no_fake_attendance_analytics": True,
+    }
 
 
 def _audit(tenant_id: int, actor: str, action: str, path: str, metadata: dict) -> None:

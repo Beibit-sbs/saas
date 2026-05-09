@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-024.4
-- current_stage: A-024.3 complete / Observability Level 4 operational visibility
-- last_completed_action_id: A-024.3
-- next_action_id: A-024.4
-- updated_at: 2026-05-09 (A-024.3 completed: observability lifted L3->L4 with tenant-safe visibility API and backend-tested evidence; next=A-024.4)
+- status: ready_for_A-024.5
+- current_stage: A-024.4 complete / Attendance + Student Portal Level 4 operational visibility
+- last_completed_action_id: A-024.4
+- next_action_id: A-024.5
+- updated_at: 2026-05-09 (A-024.4 completed: attendance and student_portal lifted L3->L4 with tenant-safe visibility APIs and backend-tested evidence; next=A-024.5)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -444,6 +444,62 @@
     - no synthetic KPI value claim
     - no module count expansion
 - Decision: **A-024.3 CLOSED — PASS**. Proceed to `A-024.4`.
+
+#### A-024.4 — Attendance + Student Portal Level 3->4 Operational Visibility
+
+- Date: 2026-05-09
+- Scope: Targeted L4 operational visibility lift for `attendance` and `student_portal` only.
+- Selected modules:
+    - `attendance`: L3 -> L4
+    - `student_portal`: L3 -> L4
+- Operational visibility evidence added:
+    - deterministic attendance visibility contracts:
+        - `build_attendance_evidence_item(...)`
+        - `classify_attendance_visibility_risk(...)`
+        - `build_attendance_visibility_summary(...)`
+    - deterministic student portal visibility contracts:
+        - `build_student_portal_evidence_item(...)`
+        - `classify_student_portal_readiness(...)`
+        - `build_student_portal_visibility_summary(...)`
+    - visible admin/API surfaces:
+        - `GET /api/admin/attendance/summary`
+        - `GET /api/admin/student-portal/summary`
+    - explicit anti-inflation safety fields:
+        - attendance: `no_fake_attendance_data`, `no_fake_attendance_analytics`
+        - student_portal: `no_fake_student_data`, `no_fake_portal_activity`
+- Audit Table — All Modules updates (A-024.4 delta):
+
+| Module | Category | Previous Level | New Level | Evidence Added | Validation |
+|---|---|---|---|---|---|
+| `attendance` | Student & Campus Life | L3 | L4 | deterministic tenant-safe attendance visibility contracts + admin endpoint `/api/admin/attendance/summary` | targeted tests PASS |
+| `student_portal` | Student & Campus Life | L3 | L4 | deterministic tenant-safe portal readiness visibility contracts + admin endpoint `/api/admin/student-portal/summary` | targeted tests PASS |
+
+- Validation evidence:
+    - `git diff --check` PASS
+    - `cd infra && docker compose --env-file .env build backend-tests` PASS
+    - `cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a0244_attendance_student_portal_operational_visibility.py --no-cov -rA` -> **30 passed, 1 warning**
+    - import check: `A-024.4 attendance/student_portal import validation OK`
+- Visible surface proof:
+    - endpoint `/api/admin/attendance/summary` returns deterministic tenant-scoped attendance visibility summary
+    - endpoint `/api/admin/student-portal/summary` returns deterministic tenant-scoped portal readiness visibility summary
+- Brain-first review:
+    - attendance and student_portal emit deterministic visibility artifacts ready for downstream signal mapping.
+    - no false claim of autonomous intervention execution.
+- SaaS-first review:
+    - strict tenant fail-closed behavior retained.
+    - no hidden cross-tenant aggregation introduced.
+- Performance review:
+    - read-only, bounded deterministic summary logic added.
+    - no external provider dependency added.
+- Event/KPI/API decision:
+    - API visibility delivered for both selected modules.
+    - no synthetic KPI values or fake activity injection added.
+- Anti-inflation review: PASS
+    - no Level 5/6 claim
+    - no fake student profile/activity claim
+    - no fake attendance analytics claim
+    - no module count expansion
+- Decision: **A-024.4 CLOSED — PASS**. Proceed to `A-024.5`.
 
 
 
@@ -1273,22 +1329,22 @@
 - level_0_count = 4
 - level_1_count = 20
 - level_2_count = 13
-- level_3_count = 27
-- level_4_count = 63
+- level_3_count = 25
+- level_4_count = 65
 - level_5_count = 21
 - level_6_count = 2
 - level_1_plus_count = 146
 - level_2_plus_count = 126
 - level_3_plus_count = 113
-- level_4_plus_count = 86
+- level_4_plus_count = 88
 - level_5_plus_count = 23
 - foundation_gap_count = 37
 - level_2_gap_count = 24
-- arithmetic_check = 4+20+13+27+63+21+2=150
+- arithmetic_check = 4+20+13+25+65+21+2=150
 - maturity_arithmetic_check = PASS
-- exact_counts_verified_at = 2026-05-09 (A-024.3 closure)
-- evidence_source = A-024.3-OBSERVABILITY_OPERATIONAL_VISIBILITY_REPORT.md + A-024.0 selection report + A-023.8 foundation report
-- updated_at = 2026-05-09 (A-024.3: observability moved L3->L4 with tested tenant-safe visibility evidence)
+- exact_counts_verified_at = 2026-05-09 (A-024.4 closure)
+- evidence_source = A-024.4-ATTENDANCE_STUDENT_PORTAL_OPERATIONAL_VISIBILITY_REPORT.md + A-024.0 selection report + A-023.8 foundation report
+- updated_at = 2026-05-09 (A-024.4: attendance and student_portal moved L3->L4 with tested tenant-safe visibility evidence)
 - mandatory_rule = Keep exact counts synchronized with canonical 150-module inventory.
 - rule = Coverage does not equal full maturity.
 - coverage_not_equal_full_maturity = true

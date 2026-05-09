@@ -20,12 +20,153 @@ REQUEST_TYPES = frozenset({
 # Request FSM states
 REQUEST_STATES = frozenset({"SUBMITTED", "PROCESSING", "READY", "DELIVERED"})
 
+STUDENT_PORTAL_ACCESS_STATUSES = frozenset({"active", "limited", "inactive", "pending_setup", "unknown"})
+STUDENT_PORTAL_READINESS_LEVELS = frozenset({"ready", "partially_ready", "not_ready", "unknown"})
+
 _REQUEST_TRANSITIONS: dict[str, set[str]] = {
     "SUBMITTED": {"PROCESSING"},
     "PROCESSING": {"READY"},
     "READY": {"DELIVERED"},
     "DELIVERED": set(),
 }
+
+
+def _validate_visibility_tenant(tenant_id: int) -> None:
+    if not tenant_id or tenant_id <= 0:
+        raise ValueError("tenant_id must be a positive integer")
+
+
+def build_student_portal_evidence_item(
+    *,
+    tenant_id: int,
+    access_status: str,
+    has_required_profile: bool,
+    has_active_enrollment: bool,
+    has_portal_role: bool,
+    has_contact_channel: bool,
+    source_entity_type: str,
+    source_entity_id: str,
+    student_id: str | None = None,
+    user_id: str | None = None,
+) -> dict:
+    """Build deterministic evidence item for student portal visibility."""
+    _validate_visibility_tenant(tenant_id)
+
+    status = str(access_status or "").strip().lower() or "unknown"
+    if status not in STUDENT_PORTAL_ACCESS_STATUSES:
+        status = "unknown"
+
+    if not source_entity_type:
+        raise ValueError("source_entity_type is required")
+    if not source_entity_id:
+        raise ValueError("source_entity_id is required")
+
+    return {
+        "tenant_id": tenant_id,
+        "student_id": student_id,
+        "user_id": user_id,
+        "access_status": status,
+        "has_required_profile": bool(has_required_profile),
+        "has_active_enrollment": bool(has_active_enrollment),
+        "has_portal_role": bool(has_portal_role),
+        "has_contact_channel": bool(has_contact_channel),
+        "source_entity_type": source_entity_type,
+        "source_entity_id": source_entity_id,
+    }
+
+
+def classify_student_portal_readiness(
+    *,
+    access_status: str,
+    has_required_profile: bool,
+    has_active_enrollment: bool,
+    has_portal_role: bool,
+    has_contact_channel: bool,
+) -> tuple[str, list[str], bool, str | None]:
+    """Classify portal readiness and missing requirements deterministically."""
+    status = str(access_status or "").strip().lower() or "unknown"
+    missing_requirements: list[str] = []
+    if not has_required_profile:
+        missing_requirements.append("required_profile")
+    if not has_active_enrollment:
+        missing_requirements.append("active_enrollment")
+    if not has_portal_role:
+        missing_requirements.append("portal_role")
+    if not has_contact_channel:
+        missing_requirements.append("contact_channel")
+
+    review_required = False
+    data_quality_note: str | None = None
+
+    if status == "unknown":
+        readiness = "unknown"
+        review_required = True
+        data_quality_note = "unknown portal access status"
+    elif status == "inactive":
+        readiness = "not_ready"
+        review_required = True
+    elif status == "pending_setup":
+        readiness = "partially_ready"
+        review_required = True
+    elif missing_requirements:
+        readiness = "partially_ready"
+        review_required = True
+    elif status == "limited":
+        readiness = "partially_ready"
+    else:
+        readiness = "ready"
+
+    return readiness, sorted(missing_requirements), review_required, data_quality_note
+
+
+def build_student_portal_visibility_summary(
+    *,
+    tenant_id: int,
+    access_status: str,
+    has_required_profile: bool,
+    has_active_enrollment: bool,
+    has_portal_role: bool,
+    has_contact_channel: bool,
+    source_entity_type: str,
+    source_entity_id: str,
+    student_id: str | None = None,
+    user_id: str | None = None,
+) -> dict:
+    """Build deterministic tenant-safe student portal visibility summary."""
+    evidence_item = build_student_portal_evidence_item(
+        tenant_id=tenant_id,
+        access_status=access_status,
+        has_required_profile=has_required_profile,
+        has_active_enrollment=has_active_enrollment,
+        has_portal_role=has_portal_role,
+        has_contact_channel=has_contact_channel,
+        source_entity_type=source_entity_type,
+        source_entity_id=source_entity_id,
+        student_id=student_id,
+        user_id=user_id,
+    )
+
+    readiness_level, missing_requirements, review_required, data_quality_note = classify_student_portal_readiness(
+        access_status=evidence_item["access_status"],
+        has_required_profile=evidence_item["has_required_profile"],
+        has_active_enrollment=evidence_item["has_active_enrollment"],
+        has_portal_role=evidence_item["has_portal_role"],
+        has_contact_channel=evidence_item["has_contact_channel"],
+    )
+
+    return {
+        "tenant_id": tenant_id,
+        "access_status": evidence_item["access_status"],
+        "readiness_level": readiness_level,
+        "missing_requirements": missing_requirements,
+        "review_required": review_required,
+        "evidence_items": [evidence_item],
+        "data_quality_note": data_quality_note,
+        "source_entity_type": source_entity_type,
+        "source_entity_id": source_entity_id,
+        "no_fake_student_data": True,
+        "no_fake_portal_activity": True,
+    }
 
 
 def _assert_request_transition(current: str, target: str) -> None:

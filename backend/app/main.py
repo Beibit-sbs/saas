@@ -156,6 +156,14 @@ from app.modules.observability.metrics import record_request, render_metrics, sn
 from app.modules.observability.service import build_observability_signal, build_observability_summary
 from app.modules.observability.security_signals import record_security_signal
 from app.modules.observability.otel import setup_otel, teardown_otel
+from app.modules.attendance.service import (
+    build_attendance_visibility_summary,
+    list_attendance_records,
+)
+from app.modules.student_portal.service import (
+    build_student_portal_visibility_summary,
+    list_requests as list_student_portal_requests,
+)
 from app.platform.runtime_state import get_scheduler_last_run, get_worker_heartbeat
 from app.platform.uow import UnitOfWork
 from app.modules.security.rate_limit import (
@@ -1021,6 +1029,65 @@ def admin_observability_summary(
         "metrics_latency": "/metrics/latency",
         "health_deep": "/health/deep",
     }
+    return summary
+
+
+@app.get("/api/admin/attendance/summary")
+def admin_attendance_summary(
+    request: Request,
+    student_id: str | None = None,
+    session_id: str | None = None,
+    __: None = Depends(permission_dependency("metrics.read")),
+) -> dict[str, object]:
+    """Tenant-safe attendance visibility summary from recorded attendance evidence."""
+    tenant_id = _resolve_metrics_tenant_id(request)
+    records = list_attendance_records(tenant_id, session_id=session_id, student_id=student_id)
+    summary = build_attendance_visibility_summary(
+        tenant_id=tenant_id,
+        records=records,
+        source_entity_type="attendance_records",
+        source_entity_id="attendance_summary",
+    )
+    summary["visible_surface"] = "/api/admin/attendance/summary"
+    summary["kpi_visibility"] = {
+        "metrics_ops": "/metrics/ops",
+        "metrics_latency": "/metrics/latency",
+    }
+    return summary
+
+
+@app.get("/api/admin/student-portal/summary")
+def admin_student_portal_summary(
+    request: Request,
+    student_id: str | None = None,
+    user_id: str | None = None,
+    __: None = Depends(permission_dependency("metrics.read")),
+) -> dict[str, object]:
+    """Tenant-safe student portal operational visibility summary."""
+    tenant_id = _resolve_metrics_tenant_id(request)
+    tenant_id_str = str(tenant_id)
+    requests = list_student_portal_requests(tenant_id_str, student_id=student_id)
+
+    has_required_profile = bool(student_id or user_id)
+    has_active_enrollment = bool(requests)
+    has_portal_role = bool(student_id or user_id)
+    has_contact_channel = bool(student_id or user_id)
+    access_status = "active" if has_active_enrollment and has_required_profile else "pending_setup"
+
+    summary = build_student_portal_visibility_summary(
+        tenant_id=tenant_id,
+        student_id=student_id,
+        user_id=user_id,
+        access_status=access_status,
+        has_required_profile=has_required_profile,
+        has_active_enrollment=has_active_enrollment,
+        has_portal_role=has_portal_role,
+        has_contact_channel=has_contact_channel,
+        source_entity_type="portal_requests",
+        source_entity_id="student_portal_summary",
+    )
+    summary["request_count"] = len(requests)
+    summary["visible_surface"] = "/api/admin/student-portal/summary"
     return summary
 
 
