@@ -171,6 +171,23 @@ describe("Billing routes", () => {
     expect(mockUseTenantLocale).toHaveBeenCalledWith(7);
   });
 
+  it("renders billing navigation when tenant context is unavailable", () => {
+    useAdminAuthMock.mockReturnValue({
+      user: { sub: "1", displayName: "Admin", roles: ["admin"], permissions: [], tenantId: null },
+      isLoading: false,
+      isAuthenticated: true,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: () => true,
+      hasAnyPermission: () => true,
+    });
+
+    render(<BillingIndexPage />);
+    expect(screen.getByText("Billing")).toBeInTheDocument();
+    expect(screen.getByText("Active Plans")).toBeInTheDocument();
+    expect(screen.getByText("Billing tenant context unavailable. Showing platform billing navigation and summary placeholders.")).toBeInTheDocument();
+  });
+
   it("renders billing KPI section from shared KPI bar", () => {
     render(<BillingIndexPage />);
     const kpi = screen.getByTestId("wave1-kpi-bar-mock");
@@ -243,7 +260,7 @@ describe("Billing routes", () => {
     expect(screen.getByText("Tenant currency: USD")).toBeInTheDocument();
   });
 
-  it("shows empty state when tenant context is missing", () => {
+  it("shows tenant-context banner when tenant context is missing", () => {
     useAdminAuthMock.mockReturnValue({
       user: null,
       isLoading: false,
@@ -255,7 +272,8 @@ describe("Billing routes", () => {
     });
 
     render(<BillingIndexPage />);
-    expect(screen.getByText("Billing tenant context unavailable")).toBeInTheDocument();
+    expect(screen.getByText("Billing")).toBeInTheDocument();
+    expect(screen.getByText("Billing tenant context unavailable. Showing platform billing navigation and summary placeholders.")).toBeInTheDocument();
   });
 
   it("maps /console/billing/plans to billing-plans section", () => {

@@ -5,7 +5,6 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { ErrorState } from "@/shared/ui/error-state";
-import { EmptyState } from "@/shared/ui/empty-state";
 import { AccessDenied } from "@/shared/ui/permission-gate";
 import { usePermissions } from "@/shared/hooks/use-permissions";
 import { PERMISSIONS } from "@/shared/config/permissions";
@@ -32,15 +31,6 @@ export default function BillingIndexPage() {
 
   if (!hasPermission(PERMISSIONS.BILLING_READ)) {
     return <AccessDenied />;
-  }
-
-  if (tenantId <= 0) {
-    return (
-      <EmptyState
-        title="Billing tenant context unavailable"
-        description="No tenant is attached to your session. Billing summary cannot be loaded."
-      />
-    );
   }
 
   const hasError = Boolean(
@@ -75,6 +65,7 @@ export default function BillingIndexPage() {
   const billingState = stateQuery.data;
   const dashboard = delinquencyQuery.data;
   const localeProfile = localeQuery.data;
+  const tenantContextMissing = tenantId <= 0;
 
   const currentPlanLabel = billingState?.plan_code
     ? billingState.plan_code.toUpperCase()
@@ -95,6 +86,14 @@ export default function BillingIndexPage() {
         description="Manage plans, subscriptions, usage, and payment status"
         icon={DollarSign}
       />
+
+      {tenantContextMissing && (
+        <Card className="border-dashed border-muted-foreground/30 bg-muted/20 p-4">
+          <p className="text-sm text-muted-foreground">
+            Billing tenant context unavailable. Showing platform billing navigation and summary placeholders.
+          </p>
+        </Card>
+      )}
 
       <section data-testid="wave5-billing-kpi-section">
         <Wave1KpiBar
