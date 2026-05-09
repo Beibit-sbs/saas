@@ -29,6 +29,15 @@ type ExecutiveKpiSectionConfig = {
   advisoryText?: string;
 };
 
+type GovernanceReportSectionConfig = {
+  sectionId: string;
+  title: string;
+  description: string;
+  metricKeys: string[];
+  sourceDomains: string[];
+  dataQualityNote: string;
+};
+
 const EXECUTIVE_KPI_SECTIONS: ExecutiveKpiSectionConfig[] = [
   {
     testId: "wave3-finance-kpi-section",
@@ -230,6 +239,155 @@ const EXECUTIVE_KPI_SECTIONS: ExecutiveKpiSectionConfig[] = [
   },
 ];
 
+const GOVERNANCE_REPORT_SECTIONS: GovernanceReportSectionConfig[] = [
+  {
+    sectionId: "institution-governance-summary",
+    title: "Institution Governance Summary",
+    description: "Executive roll-up of institution-wide evidence and readiness indicators.",
+    metricKeys: [
+      "total_students",
+      "total_enrollments",
+      "total_grades_submitted",
+      "high_risk_students_count",
+      "critical_risk_students_count",
+      "budget_overrun_risk_count",
+    ],
+    sourceDomains: ["Academic", "Student", "Finance"],
+    dataQualityNote: "Uses existing rector snapshot metrics only. Missing metrics remain Not available.",
+  },
+  {
+    sectionId: "academic-governance",
+    title: "Academic Governance",
+    description: "Integrity, thesis, exam, and ethics evidence for executive review.",
+    metricKeys: [
+      "academic_integrity_review_cases_count",
+      "academic_integrity_high_risk_count",
+      "exam_proctoring_violations_count",
+      "exam_integrity_reviews_count",
+      "thesis_governance_risk_count",
+      "research_ethics_review_cases_count",
+    ],
+    sourceDomains: ["Academic Integrity", "Thesis", "Research Ethics"],
+    dataQualityNote: "Read-only governance summary derived from current dashboard evidence.",
+  },
+  {
+    sectionId: "student-risk-intervention",
+    title: "Student / Risk / Intervention Summary",
+    description: "Student-risk signals and intervention activity, if present in the current tenant snapshot.",
+    metricKeys: [
+      "high_risk_students_count",
+      "critical_risk_students_count",
+      "intervention_auto_created_count",
+      "intervention_resolution_rate",
+      "sweep_coverage_rate",
+      "composite_risk_average",
+    ],
+    sourceDomains: ["Student Risk", "Interventions"],
+    dataQualityNote: "No fabricated student or intervention totals are generated here.",
+  },
+  {
+    sectionId: "finance-procurement-assets",
+    title: "Finance / Procurement / Asset Governance",
+    description: "Budget, procurement, delivery, and asset conversion evidence for ministry-ready reporting.",
+    metricKeys: [
+      "budget_overrun_risk_count",
+      "budget_overrun_amount_at_risk",
+      "procurement_requests_pending_approval",
+      "procurement_approval_automation_count",
+      "asset_conversion_gap_count",
+      "finance_operations_health_score",
+      "procurement_health_score",
+    ],
+    sourceDomains: ["Finance", "Procurement", "Assets"],
+    dataQualityNote: "Approval and health indicators are evidence-backed and require human review.",
+  },
+  {
+    sectionId: "campus-scheduling-room-allocation",
+    title: "Campus / Room Allocation / Scheduling Governance",
+    description: "Scheduling and room-allocation evidence carried forward from the A-020 command center.",
+    metricKeys: [
+      "scheduling_conflicts_count",
+      "room_conflict_count",
+      "room_allocation_recommendations_count",
+      "room_allocation_review_required_count",
+      "room_allocation_no_viable_candidate_count",
+      "capacity_risk_sections_count",
+      "room_capacity_mismatch_count",
+    ],
+    sourceDomains: ["Scheduling", "Room Allocation"],
+    dataQualityNote: "Advisory only; no automatic assignment or schedule mutation.",
+  },
+  {
+    sectionId: "security-visitor-operations",
+    title: "Security / Visitor Operations Governance",
+    description: "Security and visitor oversight indicators surfaced for manual review only.",
+    metricKeys: [
+      "access_denied_count",
+      "unauthorized_attempts_count",
+      "security_incidents_open_count",
+      "security_incidents_escalated_count",
+      "security_incident_review_required_count",
+      "security_high_risk_incidents_count",
+      "visitor_requests_pending_count",
+    ],
+    sourceDomains: ["Security Operations", "Visitor Management"],
+    dataQualityNote: "No lockout, ban, or other destructive security action is triggered from this shell.",
+  },
+  {
+    sectionId: "research-accreditation-quality",
+    title: "Research / Accreditation / Quality Governance",
+    description: "Research ethics and related quality evidence; accreditation fields remain available when supported by the tenant snapshot.",
+    metricKeys: [
+      "research_ethics_review_cases_count",
+      "research_ethics_requires_approval_count",
+      "thesis_governance_risk_count",
+      "thesis_governance_requires_approval_count",
+      "academic_integrity_cases_resolved_count",
+    ],
+    sourceDomains: ["Research Ethics", "Quality", "Accreditation"],
+    dataQualityNote: "Accreditation-ready packaging is report-oriented only; no external certification occurs here.",
+  },
+  {
+    sectionId: "brain-review-required",
+    title: "Brain / Review Required Summary",
+    description: "Review-required and approval-needed evidence aggregated into a rector-readable summary.",
+    metricKeys: [
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_requires_approval_count",
+      "room_allocation_review_required_count",
+      "security_incident_review_required_count",
+      "budget_review_actions_count",
+    ],
+    sourceDomains: ["Brain Core", "Review Queue"],
+    dataQualityNote: "Review-required signals are surfaced as evidence, not acted on automatically.",
+  },
+  {
+    sectionId: "evidence-gate-readiness",
+    title: "Evidence / Gate Readiness Summary",
+    description: "Operational evidence and readiness markers used to explain whether the report is complete enough for human review.",
+    metricKeys: [
+      "analytics_events_ingested_total",
+      "analytics_kpi_reads_total",
+      "analytics_reads_total",
+      "analytics_kpi_reads_share_pct",
+      "total_failed_jobs",
+      "total_failed_notifications",
+    ],
+    sourceDomains: ["Platform Analytics", "Operations"],
+    dataQualityNote: "This shell is export-ready in contract only; it does not submit externally.",
+  },
+  {
+    sectionId: "known-conditions-data-quality",
+    title: "Known Conditions / Data Quality Notes",
+    description: "Contextual notes that explain when report values are limited, missing, or intentionally suppressed.",
+    metricKeys: [],
+    sourceDomains: ["Data Quality", "Environment"],
+    dataQualityNote: "Missing metrics show as Not available. Suppressed or unavailable evidence is preserved rather than fabricated.",
+  },
+];
+
 function ExecutiveKpiSection({ section }: { section: ExecutiveKpiSectionConfig }) {
   return (
     <section data-testid={section.testId} className="space-y-3">
@@ -244,6 +402,92 @@ function ExecutiveKpiSection({ section }: { section: ExecutiveKpiSectionConfig }
         </div>
       )}
       <Wave1KpiBar metricKeys={section.metricKeys} labels={section.labels} />
+    </section>
+  );
+}
+
+function GovernanceReportShell({
+  data,
+  tenantId,
+  generatedLabel,
+}: {
+  data: { cards: Array<{ metric_key: string; title: string; value: number; trend_7d: unknown[]; metadata_json: Record<string, unknown> }> } | undefined;
+  tenantId: number;
+  generatedLabel: string;
+}) {
+  const cardByMetricKey = useMemo(() => {
+    const entries = (data?.cards ?? []).map((card) => [card.metric_key, card] as const);
+    return new Map(entries);
+  }, [data?.cards]);
+
+  const getMetricValue = (metricKey: string) => {
+    const card = cardByMetricKey.get(metricKey);
+    return card ? Number(card.value).toLocaleString() : "Not available";
+  };
+
+  const hasAnyEvidence = (metricKeys: string[]) => metricKeys.some((metricKey) => cardByMetricKey.has(metricKey));
+
+  return (
+    <section className="space-y-4" data-testid="ministry-governance-report-shell">
+      <div className="rounded-lg border bg-card p-4">
+        <p className="text-sm font-semibold">Ministry / Governance Reporting</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Read-only, tenant-scoped, evidence-backed reporting shell for rector/ministry review. Not submitted externally.
+          All approvals and actions remain human-managed; no disciplinary action, schedule mutation, or procurement action is triggered here.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Tenant {tenantId} • Last updated {generatedLabel} • Export-ready contract only
+        </p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {GOVERNANCE_REPORT_SECTIONS.map((section) => {
+          const hasEvidence = hasAnyEvidence(section.metricKeys);
+          const displayMetricKeys = section.metricKeys.slice(0, 4);
+          const evidenceLabel = hasEvidence ? "Evidence-backed" : "Not available";
+
+          return (
+            <article key={section.sectionId} data-testid={`governance-report-section-${section.sectionId}`} className="rounded-lg border bg-card p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold">{section.title}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">{section.description}</p>
+                </div>
+                <span className="rounded-full bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground">
+                  {evidenceLabel}
+                </span>
+              </div>
+
+              <div className="mt-3 space-y-2 text-xs text-muted-foreground">
+                <p>Source domains: {section.sourceDomains.join(" / ")}</p>
+                <p>Read-only: yes</p>
+                <p>Tenant-scoped: yes</p>
+                <p>{section.dataQualityNote}</p>
+              </div>
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {displayMetricKeys.length > 0 ? (
+                  displayMetricKeys.map((metricKey) => {
+                    const card = cardByMetricKey.get(metricKey);
+                    const label = card?.title ?? metricKey;
+                    return (
+                      <div key={metricKey} className="rounded-md border bg-muted/20 p-3">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+                        <p className="mt-1 text-sm font-medium">{getMetricValue(metricKey)}</p>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="rounded-md border bg-muted/20 p-3 sm:col-span-2">
+                    <p className="text-sm font-medium">No direct KPI bindings yet</p>
+                    <p className="mt-1 text-xs text-muted-foreground">This section is reserved for narrative notes only.</p>
+                  </div>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -426,6 +670,8 @@ export default function RectorDashboardPage() {
       {EXECUTIVE_KPI_SECTIONS.map((section) => (
         <ExecutiveKpiSection key={section.testId} section={section} />
       ))}
+
+      <GovernanceReportShell data={data} tenantId={tenantId} generatedLabel={generatedLabel} />
 
       <AutomationOverviewWidget tenantId={tenantId} />
     </div>

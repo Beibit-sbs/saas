@@ -569,4 +569,77 @@ describe("RectorDashboardPage", () => {
     expect(pageText).not.toContain("fake optimization");
     expect(pageText).not.toContain("booking overridden");
   });
+
+  it("renders the ministry-ready governance reporting shell with evidence-backed sections", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-12",
+        generated_at: "2026-05-12T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [
+          { metric_key: "total_students", title: "Total Students", value: 1200, trend_7d: [], metadata_json: {} },
+          { metric_key: "academic_integrity_review_cases_count", title: "Academic Integrity Review Cases", value: 7, trend_7d: [], metadata_json: {} },
+          { metric_key: "high_risk_students_count", title: "High Risk Students Count", value: 18, trend_7d: [], metadata_json: {} },
+          { metric_key: "budget_overrun_risk_count", title: "Budget Overrun Risk Count", value: 4, trend_7d: [], metadata_json: {} },
+          { metric_key: "scheduling_conflicts_count", title: "Scheduling Conflict Count", value: 9, trend_7d: [], metadata_json: {} },
+          { metric_key: "security_incidents_open_count", title: "Security Incidents Open Count", value: 2, trend_7d: [], metadata_json: {} },
+          { metric_key: "research_ethics_review_cases_count", title: "Research Ethics Review Cases", value: 3, trend_7d: [], metadata_json: {} },
+          { metric_key: "room_allocation_review_required_count", title: "Room Allocation Review Required Count", value: 5, trend_7d: [], metadata_json: {} },
+          { metric_key: "analytics_kpi_reads_total", title: "Analytics KPI Reads Total", value: 42, trend_7d: [], metadata_json: {} },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    const shell = screen.getByTestId("ministry-governance-report-shell");
+    expect(shell).toBeInTheDocument();
+    expect(screen.getByText("Ministry / Governance Reporting")).toBeInTheDocument();
+    expect(screen.getByText(/Read-only, tenant-scoped, evidence-backed reporting shell/i)).toBeInTheDocument();
+    expect(screen.getByText(/Not submitted externally/i)).toBeInTheDocument();
+
+    expect(screen.getByTestId("governance-report-section-institution-governance-summary")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-report-section-academic-governance")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-report-section-student-risk-intervention")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-report-section-finance-procurement-assets")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-report-section-campus-scheduling-room-allocation")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-report-section-security-visitor-operations")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-report-section-research-accreditation-quality")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-report-section-brain-review-required")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-report-section-evidence-gate-readiness")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-report-section-known-conditions-data-quality")).toBeInTheDocument();
+
+    const shellText = shell.textContent?.toLowerCase() ?? "";
+    expect(shellText).not.toContain("submitted to ministry");
+    expect(shellText).not.toContain("official certified score");
+    expect(shellText).not.toContain("auto disciplinary");
+    expect(shellText).not.toContain("auto schedule change");
+    expect(shellText).not.toContain("fake demo data");
+  });
+
+  it("keeps the ministry shell stable when optional KPI evidence is missing", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-12",
+        generated_at: "2026-05-12T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    const shell = screen.getByTestId("ministry-governance-report-shell");
+    expect(shell).toBeInTheDocument();
+    expect(screen.getAllByText(/Not available/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Missing metrics show as Not available/i)).toBeInTheDocument();
+  });
 });
