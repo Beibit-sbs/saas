@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-09-10 (A-021.1 RECTOR EXECUTIVE COMMAND CENTER CONSOLIDATION)
-- status: ready_for_A-022
-- current_stage: A-021 CLOSED / A-022 planning
-- last_completed_action_id: A-021.8R
-- next_action_id: A-022.0
-- updated_at: 2026-05-09 (A-021.8R finalized closure: B1 blockers resolved, release gate PASS retained, smoke remains red only on University Core table coverage known condition; A-021 closed as PASS WITH KNOWN CONDITIONS.)
+- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
+- status: ready_for_A-022.1
+- current_stage: A-022.0 selection complete / A-022.1 ready to start
+- last_completed_action_id: A-022.0
+- next_action_id: A-022.1 (pending confirmation)
+- updated_at: 2026-05-09 (A-022.0 planning complete: Top 5 selected (Simulation, Proposal Contract, Room Bridge, E2E, KPI/Dashboard); backlog finalized (A-022.1–A-022.8); safety model locked (Level 3 default, Level 5 deferred); non-destructive policy committed; A-022.0 planning report created.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -339,19 +339,80 @@
 - Decision: **A-021 CLOSED - PASS WITH KNOWN CONDITIONS**. Transition to `A-022.0`.
 - A-021 series status: **CLOSED**.
 
-#### A-022.0 - Wave 10 Selection Placeholder
+#### A-022.0 — Wave 10 Selection + Human-Approved Timetable Workflow Planning
 
 - Date: 2026-05-09
-- Scope (placeholder): planning/selection bootstrap only.
-- Inputs:
-    - A-021 closure evidence (including known-condition register)
-    - Current repo hygiene state
-    - Wave priority backlog candidates
-- Required output:
-    - A-022.0 selection/planning report
-    - updated Top-5 candidate shortlist
-    - updated guardrails for next wave
-- Status: **READY TO START**.
+- Scope: Planning/selection only. No code changes, no endpoints, no migrations, no production-logic modifications.
+- Theme selected: **Human-Approved Timetable Change Workflow**
+- Repo hygiene snapshot:
+    - Dirty tracked (out-of-scope): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical artifacts: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+    - HEAD: 314d592 (A-021.8R closure commit)
+    - A-021 closure confirmed: `docs(wave9): finalize A-021 governance closure after B1`
+- Known conditions review (A-021 continuity):
+    - University Core table coverage (66 missing tables): Residual known condition; not A-021 regression; monitor in parallel
+    - DATABASE_URL no-deps postgres path: ENV_PROFILE_ONLY
+    - Docker fixture/startup delays: ENV_PROFILE_ONLY
+    - Pydantic v2 warnings: ACCEPTED_KNOWN_CONDITION
+    - pytest-asyncio warnings: ACCEPTED_KNOWN_CONDITION
+    - .coverage artifacts: ACCEPTED_KNOWN_CONDITION
+    - .vscode/tasks.json drift: ACCEPTED_KNOWN_CONDITION
+    - **Result: No conditions block A-022.0 start**
+- Candidate module audit summary:
+    - **Scheduling**: Level 5 (production-ready)
+    - **Room booking**: Level 3 (service ready, UI missing)
+    - **Room allocation contracts**: Level 3 (A-020 proven, no dashboard)
+    - **Brain Core**: Level 5 (signal routing active)
+    - **KPI / Metrics**: Level 5 (scheduling intelligence aggregated)
+    - **RBAC/ABAC**: Level 5 (permission framework mature)
+    - **Audit / Logging**: Level 5 (append-only active)
+    - **Tenant isolation**: Level 5 (cross-tenant leak prevention proven)
+    - **Event ingestion**: Level 5 (platform event store operational)
+    - **Overall readiness**: 4.2/6 maturity (all foundational infrastructure present)
+- Wave 10 theme decision:
+    - Selected: **Human-Approved Timetable Change Workflow**
+    - Rationale: Extends A-020 Room Allocation Brain (recommendation only) with controlled approval workflow infrastructure; builds on A-021 governance patterns (approval + review + audit)
+    - Alternative themes evaluated: Ministry/Rector Governance Deepening, Student Services/Lifecycle Completion, AI/Learning Support Autonomy, Legal/Contract Governance, University Core Table Coverage Remediation, Finance/Procurement Governance
+- A-022 Top 5 selected:
+    1. Simulation / Preview Contract (33/35 score) — Level 3 automation, read-only preview, maximum A-020 reuse
+    2. Timetable Change Proposal Contract (32/35) — Core workflow model, state machine, decision envelope
+    3. Room Recommendation → Proposal Bridge (30/35) — Direct A-020 transformation, highest infrastructure reuse
+    4. Cross-feature Timetable Workflow E2E (29/35) — Integration validation, tenant isolation proof
+    5. Timetable Change KPI / Dashboard (28/35) — Admin visibility, proposal workflow metrics
+- Features explicitly deferred:
+    - Rollback / Audit Evidence Contract (27/35 score) → A-022.6
+    - Human Approval Queue (26/35) → A-022.6 (if time permits)
+    - Controlled Apply Proposal Contract (15/35) → **EXPLICITLY DEFERRED** (Level 5 auto-execute scope too risky for A-022)
+    - University Core Table Coverage Remediation (11/35) → Parallel track
+- A-022 backlog skeleton:
+    - **A-022.0**: Wave 10 selection (COMPLETE)
+    - **A-022.1**: Timetable Change Proposal Contract (2–3 days)
+    - **A-022.2**: Simulation / Preview Contract (3–4 days)
+    - **A-022.3**: Room Recommendation → Proposal Bridge (2–3 days)
+    - **A-022.4**: Human Approval Queue (2–3 days, optional)
+    - **A-022.5**: Timetable Change KPI / Dashboard (2–3 days)
+    - **A-022.6**: Cross-feature E2E + Consolidation (3–4 days)
+    - **A-022.7**: KPI / Dashboard / Rector Integration (2–3 days)
+    - **A-022.8**: Full gates + final A-022 report (1–2 days)
+    - **Total scope**: 3 weeks (15 working days)
+- Human-approved timetable safety model (locked):
+    - **Level 1 (Detect)**: Passive conflict observation; alert only
+    - **Level 2 (Recommend)**: Advisory room suggestions (from A-020); no commitment
+    - **Level 3 (Simulate)**: Read-only change preview; no production mutation — **A-022 DEFAULT TARGET**
+    - **Level 4 (Approve)**: Reviewer approves/rejects with audit trail; rollback plan generated
+    - **Level 5 (Apply)**: Execute change with safety constraints — **EXPLICITLY DEFERRED** (not in A-022.0–A-022.6)
+- Non-destructive scheduling policy (locked):
+    - ✅ Read-only by default (proposals/simulations → no mutations)
+    - ✅ No auto-assignment (rooms recommended only)
+    - ✅ No silent booking override (conflicts must be explicit)
+    - ✅ No unapproved schedule changes (require approval step)
+    - ✅ No cross-tenant leakage (proposals isolated by tenant_id)
+    - ✅ No fake optimization (simulation results reflect ground truth)
+    - ✅ Auditable reversibility (all approvals logged with timestamp/reviewer)
+    - ✅ Explicit opt-in for apply (no automatic execution, even after approval)
+- Deliverable:
+    - `A-022.0-WAVE10_SELECTION_AND_TIMETABLE_WORKFLOW_PLANNING_REPORT.md` (13-section comprehensive planning artifact)
+- Decision: **A-022.0 COMPLETE — PASS (planning/selection only)**. Ready for transition to `A-022.1`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 
