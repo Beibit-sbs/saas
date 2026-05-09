@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-024.0
-- current_stage: A-023 CLOSED / A-024 planning
-- last_completed_action_id: A-023.8
-- next_action_id: A-024.0
-- updated_at: 2026-05-09 (A-023.8 completed: A-023 final 150-module foundation wave closed; verdict=PASS; next=A-024.0)
+- status: ready_for_A-024.1
+- current_stage: A-024.0 complete / Brain+SaaS operational maturity selection
+- last_completed_action_id: A-024.0
+- next_action_id: A-024.1
+- updated_at: 2026-05-09 (A-024.0 completed: planning/selection only; no runtime changes; next=A-024.1)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -251,20 +251,56 @@
     - `A-023.8-FINAL_150_MODULE_FOUNDATION_REPORT.md` (created)
 - Decision: **A-023 CLOSED — PASS**. Next action: `A-024.0`.
 
-#### A-024.0 — Level 3–4 Fast Lift Selection / Operational Maturity Planning
+#### Architecture Completeness Rule
 
-- Status: PLANNED (A-023.8 prerequisite met)
-- Scope: Select modules/workflows from Level 2/3 candidates for Level 3–4 lift.
-- A-024.0 goals:
-    1. Select high-value modules with real business/demo value from L2/L3 pool.
-    2. Lift selected modules to Level 3–4 via backend tests, FSM/events, tenant guards, API/router, KPI visibility.
-    3. Preserve no-fake-maturity rule — no Level 5–6 without evidence.
-    4. Do not jump to Level 5–6 unless explicit E2E gate evidence exists.
-    5. Report actual test counts and import validation as evidence.
-- Priority input from A-023 foundation gap:
-    - L0=4, L1=20, L2=17 still below L3
-    - L3=24 candidates for L4 lift
-    - L4=62 → some candidates for L5 if brain/KPI visible
+- 150 modules is the current canonical baseline, not a hard maximum.
+- Additional modules may be introduced only when required for real system correctness, SaaS scalability, Brain Core signal flow, tenant isolation, governance, integration, observability, performance, or production-grade operations.
+- Any module beyond 150 must go through explicit controlled expansion (no silent additions).
+- New extension modules default to L0 unless direct implementation evidence exists.
+- Baseline metrics remain preserved and traceable:
+    - baseline_150_maturity_metrics
+    - extension_module_metrics
+    - total_tracked_module_metrics
+- No fake maturity, no fake SaaS readiness, no fake Brain readiness.
+
+#### A-024.0 — Brain + SaaS Ready Operational Maturity Selection
+
+- Date: 2026-05-09
+- Status: COMPLETE (planning/selection only)
+- Scope: Candidate selection and scoring only. No runtime endpoint/service/migration/frontend changes.
+- Strategic principles locked:
+    - Brain-first: module -> event -> KPI -> evidence -> brain signal -> review queue -> dashboard/governance -> human-approved critical action
+    - SaaS-first: tenant isolation, feature flag readiness, billing/plan compatibility, tenant configuration, auditability, safe defaults
+    - Performance-first: choose high-value/high-load/high-governance candidates with measurable operational impact
+- Baseline preserved (unchanged):
+    - L0=4, L1=20, L2=17, L3=24, L4=62, L5=21, L6=2
+    - sum=150, maturity_arithmetic_check=PASS
+    - foundation_gap_count=41, level_2_gap_count=24
+- Candidate scoring summary (0-5 each criterion):
+    - SELECT_A024 (Top targets): `ai_routing_control`, `ai_copilot_ops`, `platform_health`, `procurement_approval_workflow`, `observability`, `attendance`, `student_portal`, `university_core`
+    - DEFER_A024_LATER / A025_BRAIN: lower-feasibility or lower immediate governance impact candidates
+- Controlled extension review:
+    - No baseline+ extension approved in A-024.0
+    - Candidate-only extensions documented for later governance review (no metric impact in this action)
+- A-024 backlog locked:
+    - A-024.1: L2->L3 Pack 1 (event/FSM/tenant guard)
+    - A-024.2: L2->L3 Pack 2 (service/test hardening)
+    - A-024.3: API/Event/Tenant Guard consolidation
+    - A-024.4: KPI/Dashboard visibility consolidation
+    - A-024.5: Brain signal mapping preparation
+    - A-024.6: SaaS readiness consolidation (feature flags/billing compatibility)
+    - A-024.7: Cross-feature operational E2E
+    - A-024.8: Final A-024 operational maturity report
+- Stop rules (A-024 wave):
+    - stop if schema migration is required but not planned
+    - stop if tenant isolation is unclear
+    - stop if fake Brain/SaaS claims would be needed
+    - stop if candidate cannot be validated
+    - stop if broader runtime risk appears; open remediation slice
+- Validation (planning action):
+    - `git diff --check` PASS
+    - grep checks for A-024.0 rule and transition: PASS
+- Decision: **A-024.0 CLOSED — PASS**. Proceed to `A-024.1`.
 
 
 
