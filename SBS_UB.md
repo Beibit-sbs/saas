@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-025.0
-- current_stage: A-024.8.B3 complete / Quality baseline confirmed after remediation
-- last_completed_action_id: A-024.8.B3
-- next_action_id: A-025.0
-- updated_at: 2026-05-09 (A-024.8.B3 complete: quality baseline confirmed; backend/frontend/gates validated with no blocking regressions)
+- status: ready_for_A-025.1
+- current_stage: A-025.0 complete / Controlled extension registry and future completeness map locked
+- last_completed_action_id: A-025.0
+- next_action_id: A-025.1
+- updated_at: 2026-05-09 (A-025.0 complete: planning-only extension registry finalized; baseline 150 metrics preserved unchanged)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -858,6 +858,42 @@
 - Maturity metrics: **UNCHANGED** (`L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2, sum=150, maturity_arithmetic_check=PASS`).
 - Decision: **A-024.8.B3 COMPLETE — QUALITY BASELINE CONFIRMED**.
 - Next action: `A-025.0`.
+
+#### A-025.0 — Controlled Extension Module Registry / Future Completeness Map
+
+- Date: 2026-05-09
+- Scope: Planning-only action for controlled extension governance and future completeness mapping. No runtime code changes, no endpoint/service/migration changes, no maturity inflation.
+- Authoritative deliverable:
+    - `A-025.0-CONTROLLED_EXTENSION_AND_FUTURE_COMPLETENESS_MAP.md`
+- Baseline 150 metrics: **UNCHANGED**
+    - `L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2, sum=150, maturity_arithmetic_check=PASS`
+- Extension metrics plane (separate from baseline):
+    - `extension_total_count=25`
+    - `extension_level_0_count=25`
+    - `extension_level_1_count=0`
+    - `extension_level_2_count=0`
+    - `extension_level_3_count=0`
+    - `extension_level_4_count=0`
+    - `extension_level_5_count=0`
+    - `extension_level_6_count=0`
+    - `extension_maturity_arithmetic_check=PASS`
+- Total tracked metrics plane:
+    - `total_tracked_modules=175` (`150 baseline + 25 extension`)
+    - `baseline_metrics_mutation_in_a0250=false`
+- A-025.0 planning outputs locked:
+    - 15-domain baseline completeness audit
+    - controlled extension candidate registry classification
+    - 25 killer workflows map
+    - 10 Brain domains map
+    - 5 safe agent workflows map
+    - dashboard/frontend roadmap
+    - A-025+ sequence (`A-025.1`, `A-025.2`, `A-025.3`, `A-026`, `A-027`, `A-028`)
+- Anti-inflation review: PASS
+    - no runtime implementation claims
+    - no baseline metric mutation
+    - all extension candidates remain Level 0 planning state in A-025.0
+- Decision: **A-025.0 COMPLETE — PASS (planning-only)**.
+- Next action: `A-025.1`.
 
 
 
