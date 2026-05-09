@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-021.1 RECTOR EXECUTIVE COMMAND CENTER CONSOLIDATION)
-- status: ready_for_A-021.8R
-- current_stage: A-021.8.B1 blocker burn-down complete; residual smoke known condition triage path required
-- last_completed_action_id: A-021.8.B1
-- next_action_id: A-021.8R
-- updated_at: 2026-05-09 (B1 completed: rector dashboard collision fixes validated, targeted backend slices green, release gate PASS; smoke remains red only on University Core table coverage known condition.)
+- status: ready_for_A-022
+- current_stage: A-021 CLOSED / A-022 planning
+- last_completed_action_id: A-021.8R
+- next_action_id: A-022.0
+- updated_at: 2026-05-09 (A-021.8R finalized closure: B1 blockers resolved, release gate PASS retained, smoke remains red only on University Core table coverage known condition; A-021 closed as PASS WITH KNOWN CONDITIONS.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -302,6 +302,56 @@
 - Deliverable:
     - `A-021.8.B1-FINAL_GATE_BLOCKER_BURNDOWN_REPORT.md`
 - Decision: **A-021.8.B1 COMPLETE**. Transition to `A-021.8R` for residual smoke known-condition disposition/closure path.
+
+#### A-021.8R - Final Closure Rerun / Known Condition Disposition
+
+- Date: 2026-05-09
+- Scope: Final closure/disposition only. No new governance features, no new dashboard sections, no new modules, no migrations, no test weakening, no gate bypassing.
+- Repo hygiene snapshot:
+    - Dirty tracked excluded from scope: `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical artifacts excluded from scope: legacy A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+- B1 blocker closure confirmation:
+    - RectorDashboard strict query collisions: **RESOLVED** (targeted suite `27 passed`)
+    - Forbidden auto-resolution wording: **RESOLVED** (human-closure wording retained)
+    - Brain-core mismatch targeted slice: **RESOLVED** (`42 passed`)
+    - Postgres persistence targeted slice: **RESOLVED FOR TARGETED SCOPE** (`8 passed`)
+    - Release gate blocker: **RESOLVED** (`[release-gate] PASS: release gate and rollback readiness are green`)
+- Final validation/disposition summary:
+    - Frontend targeted governance suite: **PASS** (`27/27`)
+    - Frontend full suite: **PASS** (`118 files`, `811 tests`)
+    - Frontend lint: **PASS**
+    - Frontend build: **PASS** (latest authoritative evidence)
+    - Tenant/security backend slice: **PASS** (latest authoritative evidence)
+    - Safe gate: **PASS**
+    - Release gate: **PASS**
+    - Smoke gate: **FAIL** (`University Core Table Coverage`, 66 missing tables)
+- Smoke known condition classification:
+    - Classification: **NOT A-021 REGRESSION**
+    - Root cause: `university_core` table coverage baseline gap (66 missing tables)
+    - Impact on A-021 governance closure: no direct regression demonstrated (A-021 commit touch set is dashboard/test/report/tracker only)
+    - Future action: separate `university_core` table coverage remediation track
+- Governance safety model preserved:
+    - Allowed: read-only tenant-scoped evidence rendering, ministry-ready shell, heatmap, review queue, KPI drilldown, human review indicators
+    - Forbidden still enforced by dashboard contracts: fake KPI/demo evidence, ministry certification/submission claims, automatic disciplinary/security/scheduling/room/procurement actions, cross-tenant/RBAC bypass
+- Deliverables:
+    - `A-021.8-FINAL_WAVE9_GOVERNANCE_DASHBOARD_REPORT.md` (A-021.8R addendum)
+    - `A-021.8R-FINAL_CLOSURE_RERUN_REPORT.md`
+- Decision: **A-021 CLOSED - PASS WITH KNOWN CONDITIONS**. Transition to `A-022.0`.
+- A-021 series status: **CLOSED**.
+
+#### A-022.0 - Wave 10 Selection Placeholder
+
+- Date: 2026-05-09
+- Scope (placeholder): planning/selection bootstrap only.
+- Inputs:
+    - A-021 closure evidence (including known-condition register)
+    - Current repo hygiene state
+    - Wave priority backlog candidates
+- Required output:
+    - A-022.0 selection/planning report
+    - updated Top-5 candidate shortlist
+    - updated guardrails for next wave
+- Status: **READY TO START**.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 
