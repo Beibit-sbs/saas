@@ -1,1 +1,1 @@
-"""A-023.2 foundation package for health_services module."""
+"""A-023.3 package for health_services service skeleton."""
