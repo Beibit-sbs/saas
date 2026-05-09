@@ -275,18 +275,29 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
     "scheduling.room_type_mismatch.detected": EventDefinition(GenericTenantEventPayload),
     "scheduling.computer_shortage.detected": EventDefinition(GenericTenantEventPayload),
     "scheduling.capacity_mismatch.detected": EventDefinition(GenericTenantEventPayload),
-        # Timetable change proposal lifecycle events (A-022.1)
-        "scheduling.timetable_proposal.created": EventDefinition(GenericTenantEventPayload),
-        "scheduling.timetable_proposal.submitted": EventDefinition(GenericTenantEventPayload),
-        "scheduling.timetable_proposal.approved": EventDefinition(GenericTenantEventPayload),
-        "scheduling.timetable_proposal.rejected": EventDefinition(GenericTenantEventPayload),
-        "scheduling.timetable_proposal.revision_requested": EventDefinition(GenericTenantEventPayload),
-        "scheduling.timetable_proposal.cancelled": EventDefinition(GenericTenantEventPayload),
-        # Timetable change simulation lifecycle events (A-022.2)
-        "scheduling.timetable_simulation.created": EventDefinition(GenericTenantEventPayload),
-        "scheduling.timetable_simulation.computed": EventDefinition(GenericTenantEventPayload),
-        "scheduling.timetable_simulation.invalid": EventDefinition(GenericTenantEventPayload),
-        "scheduling.timetable_simulation.stale": EventDefinition(GenericTenantEventPayload),
+    # Timetable change proposal lifecycle events (A-022.1)
+    "scheduling.timetable_proposal.created": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_proposal.submitted": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_proposal.approved": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_proposal.rejected": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_proposal.revision_requested": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_proposal.cancelled": EventDefinition(GenericTenantEventPayload),
+    # Timetable change simulation lifecycle events (A-022.2)
+    "scheduling.timetable_simulation.created": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_simulation.computed": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_simulation.invalid": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_simulation.stale": EventDefinition(GenericTenantEventPayload),
+    # Timetable simulation governance events (A-022.5)
+    "scheduling.timetable_simulation.review_required": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_simulation.conflicts_created": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_simulation.conflicts_resolved": EventDefinition(GenericTenantEventPayload),
+    # Timetable approval lifecycle events (A-022.4/A-022.5)
+    "scheduling.timetable_approval.queued": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_approval.in_review": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_approval.approved": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_approval.rejected": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_approval.revision_requested": EventDefinition(GenericTenantEventPayload),
+    "scheduling.timetable_approval.high_risk": EventDefinition(GenericTenantEventPayload),
     "enrollment.capacity_risk.detected": EventDefinition(GenericTenantEventPayload),
     # Teaching quality lifecycle events (XXXIV.6)
     "teaching_quality.evaluation.submitted": EventDefinition(GenericTenantEventPayload),

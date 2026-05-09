@@ -570,6 +570,81 @@ describe("RectorDashboardPage", () => {
     expect(pageText).not.toContain("booking overridden");
   });
 
+  it("includes A-022.5 timetable workflow KPI section", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-16",
+        generated_at: "2026-05-16T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    const bars = screen.getAllByTestId("wave1-kpi-bar-mock");
+    const a0225 = bars.find((node) => {
+      const keys = node.getAttribute("data-keys") ?? "";
+      return (
+        keys.includes("timetable_change_proposals_count")
+        && keys.includes("timetable_change_pending_review_count")
+        && keys.includes("timetable_change_approved_count")
+        && keys.includes("timetable_change_rejected_count")
+        && keys.includes("timetable_change_revision_requested_count")
+        && keys.includes("timetable_simulations_count")
+        && keys.includes("timetable_simulations_review_required_count")
+        && keys.includes("timetable_simulation_conflicts_created_count")
+        && keys.includes("timetable_simulation_conflicts_resolved_count")
+        && keys.includes("timetable_approval_queue_count")
+        && keys.includes("timetable_approval_pending_count")
+        && keys.includes("timetable_approval_approved_count")
+        && keys.includes("timetable_approval_rejected_count")
+        && keys.includes("timetable_approval_revision_requested_count")
+        && keys.includes("timetable_approval_high_risk_count")
+      );
+    });
+
+    expect(a0225).toBeTruthy();
+  });
+
+  it("renders non-destructive advisory wording for A-022.5 timetable workflow section", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-16",
+        generated_at: "2026-05-16T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    expect(screen.getAllByText("Human-Approved Timetable Workflow").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Timetable Change KPI / Dashboard").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Read-only, tenant-scoped, evidence-backed workflow visibility/i)).toBeInTheDocument();
+    expect(screen.getByText(/No automatic timetable mutation\. No auto-apply\./i)).toBeInTheDocument();
+
+    const pageText = document.body.textContent?.toLowerCase() ?? "";
+    expect(pageText).not.toContain("auto-approved timetable");
+    expect(pageText).not.toContain("auto applied timetable");
+    expect(pageText).not.toContain("timetable changed automatically");
+    expect(pageText).not.toContain("auto schedule change");
+    expect(pageText).not.toContain("destructive action");
+    expect(pageText).not.toContain("apply now");
+    expect(pageText).not.toContain("approved and applied");
+    expect(pageText).not.toContain("room reserved automatically");
+    expect(pageText).not.toContain("booking overridden");
+    expect(pageText).not.toContain("committed change");
+  });
+
   it("renders the ministry-ready governance reporting shell with evidence-backed sections", () => {
     useRectorDashboardMock.mockReturnValue({
       data: {

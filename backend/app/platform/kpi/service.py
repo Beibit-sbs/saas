@@ -143,6 +143,22 @@ METRIC_TITLES: dict[str, str] = {
     "security_incidents_resolved_count": "Security Incidents Resolved Count",
     "security_incident_review_required_count": "Security Incidents Review Required Count",
     "security_high_risk_incidents_count": "Security High-Risk Incidents Count",
+    # A-022.5 timetable workflow KPI/dashboard metrics
+    "timetable_change_proposals_count": "Timetable Change Proposals Count",
+    "timetable_change_pending_review_count": "Timetable Change Pending Review Count",
+    "timetable_change_approved_count": "Timetable Change Approved Count",
+    "timetable_change_rejected_count": "Timetable Change Declined Count",
+    "timetable_change_revision_requested_count": "Timetable Change Revision Requested Count",
+    "timetable_simulations_count": "Timetable Simulations Count",
+    "timetable_simulations_review_required_count": "Timetable Simulations Review Required Count",
+    "timetable_simulation_conflicts_created_count": "Timetable Simulation Conflicts Created Count",
+    "timetable_simulation_conflicts_resolved_count": "Timetable Simulation Conflicts Resolved Count",
+    "timetable_approval_queue_count": "Timetable Approval Queue Count",
+    "timetable_approval_pending_count": "Timetable Approval Pending Count",
+    "timetable_approval_approved_count": "Timetable Approval Approved Count",
+    "timetable_approval_rejected_count": "Timetable Approval Declined Count",
+    "timetable_approval_revision_requested_count": "Timetable Approval Revision Requested Count",
+    "timetable_approval_high_risk_count": "Timetable Approval High-Risk Count",
 }
 
 
@@ -365,6 +381,53 @@ EVENT_DERIVED_METRIC_LINEAGE: dict[str, list[str]] = {
     "security_incidents_resolved_count": ["security.incident.resolved"],
     "security_incident_review_required_count": ["security.incident.opened"],
     "security_high_risk_incidents_count": ["security.incident.escalated"],
+    # A-022.5 timetable workflow event lineage
+    "timetable_change_proposals_count": [
+        "scheduling.timetable_proposal.created",
+    ],
+    "timetable_change_pending_review_count": [
+        "scheduling.timetable_proposal.submitted",
+    ],
+    "timetable_change_approved_count": [
+        "scheduling.timetable_proposal.approved",
+    ],
+    "timetable_change_rejected_count": [
+        "scheduling.timetable_proposal.rejected",
+    ],
+    "timetable_change_revision_requested_count": [
+        "scheduling.timetable_proposal.revision_requested",
+    ],
+    "timetable_simulations_count": [
+        "scheduling.timetable_simulation.computed",
+    ],
+    "timetable_simulations_review_required_count": [
+        "scheduling.timetable_simulation.review_required",
+    ],
+    "timetable_simulation_conflicts_created_count": [
+        "scheduling.timetable_simulation.conflicts_created",
+    ],
+    "timetable_simulation_conflicts_resolved_count": [
+        "scheduling.timetable_simulation.conflicts_resolved",
+    ],
+    "timetable_approval_queue_count": [
+        "scheduling.timetable_approval.queued",
+    ],
+    "timetable_approval_pending_count": [
+        "scheduling.timetable_approval.queued",
+        "scheduling.timetable_approval.in_review",
+    ],
+    "timetable_approval_approved_count": [
+        "scheduling.timetable_approval.approved",
+    ],
+    "timetable_approval_rejected_count": [
+        "scheduling.timetable_approval.rejected",
+    ],
+    "timetable_approval_revision_requested_count": [
+        "scheduling.timetable_approval.revision_requested",
+    ],
+    "timetable_approval_high_risk_count": [
+        "scheduling.timetable_approval.high_risk",
+    ],
 }
 
 
@@ -861,6 +924,33 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     room_type_mismatch = int(event_counts.get("scheduling.room_type_mismatch.detected", 0) or 0)
     enrollment_capacity_risk = int(event_counts.get("enrollment.capacity_risk.detected", 0) or 0)
 
+    # A-022.5 timetable workflow event counts
+    timetable_proposals_created = int(event_counts.get("scheduling.timetable_proposal.created", 0) or 0)
+    timetable_proposals_submitted = int(event_counts.get("scheduling.timetable_proposal.submitted", 0) or 0)
+    timetable_proposals_approved = int(event_counts.get("scheduling.timetable_proposal.approved", 0) or 0)
+    timetable_proposals_rejected = int(event_counts.get("scheduling.timetable_proposal.rejected", 0) or 0)
+    timetable_proposals_revision_requested = int(
+        event_counts.get("scheduling.timetable_proposal.revision_requested", 0) or 0
+    )
+    timetable_simulations_computed = int(event_counts.get("scheduling.timetable_simulation.computed", 0) or 0)
+    timetable_simulations_review_required = int(
+        event_counts.get("scheduling.timetable_simulation.review_required", 0) or 0
+    )
+    timetable_simulation_conflicts_created = int(
+        event_counts.get("scheduling.timetable_simulation.conflicts_created", 0) or 0
+    )
+    timetable_simulation_conflicts_resolved = int(
+        event_counts.get("scheduling.timetable_simulation.conflicts_resolved", 0) or 0
+    )
+    timetable_approval_queued = int(event_counts.get("scheduling.timetable_approval.queued", 0) or 0)
+    timetable_approval_in_review = int(event_counts.get("scheduling.timetable_approval.in_review", 0) or 0)
+    timetable_approval_approved = int(event_counts.get("scheduling.timetable_approval.approved", 0) or 0)
+    timetable_approval_rejected = int(event_counts.get("scheduling.timetable_approval.rejected", 0) or 0)
+    timetable_approval_revision_requested = int(
+        event_counts.get("scheduling.timetable_approval.revision_requested", 0) or 0
+    )
+    timetable_approval_high_risk = int(event_counts.get("scheduling.timetable_approval.high_risk", 0) or 0)
+
     access_denied = int(event_counts.get("access.denied", 0) or 0)
     security_anomalies = int(event_counts.get("security.anomaly", 0) or 0)
     card_issued = int(event_counts.get("card.issued", 0) or 0)
@@ -911,6 +1001,22 @@ def refresh_tenant_metrics(*, tenant_id: int, uow: Any, snapshot_date: str | Non
     metric_values["room_equipment_mismatch_count"] = room_equipment_mismatch
     metric_values["room_computer_shortage_count"] = room_computer_shortage
     metric_values["room_type_mismatch_count"] = room_type_mismatch
+
+    metric_values["timetable_change_proposals_count"] = timetable_proposals_created
+    metric_values["timetable_change_pending_review_count"] = timetable_proposals_submitted
+    metric_values["timetable_change_approved_count"] = timetable_proposals_approved
+    metric_values["timetable_change_rejected_count"] = timetable_proposals_rejected
+    metric_values["timetable_change_revision_requested_count"] = timetable_proposals_revision_requested
+    metric_values["timetable_simulations_count"] = timetable_simulations_computed
+    metric_values["timetable_simulations_review_required_count"] = timetable_simulations_review_required
+    metric_values["timetable_simulation_conflicts_created_count"] = timetable_simulation_conflicts_created
+    metric_values["timetable_simulation_conflicts_resolved_count"] = timetable_simulation_conflicts_resolved
+    metric_values["timetable_approval_queue_count"] = timetable_approval_queued
+    metric_values["timetable_approval_pending_count"] = timetable_approval_queued + timetable_approval_in_review
+    metric_values["timetable_approval_approved_count"] = timetable_approval_approved
+    metric_values["timetable_approval_rejected_count"] = timetable_approval_rejected
+    metric_values["timetable_approval_revision_requested_count"] = timetable_approval_revision_requested
+    metric_values["timetable_approval_high_risk_count"] = timetable_approval_high_risk
 
     # A-020.5 compatibility values preserved for existing contracts
     metric_values["room_allocation_recommendations_generated_count"] = room_allocation_recommendations
