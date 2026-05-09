@@ -46,6 +46,11 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
             "scheduling.timetable_proposal.rejected",
             "scheduling.timetable_proposal.revision_requested",
             "scheduling.timetable_proposal.cancelled",
+            # A-022.2 — Timetable change simulation lifecycle
+            "scheduling.timetable_simulation.created",
+            "scheduling.timetable_simulation.computed",
+            "scheduling.timetable_simulation.invalid",
+            "scheduling.timetable_simulation.stale",
         "booking.approved",
         "booking.conflict_detected",
         "room.released",

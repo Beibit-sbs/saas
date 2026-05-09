@@ -282,6 +282,11 @@ EXACT_EVENT_REGISTRY: dict[str, EventDefinition] = {
         "scheduling.timetable_proposal.rejected": EventDefinition(GenericTenantEventPayload),
         "scheduling.timetable_proposal.revision_requested": EventDefinition(GenericTenantEventPayload),
         "scheduling.timetable_proposal.cancelled": EventDefinition(GenericTenantEventPayload),
+        # Timetable change simulation lifecycle events (A-022.2)
+        "scheduling.timetable_simulation.created": EventDefinition(GenericTenantEventPayload),
+        "scheduling.timetable_simulation.computed": EventDefinition(GenericTenantEventPayload),
+        "scheduling.timetable_simulation.invalid": EventDefinition(GenericTenantEventPayload),
+        "scheduling.timetable_simulation.stale": EventDefinition(GenericTenantEventPayload),
     "enrollment.capacity_risk.detected": EventDefinition(GenericTenantEventPayload),
     # Teaching quality lifecycle events (XXXIV.6)
     "teaching_quality.evaluation.submitted": EventDefinition(GenericTenantEventPayload),

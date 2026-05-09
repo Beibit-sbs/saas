@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-022.2
-- current_stage: A-022.1 complete / A-022.2 ready to start
-- last_completed_action_id: A-022.1
-- next_action_id: A-022.2
-- updated_at: 2026-05-09 (A-022.1 complete: timetable change proposal contract delivered with tenant-safe schema + FSM + audit evidence + bridge helpers; non-destructive policy locked (no apply/mutation/reservation/override/auto-apply fields); targeted and regression validation green.)
+- status: ready_for_A-022.3
+- current_stage: A-022.2 complete / A-022.3 ready to start
+- last_completed_action_id: A-022.2
+- next_action_id: A-022.3
+- updated_at: 2026-05-09 (A-022.2 complete: timetable change simulation/preview contract delivered with tenant-safe schema + before/after snapshot + conflict/affected/risk delta + audit evidence; non-destructive policy locked (no apply/mutation/reservation/override/auto-apply fields); targeted and regression validation green.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -475,6 +475,60 @@
         - `cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest tests/ -k "tenant or security" --no-cov --tb=line -q`
         - Result: **1013 passed, 1 skipped, 0 failed, 7798 deselected**
 - Decision: **A-022.1 COMPLETE — PASS**. Transition to `A-022.2`.
+
+#### A-022.2 — Simulation / Preview Contract
+
+- Date: 2026-05-09
+- Scope: Additive contract-only simulation/preview implementation for human-approved timetable workflow. No apply pipeline, no schedule mutation, no room reservation, no booking override.
+- Repo hygiene snapshot:
+    - Dirty tracked (out-of-scope, not staged): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical artifacts retained: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+    - A-022.1 baseline commit confirmed: `e4cbe03`
+- Implementation delivered:
+    - `backend/app/modules/scheduling/timetable_change_simulation.py`
+        - Added simulation contract enums/schemas:
+            - `TimetableChangeSimulationStatus`
+            - `TimetableChangeBeforeAfterSnapshot`
+            - `TimetableChangeConflictDelta`
+            - `TimetableChangeAffectedDelta`
+            - `TimetableChangeRiskDelta`
+            - `TimetableChangeSimulationInput`
+            - `TimetableChangeSimulationResult`
+        - Added deterministic helpers:
+            - `build_timetable_change_simulation(...)`
+            - `build_simulation_conflict_delta(...)`
+            - `build_simulation_audit_evidence(...)`
+        - Safety invariants enforced:
+            - `tenant_id > 0` required (fail-closed)
+            - proposal terminal status guard (`rejected/cancelled/expired` -> `invalid` simulation)
+            - no proposal status mutation
+            - no apply/mutation/reservation/override/auto-apply outputs
+    - `backend/app/platform/events/registry.py`
+        - Added timetable simulation lifecycle event types:
+            - `scheduling.timetable_simulation.created`
+            - `scheduling.timetable_simulation.computed`
+            - `scheduling.timetable_simulation.invalid`
+            - `scheduling.timetable_simulation.stale`
+    - `backend/app/platform/event_ingestion/types.py`
+        - Added same simulation lifecycle events to ingestion allow-list
+    - `backend/tests/test_a022_2_timetable_change_simulation_contract.py`
+        - Added A-022.2 simulation contract suite (45 checks; includes required coverage areas + companion guards)
+    - `A-022.2-TIMETABLE_CHANGE_SIMULATION_PREVIEW_CONTRACT_REPORT.md`
+        - Added A-022.2 evidence package (gap matrix, proof set, validation matrix)
+- Validation summary:
+    - Targeted A-022.2 contract suite:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest tests/test_a022_2_timetable_change_simulation_contract.py --no-cov -rA`
+        - Result: **45 passed, 0 failed**
+    - Scheduling/room-allocation regression slice:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k "a020 or a022_1 or a022_2 or scheduling or room_booking or room_allocation or timetable_change" --no-cov -rA`
+        - Result: **442 passed, 0 failed, 8415 deselected**
+    - Tenant/security regression slice:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest tests/ -k "tenant or security" --no-cov --tb=line -q`
+        - Result: **1018 passed, 1 skipped, 0 failed, 7838 deselected**
+    - Safe gate:
+        - `unset VIRTUAL_ENV && bash scripts/university_pilot_safe_gate.sh`
+        - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Decision: **A-022.2 COMPLETE — PASS**. Transition to `A-022.3`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 
