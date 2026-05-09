@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-025.1
-- current_stage: A-025.0 complete / Controlled extension registry and future completeness map locked
-- last_completed_action_id: A-025.0
-- next_action_id: A-025.1
-- updated_at: 2026-05-09 (A-025.0 complete: planning-only extension registry finalized; baseline 150 metrics preserved unchanged)
+- status: ready_for_A-025.2
+- current_stage: A-025.1 complete / Killer workflow prioritization and first execution set
+- last_completed_action_id: A-025.1
+- next_action_id: A-025.2
+- updated_at: 2026-05-09 (A-025.1 complete: killer workflow prioritization finalized; baseline and extension metrics remain separated and unchanged)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -894,6 +894,58 @@
     - all extension candidates remain Level 0 planning state in A-025.0
 - Decision: **A-025.0 COMPLETE — PASS (planning-only)**.
 - Next action: `A-025.1`.
+
+#### A-025.1 — Killer Workflow Prioritization / First Execution Set
+
+- Date: 2026-05-09
+- Scope: Prioritization and execution-sequencing only. No runtime module creation, no endpoint/service/migration/frontend implementation, no maturity inflation.
+- Authoritative deliverable:
+    - `A-025.1-KILLER_WORKFLOW_PRIORITIZATION_AND_EXECUTION_SET.md`
+- Source-of-truth confirmation:
+    - A-025.0 registry/roadmap baseline consumed as input
+    - A-024 operational readiness backbone evidence consumed as implementation-readiness guard
+    - A-021 governance dashboard and A-022 timetable governance evidence consumed for reuse-first prioritization
+- Scoring model:
+    - 25 workflows scored across 10 criteria (1..5 each)
+    - criteria: product value, executive visibility, compliance value, SaaS value, Brain/KPI value, existing readiness, testability, demo value, moat, safety
+    - tiering: P0/P1/P2/P3
+- Scoring summary:
+    - total workflows scored: `25`
+    - P0: `10`
+    - P1: `6`
+    - P2: `6`
+    - P3: `3`
+- Selected first execution set (P0):
+    - `Student risk intervention playbook approval`
+    - `Rector KPI drilldown to domain-level evidence`
+    - `Billing reconciliation discrepancy closure loop`
+    - `Vendor risk assessment before procurement approval`
+    - `Brain signal to human queue closed-loop decision trail`
+- Dependency summary:
+    - Reuse anchors: existing KPI lineage, rector dashboard sections, tenant-safe governance patterns, A-024 operational backbone surfaces
+    - Extension-required for selected set: `student_success_playbooks`, `billing_reconciliation_ops`, `procurement_vendor_risk`, `copilot_safety_ops` (planning only; no implementation in A-025.1)
+    - No baseline 150 module maturity mutation in A-025.1
+- Safety boundaries locked:
+    - allowed: recommendation, prioritization, queue routing, evidence enrichment
+    - forbidden: automatic disciplinary action, automatic academic penalty, automatic payment action, automatic procurement approval, unsafe autonomous critical execution
+    - human approval mandatory for critical workflow decisions
+- Frontend/Brain/KPI map outcome:
+    - frontend-first needs identified per selected workflow (command-center drilldown, action queue, evidence/timeline surfaces)
+    - Brain/KPI/event linkage defined as mapping only; no Brain autonomy claim
+- A-025.2/A-025.3/A-026 sequence decision:
+    - `A-025.2`: contract + evidence map hardening for selected workflows (planning/spec)
+    - `A-025.3`: controlled backend/API/test execution subset (non-destructive)
+    - `A-026`: Brain/KPI/event integration wave for selected workflows
+- Metrics integrity:
+    - baseline 150 maturity metrics: **UNCHANGED** (`L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2, sum=150, maturity_arithmetic_check=PASS`)
+    - extension metrics: **UNCHANGED AND SEPARATE** (`extension_total_count=25`, `total_tracked_modules=175`)
+- Anti-inflation review: PASS
+    - no code implementation performed
+    - no fake maturity claims
+    - no fake SaaS readiness claims
+    - no fake Brain autonomy claims
+- Decision: **A-025.1 COMPLETE — PASS (prioritization-only)**.
+- Next action: `A-025.2`.
 
 
 
