@@ -2,6 +2,8 @@
 Tests that data written directly to PostgreSQL is durable and visible across connections.
 Uses raw SQLAlchemy (not the service layer) to isolate storage behavior.
 """
+import os
+
 import pytest
 from sqlalchemy import text
 
@@ -9,8 +11,20 @@ from app.core.db import build_engine
 
 
 @pytest.fixture(scope="module")
-def pg_engine():
-    """Create a direct SQLAlchemy engine to the PostgreSQL DB."""
+def pg_engine(original_database_url):
+    """Create a direct SQLAlchemy engine to the PostgreSQL DB.
+
+    Depends on the session-scoped ``original_database_url`` fixture (defined in
+    conftest.py) which captures DATABASE_URL at conftest import time — before
+    any autouse ``reset_shared_state`` teardown can pop it.  This makes the
+    fixture reliable in both narrow (isolated) and full-suite pytest runs.
+    """
+    if not original_database_url:
+        pytest.skip("DATABASE_URL is not configured for DB integration checks")
+
+    # Restore DATABASE_URL so build_engine() can read it (reset_shared_state
+    # intentionally pops it for in-memory test isolation).
+    os.environ["DATABASE_URL"] = original_database_url
     engine = build_engine()
     yield engine
     engine.dispose()

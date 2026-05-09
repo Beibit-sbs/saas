@@ -5,6 +5,11 @@ import os
 import sys
 from pathlib import Path
 
+# Capture DATABASE_URL at conftest import time (earliest possible point).
+# Tests intentionally pop it from os.environ for in-memory isolation, so we
+# preserve the original value here for fixtures that need a real DB connection.
+_ORIGINAL_DATABASE_URL: str | None = os.environ.get("DATABASE_URL")
+
 # Provide minimal env so optional modules don't crash on import.
 # DATABASE_URL is intentionally NOT set here so db_available() returns False
 # and all platform repositories fall back to their in-memory stores.
@@ -213,6 +218,18 @@ def _reset_template_state() -> None:
     # feature_flags in-memory state removed — platform service uses DB
     # (cleared above via uow.feature_flag_repository.clear_state and
     #  platform_feature_flags_service.clear_feature_flag_cache)
+
+
+@pytest.fixture(scope="session")
+def original_database_url() -> str | None:
+    """Return the DATABASE_URL captured at conftest import time.
+
+    Tests intentionally pop DATABASE_URL from os.environ for in-memory
+    isolation.  Module-scoped fixtures that need a real PostgreSQL connection
+    (e.g. pg_engine in test_postgres_persistence_xv2.py) must restore it;
+    this session fixture provides the reliable original value.
+    """
+    return _ORIGINAL_DATABASE_URL
 
 
 @pytest.fixture(autouse=True)
