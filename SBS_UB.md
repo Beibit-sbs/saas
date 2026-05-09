@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-09-02 (A-020.2 ROOM CAPABILITY CONTRACT)
-- status: ready_for_A-020.3
-- current_stage: A-020 Wave 8 execution / Scheduling + Room Allocation Brain (A-020.2 room inventory capability contract complete)
-- last_completed_action_id: A-020.2
-- next_action_id: A-020.3
-- updated_at: 2026-05-09 (A-020.2 room inventory/capability contract stabilized; readiness compatibility proven; non-destructive policy preserved; A-020.3 queued)
+- run_id: OP-AUDIT-2026-05-09-03 (A-020.3 SCHEDULING CONFLICT DETECTION ENHANCEMENT)
+- status: ready_for_A-020.4
+- current_stage: A-020 Wave 8 execution / Scheduling + Room Allocation Brain (A-020.3 scheduling conflict detection enhancement complete)
+- last_completed_action_id: A-020.3
+- next_action_id: A-020.4
+- updated_at: 2026-05-09 (A-020.3 scheduling conflict detection enhanced; SchedulingConflictEvidence contract + detect_room_requirement_conflicts() + build_scheduling_conflict_result() added; 32 tests passing; all gates green; non-destructive policy preserved; A-020.4 queued)
 
 #### A-018.7 — Campus Operations Cross-Feature E2E (Validation-Only)
 
@@ -239,15 +239,53 @@
     - classified as environment/profile behavior; mitigated by rebuilding `backend-tests` image and rerunning suites successfully
 - Decision: **A-020.2 COMPLETE - PASS**. Room inventory/capability contract is stable, tested, tenant-safe, and non-destructive. Proceed to `A-020.3`.
 
+#### A-020.3 — Scheduling Conflict Detection Enhancement
+
+- Date: 2026-05-09
+- Scope: Enhance scheduling conflict detection using A-020.1 RoomAllocationReadiness and A-020.2 RoomCapability contracts. Evidence-only. No schedule/booking mutations. Reuse-first, additive-only.
+- Artifacts:
+    - `backend/app/modules/scheduling/room_allocation_readiness.py` (extended with A-020.3 contracts and helpers)
+    - `backend/tests/test_a020_3_scheduling_conflict_detection_enhancement.py` (32 tests)
+    - `A-020.3-SCHEDULING_CONFLICT_DETECTION_ENHANCEMENT_REPORT.md`
+- Contracts delivered:
+    - `ConflictType` enum (10 conflict categories: room_time_conflict, teacher_time_conflict, group_time_conflict, capacity_mismatch, computer_shortage, room_type_mismatch, equipment_mismatch, room_unavailable, booking_conflict, restriction_mismatch)
+    - `ConflictSeverity` enum (low, medium, high, critical)
+    - `SchedulingConflictEvidence` schema (tenant_id, conflict_type, severity, section_id, course_id, group_id, teacher_id, room_id, day_of_week, time_slot, conflicting_entity_type, conflicting_entity_id, reason, evidence, source_entity_type, source_entity_id)
+    - `SchedulingConflictCheckInput` schema (input bag for detection helper)
+    - `SchedulingConflictResult` schema (has_conflicts, conflict_count, conflicts, severity_summary)
+    - `detect_room_requirement_conflicts()` — primary detection helper (evidence-only)
+    - `build_scheduling_conflict_result()` — aggregated result builder
+- Detection capabilities:
+    - Capability-based: capacity mismatch, computer shortage, room type mismatch, equipment mismatch, room unavailable/maintenance/inactive, restriction mismatch
+    - Booking-based: room_time_conflict (schedule collision), booking_conflict (approved booking collision)
+    - Teacher-based: teacher_time_conflict (exact slot match)
+    - Group-based: group_time_conflict (exact slot match)
+- Tenant/security guarantees:
+    - authoritative tenant_id mismatch on capability rejected (ValueError)
+    - invalid/missing tenant_id fails closed
+    - no cross-tenant data leakage
+- Non-destructive guarantees:
+    - no schedule mutation
+    - no room booking mutation
+    - no auto-assignment
+    - no recommendation ranking
+    - no auto-apply
+- Validation summary (Docker):
+    - A-020.3 targeted: **32 passed, 2 warnings**
+    - Scheduling/room focused regression: **295 passed, 8416 deselected, 2 warnings**
+    - Tenant/security regression: **1001 passed, 1 skipped, 7709 deselected, 2 warnings**
+    - Safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Decision: **A-020.3 COMPLETE - PASS**. Scheduling conflict detection enhanced; 10 conflict categories covered; evidence-only; tenant-safe; non-destructive. Proceed to `A-020.4`.
+
 ---
 
 #### A-020 BACKLOG SKELETON (Updated)
 
-- Next action: **A-020.3 — Scheduling Conflict Detection Enhancement**
+- Next action: **A-020.4 — Capacity Matching Brain**
 - Top 5 A-020 tasks:
     1. ✅ **A-020.1** — Room Allocation Readiness Contract Stabilization (COMPLETE)
     2. ✅ **A-020.2** — Room Inventory / Room Capability Contract (COMPLETE)
-    3. **A-020.3** — Scheduling Conflict Detection Enhancement
+    3. ✅ **A-020.3** — Scheduling Conflict Detection Enhancement (COMPLETE)
     4. **A-020.4** — Capacity Matching Brain
     5. **A-020.5** — Room Allocation Recommendation Engine
 - Additional A-020 tasks:

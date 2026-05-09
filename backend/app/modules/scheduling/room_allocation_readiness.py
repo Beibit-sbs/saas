@@ -1,4 +1,4 @@
-"""Room Allocation Readiness Contract — A-020.1.
+"""Room Allocation Readiness Contract — A-020.1 / A-020.2 / A-020.3.
 
 Lightweight schema for normalizing room allocation readiness evidence
 across scheduling, room_booking, Brain Core, KPI and frontend surfaces.
@@ -9,6 +9,7 @@ Additive-only: builds on existing signals, no breaking changes.
 """
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, Optional
 
 from pydantic import BaseModel, Field
@@ -483,4 +484,435 @@ def room_allocation_readiness_from_scheduling_context(
         evidence=evidence,
         is_satisfied=is_satisfied,
         requires_action=requires_action,
+    )
+
+
+# ─── A-020.3 Scheduling Conflict Detection Enhancement ────────────────────────
+
+
+class ConflictType(str, Enum):
+    """Enumeration of detectable scheduling conflict types."""
+
+    ROOM_TIME_CONFLICT = "room_time_conflict"
+    TEACHER_TIME_CONFLICT = "teacher_time_conflict"
+    GROUP_TIME_CONFLICT = "group_time_conflict"
+    CAPACITY_MISMATCH = "capacity_mismatch"
+    COMPUTER_SHORTAGE = "computer_shortage"
+    ROOM_TYPE_MISMATCH = "room_type_mismatch"
+    EQUIPMENT_MISMATCH = "equipment_mismatch"
+    ROOM_UNAVAILABLE = "room_unavailable"
+    BOOKING_CONFLICT = "booking_conflict"
+    RESTRICTION_MISMATCH = "restriction_mismatch"
+
+
+class ConflictSeverity(str, Enum):
+    """Impact severity of a detected conflict."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+_CONFLICT_SEVERITY_MAP: dict[ConflictType, ConflictSeverity] = {
+    ConflictType.ROOM_TIME_CONFLICT: ConflictSeverity.CRITICAL,
+    ConflictType.TEACHER_TIME_CONFLICT: ConflictSeverity.CRITICAL,
+    ConflictType.GROUP_TIME_CONFLICT: ConflictSeverity.CRITICAL,
+    ConflictType.CAPACITY_MISMATCH: ConflictSeverity.HIGH,
+    ConflictType.COMPUTER_SHORTAGE: ConflictSeverity.MEDIUM,
+    ConflictType.ROOM_TYPE_MISMATCH: ConflictSeverity.HIGH,
+    ConflictType.EQUIPMENT_MISMATCH: ConflictSeverity.MEDIUM,
+    ConflictType.ROOM_UNAVAILABLE: ConflictSeverity.HIGH,
+    ConflictType.BOOKING_CONFLICT: ConflictSeverity.CRITICAL,
+    ConflictType.RESTRICTION_MISMATCH: ConflictSeverity.LOW,
+}
+
+
+class SchedulingConflictEvidence(BaseModel):
+    """Evidence record for a single detected scheduling conflict.
+
+    Evidence-only: never mutates schedule, booking, or room state.
+    Tenant-safe: tenant_id must be positive.
+    """
+
+    tenant_id: int = Field(gt=0)
+    conflict_type: ConflictType
+    severity: ConflictSeverity
+    section_id: Optional[int] = None
+    course_id: Optional[int] = None
+    group_id: Optional[int] = None
+    teacher_id: Optional[str] = None
+    room_id: Optional[str | int] = None
+    day_of_week: Optional[str] = None
+    time_slot: Optional[str | int] = None
+    conflicting_entity_type: Optional[str] = None
+    conflicting_entity_id: Optional[str | int] = None
+    reason: str
+    evidence: dict[str, Any] = Field(default_factory=dict)
+    source_entity_type: Optional[str] = None
+    source_entity_id: Optional[str | int] = None
+
+
+class SchedulingConflictCheckInput(BaseModel):
+    """Input bag for the conflict detection helper.
+
+    All detection is evidence-only — no schedule or booking mutations.
+    """
+
+    tenant_id: int = Field(gt=0)
+    requirement: RoomAllocationRequirement
+    capability: Optional[RoomCapability] = None
+    capability_match: Optional[RoomCapabilityMatchEvidence] = None
+    schedule: Optional[RoomAllocationSchedule] = None
+    # existing bookings: list of dicts with keys: room_id, day_of_week, time_slot_id
+    existing_bookings: list[dict[str, Any]] = Field(default_factory=list)
+    # teacher schedules: list of dicts with keys: teacher_id, day_of_week, time_slot_id
+    teacher_schedules: list[dict[str, Any]] = Field(default_factory=list)
+    # group schedules: list of dicts with keys: group_id, day_of_week, time_slot_id
+    group_schedules: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class SchedulingConflictResult(BaseModel):
+    """Aggregated result of a scheduling conflict detection run.
+
+    Evidence-only output: no auto-resolution, no ranking, no auto-assignment.
+    """
+
+    tenant_id: int = Field(gt=0)
+    has_conflicts: bool
+    conflict_count: int
+    conflicts: list[SchedulingConflictEvidence]
+    severity_summary: dict[str, int] = Field(default_factory=dict)
+
+
+def _make_conflict(
+    tenant_id: int,
+    conflict_type: ConflictType,
+    reason: str,
+    *,
+    section_id: Optional[int] = None,
+    course_id: Optional[int] = None,
+    group_id: Optional[int] = None,
+    teacher_id: Optional[str] = None,
+    room_id: Optional[str | int] = None,
+    day_of_week: Optional[str] = None,
+    time_slot: Optional[str | int] = None,
+    conflicting_entity_type: Optional[str] = None,
+    conflicting_entity_id: Optional[str | int] = None,
+    evidence: Optional[dict[str, Any]] = None,
+    source_entity_type: Optional[str] = None,
+    source_entity_id: Optional[str | int] = None,
+) -> SchedulingConflictEvidence:
+    return SchedulingConflictEvidence(
+        tenant_id=tenant_id,
+        conflict_type=conflict_type,
+        severity=_CONFLICT_SEVERITY_MAP[conflict_type],
+        section_id=section_id,
+        course_id=course_id,
+        group_id=group_id,
+        teacher_id=teacher_id,
+        room_id=room_id,
+        day_of_week=day_of_week,
+        time_slot=time_slot,
+        conflicting_entity_type=conflicting_entity_type,
+        conflicting_entity_id=conflicting_entity_id,
+        reason=reason,
+        evidence=evidence or {},
+        source_entity_type=source_entity_type,
+        source_entity_id=source_entity_id,
+    )
+
+
+def detect_room_requirement_conflicts(
+    tenant_id: int,
+    requirement: RoomAllocationRequirement,
+    *,
+    capability: Optional[RoomCapability] = None,
+    capability_match: Optional[RoomCapabilityMatchEvidence] = None,
+    schedule: Optional[RoomAllocationSchedule] = None,
+    existing_bookings: Optional[list[dict[str, Any]]] = None,
+    teacher_schedules: Optional[list[dict[str, Any]]] = None,
+    group_schedules: Optional[list[dict[str, Any]]] = None,
+) -> list[SchedulingConflictEvidence]:
+    """Detect scheduling conflicts and return evidence-only list.
+
+    Non-destructive guarantee:
+    - Never assigns a room.
+    - Never reserves a room.
+    - Never moves a section.
+    - Never changes timetable.
+    - Never ranks candidate rooms.
+    - Returns evidence records only.
+
+    Cross-tenant safety:
+    - tenant_id must match capability.tenant_id when capability provided.
+    - tenant_id must be a positive integer.
+
+    Args:
+        tenant_id: Authoritative tenant ID (must be positive).
+        requirement: Room allocation requirement for the section.
+        capability: Optional room capability for capability-based checks.
+        capability_match: Pre-computed match evidence; computed if not provided.
+        schedule: Optional schedule context for slot-based checks.
+        existing_bookings: Bookings to check for room/booking conflicts.
+            Each entry: {room_id, day_of_week, time_slot_id}.
+        teacher_schedules: Schedule entries to check for teacher conflicts.
+            Each entry: {teacher_id, day_of_week, time_slot_id}.
+        group_schedules: Schedule entries to check for group conflicts.
+            Each entry: {group_id, day_of_week, time_slot_id}.
+
+    Returns:
+        List of SchedulingConflictEvidence. Empty list means no conflicts found.
+    """
+    if not isinstance(tenant_id, int) or tenant_id <= 0:
+        raise ValueError("tenant_id must be a positive integer")
+
+    conflicts: list[SchedulingConflictEvidence] = []
+    day = schedule.day_of_week if schedule else None
+    slot = schedule.time_slot_id if schedule else None
+
+    # ── Capability-based checks (capacity, computers, equipment, type, availability, restrictions) ──
+    if capability is not None:
+        # Validate tenant boundary
+        if int(capability.tenant_id) != int(tenant_id):
+            raise ValueError("capability.tenant_id does not match authoritative tenant_id")
+
+        if capability_match is None:
+            capability_match = assess_room_capability_against_requirement(
+                capability,
+                requirement,
+                authoritative_tenant_id=tenant_id,
+            )
+
+        room_id = capability.room_id
+        section_id = requirement.section_id
+        course_id = requirement.course_id
+
+        # Capacity mismatch
+        if capability_match.capacity_ok is False:
+            conflicts.append(_make_conflict(
+                tenant_id,
+                ConflictType.CAPACITY_MISMATCH,
+                reason=f"Room capacity {capability.capacity} < required {requirement.students_count}",
+                section_id=section_id,
+                course_id=course_id,
+                room_id=room_id,
+                day_of_week=day,
+                time_slot=slot,
+                evidence={"room_capacity": capability.capacity, "required": requirement.students_count},
+                source_entity_type="room_capability",
+                source_entity_id=str(room_id),
+            ))
+
+        # Computer shortage
+        if capability_match.computers_ok is False:
+            conflicts.append(_make_conflict(
+                tenant_id,
+                ConflictType.COMPUTER_SHORTAGE,
+                reason=f"Room computers {capability.computers_count} < required {requirement.required_computers}",
+                section_id=section_id,
+                course_id=course_id,
+                room_id=room_id,
+                day_of_week=day,
+                time_slot=slot,
+                evidence={"room_computers": capability.computers_count, "required": requirement.required_computers},
+                source_entity_type="room_capability",
+                source_entity_id=str(room_id),
+            ))
+
+        # Room type mismatch
+        if capability_match.room_type_ok is False:
+            conflicts.append(_make_conflict(
+                tenant_id,
+                ConflictType.ROOM_TYPE_MISMATCH,
+                reason=f"Room type '{capability.room_type}' does not match required '{requirement.required_room_type}'",
+                section_id=section_id,
+                course_id=course_id,
+                room_id=room_id,
+                day_of_week=day,
+                time_slot=slot,
+                evidence={"room_type": capability.room_type, "required_type": requirement.required_room_type},
+                source_entity_type="room_capability",
+                source_entity_id=str(room_id),
+            ))
+
+        # Equipment mismatch
+        if capability_match.equipment_ok is False:
+            conflicts.append(_make_conflict(
+                tenant_id,
+                ConflictType.EQUIPMENT_MISMATCH,
+                reason=f"Missing equipment: {capability_match.missing_equipment}",
+                section_id=section_id,
+                course_id=course_id,
+                room_id=room_id,
+                day_of_week=day,
+                time_slot=slot,
+                evidence={"missing_equipment": capability_match.missing_equipment, "match_score": capability_match.equipment_match_score},
+                source_entity_type="room_capability",
+                source_entity_id=str(room_id),
+            ))
+
+        # Room unavailable / inactive / maintenance
+        if capability_match.availability_ok is False:
+            unavail_reasons = [r for r in capability_match.mismatch_reasons if r in {
+                "room_inactive", "room_under_maintenance", "room_unavailable", "room_reserved_or_occupied"
+            }]
+            conflicts.append(_make_conflict(
+                tenant_id,
+                ConflictType.ROOM_UNAVAILABLE,
+                reason=f"Room is not available: {unavail_reasons or capability_match.mismatch_reasons}",
+                section_id=section_id,
+                course_id=course_id,
+                room_id=room_id,
+                day_of_week=day,
+                time_slot=slot,
+                evidence={"unavailability_reasons": unavail_reasons, "is_active": capability.is_active,
+                          "maintenance_status": capability.maintenance_status, "availability_status": capability.availability_status},
+                source_entity_type="room_capability",
+                source_entity_id=str(room_id),
+            ))
+
+        # Restriction mismatch
+        if capability_match.restrictions_ok is False:
+            conflicts.append(_make_conflict(
+                tenant_id,
+                ConflictType.RESTRICTION_MISMATCH,
+                reason="Required restrictions not satisfied by this room",
+                section_id=section_id,
+                course_id=course_id,
+                room_id=room_id,
+                day_of_week=day,
+                time_slot=slot,
+                evidence={"required_restrictions": requirement.restrictions_required, "room_restrictions": list(capability.restrictions)},
+                source_entity_type="room_capability",
+                source_entity_id=str(room_id),
+            ))
+
+    # ── Booking-based checks (room_time_conflict / booking_conflict) ──
+    if existing_bookings and schedule:
+        req_room_id = (capability.room_id if capability else None) or getattr(requirement, "room_id", None)
+        for booking in existing_bookings:
+            b_room_id = booking.get("room_id")
+            b_day = str(booking.get("day_of_week", "")).lower()
+            b_slot = booking.get("time_slot_id")
+            b_section = booking.get("section_id")
+            b_type = booking.get("booking_type", "schedule")
+
+            if b_room_id is None or b_day != str(day or "").lower() or b_slot != slot:
+                continue
+
+            if req_room_id is not None and str(b_room_id) == str(req_room_id):
+                conflict_type = ConflictType.BOOKING_CONFLICT if b_type == "booking" else ConflictType.ROOM_TIME_CONFLICT
+                conflicts.append(_make_conflict(
+                    tenant_id,
+                    conflict_type,
+                    reason=f"Room {b_room_id} already occupied on {day} slot {slot}",
+                    section_id=requirement.section_id,
+                    course_id=requirement.course_id,
+                    room_id=b_room_id,
+                    day_of_week=day,
+                    time_slot=slot,
+                    conflicting_entity_type=b_type,
+                    conflicting_entity_id=b_section or b_room_id,
+                    evidence={"conflicting_booking": booking},
+                    source_entity_type="section",
+                    source_entity_id=requirement.section_id,
+                ))
+
+    # ── Teacher conflict checks ──
+    if teacher_schedules and schedule and requirement.teacher_id:
+        for entry in teacher_schedules:
+            e_teacher = str(entry.get("teacher_id", ""))
+            e_day = str(entry.get("day_of_week", "")).lower()
+            e_slot = entry.get("time_slot_id")
+            e_section = entry.get("section_id")
+
+            if (e_teacher == str(requirement.teacher_id)
+                    and e_day == str(day or "").lower()
+                    and e_slot == slot
+                    and e_section != requirement.section_id):
+                conflicts.append(_make_conflict(
+                    tenant_id,
+                    ConflictType.TEACHER_TIME_CONFLICT,
+                    reason=f"Teacher {requirement.teacher_id} already assigned to section {e_section} on {day} slot {slot}",
+                    section_id=requirement.section_id,
+                    course_id=requirement.course_id,
+                    teacher_id=requirement.teacher_id,
+                    day_of_week=day,
+                    time_slot=slot,
+                    conflicting_entity_type="section",
+                    conflicting_entity_id=e_section,
+                    evidence={"conflicting_entry": entry},
+                    source_entity_type="section",
+                    source_entity_id=requirement.section_id,
+                ))
+
+    # ── Group / student cohort conflict checks ──
+    if group_schedules and schedule and requirement.group_id:
+        for entry in group_schedules:
+            e_group = entry.get("group_id")
+            e_day = str(entry.get("day_of_week", "")).lower()
+            e_slot = entry.get("time_slot_id")
+            e_section = entry.get("section_id")
+
+            if (e_group is not None
+                    and int(e_group) == int(requirement.group_id)
+                    and e_day == str(day or "").lower()
+                    and e_slot == slot
+                    and e_section != requirement.section_id):
+                conflicts.append(_make_conflict(
+                    tenant_id,
+                    ConflictType.GROUP_TIME_CONFLICT,
+                    reason=f"Group {requirement.group_id} already scheduled in section {e_section} on {day} slot {slot}",
+                    section_id=requirement.section_id,
+                    course_id=requirement.course_id,
+                    group_id=requirement.group_id,
+                    day_of_week=day,
+                    time_slot=slot,
+                    conflicting_entity_type="section",
+                    conflicting_entity_id=e_section,
+                    evidence={"conflicting_entry": entry},
+                    source_entity_type="section",
+                    source_entity_id=requirement.section_id,
+                ))
+
+    return conflicts
+
+
+def build_scheduling_conflict_result(
+    tenant_id: int,
+    requirement: RoomAllocationRequirement,
+    *,
+    capability: Optional[RoomCapability] = None,
+    capability_match: Optional[RoomCapabilityMatchEvidence] = None,
+    schedule: Optional[RoomAllocationSchedule] = None,
+    existing_bookings: Optional[list[dict[str, Any]]] = None,
+    teacher_schedules: Optional[list[dict[str, Any]]] = None,
+    group_schedules: Optional[list[dict[str, Any]]] = None,
+) -> SchedulingConflictResult:
+    """Build aggregated conflict detection result.
+
+    Evidence-only: no auto-resolution, no ranking, no auto-assignment.
+    """
+    conflicts = detect_room_requirement_conflicts(
+        tenant_id,
+        requirement,
+        capability=capability,
+        capability_match=capability_match,
+        schedule=schedule,
+        existing_bookings=existing_bookings,
+        teacher_schedules=teacher_schedules,
+        group_schedules=group_schedules,
+    )
+    severity_summary: dict[str, int] = {}
+    for c in conflicts:
+        key = c.severity.value
+        severity_summary[key] = severity_summary.get(key, 0) + 1
+
+    return SchedulingConflictResult(
+        tenant_id=tenant_id,
+        has_conflicts=len(conflicts) > 0,
+        conflict_count=len(conflicts),
+        conflicts=conflicts,
+        severity_summary=severity_summary,
     )
