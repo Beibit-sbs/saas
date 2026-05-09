@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-024.1
-- current_stage: A-024.0 complete / Brain+SaaS operational maturity selection
-- last_completed_action_id: A-024.0
-- next_action_id: A-024.1
-- updated_at: 2026-05-09 (A-024.0 completed: planning/selection only; no runtime changes; next=A-024.1)
+- status: ready_for_A-024.2
+- current_stage: A-024.1 complete / AI Routing + Platform Health Level 3 operational lift
+- last_completed_action_id: A-024.1
+- next_action_id: A-024.2
+- updated_at: 2026-05-09 (A-024.1 completed: ai_routing_control and platform_health lifted L2->L3 with backend-tested operational evidence; next=A-024.2)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -301,6 +301,50 @@
     - `git diff --check` PASS
     - grep checks for A-024.0 rule and transition: PASS
 - Decision: **A-024.0 CLOSED — PASS**. Proceed to `A-024.1`.
+
+#### A-024.1 — AI Routing Control + Platform Health Level 2->3 Operational Lift
+
+- Date: 2026-05-09
+- Scope: Targeted L3 operational lift for `ai_routing_control` and `platform_health` only.
+- Selected modules:
+    - `ai_routing_control`: L2 -> L3
+    - `platform_health`: L2 -> L3
+- Operational evidence added:
+    - deterministic evidence contracts in service layer
+    - tenant fail-closed validation (`tenant_id > 0` required)
+    - status/risk/severity classification with deterministic reasons
+    - explicit anti-inflation safety fields:
+        - no external AI provider execution
+        - no autonomous execution
+        - no fake uptime/SLA/monitoring assertions
+- Audit Table — All Modules updates (A-024.1 delta):
+
+| Module | Category | Previous Level | New Level | Evidence Added | Validation |
+|---|---|---|---|---|---|
+| `ai_routing_control` | Planned Expansion (AI / Platform Routing) | L2 | L3 | deterministic routing control decision contract + tenant fail-closed + safety/evidence payload | targeted tests PASS |
+| `platform_health` | Planned Expansion (Platform Operations) | L2 | L3 | deterministic health severity contract + tenant fail-closed + audit/evidence payload | targeted tests PASS |
+
+- Validation evidence:
+    - `git diff --check` PASS
+    - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/test_a0241_ai_routing_platform_health_operational_lift.py --no-cov -rA` -> **31 passed, 1 warning**
+    - import check: `A-024.1 import validation OK`
+- Brain-first review:
+    - `ai_routing_control` now emits deterministic routing decision evidence for future signal mapping.
+    - `platform_health` now emits deterministic health severity evidence for future operational signal flow.
+- SaaS-first review:
+    - both modules are tenant-safe and fail-closed.
+    - no hidden cross-tenant behavior introduced.
+- Performance review:
+    - deterministic evidence and severity reasons support operational triage without overclaiming production observability maturity.
+- Event readiness:
+    - module-level event readiness constants added
+    - platform registry/ingestion wiring deferred to A-024.3/A-024.5 to avoid low-signal churn in A-024.1
+- Anti-inflation review: PASS
+    - no Level 4/5/6 claims
+    - no API/frontend/dashboard claims
+    - no fake AI/autonomy claims
+    - no fake observability/SLA claims
+- Decision: **A-024.1 CLOSED — PASS**. Proceed to `A-024.2`.
 
 
 
@@ -1129,23 +1173,23 @@
 - current_audited_rows = 150
 - level_0_count = 4
 - level_1_count = 20
-- level_2_count = 17
-- level_3_count = 24
+- level_2_count = 15
+- level_3_count = 26
 - level_4_count = 62
 - level_5_count = 21
 - level_6_count = 2
 - level_1_plus_count = 146
 - level_2_plus_count = 126
-- level_3_plus_count = 109
+- level_3_plus_count = 111
 - level_4_plus_count = 85
 - level_5_plus_count = 23
-- foundation_gap_count = 41
+- foundation_gap_count = 39
 - level_2_gap_count = 24
-- arithmetic_check = 4+20+17+24+62+21+2=150
+- arithmetic_check = 4+20+15+26+62+21+2=150
 - maturity_arithmetic_check = PASS
-- exact_counts_verified_at = 2026-05-09 (A-023.8 closure)
-- evidence_source = A-023.8-FINAL_150_MODULE_FOUNDATION_REPORT.md + A-023.7 audit report + A-023.0 inventory + A-023.1→A-023.6 action reports
-- updated_at = 2026-05-09 (A-023.8: A-023 wave closed; no maturity delta from A-023.7)
+- exact_counts_verified_at = 2026-05-09 (A-024.1 closure)
+- evidence_source = A-024.1-AI_ROUTING_PLATFORM_HEALTH_OPERATIONAL_LIFT_REPORT.md + A-024.0 selection report + A-023.8 foundation report
+- updated_at = 2026-05-09 (A-024.1: ai_routing_control/platform_health moved L2->L3 with tested operational evidence)
 - mandatory_rule = Keep exact counts synchronized with canonical 150-module inventory.
 - rule = Coverage does not equal full maturity.
 - coverage_not_equal_full_maturity = true
