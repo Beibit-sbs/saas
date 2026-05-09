@@ -49,7 +49,7 @@ from app.platform.federation.schemas import (
     FederationMemberReadSchema,
 )
 from app.platform.kpi import service as kpi_service
-from app.platform.kpi.schemas import RectorDashboardReadSchema, TenantMetricSnapshotReadSchema
+from app.platform.kpi.schemas import RectorDashboardReadSchema, RectorKpiDrilldownSummarySchema, TenantMetricSnapshotReadSchema
 from app.platform.automation import service as automation_service
 from app.platform.automation.schemas import (
     AutomationExecutionReadSchema,
@@ -1071,6 +1071,19 @@ def get_platform_rector_dashboard(tenant_id: int, _actor: Actor) -> RectorDashbo
     with UnitOfWork() as uow:
         payload = kpi_service.get_rector_dashboard(tenant_id=tenant_id, uow=uow)
     return RectorDashboardReadSchema.model_validate(payload)
+
+
+@router.get("/platform/kpi/drilldown", response_model=RectorKpiDrilldownSummarySchema)
+def get_platform_rector_kpi_drilldown(tenant_id: int, _actor: Actor) -> RectorKpiDrilldownSummarySchema:
+    """Read-only rector KPI evidence drilldown.
+
+    Returns domain-level evidence completeness and risk signals derived from
+    the existing KPI metric snapshot.  No data mutation, no policy enforcement,
+    no autonomous decision.
+    """
+    with UnitOfWork() as uow:
+        payload = kpi_service.get_rector_kpi_drilldown(tenant_id=tenant_id, uow=uow)
+    return RectorKpiDrilldownSummarySchema.model_validate(payload)
 
 
 # ------------------------------------------------------------------ #

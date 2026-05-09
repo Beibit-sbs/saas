@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-025.3
-- current_stage: A-025.2 complete / Selected killer workflow contracts and evidence map
-- last_completed_action_id: A-025.2
-- next_action_id: A-025.3
-- updated_at: 2026-05-09 (A-025.2 complete: selected killer workflow contracts defined; baseline and extension metrics remain separated and unchanged)
+- status: ready_for_A-026.0
+- current_stage: A-025.3 complete / Rector KPI evidence drilldown — first killer workflow implemented
+- last_completed_action_id: A-025.3
+- next_action_id: A-026.0
+- updated_at: 2026-05-09 (A-025.3 complete: rector KPI drilldown endpoint + frontend panel + 18 backend + 6 frontend tests; 18/18 backend + 29/29 frontend green; baseline 150 metrics unchanged)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -983,6 +983,31 @@
     - no fake Brain/SaaS/readiness claims
 - Decision: **A-025.2 COMPLETE — PASS (contract/spec/evidence-map only)**.
 - Next action: `A-025.3`.
+
+---
+
+### A-025.3 — Rector KPI Drilldown to Domain-Level Evidence (first killer workflow)
+
+- Date: 2026-05-09
+- Scope: Runtime implementation — read-only, tenant-scoped, deterministic. No DB mutation, no policy enforcement, no autonomous decision, no fake values.
+- Files changed:
+    - `backend/app/platform/kpi/service.py` — wired `_build_rector_kpi_evidence_drilldowns()` into `get_rector_dashboard()` + new `get_rector_kpi_drilldown()` public function
+    - `backend/app/platform/kpi/schemas.py` — added `RectorKpiDrilldownSummarySchema`
+    - `backend/app/platform/router_admin.py` — added `GET /platform/kpi/drilldown` endpoint
+    - `backend/tests/test_a0253_rector_kpi_drilldown_evidence.py` — 18 new tests (import, validation, unit, integration, API)
+    - `frontend/modules/platform/kpi/types.ts` — added 3 TypeScript interfaces
+    - `frontend/modules/platform/kpi/use-dashboard.ts` — added `useRectorKpiDrilldown` hook
+    - `frontend/app/(admin)/console/dashboard/page.tsx` — added `RectorKpiDrilldownPanel` component
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx` — added 6 new tests for panel
+- Domains wired: 8 (`academic_quality`, `student_outcomes`, `research_output`, `financial_health`, `faculty_engagement`, `digital_infrastructure`, `compliance_governance`, `enrollment_pipeline`)
+- Test results:
+    - Backend: **18/18 PASSED** (pytest, no-deps, no-cov)
+    - Frontend: **29/29 PASSED** (vitest, RectorDashboardPage.test.tsx)
+- Safety flags in response payload: `readonly: true`, `tenant_scoped: true`, `no_policy_enforcement: true`, `no_autonomous_decision: true`, `no_remediation_action: true`
+- Metrics integrity: baseline 150 maturity metrics **UNCHANGED** (`L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2`)
+- Anti-inflation review: PASS — no new metric claims, no fake evidence, no baseline mutations
+- Decision: **A-025.3 COMPLETE — PASS (first killer workflow delivered; backend + frontend + tests green)**.
+- Next action: `A-026.0`.
 
 
 

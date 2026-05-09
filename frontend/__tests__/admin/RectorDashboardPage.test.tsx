@@ -11,6 +11,27 @@ let allowAccess = true;
 vi.mock("../../modules/platform/kpi/use-dashboard", () => ({
   useRectorDashboard: (...args: unknown[]) => useRectorDashboardMock(...args),
   useTenantKpiMetrics: () => ({ data: null, isLoading: false }),
+  useRectorKpiDrilldown: () => ({
+    data: {
+      tenant_id: 1,
+      snapshot_date: "2026-05-10",
+      generated_at: "2026-05-10T00:00:00Z",
+      domains: [],
+      total_domains: 0,
+      review_required_count: 0,
+      unavailable_domains_count: 0,
+      critical_domains_count: 0,
+      high_domains_count: 0,
+      source: "kpi_metrics_engine_v1",
+      readonly: true,
+      tenant_scoped: true,
+      no_policy_enforcement: true,
+      no_autonomous_decision: true,
+      no_remediation_action: true,
+    },
+    isLoading: false,
+    isError: false,
+  }),
 }));
 
 vi.mock("../../modules/platform/kpi/wave1-kpi-bar", () => ({
@@ -1211,5 +1232,49 @@ describe("RectorDashboardPage", () => {
     expect(screen.getAllByText(/Data quality note:/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Source metrics: unavailable/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Not submitted externally/i)).toBeInTheDocument();
+  });
+});
+
+describe("RectorKpiDrilldownPanel", () => {
+  beforeEach(() => {
+    allowAccess = true;
+    useAdminAuthMock.mockReturnValue({ user: { tenantId: 1, email: "rector@example.com" } });
+    useRectorDashboardMock.mockReturnValue({
+      data: { tenant_id: 1, snapshot_date: "2026-05-10", generated_at: "2026-05-10T00:00:00Z", source: "kpi_metrics_engine_v1", cards: [] },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+  });
+
+  it("renders the drilldown panel for admin users", () => {
+    render(<RectorDashboardPage />);
+    expect(screen.getByTestId("rector-kpi-drilldown-panel")).toBeInTheDocument();
+  });
+
+  it("shows the panel header text", () => {
+    render(<RectorDashboardPage />);
+    expect(screen.getByText("Rector KPI Evidence Drilldown")).toBeInTheDocument();
+  });
+
+  it("shows summary count grid when data is loaded", () => {
+    render(<RectorDashboardPage />);
+    expect(screen.getByTestId("rector-kpi-drilldown-summary-counts")).toBeInTheDocument();
+  });
+
+  it("shows readonly and no-action annotation in header", () => {
+    render(<RectorDashboardPage />);
+    expect(screen.getByText(/Read-only — no policy enforcement, no autonomous decision, no data mutation/i)).toBeInTheDocument();
+  });
+
+  it("shows total_domains count from drilldown data", () => {
+    render(<RectorDashboardPage />);
+    expect(screen.getByText("Total domains")).toBeInTheDocument();
+  });
+
+  it("shows tenant-scoped label from drilldown source", () => {
+    render(<RectorDashboardPage />);
+    const panel = screen.getByTestId("rector-kpi-drilldown-panel");
+    expect(panel).toHaveTextContent(/Tenant-scoped: yes/i);
   });
 });

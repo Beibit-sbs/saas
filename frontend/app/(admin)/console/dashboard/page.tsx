@@ -12,7 +12,7 @@ import { PERMISSIONS } from "@/shared/config/permissions";
 import { LayoutDashboard, RefreshCw, CalendarDays, BarChart3, FileText, GraduationCap, BookOpen, ClipboardCheck } from "lucide-react";
 import { KpiCard } from "@/modules/platform/kpi/kpi-card";
 import { Wave1KpiBar } from "@/modules/platform/kpi/wave1-kpi-bar";
-import { useRectorDashboard } from "@/modules/platform/kpi/use-dashboard";
+import { useRectorDashboard, useRectorKpiDrilldown } from "@/modules/platform/kpi/use-dashboard";
 import { AutomationOverviewWidget } from "@/modules/platform/automation/automation-overview-widget";
 import Link from "next/link";
 import { usePermissions } from "@/shared/hooks/use-permissions";
@@ -1611,6 +1611,115 @@ function GovernanceCommandCenterContract({ tenantId }: { tenantId: number }) {
   );
 }
 
+const riskBadgeClass: Record<string, string> = {
+  critical: "bg-red-100 text-red-700",
+  high: "bg-amber-100 text-amber-700",
+  medium: "bg-blue-100 text-blue-700",
+  low: "bg-emerald-100 text-emerald-700",
+  unavailable: "bg-muted text-muted-foreground",
+};
+
+function RectorKpiDrilldownPanel({ tenantId }: { tenantId: number }) {
+  const { data, isLoading, isError } = useRectorKpiDrilldown(tenantId);
+
+  return (
+    <section className="space-y-4" data-testid="rector-kpi-drilldown-panel">
+      <div className="rounded-lg border bg-card p-4">
+        <p className="text-sm font-semibold">Rector KPI Evidence Drilldown</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Domain-level evidence completeness derived from existing KPI metric snapshots.
+          Read-only — no policy enforcement, no autonomous decision, no data mutation.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Tenant {tenantId} • Source: {data?.source ?? "kpi_metrics_engine_v1"} •
+          Read-only: yes • Tenant-scoped: yes
+        </p>
+      </div>
+
+      {isLoading && (
+        <div className="rounded-lg border bg-card p-4" data-testid="rector-kpi-drilldown-loading">
+          <p className="text-sm text-muted-foreground">Loading evidence drilldown…</p>
+        </div>
+      )}
+
+      {isError && !isLoading && (
+        <div className="rounded-lg border bg-card p-4" data-testid="rector-kpi-drilldown-error">
+          <p className="text-sm text-muted-foreground">Evidence drilldown unavailable in current snapshot.</p>
+        </div>
+      )}
+
+      {!isLoading && !isError && data && (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" data-testid="rector-kpi-drilldown-summary-counts">
+            <div className="rounded-md border bg-muted/20 p-3 text-center">
+              <p className="text-lg font-bold">{data.total_domains}</p>
+              <p className="text-xs text-muted-foreground">Total domains</p>
+            </div>
+            <div className="rounded-md border bg-muted/20 p-3 text-center">
+              <p className="text-lg font-bold">{data.review_required_count}</p>
+              <p className="text-xs text-muted-foreground">Review required</p>
+            </div>
+            <div className="rounded-md border bg-muted/20 p-3 text-center">
+              <p className="text-lg font-bold">{data.critical_domains_count}</p>
+              <p className="text-xs text-muted-foreground">Critical</p>
+            </div>
+            <div className="rounded-md border bg-muted/20 p-3 text-center">
+              <p className="text-lg font-bold">{data.unavailable_domains_count}</p>
+              <p className="text-xs text-muted-foreground">Unavailable</p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2" data-testid="rector-kpi-drilldown-domains">
+            {data.domains.map((domain) => (
+              <article
+                key={domain.drilldown_id}
+                data-testid={`rector-kpi-drilldown-domain-${domain.domain_id}`}
+                className="rounded-lg border bg-card p-4"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold">{domain.domain_title}</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">{domain.title}</p>
+                  </div>
+                  <span className={`rounded-full px-2 py-1 text-[11px] font-medium ${riskBadgeClass[domain.risk_level] ?? riskBadgeClass.unavailable}`}>
+                    {domain.risk_level}
+                  </span>
+                </div>
+
+                <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                  <p>Evidence: {domain.evidence_summary}</p>
+                  <p>Source domains: {domain.source_domains.join(" / ")}</p>
+                  <p>Review required: {domain.review_required ? "yes" : "no"}</p>
+                  <p>Read-only: yes • Tenant-scoped: yes • No automatic action</p>
+                  {domain.optional && <p>Optional domain: shown when tenant metrics are available</p>}
+                </div>
+
+                {domain.evidence_sources.length > 0 && (
+                  <div className="mt-3 rounded-md border bg-muted/20 p-3">
+                    <ul className="space-y-1 text-xs text-muted-foreground">
+                      {domain.evidence_sources.map((src) => (
+                        <li key={src.metric_key}>
+                          {src.label}: {src.value_label}
+                          {!src.available && <span className="ml-1 text-muted-foreground/60">(unavailable)</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {domain.explanation}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground/70">Data quality: {domain.data_quality_note}</p>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 function DashboardSkeletonGrid() {
   return (
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3" data-testid="kpi-loading-grid">
@@ -1799,6 +1908,8 @@ export default function RectorDashboardPage() {
       <GovernanceAlertReviewQueue data={data} tenantId={tenantId} />
 
       <KpiEvidenceDrilldownContract data={data} tenantId={tenantId} />
+
+      <RectorKpiDrilldownPanel tenantId={tenantId} />
 
       <AutomationOverviewWidget tenantId={tenantId} />
     </div>

@@ -1713,7 +1713,64 @@ def get_rector_dashboard(*, tenant_id: int, uow: Any) -> dict[str, Any]:
             "generated_at": latest.get("updated_at"),
             "source": "kpi_metrics_engine_v1",
         }
+
+    # Attach evidence drilldowns if not already present in the snapshot payload
+    if "drilldowns" not in dashboard:
+        dashboard["drilldowns"] = _build_rector_kpi_evidence_drilldowns(
+            cards=list(dashboard.get("cards") or [])
+        )
+
     return dashboard
+
+
+def get_rector_kpi_drilldown(*, tenant_id: int, uow: Any) -> dict[str, Any]:
+    """Return read-only evidence drilldown summary for the rector KPI dashboard.
+
+    Constraints:
+    - Read-only: no DB mutation, no policy enforcement, no autonomous decision.
+    - Tenant-scoped: tenant_id > 0 required; fail-closed on invalid input.
+    - Deterministic: output derived solely from existing KPI metric snapshots.
+    - Evidence completeness surfaced explicitly; unavailable metrics flagged as
+      such rather than synthesised.
+    """
+    if int(tenant_id) <= 0:
+        raise ValueError(f"tenant_id must be positive; got {tenant_id!r}")
+
+    repo = uow.kpi_repository
+    conn = getattr(uow, "conn", None)
+
+    latest = repo.get_latest_dashboard_snapshot(tenant_id=int(tenant_id), conn=conn)
+    if latest is None:
+        latest = refresh_tenant_dashboard_snapshot(tenant_id=int(tenant_id), uow=uow)
+
+    snapshot = dict(latest.get("snapshot_json") or {})
+    cards: list[dict[str, Any]] = list(snapshot.get("cards") or [])
+
+    drilldowns = _build_rector_kpi_evidence_drilldowns(cards=cards)
+
+    total_domains = len(drilldowns)
+    review_required_count = sum(1 for d in drilldowns if d.get("review_required"))
+    unavailable_count = sum(1 for d in drilldowns if d.get("risk_level") == "unavailable")
+    critical_count = sum(1 for d in drilldowns if d.get("risk_level") == "critical")
+    high_count = sum(1 for d in drilldowns if d.get("risk_level") == "high")
+
+    return {
+        "tenant_id": int(tenant_id),
+        "snapshot_date": str(snapshot.get("snapshot_date") or latest.get("snapshot_date") or ""),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "domains": drilldowns,
+        "total_domains": total_domains,
+        "review_required_count": review_required_count,
+        "unavailable_domains_count": unavailable_count,
+        "critical_domains_count": critical_count,
+        "high_domains_count": high_count,
+        "source": "kpi_metrics_engine_v1",
+        "readonly": True,
+        "tenant_scoped": True,
+        "no_policy_enforcement": True,
+        "no_autonomous_decision": True,
+        "no_remediation_action": True,
+    }
 
 
 def refresh_all_tenants(*, uow: Any) -> dict[str, int]:
@@ -1769,6 +1826,277 @@ def _response_source_mode(cards: list[dict[str, Any]]) -> str:
             return "derived_from_usage"
         return "derived_from_snapshot"
     return "mixed_source"
+
+
+RECTOR_KPI_EVIDENCE_DRILLDOWN_CONFIG: list[dict[str, Any]] = [
+    {
+        "domain_id": "academic-governance",
+        "domain_title": "Academic Governance",
+        "title": "Academic governance evidence contract",
+        "metric_keys": [
+            "academic_integrity_high_risk_count",
+            "academic_integrity_cases_pending_review",
+            "exam_integrity_requires_approval_count",
+            "thesis_governance_requires_approval_count",
+            "research_ethics_requires_approval_count",
+        ],
+        "critical_metric_keys": ["academic_integrity_high_risk_count"],
+        "high_metric_keys": ["exam_integrity_requires_approval_count"],
+        "medium_metric_keys": ["thesis_governance_requires_approval_count", "research_ethics_requires_approval_count"],
+        "review_metric_keys": [
+            "academic_integrity_cases_pending_review",
+            "exam_integrity_requires_approval_count",
+            "thesis_governance_requires_approval_count",
+            "research_ethics_requires_approval_count",
+        ],
+        "source_domains": ["Academic Integrity", "Exam Governance", "Thesis", "Research Ethics"],
+        "explanation": "Academic governance signals require human review and are evidence-backed; no automatic disciplinary action is executed.",
+        "data_quality_note": "Missing integrity/governance metrics are shown as unavailable instead of inferred.",
+    },
+    {
+        "domain_id": "finance-procurement-assets",
+        "domain_title": "Finance / Procurement / Assets",
+        "title": "Finance and procurement evidence contract",
+        "metric_keys": [
+            "budget_overrun_risk_count",
+            "budget_review_actions_count",
+            "active_finance_risk_signals_count",
+            "asset_conversion_gap_count",
+            "procurement_requests_pending_approval",
+        ],
+        "critical_metric_keys": ["budget_overrun_risk_count"],
+        "high_metric_keys": ["active_finance_risk_signals_count", "asset_conversion_gap_count"],
+        "medium_metric_keys": ["budget_review_actions_count"],
+        "review_metric_keys": ["budget_review_actions_count"],
+        "source_domains": ["Finance", "Procurement", "Assets"],
+        "explanation": "Finance and procurement signals are governance review indicators only; no automatic approval is executed.",
+        "data_quality_note": "Source lineage remains limited to available tenant KPI metrics.",
+    },
+    {
+        "domain_id": "campus-operations",
+        "domain_title": "Campus Operations",
+        "title": "Campus operations evidence contract",
+        "metric_keys": [
+            "scheduling_conflicts_count",
+            "room_conflict_count",
+            "capacity_risk_sections_count",
+            "events_cancelled_count",
+        ],
+        "critical_metric_keys": ["capacity_risk_sections_count"],
+        "high_metric_keys": ["scheduling_conflicts_count", "room_conflict_count"],
+        "medium_metric_keys": ["events_cancelled_count"],
+        "review_metric_keys": [],
+        "source_domains": ["Scheduling", "Events", "Operations"],
+        "explanation": "Campus operations signals summarize operational pressure and require operator review.",
+        "data_quality_note": "Operational evidence is read-only and may be partial depending on tenant instrumentation.",
+    },
+    {
+        "domain_id": "security-visitor-operations",
+        "domain_title": "Security / Visitor Operations",
+        "title": "Security and visitor evidence contract",
+        "metric_keys": [
+            "security_incident_review_required_count",
+            "security_high_risk_incidents_count",
+            "visitor_unauthorized_attempts_count",
+            "access_denied_count",
+        ],
+        "critical_metric_keys": ["security_high_risk_incidents_count"],
+        "high_metric_keys": ["security_incident_review_required_count"],
+        "medium_metric_keys": ["visitor_unauthorized_attempts_count", "access_denied_count"],
+        "review_metric_keys": ["security_incident_review_required_count", "visitor_unauthorized_attempts_count"],
+        "source_domains": ["Security Operations", "Visitor Management", "Access Control"],
+        "explanation": "Security signals are review/escalation evidence only; no automatic lockout or ban is executed.",
+        "data_quality_note": "Unavailable security metrics are surfaced explicitly with no synthetic fallback.",
+    },
+    {
+        "domain_id": "room-allocation-scheduling-intelligence",
+        "domain_title": "Room Allocation / Scheduling Intelligence",
+        "title": "Room allocation evidence contract",
+        "metric_keys": [
+            "room_allocation_review_required_count",
+            "room_allocation_no_viable_candidate_count",
+            "room_allocation_recommendations_count",
+            "room_capacity_mismatch_count",
+            "room_conflict_count",
+        ],
+        "critical_metric_keys": ["room_allocation_no_viable_candidate_count"],
+        "high_metric_keys": ["room_capacity_mismatch_count", "room_conflict_count"],
+        "medium_metric_keys": ["room_allocation_review_required_count"],
+        "review_metric_keys": ["room_allocation_review_required_count"],
+        "source_domains": ["Room Allocation", "Scheduling"],
+        "explanation": "Room allocation recommendation evidence is advisory-only and requires human review for risk cases.",
+        "data_quality_note": "No automatic room assignment or schedule mutation is available from this surface.",
+    },
+    {
+        "domain_id": "brain-review-required",
+        "domain_title": "Brain / Review Required",
+        "title": "Brain review-required evidence contract",
+        "metric_keys": [
+            "academic_integrity_cases_pending_review",
+            "exam_integrity_requires_approval_count",
+            "thesis_governance_requires_approval_count",
+            "research_ethics_requires_approval_count",
+            "security_incident_review_required_count",
+            "budget_review_actions_count",
+        ],
+        "critical_metric_keys": [],
+        "high_metric_keys": ["security_incident_review_required_count"],
+        "medium_metric_keys": [
+            "academic_integrity_cases_pending_review",
+            "exam_integrity_requires_approval_count",
+            "thesis_governance_requires_approval_count",
+            "research_ethics_requires_approval_count",
+            "budget_review_actions_count",
+        ],
+        "review_metric_keys": [
+            "academic_integrity_cases_pending_review",
+            "exam_integrity_requires_approval_count",
+            "thesis_governance_requires_approval_count",
+            "research_ethics_requires_approval_count",
+            "security_incident_review_required_count",
+            "budget_review_actions_count",
+        ],
+        "source_domains": ["Brain Core", "Governance Review"],
+        "explanation": "Brain signals are advisory and evidence-backed; decision authority remains with humans.",
+        "data_quality_note": "Review-required entries always require explicit human closure.",
+    },
+    {
+        "domain_id": "student-risk-interventions",
+        "domain_title": "Student Risk / Interventions",
+        "title": "Student intervention evidence contract",
+        "metric_keys": ["critical_risk_students_count", "high_risk_students_count", "intervention_auto_created_count"],
+        "critical_metric_keys": ["critical_risk_students_count"],
+        "high_metric_keys": ["high_risk_students_count"],
+        "medium_metric_keys": ["intervention_auto_created_count"],
+        "review_metric_keys": [],
+        "source_domains": ["Student Success", "Interventions"],
+        "explanation": "Student-risk evidence supports human intervention prioritization.",
+        "data_quality_note": "Optional domain; may be unavailable in tenants without intervention telemetry.",
+        "optional": True,
+    },
+    {
+        "domain_id": "research-accreditation-quality",
+        "domain_title": "Research / Accreditation / Quality",
+        "title": "Research and quality evidence contract",
+        "metric_keys": ["research_ethics_high_risk_count", "research_ethics_review_cases_count", "research_ethics_requires_approval_count", "thesis_governance_risk_count"],
+        "critical_metric_keys": ["research_ethics_high_risk_count"],
+        "high_metric_keys": ["thesis_governance_risk_count"],
+        "medium_metric_keys": ["research_ethics_requires_approval_count", "research_ethics_review_cases_count"],
+        "review_metric_keys": ["research_ethics_requires_approval_count"],
+        "source_domains": ["Research Ethics", "Accreditation", "Quality"],
+        "explanation": "Research and quality evidence highlights review pressure and remains advisory-only.",
+        "data_quality_note": "Optional domain; unavailable state is explicit when metrics are missing.",
+        "optional": True,
+    },
+]
+
+
+def _build_rector_kpi_evidence_drilldowns(*, cards: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    card_by_metric_key = {
+        str(card.get("metric_key") or "").strip().lower(): dict(card)
+        for card in cards
+        if str(card.get("metric_key") or "").strip()
+    }
+
+    def _read_metric_value(metric_key: str) -> int | None:
+        card = card_by_metric_key.get(metric_key)
+        if card is None:
+            return None
+        value = card.get("value")
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+        return None
+
+    def _has_positive_value(metric_keys: list[str]) -> bool:
+        return any((value := _read_metric_value(metric_key)) is not None and value > 0 for metric_key in metric_keys)
+
+    drilldowns: list[dict[str, Any]] = []
+    for config in RECTOR_KPI_EVIDENCE_DRILLDOWN_CONFIG:
+        metric_keys = [str(metric_key) for metric_key in config["metric_keys"]]
+        available_metric_keys = [metric_key for metric_key in metric_keys if metric_key in card_by_metric_key]
+        has_evidence = bool(available_metric_keys)
+
+        if not has_evidence:
+            risk_level = "unavailable"
+        elif _has_positive_value(list(config["critical_metric_keys"])):
+            risk_level = "critical"
+        elif _has_positive_value(list(config["high_metric_keys"])):
+            risk_level = "high"
+        elif _has_positive_value(list(config["medium_metric_keys"])) or _has_positive_value(list(config["review_metric_keys"])):
+            risk_level = "medium"
+        else:
+            risk_level = "low"
+
+        review_required = has_evidence and (
+            _has_positive_value(list(config["review_metric_keys"]))
+            or _has_positive_value(list(config["high_metric_keys"]))
+            or _has_positive_value(list(config["critical_metric_keys"]))
+        )
+
+        evidence_sources: list[dict[str, Any]] = []
+        for metric_key in metric_keys[:4]:
+            card = card_by_metric_key.get(metric_key)
+            value = _read_metric_value(metric_key)
+            lineage = dict((card or {}).get("metadata_json") or {}).get("lineage")
+            source_domain = config["source_domains"][0] if config["source_domains"] else config["domain_title"]
+            evidence_sources.append(
+                {
+                    "metric_key": metric_key,
+                    "label": str((card or {}).get("title") or metric_key),
+                    "value_label": "Unavailable" if value is None else f"{value:,}",
+                    "source_domain": source_domain,
+                    "interpretation": (
+                        "Evidence unavailable in current tenant snapshot."
+                        if value is None
+                        else "Evidence supports visibility of this KPI/risk/alert."
+                        if value > 0
+                        else "Evidence available with no elevated signal."
+                    ),
+                    "available": value is not None,
+                    "lineage": lineage,
+                }
+            )
+
+        positive_evidence_summary = " | ".join(
+            [
+                f"{source['label']}: {source['value_label']}"
+                for source in evidence_sources
+                if source["available"] and source["value_label"] != "0"
+            ][:3]
+        )
+        evidence_summary = (
+            positive_evidence_summary
+            if positive_evidence_summary
+            else "Evidence-backed metrics are present with no elevated value in this snapshot."
+            if has_evidence
+            else "Evidence unavailable in current tenant snapshot."
+        )
+
+        drilldowns.append(
+            {
+                "drilldown_id": f"kpi-evidence-{config['domain_id']}",
+                "title": config["title"],
+                "domain_id": config["domain_id"],
+                "domain_title": config["domain_title"],
+                "source_metrics": available_metric_keys,
+                "source_domains": list(config["source_domains"]),
+                "evidence_summary": evidence_summary,
+                "explanation": config["explanation"],
+                "risk_level": risk_level,
+                "review_required": review_required,
+                "data_quality_note": config["data_quality_note"],
+                "readonly": True,
+                "tenant_scoped": True,
+                "optional": bool(config.get("optional", False)),
+                "evidence_sources": evidence_sources,
+            }
+        )
+
+    return drilldowns
 
 
 # ---------------------------------------------------------------------------
