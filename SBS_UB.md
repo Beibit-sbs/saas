@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-024.5
-- current_stage: A-024.4 complete / Attendance + Student Portal Level 4 operational visibility
-- last_completed_action_id: A-024.4
-- next_action_id: A-024.5
-- updated_at: 2026-05-09 (A-024.4 completed: attendance and student_portal lifted L3->L4 with tenant-safe visibility APIs and backend-tested evidence; next=A-024.5)
+- status: ready_for_A-024.6
+- current_stage: A-024.5 complete / University Core Level 4 operational readiness
+- last_completed_action_id: A-024.5
+- next_action_id: A-024.6
+- updated_at: 2026-05-09 (A-024.5 completed: university_core lifted L3->L4 readiness visibility with tenant-safe summary API and backend-tested evidence; next=A-024.6)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -500,6 +500,63 @@
     - no fake attendance analytics claim
     - no module count expansion
 - Decision: **A-024.4 CLOSED — PASS**. Proceed to `A-024.5`.
+
+#### A-024.5 — University Core Phased Level 3->4 Readiness / Operational Visibility
+
+- Date: 2026-05-09
+- Scope: Targeted L4 readiness visibility lift for `university_core` only.
+- Selected module:
+    - `university_core`: L3 -> L4 (phased readiness visibility)
+- Operational readiness evidence added:
+    - deterministic readiness contracts:
+        - `validate_university_core_tenant(...)`
+        - `build_university_core_evidence_item(...)`
+        - `classify_university_core_readiness(...)`
+        - `build_university_core_readiness_summary(...)`
+    - classification-aware readiness split:
+        - `active_migrated`
+        - `planned_not_active`
+        - `test_only_or_stub`
+        - `fallback_classified`
+        - `unknown`
+    - visible admin/API surface:
+        - `GET /api/admin/university-core/readiness`
+    - explicit anti-inflation safety fields:
+        - `no_fake_table_creation`
+        - `no_fake_migration`
+        - `no_fake_smoke_pass`
+- Audit Table — All Modules updates (A-024.5 delta):
+
+| Module | Category | Previous Level | New Level | Evidence Added | Validation |
+|---|---|---|---|---|---|
+| `university_core` | Administration & Governance | L3 | L4 | deterministic tenant-safe classification-aware readiness contracts + admin endpoint `/api/admin/university-core/readiness` | targeted tests PASS |
+
+- Validation evidence:
+    - `git diff --check` PASS
+    - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env build backend-tests` PASS
+    - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/test_a0245_university_core_operational_readiness.py --no-cov -rA` -> **23 passed, 1 warning**
+    - import check: `A-024.5 university_core import validation OK`
+- Visible surface proof:
+    - endpoint `/api/admin/university-core/readiness` returns deterministic tenant-scoped readiness visibility summary
+    - payload preserves known conditions without fake smoke-pass claim
+- Brain-first review:
+    - university_core now emits deterministic readiness evidence for future governance/brain mapping.
+    - no Level 5/6 claim added.
+- SaaS-first review:
+    - strict tenant fail-closed validation retained.
+    - no hidden cross-tenant aggregation introduced.
+- Performance review:
+    - read-only deterministic summary logic; no DB mutation/migration execution.
+    - no external dependencies added.
+- Event/KPI/API decision:
+    - API visibility delivered via `/api/admin/university-core/readiness`.
+    - event/KPI wiring deferred to `A-024.6` (`event_readiness_decision=deferred_to_a0246`).
+- Anti-inflation review: PASS
+    - no Level 5/6 claim
+    - no fake table creation/migration claim
+    - no fake smoke gate PASS claim
+    - no module count expansion
+- Decision: **A-024.5 CLOSED — PASS**. Proceed to `A-024.6`.
 
 
 
@@ -1329,22 +1386,22 @@
 - level_0_count = 4
 - level_1_count = 20
 - level_2_count = 13
-- level_3_count = 25
-- level_4_count = 65
+- level_3_count = 24
+- level_4_count = 66
 - level_5_count = 21
 - level_6_count = 2
 - level_1_plus_count = 146
 - level_2_plus_count = 126
 - level_3_plus_count = 113
-- level_4_plus_count = 88
+- level_4_plus_count = 89
 - level_5_plus_count = 23
 - foundation_gap_count = 37
 - level_2_gap_count = 24
-- arithmetic_check = 4+20+13+25+65+21+2=150
+- arithmetic_check = 4+20+13+24+66+21+2=150
 - maturity_arithmetic_check = PASS
-- exact_counts_verified_at = 2026-05-09 (A-024.4 closure)
-- evidence_source = A-024.4-ATTENDANCE_STUDENT_PORTAL_OPERATIONAL_VISIBILITY_REPORT.md + A-024.0 selection report + A-023.8 foundation report
-- updated_at = 2026-05-09 (A-024.4: attendance and student_portal moved L3->L4 with tested tenant-safe visibility evidence)
+- exact_counts_verified_at = 2026-05-09 (A-024.5 closure)
+- evidence_source = A-024.5-UNIVERSITY_CORE_OPERATIONAL_READINESS_REPORT.md + A-024.0 selection report + A-023.8 foundation report
+- updated_at = 2026-05-09 (A-024.5: university_core moved L3->L4 readiness visibility with tested tenant-safe evidence)
 - mandatory_rule = Keep exact counts synchronized with canonical 150-module inventory.
 - rule = Coverage does not equal full maturity.
 - coverage_not_equal_full_maturity = true

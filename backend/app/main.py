@@ -26,6 +26,8 @@ from app.core.config import (
 )
 from app.core.runtime_schema import bootstrap_runtime_schema
 from app.modules.university_core.entity_impl import validate_entity_tables_impl
+from app.modules.university_core.shared import TEST_ONLY_DB_TABLES
+from app.modules.university_core.service import build_university_core_readiness_summary
 
 from app.modules.admin.router import router as admin_router
 from app.modules.admin.local_users_router import router as admin_local_users_router
@@ -1088,6 +1090,60 @@ def admin_student_portal_summary(
     )
     summary["request_count"] = len(requests)
     summary["visible_surface"] = "/api/admin/student-portal/summary"
+    return summary
+
+
+@app.get("/api/admin/university-core/readiness")
+def admin_university_core_readiness(
+    request: Request,
+    __: None = Depends(permission_dependency("metrics.read")),
+) -> dict[str, object]:
+    """Tenant-safe read-only university_core readiness visibility summary."""
+    tenant_id = _resolve_metrics_tenant_id(request)
+
+    known_conditions: list[str] = []
+    try:
+        validation = validate_entity_tables_impl()
+    except Exception as exc:
+        validation = {
+            "missing": [],
+            "present": [],
+            "missing_fallback": [],
+            "present_fallback": [],
+        }
+        known_conditions.append(f"table coverage validation error: {exc}")
+
+    missing = [str(table) for table in validation.get("missing", [])]
+    present = [str(table) for table in validation.get("present", [])]
+    missing_fallback = [str(table) for table in validation.get("missing_fallback", [])]
+    present_fallback = [str(table) for table in validation.get("present_fallback", [])]
+
+    test_only_or_stub = [table for table in missing_fallback if table in TEST_ONLY_DB_TABLES]
+    planned_not_active = [table for table in missing_fallback if table not in TEST_ONLY_DB_TABLES]
+
+    if missing:
+        known_conditions.append(
+            f"{len(missing)} required university_core table(s) missing from database"
+        )
+    if missing_fallback:
+        known_conditions.append(
+            f"{len(missing_fallback)} fallback-allowed university_core table(s) absent from database"
+        )
+
+    summary = build_university_core_readiness_summary(
+        tenant_id=tenant_id,
+        active_migrated_tables=present,
+        planned_not_active_tables=planned_not_active,
+        test_only_or_stub_tables=test_only_or_stub,
+        fallback_classified_tables=present_fallback,
+        unknown_tables=missing,
+        known_conditions=known_conditions,
+        source_report="A-022.9-UNIVERSITY_CORE_TABLE_COVERAGE_REMEDIATION_REPORT.md",
+        source_entity_type="university_core_table_validation",
+        source_entity_id="validate_entity_tables_impl",
+    )
+    summary["visible_surface"] = "/api/admin/university-core/readiness"
+    summary["event_readiness_decision"] = "deferred_to_a0246"
     return summary
 
 
