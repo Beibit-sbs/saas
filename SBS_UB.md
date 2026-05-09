@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-024.8.B1
-- current_stage: A-024.8 complete / Final A-024 operational maturity report
-- last_completed_action_id: A-024.8
-- next_action_id: A-024.8.B1
-- updated_at: 2026-05-09 (A-024.8 completed: final A-024 operational maturity closure report consolidated evidence chain A-024.0..A-024.7; next=A-024.8.B1)
+- status: A-024.8.B1_baseline_established_with_blocking_regression
+- current_stage: A-024.8.B1 complete / Full regression + coverage + gates baseline captured (blocking backend regression present)
+- last_completed_action_id: A-024.8.B1
+- next_action_id: A-024.8.B2
+- updated_at: 2026-05-09 (A-024.8.B1 completed: baseline evidence captured across backend/frontend/gates; backend full regression blocked by postgres persistence failures; next=A-024.8.B2)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -730,6 +730,58 @@
     - full SaaS production readiness and Brain execution autonomy are explicitly not claimed in A-024.8
 - Decision: **A-024 CLOSED — PASS PENDING A-024.8.B1 QUALITY BASELINE**.
 - Next action: `A-024.8.B1` (full regression + coverage + gates baseline). Do not start A-025 planning before A-024.8.B1 closure.
+
+#### A-024.8.B1 — Full Regression + Coverage + Gates Baseline
+
+- Date: 2026-05-09
+- Scope: Execute full quality baseline exactly as requested (backend full regression+coverage, tenant/security slice, A-024 continuity pack, frontend tests/lint/build, safe/smoke/release gates), classify findings without pass inflation.
+- Baseline results summary:
+    - backend full regression + coverage: **BLOCKING_REGRESSION**
+        - `9062 passed, 28 skipped, 88 deselected, 7 warnings, 8 errors in 211.98s`
+        - failing file: `tests/test_postgres_persistence_xv2.py`
+        - failing tests (8):
+            - `TestPostgresMigrations::test_alembic_version_table_exists`
+            - `TestPostgresMigrations::test_migration_head_applied`
+            - `TestPostgresMigrations::test_university_students_table_exists`
+            - `TestPostgresMigrations::test_minimum_tables_count`
+            - `TestPostgresCRUD::test_insert_student_persists`
+            - `TestPostgresCRUD::test_update_student_persists`
+            - `TestPostgresCRUD::test_delete_student_removes_row`
+            - `TestPostgresTransactionIsolation::test_uncommitted_not_visible`
+    - backend coverage from same full run: **PASS**
+        - total coverage: `87.07%` (`TOTAL ... 87%`, threshold `80%` reached)
+    - tenant/security slice: **PASS**
+        - `1080 passed, 1 skipped, 8105 deselected, 2 warnings`
+    - A-024 continuity pack (`a0241..a0247`): **PASS**
+        - `185 passed, 1 warning`
+    - frontend full tests: **PASS** with **ACCEPTED_WARNING**
+        - `118 files passed, 814 tests passed`
+        - repeated React test warning: `act(...)` wrapping in `WebhookSubscriptionsUI` path (non-blocking; suite green)
+    - frontend lint: **PASS** (`No ESLint warnings or errors`)
+    - frontend build: **PASS** (Next.js production build completed)
+    - safe gate: **PASS**
+    - smoke gate: **PASS** (domain endpoint smoke + Playwright smoke green)
+    - release gate: **PASS** (including rollback readiness checks)
+- Classification table:
+
+| Check | Result | Category | Notes |
+|---|---|---|---|
+| Full backend regression + coverage run | FAIL | BLOCKING_REGRESSION | 8 postgres persistence errors in `tests/test_postgres_persistence_xv2.py` |
+| Backend coverage threshold | PASS | PASS | `87.07%` >= required `80%` |
+| Tenant/Security slice | PASS | PASS | 1080 passed |
+| A-024 continuity pack | PASS | PASS | 185 passed |
+| Frontend full tests | PASS | ACCEPTED_WARNING | repeated `act(...)` warnings, no failing tests |
+| Frontend lint | PASS | PASS | clean lint |
+| Frontend build | PASS | PASS | production build succeeded |
+| Safe gate | PASS | PASS | non-destructive safety gate green |
+| Smoke gate | PASS | PASS | domain + E2E smoke green |
+| Release gate | PASS | PASS | release + rollback readiness green |
+
+- Anti-inflation decision:
+    - B1 baseline is **not** marked PASS because mandatory full backend regression contains active blocking failures.
+    - B1 still closes as an evidence baseline action because all required baseline checks were executed and classified.
+- Decision: **A-024.8.B1 CLOSED — BASELINE ESTABLISHED WITH BLOCKING REGRESSION**.
+- Next action: `A-024.8.B2` (remediate `tests/test_postgres_persistence_xv2.py` failures, rerun full backend regression+coverage, reconfirm baseline classification).
 
 
 
