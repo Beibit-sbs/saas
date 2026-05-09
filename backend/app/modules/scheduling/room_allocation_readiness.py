@@ -916,3 +916,433 @@ def build_scheduling_conflict_result(
         conflicts=conflicts,
         severity_summary=severity_summary,
     )
+
+
+# ─── A-020.4 Capacity Matching Brain ─────────────────────────────────────────
+
+
+class CapacityMismatchReason(str, Enum):
+    """Normalized mismatch reasons for deterministic capacity matching output."""
+
+    CAPACITY_UNKNOWN = "capacity_unknown"
+    CAPACITY_SHORTAGE = "capacity_shortage"
+    ROOM_TYPE_UNKNOWN = "room_type_unknown"
+    ROOM_TYPE_MISMATCH = "room_type_mismatch"
+    COMPUTERS_UNKNOWN = "computers_unknown"
+    COMPUTERS_SHORTAGE = "computers_shortage"
+    EQUIPMENT_MISMATCH = "equipment_mismatch"
+    ROOM_UNAVAILABLE = "room_unavailable"
+    RESTRICTION_MISMATCH = "restriction_mismatch"
+    CONFLICT_PENALTY_APPLIED = "conflict_penalty_applied"
+    ROOM_CAPABILITY_MISSING = "room_capability_missing"
+
+
+class CapacityMatchStatus(str, Enum):
+    """Deterministic room-to-requirement matching status."""
+
+    EXCELLENT_MATCH = "excellent_match"
+    GOOD_MATCH = "good_match"
+    PARTIAL_MATCH = "partial_match"
+    POOR_MATCH = "poor_match"
+    NOT_SUITABLE = "not_suitable"
+    UNAVAILABLE = "unavailable"
+    UNKNOWN = "unknown"
+
+
+class CapacityRiskLevel(str, Enum):
+    """Deterministic risk level for capacity matching outcomes."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class CapacityMatchingDecision(BaseModel):
+    """Brain-compatible decision envelope for capacity matching evidence."""
+
+    scenario: str = "room_allocation_capacity_matching"
+    decision_type: str = "room_allocation_review"
+    requires_approval: bool = False
+    recommended_actions: list[str] = Field(default_factory=list)
+
+
+class CapacityMatchEvidence(BaseModel):
+    """Evidence contract for deterministic capacity matching (A-020.4)."""
+
+    tenant_id: int = Field(gt=0)
+    section_id: Optional[int] = None
+    course_id: Optional[int] = None
+    group_id: Optional[int] = None
+    teacher_id: Optional[str] = None
+    room_id: Optional[str | int] = None
+    required_capacity: Optional[int] = None
+    room_capacity: Optional[int] = None
+    required_room_type: Optional[str] = None
+    room_type: Optional[str] = None
+    required_computers: Optional[int] = None
+    computers_count: Optional[int] = None
+    equipment_required: list[str] = Field(default_factory=list)
+    equipment_available: list[str] = Field(default_factory=list)
+    conflict_count: int = 0
+    conflict_types: list[str] = Field(default_factory=list)
+    match_score: int = Field(ge=0, le=100)
+    match_status: CapacityMatchStatus
+    risk_level: CapacityRiskLevel
+    required_human_review: bool
+    mismatch_reasons: list[CapacityMismatchReason] = Field(default_factory=list)
+    satisfied_requirements: list[str] = Field(default_factory=list)
+    unsatisfied_requirements: list[str] = Field(default_factory=list)
+    evidence: dict[str, Any] = Field(default_factory=dict)
+    source_entity_type: Optional[str] = None
+    source_entity_id: Optional[str | int] = None
+
+
+class CapacityMatchingInput(BaseModel):
+    """Input envelope for deterministic capacity matching."""
+
+    tenant_id: int = Field(gt=0)
+    requirement: RoomAllocationRequirement
+    capability: Optional[RoomCapability] = None
+    capability_match: Optional[RoomCapabilityMatchEvidence] = None
+    conflicts: list[SchedulingConflictEvidence] = Field(default_factory=list)
+
+
+class CapacityMatchingResult(BaseModel):
+    """Capacity matching output (evaluation only, no ranking/assignment)."""
+
+    tenant_id: int = Field(gt=0)
+    match_score: int = Field(ge=0, le=100)
+    match_status: CapacityMatchStatus
+    risk_level: CapacityRiskLevel
+    mismatch_reasons: list[CapacityMismatchReason] = Field(default_factory=list)
+    satisfied_requirements: list[str] = Field(default_factory=list)
+    unsatisfied_requirements: list[str] = Field(default_factory=list)
+    required_human_review: bool
+    evidence: dict[str, Any] = Field(default_factory=dict)
+    source_entity_type: Optional[str] = None
+    source_entity_id: Optional[str | int] = None
+    capacity_match_evidence: CapacityMatchEvidence
+    decision: CapacityMatchingDecision
+
+
+def _clamp_score(value: int) -> int:
+    return max(0, min(100, int(value)))
+
+
+def _derive_match_status(
+    score: int,
+    *,
+    capability: Optional[RoomCapability],
+    capability_match: Optional[RoomCapabilityMatchEvidence],
+    conflict_types: list[str],
+) -> CapacityMatchStatus:
+    if capability is None:
+        return CapacityMatchStatus.UNKNOWN
+
+    if capability_match is not None and capability_match.availability_ok is False:
+        return CapacityMatchStatus.UNAVAILABLE
+
+    if ConflictType.ROOM_UNAVAILABLE.value in conflict_types:
+        return CapacityMatchStatus.UNAVAILABLE
+
+    if score >= 90:
+        return CapacityMatchStatus.EXCELLENT_MATCH
+    if score >= 75:
+        return CapacityMatchStatus.GOOD_MATCH
+    if score >= 55:
+        return CapacityMatchStatus.PARTIAL_MATCH
+    if score >= 30:
+        return CapacityMatchStatus.POOR_MATCH
+    return CapacityMatchStatus.NOT_SUITABLE
+
+
+def _derive_risk_level(
+    status: CapacityMatchStatus,
+    conflicts: list[SchedulingConflictEvidence],
+    mismatch_reasons: list[CapacityMismatchReason],
+) -> CapacityRiskLevel:
+    if status in {CapacityMatchStatus.EXCELLENT_MATCH, CapacityMatchStatus.GOOD_MATCH}:
+        risk = CapacityRiskLevel.LOW
+    elif status == CapacityMatchStatus.PARTIAL_MATCH:
+        risk = CapacityRiskLevel.MEDIUM
+    elif status in {CapacityMatchStatus.POOR_MATCH, CapacityMatchStatus.UNAVAILABLE, CapacityMatchStatus.UNKNOWN}:
+        risk = CapacityRiskLevel.HIGH
+    else:
+        risk = CapacityRiskLevel.CRITICAL
+
+    severities = {c.severity.value for c in conflicts}
+    if ConflictSeverity.CRITICAL.value in severities:
+        risk = CapacityRiskLevel.CRITICAL
+    elif ConflictSeverity.HIGH.value in severities and risk in {CapacityRiskLevel.LOW, CapacityRiskLevel.MEDIUM}:
+        risk = CapacityRiskLevel.HIGH
+
+    if CapacityMismatchReason.CAPACITY_SHORTAGE in mismatch_reasons:
+        if status == CapacityMatchStatus.NOT_SUITABLE:
+            risk = CapacityRiskLevel.CRITICAL
+        elif risk != CapacityRiskLevel.CRITICAL:
+            risk = CapacityRiskLevel.HIGH
+
+    return risk
+
+
+def build_capacity_matching_result(
+    tenant_id: int,
+    requirement: RoomAllocationRequirement,
+    *,
+    capability: Optional[RoomCapability] = None,
+    capability_match: Optional[RoomCapabilityMatchEvidence] = None,
+    conflicts: Optional[list[SchedulingConflictEvidence]] = None,
+) -> CapacityMatchingResult:
+    """Deterministic A-020.4 capacity matching evaluation.
+
+    Evidence-only output:
+    - no recommendation ranking
+    - no room assignment/reservation
+    - no timetable mutation
+    - no booking override
+    """
+    if not isinstance(tenant_id, int) or tenant_id <= 0:
+        raise ValueError("tenant_id must be a positive integer")
+
+    input_conflicts = list(conflicts or [])
+    if capability is not None and int(capability.tenant_id) != int(tenant_id):
+        raise ValueError("capability.tenant_id does not match authoritative tenant_id")
+
+    if capability is not None and capability_match is None:
+        capability_match = assess_room_capability_against_requirement(
+            capability,
+            requirement,
+            authoritative_tenant_id=tenant_id,
+        )
+
+    mismatch_reasons: list[CapacityMismatchReason] = []
+    satisfied_requirements: list[str] = []
+    unsatisfied_requirements: list[str] = []
+    score = 0
+
+    conflict_types = [c.conflict_type.value for c in input_conflicts]
+
+    if capability is None:
+        mismatch_reasons.append(CapacityMismatchReason.ROOM_CAPABILITY_MISSING)
+        unsatisfied_requirements.extend(["capacity", "room_type", "availability"])
+    else:
+        # 1) Capacity fit (30)
+        required_capacity = int(requirement.students_count)
+        room_capacity = capability.capacity
+        if room_capacity is None:
+            score += 10
+            mismatch_reasons.append(CapacityMismatchReason.CAPACITY_UNKNOWN)
+            unsatisfied_requirements.append("capacity")
+        elif int(room_capacity) >= required_capacity:
+            score += 30
+            satisfied_requirements.append("capacity")
+        else:
+            mismatch_reasons.append(CapacityMismatchReason.CAPACITY_SHORTAGE)
+            unsatisfied_requirements.append("capacity")
+
+        # 2) Room type fit (20)
+        required_room_type = str(requirement.required_room_type or "").strip().lower()
+        room_type = str(capability.room_type or "").strip().lower()
+        if not required_room_type:
+            score += 20
+            satisfied_requirements.append("room_type")
+        elif not room_type:
+            score += 8
+            mismatch_reasons.append(CapacityMismatchReason.ROOM_TYPE_UNKNOWN)
+            unsatisfied_requirements.append("room_type")
+        elif required_room_type == room_type:
+            score += 20
+            satisfied_requirements.append("room_type")
+        else:
+            mismatch_reasons.append(CapacityMismatchReason.ROOM_TYPE_MISMATCH)
+            unsatisfied_requirements.append("room_type")
+
+        # 3) Computer fit (15)
+        required_computers = requirement.required_computers
+        if required_computers is None or int(required_computers) <= 0:
+            score += 15
+            satisfied_requirements.append("computers")
+        elif capability.computers_count is None:
+            score += 5
+            mismatch_reasons.append(CapacityMismatchReason.COMPUTERS_UNKNOWN)
+            unsatisfied_requirements.append("computers")
+        elif int(capability.computers_count) >= int(required_computers):
+            score += 15
+            satisfied_requirements.append("computers")
+        else:
+            mismatch_reasons.append(CapacityMismatchReason.COMPUTERS_SHORTAGE)
+            unsatisfied_requirements.append("computers")
+
+        # 4) Equipment fit (15)
+        required_equipment = _normalize_tokens(requirement.equipment_required)
+        available_equipment = _normalize_tokens(capability.equipment_available)
+        if not required_equipment:
+            score += 15
+            satisfied_requirements.append("equipment")
+            missing_equipment: list[str] = []
+        else:
+            missing_equipment = sorted(list(required_equipment - available_equipment))
+            matched = max(0, len(required_equipment) - len(missing_equipment))
+            score += int(round((matched / len(required_equipment)) * 15))
+            if missing_equipment:
+                mismatch_reasons.append(CapacityMismatchReason.EQUIPMENT_MISMATCH)
+                unsatisfied_requirements.append("equipment")
+            else:
+                satisfied_requirements.append("equipment")
+
+        # 5) Availability/status fit (10)
+        availability_ok = capability_match.availability_ok if capability_match is not None else None
+        if availability_ok is True:
+            score += 10
+            satisfied_requirements.append("availability")
+        elif availability_ok is False:
+            mismatch_reasons.append(CapacityMismatchReason.ROOM_UNAVAILABLE)
+            unsatisfied_requirements.append("availability")
+        else:
+            score += 4
+            unsatisfied_requirements.append("availability")
+
+        # 6) No conflict/restriction issues (10)
+        controls_points = 10
+        restrictions_ok = capability_match.restrictions_ok if capability_match is not None else None
+        if restrictions_ok is False:
+            controls_points = 0
+            mismatch_reasons.append(CapacityMismatchReason.RESTRICTION_MISMATCH)
+            unsatisfied_requirements.append("restrictions")
+        elif restrictions_ok is None and requirement.restrictions_required:
+            controls_points = 4
+            unsatisfied_requirements.append("restrictions")
+        else:
+            satisfied_requirements.append("restrictions")
+
+        if input_conflicts:
+            controls_points = max(0, controls_points - 10)
+
+        score += controls_points
+
+        # Conflict penalties
+        severity_penalty = {
+            ConflictSeverity.CRITICAL.value: 25,
+            ConflictSeverity.HIGH.value: 15,
+            ConflictSeverity.MEDIUM.value: 8,
+            ConflictSeverity.LOW.value: 4,
+        }
+        total_penalty = sum(severity_penalty.get(c.severity.value, 0) for c in input_conflicts)
+        total_penalty = min(40, total_penalty)
+        if total_penalty > 0:
+            mismatch_reasons.append(CapacityMismatchReason.CONFLICT_PENALTY_APPLIED)
+        score = max(0, score - total_penalty)
+
+    score = _clamp_score(score)
+    status = _derive_match_status(
+        score,
+        capability=capability,
+        capability_match=capability_match,
+        conflict_types=conflict_types,
+    )
+    risk_level = _derive_risk_level(status, input_conflicts, mismatch_reasons)
+
+    required_human_review = (
+        risk_level in {CapacityRiskLevel.HIGH, CapacityRiskLevel.CRITICAL}
+        or status in {
+            CapacityMatchStatus.PARTIAL_MATCH,
+            CapacityMatchStatus.POOR_MATCH,
+            CapacityMatchStatus.NOT_SUITABLE,
+            CapacityMatchStatus.UNAVAILABLE,
+            CapacityMatchStatus.UNKNOWN,
+        }
+    )
+
+    reasons = sorted(set(mismatch_reasons), key=lambda r: r.value)
+    satisfied_unique = sorted(set(satisfied_requirements))
+    unsatisfied_unique = sorted(set(unsatisfied_requirements))
+
+    decision_actions: list[str] = [
+        "review_room_match",
+        "inspect_room_capability_evidence",
+    ]
+    if required_human_review:
+        decision_actions.extend([
+            "request_room_change_review",
+            "escalate_to_scheduler",
+        ])
+    if status in {CapacityMatchStatus.UNAVAILABLE, CapacityMatchStatus.NOT_SUITABLE}:
+        decision_actions.append("mark_room_allocation_required")
+
+    decision = CapacityMatchingDecision(
+        requires_approval=required_human_review,
+        recommended_actions=list(dict.fromkeys(decision_actions)),
+    )
+
+    evidence_payload: dict[str, Any] = {
+        "weights": {
+            "capacity_fit": 30,
+            "room_type_fit": 20,
+            "computer_fit": 15,
+            "equipment_fit": 15,
+            "availability_fit": 10,
+            "no_conflict_or_restriction_issues": 10,
+        },
+        "conflict_count": len(input_conflicts),
+        "conflict_types": conflict_types,
+        "source_contracts": ["A-020.1", "A-020.2", "A-020.3"],
+    }
+
+    if capability is not None:
+        evidence_payload.update({
+            "capability_match": capability_match.model_dump() if capability_match is not None else None,
+            "required_capacity": int(requirement.students_count),
+            "room_capacity": capability.capacity,
+            "required_room_type": requirement.required_room_type,
+            "room_type": capability.room_type,
+            "required_computers": requirement.required_computers,
+            "computers_count": capability.computers_count,
+            "equipment_required": list(requirement.equipment_required or []),
+            "equipment_available": list(capability.equipment_available),
+        })
+
+    capacity_evidence = CapacityMatchEvidence(
+        tenant_id=tenant_id,
+        section_id=requirement.section_id,
+        course_id=requirement.course_id,
+        group_id=requirement.group_id,
+        teacher_id=requirement.teacher_id,
+        room_id=(capability.room_id if capability is not None else None),
+        required_capacity=int(requirement.students_count) if requirement.students_count is not None else None,
+        room_capacity=(capability.capacity if capability is not None else None),
+        required_room_type=requirement.required_room_type,
+        room_type=(capability.room_type if capability is not None else None),
+        required_computers=requirement.required_computers,
+        computers_count=(capability.computers_count if capability is not None else None),
+        equipment_required=list(requirement.equipment_required or []),
+        equipment_available=(list(capability.equipment_available) if capability is not None else []),
+        conflict_count=len(input_conflicts),
+        conflict_types=conflict_types,
+        match_score=score,
+        match_status=status,
+        risk_level=risk_level,
+        required_human_review=required_human_review,
+        mismatch_reasons=reasons,
+        satisfied_requirements=satisfied_unique,
+        unsatisfied_requirements=unsatisfied_unique,
+        evidence=evidence_payload,
+        source_entity_type=(capability.source_entity_type if capability is not None else None),
+        source_entity_id=(capability.source_entity_id if capability is not None else None),
+    )
+
+    return CapacityMatchingResult(
+        tenant_id=tenant_id,
+        match_score=score,
+        match_status=status,
+        risk_level=risk_level,
+        mismatch_reasons=reasons,
+        satisfied_requirements=satisfied_unique,
+        unsatisfied_requirements=unsatisfied_unique,
+        required_human_review=required_human_review,
+        evidence=evidence_payload,
+        source_entity_type=capacity_evidence.source_entity_type,
+        source_entity_id=capacity_evidence.source_entity_id,
+        capacity_match_evidence=capacity_evidence,
+        decision=decision,
+    )
