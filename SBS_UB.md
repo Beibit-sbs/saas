@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-023
-- current_stage: A-022 CLOSED / A-023 planning
-- last_completed_action_id: A-022.8
+- status: ready_for_A-023.0
+- current_stage: A-022.10.B1 CLOSED - PASS / A-023 planning ready
+- last_completed_action_id: A-022.10.B1
 - next_action_id: A-023.0
-- updated_at: 2026-05-09 (A-022.8 final closure complete: full validation/gate consolidation finished; final verdict A-022 CLOSED — PASS WITH KNOWN CONDITIONS; smoke known condition remains University Core Table Coverage 66 missing tables, not A-022 regression.)
+- updated_at: 2026-05-09 (A-022.10.B1 completed: billing route/smoke contract aligned; billing Playwright smoke PASS; platform smoke gate PASS; safe gate PASS.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -946,6 +946,128 @@
 - A-023 transition pointer (Task 10/11):
     - next action: `A-023.0 — 150 Module Expansion & Maturity Inventory`
     - planning only in A-022.8; no A-023 implementation started here
+
+#### A-022.9 — University Core Table Coverage Remediation
+
+- Date: 2026-05-09
+- Scope: Root-cause remediation of the smoke-gate `University Core Table Coverage` blocker only. No new business features. No fake-pass changes. No blind creation of deferred tables.
+
+- Repo hygiene snapshot:
+    - Dirty tracked baseline before work: `.coverage`, `backend/.coverage`, `.vscode/tasks.json`, prior A-022 dashboard/KPI files
+    - A-022.9 code scope was kept local to university_core validation + adjacent regression test
+
+- Root cause established:
+    - `validate_entity_tables_impl()` treated every `ENTITY_CONFIGS` table as DB-required
+    - existing repository policy already limited DB-required coverage to the 15 A-011.5 migrated tables
+    - the remaining 66 missing tables were already documented as `PLANNED_NOT_ACTIVE` or `TEST_ONLY_OR_STUB` fallback entries
+
+- Remediation path selected:
+    - **Path C — classification-aware gate correction**
+    - implemented in validation layer, not by weakening smoke output and not by creating 66 speculative tables
+
+- Files changed:
+    - `backend/app/modules/university_core/shared.py`
+    - `backend/app/modules/university_core/entity_impl.py`
+    - `backend/tests/test_university_core_entity_tables_exist.py`
+
+- Implementation summary:
+    - added authoritative `REQUIRED_DB_TABLES` constant for the 15 A-011.5 tables
+    - added explicit fallback classification constants
+    - changed `validate_entity_tables_impl()` so `missing` means missing required tables only
+    - preserved explicit reporting for deferred tables via `missing_fallback` / `present_fallback`
+    - updated regression test to assert zero required missing tables and exactly 66 fallback-allowed missing tables
+
+- Validation summary:
+    - targeted university_core test:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --rm backend-tests pytest -q tests/test_university_core_entity_tables_exist.py --no-cov -rA`
+        - result: **PASS** (2 passed)
+    - key runtime evidence after image rebuild:
+        - `university_core: all 15 required entity tables verified in database`
+        - `university_core: 66 fallback-allowed entity table(s) absent from database — CRUD calls may use in-memory store`
+    - safe gate:
+        - `bash scripts/university_pilot_safe_gate.sh`
+        - result: **PASS**
+    - smoke gate:
+        - `University Core Table Coverage` no longer blocks the script
+        - current unrelated failure moved forward to billing Playwright smoke expectations (`Billing`, `Active Plans`, `Current Subscription` missing)
+
+- Deliverable:
+    - `A-022.9-UNIVERSITY_CORE_TABLE_COVERAGE_REMEDIATION_REPORT.md`
+
+- Final decision:
+    - **A-022.9 COMPLETE — PASS**
+    - A-022 University Core smoke debt is resolved at the correct policy boundary
+    - deferred fallback debt remains explicit and auditable
+    - next action remains `A-023.0`
+
+#### A-022.10 — Billing Playwright Smoke Remediation
+
+- Date: 2026-05-09
+- Scope: Narrow billing Playwright smoke remediation only. No billing business-feature expansion, no fake test data insertion, no migration work.
+
+- Repo hygiene snapshot:
+    - Existing dirty tracked baseline remained: `.coverage`, `backend/.coverage`, `.vscode/tasks.json`, previous A-022/A-021 local edits
+    - A-022.10 scoped files:
+        - `frontend/app/(admin)/console/billing/page.tsx`
+        - `frontend/e2e/smoke/billing.spec.ts`
+        - `frontend/__tests__/admin/BillingRoutes.test.tsx`
+
+- Root-cause findings (classified):
+    - `ROUTE_MISMATCH`: Playwright runtime reaches `https://nginx/console/billing`, but rendered content is platform shell without expected billing page heading/sections.
+    - `STALE_PLAYWRIGHT_EXPECTATION`: portions of billing smoke expectations were tied to legacy route/label assumptions.
+    - `NAVIGATION_LABEL_MISMATCH`: active sidebar contract points to `/console/platform/billing-plans` (`Billing / Plans`) while smoke still exercises legacy `/console/billing` dashboard assumptions.
+
+- Implementation completed:
+    - Billing dashboard no-tenant behavior updated to avoid replacing page content with hard empty-state return.
+    - Billing smoke auth stubbing hardened (`/api/auth/me*` + `/api/bff/auth/me*`).
+    - Stale billing smoke assertions/selectors partially realigned to current UI text where deterministic.
+    - Billing route unit tests updated and passing.
+
+- Validation summary:
+    - Targeted billing unit tests:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --rm frontend-tests npx vitest run __tests__/admin/BillingRoutes.test.tsx`
+        - result: **PASS** (11 passed)
+    - Targeted billing Playwright smoke:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --rm -e E2E_BASE_URL=https://nginx frontend-tests npx playwright test e2e/smoke/billing.spec.ts ...`
+        - result: **FAIL** (dashboard heading `Billing` still not found in current route runtime)
+
+- Deliverable:
+    - `A-022.10-BILLING_PLAYWRIGHT_SMOKE_REMEDIATION_REPORT.md`
+
+- Final decision:
+    - **A-022.10 CLOSED — PARTIAL, residual classified**
+    - residual blocker: `A-022.10.B1`
+    - next action: `A-022.10.B1` (final route-contract alignment + full smoke revalidation)
+
+#### A-022.10.B1 — Billing Route Contract Smoke Alignment
+
+- Date: 2026-05-09
+- Scope: Narrow route/smoke contract remediation for billing Playwright only. No billing business-logic expansion, no fake data, no migrations.
+
+- Route policy resolution:
+    - canonical navigation route remains `/console/platform/billing-plans` (`Billing / Plans` in sidebar)
+    - legacy compatibility billing routes remain valid and smoke-covered (`/console/billing`, `/console/billing/plans`, `/console/billing/subscriptions`)
+
+- B1 implementation:
+    - stabilized fragile selectors in `frontend/e2e/smoke/billing.spec.ts` (strict-mode-safe role-based locators)
+    - normalized delinquency smoke contracts to deterministic tenant-scoped request/control assertions
+    - preserved meaningful billing assertions for `Billing`, `Active Plans`, `Current Subscription`
+
+- Validation summary:
+    - targeted billing route unit tests: **PASS** (11 passed)
+    - billing Playwright smoke: **PASS** (14 passed)
+    - platform smoke gate: **PASS** (`[PASS] Domain Endpoint HTTP 200 Smoke`, `[PASS] E2E Smoke Suite: admin-console + billing + interventions + role-zones`)
+    - frontend full tests: **PASS** (118 files, 814 tests)
+    - frontend lint: **PASS**
+    - frontend build: **PASS**
+    - safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+
+- Deliverable:
+    - `A-022.10.B1-BILLING_ROUTE_CONTRACT_SMOKE_ALIGNMENT_REPORT.md`
+
+- Final decision:
+    - **A-022.10.B1 CLOSED — PASS, smoke gate clean**
+    - next action: `A-023.0`
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 

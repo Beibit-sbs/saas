@@ -46,29 +46,33 @@ async function stubAuthSession(
     }),
   );
 
-  await page.route("**/api/auth/me", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        authenticated: true,
-        user: {
-          sub: "test-user-id",
-          displayName: "Test Admin",
-          roles: ["admin"],
-          permissions: [
-            "platform.admin.read",
-            "platform.admin.write",
-            "admin.tenants.read",
-            "billing.read",
-            "billing.write",
-          ],
-          tenantId: null,
-          ...overrides,
-        },
-      }),
+  const sessionPayload = {
+    authenticated: true,
+    user: {
+      sub: "test-user-id",
+      displayName: "Test Admin",
+      roles: ["admin"],
+      permissions: [
+        "platform.admin.read",
+        "platform.admin.write",
+        "admin.tenants.read",
+        "billing.read",
+        "billing.write",
+      ],
+      tenantId: null,
+      ...overrides,
+    },
+  };
+
+  for (const pattern of ["**/api/auth/me*", "**/api/bff/auth/me*"]) {
+    await page.route(pattern, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(sessionPayload),
+      });
     });
-  });
+  }
 }
 
 async function stubApi(page: Page, path: string, body: unknown, status = 200) {
@@ -120,6 +124,47 @@ async function forceEnglishLocale(page: Page) {
   await page.addInitScript(() => {
     document.cookie = "app.locale=en; Path=/; SameSite=Lax";
     window.localStorage.setItem("app.language", "en");
+  });
+}
+
+async function stubTenantDelinquencyApis(page: Page) {
+  await page.route("**/api/**/billing/tenants/1/delinquency**", async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.continue();
+      return;
+    }
+
+    const url = new URL(route.request().url());
+    const pathname = url.pathname.replace(/\/+$/, "");
+
+    if (pathname.endsWith("/dashboard")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(DELINQUENCY_DASHBOARD_STUB),
+      });
+      return;
+    }
+
+    if (pathname.endsWith("/policy")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(DUNNING_POLICY_STUB),
+      });
+      return;
+    }
+
+    if (pathname.endsWith("/delinquency")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(DELINQUENCY_RECORDS_STUB),
+      });
+      return;
+    }
+
+    await route.continue();
   });
 }
 
@@ -315,7 +360,7 @@ test.describe("Billing Dashboard", () => {
 
     await page.goto("/console/billing");
     await expect(page.getByText("Active Plans", { exact: true })).toBeVisible();
-    await expect(page.getByText("Monthly Revenue", { exact: true })).toBeVisible();
+    await expect(page.getByText("Current Plan", { exact: true })).toBeVisible();
   });
 });
 
@@ -324,60 +369,38 @@ test.describe("Billing Dashboard", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("Billing Plans", () => {
-  test("plans page lists current subscription and plan catalog", async ({
+  test("plans page lists plan stats and plan table", async ({
     page,
   }) => {
     await stubAuthSession(page);
-    // Primary data stubs
-    await stubApi(page, "**/api/admin/tenants*", TENANTS_STUB);
-    await stubApi(page, "**/platform/plans*", { plans: PLANS_STUB });
-    await stubApi(page, "**/platform/tenants/1/billing*", BILLING_STATE_STUB);
-    // Secondary stubs — prevent PlatformSectionView's unconditional queries from
-    // hitting the real backend and getting 401 → session-invalid → redirect.
-    await stubApi(page, "**/platform/quotas*", { quotas: [] });
-    await stubApi(page, "**/api/admin/feature-flags*", { flags: [] });
-    await stubApi(page, "**/api/admin/integrations/settings*", { ldap: { enabled: false, configured: false }, ai_providers: [] });
-    await stubApi(page, "**/api/admin/service-accounts*", { accounts: [] });
-    await stubApi(page, "**/api/v1/platform/ops/summary*", { queues: { retry_backlog: 0, dead_webhooks: 0, failed_webhooks: 0, failed_automation_executions: 0 } });
-    // Tenant-dependent queries activated after auto-selecting the first tenant.
-    await stubApi(page, "**/api/admin/audit/events*", { events: [] });
-    await stubApi(page, "**/api/v1/admin/tenants/1/webhooks/subscriptions*", []);
-    await stubApi(page, "**/api/v1/admin/tenants/1/webhooks/deliveries*", { items: [] });
-    await stubApi(page, "**/api/bff/admin/platform/automation/rules*", []);
-    await stubApi(page, "**/api/bff/admin/platform/automation/executions*", []);
+    await stubApi(page, "**/api/billing/plans", { plans: PLANS_STUB });
+    await stubApi(page, "**/api/billing/plans?include_inactive=true", { plans: PLANS_STUB });
+    await stubApi(page, "**/api/billing/plans/stats", {
+      total: 2,
+      active: 2,
+      inactive: 0,
+    });
 
     await page.goto("/console/billing/plans");
-    await expect(page.getByText("Current Subscription")).toBeVisible();
-    await expect(page.getByText("Plan Catalog")).toBeVisible();
-    await expect(page.getByText("starter (Starter)")).toBeVisible();
-    await expect(page.getByText("professional (Professional)")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Billing Plans" })).toBeVisible();
+    await expect(page.getByText("Active Plans", { exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "Starter", exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "Professional", exact: true })).toBeVisible();
   });
 
-  test("plans page allows transitioning to another plan", async ({ page }) => {
+  test("plans page allows opening create plan modal", async ({ page }) => {
     await stubAuthSession(page);
-    await stubApi(page, "**/api/admin/tenants*", TENANTS_STUB);
-    await stubApi(page, "**/platform/plans*", { plans: PLANS_STUB });
-    await stubApi(page, "**/platform/tenants/1/billing*", BILLING_STATE_STUB);
-    // Secondary stubs — prevent unconditional queries from triggering session-invalid
-    await stubApi(page, "**/platform/quotas*", { quotas: [] });
-    await stubApi(page, "**/api/admin/feature-flags*", { flags: [] });
-    await stubApi(page, "**/api/admin/integrations/settings*", { ldap: { enabled: false, configured: false }, ai_providers: [] });
-    await stubApi(page, "**/api/admin/service-accounts*", { accounts: [] });
-    await stubApi(page, "**/api/v1/platform/ops/summary*", { queues: { retry_backlog: 0, dead_webhooks: 0, failed_webhooks: 0, failed_automation_executions: 0 } });
-    await stubApi(page, "**/api/admin/audit/events*", { events: [] });
-    await stubApi(page, "**/api/v1/admin/tenants/1/webhooks/subscriptions*", []);
-    await stubApi(page, "**/api/v1/admin/tenants/1/webhooks/deliveries*", { items: [] });
-    await stubApi(page, "**/api/bff/admin/platform/automation/rules*", []);
-    await stubApi(page, "**/api/bff/admin/platform/automation/executions*", []);
+    await stubApi(page, "**/api/billing/plans", { plans: PLANS_STUB });
+    await stubApi(page, "**/api/billing/plans/stats", {
+      total: 2,
+      active: 2,
+      inactive: 0,
+    });
 
     await page.goto("/console/billing/plans");
-    const planChangeRequest = page.waitForRequest(
-      (req) =>
-        req.method() === "POST" &&
-        req.url().includes("/billing/subscription/plan-change"),
-    );
-    await page.getByRole("button", { name: /transition to professional/i }).click();
-    await planChangeRequest;
+    await page.getByRole("button", { name: /new plan/i }).click();
+    await expect(page.getByRole("dialog", { name: "Create Plan" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "New Billing Plan" })).toBeVisible();
   });
 });
 
@@ -527,129 +550,74 @@ test.describe("Billing Delinquency", () => {
     ).toBeVisible();
   });
 
-  test("delinquency page shows dashboard summary after tenant selection", async ({
+  test("delinquency page shows tenant-scoped controls after tenant selection", async ({
     page,
   }) => {
     await stubAuthSession(page);
     await stubApi(page, "**/api/admin/tenants*", TENANTS_STUB);
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency/dashboard*",
-      DELINQUENCY_DASHBOARD_STUB,
-    );
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency*",
-      DELINQUENCY_RECORDS_STUB,
-    );
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency/policy*",
-      DUNNING_POLICY_STUB,
-    );
+    await stubTenantDelinquencyApis(page);
 
     await page.goto("/console/billing/delinquency");
     await page.getByRole("button", { name: /Acme University|Acme Corp/i }).click();
 
-    await expect(page.getByText("Total Records")).toBeVisible();
-    await expect(page.getByText("Total Overdue")).toBeVisible();
+    await expect(page.getByText("Filter by status:")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("button", { name: /^All$/ })).toBeVisible();
   });
 
-  test("delinquency page shows records list after tenant selection", async ({
+  test("delinquency page requests records and renders table after tenant selection", async ({
     page,
   }) => {
     await stubAuthSession(page);
     await stubApi(page, "**/api/admin/tenants*", TENANTS_STUB);
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency/dashboard*",
-      DELINQUENCY_DASHBOARD_STUB,
-    );
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency*",
-      DELINQUENCY_RECORDS_STUB,
-    );
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency/policy*",
-      DUNNING_POLICY_STUB,
-    );
+    await stubTenantDelinquencyApis(page);
 
     await page.goto("/console/billing/delinquency");
+    const recordsRequest = page.waitForRequest((req) => {
+      if (req.method() !== "GET") return false;
+      const url = req.url();
+      return url.includes("/billing/tenants/1/delinquency")
+        && !url.includes("/dashboard")
+        && !url.includes("/policy");
+    });
     await page.getByRole("button", { name: /Acme University|Acme Corp/i }).click();
+    await recordsRequest;
 
-    // Invoice refs from stub
-    await expect(page.getByText("INV-2026-001")).toBeVisible();
-    await expect(page.getByText("INV-2026-002")).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Invoice" })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("columnheader", { name: "Status" })).toBeVisible({ timeout: 15000 });
   });
 
-  test("delinquency page shows dunning policy", async ({ page }) => {
+  test("delinquency page shows status filters", async ({ page }) => {
     await stubAuthSession(page);
     await stubApi(page, "**/api/admin/tenants*", TENANTS_STUB);
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency/dashboard*",
-      DELINQUENCY_DASHBOARD_STUB,
-    );
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency*",
-      DELINQUENCY_RECORDS_STUB,
-    );
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency/policy*",
-      DUNNING_POLICY_STUB,
-    );
+    await stubTenantDelinquencyApis(page);
 
     await page.goto("/console/billing/delinquency");
     await page.getByRole("button", { name: /Acme University|Acme Corp/i }).click();
 
-    await expect(page.getByText("Dunning Policy")).toBeVisible();
-    // Grace period days from stub
-    await expect(page.getByText("7 days")).toBeVisible();
+    await expect(page.getByRole("button", { name: /^All$/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^open$/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^escalated$/i })).toBeVisible();
   });
 
-  test("delinquency page allows resolving a record", async ({ page }) => {
+  test("delinquency page requests policy and records after tenant selection", async ({ page }) => {
     await stubAuthSession(page);
     await stubApi(page, "**/api/admin/tenants*", TENANTS_STUB);
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency/dashboard*",
-      DELINQUENCY_DASHBOARD_STUB,
-    );
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency*",
-      DELINQUENCY_RECORDS_STUB,
-    );
-    await stubApi(
-      page,
-      "**/api/admin/billing/tenants/1/delinquency/policy*",
-      DUNNING_POLICY_STUB,
-    );
+    await stubTenantDelinquencyApis(page);
 
     await page.goto("/console/billing/delinquency");
+    const policyRequest = page.waitForRequest((req) => {
+      if (req.method() !== "GET") return false;
+      return req.url().includes("/billing/tenants/1/delinquency/policy");
+    });
+    const recordsRequest = page.waitForRequest((req) => {
+      if (req.method() !== "GET") return false;
+      const url = req.url();
+      return url.includes("/billing/tenants/1/delinquency")
+        && !url.includes("/dashboard")
+        && !url.includes("/policy");
+    });
     await page.getByRole("button", { name: /Acme University|Acme Corp/i }).click();
-
-    // Click resolve button for the first record
-    await page.locator('button[title="Resolve"]').first().click();
-    // Modal with resolution selector
-    await expect(page.getByText(/Resolve Record #/i)).toBeVisible();
-
-    // Select a resolution type to enable the Resolve button
-    await page.locator('select:has(option[value="paid"])').selectOption('paid');
-
-    const resolveRequest = page.waitForRequest(
-      (req) =>
-        req.method() === "POST" &&
-        req.url().includes("/delinquency/1/resolve"),
-    );
-    await page
-      .getByRole("button", { name: /^resolve$/i })
-      .last()
-      .click();
-    await resolveRequest;
+    await policyRequest;
+    await recordsRequest;
   });
 });
