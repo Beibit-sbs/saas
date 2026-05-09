@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-024.3
-- current_stage: A-024.2 complete / AI Copilot Ops + Procurement Approval Workflow Level 3 operational lift
-- last_completed_action_id: A-024.2
-- next_action_id: A-024.3
-- updated_at: 2026-05-09 (A-024.2 completed: ai_copilot_ops and procurement_approval_workflow lifted L2->L3 with backend-tested operational evidence; next=A-024.3)
+- status: ready_for_A-024.4
+- current_stage: A-024.3 complete / Observability Level 4 operational visibility
+- last_completed_action_id: A-024.3
+- next_action_id: A-024.4
+- updated_at: 2026-05-09 (A-024.3 completed: observability lifted L3->L4 with tenant-safe visibility API and backend-tested evidence; next=A-024.4)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -388,6 +388,62 @@
     - no fake AI/provider/autonomy claims
     - no fake approval/payment/contract-execution claims
 - Decision: **A-024.2 CLOSED — PASS**. Proceed to `A-024.3`.
+
+#### A-024.3 — Observability Level 3->4 Consolidation Slice
+
+- Date: 2026-05-09
+- Scope: Targeted L4 operational visibility lift for `observability` only.
+- Selected module:
+    - `observability`: L3 -> L4
+- Operational visibility evidence added:
+    - deterministic observability service contracts:
+        - `build_observability_signal(...)`
+        - `build_observability_summary(...)`
+        - `build_observability_signal_from_platform_health(...)`
+    - tenant fail-closed validation (`tenant_id > 0` required)
+    - visible admin/API surface:
+        - `GET /api/admin/observability/summary`
+    - deterministic visibility linkage to existing operational surfaces:
+        - `/health/deep`
+        - `/metrics/ops`
+        - `/metrics/latency`
+    - explicit anti-inflation safety fields:
+        - no fake uptime
+        - no fake SLA
+        - no external monitoring provider claim
+        - no fake alert execution claim
+- Audit Table — All Modules updates (A-024.3 delta):
+
+| Module | Category | Previous Level | New Level | Evidence Added | Validation |
+|---|---|---|---|---|---|
+| `observability` | Integrations & Platform | L3 | L4 | tenant-safe deterministic signal/summary contracts + admin visibility endpoint `/api/admin/observability/summary` + platform_health compatibility mapping | targeted tests PASS |
+
+- Validation evidence:
+    - `git diff --check` PASS
+    - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/test_a0243_observability_operational_visibility.py --no-cov -rA` -> **23 passed, 1 warning**
+    - import check: `A-024.3 observability import validation OK`
+- Visible surface proof:
+    - endpoint `/api/admin/observability/summary` returns deterministic tenant-scoped visibility summary
+    - summary exposes evidence lineage and references existing metrics/health surfaces
+- Brain-first review:
+    - observability now emits deterministic reliability visibility artifacts that can feed future Brain signal mapping.
+    - platform_health evidence compatibility path is validated.
+- SaaS-first review:
+    - endpoint and service contracts are tenant-safe and fail-closed.
+    - no hidden cross-tenant aggregation behavior introduced.
+- Performance review:
+    - summary is derived from internal runtime/dependency evidence only.
+    - no external monitoring integration added; blast radius remains controlled.
+- Event/KPI/API decision:
+    - API surface delivered in A-024.3 (`/api/admin/observability/summary`).
+    - registry/ingestion wiring explicitly deferred (`event_readiness_decision=deferred_to_a0245`) to avoid low-signal churn.
+- Anti-inflation review: PASS
+    - no Level 5/6 claim
+    - no fake uptime/SLA claim
+    - no fake external monitoring provider claim
+    - no synthetic KPI value claim
+    - no module count expansion
+- Decision: **A-024.3 CLOSED — PASS**. Proceed to `A-024.4`.
 
 
 
@@ -1217,22 +1273,22 @@
 - level_0_count = 4
 - level_1_count = 20
 - level_2_count = 13
-- level_3_count = 28
-- level_4_count = 62
+- level_3_count = 27
+- level_4_count = 63
 - level_5_count = 21
 - level_6_count = 2
 - level_1_plus_count = 146
 - level_2_plus_count = 126
 - level_3_plus_count = 113
-- level_4_plus_count = 85
+- level_4_plus_count = 86
 - level_5_plus_count = 23
 - foundation_gap_count = 37
 - level_2_gap_count = 24
-- arithmetic_check = 4+20+13+28+62+21+2=150
+- arithmetic_check = 4+20+13+27+63+21+2=150
 - maturity_arithmetic_check = PASS
-- exact_counts_verified_at = 2026-05-09 (A-024.2 closure)
-- evidence_source = A-024.2-AI_COPILOT_PROCUREMENT_OPERATIONAL_LIFT_REPORT.md + A-024.0 selection report + A-023.8 foundation report
-- updated_at = 2026-05-09 (A-024.2: ai_copilot_ops/procurement_approval_workflow moved L2->L3 with tested operational evidence)
+- exact_counts_verified_at = 2026-05-09 (A-024.3 closure)
+- evidence_source = A-024.3-OBSERVABILITY_OPERATIONAL_VISIBILITY_REPORT.md + A-024.0 selection report + A-023.8 foundation report
+- updated_at = 2026-05-09 (A-024.3: observability moved L3->L4 with tested tenant-safe visibility evidence)
 - mandatory_rule = Keep exact counts synchronized with canonical 150-module inventory.
 - rule = Coverage does not equal full maturity.
 - coverage_not_equal_full_maturity = true

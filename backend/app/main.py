@@ -153,6 +153,7 @@ from app.modules.observability.perf_profile import (
 )
 from app.modules.observability.trace import generate_trace_id
 from app.modules.observability.metrics import record_request, render_metrics, snapshot_latency_metrics
+from app.modules.observability.service import build_observability_signal, build_observability_summary
 from app.modules.observability.security_signals import record_security_signal
 from app.modules.observability.otel import setup_otel, teardown_otel
 from app.platform.runtime_state import get_scheduler_last_run, get_worker_heartbeat
@@ -902,6 +903,125 @@ def metrics_latency(
     __: None = Depends(permission_dependency("metrics.read")),
 ) -> dict[str, float | int]:
     return _collect_latency_metrics()
+
+
+@app.get("/api/admin/observability/summary")
+def admin_observability_summary(
+    request: Request,
+    __: None = Depends(permission_dependency("metrics.read")),
+) -> dict[str, object]:
+    """Tenant-safe observability visibility summary.
+
+    The payload is derived from internal runtime/dependency evidence only.
+    It does not claim production SLA/uptime guarantees or external monitoring integrations.
+    """
+    tenant_id = _resolve_metrics_tenant_id(request)
+    deep = deep_payload(request.app)
+    latency = snapshot_latency_metrics()
+    dependencies = deep.get("dependencies", {}) if isinstance(deep, dict) else {}
+
+    def _dep_status(name: str) -> str:
+        dependency = dependencies.get(name, {}) if isinstance(dependencies, dict) else {}
+        healthy = bool(dependency.get("healthy", False))
+        return "healthy" if healthy else "unhealthy"
+
+    api_status = "healthy"
+    p95_latency = float(latency.get("p95_latency_ms", 0.0) or 0.0)
+    p99_latency = float(latency.get("p99_latency_ms", 0.0) or 0.0)
+    if p95_latency >= 1200 or p99_latency >= 2500:
+        api_status = "degraded"
+
+    ai_status = "healthy"
+    if p95_latency >= 1500 or int(latency.get("http_5xx_count", 0) or 0) > 0:
+        ai_status = "degraded"
+
+    signals = [
+        build_observability_signal(
+            tenant_id=tenant_id,
+            component="api",
+            status=api_status,
+            latency_ms=p95_latency,
+            error_rate=min(1.0, float(latency.get("http_5xx_count", 0) or 0) / max(1, int(latency.get("requests_per_minute", 0) or 0))),
+            dependency_available=True,
+            source="metrics.latency",
+            source_entity_type="runtime_metrics",
+            source_entity_id="latency_snapshot",
+        ),
+        build_observability_signal(
+            tenant_id=tenant_id,
+            component="database",
+            status=_dep_status("postgresql"),
+            source="health.deep",
+            source_entity_type="dependency",
+            source_entity_id="postgresql",
+            dependency_available=_dep_status("postgresql") == "healthy",
+        ),
+        build_observability_signal(
+            tenant_id=tenant_id,
+            component="cache",
+            status=_dep_status("redis"),
+            source="health.deep",
+            source_entity_type="dependency",
+            source_entity_id="redis",
+            dependency_available=_dep_status("redis") == "healthy",
+        ),
+        build_observability_signal(
+            tenant_id=tenant_id,
+            component="worker",
+            status=_dep_status("worker"),
+            source="health.deep",
+            source_entity_type="dependency",
+            source_entity_id="worker",
+            dependency_available=_dep_status("worker") == "healthy",
+        ),
+        build_observability_signal(
+            tenant_id=tenant_id,
+            component="scheduler",
+            status=_dep_status("scheduler"),
+            source="health.deep",
+            source_entity_type="dependency",
+            source_entity_id="scheduler",
+            dependency_available=_dep_status("scheduler") == "healthy",
+        ),
+        build_observability_signal(
+            tenant_id=tenant_id,
+            component="platform_health",
+            status="healthy" if bool(deep.get("deep", False)) else "degraded",
+            source="health.deep",
+            source_entity_type="dependency_summary",
+            source_entity_id="platform_health",
+            dependency_available=bool(deep.get("deep", False)),
+        ),
+        build_observability_signal(
+            tenant_id=tenant_id,
+            component="ai_routing",
+            status=ai_status,
+            latency_ms=p95_latency,
+            error_rate=min(1.0, float(latency.get("http_5xx_count", 0) or 0) / max(1, int(latency.get("requests_per_minute", 0) or 0))),
+            source="metrics.latency",
+            source_entity_type="runtime_metrics",
+            source_entity_id="ai_routing_visibility",
+        ),
+        build_observability_signal(
+            tenant_id=tenant_id,
+            component="ai_copilot",
+            status=ai_status,
+            latency_ms=p95_latency,
+            error_rate=min(1.0, float(latency.get("http_5xx_count", 0) or 0) / max(1, int(latency.get("requests_per_minute", 0) or 0))),
+            source="metrics.latency",
+            source_entity_type="runtime_metrics",
+            source_entity_id="ai_copilot_visibility",
+        ),
+    ]
+
+    summary = build_observability_summary(tenant_id=tenant_id, signals=signals)
+    summary["visible_surface"] = "/api/admin/observability/summary"
+    summary["kpi_visibility"] = {
+        "metrics_ops": "/metrics/ops",
+        "metrics_latency": "/metrics/latency",
+        "health_deep": "/health/deep",
+    }
+    return summary
 
 
 @app.get("/health/deep")
