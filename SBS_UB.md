@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-023.1
-- current_stage: A-023.0 COMPLETE - canonical 150 module maturity inventory locked
-- last_completed_action_id: A-023.0
-- next_action_id: A-023.1
-- updated_at: 2026-05-09 (A-023.0 completed: canonical 150-module inventory + exact L0-L6 metrics + A-023.1 handoff prepared.)
+- status: ready_for_A-023.2
+- current_stage: A-023.1 COMPLETE - academic/education foundation lift (8 modules: 6 L0→L1, 2 L1→L2)
+- last_completed_action_id: A-023.1
+- next_action_id: A-023.2
+- updated_at: 2026-05-09 (A-023.1 completed: 8 academic/education modules lifted; L0:26→20, L1:12→16, L2:3→5; sum=150.)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
 
@@ -14,7 +14,7 @@
     - implemented_modules: `112`
     - planned_expansion_modules: `38`
 - Exact maturity metrics (locked):
-    - level_0_count: `26`
+    - level_0_count: `26` *(A-023.0 snapshot — see A-023.1 for updated counts)*
     - level_1_count: `12`
     - level_2_count: `3`
     - level_3_count: `24`
@@ -858,20 +858,22 @@
 - current_level_counts_status = exact_counts_locked
 - exact_level_counts_due = closed_in_A-023.0
 - current_audited_rows = 150
-- level_0_count = 26
-- level_1_count = 12
-- level_2_count = 3
+- level_0_count = 20
+- level_1_count = 16
+- level_2_count = 5
 - level_3_count = 24
 - level_4_count = 62
 - level_5_count = 21
 - level_6_count = 2
-- level_1_plus_count = 124
-- level_2_plus_count = 112
+- level_1_plus_count = 130
+- level_2_plus_count = 114
 - level_3_plus_count = 109
 - level_4_plus_count = 85
 - level_5_plus_count = 23
-- evidence_source = A-023.0-150_MODULE_EXPANSION_AND_MATURITY_INVENTORY_REPORT.md
-- updated_at = 2026-05-09 (A-023.0)
+- foundation_gap_count = 41
+- arithmetic_check = 20+16+5+24+62+21+2=150
+- evidence_source = A-023.1-ACADEMIC_EDUCATION_FOUNDATION_LIFT_REPORT.md
+- updated_at = 2026-05-09 (A-023.1: 6×L0→L1 + 2×L1→L2)
 - mandatory_rule = Keep exact counts synchronized with canonical 150-module inventory.
 - coverage_not_equal_full_maturity = true
 - note = Coverage is not equal to full maturity. Level 6 applies only to modules/workflows with E2E + gate evidence.
