@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-022.1
-- current_stage: A-022.0 selection complete / A-022.1 ready to start
-- last_completed_action_id: A-022.0
-- next_action_id: A-022.1 (pending confirmation)
-- updated_at: 2026-05-09 (A-022.0 planning complete: Top 5 selected (Simulation, Proposal Contract, Room Bridge, E2E, KPI/Dashboard); backlog finalized (A-022.1–A-022.8); safety model locked (Level 3 default, Level 5 deferred); non-destructive policy committed; A-022.0 planning report created.)
+- status: ready_for_A-022.2
+- current_stage: A-022.1 complete / A-022.2 ready to start
+- last_completed_action_id: A-022.1
+- next_action_id: A-022.2
+- updated_at: 2026-05-09 (A-022.1 complete: timetable change proposal contract delivered with tenant-safe schema + FSM + audit evidence + bridge helpers; non-destructive policy locked (no apply/mutation/reservation/override/auto-apply fields); targeted and regression validation green.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -413,6 +413,68 @@
 - Deliverable:
     - `A-022.0-WAVE10_SELECTION_AND_TIMETABLE_WORKFLOW_PLANNING_REPORT.md` (13-section comprehensive planning artifact)
 - Decision: **A-022.0 COMPLETE — PASS (planning/selection only)**. Ready for transition to `A-022.1`.
+
+#### A-022.1 — Timetable Change Proposal Contract
+
+- Date: 2026-05-09
+- Scope: Additive contract-only implementation for human-approved timetable change proposals. No simulation engine, no apply pipeline, no schedule mutation, no room reservation override.
+- Repo hygiene snapshot:
+    - Dirty tracked (out-of-scope, not staged): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical artifacts retained: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+    - A-022.0 baseline commit confirmed: `7c6e691`
+- Implementation delivered:
+    - `backend/app/modules/scheduling/timetable_change_proposal.py`
+        - Added proposal contract enums:
+            - `TimetableChangeProposalStatus`
+            - `TimetableChangeType`
+            - `TimetableChangeProposalRiskLevel`
+            - `TimetableChangeProposalSourceType`
+        - Added core schemas:
+            - `TimetableChangeCurrentSnapshot`
+            - `TimetableChangeProposedChange`
+            - `TimetableChangeAffectedEntities`
+            - `TimetableChangeProposalEvidence`
+            - `TimetableChangeAuditEvidence`
+            - `TimetableChangeProposal`
+            - `TimetableChangeProposalInput`
+            - `TimetableChangeProposalDecision`
+        - Added FSM helpers:
+            - `transition_timetable_change_proposal(...)`
+            - `apply_proposal_decision(...)`
+            - `build_proposal_audit_evidence(...)`
+        - Added bridge/build helpers:
+            - `build_timetable_change_proposal(...)`
+            - `proposal_from_room_recommendation(...)`
+            - `proposal_from_conflict(...)`
+        - Safety invariants enforced:
+            - `tenant_id > 0` required (fail-closed)
+            - cross-tenant transition/decision rejected
+            - invalid FSM transition raises `ValueError`
+            - no mutation/apply/reservation/override outputs
+            - `approval_required=True` default preserved
+    - `backend/app/platform/events/registry.py`
+        - Added timetable proposal lifecycle event types:
+            - `scheduling.timetable_proposal.created`
+            - `scheduling.timetable_proposal.submitted`
+            - `scheduling.timetable_proposal.approved`
+            - `scheduling.timetable_proposal.rejected`
+            - `scheduling.timetable_proposal.revision_requested`
+            - `scheduling.timetable_proposal.cancelled`
+    - `backend/app/platform/event_ingestion/types.py`
+        - Added same lifecycle events to ingestion allow-list
+    - `backend/tests/test_a022_1_timetable_change_proposal_contract.py`
+        - Added full A-022.1 contract suite (33 checks; includes required 27 coverage areas + companion guards)
+- Validation summary:
+    - Targeted A-022.1 contract suite:
+        - `cd infra && docker compose --env-file .env build backend-tests && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a022_1_timetable_change_proposal_contract.py --no-cov -rA`
+        - Result: **33 passed, 0 failed**
+    - Scheduling/room-allocation regression slice:
+        - `cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/ -k "a020 or a022_1 or scheduling or room_booking or room_allocation or timetable_change" --no-cov -rA`
+        - Result: **397 passed, 0 failed, 8415 deselected**
+    - Tenant/security regression slice:
+        - `cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest tests/ -k "tenant or security" --no-cov --tb=line -q`
+        - Result: **1013 passed, 1 skipped, 0 failed, 7798 deselected**
+- Decision: **A-022.1 COMPLETE — PASS**. Transition to `A-022.2`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 

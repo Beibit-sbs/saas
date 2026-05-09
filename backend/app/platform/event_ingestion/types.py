@@ -39,6 +39,13 @@ VALID_EVENT_TYPES: frozenset[str] = frozenset(
         "scheduling.room_type_mismatch.detected",
         "scheduling.computer_shortage.detected",
         "scheduling.capacity_mismatch.detected",
+            # A-022.1 — Timetable change proposal lifecycle
+            "scheduling.timetable_proposal.created",
+            "scheduling.timetable_proposal.submitted",
+            "scheduling.timetable_proposal.approved",
+            "scheduling.timetable_proposal.rejected",
+            "scheduling.timetable_proposal.revision_requested",
+            "scheduling.timetable_proposal.cancelled",
         "booking.approved",
         "booking.conflict_detected",
         "room.released",
