@@ -807,7 +807,7 @@ const GOVERNANCE_ALERT_QUEUE_DOMAINS: GovernanceAlertDomainConfig[] = [
     watchMetricKeys: [],
     sourceDomains: ["Brain Core", "Governance Review", "Actionability"],
     recommendedHumanAction: "Triage review-required backlog and assign human owners by domain.",
-    dataQualityNote: "Queue entries are evidence-backed and do not auto-resolve.",
+    dataQualityNote: "Queue entries are evidence-backed and require explicit human closure.",
   },
   {
     domainId: "student-risk-interventions",
@@ -978,7 +978,7 @@ const KPI_EVIDENCE_DRILLDOWN_CONFIG: KpiEvidenceDrilldownConfig[] = [
     ],
     sourceDomains: ["Brain Core", "Governance Review"],
     explanation: "Brain signals are advisory and evidence-backed; decision authority remains with humans.",
-    dataQualityNote: "Review-required entries are never auto-resolved.",
+    dataQualityNote: "Review-required entries always require explicit human closure.",
   },
   {
     domainId: "student-risk-interventions",

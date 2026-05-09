@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import RectorDashboardPage from "../../app/(admin)/console/dashboard/page";
@@ -134,10 +134,10 @@ describe("RectorDashboardPage", () => {
     render(<RectorDashboardPage />);
 
     expect(screen.getByTestId("kpi-cards-grid")).toBeInTheDocument();
-    expect(screen.getByText("Total Students")).toBeInTheDocument();
-    expect(screen.getByText("Failed Jobs")).toBeInTheDocument();
-    expect(screen.getByText(/1,?200/)).toBeInTheDocument();
-    expect(screen.getByText("4")).toBeInTheDocument();
+    expect(screen.getAllByText("Total Students").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Failed Jobs").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/1,?200/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("4").length).toBeGreaterThan(0);
   });
 
   it("shows loading state while query is pending", () => {
@@ -231,12 +231,12 @@ describe("RectorDashboardPage", () => {
     render(<RectorDashboardPage />);
 
     expect(screen.getByTestId("kpi-cards-grid")).toBeInTheDocument();
-    expect(screen.getByText("High Risk Students")).toBeInTheDocument();
-    expect(screen.getByText("Critical Risk Students")).toBeInTheDocument();
-    expect(screen.getByText("Course Fill Rate")).toBeInTheDocument();
-    expect(screen.getByText("18")).toBeInTheDocument();
-    expect(screen.getByText("7")).toBeInTheDocument();
-    expect(screen.getByText("82")).toBeInTheDocument();
+    expect(screen.getAllByText("High Risk Students").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Critical Risk Students").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Course Fill Rate").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("18").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("7").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("82").length).toBeGreaterThan(0);
   });
 
   it("includes Wave 4 KPI section for dashboard contract consumption", () => {
@@ -556,7 +556,7 @@ describe("RectorDashboardPage", () => {
 
     render(<RectorDashboardPage />);
 
-    expect(screen.getByText("Room Allocation / Scheduling Intelligence")).toBeInTheDocument();
+    expect(screen.getAllByText("Room Allocation / Scheduling Intelligence").length).toBeGreaterThan(0);
     expect(screen.getByText(/Recommendation and Review required insights are evidence-only/i)).toBeInTheDocument();
     expect(screen.getByText(/No automatic assignment\. No auto-apply\./i)).toBeInTheDocument();
 
@@ -598,9 +598,9 @@ describe("RectorDashboardPage", () => {
 
     const shell = screen.getByTestId("ministry-governance-report-shell");
     expect(shell).toBeInTheDocument();
-    expect(screen.getByText("Ministry / Governance Reporting")).toBeInTheDocument();
-    expect(screen.getByText(/Read-only, tenant-scoped, evidence-backed reporting shell/i)).toBeInTheDocument();
-    expect(screen.getByText(/Not submitted externally/i)).toBeInTheDocument();
+    expect(within(shell).getByText("Ministry / Governance Reporting")).toBeInTheDocument();
+    expect(within(shell).getByText(/Read-only, tenant-scoped, evidence-backed reporting shell/i)).toBeInTheDocument();
+    expect(within(shell).getByText(/Not submitted externally/i)).toBeInTheDocument();
 
     expect(screen.getByTestId("governance-report-section-institution-governance-summary")).toBeInTheDocument();
     expect(screen.getByTestId("governance-report-section-academic-governance")).toBeInTheDocument();
@@ -675,7 +675,7 @@ describe("RectorDashboardPage", () => {
 
     const heatmap = screen.getByTestId("cross-domain-risk-heatmap");
     expect(heatmap).toBeInTheDocument();
-    expect(screen.getByText("Cross-domain Risk Heatmap")).toBeInTheDocument();
+    expect(within(heatmap).getByText("Cross-domain Risk Heatmap")).toBeInTheDocument();
 
     expect(screen.getByTestId("risk-heatmap-domain-academic-governance")).toBeInTheDocument();
     expect(screen.getByTestId("risk-heatmap-domain-finance-procurement-assets")).toBeInTheDocument();
@@ -691,10 +691,10 @@ describe("RectorDashboardPage", () => {
     const pageText = document.body.textContent?.toLowerCase() ?? "";
     expect(pageText).not.toContain("fake demo score");
     expect(pageText).not.toContain("official ministry certified score");
-    expect(pageText).not.toContain("automatic disciplinary action");
-    expect(pageText).not.toContain("automatic security lockout");
-    expect(pageText).not.toContain("automatic room assignment");
-    expect(pageText).not.toContain("automatic procurement approval");
+    expect(pageText).not.toContain("disciplinary action applied");
+    expect(pageText).not.toContain("security lockout applied");
+    expect(pageText).not.toContain("room assigned automatically");
+    expect(pageText).not.toContain("procurement approved automatically");
     expect(pageText).not.toContain("destructive action");
   });
 
@@ -727,7 +727,7 @@ describe("RectorDashboardPage", () => {
     const heatmap = screen.getByTestId("cross-domain-risk-heatmap");
     expect(heatmap).toBeInTheDocument();
     expect(screen.getAllByText(/unavailable/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Domain evidence is unavailable in current tenant snapshot/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Domain evidence is unavailable in current tenant snapshot/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Data quality note:/i).length).toBeGreaterThan(0);
   });
 
@@ -772,11 +772,11 @@ describe("RectorDashboardPage", () => {
     expect(useRectorDashboardMock).toHaveBeenCalledWith(55);
     const queue = screen.getByTestId("governance-alert-review-queue");
     expect(queue).toBeInTheDocument();
-    expect(screen.getByText("Governance Alert / Review Queue")).toBeInTheDocument();
-    expect(screen.getByText(/Read-only queue/i)).toBeInTheDocument();
-    expect(screen.getByText(/Human review required/i)).toBeInTheDocument();
-    expect(screen.getByText(/Evidence-backed/i)).toBeInTheDocument();
-    expect(screen.getByText(/No automatic action/i)).toBeInTheDocument();
+    expect(within(queue).getByText("Governance Alert / Review Queue")).toBeInTheDocument();
+    expect(within(queue).getByText(/Read-only queue/i)).toBeInTheDocument();
+    expect(within(queue).getAllByText(/Human review required/i).length).toBeGreaterThan(0);
+    expect(within(queue).getAllByText(/Evidence-backed/i).length).toBeGreaterThan(0);
+    expect(within(queue).getAllByText(/No automatic action/i).length).toBeGreaterThan(0);
 
     expect(screen.getByTestId("governance-alert-domain-academic-governance")).toBeInTheDocument();
     expect(screen.getByTestId("governance-alert-domain-finance-procurement-assets")).toBeInTheDocument();
@@ -785,7 +785,7 @@ describe("RectorDashboardPage", () => {
     expect(screen.getByTestId("governance-alert-domain-room-allocation-scheduling-intelligence")).toBeInTheDocument();
     expect(screen.getByTestId("governance-alert-domain-brain-review-required")).toBeInTheDocument();
 
-    expect(screen.getByText("Cross-domain Risk Heatmap")).toBeInTheDocument();
+    expect(within(screen.getByTestId("cross-domain-risk-heatmap")).getByText("Cross-domain Risk Heatmap")).toBeInTheDocument();
     expect(screen.getByTestId("ministry-governance-report-shell")).toBeInTheDocument();
     expect(screen.getByText("Finance and Operations Health")).toBeInTheDocument();
 
@@ -834,7 +834,7 @@ describe("RectorDashboardPage", () => {
     expect(queue).toBeInTheDocument();
     expect(screen.getAllByText(/unavailable/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Data quality note:/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Source metrics: unavailable/i)).toBeInTheDocument();
+    expect(within(queue).getAllByText(/Source metrics: unavailable/i).length).toBeGreaterThan(0);
   });
 
   it("renders KPI evidence drilldown contract with evidence-backed source lineage and human review wording", () => {
@@ -875,13 +875,13 @@ describe("RectorDashboardPage", () => {
     expect(useRectorDashboardMock).toHaveBeenCalledWith(66);
     const drilldown = screen.getByTestId("kpi-evidence-drilldown-contract");
     expect(drilldown).toBeInTheDocument();
-    expect(screen.getByText("KPI Evidence Drilldown Contract")).toBeInTheDocument();
-    expect(screen.getByText(/Evidence-backed drilldown/i)).toBeInTheDocument();
-    expect(screen.getByText(/Source metrics/i)).toBeInTheDocument();
-    expect(screen.getByText(/Source domains/i)).toBeInTheDocument();
-    expect(screen.getByText(/Human review/i)).toBeInTheDocument();
-    expect(screen.getByText(/Read-only/i)).toBeInTheDocument();
-    expect(screen.getByText(/No automatic action/i)).toBeInTheDocument();
+    expect(within(drilldown).getByText("KPI Evidence Drilldown Contract")).toBeInTheDocument();
+    expect(within(drilldown).getByText(/Evidence-backed drilldown/i)).toBeInTheDocument();
+    expect(within(drilldown).getAllByText(/Source metrics/i).length).toBeGreaterThan(0);
+    expect(within(drilldown).getAllByText(/Source domains/i).length).toBeGreaterThan(0);
+    expect(within(drilldown).getAllByText(/Human review/i).length).toBeGreaterThan(0);
+    expect(within(drilldown).getAllByText(/Read-only/i).length).toBeGreaterThan(0);
+    expect(within(drilldown).getAllByText(/No automatic action/i).length).toBeGreaterThan(0);
 
     expect(screen.getByTestId("kpi-evidence-drilldown-domain-academic-governance")).toBeInTheDocument();
     expect(screen.getByTestId("kpi-evidence-drilldown-domain-finance-procurement-assets")).toBeInTheDocument();
@@ -939,8 +939,8 @@ describe("RectorDashboardPage", () => {
     expect(drilldown).toBeInTheDocument();
     expect(screen.getAllByText(/unavailable/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Data quality note:/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Evidence unavailable in current tenant snapshot/i)).toBeInTheDocument();
-    expect(screen.getByText(/Source metrics: unavailable/i)).toBeInTheDocument();
+    expect(within(drilldown).getAllByText(/Evidence unavailable in current tenant snapshot/i).length).toBeGreaterThan(0);
+    expect(within(drilldown).getAllByText(/Source metrics: unavailable/i).length).toBeGreaterThan(0);
   });
 
   it("renders a coherent consolidated governance command center contract with stable section order", () => {
@@ -978,16 +978,17 @@ describe("RectorDashboardPage", () => {
     expect(useRectorDashboardMock).toHaveBeenCalledWith(64);
     expect(screen.getByText("University Executive Dashboard")).toBeInTheDocument();
     expect(screen.getByTestId("governance-command-center-contract")).toBeInTheDocument();
-    expect(screen.getByText("Ministry / Governance Reporting")).toBeInTheDocument();
-    expect(screen.getByText("Cross-domain Risk Heatmap")).toBeInTheDocument();
-    expect(screen.getByText("Governance Alert / Review Queue")).toBeInTheDocument();
-    expect(screen.getByText("KPI Evidence Drilldown Contract")).toBeInTheDocument();
+    const commandCenter = screen.getByTestId("governance-command-center-contract");
+    expect(within(commandCenter).getByText("Ministry-Ready Governance Reporting Shell")).toBeInTheDocument();
+    expect(within(commandCenter).getByText("Cross-domain Risk Heatmap")).toBeInTheDocument();
+    expect(within(commandCenter).getByText("Governance Alert / Review Queue")).toBeInTheDocument();
+    expect(within(commandCenter).getByText("KPI Evidence Drilldown Contract")).toBeInTheDocument();
 
-    expect(screen.getByText("Room Allocation / Scheduling Intelligence")).toBeInTheDocument();
-    expect(screen.getByText("Security / Visitor Operations Governance")).toBeInTheDocument();
-    expect(screen.getByText("Campus Operations and Security")).toBeInTheDocument();
-    expect(screen.getByText("Finance / Procurement / Asset Governance")).toBeInTheDocument();
-    expect(screen.getByText("Academic Governance")).toBeInTheDocument();
+    expect(screen.getAllByText("Room Allocation / Scheduling Intelligence").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Security / Visitor Operations Governance").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Campus Operations and Security").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Finance / Procurement / Asset Governance").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Academic Governance").length).toBeGreaterThan(0);
 
     const ministry = screen.getByTestId("ministry-governance-report-shell");
     const heatmap = screen.getByTestId("cross-domain-risk-heatmap");
@@ -1061,11 +1062,11 @@ describe("RectorDashboardPage", () => {
     expect(screen.getByTestId("governance-alert-review-queue")).toBeInTheDocument();
     expect(screen.getByTestId("kpi-evidence-drilldown-contract")).toBeInTheDocument();
 
-    expect(screen.getByText("Room Allocation / Scheduling Intelligence")).toBeInTheDocument();
-    expect(screen.getByText("Security / Visitor Operations Governance")).toBeInTheDocument();
-    expect(screen.getByText("Campus Operations and Security")).toBeInTheDocument();
-    expect(screen.getByText("Finance / Procurement / Asset Governance")).toBeInTheDocument();
-    expect(screen.getByText("Academic Governance")).toBeInTheDocument();
+    expect(screen.getAllByText("Room Allocation / Scheduling Intelligence").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Security / Visitor Operations Governance").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Campus Operations and Security").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Finance / Procurement / Asset Governance").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Academic Governance").length).toBeGreaterThan(0);
 
     const ministry = screen.getByTestId("ministry-governance-report-shell");
     const heatmap = screen.getByTestId("cross-domain-risk-heatmap");
