@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-021.1 RECTOR EXECUTIVE COMMAND CENTER CONSOLIDATION)
-- status: ready_for_A-021.8
-- current_stage: A-021 Wave 9 implementation (A-021.7 complete)
+- status: A-021.8_blocked
+- current_stage: A-021 Wave 9 closure blocked (gate remediation required)
 - last_completed_action_id: A-021.7
-- next_action_id: A-021.8
-- updated_at: 2026-05-09 (A-021.7 complete: cross-feature governance E2E validation proved integrated tenant-scoped read-only evidence-backed dashboard flow across executive/shell/heatmap/queue/drilldown, with targeted/full frontend + lint + build + tenant/security slice + safe-gate validations passing.)
+- next_action_id: A-021.8.B1
+- updated_at: 2026-05-09 (A-021.8 closure matrix executed: targeted/lint/build/tenant-security/safe-gate passed, but smoke gate failed, full backend failed, and release gate failed; closure blocked pending remediation.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -248,6 +248,34 @@
 - Deliverable:
     - `A-021.7-CROSS_FEATURE_GOVERNANCE_E2E_REPORT.md`
 - Decision: **A-021.7 CLOSED - PASS**. Proceed to `A-021.8`.
+
+#### A-021.8 - Full Gates + Final A-021 Governance Dashboard Closure
+
+- Date: 2026-05-09
+- Scope: Closure-only final validation matrix and evidence consolidation for A-021. No new features/endpoints/migrations.
+- Repo hygiene snapshot:
+    - Dirty tracked baseline artifacts: `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Historical untracked artifacts: legacy A-011/A-012/A-017 reports and local outputs
+    - A-021.8 commit scope: final report + `SBS_UB.md` update only
+- Validation summary:
+    - Targeted governance frontend (`RectorDashboardPage`): **PASS** (`1 file`, `16 tests`)
+    - Frontend lint: **PASS**
+    - Frontend build: **PASS**
+    - Tenant/security backend slice: **PASS** (`1006 passed, 1 skipped, 7772 deselected`)
+    - Safe gate: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+    - Smoke gate: **FAIL** (backend container unhealthy)
+    - Full backend: **FAIL** (`1 failed, 8713 passed, 13 skipped, 88 deselected, 7 warnings, 8 errors`)
+        - Error class: `tests/test_postgres_persistence_xv2.py` -> `DATABASE_URL` not set in this profile
+        - Failure class: brain-core assertion mismatch (`operational` vs `security_incident_review`)
+    - Release gate: **FAIL** (`exit 1`)
+        - Frontend segment summary: `2 failed | 116 passed` files, `18 failed | 793 passed` tests
+        - Representative failing surface: `__tests__/admin/RectorDashboardPage.test.tsx` (`getByText` strict-match collisions)
+- Classification:
+    - Environment/runtime conditions: smoke gate backend health; postgres persistence env wiring in no-deps backend profile
+    - Active closure blockers: release gate red in governance frontend contracts; full backend red
+- Deliverable:
+    - `A-021.8-FINAL_WAVE9_GOVERNANCE_DASHBOARD_REPORT.md` (17-section closure report)
+- Decision: **A-021.8 BLOCKED - CLOSURE NOT APPROVED**. Remediation action required at `A-021.8.B1` before transition to A-022.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 
