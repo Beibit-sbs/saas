@@ -11,28 +11,6 @@ from app.modules.university_core.entity_impl import validate_entity_tables_impl
 # autouse fixture pops it from os.environ for test isolation.
 _DATABASE_URL_AT_IMPORT = os.environ.get("DATABASE_URL")
 
-# A-011.5: 15 ACTIVE tables that have Alembic migrations (migration yp24qr56st78).
-# The remaining 66 ENTITY_CONFIGS tables are PLANNED_NOT_ACTIVE (63) or TEST_ONLY (3);
-# they fall back to in-memory store intentionally and are NOT asserted here.
-_A011_ACTIVE_TABLES = frozenset([
-    "currency_exchange_rates",
-    "tenant_localization_profiles",
-    "personnel_orders",
-    "portal_requests",
-    "university_syllabus_approval_actions",
-    "university_syllabus_approval_workflows",
-    "hr_contracts",
-    "university_equipment_booking_action_logs",
-    "patents",
-    "university_ip_asset_action_logs",
-    "university_research_ethics_action_logs",
-    "university_scheduling_section_action_logs",
-    "university_scheduling_section_outcomes",
-    "university_syllabus_approval_outcomes",
-    "university_teaching_quality_action_logs",
-])
-
-
 def test_all_entity_tables_exist() -> None:
     """Assert that the 15 ACTIVE university_core tables (migrated in A-011.5) are
     present in the database.  PLANNED_NOT_ACTIVE and TEST_ONLY entries are excluded
@@ -46,10 +24,18 @@ def test_all_entity_tables_exist() -> None:
 
     result = validate_entity_tables_impl()
     present = set(result.get("present", []))
+    missing_required = result.get("missing", [])
+    missing_fallback = result.get("missing_fallback", [])
 
-    missing_active = sorted(_A011_ACTIVE_TABLES - present)
+    missing_active = sorted(university_shared.REQUIRED_DB_TABLES - present)
     assert missing_active == [], (
         f"A-011.5 ACTIVE tables missing from database: {', '.join(missing_active)}"
+    )
+    assert missing_required == [], (
+        f"validate_entity_tables_impl() reported required missing tables unexpectedly: {', '.join(missing_required)}"
+    )
+    assert len(missing_fallback) == 66, (
+        f"Expected 66 fallback-allowed missing tables after A-011.5, got {len(missing_fallback)}"
     )
 
 

@@ -2128,6 +2128,37 @@ ENTITY_CONFIGS: dict[str, EntityConfig] = {
 }
 
 
+# A-011.5 authoritative DB-backed set. These tables are actively required by
+# runtime or internal audit paths and must exist in the database.
+REQUIRED_DB_TABLES = frozenset({
+    "currency_exchange_rates",
+    "tenant_localization_profiles",
+    "personnel_orders",
+    "portal_requests",
+    "university_syllabus_approval_actions",
+    "university_syllabus_approval_workflows",
+    "hr_contracts",
+    "university_equipment_booking_action_logs",
+    "patents",
+    "university_ip_asset_action_logs",
+    "university_research_ethics_action_logs",
+    "university_scheduling_section_action_logs",
+    "university_scheduling_section_outcomes",
+    "university_syllabus_approval_outcomes",
+    "university_teaching_quality_action_logs",
+})
+
+TEST_ONLY_DB_TABLES = frozenset({
+    "admissions_scorings",
+    "scan_requests",
+    "tutor_sessions",
+})
+
+ALLOWED_FALLBACK_TABLES = frozenset(
+    cfg.table for cfg in ENTITY_CONFIGS.values() if cfg.table not in REQUIRED_DB_TABLES
+)
+
+
 @dataclass
 class UniversityMemoryState:
     data: dict[str, dict[int, dict[str, object]]] = field(default_factory=dict)
@@ -2151,6 +2182,9 @@ def clear_university_state() -> None:
 __all__ = [
     "EntityConfig",
     "ENTITY_CONFIGS",
+    "REQUIRED_DB_TABLES",
+    "TEST_ONLY_DB_TABLES",
+    "ALLOWED_FALLBACK_TABLES",
     "UniversityMemoryState",
     "_state",
     "_state_lock",

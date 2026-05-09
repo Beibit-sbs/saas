@@ -421,8 +421,10 @@ def validate_entity_tables_impl() -> dict[str, list[str]]:
     """Check that every table referenced in ENTITY_CONFIGS exists in the database.
 
     Returns a dict with two keys:
-      - "missing": table names declared in ENTITY_CONFIGS but absent from the DB.
-      - "present": table names that were found.
+    - "missing": DB-required table names absent from the DB.
+    - "present": DB-required table names found.
+    - "missing_fallback": fallback-allowed table names absent from the DB.
+    - "present_fallback": fallback-allowed table names found.
 
     If the database is not configured or psycopg is unavailable the function
     returns immediately with empty lists (no-op; will be logged by the caller).
@@ -433,9 +435,16 @@ def validate_entity_tables_impl() -> dict[str, list[str]]:
 
     missing: list[str] = []
     present: list[str] = []
+    missing_fallback: list[str] = []
+    present_fallback: list[str] = []
 
     if not _use_database_impl():
-        return {"missing": missing, "present": present}
+        return {
+            "missing": missing,
+            "present": present,
+            "missing_fallback": missing_fallback,
+            "present_fallback": present_fallback,
+        }
 
     db_url = _db_url_impl()
     assert db_url is not None  # narrowing — _use_database_impl already checked
@@ -456,13 +465,24 @@ def validate_entity_tables_impl() -> dict[str, list[str]]:
                 "university_core: table-existence validation failed in fail-closed mode"
             ) from exc
         _log.warning("university_core: table-existence validation skipped — DB error: %s", exc)
-        return {"missing": missing, "present": present}
+        return {
+            "missing": missing,
+            "present": present,
+            "missing_fallback": missing_fallback,
+            "present_fallback": present_fallback,
+        }
 
     for _entity_name, cfg in university_shared.ENTITY_CONFIGS.items():
         if cfg.table in db_tables:
-            present.append(cfg.table)
+            if cfg.table in university_shared.REQUIRED_DB_TABLES:
+                present.append(cfg.table)
+            else:
+                present_fallback.append(cfg.table)
         else:
-            missing.append(cfg.table)
+            if cfg.table in university_shared.REQUIRED_DB_TABLES:
+                missing.append(cfg.table)
+            else:
+                missing_fallback.append(cfg.table)
 
     if missing:
         if _is_fail_closed_mode_impl():
@@ -471,17 +491,29 @@ def validate_entity_tables_impl() -> dict[str, list[str]]:
                 + ", ".join(sorted(missing))
             )
         _log.warning(
-            "university_core: %d entity table(s) MISSING from database — "
-            "CRUD calls will fall back to in-memory store: %s",
+            "university_core: %d REQUIRED entity table(s) missing from database: %s",
             len(missing),
             ", ".join(sorted(missing)),
         )
-    else:
+    elif present:
         _log.info(
-            "university_core: all %d entity tables verified in database", len(present)
+            "university_core: all %d required entity tables verified in database", len(present)
         )
 
-    return {"missing": missing, "present": present}
+    if missing_fallback:
+        _log.warning(
+            "university_core: %d fallback-allowed entity table(s) absent from database — "
+            "CRUD calls may use in-memory store: %s",
+            len(missing_fallback),
+            ", ".join(sorted(missing_fallback)),
+        )
+
+    return {
+        "missing": missing,
+        "present": present,
+        "missing_fallback": missing_fallback,
+        "present_fallback": present_fallback,
+    }
 
 
 __all__ = [
