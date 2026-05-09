@@ -94,6 +94,47 @@ type GovernanceReviewAlert = {
   readonly: true;
 };
 
+type KpiEvidenceSource = {
+  metricKey: string;
+  label: string;
+  valueLabel: string;
+  sourceDomain: string;
+  interpretation: string;
+  available: boolean;
+};
+
+type KpiEvidenceDrilldown = {
+  drilldownId: string;
+  title: string;
+  domainId: string;
+  domainTitle: string;
+  sourceMetrics: string[];
+  sourceDomains: string[];
+  evidenceSummary: string;
+  explanation: string;
+  riskLevel: "low" | "medium" | "high" | "critical" | "unavailable";
+  reviewRequired: boolean;
+  dataQualityNote: string;
+  readonly: true;
+  tenantScoped: true;
+  evidenceSources: KpiEvidenceSource[];
+};
+
+type KpiEvidenceDrilldownConfig = {
+  domainId: string;
+  domainTitle: string;
+  title: string;
+  metricKeys: string[];
+  criticalMetricKeys: string[];
+  highMetricKeys: string[];
+  mediumMetricKeys: string[];
+  reviewMetricKeys: string[];
+  sourceDomains: string[];
+  explanation: string;
+  dataQualityNote: string;
+  optional?: boolean;
+};
+
 const EXECUTIVE_KPI_SECTIONS: ExecutiveKpiSectionConfig[] = [
   {
     testId: "wave3-finance-kpi-section",
@@ -807,6 +848,163 @@ const GOVERNANCE_ALERT_QUEUE_DOMAINS: GovernanceAlertDomainConfig[] = [
   },
 ];
 
+const KPI_EVIDENCE_DRILLDOWN_CONFIG: KpiEvidenceDrilldownConfig[] = [
+  {
+    domainId: "academic-governance",
+    domainTitle: "Academic Governance",
+    title: "Academic governance evidence contract",
+    metricKeys: [
+      "academic_integrity_high_risk_count",
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_requires_approval_count",
+    ],
+    criticalMetricKeys: ["academic_integrity_high_risk_count"],
+    highMetricKeys: ["exam_integrity_requires_approval_count"],
+    mediumMetricKeys: ["thesis_governance_requires_approval_count", "research_ethics_requires_approval_count"],
+    reviewMetricKeys: ["academic_integrity_cases_pending_review", "exam_integrity_requires_approval_count", "thesis_governance_requires_approval_count", "research_ethics_requires_approval_count"],
+    sourceDomains: ["Academic Integrity", "Exam Governance", "Thesis", "Research Ethics"],
+    explanation: "Academic governance signals require human review and are evidence-backed; no automatic disciplinary action is executed.",
+    dataQualityNote: "Missing integrity/governance metrics are shown as unavailable instead of inferred.",
+  },
+  {
+    domainId: "finance-procurement-assets",
+    domainTitle: "Finance / Procurement / Assets",
+    title: "Finance and procurement evidence contract",
+    metricKeys: [
+      "budget_overrun_risk_count",
+      "budget_review_actions_count",
+      "active_finance_risk_signals_count",
+      "asset_conversion_gap_count",
+      "procurement_requests_pending_approval",
+    ],
+    criticalMetricKeys: ["budget_overrun_risk_count"],
+    highMetricKeys: ["active_finance_risk_signals_count", "asset_conversion_gap_count"],
+    mediumMetricKeys: ["budget_review_actions_count"],
+    reviewMetricKeys: ["budget_review_actions_count"],
+    sourceDomains: ["Finance", "Procurement", "Assets"],
+    explanation: "Finance and procurement signals are governance review indicators only; no automatic approval is executed.",
+    dataQualityNote: "Source lineage remains limited to available tenant KPI metrics.",
+  },
+  {
+    domainId: "campus-operations",
+    domainTitle: "Campus Operations",
+    title: "Campus operations evidence contract",
+    metricKeys: [
+      "scheduling_conflicts_count",
+      "room_conflict_count",
+      "capacity_risk_sections_count",
+      "events_cancelled_count",
+    ],
+    criticalMetricKeys: ["capacity_risk_sections_count"],
+    highMetricKeys: ["scheduling_conflicts_count", "room_conflict_count"],
+    mediumMetricKeys: ["events_cancelled_count"],
+    reviewMetricKeys: [],
+    sourceDomains: ["Scheduling", "Events", "Operations"],
+    explanation: "Campus operations signals summarize operational pressure and require operator review.",
+    dataQualityNote: "Operational evidence is read-only and may be partial depending on tenant instrumentation.",
+  },
+  {
+    domainId: "security-visitor-operations",
+    domainTitle: "Security / Visitor Operations",
+    title: "Security and visitor evidence contract",
+    metricKeys: [
+      "security_incident_review_required_count",
+      "security_high_risk_incidents_count",
+      "visitor_unauthorized_attempts_count",
+      "access_denied_count",
+    ],
+    criticalMetricKeys: ["security_high_risk_incidents_count"],
+    highMetricKeys: ["security_incident_review_required_count"],
+    mediumMetricKeys: ["visitor_unauthorized_attempts_count", "access_denied_count"],
+    reviewMetricKeys: ["security_incident_review_required_count", "visitor_unauthorized_attempts_count"],
+    sourceDomains: ["Security Operations", "Visitor Management", "Access Control"],
+    explanation: "Security signals are review/escalation evidence only; no automatic lockout or ban is executed.",
+    dataQualityNote: "Unavailable security metrics are surfaced explicitly with no synthetic fallback.",
+  },
+  {
+    domainId: "room-allocation-scheduling-intelligence",
+    domainTitle: "Room Allocation / Scheduling Intelligence",
+    title: "Room allocation evidence contract",
+    metricKeys: [
+      "room_allocation_review_required_count",
+      "room_allocation_no_viable_candidate_count",
+      "room_allocation_recommendations_count",
+      "room_capacity_mismatch_count",
+      "room_conflict_count",
+    ],
+    criticalMetricKeys: ["room_allocation_no_viable_candidate_count"],
+    highMetricKeys: ["room_capacity_mismatch_count", "room_conflict_count"],
+    mediumMetricKeys: ["room_allocation_review_required_count"],
+    reviewMetricKeys: ["room_allocation_review_required_count"],
+    sourceDomains: ["Room Allocation", "Scheduling"],
+    explanation: "Room allocation recommendation evidence is advisory-only and requires human review for risk cases.",
+    dataQualityNote: "No automatic room assignment or schedule mutation is available from this surface.",
+  },
+  {
+    domainId: "brain-review-required",
+    domainTitle: "Brain / Review Required",
+    title: "Brain review-required evidence contract",
+    metricKeys: [
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_requires_approval_count",
+      "security_incident_review_required_count",
+      "budget_review_actions_count",
+    ],
+    criticalMetricKeys: [],
+    highMetricKeys: ["security_incident_review_required_count"],
+    mediumMetricKeys: [
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_requires_approval_count",
+      "budget_review_actions_count",
+    ],
+    reviewMetricKeys: [
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_requires_approval_count",
+      "security_incident_review_required_count",
+      "budget_review_actions_count",
+    ],
+    sourceDomains: ["Brain Core", "Governance Review"],
+    explanation: "Brain signals are advisory and evidence-backed; decision authority remains with humans.",
+    dataQualityNote: "Review-required entries are never auto-resolved.",
+  },
+  {
+    domainId: "student-risk-interventions",
+    domainTitle: "Student Risk / Interventions",
+    title: "Student intervention evidence contract",
+    metricKeys: ["critical_risk_students_count", "high_risk_students_count", "intervention_auto_created_count"],
+    criticalMetricKeys: ["critical_risk_students_count"],
+    highMetricKeys: ["high_risk_students_count"],
+    mediumMetricKeys: ["intervention_auto_created_count"],
+    reviewMetricKeys: [],
+    sourceDomains: ["Student Success", "Interventions"],
+    explanation: "Student-risk evidence supports human intervention prioritization.",
+    dataQualityNote: "Optional domain; may be unavailable in tenants without intervention telemetry.",
+    optional: true,
+  },
+  {
+    domainId: "research-accreditation-quality",
+    domainTitle: "Research / Accreditation / Quality",
+    title: "Research and quality evidence contract",
+    metricKeys: ["research_ethics_high_risk_count", "research_ethics_review_cases_count", "research_ethics_requires_approval_count", "thesis_governance_risk_count"],
+    criticalMetricKeys: ["research_ethics_high_risk_count"],
+    highMetricKeys: ["thesis_governance_risk_count"],
+    mediumMetricKeys: ["research_ethics_requires_approval_count", "research_ethics_review_cases_count"],
+    reviewMetricKeys: ["research_ethics_requires_approval_count"],
+    sourceDomains: ["Research Ethics", "Accreditation", "Quality"],
+    explanation: "Research and quality evidence highlights review pressure and remains advisory-only.",
+    dataQualityNote: "Optional domain; unavailable state is explicit when metrics are missing.",
+    optional: true,
+  },
+];
+
 function ExecutiveKpiSection({ section }: { section: ExecutiveKpiSectionConfig }) {
   return (
     <section data-testid={section.testId} className="space-y-3">
@@ -1190,6 +1388,148 @@ function GovernanceAlertReviewQueue({
   );
 }
 
+function KpiEvidenceDrilldownContract({
+  data,
+  tenantId,
+}: {
+  data: { cards: DashboardCardSnapshot[] } | undefined;
+  tenantId: number;
+}) {
+  const cardByMetricKey = useMemo(() => {
+    const entries = (data?.cards ?? []).map((card) => [card.metric_key, card] as const);
+    return new Map(entries);
+  }, [data?.cards]);
+
+  const readMetricValue = (metricKey: string) => {
+    const card = cardByMetricKey.get(metricKey);
+    if (!card) return null;
+    const value = Number(card.value);
+    return Number.isFinite(value) ? value : null;
+  };
+
+  const hasPositiveValue = (metricKeys: string[]) => metricKeys.some((metricKey) => {
+    const value = readMetricValue(metricKey);
+    return value !== null && value > 0;
+  });
+
+  const drilldowns: KpiEvidenceDrilldown[] = KPI_EVIDENCE_DRILLDOWN_CONFIG.map((config) => {
+    const availableMetricKeys = config.metricKeys.filter((metricKey) => cardByMetricKey.has(metricKey));
+    const hasEvidence = availableMetricKeys.length > 0;
+
+    let riskLevel: KpiEvidenceDrilldown["riskLevel"] = "low";
+    if (!hasEvidence) {
+      riskLevel = "unavailable";
+    } else if (hasPositiveValue(config.criticalMetricKeys)) {
+      riskLevel = "critical";
+    } else if (hasPositiveValue(config.highMetricKeys)) {
+      riskLevel = "high";
+    } else if (hasPositiveValue(config.mediumMetricKeys) || hasPositiveValue(config.reviewMetricKeys)) {
+      riskLevel = "medium";
+    }
+
+    const reviewRequired = hasEvidence && (hasPositiveValue(config.reviewMetricKeys) || hasPositiveValue(config.highMetricKeys) || hasPositiveValue(config.criticalMetricKeys));
+
+    const evidenceSources: KpiEvidenceSource[] = config.metricKeys.slice(0, 4).map((metricKey) => {
+      const card = cardByMetricKey.get(metricKey);
+      const value = readMetricValue(metricKey);
+      return {
+        metricKey,
+        label: card?.title ?? metricKey,
+        valueLabel: value === null ? "Unavailable" : value.toLocaleString(),
+        sourceDomain: config.sourceDomains[0] ?? config.domainTitle,
+        interpretation: value === null ? "Evidence unavailable in current tenant snapshot." : value > 0 ? "Evidence supports visibility of this KPI/risk/alert." : "Evidence available with no elevated signal.",
+        available: value !== null,
+      };
+    });
+
+    const positiveEvidenceSummary = evidenceSources
+      .filter((source) => source.available && source.valueLabel !== "0")
+      .slice(0, 3)
+      .map((source) => `${source.label}: ${source.valueLabel}`)
+      .join(" | ");
+
+    const evidenceSummary = positiveEvidenceSummary.length > 0
+      ? positiveEvidenceSummary
+      : hasEvidence
+        ? "Evidence-backed metrics are present with no elevated value in this snapshot."
+        : "Evidence unavailable in current tenant snapshot.";
+
+    return {
+      drilldownId: `kpi-evidence-${config.domainId}`,
+      title: config.title,
+      domainId: config.domainId,
+      domainTitle: config.domainTitle,
+      sourceMetrics: availableMetricKeys,
+      sourceDomains: config.sourceDomains,
+      evidenceSummary,
+      explanation: config.explanation,
+      riskLevel,
+      reviewRequired,
+      dataQualityNote: config.dataQualityNote,
+      readonly: true,
+      tenantScoped: true,
+      evidenceSources,
+    };
+  });
+
+  const riskBadgeClass: Record<KpiEvidenceDrilldown["riskLevel"], string> = {
+    critical: "bg-red-100 text-red-700",
+    high: "bg-amber-100 text-amber-700",
+    medium: "bg-blue-100 text-blue-700",
+    low: "bg-emerald-100 text-emerald-700",
+    unavailable: "bg-muted text-muted-foreground",
+  };
+
+  return (
+    <section className="space-y-4" data-testid="kpi-evidence-drilldown-contract">
+      <div className="rounded-lg border bg-card p-4">
+        <p className="text-sm font-semibold">KPI Evidence Drilldown Contract</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Evidence-backed drilldown explaining why KPI, risk, and alert signals are visible for governance review.
+          Read-only evidence context is tenant-scoped and supports human review only.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Tenant {tenantId} context only • Source metrics • Source domains • Human review • Read-only • No automatic action
+        </p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {drilldowns.map((drilldown) => (
+          <article key={drilldown.drilldownId} data-testid={`kpi-evidence-drilldown-domain-${drilldown.domainId}`} className="rounded-lg border bg-card p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-semibold">{drilldown.domainTitle}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">{drilldown.title}</p>
+              </div>
+              <span className={`rounded-full px-2 py-1 text-[11px] font-medium ${riskBadgeClass[drilldown.riskLevel]}`}>{drilldown.riskLevel}</span>
+            </div>
+
+            <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+              <p>Evidence-backed: {drilldown.riskLevel === "unavailable" ? "unavailable" : "yes"}</p>
+              <p>Source metrics: {drilldown.sourceMetrics.length > 0 ? drilldown.sourceMetrics.slice(0, 4).join(", ") : "unavailable"}</p>
+              <p>Source domains: {drilldown.sourceDomains.join(" / ")}</p>
+              <p>Evidence summary: {drilldown.evidenceSummary}</p>
+              <p>Explanation: {drilldown.explanation}</p>
+              <p>Human review: {drilldown.reviewRequired ? "required" : "not currently required"}</p>
+              <p>Read-only: yes</p>
+              <p>No automatic action: yes</p>
+              <p>Data quality note: {drilldown.dataQualityNote}</p>
+            </div>
+
+            <div className="mt-3 rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground space-y-1">
+              {drilldown.evidenceSources.map((source) => (
+                <p key={source.metricKey}>
+                  {source.label} ({source.sourceDomain}): {source.valueLabel}
+                </p>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function DashboardSkeletonGrid() {
   return (
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3" data-testid="kpi-loading-grid">
@@ -1370,6 +1710,8 @@ export default function RectorDashboardPage() {
       ))}
 
       <GovernanceAlertReviewQueue data={data} tenantId={tenantId} />
+
+      <KpiEvidenceDrilldownContract data={data} tenantId={tenantId} />
 
       <CrossDomainRiskHeatmap data={data} tenantId={tenantId} />
 

@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-021.1 RECTOR EXECUTIVE COMMAND CENTER CONSOLIDATION)
-- status: ready_for_A-021.5
-- current_stage: A-021 Wave 9 implementation (A-021.4 complete)
-- last_completed_action_id: A-021.4
-- next_action_id: A-021.5
-- updated_at: 2026-05-09 (A-021.4 complete: governance alert/review queue added as read-only tenant-scoped evidence surface, with deterministic domain severity/review mapping, unavailable fallback safety, and targeted/full frontend + lint + build + safe-gate validations passing.)
+- status: ready_for_A-021.6
+- current_stage: A-021 Wave 9 implementation (A-021.5 complete)
+- last_completed_action_id: A-021.5
+- next_action_id: A-021.6
+- updated_at: 2026-05-09 (A-021.5 complete: KPI evidence drilldown contract added as read-only tenant-scoped evidence lineage surface with explanation/source metrics/source domains/evidence summary/human-review status, unavailable fallback safety, and targeted/full frontend + lint + build + safe-gate validations passing.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -149,6 +149,40 @@
 - Deliverable:
     - `A-021.4-GOVERNANCE_ALERT_REVIEW_QUEUE_REPORT.md`
 - Decision: **A-021.4 CLOSED - PASS**. Proceed to `A-021.5`.
+
+#### A-021.5 - KPI Evidence Drilldown Contract
+
+- Date: 2026-05-09
+- Scope: Additive-only, frontend-only KPI evidence drilldown contract over existing rector KPI snapshot evidence (`data.cards`). No migrations, no new endpoints, no destructive automation, no external submission.
+- Implementation delivered:
+    - `frontend/app/(admin)/console/dashboard/page.tsx`
+        - Added drilldown model types and drilldown config for governance domains
+        - Added deterministic evidence lineage derivation (`riskLevel`, `reviewRequired`, `evidenceSummary`) from existing KPI cards
+        - Added `KPI Evidence Drilldown Contract` section with explicit wording: `Evidence-backed`, `Source metrics`, `Source domains`, `Human review`, `Read-only`, `No automatic action`
+        - Added unavailable/data-quality fallback when tenant metrics are missing
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx`
+        - Added drilldown contract rendering test with tenant-context assertion
+        - Added coexistence assertions with queue/heatmap/ministry shell/executive sections
+        - Added unavailable fallback and forbidden-wording safety assertions
+- Validation summary:
+    - Targeted rector dashboard tests:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm frontend-tests npm run test:frontend -- --run __tests__/admin/RectorDashboardPage.test.tsx`
+        - Result: **PASS** (`1 file`, `16 tests`)
+    - Full frontend tests:
+        - task `test-frontend`
+        - Result: **PASS** (`118 files`, `800 tests`)
+    - Frontend lint:
+        - task `lint-frontend`
+        - Result: **PASS**
+    - Frontend build:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --rm frontend-tests npm run build`
+        - Result: **PASS** (`Compiled successfully`, type/lint checks, static generation, build traces)
+    - Safe gate:
+        - task `safe-gate-once`
+        - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Deliverable:
+    - `A-021.5-KPI_EVIDENCE_DRILLDOWN_CONTRACT_REPORT.md`
+- Decision: **A-021.5 CLOSED - PASS**. Proceed to `A-021.6`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 

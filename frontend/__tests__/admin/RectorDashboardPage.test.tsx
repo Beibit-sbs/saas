@@ -836,4 +836,110 @@ describe("RectorDashboardPage", () => {
     expect(screen.getAllByText(/Data quality note:/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Source metrics: unavailable/i)).toBeInTheDocument();
   });
+
+  it("renders KPI evidence drilldown contract with evidence-backed source lineage and human review wording", () => {
+    useAdminAuthMock.mockReturnValue({
+      user: { tenantId: 66, roles: ["admin"], permissions: [] },
+      isLoading: false,
+      isAuthenticated: true,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: vi.fn(() => true),
+      hasAnyPermission: vi.fn(() => true),
+    });
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 66,
+        snapshot_date: "2026-05-15",
+        generated_at: "2026-05-15T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [
+          { metric_key: "academic_integrity_high_risk_count", title: "Academic Integrity High Risk Count", value: 2, trend_7d: [], metadata_json: {} },
+          { metric_key: "academic_integrity_cases_pending_review", title: "Academic Integrity Cases Pending Review", value: 4, trend_7d: [], metadata_json: {} },
+          { metric_key: "budget_overrun_risk_count", title: "Budget Overrun Risk Count", value: 3, trend_7d: [], metadata_json: {} },
+          { metric_key: "budget_review_actions_count", title: "Budget Review Actions Count", value: 2, trend_7d: [], metadata_json: {} },
+          { metric_key: "scheduling_conflicts_count", title: "Scheduling Conflict Count", value: 5, trend_7d: [], metadata_json: {} },
+          { metric_key: "security_incident_review_required_count", title: "Security Incident Review Required Count", value: 1, trend_7d: [], metadata_json: {} },
+          { metric_key: "room_allocation_review_required_count", title: "Room Allocation Review Required Count", value: 3, trend_7d: [], metadata_json: {} },
+          { metric_key: "room_allocation_no_viable_candidate_count", title: "Room Allocation No Viable Candidate Count", value: 1, trend_7d: [], metadata_json: {} },
+          { metric_key: "research_ethics_requires_approval_count", title: "Research Ethics Requires Approval", value: 2, trend_7d: [], metadata_json: {} },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    expect(useRectorDashboardMock).toHaveBeenCalledWith(66);
+    const drilldown = screen.getByTestId("kpi-evidence-drilldown-contract");
+    expect(drilldown).toBeInTheDocument();
+    expect(screen.getByText("KPI Evidence Drilldown Contract")).toBeInTheDocument();
+    expect(screen.getByText(/Evidence-backed drilldown/i)).toBeInTheDocument();
+    expect(screen.getByText(/Source metrics/i)).toBeInTheDocument();
+    expect(screen.getByText(/Source domains/i)).toBeInTheDocument();
+    expect(screen.getByText(/Human review/i)).toBeInTheDocument();
+    expect(screen.getByText(/Read-only/i)).toBeInTheDocument();
+    expect(screen.getByText(/No automatic action/i)).toBeInTheDocument();
+
+    expect(screen.getByTestId("kpi-evidence-drilldown-domain-academic-governance")).toBeInTheDocument();
+    expect(screen.getByTestId("kpi-evidence-drilldown-domain-finance-procurement-assets")).toBeInTheDocument();
+    expect(screen.getByTestId("kpi-evidence-drilldown-domain-campus-operations")).toBeInTheDocument();
+    expect(screen.getByTestId("kpi-evidence-drilldown-domain-security-visitor-operations")).toBeInTheDocument();
+    expect(screen.getByTestId("kpi-evidence-drilldown-domain-room-allocation-scheduling-intelligence")).toBeInTheDocument();
+    expect(screen.getByTestId("kpi-evidence-drilldown-domain-brain-review-required")).toBeInTheDocument();
+
+    expect(screen.getByTestId("governance-alert-review-queue")).toBeInTheDocument();
+    expect(screen.getByTestId("cross-domain-risk-heatmap")).toBeInTheDocument();
+    expect(screen.getByTestId("ministry-governance-report-shell")).toBeInTheDocument();
+    expect(screen.getByText("Finance and Operations Health")).toBeInTheDocument();
+
+    const pageText = document.body.textContent?.toLowerCase() ?? "";
+    expect(pageText).not.toContain("fake drilldown");
+    expect(pageText).not.toContain("fabricated metric");
+    expect(pageText).not.toContain("auto-approved");
+    expect(pageText).not.toContain("auto-resolved");
+    expect(pageText).not.toContain("submitted to ministry");
+    expect(pageText).not.toContain("disciplinary action applied");
+    expect(pageText).not.toContain("security lockout applied");
+    expect(pageText).not.toContain("room assigned automatically");
+    expect(pageText).not.toContain("schedule changed automatically");
+    expect(pageText).not.toContain("procurement approved automatically");
+    expect(pageText).not.toContain("action executed");
+  });
+
+  it("keeps KPI evidence drilldown stable when tenant metrics are unavailable", () => {
+    useAdminAuthMock.mockReturnValue({
+      user: { tenantId: 99, roles: ["admin"], permissions: [] },
+      isLoading: false,
+      isAuthenticated: true,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: vi.fn(() => true),
+      hasAnyPermission: vi.fn(() => true),
+    });
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 99,
+        snapshot_date: "2026-05-15",
+        generated_at: "2026-05-15T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    expect(useRectorDashboardMock).toHaveBeenCalledWith(99);
+    const drilldown = screen.getByTestId("kpi-evidence-drilldown-contract");
+    expect(drilldown).toBeInTheDocument();
+    expect(screen.getAllByText(/unavailable/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Data quality note:/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Evidence unavailable in current tenant snapshot/i)).toBeInTheDocument();
+    expect(screen.getByText(/Source metrics: unavailable/i)).toBeInTheDocument();
+  });
 });
