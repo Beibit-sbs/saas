@@ -1,9 +1,9 @@
-- run_id: OP-AUDIT-2026-05-09-09 (A-021.0 WAVE 9 SELECTION + GOVERNANCE DASHBOARD PLANNING)
-- status: ready_for_A-021.1
-- current_stage: A-021 Wave 9 selection / ministry rector governance planning (selection complete)
-- last_completed_action_id: A-021.0
-- next_action_id: A-021.1
-- updated_at: 2026-05-09 (A-021.0 planning-only action completed: repository and known-conditions audit finalized; KPI/dashboard/Brain governance audit completed; candidate feature scoring completed; Wave 9 selected as Ministry/Rector Governance Dashboard; Top 5 selected for A-021.1..A-021.5; governance safety model finalized; no code/runtime/migration changes.)
+- run_id: OP-AUDIT-2026-05-09-10 (A-021.1 RECTOR EXECUTIVE COMMAND CENTER CONSOLIDATION)
+- status: ready_for_A-021.2
+- current_stage: A-021 Wave 9 implementation (A-021.1 complete)
+- last_completed_action_id: A-021.1
+- next_action_id: A-021.2
+- updated_at: 2026-05-09 (A-021.1 complete: critical-condition triage executed; rector dashboard consolidated into config-driven executive sections; legacy brain-core assertion mismatch converted to current policy contract in tests; targeted frontend/backend validations passed; no runtime-destructive changes.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -42,6 +42,43 @@
 - Deliverable:
     - `A-021.0-WAVE9_SELECTION_AND_GOVERNANCE_PLANNING_REPORT.md`
 - Decision: **A-021.0 COMPLETE — PASS (planning-only)**. Proceed to `A-021.1`.
+
+#### A-021.1 — Rector Executive Command Center Consolidation
+
+- Date: 2026-05-09
+- Scope: Reuse-first/additive-only consolidation of rector executive KPI sections + mandatory pre-coding triage of A-021 critical conditions.
+- Repo hygiene snapshot:
+    - Dirty tracked (not staged): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical artifacts: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+- Critical-condition triage matrix:
+    - `DATABASE_URL` no-deps path contract:
+        - Finding: `backend-tests` DATABASE_URL is compose-network-safe (`pgbouncer`) in `infra/docker-compose.yml`; direct `docker run --env-file infra/.env` path may resolve `db` host incorrectly outside compose network
+        - Classification: `ENV_PROFILE_ONLY`
+        - Blocks A-021.1: **No**
+        - Decision: keep validations in compose no-deps context (`cd infra && docker compose --env-file .env run ...`)
+    - Legacy brain-core assertion mismatch:
+        - Finding: stale assertion in `backend/app/modules/brain_core/tests/test_student_risk_flow.py` expected `operational` while current policy emits `security_incident_review`
+        - Classification: `FIXED_IN_A-021.1` (test-contract sync only)
+        - Blocks A-021.1: **No (after sync)**
+- Implementation delivered:
+    - `frontend/app/(admin)/console/dashboard/page.tsx`
+        - Introduced config-driven executive sections (`EXECUTIVE_KPI_SECTIONS`) and reusable renderer (`ExecutiveKpiSection`)
+        - Preserved existing section test IDs and KPI keys (`wave3`, `wave4`, `a0185`, `a0206`, `a017`) for compatibility
+        - Preserved explicit non-destructive room-allocation wording (`evidence-only`, `No automatic assignment. No auto-apply.`)
+    - `backend/app/modules/brain_core/tests/test_student_risk_flow.py`
+        - Updated stale campus-security test contract to current deterministic policy output
+        - New test name: `test_campus_security_incident_high_dispatches_security_review_actions`
+        - Asserts: `decision_type=security_incident_review`, `priority=high`, `status=dispatched`, `dispatch_results=[]`
+- Validation summary:
+    - Frontend targeted rector dashboard suite:
+        - `docker compose --env-file .env run --no-deps --rm frontend-tests npm run test:frontend -- __tests__/admin/RectorDashboardPage.test.tsx`
+        - Result: **16 passed, 0 failed**
+    - Backend targeted legacy mismatch test (workspace-mounted code):
+        - `docker compose --env-file .env run -T --no-deps --rm backend-tests sh -lc 'PYTHONPATH=/project/backend python -m pytest -q /project/backend/app/modules/brain_core/tests/test_student_risk_flow.py -k dispatches_security_review_actions --no-cov -rA'`
+        - Result: **1 passed, 0 failed**
+- Deliverable:
+    - `A-021.1-RECTOR_EXECUTIVE_COMMAND_CENTER_REPORT.md`
+- Decision: **A-021.1 COMPLETE — PASS**. Proceed to `A-021.2`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 

@@ -19,6 +19,235 @@ import { usePermissions } from "@/shared/hooks/use-permissions";
 import { useAdminAuth } from "@/shared/auth/context";
 import { useLanguage } from "@/app/components/LanguageProvider";
 
+type ExecutiveKpiSectionConfig = {
+  testId: string;
+  title: string;
+  description: string;
+  metricKeys: string[];
+  labels: Record<string, string>;
+  advisoryTitle?: string;
+  advisoryText?: string;
+};
+
+const EXECUTIVE_KPI_SECTIONS: ExecutiveKpiSectionConfig[] = [
+  {
+    testId: "wave3-finance-kpi-section",
+    title: "Finance and Operations Health",
+    description: "Budget, procurement, and inventory indicators are displayed as evidence for rector-level governance review.",
+    metricKeys: [
+      "budget_overrun_risk_count",
+      "budget_review_actions_count",
+      "active_finance_risk_signals_count",
+      "finance_operations_actionability_count",
+      "asset_conversion_gap_count",
+      "inventory_low_stock_items_count",
+      "critical_supply_risk_count",
+      "supply_risk_actions_count",
+    ],
+    labels: {
+      budget_overrun_risk_count: "Budget Overrun Risk",
+      budget_review_actions_count: "Budget Review Actions",
+      active_finance_risk_signals_count: "Finance Risk Signals",
+      finance_operations_actionability_count: "Finance Actionability",
+      asset_conversion_gap_count: "Asset Conversion Gap",
+      inventory_low_stock_items_count: "Low Stock Items",
+      critical_supply_risk_count: "Critical Supply Risk",
+      supply_risk_actions_count: "Supply Risk Actions",
+    },
+  },
+  {
+    testId: "wave4-academic-integrity-kpi-section",
+    title: "Academic Integrity and Governance",
+    description: "Integrity, exam governance, thesis review, and ethics compliance remain read-only command inputs.",
+    metricKeys: [
+      "academic_integrity_risk_count",
+      "academic_integrity_review_cases_count",
+      "academic_integrity_high_risk_count",
+      "academic_integrity_cases_pending_review",
+      "exam_proctoring_violations_count",
+      "exam_integrity_reviews_count",
+      "exam_integrity_high_risk_count",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_risk_count",
+      "thesis_supervisor_assignment_needed_count",
+      "thesis_review_delayed_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_review_cases_count",
+      "research_ethics_high_risk_count",
+      "research_ethics_missing_documents_count",
+      "research_ethics_requires_approval_count",
+      "integrity_cases_open_count",
+      "integrity_cases_escalated_count",
+      "integrity_cases_resolved_count",
+      "integrity_cases_evidence_requested_count",
+      "integrity_case_resolution_sla_risk_count",
+    ],
+    labels: {
+      academic_integrity_risk_count: "Integrity Risk",
+      academic_integrity_review_cases_count: "Review Cases",
+      academic_integrity_high_risk_count: "High Risk",
+      academic_integrity_cases_pending_review: "Pending Review",
+      exam_proctoring_violations_count: "Proctoring Violations",
+      exam_integrity_reviews_count: "Exam Reviews",
+      exam_integrity_high_risk_count: "Exam High Risk",
+      exam_integrity_requires_approval_count: "Exam Approval Needed",
+      thesis_governance_risk_count: "Thesis Risk",
+      thesis_supervisor_assignment_needed_count: "Supervisor Needed",
+      thesis_review_delayed_count: "Review Delayed",
+      thesis_governance_requires_approval_count: "Thesis Approval Needed",
+      research_ethics_review_cases_count: "Ethics Review Cases",
+      research_ethics_high_risk_count: "Ethics High Risk",
+      research_ethics_missing_documents_count: "Missing Documents",
+      research_ethics_requires_approval_count: "Ethics Approval Needed",
+      integrity_cases_open_count: "Cases Open",
+      integrity_cases_escalated_count: "Cases Escalated",
+      integrity_cases_resolved_count: "Cases Resolved",
+      integrity_cases_evidence_requested_count: "Evidence Requested",
+      integrity_case_resolution_sla_risk_count: "SLA Risk",
+    },
+  },
+  {
+    testId: "a0185-campus-operations-kpi-section",
+    title: "Campus Operations and Security",
+    description: "Campus activity and security posture are surfaced for manual rector oversight and escalation decisions.",
+    metricKeys: [
+      "scheduling_conflicts_count",
+      "room_conflict_count",
+      "access_denied_count",
+      "unauthorized_attempts_count",
+      "active_access_cards_count",
+      "suspended_access_cards_count",
+      "security_access_anomaly_count",
+      "events_published_count",
+      "events_started_count",
+      "events_completed_count",
+      "events_cancelled_count",
+      "events_registration_full_count",
+      "visitor_requests_pending_count",
+      "visitors_checked_in_count",
+      "visitor_unauthorized_attempts_count",
+      "visitor_visits_completed_count",
+      "visitor_visits_cancelled_count",
+      "security_incidents_open_count",
+      "security_incidents_escalated_count",
+      "security_incidents_resolved_count",
+      "security_incident_review_required_count",
+      "security_high_risk_incidents_count",
+    ],
+    labels: {
+      scheduling_conflicts_count: "Scheduling Conflicts",
+      room_conflict_count: "Room Conflicts",
+      access_denied_count: "Access Denied",
+      unauthorized_attempts_count: "Unauthorized Attempts",
+      active_access_cards_count: "Active Access Cards",
+      suspended_access_cards_count: "Suspended Access Cards",
+      security_access_anomaly_count: "Security Anomalies",
+      events_published_count: "Events Published",
+      events_started_count: "Events Started",
+      events_completed_count: "Events Completed",
+      events_cancelled_count: "Events Cancelled",
+      events_registration_full_count: "Registration Full",
+      visitor_requests_pending_count: "Visitor Requests Pending",
+      visitors_checked_in_count: "Visitors Checked-In",
+      visitor_unauthorized_attempts_count: "Visitor Unauthorized Attempts",
+      visitor_visits_completed_count: "Visitor Visits Completed",
+      visitor_visits_cancelled_count: "Visitor Visits Cancelled",
+      security_incidents_open_count: "Security Incidents Open",
+      security_incidents_escalated_count: "Security Incidents Escalated",
+      security_incidents_resolved_count: "Security Incidents Resolved",
+      security_incident_review_required_count: "Security Review Required",
+      security_high_risk_incidents_count: "Security High-Risk Incidents",
+    },
+  },
+  {
+    testId: "a0206-room-allocation-intelligence-section",
+    title: "Scheduling and Room Allocation Intelligence",
+    description: "Capacity and allocation indicators are decision-support only and never auto-execute scheduling changes.",
+    advisoryTitle: "Room Allocation / Scheduling Intelligence",
+    advisoryText:
+      "Recommendation and Review required insights are evidence-only. Evidence is provided for human approval when risk exists. No automatic assignment. No auto-apply.",
+    metricKeys: [
+      "room_allocation_recommendations_count",
+      "room_allocation_review_required_count",
+      "room_allocation_no_viable_candidate_count",
+      "room_allocation_candidate_evaluated_count",
+      "room_capacity_mismatch_count",
+      "room_equipment_mismatch_count",
+      "room_computer_shortage_count",
+      "room_type_mismatch_count",
+      "scheduling_conflicts_count",
+      "room_conflict_count",
+      "capacity_risk_sections_count",
+    ],
+    labels: {
+      room_allocation_recommendations_count: "Recommendation",
+      room_allocation_review_required_count: "Review required",
+      room_allocation_no_viable_candidate_count: "No viable candidate",
+      room_allocation_candidate_evaluated_count: "Candidate evaluated",
+      room_capacity_mismatch_count: "Capacity mismatch",
+      room_equipment_mismatch_count: "Equipment mismatch",
+      room_computer_shortage_count: "Computer shortage",
+      room_type_mismatch_count: "Room type mismatch",
+      scheduling_conflicts_count: "Scheduling conflicts",
+      room_conflict_count: "Room conflicts",
+      capacity_risk_sections_count: "Capacity-risk sections",
+    },
+  },
+  {
+    testId: "a017-consolidation-kpi-section",
+    title: "Cross-Wave Governance Snapshot",
+    description: "Financial, billing, integrity, and ethics signals are consolidated for executive cross-domain review.",
+    metricKeys: [
+      "budget_overrun_risk_count",
+      "budget_overrun_amount_at_risk",
+      "budget_health_score",
+      "total_active_subscriptions",
+      "delinquency_cases_active",
+      "overdue_amount_at_risk",
+      "delinquency_recovery_rate",
+      "academic_integrity_review_cases_count",
+      "exam_proctoring_violations_count",
+      "exam_integrity_reviews_count",
+      "exam_integrity_requires_approval_count",
+      "research_ethics_review_cases_count",
+      "research_ethics_requires_approval_count",
+    ],
+    labels: {
+      budget_overrun_risk_count: "Budget Overrun Risk",
+      budget_overrun_amount_at_risk: "Budget Amount At Risk",
+      budget_health_score: "Budget Health Score",
+      total_active_subscriptions: "Active Subscriptions",
+      delinquency_cases_active: "Active Delinquency Cases",
+      overdue_amount_at_risk: "Overdue Amount At Risk",
+      delinquency_recovery_rate: "Delinquency Recovery Rate",
+      academic_integrity_review_cases_count: "Integrity Review Cases",
+      exam_proctoring_violations_count: "Proctoring Violations",
+      exam_integrity_reviews_count: "Exam Integrity Reviews",
+      exam_integrity_requires_approval_count: "Exam Approval Needed",
+      research_ethics_review_cases_count: "Research Ethics Cases",
+      research_ethics_requires_approval_count: "Ethics Approval Needed",
+    },
+  },
+];
+
+function ExecutiveKpiSection({ section }: { section: ExecutiveKpiSectionConfig }) {
+  return (
+    <section data-testid={section.testId} className="space-y-3">
+      <div className="rounded-md border bg-muted/20 p-3">
+        <p className="text-sm font-medium">{section.title}</p>
+        <p className="text-xs text-muted-foreground mt-1">{section.description}</p>
+      </div>
+      {section.advisoryTitle && section.advisoryText && (
+        <div className="rounded-md border bg-muted/20 p-3">
+          <p className="text-sm font-medium">{section.advisoryTitle}</p>
+          <p className="text-xs text-muted-foreground mt-1">{section.advisoryText}</p>
+        </div>
+      )}
+      <Wave1KpiBar metricKeys={section.metricKeys} labels={section.labels} />
+    </section>
+  );
+}
+
 function DashboardSkeletonGrid() {
   return (
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3" data-testid="kpi-loading-grid">
@@ -194,198 +423,9 @@ export default function RectorDashboardPage() {
         </div>
       )}
 
-      <section data-testid="wave3-finance-kpi-section">
-        <Wave1KpiBar
-          metricKeys={["budget_overrun_risk_count","budget_review_actions_count","active_finance_risk_signals_count","finance_operations_actionability_count","asset_conversion_gap_count","inventory_low_stock_items_count","critical_supply_risk_count","supply_risk_actions_count"]}
-          labels={{
-            budget_overrun_risk_count: "Budget Overrun Risk",
-            budget_review_actions_count: "Budget Review Actions",
-            active_finance_risk_signals_count: "Finance Risk Signals",
-            finance_operations_actionability_count: "Finance Actionability",
-            asset_conversion_gap_count: "Asset Conversion Gap",
-            inventory_low_stock_items_count: "Low Stock Items",
-            critical_supply_risk_count: "Critical Supply Risk",
-            supply_risk_actions_count: "Supply Risk Actions",
-          }}
-        />
-      </section>
-
-      <section data-testid="wave4-academic-integrity-kpi-section">
-        <Wave1KpiBar
-          metricKeys={[
-            "academic_integrity_risk_count",
-            "academic_integrity_review_cases_count",
-            "academic_integrity_high_risk_count",
-            "academic_integrity_cases_pending_review",
-            "exam_proctoring_violations_count",
-            "exam_integrity_reviews_count",
-            "exam_integrity_high_risk_count",
-            "exam_integrity_requires_approval_count",
-            "thesis_governance_risk_count",
-            "thesis_supervisor_assignment_needed_count",
-            "thesis_review_delayed_count",
-            "thesis_governance_requires_approval_count",
-            "research_ethics_review_cases_count",
-            "research_ethics_high_risk_count",
-            "research_ethics_missing_documents_count",
-            "research_ethics_requires_approval_count",
-            "integrity_cases_open_count",
-            "integrity_cases_escalated_count",
-            "integrity_cases_resolved_count",
-            "integrity_cases_evidence_requested_count",
-            "integrity_case_resolution_sla_risk_count",
-          ]}
-          labels={{
-            academic_integrity_risk_count: "Integrity Risk",
-            academic_integrity_review_cases_count: "Review Cases",
-            academic_integrity_high_risk_count: "High Risk",
-            academic_integrity_cases_pending_review: "Pending Review",
-            exam_proctoring_violations_count: "Proctoring Violations",
-            exam_integrity_reviews_count: "Exam Reviews",
-            exam_integrity_high_risk_count: "Exam High Risk",
-            exam_integrity_requires_approval_count: "Exam Approval Needed",
-            thesis_governance_risk_count: "Thesis Risk",
-            thesis_supervisor_assignment_needed_count: "Supervisor Needed",
-            thesis_review_delayed_count: "Review Delayed",
-            thesis_governance_requires_approval_count: "Thesis Approval Needed",
-            research_ethics_review_cases_count: "Ethics Review Cases",
-            research_ethics_high_risk_count: "Ethics High Risk",
-            research_ethics_missing_documents_count: "Missing Documents",
-            research_ethics_requires_approval_count: "Ethics Approval Needed",
-            integrity_cases_open_count: "Cases Open",
-            integrity_cases_escalated_count: "Cases Escalated",
-            integrity_cases_resolved_count: "Cases Resolved",
-            integrity_cases_evidence_requested_count: "Evidence Requested",
-            integrity_case_resolution_sla_risk_count: "SLA Risk",
-          }}
-        />
-      </section>
-
-      <section data-testid="a0185-campus-operations-kpi-section">
-        <Wave1KpiBar
-          metricKeys={[
-            "scheduling_conflicts_count",
-            "room_conflict_count",
-            "access_denied_count",
-            "unauthorized_attempts_count",
-            "active_access_cards_count",
-            "suspended_access_cards_count",
-            "security_access_anomaly_count",
-            "events_published_count",
-            "events_started_count",
-            "events_completed_count",
-            "events_cancelled_count",
-            "events_registration_full_count",
-            "visitor_requests_pending_count",
-            "visitors_checked_in_count",
-            "visitor_unauthorized_attempts_count",
-            "visitor_visits_completed_count",
-            "visitor_visits_cancelled_count",
-            "security_incidents_open_count",
-            "security_incidents_escalated_count",
-            "security_incidents_resolved_count",
-            "security_incident_review_required_count",
-            "security_high_risk_incidents_count",
-          ]}
-          labels={{
-            scheduling_conflicts_count: "Scheduling Conflicts",
-            room_conflict_count: "Room Conflicts",
-            access_denied_count: "Access Denied",
-            unauthorized_attempts_count: "Unauthorized Attempts",
-            active_access_cards_count: "Active Access Cards",
-            suspended_access_cards_count: "Suspended Access Cards",
-            security_access_anomaly_count: "Security Anomalies",
-            events_published_count: "Events Published",
-            events_started_count: "Events Started",
-            events_completed_count: "Events Completed",
-            events_cancelled_count: "Events Cancelled",
-            events_registration_full_count: "Registration Full",
-            visitor_requests_pending_count: "Visitor Requests Pending",
-            visitors_checked_in_count: "Visitors Checked-In",
-            visitor_unauthorized_attempts_count: "Visitor Unauthorized Attempts",
-            visitor_visits_completed_count: "Visitor Visits Completed",
-            visitor_visits_cancelled_count: "Visitor Visits Cancelled",
-            security_incidents_open_count: "Security Incidents Open",
-            security_incidents_escalated_count: "Security Incidents Escalated",
-            security_incidents_resolved_count: "Security Incidents Resolved",
-            security_incident_review_required_count: "Security Review Required",
-            security_high_risk_incidents_count: "Security High-Risk Incidents",
-          }}
-        />
-      </section>
-
-      <section data-testid="a0206-room-allocation-intelligence-section" className="space-y-3">
-        <div className="rounded-md border bg-muted/20 p-3">
-          <p className="text-sm font-medium">Room Allocation / Scheduling Intelligence</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Recommendation and Review required insights are evidence-only. Evidence is provided for human approval when risk exists.
-            No automatic assignment. No auto-apply.
-          </p>
-        </div>
-        <Wave1KpiBar
-          metricKeys={[
-            "room_allocation_recommendations_count",
-            "room_allocation_review_required_count",
-            "room_allocation_no_viable_candidate_count",
-            "room_allocation_candidate_evaluated_count",
-            "room_capacity_mismatch_count",
-            "room_equipment_mismatch_count",
-            "room_computer_shortage_count",
-            "room_type_mismatch_count",
-            "scheduling_conflicts_count",
-            "room_conflict_count",
-            "capacity_risk_sections_count",
-          ]}
-          labels={{
-            room_allocation_recommendations_count: "Recommendation",
-            room_allocation_review_required_count: "Review required",
-            room_allocation_no_viable_candidate_count: "No viable candidate",
-            room_allocation_candidate_evaluated_count: "Candidate evaluated",
-            room_capacity_mismatch_count: "Capacity mismatch",
-            room_equipment_mismatch_count: "Equipment mismatch",
-            room_computer_shortage_count: "Computer shortage",
-            room_type_mismatch_count: "Room type mismatch",
-            scheduling_conflicts_count: "Scheduling conflicts",
-            room_conflict_count: "Room conflicts",
-            capacity_risk_sections_count: "Capacity-risk sections",
-          }}
-        />
-      </section>
-
-      <section data-testid="a017-consolidation-kpi-section">
-        <Wave1KpiBar
-          metricKeys={[
-            "budget_overrun_risk_count",
-            "budget_overrun_amount_at_risk",
-            "budget_health_score",
-            "total_active_subscriptions",
-            "delinquency_cases_active",
-            "overdue_amount_at_risk",
-            "delinquency_recovery_rate",
-            "academic_integrity_review_cases_count",
-            "exam_proctoring_violations_count",
-            "exam_integrity_reviews_count",
-            "exam_integrity_requires_approval_count",
-            "research_ethics_review_cases_count",
-            "research_ethics_requires_approval_count",
-          ]}
-          labels={{
-            budget_overrun_risk_count: "Budget Overrun Risk",
-            budget_overrun_amount_at_risk: "Budget Amount At Risk",
-            budget_health_score: "Budget Health Score",
-            total_active_subscriptions: "Active Subscriptions",
-            delinquency_cases_active: "Active Delinquency Cases",
-            overdue_amount_at_risk: "Overdue Amount At Risk",
-            delinquency_recovery_rate: "Delinquency Recovery Rate",
-            academic_integrity_review_cases_count: "Integrity Review Cases",
-            exam_proctoring_violations_count: "Proctoring Violations",
-            exam_integrity_reviews_count: "Exam Integrity Reviews",
-            exam_integrity_requires_approval_count: "Exam Approval Needed",
-            research_ethics_review_cases_count: "Research Ethics Cases",
-            research_ethics_requires_approval_count: "Ethics Approval Needed",
-          }}
-        />
-      </section>
+      {EXECUTIVE_KPI_SECTIONS.map((section) => (
+        <ExecutiveKpiSection key={section.testId} section={section} />
+      ))}
 
       <AutomationOverviewWidget tenantId={tenantId} />
     </div>

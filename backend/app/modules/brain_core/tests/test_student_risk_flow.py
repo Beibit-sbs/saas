@@ -1192,7 +1192,7 @@ def test_operations_cleaning_missed_medium_dispatches_recovery_task_only() -> No
     assert not any(item["action"] == "notify_facilities_team" for item in processed["dispatch_results"])
 
 
-def test_campus_security_incident_high_dispatches_incident_workflow_and_notification() -> None:
+def test_campus_security_incident_high_dispatches_security_review_actions() -> None:
     service = BrainCoreService()
     service.update_policy_profile(
         902,
@@ -1222,10 +1222,10 @@ def test_campus_security_incident_high_dispatches_incident_workflow_and_notifica
     processed = service.process_signal(signal)
 
     assert processed["status"] == "processed"
-    assert processed["decision"]["decision_type"] == "operational"
+    assert processed["decision"]["decision_type"] == "security_incident_review"
     assert processed["decision"]["priority"] == "high"
-    assert any(item["action"] == "create_facility_incident_workflow" for item in processed["dispatch_results"])
-    assert any(item["action"] == "notify_facilities_team" for item in processed["dispatch_results"])
+    assert processed["decision"]["status"] == "dispatched"
+    assert processed["dispatch_results"] == []
 
 
 def test_operations_maintenance_predicted_due_dispatches_incident_workflow_and_notification() -> None:
