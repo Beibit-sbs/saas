@@ -1,9 +1,47 @@
-- run_id: OP-AUDIT-2026-05-09-08 (A-020.8 FINAL WAVE 8 ROOM ALLOCATION BRAIN CLOSURE)
-- status: ready_for_A-021
-- current_stage: A-020 CLOSED / A-021 planning / Wave 9 theme selection (Ministry/Rector Governance or Human-Approved Timetable Workflow)
-- last_completed_action_id: A-020.8
-- next_action_id: A-021.0
-- updated_at: 2026-05-09 (A-020.8 final closure: all A-020.1–A-020.7 modules stable; backend 921 regression PASS; tenant/security 1006 PASS; frontend 800 tests PASS; safe gate PASS; release gate PASS; non-destructive scheduling policy enforced by contract design; final report created; SBS_UB.md transitioned to A-021; A-020 CLOSED — PASS WITH KNOWN CONDITIONS.)
+- run_id: OP-AUDIT-2026-05-09-09 (A-021.0 WAVE 9 SELECTION + GOVERNANCE DASHBOARD PLANNING)
+- status: ready_for_A-021.1
+- current_stage: A-021 Wave 9 selection / ministry rector governance planning (selection complete)
+- last_completed_action_id: A-021.0
+- next_action_id: A-021.1
+- updated_at: 2026-05-09 (A-021.0 planning-only action completed: repository and known-conditions audit finalized; KPI/dashboard/Brain governance audit completed; candidate feature scoring completed; Wave 9 selected as Ministry/Rector Governance Dashboard; Top 5 selected for A-021.1..A-021.5; governance safety model finalized; no code/runtime/migration changes.)
+
+#### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
+
+- Date: 2026-05-09
+- Scope: Planning/selection only. No runtime code changes, no endpoints, no migrations, no production-logic modifications.
+- Repo hygiene snapshot:
+    - Dirty tracked (not staged): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical artifacts: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+    - A-020 closure commit confirmed: `17591a1`
+- Known conditions review (A-020 continuity):
+    - Accepted: Pydantic deprecation warnings, pytest-asyncio warnings, coverage artifacts, historical/untracked local artifacts
+    - Env-profile only: docker fixture delay, `DATABASE_URL` no-deps path, local tasks.json state
+    - A-021.1 triage candidate: legacy brain-core assertion mismatch (governance relevance check)
+- Governance/dashboard architecture audit:
+    - Backend foundations confirmed: KPI lineage, event registry, event ingestion allow-list, Brain Core signal registry
+    - Frontend rector dashboard already aggregates finance, integrity, campus operations, and room allocation sections
+    - Tenant-scoped dashboard data hooks confirmed
+    - Ministry KPI contract seed confirmed in `backend/app/platform/kpi/ministry_kpi.py` (whitelist + suppression + audit), not yet full reporting shell
+- Domain maturity audit summary:
+    - Level 6: Room Allocation Brain, Campus Operations, Visitor/Security Operations
+    - Level 5: Finance/Procurement/Assets, Academic Integrity/Thesis/Exam Governance
+    - Level 4: Student risk/interventions
+    - Level 1-2: Accreditation/quality, HR/faculty/workload, research/publications governance packaging
+- Wave 9 theme decision:
+    - Selected: **Ministry / Rector Governance Dashboard**
+    - Alternative retained: Human-Approved Timetable Change Workflow
+- A-021 Top 5 selected:
+    1. Rector Executive Command Center Consolidation
+    2. Ministry-Ready Governance Reporting Shell
+    3. Cross-domain Risk Heatmap
+    4. Governance Alert / Review Queue
+    5. KPI Evidence Drilldown Contract
+- Governance safety model (locked):
+    - Allowed: read-only executive summaries, KPI aggregation, domain health, heatmap, evidence drilldown, review queue, report shell
+    - Forbidden: any destructive auto-action (discipline/lockout/schedule mutation/room assignment/procurement approval), fake KPIs, silent cross-tenant aggregation, RBAC bypass
+- Deliverable:
+    - `A-021.0-WAVE9_SELECTION_AND_GOVERNANCE_PLANNING_REPORT.md`
+- Decision: **A-021.0 COMPLETE — PASS (planning-only)**. Proceed to `A-021.1`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 
@@ -6084,54 +6122,35 @@ validate -> guard -> cross-entity check -> persist -> publish_event -> brain sig
 
 ---
 
-## A-021 — Wave 9 Planning (Backlog Skeleton)
+## A-021 — Wave 9 Backlog Skeleton (Post-Selection)
 
-**Status**: Ready for theme selection review
+**Status**: Selection complete, ready for implementation sequence
 
-**Theme Options** (Ranked by Recommendation):
+**Wave 9 Direction**: Ministry / Rector Governance Dashboard
 
-1. **Ministry / Rector Governance Dashboard** (Recommended for sales/demo trajectory)
-   - Rector-level KPI aggregation and ministry compliance reporting
-   - Builds on A-020 room allocation intelligence
-   - Executive dashboards for scheduling/resource/utilization views
-   - Demo-ready; market differentiation focus
+**Top 5 Features (Implementation blocks):**
 
-2. **Human-Approved Timetable Change Workflow** (Recommended for technical depth)
-   - Takes A-020 recommendations through approval queue
-   - Simulation/preview before apply
-   - Maintains strict non-destructive scheduling policy
-   - Extends room allocation to other resources (teachers, equipment)
+1. **A-021.1** — Rector Executive Command Center Consolidation
+2. **A-021.2** — Ministry-Ready Governance Reporting Shell
+3. **A-021.3** — Cross-domain Risk Heatmap
+4. **A-021.4** — Governance Alert / Review Queue
+5. **A-021.5** — KPI Evidence Drilldown Contract
 
-3. **Student Services / Lifecycle Completion** (Alternative)
-   - Student portal, counseling, internship lifecycle
-   - Student feedback and support dashboard
+**Wave completion sequence:**
 
-4. **AI / Learning Support Autonomy** (Alternative)
-   - Plagiarism detection, student tutoring, learning analytics
-   - Academic integrity and engagement focus
+6. **A-021.6** — KPI/frontend/dashboard consolidation
+7. **A-021.7** — Cross-feature governance E2E
+8. **A-021.8** — Full gates + final A-021 report
 
-5. **Legal / Contract Governance** (Alternative)
-   - Contract lifecycle, expiry management, HR contracts
-   - Legal compliance and SLA monitoring
+**Governance constraints (carry-forward, mandatory):**
 
-**Entry Criteria** (All from A-020 ✅):
-- ✅ A-020 complete and committed
-- ✅ Non-destructive scheduling policy stable
-- ✅ Room allocation brain foundation ready
-- ✅ KPI dashboard operational
-- ✅ Tenant isolation proven
-- ✅ Safe gate green
-- ✅ Release gate green
+- Read-only decision-support first for rector/ministry surfaces
+- No destructive or hidden auto-actions
+- Tenant context authoritative and RBAC enforced
+- Evidence-backed KPI only; no fake/demo numbers
+- Optional metrics must degrade gracefully on dashboard
 
-**Next Step**: Stakeholder review of A-021 theme options. Select preferred theme and proceed with A-021.0 planning.
-
-**Known Constraints**:
-- Preserve non-destructive scheduling policy across all A-021 features
-- No automatic destructive actions (humans-in-the-loop for high-impact changes)
-- Maintain tenant isolation and RBAC guardrails
-- Additive-only, non-breaking contract evolution
-- Full test coverage required (backend + frontend)
-- Safe gate and release gate must remain green
+**Immediate next step:** Execute `A-021.1` only (A-021.2+ not started).
 
 ---
 
