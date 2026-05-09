@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-024.7
-- current_stage: A-024.6 complete / SaaS readiness consolidation
-- last_completed_action_id: A-024.6
-- next_action_id: A-024.7
-- updated_at: 2026-05-09 (A-024.6 completed: operational backbone SaaS readiness consolidation with tenant-safe read-only summary API; next=A-024.7)
+- status: ready_for_A-024.8
+- current_stage: A-024.7 complete / Cross-feature operational E2E
+- last_completed_action_id: A-024.7
+- next_action_id: A-024.8
+- updated_at: 2026-05-09 (A-024.7 completed: cross-feature operational E2E validation across 5 admin readiness surfaces and 8-module operational backbone; next=A-024.8)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -626,6 +626,43 @@
     - no fake Brain autonomy claim
     - no module expansion beyond canonical 150
 - Decision: **A-024.6 CLOSED — PASS**. Proceed to `A-024.7`.
+
+#### A-024.7 — Cross-feature Operational E2E / SaaS Backbone Flow Validation
+
+- Date: 2026-05-09
+- Scope: Cross-feature operational E2E validation only for A-024 backbone surfaces and SaaS readiness continuity. No maturity inflation, no runtime mutation, no auto-action claims.
+- Cross-feature verification pack:
+    - required module import checks (8 backbone modules + consolidation contract)
+    - exact operational backbone inventory remains 8 modules
+    - 5-surface operational visibility contract validated:
+        - `/api/admin/observability/summary`
+        - `/api/admin/attendance/summary`
+        - `/api/admin/student-portal/summary`
+        - `/api/admin/university-core/readiness`
+        - `/api/admin/saas-readiness/summary`
+    - L3/L4 honesty checks:
+        - L3 modules remain non-visible (no fake L4 visibility)
+        - L4 modules remain visible and tenant-safe
+    - event/KPI/Brain readiness mapping remains explicit and non-fake (`readiness_mapping_only`)
+    - feature-flag/billing compatibility remains classification-only (no fake enforcement)
+    - deterministic summary contract preserved
+    - missing tenant context fail-closed validation preserved across all five surfaces
+- Validation evidence:
+    - `git diff --check` PASS
+    - `pytest -q tests/test_a0247_cross_feature_operational_e2e.py --no-cov -rA` -> **29 passed, 1 warning**
+    - `pytest -q tests/test_a0246_saas_readiness_consolidation.py --no-cov -rA` -> **18 passed, 1 warning**
+    - import check: `A-024.7 cross-feature import validation OK`
+- Metrics transition (A-024.7):
+    - no maturity level movement
+    - L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2
+    - sum=150, `maturity_arithmetic_check=PASS`
+    - `foundation_gap_count=37`, `level_2_gap_count=24`, `level_4_plus_count=89`
+- Anti-inflation review: PASS
+    - no Level 5/6 claim
+    - no fake SaaS/Brain/full-production claim
+    - no module count expansion beyond canonical 150
+    - no DB mutation and no automatic action execution
+- Decision: **A-024.7 CLOSED — PASS**. Proceed to `A-024.8`.
 
 
 
@@ -1468,9 +1505,9 @@
 - level_2_gap_count = 24
 - arithmetic_check = 4+20+13+24+66+21+2=150
 - maturity_arithmetic_check = PASS
-- exact_counts_verified_at = 2026-05-09 (A-024.6 closure)
-- evidence_source = A-024.6-SAAS_READINESS_CONSOLIDATION_REPORT.md + A-024.5-UNIVERSITY_CORE_OPERATIONAL_READINESS_REPORT.md + A-024.0 selection report + A-023.8 foundation report
-- updated_at = 2026-05-09 (A-024.6: SaaS readiness consolidation completed with tenant-safe read-only operational backbone summary)
+- exact_counts_verified_at = 2026-05-09 (A-024.7 closure)
+- evidence_source = A-024.7-CROSS_FEATURE_OPERATIONAL_E2E_REPORT.md + A-024.6-SAAS_READINESS_CONSOLIDATION_REPORT.md + A-024.5-UNIVERSITY_CORE_OPERATIONAL_READINESS_REPORT.md + A-024.0 selection report + A-023.8 foundation report
+- updated_at = 2026-05-09 (A-024.7: cross-feature operational E2E validation completed without maturity inflation)
 - mandatory_rule = Keep exact counts synchronized with canonical 150-module inventory.
 - rule = Coverage does not equal full maturity.
 - coverage_not_equal_full_maturity = true
