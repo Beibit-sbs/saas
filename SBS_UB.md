@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-021.1 RECTOR EXECUTIVE COMMAND CENTER CONSOLIDATION)
-- status: ready_for_A-021.7
-- current_stage: A-021 Wave 9 implementation (A-021.6 complete)
-- last_completed_action_id: A-021.6
-- next_action_id: A-021.7
-- updated_at: 2026-05-09 (A-021.6 complete: governance dashboard frontend consolidated into one coherent command center contract with stable section ordering, preserved read-only/evidence/human-review safety wording, and targeted/full frontend + lint + build + safe-gate validations passing.)
+- status: ready_for_A-021.8
+- current_stage: A-021 Wave 9 implementation (A-021.7 complete)
+- last_completed_action_id: A-021.7
+- next_action_id: A-021.8
+- updated_at: 2026-05-09 (A-021.7 complete: cross-feature governance E2E validation proved integrated tenant-scoped read-only evidence-backed dashboard flow across executive/shell/heatmap/queue/drilldown, with targeted/full frontend + lint + build + tenant/security slice + safe-gate validations passing.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -216,6 +216,38 @@
 - Deliverable:
     - `A-021.6-KPI_FRONTEND_DASHBOARD_CONSOLIDATION_REPORT.md`
 - Decision: **A-021.6 CLOSED - PASS**. Proceed to `A-021.7`.
+
+#### A-021.7 - Cross-feature Governance E2E
+
+- Date: 2026-05-09
+- Scope: Validation/evidence-only cross-feature integration proof for A-021 governance dashboard surface. No backend feature expansion, no migrations, no new endpoints.
+- Implementation delivered:
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx`
+        - Added integrated cross-feature governance E2E test covering one coherent tenant-scoped command-center render
+        - Added integrated empty-snapshot/unavailable fallback E2E test
+        - Preserved existing A-021.1..A-021.6 section-level contracts
+- Validation summary:
+    - Frontend targeted:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm frontend-tests npm run test:frontend -- --run __tests__/admin/RectorDashboardPage.test.tsx`
+        - Result: **PASS** (`1 file`, `16 tests`)
+    - Frontend full:
+        - task `test-frontend`
+        - Result: **PASS** (`118 files`, `800 tests`)
+    - Frontend lint:
+        - task `lint-frontend`
+        - Result: **PASS**
+    - Frontend build:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --rm frontend-tests npm run build`
+        - Result: **PASS** (`Compiled successfully`, static generation and build traces complete)
+    - Tenant/security slice:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest tests/ -k "tenant or security" --no-cov --tb=line -q`
+        - Result: **PASS** (`1006 passed, 1 skipped, 7772 deselected`)
+    - Safe gate:
+        - task `safe-gate-once`
+        - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Deliverable:
+    - `A-021.7-CROSS_FEATURE_GOVERNANCE_E2E_REPORT.md`
+- Decision: **A-021.7 CLOSED - PASS**. Proceed to `A-021.8`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 

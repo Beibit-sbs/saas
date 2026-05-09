@@ -1017,4 +1017,123 @@ describe("RectorDashboardPage", () => {
     expect(pageText).not.toContain("schedule changed automatically");
     expect(pageText).not.toContain("procurement approved automatically");
   });
+
+  it("validates cross-feature governance e2e flow as one tenant-scoped read-only evidence-backed command center", () => {
+    useAdminAuthMock.mockReturnValue({
+      user: { tenantId: 321, roles: ["admin"], permissions: [] },
+      isLoading: false,
+      isAuthenticated: true,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: vi.fn(() => true),
+      hasAnyPermission: vi.fn(() => true),
+    });
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 321,
+        snapshot_date: "2026-05-17",
+        generated_at: "2026-05-17T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [
+          { metric_key: "total_students", title: "Total Students", value: 1400, trend_7d: [], metadata_json: {} },
+          { metric_key: "budget_overrun_risk_count", title: "Budget Overrun Risk Count", value: 2, trend_7d: [], metadata_json: {} },
+          { metric_key: "academic_integrity_high_risk_count", title: "Academic Integrity High Risk Count", value: 1, trend_7d: [], metadata_json: {} },
+          { metric_key: "security_incident_review_required_count", title: "Security Incident Review Required Count", value: 2, trend_7d: [], metadata_json: {} },
+          { metric_key: "room_allocation_review_required_count", title: "Room Allocation Review Required Count", value: 2, trend_7d: [], metadata_json: {} },
+          { metric_key: "scheduling_conflicts_count", title: "Scheduling Conflict Count", value: 3, trend_7d: [], metadata_json: {} },
+          { metric_key: "research_ethics_requires_approval_count", title: "Research Ethics Requires Approval", value: 1, trend_7d: [], metadata_json: {} },
+          { metric_key: "finance_operations_actionability_count", title: "Finance Operations Actionability Count", value: 1, trend_7d: [], metadata_json: {} },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    expect(useRectorDashboardMock).toHaveBeenCalledWith(321);
+
+    expect(screen.getByText("University Executive Dashboard")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-command-center-contract")).toBeInTheDocument();
+    expect(screen.getByTestId("ministry-governance-report-shell")).toBeInTheDocument();
+    expect(screen.getByTestId("cross-domain-risk-heatmap")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-alert-review-queue")).toBeInTheDocument();
+    expect(screen.getByTestId("kpi-evidence-drilldown-contract")).toBeInTheDocument();
+
+    expect(screen.getByText("Room Allocation / Scheduling Intelligence")).toBeInTheDocument();
+    expect(screen.getByText("Security / Visitor Operations Governance")).toBeInTheDocument();
+    expect(screen.getByText("Campus Operations and Security")).toBeInTheDocument();
+    expect(screen.getByText("Finance / Procurement / Asset Governance")).toBeInTheDocument();
+    expect(screen.getByText("Academic Governance")).toBeInTheDocument();
+
+    const ministry = screen.getByTestId("ministry-governance-report-shell");
+    const heatmap = screen.getByTestId("cross-domain-risk-heatmap");
+    const queue = screen.getByTestId("governance-alert-review-queue");
+    const drilldown = screen.getByTestId("kpi-evidence-drilldown-contract");
+
+    expect(ministry.compareDocumentPosition(heatmap) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(heatmap.compareDocumentPosition(queue) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(queue.compareDocumentPosition(drilldown) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    const pageText = document.body.textContent?.toLowerCase() ?? "";
+    expect(pageText).toContain("read-only");
+    expect(pageText).toContain("human review");
+    expect(pageText).toContain("evidence-backed");
+    expect(pageText).toContain("no automatic action");
+    expect(pageText).toContain("source metrics");
+    expect(pageText).toContain("source domains");
+
+    expect(pageText).not.toContain("auto-approved");
+    expect(pageText).not.toContain("auto-resolved");
+    expect(pageText).not.toContain("action executed");
+    expect(pageText).not.toContain("disciplinary action applied");
+    expect(pageText).not.toContain("security lockout applied");
+    expect(pageText).not.toContain("room assigned automatically");
+    expect(pageText).not.toContain("schedule changed automatically");
+    expect(pageText).not.toContain("procurement approved automatically");
+    expect(pageText).not.toContain("submitted to ministry");
+    expect(pageText).not.toContain("official ministry certified");
+    expect(pageText).not.toContain("fake demo score");
+    expect(pageText).not.toContain("fake kpi");
+  });
+
+  it("keeps cross-feature governance e2e flow stable with empty tenant snapshot and unavailable fallbacks", () => {
+    useAdminAuthMock.mockReturnValue({
+      user: { tenantId: 654, roles: ["admin"], permissions: [] },
+      isLoading: false,
+      isAuthenticated: true,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: vi.fn(() => true),
+      hasAnyPermission: vi.fn(() => true),
+    });
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 654,
+        snapshot_date: "2026-05-17",
+        generated_at: "2026-05-17T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    expect(useRectorDashboardMock).toHaveBeenCalledWith(654);
+    expect(screen.getByText("University Executive Dashboard")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-command-center-contract")).toBeInTheDocument();
+    expect(screen.getByTestId("ministry-governance-report-shell")).toBeInTheDocument();
+    expect(screen.getByTestId("cross-domain-risk-heatmap")).toBeInTheDocument();
+    expect(screen.getByTestId("governance-alert-review-queue")).toBeInTheDocument();
+    expect(screen.getByTestId("kpi-evidence-drilldown-contract")).toBeInTheDocument();
+
+    expect(screen.getAllByText(/unavailable/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Data quality note:/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Source metrics: unavailable/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Not submitted externally/i)).toBeInTheDocument();
+  });
 });
