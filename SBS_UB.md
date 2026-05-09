@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-021.1 RECTOR EXECUTIVE COMMAND CENTER CONSOLIDATION)
-- status: ready_for_A-021.3
-- current_stage: A-021 Wave 9 implementation (A-021.2 complete)
-- last_completed_action_id: A-021.2
-- next_action_id: A-021.3
-- updated_at: 2026-05-09 (A-021.2 complete: ministry-ready governance reporting shell added to the rector dashboard, coverage added for read-only tenant-scoped report behavior, report artifact written, and targeted/full frontend plus safe-gate validations passed; no runtime-destructive changes.)
+- status: ready_for_A-021.4
+- current_stage: A-021 Wave 9 implementation (A-021.3 complete)
+- last_completed_action_id: A-021.3
+- next_action_id: A-021.4
+- updated_at: 2026-05-09 (A-021.2 hash confirmed: 3dc3f3b. A-021.3 complete: cross-domain risk heatmap added to rector dashboard using existing KPI evidence, tenant/unavailable safety coverage added, and targeted/full frontend + lint + build + safe-gate validations passed.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -79,6 +79,42 @@
 - Deliverable:
     - `A-021.1-RECTOR_EXECUTIVE_COMMAND_CENTER_REPORT.md`
 - Decision: **A-021.1 COMPLETE — PASS**. Proceed to `A-021.2`.
+
+#### A-021.3 - Cross-domain Risk Heatmap
+
+- Date: 2026-05-09
+- Scope: Additive-only, frontend-only cross-domain risk heatmap for rector governance dashboard using existing KPI evidence (`data.cards`). No backend risk engine/migrations/destructive automation.
+- A-021.2 commit hash confirmation:
+    - Confirmed hash: `3dc3f3b`
+    - Commit message: `feat(wave9): add ministry-ready governance reporting shell`
+- Implementation delivered:
+    - `frontend/app/(admin)/console/dashboard/page.tsx`
+        - Added `CROSS_DOMAIN_RISK_HEATMAP` domain configuration (8 governance domains)
+        - Added `CrossDomainRiskHeatmap` with deterministic evidence-first risk labeling (`critical`, `risk`, `watch`, `healthy`, `unavailable`)
+        - Added domain evidence rows, source-domain hints, and data-quality notes for missing optional metrics
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx`
+        - Added heatmap rendering/domain-id contract tests
+        - Added unavailable/fallback + tenant-context assertion
+        - Added safety wording assertions that forbid fake/demo/automatic/destructive semantics
+- Validation summary:
+    - Targeted dashboard suite:
+        - `cd infra && docker compose --env-file .env run --rm frontend-tests npm exec vitest -- run __tests__/admin/RectorDashboardPage.test.tsx --reporter=dot`
+        - Result: **1 file PASS, 16 tests PASS**
+    - Frontend lint:
+        - `docker compose --env-file .env run --rm frontend-tests npm run lint`
+        - Result: **PASS**
+    - Full frontend suite:
+        - `cd infra && docker compose --env-file .env run --rm frontend-tests npm run test:frontend`
+        - Result: **118 files PASS, 800 tests PASS**
+    - Frontend build:
+        - `cd infra && docker compose --env-file .env run --rm frontend-tests npm run build`
+        - Result: **PASS**
+    - Safe gate:
+        - `unset VIRTUAL_ENV && bash scripts/university_pilot_safe_gate.sh`
+        - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Deliverable:
+    - `A-021.3-CROSS_DOMAIN_RISK_HEATMAP_REPORT.md`
+- Decision: **A-021.3 CLOSED - PASS**. Proceed to `A-021.4`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 

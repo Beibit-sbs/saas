@@ -642,4 +642,92 @@ describe("RectorDashboardPage", () => {
     expect(screen.getAllByText(/Not available/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Missing metrics show as Not available/i)).toBeInTheDocument();
   });
+
+  it("renders cross-domain risk heatmap with supported governance domains and safe wording", () => {
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 1,
+        snapshot_date: "2026-05-13",
+        generated_at: "2026-05-13T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [
+          { metric_key: "academic_integrity_high_risk_count", title: "Academic Integrity High Risk Count", value: 2, trend_7d: [], metadata_json: {} },
+          { metric_key: "academic_integrity_cases_pending_review", title: "Academic Integrity Cases Pending Review", value: 4, trend_7d: [], metadata_json: {} },
+          { metric_key: "budget_overrun_risk_count", title: "Budget Overrun Risk Count", value: 3, trend_7d: [], metadata_json: {} },
+          { metric_key: "active_finance_risk_signals_count", title: "Active Finance Risk Signals Count", value: 6, trend_7d: [], metadata_json: {} },
+          { metric_key: "scheduling_conflicts_count", title: "Scheduling Conflict Count", value: 5, trend_7d: [], metadata_json: {} },
+          { metric_key: "security_incidents_escalated_count", title: "Security Incidents Escalated Count", value: 2, trend_7d: [], metadata_json: {} },
+          { metric_key: "security_incident_review_required_count", title: "Security Incident Review Required Count", value: 1, trend_7d: [], metadata_json: {} },
+          { metric_key: "room_allocation_review_required_count", title: "Room Allocation Review Required Count", value: 3, trend_7d: [], metadata_json: {} },
+          { metric_key: "room_capacity_mismatch_count", title: "Room Capacity Mismatch Count", value: 2, trend_7d: [], metadata_json: {} },
+          { metric_key: "high_risk_students_count", title: "High Risk Students Count", value: 8, trend_7d: [], metadata_json: {} },
+          { metric_key: "research_ethics_review_cases_count", title: "Research Ethics Review Cases", value: 2, trend_7d: [], metadata_json: {} },
+          { metric_key: "exam_integrity_requires_approval_count", title: "Exam Integrity Requires Approval Count", value: 2, trend_7d: [], metadata_json: {} },
+          { metric_key: "finance_operations_actionability_count", title: "Finance Operations Actionability Count", value: 3, trend_7d: [], metadata_json: {} },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    const heatmap = screen.getByTestId("cross-domain-risk-heatmap");
+    expect(heatmap).toBeInTheDocument();
+    expect(screen.getByText("Cross-domain Risk Heatmap")).toBeInTheDocument();
+
+    expect(screen.getByTestId("risk-heatmap-domain-academic-governance")).toBeInTheDocument();
+    expect(screen.getByTestId("risk-heatmap-domain-finance-procurement-assets")).toBeInTheDocument();
+    expect(screen.getByTestId("risk-heatmap-domain-campus-operations")).toBeInTheDocument();
+    expect(screen.getByTestId("risk-heatmap-domain-visitor-security-operations")).toBeInTheDocument();
+    expect(screen.getByTestId("risk-heatmap-domain-room-allocation-scheduling-intelligence")).toBeInTheDocument();
+    expect(screen.getByTestId("risk-heatmap-domain-brain-review-required-actionability")).toBeInTheDocument();
+
+    expect(screen.getByTestId("ministry-governance-report-shell")).toBeInTheDocument();
+    expect(screen.getByText("Finance and Operations Health")).toBeInTheDocument();
+    expect(screen.getByText("Academic Integrity and Governance")).toBeInTheDocument();
+
+    const pageText = document.body.textContent?.toLowerCase() ?? "";
+    expect(pageText).not.toContain("fake demo score");
+    expect(pageText).not.toContain("official ministry certified score");
+    expect(pageText).not.toContain("automatic disciplinary action");
+    expect(pageText).not.toContain("automatic security lockout");
+    expect(pageText).not.toContain("automatic room assignment");
+    expect(pageText).not.toContain("automatic procurement approval");
+    expect(pageText).not.toContain("destructive action");
+  });
+
+  it("renders unavailable state and data quality note when heatmap domain metrics are missing", () => {
+    useAdminAuthMock.mockReturnValue({
+      user: { tenantId: 77, roles: ["admin"], permissions: [] },
+      isLoading: false,
+      isAuthenticated: true,
+      refreshSession: vi.fn(),
+      logout: vi.fn(),
+      hasPermission: vi.fn(() => true),
+      hasAnyPermission: vi.fn(() => true),
+    });
+    useRectorDashboardMock.mockReturnValue({
+      data: {
+        tenant_id: 77,
+        snapshot_date: "2026-05-13",
+        generated_at: "2026-05-13T10:00:00Z",
+        source: "kpi_metrics_engine_v1",
+        cards: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<RectorDashboardPage />);
+
+    expect(useRectorDashboardMock).toHaveBeenCalledWith(77);
+    const heatmap = screen.getByTestId("cross-domain-risk-heatmap");
+    expect(heatmap).toBeInTheDocument();
+    expect(screen.getAllByText(/unavailable/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Domain evidence is unavailable in current tenant snapshot/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Data quality note:/i).length).toBeGreaterThan(0);
+  });
 });

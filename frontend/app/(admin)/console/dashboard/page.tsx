@@ -38,6 +38,28 @@ type GovernanceReportSectionConfig = {
   dataQualityNote: string;
 };
 
+type DashboardCardSnapshot = {
+  metric_key: string;
+  title: string;
+  value: number;
+  trend_7d: unknown[];
+  metadata_json: Record<string, unknown>;
+};
+
+type RiskHeatmapDomainConfig = {
+  domainId: string;
+  title: string;
+  description: string;
+  metricKeys: string[];
+  criticalMetricKeys: string[];
+  riskMetricKeys: string[];
+  watchMetricKeys: string[];
+  reviewMetricKeys: string[];
+  sourceDomains: string[];
+  dataQualityNote: string;
+  optional?: boolean;
+};
+
 const EXECUTIVE_KPI_SECTIONS: ExecutiveKpiSectionConfig[] = [
   {
     testId: "wave3-finance-kpi-section",
@@ -388,6 +410,172 @@ const GOVERNANCE_REPORT_SECTIONS: GovernanceReportSectionConfig[] = [
   },
 ];
 
+const CROSS_DOMAIN_RISK_HEATMAP: RiskHeatmapDomainConfig[] = [
+  {
+    domainId: "academic-governance",
+    title: "Academic Governance",
+    description: "Integrity, exam governance, thesis, and ethics risk signals.",
+    metricKeys: [
+      "academic_integrity_high_risk_count",
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_high_risk_count",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_risk_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_high_risk_count",
+      "research_ethics_requires_approval_count",
+    ],
+    criticalMetricKeys: ["academic_integrity_high_risk_count", "exam_integrity_high_risk_count", "research_ethics_high_risk_count"],
+    riskMetricKeys: ["thesis_governance_risk_count", "academic_integrity_review_cases_count", "exam_integrity_reviews_count"],
+    watchMetricKeys: ["integrity_case_resolution_sla_risk_count", "research_ethics_review_cases_count"],
+    reviewMetricKeys: ["academic_integrity_cases_pending_review", "exam_integrity_requires_approval_count", "thesis_governance_requires_approval_count", "research_ethics_requires_approval_count"],
+    sourceDomains: ["Academic Integrity", "Exam Governance", "Thesis", "Research Ethics"],
+    dataQualityNote: "Uses current tenant KPI evidence only.",
+  },
+  {
+    domainId: "finance-procurement-assets",
+    title: "Finance / Procurement / Assets",
+    description: "Budget, procurement, delinquency, and asset-conversion pressure.",
+    metricKeys: [
+      "budget_overrun_risk_count",
+      "active_finance_risk_signals_count",
+      "delinquency_cases_active",
+      "asset_conversion_gap_count",
+      "procurement_requests_pending_approval",
+      "budget_review_actions_count",
+    ],
+    criticalMetricKeys: ["budget_overrun_risk_count", "delinquency_cases_active"],
+    riskMetricKeys: ["active_finance_risk_signals_count", "asset_conversion_gap_count"],
+    watchMetricKeys: ["procurement_requests_pending_approval"],
+    reviewMetricKeys: ["budget_review_actions_count"],
+    sourceDomains: ["Finance", "Procurement", "Assets"],
+    dataQualityNote: "Evidence-backed only; approvals remain human-managed.",
+  },
+  {
+    domainId: "campus-operations",
+    title: "Campus Operations",
+    description: "Operational pressure from scheduling, events, and capacity risk.",
+    metricKeys: [
+      "scheduling_conflicts_count",
+      "room_conflict_count",
+      "capacity_risk_sections_count",
+      "events_cancelled_count",
+      "events_registration_full_count",
+    ],
+    criticalMetricKeys: ["capacity_risk_sections_count"],
+    riskMetricKeys: ["scheduling_conflicts_count", "room_conflict_count"],
+    watchMetricKeys: ["events_cancelled_count", "events_registration_full_count"],
+    reviewMetricKeys: [],
+    sourceDomains: ["Scheduling", "Events", "Operations"],
+    dataQualityNote: "Campus operations are displayed as read-only governance evidence.",
+  },
+  {
+    domainId: "visitor-security-operations",
+    title: "Visitor / Security Operations",
+    description: "Security and visitor oversight indicators requiring human supervision.",
+    metricKeys: [
+      "security_high_risk_incidents_count",
+      "security_incident_review_required_count",
+      "security_incidents_escalated_count",
+      "security_incidents_open_count",
+      "access_denied_count",
+      "unauthorized_attempts_count",
+      "visitor_requests_pending_count",
+      "visitor_unauthorized_attempts_count",
+    ],
+    criticalMetricKeys: ["security_high_risk_incidents_count"],
+    riskMetricKeys: ["security_incidents_escalated_count", "security_incidents_open_count", "unauthorized_attempts_count"],
+    watchMetricKeys: ["access_denied_count", "visitor_requests_pending_count", "visitor_unauthorized_attempts_count"],
+    reviewMetricKeys: ["security_incident_review_required_count"],
+    sourceDomains: ["Security Operations", "Visitor Management", "Access Control"],
+    dataQualityNote: "No lockout or ban is executed from this dashboard view.",
+  },
+  {
+    domainId: "room-allocation-scheduling-intelligence",
+    title: "Room Allocation / Scheduling Intelligence",
+    description: "Allocation and mismatch signals for review-required scheduling governance.",
+    metricKeys: [
+      "room_allocation_review_required_count",
+      "room_allocation_no_viable_candidate_count",
+      "room_capacity_mismatch_count",
+      "room_equipment_mismatch_count",
+      "room_type_mismatch_count",
+      "room_computer_shortage_count",
+      "room_allocation_recommendations_count",
+    ],
+    criticalMetricKeys: ["room_allocation_no_viable_candidate_count"],
+    riskMetricKeys: ["room_capacity_mismatch_count", "room_equipment_mismatch_count", "room_type_mismatch_count", "room_computer_shortage_count"],
+    watchMetricKeys: ["room_allocation_recommendations_count"],
+    reviewMetricKeys: ["room_allocation_review_required_count"],
+    sourceDomains: ["Room Allocation", "Scheduling Intelligence"],
+    dataQualityNote: "Recommendations are advisory only and require human review.",
+  },
+  {
+    domainId: "student-risk-interventions",
+    title: "Student Risk / Interventions",
+    description: "Student-risk and intervention pressure indicators where available.",
+    metricKeys: [
+      "critical_risk_students_count",
+      "high_risk_students_count",
+      "intervention_auto_created_count",
+      "sweep_coverage_rate",
+      "intervention_resolution_rate",
+    ],
+    criticalMetricKeys: ["critical_risk_students_count"],
+    riskMetricKeys: ["high_risk_students_count", "intervention_auto_created_count"],
+    watchMetricKeys: ["sweep_coverage_rate"],
+    reviewMetricKeys: [],
+    sourceDomains: ["Student Success", "Interventions"],
+    dataQualityNote: "Optional domain; unavailable if tenant does not emit student-risk metrics.",
+    optional: true,
+  },
+  {
+    domainId: "research-accreditation-quality",
+    title: "Research / Accreditation / Quality",
+    description: "Ethics and quality governance risk indicators where supported.",
+    metricKeys: [
+      "research_ethics_high_risk_count",
+      "research_ethics_review_cases_count",
+      "research_ethics_requires_approval_count",
+      "thesis_governance_risk_count",
+    ],
+    criticalMetricKeys: ["research_ethics_high_risk_count"],
+    riskMetricKeys: ["thesis_governance_risk_count"],
+    watchMetricKeys: ["research_ethics_review_cases_count"],
+    reviewMetricKeys: ["research_ethics_requires_approval_count"],
+    sourceDomains: ["Research Ethics", "Accreditation", "Quality"],
+    dataQualityNote: "Optional domain; supported when corresponding governance evidence is present.",
+    optional: true,
+  },
+  {
+    domainId: "brain-review-required-actionability",
+    title: "Brain / Review Required / Actionability",
+    description: "Review-required queue and actionability pressure from cross-domain governance signals.",
+    metricKeys: [
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_requires_approval_count",
+      "security_incident_review_required_count",
+      "budget_review_actions_count",
+      "finance_operations_actionability_count",
+    ],
+    criticalMetricKeys: [],
+    riskMetricKeys: ["finance_operations_actionability_count"],
+    watchMetricKeys: [],
+    reviewMetricKeys: [
+      "academic_integrity_cases_pending_review",
+      "exam_integrity_requires_approval_count",
+      "thesis_governance_requires_approval_count",
+      "research_ethics_requires_approval_count",
+      "security_incident_review_required_count",
+      "budget_review_actions_count",
+    ],
+    sourceDomains: ["Brain Core", "Review Queue", "Governance"],
+    dataQualityNote: "Review-required indicators are evidence-backed and require human decisions.",
+  },
+];
+
 function ExecutiveKpiSection({ section }: { section: ExecutiveKpiSectionConfig }) {
   return (
     <section data-testid={section.testId} className="space-y-3">
@@ -411,7 +599,7 @@ function GovernanceReportShell({
   tenantId,
   generatedLabel,
 }: {
-  data: { cards: Array<{ metric_key: string; title: string; value: number; trend_7d: unknown[]; metadata_json: Record<string, unknown> }> } | undefined;
+  data: { cards: DashboardCardSnapshot[] } | undefined;
   tenantId: number;
   generatedLabel: string;
 }) {
@@ -487,6 +675,134 @@ function GovernanceReportShell({
             </article>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+function CrossDomainRiskHeatmap({
+  data,
+  tenantId,
+}: {
+  data: { cards: DashboardCardSnapshot[] } | undefined;
+  tenantId: number;
+}) {
+  const cardByMetricKey = useMemo(() => {
+    const entries = (data?.cards ?? []).map((card) => [card.metric_key, card] as const);
+    return new Map(entries);
+  }, [data?.cards]);
+
+  const readMetricValue = (metricKey: string) => {
+    const card = cardByMetricKey.get(metricKey);
+    if (!card) return null;
+    const value = Number(card.value);
+    return Number.isFinite(value) ? value : null;
+  };
+
+  const hasPositiveValue = (metricKeys: string[]) => metricKeys.some((metricKey) => {
+    const value = readMetricValue(metricKey);
+    return value !== null && value > 0;
+  });
+
+  const domains = CROSS_DOMAIN_RISK_HEATMAP.map((domain) => {
+    const availableMetricKeys = domain.metricKeys.filter((metricKey) => cardByMetricKey.has(metricKey));
+    const hasEvidence = availableMetricKeys.length > 0;
+
+    let riskLevel: "healthy" | "watch" | "risk" | "critical" | "unavailable" = "healthy";
+    if (!hasEvidence) {
+      riskLevel = "unavailable";
+    } else if (hasPositiveValue(domain.criticalMetricKeys)) {
+      riskLevel = "critical";
+    } else if (hasPositiveValue(domain.riskMetricKeys)) {
+      riskLevel = "risk";
+    } else if (hasPositiveValue(domain.reviewMetricKeys) || hasPositiveValue(domain.watchMetricKeys)) {
+      riskLevel = "watch";
+    }
+
+    const reviewRequired = hasPositiveValue(domain.reviewMetricKeys);
+    const evidenceItems = availableMetricKeys
+      .filter((metricKey) => {
+        const value = readMetricValue(metricKey);
+        return value !== null && value > 0;
+      })
+      .slice(0, 3)
+      .map((metricKey) => {
+        const card = cardByMetricKey.get(metricKey);
+        return {
+          label: card?.title ?? metricKey,
+          value: readMetricValue(metricKey) ?? 0,
+        };
+      });
+
+    return {
+      ...domain,
+      hasEvidence,
+      availableMetricKeys,
+      riskLevel,
+      reviewRequired,
+      evidenceItems,
+    };
+  });
+
+  const riskLevelClassName: Record<string, string> = {
+    critical: "bg-red-100 text-red-700",
+    risk: "bg-amber-100 text-amber-700",
+    watch: "bg-blue-100 text-blue-700",
+    healthy: "bg-emerald-100 text-emerald-700",
+    unavailable: "bg-muted text-muted-foreground",
+  };
+
+  return (
+    <section className="space-y-4" data-testid="cross-domain-risk-heatmap">
+      <div className="rounded-lg border bg-card p-4">
+        <p className="text-sm font-semibold">Cross-domain Risk Heatmap</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Read-only, evidence-backed cross-domain risk summary for tenant-scoped governance review.
+          Risk levels indicate operational pressure and review needs requiring human review.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">Tenant {tenantId} context only • No external submission • No automatic action execution</p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {domains.map((domain) => (
+          <article key={domain.domainId} data-testid={`risk-heatmap-domain-${domain.domainId}`} className="rounded-lg border bg-card p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-semibold">{domain.title}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">{domain.description}</p>
+              </div>
+              <span className={`rounded-full px-2 py-1 text-[11px] font-medium ${riskLevelClassName[domain.riskLevel]}`}>
+                {domain.riskLevel}
+              </span>
+            </div>
+
+            <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+              <p>Source domains: {domain.sourceDomains.join(" / ")}</p>
+              <p>Evidence-backed: {domain.hasEvidence ? "yes" : "unavailable"}</p>
+              <p>Review required: {domain.reviewRequired ? "yes" : "no"}</p>
+              <p>Read-only governance surface: yes</p>
+              {domain.optional && <p>Optional domain support: enabled when tenant metrics are available</p>}
+            </div>
+
+            <div className="mt-3 rounded-md border bg-muted/20 p-3">
+              {domain.evidenceItems.length > 0 ? (
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  {domain.evidenceItems.map((item) => (
+                    <li key={item.label}>
+                      {item.label}: {item.value.toLocaleString()}
+                    </li>
+                  ))}
+                </ul>
+              ) : domain.hasEvidence ? (
+                <p className="text-xs text-muted-foreground">No elevated risk signal in currently available metrics.</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Domain evidence is unavailable in current tenant snapshot.</p>
+              )}
+            </div>
+
+            <p className="mt-3 text-xs text-muted-foreground">Data quality note: {domain.dataQualityNote}</p>
+          </article>
+        ))}
       </div>
     </section>
   );
@@ -670,6 +986,8 @@ export default function RectorDashboardPage() {
       {EXECUTIVE_KPI_SECTIONS.map((section) => (
         <ExecutiveKpiSection key={section.testId} section={section} />
       ))}
+
+      <CrossDomainRiskHeatmap data={data} tenantId={tenantId} />
 
       <GovernanceReportShell data={data} tenantId={tenantId} generatedLabel={generatedLabel} />
 
