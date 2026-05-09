@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-022.4
-- current_stage: A-022.3 complete / A-022.4 ready to start
-- last_completed_action_id: A-022.3
-- next_action_id: A-022.4
-- updated_at: 2026-05-09 (A-022.3 complete: room recommendation -> proposal bridge delivered with tenant-safe candidate selection + proposal/simulation compatibility + bridge audit evidence; non-destructive policy preserved; focused/targeted/regression/tenant-security/safe-gate validations green.)
+- status: ready_for_A-022.5
+- current_stage: A-022.4 complete / A-022.5 ready to start
+- last_completed_action_id: A-022.4
+- next_action_id: A-022.5
+- updated_at: 2026-05-09 (A-022.4 complete: human approval queue/decision contract delivered with tenant-safe decision guards + queue audit evidence + explicit non-destructive semantics; targeted/regression/tenant-security/safe-gate validations green.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -577,6 +577,56 @@
         - `bash scripts/university_pilot_safe_gate.sh`
         - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
 - Decision: **A-022.3 COMPLETE — PASS**. Transition to `A-022.4`.
+
+#### A-022.4 — Human Approval Queue / Decision Contract
+
+- Date: 2026-05-09
+- Scope: Additive contract-only queue/decision layer for human-reviewed timetable changes. No apply pipeline, no timetable mutation, no room reservation, no booking override, no auto-apply.
+- Repo hygiene snapshot:
+    - Dirty tracked (out-of-scope, not staged): `.coverage`, `backend/.coverage`, `.vscode/tasks.json`
+    - Untracked historical artifacts retained: A-011/A-012/A-017 reports, `A009_AUTH_HARNESS_STABILIZATION.md`, `infra/nohup.out`
+    - A-022.3 baseline commit confirmed: `daf20e2`
+- Implementation delivered:
+    - `backend/app/modules/scheduling/timetable_approval_queue.py`
+        - Added approval queue contracts/helpers:
+            - `TimetableApprovalQueueItem`
+            - `TimetableApprovalDecision`
+            - `TimetableApprovalReviewStatus`
+            - `TimetableApprovalDecisionStatus`
+            - `TimetableApprovalPriority`
+            - `TimetableApprovalAuditEvidence`
+            - `TimetableApprovalQueueInput`
+            - `TimetableApprovalQueueResult`
+            - `build_timetable_approval_queue_item(...)`
+            - `validate_timetable_approval_decision(...)`
+            - `record_timetable_approval_decision(...)`
+            - `build_timetable_approval_audit_evidence(...)`
+        - Enforced policy/guard behavior:
+            - `tenant_id > 0` required (fail-closed)
+            - queue/proposal/simulation tenant consistency enforced
+            - reviewer requirements enforced (`reviewer_id`, `reviewer_note` by decision/risk)
+            - terminal queue decisions immutable
+            - optional explicit proposal FSM transition path only via A-022.1 helper
+            - `approved` remains decision-record only (no schedule apply)
+            - queue audit evidence appended (`approval_queue_item_created`, `approval_decision_recorded`)
+    - `backend/tests/test_a022_4_timetable_approval_queue_contract.py`
+        - Added A-022.4 contract suite (32 checks; includes required decision semantics, non-destructive guards, and A-022.1/2/3 compatibility proofs)
+    - `A-022.4-HUMAN_APPROVAL_QUEUE_DECISION_CONTRACT_REPORT.md`
+        - Added A-022.4 evidence package (gap matrix, decision semantics proof, tracker/audit-table deltas, validation matrix)
+- Validation summary:
+    - Targeted A-022 queue/proposal/simulation slice:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k "a022_4 or timetable_approval_queue or timetable_change_proposal or timetable_change_simulation" --no-cov -rA`
+        - Result: **111 passed, 0 failed, 8807 deselected**
+    - Broad A-020/A-022 scheduling regression slice:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k "a020 or a022_1 or a022_2 or a022_3 or a022_4 or scheduling or room_booking or room_allocation or timetable_change" --no-cov -rA`
+        - Result: **503 passed, 0 failed, 8415 deselected**
+    - Tenant/security regression slice:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest tests/ -k "tenant or security" --no-cov --tb=line -q`
+        - Result: **1026 passed, 1 skipped, 0 failed, 7891 deselected**
+    - Safe gate:
+        - `unset VIRTUAL_ENV && bash scripts/university_pilot_safe_gate.sh`
+        - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Decision: **A-022.4 COMPLETE — PASS**. Transition to `A-022.5`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 
@@ -4152,7 +4202,12 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 | procurement | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ EVENT LAYER DONE |
 | budget_planning | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | syllabus_governance | ❌ | ⚠️ stub | ✅ | ✅ | ❌ | ❌ PARTIAL |
-| scheduling | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ L6 FULL (A-018.1) |
+| scheduling | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ L6 FULL + A-022 contract layer ready (A-018.1, A-022.1–A-022.4) |
+| timetable_change_proposal | ⚠️ contract event readiness | ✅ contract FSM | ✅ tenant-safe contract guards | ⚠️ not wired | ✅ contract-ready | ⚠️ CONTRACT READY (A-022.1) |
+| timetable_change_simulation | ⚠️ contract event readiness | ⚠️ preview-state contract | ✅ tenant-safe contract guards | ⚠️ not wired | ✅ preview contract-ready | ⚠️ CONTRACT READY (A-022.2) |
+| timetable_recommendation_bridge | ❌ | ⚠️ bridge-state guard flow | ✅ tenant-safe candidate/tenant guards | ⚠️ not wired | ✅ simulation-ready bridge | ⚠️ CONTRACT READY (A-022.3) |
+| timetable_approval_queue | ❌ | ✅ contract decision flow | ✅ tenant-safe queue/decision guards | ⚠️ not wired | ✅ review workflow contract-ready | ⚠️ CONTRACT READY (A-022.4) |
+| human_approved_timetable_workflow | ⚠️ deferred to A-022.5+ | ✅ review/decision record semantics | ✅ fail-closed approval guard model | ⚠️ frontend deferred | ⚠️ queue/decision only | ⚠️ PARTIAL (A-022.4 contract layer only) |
 | teaching_quality | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
 | research_ethics | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
 | equipment_booking | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
