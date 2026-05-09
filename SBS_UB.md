@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-023.6
-- current_stage: A-023.5 COMPLETE - governance/rector/ministry/reporting foundation lift (4 modules: 3 L0→L1, 1 L1→L2)
-- last_completed_action_id: A-023.5
-- next_action_id: A-023.6
-- updated_at: 2026-05-09 (A-023.5 completed: 4 governance/reporting modules lifted; L0:8→5, L1:20→22, L2:13→14; sum=150.)
+- status: ready_for_A-023.7
+- current_stage: A-023.6 COMPLETE - ai/brain/platform/infra foundation lift (4 modules: 1 L0→L1, 3 L1→L2)
+- last_completed_action_id: A-023.6
+- next_action_id: A-023.7
+- updated_at: 2026-05-09 (A-023.6 completed: 4 ai/brain/platform modules lifted; L0:5→4, L1:22→20, L2:14→17; sum=150.)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -162,6 +162,36 @@
 - Candidate extension modules beyond 150 baseline:
     - none identified in A-023.5 scope scan.
 - Decision: **A-023.5 CLOSED — PASS**. Proceed to `A-023.6`.
+
+#### A-023.6 — AI / Brain / Platform / Infra Level 1–2 Foundation Lift
+
+- Date: 2026-05-09
+- Scope: Foundation-only lift for AI / Brain / Platform / Infra modules below L2. No L3+ promotion, no API/frontend/KPI/Brain production claims, no E2E claims.
+- Selection scope (canonical 150 only):
+    - L0→L1: `exam_integrity_analytics`
+    - L1→L2: `ai_copilot_ops`, `ai_routing_control`, `developer_portal`
+- Validation evidence:
+    - Import validation: selected module packages + L2 services import successfully in `backend-tests` container
+    - Targeted tests: `backend/tests/test_a0236_ai_brain_platform_infra_foundation_validation.py` → **PASS (7 passed)**
+    - Hygiene: `git diff --check` → **PASS**
+- Audit Table — All Modules updates (A-023.6 delta):
+
+| Module | Category | Previous Level | New Level | Evidence Added | Validation |
+|---|---|---|---|---|---|
+| `exam_integrity_analytics` | Planned Expansion (AI / Platform Analytics) | L0 | L1 | `FOUNDATION.md` + `__init__.py` | import PASS |
+| `ai_copilot_ops` | Planned Expansion (AI / Platform Operations) | L1 | L2 | `service.py` + tenant guard + state/safety constants | import/test PASS |
+| `ai_routing_control` | Planned Expansion (AI / Platform Routing) | L1 | L2 | `service.py` + tenant guard + state/safety constants | import/test PASS |
+| `developer_portal` | Planned Expansion (Platform / Infra Enablement) | L1 | L2 | `service.py` + tenant guard + state/safety constants | import/test PASS |
+
+- Anti-inflation review:
+    - Canonical names preserved from A-023.0 inventory.
+    - No invented modules implemented.
+    - No module moved above L2.
+    - No fake autonomous execution/LLM provider integration/fake observability/kpi outputs.
+    - No fake Brain production maturity claims.
+- Candidate extension modules beyond 150 baseline:
+    - none identified in A-023.6 scope scan.
+- Decision: **A-023.6 CLOSED — PASS**. Proceed to `A-023.7`.
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -988,25 +1018,25 @@
 - current_level_counts_status = exact_counts_locked
 - exact_level_counts_due = closed_in_A-023.0
 - current_audited_rows = 150
-- level_0_count = 5
-- level_1_count = 22
-- level_2_count = 14
+- level_0_count = 4
+- level_1_count = 20
+- level_2_count = 17
 - level_3_count = 24
 - level_4_count = 62
 - level_5_count = 21
 - level_6_count = 2
-- level_1_plus_count = 145
-- level_2_plus_count = 123
+- level_1_plus_count = 146
+- level_2_plus_count = 126
 - level_3_plus_count = 109
 - level_4_plus_count = 85
 - level_5_plus_count = 23
 - foundation_gap_count = 41
-- level_2_gap_count = 27
-- arithmetic_check = 5+22+14+24+62+21+2=150
+- level_2_gap_count = 24
+- arithmetic_check = 4+20+17+24+62+21+2=150
 - maturity_arithmetic_check = PASS
-- exact_counts_verified_at = 2026-05-09 (A-023.5 closure)
-- evidence_source = A-023.5-GOVERNANCE_RECTOR_MINISTRY_REPORTING_FOUNDATION_LIFT_REPORT.md + Audit Table — All Modules
-- updated_at = 2026-05-09 (A-023.5: 3×L0→L1 + 1×L1→L2)
+- exact_counts_verified_at = 2026-05-09 (A-023.6 closure)
+- evidence_source = A-023.6-AI_BRAIN_PLATFORM_INFRA_FOUNDATION_LIFT_REPORT.md + Audit Table — All Modules
+- updated_at = 2026-05-09 (A-023.6: 1×L0→L1 + 3×L1→L2)
 - mandatory_rule = Keep exact counts synchronized with canonical 150-module inventory.
 - rule = Coverage does not equal full maturity.
 - coverage_not_equal_full_maturity = true
