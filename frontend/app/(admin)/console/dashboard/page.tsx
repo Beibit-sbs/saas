@@ -135,6 +135,11 @@ type KpiEvidenceDrilldownConfig = {
   optional?: boolean;
 };
 
+type GovernanceCommandCenterSection = {
+  sectionId: string;
+  title: string;
+};
+
 const EXECUTIVE_KPI_SECTIONS: ExecutiveKpiSectionConfig[] = [
   {
     testId: "wave3-finance-kpi-section",
@@ -1005,6 +1010,15 @@ const KPI_EVIDENCE_DRILLDOWN_CONFIG: KpiEvidenceDrilldownConfig[] = [
   },
 ];
 
+const GOVERNANCE_COMMAND_CENTER_SECTIONS: GovernanceCommandCenterSection[] = [
+  { sectionId: "executive-overview", title: "Executive Health / Command Center Overview" },
+  { sectionId: "ministry-reporting-shell", title: "Ministry-Ready Governance Reporting Shell" },
+  { sectionId: "cross-domain-risk-heatmap", title: "Cross-domain Risk Heatmap" },
+  { sectionId: "governance-alert-review-queue", title: "Governance Alert / Review Queue" },
+  { sectionId: "kpi-evidence-drilldown", title: "KPI Evidence Drilldown Contract" },
+  { sectionId: "domain-intelligence", title: "Domain Intelligence Sections (Room Allocation / Security / Campus / Finance / Academic)" },
+];
+
 function ExecutiveKpiSection({ section }: { section: ExecutiveKpiSectionConfig }) {
   return (
     <section data-testid={section.testId} className="space-y-3">
@@ -1530,6 +1544,31 @@ function KpiEvidenceDrilldownContract({
   );
 }
 
+function GovernanceCommandCenterContract({ tenantId }: { tenantId: number }) {
+  return (
+    <section className="space-y-3" data-testid="governance-command-center-contract">
+      <div className="rounded-lg border bg-card p-4">
+        <p className="text-sm font-semibold">Governance Command Center Contract</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Consolidated rector/ministry governance dashboard contract: tenant-scoped, evidence-backed, read-only, and human-review driven.
+          No automatic action is executed from this surface.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Tenant {tenantId} context only • Read-only • Evidence-backed • Human review • No automatic action
+        </p>
+      </div>
+      <div className="rounded-lg border bg-card p-4" data-testid="governance-command-center-section-order">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Consolidated section order</p>
+        <ol className="mt-2 list-decimal pl-5 space-y-1 text-xs text-muted-foreground">
+          {GOVERNANCE_COMMAND_CENTER_SECTIONS.map((section) => (
+            <li key={section.sectionId}>{section.title}</li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
 function DashboardSkeletonGrid() {
   return (
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3" data-testid="kpi-loading-grid">
@@ -1709,13 +1748,15 @@ export default function RectorDashboardPage() {
         <ExecutiveKpiSection key={section.testId} section={section} />
       ))}
 
-      <GovernanceAlertReviewQueue data={data} tenantId={tenantId} />
+      <GovernanceCommandCenterContract tenantId={tenantId} />
 
-      <KpiEvidenceDrilldownContract data={data} tenantId={tenantId} />
+      <GovernanceReportShell data={data} tenantId={tenantId} generatedLabel={generatedLabel} />
 
       <CrossDomainRiskHeatmap data={data} tenantId={tenantId} />
 
-      <GovernanceReportShell data={data} tenantId={tenantId} generatedLabel={generatedLabel} />
+      <GovernanceAlertReviewQueue data={data} tenantId={tenantId} />
+
+      <KpiEvidenceDrilldownContract data={data} tenantId={tenantId} />
 
       <AutomationOverviewWidget tenantId={tenantId} />
     </div>

@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-021.1 RECTOR EXECUTIVE COMMAND CENTER CONSOLIDATION)
-- status: ready_for_A-021.6
-- current_stage: A-021 Wave 9 implementation (A-021.5 complete)
-- last_completed_action_id: A-021.5
-- next_action_id: A-021.6
-- updated_at: 2026-05-09 (A-021.5 complete: KPI evidence drilldown contract added as read-only tenant-scoped evidence lineage surface with explanation/source metrics/source domains/evidence summary/human-review status, unavailable fallback safety, and targeted/full frontend + lint + build + safe-gate validations passing.)
+- status: ready_for_A-021.7
+- current_stage: A-021 Wave 9 implementation (A-021.6 complete)
+- last_completed_action_id: A-021.6
+- next_action_id: A-021.7
+- updated_at: 2026-05-09 (A-021.6 complete: governance dashboard frontend consolidated into one coherent command center contract with stable section ordering, preserved read-only/evidence/human-review safety wording, and targeted/full frontend + lint + build + safe-gate validations passing.)
 
 #### A-021.0 — Wave 9 Selection + Governance Dashboard Planning
 
@@ -183,6 +183,39 @@
 - Deliverable:
     - `A-021.5-KPI_EVIDENCE_DRILLDOWN_CONTRACT_REPORT.md`
 - Decision: **A-021.5 CLOSED - PASS**. Proceed to `A-021.6`.
+
+#### A-021.6 - KPI / Frontend / Dashboard Consolidation
+
+- Date: 2026-05-09
+- Scope: Additive-only frontend consolidation of existing A-021 governance dashboard sections into a coherent command center contract. No backend service, no migration, no external integration.
+- Implementation delivered:
+    - `frontend/app/(admin)/console/dashboard/page.tsx`
+        - Added consolidation contract section (`Governance Command Center Contract`)
+        - Added explicit ordered section manifest (`GOVERNANCE_COMMAND_CENTER_SECTIONS`)
+        - Reordered governance section flow to: Ministry shell -> Heatmap -> Review queue -> Evidence drilldown
+        - Preserved all existing A-021.1..A-021.5 sections and safety semantics
+    - `frontend/__tests__/admin/RectorDashboardPage.test.tsx`
+        - Added consolidation coexistence/order contract test
+        - Added explicit assertions for domain visibility and forbidden wording in one coherent render
+- Validation summary:
+    - Targeted rector dashboard tests:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm frontend-tests npm run test:frontend -- --run __tests__/admin/RectorDashboardPage.test.tsx`
+        - Result: **PASS** (`1 file`, `16 tests`)
+    - Full frontend tests:
+        - task `test-frontend`
+        - Result: **PASS** (`118 files`, `800 tests`)
+    - Frontend lint:
+        - task `lint-frontend`
+        - Result: **PASS**
+    - Frontend build:
+        - `docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --rm frontend-tests npm run build`
+        - Result: **PASS** (`Compiled successfully`, static generation and build traces complete)
+    - Safe gate:
+        - task `safe-gate-once`
+        - Result: **PASS** (`[pilot-safe-gate] PASS: non-destructive pilot gate is green`)
+- Deliverable:
+    - `A-021.6-KPI_FRONTEND_DASHBOARD_CONSOLIDATION_REPORT.md`
+- Decision: **A-021.6 CLOSED - PASS**. Proceed to `A-021.7`.
 
 #### A-020.7 — Room Allocation Cross-Feature E2E
 
