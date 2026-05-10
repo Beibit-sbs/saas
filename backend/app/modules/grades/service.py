@@ -311,7 +311,7 @@ class GradeLifecycleService:
         assert_billing_write_allowed(tenant_id, action="grades.submit")
         assert_quota_with_increment(tenant_id, "grades_submitted", increment=1)
         enrollment = self._load_enrollment(tenant_id, request.enrollment_id)
-        
+
         # ABAC: Verify actor is authorized to submit grades for this course
         self._load_course(tenant_id, enrollment.course_id)
         await validate_grade_submission(
@@ -536,7 +536,7 @@ class GradeLifecycleService:
             raise TenantResourceNotFoundError(
                 f"Grade submission for enrollment {request.enrollment_id} not found or does not belong to tenant {tenant_id}"
             )
-        
+
         # ABAC: Only original submitter or admin can modify grade
         await validate_grade_modification(
             actor_id=actor_id,
@@ -661,7 +661,7 @@ class GradeLifecycleService:
     ) -> GradeListResponseSchema:
         tenant_id = validate_tenant_id_provided(tenant_id)
         self._load_course(tenant_id, course_id)
-        
+
         # ABAC: Verify actor is authorized to view grades for this course
         if actor_id:
             await validate_grade_ownership(

@@ -412,20 +412,20 @@ def list_login_directory_tenants() -> list[dict[str, object]]:
     Safe for unauthenticated access.
     """
     tenants = list_tenants()
-    
+
     result = []
     for tenant in tenants:
         status = str(tenant.get("status", "")).lower()
         # Only include active tenants for login UX
         if status != "active":
             continue
-        
+
         result.append({
             "tenant_id": int(tenant["id"]),
             "slug": str(tenant["slug"]),
             "name": str(tenant["name"]),
         })
-    
+
     # Sort by name for consistent UI ordering
     result.sort(key=lambda t: t["name"])
     return result

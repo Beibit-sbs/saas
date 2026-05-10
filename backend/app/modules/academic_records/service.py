@@ -339,10 +339,10 @@ def get_record_consistency_report(tenant_id: int) -> dict[str, object]:
 
     allowed_statuses = {"published", "draft", "pending", "archived", "withdrawn"}
     allowed_grades = {"A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "P", "NP", "I", "W"}
-    
+
     issues: list[dict[str, object]] = []
     enrollment_keys: dict[tuple[int | None, int | None, str], int] = {}
-    
+
     for record in records:
         record_id = _safe_int(record.get("id"))
         student_id = _safe_int(record.get("student_id"))

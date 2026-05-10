@@ -453,7 +453,7 @@ def create_room_assignment(
     payload: dict[str, object], tenant_id: int
 ) -> dict[str, object]:
     """W108: Create a room assignment with availability check.
-    
+
     Guard ensures room exists, is active, and has available occupancy
     before creating the assignment record.
     """

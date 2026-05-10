@@ -286,7 +286,7 @@ async def submit_application_endpoint(
     db: AdmissionsDb = None,
 ) -> ApplicationReadSchema:
     """Submit an application (transition from NEW → RECEIVED) and start workflow.
-    
+
     - Requires admissions.write permission
     - Tenant ID from trusted context header (X-Tenant-ID)
     - Accepts expected_version for optimistic locking

@@ -27,12 +27,12 @@ def inject_trace_context(
 ) -> dict[str, Any]:
     """
     Inject trace context (request_id, trace_id, tenant_id, actor_id) into a payload.
-    
+
     Used for outbox events, webhooks, automation, audit entries, etc.
     """
     exclude_keys = exclude_keys or set()
     context = get_log_context()
-    
+
     if not include_all:
         # Only inject non-empty, non-default values
         trace_fields = {
@@ -41,5 +41,5 @@ def inject_trace_context(
         }
     else:
         trace_fields = {k: v for k, v in context.items() if k not in exclude_keys}
-    
+
     return {**payload, **trace_fields}

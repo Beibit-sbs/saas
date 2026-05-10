@@ -477,7 +477,7 @@ class InterventionService:
                 metric="interventions_case_outcomes_recorded",
                 value=1,
             )
-            
+
             # Immediately ingest outcome into Brain Core if callback is registered
             if self._on_case_outcome is not None:
                 try:

@@ -59,16 +59,16 @@ def _enforce_role_mutation_guard(
     # Exception: platform admins can assign any role
     if _actor_is_platform_admin(actor):
         return  # Platform admin bypass
-    
+
     # Get actor's current roles in target tenant
     actor_roles = get_user_roles_for_tenant(normalized_actor, target_tenant_id)
     if not actor_roles and actor_claim_roles:
         actor_roles = sorted({str(item).strip().lower() for item in actor_claim_roles if str(item).strip()})
     actor_max_level = get_highest_role_level(actor_roles)
-    
+
     # Get target role's privilege level
     target_role_level = get_role_hierarchy_level(normalized_role)
-    
+
     # Actor can only assign roles with lower privilege than their highest role
     if target_role_level >= actor_max_level:
         raise HTTPException(
@@ -167,7 +167,7 @@ def assign_user_role(
 ) -> RoleAssignResponse:
     current_tenant_id = int(tenant["id"])
     target_tenant_id = payload.tenant_id if payload.tenant_id is not None and _actor_is_platform_admin(actor) else current_tenant_id
-    
+
     try:
         # Governance validation — role hierarchy, self-escalation checks
         _enforce_role_mutation_guard(
@@ -177,12 +177,12 @@ def assign_user_role(
             target_tenant_id=target_tenant_id,
             actor_claim_roles=getattr(getattr(request.state, "auth_claims", None), "roles", None),
         )
-        
+
         # Service call
         before_roles = get_user_roles_for_tenant(payload.user_id, target_tenant_id)
         assigned = assign_role_to_user(target_tenant_id, payload.user_id, payload.role)
         replayed = sorted(before_roles) == sorted(assigned.get("roles", []))
-        
+
         # Log success
         log_admin_action(
             actor=actor,
@@ -211,7 +211,7 @@ def assign_user_role(
             entity="rbac_assignments",
             result="denied",
             metadata={
-                "user_id": payload.user_id, 
+                "user_id": payload.user_id,
                 "role": payload.role,
                 "reason": exc.detail,
             },
@@ -229,7 +229,7 @@ def assign_user_role(
             entity="rbac_assignments",
             result="error",
             metadata={
-                "user_id": payload.user_id, 
+                "user_id": payload.user_id,
                 "role": payload.role,
                 "error": str(exc),
             },

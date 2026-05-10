@@ -1,0 +1,25 @@
+| 1 | digital_credentials_wallet | Academic | L0 | NO | NO | PLANNING_ONLY | digital credential issuance governance | define service contract and governance policy | high | A-027+ |
+| 2 | micro_credentials_stack | Academic | L0 | NO | NO | PLANNING_ONLY | stackable credential design governance | design credential stacking model | high | A-027+ |
+| 3 | alumni_career_outcomes | Student Success | L0 | NO | NO | PLANNING_ONLY | alumni outcomes analytics | define outcomes schema and KPI lineage | medium | A-026+ |
+| 4 | grant_peer_review | Research | L0 | NO | NO | PLANNING_ONLY | research grant peer-review workflow | define review FSM and approval queues | high | A-027+ |
+| 5 | research_data_governance | Research | L0 | NO | NO | PLANNING_ONLY | research data access and retention | define data governance policy contracts | high | A-027+ |
+| 6 | llm_eval_harness | AI Platform | L0 | NO | NO | PLANNING_ONLY | model evaluation deterministic gates | define evaluation service contract | high | A-025.2 |
+| 7 | prompt_lifecycle_governance | AI Platform | L0 | NO | NO | PLANNING_ONLY | prompt release governance approval | define prompt version and release FSM | high | A-025.2 |
+| 8 | knowledge_retrieval_fabric | AI Platform | L0 | NO | NO | PLANNING_ONLY | retrieval quality audit and drift | define orchestration and lineage contracts | high | A-025.2 |
+| 9 | ai_model_registry | AI Platform | L0 | NO | NO | PLANNING_ONLY | model governance and policy hooks | define model lifecycle inventory | high | A-025.3 |
+| 10 | model_cost_optimizer | Finance/AI | L0 | NO | NO | PLANNING_ONLY | cost optimization recommendations | define cost optimization advisory service | medium | A-026+ |
+| 11 | copilot_safety_ops | AI Governance | L0 | NO | NO | PLANNING_ONLY | policy violation triage queue | define safety gate and policy FSM | high | A-025.3 |
+| 12 | policy_simulation_lab | Governance | L0 | NO | NO | PLANNING_ONLY | policy impact simulation | define no-mutation simulation contracts | medium | A-026+ |
+| 13 | incident_command_center | Security/Governance | L0 | NO | NO | PLANNING_ONLY | cross-domain incident dispatch | define incident FSM and routing rules | high | A-026+ |
+| 14 | threat_intel_fusion | Security | L0 | NO | NO | PLANNING_ONLY | threat signal normalization | define threat signal fusion service | high | A-026+ |
+| 15 | privacy_request_orchestrator | Compliance | L0 | NO | NO | PLANNING_ONLY | DSAR and privacy operations | define privacy request FSM and SLA | high | A-026+ |
+| 16 | data_retention_orchestrator | Compliance | L0 | NO | NO | PLANNING_ONLY | retention policy enforcement | define retention policy service contract | high | A-026+ |
+| 17 | billing_reconciliation_ops | Finance | L0 | NO | NO | PLANNING_ONLY | reconciliation discrepancy closure | define reconciliation workflow FSM | high | A-025.3 |
+| 18 | revenue_leak_detection | Finance | L0 | NO | NO | PLANNING_ONLY | revenue anomaly surfacing | define anomaly detection and alert service | medium | A-026+ |
+| 19 | procurement_vendor_risk | Procurement | L0 | NO | NO | PLANNING_ONLY | vendor risk assessment workflow | define risk scoring and audit lineage | high | A-026+ |
+| 20 | classroom_iot_telemetry | Campus | L0 | NO | NO | PLANNING_ONLY | IoT telemetry ingestion | define telemetry ingestion contracts | medium | A-027+ |
+| 21 | energy_optimization_ops | Campus | L0 | NO | NO | PLANNING_ONLY | energy optimization recommendations | define optimization advisory service | medium | A-027+ |
+| 22 | transport_fleet_ops | Campus | L0 | NO | NO | PLANNING_ONLY | fleet operations visibility | define fleet status and incident service | medium | A-027+ |
+| 23 | admissions_yield_prediction | Admissions | L0 | NO | NO | PLANNING_ONLY | yield prediction advisory workflow | define yield advisory service and guidance | high | A-026+ |
+| 24 | student_success_playbooks | Student Success | L0 | NO | NO | PLANNING_ONLY | intervention playbook approvals | define playbook orchestration and approval FSM | high | A-026+ |
+| 25 | faculty_workload_optimizer | HR/Faculty | L0 | NO | NO | PLANNING_ONLY | workload planning recommendations | define workload advisory service | high | A-027+ |

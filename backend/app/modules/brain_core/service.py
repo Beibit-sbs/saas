@@ -2280,20 +2280,20 @@ class BrainCoreService:
     def detect_policy_drift(self, tenant_id: int) -> dict:
         """XVIII3 — Detect policy drift from repeated negative outcomes."""
         from app.modules.brain_core.models import BrainOutcomeModel  # local import
-        
+
         # Evaluate current learning status
         evaluated = self.evaluate_learning(tenant_id)
         negative_rate = float(evaluated.get("effectiveness_score") or 0.0)
         total_outcomes = int(evaluated.get("total_outcomes") or 0)
         negative_outcomes = int(evaluated.get("negative_outcomes") or 0)
-        
+
         # Initialize alerts list if not present
         if tenant_id not in self._drift_alerts:
             self._drift_alerts[tenant_id] = []
-        
+
         # Drift detection: negative_rate >= 50% and total_outcomes >= 4
         drift_detected = (negative_rate < 0.5 and total_outcomes >= 4) or (negative_outcomes >= 3)
-        
+
         if drift_detected:
             alert_id = str(uuid4())
             alert = {
@@ -2317,7 +2317,7 @@ class BrainCoreService:
             if not existing:
                 self._drift_alerts[tenant_id].append(alert)
             return alert if not existing else existing[0]
-        
+
         return {
             "alert_id": None,
             "tenant_id": tenant_id,
@@ -2335,11 +2335,11 @@ class BrainCoreService:
         """XVIII3 — Retrieve policy drift alerts for a tenant."""
         if tenant_id not in self._drift_alerts:
             return []
-        
+
         alerts = self._drift_alerts[tenant_id]
         if status:
             alerts = [a for a in alerts if a.get("status") == status]
-        
+
         return sorted(alerts, key=lambda x: x.get("created_at", ""), reverse=True)
 
 
@@ -4039,7 +4039,7 @@ class BrainCoreService:
         outcomes = [o for o in self._outcome_tracker._outcomes if o.get("tenant_id") == tenant_id]
         positive = sum(1 for o in outcomes if o.get("effectiveness") == "positive")
         negative = sum(1 for o in outcomes if o.get("effectiveness") == "negative")
-        
+
         return {
             "tenant_id": tenant_id,
             "current_profile": {"autonomy_level": 2, "risk_tolerance": "medium"},
@@ -4081,10 +4081,10 @@ class BrainCoreService:
             observations = quality_tracker._observations
         else:
             observations = getattr(self, '_outcome_tracker', {})._outcomes if hasattr(self, '_outcome_tracker') else []
-        
+
         peer_tenants = set(o.get("tenant_id") for o in observations if o.get("tenant_id") != tenant_id and o.get("tenant_id"))
         sample_size = len(peer_tenants)
-        
+
         return {
             "tenant_id": tenant_id,
             "sample_size": sample_size,
@@ -4115,15 +4115,15 @@ class BrainCoreService:
             outcomes = [o for o in quality_tracker._observations if o.get("tenant_id") == tenant_id]
         else:
             outcomes = [o for o in self._outcome_tracker._outcomes if o.get("tenant_id") == tenant_id]
-        
+
         positive = sum(1 for o in outcomes if o.get("effectiveness") == "positive")
         total = len(outcomes)
         current_rate = (positive / total) if total > 0 else 0.5
-        
+
         # Check for drift alerts or high severity signals to determine risk
         has_drift_alerts = tenant_id in getattr(self, '_drift_alerts', {}) and bool(self._drift_alerts.get(tenant_id, []))
         high_severity_signals = len([s for s in getattr(self, '_signals', []) if s.get("tenant_id") == tenant_id and s.get("severity") == "high"])
-        
+
         # Calculate risk score based on effectiveness rate
         if current_rate > 0.8:  # Very high positive rate = low risk
             risk_score = 0.2
@@ -4137,12 +4137,12 @@ class BrainCoreService:
         else:  # More negative outcomes = higher risk
             risk_score = 0.7
             forecast_band = "high"
-        
+
         if has_drift_alerts:
             risk_score += 0.1
         if high_severity_signals > 0:
             risk_score += 0.1
-        
+
         return {
             "tenant_id": tenant_id,
             "horizon_days": horizon_days,
@@ -4155,8 +4155,8 @@ class BrainCoreService:
             },
             "drivers": ["Signal volume trending up", "Negative outcome rate increasing"],
             "recommended_actions": (
-                ["Increase autonomy"] if current_rate > 0.8 
-                else (["Maintain current autonomy"] if current_rate > 0.6 
+                ["Increase autonomy"] if current_rate > 0.8
+                else (["Maintain current autonomy"] if current_rate > 0.6
                 else ["Decrease autonomy temporarily"])
             ),
             "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -4166,18 +4166,18 @@ class BrainCoreService:
     def generate_policy_rollout_plan(self, tenant_id: int, horizon_days: int = 30) -> dict:
         """XX1 — Generate staged policy rollout plan."""
         from datetime import datetime, timezone
-        
+
         # Use quality_tracker if available, otherwise outcome_tracker
         quality_tracker = getattr(self, '_quality_tracker', None)
         if quality_tracker and hasattr(quality_tracker, '_observations'):
             outcomes = [o for o in quality_tracker._observations if o.get("tenant_id") == tenant_id]
         else:
             outcomes = [o for o in self._outcome_tracker._outcomes if o.get("tenant_id") == tenant_id]
-        
+
         positive = sum(1 for o in outcomes if o.get("effectiveness") == "positive")
         total = len(outcomes)
         current_rate = (positive / total) if total > 0 else 0.5
-        
+
         # Get peer sample size
         if quality_tracker and hasattr(quality_tracker, '_observations'):
             peer_observations = quality_tracker._observations
@@ -4185,7 +4185,7 @@ class BrainCoreService:
             peer_observations = getattr(self, '_outcome_tracker', {})._outcomes if hasattr(self, '_outcome_tracker') else []
         peer_tenants = set(o.get("tenant_id") for o in peer_observations if o.get("tenant_id") != tenant_id and o.get("tenant_id"))
         peer_sample_size = len(peer_tenants)
-        
+
         # Calculate forecast band based on success rate
         if current_rate > 0.8:
             forecast_band = "low"
@@ -4196,7 +4196,7 @@ class BrainCoreService:
         else:
             forecast_band = "moderate"
             risk_score = 0.5
-        
+
         return {
             "plan_id": f"plan-{tenant_id}-{datetime.now().timestamp()}",
             "tenant_id": tenant_id,

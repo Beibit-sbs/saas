@@ -187,20 +187,20 @@ class ApplicantService:
     ) -> ApplicantReadSchema:
         """
         Create a new applicant.
-        
+
         Args:
             tenant_id: Tenant ID (mandatory, fail-closed)
             request: ApplicantCreateSchema with applicant data
             created_by: User ID who created the applicant (from auth context)
-        
+
         Returns:
             ApplicantReadSchema
-        
+
         Raises:
             ValueError: If tenant_id not provided
             IntegrityError: If unique constraint violated (duplicate email per tenant/program/year)
             PermissionError: Should not happen here (auth layer checks)
-        
+
         Audit Event: "applicant.created"
         """
         tenant_id = validate_tenant_id_provided(tenant_id)
@@ -245,7 +245,7 @@ class ApplicantService:
     async def get_applicant(self, tenant_id: int, applicant_id: int) -> ApplicantReadSchema:
         """
         Get applicant by ID with tenant isolation.
-        
+
         Raises:
             PermissionError: If applicant belongs to different tenant (HTTP 403)
             ValueError: If applicant not found
@@ -276,7 +276,7 @@ class ApplicantService:
     ) -> ApplicantListResponseSchema:
         """
         List applicants with optional filtering by program and year.
-        
+
         Tenant isolation: All queries filtered by tenant_id.
         """
         TenantIsolationRules.validate_tenant_id_provided(tenant_id)
@@ -320,7 +320,7 @@ class ApplicantService:
     ) -> ApplicantReadSchema:
         """
         Update applicant (partial update).
-        
+
         Audit Event: "applicant.updated"
         """
         TenantIsolationRules.validate_tenant_id_provided(tenant_id)
@@ -387,12 +387,12 @@ class ApplicationService:
     ) -> ApplicationReadSchema:
         """
         Create a new application for an applicant.
-        
+
         Validation:
         - Applicant must exist and belong to tenant
         - Applicant must be active
         - Only one active application per applicant (enforced by service + DB)
-        
+
         Audit Event: "application.created"
         """
         TenantIsolationRules.validate_tenant_id_provided(tenant_id)
@@ -493,7 +493,7 @@ class ApplicationService:
     ) -> ApplicationListResponseSchema:
         """
         List applications with optional filtering.
-        
+
         Tenant isolation: All queries filtered by tenant_id.
         """
         TenantIsolationRules.validate_tenant_id_provided(tenant_id)
@@ -751,34 +751,34 @@ class ApplicationService:
     ) -> ApplicationReadSchema:
         """
         Submit (transition to 'received') and start workflow.
-        
+
         Workflow trigger:
         1. Validate application in 'new' stage
         2. Transition to 'received' stage (record in history)
         3. Start admissions workflow instance
         4. Store workflow_instance_id in application.metadata_json
-        
+
         Idempotency:
         - If workflow_instance_id already in metadata_json, skip workflow creation
         - Still update stage/history (idempotent)
-        
+
         Audit Events:
         - "application.submitted" (application state change)
         - "workflow.started" (workflow event) [logged by WorkflowService]
-        
+
         Args:
             tenant_id: Tenant (mandatory, fail-closed)
             application_id: Application to submit
             actor: User submitting (typically applicant in UI; system in admin)
             expected_version: Expected version (optimistic lock)
-        
+
         Returns:
             ApplicationReadSchema with updated stage + metadata
-        
+
         Raises:
             ValueError: If application not found, wrong stage, or version mismatch
             PermissionError: If applicant lacks admissions.write permission
-        
+
         Constraints:
         - Tenant isolation: all queries filtered by tenant_id
         - Fail-closed: no implicit defaults
@@ -786,7 +786,7 @@ class ApplicationService:
         - Optimistic locking: validate_version_match(current_version, expected_version)
         """
         tenant_id = validate_tenant_id_provided(tenant_id)
-        
+
         # Fetch application
         application = self.db.execute(
             select(ApplicationModel).where(
@@ -796,10 +796,10 @@ class ApplicationService:
                 )
             )
         ).scalar_one_or_none()
-        
+
         if not application:
             raise ValueError(f"Application {application_id} not found in tenant {tenant_id}")
-        
+
         # Validate optimistic lock
         if application.version != expected_version:
             raise ValueError(
@@ -811,13 +811,13 @@ class ApplicationService:
             raise ValueError(
                 f"Cannot submit application in stage '{application.stage}'. Expected 'new'."
             )
-        
+
         # Guard: validate NEW → RECEIVED is allowed by the transition matrix
         _assert_stage_transition_allowed(
             ApplicationStage(application.stage),
             ApplicationStage.RECEIVED,
         )
-        
+
         # Check if workflow already started (idempotency)
         workflow_instance_id = application.metadata_json.get("workflow_instance_id")
         if not workflow_instance_id:
@@ -836,18 +836,18 @@ class ApplicationService:
             workflow_instance_id = int(raw_workflow_instance_id or 0)
             if workflow_instance_id <= 0:
                 raise ValueError("Workflow instance started without valid id")
-            
+
             # Store workflow reference in metadata
             application.metadata_json["workflow_instance_id"] = workflow_instance_id
             application.metadata_json["workflow_key"] = "admissions"
             application.metadata_json["workflow_status"] = "in_progress"
             application.metadata_json["workflow_started_at"] = _utc_now().isoformat()
-        
+
         # Transition stage
         application.stage = ApplicationStage.RECEIVED.value
         application.received_at = _utc_now()
         application.version += 1  # Version increment
-        
+
         # Record stage transition in history
         stage_history = ApplicationStageHistoryModel(
             tenant_id=tenant_id,
@@ -863,9 +863,9 @@ class ApplicationService:
             },
         )
         self.db.add(stage_history)
-        
+
         self.db.flush()
-        
+
         # Audit logging
         log_admin_action(
             actor=actor,
@@ -912,31 +912,31 @@ class ApplicationService:
     ) -> object:  # WorkflowInstanceReadSchema from workflows module
         """
         Internal helper: Start admissions workflow for an application.
-        
+
         Workflow Configuration:
         - Workflow key: "admissions"
         - Entity type: "admission_application"
         - Entity ID: application_id
         - Steps: document_review, dept_approval, dean_approval, registrar_approval, final_decision
         - Trigger mode: manual (no auto-advance)
-        
+
         Task Assignments (from metadata):
         - document_review → "group:admissions_staff"
         - dept_approval → "group:department_chairs"
         - dean_approval → "group:deans"
         - registrar_approval → "group:registrars"
         - final_decision → "group:admissions_leadership"
-        
+
         Returns:
             WorkflowInstanceReadSchema
-        
+
         Raises:
             ValueError: If workflow template not found
             RuntimeError: If workflow service not available
         """
         tenant_id = validate_tenant_id_provided(tenant_id)
         workflow_runtime = workflow_service.WorkflowService(self.db)
-        
+
         # Start workflow
         workflow_instance = await workflow_runtime.start_workflow(
             tenant_id=tenant_id,
@@ -950,7 +950,7 @@ class ApplicationService:
                 "program_id": str(program_id),
             },
         )
-        
+
         return workflow_instance
 
 
@@ -974,12 +974,12 @@ class DocumentService:
     ) -> DocumentReadSchema:
         """
         Attach a document to an application.
-        
+
         Validation:
         - Application must exist and belong to tenant
         - Stage must allow document uploads
         - document_key must be safe (S3, not filesystem)
-        
+
         Audit Event: "application.document_attached"
         """
         TenantIsolationRules.validate_tenant_id_provided(tenant_id)
@@ -1146,12 +1146,12 @@ class StageTransitionService:
     ) -> StageTransitionResponseSchema:
         """
         Transition application to a new stage.
-        
+
         Validation:
         - Application must exist and belong to tenant
         - Transition must be valid per StageTransitionRules
         - Cannot transition to CONCLUDED without a decision
-        
+
         Audit Event: "application.stage_changed"
         """
         TenantIsolationRules.validate_tenant_id_provided(tenant_id)
@@ -1718,15 +1718,15 @@ class DecisionService:
     ) -> ApplicationDecisionReadSchema:
         """
         Make an admission decision on an application.
-        
+
         Validation:
         - Application must be in DECISION_PENDING stage
         - Decision type must be valid
         - Optimistic lock via application_version
         - Single decision per application
-        
+
         Next Step: Call transition_stage() to move to CONCLUDED
-        
+
         Audit Event: "application.decision_made"
         """
         TenantIsolationRules.validate_tenant_id_provided(tenant_id)
@@ -1902,13 +1902,13 @@ class DecisionService:
     ) -> ApplicationDecisionReadSchema:
         """
         Finalize admission decision based on workflow outcome.
-        
+
         Called by: WorkflowService.on_workflow_completed() callback
-        
+
         Workflow Action Mapping:
         - "approve" → conclusion_type="accepted"
         - "reject" → conclusion_type="rejected"
-        
+
         Transaction:
         1. Validate application exists and matches workflow instance
         2. Check if decision already exists (idempotency)
@@ -1917,23 +1917,23 @@ class DecisionService:
         5. Record stage transition in history
         6. Audit log
         7. Commit
-        
+
         Args:
             tenant_id: Tenant (mandatory, fail-closed)
             application_id: Application to finalize
             workflow_instance_id: Workflow that completed (validation)
             approval_action: "approve" or "reject"
             actor: Decision maker (default: system)
-        
+
         Returns:
             ApplicationDecisionReadSchema
-        
+
         Raises:
             ValueError: application not found, workflow mismatch, invalid action
             PermissionError: tenant mismatch
         """
         tenant_id = validate_tenant_id_provided(tenant_id)
-        
+
         # Fetch application
         application = self.db.execute(
             select(ApplicationModel).where(
@@ -1943,10 +1943,10 @@ class DecisionService:
                 )
             )
         ).scalar_one_or_none()
-        
+
         if not application:
             raise ValueError(f"Application {application_id} not found in tenant {tenant_id}")
-        
+
         # Validate workflow instance ID
         stored_workflow_id = application.metadata_json.get("workflow_instance_id")
         if stored_workflow_id != workflow_instance_id:
@@ -1954,7 +1954,7 @@ class DecisionService:
                 f"Workflow instance ID mismatch for application {application_id}: "
                 f"expected {stored_workflow_id}, got {workflow_instance_id}"
             )
-        
+
         # Check if decision already exists (idempotency)
         existing_decision = self.db.execute(
             select(ApplicationDecisionModel).where(
@@ -1964,7 +1964,7 @@ class DecisionService:
                 )
             )
         ).scalar_one_or_none()
-        
+
         if existing_decision:
             return ApplicationDecisionReadSchema.model_validate(existing_decision)
 
@@ -1990,17 +1990,17 @@ class DecisionService:
                 tenant_id=tenant_id,
                 application=application,
             )
-        
+
         # Update application
         application.stage = ApplicationStage.CONCLUDED.value
         application.conclusion_type = conclusion_type
         application.decision_at = _utc_now()
-        
+
         # Update metadata
         application.metadata_json["workflow_status"] = "completed"
         application.metadata_json["workflow_outcome"] = approval_action
         application.metadata_json["workflow_completed_at"] = _utc_now().isoformat()
-        
+
         # Create decision record
         decision = ApplicationDecisionModel(
             tenant_id=tenant_id,
@@ -2015,7 +2015,7 @@ class DecisionService:
             },
         )
         self.db.add(decision)
-        
+
         # Record stage transition
         stage_history = ApplicationStageHistoryModel(
             tenant_id=tenant_id,
@@ -2032,10 +2032,10 @@ class DecisionService:
             },
         )
         self.db.add(stage_history)
-        
+
         self.db.flush()
         self.db.refresh(decision)
-        
+
         # Audit logging
         log_admin_action(
             actor=actor,

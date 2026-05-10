@@ -92,23 +92,23 @@ def _validate_tenant_consistency(
     request: Request | None = None,
 ) -> None:
     """SECURITY: Prevent tenant spoofing by verifying X-Tenant-ID matches token tenant_id.
-    
+
     If X-Tenant-ID header is provided, it MUST match the user's tenant in the token.
     If it doesn't match, raise 403 Forbidden (cross-tenant override attempt).
     """
     if not hasattr(claims, 'tenant_id') or not hasattr(claims, 'user_id'):
         return  # Not a user claim
-    
+
     if x_tenant_id is None:
         return  # Header not provided is ok
-    
+
     try:
         header_tenant = int(x_tenant_id)
     except (TypeError, ValueError):
         raise HTTPException(status_code=400, detail="invalid X-Tenant-ID header format")
-    
+
     token_tenant = int(claims.tenant_id)
-    
+
     if header_tenant != token_tenant:
         # Log security signal for tenant override attempt
         record_security_signal(
@@ -734,7 +734,7 @@ def get_session(
     """
     resolved_user_id = _resolve_user_id_from_request(request, authorization, x_user_id)
     claims = getattr(request.state, "auth_claims", None)
-    
+
     # SECURITY: Validate tenant consistency to prevent tenant spoofing
     _validate_tenant_consistency(claims, x_tenant_id, request)
 
@@ -1015,16 +1015,16 @@ def revoke_session_by_id(
     claims = resolve_current_user_claims(request, authorization)
     # SECURITY: Validate tenant consistency to prevent tenant spoofing
     _validate_tenant_consistency(claims, x_tenant_id, request)
-    
+
     # Verify that the session belongs to the current user
     sessions = list_sessions_for_user(user_id=claims.user_id, tenant_id=claims.tenant_id)
     session_exists = any(
-        str(s.get("session_id", "")).strip() == str(session_id).strip() 
+        str(s.get("session_id", "")).strip() == str(session_id).strip()
         for s in sessions
     )
     if not session_exists:
         raise HTTPException(status_code=404, detail="session not found or not owned by user")
-    
+
     revoked = revoke_session(session_id=str(session_id).strip())
     _log_auth_event(
         actor=claims.user_id,

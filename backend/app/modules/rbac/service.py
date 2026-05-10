@@ -1315,7 +1315,7 @@ def get_role_hierarchy_level(role: str) -> int:
     Get privilege level of a role.
     Higher number = higher privilege.
     Unknown roles return -1 (lowest privilege).
-    
+
     Hierarchy:
         superadmin: 100
         admin:      50

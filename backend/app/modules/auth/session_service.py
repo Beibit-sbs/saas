@@ -421,11 +421,11 @@ def list_active_devices(*, user_id: str, tenant_id: int) -> list[dict[str, Any]]
                     "auth_source": str(row.get("auth_source", "")),
                     "created_at": str(row.get("created_at", "")),
                     "last_seen_at": str(row.get("last_seen_at", "")),
-                    "session_count": len([s for s in _state.rows.values() 
-                                        if str(s.get("device_id", "")) == device_id 
+                    "session_count": len([s for s in _state.rows.values()
+                                        if str(s.get("device_id", "")) == device_id
                                         and bool(s.get("active", False))]),
                 }
-    
+
     result = list(devices.values())
     result.sort(key=lambda x: x["last_seen_at"], reverse=True)
     return result

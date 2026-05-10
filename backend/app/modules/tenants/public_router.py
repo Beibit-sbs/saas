@@ -12,15 +12,15 @@ router = APIRouter(prefix="/api", tags=["tenants-public"])
 def get_login_directory() -> LoginDirectoryResponse:
     """
     Public login directory endpoint.
-    
+
     Returns a list of active tenants available for selection during login.
     No authentication required.
-    
+
     This endpoint is safe for unauthenticated, public access:
     - Only includes active tenants
     - Returns minimal fields (tenant_id, slug, name)
     - No sensitive tenant metadata exposed
-    
+
     Response:
         tenants: List of LoginDirectoryTenant objects
             - tenant_id: Numeric ID for login form

@@ -63,7 +63,7 @@ def _check_program_has_active_requirements(tenant_id: int, program_id: int) -> N
     An active program with zero active degree requirements creates every enrolled student
     with a permanently-unsatisfiable graduation state — remaining_required_items = 0 forever,
     every student graduates without taking any courses, accreditation violation.
-    
+
     HARDENING RULE: NO SILENT FALLBACK — if validation cannot complete, block the action.
     """
     try:
@@ -121,11 +121,11 @@ def create_program(payload: dict[str, object], tenant_id: int) -> dict[str, obje
 
 def update_program(program_id: int, payload: dict[str, object], tenant_id: int) -> dict[str, object]:
     to_status = str(payload.get("status") or "").strip().lower()
-    
+
     # W85: activation requires at least one active requirement
     if to_status in _ACTIVATION_STATUSES:
         _check_program_has_active_requirements(tenant_id, program_id)
-    
+
     result = update_entity_for_tenant("programs", program_id, payload, tenant_id)
     if to_status in {"inactive", "archived"}:
         from app.platform.events.publisher import EventPublisher

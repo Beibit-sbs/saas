@@ -449,12 +449,12 @@ class WorkflowService:
     ) -> dict:
         """
         Handle workflow completion callback (dispatcher).
-        
+
         Invoked by WorkflowRuntimeEngine when workflow reaches END state.
         Dispatches to appropriate handler based on entity_type.
-        
+
         Idempotent: safe to call multiple times.
-        
+
         Args:
             workflow_id: Workflow instance ID
             tenant_id: Tenant (mandatory, fail-closed)
@@ -466,7 +466,7 @@ class WorkflowService:
                 "reason": str,
                 "metadata": dict,
             }
-        
+
         Returns:
             {
                 "status": "success" | "no_action" | "skipped",
@@ -475,19 +475,19 @@ class WorkflowService:
                 "result_id": int | None,
                 "message": str,
             }
-        
+
         Raises:
             ValueError: Invalid input, validation failure
             PermissionError: Tenant mismatch
         """
         # Fail-closed: validate tenant
         tenant_id = validate_tenant_id_provided(tenant_id)
-        
+
         # Get callback registry
         from app.modules.workflows.callback_handler import get_callback_registry
-        
+
         registry = get_callback_registry()
-        
+
         # Dispatch to handler (safe unknown entity → no_action)
         try:
             result = await registry.dispatch(
@@ -498,7 +498,7 @@ class WorkflowService:
                 workflow_key=workflow_key,
                 outcome=outcome,
             )
-            
+
             # Audit callback execution
             _audit(
                 actor="system@workflow",
@@ -514,9 +514,9 @@ class WorkflowService:
                 },
                 tenant_id=tenant_id,
             )
-            
+
             return result
-        
+
         except Exception as e:
             # Callback failure: log and propagate
             _audit(

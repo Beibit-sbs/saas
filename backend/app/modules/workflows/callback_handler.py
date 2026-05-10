@@ -20,14 +20,14 @@ from sqlalchemy.orm import Session
 class WorkflowCompletionCallbackHandler(ABC):
     """
     Abstract interface for handling workflow completion callbacks.
-    
+
     Implementations are responsible for:
     - Entity type validation
     - Outcome mapping
     - Service dispatch
     - Idempotency safeguards
     - Audit logging
-    
+
     Pattern: Strategy pattern for dispatching by entity_type.
     """
 
@@ -43,7 +43,7 @@ class WorkflowCompletionCallbackHandler(ABC):
     ) -> dict[str, Any]:
         """
         Handle workflow completion callback.
-        
+
         Args:
             workflow_id: Workflow instance ID
             tenant_id: Workspace tenant (mandatory)
@@ -55,7 +55,7 @@ class WorkflowCompletionCallbackHandler(ABC):
                 "reason": str,
                 "metadata": dict,
             }
-        
+
         Returns:
             {
                 "status": "success" | "no_action" | "skipped",
@@ -64,7 +64,7 @@ class WorkflowCompletionCallbackHandler(ABC):
                 "result_id": int | None,  # e.g., decision_id
                 "message": str,
             }
-        
+
         Raises:
             ValueError: Invalid inputs, validation failures
             PermissionError: Tenant mismatch
@@ -75,9 +75,9 @@ class WorkflowCompletionCallbackHandler(ABC):
 class CallbackHandlerRegistry:
     """
     Registry for workflow completion callback handlers.
-    
+
     Dispatches callbacks to appropriate handler based on entity_type.
-    
+
     Uses strategy pattern: entity_type → handler mapping.
     """
 
@@ -94,7 +94,7 @@ class CallbackHandlerRegistry:
             raise ValueError("entity_type must be non-empty")
         if not isinstance(handler, WorkflowCompletionCallbackHandler):
             raise TypeError("handler must implement WorkflowCompletionCallbackHandler")
-        
+
         self._handlers[entity_type.strip()] = handler
 
     async def dispatch(
@@ -108,7 +108,7 @@ class CallbackHandlerRegistry:
     ) -> dict[str, Any]:
         """
         Dispatch callback to registered handler.
-        
+
         If no handler registered, returns no_action (safe unknown entity).
         """
         handler = self._handlers.get(entity_type)
@@ -121,7 +121,7 @@ class CallbackHandlerRegistry:
                 "result_id": None,
                 "message": f"No callback handler registered for entity_type '{entity_type}'",
             }
-        
+
         # Dispatch to handler
         return await handler.handle(
             workflow_id=workflow_id,
@@ -148,18 +148,18 @@ def get_callback_registry() -> CallbackHandlerRegistry:
 def initialize_callback_registry(db_session_factory: Callable[[], Session]) -> None:
     """
     Initialize callback registry with all handlers.
-    
+
     Called during application startup to register all callback handlers.
-    
+
     Args:
         db_session_factory: Callable that returns a new DB session
     """
     from app.modules.workflows.callbacks.admissions_callback import (
         AdmissionsWorkflowCompletionCallbackHandler,
     )
-    
+
     registry = get_callback_registry()
-    
+
     # Register admissions callback handler
     admissions_handler = AdmissionsWorkflowCompletionCallbackHandler(
         db_session_factory=db_session_factory

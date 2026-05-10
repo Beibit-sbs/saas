@@ -97,23 +97,23 @@ class _JsonFormatter(logging.Formatter):
         if endpoint:
             payload["endpoint"] = endpoint
             payload["path"] = endpoint
-        
+
         # HTTP info
         for key in ("method", "status_code", "duration_ms"):
             value = getattr(record, key, None)
             if value is not None:
                 payload[key] = value
-        
+
         # Event/async work fields
         for key in ("event_type", "event_id", "automation_rule_id", "automation_execution_id",
                     "webhook_delivery_id", "developer_app_id", "error_code"):
             value = getattr(record, key, None)
             if value is not None:
                 payload[key] = value
-        
+
         if record.exc_info:
             payload["error_message"] = self.formatException(record.exc_info)
-        
+
         return json.dumps(payload, ensure_ascii=False, default=str)
 
 

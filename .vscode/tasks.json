@@ -171,6 +171,459 @@
 			"type": "shell",
 			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"tenant or security\" --no-cov -rA",
 			"isBackground": false
+		},
+		{
+			"label": "a0181-backend-targeted",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/ -k \"a018_1 or scheduling or room_allocation or capacity_risk or brain_core\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0181-tenant-security",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest tests/ -k \"tenant or security\" --no-cov --tb=line -q",
+			"isBackground": false
+		},
+		{
+			"label": "a0185-backend-targeted",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/platform/test_platform_kpi_campus_ops_a0185.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0185-backend-targeted-rerun",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/platform/test_platform_kpi_campus_ops_a0185.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0185-backend-targeted-rerun-2",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/platform/test_platform_kpi_campus_ops_a0185.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0185-backend-targeted-final",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/platform/test_platform_kpi_campus_ops_a0185.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0185-frontend-targeted-final",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm frontend-tests npm run test:frontend -- RectorDashboardPage.test.tsx",
+			"isBackground": false
+		},
+		{
+			"label": "a0187-backend-suite",
+			"type": "shell",
+			"command": "docker compose",
+			"args": [
+				"--project-directory",
+				"/home/sbs/AI/infra",
+				"--env-file",
+				"/home/sbs/AI/infra/.env",
+				"run",
+				"-T",
+				"--no-deps",
+				"--rm",
+				"backend-tests",
+				"pytest",
+				"-q",
+				"tests/test_a018_7_campus_operations_cross_feature_e2e.py",
+				"--no-cov",
+				"-rA"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "a0187-backend-suite",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"compose",
+				"--project-directory",
+				"/home/sbs/AI/infra",
+				"--env-file",
+				"/home/sbs/AI/infra/.env",
+				"run",
+				"-T",
+				"--no-deps",
+				"--rm",
+				"backend-tests",
+				"pytest",
+				"-q",
+				"tests/test_a018_7_campus_operations_cross_feature_e2e.py",
+				"--no-cov",
+				"-rA"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "a0191-legacy-visitor-access-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --rm backend-tests pytest -q tests/test_visitor_access_control_module_xliii.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0191-legacy-visitor-access-validate",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --rm backend-tests pytest -q tests/test_visitor_access_control_module_xliii.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0191-legacy-visitor-access-validate-after-rebuild",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --rm backend-tests pytest -q tests/test_visitor_access_control_module_xliii.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0191-legacy-visitor-access-final",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --rm backend-tests pytest -q tests/test_visitor_access_control_module_xliii.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0191-legacy-target-final-pass",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --rm backend-tests pytest -q tests/test_visitor_access_control_module_xliii.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0191-a018-slice-regression",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --rm backend-tests pytest -q tests/ -k \"a018_3 or a018_6 or visitor_management or access_control or security_operations\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0191-tenant-security-regression",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --rm backend-tests pytest tests/ -k \"tenant or security\" --no-cov --tb=line -q",
+			"isBackground": false
+		},
+		{
+			"label": "a0191-legacy-target-final-pass-2",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --rm backend-tests pytest -q tests/test_visitor_access_control_module_xliii.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0191-a018-slice-regression-2",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --rm backend-tests pytest -q tests/ -k \"a018_3 or a018_6 or visitor_management or access_control or security_operations\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0191-tenant-security-regression-2",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --rm backend-tests pytest tests/ -k \"tenant or security\" --no-cov --tb=line -q",
+			"isBackground": false
+		},
+		{
+			"label": "a0202-tests",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/test_a020_2_room_inventory_capability_contract.py tests/test_a020_1_room_allocation_readiness_contract.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0202-tests-backendpath",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q backend/tests/test_a020_2_room_inventory_capability_contract.py backend/tests/test_a020_1_room_allocation_readiness_contract.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0202-tests-rebuilt",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/test_a020_2_room_inventory_capability_contract.py tests/test_a020_1_room_allocation_readiness_contract.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0202-regression",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"a020_1 or a020_2 or scheduling or room_booking or capacity_risk or room_conflict\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0202-tenant-security",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest tests/ -k \"tenant or security\" --no-cov --tb=line -q",
+			"isBackground": false
+		},
+		{
+			"label": "a0202-scheduling-room-regression-focused",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"a020_1 or a020_2 or room_booking or room_conflict or capacity_risk\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0205-targeted-tests-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a020_5_room_allocation_recommendation_engine.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0205-targeted-tests-once-rerun",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a020_5_room_allocation_recommendation_engine.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0205-targeted-tests-after-rebuild",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a020_5_room_allocation_recommendation_engine.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0205-targeted-tests-final",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a020_5_room_allocation_recommendation_engine.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0205-broad-regression-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a020_4_capacity_matching_brain.py tests/test_a020_5_room_allocation_recommendation_engine.py tests/test_knowledge_retrieval_router.py tests/test_model_evaluation_router.py tests/test_prompt_management_router.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0205-tenant-security-regression-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests -k \"tenant or security\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0206-backend-targeted",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/ -k \"a020_6 or room_allocation_kpi or room_allocation_recommendation or capacity_matching\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0206-backend-new-file",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/platform/test_platform_kpi_room_allocation_a0206.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0206-backend-wide-regression",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/ -k \"a020_1 or a020_2 or a020_3 or a020_4 or a020_5 or a020_6 or scheduling or room_booking or brain_core or kpi\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0206-backend-new-file-after-rebuild",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/platform/test_platform_kpi_room_allocation_a0206.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0206-backend-tenant-security",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest tests/ -k \"tenant or security\" --no-cov --tb=line -q",
+			"isBackground": false
+		},
+		{
+			"label": "a0206-frontend-targeted",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm frontend-tests npm run test:frontend -- --runInBand --testPathPattern=\"RectorDashboardPage|SchedulingPage|RoomBookingPage\"",
+			"isBackground": false
+		},
+		{
+			"label": "a0206-frontend-targeted-fixed",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm frontend-tests npm run test:frontend -- ../frontend/__tests__/admin/RectorDashboardPage.test.tsx ../frontend/__tests__/admin/SchedulingPage.test.tsx",
+			"isBackground": false
+		},
+		{
+			"label": "a0206-frontend-targeted-final",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm frontend-tests npm run test:frontend -- __tests__/admin/RectorDashboardPage.test.tsx __tests__/admin/SchedulingPage.test.tsx",
+			"isBackground": false
+		},
+		{
+			"label": "a0206-frontend-build",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm frontend-tests npm run build",
+			"isBackground": false
+		},
+		{
+			"label": "a0207-backend-targeted",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"a020_7 or room_allocation_cross_feature or room_allocation_recommendation or capacity_matching\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0207-backend-regression",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"a020_1 or a020_2 or a020_3 or a020_4 or a020_5 or a020_6 or a020_7 or scheduling or room_booking or brain_core or kpi\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0207-backend-tenant-security",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest tests/ -k \"tenant or security\" --no-cov --tb=line -q",
+			"isBackground": false
+		},
+		{
+			"label": "a0207-backend-targeted-rerun",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"a020_7 or room_allocation_cross_feature or room_allocation_recommendation or capacity_matching\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0207-backend-regression-rerun",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"a020_1 or a020_2 or a020_3 or a020_4 or a020_5 or a020_6 or a020_7 or scheduling or room_booking or brain_core or kpi\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0207-backend-targeted-rerun-after-rebuild",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"a020_7 or room_allocation_cross_feature or room_allocation_recommendation or capacity_matching\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0207-backend-regression-rerun-after-rebuild",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"a020_1 or a020_2 or a020_3 or a020_4 or a020_5 or a020_6 or a020_7 or scheduling or room_booking or brain_core or kpi\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0207-frontend-targeted",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm frontend-tests npm run test:frontend -- __tests__/admin/RectorDashboardPage.test.tsx __tests__/admin/SchedulingPage.test.tsx",
+			"isBackground": false
+		},
+		{
+			"label": "a0207-frontend-build",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm frontend-tests npm run build",
+			"isBackground": false
+		},
+		{
+			"label": "a0207-release-gate-authoritative",
+			"type": "shell",
+			"command": "env -u VIRTUAL_ENV -u CONDA_PREFIX bash scripts/release_gate.sh",
+			"isBackground": false
+		},
+		{
+			"label": "a0228-backend-targeted",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"a022 or timetable_change or timetable_workflow or room_recommendation_to_proposal\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0228-backend-broad",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest -q tests/ -k \"a020 or a022 or scheduling or room_booking or room_allocation or timetable_change\" --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0228-backend-tenant-security",
+			"type": "shell",
+			"command": "docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --no-deps --rm backend-tests pytest tests/ -k \"tenant or security\" --no-cov --tb=line -q",
+			"isBackground": false
+		},
+		{
+			"label": "a02210b1-billing-smoke-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm -e E2E_BASE_URL=https://nginx frontend-tests npx playwright test e2e/smoke/billing.spec.ts --reporter=line --retries=0 --max-failures=1",
+			"isBackground": false
+		},
+		{
+			"label": "a02210b1-billing-smoke-once-2",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm -e E2E_BASE_URL=https://nginx frontend-tests npx playwright test e2e/smoke/billing.spec.ts --reporter=line --retries=0 --max-failures=1",
+			"isBackground": false
+		},
+		{
+			"label": "a02210b1-billing-smoke-once-3",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm -e E2E_BASE_URL=https://nginx frontend-tests npx playwright test e2e/smoke/billing.spec.ts --reporter=line --retries=0 --max-failures=1",
+			"isBackground": false
+		},
+		{
+			"label": "a02210b1-billing-smoke-once-4",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm -e E2E_BASE_URL=https://nginx frontend-tests npx playwright test e2e/smoke/billing.spec.ts --reporter=line --retries=0",
+			"isBackground": false
+		},
+		{
+			"label": "a02210b1-billing-smoke-once-5",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm -e E2E_BASE_URL=https://nginx frontend-tests npx playwright test e2e/smoke/billing.spec.ts --reporter=line --retries=0",
+			"isBackground": false
+		},
+		{
+			"label": "a02210b1-billing-smoke-once-6",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm -e E2E_BASE_URL=https://nginx frontend-tests npx playwright test e2e/smoke/billing.spec.ts --reporter=line --retries=0",
+			"isBackground": false
+		},
+		{
+			"label": "a02210b1-billing-smoke-once-7",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm -e E2E_BASE_URL=https://nginx frontend-tests npx playwright test e2e/smoke/billing.spec.ts --reporter=line --retries=0",
+			"isBackground": false
+		},
+		{
+			"label": "a02210b1-billing-smoke-once-8",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm -e E2E_BASE_URL=https://nginx frontend-tests npx playwright test e2e/smoke/billing.spec.ts --reporter=line --retries=0",
+			"isBackground": false
+		},
+		{
+			"label": "a02210b1-build-frontend-tests",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env build frontend-tests",
+			"isBackground": false
+		},
+		{
+			"label": "a02210b1-billing-smoke-once-9",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm -e E2E_BASE_URL=https://nginx frontend-tests npx playwright test e2e/smoke/billing.spec.ts --reporter=line --retries=0",
+			"isBackground": false
+		},
+		{
+			"label": "a0244-tests-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q /app/tests/test_a0244_attendance_student_portal_operational_visibility.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0244-tests-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a0244_attendance_student_portal_operational_visibility.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0244-tests-once-v2",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a0244_attendance_student_portal_operational_visibility.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0244-tests-once-v3",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a0244_attendance_student_portal_operational_visibility.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0244-tests-once-v4",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a0244_attendance_student_portal_operational_visibility.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0244-tests-once-v5",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a0244_attendance_student_portal_operational_visibility.py --no-cov -rA",
+			"isBackground": false
+		},
+		{
+			"label": "a0245-tests-once",
+			"type": "shell",
+			"command": "cd infra && docker compose --env-file .env run --no-deps --rm backend-tests pytest -q tests/test_a0245_university_core_operational_readiness.py --no-cov -rA",
+			"isBackground": false
 		}
 	]
 }

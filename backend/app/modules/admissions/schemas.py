@@ -184,7 +184,7 @@ class DocumentAttachRequestSchema(BaseModel):
         if v.startswith("/") or v.startswith("C:\\"):
             raise ValueError("document_key must be a safe reference (e.g., s3://...), not a filesystem path")
         if ".." in v:
-            raise ValueError("document_key cannot contain directory traversal (..)") 
+            raise ValueError("document_key cannot contain directory traversal (..)")
         return v
 
 

@@ -89,7 +89,7 @@ class DegreeProgressService:
         A requirement item referencing a phantom course creates a permanently-unsatisfiable
         requirement — every student in the program will have remaining_required_items >= 1
         forever and can never graduate without admin intervention.
-        
+
         HARDENING RULE: NO SILENT FALLBACK — if validation cannot complete, block the action.
         """
         try:

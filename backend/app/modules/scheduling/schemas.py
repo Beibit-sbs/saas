@@ -275,8 +275,8 @@ class ConflictReportSchema(BaseModel):
     has_room_conflict: bool
     room_conflict_section_id: int | None
     instructor_conflicts: list[dict]
-    
-    
+
+
 
 
 class SchedulingConsistencyIssueSchema(BaseModel):

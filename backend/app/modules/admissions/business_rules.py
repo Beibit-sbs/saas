@@ -23,10 +23,10 @@ from app.modules.admissions.schemas import ApplicationConclusionType, Applicatio
 class StageTransitionRules:
     """
     Defines valid stage transitions and validation rules.
-    
+
     State machine:
         new → received → under_review → decision_pending → concluded
-    
+
     Allowed transitions:
     - Any stage can transition back to previous stage (for corrections/resets)
     - new: entry point only
@@ -63,7 +63,7 @@ class StageTransitionRules:
         """Check if transition from_stage → to_stage is allowed."""
         if from_stage == to_stage:
             return False  # No self-transitions
-        
+
         allowed_targets = cls.FORWARD_TRANSITIONS.get(from_stage, set())
         return to_stage in allowed_targets
 
@@ -114,7 +114,7 @@ class StageTransitionRules:
 class DecisionRules:
     """
     Defines valid decision rules and constraints.
-    
+
     Constraints:
     - One decision per application (DB UNIQUE constraint enforced)
     - Decision can only be made when application stage == DECISION_PENDING
@@ -156,7 +156,7 @@ class DecisionRules:
         if decision_type != ApplicationConclusionType.ACCEPTED:
             # Non-accept decisions should have empty conditions
             return len(conditions) == 0
-        
+
         # Accept decisions can have any conditions (validated by endpoint or domain rules)
         return True
 
@@ -184,7 +184,7 @@ class DecisionRules:
 class TenantIsolationRules:
     """
     Tenant isolation contract: fail-closed, no implicit defaults.
-    
+
     Rules:
     - tenant_id must always be provided (never inferred or defaulted)
     - Every query must filter by tenant_id at service layer
@@ -196,12 +196,12 @@ class TenantIsolationRules:
     def validate_tenant_match(cls, resource_tenant_id: int, request_tenant_id: int, resource_name: str = "resource") -> None:
         """
         Validate tenant match; raise PermissionError with 403 contract if mismatch.
-        
+
         Args:
             resource_tenant_id: tenant_id of resource in database
             request_tenant_id: tenant_id from request context
             resource_name: name of resource for error message
-        
+
         Raises:
             PermissionError: if tenant_id mismatch (should map to HTTP 403)
         """
@@ -223,14 +223,14 @@ class TenantIsolationRules:
 
 
 # ==============================================================================
-# DOCUMENT RULES  
+# DOCUMENT RULES
 # ==============================================================================
 
 
 class DocumentRules:
     """
     Document handling rules and constraints.
-    
+
     Constraints:
     - document_key must be a safe reference (S3, not filesystem)
     - document_key validated at schema + service layer
@@ -279,7 +279,7 @@ class DocumentRules:
 class AuditEventRules:
     """
     Defines what events should be logged and their severity levels.
-    
+
     Events:
     - applicant.created: CREATE on ApplicantModel
     - applicant.updated: UPDATE on ApplicantModel
@@ -341,7 +341,7 @@ class AuditEventRules:
         event_config = cls.get_event_config(event_name)
         if not event_config:
             return None
-        
+
         resource = event_config["resource"]
         action = event_config["action"].lower()
         return f"admissions.{resource}.{action}"

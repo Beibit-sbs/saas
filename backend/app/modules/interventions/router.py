@@ -52,7 +52,7 @@ def _get_intervention_service(db: Session) -> InterventionService:
         on_case_outcome_callback = brain_core_service.record_dispatch_outcome
     except Exception:
         pass
-    
+
     return InterventionService(db, on_case_outcome=on_case_outcome_callback)
 
 

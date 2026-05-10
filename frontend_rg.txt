@@ -1,0 +1,15 @@
+frontend/app/(admin)/console/ai/brain/intelligence/page.tsx
+frontend/app/(admin)/console/ai/brain/page.tsx
+frontend/app/(admin)/console/ai/brain/policy/page.tsx
+frontend/app/(admin)/console/dashboard/page.tsx
+frontend/app/(admin)/console/faculty-performance-kpis/page.tsx
+frontend/app/api/public/tenants/login-directory/route.ts
+frontend/app/login/tenant-directory.ts
+frontend/modules/brain-core/hooks.ts
+frontend/modules/brain-core/types.ts
+frontend/modules/faculty-performance-kpis/hooks.ts
+frontend/modules/faculty-performance-kpis/types.ts
+frontend/modules/platform/kpi/kpi-card.tsx
+frontend/modules/platform/kpi/types.ts
+frontend/modules/platform/kpi/use-dashboard.ts
+frontend/modules/platform/kpi/wave1-kpi-bar.tsx

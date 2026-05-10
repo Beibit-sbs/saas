@@ -193,13 +193,13 @@ class WorkflowRuntimeEngine:
             try:
                 # Import here to avoid circular dependency
                 from app.modules.workflows.workflow_service import WorkflowService
-                
+
                 # Get workflow service to invoke callback
                 workflow_service = WorkflowService(self.db)
-                
+
                 # Extract outcome from instance metadata
                 outcome = self._extract_outcome_data(instance)
-                
+
                 # Invoke callback (idempotent, safe to retry)
                 callback_result = await workflow_service.on_workflow_completed(
                     workflow_id=instance.id,
@@ -209,7 +209,7 @@ class WorkflowRuntimeEngine:
                     workflow_key="",  # Not directly available; will be inferred by handler
                     outcome=outcome,
                 )
-                
+
                 # Log callback execution result
                 _audit(
                     actor="engine",
@@ -223,7 +223,7 @@ class WorkflowRuntimeEngine:
                     },
                     tenant_id=instance.tenant_id,
                 )
-            
+
             except Exception as e:
                 # Callback failure: log error but don't fail workflow completion
                 _audit(
@@ -242,17 +242,17 @@ class WorkflowRuntimeEngine:
                 raise
 
         return next_tasks
-    
+
     @staticmethod
     def _extract_outcome_data(instance: WorkflowInstanceModel) -> dict:
         """
         Extract workflow decision outcome for callback.
-        
+
         Looks in metadata_json["outcome"] or returns empty dict.
-        
+
         Args:
             instance: Workflow instance
-        
+
         Returns:
             Outcome dict {
                 "action": "approve"|"reject"|None,
@@ -262,11 +262,11 @@ class WorkflowRuntimeEngine:
         """
         if not instance.metadata_json:
             return {}
-        
+
         outcome = instance.metadata_json.get("outcome")
         if isinstance(outcome, dict):
             return outcome
-        
+
         return {}
 
     async def create_next_tasks(
