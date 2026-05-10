@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from uuid import UUID
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -92,3 +93,52 @@ class BrainDecisionListResponseSchema(BaseModel):
     page: int = Field(..., ge=1)
     page_size: int = Field(..., ge=1)
     items: list[BrainDecisionSchema]
+
+
+class BrainSignalCandidateEvidenceRefSchema(BaseModel):
+    ref_type: str
+    ref_id: str
+    description: str | None = None
+
+
+class BrainSignalCandidateSchema(BaseModel):
+    signal_id: str
+    signal_type: Literal["risk", "drift", "gap", "anomaly", "readiness", "compliance", "cost", "quality"]
+    source_domain: str
+    tenant_id: int = Field(..., gt=0)
+    evidence_refs: list[BrainSignalCandidateEvidenceRefSchema] = Field(default_factory=list)
+    kpi_refs: list[str] = Field(default_factory=list)
+    confidence_level: Literal["high", "medium", "low", "unknown"]
+    rationale: str
+    severity: Literal["info", "watch", "review_required", "high", "critical"]
+    recommended_review_role: str
+    allowed_action_type: Literal["read_only", "draft_recommendation", "human_review_queue"]
+    forbidden_actions: list[str] = Field(default_factory=list)
+    human_approval_required: bool
+    generated_from_evidence: bool
+    read_only: bool = True
+    tenant_scoped: bool = True
+    no_autonomous_execution: bool = True
+    no_policy_enforcement: bool = True
+    no_remediation_action: bool = True
+    no_fake_signal: bool = True
+
+
+class BrainSignalCandidateSummarySchema(BaseModel):
+    tenant_id: int = Field(..., gt=0)
+    source: Literal["rector_kpi_drilldown"] = "rector_kpi_drilldown"
+    signals: list[BrainSignalCandidateSchema] = Field(default_factory=list)
+    total_signals: int = Field(..., ge=0)
+    review_required_count: int = Field(..., ge=0)
+    high_priority_count: int = Field(..., ge=0)
+    source_domains: list[str] = Field(default_factory=list)
+    generated_from_existing_drilldowns: bool = True
+    generated_from_evidence: bool = True
+    read_only: bool = True
+    tenant_scoped: bool = True
+    no_autonomous_action: bool = True
+    no_policy_enforcement: bool = True
+    no_remediation_action: bool = True
+    no_fake_signal: bool = True
+    no_fake_kpi: bool = True
+    no_fake_event: bool = True
