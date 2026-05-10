@@ -1330,6 +1330,7 @@ def refresh_tenant_dashboard_snapshot(
         "tenant_id": int(tenant_id),
         "snapshot_date": day,
         "cards": cards,
+        "drilldowns": _build_rector_kpi_evidence_drilldowns(cards=cards),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source": "kpi_metrics_engine_v1",
     }

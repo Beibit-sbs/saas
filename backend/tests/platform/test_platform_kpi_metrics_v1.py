@@ -175,7 +175,29 @@ def test_kpi_dashboard_snapshot_creation(reset_shared_state) -> None:
     assert payload["tenant_id"] == tenant_id
     assert payload["source"] == "kpi_metrics_engine_v1"
     assert isinstance(payload["cards"], list)
+    assert isinstance(payload["drilldowns"], list)
     assert len(payload["cards"]) >= 6
+
+
+def test_kpi_dashboard_snapshot_includes_domain_evidence_drilldowns(reset_shared_state) -> None:
+    tenant_id = _create_tenant("kpi-drilldown")
+    _emit_analytics_event(tenant_id=tenant_id, event_type="student.created", event_id=2101)
+
+    with UnitOfWork() as uow:
+        snapshot = kpi_service.refresh_tenant_dashboard_snapshot(tenant_id=tenant_id, uow=uow)
+
+    payload = dict(snapshot["snapshot_json"])
+    drilldowns = list(payload["drilldowns"])
+
+    assert drilldowns, "expected domain-level evidence drilldowns in dashboard snapshot"
+    first = drilldowns[0]
+    assert first["drilldown_id"].startswith("kpi-evidence-")
+    assert first["readonly"] is True
+    assert first["tenant_scoped"] is True
+    assert isinstance(first["source_metrics"], list)
+    assert isinstance(first["source_domains"], list)
+    assert isinstance(first["evidence_sources"], list)
+    assert first["evidence_sources"], "expected drilldown evidence sources"
 
 
 def test_kpi_tenant_isolation(reset_shared_state) -> None:
