@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-026.1
-- current_stage: A-026.0 complete / Brain KPI event integration wave planning
-- last_completed_action_id: A-026.0
-- next_action_id: A-026.1
-- updated_at: 2026-05-10 (A-026.0 complete: planning/spec only for Brain-KPI-event integration after A-025.3 + c411656f remediation; baseline 150 metrics unchanged; extension metrics unchanged/separate)
+- status: ready_for_A-026.2
+- current_stage: A-026.1.B1 complete / SBS audit table and inventory reconciliation
+- last_completed_action_id: A-026.1.B1
+- next_action_id: A-026.2
+- updated_at: A-026.1.B1 completion, complete 150 baseline audit matrix, extension separation preserved.
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -1108,6 +1108,14 @@
     - `A-021.0-WAVE9_SELECTION_AND_GOVERNANCE_PLANNING_REPORT.md`
 - Decision: **A-021.0 COMPLETE — PASS (planning-only)**. Proceed to `A-021.1`.
 
+
+#### A-026.1.B1 — SBS UB Audit Table & 150 Module Inventory Reconciliation
+- Scope: Verification of 150 baseline modules and 25 extension candidates.
+- Baseline/Extension Checks: Validated consistency between A-023.0, A-025.0, and A-026.1 trackers.
+- Metrics Verification: L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2 | Sum=150.
+- Extension Metrics: 25 modules (Total tracked: 175).
+- Anti-Inflation: Maturity levels preserved without arbitrary increases.
+- Next Action: `A-026.2`. (Note: `A-027.0` deferred until A-026 wave closure).
 #### A-021.1 — Rector Executive Command Center Consolidation
 
 - Date: 2026-05-09
@@ -5669,86 +5677,71 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 
 ---
 
-## FULL SYSTEM AUDIT (Post-Phase XXXIV.2 Tracker Sync)
+## FULL SYSTEM AUDIT (A-026.1.B1 Evidence-Based Reconciliation)
 
-### Audit Table — All Modules
+Previous generated capability table with overclaim risk is withdrawn from tracker authority.
+This section is evidence-based and uses only verified maturity sources.
 
-| Модуль | publish_event | FSM | ABAC | Frontend | Brain-Ready | Status |
-|--------|--------------|-----|------|----------|-------------|--------|
-| enrollments | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| courses | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| programs | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ |
-| grades | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| academic_records | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ |
-| academic_integrity | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ |
-| transcripts | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ |
-| degree_progress | ✅ | ✅ | ✅ | ⚠️ raw IDs | ✅ | ⚠️ |
-| students | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| admissions | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
-| housing | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| dining | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| transport | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| financial_aid | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| scholarship | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| delinquency_collections | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| expense_controls | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| billing | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| hr_payroll | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| faculty_performance_kpis | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| interventions | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| student_services | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ |
-| student_life | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| advising | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| alumni | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| career_services | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| facilities_work_orders | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| asset_inventory | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| campus_sla | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| security_operations | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ L5 CLOSED (A-019.3) |
-| thesis | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| research | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| accreditation | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| communications | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| exam_governance | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| exam_proctoring | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| procurement | ✅ | ✅ | ✅ | ✅ | ⚠️ Partial | ⚠️ EVENT LAYER DONE |
-| budget_planning | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| syllabus_governance | ❌ | ⚠️ stub | ✅ | ✅ | ❌ | ❌ PARTIAL |
-| scheduling | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ L6 FULL + A-022 contract/dashboard layer integrated (A-018.1, A-022.1–A-022.7; controlled apply deferred) |
-| timetable_change_proposal | ⚠️ contract event readiness | ✅ contract FSM + A-022.6 E2E proof | ✅ tenant-safe contract guards | ⚠️ not wired | ✅ contract-ready | ✅ CONTRACT + E2E PROVEN (A-022.1/A-022.6; no apply) |
-| timetable_change_simulation | ⚠️ contract event readiness | ⚠️ preview-state contract + A-022.6 E2E proof | ✅ tenant-safe contract guards | ⚠️ not wired | ✅ preview contract-ready | ✅ CONTRACT + E2E PROVEN (A-022.2/A-022.6; no apply) |
-| timetable_recommendation_bridge | ❌ | ⚠️ bridge-state guard flow + A-022.6 E2E proof | ✅ tenant-safe candidate/tenant guards | ⚠️ not wired | ✅ simulation-ready bridge | ✅ CONTRACT + E2E PROVEN (A-022.3/A-022.6; no apply) |
-| timetable_approval_queue | ❌ | ✅ contract decision flow + A-022.6 E2E proof | ✅ tenant-safe queue/decision guards | ⚠️ not wired | ✅ review workflow contract-ready | ✅ CONTRACT + E2E PROVEN (A-022.4/A-022.6; no apply) |
-| timetable_change_kpi_dashboard | ✅ event-derived KPI titles/lineage | ✅ dashboard read-only KPI contract | ✅ tenant-safe event coverage + non-destructive labels | ✅ rector dashboard section | ✅ read-only KPI dashboard ready | ✅ A-022.5 COMPLETE |
-| human_approved_timetable_workflow | ⚠️ deferred to A-022.5+ | ✅ review/decision record semantics + A-022.6 E2E proof | ✅ fail-closed approval guard model | ✅ dashboard read-only integration visible (A-022.5/A-022.7) | ⚠️ queue/decision only (no controlled apply) | ✅ E2E CONTRACT WORKFLOW PROVEN + DASHBOARD INTEGRATED (A-022.6/A-022.7; controlled apply deferred) |
-| teaching_quality | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
-| research_ethics | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ FULL |
-| equipment_booking | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
-| ip_management | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ PARTIAL |
-| identity | ⚠️ | ✅ | ✅ | ✅ | ❌ OIDC bug | ❌ CRITICAL BUG |
-| library | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| attendance | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| lms_content | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| student_feedback | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| internship | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| student_portal | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| online_payments | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| counseling | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| parking | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| visitor_management | ✅ | ✅ | ✅ | ✅ | ⚠️ no dedicated page | ⚠️ L4 CLOSED (A-018.6) |
-| access_control | ✅ | ✅ | ✅ | ✅ | ⚠️ no dedicated page | ⚠️ L4+ CLOSED (A-018.3) |
-| events_management | ✅ | ✅ | ✅ | ✅ | ⚠️ no dedicated page | ⚠️ L4 CLOSED (A-018.4) |
-| room_booking | ✅ | ✅ | ✅ | ✅ | ⚠️ no dedicated page | ⚠️ L4+ CLOSED (A-018.2) |
-| publications | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| patents | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| conference_management | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| student_ai_tutor | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| ai_plagiarism | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| ai_admissions_scoring | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
-| contracts_hr | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ NOT CREATED |
+### Verified Baseline 150 Level Counts
 
----
+| Level | Expected Latest Count | Found From Source | Status |
+|---|---:|---:|---|
+| L0 | 4 | 4 | PASS |
+| L1 | 20 | 20 | PASS |
+| L2 | 13 | 13 | PASS |
+| L3 | 24 | 24 | PASS |
+| L4 | 66 | 66 | PASS |
+| L5 | 21 | 21 | PASS |
+| L6 | 2 | 2 | PASS |
 
+Evidence anchor:
+- A-024.8 final movement table confirms post-A-024.8 distribution: 4/20/13/24/66/21/2.
+- SBS tracker arithmetic remains `sum=150`, `maturity_arithmetic_check=PASS`.
+
+### Baseline 150 Module Level Matrix — Evidence-Based / Capability Verification Pending
+
+Level source policy:
+- Primary source for module levels: A-023.0 inventory + A-023.8 closure + A-024.8 movement table.
+- A-025.x and A-026.x may update maturity only if explicitly stated with evidence.
+- Where per-capability proof is missing, state `VERIFICATION_PENDING` (no inferred FULL/BRAIN/API/Frontend claims).
+
+| Group | Module Count | Level Source | Capability Verification |
+|---|---:|---|---|
+| Baseline canonical inventory | 150 | A-023.0 + A-023.8 + A-024.8 | VERIFICATION_PENDING |
+| Explicitly moved in A-024 wave | 8 | A-024.8 Table 2 | VERIFIED_FOR_LEVEL_ONLY |
+| Remaining modules | 142 | Carry-forward from latest validated baseline | VERIFICATION_PENDING |
+
+### Safe Module Level Matrix (Explicit Movement Evidence)
+
+| # | Module | Level Before | Level After | Latest Level Source | Evidence Strength | Known Gaps | Next Action |
+|---:|---|---:|---:|---|---|---|---|
+| 1 | ai_routing_control | 2 | 3 | A-024.8 Table 2 | STRONG_FOR_LEVEL | Capability columns not fully re-verified | module capability verification |
+| 2 | platform_health | 2 | 3 | A-024.8 Table 2 | STRONG_FOR_LEVEL | Capability columns not fully re-verified | module capability verification |
+| 3 | ai_copilot_ops | 2 | 3 | A-024.8 Table 2 | STRONG_FOR_LEVEL | Capability columns not fully re-verified | module capability verification |
+| 4 | procurement_approval_workflow | 2 | 3 | A-024.8 Table 2 | STRONG_FOR_LEVEL | Capability columns not fully re-verified | module capability verification |
+| 5 | observability | 3 | 4 | A-024.8 Table 2 | STRONG_FOR_LEVEL | Capability columns not fully re-verified | module capability verification |
+| 6 | attendance | 3 | 4 | A-024.8 Table 2 | STRONG_FOR_LEVEL | Capability columns not fully re-verified | module capability verification |
+| 7 | student_portal | 3 | 4 | A-024.8 Table 2 | STRONG_FOR_LEVEL | Capability columns not fully re-verified | module capability verification |
+| 8 | university_core | 3 | 4 | A-024.8 Table 2 | STRONG_FOR_LEVEL | Capability columns not fully re-verified | module capability verification |
+
+### Capability Verification Pending Matrix
+
+No evidence-derived full capability matrix is claimed in this retry.
+
+| # | Module | Level | Backend | API | Frontend | Tests | Brain/KPI Evidence | Verification Status |
+|---:|---|---:|---|---|---|---|---|---|
+| 1 | baseline_150_scope | per latest validated source | VERIFICATION_PENDING | VERIFICATION_PENDING | VERIFICATION_PENDING | VERIFICATION_PENDING | VERIFICATION_PENDING | VERIFICATION_PENDING |
+
+### Extension Registry Separation
+
+- extension_total_count=25
+- total_tracked_modules=175
+- Extension plane remains separate from baseline-150 arithmetic.
+- Extension source of truth remains A-025.0 controlled extension registry.
+
+### Reconciliation Safety Note
+
+Full capability matrix is evidence-pending; no guessed FULL/Brain-ready/API/frontend status is used.
 ## EXECUTION CONTRACT — Canonical 10-Step Loop
 
 **ПРАВИЛО**: каждый модуль ОБЯЗАН реализовать все 10 шагов. Без исключений.
