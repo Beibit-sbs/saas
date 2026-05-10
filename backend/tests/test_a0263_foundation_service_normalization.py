@@ -210,7 +210,7 @@ class TestContractOutput:
         assert "tenant_id" in contract
         assert contract["tenant_id"] == 1
         assert "module" in contract
-        assert "readiness_status" in contract
+        assert "kpi_readiness_status" in contract
 
     def test_workload_contract_output(self):
         """Test workload contract has required fields."""
@@ -256,7 +256,7 @@ class TestModuleConstants:
 
     def test_bridge_mode_constant_valid(self):
         """Test bridge mode constant."""
-        assert simulation_service.BRIDGE_MODE == "DETERMINISTIC_ENVELOPE_ONLY"
+        assert bridge_service.BRIDGE_MODE == "DETERMINISTIC_ENVELOPE_ONLY"
 
     def test_queue_forbidden_actions_defined(self):
         """Test queue forbidden auto actions."""
