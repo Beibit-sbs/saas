@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - status: ready_for_A-026.3
-- current_stage: A-026.2.B1 complete / full 150 + 25 normalization matrix populated
-- last_completed_action_id: A-026.2.B1
+- current_stage: A-026.2.B3 complete / deep batch implementation specification finalized
+- last_completed_action_id: A-026.2.B3
 - next_action_id: A-026.3
-- updated_at: 2026-05-11 (A-026.2.B1 full baseline 150 plus extension 25 matrix population complete)
+- updated_at: 2026-05-11 (A-026.2.B3 A-026.3 batch deep implementation specification complete)
 - latest_runtime_reconciliation: A-026.1.B2-RUNTIME, commit e408694
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
@@ -1187,6 +1187,29 @@
 - Report: `A-026.2.B1-FULL_150_25_MODULE_MATRIX_POPULATION_REPORT.md`
 - Decision: A-026.2.B1 CLOSED — PASS.
 - Next Action: A-026.3.
+
+#### A-026.2.B3 — A-026.3 Batch Deep Implementation Specification
+- Date: 2026-05-11
+- Scope: Optional deep specification phase following A-026.2.B2 audit verdict (MATRIX_VALID_BUT_NEEDS_DETAILING). Create module-by-module implementation contracts for 8-module A-026.3 foundation batch (4 L0→L2, 4 L1→L2).
+- Batch: 8 Bucket A modules (timetable_workflow, timetable_proposal, timetable_simulation, timetable_recommendation_bridge, timetable_approval_queue, timetable_change_kpi_dashboard, workload_management, notification_center)
+- Deliverables:
+    - L2 Implementation Contract Standard: 6 required elements (package, service contract, tenant guard, FSM/status, anti-inflation boundaries, tests)
+    - 8 Module-by-Module Deep Specifications: current state, intended scope, expected files, service functions, constants, tenant guard, anti-inflation boundaries, required tests (each module ~200-300 lines)
+    - Shared Test Plan: backend/tests/test_a0263_foundation_service_normalization.py framework (minimum 16 tests, 6 test groups)
+    - Scope Boundaries Table: explicitly allowed vs forbidden areas (API, frontend, KPI, Brain, DB, events)
+    - Expected A-026.3 Files Table: 14 files (8 __init__.py + 4 new service.py + 1 test file + 1 B3 report)
+    - Definition of Done: 13-point checklist for A-026.3 closure
+- Key constraints maintained:
+    - No maturity levels changed.
+    - No code created (docs/planning only).
+    - Baseline 150 metrics locked: L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2, sum=150 (no change).
+    - Extension 25 isolation maintained (separate plane, no baseline merge).
+    - Anti-inflation boundaries explicit: no_api_claim, no_frontend_claim, no_brain_claim, no_autonomous_execution, target_level=L2
+    - Tenant safety guards critical for all modules (fail-closed tenant_id validation).
+- Working document: `SBS_UB_150_MODULE_NORMALIZATION.md` (new section A-026.2.B3 added before A-026.3 First Implementation Batch preview)
+- Report: `A-026.2.B3-A0263_BATCH_DEEP_IMPLEMENTATION_SPECIFICATION_REPORT.md`
+- Decision: A-026.2.B3 CLOSED — PASS.
+- Next Action: A-026.3 (implement 8-module foundation batch to L2 using this specification as contract).
 
 #### A-021.1 — Rector Executive Command Center Consolidation
 

@@ -352,6 +352,521 @@ Note:
 | Baseline impact | 0 | 0 | PASS |
 | All extensions at L0 | 25 | 25 | PASS |
 
+## A-026.2.B3 — A-026.3 Batch Deep Implementation Specification
+
+### L2 Implementation Contract Standard
+
+Every A-026.3 module must conform to L2 standard by end of A-026.3:
+
+1. **Package Structure**
+   - backend/app/modules/<module_name>/__init__.py must exist
+   - backend/app/modules/<module_name>/service.py must exist
+   - FOUNDATION.md recommended for L0 modules becoming L2
+
+2. **Service Contract**
+   - Pure deterministic functions (no DB mutation, no external calls without guards)
+   - Typed constants or dictionary-contract schemas
+   - Tenant_id validation on entry
+   - No endpoint/router exposure in service.py
+   - No frontend claims
+
+3. **Tenant Safety (Critical)**
+   - validate_tenant_id(tenant_id) function required
+   - Fail-closed: reject tenant_id=None, tenant_id<=0, invalid format
+   - No cross-tenant aggregation
+   - All returned data must include tenant_id scope
+
+4. **FSM/Status Anchors**
+   - Status constants defined where workflow/state exists
+   - Transition rules or allowed_actions constants
+   - Forbidden_actions constants where applicable
+
+5. **Anti-Inflation Boundaries**
+   - no_api_claim = true (documented in module docstring)
+   - no_frontend_claim = true
+   - no_brain_claim = true
+   - no_autonomous_execution = true
+   - no_e2e_claim = true
+   - target_level_only = L2
+
+6. **Tests**
+   - import test: module imports without error
+   - tenant validation test: fail-closed on bad tenant_id
+   - determinism test: repeated calls = same output
+   - FSM/constants test: status values are valid
+   - anti-inflation test: no API/frontend markers present
+
+### Module-by-Module Deep Implementation Specification
+
+#### Module 1: human_approved_timetable_workflow
+
+**Current State**
+- Current Level: L0
+- Target Level: L2
+- Primary Gap: foundation_missing (no package exists yet)
+- Why Selected: High-priority workflow foundation, many other timetable modules depend on this contract
+
+**Intended L2 Scope**
+- Will do: Define foundation package and deterministic service contract for human-approved workflows
+- Will NOT do: Auto-apply timetable changes, implement scheduling logic, create API endpoints, create frontend UX, claim Brain readiness
+
+**Expected Files**
+- backend/app/modules/human_approved_timetable_workflow/__init__.py
+- backend/app/modules/human_approved_timetable_workflow/service.py
+
+**Service Contract Functions**
+- `validate_workflow_tenant(tenant_id: int)` → bool (fail-closed)
+- `get_workflow_status_contract()` → dict with approved workflow status schema
+
+**FSM/Status Constants**
+```
+WORKFLOW_STATUS = {
+    'DRAFT': 'initial proposal state',
+    'PENDING_HUMAN_REVIEW': 'awaiting human decision',
+    'HUMAN_APPROVED': 'approved for manual application',
+    'HUMAN_REJECTED': 'rejected by human reviewer',
+    'CANCELLED': 'workflow cancelled'
+}
+FORBIDDEN_ACTIONS = ['AUTO_APPLY', 'AUTO_OPTIMIZE', 'AUTONOMOUS_ROLLBACK']
+HUMAN_APPROVAL_REQUIRED = True
+```
+
+**Tenant Guard**
+- validate_workflow_tenant: reject tenant_id None/≤0
+- All workflow records scoped to tenant_id
+- No cross-tenant workflow visibility
+
+**Required Tests**
+- test_human_approved_workflow_import
+- test_workflow_tenant_validation_fail_closed
+- test_workflow_status_constants_valid
+- test_workflow_determinism
+- test_no_auto_apply_claim
+
+---
+
+#### Module 2: timetable_change_proposal
+
+**Current State**
+- Current Level: L0
+- Target Level: L2
+- Primary Gap: foundation_missing
+- Why Selected: Core change request domain, must be deterministic
+
+**Intended L2 Scope**
+- Will do: Deterministic proposal contract with payload validation
+- Will NOT do: Scheduling conflict detection, optimization, automatic approval
+
+**Expected Files**
+- backend/app/modules/timetable_change_proposal/__init__.py
+- backend/app/modules/timetable_change_proposal/service.py
+
+**Service Contract Functions**
+- `validate_proposal_tenant(tenant_id: int)` → bool
+- `validate_proposal_payload(payload: dict)` → (bool, dict) with error details
+- `get_proposal_schema()` → dict defining expected proposal structure
+
+**FSM/Status Constants**
+```
+PROPOSAL_STATUS = {
+    'SUBMITTED': 'initial proposal',
+    'UNDER_REVIEW': 'being evaluated',
+    'READY_FOR_SIMULATION': 'approved for simulation testing',
+    'REJECTED': 'rejected during review',
+    'APPLIED': 'change has been applied'
+}
+```
+
+**Tenant Guard**
+- validate_proposal_tenant: fail-closed on invalid tenant
+- All proposals scoped by tenant_id
+- No cross-tenant proposal access
+
+**Required Tests**
+- test_proposal_import
+- test_proposal_tenant_guard
+- test_proposal_schema_validation
+- test_proposal_determinism
+- test_proposal_no_autoconf_claim
+
+---
+
+#### Module 3: timetable_change_simulation
+
+**Current State**
+- Current Level: L0
+- Target Level: L2
+- Primary Gap: service_contract_missing
+- Why Selected: Blocks KPI and approval logic, guards required
+
+**Intended L2 Scope**
+- Will do: Simulation request/response contract with input validation
+- Will NOT do: Real timetable mutation, optimization solving, conflict resolution
+
+**Expected Files**
+- backend/app/modules/timetable_change_simulation/__init__.py
+- backend/app/modules/timetable_change_simulation/service.py
+
+**Service Contract Functions**
+- `validate_simulation_tenant(tenant_id: int)` → bool
+- `validate_simulation_request(request: dict)` → (bool, dict)
+- `get_simulation_readiness_response()` → dict
+
+**FSM/Status Constants**
+```
+SIMULATION_STATUS = {
+    'PENDING': 'awaiting simulation',
+    'SIMULATED': 'simulation completed',
+    'CONFLICT_DETECTED': 'conflicts found in simulation',
+    'READY_FOR_APPROVAL': 'no conflicts, ready for human review',
+    'SIMULATION_FAILED': 'simulation process encountered error'
+}
+FORBIDDEN_MUTATIONS = ['APPLY_TIMETABLE', 'COMMIT_CHANGES', 'AUTO_RESOLVE_CONFLICTS']
+```
+
+**Tenant Guard**
+- validate_simulation_tenant: fail-closed
+- simulation input must include tenant_id
+- No cross-tenant simulation data
+
+**Required Tests**
+- test_simulation_import
+- test_simulation_tenant_guard
+- test_simulation_input_validation
+- test_simulation_no_mutation_claim
+- test_simulation_contract_determinism
+
+---
+
+#### Module 4: timetable_recommendation_bridge
+
+**Current State**
+- Current Level: L0
+- Target Level: L2
+- Primary Gap: service_contract_missing
+- Why Selected: Bridge prerequisite for later governance layers
+
+**Intended L2 Scope**
+- Will do: Deterministic recommendation envelope contract
+- Will NOT do: AI provider calls, automatic recommendations, autonomous execution
+
+**Expected Files**
+- backend/app/modules/timetable_recommendation_bridge/__init__.py
+- backend/app/modules/timetable_recommendation_bridge/service.py
+
+**Service Contract Functions**
+- `validate_bridge_tenant(tenant_id: int)` → bool
+- `create_recommendation_envelope(simulation_result: dict)` → dict
+
+**Constants**
+```
+RECOMMENDATION_SOURCE = {
+    'SIMULATION_ANALYSIS': 'analysis from simulation module',
+    'HISTORICAL_PATTERNS': 'patterns from historical data',
+    'PENDING': 'recommendation not yet available'
+}
+BRIDGE_MODE = 'DETERMINISTIC_ENVELOPE_ONLY'
+NO_AI_PROVIDER_CALLS = True
+```
+
+**Tenant Guard**
+- validate_bridge_tenant
+- All recommendations scoped to tenant
+
+**Required Tests**
+- test_bridge_import
+- test_bridge_tenant_guard
+- test_bridge_envelope_determinism
+- test_no_ai_calls
+- test_bridge_contract
+
+---
+
+#### Module 5: timetable_approval_queue
+
+**Current State**
+- Current Level: L1 (foundation exists, L1 markers found in A-023.0)
+- Target Level: L2
+- Primary Gap: service_contract_missing
+- Why Selected: Required for bounded human review workflow, L1→L2 is service contract gap
+
+**Intended L2 Scope**
+- Will do: Queue contract and status constants for human review
+- Will NOT do: Actual queue persistence (unless already existing), automatic action, autonomous decision
+
+**Expected Files**
+- backend/app/modules/timetable_approval_queue/service.py (augment existing)
+
+**Service Contract Functions**
+- `validate_queue_tenant(tenant_id: int)` → bool
+- `enqueue_for_review(item: dict)` → dict with queue_id
+- `get_queue_status_contract()` → dict
+
+**FSM/Status Constants**
+```
+QUEUE_STATUS = {
+    'PENDING_REVIEW': 'awaiting human decision',
+    'IN_PROGRESS': 'reviewer is examining',
+    'APPROVED_PENDING_APPLY': 'approved, awaiting apply command',
+    'REJECTED': 'rejected by reviewer',
+    'APPLIED': 'changes applied'
+}
+ALLOWED_ACTIONS = ['APPROVE', 'REJECT', 'REQUEST_MORE_INFO', 'REASSIGN_REVIEWER']
+FORBIDDEN_AUTO_ACTIONS = ['AUTO_APPROVE', 'AUTO_APPLY', 'AUTO_REJECT']
+```
+
+**Tenant Guard**
+- validate_queue_tenant
+- Queue items scoped by tenant
+- No cross-tenant queue visibility
+
+**Required Tests**
+- test_queue_import
+- test_queue_tenant_guard
+- test_queue_status_contract
+- test_forbidden_auto_actions
+- test_queue_determinism
+
+---
+
+#### Module 6: timetable_change_kpi_dashboard
+
+**Current State**
+- Current Level: L1
+- Target Level: L2
+- Primary Gap: verification_pending
+- Why Selected: Validation-focused, must verify backend contract dependency before dashboard claims
+
+**Intended L2 Scope**
+- Will do: Backend-facing KPI readiness contract (no frontend yet)
+- Will NOT do: Frontend dashboard exposure, KPI values computation, Brain signal claims
+
+**Expected Files**
+- backend/app/modules/timetable_change_kpi_dashboard/service.py (augment or create)
+
+**Service Contract Functions**
+- `validate_kpi_dashboard_tenant(tenant_id: int)` → bool
+- `get_kpi_readiness_contract()` → dict with readiness fields
+
+**Contract Output**
+```
+KPI_READINESS = {
+    'tenant_id': <int>,
+    'module': 'timetable_change',
+    'kpi_readiness_status': 'BACKEND_CONTRACT_ONLY',
+    'frontend_claim': False,
+    'kpi_values_available': False,
+    'brain_mapping_status': 'NOT_AVAILABLE',
+    'target_level': 'L2'
+}
+```
+
+**Tenant Guard**
+- validate_kpi_dashboard_tenant
+- All KPI readiness scoped by tenant
+
+**Required Tests**
+- test_kpi_dashboard_import
+- test_kpi_tenant_guard
+- test_kpi_readiness_contract_no_frontend_claim
+- test_kpi_no_brain_mapping_claim
+- test_kpi_determinism
+
+---
+
+#### Module 7: workload_management
+
+**Current State**
+- Current Level: L1
+- Target Level: L2
+- Primary Gap: service_contract_missing
+- Why Selected: Work level governance, L1→L2 service contract needed
+
+**Intended L2 Scope**
+- Will do: Deterministic workload planning contract
+- Will NOT do: Payroll mutation, schedule mutation, automatic workload assignment
+
+**Expected Files**
+- backend/app/modules/workload_management/service.py (augment existing)
+
+**Service Contract Functions**
+- `validate_workload_tenant(tenant_id: int)` → bool
+- `get_workload_readiness_contract()` → dict
+- `validate_workload_input(payload: dict)` → (bool, dict)
+
+**FSM/Status Constants**
+```
+WORKLOAD_STATUS = {
+    'PLANNING': 'initial planning stage',
+    'UNDER_REVIEW': 'awaiting approval',
+    'READY_FOR_ASSIGNMENT': 'approved, ready for assignment',
+    'ASSIGNED': 'workload assigned to staff',
+    'MONITORED': 'workload being monitored',
+    'COMPLETED': 'workload cycle complete'
+}
+FORBIDDEN_AUTO_ACTIONS = ['AUTO_ASSIGN', 'AUTO_OVERRIDE_CONSTRAINTS', 'AUTO_MUTATE_PAYROLL']
+```
+
+**Tenant Guard**
+- validate_workload_tenant
+- All workload scoped by tenant
+
+**Required Tests**
+- test_workload_import
+- test_workload_tenant_guard
+- test_workload_contract
+- test_no_auto_assign_claim
+- test_workload_determinism
+
+---
+
+#### Module 8: notification_center
+
+**Current State**
+- Current Level: L1
+- Target Level: L2
+- Primary Gap: tenant_guard_missing (critical)
+- Why Selected: High priority, tenant safety critical
+
+**Intended L2 Scope**
+- Will do: Tenant-safe notification contract (no actual sending)
+- Will NOT do: Email/SMS/push provider calls, cross-tenant broadcasts, automatic notification generation
+
+**Expected Files**
+- backend/app/modules/notification_center/service.py (augment existing)
+
+**Service Contract Functions**
+- `validate_notification_tenant(tenant_id: int)` → bool (CRITICAL)
+- `build_notification_contract(tenant_id: int, type: str)` → dict
+- `get_notification_types()` → dict
+
+**FSM/Status Constants**
+```
+NOTIFICATION_TYPE = {
+    'WORKFLOW_APPROVED': 'workflow has been approved',
+    'WORKFLOW_REJECTED': 'workflow has been rejected',
+    'WORKLOAD_ASSIGNED': 'workload has been assigned',
+    'REVIEW_NEEDED': 'human review is needed',
+    'CHANGE_APPLIED': 'timetable change has been applied'
+}
+NOTIFICATION_STATUS = {
+    'QUEUED': 'notification queued',
+    'COMPOSED': 'notification message composed',
+    'READY_FOR_DISPATCH': 'ready to send (but not sent)',
+    'SEND_FAILED': 'send attempt failed'
+}
+NO_SENDING = True
+NO_PROVIDER_CALLS = True
+TENANT_ISOLATION_REQUIRED = True
+```
+
+**Tenant Guard (CRITICAL)**
+- validate_notification_tenant: MUST fail-closed on invalid tenant_id
+- tenant_id=None → rejection
+- tenant_id≤0 → rejection
+- All notifications must include tenant_id scope
+- NO cross-tenant notification visibility
+- NO cross-tenant broadcast capability
+
+**Required Tests**
+- test_notification_import
+- test_notification_tenant_guard_fail_closed (critical)
+- test_notification_tenant_guard_negative_rejection
+- test_notification_contract
+- test_no_actual_sending_claim
+- test_notification_determinism
+
+### Shared A-026.3 Test File Specification
+
+**Test File**: backend/tests/test_a0263_foundation_service_normalization.py
+
+**Test Structure**:
+1. **Import Validation** (1 shared test)
+   - All 8 module service files import successfully
+   - All required functions are callable
+
+2. **Tenant Validation Suite** (8 module-specific tests)
+   - Each module: test_<module>_tenant_validation_fail_closed()
+   - Rejects tenant_id=None, tenant_id≤0
+   - Accepts valid tenant_id
+
+3. **Contract Output Validation** (1 shared test)
+   - All modules return required common fields: tenant_id, module, status/readiness_status
+   - All returns are deterministic (JSON-serializable)
+
+4. **Module-Specific Constants** (8 module-specific tests)
+   - Workflow modules: test_workflow_status_constants_valid()
+   - Queue modules: test_forbidden_actions_constants_defined()
+   - Notification module: test_notification_types_constants_valid()
+
+5. **Anti-Inflation Validation** (8 module-specific tests)
+   - Each module: test_<module>_anti_inflation_flags()
+   - Assert: no_api_claim, no_frontend_claim, no_brain_claim, no_autonomous_execution, target_level=L2
+
+6. **Determinism** (8 module-specific tests)
+   - Each module: test_<module>_determinism()
+   - Repeated calls with same input produce identical output
+
+**Expected Test Count**: Minimum 16 tests (shared: 2, per-module: ~1.75 avg)
+**Acceptable Range**: 16–30 tests
+
+### A-026.3 Implementation Scope Boundaries
+
+| Area | Allowed | Forbidden |
+|---|---|---|
+| Backend module files | Create __init__.py, service.py | No routers, no endpoints |
+| Service contracts | Pure functions, tenant guards, FSM constants | DB mutations, external provider calls |
+| Tenant guards | validate_tenant_id, fail-closed logic | Cross-tenant data, bypass logic |
+| FSM/status constants | Status values, transitions, allowed actions | Autonomous execution, auto-apply claims |
+| Tests | Import, tenant validation, determinism, anti-inflation | Production tests, E2E tests, performance tests |
+| API | No API endpoints created | Any endpoint creation forbidden |
+| Frontend | No frontend visibility | Any frontend claim forbidden |
+| KPI | No KPI values, no lineage claims | KPI computation, Brain mapping |
+| Brain | No Brain signal mapping | Any Brain governance claim |
+| Events | No event publishing from these modules | Any event emission |
+| DB/Migrations | No DB schema changes | Any schema creation |
+| External providers | No calls (fail-closed) | Any email/SMS/push calls |
+| Maturity claims | L2 only after tests pass | No L3/L4/L5/L6 claims |
+
+### Expected A-026.3 Implementation Files
+
+| File | Created? | Reason |
+|---|---|---|
+| backend/app/modules/human_approved_timetable_workflow/__init__.py | YES | L0→L2 requires new package |
+| backend/app/modules/human_approved_timetable_workflow/service.py | YES | L0→L2 requires service contract |
+| backend/app/modules/timetable_change_proposal/__init__.py | YES | L0→L2 requires new package |
+| backend/app/modules/timetable_change_proposal/service.py | YES | L0→L2 requires service contract |
+| backend/app/modules/timetable_change_simulation/__init__.py | YES | L0→L2 requires new package |
+| backend/app/modules/timetable_change_simulation/service.py | YES | L0→L2 requires service contract |
+| backend/app/modules/timetable_recommendation_bridge/__init__.py | YES | L0→L2 requires new package |
+| backend/app/modules/timetable_recommendation_bridge/service.py | YES | L0→L2 requires service contract |
+| backend/app/modules/timetable_approval_queue/service.py | AUGMENT | L1→L2 requires service contract upgrade |
+| backend/app/modules/timetable_change_kpi_dashboard/service.py | AUGMENT | L1→L2 requires service contract upgrade |
+| backend/app/modules/workload_management/service.py | AUGMENT | L1→L2 requires service contract upgrade |
+| backend/app/modules/notification_center/service.py | AUGMENT | L1→L2 requires tenant guard + contract |
+| backend/tests/test_a0263_foundation_service_normalization.py | YES | Shared test file for all 8 modules |
+| SBS_UB_150_MODULE_NORMALIZATION.md | UPDATE | Add B3 section, mark modules as A-026.3 spec complete |
+| SBS_UB.md | UPDATE | Control block + B3 execution block |
+| A-026.2.B3-A0263_BATCH_DEEP_IMPLEMENTATION_SPECIFICATION_REPORT.md | CREATE | B3 report documenting this specification |
+
+### A-026.3 Definition of Done
+
+A-026.3 implementation is CLOSED only when:
+1. All 8 modules implemented to L2 contract standard (service.py exists with contract functions)
+2. All 4 new packages (human_approved_timetable_workflow, timetable_change_proposal, timetable_change_simulation, timetable_recommendation_bridge) created
+3. All 4 augmented modules (timetable_approval_queue, timetable_change_kpi_dashboard, workload_management, notification_center) have service.py with L2 contract
+4. backend/tests/test_a0263_foundation_service_normalization.py exists with ≥16 tests, all PASS
+5. git diff --check PASS (no whitespace/conflict errors)
+6. No API endpoints created (grep -r "router\|@app.post\|@app.get" backend/app/modules/timetable* backend/app/modules/workload_management backend/app/modules/notification_center = only inside service.py, not in router)
+7. No frontend pages created (no changes to frontend/app/**/page.tsx for timetable modules)
+8. No KPI/Brain lineage claims (modules return kpi_readiness=BACKEND_CONTRACT_ONLY)
+9. No maturity levels changed beyond L0/L1→L2 for selected 8 modules
+10. Baseline arithmetic remains: L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2, sum=150
+11. Extension 25 isolation maintained (no extension modules merged into baseline)
+12. A-026.3 report created documenting implementation
+13. SBS_UB.md updated with A-026.3 completion block
+14. Scoped commit only (3 files staged: SBS_UB.md, SBS_UB_150_MODULE_NORMALIZATION.md, A-026.3 report)
+
 ## A-026.3 First Implementation Batch (Planning Selection)
 Constraint profile:
 - 5-10 modules
