@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-026.0
-- current_stage: A-025.3 complete / Rector KPI evidence drilldown — first killer workflow implemented
-- last_completed_action_id: A-025.3
-- next_action_id: A-026.0
-- updated_at: 2026-05-09 (A-025.3 complete: rector KPI drilldown endpoint + frontend panel + 18 backend + 6 frontend tests; 18/18 backend + 29/29 frontend green; baseline 150 metrics unchanged)
+- status: ready_for_A-026.1
+- current_stage: A-026.0 complete / Brain KPI event integration wave planning
+- last_completed_action_id: A-026.0
+- next_action_id: A-026.1
+- updated_at: 2026-05-10 (A-026.0 complete: planning/spec only for Brain-KPI-event integration after A-025.3 + c411656f remediation; baseline 150 metrics unchanged; extension metrics unchanged/separate)
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
@@ -1008,6 +1008,67 @@
 - Anti-inflation review: PASS — no new metric claims, no fake evidence, no baseline mutations
 - Decision: **A-025.3 COMPLETE — PASS (first killer workflow delivered; backend + frontend + tests green)**.
 - Next action: `A-026.0`.
+
+#### A-026.0 — Brain / KPI / Event Integration Wave Planning
+
+- Date: 2026-05-10
+- Scope: Planning/spec only. No runtime code changes, no endpoint creation, no migrations, no event-registry mutation, no KPI/Brain runtime mutation.
+- Repo hygiene snapshot:
+    - Expected local/runtime artifacts preserved: `.coverage`, `backend/.coverage`, `.vscode/tasks.json`, `infra/nohup.out`
+    - Expected historical/planning docs preserved (A-011/A-012/A-017 family and related artifacts)
+    - Unexpected backend/frontend source dirty files: **none**
+    - Decision: proceed scoped-only (no `HUMAN_REVIEW_REQUIRED` blocker)
+- Source-of-truth confirmation:
+    - `A-025.3` implementation evidence confirmed (`c37cfb3`)
+    - Post A-025.3 remediation confirmed (`c411656f0f8db255ba69bbbcdd09688510d327b1`): snapshot payload now always includes deterministic `drilldowns` via `_build_rector_kpi_evidence_drilldowns(cards=cards)`
+    - A-026.0 content block did not exist before this update (status pointer only)
+- Brain/KPI/event readiness audit summary:
+    - READY: rector drilldown payload safety contract, snapshot drilldowns contract, tenant fail-closed boundaries, no-autonomy safety controls, dashboard readiness
+    - PARTIAL: confidence/rationale normalization, domain-to-event reuse map formalization, brain candidate envelope, human-review envelope
+    - DEFERRED: recommendation lifecycle ledger and cross-feature signal-to-review E2E (A-027/A-028 dependency)
+- Rector KPI domain -> Brain signal candidate mapping (planning-only):
+    - `academic_quality` -> `academic_quality_drift_signal`
+    - `student_outcomes` -> `student_outcome_risk_signal`
+    - `research_output` -> `research_output_gap_signal`
+    - `financial_health` -> `financial_health_anomaly_signal`
+    - `faculty_engagement` -> `faculty_engagement_watch_signal`
+    - `digital_infrastructure` -> `digital_infrastructure_readiness_signal`
+    - `compliance_governance` -> `compliance_governance_gap_signal`
+    - `enrollment_pipeline` -> `enrollment_pipeline_risk_signal`
+    - Boundary: candidate mapping only, no autonomous runtime execution
+- KPI snapshot drilldowns readiness:
+    - snapshot `drilldowns` accepted as evidence input for Brain candidate mapping when deterministic and tenant-scoped
+    - no new signal runtime added in A-026.0
+- Event/KPI mapping plan:
+    - reuse-first strategy using existing event registry + ingestion allow-list + Brain registry
+    - no event additions required for first bounded A-026.1 slice
+    - missing domain KPI families marked planned/deferred (not fabricated)
+- Selected A-026.1 implementation candidate:
+    - Primary: **Rector KPI Drilldown -> Brain Signal Candidate Mapping**
+    - Backup: **Rector KPI Drilldown -> Human Review Queue Envelope**
+    - Selection rationale: smallest safe, deterministic, high-testability step that creates durable architecture without fake autonomy
+- L5 readiness criteria (defined, not claimed):
+    - signal contract + tests
+    - evidence-backed signal provenance
+    - KPI/domain mapping traceability
+    - human review boundary
+    - dashboard/queue visibility
+    - recommendation lifecycle audit trail
+    - no autonomous critical action
+    - tenant-scoped tests
+    - cross-feature E2E signal-to-review proof
+    - gate baseline no-regression confirmation
+    - Current state: **A-026.0 does not claim L5**
+- Safety / no-autonomy boundary (locked):
+    - Allowed: signal mapping, confidence/rationale annotation, risk classification, evidence explanation, recommendation draft, human review queue preparation
+    - Forbidden: auto-discipline, auto-penalty, auto-financial action, auto-procurement approval, auto-policy enforcement, auto-remediation, autonomous critical execution
+- Metrics integrity:
+    - baseline 150 maturity metrics: **UNCHANGED** (`L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2`, `sum=150`, `maturity_arithmetic_check=PASS`)
+    - extension metrics: **UNCHANGED AND SEPARATE** (`extension_total_count=25`, `total_tracked_modules=175`)
+- Deliverable:
+    - `A-026.0-BRAIN_KPI_EVENT_INTEGRATION_WAVE_PLAN.md`
+- Decision: **A-026.0 CLOSED — PASS (planning/spec only)**.
+- Next action: `A-026.1`.
 
 
 
