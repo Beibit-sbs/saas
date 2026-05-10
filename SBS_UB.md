@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - status: ready_for_A-026.3
-- current_stage: A-026.2 complete / Baseline 150 deep normalization planning
-- last_completed_action_id: A-026.2
+- current_stage: A-026.2.B1 complete / full 150 + 25 normalization matrix populated
+- last_completed_action_id: A-026.2.B1
 - next_action_id: A-026.3
-- updated_at: 2026-05-11 (A-026.2 baseline 150 deep normalization planning complete)
+- updated_at: 2026-05-11 (A-026.2.B1 full baseline 150 plus extension 25 matrix population complete)
 - latest_runtime_reconciliation: A-026.1.B2-RUNTIME, commit e408694
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
@@ -1168,6 +1168,24 @@
     - Baseline metrics unchanged: `L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2, sum=150, maturity_arithmetic_check=PASS`.
     - Extension metrics unchanged and separate: `extension_total_count=25`, `total_tracked_modules=175`.
 - Decision: A-026.2 CLOSED — PASS.
+- Next Action: A-026.3.
+
+#### A-026.2.B1 — Full 150 + 25 Module Matrix Population
+- Date: 2026-05-11
+- Scope: Planning/docs-only continuation of A-026.2. Populate full baseline 150 and extension 25 module normalization matrix.
+- Deliverables:
+    - Full Baseline 150 Module Normalization Matrix: 150 data rows with verified levels, gaps, target levels, required work, tests, A-026.x actions.
+    - Full Extension 25 Module Registry Matrix: 25 data rows with initial L0, no runtime claims, separate baseline impact, killer workflow mapping.
+    - Matrix Verification Summary: all counts verified PASS (L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2 + extension=25).
+- Key constraints maintained:
+    - No maturity levels changed.
+    - VERIFICATION_PENDING policy retained for incomplete evidence.
+    - Baseline 150 metrics locked: arithmetic check PASS.
+    - Extension 25 metrics separate from baseline.
+    - No fake green statuses introduced.
+- Working document: `SBS_UB_150_MODULE_NORMALIZATION.md`
+- Report: `A-026.2.B1-FULL_150_25_MODULE_MATRIX_POPULATION_REPORT.md`
+- Decision: A-026.2.B1 CLOSED — PASS.
 - Next Action: A-026.3.
 
 #### A-021.1 — Rector Executive Command Center Consolidation
