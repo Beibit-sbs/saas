@@ -1,5 +1,9 @@
 # SBS_UB Module Inventory
 
+> **STATUS: SUPPORTING DRAFT — NOT AUTHORITATIVE**
+> SBS_UB.md is the authoritative source of truth. This document is a draft index only.
+> Anti-loss audit (A-026.1.B3.A1) must pass before this document is promoted.
+
 ## 1. Baseline 150 (Locked)
 
 ### Baseline 150 Maturity Metrics
