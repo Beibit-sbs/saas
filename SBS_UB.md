@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-026.2
-- current_stage: A-026.1.B3.A1 complete / decomposition state reconciled / SBS_UB.md authoritative full tracker
-- last_completed_action_id: A-026.1.B3.A1
-- next_action_id: A-026.2
-- updated_at: 2026-05-11 (A-026.1.B3.A1 decomposition state reconciliation)
+- status: ready_for_A-026.3
+- current_stage: A-026.2 complete / Baseline 150 deep normalization planning
+- last_completed_action_id: A-026.2
+- next_action_id: A-026.3
+- updated_at: 2026-05-11 (A-026.2 baseline 150 deep normalization planning complete)
 - latest_runtime_reconciliation: A-026.1.B2-RUNTIME, commit e408694
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
@@ -1154,6 +1154,22 @@
 - Anti-loss check: PENDING (split docs are summary-only, not full content transfer).
 - Decision: A-026.1.B3.A1 CLOSED — RECONCILED (SBS_UB.md authoritative; split docs supporting drafts).
 - Next Action: A-026.2.
+
+#### A-026.2 — Baseline 150 Deep Normalization / Red-Yellow Gap Remediation Planning
+- Date: 2026-05-11
+- Scope: Planning/docs-only. No runtime code, no endpoint/schema/module creation, no maturity movement.
+- Dedicated normalization source created: `SBS_UB_150_MODULE_NORMALIZATION.md`.
+- Key decisions:
+    - Baseline 150 normalization tracked in dedicated document; SBS_UB.md remains authoritative tracker.
+    - Killer flows remain paused until normalization acceptance and A-026.3 closure criteria are met.
+    - First implementation batch selected for A-026.3 (foundation/service normalization, no L5/L6 claims).
+    - A-026.x roadmap defined (A-026.3 through A-026.8).
+- Metrics policy:
+    - Baseline metrics unchanged: `L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2, sum=150, maturity_arithmetic_check=PASS`.
+    - Extension metrics unchanged and separate: `extension_total_count=25`, `total_tracked_modules=175`.
+- Decision: A-026.2 CLOSED — PASS.
+- Next Action: A-026.3.
+
 #### A-021.1 — Rector Executive Command Center Consolidation
 
 - Date: 2026-05-09
