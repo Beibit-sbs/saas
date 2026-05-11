@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-027.1
-    - current_stage: A-027.0.B1 complete / deep university completeness expansion sweep
-    - last_completed_action_id: A-027.0.B1
-    - next_action_id: A-027.1
-    - updated_at: 2026-05-12 (A-027.0.B1 planning complete: deep expansion sweep extended UCE registry)
+    - status: ready_for_A-027.2
+    - current_stage: A-027.1 complete / controlled expansion registry governance lock
+    - last_completed_action_id: A-027.1
+    - next_action_id: A-027.2
+    - updated_at: 2026-05-12 (A-027.1 planning complete: controlled expansion registry canonicalized and governance-locked)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS
@@ -42,6 +42,22 @@
     - candidate_audit_evidence_capabilities: 1
     - anti_inflation: PASS (no runtime code, no maturity movement, no fake implementation claims)
     - next_action_id: A-027.1
+- A-027.1 execution block:
+    - mode: planning_only_no_runtime_changes
+    - purpose: controlled_expansion_registry_governance_lock_for_uce_001_to_uce_149
+    - source_of_truth_check: PASS (A-027.0/A-027.0.B1 registry anchors confirmed before lock)
+    - extraction_integrity: PASS (149 candidates extracted; UCE-001..UCE-149 unique IDs confirmed)
+    - expansion_map_file: SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md
+    - report_file: A-027.1-CONTROLLED_EXPANSION_REGISTRY_AND_GOVERNANCE_LOCK_REPORT.md
+    - raw_registry_type_counts: NEW_MODULE=57, WORKFLOW=22, INTEGRATION=16, REPORT_DASHBOARD=15, POLICY_CONTROL=10, BRAIN_SIGNAL=20, AUTONOMOUS_WORKFLOW_CANDIDATE=6, SUBMODULE=1, DATA_ENTITY=1, AUDIT_EVIDENCE_CAPABILITY=1
+    - canonical_decision_counts: accepted=138, merged=6, deferred=3, rejected=2, future_total_candidate_tracking_count=149
+    - accepted_type_counts: NEW_MODULE=53, WORKFLOW=20, INTEGRATION=16, REPORT_DASHBOARD=15, POLICY_CONTROL=10, BRAIN_SIGNAL=17, AUTONOMOUS_WORKFLOW_CANDIDATE=6, AUDIT_EVIDENCE_CAPABILITY=1
+    - merge_candidates: UCE-010, UCE-020, UCE-021, UCE-068, UCE-093, UCE-132
+    - deferred_candidates: UCE-066, UCE-079, UCE-143
+    - rejected_candidates: UCE-100, UCE-137
+    - a0272_selection_rule: P0/P1 accepted candidates only; defer/reject excluded; merge candidates implemented only through target canonical parents
+    - anti_inflation: PASS (planning-only, no runtime changes, no maturity movement, no baseline/extension contamination)
+    - next_action_id: A-027.2
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

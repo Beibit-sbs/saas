@@ -5,7 +5,7 @@
 A-027.0 is a planning-only audit that treats the existing 150 modules as the stabilized baseline core, not the final ceiling. The 25 controlled extensions remain a separate tracking plane. This document defines a realistic beyond-150 expansion roadmap for maximum University OS completeness, without runtime implementation or maturity inflation.
 
 Key result:
-- A new University Completeness Expansion Candidate Registry is defined with 53 candidates.
+- A new University Completeness Expansion Candidate Registry is defined with 54 candidates.
 - The registry spans modules, workflows, integrations, reports, policy controls, Brain signals, autonomous workflow candidates, data entities, and audit evidence capabilities.
 - Baseline metrics remain unchanged.
 
@@ -533,3 +533,86 @@ Type counts (all candidates):
 - No fake integration-live claim.
 - No fake compliance certification claim.
 - Baseline 150 and extension 25 remain isolated from expansion registry counts.
+
+## A-027.1 — Controlled Expansion Registry Governance Lock (UCE-001..UCE-149)
+
+### Governance-Lock Objective
+
+- Freeze canonical planning decisions for all 149 UCE candidates before any runtime implementation planning.
+- Enforce count integrity and decision transparency so A-027.2 can only consume approved and non-inflated candidates.
+
+### Extraction Integrity (Task 2)
+
+- Extracted row rule: only lines matching `| UCE-### | ... |` from the canonical registry tables.
+- Unique ID check: PASS (`UCE-001..UCE-149`, 149 unique).
+- Raw type counts from extracted rows:
+	- NEW_MODULE: 57
+	- WORKFLOW: 22
+	- INTEGRATION: 16
+	- REPORT_DASHBOARD: 15
+	- POLICY_CONTROL: 10
+	- BRAIN_SIGNAL: 20
+	- AUTONOMOUS_WORKFLOW_CANDIDATE: 6
+	- SUBMODULE: 1
+	- DATA_ENTITY: 1
+	- AUDIT_EVIDENCE_CAPABILITY: 1
+
+### Canonicalization and Dedup Outcomes (Task 3)
+
+- Decision totals:
+	- ACCEPT: 138
+	- MERGE_WITH_OTHER_UCE: 6
+	- DEFER: 3
+	- REJECT_DUPLICATE: 2
+- Accepted type counts:
+	- NEW_MODULE: 53
+	- WORKFLOW: 20
+	- INTEGRATION: 16
+	- REPORT_DASHBOARD: 15
+	- POLICY_CONTROL: 10
+	- BRAIN_SIGNAL: 17
+	- AUTONOMOUS_WORKFLOW_CANDIDATE: 6
+	- AUDIT_EVIDENCE_CAPABILITY: 1
+
+### Locked Merge / Defer / Reject Set
+
+- MERGE_WITH_OTHER_UCE:
+	- UCE-010 -> `document_workflow_internal_memo_flow`
+	- UCE-020 -> `international_office_visa_support`
+	- UCE-021 -> `employee_records_party_profile`
+	- UCE-068 -> `faculty_contracting_and_employee_records`
+	- UCE-093 -> `student_appeals_workflow`
+	- UCE-132 -> `academic_quality_signal_registry`
+- DEFER:
+	- UCE-066 (`DEFER_DEPENDENCY_HEAVY`)
+	- UCE-079 (`DEFER_LOW_PRIORITY`)
+	- UCE-143 (`DEFER_DEPENDENCY_HEAVY`)
+- REJECT_DUPLICATE:
+	- UCE-100 (covered by emergency drill capability set and flow overlap)
+	- UCE-137 (covered by existing student risk signal scope)
+
+### A-027.2 Controlled Selection Gate
+
+- A-027.2 can select only from accepted candidates.
+- Any merged candidate is ineligible as a standalone implementation unit and must be represented through its canonical target.
+- Deferred and rejected candidates are explicitly excluded from A-027.2 selection.
+- Priority policy for A-027.2 batching: accepted P0 first, then accepted P1, then accepted P2 if capacity remains.
+
+### Governance Rules (Locked)
+
+- Rule 1: Candidate presence in this map is not implementation evidence.
+- Rule 2: No candidate may claim maturity advancement without runtime evidence and scoped validation.
+- Rule 3: No baseline 150 or extension 25 metrics may be altered by expansion registry planning actions.
+- Rule 4: Autonomous candidates remain human-approval-bound and non-executing in planning waves.
+- Rule 5: Brain signals remain candidate taxonomies until runtime evidence and policy gates exist.
+
+### Canonical Decision Matrix Location
+
+- Full 149-row per-candidate canonicalization table is locked in:
+	- `A-027.1-CONTROLLED_EXPANSION_REGISTRY_AND_GOVERNANCE_LOCK_REPORT.md`
+
+### Next Action
+
+- Next action id: A-027.2
+- Action title: Controlled implementation selection from accepted registry set
+- Scope: planning/runtime preparation only for selected accepted candidates under anti-inflation guardrails
