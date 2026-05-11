@@ -1196,6 +1196,487 @@ If N=6:
 - SBS_UB.md metrics remain unchanged until runtime passes
 - the normalized matrix is updated only after implementation and validation
 
+## A-026.6-SPEC - L4→L5 Evidence / Governance / KPI / Brain-Readiness Batch Specification
+
+**Status**: SPEC ONLY
+
+**Purpose**: select a bounded current-L4 batch for future A-026.6-RUNTIME and define auditable L5-readiness contracts without runtime execution claims, autonomous actions, or fake Brain/KPI inflation.
+
+### Source-of-Truth Snapshot
+
+- Authoritative tracker: SBS_UB.md
+- Reconciled matrix: SBS_UB_150_MODULE_NORMALIZATION.md
+- Current baseline metrics: L0=0, L1=16, L2=13, L3=26, L4=72, L5=21, L6=2, total=150, arithmetic_check=PASS
+- Extension metrics: extension_total_count=25, total_tracked_modules=175, separation=PASS
+- Last completed action in tracker before this spec: A-026.5-RUNTIME
+- Next action in tracker after this spec: A-026.6-RUNTIME
+- Runtime implementation status for A-026.6: not started
+
+### L4 Extraction Summary
+
+Current L4 modules were extracted from the full baseline matrix after A-026.5-RUNTIME.
+
+- expected L4 count: 72
+- found L4 count: 72
+- status: PASS
+- full L4 inventory table is documented in: A-026.6-SPEC-L4_TO_L5_EVIDENCE_GOVERNANCE_READINESS_BATCH_SPECIFICATION_REPORT.md
+
+### L4→L5-Readiness Suitability Scoring
+
+Scoring criteria per module:
+1. evidence lineage clarity
+2. governance decision value
+3. KPI mapping value
+4. human-review boundary clarity
+5. auditability
+6. testability
+7. blast radius
+
+Scoring scale: 1 (low), 3 (medium), 5 (high).
+
+Recommendation values:
+- SELECT_A0266
+- DEFER_A0267
+- DEFER_AFTER_EVIDENCE_INDEX
+- DO_NOT_TOUCH_NOW
+
+Full 72-module scoring table is documented in the A-026.6 spec report.
+
+### Selected A-026.6 Batch
+
+Selected batch size: 4.
+
+| Selected Module | Current Level | Target Level | Why Selected | Expected L5-Readiness Contract | Required Tests | Risk |
+|---|---:|---:|---|---|---|---|
+| human_approved_timetable_workflow | L4 | L5-readiness | strongest governance and human-approval semantics with recent A-026.5 visibility coverage | evidence lineage + governance mapping + KPI-readiness boundary + Brain boundary envelope | evidence/governance/KPI/Brain-boundary/tenant tests | medium |
+| timetable_approval_queue | L4 | L5-readiness | explicit human-review queue with clear escalation and audit semantics | decision-support mapping with strict human-review gate and deterministic audit notes | queue governance + tenant isolation + anti-autonomy tests | medium |
+| timetable_change_kpi_dashboard | L4 | L5-readiness | highest KPI/evidence-readiness leverage while preserving anti-fake-KPI boundary | KPI-readiness classification and evidence completeness mapping only | no-fake-KPI + evidence lineage + boundary tests | medium |
+| workload_management | L4 | L5-readiness | strong planning-governance value and deterministic readiness semantics | governance-ready readiness contract with no assignment automation | governance mapping + no-mutation + tenant/audit tests | medium |
+
+Deferred from A-026.6 first slice:
+- notification_center (provider/send overclaim risk; defer until evidence index hardening)
+- timetable_change_proposal (defer until proposal evidence lineage index is tightened)
+
+## A-026.6 L5-Readiness Standard
+
+For each selected module, L5-readiness requires:
+
+1. Evidence lineage contract
+- explicit evidence source references
+- operational visibility source linkage
+- deterministic evidence notes
+- no fake data
+- no unverifiable KPI values
+
+2. Governance mapping
+- decision-support category
+- human-review owner
+- escalation boundary
+- allowed governance actions
+- forbidden autonomous actions
+
+3. KPI-readiness mapping
+- KPI category or readiness status
+- evidence completeness status
+- confidence/rationale notes
+- no fake KPI computation
+- no KPI lineage claim unless explicitly implemented
+
+4. Brain-readiness boundary
+- signal_candidate_allowed only when deterministic and bounded
+- no Brain execution
+- no autonomous recommendation execution
+- no L6 claim
+
+5. Tenant/audit/security
+- tenant-scoped evidence outputs
+- no cross-tenant leakage
+- permission-aware access design
+- audit/evidence note fields
+- fail-closed behavior
+
+6. Tests
+- evidence contract tests
+- governance mapping tests
+- KPI-readiness boundary tests
+- Brain boundary tests
+- tenant/audit/security tests
+- anti-inflation tests
+
+### Module: human_approved_timetable_workflow
+
+#### Current State
+- Current Level: L4
+- Target Level: L5-readiness
+- Source: A-026.5-RUNTIME
+- Existing L4 evidence: tenant-safe read-only visibility route and targeted security tests
+- Primary gap: evidence lineage and governance contract are not yet formalized
+
+#### Intended L5-Readiness Scope
+- What this module will map: workflow evidence lineage, governance decision support, escalation readiness
+- What this module will NOT map: autonomous approval, Brain execution, L6 gate claims
+- Human-review boundary: mandatory (human_review_required=true)
+- KPI/evidence boundary: readiness/evidence classification only, no fabricated KPI values
+- Brain boundary: signal candidate envelope only, execution forbidden
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/human_approved_timetable_workflow/service.py | augment | expose deterministic L5-readiness evidence/governance summary wrapper |
+| backend/app/modules/human_approved_timetable_workflow/schemas.py | augment | add L5-readiness contract fields |
+| backend/tests/test_a0266_l4_to_l5_evidence_governance_readiness.py | add | module L5-readiness contract validation |
+
+#### L5-Readiness Contract Fields
+- tenant_id
+- module
+- readiness_level="L5_READY"
+- evidence_lineage_status
+- governance_mapping_status
+- kpi_readiness_status
+- brain_readiness_boundary
+- human_review_required=true
+- confidence_status
+- rationale_notes
+- allowed_governance_actions
+- forbidden_autonomous_actions
+- no_autonomous_execution=true
+- no_l6_claim=true
+- tenant_scoped=true
+
+#### Governance Mapping
+- governance category: timetable_workflow_governance
+- human review role: timetable_admin_reviewer
+- escalation boundary: policy_violation_or_high_risk_workflow_only
+- allowed actions: review, approve_for_manual_apply, reject, request_revision
+- forbidden actions: auto_approve, auto_apply, cross_tenant_override
+- audit note: deterministic governance decision note with tenant and actor scope
+
+#### KPI / Evidence Mapping
+- KPI category: workflow_evidence_readiness
+- evidence source: workflow operational visibility summary + approval boundary state
+- completeness: PARTIAL_UNTIL_INDEXED
+- confidence: medium
+- no fake KPI guarantee: enforced
+
+#### Brain Boundary
+- Brain signal candidate: YES (candidate envelope only)
+- execution: forbidden
+- no autonomous execution: required
+- no L6 claim: required
+
+#### Tests
+| Test | Purpose |
+|---|---|
+| evidence lineage contract test | validate deterministic evidence_source and evidence_lineage_status |
+| governance mapping test | validate allowed/forbidden governance actions and escalation boundary |
+| KPI-readiness boundary test | validate no fabricated KPI values |
+| Brain/no-autonomy boundary test | validate candidate-only and no execution fields |
+| tenant-scoped output test | validate tenant isolation and fail-closed behavior |
+| anti-inflation test | validate no_l6_claim and no_autonomous_execution fields |
+
+### Module: timetable_approval_queue
+
+#### Current State
+- Current Level: L4
+- Target Level: L5-readiness
+- Source: A-026.5-RUNTIME
+- Existing L4 evidence: tenant-safe queue visibility summary and read-only enforcement
+- Primary gap: explicit governance lineage and human-escalation contract
+
+#### Intended L5-Readiness Scope
+- What this module will map: review queue governance mapping and audit-ready evidence notes
+- What this module will NOT map: automated queue execution or autonomous approval
+- Human-review boundary: mandatory reviewer decision boundary
+- KPI/evidence boundary: queue evidence completeness only
+- Brain boundary: no execution, candidate envelope optional only
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/timetable_approval_queue/service.py | augment | L5-readiness governance/evidence summary mapping |
+| backend/app/modules/timetable_approval_queue/schemas.py | augment | extended readiness fields for governance and audit notes |
+| backend/tests/test_a0266_l4_to_l5_evidence_governance_readiness.py | add | queue governance and anti-autonomy coverage |
+
+#### L5-Readiness Contract Fields
+- tenant_id
+- module
+- readiness_level="L5_READY"
+- evidence_lineage_status
+- governance_mapping_status
+- kpi_readiness_status
+- brain_readiness_boundary
+- human_review_required=true
+- confidence_status
+- rationale_notes
+- allowed_governance_actions
+- forbidden_autonomous_actions
+- no_autonomous_execution=true
+- no_l6_claim=true
+- tenant_scoped=true
+
+#### Governance Mapping
+- governance category: timetable_review_queue_governance
+- human review role: queue_reviewer
+- escalation boundary: unresolved_conflict_or_policy_breach
+- allowed actions: enqueue, review, approve_for_manual_apply, reject, escalate
+- forbidden actions: silent_approve, auto_apply, bypass_review
+- audit note: queue review decision with deterministic status rationale
+
+#### KPI / Evidence Mapping
+- KPI category: queue_decision_readiness
+- evidence source: queue visibility summary, review state, decision boundary markers
+- completeness: PARTIAL_UNTIL_INDEXED
+- confidence: medium
+- no fake KPI guarantee: enforced
+
+#### Brain Boundary
+- Brain signal candidate: NO
+- no autonomous execution: required
+- no L6 claim: required
+
+#### Tests
+| Test | Purpose |
+|---|---|
+| evidence lineage contract test | validate evidence lineage and audit_note determinism |
+| governance mapping test | validate escalation and action boundaries |
+| KPI-readiness boundary test | validate readiness-only semantics |
+| Brain/no-autonomy boundary test | validate no execution signal path |
+| tenant-scoped output test | validate fail-closed tenant behavior |
+| anti-inflation test | validate no_l6_claim and no_autonomous_execution |
+
+### Module: timetable_change_kpi_dashboard
+
+#### Current State
+- Current Level: L4
+- Target Level: L5-readiness
+- Source: A-026.5-RUNTIME
+- Existing L4 evidence: deterministic KPI-readiness visibility endpoint with anti-fake safeguards
+- Primary gap: formal evidence lineage and governance-ready rationale envelope
+
+#### Intended L5-Readiness Scope
+- What this module will map: KPI-readiness-to-evidence mapping and governance rationale notes
+- What this module will NOT map: KPI lineage claims without implementation, Brain execution, L6 gate readiness
+- Human-review boundary: mandatory for governance decision usage
+- KPI/evidence boundary: readiness and completeness only; no fake KPI computation
+- Brain boundary: candidate envelope only if deterministic; execution prohibited
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/timetable_change_kpi_dashboard/service.py | augment | deterministic L5-readiness KPI/evidence mapping contract |
+| backend/app/modules/timetable_change_kpi_dashboard/schemas.py | augment | readiness contract fields and audit rationale |
+| backend/tests/test_a0266_l4_to_l5_evidence_governance_readiness.py | add | KPI boundary and governance evidence tests |
+
+#### L5-Readiness Contract Fields
+- tenant_id
+- module
+- readiness_level="L5_READY"
+- evidence_lineage_status
+- governance_mapping_status
+- kpi_readiness_status
+- brain_readiness_boundary
+- human_review_required=true
+- confidence_status
+- rationale_notes
+- allowed_governance_actions
+- forbidden_autonomous_actions
+- no_autonomous_execution=true
+- no_l6_claim=true
+- tenant_scoped=true
+
+#### Governance Mapping
+- governance category: timetable_kpi_governance_readiness
+- human review role: timetable_analytics_reviewer
+- escalation boundary: low_evidence_confidence_or_policy_alert
+- allowed actions: review, annotate, escalate, defer
+- forbidden actions: fabricate_kpi, auto_decide, autonomous_apply
+- audit note: deterministic evidence completeness rationale
+
+#### KPI / Evidence Mapping
+- KPI category: timetable_change_readiness_kpi
+- evidence source: operational summary, readiness classifiers, safety flags
+- completeness: PARTIAL_OR_READY (deterministic)
+- confidence: medium_high
+- no fake KPI guarantee: enforced
+
+#### Brain Boundary
+- Brain signal candidate: YES (candidate only)
+- execution: forbidden
+- no autonomous execution: required
+- no L6 claim: required
+
+#### Tests
+| Test | Purpose |
+|---|---|
+| evidence lineage contract test | validate deterministic lineage markers |
+| governance mapping test | validate allowed governance actions and escalation |
+| KPI-readiness boundary test | validate no fabricated KPI values or lineage overclaim |
+| Brain/no-autonomy boundary test | validate candidate-only and no execution |
+| tenant-scoped output test | validate tenant isolation and fail-closed behavior |
+| anti-inflation test | validate no_l6_claim and no_autonomous_execution |
+
+### Module: workload_management
+
+#### Current State
+- Current Level: L4
+- Target Level: L5-readiness
+- Source: A-026.5-RUNTIME
+- Existing L4 evidence: deterministic workload readiness/constraints visibility route
+- Primary gap: explicit governance-evidence contract for executive decision support
+
+#### Intended L5-Readiness Scope
+- What this module will map: workload governance-ready evidence envelope and human-review escalation boundaries
+- What this module will NOT map: auto-assignment, payroll mutation, autonomous workload execution
+- Human-review boundary: mandatory
+- KPI/evidence boundary: readiness confidence only
+- Brain boundary: candidate envelope optional only, execution disallowed
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/workload_management/service.py | augment | L5-readiness evidence/governance wrapper |
+| backend/app/modules/workload_management/schemas.py | augment | workload governance-readiness contract extension |
+| backend/tests/test_a0266_l4_to_l5_evidence_governance_readiness.py | add | workload L5-readiness boundary tests |
+
+#### L5-Readiness Contract Fields
+- tenant_id
+- module
+- readiness_level="L5_READY"
+- evidence_lineage_status
+- governance_mapping_status
+- kpi_readiness_status
+- brain_readiness_boundary
+- human_review_required=true
+- confidence_status
+- rationale_notes
+- allowed_governance_actions
+- forbidden_autonomous_actions
+- no_autonomous_execution=true
+- no_l6_claim=true
+- tenant_scoped=true
+
+#### Governance Mapping
+- governance category: workload_planning_governance
+- human review role: workload_planning_reviewer
+- escalation boundary: high_risk_workload_or_policy_conflict
+- allowed actions: assess, classify, recommend_manual_adjustment, escalate
+- forbidden actions: auto_assign, auto_override_constraints, payroll_mutation
+- audit note: deterministic planning evidence rationale with tenant scope
+
+#### KPI / Evidence Mapping
+- KPI category: workload_readiness_evidence
+- evidence source: workload readiness and constraint summary
+- completeness: PARTIAL_UNTIL_INDEXED
+- confidence: medium
+- no fake KPI guarantee: enforced
+
+#### Brain Boundary
+- Brain signal candidate: YES (candidate only)
+- execution: forbidden
+- no autonomous execution: required
+- no L6 claim: required
+
+#### Tests
+| Test | Purpose |
+|---|---|
+| evidence lineage contract test | validate source and evidence status determinism |
+| governance mapping test | validate review/escalation boundaries |
+| KPI-readiness boundary test | validate no fabricated KPI values |
+| Brain/no-autonomy boundary test | validate candidate-only boundary |
+| tenant-scoped output test | validate tenant isolation and fail-closed handling |
+| anti-inflation test | validate no_l6_claim and no_autonomous_execution |
+
+### Expected A-026.6 Runtime Files
+
+| File | Expected Action | Reason |
+|---|---|---|
+| backend/app/modules/human_approved_timetable_workflow/service.py | augment | add L5-readiness evidence/governance wrapper fields |
+| backend/app/modules/human_approved_timetable_workflow/schemas.py | augment | extend visibility schema with readiness contract fields |
+| backend/app/modules/timetable_approval_queue/service.py | augment | add queue governance-readiness mapping |
+| backend/app/modules/timetable_approval_queue/schemas.py | augment | extend queue schema for readiness contract |
+| backend/app/modules/timetable_change_kpi_dashboard/service.py | augment | add deterministic KPI/evidence readiness mapping envelope |
+| backend/app/modules/timetable_change_kpi_dashboard/schemas.py | augment | extend KPI schema for governance/evidence fields |
+| backend/app/modules/workload_management/service.py | augment | add workload governance-readiness mapping |
+| backend/app/modules/workload_management/schemas.py | augment | extend workload schema for readiness contract |
+| backend/tests/test_a0266_l4_to_l5_evidence_governance_readiness.py | add | targeted L5-readiness contract and anti-inflation suite |
+| SBS_UB.md | update in runtime | reconcile runtime result and next action |
+| SBS_UB_150_MODULE_NORMALIZATION.md | update in runtime | selected rows move L4→L5 after validation |
+| A-026.6-RUNTIME-L4_TO_L5_EVIDENCE_GOVERNANCE_READINESS_REPORT.md | add in runtime | runtime evidence report |
+
+## A-026.6 Targeted Test Plan
+
+Preferred test file:
+- backend/tests/test_a0266_l4_to_l5_evidence_governance_readiness.py
+
+Test groups:
+1. evidence lineage contract validation
+2. governance mapping validation
+3. human-review boundary validation
+4. KPI-readiness boundary validation
+5. Brain boundary and no-autonomous-execution validation
+6. tenant-scoped evidence validation
+7. audit/evidence note validation
+8. anti-inflation validation
+
+Expected backend test count:
+- minimum: 18
+- preferred: 25-40 for selected 4-module batch
+
+Validation mode for runtime:
+- USE_FAST_DOCKER_RUN_MODE
+- compose path remains slow but functional and optional for parity sanity
+
+### Expected Maturity Movement
+
+No maturity movement occurs in this spec action.
+
+If A-026.6-RUNTIME succeeds for selected batch size N:
+- L0=0
+- L1=16
+- L2=13
+- L3=26
+- L4=72-N
+- L5=21+N
+- L6=2
+- total=150
+- maturity_arithmetic_check=PASS
+
+If N=3:
+- L4=69
+- L5=24
+
+If N=4:
+- L4=68
+- L5=25
+
+### Security / SaaS Boundaries
+
+- tenant isolation is mandatory for every readiness contract
+- fail-closed tenant handling is mandatory; no default tenant fallback
+- permission-aware access design is mandatory for operational surfaces
+- no cross-tenant leakage is allowed in evidence payloads or governance notes
+- auditability and evidence traceability are mandatory
+- human approval boundary is mandatory
+- no unsafe automation and no unguarded provider call paths
+
+### Anti-Inflation Boundaries
+
+- no runtime code changes in this spec action
+- no maturity movement in this spec action
+- no fake KPI values
+- no fake Brain execution claims
+- no autonomous action
+- no L6 claim
+
+### Definition of Done for Future A-026.6-RUNTIME
+
+- selected batch remains exactly 4 modules unless re-approved
+- each selected module produces deterministic L5-readiness contract fields
+- evidence lineage, governance mapping, KPI-readiness boundary, and Brain boundary tests pass
+- no autonomous execution path is introduced
+- no fake KPI or fake Brain claims are introduced
+- tenant isolation and fail-closed behavior are preserved
+- SBS_UB.md and matrix updates happen only after runtime validation succeeds
 ## Normalization Philosophy
 1. No fake green.
 2. No guessed capability status.
