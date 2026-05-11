@@ -1,0 +1,6 @@
+"""Performance Appraisal Module - L2 Foundation (UCE-005)."""
+MODULE_NAME = "performance_appraisal"
+UCE_ID = "UCE-005"
+TARGET_LEVEL = "L2"
+CONTRACT_VERSION = "A-027.3"
+FOUNDATION_STATUS = "FOUNDATION_READY"
