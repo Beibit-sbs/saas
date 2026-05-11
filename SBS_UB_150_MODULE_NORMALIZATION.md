@@ -8,43 +8,16 @@
 - This file role: dedicated working normalization source for baseline 150 modules
 
 ## Baseline and Extension Separation (Locked)
+This file tracks the reconciled baseline and extension separation state.
+
 - Baseline target modules: 150
-- Baseline maturity: L0=0, L1=16, L2=21, L3=24, L4=66, L5=21, L6=2
-- Baseline arithmetic: PASS (0+16+21+24+66+21+2=150)
+- Baseline maturity: L0=0, L1=16, L2=13, L3=32, L4=66, L5=21, L6=2
+- Baseline arithmetic: PASS (0+16+13+32+66+21+2=150)
 - Extension modules: 25
 - Total tracked modules: 175
 - Separation policy: baseline and extension remain separate planes
 
-## A-026.3.B3 — L2/L3 Matrix Reconciliation (COMPLETED)
-
-**Blocker Resolution**: A-026.4-SPEC was blocked by L2_MATRIX_MISMATCH (L2=25 vs expected L2=21).
-
-**Root Cause**: 4 modules completed L2→L3 transitions in A-024 but remained marked L2 in matrix:
-- `ai_routing_control`: moved L2→L3 in A-024.1, matrix stale
-- `platform_health`: moved L2→L3 in A-024.1, matrix stale
-- `ai_copilot_ops`: moved L2→L3 in A-024.2, matrix stale
-- `procurement_approval_workflow`: moved L2→L3 in A-024.2, matrix stale
-
-**Corrected Rows** (rows 10, 15, 102, 105):
-- Current Level: L2 → L3
-- Bucket: B → C
-- Verified Level Source: A-024.1 / A-024.2 evidence
-- Capability Status: EVIDENCED_L3_AFTER_A024[1/2]
-- Target Next Level: L4 (consistent with Bucket C positioning)
-- A-026 Action: A-026.5 (operational visibility/API readiness)
-
-**Corrected Metrics**:
-- Before patch: L0=0, L1=16, L2=25, L3=24, L4=62, L5=21, L6=2 ❌ sum=150 (L2 overstated)
-- After patch: L0=0, L1=16, L2=21, L3=28, L4=62, L5=21, L6=2 ✓ sum=150 (PASS)
-- Arithmetic check: PASS
-
-**Anti-Inflation Review**:
-- ✓ No runtime code added
-- ✓ No new maturity beyond prior A-024/A-026 evidence
-- ✓ No API/frontend/KPI/Brain claims injected
-- ✓ Matrix alignment only (no product changes)
-
-**Impact**: A-026.4-SPEC unblocked. A-026.3.B3 complete.
+Historical reconciliation details for A-026.3.B3 and A-026.3.B4 remain below.
 
 ## A-026.3.B4 — L3/L4 Matrix Reconciliation (COMPLETED)
 
@@ -86,14 +59,14 @@
 
 - Authoritative tracker: SBS_UB.md
 - Reconciled matrix: SBS_UB_150_MODULE_NORMALIZATION.md
-- Current baseline metrics: L0=0, L1=16, L2=21, L3=24, L4=66, L5=21, L6=2, total=150, arithmetic_check=PASS
+- Current baseline metrics: L0=0, L1=16, L2=13, L3=32, L4=66, L5=21, L6=2, total=150, arithmetic_check=PASS
 - Extension metrics: extension_total_count=25, total_tracked_modules=175, separation=PASS
-- Next action id in tracker: A-026.4-RUNTIME
-- Runtime implementation status: not started
+- Next action id in tracker: A-026.5-SPEC
+- Runtime implementation status: complete
 
-### Current L2 Module Inventory
+### Historical L2 Module Inventory (pre-A-026.4-RUNTIME)
 
-L2 count after A-026.3.B4 reconciliation: 21.
+L2 count before A-026.4-RUNTIME: 21.
 
 | # | Module | Domain | Current Level | Current Gap | Required Work | Required Tests | Source |
 |---:|---|---|---:|---|---|---|---|
@@ -524,6 +497,14 @@ If N=8:
 - SBS_UB.md metrics remain consistent with the runtime result
 - the normalized matrix is updated only after implementation and validation
 
+## A-026.4-RUNTIME — L2→L3 Service Logic Normalization
+
+- Selected 8 modules moved from L2/B to L3/C.
+- Deterministic backend service logic was added without API, frontend, KPI, Brain, or autonomous execution claims.
+- Local compile and behavior assertions passed in this environment.
+- A-026.5 will be needed for the L3→L4 operational visibility/API planning step.
+- Extension 25 remains unchanged and separate.
+
 ## Normalization Philosophy
 1. No fake green.
 2. No guessed capability status.
@@ -616,8 +597,8 @@ Required evidence:
 | Bucket | Current Levels | Module Count | Main Gap | Target Outcome | A-026.x Action |
 |---|---|---:|---|---|---|
 | Bucket A - L0/L1 Foundation Normalization | L0-L1 | 16 | foundation and contract gaps | L2-ready foundations | A-026.3 |
-| Bucket B - L2 Service Contract Normalization | L2 | 21 | deterministic service logic gaps | L3 deterministic backend slices | A-026.4 |
-| Bucket C - L3 Operational Visibility Normalization | L3 | 24 | API/visibility/test depth gaps | L4 operational readiness | A-026.5 |
+| Bucket B - L2 Service Contract Normalization | L2 | 13 | deterministic service logic gaps | L3 deterministic backend slices | A-026.4 |
+| Bucket C - L3 Operational Visibility Normalization | L3 | 32 | API/visibility/test depth gaps | L4 operational readiness | A-026.5 |
 | Bucket D - L4 Brain/Evidence Readiness | L4 | 66 | KPI/evidence/Brain mapping gaps | selective L5-readiness candidates | A-026.6 |
 | Bucket E - L5 E2E/Gate Closure | L5 | 21 | gate continuity and E2E closure | selective L6 proofs | A-026.7 |
 | Bucket F - Preserve / Regression Only | L6 | 2 | regression risk only | preserve quality baseline | A-026.7 |
@@ -718,7 +699,7 @@ Note:
 | 63 | help | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify help desk scope | contract tests | medium | low | A-026.5 |
 | 64 | housing | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | housing KPI mapping | lineage mapping | medium | medium | A-026.6 |
 | 65 | hr_payroll | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | payroll KPI lineage | lineage mapping | medium | high | A-026.6 |
-| 66 | human_approved_timetable_workflow | Planned Expansion | L2 | B | A-026.3 runtime + A-026.3.B1 evidence | EVIDENCED_L2_AFTER_A0263 | deterministic_service_logic_needed | L3 | L3 deterministic workflow state logic | L3 service logic / transition tests | medium | high | A-026.4-candidate |
+| 66 | human_approved_timetable_workflow | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
 | 67 | i18n | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify i18n contract completeness | contract tests | medium | low | A-026.5 |
 | 68 | identity | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | identity event mapping | mapping tests | medium | high | A-026.6 |
 | 69 | integrations | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify integration breadth | contract tests | medium | low | A-026.5 |
@@ -739,7 +720,7 @@ Note:
 | 84 | mobile_app | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | frontend_missing | L4 | mobile app frontend visibility | frontend tests | medium | medium | A-026.5 |
 | 85 | mobile_push_gateway | Planned Expansion | L1 | A | A-023.0 | EVIDENCED_LEVEL_ONLY | service_contract_missing | L2 | push gateway contract | contract tests | medium | high | A-026.3 |
 | 86 | model_evaluation | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | model eval signal mapping | mapping tests | medium | high | A-026.6 |
-| 87 | notification_center | Planned Expansion | L2 | B | A-026.3 runtime + A-026.3.B1 evidence | EVIDENCED_L2_AFTER_A0263 | deterministic_service_logic_needed | L3 | deterministic notification composition/readiness logic without sending | notification logic / tenant / no-provider-call tests | high | high | A-026.4-candidate |
+| 87 | notification_center | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | high | high | A-026.5 |
 | 88 | observability | Integrations & Platform | L4 | D | A-024.3 | EVIDENCED_L4_AFTER_A0243 | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
 | 89 | online_payments | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | payment KPI lineage | lineage mapping | medium | high | A-026.6 |
 | 90 | operations | Administration & Governance | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | ops E2E and gates | gate continuity | high | high | A-026.7 |
@@ -790,11 +771,11 @@ Note:
 | 135 | teaching_quality | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | quality signal mapping | mapping tests | medium | high | A-026.6 |
 | 136 | tenants | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | tenant event mapping | mapping tests | medium | high | A-026.6 |
 | 137 | thesis | Research & Innovation | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | thesis E2E and gates | gate continuity | high | high | A-026.7 |
-| 138 | timetable_approval_queue | Planned Expansion | L2 | B | A-026.3 runtime + A-026.3.B1 evidence | EVIDENCED_L2_AFTER_A0263 | deterministic_service_logic_needed | L3 | deterministic queue state/action logic | queue transition / forbidden action tests | medium | high | A-026.4-candidate |
-| 139 | timetable_change_kpi_dashboard | Planned Expansion | L2 | B | A-026.3 runtime + A-026.3.B1 evidence | EVIDENCED_L2_AFTER_A0263 | deterministic_service_logic_needed | L3 | deterministic KPI readiness classification only | KPI readiness logic / no-fake-KPI tests | medium | medium | A-026.4-candidate |
-| 140 | timetable_change_proposal | Planned Expansion | L2 | B | A-026.3 runtime + A-026.3.B1 evidence | EVIDENCED_L2_AFTER_A0263 | deterministic_service_logic_needed | L3 | deterministic proposal evaluation rules | proposal logic / validation / boundary tests | medium | high | A-026.4-candidate |
-| 141 | timetable_change_simulation | Planned Expansion | L2 | B | A-026.3 runtime + A-026.3.B1 evidence | EVIDENCED_L2_AFTER_A0263 | deterministic_service_logic_needed | L3 | deterministic simulation readiness classification | simulation logic / no-mutation / boundary tests | medium | high | A-026.4-candidate |
-| 142 | timetable_recommendation_bridge | Planned Expansion | L2 | B | A-026.3 runtime + A-026.3.B1 evidence | EVIDENCED_L2_AFTER_A0263 | deterministic_service_logic_needed | L3 | deterministic recommendation envelope rules | bridge logic / determinism / no-AI-provider tests | medium | high | A-026.4-candidate |
+| 138 | timetable_approval_queue | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
+| 139 | timetable_change_kpi_dashboard | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | medium | A-026.5 |
+| 140 | timetable_change_proposal | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
+| 141 | timetable_change_simulation | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
+| 142 | timetable_recommendation_bridge | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
 | 143 | transcripts | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | transcript KPI mapping | lineage mapping | medium | high | A-026.6 |
 | 144 | transport | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | transport KPI mapping | lineage mapping | medium | low | A-026.6 |
 | 145 | two_factor_auth | Identity/Access/Security | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | 2FA API visibility | route tests | medium | high | A-026.5 |
@@ -802,7 +783,7 @@ Note:
 | 147 | usage | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | usage KPI lineage | lineage mapping | medium | high | A-026.6 |
 | 148 | visitor_management | Student & Campus Life | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | visitor E2E and gates | gate continuity | high | high | A-026.7 |
 | 149 | workflows | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | workflow signal mapping | mapping tests | medium | medium | A-026.6 |
-| 150 | workload_management | Planned Expansion | L2 | B | A-026.3 runtime + A-026.3.B1 evidence | EVIDENCED_L2_AFTER_A0263 | deterministic_service_logic_needed | L3 | deterministic workload planning classification | workload logic / no-payroll-mutation tests | medium | high | A-026.4-candidate |
+| 150 | workload_management | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
 
 ## Full Extension 25 Module Registry Matrix
 
@@ -856,8 +837,8 @@ Note:
 | Bucket | Expected | Found | Status |
 |---|---:|---:|---|
 | Bucket A | 16 | 16 | PASS |
-| Bucket B | 21 | 21 | PASS |
-| Bucket C | 24 | 24 | PASS |
+| Bucket B | 13 | 13 | PASS |
+| Bucket C | 32 | 32 | PASS |
 | Bucket D | 66 | 66 | PASS |
 | Bucket E | 21 | 21 | PASS |
 | Bucket F | 2 | 2 | PASS |
@@ -957,6 +938,13 @@ WORKFLOW_STATUS = {
     'CANCELLED': 'workflow cancelled'
 }
 FORBIDDEN_ACTIONS = ['AUTO_APPLY', 'AUTO_OPTIMIZE', 'AUTONOMOUS_ROLLBACK']
+## A-026.4-RUNTIME — L2→L3 Service Logic Normalization
+
+- Selected 8 modules moved from L2/B to L3/C.
+- Deterministic backend service logic was added without API, frontend, KPI, Brain, or autonomous execution claims.
+- Local compile and behavior assertions passed in this environment.
+- A-026.5 will be needed for the L3→L4 operational visibility/API planning step.
+- Extension 25 remains unchanged and separate.
 HUMAN_APPROVAL_REQUIRED = True
 ```
 

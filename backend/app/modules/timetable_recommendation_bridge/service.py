@@ -31,7 +31,9 @@ SAFETY_FLAGS = {
     "no_ai_provider_calls": True,
     "no_autonomous_recommendation_execution": True,
     "no_autonomous_execution": True,
-    "target_level": "L2",
+    "no_kpi_lineage_claim": True,
+    "no_e2e_claim": True,
+    "target_level": "L3",
 }
 
 
@@ -131,4 +133,59 @@ def get_bridge_readiness_contract(tenant_id: Any) -> Dict[str, Any]:
         "valid_sources": list(RECOMMENDATION_SOURCE.keys()),
         "safety_flags": SAFETY_FLAGS,
         "contract_type": "deterministic_envelope_bridge",
+    }
+
+
+def evaluate_recommendation_bridge(tenant_id: Any, simulation_result: Any) -> Dict[str, Any]:
+    """Deterministically classify recommendation bridge readiness at L3."""
+    if not validate_bridge_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "timetable_recommendation_bridge",
+            "maturity_level": "L3",
+            "bridge_status": "TENANT_VALIDATION_FAILED",
+            "classification": "RECOMMENDATION_NOT_READY",
+            "BRIDGE_MODE": BRIDGE_MODE,
+            "safety_flags": SAFETY_FLAGS,
+        }
+
+    result = simulation_result if isinstance(simulation_result, dict) else {}
+    simulation_status = str(result.get("readiness_status") or result.get("simulation_status") or result.get("classification") or "").upper()
+    policy_review_required = bool(result.get("policy_review_required") or result.get("requires_policy_review"))
+    missing_inputs = [field for field in ["proposal_id", "simulation_type"] if result.get(field) in (None, "")]
+
+    if missing_inputs:
+        classification = "RECOMMENDATION_BLOCKED_BY_INCOMPLETE_SIMULATION"
+        next_step = "COMPLETE_SIMULATION_INPUTS"
+    elif policy_review_required or simulation_status in {"CONFLICT_DETECTED", "SIMULATION_REQUIRES_POLICY_REVIEW"}:
+        classification = "RECOMMENDATION_REQUIRES_POLICY_REVIEW"
+        next_step = "POLICY_REVIEW"
+    elif simulation_status in {"READY_FOR_APPROVAL", "SIMULATION_RESULT_READY_FOR_APPROVAL", "READY"}:
+        classification = "RECOMMENDATION_READY_FOR_HUMAN_REVIEW"
+        next_step = "SUBMIT_FOR_HUMAN_REVIEW"
+    else:
+        classification = "RECOMMENDATION_NOT_READY"
+        next_step = "COLLECT_ADDITIONAL_EVIDENCE"
+
+    recommendation_envelope = {
+        "tenant_id": tenant_id,
+        "module": "timetable_recommendation_bridge",
+        "bridge_mode": BRIDGE_MODE,
+        "recommendation_source": "SIMULATION_ANALYSIS" if result else "PENDING",
+        "simulation_status": simulation_status or "UNKNOWN",
+        "next_recommended_step": next_step,
+    }
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "timetable_recommendation_bridge",
+        "maturity_level": "L3",
+        "bridge_status": "EVALUATED",
+        "classification": classification,
+        "BRIDGE_MODE": BRIDGE_MODE,
+        "recommendation_envelope": recommendation_envelope,
+        "allowed_actions": ["PREVIEW", "REVIEW", "REQUEST_MORE_INFO"],
+        "forbidden_actions": ["AUTO_RECOMMEND", "AUTO_APPLY", "AI_PROVIDER_CALL"],
+        "next_recommended_step": next_step,
+        "safety_flags": SAFETY_FLAGS,
     }

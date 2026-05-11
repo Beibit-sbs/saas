@@ -37,7 +37,9 @@ SAFETY_FLAGS = {
     "no_real_mutation": True,
     "no_optimization_solver": True,
     "no_autonomous_execution": True,
-    "target_level": "L2",
+    "no_kpi_lineage_claim": True,
+    "no_e2e_claim": True,
+    "target_level": "L3",
 }
 
 
@@ -154,5 +156,72 @@ def get_simulation_output_contract(tenant_id: Any, simulation_status: str = "PEN
         "conflicts_detected": simulation_status == "CONFLICT_DETECTED",
         "ready_for_approval": simulation_status == "READY_FOR_APPROVAL",
         "actual_schedule_modified": False,
+        "safety_flags": SAFETY_FLAGS,
+    }
+
+
+def assess_simulation_readiness(tenant_id: Any, simulation_request: Any) -> Dict[str, Any]:
+    """Deterministically classify simulation readiness at L3."""
+    if not validate_simulation_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "timetable_change_simulation",
+            "maturity_level": "L3",
+            "readiness_status": "TENANT_VALIDATION_FAILED",
+            "classification": "NOT_READY",
+            "readiness_score": 0,
+            "readiness_level": "LOW",
+            "forbidden_mutations": FORBIDDEN_MUTATIONS,
+            "safety_flags": SAFETY_FLAGS,
+        }
+
+    if not isinstance(simulation_request, dict):
+        return {
+            "tenant_id": tenant_id,
+            "module": "timetable_change_simulation",
+            "maturity_level": "L3",
+            "readiness_status": "INVALID_REQUEST",
+            "classification": "NOT_READY",
+            "readiness_score": 0,
+            "readiness_level": "LOW",
+            "forbidden_mutations": FORBIDDEN_MUTATIONS,
+            "safety_flags": SAFETY_FLAGS,
+        }
+
+    required_fields = ["proposal_id", "simulation_type", "baseline_snapshot"]
+    missing_fields = [field for field in required_fields if simulation_request.get(field) in (None, "")]
+    has_scope_review_flag = bool(simulation_request.get("requires_human_scope_review") or simulation_request.get("human_scope_review_required"))
+    has_result_ready_flag = bool(simulation_request.get("simulation_result_ready") or simulation_request.get("ready_for_approval"))
+    completeness_score = len(required_fields) - len(missing_fields)
+
+    if missing_fields:
+        classification = "NOT_READY"
+        readiness_status = "INCOMPLETE_REQUEST"
+        readiness_level = "LOW"
+    elif has_scope_review_flag:
+        classification = "SIMULATION_REQUIRES_HUMAN_SCOPE_REVIEW"
+        readiness_status = "SCOPE_REVIEW_REQUIRED"
+        readiness_level = "MEDIUM"
+    elif has_result_ready_flag:
+        classification = "SIMULATION_RESULT_READY_FOR_APPROVAL"
+        readiness_status = "RESULT_READY"
+        readiness_level = "HIGH"
+    else:
+        classification = "READY_FOR_SIMULATION"
+        readiness_status = "READY"
+        readiness_level = "MEDIUM"
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "timetable_change_simulation",
+        "maturity_level": "L3",
+        "readiness_status": readiness_status,
+        "classification": classification,
+        "readiness_score": completeness_score,
+        "readiness_level": readiness_level,
+        "missing_fields": missing_fields,
+        "forbidden_mutations": FORBIDDEN_MUTATIONS,
+        "allowed_actions": ["PREVIEW", "VALIDATE", "REVIEW"],
+        "next_recommended_step": "SUBMIT_FOR_HUMAN_REVIEW" if classification == "SIMULATION_RESULT_READY_FOR_APPROVAL" else "COMPLETE_REQUIRED_INPUTS",
         "safety_flags": SAFETY_FLAGS,
     }

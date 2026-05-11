@@ -17,8 +17,9 @@ SAFETY_FLAGS = {
     "no_brain_claim": True,
     "no_kpi_values_computed": True,
     "no_kpi_lineage_claim": True,
+    "no_e2e_claim": True,
     "backend_contract_only": True,
-    "target_level": "L2",
+    "target_level": "L3",
 }
 
 
@@ -111,4 +112,51 @@ def get_kpi_metadata(tenant_id: Any) -> Dict[str, Any]:
         "values_available": False,
         "computation_required_for_l3": True,
         "safety_flags": SAFETY_FLAGS,
+    }
+
+
+def classify_kpi_readiness(tenant_id: Any, evidence: Any) -> Dict[str, Any]:
+    """Deterministically classify KPI dashboard readiness at L3."""
+    if not validate_kpi_dashboard_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "timetable_change_kpi_dashboard",
+            "maturity_level": "L3",
+            "kpi_readiness_status": "KPI_BACKEND_CONTRACT_INCOMPLETE",
+            "classification": "KPI_BACKEND_CONTRACT_INCOMPLETE",
+            "frontend_claim": False,
+            "kpi_values_available": False,
+            "brain_mapping_status": "NOT_AVAILABLE",
+            "safety_flags": SAFETY_FLAGS,
+        }
+
+    evidence_data = evidence if isinstance(evidence, dict) else {}
+    backend_contract_ready = bool(evidence_data.get("backend_contract_ready") or evidence_data.get("backend_contract"))
+    values_requested = bool(evidence_data.get("values_requested") or evidence_data.get("kpi_values_requested"))
+    frontend_claimed = bool(evidence_data.get("frontend_claimed") or evidence_data.get("frontend_requested"))
+
+    if frontend_claimed:
+        status = "KPI_FRONTEND_NOT_CLAIMED"
+    elif not backend_contract_ready:
+        status = "KPI_BACKEND_CONTRACT_INCOMPLETE"
+    elif values_requested or evidence_data.get("kpi_values_available") is True:
+        status = "KPI_VALUES_NOT_AVAILABLE"
+    else:
+        status = "KPI_BACKEND_CONTRACT_READY"
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "timetable_change_kpi_dashboard",
+        "maturity_level": "L3",
+        "kpi_readiness_status": status,
+        "classification": status,
+        "frontend_claim": False,
+        "frontend_dashboard_claim": False,
+        "kpi_values_available": False,
+        "kpi_values_computed": False,
+        "brain_mapping_status": "NOT_AVAILABLE",
+        "brain_signal_claim": False,
+        "no_kpi_lineage_claim": True,
+        "safety_flags": SAFETY_FLAGS,
+        "next_recommended_step": "OPERATIONAL_VISIBILITY_SPECIFICATION",
     }

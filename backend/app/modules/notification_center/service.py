@@ -46,7 +46,9 @@ SAFETY_FLAGS = {
     "no_cross_tenant_broadcast": True,
     "tenant_isolation_required": True,
     "no_autonomous_execution": True,
-    "target_level": "L2",
+    "no_kpi_lineage_claim": True,
+    "no_e2e_claim": True,
+    "target_level": "L3",
 }
 
 
@@ -177,4 +179,65 @@ def get_notification_readiness_contract(tenant_id: Any) -> Dict[str, Any]:
         "safety_flags": SAFETY_FLAGS,
         "contract_type": "deterministic_tenant_isolated_notification",
         "critical_note": "Tenant isolation is MANDATORY for all operations",
+    }
+
+
+def classify_notification_readiness(tenant_id: Any, notification_payload: Any) -> Dict[str, Any]:
+    """Deterministically classify notification readiness at L3."""
+    if not validate_notification_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "notification_center",
+            "maturity_level": "L3",
+            "notification_readiness_status": "NOTIFICATION_INPUT_INCOMPLETE",
+            "classification": "NOTIFICATION_INPUT_INCOMPLETE",
+            "NO_SENDING": NO_SENDING,
+            "NO_PROVIDER_CALLS": NO_PROVIDER_CALLS,
+            "TENANT_ISOLATION_REQUIRED": TENANT_ISOLATION_REQUIRED,
+            "safety_flags": SAFETY_FLAGS,
+        }
+
+    payload = notification_payload if isinstance(notification_payload, dict) else {}
+    required_fields = ["notification_type", "subject", "message"]
+    missing_fields = [field for field in required_fields if payload.get(field) in (None, "")]
+    notification_type = str(payload.get("notification_type") or "").upper()
+    provider_configured = bool(payload.get("provider_configured") or payload.get("dispatch_provider_ready"))
+    send_requested = bool(payload.get("send_requested") or payload.get("dispatch_now"))
+
+    if missing_fields:
+        status = "NOTIFICATION_INPUT_INCOMPLETE"
+        next_step = "COMPLETE_REQUIRED_FIELDS"
+    elif notification_type not in set(NOTIFICATION_TYPE.keys()):
+        status = "BLOCKED_UNSUPPORTED_TYPE"
+        next_step = "SELECT_SUPPORTED_NOTIFICATION_TYPE"
+    elif not provider_configured:
+        status = "PROVIDER_NOT_CONFIGURED"
+        next_step = "CONFIGURE_PROVIDER_FOR_MANUAL_REVIEW"
+    elif send_requested:
+        status = "READY_FOR_MANUAL_DISPATCH_REVIEW"
+        next_step = "HUMAN_DISPATCH_REVIEW"
+    else:
+        status = "READY_TO_COMPOSE"
+        next_step = "COMPOSE_PREVIEW"
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "notification_center",
+        "maturity_level": "L3",
+        "notification_readiness_status": status,
+        "classification": status,
+        "notification_type": notification_type or "UNKNOWN",
+        "missing_fields": missing_fields,
+        "NO_SENDING": NO_SENDING,
+        "NO_PROVIDER_CALLS": NO_PROVIDER_CALLS,
+        "TENANT_ISOLATION_REQUIRED": TENANT_ISOLATION_REQUIRED,
+        "no_sending": NO_SENDING,
+        "no_provider_calls": NO_PROVIDER_CALLS,
+        "tenant_isolation_required": TENANT_ISOLATION_REQUIRED,
+        "cross_tenant_broadcast": False,
+        "frontend_claim": False,
+        "kpi_values_available": False,
+        "brain_mapping_status": "NOT_AVAILABLE",
+        "next_recommended_step": next_step,
+        "safety_flags": SAFETY_FLAGS,
     }

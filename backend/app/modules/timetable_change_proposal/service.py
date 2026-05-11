@@ -29,7 +29,9 @@ SAFETY_FLAGS = {
     "no_brain_claim": True,
     "no_scheduling_conflict_solving": True,
     "no_autonomous_execution": True,
-    "target_level": "L2",
+    "no_kpi_lineage_claim": True,
+    "no_e2e_claim": True,
+    "target_level": "L3",
 }
 
 
@@ -148,4 +150,67 @@ def get_proposal_readiness_contract(tenant_id: Any) -> Dict[str, Any]:
         "valid_statuses": list(PROPOSAL_STATUS.keys()),
         "safety_flags": SAFETY_FLAGS,
         "contract_type": "deterministic_shallow_validation",
+    }
+
+
+def evaluate_timetable_change_proposal(tenant_id: Any, proposal: Any) -> Dict[str, Any]:
+    """Deterministically classify timetable change proposal readiness at L3."""
+    if not validate_proposal_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "timetable_change_proposal",
+            "maturity_level": "L3",
+            "evaluation_status": "TENANT_VALIDATION_FAILED",
+            "classification": "REJECTED_INVALID_PAYLOAD",
+            "missing_fields": ["tenant_id"],
+            "next_required_evidence": ["VALID_TENANT"],
+            "safety_flags": SAFETY_FLAGS,
+        }
+
+    if not isinstance(proposal, dict):
+        return {
+            "tenant_id": tenant_id,
+            "module": "timetable_change_proposal",
+            "maturity_level": "L3",
+            "evaluation_status": "INVALID_PAYLOAD",
+            "classification": "REJECTED_INVALID_PAYLOAD",
+            "missing_fields": ["proposal"],
+            "next_required_evidence": ["DICT_PAYLOAD"],
+            "safety_flags": SAFETY_FLAGS,
+        }
+
+    required_fields = ["proposal_type", "description", "reason", "impact"]
+    missing_fields = [field for field in required_fields if not proposal.get(field)]
+    classification = "READY_FOR_REVIEW"
+    next_required_evidence = ["REVIEW_CONTEXT"]
+
+    if missing_fields:
+        classification = "INCOMPLETE_PROPOSAL"
+        next_required_evidence = missing_fields[:]
+    else:
+        affected_fields = [field for field in ["affected_course", "affected_room", "affected_instructor"] if proposal.get(field) is not None]
+        requested_change_type = str(proposal.get("requested_change_type") or proposal.get("proposal_type") or "").upper()
+        policy_review_required = bool(proposal.get("policy_review_required") or proposal.get("policy_flag"))
+        if policy_review_required:
+            classification = "POLICY_REVIEW_REQUIRED"
+            next_required_evidence = ["POLICY_REVIEW_CLEARANCE"]
+        elif requested_change_type in {"SIMULATION", "SIMULATE", "HIGH_RISK"} or proposal.get("requires_simulation") is True:
+            classification = "READY_FOR_SIMULATION"
+            next_required_evidence = ["SIMULATION_REQUEST"]
+        else:
+            classification = "READY_FOR_REVIEW"
+            next_required_evidence = affected_fields or ["REVIEW_CONTEXT"]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "timetable_change_proposal",
+        "maturity_level": "L3",
+        "evaluation_status": "EVALUATED",
+        "classification": classification,
+        "proposal_type": proposal.get("proposal_type") if isinstance(proposal, dict) else None,
+        "missing_fields": missing_fields,
+        "next_required_evidence": next_required_evidence,
+        "allowed_actions": ["SUBMIT", "REVIEW", "REQUEST_MORE_INFO", "REQUEST_SIMULATION", "REJECT"],
+        "forbidden_actions": ["AUTO_APPLY", "AUTO_OPTIMIZE", "AUTONOMOUS_MUTATION"],
+        "safety_flags": SAFETY_FLAGS,
     }

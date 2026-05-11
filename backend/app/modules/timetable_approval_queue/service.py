@@ -44,7 +44,9 @@ SAFETY_FLAGS = {
     "no_brain_claim": True,
     "no_automatic_decision": True,
     "no_autonomous_execution": True,
-    "target_level": "L2",
+    "no_kpi_lineage_claim": True,
+    "no_e2e_claim": True,
+    "target_level": "L3",
 }
 
 
@@ -156,4 +158,51 @@ def get_queue_item_details(tenant_id: Any, queue_id: Any) -> Dict[str, Any]:
         "queue_status": "PENDING_REVIEW",
         "allowed_actions": ALLOWED_ACTIONS,
         "forbidden_actions": FORBIDDEN_AUTO_ACTIONS,
+    }
+
+
+def evaluate_queue_item(tenant_id: Any, item: Any) -> Dict[str, Any]:
+    """Deterministically classify a queue item at L3."""
+    if not validate_queue_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "timetable_approval_queue",
+            "maturity_level": "L3",
+            "queue_status": "QUEUE_ITEM_INVALID",
+            "classification": "QUEUE_ITEM_INVALID",
+            "human_review_required": True,
+            "allowed_actions": ["APPROVE", "REJECT", "REQUEST_MORE_INFO", "REASSIGN_REVIEWER"],
+            "forbidden_actions": FORBIDDEN_AUTO_ACTIONS,
+            "safety_flags": SAFETY_FLAGS,
+        }
+
+    queue_item = item if isinstance(item, dict) else {}
+    queue_status = str(queue_item.get("queue_status") or queue_item.get("status") or "").upper()
+    if not queue_item:
+        classification = "QUEUE_ITEM_INVALID"
+        next_step = "REQUEST_MORE_INFO"
+    elif queue_item.get("requires_more_info") is True or queue_status == "BLOCKED_REQUIRES_MORE_INFO":
+        classification = "BLOCKED_REQUIRES_MORE_INFO"
+        next_step = "REQUEST_MORE_INFO"
+    elif queue_status in {"IN_PROGRESS", "REVIEW_IN_PROGRESS"}:
+        classification = "REVIEW_IN_PROGRESS"
+        next_step = "CONTINUE_REVIEW"
+    elif queue_status in {"READY_FOR_MANUAL_DECISION", "APPROVED_PENDING_APPLY", "PENDING_REVIEW"}:
+        classification = "READY_FOR_MANUAL_DECISION" if queue_status != "PENDING_REVIEW" else "READY_FOR_REVIEW"
+        next_step = "MANUAL_DECISION"
+    else:
+        classification = "READY_FOR_REVIEW"
+        next_step = "BEGIN_REVIEW"
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "timetable_approval_queue",
+        "maturity_level": "L3",
+        "queue_status": classification,
+        "classification": classification,
+        "human_review_required": True,
+        "allowed_actions": ["APPROVE", "REJECT", "REQUEST_MORE_INFO", "REASSIGN_REVIEWER"],
+        "forbidden_actions": FORBIDDEN_AUTO_ACTIONS,
+        "next_recommended_step": next_step,
+        "safety_flags": SAFETY_FLAGS,
     }

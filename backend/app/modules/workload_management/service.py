@@ -39,7 +39,9 @@ SAFETY_FLAGS = {
     "no_schedule_mutation": True,
     "no_automatic_assignment": True,
     "no_autonomous_execution": True,
-    "target_level": "L2",
+    "no_kpi_lineage_claim": True,
+    "no_e2e_claim": True,
+    "target_level": "L3",
 }
 
 
@@ -160,4 +162,60 @@ def get_workload_status_options(tenant_id: Any) -> Dict[str, Any]:
             "MONITORED": ["COMPLETED"],
             "COMPLETED": [],
         },
+    }
+
+
+def evaluate_workload_plan(tenant_id: Any, workload_payload: Any) -> Dict[str, Any]:
+    """Deterministically classify workload planning at L3."""
+    if not validate_workload_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "workload_management",
+            "maturity_level": "L3",
+            "evaluation_status": "TENANT_VALIDATION_FAILED",
+            "classification": "WORKLOAD_INPUT_INCOMPLETE",
+            "risk_level": "LOW",
+            "next_required_evidence": ["VALID_TENANT"],
+            "safety_flags": SAFETY_FLAGS,
+        }
+
+    payload = workload_payload if isinstance(workload_payload, dict) else {}
+    required_fields = ["workload_type", "units"]
+    missing_fields = [field for field in required_fields if payload.get(field) in (None, "")]
+    overload_risk = bool(payload.get("overload_risk") or payload.get("capacity_exceeded"))
+    policy_review_required = bool(payload.get("policy_review_required") or payload.get("policy_flag"))
+    has_assignment_context = bool(payload.get("assignment_context") or payload.get("assignment_plan"))
+
+    if missing_fields:
+        classification = "WORKLOAD_INPUT_INCOMPLETE"
+        risk_level = "LOW"
+        next_required_evidence = missing_fields[:]
+    elif policy_review_required:
+        classification = "POLICY_REVIEW_REQUIRED"
+        risk_level = "HIGH"
+        next_required_evidence = ["POLICY_REVIEW_CLEARANCE"]
+    elif overload_risk:
+        classification = "OVERLOAD_RISK_REVIEW_REQUIRED"
+        risk_level = "HIGH"
+        next_required_evidence = ["CAPACITY_REVIEW"]
+    elif has_assignment_context:
+        classification = "READY_FOR_ASSIGNMENT_PLANNING"
+        risk_level = "MEDIUM"
+        next_required_evidence = ["ASSIGNMENT_PLAN_REVIEW"]
+    else:
+        classification = "READY_FOR_HUMAN_REVIEW"
+        risk_level = "MEDIUM"
+        next_required_evidence = ["HUMAN_REVIEW_CONTEXT"]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "workload_management",
+        "maturity_level": "L3",
+        "evaluation_status": "EVALUATED",
+        "classification": classification,
+        "risk_level": risk_level,
+        "allowed_actions": ["ASSESS", "CLASSIFY", "REVIEW"],
+        "forbidden_actions": ["AUTO_ASSIGN", "AUTO_OVERRIDE_CONSTRAINTS", "AUTO_MUTATE_PAYROLL", "AUTO_DISTRIBUTE_WORKLOAD"],
+        "next_required_evidence": next_required_evidence,
+        "safety_flags": SAFETY_FLAGS,
     }
