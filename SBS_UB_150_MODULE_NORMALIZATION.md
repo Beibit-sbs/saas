@@ -1364,6 +1364,105 @@ This specification introduces:
 - ✓ Full spec document delivered: A-026.7-SPEC-NEXT_L4_TO_L5_EVIDENCE_GOVERNANCE_READINESS_BATCH_SPECIFICATION.md
 
 ---
+- ✓ Full spec document delivered: A-026.7-SPEC-NEXT_L4_TO_L5_EVIDENCE_GOVERNANCE_READINESS_BATCH_SPECIFICATION.md
+
+---
+
+## A-026.7.REPLAN — Strategic Pivot to Lower Maturity Gap Closure
+
+**Status**: SPEC ONLY (planning/docs phase, no runtime code changes)
+
+**Date**: 2026-05-12
+
+**Purpose**: Strategic assessment of lower maturity gap closure (55 modules below L4) before continuing L4→L5 transitions. Evaluate 4 strategic options; select optimal batch; plan next runtime action.
+
+### Decision Summary
+
+**Discovered Issue**: After A-026.6-RUNTIME, 55 modules remain below L4 (L1=16, L2=13, L3=26, 36.7% of baseline). For SaaS/enterprise readiness, foundation gaps should be addressed before continuing top-layer L4→L5 transitions.
+
+**Strategic Options Evaluated**:
+| Option | Batch | Complexity | Gap Reduction | Product Visibility | Priority Score |
+|---|---|---|---|---|---|
+| A: L1→L2 First | 16 L1 modules (all service_contract_missing) | LOW | 55→39 (29%) | NONE (foundation) | 4.5/5.0 ✓ SELECTED |
+| B: L2→L3 Next | 5-8 L2 modules (FSM/logic) | MEDIUM | Intermediate | NONE (internal) | 3.5/5.0 |
+| C: L3→L4 Focused | 3-4 L3 modules (API/visibility) | MEDIUM-HIGH | Variable | HIGH (SaaS) | 4.0/5.0 |
+| D: Mixed L1-L2-L3 | 6+3+2 modules | MIXED | Fragmented | Mixed | 3.0/5.0 |
+
+**Decision**: **SELECT OPTION A — L1→L2 First (Bottom-Up Cleanup)**
+
+**Rationale**:
+1. All 16 L1 modules have identical gap: `service_contract_missing` (100% consistency)
+2. Service contracts are lightweight — no routes, no frontend, no complex logic
+3. Establishes reusable L2 service contract pattern
+4. Reduces lower-level gap by 29% immediately (39 modules remain below L4)
+5. Improves foundation consistency before heavier L3→L4 API work
+6. Fast execution path (20-40 tests expected, 2-3 day estimate)
+7. After L1→L2 succeeds, select L2→L3 or L3→L4 based on product priorities
+
+### L1→L2 Batch (16 modules)
+
+**All L1 Modules** (sorted by module number):
+
+| # | Module | Domain | Current Gap | Target | Work Required | Tests | Status |
+|---:|---|---|---|---:|---|---:|---|
+| 18 | alumni_relations_ops | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 42 | digital_certificates | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 45 | donations_fundraising | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 48 | event_registration_portal | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 51 | exam_integrity_analytics | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 71 | internship_marketplace | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 77 | lab_operations | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 81 | lms_assessment_center | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 85 | mobile_push_gateway | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 92 | parent_engagement | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 95 | parking_enforcement | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 96 | parking_permit_ops | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 109 | publication_registry | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 113 | records_hub | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 117 | research_projects | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+| 131 | student_success_analytics | Planned Expansion | service_contract_missing | L2 | Deterministic service contract | 2-3 | PENDING_A026.7L1L2 |
+
+### Expected Maturity Formula
+
+**Current State (post-A-026.6)**:
+- L0=0, L1=16, L2=13, L3=26, L4=68, L5=25, L6=2, total=150
+
+**After A-026.7.L1L2-RUNTIME (if all 16 succeed)**:
+- L0=0, L1=0, L2=29, L3=26, L4=68, L5=25, L6=2, total=150
+- **Gap reduction**: 55→26 modules below L4 (53% reduction)
+- **Arithmetic check**: PASS ✓
+
+### A-026.7-SPEC Status
+
+**Deferred, NOT Invalidated**:
+- Original A-026.7-SPEC remains valid and complete
+- 4 L4→L5 candidates still relevant: attendance, observability, student_portal, timetable_change_proposal
+- Full 722-line spec with deep per-module specifications and 32-50 test plan preserved
+- Commit: b36e3e8 (A-026.7-SPEC select next L4 to L5 evidence governance batch)
+- **Will resume after** L1→L2 and subsequent gap closures complete
+- This is a priority shift, not cancellation
+
+### Future Sequence (Approved Roadmap)
+
+1. **A-026.7.L1L2-RUNTIME** ← **NEXT** (execute L1→L2 service contracts, 16 modules, 20-40 tests)
+2. **A-026.7.L2L3-RUNTIME** (evaluate L2 batch, select 5-8 modules, implement FSM/service logic)
+3. **A-026.7.L3L4-RUNTIME** (evaluate L3 batch, select 3-4 high-value modules, implement API/routes)
+4. **A-026.7-RUNTIME** (resume original L4→L5 batch: attendance, observability, student_portal, timetable_change_proposal)
+
+### Anti-Inflation Confirmation
+
+A-026.7.REPLAN spec contains:
+- ✓ NO runtime code implementation
+- ✓ NO maturity metric changes
+- ✓ NO service/schema/router modifications
+- ✓ NO test implementations
+- ✓ NO KPI/Brain/autonomy claims
+- ✓ NO frontend pages
+- ✓ A-026.7-SPEC preserved (not invalidated)
+
+**Verdict**: PLANNING-ONLY, ANTI-INFLATION COMPLIANT ✓
+
+---
 
 ## A-026.6-SPEC - L4→L5 Evidence / Governance / KPI / Brain-Readiness Batch Specification
 
