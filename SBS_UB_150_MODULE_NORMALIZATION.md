@@ -3923,5 +3923,1000 @@ Killer flows can resume only when:
 ## Anti-Fake and Anti-Inflation Guards
 - No maturity levels are changed in A-026.2.
 - No row in this document is treated as achieved-state promotion.
+
+## A-026.10-SPEC — Final L2 Cleanup / Remaining L2→L3 Deterministic Logic Specification
+
+Status: SPEC ONLY (planning/docs-only)
+
+Purpose: extract all remaining L2 modules, confirm inventory integrity, select final L2->L3 deterministic cleanup strategy, and define module-specific L3 implementation contracts for the future runtime.
+
+### Repo Hygiene Snapshot
+
+- branch: main
+- git status --short: clean
+- git diff --name-only: clean
+- git diff --stat: clean
+- risk assessment: no unexpected dirty/untracked runtime artifacts at spec start
+
+| File | Type | Related Action | Risk | Recommended Handling |
+|---|---|---|---|---|
+| None detected at spec start | workspace state | A-026.10-SPEC | low | proceed with docs-only update |
+
+### Source-of-Truth Confirmation
+
+- SBS_UB.md remains authoritative tracker.
+- A-026.9-RUNTIME remains closed/validated.
+- A-026.10-RUNTIME has not started in this spec phase.
+- next_action_id before this spec: A-026.10-SPEC.
+- baseline metrics at spec start: L0=0, L1=0, L2=13, L3=42, L4=68, L5=25, L6=2, total=150.
+- extension separation unchanged: extension_total_count=25, total_tracked_modules=175, separation=PASS.
+
+### Remaining L2 Extraction Summary
+
+Extraction source: Full Baseline 150 Module Normalization Matrix (canonical rows).
+
+| # | Module | Domain | Current Level | Current Gap | Required Work | Required Tests | Source |
+|---:|---|---|---:|---|---|---|---|
+| 5 | accreditation_compliance | Planned Expansion | L2 | FSM_workflow_missing | deterministic service logic | targeted tests | A-023.0 |
+| 11 | ai_cost_governance | Planned Expansion | L2 | service_contract_missing | cost service determinism | contract tests | A-023.0 |
+| 14 | ai_plagiarism | Research & Innovation | L2 | FSM_workflow_missing | plagiarism detection FSM | transition tests | A-023.0 |
+| 32 | conference_management | Research & Innovation | L2 | FSM_workflow_missing | conference FSM transitions | transition tests | A-023.0 |
+| 34 | contracts_legal_repository | Planned Expansion | L2 | service_contract_missing | legal contract service | contract tests | A-023.0 |
+| 36 | counseling_case_management | Planned Expansion | L2 | service_contract_missing | case management service | contract tests | A-023.0 |
+| 41 | developer_portal | Planned Expansion | L2 | service_contract_missing | developer service contract | contract tests | A-023.0 |
+| 59 | federation_management | Planned Expansion | L2 | FSM_workflow_missing | federation FSM logic | transition tests | A-023.0 |
+| 62 | health_services | Planned Expansion | L2 | FSM_workflow_missing | health service logic | transition tests | A-023.0 |
+| 80 | library_circulation | Planned Expansion | L2 | FSM_workflow_missing | circulation FSM logic | transition tests | A-023.0 |
+| 83 | local_user_management | Planned Expansion | L2 | tenant_guard_missing | user management tenant guards | tenant tests | A-023.0 |
+| 116 | research_grants | Planned Expansion | L2 | FSM_workflow_missing | grants FSM logic | transition tests | A-023.0 |
+| 125 | student_ai_tutor | Research & Innovation | L2 | FSM_workflow_missing | tutor FSM logic | transition tests | A-023.0 |
+
+- expected L2 count: 13
+- found L2 count: 13
+- status: PASS
+
+### A-026.8 and A-026.9 Exclusion Confirmation
+
+These modules are already L3 in the canonical matrix and are excluded from A-026.10 selection.
+
+| Module | Expected Level | Found Level | Status |
+|---|---:|---:|---|
+| digital_certificates | L3 | L3 | PASS |
+| records_hub | L3 | L3 | PASS |
+| student_success_analytics | L3 | L3 | PASS |
+| publication_registry | L3 | L3 | PASS |
+| research_projects | L3 | L3 | PASS |
+| lms_assessment_center | L3 | L3 | PASS |
+| lab_operations | L3 | L3 | PASS |
+| internship_marketplace | L3 | L3 | PASS |
+| parking_permit_ops | L3 | L3 | PASS |
+| parking_enforcement | L3 | L3 | PASS |
+| event_registration_portal | L3 | L3 | PASS |
+| parent_engagement | L3 | L3 | PASS |
+| alumni_relations_ops | L3 | L3 | PASS |
+| donations_fundraising | L3 | L3 | PASS |
+| exam_integrity_analytics | L3 | L3 | PASS |
+| mobile_push_gateway | L3 | L3 | PASS |
+
+### Remaining L2 Readiness Scoring
+
+Priority score model (max 40):
+Domain Value + SaaS Value + L2 Quality + Logic Clarity + (6 - Tenant Risk) + Testability + (6 - Provider/AI Risk) + (6 - Blast Radius).
+
+| Module | Domain Value | SaaS Value | L2 Quality | Logic Clarity | Tenant Risk | Testability | Provider/AI Risk | Blast Radius | Priority Score | Recommendation |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| accreditation_compliance | 4 | 4 | 4 | 4 | 2 | 4 | 1 | 2 | 27 | SELECT_A02610 |
+| ai_cost_governance | 4 | 4 | 4 | 4 | 3 | 4 | 3 | 3 | 23 | SELECT_A02610 |
+| ai_plagiarism | 4 | 4 | 4 | 3 | 4 | 3 | 4 | 3 | 19 | SELECT_A02610 |
+| conference_management | 3 | 3 | 4 | 4 | 2 | 4 | 1 | 2 | 25 | SELECT_A02610 |
+| contracts_legal_repository | 4 | 4 | 4 | 4 | 3 | 4 | 1 | 3 | 25 | SELECT_A02610 |
+| counseling_case_management | 4 | 4 | 4 | 4 | 3 | 4 | 1 | 3 | 25 | SELECT_A02610 |
+| developer_portal | 3 | 4 | 4 | 4 | 2 | 4 | 1 | 2 | 26 | SELECT_A02610 |
+| federation_management | 3 | 3 | 4 | 4 | 3 | 4 | 1 | 2 | 25 | SELECT_A02610 |
+| health_services | 4 | 4 | 4 | 4 | 3 | 4 | 2 | 3 | 24 | SELECT_A02610 |
+| library_circulation | 4 | 4 | 4 | 4 | 2 | 4 | 1 | 2 | 27 | SELECT_A02610 |
+| local_user_management | 4 | 5 | 4 | 4 | 5 | 4 | 1 | 4 | 20 | SELECT_A02610 |
+| research_grants | 4 | 4 | 4 | 4 | 3 | 4 | 1 | 3 | 25 | SELECT_A02610 |
+| student_ai_tutor | 4 | 4 | 4 | 3 | 4 | 3 | 5 | 4 | 15 | SELECT_A02610 |
+
+### Final L2 Cleanup Strategy
+
+Decision: Option A selected (all 13 modules in one runtime) because all 13 have existing package and service.py foundations, the scope is bounded to service-logic uplift, and prior batch evidence supports a similar load profile.
+
+| Selected Module | Current Level | Target Level | Runtime Group | Why Selected | Expected L3 Logic | Required Tests | Risk |
+|---|---:|---:|---|---|---|---|---|
+| accreditation_compliance | L2 | L3 | A-026.10-RUNTIME | compliance leverage, deterministic policy readiness | compliance state/risk/readiness logic | tenant, classification, boundary | medium |
+| ai_cost_governance | L2 | L3 | A-026.10-RUNTIME | cost governance reuse and controls | deterministic cost readiness and guardrails | tenant, deterministic, anti-provider | medium |
+| ai_plagiarism | L2 | L3 | A-026.10-RUNTIME | integrity risk value | deterministic plagiarism review state | tenant, transition, anti-autonomy | high |
+| conference_management | L2 | L3 | A-026.10-RUNTIME | event orchestration reusability | deterministic conference readiness/fsm | tenant, transition, boundary | medium |
+| contracts_legal_repository | L2 | L3 | A-026.10-RUNTIME | legal governance dependency | deterministic legal contract readiness | tenant, contract, forbidden-action | medium |
+| counseling_case_management | L2 | L3 | A-026.10-RUNTIME | case governance dependency | deterministic counseling case routing | tenant, status, boundary | medium |
+| developer_portal | L2 | L3 | A-026.10-RUNTIME | platform control-plane value | deterministic developer onboarding state | tenant, contract, anti-inflation | medium |
+| federation_management | L2 | L3 | A-026.10-RUNTIME | identity federation governance | deterministic federation state machine | tenant, transition, policy checks | medium |
+| health_services | L2 | L3 | A-026.10-RUNTIME | student wellbeing domain value | deterministic health service triage readiness | tenant, risk, boundary | medium |
+| library_circulation | L2 | L3 | A-026.10-RUNTIME | circulation workflow value | deterministic circulation lifecycle rules | tenant, transition, anti-autonomy | medium |
+| local_user_management | L2 | L3 | A-026.10-RUNTIME | high SaaS tenancy impact | deterministic user lifecycle and tenant guard logic | tenant-negative, boundary, anti-cross-tenant | high |
+| research_grants | L2 | L3 | A-026.10-RUNTIME | research governance value | deterministic grant workflow readiness | tenant, status/risk, boundary | medium |
+| student_ai_tutor | L2 | L3 | A-026.10-RUNTIME | strategic AI module cleanup | deterministic tutoring readiness without provider execution | tenant, provider-boundary, anti-autonomy | high |
+
+## A-026.10 Final L2→L3 Deterministic Service Logic Standard
+
+1. Deterministic business logic
+- service function does more than return foundation contract
+- module-specific classification/readiness/risk/status
+- deterministic next recommended step
+
+2. Tenant fail-closed behavior
+- tenant_id=None rejected
+- tenant_id=0 rejected
+- tenant_id<0 rejected
+- valid tenant_id accepted
+- output tenant-scoped
+
+3. Domain-specific rules
+- module-specific statuses
+- allowed actions
+- forbidden actions
+- required evidence
+- readiness/risk classification
+
+4. Tests
+- import tests
+- tenant fail-closed tests
+- deterministic output tests
+- classification/status/risk tests
+- boundary tests
+- provider boundary tests where relevant
+- anti-inflation tests
+
+5. Anti-inflation
+- no API claim
+- no frontend claim
+- no KPI claim
+- no Brain claim
+- no autonomous execution
+- no L4/L5/L6 claim
+- no external provider call
+
+### Module-by-Module Deep Specification
+
+### Module: accreditation_compliance
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: FSM_workflow_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic accreditation readiness and policy exception classification.
+- What this module will NOT do: no API route, no external regulator submission, no autonomous approval.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/accreditation_compliance/service.py | update | add deterministic accreditation readiness/risk logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_accreditation_compliance_readiness | classify readiness/risk | tenant_id, compliance_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: DRAFT, IN_REVIEW, READY, BLOCKED
+- classifications: READY_FOR_COMPLIANCE_REVIEW, NEEDS_POLICY_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_COMPLIANCE, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_APPROVE, AUTO_SUBMIT
+- required evidence: policy_context, audit_context, control_context
+- human review boundary: compliance approvals are human-controlled
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed ValueError
+- valid tenant behavior: deterministic tenant-scoped result
+- tenant scope in output: tenant_id always present
+- cross-tenant prevention: no cross-tenant aggregation
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_accreditation_import | import contract exists |
+| test_accreditation_tenant_fail_closed | reject invalid tenant ids |
+| test_accreditation_deterministic_readiness | deterministic outputs |
+| test_accreditation_forbidden_actions | anti-autonomy guard |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: ai_cost_governance
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: service_contract_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic cost governance readiness and risk banding.
+- What this module will NOT do: no provider calls, no budget mutation, no autonomous enforcement.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/ai_cost_governance/service.py | update | add deterministic cost governance logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_ai_cost_governance_readiness | classify budget/risk state | tenant_id, cost_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: BASELINE, WATCH, REVIEW_REQUIRED, BLOCKED
+- classifications: READY_FOR_GOVERNANCE_REVIEW, NEEDS_COST_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_COST_POLICY, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_BLOCK_SPEND, AUTO_OVERRIDE_POLICY
+- required evidence: spend_context, policy_context, variance_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic scoped output
+- tenant scope in output: required
+- cross-tenant prevention: no shared spend rollups
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_ai_cost_governance_import | module import viability |
+| test_ai_cost_governance_tenant_fail_closed | tenant safety |
+| test_ai_cost_governance_deterministic_logic | deterministic output |
+| test_ai_cost_governance_no_provider_actions | no provider/autonomy |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: ai_plagiarism
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: FSM_workflow_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic plagiarism review state/risk classification.
+- What this module will NOT do: no autonomous accusation, no model/provider invocation in runtime path.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/ai_plagiarism/service.py | update | add deterministic plagiarism state logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_ai_plagiarism_readiness | classify integrity review state | tenant_id, plagiarism_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: CLEAN, FLAGGED, UNDER_REVIEW, BLOCKED
+- classifications: READY_FOR_REVIEW, NEEDS_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_SIGNAL, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_ACCUSATION, AUTO_PENALTY
+- required evidence: submission_context, similarity_context, policy_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic output
+- tenant scope in output: required
+- cross-tenant prevention: no cross-tenant similarity fusion
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_ai_plagiarism_import | import path |
+| test_ai_plagiarism_tenant_fail_closed | tenant guard |
+| test_ai_plagiarism_state_determinism | deterministic state |
+| test_ai_plagiarism_forbidden_actions | anti-autonomy boundaries |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: conference_management
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: FSM_workflow_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic conference lifecycle/readiness transitions.
+- What this module will NOT do: no registration side effects, no API surfaces.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/conference_management/service.py | update | add deterministic conference readiness FSM |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_conference_management_readiness | classify event lifecycle state | tenant_id, conference_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: DRAFT, PREPARING, READY, BLOCKED
+- classifications: READY_FOR_REVIEW, NEEDS_EVENT_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_PLAN, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_PUBLISH_EVENT, AUTO_OVERRIDE_CAPACITY
+- required evidence: schedule_context, venue_context, compliance_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic output
+- tenant scope in output: required
+- cross-tenant prevention: no shared event state
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_conference_import | import validation |
+| test_conference_tenant_fail_closed | tenant guard |
+| test_conference_fsm_determinism | deterministic transitions |
+| test_conference_forbidden_actions | anti-autonomy |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: contracts_legal_repository
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: service_contract_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic legal contract review readiness.
+- What this module will NOT do: no legal execution, no document mutation.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/contracts_legal_repository/service.py | update | add deterministic legal contract readiness logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_contracts_legal_repository_readiness | classify legal review state | tenant_id, legal_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: DRAFT, REVIEW_PENDING, READY, BLOCKED
+- classifications: READY_FOR_LEGAL_REVIEW, NEEDS_DOCUMENT_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_CONTRACT, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_EXECUTE_CONTRACT, AUTO_APPROVE_TERMS
+- required evidence: clause_context, signature_context, jurisdiction_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic output
+- tenant scope in output: required
+- cross-tenant prevention: no cross-tenant document access
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_legal_repo_import | import validation |
+| test_legal_repo_tenant_fail_closed | tenant guard |
+| test_legal_repo_deterministic_readiness | deterministic behavior |
+| test_legal_repo_forbidden_actions | anti-autonomy |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: counseling_case_management
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: service_contract_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic case triage/readiness logic.
+- What this module will NOT do: no autonomous case closure, no messaging/provider calls.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/counseling_case_management/service.py | update | add deterministic counseling case logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_counseling_case_management_readiness | classify case workflow state | tenant_id, case_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: INTAKE, UNDER_REVIEW, READY, BLOCKED
+- classifications: READY_FOR_CASE_REVIEW, NEEDS_CASE_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_CASE, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_CLOSE_CASE, AUTO_ASSIGN_INTERVENTION
+- required evidence: intake_context, consent_context, history_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic output
+- tenant scope in output: required
+- cross-tenant prevention: strict tenant case boundary
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_counseling_case_import | import validation |
+| test_counseling_case_tenant_fail_closed | tenant guard |
+| test_counseling_case_deterministic_logic | deterministic output |
+| test_counseling_case_forbidden_actions | anti-autonomy |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: developer_portal
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: service_contract_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic onboarding/readiness policy logic.
+- What this module will NOT do: no API key issuance, no platform mutation.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/developer_portal/service.py | update | add deterministic developer readiness logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_developer_portal_readiness | classify onboarding state | tenant_id, portal_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: NEW, VERIFIED, READY, BLOCKED
+- classifications: READY_FOR_ONBOARDING_REVIEW, NEEDS_PROFILE_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_PROFILE, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_ISSUE_KEYS, AUTO_APPROVE_ACCESS
+- required evidence: profile_context, policy_ack_context, compliance_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic output
+- tenant scope in output: required
+- cross-tenant prevention: no cross-tenant account mapping
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_developer_portal_import | import validation |
+| test_developer_portal_tenant_fail_closed | tenant guard |
+| test_developer_portal_deterministic_logic | deterministic output |
+| test_developer_portal_forbidden_actions | anti-autonomy |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: federation_management
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: FSM_workflow_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic federation state transitions and policy checks.
+- What this module will NOT do: no identity provider calls or autonomous sync execution.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/federation_management/service.py | update | add deterministic federation FSM logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_federation_management_readiness | classify federation readiness state | tenant_id, federation_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: CONFIG_PENDING, VALIDATING, READY, BLOCKED
+- classifications: READY_FOR_FEDERATION_REVIEW, NEEDS_CONFIG_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_CONFIG, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_BIND_FEDERATION, AUTO_OVERRIDE_POLICY
+- required evidence: idp_context, mapping_context, policy_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic output
+- tenant scope in output: required
+- cross-tenant prevention: no cross-tenant federation linkage
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_federation_import | import validation |
+| test_federation_tenant_fail_closed | tenant guard |
+| test_federation_fsm_determinism | deterministic transitions |
+| test_federation_forbidden_actions | anti-autonomy/provider boundary |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: health_services
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: FSM_workflow_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic triage/readiness and escalation rules.
+- What this module will NOT do: no medical action execution, no provider integration.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/health_services/service.py | update | add deterministic health service readiness logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_health_services_readiness | classify triage/review state | tenant_id, health_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: INTAKE, REVIEW, READY, BLOCKED
+- classifications: READY_FOR_SERVICE_REVIEW, NEEDS_CLINICAL_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_CASE, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_DIAGNOSIS, AUTO_DISPATCH
+- required evidence: case_context, consent_context, compliance_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic output
+- tenant scope in output: required
+- cross-tenant prevention: no cross-tenant patient blending
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_health_services_import | import validation |
+| test_health_services_tenant_fail_closed | tenant guard |
+| test_health_services_deterministic_logic | deterministic output |
+| test_health_services_forbidden_actions | anti-autonomy/provider boundary |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: library_circulation
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: FSM_workflow_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic circulation lifecycle and hold/review readiness.
+- What this module will NOT do: no autonomous checkout override or account mutation.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/library_circulation/service.py | update | add deterministic circulation logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_library_circulation_readiness | classify circulation state | tenant_id, circulation_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: AVAILABLE, HOLD_PENDING, CHECKOUT_REVIEW, BLOCKED
+- classifications: READY_FOR_CIRCULATION_REVIEW, NEEDS_ACCOUNT_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_ACCOUNT, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_CHECKOUT_OVERRIDE, AUTO_FINE_OVERRIDE
+- required evidence: account_context, hold_context, policy_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic output
+- tenant scope in output: required
+- cross-tenant prevention: no shared patron records
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_library_circulation_import | import validation |
+| test_library_circulation_tenant_fail_closed | tenant guard |
+| test_library_circulation_fsm_determinism | deterministic transitions |
+| test_library_circulation_forbidden_actions | anti-autonomy |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: local_user_management
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: tenant_guard_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic user lifecycle/readiness logic with strict tenant isolation.
+- What this module will NOT do: no autonomous provisioning, no cross-tenant identity operations.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/local_user_management/service.py | update | add deterministic user state and tenant safety logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_local_user_management_readiness | classify user lifecycle state | tenant_id, user_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: NEW, VERIFIED, READY, BLOCKED
+- classifications: READY_FOR_USER_REVIEW, NEEDS_IDENTITY_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_USER, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_PROVISION_PRIVILEGED_USER, AUTO_CROSS_TENANT_LINK
+- required evidence: identity_context, policy_context, access_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic output
+- tenant scope in output: required
+- cross-tenant prevention: hard deny for cross-tenant references
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_local_user_management_import | import validation |
+| test_local_user_management_tenant_fail_closed | strict tenant guard |
+| test_local_user_management_deterministic_logic | deterministic output |
+| test_local_user_management_cross_tenant_forbidden | anti-cross-tenant boundary |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: research_grants
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: FSM_workflow_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic grant workflow readiness/risk classification.
+- What this module will NOT do: no autonomous award decisions, no fund disbursement actions.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/research_grants/service.py | update | add deterministic grant workflow logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_research_grants_readiness | classify grant review state | tenant_id, grant_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: DRAFT, UNDER_REVIEW, READY, BLOCKED
+- classifications: READY_FOR_GRANT_REVIEW, NEEDS_APPLICATION_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_GRANT, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_AWARD_GRANT, AUTO_APPROVE_COMPLIANCE
+- required evidence: proposal_context, budget_context, compliance_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic output
+- tenant scope in output: required
+- cross-tenant prevention: no cross-tenant grant mixing
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_research_grants_import | import validation |
+| test_research_grants_tenant_fail_closed | tenant guard |
+| test_research_grants_fsm_determinism | deterministic transitions |
+| test_research_grants_forbidden_actions | anti-autonomy boundary |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Module: student_ai_tutor
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-023.0
+- Existing L2 evidence: deterministic contract skeleton and tenant guard
+- Primary gap: FSM_workflow_missing
+
+#### Intended L3 Scope
+- What this module will do in A-026.10-RUNTIME: deterministic tutoring readiness and human-review routing logic.
+- What this module will NOT do: no model/provider execution, no autonomous tutoring actions.
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/student_ai_tutor/service.py | update | add deterministic tutor readiness/risk logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_student_ai_tutor_readiness | classify tutoring readiness state | tenant_id, tutor_payload | status/classification/risk/next_step/actions/evidence | yes | yes |
+
+#### Domain Logic
+- statuses: INTAKE, PREPARED, REVIEW_REQUIRED, BLOCKED
+- classifications: READY_FOR_TUTOR_REVIEW, NEEDS_LEARNING_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness levels: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_CONTEXT, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_GENERATE_LEARNING_PLAN, AUTO_EXECUTE_PROVIDER_CALL
+- required evidence: learner_context, policy_context, consent_context
+
+#### Tenant Safety
+- invalid tenant behavior: fail-closed
+- valid tenant behavior: deterministic output
+- tenant scope in output: required
+- cross-tenant prevention: no learner profile blending
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_student_ai_tutor_import | import validation |
+| test_student_ai_tutor_tenant_fail_closed | tenant guard |
+| test_student_ai_tutor_deterministic_logic | deterministic output |
+| test_student_ai_tutor_provider_boundary | no provider call/no autonomy |
+
+#### Anti-Inflation Boundary
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission
+- no autonomous execution
+- no external provider call
+- L3 only
+
+### Expected A-026.10 Runtime Files
+
+| File | Expected Action | Reason |
+|---|---|---|
+| backend/app/modules/accreditation_compliance/service.py | update | deterministic L3 accreditation logic |
+| backend/app/modules/ai_cost_governance/service.py | update | deterministic L3 cost governance logic |
+| backend/app/modules/ai_plagiarism/service.py | update | deterministic L3 plagiarism logic |
+| backend/app/modules/conference_management/service.py | update | deterministic L3 conference logic |
+| backend/app/modules/contracts_legal_repository/service.py | update | deterministic L3 legal contract logic |
+| backend/app/modules/counseling_case_management/service.py | update | deterministic L3 case logic |
+| backend/app/modules/developer_portal/service.py | update | deterministic L3 developer readiness logic |
+| backend/app/modules/federation_management/service.py | update | deterministic L3 federation FSM logic |
+| backend/app/modules/health_services/service.py | update | deterministic L3 health service logic |
+| backend/app/modules/library_circulation/service.py | update | deterministic L3 circulation logic |
+| backend/app/modules/local_user_management/service.py | update | deterministic L3 tenant-safe user logic |
+| backend/app/modules/research_grants/service.py | update | deterministic L3 grants logic |
+| backend/app/modules/student_ai_tutor/service.py | update | deterministic L3 tutor readiness logic |
+| backend/tests/test_a02610_final_l2_to_l3_deterministic_service_logic.py | add | targeted final L2->L3 test suite |
+| SBS_UB.md | update in runtime | tracker reconciliation after runtime evidence |
+| SBS_UB_150_MODULE_NORMALIZATION.md | update in runtime | row-level L2->L3 movement after PASS validation |
+| A-026.10-RUNTIME-FINAL_L2_TO_L3_DETERMINISTIC_SERVICE_LOGIC_REPORT.md | add in runtime | authoritative runtime evidence report |
+
+### A-026.10 Targeted Test Plan
+
+Preferred test file:
+- backend/tests/test_a02610_final_l2_to_l3_deterministic_service_logic.py
+
+Test groups:
+1. import validation
+2. tenant fail-closed validation
+3. deterministic output validation
+4. classification/status/risk logic
+5. required evidence validation
+6. allowed/forbidden action validation
+7. provider boundary validation where relevant
+8. anti-inflation validation
+9. no API/frontend/Brain/KPI behavior
+
+Expected test count:
+- 80-140 tests acceptable for all 13 modules
+
+Validation mode:
+- fast direct Docker validation mode
+
+Preferred fast Docker command:
+
+```bash
+cd /home/sbs/AI
+
+docker run --rm \
+   --env-file /home/sbs/AI/infra/.env \
+   -v /home/sbs/AI/backend/app:/app/app \
+   -v /home/sbs/AI/backend/tests:/app/tests \
+   -w /app \
+   ai-backend-tests:latest \
+   python -m pytest -q \
+   tests/test_a02610_final_l2_to_l3_deterministic_service_logic.py \
+   -o addopts='' \
+   --no-cov \
+   -rA \
+   --durations=30
+```
+
+Continuity target:
+- include A-026.3 through A-026.10 suites
+
+### Expected Maturity Movement
+
+Current (spec-time, unchanged):
+- L0=0
+- L1=0
+- L2=13
+- L3=42
+- L4=68
+- L5=25
+- L6=2
+
+If Option A (N=13) passes in runtime:
+- L0=0
+- L1=0
+- L2=0
+- L3=55
+- L4=68
+- L5=25
+- L6=2
+- total=150
+- maturity_arithmetic_check=PASS
+
+Spec-phase rule:
+- no maturity movement in A-026.10-SPEC
+
+### Anti-Inflation Boundaries
+
+- no runtime code changes in this spec
+- no test implementation in this spec
+- no API/router/schema/frontend additions
+- no DB migrations/mutations
+- no KPI/Brain/autonomy claims
+- no L4/L5/L6 overclaim
+
+### Definition of Done for Future A-026.10-RUNTIME
+
+- remaining L2 extraction stays at 13 unless matrix changes are explicitly approved
+- selected 13 modules are implemented with deterministic L3 service logic and tenant fail-closed safety
+- targeted suite passes in fast Docker mode
+- continuity suite (A-026.3 through A-026.10) passes
+- no API/frontend/KPI/Brain/autonomy overclaim appears in runtime artifacts
+- SBS_UB.md and matrix rows update only after implementation plus validation
+
 - VERIFICATION_PENDING must be used where direct evidence is not yet attached.
 - This file does not replace SBS_UB.md authority; it supports execution planning only.
