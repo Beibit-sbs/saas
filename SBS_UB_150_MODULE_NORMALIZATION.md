@@ -1237,9 +1237,137 @@ If N=6:
 
 **Next action**: A-026.7-SPEC
 
+## A-026.7-SPEC — Next L4→L5 Evidence / Governance / KPI / Brain-Readiness Batch Specification
+
+**Status**: SPEC ONLY (planning phase, no runtime code)
+
+**Purpose**: select a bounded current-L4 batch for future A-026.7-RUNTIME and define auditable L5-readiness contracts without runtime execution claims, autonomous actions, or fake Brain/KPI inflation.
+
+### Source-of-Truth Snapshot (A-026.7-SPEC)
+
+- **Authoritative tracker**: SBS_UB.md
+- **Reconciled matrix**: SBS_UB_150_MODULE_NORMALIZATION.md
+- **Current baseline metrics**: L0=0, L1=16, L2=13, L3=26, L4=68, L5=25, L6=2, total=150 (post-A-026.6-RUNTIME)
+- **Extension metrics**: extension_total_count=25, total_tracked_modules=175, separation=PASS
+- **Last completed action**: A-026.6-RUNTIME + A-026.6.B1 reconciliation
+- **Current action**: A-026.7-SPEC (this planning phase)
+- **Next action in tracker**: A-026.7-RUNTIME
+
+### L4 Inventory (A-026.7-SPEC)
+
+Current L4 modules extracted from baseline matrix after A-026.6-RUNTIME:
+
+- **Expected L4 count**: 68 (verified; 4 modules moved L4→L5 in A-026.6)
+- **Found L4 count**: 68 ✓
+- **Status**: PASS
+
+### Selected A-026.7 Batch
+
+**Selected batch size**: 4 modules (high-value L4→L5-readiness candidates)
+
+| # | Module | Domain | L4 Evidence Source | Primary Gap | Why Selected | Target | Risk |
+|---:|---|---|---|---|---|---:|---|
+| 1 | **attendance** | Student & Campus Life | A-024.4 | KPI_evidence_or_Brain_mapping_missing | Highest operational leverage for academic risk/governance; evidence lineage clear; deterministic governance boundary. | L5-readiness | medium |
+| 2 | **observability** | Integrations & Platform | A-024.3 | KPI_evidence_or_Brain_mapping_missing | Strong platform health signal candidate; observability metrics map clearly to evidence lineage; infrastructure governance with high auditability. | L5-readiness | medium |
+| 3 | **student_portal** | Student & Campus Life | A-024.4 | KPI_evidence_or_Brain_mapping_missing | Product-core visibility and governance; student-facing requires clear evidence lineage for user-impact decisions; deterministic readiness semantics. | L5-readiness | medium |
+| 4 | **timetable_change_proposal** | Planned Expansion | A-026.5-RUNTIME | KPI_evidence_or_Brain_mapping_missing | Complements A-026.6 governance work; full timetable governance envelope with prior L4 approval queue work; deterministic proposal-to-evidence chain. | L5-readiness | medium |
+
+### A-026.7 L5-Readiness Standard
+
+Each selected module must deliver:
+
+1. **Evidence Lineage Contract**: Explicit evidence sources from L4 visibility; deterministic evidence notes; completeness status (COMPLETE, PARTIAL, PENDING); no fake data.
+2. **Governance Mapping**: Decision-support category; human-review owner; escalation boundary; allowed/forbidden action lists.
+3. **KPI-Readiness Boundary**: KPI category; completeness status; confidence level; NO fake KPI computation; "READINESS"/"CANDIDATE" language only, not "COMPUTED"/"DERIVED".
+4. **Brain-Readiness Boundary**: Signal candidate (YES/NO, deterministic only); execution=FORBIDDEN; no L6 claim.
+5. **Tenant/Audit/Security**: Tenant-scoped evidence; fail-closed tenant handling; permission-aware access; audit_evidence_notes; human_review_required=true.
+6. **Tests** (per module): Evidence contract, governance mapping, KPI boundary, Brain boundary, tenant/security, anti-inflation validation.
+
+### Expected Runtime Files (A-026.7)
+
+*Note: This specification does NOT create these files; runtime implementation will.*
+
+| File | Action | Purpose |
+|---|---|---|
+| `backend/app/modules/attendance/service.py` | augment | Add L5-readiness function and safety flags |
+| `backend/app/modules/attendance/schemas.py` | augment | Add L5-readiness response schema |
+| `backend/app/modules/attendance/router.py` | add/augment | Add L5-readiness GET route with permission gate |
+| `backend/app/modules/observability/service.py` | augment | Add L5-readiness governance mapping |
+| `backend/app/modules/observability/schemas.py` | augment | Add L5-readiness response schema |
+| `backend/app/modules/observability/router.py` | add/augment | Add L5-readiness GET route with permission gate |
+| `backend/app/modules/student_portal/service.py` | augment | Add L5-readiness evidence/governance function |
+| `backend/app/modules/student_portal/schemas.py` | augment | Add L5-readiness response schema |
+| `backend/app/modules/student_portal/router.py` | add/augment | Add L5-readiness GET route with permission gate |
+| `backend/app/modules/timetable_change_proposal/service.py` | augment | Add L5-readiness governance mapping |
+| `backend/app/modules/timetable_change_proposal/schemas.py` | augment | Add L5-readiness response schema |
+| `backend/app/modules/timetable_change_proposal/router.py` | add/augment | Add L5-readiness GET route with permission gate |
+| `backend/app/main.py` | update | Register L5-readiness routes |
+| `backend/tests/test_a0267_l4_to_l5_evidence_governance_readiness.py` | add | Targeted L5-readiness contract tests (32-50 tests) |
+| `A-026.7-SPEC-NEXT_L4_TO_L5_EVIDENCE_GOVERNANCE_READINESS_BATCH_SPECIFICATION.md` | add | Full spec document (deliverable) |
+
+### A-026.7 Targeted Test Plan
+
+**Test file**: `backend/tests/test_a0267_l4_to_l5_evidence_governance_readiness.py`
+
+**Test groups** (per module):
+1. Import/registration validation (1-2 tests)
+2. Evidence lineage contract (2-3 tests)
+3. Governance mapping (2-3 tests)
+4. KPI-readiness boundary (1-2 tests)
+5. Brain-readiness boundary (2-3 tests)
+6. Tenant/security (3-4 tests)
+7. Audit/evidence trail (1-2 tests)
+8. Anti-inflation (2-3 tests)
+
+**Expected test count**: 32-50 targeted tests (4 modules × 8-12 tests per module)
+
+**Continuity validation**: A-026.3+A-026.4+A-026.5+A-026.6+A-026.7 combined pytest (expected ~240+ PASS)
+
+### Expected Maturity Movement (A-026.7)
+
+**No movement in this SPEC phase.**
+
+If A-026.7-RUNTIME succeeds:
+
+```
+Before: L0=0, L1=16, L2=13, L3=26, L4=68, L5=25, L6=2, total=150
+After:  L0=0, L1=16, L2=13, L3=26, L4=64, L5=29, L6=2, total=150
+Movement: L4: 68→64 (-4), L5: 25→29 (+4)
+Arithmetic: PASS
+```
+
+### Anti-Inflation Boundaries (A-026.7-SPEC)
+
+This specification introduces:
+- ✓ NO runtime code
+- ✓ NO maturity movement
+- ✓ NO fake governance/KPI claims
+- ✓ NO autonomous execution paths
+- ✓ NO Brain execution
+- ✓ NO L6 claims
+- ✓ NO frontend pages
+- ✓ NO database mutations
+- ✓ NO provider calls
+
+### Definition of Done (A-026.7-SPEC)
+
+- ✓ Source-of-truth snapshot confirmed
+- ✓ L4 inventory extracted and scored
+- ✓ 4 modules selected with high L5-readiness fit
+- ✓ L5-readiness standard defined
+- ✓ Deep per-module specifications written with governance/KPI/Brain boundaries
+- ✓ Test plan defined (32-50 targeted tests)
+- ✓ Runtime files planned
+- ✓ Expected maturity movement documented
+- ✓ Security/SaaS boundaries defined
+- ✓ Anti-inflation boundaries confirmed
+- ✓ Full spec document delivered: A-026.7-SPEC-NEXT_L4_TO_L5_EVIDENCE_GOVERNANCE_READINESS_BATCH_SPECIFICATION.md
+
+---
+
 ## A-026.6-SPEC - L4→L5 Evidence / Governance / KPI / Brain-Readiness Batch Specification
 
-**Status**: SPEC ONLY
+**Status**: SPEC ONLY (historical; A-026.6-RUNTIME completed)
 
 **Purpose**: select a bounded current-L4 batch for future A-026.6-RUNTIME and define auditable L5-readiness contracts without runtime execution claims, autonomous actions, or fake Brain/KPI inflation.
 

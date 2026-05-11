@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-026.7-SPEC
-- current_stage: A-026.6.B1 complete / runtime evidence reconciled for A-026.6
-- last_completed_action_id: A-026.6.B1
-- next_action_id: A-026.7-SPEC
-- updated_at: 2026-05-11 (A-026.6-RUNTIME complete: 4 modules L4→L5, 58 targeted + 218 continuity tests PASS)
+- status: ready_for_A-026.7-RUNTIME
+- current_stage: A-026.7-SPEC complete / batch selected, L5-readiness standard defined, deep specs written
+- last_completed_action_id: A-026.7-SPEC
+- next_action_id: A-026.7-RUNTIME
+- updated_at: 2026-05-12 (A-026.7-SPEC complete: 4 modules selected, L5-readiness specs delivered, 32-50 targeted tests planned)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=16, L2=13, L3=26, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS
@@ -75,6 +75,20 @@
     - git_diff_check: CLEAN
     - a0266_authoritative_verdict: AUTHORITATIVE PASS after B1 evidence reconciliation
     - next_action_id: A-026.7-SPEC
+- A-026.7-SPEC execution block:
+    - l4_inventory_verified: 68 current L4 modules in SBS_UB_150_MODULE_NORMALIZATION.md (PASS)
+    - selected_batch: attendance, observability, student_portal, timetable_change_proposal
+    - selected_batch_size: 4
+    - mode: spec_only_no_runtime_changes
+    - maturity_movement: none in spec; expected runtime formula L4=68-N, L5=25+N; if N=4 then L4=64 and L5=29
+    - l5_readiness_standard: evidence_lineage + governance_mapping + kpi_readiness_boundary + brain_readiness_boundary (candidate only, no execution) + tenant/audit/security controls + 6 test groups
+    - modules_high_value_criteria: all 4 selected have KPI_evidence_or_Brain_mapping_missing gap; all evidence-sourced from A-024.3-4/A-026.5; all have high priority, medium risk; all deterministic and governable
+    - anti_inflation_rule: no fake Brain signal, no fake KPI values, no autonomous action, no L6 claim, no runtime code in spec
+    - test_plan: 32-50 targeted tests (evidence/governance/KPI/Brain/tenant/security/anti-inflation groups) + continuity validation with A-026.3-6 combined
+    - spec_deliverables: deep per-module specs with intended L5 scope, governance mapping, KPI boundary, Brain boundary, contract fields, test list
+    - runtime_readiness: A-026.7-RUNTIME may proceed after approval
+    - verdict: SPEC_COMPLETE_READY_FOR_RUNTIME
+    - next_action_id: A-026.7-RUNTIME
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
