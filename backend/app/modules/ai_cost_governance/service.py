@@ -88,3 +88,97 @@ def list_policies(
     if status:
         rows = [row for row in rows if row.get("status") == status]
     return rows
+
+
+def evaluate_ai_cost_governance_readiness(
+    tenant_id: int,
+    cost_payload: dict | None = None,
+) -> dict:
+    """Return deterministic L3 readiness classification for AI cost governance."""
+    _validate_tenant(tenant_id)
+    payload = cost_payload or {}
+
+    required_evidence = [
+        "policy_id",
+        "budget_limit",
+        "period_usage",
+        "governance_owner",
+    ]
+    missing_evidence = [key for key in required_evidence if payload.get(key) in (None, "")]
+
+    threshold_breached = bool(payload.get("threshold_breached"))
+    usage_evidence_gap = bool(payload.get("usage_evidence_gap"))
+
+    if missing_evidence:
+        classification = "AI_COST_INPUT_INCOMPLETE"
+        evaluation_status = "INCOMPLETE"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_step = "collect_missing_cost_governance_evidence"
+        rationale = "Required cost governance evidence is incomplete."
+    elif threshold_breached:
+        classification = "BUDGET_THRESHOLD_REVIEW_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "route_threshold_breach_to_manual_governance_review"
+        rationale = "Budget threshold breach requires manual policy review."
+    elif usage_evidence_gap:
+        classification = "USAGE_EVIDENCE_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "collect_usage_evidence_before_policy_review"
+        rationale = "Usage evidence gap blocks deterministic review closure."
+    elif payload.get("governance_ready"):
+        classification = "READY_FOR_MANUAL_COST_GOVERNANCE_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "submit_for_manual_cost_governance_review"
+        rationale = "Cost governance inputs are complete for human review."
+    else:
+        classification = "READY_FOR_COST_POLICY_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "start_manual_cost_policy_review"
+        rationale = "Policy data is sufficient for bounded deterministic review."
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "ai_cost_governance",
+        "maturity_level": "L3",
+        "evaluation_status": evaluation_status,
+        "classification": classification,
+        "readiness_level": readiness_level,
+        "risk_level": risk_level,
+        "required_evidence": required_evidence,
+        "missing_evidence": missing_evidence,
+        "allowed_actions": [
+            "REVIEW_COST_POLICY",
+            "REQUEST_EVIDENCE",
+            "ESCALATE_REVIEW",
+        ],
+        "forbidden_actions": [
+            "AUTO_ENFORCE_COST_POLICY",
+            "AUTO_SUSPEND_AI_ACCESS",
+            "AUTO_CHANGE_BUDGET_LIMITS",
+        ],
+        "human_review_required": True,
+        "next_recommended_step": next_step,
+        "rationale_notes": rationale,
+        "safety_flags": {
+            "tenant_scoped": True,
+            "deterministic": True,
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_kpi_claim": True,
+            "no_brain_claim": True,
+            "no_autonomous_execution": True,
+            "no_external_provider_call": True,
+            "no_l4_claim": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+        },
+    }

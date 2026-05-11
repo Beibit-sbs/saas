@@ -131,3 +131,97 @@ def list_cases(
     if student_id:
         rows = [r for r in rows if r.get("student_id") == student_id]
     return rows
+
+
+def evaluate_counseling_case_readiness(
+    tenant_id: int,
+    case_payload: dict | None = None,
+) -> dict:
+    """Return deterministic L3 readiness classification for counseling case flows."""
+    _validate_tenant(tenant_id)
+    payload = case_payload or {}
+
+    required_evidence = [
+        "case_id",
+        "student_id",
+        "consent_context",
+        "risk_context",
+    ]
+    missing_evidence = [key for key in required_evidence if not payload.get(key)]
+
+    risk_escalation = bool(payload.get("risk_escalation_flag"))
+    consent_gap = bool(payload.get("consent_evidence_missing"))
+
+    if missing_evidence:
+        classification = "COUNSELING_INPUT_INCOMPLETE"
+        evaluation_status = "INCOMPLETE"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_step = "collect_missing_case_evidence"
+        rationale = "Counseling case evidence is incomplete."
+    elif risk_escalation:
+        classification = "RISK_ESCALATION_REVIEW_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "escalate_case_to_manual_counselor_review"
+        rationale = "Risk escalation requires immediate human counselor review."
+    elif consent_gap:
+        classification = "CONSENT_EVIDENCE_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "collect_consent_evidence_before_triage"
+        rationale = "Consent evidence is required for compliant case handling."
+    elif payload.get("manual_triage_ready"):
+        classification = "READY_FOR_MANUAL_CASE_TRIAGE"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "route_case_for_manual_triage"
+        rationale = "Case packet is ready for bounded human triage."
+    else:
+        classification = "READY_FOR_COUNSELOR_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "start_manual_counselor_review"
+        rationale = "Case evidence is sufficient for counselor review."
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "counseling_case_management",
+        "maturity_level": "L3",
+        "evaluation_status": evaluation_status,
+        "classification": classification,
+        "readiness_level": readiness_level,
+        "risk_level": risk_level,
+        "required_evidence": required_evidence,
+        "missing_evidence": missing_evidence,
+        "allowed_actions": [
+            "REVIEW_CASE",
+            "REQUEST_EVIDENCE",
+            "ESCALATE_REVIEW",
+        ],
+        "forbidden_actions": [
+            "AUTO_DIAGNOSIS",
+            "AUTO_TREATMENT_DECISION",
+            "AUTO_DISCIPLINARY_ESCALATION",
+        ],
+        "human_review_required": True,
+        "next_recommended_step": next_step,
+        "rationale_notes": rationale,
+        "safety_flags": {
+            "tenant_scoped": True,
+            "deterministic": True,
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_kpi_claim": True,
+            "no_brain_claim": True,
+            "no_autonomous_execution": True,
+            "no_external_provider_call": True,
+            "no_l4_claim": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+        },
+    }

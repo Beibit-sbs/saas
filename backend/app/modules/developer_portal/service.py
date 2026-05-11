@@ -60,3 +60,97 @@ def list_portal_channels(tenant_id: int, *, status: str | None = None) -> list[d
     if status:
         rows = [row for row in rows if row.get("status") == status]
     return rows
+
+
+def evaluate_developer_portal_readiness(
+    tenant_id: int,
+    portal_payload: dict | None = None,
+) -> dict:
+    """Return deterministic L3 readiness classification for developer portal enablement."""
+    _validate_tenant(tenant_id)
+    payload = portal_payload or {}
+
+    required_evidence = [
+        "channel_id",
+        "api_access_scope",
+        "security_review_context",
+        "governance_owner",
+    ]
+    missing_evidence = [key for key in required_evidence if not payload.get(key)]
+
+    api_access_gap = bool(payload.get("api_access_evidence_missing"))
+    security_review_required = bool(payload.get("security_review_required"))
+
+    if missing_evidence:
+        classification = "DEVELOPER_PORTAL_INPUT_INCOMPLETE"
+        evaluation_status = "INCOMPLETE"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_step = "collect_missing_developer_portal_evidence"
+        rationale = "Developer portal enablement evidence is incomplete."
+    elif api_access_gap:
+        classification = "API_ACCESS_EVIDENCE_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "request_api_access_evidence_for_manual_review"
+        rationale = "API access evidence is required before enablement review."
+    elif security_review_required:
+        classification = "SECURITY_REVIEW_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "route_portal_request_to_manual_security_review"
+        rationale = "Security review must complete before portal enablement."
+    elif payload.get("enablement_ready"):
+        classification = "READY_FOR_MANUAL_DEVELOPER_ENABLEMENT"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "route_for_manual_developer_enablement"
+        rationale = "Evidence is complete for bounded human enablement."
+    else:
+        classification = "READY_FOR_ONBOARDING_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "start_manual_onboarding_review"
+        rationale = "Portal onboarding evidence supports manual review."
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "developer_portal",
+        "maturity_level": "L3",
+        "evaluation_status": evaluation_status,
+        "classification": classification,
+        "readiness_level": readiness_level,
+        "risk_level": risk_level,
+        "required_evidence": required_evidence,
+        "missing_evidence": missing_evidence,
+        "allowed_actions": [
+            "REVIEW_PROFILE",
+            "REQUEST_EVIDENCE",
+            "ESCALATE_REVIEW",
+        ],
+        "forbidden_actions": [
+            "AUTO_GRANT_API_ACCESS",
+            "AUTO_CREATE_PRODUCTION_TOKEN",
+            "AUTO_BYPASS_SECURITY_REVIEW",
+        ],
+        "human_review_required": True,
+        "next_recommended_step": next_step,
+        "rationale_notes": rationale,
+        "safety_flags": {
+            "tenant_scoped": True,
+            "deterministic": True,
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_kpi_claim": True,
+            "no_brain_claim": True,
+            "no_autonomous_execution": True,
+            "no_external_provider_call": True,
+            "no_l4_claim": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+        },
+    }

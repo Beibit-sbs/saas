@@ -112,3 +112,97 @@ def list_sessions(tenant_id: int, *, student_id: str | None = None) -> list[dict
     if student_id:
         rows = [r for r in rows if r.get("student_id") == student_id]
     return rows
+
+
+def evaluate_student_ai_tutor_readiness(
+    tenant_id: int,
+    tutor_payload: dict | None = None,
+) -> dict:
+    """Return deterministic L3 readiness classification for student AI tutor sessions."""
+    _validate_tenant(tenant_id)
+    payload = tutor_payload or {}
+
+    required_evidence = [
+        "session_id",
+        "student_id",
+        "topic",
+        "support_context",
+    ]
+    missing_evidence = [key for key in required_evidence if not payload.get(key)]
+
+    struggle_escalation = bool(payload.get("struggle_escalation_flag"))
+    safety_gap = bool(payload.get("safety_evidence_missing"))
+
+    if missing_evidence:
+        classification = "TUTOR_SESSION_INPUT_INCOMPLETE"
+        evaluation_status = "INCOMPLETE"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_step = "collect_missing_tutor_session_evidence"
+        rationale = "Tutor session evidence is incomplete."
+    elif struggle_escalation:
+        classification = "STUDENT_SUPPORT_ESCALATION_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "escalate_to_manual_student_support_review"
+        rationale = "Struggle escalation requires human support intervention."
+    elif safety_gap:
+        classification = "TUTOR_SAFETY_EVIDENCE_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "collect_tutor_safety_evidence_before_review"
+        rationale = "Safety evidence gap blocks deterministic review closure."
+    elif payload.get("manual_review_ready"):
+        classification = "READY_FOR_MANUAL_TUTOR_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "route_session_for_manual_tutor_review"
+        rationale = "Session packet is complete for bounded manual review."
+    else:
+        classification = "READY_FOR_TUTOR_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "start_manual_tutor_review"
+        rationale = "Tutor session evidence is sufficient for deterministic review."
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "student_ai_tutor",
+        "maturity_level": "L3",
+        "evaluation_status": evaluation_status,
+        "classification": classification,
+        "readiness_level": readiness_level,
+        "risk_level": risk_level,
+        "required_evidence": required_evidence,
+        "missing_evidence": missing_evidence,
+        "allowed_actions": [
+            "REVIEW_SESSION",
+            "REQUEST_EVIDENCE",
+            "ESCALATE_REVIEW",
+        ],
+        "forbidden_actions": [
+            "AUTO_DECIDE_INTERVENTION",
+            "AUTO_DISCIPLINARY_LABEL",
+            "AUTO_CLOSE_STRUGGLE_CASE",
+        ],
+        "human_review_required": True,
+        "next_recommended_step": next_step,
+        "rationale_notes": rationale,
+        "safety_flags": {
+            "tenant_scoped": True,
+            "deterministic": True,
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_kpi_claim": True,
+            "no_brain_claim": True,
+            "no_autonomous_execution": True,
+            "no_external_provider_call": True,
+            "no_l4_claim": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+        },
+    }

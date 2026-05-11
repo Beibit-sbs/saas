@@ -141,3 +141,97 @@ def list_loans(
     if student_id:
         rows = [r for r in rows if r.get("student_id") == student_id]
     return rows
+
+
+def evaluate_library_circulation_readiness(
+    tenant_id: int,
+    circulation_payload: dict | None = None,
+) -> dict:
+    """Return deterministic L3 readiness classification for circulation workflows."""
+    _validate_tenant(tenant_id)
+    payload = circulation_payload or {}
+
+    required_evidence = [
+        "loan_id",
+        "item_id",
+        "student_id",
+        "due_date",
+    ]
+    missing_evidence = [key for key in required_evidence if not payload.get(key)]
+
+    overdue_risk = bool(payload.get("overdue_risk"))
+    return_gap = bool(payload.get("return_evidence_gap"))
+
+    if missing_evidence:
+        classification = "CIRCULATION_INPUT_INCOMPLETE"
+        evaluation_status = "INCOMPLETE"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_step = "collect_missing_circulation_evidence"
+        rationale = "Circulation evidence is incomplete."
+    elif overdue_risk:
+        classification = "OVERDUE_RISK_REVIEW_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "route_overdue_case_for_manual_review"
+        rationale = "Overdue risk requires manual circulation review."
+    elif return_gap:
+        classification = "RETURN_EVIDENCE_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "collect_return_evidence_before_closure"
+        rationale = "Return evidence gap blocks deterministic closure."
+    elif payload.get("manual_review_ready"):
+        classification = "READY_FOR_MANUAL_CIRCULATION_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "submit_loan_for_manual_review"
+        rationale = "Loan evidence is complete for bounded manual review."
+    else:
+        classification = "READY_FOR_CIRCULATION_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "start_manual_circulation_review"
+        rationale = "Circulation payload is sufficient for deterministic review."
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "library_circulation",
+        "maturity_level": "L3",
+        "evaluation_status": evaluation_status,
+        "classification": classification,
+        "readiness_level": readiness_level,
+        "risk_level": risk_level,
+        "required_evidence": required_evidence,
+        "missing_evidence": missing_evidence,
+        "allowed_actions": [
+            "REVIEW_LOAN",
+            "REQUEST_EVIDENCE",
+            "ESCALATE_REVIEW",
+        ],
+        "forbidden_actions": [
+            "AUTO_FINE_STUDENT",
+            "AUTO_BLOCK_BORROWING",
+            "AUTO_CLOSE_OVERDUE_CASE",
+        ],
+        "human_review_required": True,
+        "next_recommended_step": next_step,
+        "rationale_notes": rationale,
+        "safety_flags": {
+            "tenant_scoped": True,
+            "deterministic": True,
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_kpi_claim": True,
+            "no_brain_claim": True,
+            "no_autonomous_execution": True,
+            "no_external_provider_call": True,
+            "no_l4_claim": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+        },
+    }

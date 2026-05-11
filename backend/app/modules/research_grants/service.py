@@ -186,3 +186,97 @@ def list_grants(
     if pi_id:
         rows = [r for r in rows if r.get("pi_id") == pi_id]
     return rows
+
+
+def evaluate_research_grants_readiness(
+    tenant_id: int,
+    grant_payload: dict | None = None,
+) -> dict:
+    """Return deterministic L3 readiness classification for research grant review."""
+    _validate_tenant(tenant_id)
+    payload = grant_payload or {}
+
+    required_evidence = [
+        "grant_id",
+        "pi_id",
+        "funding_agency",
+        "budget_context",
+    ]
+    missing_evidence = [key for key in required_evidence if not payload.get(key)]
+
+    budget_gap = bool(payload.get("budget_evidence_gap"))
+    compliance_risk = bool(payload.get("compliance_risk_flag"))
+
+    if missing_evidence:
+        classification = "GRANT_INPUT_INCOMPLETE"
+        evaluation_status = "INCOMPLETE"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_step = "collect_missing_grant_evidence"
+        rationale = "Grant evaluation evidence is incomplete."
+    elif budget_gap:
+        classification = "BUDGET_EVIDENCE_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "request_budget_evidence_for_manual_review"
+        rationale = "Budget evidence gap blocks deterministic grant decisioning."
+    elif compliance_risk:
+        classification = "COMPLIANCE_RISK_REVIEW_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "escalate_compliance_risk_for_manual_review"
+        rationale = "Compliance risk requires expert manual review."
+    elif payload.get("manual_review_ready"):
+        classification = "READY_FOR_MANUAL_GRANT_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "route_grant_for_manual_review"
+        rationale = "Grant packet is complete for bounded human review."
+    else:
+        classification = "READY_FOR_GRANT_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "start_manual_grant_review"
+        rationale = "Grant input is sufficient for deterministic review."
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "research_grants",
+        "maturity_level": "L3",
+        "evaluation_status": evaluation_status,
+        "classification": classification,
+        "readiness_level": readiness_level,
+        "risk_level": risk_level,
+        "required_evidence": required_evidence,
+        "missing_evidence": missing_evidence,
+        "allowed_actions": [
+            "REVIEW_GRANT",
+            "REQUEST_EVIDENCE",
+            "ESCALATE_REVIEW",
+        ],
+        "forbidden_actions": [
+            "AUTO_APPROVE_GRANT",
+            "AUTO_REJECT_GRANT",
+            "AUTO_TRANSFER_FUNDS",
+        ],
+        "human_review_required": True,
+        "next_recommended_step": next_step,
+        "rationale_notes": rationale,
+        "safety_flags": {
+            "tenant_scoped": True,
+            "deterministic": True,
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_kpi_claim": True,
+            "no_brain_claim": True,
+            "no_autonomous_execution": True,
+            "no_external_provider_call": True,
+            "no_l4_claim": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+        },
+    }

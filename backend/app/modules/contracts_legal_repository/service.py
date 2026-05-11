@@ -87,3 +87,97 @@ def list_contracts(
     if status:
         rows = [row for row in rows if row.get("status") == status]
     return rows
+
+
+def evaluate_contracts_legal_readiness(
+    tenant_id: int,
+    contract_payload: dict | None = None,
+) -> dict:
+    """Return deterministic L3 readiness classification for legal contract workflows."""
+    _validate_tenant(tenant_id)
+    payload = contract_payload or {}
+
+    required_evidence = [
+        "contract_id",
+        "party_context",
+        "signature_context",
+        "expiry_context",
+    ]
+    missing_evidence = [key for key in required_evidence if not payload.get(key)]
+
+    signature_gap = bool(payload.get("signature_evidence_gap"))
+    expiry_risk = bool(payload.get("expiry_risk"))
+
+    if missing_evidence:
+        classification = "CONTRACT_INPUT_INCOMPLETE"
+        evaluation_status = "INCOMPLETE"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_step = "collect_missing_contract_evidence"
+        rationale = "Contract evidence payload is incomplete."
+    elif signature_gap:
+        classification = "SIGNATURE_EVIDENCE_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "request_signature_evidence_for_manual_review"
+        rationale = "Signature evidence must be completed before legal review."
+    elif expiry_risk:
+        classification = "EXPIRY_RISK_REVIEW_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "escalate_expiry_risk_for_manual_legal_action"
+        rationale = "Expiry risk requires legal reviewer intervention."
+    elif payload.get("manual_action_ready"):
+        classification = "READY_FOR_MANUAL_CONTRACT_ACTION"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "route_contract_for_manual_legal_action"
+        rationale = "Contract package is ready for bounded manual action."
+    else:
+        classification = "READY_FOR_LEGAL_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "start_manual_legal_review"
+        rationale = "Contract evidence is sufficient for legal review."
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "contracts_legal_repository",
+        "maturity_level": "L3",
+        "evaluation_status": evaluation_status,
+        "classification": classification,
+        "readiness_level": readiness_level,
+        "risk_level": risk_level,
+        "required_evidence": required_evidence,
+        "missing_evidence": missing_evidence,
+        "allowed_actions": [
+            "REVIEW_CONTRACT",
+            "REQUEST_EVIDENCE",
+            "ESCALATE_REVIEW",
+        ],
+        "forbidden_actions": [
+            "AUTO_SIGN_CONTRACT",
+            "AUTO_APPROVE_LEGAL_TERMS",
+            "AUTO_TERMINATE_CONTRACT",
+        ],
+        "human_review_required": True,
+        "next_recommended_step": next_step,
+        "rationale_notes": rationale,
+        "safety_flags": {
+            "tenant_scoped": True,
+            "deterministic": True,
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_kpi_claim": True,
+            "no_brain_claim": True,
+            "no_autonomous_execution": True,
+            "no_external_provider_call": True,
+            "no_l4_claim": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+        },
+    }

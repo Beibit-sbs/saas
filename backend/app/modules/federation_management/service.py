@@ -78,3 +78,97 @@ def list_identity_providers(
     if status:
         rows = [row for row in rows if row.get("status") == status]
     return rows
+
+
+def evaluate_federation_management_readiness(
+    tenant_id: int,
+    federation_payload: dict | None = None,
+) -> dict:
+    """Return deterministic L3 readiness classification for federation trust workflows."""
+    _validate_tenant(tenant_id)
+    payload = federation_payload or {}
+
+    required_evidence = [
+        "trust_link_id",
+        "partner_org_context",
+        "protocol_context",
+        "security_review_context",
+    ]
+    missing_evidence = [key for key in required_evidence if not payload.get(key)]
+
+    protocol_mismatch = bool(payload.get("protocol_mismatch"))
+    security_gap = bool(payload.get("security_evidence_gap"))
+
+    if missing_evidence:
+        classification = "FEDERATION_INPUT_INCOMPLETE"
+        evaluation_status = "INCOMPLETE"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_step = "collect_missing_federation_evidence"
+        rationale = "Federation trust evidence is incomplete."
+    elif protocol_mismatch:
+        classification = "FEDERATION_PROTOCOL_REVIEW_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "route_protocol_mismatch_for_manual_review"
+        rationale = "Protocol mismatch requires human federation review."
+    elif security_gap:
+        classification = "FEDERATION_SECURITY_EVIDENCE_REQUIRED"
+        evaluation_status = "REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_step = "collect_security_evidence_before_approval"
+        rationale = "Security evidence gap blocks trust-link approval."
+    elif payload.get("manual_approval_ready"):
+        classification = "READY_FOR_MANUAL_FEDERATION_APPROVAL"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "submit_trust_link_for_manual_approval"
+        rationale = "Trust-link package is complete for human approval."
+    else:
+        classification = "READY_FOR_FEDERATION_REVIEW"
+        evaluation_status = "READY"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_step = "start_manual_federation_review"
+        rationale = "Federation evidence is sufficient for deterministic review."
+
+    return {
+        "tenant_id": tenant_id,
+        "module": "federation_management",
+        "maturity_level": "L3",
+        "evaluation_status": evaluation_status,
+        "classification": classification,
+        "readiness_level": readiness_level,
+        "risk_level": risk_level,
+        "required_evidence": required_evidence,
+        "missing_evidence": missing_evidence,
+        "allowed_actions": [
+            "REVIEW_TRUST_LINK",
+            "REQUEST_EVIDENCE",
+            "ESCALATE_REVIEW",
+        ],
+        "forbidden_actions": [
+            "AUTO_ENABLE_FEDERATION",
+            "AUTO_GRANT_TRUST",
+            "AUTO_SYNC_CROSS_TENANT_ACCESS",
+        ],
+        "human_review_required": True,
+        "next_recommended_step": next_step,
+        "rationale_notes": rationale,
+        "safety_flags": {
+            "tenant_scoped": True,
+            "deterministic": True,
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_kpi_claim": True,
+            "no_brain_claim": True,
+            "no_autonomous_execution": True,
+            "no_external_provider_call": True,
+            "no_l4_claim": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+        },
+    }
