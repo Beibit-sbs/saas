@@ -11,8 +11,8 @@
 This file tracks the reconciled baseline and extension separation state.
 
 - Baseline target modules: 150
-- Baseline maturity: L0=0, L1=0, L2=21, L3=34, L4=68, L5=25, L6=2
-- Baseline arithmetic: PASS (0+0+21+34+68+25+2=150)
+- Baseline maturity: L0=0, L1=0, L2=13, L3=42, L4=68, L5=25, L6=2
+- Baseline arithmetic: PASS (0+0+13+42+68+25+2=150)
 - Extension modules: 25
 - Total tracked modules: 175
 - Separation policy: baseline and extension remain separate planes
@@ -1196,19 +1196,19 @@ If N=6:
 - SBS_UB.md metrics remain unchanged until runtime passes
 - the normalized matrix is updated only after implementation and validation
 
-## A-026.9-SPEC — L2→L3 Deterministic Service Logic Batch 2 Specification
+## A-026.9-RUNTIME — L2→L3 Deterministic Service Logic Batch 2 Runtime Completion
 
-**Status**: SPEC ONLY (planning-only, no runtime implementation)
+**Status**: COMPLETE (targeted and continuity Docker pytest passed)
 
-**Purpose**: Select the next bounded current-L2 batch for future A-026.9-RUNTIME and define deep deterministic L3 service-logic specifications with strict anti-inflation boundaries.
+**Purpose**: Implement the selected bounded batch and reconcile the current maturity matrix after lifting eight L2 modules to deterministic L3 service logic.
 
-### L2 Extraction Summary
+### Pre-Selection L2 Extraction Summary
 
 - expected L2 count: 21
 - found L2 count: 21
 - status: PASS
 - tracker remains authoritative: SBS_UB.md
-- runtime has not started: confirmed
+- runtime implementation: complete
 
 ### A-026.8 Exclusion Confirmation
 
@@ -1231,14 +1231,22 @@ Selected batch size: 8.
 
 | Selected Module | Current Level | Target Level | Why Selected | Expected L3 Logic | Required Tests | Risk |
 |---|---:|---:|---|---|---|---|
-| parking_permit_ops | L2 | L3 | clear deterministic permit readiness and eligibility rules | permit readiness, status, next_step, allowed/forbidden actions | tenant, determinism, boundary, anti-inflation | medium |
-| parking_enforcement | L2 | L3 | operational workflow with explicit rule boundaries | enforcement review, risk, escalation, next_step | tenant, classification, forbidden-action tests | medium |
-| event_registration_portal | L2 | L3 | high reuse value for event intake and eligibility review | registration readiness and status classification | tenant, readiness, forbidden-action, anti-inflation | medium |
-| parent_engagement | L2 | L3 | strong engagement governance and deterministic readiness logic | outreach readiness and intervention classification | tenant, determinism, evidence, boundary tests | medium |
-| alumni_relations_ops | L2 | L3 | operationally useful relationship workflow with clean rule set | alumni outreach readiness and risk classification | tenant, deterministic output, boundary tests | medium |
-| donations_fundraising | L2 | L3 | measurable readiness/risk classification with clear evidence gates | fundraising readiness and review classification | tenant, forbidden-action, no-fake-data tests | medium |
-| exam_integrity_analytics | L2 | L3 | high governance value with explicit integrity boundaries | integrity review readiness and escalation classification | tenant, determinism, anti-inflation, boundary | high |
-| mobile_push_gateway | L2 | L3 | useful if kept provider-free with strict preview/readiness boundary | notification preview/readiness without sending | tenant, no-provider-call, determinism, boundary | high |
+| parking_permit_ops | L3 | L3 | clear deterministic permit readiness and eligibility rules | permit readiness, status, next_step, allowed/forbidden actions | tenant, determinism, boundary, anti-inflation | medium |
+| parking_enforcement | L3 | L3 | operational workflow with explicit rule boundaries | enforcement review, risk, escalation, next_step | tenant, classification, forbidden-action tests | medium |
+| event_registration_portal | L3 | L3 | high reuse value for event intake and eligibility review | registration readiness and status classification | tenant, readiness, forbidden-action, anti-inflation | medium |
+| parent_engagement | L3 | L3 | strong engagement governance and deterministic readiness logic | outreach readiness and intervention classification | tenant, determinism, evidence, boundary tests | medium |
+| alumni_relations_ops | L3 | L3 | operationally useful relationship workflow with clean rule set | alumni outreach readiness and risk classification | tenant, deterministic output, boundary tests | medium |
+| donations_fundraising | L3 | L3 | measurable readiness/risk classification with clear evidence gates | fundraising readiness and review classification | tenant, forbidden-action, no-fake-data tests | medium |
+| exam_integrity_analytics | L3 | L3 | high governance value with explicit integrity boundaries | integrity review readiness and escalation classification | tenant, determinism, anti-inflation, boundary | high |
+| mobile_push_gateway | L3 | L3 | useful if kept provider-free with strict preview/readiness boundary | notification preview/readiness without sending | tenant, no-provider-call, determinism, boundary | high |
+
+### Runtime Reconciliation
+
+- targeted runtime validation: PASS (97 passed, 1 warning)
+- continuity validation: PASS (579 passed, 1 warning)
+- current L2 modules lifted to L3 in this batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
+- post-runtime counts: L2=13, L3=42, L4=68, L5=25, L6=2
+- arithmetic check: PASS (total=150)
 
 ### A-026.9 L3 Deterministic Service Logic Standard
 
@@ -1281,11 +1289,11 @@ Selected batch size: 8.
 ### Module-by-Module Deep Specification
 
 #### Module: parking_permit_ops
-- Current Level: L2
+- Current Level: L3
 - Target Level: L3
-- Source: A-026.7.L1L2-RUNTIME
+- Source: A-026.9-RUNTIME
 - Existing L2 evidence: deterministic foundation contract and tenant guard
-- Primary gap: deterministic_service_logic_needed
+- Primary gap: resolved
 - Will do: evaluate permit readiness, eligibility state, and review routing deterministically
 - Will NOT do: issue permits automatically, mutate records, expose APIs, or call external services
 - Expected runtime file: backend/app/modules/parking_permit_ops/service.py
@@ -1301,11 +1309,11 @@ Selected batch size: 8.
 - anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
 
 #### Module: parking_enforcement
-- Current Level: L2
+- Current Level: L3
 - Target Level: L3
-- Source: A-026.7.L1L2-RUNTIME
+- Source: A-026.9-RUNTIME
 - Existing L2 evidence: deterministic foundation contract and tenant guard
-- Primary gap: deterministic_service_logic_needed
+- Primary gap: resolved
 - Will do: classify enforcement review state, risk, and escalation recommendations deterministically
 - Will NOT do: issue citations, mutate enforcement outcomes, expose APIs, or call providers
 - Expected runtime file: backend/app/modules/parking_enforcement/service.py
@@ -1321,11 +1329,11 @@ Selected batch size: 8.
 - anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
 
 #### Module: event_registration_portal
-- Current Level: L2
+- Current Level: L3
 - Target Level: L3
-- Source: A-026.7.L1L2-RUNTIME
+- Source: A-026.9-RUNTIME
 - Existing L2 evidence: deterministic foundation contract and tenant guard
-- Primary gap: deterministic_service_logic_needed
+- Primary gap: resolved
 - Will do: evaluate registration readiness and eligibility routing deterministically
 - Will NOT do: accept registrations automatically, mutate schedules, expose API/UI surfaces, or call providers
 - Expected runtime file: backend/app/modules/event_registration_portal/service.py
@@ -1341,11 +1349,11 @@ Selected batch size: 8.
 - anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
 
 #### Module: parent_engagement
-- Current Level: L2
+- Current Level: L3
 - Target Level: L3
-- Source: A-026.7.L1L2-RUNTIME
+- Source: A-026.9-RUNTIME
 - Existing L2 evidence: deterministic foundation contract and tenant guard
-- Primary gap: deterministic_service_logic_needed
+- Primary gap: resolved
 - Will do: classify engagement readiness and outreach risk deterministically
 - Will NOT do: send messages, mutate parent records, or call providers
 - Expected runtime file: backend/app/modules/parent_engagement/service.py
@@ -1361,11 +1369,11 @@ Selected batch size: 8.
 - anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
 
 #### Module: alumni_relations_ops
-- Current Level: L2
+- Current Level: L3
 - Target Level: L3
-- Source: A-026.7.L1L2-RUNTIME
+- Source: A-026.9-RUNTIME
 - Existing L2 evidence: deterministic foundation contract and tenant guard
-- Primary gap: deterministic_service_logic_needed
+- Primary gap: resolved
 - Will do: classify alumni outreach readiness and relationship risk deterministically
 - Will NOT do: send outreach, mutate data, expose APIs, or call providers
 - Expected runtime file: backend/app/modules/alumni_relations_ops/service.py
@@ -1381,11 +1389,11 @@ Selected batch size: 8.
 - anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
 
 #### Module: donations_fundraising
-- Current Level: L2
+- Current Level: L3
 - Target Level: L3
-- Source: A-026.7.L1L2-RUNTIME
+- Source: A-026.9-RUNTIME
 - Existing L2 evidence: deterministic foundation contract and tenant guard
-- Primary gap: deterministic_service_logic_needed
+- Primary gap: resolved
 - Will do: evaluate fundraising readiness and risk deterministically
 - Will NOT do: process donations, mutate ledger state, expose APIs, or call payment providers
 - Expected runtime file: backend/app/modules/donations_fundraising/service.py
@@ -1401,11 +1409,11 @@ Selected batch size: 8.
 - anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
 
 #### Module: exam_integrity_analytics
-- Current Level: L2
+- Current Level: L3
 - Target Level: L3
-- Source: A-026.7.L1L2-RUNTIME
+- Source: A-026.9-RUNTIME
 - Existing L2 evidence: deterministic foundation contract and tenant guard
-- Primary gap: deterministic_service_logic_needed
+- Primary gap: resolved
 - Will do: evaluate exam integrity review readiness and escalation risk deterministically
 - Will NOT do: score exams autonomously, mutate results, expose APIs, or call providers
 - Expected runtime file: backend/app/modules/exam_integrity_analytics/service.py
@@ -1421,11 +1429,11 @@ Selected batch size: 8.
 - anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
 
 #### Module: mobile_push_gateway
-- Current Level: L2
+- Current Level: L3
 - Target Level: L3
-- Source: A-026.7.L1L2-RUNTIME
+- Source: A-026.9-RUNTIME
 - Existing L2 evidence: deterministic foundation contract and tenant guard
-- Primary gap: deterministic_service_logic_needed
+- Primary gap: resolved
 - Will do: preview notification readiness and routing deterministically without sending
 - Will NOT do: send push notifications, call providers, mutate user records, or expose APIs
 - Expected runtime file: backend/app/modules/mobile_push_gateway/service.py
@@ -3138,7 +3146,7 @@ Note:
 | 15 | ai_routing_control | Planned Expansion | L3 | C | A-024.1 | EVIDENCED_L3_AFTER_A0241 | operational_visibility_or_API_depth_needed | L4 | operational visibility / routing control surface readiness | route or visibility contract tests | medium | high | A-026.5 |
 | 16 | alumni | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | alumni metrics lineage | lineage mapping | medium | low | A-026.6 |
 | 17 | alumni_donation_portal | Administration & Governance | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | donation API visibility | route tests | medium | medium | A-026.5 |
-| 18 | alumni_relations_ops | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 18 | alumni_relations_ops | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
 | 19 | analytics | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | analytics brain mapping | mapping tests | medium | medium | A-026.6 |
 | 20 | asset_inventory | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | asset KPI lineage | lineage mapping | medium | medium | A-026.6 |
 | 21 | attendance | Student & Campus Life | L4 | D | A-024.4 | EVIDENCED_L4_AFTER_A0244 | KPI_evidence_or_Brain_mapping_missing | L5-readiness | attendance KPI/evidence lineage and governance mapping | lineage/mapping contract tests | medium | high | A-026.6 |
@@ -3165,13 +3173,13 @@ Note:
 | 42 | digital_certificates | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
 | 43 | digital_documents | Administration & Governance | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | document API visibility | route tests | medium | low | A-026.5 |
 | 44 | dining | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | dining KPI mapping | lineage mapping | medium | low | A-026.6 |
-| 45 | donations_fundraising | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 45 | donations_fundraising | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
 | 46 | enrollments | Core Academic | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | enrollment E2E and gates | gate continuity | high | high | A-026.7 |
 | 47 | equipment_booking | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | equipment utilization signal | mapping tests | medium | medium | A-026.6 |
-| 48 | event_registration_portal | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 48 | event_registration_portal | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
 | 49 | events_management | Student & Campus Life | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | events E2E and gates | gate continuity | high | high | A-026.7 |
 | 50 | exam_governance | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | exam metrics mapping | lineage mapping | medium | high | A-026.6 |
-| 51 | exam_integrity_analytics | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 51 | exam_integrity_analytics | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
 | 52 | exam_proctoring | Workflow & Process Automation | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | proctoring E2E and gates | gate continuity | high | high | A-026.7 |
 | 53 | expense_controls | Finance & Billing | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | expense E2E and gates | gate continuity | high | high | A-026.7 |
 | 54 | facilities_work_orders | Workflow & Process Automation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | work order KPI mapping | lineage mapping | medium | medium | A-026.6 |
@@ -3205,18 +3213,18 @@ Note:
 | 82 | lms_content | Administration & Governance | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | content API visibility | route tests | medium | medium | A-026.5 |
 | 83 | local_user_management | Planned Expansion | L2 | B | A-023.0 | EVIDENCED_LEVEL_ONLY | tenant_guard_missing | L3 | user management tenant guards | tenant tests | high | high | A-026.4 |
 | 84 | mobile_app | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | frontend_missing | L4 | mobile app frontend visibility | frontend tests | medium | medium | A-026.5 |
-| 85 | mobile_push_gateway | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 85 | mobile_push_gateway | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
 | 86 | model_evaluation | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | model eval signal mapping | mapping tests | medium | high | A-026.6 |
 | 87 | notification_center | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | high | high | A-026.6 |
 | 88 | observability | Integrations & Platform | L4 | D | A-024.3 | EVIDENCED_L4_AFTER_A0243 | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
 | 89 | online_payments | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | payment KPI lineage | lineage mapping | medium | high | A-026.6 |
 | 90 | operations | Administration & Governance | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | ops E2E and gates | gate continuity | high | high | A-026.7 |
 | 91 | org_structure | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | org KPI mapping | lineage mapping | medium | low | A-026.6 |
-| 92 | parent_engagement | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 92 | parent_engagement | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
 | 93 | parent_portal | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | parent portal API | route tests | medium | medium | A-026.5 |
 | 94 | parking | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | parking API visibility | route tests | medium | low | A-026.5 |
-| 95 | parking_enforcement | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
-| 96 | parking_permit_ops | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 95 | parking_enforcement | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
+| 96 | parking_permit_ops | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
 | 97 | patents | Research & Innovation | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | patent API visibility | route tests | medium | low | A-026.5 |
 | 98 | payment_reconciliation | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | reconciliation KPI mapping | lineage mapping | medium | high | A-026.6 |
 | 99 | pdpl | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify PDPL contract completeness | contract tests | medium | medium | A-026.5 |

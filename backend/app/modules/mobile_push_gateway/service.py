@@ -82,3 +82,76 @@ def get_mobile_push_gateway_foundation_contract(
         "payload_keys": sorted(normalized_payload.keys()),
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def evaluate_mobile_push_gateway_readiness(
+    tenant_id: int,
+    push_payload: dict | None = None,
+) -> dict[str, Any]:
+    """Evaluate deterministic L3 readiness for mobile_push_gateway."""
+    normalized_tenant_id = validate_tenant_id(tenant_id)
+    payload = push_payload if isinstance(push_payload, dict) else {}
+
+    required_evidence = ["notification_id", "notification_context", "template_context", "consent_context"]
+    missing_required = [key for key in required_evidence if payload.get(key) in (None, "", [], {})]
+
+    allowed_actions = ["PREVIEW_MESSAGE", "REVIEW_TEMPLATE", "REQUEST_EVIDENCE"]
+    forbidden_actions = ["AUTO_SEND_PUSH", "AUTO_CALL_PROVIDER", "AUTO_OVERRIDE_LIMITS"]
+
+    if missing_required:
+        classification = "PUSH_INPUT_INCOMPLETE"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_recommended_step = "COMPLETE_REQUIRED_PUSH_FIELDS"
+        rationale_notes = "Required push preview fields are missing"
+    elif not bool(payload.get("provider_preview_allowed")):
+        classification = "PROVIDER_BOUNDARY_BLOCKED"
+        readiness_level = "BLOCKED"
+        risk_level = "HIGH"
+        next_recommended_step = "REQUEST_EVIDENCE"
+        rationale_notes = "Provider execution remains blocked; preview only"
+    elif bool(payload.get("template_review_requested")):
+        classification = "TEMPLATE_REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_recommended_step = "REVIEW_TEMPLATE"
+        rationale_notes = "Template review is required before send readiness"
+    else:
+        classification = "READY_FOR_PREVIEW"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_recommended_step = "PREVIEW_MESSAGE"
+        rationale_notes = "Notification evidence is complete for deterministic preview"
+
+    safety_flags = {
+        **SAFETY_FLAGS,
+        "tenant_scoped": True,
+        "deterministic": True,
+        "no_api_claim": True,
+        "no_frontend_claim": True,
+        "no_kpi_claim": True,
+        "no_brain_claim": True,
+        "no_autonomous_execution": True,
+        "no_external_provider_call": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }
+
+    return {
+        "tenant_id": normalized_tenant_id,
+        "module": MODULE_NAME,
+        "maturity_level": "L3",
+        "evaluation_status": "EVALUATED",
+        "classification": classification,
+        "readiness_level": readiness_level,
+        "risk_level": risk_level,
+        "required_evidence": required_evidence,
+        "missing_required_evidence": missing_required,
+        "allowed_actions": allowed_actions,
+        "forbidden_actions": forbidden_actions,
+        "human_review_required": True,
+        "next_recommended_step": next_recommended_step,
+        "rationale_notes": rationale_notes,
+        "safety_flags": safety_flags,
+    }

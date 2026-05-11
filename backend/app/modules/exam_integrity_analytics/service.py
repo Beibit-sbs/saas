@@ -82,3 +82,76 @@ def get_exam_integrity_analytics_foundation_contract(
         "payload_keys": sorted(normalized_payload.keys()),
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def evaluate_exam_integrity_analytics_readiness(
+    tenant_id: int,
+    exam_payload: dict | None = None,
+) -> dict[str, Any]:
+    """Evaluate deterministic L3 readiness for exam_integrity_analytics."""
+    normalized_tenant_id = validate_tenant_id(tenant_id)
+    payload = exam_payload if isinstance(exam_payload, dict) else {}
+
+    required_evidence = ["exam_id", "exam_context", "integrity_context", "review_context"]
+    missing_required = [key for key in required_evidence if payload.get(key) in (None, "", [], {})]
+
+    allowed_actions = ["REVIEW_SIGNAL", "REQUEST_EVIDENCE", "ESCALATE_REVIEW"]
+    forbidden_actions = ["AUTO_ACCUSATION", "AUTO_SCORE_MODIFICATION", "AUTO_OVERRIDE_POLICY"]
+
+    if missing_required:
+        classification = "INTEGRITY_INPUT_INCOMPLETE"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_recommended_step = "COMPLETE_REQUIRED_INTEGRITY_FIELDS"
+        rationale_notes = "Required integrity evidence fields are missing"
+    elif not bool(payload.get("reviewable_signal")):
+        classification = "INTEGRITY_REVIEW_REQUIRED"
+        readiness_level = "BLOCKED"
+        risk_level = "HIGH"
+        next_recommended_step = "REQUEST_EVIDENCE"
+        rationale_notes = "Integrity evidence requires human review before action"
+    elif bool(payload.get("escalation_required")):
+        classification = "ESCALATION_REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "HIGH"
+        next_recommended_step = "ESCALATE_REVIEW"
+        rationale_notes = "Integrity risk requires escalation"
+    else:
+        classification = "READY_FOR_INTEGRITY_REVIEW"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_recommended_step = "REVIEW_SIGNAL"
+        rationale_notes = "Integrity evidence is complete for deterministic review"
+
+    safety_flags = {
+        **SAFETY_FLAGS,
+        "tenant_scoped": True,
+        "deterministic": True,
+        "no_api_claim": True,
+        "no_frontend_claim": True,
+        "no_kpi_claim": True,
+        "no_brain_claim": True,
+        "no_autonomous_execution": True,
+        "no_external_provider_call": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }
+
+    return {
+        "tenant_id": normalized_tenant_id,
+        "module": MODULE_NAME,
+        "maturity_level": "L3",
+        "evaluation_status": "EVALUATED",
+        "classification": classification,
+        "readiness_level": readiness_level,
+        "risk_level": risk_level,
+        "required_evidence": required_evidence,
+        "missing_required_evidence": missing_required,
+        "allowed_actions": allowed_actions,
+        "forbidden_actions": forbidden_actions,
+        "human_review_required": True,
+        "next_recommended_step": next_recommended_step,
+        "rationale_notes": rationale_notes,
+        "safety_flags": safety_flags,
+    }

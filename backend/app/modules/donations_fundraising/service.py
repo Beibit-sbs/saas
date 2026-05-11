@@ -82,3 +82,76 @@ def get_donations_fundraising_foundation_contract(
         "payload_keys": sorted(normalized_payload.keys()),
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def evaluate_donations_fundraising_readiness(
+    tenant_id: int,
+    fundraising_payload: dict | None = None,
+) -> dict[str, Any]:
+    """Evaluate deterministic L3 readiness for donations_fundraising."""
+    normalized_tenant_id = validate_tenant_id(tenant_id)
+    payload = fundraising_payload if isinstance(fundraising_payload, dict) else {}
+
+    required_evidence = ["campaign_id", "campaign_context", "compliance_context", "donor_context"]
+    missing_required = [key for key in required_evidence if payload.get(key) in (None, "", [], {})]
+
+    allowed_actions = ["REVIEW_CAMPAIGN", "REQUEST_EVIDENCE", "ESCALATE_REVIEW"]
+    forbidden_actions = ["AUTO_LAUNCH_CAMPAIGN", "AUTO_ALLOCATE_FUNDS", "AUTO_OVERRIDE_COMPLIANCE"]
+
+    if missing_required:
+        classification = "FUNDRAISING_INPUT_INCOMPLETE"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_recommended_step = "COMPLETE_REQUIRED_FUNDRAISING_FIELDS"
+        rationale_notes = "Required fundraising evidence fields are missing"
+    elif not bool(payload.get("compliance_verified")):
+        classification = "COMPLIANCE_REVIEW_REQUIRED"
+        readiness_level = "BLOCKED"
+        risk_level = "HIGH"
+        next_recommended_step = "REQUEST_EVIDENCE"
+        rationale_notes = "Compliance evidence is required before campaign review"
+    elif bool(payload.get("budget_allocation_requested")):
+        classification = "ALLOCATION_REVIEW_REQUIRED"
+        readiness_level = "PENDING"
+        risk_level = "MEDIUM"
+        next_recommended_step = "ESCALATE_REVIEW"
+        rationale_notes = "Budget allocation requires human review"
+    else:
+        classification = "READY_FOR_CAMPAIGN_REVIEW"
+        readiness_level = "READY"
+        risk_level = "LOW"
+        next_recommended_step = "REVIEW_CAMPAIGN"
+        rationale_notes = "Fundraising evidence is complete for deterministic review"
+
+    safety_flags = {
+        **SAFETY_FLAGS,
+        "tenant_scoped": True,
+        "deterministic": True,
+        "no_api_claim": True,
+        "no_frontend_claim": True,
+        "no_kpi_claim": True,
+        "no_brain_claim": True,
+        "no_autonomous_execution": True,
+        "no_external_provider_call": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }
+
+    return {
+        "tenant_id": normalized_tenant_id,
+        "module": MODULE_NAME,
+        "maturity_level": "L3",
+        "evaluation_status": "EVALUATED",
+        "classification": classification,
+        "readiness_level": readiness_level,
+        "risk_level": risk_level,
+        "required_evidence": required_evidence,
+        "missing_required_evidence": missing_required,
+        "allowed_actions": allowed_actions,
+        "forbidden_actions": forbidden_actions,
+        "human_review_required": True,
+        "next_recommended_step": next_recommended_step,
+        "rationale_notes": rationale_notes,
+        "safety_flags": safety_flags,
+    }
