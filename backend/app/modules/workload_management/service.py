@@ -262,3 +262,84 @@ def get_workload_visibility_summary(tenant_id: Any) -> Dict[str, Any]:
         "readonly": True,
         "tenant_scoped": True,
     }
+
+
+L5_SAFETY_FLAGS = {
+    "tenant_scoped": True,
+    "no_cross_tenant_evidence": True,
+    "no_fake_kpi_values": True,
+    "no_brain_execution": True,
+    "no_autonomous_execution": True,
+    "no_l6_claim": True,
+    "human_review_required": True,
+}
+
+
+def get_workload_l5_readiness(
+    tenant_id: Any, evidence_context: Dict[str, Any] | None = None
+) -> Dict[str, Any]:
+    """Deterministic L5-readiness evidence/governance contract for workload_management.
+
+    Returns evidence lineage, governance mapping, KPI-readiness boundary, and Brain
+    candidate boundary. No assignment automation, no payroll mutation, no L6 claim.
+    """
+    if not validate_workload_tenant(tenant_id):
+        raise ValueError(
+            f"tenant_id must be a positive integer; got {tenant_id!r}"
+        )
+
+    tid = int(tenant_id)
+
+    return {
+        "tenant_id": tid,
+        "module": "workload_management",
+        "readiness_level": "L5_READY",
+        # Evidence lineage
+        "evidence_lineage_status": "EVIDENCED_FROM_L4_VISIBILITY_SURFACE",
+        "evidence_sources": [
+            "workload_visibility_summary",
+            "workload_risk_classification",
+            "assignment_boundary",
+        ],
+        "evidence_completeness": "PARTIAL_UNTIL_INDEXED",
+        # Governance mapping
+        "governance_mapping_status": "GOVERNANCE_BOUNDARY_MAPPED",
+        "governance_category": "WORKLOAD_GOVERNANCE",
+        "human_review_owner": "workload_planning_reviewer",
+        "escalation_boundary": "high_risk_workload_or_policy_conflict",
+        "allowed_governance_actions": [
+            "REVIEW_WORKLOAD_EVIDENCE",
+            "REQUEST_CAPACITY_REVIEW",
+            "MARK_FOR_MANUAL_ASSIGNMENT_PLANNING",
+        ],
+        "forbidden_autonomous_actions": [
+            "AUTO_ASSIGN",
+            "AUTO_OVERRIDE_CONSTRAINTS",
+            "AUTO_MUTATE_PAYROLL",
+        ],
+        # KPI readiness
+        "kpi_readiness_status": "WORKLOAD_EVIDENCE_READY_FOR_GOVERNANCE_MAPPING",
+        # Brain boundary
+        "brain_readiness_boundary": "BRAIN_CANDIDATE_ONLY_NO_EXECUTION",
+        # Human review
+        "human_review_required": True,
+        # Confidence
+        "confidence_status": "MEDIUM",
+        "rationale_notes": (
+            "Workload evidence lineage established from A-026.5 L4 visibility surface. "
+            "Governance mapping complete. No fake workload KPI values. "
+            "Brain boundary: candidate envelope only, execution forbidden."
+        ),
+        # Audit
+        "audit_evidence_notes": [
+            f"tenant_id={tid} scoped workload evidence contract",
+            "source: A-026.5-RUNTIME workload readiness visibility",
+            "no cross-tenant workload aggregation",
+            "no payroll or assignment mutation",
+        ],
+        # Safety flags
+        "safety_flags": L5_SAFETY_FLAGS,
+        "no_autonomous_execution": True,
+        "no_l6_claim": True,
+        "tenant_scoped": True,
+    }

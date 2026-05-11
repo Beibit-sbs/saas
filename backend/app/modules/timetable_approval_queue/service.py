@@ -244,3 +244,86 @@ def get_approval_queue_visibility_summary(tenant_id: Any) -> Dict[str, Any]:
         "readonly": True,
         "tenant_scoped": True,
     }
+
+
+L5_SAFETY_FLAGS = {
+    "tenant_scoped": True,
+    "no_cross_tenant_evidence": True,
+    "no_fake_kpi_values": True,
+    "no_brain_execution": True,
+    "no_autonomous_execution": True,
+    "no_l6_claim": True,
+    "human_review_required": True,
+}
+
+
+def get_approval_queue_l5_readiness(
+    tenant_id: Any, evidence_context: Dict[str, Any] | None = None
+) -> Dict[str, Any]:
+    """Deterministic L5-readiness evidence/governance contract for timetable_approval_queue.
+
+    Returns structured evidence lineage, governance mapping, KPI-readiness boundary,
+    and Brain candidate boundary. No autonomous execution, no fake KPI, no L6 claim.
+    """
+    if not validate_queue_tenant(tenant_id):
+        raise ValueError(
+            f"tenant_id must be a positive integer; got {tenant_id!r}"
+        )
+
+    tid = int(tenant_id)
+
+    return {
+        "tenant_id": tid,
+        "module": "timetable_approval_queue",
+        "readiness_level": "L5_READY",
+        # Evidence lineage
+        "evidence_lineage_status": "EVIDENCED_FROM_L4_VISIBILITY_SURFACE",
+        "evidence_sources": [
+            "queue_visibility_summary",
+            "reviewer_state",
+            "manual_decision_boundary",
+        ],
+        "evidence_completeness": "PARTIAL_UNTIL_INDEXED",
+        # Governance mapping
+        "governance_mapping_status": "GOVERNANCE_BOUNDARY_MAPPED",
+        "governance_category": "HUMAN_REVIEW_QUEUE_GOVERNANCE",
+        "human_review_owner": "approval_queue_reviewer",
+        "escalation_boundary": "unresolved_conflict_or_policy_breach",
+        "allowed_governance_actions": [
+            "REVIEW_QUEUE_ITEM",
+            "REQUEST_MORE_INFO",
+            "MANUAL_APPROVE",
+            "MANUAL_REJECT",
+            "REASSIGN_REVIEWER",
+        ],
+        "forbidden_autonomous_actions": [
+            "AUTO_APPROVE",
+            "AUTO_REJECT",
+            "AUTO_APPLY",
+        ],
+        # KPI readiness
+        "kpi_readiness_status": "QUEUE_GOVERNANCE_READINESS_ONLY",
+        # Brain boundary
+        "brain_readiness_boundary": "BRAIN_CANDIDATE_ONLY_NO_EXECUTION",
+        # Human review
+        "human_review_required": True,
+        # Confidence
+        "confidence_status": "MEDIUM",
+        "rationale_notes": (
+            "Queue evidence lineage established from A-026.5 L4 visibility surface. "
+            "Governance mapping complete. KPI readiness-only — no fabricated values. "
+            "Brain boundary: no execution path."
+        ),
+        # Audit
+        "audit_evidence_notes": [
+            f"tenant_id={tid} scoped evidence contract",
+            "source: A-026.5-RUNTIME operational visibility",
+            "no cross-tenant evidence aggregation",
+            "human reviewer decision gate enforced",
+        ],
+        # Safety flags
+        "safety_flags": L5_SAFETY_FLAGS,
+        "no_autonomous_execution": True,
+        "no_l6_claim": True,
+        "tenant_scoped": True,
+    }

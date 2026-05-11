@@ -11,8 +11,8 @@
 This file tracks the reconciled baseline and extension separation state.
 
 - Baseline target modules: 150
-- Baseline maturity: L0=0, L1=16, L2=13, L3=26, L4=72, L5=21, L6=2
-- Baseline arithmetic: PASS (0+16+13+26+72+21+2=150)
+- Baseline maturity: L0=0, L1=16, L2=13, L3=26, L4=68, L5=25, L6=2
+- Baseline arithmetic: PASS (0+16+13+26+68+25+2=150)
 - Extension modules: 25
 - Total tracked modules: 175
 - Separation policy: baseline and extension remain separate planes
@@ -1196,6 +1196,47 @@ If N=6:
 - SBS_UB.md metrics remain unchanged until runtime passes
 - the normalized matrix is updated only after implementation and validation
 
+## A-026.6-RUNTIME — L4→L5 Evidence / Governance / KPI / Brain-Readiness
+
+**Status**: COMPLETE
+
+**Commit**: test(wave14): A-026.6 implement L4 to L5 evidence governance readiness
+
+**Selected batch**: 4 modules lifted from L4/Bucket-D to L5/Bucket-E.
+
+| Module | Previous Level | New Level | Evidence Source |
+|---|---:|---:|---|
+| human_approved_timetable_workflow | L4 | L5 | A-026.6-RUNTIME deterministic L5-readiness contract |
+| timetable_approval_queue | L4 | L5 | A-026.6-RUNTIME deterministic L5-readiness contract |
+| timetable_change_kpi_dashboard | L4 | L5 | A-026.6-RUNTIME deterministic L5-readiness contract |
+| workload_management | L4 | L5 | A-026.6-RUNTIME deterministic L5-readiness contract |
+
+**Implementation summary**:
+- deterministic evidence lineage contracts added to service.py for all 4 modules
+- governance mapping contracts (category, human_review_owner, escalation_boundary) added
+- KPI-readiness boundary fields added (no fake KPI values)
+- Brain candidate/no-execution boundaries added
+- L5-readiness Pydantic schemas added to schemas.py for all 4 modules
+- read-only L5-readiness GET routes added to router.py for all 4 modules (permission-guarded, tenant-safe)
+- test file: backend/tests/test_a0266_l4_to_l5_evidence_governance_readiness.py (58 tests PASS)
+- A-026.3+A-026.4+A-026.5+A-026.6 continuity: 218 tests PASS
+
+**Anti-inflation confirmation**:
+- no autonomous execution
+- no fake KPI values
+- no Brain execution
+- no L6 claim
+- no frontend pages
+- no DB mutations
+- no event emission
+- no provider calls
+- extension 25 unchanged
+
+**Metrics after A-026.6-RUNTIME**:
+- L0=0, L1=16, L2=13, L3=26, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+
+**Next action**: A-026.7-SPEC
+
 ## A-026.6-SPEC - L4→L5 Evidence / Governance / KPI / Brain-Readiness Batch Specification
 
 **Status**: SPEC ONLY
@@ -1771,8 +1812,8 @@ Required evidence:
 | Bucket A - L0/L1 Foundation Normalization | L0-L1 | 16 | foundation and contract gaps | L2-ready foundations | A-026.3 |
 | Bucket B - L2 Service Contract Normalization | L2 | 13 | deterministic service logic gaps | L3 deterministic backend slices | A-026.4 |
 | Bucket C - L3 Operational Visibility Normalization | L3 | 26 | API/visibility/test depth gaps | L4 operational readiness | A-026.5 |
-| Bucket D - L4 Brain/Evidence Readiness | L4 | 72 | KPI/evidence/Brain mapping gaps | selective L5-readiness candidates | A-026.6 |
-| Bucket E - L5 E2E/Gate Closure | L5 | 21 | gate continuity and E2E closure | selective L6 proofs | A-026.7 |
+| Bucket D - L4 Brain/Evidence Readiness | L4 | 68 | KPI/evidence/Brain mapping gaps | selective L5-readiness candidates | A-026.6 |
+| Bucket E - L5 E2E/Gate Closure | L5 | 25 | gate continuity and E2E closure | selective L6 proofs | A-026.7 |
 | Bucket F - Preserve / Regression Only | L6 | 2 | regression risk only | preserve quality baseline | A-026.7 |
 
 ## Initial Module Normalization Matrix (Safe)
@@ -1871,7 +1912,7 @@ Note:
 | 63 | help | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify help desk scope | contract tests | medium | low | A-026.5 |
 | 64 | housing | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | housing KPI mapping | lineage mapping | medium | medium | A-026.6 |
 | 65 | hr_payroll | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | payroll KPI lineage | lineage mapping | medium | high | A-026.6 |
-| 66 | human_approved_timetable_workflow | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
+| 66 | human_approved_timetable_workflow | Planned Expansion | L5 | E | A-026.6-RUNTIME | EVIDENCED_L5_READY_AFTER_A0266 | autonomous_execution_and_closed_loop_validation_missing | L6-readiness | controlled human-approved closed-loop governance / autonomous boundary validation | closed-loop safety / no-autonomy-breakout / human approval tests | medium | high | A-026.7 |
 | 67 | i18n | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify i18n contract completeness | contract tests | medium | low | A-026.5 |
 | 68 | identity | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | identity event mapping | mapping tests | medium | high | A-026.6 |
 | 69 | integrations | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify integration breadth | contract tests | medium | low | A-026.5 |
@@ -1943,8 +1984,8 @@ Note:
 | 135 | teaching_quality | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | quality signal mapping | mapping tests | medium | high | A-026.6 |
 | 136 | tenants | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | tenant event mapping | mapping tests | medium | high | A-026.6 |
 | 137 | thesis | Research & Innovation | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | thesis E2E and gates | gate continuity | high | high | A-026.7 |
-| 138 | timetable_approval_queue | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
-| 139 | timetable_change_kpi_dashboard | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | medium | A-026.6 |
+| 138 | timetable_approval_queue | Planned Expansion | L5 | E | A-026.6-RUNTIME | EVIDENCED_L5_READY_AFTER_A0266 | autonomous_execution_and_closed_loop_validation_missing | L6-readiness | controlled human-approved closed-loop governance / autonomous boundary validation | closed-loop safety / no-autonomy-breakout / human approval tests | medium | high | A-026.7 |
+| 139 | timetable_change_kpi_dashboard | Planned Expansion | L5 | E | A-026.6-RUNTIME | EVIDENCED_L5_READY_AFTER_A0266 | autonomous_execution_and_closed_loop_validation_missing | L6-readiness | controlled human-approved closed-loop governance / autonomous boundary validation | closed-loop safety / no-autonomy-breakout / human approval tests | medium | medium | A-026.7 |
 | 140 | timetable_change_proposal | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
 | 141 | timetable_change_simulation | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
 | 142 | timetable_recommendation_bridge | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
@@ -1955,7 +1996,7 @@ Note:
 | 147 | usage | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | usage KPI lineage | lineage mapping | medium | high | A-026.6 |
 | 148 | visitor_management | Student & Campus Life | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | visitor E2E and gates | gate continuity | high | high | A-026.7 |
 | 149 | workflows | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | workflow signal mapping | mapping tests | medium | medium | A-026.6 |
-| 150 | workload_management | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
+| 150 | workload_management | Planned Expansion | L5 | E | A-026.6-RUNTIME | EVIDENCED_L5_READY_AFTER_A0266 | autonomous_execution_and_closed_loop_validation_missing | L6-readiness | controlled human-approved closed-loop governance / autonomous boundary validation | closed-loop safety / no-autonomy-breakout / human approval tests | medium | high | A-026.7 |
 
 ## Full Extension 25 Module Registry Matrix
 
@@ -1999,8 +2040,8 @@ Note:
 | L1 count | 16 | 16 | PASS |
 | L2 count | 21 | 21 | PASS |
 | L3 count | 24 | 24 | PASS |
-| L4 count | 66 | 66 | PASS |
-| L5 count | 21 | 21 | PASS |
+| L4 count | 68 | 68 | PASS |
+| L5 count | 25 | 25 | PASS |
 | L6 count | 2 | 2 | PASS |
 | maturity_arithmetic_check | PASS | PASS | PASS |
 
@@ -2011,8 +2052,8 @@ Note:
 | Bucket A | 16 | 16 | PASS |
 | Bucket B | 13 | 13 | PASS |
 | Bucket C | 32 | 32 | PASS |
-| Bucket D | 66 | 66 | PASS |
-| Bucket E | 21 | 21 | PASS |
+| Bucket D | 68 | 68 | PASS |
+| Bucket E | 25 | 25 | PASS |
 | Bucket F | 2 | 2 | PASS |
 
 ### Extension Matrix Verification

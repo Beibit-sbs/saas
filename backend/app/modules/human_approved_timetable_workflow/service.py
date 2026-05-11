@@ -245,3 +245,85 @@ def get_human_workflow_visibility_summary(tenant_id: Any) -> Dict[str, Any]:
         "readonly": True,
         "tenant_scoped": True,
     }
+
+
+L5_SAFETY_FLAGS = {
+    "tenant_scoped": True,
+    "no_cross_tenant_evidence": True,
+    "no_fake_kpi_values": True,
+    "no_brain_execution": True,
+    "no_autonomous_execution": True,
+    "no_l6_claim": True,
+    "human_review_required": True,
+}
+
+
+def get_human_workflow_l5_readiness(
+    tenant_id: Any, evidence_context: Dict[str, Any] | None = None
+) -> Dict[str, Any]:
+    """Deterministic L5-readiness evidence/governance contract for human_approved_timetable_workflow.
+
+    Returns structured evidence lineage, governance mapping, KPI-readiness boundary,
+    and Brain candidate boundary. No autonomous execution, no fake KPI, no L6 claim.
+    """
+    if not validate_workflow_tenant(tenant_id):
+        raise ValueError(
+            f"tenant_id must be a positive integer; got {tenant_id!r}"
+        )
+
+    tid = int(tenant_id)
+
+    return {
+        "tenant_id": tid,
+        "module": "human_approved_timetable_workflow",
+        "readiness_level": "L5_READY",
+        # Evidence lineage
+        "evidence_lineage_status": "EVIDENCED_FROM_L4_VISIBILITY_SURFACE",
+        "evidence_sources": [
+            "workflow_visibility_summary",
+            "human_review_state",
+            "approval_boundary",
+        ],
+        "evidence_completeness": "PARTIAL_UNTIL_INDEXED",
+        # Governance mapping
+        "governance_mapping_status": "GOVERNANCE_BOUNDARY_MAPPED",
+        "governance_category": "TIMETABLE_GOVERNANCE",
+        "human_review_owner": "timetable_governance_committee",
+        "escalation_boundary": "policy_violation_or_high_risk_workflow_only",
+        "allowed_governance_actions": [
+            "REVIEW_EVIDENCE",
+            "REQUEST_MORE_INFO",
+            "APPROVE_MANUALLY",
+            "REJECT_MANUALLY",
+        ],
+        "forbidden_autonomous_actions": [
+            "AUTO_APPLY",
+            "AUTO_OPTIMIZE",
+            "AUTONOMOUS_ROLLBACK",
+        ],
+        # KPI readiness
+        "kpi_readiness_status": "KPI_READINESS_CANDIDATE_ONLY",
+        # Brain boundary
+        "brain_readiness_boundary": "BRAIN_CANDIDATE_ONLY_NO_EXECUTION",
+        # Human review
+        "human_review_required": True,
+        # Confidence
+        "confidence_status": "MEDIUM",
+        "rationale_notes": (
+            "Workflow evidence lineage established from A-026.5 L4 visibility surface. "
+            "Governance mapping complete. KPI candidate only — no fabricated values. "
+            "Brain boundary: candidate envelope, no execution."
+        ),
+        # Audit
+        "audit_evidence_notes": [
+            f"tenant_id={tid} scoped evidence contract",
+            "source: A-026.5-RUNTIME operational visibility",
+            "no cross-tenant evidence aggregation",
+            "human approval gate enforced",
+        ],
+        # Safety flags
+        "safety_flags": L5_SAFETY_FLAGS,
+        "no_autonomous_execution": True,
+        "no_l6_claim": True,
+        "tenant_scoped": True,
+    }

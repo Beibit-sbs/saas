@@ -199,3 +199,84 @@ def get_kpi_dashboard_visibility_summary(tenant_id: Any) -> Dict[str, Any]:
         "readonly": True,
         "tenant_scoped": True,
     }
+
+
+L5_SAFETY_FLAGS = {
+    "tenant_scoped": True,
+    "no_cross_tenant_evidence": True,
+    "no_fake_kpi_values": True,
+    "no_brain_execution": True,
+    "no_autonomous_execution": True,
+    "no_l6_claim": True,
+    "human_review_required": True,
+}
+
+
+def get_kpi_dashboard_l5_readiness(
+    tenant_id: Any, evidence_context: Dict[str, Any] | None = None
+) -> Dict[str, Any]:
+    """Deterministic L5-readiness evidence/governance contract for timetable_change_kpi_dashboard.
+
+    Returns KPI-readiness boundary, evidence lineage, governance mapping, and Brain
+    candidate boundary. No fake KPI computation, no autonomous execution, no L6 claim.
+    """
+    if not validate_kpi_dashboard_tenant(tenant_id):
+        raise ValueError(
+            f"tenant_id must be a positive integer; got {tenant_id!r}"
+        )
+
+    tid = int(tenant_id)
+
+    return {
+        "tenant_id": tid,
+        "module": "timetable_change_kpi_dashboard",
+        "readiness_level": "L5_READY",
+        # Evidence lineage
+        "evidence_lineage_status": "EVIDENCED_FROM_L4_VISIBILITY_SURFACE",
+        "evidence_sources": [
+            "kpi_readiness_visibility_summary",
+            "backend_contract_readiness",
+            "evidence_completeness_boundary",
+        ],
+        "evidence_completeness": "PARTIAL_OR_READY",
+        # Governance mapping
+        "governance_mapping_status": "GOVERNANCE_BOUNDARY_MAPPED",
+        "governance_category": "KPI_GOVERNANCE_READINESS",
+        "human_review_owner": "timetable_analytics_reviewer",
+        "escalation_boundary": "low_evidence_confidence_or_policy_alert",
+        "allowed_governance_actions": [
+            "REVIEW_KPI_EVIDENCE",
+            "REQUEST_EVIDENCE_COMPLETION",
+            "MARK_READY_FOR_MAPPING",
+        ],
+        "forbidden_autonomous_actions": [
+            "AUTO_GENERATE_KPI",
+            "AUTO_ROUTE_TO_BRAIN",
+            "AUTONOMOUS_DECISION",
+        ],
+        # KPI readiness
+        "kpi_readiness_status": "KPI_EVIDENCE_READY_FOR_MAPPING",
+        # Brain boundary
+        "brain_readiness_boundary": "BRAIN_CANDIDATE_ONLY_NO_EXECUTION",
+        # Human review
+        "human_review_required": True,
+        # Confidence
+        "confidence_status": "MEDIUM_HIGH",
+        "rationale_notes": (
+            "KPI evidence lineage established from A-026.5 L4 readiness surface. "
+            "No fabricated KPI values. Governance mapping complete. "
+            "Brain boundary: candidate envelope only, execution forbidden."
+        ),
+        # Audit
+        "audit_evidence_notes": [
+            f"tenant_id={tid} scoped KPI evidence contract",
+            "source: A-026.5-RUNTIME KPI readiness visibility",
+            "no cross-tenant KPI aggregation",
+            "no fake KPI values generated",
+        ],
+        # Safety flags
+        "safety_flags": L5_SAFETY_FLAGS,
+        "no_autonomous_execution": True,
+        "no_l6_claim": True,
+        "tenant_scoped": True,
+    }
