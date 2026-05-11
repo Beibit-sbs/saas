@@ -616,3 +616,50 @@ Type counts (all candidates):
 - Next action id: A-027.2
 - Action title: Controlled implementation selection from accepted registry set
 - Scope: planning/runtime preparation only for selected accepted candidates under anti-inflation guardrails
+## A-027.2 — P0 New Module Foundation Batch 1 (L2 Service Contracts)
+
+### Selection and Implementation
+
+- Selected candidates: 11 P0 NEW_MODULE candidates from A-027.1 accepted set
+- Batch composition:
+  - UCE-001 | staff_recruitment
+  - UCE-002 | staff_onboarding
+  - UCE-003 | employee_records
+  - UCE-009 | document_workflow
+  - UCE-011 | order_decree_registry
+  - UCE-014 | curriculum_mapping
+  - UCE-015 | syllabus_management
+  - UCE-019 | international_office
+  - UCE-071 | program_learning_outcomes
+  - UCE-072 | course_learning_outcomes
+  - UCE-090 | committee_decision_registry
+
+- Implementation scope: L2 foundation service contracts only
+  - Module packages created: 11
+  - Service.py files created: 11 foundation contract functions
+  - Tenant fail-closed validation: PASS
+  - Safety flags: all True
+  - Determinism: PASS (identical input = identical output)
+
+### Implementation Status
+
+- Implementation status: COMPLETE
+- Targeted pytest: PASS (59 passed, 0 failed)
+- Anti-inflation: PASS (no API/frontend/provider/KPI/Brain/autonomy claims)
+- Scope verification: PASS (grep clean, no forbidden patterns)
+- Baseline 150 metrics: UNCHANGED (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2)
+- Extension 25 metrics: UNCHANGED
+
+### Expansion Layer Metrics Added
+
+- A0272_implemented_foundation_count: 11
+- expansion_L2_foundation_count: 11
+- baseline_impact: 0
+- extension_impact: 0
+- future_expansion_runtime_target: A-027.3 (L2→L3 deterministic logic for selected expansion modules)
+
+### Next Action
+
+- Next action id: A-027.3
+- Title: Select and implement L3 deterministic logic batch for expansion modules
+- Guardrails: strict anti-inflation, baseline isolation, deterministic logic only, no autonomous action
