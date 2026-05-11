@@ -9,11 +9,42 @@
 
 ## Baseline and Extension Separation (Locked)
 - Baseline target modules: 150
-- Baseline maturity: L0=4, L1=20, L2=13, L3=24, L4=66, L5=21, L6=2
-- Baseline arithmetic: PASS (4+20+13+24+66+21+2=150)
+- Baseline maturity: L0=0, L1=16, L2=21, L3=28, L4=62, L5=21, L6=2
+- Baseline arithmetic: PASS (0+16+21+28+62+21+2=150)
 - Extension modules: 25
 - Total tracked modules: 175
 - Separation policy: baseline and extension remain separate planes
+
+## A-026.3.B3 — L2/L3 Matrix Reconciliation (COMPLETED)
+
+**Blocker Resolution**: A-026.4-SPEC was blocked by L2_MATRIX_MISMATCH (L2=25 vs expected L2=21).
+
+**Root Cause**: 4 modules completed L2→L3 transitions in A-024 but remained marked L2 in matrix:
+- `ai_routing_control`: moved L2→L3 in A-024.1, matrix stale
+- `platform_health`: moved L2→L3 in A-024.1, matrix stale
+- `ai_copilot_ops`: moved L2→L3 in A-024.2, matrix stale
+- `procurement_approval_workflow`: moved L2→L3 in A-024.2, matrix stale
+
+**Corrected Rows** (rows 10, 15, 102, 105):
+- Current Level: L2 → L3
+- Bucket: B → C
+- Verified Level Source: A-024.1 / A-024.2 evidence
+- Capability Status: EVIDENCED_L3_AFTER_A024[1/2]
+- Target Next Level: L4 (consistent with Bucket C positioning)
+- A-026 Action: A-026.5 (operational visibility/API readiness)
+
+**Corrected Metrics**:
+- Before patch: L0=0, L1=16, L2=25, L3=24, L4=62, L5=21, L6=2 ❌ sum=150 (L2 overstated)
+- After patch: L0=0, L1=16, L2=21, L3=28, L4=62, L5=21, L6=2 ✓ sum=150 (PASS)
+- Arithmetic check: PASS
+
+**Anti-Inflation Review**:
+- ✓ No runtime code added
+- ✓ No new maturity beyond prior A-024/A-026 evidence
+- ✓ No API/frontend/KPI/Brain claims injected
+- ✓ Matrix alignment only (no product changes)
+
+**Impact**: A-026.4-SPEC unblocked. A-026.3.B3 complete.
 
 ## Normalization Philosophy
 1. No fake green.
@@ -153,12 +184,12 @@ Note:
 | 7 | admissions | Administration & Governance | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | E2E for admissions workflows | gate continuity | high | high | A-026.7 |
 | 8 | advising | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | frontend_missing | L5 | verify advising dashboard UX | frontend tests | medium | medium | A-026.5 |
 | 9 | ai_admissions_scoring | Research & Innovation | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | expose scoring API readiness | route tests | medium | high | A-026.5 |
-| 10 | ai_copilot_ops | Planned Expansion | L2 | B | A-023.0 | EVIDENCED_LEVEL_ONLY | service_contract_missing | L3 | deterministic copilot service | contract tests | medium | high | A-026.4 |
+| 10 | ai_copilot_ops | Planned Expansion | L3 | C | A-024.2 | EVIDENCED_L3_AFTER_A0242 | operational_visibility_or_API_depth_needed | L4 | operational visibility / API readiness specification | route or visibility contract tests | medium | high | A-026.5 |
 | 11 | ai_cost_governance | Planned Expansion | L2 | B | A-023.0 | EVIDENCED_LEVEL_ONLY | service_contract_missing | L3 | cost service determinism | contract tests | medium | high | A-026.4 |
 | 12 | ai_gateway | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | Brain signal gateway mapping | mapping tests | medium | high | A-026.6 |
 | 13 | ai_guardrails | AI/Knowledge/Reasoning | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | guardrails control API | route tests | medium | high | A-026.5 |
 | 14 | ai_plagiarism | Research & Innovation | L2 | B | A-023.0 | EVIDENCED_LEVEL_ONLY | FSM_workflow_missing | L3 | plagiarism detection FSM | transition tests | medium | high | A-026.4 |
-| 15 | ai_routing_control | Planned Expansion | L2 | B | A-023.0 | EVIDENCED_LEVEL_ONLY | service_contract_missing | L3 | routing control determinism | contract tests | medium | high | A-026.4 |
+| 15 | ai_routing_control | Planned Expansion | L3 | C | A-024.1 | EVIDENCED_L3_AFTER_A0241 | operational_visibility_or_API_depth_needed | L4 | operational visibility / routing control surface readiness | route or visibility contract tests | medium | high | A-026.5 |
 | 16 | alumni | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | alumni metrics lineage | lineage mapping | medium | low | A-026.6 |
 | 17 | alumni_donation_portal | Administration & Governance | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | donation API visibility | route tests | medium | medium | A-026.5 |
 | 18 | alumni_relations_ops | Planned Expansion | L1 | A | A-023.0 | EVIDENCED_LEVEL_ONLY | service_contract_missing | L2 | alumni service contract | contract tests | medium | high | A-026.3 |
@@ -245,10 +276,10 @@ Note:
 | 99 | pdpl | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify PDPL contract completeness | contract tests | medium | medium | A-026.5 |
 | 100 | plans | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | planning KPI mapping | lineage mapping | medium | low | A-026.6 |
 | 101 | platform | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify platform contract | contract tests | medium | low | A-026.5 |
-| 102 | platform_health | Planned Expansion | L2 | B | A-023.0 | EVIDENCED_LEVEL_ONLY | FSM_workflow_missing | L3 | health FSM logic | transition tests | medium | low | A-026.4 |
+| 102 | platform_health | Planned Expansion | L3 | C | A-024.1 | EVIDENCED_L3_AFTER_A0241 | operational_visibility_or_API_depth_needed | L4 | operational health visibility readiness | visibility contract tests | medium | low | A-026.5 |
 | 103 | platform_shared | Integrations & Platform | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | shared services API | route tests | medium | low | A-026.5 |
 | 104 | procurement | Finance & Billing | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | procurement E2E and gates | gate continuity | high | high | A-026.7 |
-| 105 | procurement_approval_workflow | Planned Expansion | L2 | B | A-023.0 | EVIDENCED_LEVEL_ONLY | FSM_workflow_missing | L3 | approval workflow FSM | transition tests | medium | high | A-026.4 |
+| 105 | procurement_approval_workflow | Planned Expansion | L3 | C | A-024.2 | EVIDENCED_L3_AFTER_A0242 | operational_visibility_or_API_depth_needed | L4 | operational workflow visibility/API readiness | route or workflow visibility tests | medium | high | A-026.5 |
 | 106 | profiles | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | profile signal mapping | mapping tests | medium | low | A-026.6 |
 | 107 | programs | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | program KPI mapping | lineage mapping | medium | high | A-026.6 |
 | 108 | prompt_management | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | prompt signal mapping | mapping tests | medium | high | A-026.6 |
