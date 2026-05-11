@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-027.3
-    - current_stage: A-027.2 complete / P0 new module foundation batch 1 implemented
-    - last_completed_action_id: A-027.2
-    - next_action_id: A-027.3
-    - updated_at: 2026-05-12 (A-027.2 runtime complete: 11 P0 NEW_MODULE L2 foundation contracts implemented and tested)
+    - status: ready_for_A-027.3-RUNTIME
+    - current_stage: A-027.3-SPEC complete / P0-P1 new module foundation batch 2 selected
+    - last_completed_action_id: A-027.3-SPEC
+    - next_action_id: A-027.3-RUNTIME
+    - updated_at: 2026-05-12 (A-027.3-SPEC complete: 12 P0/P1 NEW_MODULE candidates selected and specified for L2 foundation)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS
@@ -76,6 +76,32 @@
     - runtime_report_file: A-027.2-P0_NEW_MODULE_FOUNDATION_BATCH_1_REPORT.md
     - final_verdict: PASS_AUTHORITATIVE
     - next_action_id: A-027.3
+- A-027.3-SPEC execution block:
+    - mode: planning_and_specification_only_no_code
+    - purpose: select_p0_p1_new_module_foundation_batch_2
+    - source_of_truth_check: PASS (A-027.2 closed, baseline locked)
+    - a0272_exclusion_check: PASS (11 A-027.2 modules confirmed excluded)
+    - accepted_new_module_pool: 45 candidates (from A-027.1 governance lock)
+    - candidate_scoring: completed for 25+ candidates; top 12 selected
+    - selected_batch_count: 12 modules
+    - selected_batch: UCE-016 competency_framework, UCE-012 archive_retention_management, UCE-004 leave_management, UCE-005 performance_appraisal, UCE-007 disciplinary_case_management, UCE-081 degree_audit, UCE-082 transfer_credit_management, UCE-074 prerequisite_management, UCE-076 course_catalog_management, UCE-023 mou_lifecycle, UCE-022 partnership_registry, UCE-070 staff_exit_offboarding
+    - selected_batch_priority: P0=2, P1=10 (100% P0/P1)
+    - selected_batch_type: NEW_MODULE only (no integrations/brain/autonomous)
+    - selected_batch_domains: Academic (4), HR (4), International (2), Registrar (2)
+    - batch_scoring_range: 4.5–3.8 (all ≥ 4.0 except last 2)
+    - l2_foundation_standard: defined with tenant fail-closed, deterministic contracts, lifecycle/actions/evidence per module
+    - module_by_module_specs: all 12 modules specified with lifecycle/actions/evidence/tenant/anti-inflation boundaries
+    - expected_runtime_files: 25 (12 × __init__.py + 12 × service.py + 1 test file)
+    - expected_test_count: 75–85 parametrized tests across 7 groups
+    - expected_test_groups: import validation, tenant fail-closed, output structure, lifecycle, safety flags, determinism, anti-inflation
+    - anti_inflation_spec: PASS (no API/frontend/provider/KPI/Brain/autonomy specified; deterministic L2 contracts only)
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (unchanged)
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - expansion_metrics_current: A0272_implemented_foundation_count=11, expansion_L2_foundation_count=11, baseline_impact=0, extension_impact=0
+    - expansion_metrics_expected_if_runtime_pass: A0273_implemented_foundation_count=12, expansion_L2_foundation_count=23, baseline_impact=0, extension_impact=0
+    - spec_report_file: A-027.3-SPEC-P0_P1_NEW_MODULE_FOUNDATION_BATCH_2_REPORT.md
+    - final_verdict: SPEC_COMPLETE_PASS
+    - next_action_id: A-027.3-RUNTIME
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

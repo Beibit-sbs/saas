@@ -663,3 +663,119 @@ Type counts (all candidates):
 - Next action id: A-027.3
 - Title: Select and implement L3 deterministic logic batch for expansion modules
 - Guardrails: strict anti-inflation, baseline isolation, deterministic logic only, no autonomous action
+
+## A-027.3-SPEC — P0/P1 New Module Foundation Batch 2 Selection
+
+### Strategic Rationale
+
+Continue broad L2 foundation coverage across HR, academic, registrar, communications, and campus domains before deep L3 deterministic logic work. This prevents single-domain concentration and enables cross-module orchestration readiness in later waves.
+
+### A-027.2 Implemented Modules (11 P0)
+
+Excluded from A-027.3 candidate pool:
+- UCE-001 staff_recruitment
+- UCE-002 staff_onboarding
+- UCE-003 employee_records
+- UCE-009 document_workflow
+- UCE-011 order_decree_registry
+- UCE-014 curriculum_mapping
+- UCE-015 syllabus_management
+- UCE-019 international_office
+- UCE-071 program_learning_outcomes
+- UCE-072 course_learning_outcomes
+- UCE-090 committee_decision_registry
+
+### Selected A-027.3 Batch (12 Modules)
+
+| # | UCE ID | Module | Priority | Domain | Score | Why Selected |
+|---|---|---|---|---|---|---|
+| 1 | UCE-016 | competency_framework | P0 | Academic Affairs | 4.5 | Core accreditation driver; unlocks academic rigor |
+| 2 | UCE-012 | archive_retention_management | P0 | Library / Archive | 4.2 | Compliance/evidence requirement; policy-coupled |
+| 3 | UCE-004 | leave_management | P1 | Faculty / HR | 4.4 | Visibility foundation for HR stack; frequently queried |
+| 4 | UCE-005 | performance_appraisal | P1 | Faculty / HR | 4.3 | Evidence base for reviews and decisions |
+| 5 | UCE-007 | disciplinary_case_management | P1 | Faculty / HR | 4.1 | Strict human review; enables controlled workflows |
+| 6 | UCE-081 | degree_audit | P1 | Registrar | 4.4 | Student success prerequisite; foundational for progression |
+| 7 | UCE-082 | transfer_credit_management | P1 | Registrar | 4.4 | Enrollment critical path; cross-institution governance |
+| 8 | UCE-074 | prerequisite_management | P1 | Academic Affairs | 4.4 | Curriculum enforcement; accreditation link |
+| 9 | UCE-076 | course_catalog_management | P1 | Academic Affairs | 4.1 | Source of truth for enrollment; marketing feed |
+| 10 | UCE-023 | mou_lifecycle | P1 | International Office | 3.8 | Governance; high inter-domain value |
+| 11 | UCE-022 | partnership_registry | P1 | International Office | 3.8 | Enables mobility workflows; compliance tracking |
+| 12 | UCE-070 | staff_exit_offboarding | P1 | HR / Personnel | 4.1 | Compliance and audit control; HR lifecycle closure |
+
+**Batch validation:**
+- Count: 12 (within 10-14 range)
+- P0/P1 only: 2 P0 + 10 P1 (100% match)
+- No integrations: all pure domain modules
+- No Brain signals: none included
+- No autonomous candidates: all human-review-safe
+- Domain diversity: HR (1), Faculty HR (3), Academic (4), International (2), Registrar (2)
+
+### L2 Foundation Standard
+
+All 12 modules follow identical L2 contract pattern:
+- Tenant fail-closed validation (None/0/-1 rejected)
+- Deterministic service contract output
+- Module-specific lifecycle_statuses, allowed_actions, forbidden_actions
+- required_evidence and next_maturity_gap
+- All 12 safety flags = True
+- No API/frontend/provider/KPI/Brain/autonomy claim
+
+### Module-by-Module Specs
+
+See A-027.3-SPEC-P0_P1_NEW_MODULE_FOUNDATION_BATCH_2_REPORT.md for:
+- Detailed lifecycle statuses per module
+- Allowed/forbidden actions per module
+- Required evidence per module
+- Tenant boundaries per module
+- Anti-inflation boundaries per module
+
+### Expected Runtime Files
+
+- 12 × backend/app/modules/<module>/__init__.py
+- 12 × backend/app/modules/<module>/service.py
+- 1 × backend/tests/test_a0273_new_module_foundation_batch2.py
+
+Total: 25 files
+
+### Targeted Test Plan
+
+- Import validation (1 test)
+- Tenant fail-closed (12 tests)
+- Output structure (12 parametrized tests)
+- Lifecycle validation (12 parametrized tests)
+- Safety flags validation (12 parametrized tests)
+- Determinism validation (12 parametrized tests)
+- Anti-inflation verification (3 tests)
+
+Total: ~75–85 tests
+
+### Expected Expansion Metrics After A-027.3-RUNTIME
+
+If A-027.3 runtime passes:
+- A0273_implemented_foundation_count: 12
+- expansion_L2_foundation_count: 11 + 12 = 23
+- expansion_runtime_implemented_count: 23
+- baseline_impact: 0
+- extension_impact: 0
+
+### Baseline/Extension Separation
+
+- Baseline 150 metrics: UNCHANGED (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2)
+- Extension 25 metrics: UNCHANGED
+- Expansion metrics: Isolated in control block
+
+### Anti-Fake Review
+
+- SPEC-only: no code created in this phase
+- No runtime claims: modules marked "PENDING_A-027.3-RUNTIME"
+- No maturity movement: baseline locked
+- No baseline contamination: all modules in expansion layer
+- No false claims beyond L2 foundation contracts
+
+### Next Action
+
+- Next action id: A-027.3-RUNTIME
+- Title: Implement P0/P1 New Module Foundation Batch 2 (12 modules)
+- Scope: Create 12 L2 foundation service contracts
+- Validation: Docker pytest ~75–85 tests
+- Expected outcome: 12 × L2 foundation contracts, test PASS, expansion_L2_foundation_count = 23
