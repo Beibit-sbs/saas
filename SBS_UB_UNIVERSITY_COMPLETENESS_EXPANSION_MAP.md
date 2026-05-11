@@ -694,8 +694,8 @@ Excluded from A-027.3 candidate pool:
 | 3 | UCE-004 | leave_management | P1 | Faculty / HR | 4.4 | Visibility foundation for HR stack; frequently queried |
 | 4 | UCE-005 | performance_appraisal | P1 | Faculty / HR | 4.3 | Evidence base for reviews and decisions |
 | 5 | UCE-007 | disciplinary_case_management | P1 | Faculty / HR | 4.1 | Strict human review; enables controlled workflows |
-| 6 | UCE-081 | degree_audit | P1 | Registrar | 4.4 | Student success prerequisite; foundational for progression |
-| 7 | UCE-082 | transfer_credit_management | P1 | Registrar | 4.4 | Enrollment critical path; cross-institution governance |
+| 6 | UCE-092 | degree_audit | P1 | Registrar | 4.4 | Student success prerequisite; foundational for progression |
+| 7 | UCE-075 | transfer_credit_management | P1 | Registrar | 4.4 | Enrollment critical path; cross-institution governance |
 | 8 | UCE-074 | prerequisite_management | P1 | Academic Affairs | 4.4 | Curriculum enforcement; accreditation link |
 | 9 | UCE-076 | course_catalog_management | P1 | Academic Affairs | 4.1 | Source of truth for enrollment; marketing feed |
 | 10 | UCE-023 | mou_lifecycle | P1 | International Office | 3.8 | Governance; high inter-domain value |
@@ -748,9 +748,9 @@ All 12 modules from A-027.3 batch successfully implemented with L2 foundation co
 - backend/app/modules/performance_appraisal/service.py
 - backend/app/modules/disciplinary_case_management/__init__.py (UCE-007, P1)
 - backend/app/modules/disciplinary_case_management/service.py
-- backend/app/modules/degree_audit/__init__.py (UCE-081, P1)
+- backend/app/modules/degree_audit/__init__.py (UCE-092, P1)
 - backend/app/modules/degree_audit/service.py
-- backend/app/modules/transfer_credit_management/__init__.py (UCE-082, P1)
+- backend/app/modules/transfer_credit_management/__init__.py (UCE-075, P1)
 - backend/app/modules/transfer_credit_management/service.py
 - backend/app/modules/prerequisite_management/__init__.py (UCE-074, P1)
 - backend/app/modules/prerequisite_management/service.py

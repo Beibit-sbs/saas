@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-027.3.R1
-    - current_stage: A-027.1.B1 complete / degree_audit canonical registry amendment
-    - last_completed_action_id: A-027.1.B1
-    - next_action_id: A-027.3.R1
-    - updated_at: 2026-05-12 (A-027.1.B1 complete: UCE-092 canonicalized to degree_audit NEW_MODULE; governance-only fix before A-027.3.R1 runtime evidence reconciliation)
+    - status: ready_for_A-027.4.B1
+    - current_stage: A-027.3.R1 complete / UCE ID runtime evidence reconciled
+    - last_completed_action_id: A-027.3.R1
+    - next_action_id: A-027.4.B1
+    - updated_at: 2026-05-12 (A-027.3.R1 complete: degree_audit UCE corrected to UCE-092, transfer_credit_management corrected to UCE-075, tests passed; A-027.4.B1 rerun required before A-027.4-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -101,7 +101,7 @@
     - accepted_new_module_pool: 45 candidates (from A-027.1 governance lock)
     - candidate_scoring: completed for 25+ candidates; top 12 selected
     - selected_batch_count: 12 modules
-    - selected_batch: UCE-016 competency_framework, UCE-012 archive_retention_management, UCE-004 leave_management, UCE-005 performance_appraisal, UCE-007 disciplinary_case_management, UCE-081 degree_audit, UCE-082 transfer_credit_management, UCE-074 prerequisite_management, UCE-076 course_catalog_management, UCE-023 mou_lifecycle, UCE-022 partnership_registry, UCE-070 staff_exit_offboarding
+    - selected_batch: UCE-016 competency_framework, UCE-012 archive_retention_management, UCE-004 leave_management, UCE-005 performance_appraisal, UCE-007 disciplinary_case_management, UCE-092 degree_audit, UCE-075 transfer_credit_management, UCE-074 prerequisite_management, UCE-076 course_catalog_management, UCE-023 mou_lifecycle, UCE-022 partnership_registry, UCE-070 staff_exit_offboarding
     - selected_batch_priority: P0=2, P1=10 (100% P0/P1)
     - selected_batch_type: NEW_MODULE only (no integrations/brain/autonomous)
     - selected_batch_domains: Academic (4), HR (4), International (2), Registrar (2)
@@ -119,6 +119,22 @@
     - spec_report_file: A-027.3-SPEC-P0_P1_NEW_MODULE_FOUNDATION_BATCH_2_REPORT.md
     - final_verdict: SPEC_COMPLETE_PASS
     - next_action_id: A-027.3-RUNTIME
+- A-027.3.R1 execution block:
+    - mode: runtime_evidence_reconciliation_metadata_only
+    - purpose: reconcile_a0273_uce_ids_to_canonical_a0271_b1
+    - canonical_registry_source: A-027.1.B1 amendment + A-027.1 canonical registry
+    - corrected_mappings: degree_audit UCE-081->UCE-092, transfer_credit_management UCE-082->UCE-075
+    - reserved_ids_preserved: UCE-081=disability_support_services, UCE-082=student_financial_hardship
+    - code_scope: service metadata + tests + A-027.3 docs/tracker references
+    - business_logic_changes: none
+    - targeted_pytest: PASS (tests/test_a0273_new_module_foundation_batch2.py)
+    - continuity_pytest: PASS (tests/test_a0272_p0_new_module_foundation_contracts.py + tests/test_a0273_new_module_foundation_batch2.py)
+    - no_maturity_movement: PASS
+    - no_baseline_extension_metric_change: PASS
+    - safety_decision: A-027.4.B1 must be rerun before A-027.4-RUNTIME
+    - report_file: A-027.3.R1-UCE_ID_RUNTIME_EVIDENCE_RECONCILIATION_REPORT.md
+    - final_verdict: PASS_AUTHORITATIVE
+    - next_action_id: A-027.4.B1
 - A-027.4-SPEC execution block:
     - mode: planning_and_specification_only_no_code
     - purpose: select_p0_p1_new_module_foundation_batch_3
@@ -143,7 +159,7 @@
     - expansion_metrics_expected_if_runtime_pass: A0274_implemented_foundation_count=N, expansion_L2_foundation_count=23+N, expansion_runtime_implemented_count=23+N, baseline_impact=0, extension_impact=0
     - spec_report_file: A-027.4-SPEC-P0_P1_NEW_MODULE_FOUNDATION_BATCH_3_REPORT.md
     - final_verdict: SPEC_COMPLETE_PASS
-    - next_action_id: A-027.4-RUNTIME
+    - next_action_id: A-027.4.B1
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

@@ -1,6 +1,8 @@
-"""Transfer_Credit_Management L2 Foundation Service Contract (UCE-082)."""
+"""Transfer_Credit_Management L2 Foundation Service Contract (UCE-075)."""
 
-from . import MODULE_NAME, UCE_ID, TARGET_LEVEL, CONTRACT_VERSION, FOUNDATION_STATUS
+from . import MODULE_NAME, TARGET_LEVEL, CONTRACT_VERSION, FOUNDATION_STATUS
+
+CANONICAL_UCE_ID = "UCE-075"
 
 
 def validate_tenant_id(tenant_id: int) -> int:
@@ -17,7 +19,7 @@ def get_transfer_credit_management_foundation_contract(tenant_id: int, payload: 
     return {
         "tenant_id": tenant_id,
         "module": MODULE_NAME,
-        "uce_id": UCE_ID,
+        "uce_id": CANONICAL_UCE_ID,
         "maturity_level": TARGET_LEVEL,
         "expansion_layer": "university_completeness",
         "contract_status": "FOUNDATION_READY",
