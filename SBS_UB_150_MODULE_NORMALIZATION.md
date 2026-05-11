@@ -11,8 +11,8 @@
 This file tracks the reconciled baseline and extension separation state.
 
 - Baseline target modules: 150
-- Baseline maturity: L0=0, L1=0, L2=29, L3=26, L4=68, L5=25, L6=2
-- Baseline arithmetic: PASS (0+0+29+26+68+25+2=150)
+- Baseline maturity: L0=0, L1=0, L2=21, L3=34, L4=68, L5=25, L6=2
+- Baseline arithmetic: PASS (0+0+21+34+68+25+2=150)
 - Extension modules: 25
 - Total tracked modules: 175
 - Separation policy: baseline and extension remain separate planes
@@ -2112,6 +2112,46 @@ Spec boundary:
 
 ---
 
+## A-026.8-RUNTIME — L2→L3 Deterministic Service Logic Implementation
+
+**Status**: COMPLETE (runtime implemented and validated)
+
+### Runtime Scope
+
+- implemented deterministic L3 service logic functions in 8 selected modules only
+- preserved existing L2 foundation contracts and tenant fail-closed guards
+- no router/API/schema/frontend/DB migration/event/KPI/Brain/provider/autonomy behavior added
+
+### Selected Runtime Modules
+
+- digital_certificates
+- records_hub
+- student_success_analytics
+- publication_registry
+- research_projects
+- lms_assessment_center
+- lab_operations
+- internship_marketplace
+
+### Runtime Validation Evidence
+
+- targeted Docker pytest: PASS (backend/tests/test_a0268_l2_to_l3_deterministic_service_logic.py, 88 passed, 1 warning)
+- continuity Docker pytest: PASS (A-026.3 through A-026.8 suite, 482 passed, 1 warning)
+- scope and anti-inflation checks: PASS (git diff --check clean; runtime service files free of API/router/provider tokens)
+
+### Maturity Movement (Authoritative)
+
+- before: L0=0, L1=0, L2=29, L3=26, L4=68, L5=25, L6=2
+- after: L0=0, L1=0, L2=21, L3=34, L4=68, L5=25, L6=2
+- arithmetic check: PASS (0+0+21+34+68+25+2=150)
+- extension metrics: unchanged (25), separation remains PASS
+
+### Next Action
+
+- A-026.9-SPEC
+
+---
+
 ## A-026.6-SPEC - L4→L5 Evidence / Governance / KPI / Brain-Readiness Batch Specification
 
 **Status**: SPEC ONLY (historical; A-026.6-RUNTIME completed)
@@ -2685,8 +2725,8 @@ Required evidence:
 | Bucket | Current Levels | Module Count | Main Gap | Target Outcome | A-026.x Action |
 |---|---|---:|---|---|---|
 | Bucket A - L0/L1 Foundation Normalization | L0-L1 | 0 | foundation and contract gaps | L2-ready foundations completed for baseline | A-026.7.L1L2-RUNTIME |
-| Bucket B - L2 Service Contract Normalization | L2 | 29 | deterministic service logic gaps | L3 deterministic backend slices | A-026.8-SPEC |
-| Bucket C - L3 Operational Visibility Normalization | L3 | 26 | API/visibility/test depth gaps | L4 operational readiness | A-026.5 |
+| Bucket B - L2 Service Contract Normalization | L2 | 21 | deterministic service logic gaps | L3 deterministic backend slices | A-026.9-SPEC |
+| Bucket C - L3 Operational Visibility Normalization | L3 | 34 | API/visibility/test depth gaps | L4 operational readiness | A-026.5 |
 | Bucket D - L4 Brain/Evidence Readiness | L4 | 68 | KPI/evidence/Brain mapping gaps | selective L5-readiness candidates | A-026.6 |
 | Bucket E - L5 E2E/Gate Closure | L5 | 25 | gate continuity and E2E closure | selective L6 proofs | A-026.7 |
 | Bucket F - Preserve / Regression Only | L6 | 2 | regression risk only | preserve quality baseline | A-026.7 |
@@ -2763,7 +2803,7 @@ Note:
 | 39 | degree_progress | Core Academic | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | degree E2E and gates | gate continuity | high | high | A-026.7 |
 | 40 | delinquency_collections | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | delinquency KPI lineage | lineage mapping | medium | high | A-026.6 |
 | 41 | developer_portal | Planned Expansion | L2 | B | A-023.0 | EVIDENCED_LEVEL_ONLY | service_contract_missing | L3 | developer service contract | contract tests | medium | low | A-026.4 |
-| 42 | digital_certificates | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 42 | digital_certificates | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
 | 43 | digital_documents | Administration & Governance | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | document API visibility | route tests | medium | low | A-026.5 |
 | 44 | dining | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | dining KPI mapping | lineage mapping | medium | low | A-026.6 |
 | 45 | donations_fundraising | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
@@ -2792,17 +2832,17 @@ Note:
 | 68 | identity | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | identity event mapping | mapping tests | medium | high | A-026.6 |
 | 69 | integrations | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify integration breadth | contract tests | medium | low | A-026.5 |
 | 70 | internship | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | internship API visibility | route tests | medium | medium | A-026.5 |
-| 71 | internship_marketplace | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 71 | internship_marketplace | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
 | 72 | interventions | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | intervention signal mapping | mapping tests | medium | high | A-026.6 |
 | 73 | invoices | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | invoice KPI lineage | lineage mapping | medium | high | A-026.6 |
 | 74 | ip_management | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | IP portfolio signal | mapping tests | medium | medium | A-026.6 |
 | 75 | jobs | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify job board scope | contract tests | medium | low | A-026.5 |
 | 76 | knowledge_retrieval | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | retrieval signal mapping | mapping tests | medium | high | A-026.6 |
-| 77 | lab_operations | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 77 | lab_operations | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
 | 78 | ldap | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify LDAP integration scope | contract tests | medium | medium | A-026.5 |
 | 79 | library | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | library API visibility | route tests | medium | medium | A-026.5 |
 | 80 | library_circulation | Planned Expansion | L2 | B | A-023.0 | EVIDENCED_LEVEL_ONLY | FSM_workflow_missing | L3 | circulation FSM logic | transition tests | medium | high | A-026.4 |
-| 81 | lms_assessment_center | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 81 | lms_assessment_center | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
 | 82 | lms_content | Administration & Governance | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | content API visibility | route tests | medium | medium | A-026.5 |
 | 83 | local_user_management | Planned Expansion | L2 | B | A-023.0 | EVIDENCED_LEVEL_ONLY | tenant_guard_missing | L3 | user management tenant guards | tenant tests | high | high | A-026.4 |
 | 84 | mobile_app | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | frontend_missing | L4 | mobile app frontend visibility | frontend tests | medium | medium | A-026.5 |
@@ -2830,15 +2870,15 @@ Note:
 | 106 | profiles | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | profile signal mapping | mapping tests | medium | low | A-026.6 |
 | 107 | programs | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | program KPI mapping | lineage mapping | medium | high | A-026.6 |
 | 108 | prompt_management | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | prompt signal mapping | mapping tests | medium | high | A-026.6 |
-| 109 | publication_registry | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 109 | publication_registry | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
 | 110 | publications | Research & Innovation | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | publications API visibility | route tests | medium | low | A-026.5 |
 | 111 | quotas | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | quota KPI lineage | lineage mapping | medium | low | A-026.6 |
 | 112 | rbac | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | RBAC event mapping | mapping tests | medium | high | A-026.6 |
-| 113 | records_hub | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 113 | records_hub | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
 | 114 | research | Research & Innovation | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | research E2E and gates | gate continuity | high | high | A-026.7 |
 | 115 | research_ethics | Research & Innovation | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | ethics E2E and gates | gate continuity | high | high | A-026.7 |
 | 116 | research_grants | Planned Expansion | L2 | B | A-023.0 | EVIDENCED_LEVEL_ONLY | FSM_workflow_missing | L3 | grants FSM logic | transition tests | medium | high | A-026.4 |
-| 117 | research_projects | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 117 | research_projects | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
 | 118 | room_booking | Core Academic | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | room booking E2E gates | gate continuity | high | high | A-026.7 |
 | 119 | scheduling | Core Academic | L6 | F | A-023.0 | EVIDENCED_LEVEL_ONLY | preserve_only | L6 | preserve gate continuity | regression tests | medium | high | A-026.7 |
 | 120 | scholarship | Finance & Billing | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | scholarship E2E gates | gate continuity | high | high | A-026.7 |
@@ -2852,7 +2892,7 @@ Note:
 | 128 | student_life | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | life KPI mapping | lineage mapping | medium | medium | A-026.6 |
 | 129 | student_portal | Student & Campus Life | L4 | D | A-024.4 | EVIDENCED_L4_AFTER_A0244 | KPI_evidence_or_Brain_mapping_missing | L5-readiness | student portal evidence/governance mapping | lineage/mapping contract tests | medium | high | A-026.6 |
 | 130 | student_services | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | services KPI mapping | lineage mapping | medium | medium | A-026.6 |
-| 131 | student_success_analytics | Planned Expansion | L2 | B | A-026.7.L1L2-RUNTIME | EVIDENCED_L2_AFTER_A0267_L1L2 | deterministic_service_logic_needed | L3 | deterministic service/business logic | L3 logic/classification tests | medium | high | A-026.8 |
+| 131 | student_success_analytics | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
 | 132 | students | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | student KPI mapping | lineage mapping | medium | high | A-026.6 |
 | 133 | subscriptions | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | subscription KPI lineage | lineage mapping | medium | low | A-026.6 |
 | 134 | syllabus_governance | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | syllabus signal mapping | mapping tests | medium | high | A-026.6 |

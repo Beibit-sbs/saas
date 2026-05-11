@@ -82,3 +82,85 @@ def get_student_success_analytics_foundation_contract(
         "payload_keys": sorted(normalized_payload.keys()),
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def evaluate_student_success_readiness(tenant_id: int, analytics_payload: dict | None = None) -> dict[str, Any]:
+    """Evaluate deterministic L3 readiness for student_success_analytics."""
+    normalized_tenant_id = validate_tenant_id(tenant_id)
+    payload = analytics_payload if isinstance(analytics_payload, dict) else {}
+
+    base_required_evidence = ['student_id', 'term_id', 'signal_snapshot']
+    missing_required = [key for key in base_required_evidence if payload.get(key) in (None, '', [], {})]
+
+    allowed_actions = ['REVIEW_SUCCESS_SIGNALS', 'REQUEST_ATTENDANCE_EVIDENCE', 'REQUEST_GRADE_EVIDENCE', 'MARK_FOR_ADVISOR_REVIEW']
+    forbidden_actions = ['AUTO_LABEL_STUDENT_AT_RISK', 'AUTO_TRIGGER_INTERVENTION', 'AUTO_DISCIPLINARY_ACTION']
+
+    attendance_evidence_complete = bool(payload.get('attendance_evidence_complete'))
+    grade_evidence_complete = bool(payload.get('grade_evidence_complete'))
+    intervention_required = bool(payload.get('intervention_required'))
+
+    if missing_required:
+        classification = 'ANALYTICS_INPUT_INCOMPLETE'
+        readiness_level = 'PENDING'
+        risk_level = 'MEDIUM'
+        next_step = 'COMPLETE_REQUIRED_ANALYTICS_FIELDS'
+        rationale = 'Required analytics fields are missing'
+    elif not attendance_evidence_complete or not grade_evidence_complete:
+        classification = 'RISK_SIGNALS_INCOMPLETE'
+        readiness_level = 'BLOCKED'
+        risk_level = 'HIGH'
+        next_step = 'REQUEST_ATTENDANCE_EVIDENCE' if not attendance_evidence_complete else 'REQUEST_GRADE_EVIDENCE'
+        rationale = 'Risk signals are incomplete and require supporting evidence'
+    elif intervention_required:
+        classification = 'INTERVENTION_REVIEW_REQUIRED'
+        readiness_level = 'PENDING'
+        risk_level = 'HIGH'
+        next_step = 'MARK_FOR_ADVISOR_REVIEW'
+        rationale = 'Intervention signal requires deterministic advisor review'
+    elif bool(payload.get('advisor_triage_ready')):
+        classification = 'READY_FOR_ADVISOR_TRIAGE'
+        readiness_level = 'READY'
+        risk_level = 'MEDIUM'
+        next_step = 'REVIEW_SUCCESS_SIGNALS'
+        rationale = 'Signals are complete and ready for advisor triage'
+    else:
+        classification = 'READY_FOR_HUMAN_SUCCESS_REVIEW'
+        readiness_level = 'READY'
+        risk_level = 'LOW'
+        next_step = 'REVIEW_SUCCESS_SIGNALS'
+        rationale = 'Signals are complete for deterministic human success review'
+
+    l3_safety_flags = {
+        **SAFETY_FLAGS,
+        'tenant_scoped': True,
+        'deterministic': True,
+        'no_api_claim': True,
+        'no_frontend_claim': True,
+        'no_kpi_claim': True,
+        'no_brain_claim': True,
+        'no_autonomous_execution': True,
+        'no_external_provider_call': True,
+        'no_l4_claim': True,
+        'no_l5_claim': True,
+        'no_l6_claim': True,
+    }
+
+    required_evidence = list(base_required_evidence)
+
+    return {
+        'tenant_id': normalized_tenant_id,
+        'module': MODULE_NAME,
+        'maturity_level': 'L3',
+        'evaluation_status': 'EVALUATED',
+        'classification': classification,
+        'readiness_level': readiness_level,
+        'risk_level': risk_level,
+        'required_evidence': required_evidence,
+        'missing_required_evidence': missing_required,
+        'allowed_actions': list(allowed_actions),
+        'forbidden_actions': list(forbidden_actions),
+        'human_review_required': True,
+        'next_recommended_step': next_step,
+        'rationale_notes': rationale,
+        'safety_flags': l3_safety_flags,
+    }

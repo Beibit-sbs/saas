@@ -82,3 +82,85 @@ def get_lab_operations_foundation_contract(
         "payload_keys": sorted(normalized_payload.keys()),
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def evaluate_lab_operations_readiness(tenant_id: int, lab_payload: dict | None = None) -> dict[str, Any]:
+    """Evaluate deterministic L3 readiness for lab_operations."""
+    normalized_tenant_id = validate_tenant_id(tenant_id)
+    payload = lab_payload if isinstance(lab_payload, dict) else {}
+
+    base_required_evidence = ['lab_request_id', 'lab_id', 'requested_slot']
+    missing_required = [key for key in base_required_evidence if payload.get(key) in (None, '', [], {})]
+
+    allowed_actions = ['REVIEW_LAB_REQUEST', 'REQUEST_SAFETY_EVIDENCE', 'REQUEST_CAPACITY_EVIDENCE', 'MARK_FOR_MANUAL_SCHEDULING']
+    forbidden_actions = ['AUTO_ASSIGN_LAB', 'AUTO_OVERRIDE_CAPACITY', 'AUTO_BYPASS_SAFETY_REVIEW']
+
+    safety_evidence_complete = bool(payload.get('safety_evidence_complete'))
+    capacity_evidence_complete = bool(payload.get('capacity_evidence_complete'))
+    scheduling_review_requested = bool(payload.get('scheduling_review_requested'))
+
+    if missing_required:
+        classification = 'LAB_INPUT_INCOMPLETE'
+        readiness_level = 'PENDING'
+        risk_level = 'MEDIUM'
+        next_step = 'COMPLETE_REQUIRED_LAB_FIELDS'
+        rationale = 'Required lab fields are missing'
+    elif not safety_evidence_complete:
+        classification = 'SAFETY_REVIEW_REQUIRED'
+        readiness_level = 'BLOCKED'
+        risk_level = 'HIGH'
+        next_step = 'REQUEST_SAFETY_EVIDENCE'
+        rationale = 'Safety evidence is required before lab scheduling review'
+    elif not capacity_evidence_complete:
+        classification = 'CAPACITY_REVIEW_REQUIRED'
+        readiness_level = 'PENDING'
+        risk_level = 'MEDIUM'
+        next_step = 'REQUEST_CAPACITY_EVIDENCE'
+        rationale = 'Capacity evidence is required before deterministic readiness'
+    elif scheduling_review_requested:
+        classification = 'READY_FOR_MANUAL_SCHEDULING_REVIEW'
+        readiness_level = 'READY'
+        risk_level = 'LOW'
+        next_step = 'MARK_FOR_MANUAL_SCHEDULING'
+        rationale = 'Lab request is complete for manual scheduling review'
+    else:
+        classification = 'READY_FOR_LAB_REVIEW'
+        readiness_level = 'READY'
+        risk_level = 'LOW'
+        next_step = 'REVIEW_LAB_REQUEST'
+        rationale = 'Lab request evidence is complete for deterministic review'
+
+    l3_safety_flags = {
+        **SAFETY_FLAGS,
+        'tenant_scoped': True,
+        'deterministic': True,
+        'no_api_claim': True,
+        'no_frontend_claim': True,
+        'no_kpi_claim': True,
+        'no_brain_claim': True,
+        'no_autonomous_execution': True,
+        'no_external_provider_call': True,
+        'no_l4_claim': True,
+        'no_l5_claim': True,
+        'no_l6_claim': True,
+    }
+
+    required_evidence = list(base_required_evidence)
+
+    return {
+        'tenant_id': normalized_tenant_id,
+        'module': MODULE_NAME,
+        'maturity_level': 'L3',
+        'evaluation_status': 'EVALUATED',
+        'classification': classification,
+        'readiness_level': readiness_level,
+        'risk_level': risk_level,
+        'required_evidence': required_evidence,
+        'missing_required_evidence': missing_required,
+        'allowed_actions': list(allowed_actions),
+        'forbidden_actions': list(forbidden_actions),
+        'human_review_required': True,
+        'next_recommended_step': next_step,
+        'rationale_notes': rationale,
+        'safety_flags': l3_safety_flags,
+    }
