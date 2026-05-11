@@ -1,12 +1,22 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-026.9-SPEC
-    - current_stage: A-026.8-RUNTIME complete / bounded L2→L3 deterministic service logic implemented for 8 modules
-    - last_completed_action_id: A-026.8-RUNTIME
-    - next_action_id: A-026.9-SPEC
-    - updated_at: 2026-05-12 (A-026.8-RUNTIME complete: 8 selected modules lifted L2→L3 with deterministic service logic; targeted and continuity Docker pytest PASS; maturity moved L2=29→21 and L3=26→34)
+    - status: ready_for_A-026.9-RUNTIME
+    - current_stage: A-026.9-SPEC complete / selected L2→L3 deterministic service logic batch 2
+    - last_completed_action_id: A-026.9-SPEC
+    - next_action_id: A-026.9-RUNTIME
+    - updated_at: 2026-05-12 (A-026.9-SPEC complete: second bounded L2→L3 deterministic batch selected; no runtime code changes; no maturity movement)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=21, L3=34, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS
+- A-026.9-SPEC execution block:
+    - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
+    - selected_batch_size: 8
+    - runtime_scope: none (spec-only; no code/test/schema/router/frontend changes)
+    - validation_mode: planning/docs only
+    - expected_post_runtime_formula: L2=21-N, L3=34+N, L4=68, L5=25, L6=2; if N=8 then L2=13 and L3=42
+    - anti_inflation: PASS (no API/frontend/KPI/Brain/autonomy claims)
+    - runtime_report_file: A-026.9-SPEC-L2_TO_L3_DETERMINISTIC_SERVICE_LOGIC_BATCH2_REPORT.md
+    - final_verdict: SPEC_COMPLETE_READY_FOR_RUNTIME
+    - next_action_id: A-026.9-RUNTIME
 - extension_metrics: 25_L0_modules_PLANNING_ONLY, isolated_from_baseline, total_tracked=175, separation=PASS
 - A-026.4-RUNTIME execution block:
     - selected_batch: human_approved_timetable_workflow, timetable_change_proposal, timetable_change_simulation, timetable_recommendation_bridge, timetable_approval_queue, timetable_change_kpi_dashboard, workload_management, notification_center

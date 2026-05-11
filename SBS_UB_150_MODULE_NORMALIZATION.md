@@ -1196,6 +1196,365 @@ If N=6:
 - SBS_UB.md metrics remain unchanged until runtime passes
 - the normalized matrix is updated only after implementation and validation
 
+## A-026.9-SPEC — L2→L3 Deterministic Service Logic Batch 2 Specification
+
+**Status**: SPEC ONLY (planning-only, no runtime implementation)
+
+**Purpose**: Select the next bounded current-L2 batch for future A-026.9-RUNTIME and define deep deterministic L3 service-logic specifications with strict anti-inflation boundaries.
+
+### L2 Extraction Summary
+
+- expected L2 count: 21
+- found L2 count: 21
+- status: PASS
+- tracker remains authoritative: SBS_UB.md
+- runtime has not started: confirmed
+
+### A-026.8 Exclusion Confirmation
+
+The following modules were already lifted to L3 in A-026.8 and must not be selected again:
+
+| Module | Expected Level After A-026.8 | Found Level | Status |
+|---|---:|---:|---|
+| digital_certificates | L3 | L3 | PASS |
+| records_hub | L3 | L3 | PASS |
+| student_success_analytics | L3 | L3 | PASS |
+| publication_registry | L3 | L3 | PASS |
+| research_projects | L3 | L3 | PASS |
+| lms_assessment_center | L3 | L3 | PASS |
+| lab_operations | L3 | L3 | PASS |
+| internship_marketplace | L3 | L3 | PASS |
+
+### Selected A-026.9 Batch
+
+Selected batch size: 8.
+
+| Selected Module | Current Level | Target Level | Why Selected | Expected L3 Logic | Required Tests | Risk |
+|---|---:|---:|---|---|---|---|
+| parking_permit_ops | L2 | L3 | clear deterministic permit readiness and eligibility rules | permit readiness, status, next_step, allowed/forbidden actions | tenant, determinism, boundary, anti-inflation | medium |
+| parking_enforcement | L2 | L3 | operational workflow with explicit rule boundaries | enforcement review, risk, escalation, next_step | tenant, classification, forbidden-action tests | medium |
+| event_registration_portal | L2 | L3 | high reuse value for event intake and eligibility review | registration readiness and status classification | tenant, readiness, forbidden-action, anti-inflation | medium |
+| parent_engagement | L2 | L3 | strong engagement governance and deterministic readiness logic | outreach readiness and intervention classification | tenant, determinism, evidence, boundary tests | medium |
+| alumni_relations_ops | L2 | L3 | operationally useful relationship workflow with clean rule set | alumni outreach readiness and risk classification | tenant, deterministic output, boundary tests | medium |
+| donations_fundraising | L2 | L3 | measurable readiness/risk classification with clear evidence gates | fundraising readiness and review classification | tenant, forbidden-action, no-fake-data tests | medium |
+| exam_integrity_analytics | L2 | L3 | high governance value with explicit integrity boundaries | integrity review readiness and escalation classification | tenant, determinism, anti-inflation, boundary | high |
+| mobile_push_gateway | L2 | L3 | useful if kept provider-free with strict preview/readiness boundary | notification preview/readiness without sending | tenant, no-provider-call, determinism, boundary | high |
+
+### A-026.9 L3 Deterministic Service Logic Standard
+
+1. Deterministic business logic
+- service function does more than return foundation contract
+- module-specific classification/status/risk/readiness logic
+- deterministic next recommended step
+
+2. Tenant fail-closed behavior
+- tenant_id=None rejected
+- tenant_id=0 rejected
+- tenant_id<0 rejected
+- valid tenant_id accepted
+- output tenant-scoped
+
+3. Domain-specific rules
+- module-specific statuses
+- allowed actions
+- forbidden actions
+- required evidence
+- readiness/risk classification
+
+4. Tests
+- import tests
+- tenant fail-closed tests
+- deterministic output tests
+- classification/status/risk tests
+- boundary tests
+- anti-inflation tests
+
+5. Anti-inflation
+- no API claim
+- no frontend claim
+- no KPI claim
+- no Brain claim
+- no autonomous execution
+- no L4/L5/L6 claim
+- no external provider call
+
+### Module-by-Module Deep Specification
+
+#### Module: parking_permit_ops
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract and tenant guard
+- Primary gap: deterministic_service_logic_needed
+- Will do: evaluate permit readiness, eligibility state, and review routing deterministically
+- Will NOT do: issue permits automatically, mutate records, expose APIs, or call external services
+- Expected runtime file: backend/app/modules/parking_permit_ops/service.py
+- L3 function: evaluate_parking_permit_ops_readiness(tenant_id, permit_payload)
+- statuses: INCOMPLETE, UNDER_REVIEW, ELIGIBLE, BLOCKED
+- classifications: READY_FOR_REVIEW, NEEDS_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_PERMIT, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_ISSUE_PERMIT, AUTO_OVERRIDE_ELIGIBILITY
+- required evidence: tenant_id, vehicle_context, permit_type, compliance_context
+- human review boundary: eligibility decisions remain human-controlled
+- required tests: tenant fail-closed, determinism, readiness levels, forbidden actions
+- anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
+
+#### Module: parking_enforcement
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract and tenant guard
+- Primary gap: deterministic_service_logic_needed
+- Will do: classify enforcement review state, risk, and escalation recommendations deterministically
+- Will NOT do: issue citations, mutate enforcement outcomes, expose APIs, or call providers
+- Expected runtime file: backend/app/modules/parking_enforcement/service.py
+- L3 function: evaluate_parking_enforcement_readiness(tenant_id, enforcement_payload)
+- statuses: REPORTED, REVIEWING, ESCALATED, CLOSED
+- classifications: READY_FOR_REVIEW, NEEDS_SUPPORTING_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_CASE, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_CITATION, AUTO_CLOSE_CASE, AUTO_OVERRIDE_POLICY
+- required evidence: tenant_id, violation_context, evidence_snapshot, policy_context
+- human review boundary: citation and closure remain human-controlled
+- required tests: tenant validation, determinism, risk banding, forbidden actions
+- anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
+
+#### Module: event_registration_portal
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract and tenant guard
+- Primary gap: deterministic_service_logic_needed
+- Will do: evaluate registration readiness and eligibility routing deterministically
+- Will NOT do: accept registrations automatically, mutate schedules, expose API/UI surfaces, or call providers
+- Expected runtime file: backend/app/modules/event_registration_portal/service.py
+- L3 function: evaluate_event_registration_portal_readiness(tenant_id, registration_payload)
+- statuses: DRAFT, READY, PENDING_REVIEW, BLOCKED
+- classifications: READY_FOR_REGISTRATION_REVIEW, NEEDS_PROFILE_COMPLETION, HUMAN_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_REGISTRATION, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_CONFIRM_REGISTRATION, AUTO_OVERRIDE_CAPACITY, AUTO_WAITLIST_ASSIGNMENT
+- required evidence: tenant_id, event_id, eligibility_context, capacity_context
+- human review boundary: final registration approval remains human-controlled
+- required tests: tenant validation, determinism, readiness/risk, forbidden actions
+- anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
+
+#### Module: parent_engagement
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract and tenant guard
+- Primary gap: deterministic_service_logic_needed
+- Will do: classify engagement readiness and outreach risk deterministically
+- Will NOT do: send messages, mutate parent records, or call providers
+- Expected runtime file: backend/app/modules/parent_engagement/service.py
+- L3 function: evaluate_parent_engagement_readiness(tenant_id, engagement_payload)
+- statuses: INACTIVE, CONTACT_PENDING, ENGAGED, BLOCKED
+- classifications: READY_FOR_OUTREACH_REVIEW, NEEDS_CONTACT_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_OUTREACH, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_SEND_MESSAGE, AUTO_MARK_ENGAGED, AUTO_OVERRIDE_CONTACT_RULES
+- required evidence: tenant_id, contact_context, consent_context, outreach_context
+- human review boundary: final outreach decisions remain human-controlled
+- required tests: tenant validation, determinism, readiness/risk, forbidden actions
+- anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
+
+#### Module: alumni_relations_ops
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract and tenant guard
+- Primary gap: deterministic_service_logic_needed
+- Will do: classify alumni outreach readiness and relationship risk deterministically
+- Will NOT do: send outreach, mutate data, expose APIs, or call providers
+- Expected runtime file: backend/app/modules/alumni_relations_ops/service.py
+- L3 function: evaluate_alumni_relations_ops_readiness(tenant_id, alumni_payload)
+- statuses: NEW, VERIFIED, CONTACTABLE, BLOCKED
+- classifications: READY_FOR_OUTREACH_REVIEW, NEEDS_PROFILE_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_PROFILE, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_SEND_OUTREACH, AUTO_MARK_VERIFIED, AUTO_OVERRIDE_CONSENT
+- required evidence: tenant_id, contact_context, consent_context, profile_context
+- human review boundary: consent-sensitive outreach remains human-controlled
+- required tests: tenant validation, determinism, readiness/risk, forbidden actions
+- anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
+
+#### Module: donations_fundraising
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract and tenant guard
+- Primary gap: deterministic_service_logic_needed
+- Will do: evaluate fundraising readiness and risk deterministically
+- Will NOT do: process donations, mutate ledger state, expose APIs, or call payment providers
+- Expected runtime file: backend/app/modules/donations_fundraising/service.py
+- L3 function: evaluate_donations_fundraising_readiness(tenant_id, fundraising_payload)
+- statuses: PIPELINE_EMPTY, PIPELINE_ACTIVE, REVIEW_REQUIRED, BLOCKED
+- classifications: READY_FOR_REVIEW, NEEDS_SUPPORTING_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_CAMPAIGN, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_LAUNCH_CAMPAIGN, AUTO_ALLOCATE_FUNDS, AUTO_OVERRIDE_COMPLIANCE
+- required evidence: tenant_id, campaign_context, compliance_context, donor_context
+- human review boundary: campaign and allocation approval remain human-controlled
+- required tests: tenant validation, determinism, readiness/risk, forbidden actions
+- anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
+
+#### Module: exam_integrity_analytics
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract and tenant guard
+- Primary gap: deterministic_service_logic_needed
+- Will do: evaluate exam integrity review readiness and escalation risk deterministically
+- Will NOT do: score exams autonomously, mutate results, expose APIs, or call providers
+- Expected runtime file: backend/app/modules/exam_integrity_analytics/service.py
+- L3 function: evaluate_exam_integrity_analytics_readiness(tenant_id, exam_payload)
+- statuses: CLEAN, FLAGGED, UNDER_REVIEW, BLOCKED
+- classifications: READY_FOR_REVIEW, NEEDS_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_SIGNAL, REQUEST_EVIDENCE, ESCALATE_REVIEW
+- forbidden actions: AUTO_ACCUSATION, AUTO_SCORE_MODIFICATION, AUTO_OVERRIDE_POLICY
+- required evidence: tenant_id, exam_context, integrity_context, review_context
+- human review boundary: integrity findings remain human-reviewed
+- required tests: tenant validation, determinism, readiness/risk, anti-inflation
+- anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
+
+#### Module: mobile_push_gateway
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract and tenant guard
+- Primary gap: deterministic_service_logic_needed
+- Will do: preview notification readiness and routing deterministically without sending
+- Will NOT do: send push notifications, call providers, mutate user records, or expose APIs
+- Expected runtime file: backend/app/modules/mobile_push_gateway/service.py
+- L3 function: evaluate_mobile_push_gateway_readiness(tenant_id, push_payload)
+- statuses: PREVIEW_ONLY, READY_TO_SEND, BLOCKED, REVIEW_REQUIRED
+- classifications: READY_FOR_PREVIEW, NEEDS_TEMPLATE_EVIDENCE, HUMAN_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: PREVIEW_MESSAGE, REVIEW_TEMPLATE, REQUEST_EVIDENCE
+- forbidden actions: AUTO_SEND_PUSH, AUTO_CALL_PROVIDER, AUTO_OVERRIDE_LIMITS
+- required evidence: tenant_id, notification_context, template_context, consent_context
+- human review boundary: send actions remain human-controlled
+- required tests: tenant validation, determinism, readiness/risk, no-provider-call
+- anti-inflation boundary: no API/frontend/DB/KPI/Brain/event/autonomy/provider claims, L3 only
+
+### Expected Runtime Files
+| File | Expected Action | Reason |
+|---|---|---|
+| backend/app/modules/parking_permit_ops/service.py | update | add deterministic permit readiness logic |
+| backend/app/modules/parking_enforcement/service.py | update | add deterministic enforcement review logic |
+| backend/app/modules/event_registration_portal/service.py | update | add deterministic registration readiness logic |
+| backend/app/modules/parent_engagement/service.py | update | add deterministic engagement logic |
+| backend/app/modules/alumni_relations_ops/service.py | update | add deterministic outreach logic |
+| backend/app/modules/donations_fundraising/service.py | update | add deterministic fundraising logic |
+| backend/app/modules/exam_integrity_analytics/service.py | update | add deterministic integrity analytics logic |
+| backend/app/modules/mobile_push_gateway/service.py | update | add deterministic push preview logic |
+| backend/tests/test_a0269_l2_to_l3_deterministic_service_logic_batch2.py | add | targeted deterministic L3 test suite |
+| SBS_UB.md | update | tracker control block and execution staging |
+| SBS_UB_150_MODULE_NORMALIZATION.md | update | add A-026.9-SPEC section and keep metrics unchanged |
+| A-026.9-SPEC-L2_TO_L3_DETERMINISTIC_SERVICE_LOGIC_BATCH2_REPORT.md | add | runtime planning evidence report |
+
+### A-026.9 Targeted Test Plan
+
+Preferred test file: backend/tests/test_a0269_l2_to_l3_deterministic_service_logic_batch2.py
+
+Test groups:
+1. import validation
+2. tenant fail-closed validation
+3. deterministic output validation
+4. classification/status/risk logic
+5. required evidence validation
+6. allowed/forbidden action validation
+7. provider boundary validation where relevant
+8. anti-inflation validation
+9. no API/frontend/Brain/KPI behavior
+
+Expected test count:
+- minimum 35
+- preferred 50–80 depending selected modules
+
+Validation mode:
+- fast direct Docker validation mode
+
+Preferred fast Docker command:
+
+```bash
+cd /home/sbs/AI
+
+docker run --rm \
+   --env-file /home/sbs/AI/infra/.env \
+   -v /home/sbs/AI/backend/app:/app/app \
+   -v /home/sbs/AI/backend/tests:/app/tests \
+   -w /app \
+   ai-backend-tests:latest \
+   python -m pytest -q \
+   tests/test_a0269_l2_to_l3_deterministic_service_logic_batch2.py \
+   -o addopts='' \
+   --no-cov \
+   -rA \
+   --durations=30
+```
+
+### Expected Maturity Movement
+
+Before A-026.9-RUNTIME:
+- L0=0
+- L1=0
+- L2=21
+- L3=34
+- L4=68
+- L5=25
+- L6=2
+
+After A-026.9-RUNTIME:
+- L0=0
+- L1=0
+- L2=21-N
+- L3=34+N
+- L4=68
+- L5=25
+- L6=2
+- total=150
+- maturity_arithmetic_check=PASS
+
+If selected batch size is 8:
+- L2=13
+- L3=42
+- L4=68
+- L5=25
+- L6=2
+- total=150
+- maturity_arithmetic_check=PASS
+
+In this spec action:
+- do NOT change metrics yet
+- record expected formula only
+
+### Anti-Inflation Boundaries
+
+- no runtime code changes
+- no test implementation changes
+- no API or router additions
+- no frontend additions
+- no DB mutations/migrations
+- no KPI/Brain/autonomy claims
+- no maturity-level changes in this spec phase
+
+### Definition of Done (A-026.9-SPEC)
+
+- 21-module L2 inventory extracted and verified
+- bounded 6-8 module selection completed (selected N=8)
+- deterministic L3 standard defined
+- deep module-by-module runtime specifications defined
+- expected runtime files and targeted test plan defined
+- expected post-runtime formula documented
+- SBS tracker and normalization spec sections updated
+- standalone A-026.9 spec report created
+
+---
+
 ## A-026.6-RUNTIME — L4→L5 Evidence / Governance / KPI / Brain-Readiness
 
 **Status**: COMPLETE
