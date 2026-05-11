@@ -316,3 +316,220 @@ Scoring scale: 0-5 (0 missing, 5 excellent).
 - Next action id: A-027.1
 - Action title: Controlled Expansion Registry and New Module Canonicalization
 - Scope: planning and canonicalization only; no runtime code.
+
+## A-027.0.B1 — Deep University Completeness Expansion Sweep
+
+### Why B1 Was Needed
+
+- The initial A-027.0 registry (54 candidates) was intentionally conservative.
+- University OS completeness requires deeper subdomain coverage across HR, registrar, document governance, security operations, international office, ministry reporting, and Brain/evidence control planes.
+- User strategy is explicit: baseline 150 is not a ceiling.
+
+### Expanded Domain Granularity
+
+Deep-sweep audit expanded coverage decisions across 40 domains:
+
+1. Governance / Rectorate / Strategy
+2. Academic Affairs
+3. Registrar / Student Records
+4. Admissions / Enrollment
+5. Curriculum / Programs / Competencies
+6. Syllabus / Course Management
+7. Teaching Quality
+8. LMS / Digital Learning
+9. Assessment / Exams / Proctoring
+10. Faculty Lifecycle
+11. HR / Personnel
+12. Payroll / Position Budgeting Interfaces
+13. Workload / Timetable / Capacity
+14. Research / Grants / Publications
+15. Labs / Equipment / Research Data
+16. Ethics / Compliance / IP / Tech Transfer
+17. Finance / Budget / Billing
+18. Procurement / Contracts / Assets
+19. Legal / Internal Audit
+20. Document Workflow / Archive / EDS
+21. Campus / Facilities / Maintenance
+22. Dormitory / Housing
+23. Transport / Parking
+24. Security / Access Control / SOC
+25. IAM / Federation / Privileged Access
+26. IT Operations / DevOps / Release Governance
+27. Data / BI / KPI / Reporting
+28. Quality Assurance / Accreditation
+29. Ministry / Government / Regulatory Reporting
+30. International Office / Mobility / Partnerships
+31. Student Life / Clubs / Discipline / Appeals
+32. Student Support / Health / Counseling
+33. Career / Alumni / Employer Relations
+34. Communications / Notifications / PR
+35. Library / Repository / Knowledge
+36. Integration Layer / External Systems
+37. AI Governance / Brain / Agents
+38. Risk Management / Incident Management
+39. Sustainability / ESG / Safety
+40. Commercialization / Continuing Education / Online Programs
+
+### Added Candidate Registry (UCE-055 to UCE-149)
+
+| UCE ID | Candidate Name | Type | Domain | Problem It Solves | Existing Coverage Gap | Priority | Target Initial Level | Recommended Wave | Notes |
+|---|---|---|---|---|---|---|---:|---|---|
+| UCE-055 | staff_recruitment | NEW_MODULE | HR / Personnel | hiring request-to-offer lifecycle | no dedicated recruitment lifecycle | P0 | L2 | A-027.2 | tenant-safe contracts only |
+| UCE-056 | staff_onboarding | NEW_MODULE | Faculty Lifecycle | onboarding checkpoints and policy tasks | no structured onboarding module | P0 | L2 | A-027.2 | links HR and IAM controls |
+| UCE-057 | staff_probation_review | NEW_MODULE | Faculty Lifecycle | probation evaluation and outcomes | probation governance gap | P1 | L2 | A-027.3 | human review required |
+| UCE-058 | employee_records | NEW_MODULE | HR / Personnel | canonical employment profile lifecycle | fragmented HR evidence | P0 | L2 | A-027.2 | no payroll mutation in first slice |
+| UCE-059 | leave_management | NEW_MODULE | HR / Personnel | leave request and approval lifecycle | leave process missing | P1 | L2 | A-027.3 | policy-bound leave rules |
+| UCE-060 | timesheet_management | NEW_MODULE | HR / Personnel | timesheet capture and approval | no unified timesheet controls | P1 | L2 | A-027.3 | deterministic approvals |
+| UCE-061 | faculty_attestation | NEW_MODULE | Faculty Lifecycle | yearly faculty attestation and compliance | attestation workflow missing | P1 | L2 | A-027.3 | evidence-first design |
+| UCE-062 | faculty_promotion | NEW_MODULE | Faculty Lifecycle | promotion dossier and committee outcomes | no promotion lifecycle module | P1 | L2 | A-027.3 | strong audit trail needed |
+| UCE-063 | performance_appraisal | NEW_MODULE | Faculty Lifecycle | appraisal goals, cycles, and outcomes | appraisal stack incomplete | P1 | L2 | A-027.3 | human-reviewed scoring only |
+| UCE-064 | training_certification | NEW_MODULE | Faculty Lifecycle | mandatory training completion tracking | training governance gap | P1 | L2 | A-027.3 | compliance-linked controls |
+| UCE-065 | disciplinary_case_management | NEW_MODULE | Faculty Lifecycle | disciplinary case intake-review-resolution | no controlled disciplinary module | P1 | L2 | A-027.3 | strict safety boundaries |
+| UCE-066 | succession_planning | NEW_MODULE | Governance / HR | leadership continuity planning | succession governance missing | P2 | L2 | A-027.3 | planning-only first |
+| UCE-067 | teaching_load_contracts | NEW_MODULE | Workload / Timetable / Capacity | formal teaching load obligations | workload contract gap | P1 | L2 | A-027.3 | links faculty and timetable |
+| UCE-068 | adjunct_faculty_management | NEW_MODULE | Faculty Lifecycle | adjunct engagement and contract states | adjunct lifecycle missing | P1 | L2 | A-027.3 | tenant and legal boundaries |
+| UCE-069 | vacancy_planning | NEW_MODULE | HR / Personnel | planned vacancy forecast and approvals | staffing planning gap | P2 | L2 | A-027.3 | tied to position budgets |
+| UCE-070 | staff_exit_offboarding | NEW_MODULE | HR / Personnel | offboarding task and entitlement closure | offboarding process missing | P1 | L2 | A-027.3 | IAM and asset closure links |
+| UCE-071 | program_learning_outcomes | NEW_MODULE | Curriculum / Programs / Competencies | program-level outcomes catalog | outcomes traceability gap | P0 | L2 | A-027.2 | accreditation-critical |
+| UCE-072 | course_learning_outcomes | NEW_MODULE | Curriculum / Programs / Competencies | course outcome definitions and mapping | CLO governance missing | P0 | L2 | A-027.2 | ties to syllabus and assessment |
+| UCE-073 | elective_course_selection | NEW_MODULE | Academic Affairs | elective demand and approval lifecycle | elective workflow incomplete | P1 | L2 | A-027.3 | bounded selection policy |
+| UCE-074 | prerequisite_management | NEW_MODULE | Curriculum / Programs / Competencies | prerequisite rule governance | prerequisite rule engine missing | P1 | L2 | A-027.3 | deterministic validation boundaries |
+| UCE-075 | transfer_credit_management | NEW_MODULE | Registrar / Student Records | transfer credit evaluation workflow | transfer credit lifecycle missing | P1 | L2 | A-027.3 | human-approved evaluation |
+| UCE-076 | course_catalog_management | NEW_MODULE | Academic Affairs | versioned course catalog publication lifecycle | no dedicated catalog module | P1 | L2 | A-027.3 | no direct publish automation |
+| UCE-077 | thesis_dissertation_management | NEW_MODULE | Academic Affairs | end-to-end thesis/dissertation governance | thesis lifecycle fragmented | P1 | L2 | A-027.3 | review-gated progression |
+| UCE-078 | academic_integrity_case_management | NEW_MODULE | Assessment / Exams / Proctoring | integrity case handling and adjudication | core integrity module too broad for caseflow | P1 | L2 | A-027.3 | strict human decision boundary |
+| UCE-079 | meal_plan_management | NEW_MODULE | Student Life / Clubs / Discipline / Appeals | meal plan enrollment and eligibility | cafeteria-service governance missing | P2 | L2 | A-027.3 | no billing mutation first |
+| UCE-080 | student_clubs_management | NEW_MODULE | Student Life / Clubs / Discipline / Appeals | club registry, approvals, and activities | student club governance missing | P2 | L2 | A-027.3 | policy-bound approvals |
+| UCE-081 | disability_support_services | NEW_MODULE | Student Support / Health / Counseling | accommodations case lifecycle and evidence | disability support flow missing | P0 | L2 | A-027.2 | sensitive data controls required |
+| UCE-082 | student_financial_hardship | NEW_MODULE | Student Support / Health / Counseling | hardship case intake and review | hardship intervention flow missing | P1 | L2 | A-027.3 | links aid and counseling |
+| UCE-083 | student_orientation_management | NEW_MODULE | Student Lifecycle | orientation planning and completion tracking | orientation lifecycle missing | P2 | L2 | A-027.3 | event and student links |
+| UCE-084 | graduation_ceremony_management | NEW_MODULE | Student Lifecycle | ceremony eligibility and logistics | graduation operations gap | P2 | L2 | A-027.3 | readiness and attendance tracking |
+| UCE-085 | joint_program_management | NEW_MODULE | International Office / Mobility / Partnerships | joint program governance and obligations | partnerships not lifecycle-managed | P1 | L2 | A-027.3 | multi-party control boundaries |
+| UCE-086 | inbound_exchange_management | NEW_MODULE | International Office / Mobility / Partnerships | inbound exchange admissions and support | inbound process missing | P1 | L2 | A-027.3 | ties visa and registrar |
+| UCE-087 | outbound_exchange_management | NEW_MODULE | International Office / Mobility / Partnerships | outbound exchange application and approvals | outbound process missing | P1 | L2 | A-027.3 | policy and risk checks |
+| UCE-088 | international_grant_coordination | NEW_MODULE | International Office / Mobility / Partnerships | international grant lifecycle coordination | cross-border grant workflow gap | P2 | L2 | A-027.3 | integration-ready design |
+| UCE-089 | document_template_library | NEW_MODULE | Document Workflow / Archive / EDS | controlled template versioning and approvals | template governance not explicit | P1 | L2 | A-027.3 | links document workflow |
+| UCE-090 | committee_decision_registry | NEW_MODULE | Governance / Rectorate / Strategy | formal committee resolutions and decisions | decision evidence chain missing | P0 | L2 | A-027.2 | critical governance evidence |
+| UCE-091 | payroll_interface_workflow | WORKFLOW | Payroll / Position Budgeting Interfaces | orchestrate payroll data handoff approvals | payroll interface workflow missing | P0 | L2 | A-027.4 | no direct payroll execution |
+| UCE-092 | degree_audit_workflow | WORKFLOW | Registrar / Student Records | end-to-end degree audit routing | audit orchestration gap | P0 | L2 | A-027.4 | human-reviewed completion |
+| UCE-093 | academic_appeals_workflow | WORKFLOW | Student Life / Clubs / Discipline / Appeals | appeal intake-review-resolution flow | appeals orchestration incomplete | P1 | L2 | A-027.4 | committee gates required |
+| UCE-094 | thesis_supervision_workflow | WORKFLOW | Academic Affairs | supervisor assignment and milestone approvals | supervision orchestration fragmented | P1 | L2 | A-027.4 | no autonomous approval |
+| UCE-095 | graduation_clearance_workflow | WORKFLOW | Registrar / Student Records | cross-domain graduation readiness clearance | fragmented clearance checks | P1 | L2 | A-027.4 | deterministic checklist orchestration |
+| UCE-096 | inventory_writeoff_workflow | WORKFLOW | Procurement / Contracts / Assets | controlled writeoff review and approval routing | writeoff path not standardized | P1 | L2 | A-027.4 | audit trail mandatory |
+| UCE-097 | contract_obligation_tracking_workflow | WORKFLOW | Legal / Internal Audit | monitor obligation due dates and escalations | legal obligation tracking gap | P0 | L2 | A-027.4 | compliance critical |
+| UCE-098 | procurement_plan_approval_workflow | WORKFLOW | Procurement / Contracts / Assets | annual procurement plan approval orchestration | planning approvals fragmented | P1 | L2 | A-027.4 | risk and budget gates |
+| UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | Governance / Rectorate / Strategy | track resolution execution and closure evidence | strategy execution visibility gap | P0 | L2 | A-027.4 | rectorate governance value |
+| UCE-100 | emergency_drill_execution_workflow | WORKFLOW | Sustainability / ESG / Safety | drill planning-to-execution evidence flow | safety drill workflow missing | P1 | L2 | A-027.4 | no automated emergency actions |
+| UCE-101 | service_catalog_request_workflow | WORKFLOW | IT Operations / DevOps / Release Governance | service request intake and approvals | service catalog orchestration gap | P1 | L2 | A-027.4 | ties helpdesk and IAM |
+| UCE-102 | helpdesk_ticket_escalation_workflow | WORKFLOW | IT Operations / DevOps / Release Governance | deterministic escalation routing | escalation policy not formalized | P1 | L2 | A-027.4 | SLA evidence first |
+| UCE-103 | ethics_amendment_workflow | WORKFLOW | Ethics / Compliance / IP / Tech Transfer | amendment submission and committee handling | ethics change workflow missing | P1 | L2 | A-027.4 | research governance critical |
+| UCE-104 | patent_application_workflow | WORKFLOW | Ethics / Compliance / IP / Tech Transfer | patent filing review and approval flow | patent lifecycle orchestration weak | P2 | L2 | A-027.4 | commercialization linkage |
+| UCE-105 | epvo_integration | INTEGRATION | Integration Layer / External Systems | national education platform interoperability | connector absent | P1 | L2 | A-027.3 | contract only, no live provider |
+| UCE-106 | lms_integration | INTEGRATION | Integration Layer / External Systems | federated LMS synchronization contracts | LMS connector incomplete | P1 | L2 | A-027.3 | read and reconcile first |
+| UCE-107 | turnstile_sks_integration | INTEGRATION | Integration Layer / External Systems | turnstile access event federation | physical access integration missing | P1 | L2 | A-027.3 | security and privacy boundaries |
+| UCE-108 | idp_sso_integration | INTEGRATION | IAM / Federation / Privileged Access | external IdP SSO interoperability | SSO federation depth gap | P1 | L2 | A-027.3 | no privileged bypass |
+| UCE-109 | eds_signature_integration | INTEGRATION | Document Workflow / Archive / EDS | digital signature verification gateway | e-signature connector missing | P0 | L2 | A-027.2 | compliance-critical |
+| UCE-110 | payment_gateway_integration | INTEGRATION | Finance / Budget / Billing | payment provider abstraction and evidence | payment integration fragmentation | P1 | L2 | A-027.3 | no autonomous settlement |
+| UCE-111 | document_archive_integration | INTEGRATION | Document Workflow / Archive / EDS | archive system sync and retrieval contracts | archive interop gap | P1 | L2 | A-027.3 | retention policy compatibility |
+| UCE-112 | ministry_reporting_integration | INTEGRATION | Ministry / Government / Regulatory Reporting | machine-readable reporting exchange | ministry interface missing | P0 | L2 | A-027.2 | regulatory priority |
+| UCE-113 | hr_payroll_system_integration | INTEGRATION | Payroll / Position Budgeting Interfaces | HR to payroll system federation | payroll connector missing | P0 | L2 | A-027.2 | contract-only first |
+| UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | Quality Assurance / Accreditation | accreditation readiness and gap visibility | no dedicated accreditation dashboard | P0 | L2 | A-027.5 | evidence-backed only |
+| UCE-115 | research_performance_dashboard | REPORT_DASHBOARD | Research / Grants / Publications | publication/grant/lab KPI visibility | research reporting fragmentation | P1 | L2 | A-027.5 | no synthetic KPIs |
+| UCE-116 | hr_dashboard | REPORT_DASHBOARD | HR / Personnel | staffing, attrition, compliance visibility | no unified HR dashboard | P1 | L2 | A-027.5 | policy-compliant aggregations |
+| UCE-117 | campus_operations_dashboard | REPORT_DASHBOARD | Campus / Facilities / Maintenance | facilities, incidents, maintenance visibility | campus ops view fragmented | P1 | L2 | A-027.5 | tenant and role scopes |
+| UCE-118 | international_office_dashboard | REPORT_DASHBOARD | International Office / Mobility / Partnerships | mobility and partnerships visibility | domain dashboard missing | P1 | L2 | A-027.5 | interop-dependent |
+| UCE-119 | curriculum_quality_dashboard | REPORT_DASHBOARD | Curriculum / Programs / Competencies | curriculum and outcomes quality tracking | quality dashboard gap | P1 | L2 | A-027.5 | evidence lineage required |
+| UCE-120 | document_workflow_dashboard | REPORT_DASHBOARD | Document Workflow / Archive / EDS | document SLA and routing bottleneck visibility | document governance visibility weak | P1 | L2 | A-027.5 | no fake processing claims |
+| UCE-121 | procurement_risk_dashboard | REPORT_DASHBOARD | Procurement / Contracts / Assets | vendor and obligation risk visibility | procurement risk reporting gap | P1 | L2 | A-027.5 | depends on workflow evidence |
+| UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | Legal / Internal Audit | deadline and remediation calendar visibility | compliance calendar gap | P0 | L2 | A-027.5 | critical for audit readiness |
+| UCE-123 | academic_integrity_policy_control | POLICY_CONTROL | Assessment / Exams / Proctoring | codified integrity decision boundaries | policy control missing | P0 | L1 | A-027.1 | no automatic sanctions |
+| UCE-124 | examination_governance_policy_control | POLICY_CONTROL | Assessment / Exams / Proctoring | exam board and change governance constraints | governance policy not explicit | P1 | L1 | A-027.1 | policy-only first |
+| UCE-125 | laboratory_safety_policy_control | POLICY_CONTROL | Sustainability / ESG / Safety | lab safety control baseline and escalation rules | safety policy control gap | P1 | L1 | A-027.1 | ties lab operations |
+| UCE-126 | campus_emergency_response_policy_control | POLICY_CONTROL | Sustainability / ESG / Safety | emergency protocol control definitions | emergency policy set incomplete | P1 | L1 | A-027.1 | no autonomous emergency actions |
+| UCE-127 | records_retention_legal_hold_policy_control | POLICY_CONTROL | Legal / Internal Audit | legal hold and retention precedence rules | retention/legal hold policy gap | P0 | L1 | A-027.1 | audit-critical |
+| UCE-128 | ai_model_risk_policy_control | POLICY_CONTROL | AI Governance / Brain / Agents | AI model risk classification and controls | AI risk policy controls missing | P1 | L1 | A-027.1 | governance foundation |
+| UCE-129 | procurement_risk_signal_registry | BRAIN_SIGNAL | Procurement / Contracts / Assets | normalized procurement risk signal taxonomy | procurement signal standard missing | P1 | L2 | A-029 | candidate-only signals |
+| UCE-130 | facility_risk_signal_registry | BRAIN_SIGNAL | Campus / Facilities / Maintenance | facilities risk signal standards | facility signal gap | P1 | L2 | A-029 | candidate-only signals |
+| UCE-131 | hr_risk_signal_registry | BRAIN_SIGNAL | HR / Personnel | HR risk and compliance signal taxonomy | HR signal governance missing | P1 | L2 | A-029 | candidate-only signals |
+| UCE-132 | curriculum_gap_signal_registry | BRAIN_SIGNAL | Curriculum / Programs / Competencies | curriculum quality gap signal definitions | quality signal gap | P1 | L2 | A-029 | no autonomous action |
+| UCE-133 | document_delay_signal_registry | BRAIN_SIGNAL | Document Workflow / Archive / EDS | document routing delay signal standards | no standardized delay signals | P1 | L2 | A-029 | supports document dashboard |
+| UCE-134 | compliance_deadline_signal_registry | BRAIN_SIGNAL | Legal / Internal Audit | compliance deadline risk signals | deadline signal model missing | P0 | L2 | A-029 | audit-critical |
+| UCE-135 | integration_failure_signal_registry | BRAIN_SIGNAL | Integration Layer / External Systems | standardized integration failure signals | integration reliability signal gap | P0 | L2 | A-029 | drives resilience reviews |
+| UCE-136 | enrollment_conversion_signal_registry | BRAIN_SIGNAL | Admissions / Enrollment | admissions conversion signal taxonomy | admissions signal standard missing | P2 | L2 | A-029 | explainability boundary |
+| UCE-137 | dropout_prevention_signal_registry | BRAIN_SIGNAL | Student Lifecycle | dropout risk signal standardization | student risk signal depth gap | P1 | L2 | A-029 | human review required |
+| UCE-138 | scholarship_abuse_signal_registry | BRAIN_SIGNAL | Student Lifecycle | scholarship misuse risk indicators | scholarship controls under-modeled | P1 | L2 | A-029 | no enforcement automation |
+| UCE-139 | payroll_anomaly_signal_registry | BRAIN_SIGNAL | Payroll / Position Budgeting Interfaces | payroll anomaly signal taxonomy | payroll oversight gap | P1 | L2 | A-029 | policy and audit bound |
+| UCE-140 | contract_breach_signal_registry | BRAIN_SIGNAL | Legal / Internal Audit | contract breach early-warning signals | legal risk signal standards missing | P1 | L2 | A-029 | legal review required |
+| UCE-141 | cyber_threat_signal_registry | BRAIN_SIGNAL | Security / Access Control / SOC | cyber risk signal standardization | SOC signal taxonomy incomplete | P1 | L2 | A-029 | no auto-block execution |
+| UCE-142 | sustainability_esg_signal_registry | BRAIN_SIGNAL | Sustainability / ESG / Safety | ESG and safety signal governance | ESG signal registry missing | P2 | L2 | A-029 | evidence-driven only |
+| UCE-143 | commercialization_pipeline_signal_registry | BRAIN_SIGNAL | Commercialization / Continuing Education / Online Programs | commercialization pipeline health signals | commercialization signal gap | P2 | L2 | A-029 | candidate-only signals |
+| UCE-144 | brain_signal_quality_monitor | BRAIN_SIGNAL | AI Governance / Brain / Agents | detect drift/quality issues in signal pipelines | signal quality governance gap | P1 | L2 | A-029 | no autonomous correction |
+| UCE-145 | safe_evidence_summary_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | AI Governance / Brain / Agents | draft evidence summaries for human review | manual evidence summarization bottleneck | P2 | L1 | A-030 | human approval mandatory |
+| UCE-146 | safe_task_drafting_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | Governance / Rectorate / Strategy | draft task cards and action templates | manual planning overhead | P2 | L1 | A-030 | no direct execution rights |
+| UCE-147 | safe_report_draft_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | Data / BI / KPI / Reporting | draft report narrative from approved evidence | reporting drafting bottleneck | P2 | L1 | A-030 | human sign-off required |
+| UCE-148 | safe_document_routing_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | Document Workflow / Archive / EDS | suggest routing path for incoming documents | routing triage latency | P2 | L1 | A-030 | cannot auto-approve |
+| UCE-149 | safe_compliance_calendar_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | Legal / Internal Audit | draft reminder schedule for compliance deadlines | calendar maintenance burden | P2 | L1 | A-030 | no autonomous enforcement |
+
+### Deduplication Review (150 Baseline + 25 Extension + UCE-001..054)
+
+| Candidate | Existing Similar Capability | Decision | Rationale |
+|---|---|---|---|
+| UCE-078 academic_integrity_case_management | baseline academic_integrity | ACCEPT_SEPARATE | dedicated case lifecycle distinct from broader integrity domain |
+| UCE-061 faculty_attestation | baseline faculty | ACCEPT_SEPARATE | distinct attestation lifecycle and compliance evidence requirements |
+| UCE-067 teaching_load_contracts | baseline workload_management | ACCEPT_SEPARATE | contractual obligations differ from planning classification |
+| UCE-091 payroll_interface_workflow | UCE-113 hr_payroll_system_integration | ACCEPT_BOTH | workflow orchestration and integration contracts are distinct types |
+| UCE-109 eds_signature_integration | A-027.0 document/e-sign direction | ACCEPT_SEPARATE | explicit external connector needed for signature trust chain |
+| UCE-112 ministry_reporting_integration | UCE-032 ministry_reporting_dashboard | ACCEPT_BOTH | integration transport and reporting surface are different capabilities |
+| UCE-114 accreditation_dashboard | baseline accreditation modules | ACCEPT_SEPARATE | dashboard visibility capability is not implemented by module existence |
+| UCE-122 compliance_calendar_dashboard | UCE-048 data_retention_policy_control | ACCEPT_BOTH | policy control and operational visibility remain separate layers |
+| UCE-127 records_retention_legal_hold_policy_control | UCE-012 archive_retention_management | ACCEPT_BOTH | policy definitions and execution module are distinct |
+| UCE-129 procurement_risk_signal_registry | UCE-047 third_party_risk_policy | ACCEPT_BOTH | policy control != signal taxonomy |
+| UCE-144 brain_signal_quality_monitor | UCE-054 brain_decision_audit_trail | ACCEPT_SEPARATE | signal quality oversight differs from decision lineage logging |
+| UCE-145 safe_evidence_summary_agent | A-025 safe agent concept | ACCEPT_SEPARATE | explicit bounded candidate with A-030 placement and constraints |
+| UCE-146 safe_task_drafting_agent | A-025 safe agent concept | ACCEPT_SEPARATE | candidate formalized with restrictions and governance links |
+| UCE-147 safe_report_draft_agent | report drafting workflows | ACCEPT_SEPARATE | distinct autonomous draft candidate under human approval |
+| UCE-148 safe_document_routing_agent | UCE-009 document_workflow | ACCEPT_BOUNDED | routing suggestion candidate only; execution remains in workflow module |
+| UCE-149 safe_compliance_calendar_agent | UCE-122 dashboard + policy controls | ACCEPT_BOUNDED | reminder suggestion is separate from policy and dashboard layers |
+
+### Updated Registry Counts After B1
+
+- original A-027.0 candidates: 54
+- added in A-027.0.B1: 95
+- total university completeness candidates: 149
+
+Type counts (all candidates):
+- candidate_new_modules: 56
+- candidate_workflows: 22
+- candidate_integrations: 16
+- candidate_reports_dashboards: 15
+- candidate_policy_controls: 10
+- candidate_brain_signals: 20
+- candidate_autonomous_workflow_candidates: 6
+- candidate_submodules: 1
+- candidate_data_entities: 1
+- candidate_audit_evidence_capabilities: 1
+
+### Priority Summary (All Candidates)
+
+- P0: regulatory/compliance-critical and major domain-missing capabilities (international office foundation, ministry interoperability, HR foundations, document governance, compliance calendar and deadline signals)
+- P1: high-value operational capabilities that unlock L3/L4 readiness depth
+- P2: important but dependency-heavy or post-foundation optimization slices
+- P3: intentionally deferred exploratory candidates
+
+### Recommended Next Governance Action
+
+- Keep next action at A-027.1 (registry lock/canonicalization).
+- A-027.1 inputs should now include:
+	- canonical dedup rules for module vs workflow vs integration vs dashboard vs policy vs signal vs autonomous candidate
+	- P0 hard-selection list for A-027.2 batch sizing
+	- domain ownership assignment and acceptance criteria templates per candidate type
+
+### Anti-Fake Rules (Reaffirmed)
+
+- No candidate in UCE-001..149 is treated as implemented.
+- No candidate maturity is claimed above initial planning target without runtime evidence.
+- No fake Brain execution claim.
+- No fake autonomous workflow claim.
+- No fake integration-live claim.
+- No fake compliance certification claim.
+- Baseline 150 and extension 25 remain isolated from expansion registry counts.
