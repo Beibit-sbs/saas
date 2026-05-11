@@ -219,3 +219,46 @@ def evaluate_workload_plan(tenant_id: Any, workload_payload: Any) -> Dict[str, A
         "next_required_evidence": next_required_evidence,
         "safety_flags": SAFETY_FLAGS,
     }
+
+
+def get_workload_visibility_summary(tenant_id: Any) -> Dict[str, Any]:
+    """Build deterministic read-only L4 visibility summary for workload operations."""
+    if not validate_workload_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "workload_management",
+            "visibility_level": "L4",
+            "operational_status": "TENANT_VALIDATION_FAILED",
+            "classification": "WORKLOAD_INPUT_INCOMPLETE",
+            "allowed_actions": ["ASSESS", "CLASSIFY", "REVIEW"],
+            "forbidden_actions": [
+                "AUTO_ASSIGN",
+                "AUTO_OVERRIDE_CONSTRAINTS",
+                "AUTO_MUTATE_PAYROLL",
+                "AUTO_DISTRIBUTE_WORKLOAD",
+            ],
+            "safety_flags": SAFETY_FLAGS,
+            "evidence_notes": ["tenant validation failed"],
+            "no_autonomous_execution": True,
+            "readonly": True,
+            "tenant_scoped": True,
+        }
+
+    evaluated = evaluate_workload_plan(int(tenant_id), {"workload_type": "teaching", "units": 1})
+    return {
+        "tenant_id": int(tenant_id),
+        "module": "workload_management",
+        "visibility_level": "L4",
+        "operational_status": str(evaluated.get("evaluation_status") or "EVALUATED"),
+        "classification": str(evaluated.get("classification") or "READY_FOR_HUMAN_REVIEW"),
+        "allowed_actions": list(evaluated.get("allowed_actions") or []),
+        "forbidden_actions": list(evaluated.get("forbidden_actions") or []),
+        "safety_flags": SAFETY_FLAGS,
+        "evidence_notes": [
+            "deterministic workload classifier surfaced via read-only L4 visibility",
+            "no payroll or assignment mutation exposed",
+        ],
+        "no_autonomous_execution": True,
+        "readonly": True,
+        "tenant_scoped": True,
+    }

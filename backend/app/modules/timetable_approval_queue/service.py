@@ -206,3 +206,41 @@ def evaluate_queue_item(tenant_id: Any, item: Any) -> Dict[str, Any]:
         "next_recommended_step": next_step,
         "safety_flags": SAFETY_FLAGS,
     }
+
+
+def get_approval_queue_visibility_summary(tenant_id: Any) -> Dict[str, Any]:
+    """Build deterministic read-only L4 visibility summary for approval queue operations."""
+    if not validate_queue_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "timetable_approval_queue",
+            "visibility_level": "L4",
+            "operational_status": "TENANT_VALIDATION_FAILED",
+            "classification": "QUEUE_ITEM_INVALID",
+            "allowed_actions": ["APPROVE", "REJECT", "REQUEST_MORE_INFO", "REASSIGN_REVIEWER"],
+            "forbidden_actions": FORBIDDEN_AUTO_ACTIONS,
+            "safety_flags": SAFETY_FLAGS,
+            "evidence_notes": ["tenant validation failed"],
+            "no_autonomous_execution": True,
+            "readonly": True,
+            "tenant_scoped": True,
+        }
+
+    evaluated = evaluate_queue_item(int(tenant_id), {})
+    return {
+        "tenant_id": int(tenant_id),
+        "module": "timetable_approval_queue",
+        "visibility_level": "L4",
+        "operational_status": "EVALUATED",
+        "classification": str(evaluated.get("classification") or "READY_FOR_REVIEW"),
+        "allowed_actions": list(evaluated.get("allowed_actions") or []),
+        "forbidden_actions": list(evaluated.get("forbidden_actions") or []),
+        "safety_flags": SAFETY_FLAGS,
+        "evidence_notes": [
+            "deterministic queue evaluator surfaced via read-only L4 visibility",
+            "manual decision boundary preserved",
+        ],
+        "no_autonomous_execution": True,
+        "readonly": True,
+        "tenant_scoped": True,
+    }

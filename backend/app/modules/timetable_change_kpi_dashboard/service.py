@@ -161,3 +161,41 @@ def classify_kpi_readiness(tenant_id: Any, evidence: Any) -> Dict[str, Any]:
         "safety_flags": SAFETY_FLAGS,
         "next_recommended_step": "OPERATIONAL_VISIBILITY_SPECIFICATION",
     }
+
+
+def get_kpi_dashboard_visibility_summary(tenant_id: Any) -> Dict[str, Any]:
+    """Build deterministic read-only L4 visibility summary for KPI readiness."""
+    if not validate_kpi_dashboard_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "timetable_change_kpi_dashboard",
+            "visibility_level": "L4",
+            "operational_status": "TENANT_VALIDATION_FAILED",
+            "classification": "KPI_BACKEND_CONTRACT_INCOMPLETE",
+            "allowed_actions": ["REVIEW_READINESS", "VERIFY_EVIDENCE"],
+            "forbidden_actions": ["AUTO_APPLY", "AUTO_APPROVE", "AUTONOMOUS_EXECUTION"],
+            "safety_flags": SAFETY_FLAGS,
+            "evidence_notes": ["tenant validation failed"],
+            "no_autonomous_execution": True,
+            "readonly": True,
+            "tenant_scoped": True,
+        }
+
+    evaluated = classify_kpi_readiness(int(tenant_id), {"backend_contract_ready": True})
+    return {
+        "tenant_id": int(tenant_id),
+        "module": "timetable_change_kpi_dashboard",
+        "visibility_level": "L4",
+        "operational_status": str(evaluated.get("kpi_readiness_status") or "KPI_BACKEND_CONTRACT_READY"),
+        "classification": str(evaluated.get("classification") or "KPI_BACKEND_CONTRACT_READY"),
+        "allowed_actions": ["REVIEW_READINESS", "VERIFY_EVIDENCE", "EXPORT_SUMMARY"],
+        "forbidden_actions": ["AUTO_APPLY", "AUTO_APPROVE", "AUTONOMOUS_EXECUTION"],
+        "safety_flags": SAFETY_FLAGS,
+        "evidence_notes": [
+            "deterministic backend KPI readiness surfaced via read-only L4 visibility",
+            "no KPI values or lineage claims generated",
+        ],
+        "no_autonomous_execution": True,
+        "readonly": True,
+        "tenant_scoped": True,
+    }

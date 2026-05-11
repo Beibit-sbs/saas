@@ -11,8 +11,8 @@
 This file tracks the reconciled baseline and extension separation state.
 
 - Baseline target modules: 150
-- Baseline maturity: L0=0, L1=16, L2=13, L3=32, L4=66, L5=21, L6=2
-- Baseline arithmetic: PASS (0+16+13+32+66+21+2=150)
+- Baseline maturity: L0=0, L1=16, L2=13, L3=26, L4=72, L5=21, L6=2
+- Baseline arithmetic: PASS (0+16+13+26+72+21+2=150)
 - Extension modules: 25
 - Total tracked modules: 175
 - Separation policy: baseline and extension remain separate planes
@@ -59,7 +59,7 @@ Historical reconciliation details for A-026.3.B3 and A-026.3.B4 remain below.
 
 - Authoritative tracker: SBS_UB.md
 - Reconciled matrix: SBS_UB_150_MODULE_NORMALIZATION.md
-- Current baseline metrics: L0=0, L1=16, L2=13, L3=32, L4=66, L5=21, L6=2, total=150, arithmetic_check=PASS
+- Current baseline metrics: L0=0, L1=16, L2=13, L3=26, L4=72, L5=21, L6=2, total=150, arithmetic_check=PASS
 - Extension metrics: extension_total_count=25, total_tracked_modules=175, separation=PASS
 - Next action id in tracker: A-026.5-SPEC
 - Runtime implementation status: complete
@@ -515,7 +515,7 @@ If N=8:
 
 - Authoritative tracker: SBS_UB.md
 - Reconciled matrix: SBS_UB_150_MODULE_NORMALIZATION.md
-- Current baseline metrics: L0=0, L1=16, L2=13, L3=32, L4=66, L5=21, L6=2, total=150, arithmetic_check=PASS
+- Current baseline metrics: L0=0, L1=16, L2=13, L3=26, L4=72, L5=21, L6=2, total=150, arithmetic_check=PASS
 - Extension metrics: extension_total_count=25, total_tracked_modules=175, separation=PASS
 - Last completed action in tracker: A-026.4.B2.R1
 - Next action in tracker before this spec: A-026.5-SPEC
@@ -1289,8 +1289,8 @@ Required evidence:
 |---|---|---:|---|---|---|
 | Bucket A - L0/L1 Foundation Normalization | L0-L1 | 16 | foundation and contract gaps | L2-ready foundations | A-026.3 |
 | Bucket B - L2 Service Contract Normalization | L2 | 13 | deterministic service logic gaps | L3 deterministic backend slices | A-026.4 |
-| Bucket C - L3 Operational Visibility Normalization | L3 | 32 | API/visibility/test depth gaps | L4 operational readiness | A-026.5 |
-| Bucket D - L4 Brain/Evidence Readiness | L4 | 66 | KPI/evidence/Brain mapping gaps | selective L5-readiness candidates | A-026.6 |
+| Bucket C - L3 Operational Visibility Normalization | L3 | 26 | API/visibility/test depth gaps | L4 operational readiness | A-026.5 |
+| Bucket D - L4 Brain/Evidence Readiness | L4 | 72 | KPI/evidence/Brain mapping gaps | selective L5-readiness candidates | A-026.6 |
 | Bucket E - L5 E2E/Gate Closure | L5 | 21 | gate continuity and E2E closure | selective L6 proofs | A-026.7 |
 | Bucket F - Preserve / Regression Only | L6 | 2 | regression risk only | preserve quality baseline | A-026.7 |
 
@@ -1390,7 +1390,7 @@ Note:
 | 63 | help | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify help desk scope | contract tests | medium | low | A-026.5 |
 | 64 | housing | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | housing KPI mapping | lineage mapping | medium | medium | A-026.6 |
 | 65 | hr_payroll | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | payroll KPI lineage | lineage mapping | medium | high | A-026.6 |
-| 66 | human_approved_timetable_workflow | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
+| 66 | human_approved_timetable_workflow | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
 | 67 | i18n | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify i18n contract completeness | contract tests | medium | low | A-026.5 |
 | 68 | identity | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | identity event mapping | mapping tests | medium | high | A-026.6 |
 | 69 | integrations | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify integration breadth | contract tests | medium | low | A-026.5 |
@@ -1411,7 +1411,7 @@ Note:
 | 84 | mobile_app | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | frontend_missing | L4 | mobile app frontend visibility | frontend tests | medium | medium | A-026.5 |
 | 85 | mobile_push_gateway | Planned Expansion | L1 | A | A-023.0 | EVIDENCED_LEVEL_ONLY | service_contract_missing | L2 | push gateway contract | contract tests | medium | high | A-026.3 |
 | 86 | model_evaluation | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | model eval signal mapping | mapping tests | medium | high | A-026.6 |
-| 87 | notification_center | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | high | high | A-026.5 |
+| 87 | notification_center | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | high | high | A-026.6 |
 | 88 | observability | Integrations & Platform | L4 | D | A-024.3 | EVIDENCED_L4_AFTER_A0243 | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
 | 89 | online_payments | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | payment KPI lineage | lineage mapping | medium | high | A-026.6 |
 | 90 | operations | Administration & Governance | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | ops E2E and gates | gate continuity | high | high | A-026.7 |
@@ -1462,9 +1462,9 @@ Note:
 | 135 | teaching_quality | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | quality signal mapping | mapping tests | medium | high | A-026.6 |
 | 136 | tenants | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | tenant event mapping | mapping tests | medium | high | A-026.6 |
 | 137 | thesis | Research & Innovation | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | thesis E2E and gates | gate continuity | high | high | A-026.7 |
-| 138 | timetable_approval_queue | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
-| 139 | timetable_change_kpi_dashboard | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | medium | A-026.5 |
-| 140 | timetable_change_proposal | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
+| 138 | timetable_approval_queue | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
+| 139 | timetable_change_kpi_dashboard | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | medium | A-026.6 |
+| 140 | timetable_change_proposal | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
 | 141 | timetable_change_simulation | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
 | 142 | timetable_recommendation_bridge | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
 | 143 | transcripts | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | transcript KPI mapping | lineage mapping | medium | high | A-026.6 |
@@ -1474,7 +1474,7 @@ Note:
 | 147 | usage | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | usage KPI lineage | lineage mapping | medium | high | A-026.6 |
 | 148 | visitor_management | Student & Campus Life | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | visitor E2E and gates | gate continuity | high | high | A-026.7 |
 | 149 | workflows | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | workflow signal mapping | mapping tests | medium | medium | A-026.6 |
-| 150 | workload_management | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
+| 150 | workload_management | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
 
 ## Full Extension 25 Module Registry Matrix
 

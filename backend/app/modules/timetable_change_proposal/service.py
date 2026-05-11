@@ -214,3 +214,41 @@ def evaluate_timetable_change_proposal(tenant_id: Any, proposal: Any) -> Dict[st
         "forbidden_actions": ["AUTO_APPLY", "AUTO_OPTIMIZE", "AUTONOMOUS_MUTATION"],
         "safety_flags": SAFETY_FLAGS,
     }
+
+
+def get_timetable_proposal_visibility_summary(tenant_id: Any) -> Dict[str, Any]:
+    """Build deterministic read-only L4 visibility summary for proposal operations."""
+    if not validate_proposal_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "timetable_change_proposal",
+            "visibility_level": "L4",
+            "operational_status": "TENANT_VALIDATION_FAILED",
+            "classification": "REJECTED_INVALID_PAYLOAD",
+            "allowed_actions": ["SUBMIT", "REVIEW", "REQUEST_MORE_INFO"],
+            "forbidden_actions": ["AUTO_APPLY", "AUTO_OPTIMIZE", "AUTONOMOUS_MUTATION"],
+            "safety_flags": SAFETY_FLAGS,
+            "evidence_notes": ["tenant validation failed"],
+            "no_autonomous_execution": True,
+            "readonly": True,
+            "tenant_scoped": True,
+        }
+
+    evaluated = evaluate_timetable_change_proposal(int(tenant_id), {})
+    return {
+        "tenant_id": int(tenant_id),
+        "module": "timetable_change_proposal",
+        "visibility_level": "L4",
+        "operational_status": str(evaluated.get("evaluation_status") or "EVALUATED"),
+        "classification": str(evaluated.get("classification") or "READY_FOR_REVIEW"),
+        "allowed_actions": list(evaluated.get("allowed_actions") or []),
+        "forbidden_actions": list(evaluated.get("forbidden_actions") or []),
+        "safety_flags": SAFETY_FLAGS,
+        "evidence_notes": [
+            "deterministic L3 proposal evaluator surfaced via read-only L4 visibility",
+            "no mutation or apply path exposed",
+        ],
+        "no_autonomous_execution": True,
+        "readonly": True,
+        "tenant_scoped": True,
+    }

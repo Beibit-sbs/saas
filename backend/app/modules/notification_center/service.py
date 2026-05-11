@@ -241,3 +241,44 @@ def classify_notification_readiness(tenant_id: Any, notification_payload: Any) -
         "next_recommended_step": next_step,
         "safety_flags": SAFETY_FLAGS,
     }
+
+
+def get_notification_visibility_summary(tenant_id: Any) -> Dict[str, Any]:
+    """Build deterministic read-only L4 visibility summary for notification readiness."""
+    if not validate_notification_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "notification_center",
+            "visibility_level": "L4",
+            "operational_status": "TENANT_VALIDATION_FAILED",
+            "classification": "NOTIFICATION_INPUT_INCOMPLETE",
+            "allowed_actions": ["PREVIEW", "CLASSIFY", "REVIEW"],
+            "forbidden_actions": ["SEND", "PROVIDER_CALL", "AUTO_DISPATCH", "CROSS_TENANT_BROADCAST"],
+            "safety_flags": SAFETY_FLAGS,
+            "evidence_notes": ["tenant validation failed"],
+            "no_autonomous_execution": True,
+            "readonly": True,
+            "tenant_scoped": True,
+        }
+
+    evaluated = classify_notification_readiness(
+        int(tenant_id),
+        {"notification_type": "REVIEW_NEEDED", "subject": "review", "message": "review", "provider_configured": True},
+    )
+    return {
+        "tenant_id": int(tenant_id),
+        "module": "notification_center",
+        "visibility_level": "L4",
+        "operational_status": str(evaluated.get("notification_readiness_status") or "READY_TO_COMPOSE"),
+        "classification": str(evaluated.get("classification") or "READY_TO_COMPOSE"),
+        "allowed_actions": ["PREVIEW", "CLASSIFY", "REVIEW"],
+        "forbidden_actions": ["SEND", "PROVIDER_CALL", "AUTO_DISPATCH", "CROSS_TENANT_BROADCAST"],
+        "safety_flags": SAFETY_FLAGS,
+        "evidence_notes": [
+            "deterministic notification readiness surfaced via read-only L4 visibility",
+            "no provider calls and no dispatch performed",
+        ],
+        "no_autonomous_execution": True,
+        "readonly": True,
+        "tenant_scoped": True,
+    }

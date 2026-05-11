@@ -207,3 +207,41 @@ def evaluate_human_workflow_state(tenant_id: Any, workflow: Any) -> Dict[str, An
         "next_recommended_step": next_step,
         "safety_flags": SAFETY_FLAGS,
     }
+
+
+def get_human_workflow_visibility_summary(tenant_id: Any) -> Dict[str, Any]:
+    """Build deterministic read-only L4 visibility summary for admin/API use."""
+    if not validate_workflow_tenant(tenant_id):
+        return {
+            "tenant_id": None,
+            "module": "human_approved_timetable_workflow",
+            "visibility_level": "L4",
+            "operational_status": "TENANT_VALIDATION_FAILED",
+            "classification": "NEEDS_HUMAN_REVIEW",
+            "allowed_actions": ["SUBMIT_FOR_REVIEW", "REQUEST_MORE_INFO"],
+            "forbidden_actions": ["AUTO_APPLY", "AUTO_OPTIMIZE", "AUTONOMOUS_ROLLBACK"],
+            "safety_flags": SAFETY_FLAGS,
+            "evidence_notes": ["tenant validation failed"],
+            "no_autonomous_execution": True,
+            "readonly": True,
+            "tenant_scoped": True,
+        }
+
+    evaluated = evaluate_human_workflow_state(int(tenant_id), {})
+    return {
+        "tenant_id": int(tenant_id),
+        "module": "human_approved_timetable_workflow",
+        "visibility_level": "L4",
+        "operational_status": str(evaluated.get("evaluation_status") or "EVALUATED"),
+        "classification": str(evaluated.get("classification") or "NEEDS_HUMAN_REVIEW"),
+        "allowed_actions": list(evaluated.get("allowed_actions") or []),
+        "forbidden_actions": list(evaluated.get("forbidden_actions") or []),
+        "safety_flags": SAFETY_FLAGS,
+        "evidence_notes": [
+            "deterministic L3 workflow classifier surfaced via read-only L4 visibility",
+            "human review boundary preserved",
+        ],
+        "no_autonomous_execution": True,
+        "readonly": True,
+        "tenant_scoped": True,
+    }

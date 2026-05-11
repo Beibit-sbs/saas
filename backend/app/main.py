@@ -48,6 +48,16 @@ from app.modules.faculty.router import router as faculty_router
 from app.modules.feature_flags.router import router as feature_flags_router
 from app.modules.grades.router import router as grades_router
 from app.modules.scheduling.router import router as scheduling_router
+from app.modules.human_approved_timetable_workflow.router import (
+    router as human_approved_timetable_workflow_router,
+)
+from app.modules.timetable_change_proposal.router import router as timetable_change_proposal_router
+from app.modules.timetable_approval_queue.router import router as timetable_approval_queue_router
+from app.modules.timetable_change_kpi_dashboard.router import (
+    router as timetable_change_kpi_dashboard_router,
+)
+from app.modules.workload_management.router import router as workload_management_router
+from app.modules.notification_center.router import router as notification_center_router
 from app.modules.events_management.router import router as events_management_router
 from app.modules.thesis.router import router as thesis_router
 from app.modules.advising.router import router as advising_router
@@ -372,6 +382,12 @@ app.include_router(courses_router)
 app.include_router(enrollments_router)
 app.include_router(grades_router)
 app.include_router(scheduling_router)
+app.include_router(human_approved_timetable_workflow_router)
+app.include_router(timetable_change_proposal_router)
+app.include_router(timetable_approval_queue_router)
+app.include_router(timetable_change_kpi_dashboard_router)
+app.include_router(workload_management_router)
+app.include_router(notification_center_router)
 app.include_router(events_management_router)
 app.include_router(thesis_router)
 app.include_router(advising_router)
