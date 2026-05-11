@@ -76,6 +76,454 @@
 
 **Impact**: A-026.4-SPEC unblocked with correct L3/L4 baseline. A-026.3 fully reconciled. A-026.3.B4 complete.
 
+## A-026.4-SPEC — L2→L3 Service Logic Normalization Batch Specification
+
+**Status**: SPEC ONLY
+
+**Purpose**: Select a bounded L2 batch for future A-026.4-RUNTIME and define the deterministic backend service logic that would lift those modules from L2→L3. This section does not change any maturity level, runtime artifact, schema, endpoint, or test state.
+
+### Source-of-Truth Snapshot
+
+- Authoritative tracker: SBS_UB.md
+- Reconciled matrix: SBS_UB_150_MODULE_NORMALIZATION.md
+- Current baseline metrics: L0=0, L1=16, L2=21, L3=24, L4=66, L5=21, L6=2, total=150, arithmetic_check=PASS
+- Extension metrics: extension_total_count=25, total_tracked_modules=175, separation=PASS
+- Next action id in tracker: A-026.4-RUNTIME
+- Runtime implementation status: not started
+
+### Current L2 Module Inventory
+
+L2 count after A-026.3.B4 reconciliation: 21.
+
+| # | Module | Domain | Current Level | Current Gap | Required Work | Required Tests | Source |
+|---:|---|---|---:|---|---|---|---|
+| 5 | accreditation_compliance | Planned Expansion | L2 | FSM_workflow_missing | deterministic service logic | targeted tests | A-023.0 |
+| 11 | ai_cost_governance | Planned Expansion | L2 | service_contract_missing | cost service determinism | contract tests | A-023.0 |
+| 14 | ai_plagiarism | Research & Innovation | L2 | FSM_workflow_missing | plagiarism detection FSM | transition tests | A-023.0 |
+| 32 | conference_management | Research & Innovation | L2 | FSM_workflow_missing | conference FSM transitions | transition tests | A-023.0 |
+| 34 | contracts_legal_repository | Planned Expansion | L2 | service_contract_missing | legal contract service | contract tests | A-023.0 |
+| 36 | counseling_case_management | Planned Expansion | L2 | service_contract_missing | case management service | contract tests | A-023.0 |
+| 41 | developer_portal | Planned Expansion | L2 | service_contract_missing | developer service contract | contract tests | A-023.0 |
+| 59 | federation_management | Planned Expansion | L2 | FSM_workflow_missing | federation FSM logic | transition tests | A-023.0 |
+| 62 | health_services | Planned Expansion | L2 | FSM_workflow_missing | health service logic | transition tests | A-023.0 |
+| 66 | human_approved_timetable_workflow | Planned Expansion | L2 | deterministic_service_logic_needed | L3 deterministic workflow state logic | L3 service logic / transition tests | A-026.3 runtime + A-026.3.B1 evidence |
+| 80 | library_circulation | Planned Expansion | L2 | FSM_workflow_missing | circulation FSM logic | transition tests | A-023.0 |
+| 83 | local_user_management | Planned Expansion | L2 | tenant_guard_missing | user management tenant guards | tenant tests | A-023.0 |
+| 87 | notification_center | Planned Expansion | L2 | deterministic_service_logic_needed | deterministic notification composition/readiness logic without sending | notification logic / tenant / no-provider-call tests | A-026.3 runtime + A-026.3.B1 evidence |
+| 116 | research_grants | Planned Expansion | L2 | FSM_workflow_missing | grants FSM logic | transition tests | A-023.0 |
+| 125 | student_ai_tutor | Research & Innovation | L2 | FSM_workflow_missing | tutor FSM logic | transition tests | A-023.0 |
+| 138 | timetable_approval_queue | Planned Expansion | L2 | deterministic_service_logic_needed | deterministic queue state/action logic | queue transition / forbidden action tests | A-026.3 runtime + A-026.3.B1 evidence |
+| 139 | timetable_change_kpi_dashboard | Planned Expansion | L2 | deterministic_service_logic_needed | deterministic KPI readiness classification only | KPI readiness logic / no-fake-KPI tests | A-026.3 runtime + A-026.3.B1 evidence |
+| 140 | timetable_change_proposal | Planned Expansion | L2 | deterministic_service_logic_needed | deterministic proposal evaluation rules | proposal logic / validation / boundary tests | A-026.3 runtime + A-026.3.B1 evidence |
+| 141 | timetable_change_simulation | Planned Expansion | L2 | deterministic_service_logic_needed | deterministic simulation readiness classification | simulation logic / no-mutation / boundary tests | A-026.3 runtime + A-026.3.B1 evidence |
+| 142 | timetable_recommendation_bridge | Planned Expansion | L2 | deterministic_service_logic_needed | deterministic recommendation envelope rules | bridge logic / determinism / no-AI-provider tests | A-026.3 runtime + A-026.3.B1 evidence |
+| 150 | workload_management | Planned Expansion | L2 | deterministic_service_logic_needed | deterministic workload planning classification | workload logic / no-payroll-mutation tests | A-026.3 runtime + A-026.3.B1 evidence |
+
+**Count check**: PASS (21 L2 rows)
+
+### Selection Criteria
+
+- Prefer coherent dependency chains over single isolated modules.
+- Prefer deterministic backend logic that can be specified without schema, endpoint, or frontend work.
+- Prefer low blast radius and strong testability.
+- Prefer tenant-safe behavior with fail-closed handling.
+- Avoid API, frontend, schema, event registry, Brain, or KPI overreach in this spec stage.
+
+### L2 Suitability Scoring
+
+Priority score formula: `Domain Leverage + Service Clarity + Testability + (6 - Tenant Risk) + (6 - Blast Radius)`, max 25.
+
+| Module | Domain Leverage | Service Clarity | Tenant Risk | Testability | Blast Radius | Priority Score | Recommended |
+|---|---:|---:|---:|---:|---:|---:|---|
+| accreditation_compliance | 3 | 3 | 2 | 4 | 2 | 18 | DEFER_A0265 |
+| ai_cost_governance | 4 | 3 | 2 | 4 | 2 | 19 | DEFER_A0265 |
+| ai_plagiarism | 4 | 3 | 4 | 3 | 3 | 16 | DEFER_AFTER_VERIFICATION |
+| conference_management | 3 | 3 | 3 | 3 | 2 | 16 | DEFER_A0265 |
+| contracts_legal_repository | 3 | 4 | 2 | 4 | 3 | 17 | DEFER_A0265 |
+| counseling_case_management | 3 | 3 | 3 | 4 | 3 | 15 | DEFER_AFTER_VERIFICATION |
+| developer_portal | 3 | 4 | 2 | 4 | 3 | 17 | DEFER_A0265 |
+| federation_management | 4 | 3 | 3 | 4 | 3 | 17 | DEFER_AFTER_VERIFICATION |
+| health_services | 4 | 3 | 3 | 4 | 3 | 17 | DEFER_AFTER_VERIFICATION |
+| human_approved_timetable_workflow | 5 | 5 | 2 | 5 | 2 | 23 | SELECT_A0264 |
+| library_circulation | 4 | 4 | 3 | 4 | 2 | 19 | DEFER_A0265 |
+| local_user_management | 4 | 3 | 4 | 4 | 4 | 14 | DO_NOT_TOUCH_NOW |
+| notification_center | 5 | 4 | 2 | 4 | 3 | 21 | SELECT_A0264 |
+| research_grants | 4 | 4 | 3 | 4 | 2 | 19 | DEFER_A0265 |
+| student_ai_tutor | 4 | 3 | 3 | 4 | 3 | 17 | DEFER_AFTER_VERIFICATION |
+| timetable_approval_queue | 5 | 4 | 3 | 4 | 2 | 20 | SELECT_A0264 |
+| timetable_change_kpi_dashboard | 4 | 4 | 3 | 4 | 2 | 19 | SELECT_A0264 |
+| timetable_change_proposal | 5 | 5 | 2 | 5 | 2 | 23 | SELECT_A0264 |
+| timetable_change_simulation | 5 | 4 | 2 | 5 | 2 | 22 | SELECT_A0264 |
+| timetable_recommendation_bridge | 5 | 4 | 2 | 4 | 2 | 21 | SELECT_A0264 |
+| workload_management | 4 | 4 | 3 | 4 | 2 | 19 | SELECT_A0264 |
+
+### Selected A-026.4 Batch
+
+Selected batch size: 8.
+
+| Selected Module | Current Level | Target Level | Why Selected | Expected L3 Logic | Required Tests | Risk |
+|---|---:|---:|---|---|---|---|
+| human_approved_timetable_workflow | L2 | L3 | Highest leverage workflow root; anchors the rest of the timetable chain | deterministic workflow state transitions and approval boundary logic | import, tenant negative, transition, forbidden action tests | medium |
+| timetable_change_proposal | L2 | L3 | Core change request domain; clean rule surface | deterministic proposal evaluation and status logic | contract, validation, boundary tests | medium |
+| timetable_change_simulation | L2 | L3 | Bounded simulation logic; no mutation needed | deterministic simulation readiness and conflict classification | negative, no-mutation, boundary tests | medium |
+| timetable_recommendation_bridge | L2 | L3 | Bridge layer between recommendation and workflow decisions | deterministic envelope and mapping rules | determinism, no-provider-call tests | medium |
+| timetable_approval_queue | L2 | L3 | Human review queue for bounded actions | deterministic queue state and allowed-action rules | transition, forbidden-action tests | medium |
+| timetable_change_kpi_dashboard | L2 | L3 | Supports review-ready classification without KPI claims | deterministic readiness classification only | no-fake-KPI tests | medium |
+| workload_management | L2 | L3 | Planning logic adjacent to timetable decisions | deterministic workload planning classification | contract, no-mutation tests | medium |
+| notification_center | L2 | L3 | Cross-cutting tenant-safe notification preview logic | deterministic notification composition without provider calls | tenant, no-provider-call tests | high |
+
+### A-026.4 L3 Implementation Standard
+
+1. Deterministic backend business logic
+- service functions do more than readiness contracts
+- status, risk, classification, and action recommendations must be deterministic
+- no fake data generation
+
+2. Tenant fail-closed behavior
+- invalid tenant rejected
+- all outputs tenant-scoped
+- no cross-tenant aggregation
+
+3. Domain-specific rules
+- module-specific classification
+- allowed and forbidden actions
+- next-state or readiness rules
+- human review boundary where applicable
+- risk, severity, and priority logic where applicable
+
+4. Tests
+- import tests
+- tenant negative tests
+- deterministic output tests
+- status/risk/classification tests
+- boundary tests
+- anti-inflation tests
+
+5. Anti-inflation
+- no API claim
+- no frontend claim
+- no KPI lineage claim
+- no Brain claim
+- no L4/L5/L6 claim
+- no autonomous critical action
+
+### Module-by-Module Deep Specification
+
+#### Module: human_approved_timetable_workflow
+
+Current state: L2; source A-026.3 runtime + A-026.3.B1 evidence; primary gap is deterministic workflow state logic.
+
+Intended L3 scope: compute approval-state transitions deterministically, enforce human-review boundaries, and fail closed on invalid tenant input. This module will not expose APIs, mutate data, or schedule autonomous actions.
+
+Expected runtime files:
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/human_approved_timetable_workflow/service.py | augment | L3 workflow state logic |
+| backend/tests/test_a0264_l2_to_l3_service_logic_normalization.py | add | shared deterministic tests |
+
+L3 service functions:
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| validate_tenant_id | fail-closed tenant guard | tenant_id | normalized tenant_id or error | yes | yes |
+| evaluate_workflow_state | classify workflow state | proposal state, actor state | workflow classification | yes | yes |
+| determine_human_review_boundary | identify approval boundary | workflow payload | boundary decision | yes | yes |
+| build_workflow_summary | summarize deterministic status | tenant-scoped payload | summary object | yes | yes |
+
+Domain logic: statuses should include draft, pending_review, approved, rejected, and cancelled; allowed actions should be submit, review, approve, reject, and cancel; forbidden actions should include auto-approve, cross-tenant routing, and silent state mutation.
+
+Tenant safety: reject missing, non-integer, or non-positive tenant ids; include tenant id in every returned payload; never aggregate across tenants.
+
+Required tests: import validation, tenant fail-closed rejection, deterministic state transitions, forbidden action protection, and anti-inflation flags.
+
+Anti-inflation boundary: no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signal, no event emission, no autonomous execution, L3 only.
+
+#### Module: timetable_change_proposal
+
+Current state: L2; source A-026.3 runtime + A-026.3.B1 evidence; primary gap is deterministic proposal evaluation rules.
+
+Intended L3 scope: classify proposal validity, status, and next action deterministically. This module will not publish events or expose a proposal API.
+
+Expected runtime files:
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/timetable_change_proposal/service.py | augment | L3 proposal evaluation logic |
+| backend/tests/test_a0264_l2_to_l3_service_logic_normalization.py | add | shared deterministic tests |
+
+L3 service functions:
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| validate_tenant_id | fail-closed tenant guard | tenant_id | normalized tenant_id or error | yes | yes |
+| evaluate_proposal | classify proposal outcome | proposal payload | proposal verdict | yes | yes |
+| classify_proposal_status | assign status bucket | proposal state | status object | yes | yes |
+| list_forbidden_actions | block invalid operations | proposal context | forbidden action list | yes | yes |
+
+Domain logic: statuses should include submitted, under_review, ready, rejected, and applied; allowed actions should include submit, review, revise, approve, and apply; forbidden actions should include auto-apply, cross-tenant reuse, and hidden mutation.
+
+Tenant safety: keep all outputs tenant-scoped and reject malformed tenant ids before any classification.
+
+Required tests: import validation, proposal-status classification, forbidden action protection, tenant negative tests, and anti-inflation flags.
+
+Anti-inflation boundary: no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signal, no event emission, no autonomous execution, L3 only.
+
+#### Module: timetable_change_simulation
+
+Current state: L2; source A-026.3 runtime + A-026.3.B1 evidence; primary gap is deterministic simulation readiness classification.
+
+Intended L3 scope: evaluate simulation readiness and conflict outcomes without mutating timetable data. This module will not simulate by calling external providers or writing state.
+
+Expected runtime files:
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/timetable_change_simulation/service.py | augment | L3 simulation readiness logic |
+| backend/tests/test_a0264_l2_to_l3_service_logic_normalization.py | add | shared deterministic tests |
+
+L3 service functions:
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| validate_tenant_id | fail-closed tenant guard | tenant_id | normalized tenant_id or error | yes | yes |
+| classify_simulation_readiness | readiness classification | simulation input | readiness verdict | yes | yes |
+| detect_simulation_conflicts | identify deterministic conflicts | timetable snapshot | conflict summary | yes | yes |
+| build_simulation_summary | package output | tenant-scoped payload | summary object | yes | yes |
+
+Domain logic: statuses should include pending, simulated, conflict_detected, ready, and failed; allowed actions should include preview, classify, and review; forbidden actions should include any mutation or optimistic commit.
+
+Tenant safety: tenant id required, outputs tenant-scoped, and cross-tenant conflict blending prohibited.
+
+Required tests: readiness classification, no-mutation behavior, tenant fail-closed rejection, conflict boundary tests, and anti-inflation flags.
+
+Anti-inflation boundary: no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signal, no event emission, no autonomous execution, L3 only.
+
+#### Module: timetable_recommendation_bridge
+
+Current state: L2; source A-026.3 runtime + A-026.3.B1 evidence; primary gap is deterministic recommendation envelope rules.
+
+Intended L3 scope: transform recommendations into deterministic workflow envelopes and classify them for downstream review. This module will not call AI providers or emit autonomous decisions.
+
+Expected runtime files:
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/timetable_recommendation_bridge/service.py | augment | L3 bridge rules |
+| backend/tests/test_a0264_l2_to_l3_service_logic_normalization.py | add | shared deterministic tests |
+
+L3 service functions:
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| validate_tenant_id | fail-closed tenant guard | tenant_id | normalized tenant_id or error | yes | yes |
+| build_recommendation_envelope | map recommendation into envelope | recommendation payload | deterministic envelope | yes | yes |
+| classify_bridge_readiness | readiness classification | bridge context | readiness verdict | yes | yes |
+| list_forbidden_actions | block unsupported actions | bridge context | forbidden action list | yes | yes |
+
+Domain logic: allowed actions should include map, preview, and review; forbidden actions should include direct execution, AI-provider calls, and cross-tenant reuse.
+
+Tenant safety: every envelope must carry tenant scope and reject invalid tenants before any mapping.
+
+Required tests: deterministic mapping, no-provider-call behavior, tenant negative tests, and anti-inflation flags.
+
+Anti-inflation boundary: no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signal, no event emission, no autonomous execution, L3 only.
+
+#### Module: timetable_approval_queue
+
+Current state: L2; source A-026.3 runtime + A-026.3.B1 evidence; primary gap is deterministic queue state/action logic.
+
+Intended L3 scope: classify queue states and allowed actions for review workflows. This module will not mutate production queue state or expose queue APIs.
+
+Expected runtime files:
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/timetable_approval_queue/service.py | augment | L3 queue logic |
+| backend/tests/test_a0264_l2_to_l3_service_logic_normalization.py | add | shared deterministic tests |
+
+L3 service functions:
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| validate_tenant_id | fail-closed tenant guard | tenant_id | normalized tenant_id or error | yes | yes |
+| determine_queue_state | classify queue state | queue payload | queue state object | yes | yes |
+| allow_queue_transition | enforce allowed transitions | queue state, action | allow/deny verdict | yes | yes |
+| block_forbidden_actions | list forbidden actions | queue context | forbidden action list | yes | yes |
+
+Domain logic: allowed actions should include enqueue, review, approve, reject, and apply; forbidden actions should include silent approve, bypass review, and cross-tenant queue sharing.
+
+Tenant safety: all queue evaluation remains tenant-bound and fail-closed.
+
+Required tests: queue transition tests, forbidden action tests, tenant negative tests, deterministic output tests, and anti-inflation flags.
+
+Anti-inflation boundary: no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signal, no event emission, no autonomous execution, L3 only.
+
+#### Module: timetable_change_kpi_dashboard
+
+Current state: L2; source A-026.3 runtime + A-026.3.B1 evidence; primary gap is deterministic KPI readiness classification only.
+
+Intended L3 scope: classify whether backend evidence is ready for dashboard surfacing without inventing KPI values. This module will not publish frontend dashboards or claim KPI lineage.
+
+Expected runtime files:
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/timetable_change_kpi_dashboard/service.py | augment | L3 readiness classifier |
+| backend/tests/test_a0264_l2_to_l3_service_logic_normalization.py | add | shared deterministic tests |
+
+L3 service functions:
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| validate_tenant_id | fail-closed tenant guard | tenant_id | normalized tenant_id or error | yes | yes |
+| classify_dashboard_readiness | readiness classification | evidence context | readiness verdict | yes | yes |
+| validate_no_fake_kpi | block invented KPI data | dashboard payload | allow/deny verdict | yes | yes |
+| build_evidence_summary | summarise evidence state | tenant-scoped evidence | summary object | yes | yes |
+
+Domain logic: outputs should distinguish ready, blocked, and incomplete states; forbidden actions include fabricating KPI values, implying frontend presence, or cross-tenant aggregation.
+
+Tenant safety: all readiness decisions remain tenant-scoped and fail-closed.
+
+Required tests: no-fake-KPI tests, evidence classification, tenant negative tests, and anti-inflation flags.
+
+Anti-inflation boundary: no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signal, no event emission, no autonomous execution, L3 only.
+
+#### Module: workload_management
+
+Current state: L2; source A-026.3 runtime + A-026.3.B1 evidence; primary gap is deterministic workload planning classification.
+
+Intended L3 scope: classify workload planning states and constraints deterministically. This module will not mutate payroll, scheduling, or assignment state.
+
+Expected runtime files:
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/workload_management/service.py | augment | L3 workload planning logic |
+| backend/tests/test_a0264_l2_to_l3_service_logic_normalization.py | add | shared deterministic tests |
+
+L3 service functions:
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| validate_tenant_id | fail-closed tenant guard | tenant_id | normalized tenant_id or error | yes | yes |
+| classify_workload_plan | classify planning state | workload payload | plan verdict | yes | yes |
+| determine_constraint_set | compute planning constraints | workload context | constraint summary | yes | yes |
+| block_mutating_actions | block unsafe actions | workload context | forbidden action list | yes | yes |
+
+Domain logic: allowed actions should include assess, classify, and review; forbidden actions should include payroll mutation, auto-assignment, and cross-tenant mixing.
+
+Tenant safety: tenant scoping required for all outputs.
+
+Required tests: contract tests, no-mutation tests, tenant negative tests, and anti-inflation flags.
+
+Anti-inflation boundary: no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signal, no event emission, no autonomous execution, L3 only.
+
+#### Module: notification_center
+
+Current state: L2; source A-026.3 runtime + A-026.3.B1 evidence; primary gap is deterministic notification composition/readiness logic without sending.
+
+Intended L3 scope: compose notification previews and readiness states deterministically while keeping provider calls out of scope. This module will not send notifications or call external providers.
+
+Expected runtime files:
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/notification_center/service.py | augment | L3 notification preview logic |
+| backend/tests/test_a0264_l2_to_l3_service_logic_normalization.py | add | shared deterministic tests |
+
+L3 service functions:
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| validate_tenant_id | fail-closed tenant guard | tenant_id | normalized tenant_id or error | yes | yes |
+| compose_notification_preview | build deterministic preview | notification payload | preview object | yes | yes |
+| classify_dispatch_readiness | classify send readiness | preview context | readiness verdict | yes | yes |
+| block_provider_calls | prevent delivery side effects | dispatch context | forbidden action list | yes | yes |
+
+Domain logic: allowed actions should include preview, classify, and review; forbidden actions should include send, deliver, cross-tenant reuse, and any direct provider invocation.
+
+Tenant safety: mandatory tenant scope on all preview objects; fail closed on invalid tenant ids; no cross-tenant fanout.
+
+Required tests: tenant negative tests, no-provider-call tests, deterministic preview tests, and anti-inflation flags.
+
+Anti-inflation boundary: no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signal, no event emission, no autonomous execution, L3 only.
+
+### Expected Runtime Files
+
+| File | Expected Action | Reason |
+|---|---|---|
+| backend/app/modules/human_approved_timetable_workflow/service.py | augment | add deterministic L3 workflow logic |
+| backend/app/modules/timetable_change_proposal/service.py | augment | add deterministic L3 proposal logic |
+| backend/app/modules/timetable_change_simulation/service.py | augment | add deterministic L3 simulation logic |
+| backend/app/modules/timetable_recommendation_bridge/service.py | augment | add deterministic L3 bridge logic |
+| backend/app/modules/timetable_approval_queue/service.py | augment | upgrade queue logic from L2 contract to L3 rules |
+| backend/app/modules/timetable_change_kpi_dashboard/service.py | augment | upgrade readiness classifier without KPI inflation |
+| backend/app/modules/workload_management/service.py | augment | add deterministic workload planning logic |
+| backend/app/modules/notification_center/service.py | augment | add deterministic tenant-safe preview logic |
+| backend/tests/test_a0264_l2_to_l3_service_logic_normalization.py | add | shared targeted test file for selected batch |
+| SBS_UB.md | update | control block and execution staging |
+| SBS_UB_150_MODULE_NORMALIZATION.md | update | add this A-026.4-SPEC section |
+| A-026.4-SPEC-L2_TO_L3_SERVICE_LOGIC_BATCH_SPECIFICATION_REPORT.md | add | audit-ready spec report |
+
+### A-026.4 Targeted Test Plan
+
+Preferred test file: backend/tests/test_a0264_l2_to_l3_service_logic_normalization.py
+
+Targeted test count: 32 tests.
+
+Test groups:
+1. import validation for all 8 selected modules
+2. tenant fail-closed validation for all 8 selected modules
+3. deterministic domain logic for all 8 selected modules
+4. status, risk, and classification outputs
+5. forbidden action protection
+6. anti-inflation flags and no-provider-call / no-mutation checks
+7. no DB, external API, frontend, or autonomous execution behavior
+
+### Expected Maturity Movement
+
+No maturity movement in this spec phase.
+
+If A-026.4-RUNTIME succeeds, selected modules move L2→L3 only.
+
+Before A-026.4-RUNTIME:
+- L0=0
+- L1=16
+- L2=21
+- L3=24
+- L4=66
+- L5=21
+- L6=2
+- total=150
+- maturity_arithmetic_check=PASS
+
+If selected batch size is N:
+- L0=0
+- L1=16
+- L2=21-N
+- L3=24+N
+- L4=66
+- L5=21
+- L6=2
+- total=150
+- maturity_arithmetic_check=PASS
+
+If N=8:
+- L0=0
+- L1=16
+- L2=13
+- L3=32
+- L4=66
+- L5=21
+- L6=2
+- total=150
+- maturity_arithmetic_check=PASS
+
+### Anti-Inflation Boundaries
+
+- no API endpoint
+- no frontend page
+- no DB mutation
+- no KPI values
+- no Brain signal
+- no event emission unless later explicitly scoped
+- no autonomous execution
+- L3 only
+
+### Definition of Done for Future A-026.4-RUNTIME
+
+- selected batch remains exactly 8 modules unless re-approved
+- service logic is deterministic and tenant-safe
+- shared targeted tests pass
+- no API, frontend, schema, or Brain claims are introduced
+- SBS_UB.md metrics remain consistent with the runtime result
+- the normalized matrix is updated only after implementation and validation
+
 ## Normalization Philosophy
 1. No fake green.
 2. No guessed capability status.

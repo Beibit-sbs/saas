@@ -1,13 +1,19 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-026.4
-- current_stage: A-026.3.B4 complete / L3-L4 matrix reconciliation applied after A-024 A-026.3
-- last_completed_action_id: A-026.3.B4
-- next_action_id: A-026.4
-- updated_at: 2026-05-11 (A-026.3.B4 matrix L3/L4 reconciliation complete)
+- status: ready_for_A-026.4-RUNTIME
+- current_stage: A-026.4-SPEC complete / selected L2→L3 service logic batch
+- last_completed_action_id: A-026.4-SPEC
+- next_action_id: A-026.4-RUNTIME
+- updated_at: 2026-05-11 (A-026.4-SPEC selected batch confirmed)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=16, L2=21, L3=24, L4=66, L5=21, L6=2, total=150, arithmetic_check=PASS
 - extension_metrics: 25_L0_modules_PLANNING_ONLY, isolated_from_baseline, total_tracked=175, separation=PASS
+- A-026.4-SPEC execution block:
+    - selected_batch: human_approved_timetable_workflow, timetable_change_proposal, timetable_change_simulation, timetable_recommendation_bridge, timetable_approval_queue, timetable_change_kpi_dashboard, workload_management, notification_center
+    - runtime_status: not started
+    - maturity_movement: none in spec phase
+    - expected_runtime_formula: L2=21-N, L3=24+N, other levels unchanged; with N=8 => L2=13, L3=32, total=150, arithmetic_check=PASS
+    - approval_gate: A-026.4-RUNTIME may proceed only after spec review/approval
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory
