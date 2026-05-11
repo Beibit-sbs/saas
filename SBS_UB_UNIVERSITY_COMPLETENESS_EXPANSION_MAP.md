@@ -876,3 +876,236 @@ If A-027.3 runtime passes:
 - Scope: Create 12 L2 foundation service contracts
 - Validation: Docker pytest ~75–85 tests
 - Expected outcome: 12 × L2 foundation contracts, test PASS, expansion_L2_foundation_count = 23
+
+## A-027.4-SPEC — P0/P1 New Module Foundation Batch 3 Selection
+
+### Why Continue L2 Foundation Before L2->L3
+
+- Strategic posture remains broad completeness-first expansion across missing University OS domains.
+- A-027.2 and A-027.3 established a stable deterministic L2 foundation pattern and anti-inflation guardrails.
+- Remaining accepted NEW_MODULE gaps still offer higher completeness ROI than early L2->L3 deepening.
+- Integrations, dashboards, Brain signals, and autonomous workflows remain explicitly deferred in A-027.4.
+
+### Excluded Already Implemented Modules
+
+**A-027.2 implemented (11):**
+- staff_recruitment
+- staff_onboarding
+- employee_records
+- document_workflow
+- order_decree_registry
+- curriculum_mapping
+- syllabus_management
+- international_office
+- program_learning_outcomes
+- course_learning_outcomes
+- committee_decision_registry
+
+**A-027.3 implemented (12):**
+- competency_framework
+- archive_retention_management
+- leave_management
+- performance_appraisal
+- disciplinary_case_management
+- degree_audit
+- transfer_credit_management
+- prerequisite_management
+- course_catalog_management
+- mou_lifecycle
+- partnership_registry
+- staff_exit_offboarding
+
+### Selected A-027.4 Batch (15 Modules)
+
+| # | UCE ID | Candidate | Priority | Domain | Initial Target Level | Why Selected | Risk |
+|---:|---|---|---|---|---:|---|---|
+| 1 | UCE-081 | disability_support_services | P0 | Student Support / Health / Counseling | L2 | Only remaining accepted P0 NEW_MODULE; high student-success and compliance value | LOW |
+| 2 | UCE-017 | dormitory_management | P1 | Campus Operations | L2 | Critical student lifecycle infrastructure gap | LOW |
+| 3 | UCE-013 | incoming_outgoing_correspondence | P1 | Communications | L2 | Institutional traceability and compliance evidence backbone | LOW |
+| 4 | UCE-057 | staff_probation_review | P1 | Faculty Lifecycle | L2 | HR lifecycle closure and governance consistency | LOW |
+| 5 | UCE-060 | timesheet_management | P1 | HR / Personnel | L2 | Workforce control dependency for future workflows | LOW |
+| 6 | UCE-061 | faculty_attestation | P1 | Faculty Lifecycle | L2 | Compliance and faculty quality governance dependency | LOW |
+| 7 | UCE-067 | teaching_load_contracts | P1 | Workload / Timetable / Capacity | L2 | Enables future workload and scheduling deterministic layers | LOW |
+| 8 | UCE-073 | elective_course_selection | P1 | Academic Affairs | L2 | Student curriculum flexibility with strong downstream value | LOW |
+| 9 | UCE-077 | thesis_dissertation_management | P1 | Academic Affairs | L2 | Major academic lifecycle gap with high completeness value | LOW |
+| 10 | UCE-078 | academic_integrity_case_management | P1 | Assessment / Exams / Proctoring | L2 | Compliance and case-governance control plane | LOW |
+| 11 | UCE-082 | student_financial_hardship | P1 | Student Support / Health / Counseling | L2 | Student retention and governance evidence foundation | LOW |
+| 12 | UCE-085 | joint_program_management | P1 | International Office / Mobility / Partnerships | L2 | Multi-institution governance dependency for later mobility workflows | LOW |
+| 13 | UCE-086 | inbound_exchange_management | P1 | International Office / Mobility / Partnerships | L2 | Mobility governance lifecycle foundation | LOW |
+| 14 | UCE-087 | outbound_exchange_management | P1 | International Office / Mobility / Partnerships | L2 | Mobility governance lifecycle foundation | LOW |
+| 15 | UCE-089 | document_template_library | P1 | Document Workflow / Archive / EDS | L2 | Reusable documentation control baseline for many workflows | LOW |
+
+### A-027.4 New Module Foundation Standard
+
+Every selected module requires A-027.4-RUNTIME to create:
+
+- backend/app/modules/<module>/__init__.py
+- backend/app/modules/<module>/service.py
+- MODULE_NAME
+- UCE_ID
+- TARGET_LEVEL = "L2"
+- CONTRACT_VERSION = "A-027.4"
+- FOUNDATION_STATUS = "FOUNDATION_READY"
+- validate_tenant_id fail-closed helper
+- get_<module>_foundation_contract(...)
+- deterministic foundation output
+- lifecycle_statuses
+- allowed_actions
+- forbidden_actions
+- required_evidence
+- next_maturity_gap = "L3 deterministic logic required"
+- safety_flags:
+	- no_api_claim
+	- no_frontend_claim
+	- no_live_integration_claim
+	- no_provider_call
+	- no_kpi_claim
+	- no_brain_claim
+	- no_autonomous_execution
+	- no_external_side_effects
+	- no_l3_claim
+	- no_l4_claim
+	- no_l5_claim
+	- no_l6_claim
+
+### Module-by-Module Specs (Condensed)
+
+#### Module: disability_support_services
+- UCE ID: UCE-081
+- Purpose: Track support requests, evidence, and manual accommodation review readiness.
+- Sensitive boundary: no medical diagnosis; no automatic accommodation decision.
+
+#### Module: dormitory_management
+- UCE ID: UCE-017
+- Purpose: Dormitory lifecycle and evidence governance for housing requests.
+- Sensitive boundary: no automatic eviction; no automatic room assignment claim.
+
+#### Module: incoming_outgoing_correspondence
+- UCE ID: UCE-013
+- Purpose: Controlled correspondence registry for traceability and audits.
+- Sensitive boundary: no autonomous dispatch or legal filing.
+
+#### Module: staff_probation_review
+- UCE ID: UCE-057
+- Purpose: Probation lifecycle with manual review and evidence checkpoints.
+- Sensitive boundary: no automatic probation pass/fail decision.
+
+#### Module: timesheet_management
+- UCE ID: UCE-060
+- Purpose: Timesheet governance and review-state lifecycle.
+- Sensitive boundary: no automatic payroll action.
+
+#### Module: faculty_attestation
+- UCE ID: UCE-061
+- Purpose: Faculty attestation evidence lifecycle and manual review readiness.
+- Sensitive boundary: no automatic attestation approval.
+
+#### Module: teaching_load_contracts
+- UCE ID: UCE-067
+- Purpose: Teaching load contract lifecycle with manual governance.
+- Sensitive boundary: no automatic workload enforcement decision.
+
+#### Module: elective_course_selection
+- UCE ID: UCE-073
+- Purpose: Elective selection request lifecycle and manual approval readiness.
+- Sensitive boundary: no automatic registration mutation.
+
+#### Module: thesis_dissertation_management
+- UCE ID: UCE-077
+- Purpose: Thesis/dissertation lifecycle governance and evidence checkpoints.
+- Sensitive boundary: no automatic thesis approval decision.
+
+#### Module: academic_integrity_case_management
+- UCE ID: UCE-078
+- Purpose: Case lifecycle for academic integrity with strict manual decision points.
+- Sensitive boundary: no automatic penalty or verdict.
+
+#### Module: student_financial_hardship
+- UCE ID: UCE-082
+- Purpose: Hardship request intake, evidence capture, and manual committee review readiness.
+- Sensitive boundary: no automatic aid award or denial.
+
+#### Module: joint_program_management
+- UCE ID: UCE-085
+- Purpose: Joint-program lifecycle governance and partner evidence tracking.
+- Sensitive boundary: no legal ownership/contract decision automation.
+
+#### Module: inbound_exchange_management
+- UCE ID: UCE-086
+- Purpose: Inbound mobility lifecycle and evidence governance.
+- Sensitive boundary: no immigration/visa decision; no automatic mobility approval.
+
+#### Module: outbound_exchange_management
+- UCE ID: UCE-087
+- Purpose: Outbound mobility lifecycle and evidence governance.
+- Sensitive boundary: no immigration/visa decision; no automatic mobility approval.
+
+#### Module: document_template_library
+- UCE ID: UCE-089
+- Purpose: Controlled template lifecycle and approval state tracking.
+- Sensitive boundary: no automatic legal finalization.
+
+### Expected Runtime Files (A-027.4-RUNTIME)
+
+| File | Expected Action | Reason |
+|---|---|---|
+| backend/app/modules/<selected_module>/__init__.py | CREATE | Module identity and L2 contract metadata |
+| backend/app/modules/<selected_module>/service.py | CREATE | Deterministic L2 foundation contract function |
+| backend/tests/test_a0274_new_module_foundation_batch3.py | CREATE | Batch-3 foundation safety and determinism validation |
+| SBS_UB.md | UPDATE | Record A-027.4 runtime closure and expansion counters |
+| SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md | UPDATE | Mark selected modules implemented after runtime pass |
+| A-027.4-P0_P1_NEW_MODULE_FOUNDATION_BATCH_3_RUNTIME_REPORT.md | CREATE | Runtime evidence and anti-inflation closure |
+
+### A-027.4 Targeted Test Plan
+
+Preferred runtime test file:
+- backend/tests/test_a0274_new_module_foundation_batch3.py
+
+Test groups:
+1. import validation
+2. tenant fail-closed validation
+3. foundation output validation
+4. lifecycle/status validation
+5. required evidence validation
+6. allowed/forbidden action validation
+7. sensitive-domain boundary validation
+8. safety flag validation
+9. determinism validation
+10. anti-inflation validation
+
+Expected test count:
+- 90-170 (for 15 modules)
+
+Validation mode:
+- fast direct Docker
+
+### Expected Expansion Metrics
+
+Current:
+- A0272_implemented_foundation_count = 11
+- A0273_implemented_foundation_count = 12
+- expansion_L2_foundation_count = 23
+- expansion_runtime_implemented_count = 23
+
+If A-027.4 runtime selects N modules and passes:
+- A0274_implemented_foundation_count = N
+- expansion_L2_foundation_count = 23 + N
+- expansion_runtime_implemented_count = 23 + N
+- baseline_impact = 0
+- extension_impact = 0
+
+Baseline remains unchanged:
+- L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+
+### Anti-Fake Review
+
+- SPEC-only: no runtime code created in A-027.4-SPEC.
+- No implementation claims for selected modules in this phase.
+- No maturity movement in baseline metrics.
+- Baseline/extension separation preserved.
+- Expansion counters remain unchanged during SPEC.
+
+### Next Action
+
+- next_action_id: A-027.4-RUNTIME
+- scope: implement 15 selected NEW_MODULE L2 foundation contracts
