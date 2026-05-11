@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-026.8-SPEC
-    - current_stage: A-026.7.L1L2-RUNTIME complete / all selected L1 modules lifted to L2 foundation service contracts
-    - last_completed_action_id: A-026.7.L1L2-RUNTIME
-    - next_action_id: A-026.8-SPEC
-    - updated_at: 2026-05-12 (A-026.7.L1L2-RUNTIME complete: 16 modules lifted L1→L2 with tenant fail-closed deterministic service contracts, targeted and continuity tests PASS, A-026.7-SPEC deferred backlog preserved)
+    - status: ready_for_A-026.8-RUNTIME
+    - current_stage: A-026.8-SPEC complete / selected bounded L2→L3 deterministic service logic batch
+    - last_completed_action_id: A-026.8-SPEC
+    - next_action_id: A-026.8-RUNTIME
+    - updated_at: 2026-05-12 (A-026.8-SPEC complete: 29 L2 inventory extracted, 8-module L2→L3 batch selected, deep deterministic logic spec completed; no runtime code or maturity movement)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=29, L3=26, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS
@@ -117,6 +117,18 @@
     - extension_metrics: unchanged (extension_total_count=25, total_tracked_modules=175, separation=PASS)
     - a026_7_spec_backlog: deferred but valid (L4→L5 batch preserved at b36e3e8)
     - next_action_id: A-026.8-SPEC
+- A-026.8-SPEC execution block:
+    - mode: spec_only_no_runtime_changes
+    - l2_inventory_verified: 29 current L2 modules in SBS_UB_150_MODULE_NORMALIZATION.md (PASS)
+    - selected_batch: digital_certificates, records_hub, student_success_analytics, publication_registry, research_projects, lms_assessment_center, lab_operations, internship_marketplace
+    - selected_batch_size: 8
+    - l3_standard: deterministic service logic with tenant fail-closed validation, module-specific classification/status/risk logic, allowed/forbidden actions, required evidence, deterministic tenant-scoped outputs
+    - anti_inflation_rule: no API/frontend/KPI/Brain claims, no autonomous execution, no external provider calls, no L4/L5/L6 claim in spec
+    - expected_runtime_formula: L2=29-N, L3=26+N; if N=8 then L2=21 and L3=34 (no movement in spec)
+    - expected_runtime_artifacts: selected module service.py logic updates + backend/tests/test_a0268_l2_to_l3_deterministic_service_logic.py + runtime report and tracker updates
+    - runtime_readiness: A-026.8-RUNTIME may proceed after approval
+    - maturity_movement: none in spec
+    - next_action_id: A-026.8-RUNTIME
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory

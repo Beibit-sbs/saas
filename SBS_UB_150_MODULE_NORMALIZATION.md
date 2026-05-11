@@ -1557,6 +1557,561 @@ A-026.7.REPLAN spec contains:
 
 ---
 
+## A-026.8-SPEC — L2→L3 Deterministic Service Logic Batch Specification
+
+**Status**: SPEC ONLY (planning-only, no runtime implementation)
+
+**Purpose**: Select a bounded current-L2 batch for future A-026.8-RUNTIME and define deep deterministic L3 service-logic specifications with strict anti-inflation boundaries.
+
+### L2 Extraction Summary
+
+- expected L2 count: 29
+- found L2 count: 29
+- status: PASS
+- tracker remains authoritative: SBS_UB.md
+- runtime has not started: confirmed
+
+### Selected A-026.8 Batch
+
+Selected batch size: 8 (bounded, coherent, deterministic-logic safe)
+
+| Selected Module | Current Level | Target Level | Why Selected | Expected L3 Logic | Required Tests | Risk |
+|---|---:|---:|---|---|---|---|
+| digital_certificates | L2 | L3 | stable post-A-026.7 foundation and high records trust value | certificate readiness/status and validation-state classification | tenant/logic/boundary/anti-inflation tests | medium |
+| records_hub | L2 | L3 | core records reconciliation leverage | records completeness classification and remediation routing | tenant/logic/determinism tests | medium |
+| student_success_analytics | L2 | L3 | high student-success governance value | risk/readiness banding and intervention recommendation classification | classification and boundary tests | medium |
+| publication_registry | L2 | L3 | academic governance and traceability value | publication state/risk/readiness classification | state and forbidden-action tests | medium |
+| research_projects | L2 | L3 | research workflow dependency and reuse value | project readiness/risk and next-step classification | readiness and transition tests | medium |
+| lms_assessment_center | L2 | L3 | direct academic operations value | assessment readiness and control-state classification | deterministic output and classification tests | medium |
+| lab_operations | L2 | L3 | operational planning coherence with facilities | capacity/safety/readiness classification | tenant and status boundary tests | medium |
+| internship_marketplace | L2 | L3 | career outcomes and placement planning value | placement-readiness and risk classification | classification and anti-inflation tests | medium |
+
+### A-026.8 L3 Deterministic Service Logic Standard
+
+1. Deterministic business logic
+- Service logic must do more than L2 foundation contract return.
+- Each module must compute deterministic classification/status/readiness/risk outputs.
+- Each output must include deterministic next recommended step.
+
+2. Tenant fail-closed behavior
+- tenant_id=None rejected
+- tenant_id=0 rejected
+- tenant_id<0 rejected
+- valid tenant_id accepted
+- all outputs tenant-scoped
+
+3. Domain-specific rules
+- module-specific statuses
+- module-specific classifications
+- readiness/risk levels
+- allowed actions and forbidden actions
+- required evidence list
+- human-review boundary where relevant
+
+4. Tests
+- import validation
+- tenant fail-closed checks
+- deterministic output checks
+- classification/status/risk checks
+- boundary checks
+- anti-inflation checks
+
+5. Anti-inflation
+- no API claim
+- no frontend claim
+- no KPI claim
+- no Brain claim
+- no autonomous execution
+- no external provider call
+- no L4/L5/L6 claim
+
+### Module-by-Module Deep Specification
+
+### Module: digital_certificates
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract + tenant fail-closed guard
+- Primary gap: deterministic_service_logic_needed
+
+#### Intended L3 Scope
+- Will do: deterministic certificate readiness/state/risk classification and next-step logic
+- Will NOT do: endpoints, frontend, DB mutation, signature provider integration, KPI/Brain/autonomy
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/digital_certificates/service.py | update | add L3 deterministic classification logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| classify_digital_certificate_state | classify certificate lifecycle state | tenant_id, certificate_payload | state, classification, next_step, actions, evidence | yes | yes |
+| evaluate_digital_certificate_readiness | compute readiness/risk snapshot | tenant_id, validation_payload | readiness_level, risk_level, required_evidence_missing | yes | yes |
+
+#### Domain Logic
+- statuses: DRAFT, SUBMITTED, VERIFIED, REJECTED, EXPIRED
+- classifications: READY_FOR_VERIFICATION, BLOCKED_DATA_GAP, REQUIRES_HUMAN_REVIEW
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: VALIDATE_METADATA, REVIEW_CERTIFICATE, MARK_VERIFIED
+- forbidden actions: ISSUE_AUTONOMOUSLY, CALL_EXTERNAL_SIGN_PROVIDER
+- required evidence: owner_identity, issuer_trace, issue_date, checksum
+- human review boundary: verification/rejection decisions remain human-controlled
+
+#### Tenant Safety
+- invalid tenant: raise ValueError fail-closed
+- valid tenant: deterministic scoped result
+- output always includes tenant_id
+- no cross-tenant lookup/aggregation
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_digital_certificates_tenant_fail_closed | reject invalid tenant ids |
+| test_digital_certificates_deterministic_classification | same input produces same classification |
+| test_digital_certificates_readiness_levels | readiness and risk classification correctness |
+| test_digital_certificates_forbidden_actions | anti-autonomy/provider boundaries |
+
+#### Anti-Inflation Boundary
+- no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signals, no event emission, no autonomous execution, L3 only
+
+### Module: records_hub
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract
+- Primary gap: deterministic_service_logic_needed
+
+#### Intended L3 Scope
+- Will do: deterministic records completeness and reconciliation state classification
+- Will NOT do: API/portal, storage mutation, archival jobs, KPI/Brain logic
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/records_hub/service.py | update | add records completeness/reconciliation logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| classify_records_hub_state | classify records integrity state | tenant_id, records_payload | state, gaps, next_step, actions | yes | yes |
+| evaluate_records_hub_readiness | summarize readiness and risk | tenant_id, records_payload | readiness_level, risk_level, missing_evidence | yes | yes |
+
+#### Domain Logic
+- statuses: COMPLETE, PARTIAL, INCONSISTENT, BLOCKED
+- classifications: READY_FOR_RECONCILIATION, NEEDS_DATA_COMPLETION, HUMAN_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: VALIDATE_RECORDS, FLAG_INCONSISTENCY, REQUEST_CORRECTION
+- forbidden actions: AUTO_CORRECT_RECORDS, AUTO_APPROVE_RECORDS
+- required evidence: student_id, source_system, record_timestamp, record_signature
+- human review boundary: reconciliation acceptance remains human-approved
+
+#### Tenant Safety
+- invalid tenant rejected fail-closed
+- valid tenant accepted with scoped output
+- tenant_id always present in output
+- no cross-tenant merge
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_records_hub_tenant_fail_closed | fail-closed tenant behavior |
+| test_records_hub_classification_determinism | deterministic classification outputs |
+| test_records_hub_missing_evidence_classification | correct missing-evidence handling |
+| test_records_hub_forbidden_actions | anti-autonomy boundary validation |
+
+#### Anti-Inflation Boundary
+- no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signals, no event emission, no autonomous execution, L3 only
+
+### Module: student_success_analytics
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract
+- Primary gap: deterministic_service_logic_needed
+
+#### Intended L3 Scope
+- Will do: deterministic success risk/readiness classification and intervention recommendation category
+- Will NOT do: KPI calculations, ML scoring, autonomous interventions, API/frontend
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/student_success_analytics/service.py | update | add deterministic risk/readiness logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| assess_student_success_risk | classify risk/readiness band | tenant_id, student_context | risk_band, readiness_band, next_step | yes | yes |
+| classify_student_success_state | classify intervention state | tenant_id, student_context | state, action_set, evidence_requirements | yes | yes |
+
+#### Domain Logic
+- statuses: STABLE, WATCHLIST, AT_RISK, CRITICAL_REVIEW
+- classifications: READY_FOR_REVIEW, NEEDS_MORE_EVIDENCE, ESCALATE_TO_HUMAN
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_CASE, REQUEST_EVIDENCE, SCHEDULE_HUMAN_INTERVENTION
+- forbidden actions: AUTO_INTERVENE, AUTO_DISMISS_RISK
+- required evidence: attendance_context, grade_context, advisor_notes
+- human review boundary: final intervention decisions require human approval
+
+#### Tenant Safety
+- invalid tenant rejected
+- valid tenant returns deterministic tenant-scoped output
+- no cross-tenant analytics aggregation
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_student_success_tenant_fail_closed | reject invalid tenants |
+| test_student_success_determinism | deterministic classification under same inputs |
+| test_student_success_risk_banding | risk/readiness band correctness |
+| test_student_success_forbidden_actions | no autonomous action boundary |
+
+#### Anti-Inflation Boundary
+- no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signals, no event emission, no autonomous execution, L3 only
+
+### Module: publication_registry
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract
+- Primary gap: deterministic_service_logic_needed
+
+#### Intended L3 Scope
+- Will do: deterministic publication-state and readiness classification
+- Will NOT do: publication indexing jobs, external publisher calls, API/frontend
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/publication_registry/service.py | update | add publication lifecycle/readiness logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| classify_publication_registry_state | classify publication status/readiness | tenant_id, publication_payload | state, readiness, next_step | yes | yes |
+| assess_publication_registry_risk | classify registry risk | tenant_id, publication_payload | risk_level, evidence_gaps, review_required | yes | yes |
+
+#### Domain Logic
+- statuses: DRAFT, PENDING_REVIEW, APPROVED, REJECTED, ARCHIVED
+- classifications: READY_FOR_REVIEW, REQUIRES_METADATA_COMPLETION, HUMAN_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: VALIDATE_METADATA, ROUTE_FOR_REVIEW, MARK_APPROVED
+- forbidden actions: AUTO_PUBLISH, AUTO_APPROVE
+- required evidence: author_id, publication_type, submission_date, source_reference
+- human review boundary: approval/rejection remains human-controlled
+
+#### Tenant Safety
+- fail-closed invalid tenant behavior
+- deterministic tenant-scoped output for valid tenant
+- no cross-tenant publication aggregation
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_publication_registry_tenant_fail_closed | tenant guard validation |
+| test_publication_registry_state_classification | deterministic state classification |
+| test_publication_registry_risk_assessment | risk and evidence-gap handling |
+| test_publication_registry_forbidden_actions | anti-autonomy boundary |
+
+#### Anti-Inflation Boundary
+- no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signals, no event emission, no autonomous execution, L3 only
+
+### Module: research_projects
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract
+- Primary gap: deterministic_service_logic_needed
+
+#### Intended L3 Scope
+- Will do: deterministic project readiness/risk and governance-state classification
+- Will NOT do: grant disbursement, workflow automation, API/frontend
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/research_projects/service.py | update | add project readiness and risk logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| evaluate_research_project_readiness | compute readiness profile | tenant_id, project_payload | readiness_level, blockers, next_step | yes | yes |
+| classify_research_project_risk | classify project risk | tenant_id, project_payload | risk_level, escalation_needed, actions | yes | yes |
+
+#### Domain Logic
+- statuses: INITIATED, PLANNING, EXECUTION_READY, BLOCKED, UNDER_REVIEW
+- classifications: READY_TO_PROGRESS, NEEDS_APPROVAL_INPUT, ESCALATE_HUMAN_REVIEW
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_SCOPE, REQUEST_EVIDENCE, ROUTE_HUMAN_REVIEW
+- forbidden actions: AUTO_APPROVE_PROJECT, AUTO_ESCALATE_WITHOUT_REVIEW
+- required evidence: project_owner, scope_document, compliance_context, timeline_context
+- human review boundary: progression approval remains human-controlled
+
+#### Tenant Safety
+- invalid tenant rejected fail-closed
+- tenant-scoped deterministic outputs for valid tenant
+- no cross-tenant project decisioning
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_research_projects_tenant_fail_closed | tenant validation |
+| test_research_projects_readiness_determinism | deterministic readiness outcomes |
+| test_research_projects_risk_classification | risk-level correctness |
+| test_research_projects_forbidden_actions | anti-autonomy boundary |
+
+#### Anti-Inflation Boundary
+- no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signals, no event emission, no autonomous execution, L3 only
+
+### Module: lms_assessment_center
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract
+- Primary gap: deterministic_service_logic_needed
+
+#### Intended L3 Scope
+- Will do: deterministic assessment readiness and integrity-state classification
+- Will NOT do: proctoring automation, grading automation, API/frontend
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/lms_assessment_center/service.py | update | add assessment control-state logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| classify_lms_assessment_state | classify assessment control state | tenant_id, assessment_payload | state, readiness, next_step, actions | yes | yes |
+| assess_lms_assessment_risk | classify risk and evidence gaps | tenant_id, assessment_payload | risk_level, evidence_gaps, escalation | yes | yes |
+
+#### Domain Logic
+- statuses: CONFIG_PENDING, READY_FOR_REVIEW, BLOCKED, APPROVED_FOR_DELIVERY
+- classifications: READY_FOR_HUMAN_REVIEW, NEEDS_CONFIGURATION, INTEGRITY_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: VALIDATE_CONFIGURATION, REQUEST_CORRECTION, ROUTE_REVIEW
+- forbidden actions: AUTO_PUBLISH_ASSESSMENT, AUTO_OVERRIDE_INTEGRITY_CHECK
+- required evidence: rubric_presence, identity_policy, schedule_context, integrity_controls
+- human review boundary: delivery approval remains human-controlled
+
+#### Tenant Safety
+- fail-closed invalid tenants
+- deterministic tenant-scoped outputs for valid tenants
+- no cross-tenant assessment data handling
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_lms_assessment_tenant_fail_closed | tenant safety |
+| test_lms_assessment_state_determinism | deterministic state outputs |
+| test_lms_assessment_risk_boundaries | risk/readiness boundary behavior |
+| test_lms_assessment_forbidden_actions | no autonomous publication |
+
+#### Anti-Inflation Boundary
+- no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signals, no event emission, no autonomous execution, L3 only
+
+### Module: lab_operations
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract
+- Primary gap: deterministic_service_logic_needed
+
+#### Intended L3 Scope
+- Will do: deterministic capacity/safety/readiness classification for lab operations
+- Will NOT do: facility actuation, autonomous scheduling, API/frontend
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/lab_operations/service.py | update | add deterministic lab readiness logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| classify_lab_operations_state | classify lab operation state | tenant_id, lab_payload | state, readiness, actions, next_step | yes | yes |
+| assess_lab_operations_risk | classify safety/capacity risk | tenant_id, lab_payload | risk_level, blockers, escalation | yes | yes |
+
+#### Domain Logic
+- statuses: CAPACITY_READY, CAPACITY_LIMITED, SAFETY_BLOCKED, REVIEW_REQUIRED
+- classifications: READY_FOR_OPERATION, NEEDS_CAPACITY_ADJUSTMENT, HUMAN_SAFETY_REVIEW
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_CAPACITY, REQUEST_SAFETY_EVIDENCE, ESCALATE_HUMAN_REVIEW
+- forbidden actions: AUTO_APPROVE_SAFETY, AUTO_ASSIGN_CAPACITY
+- required evidence: safety_checklist, capacity_snapshot, supervisor_context
+- human review boundary: safety override decisions remain human-controlled
+
+#### Tenant Safety
+- invalid tenant rejected
+- valid tenant returns tenant-scoped deterministic output
+- no cross-tenant capacity comparison
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_lab_operations_tenant_fail_closed | tenant guard |
+| test_lab_operations_state_classification | deterministic state logic |
+| test_lab_operations_risk_classification | risk and escalation rules |
+| test_lab_operations_forbidden_actions | no autonomous safety/capacity action |
+
+#### Anti-Inflation Boundary
+- no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signals, no event emission, no autonomous execution, L3 only
+
+### Module: internship_marketplace
+
+#### Current State
+- Current Level: L2
+- Target Level: L3
+- Source: A-026.7.L1L2-RUNTIME
+- Existing L2 evidence: deterministic foundation contract
+- Primary gap: deterministic_service_logic_needed
+
+#### Intended L3 Scope
+- Will do: deterministic placement-readiness and matching-risk classification
+- Will NOT do: autonomous matching, provider integrations, API/frontend
+
+#### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/internship_marketplace/service.py | update | add placement-readiness and risk logic |
+
+#### L3 Service Functions
+| Function | Purpose | Input | Output | Deterministic | Tenant-Safe |
+|---|---|---|---|---|---|
+| classify_internship_marketplace_state | classify placement state | tenant_id, internship_payload | state, readiness, next_step, actions | yes | yes |
+| assess_internship_marketplace_risk | classify matching and compliance risk | tenant_id, internship_payload | risk_level, evidence_gaps, review_required | yes | yes |
+
+#### Domain Logic
+- statuses: PROFILE_INCOMPLETE, READY_FOR_REVIEW, MATCH_READY, BLOCKED
+- classifications: READY_FOR_MATCH_REVIEW, NEEDS_PROFILE_EVIDENCE, HUMAN_MATCH_REVIEW_REQUIRED
+- risk/readiness: LOW/MEDIUM/HIGH and READY/PENDING/BLOCKED
+- allowed actions: REVIEW_PROFILE, REQUEST_EVIDENCE, ROUTE_HUMAN_REVIEW
+- forbidden actions: AUTO_MATCH_ASSIGNMENT, AUTO_COMPLIANCE_APPROVAL
+- required evidence: profile_completeness, eligibility_context, compliance_acknowledgement
+- human review boundary: match assignment remains human-controlled
+
+#### Tenant Safety
+- invalid tenant rejected fail-closed
+- deterministic tenant-scoped output on valid tenant
+- no cross-tenant candidate/placement blending
+
+#### Required Tests
+| Test | Purpose |
+|---|---|
+| test_internship_marketplace_tenant_fail_closed | tenant validation |
+| test_internship_marketplace_determinism | deterministic classification |
+| test_internship_marketplace_risk_and_readiness | readiness/risk correctness |
+| test_internship_marketplace_forbidden_actions | no autonomous matching |
+
+#### Anti-Inflation Boundary
+- no API endpoint, no frontend page, no DB mutation, no KPI values, no Brain signals, no event emission, no autonomous execution, L3 only
+
+### Expected A-026.8 Runtime Files
+
+| File | Expected Action | Reason |
+|---|---|---|
+| backend/app/modules/digital_certificates/service.py | update | add deterministic L3 classification logic |
+| backend/app/modules/records_hub/service.py | update | add deterministic records logic |
+| backend/app/modules/student_success_analytics/service.py | update | add deterministic risk/readiness logic |
+| backend/app/modules/publication_registry/service.py | update | add deterministic publication logic |
+| backend/app/modules/research_projects/service.py | update | add deterministic project logic |
+| backend/app/modules/lms_assessment_center/service.py | update | add deterministic assessment logic |
+| backend/app/modules/lab_operations/service.py | update | add deterministic lab operations logic |
+| backend/app/modules/internship_marketplace/service.py | update | add deterministic placement logic |
+| backend/tests/test_a0268_l2_to_l3_deterministic_service_logic.py | add | targeted deterministic L3 test suite |
+| SBS_UB.md | update in runtime | tracker runtime evidence reconciliation |
+| SBS_UB_150_MODULE_NORMALIZATION.md | update in runtime | row-level L2→L3 movement after PASS evidence |
+| A-026.8-RUNTIME-L2_TO_L3_DETERMINISTIC_SERVICE_LOGIC_REPORT.md | add in runtime | runtime evidence report |
+
+### A-026.8 Targeted Test Plan
+
+Preferred test file:
+- backend/tests/test_a0268_l2_to_l3_deterministic_service_logic.py
+
+Test groups:
+1. import validation
+2. tenant fail-closed validation
+3. deterministic output validation
+4. classification/status/risk logic validation
+5. required evidence validation
+6. allowed/forbidden action validation
+7. anti-inflation validation
+8. no provider/API/frontend/Brain/KPI behavior validation
+
+Expected test count:
+- minimum: 25
+- preferred: 40-70
+
+Validation mode:
+- fast direct Docker mode (same bind-mount pattern used in A-026.7)
+
+### Expected Maturity Movement
+
+Before A-026.8-RUNTIME:
+- L0=0
+- L1=0
+- L2=29
+- L3=26
+- L4=68
+- L5=25
+- L6=2
+
+After A-026.8-RUNTIME:
+- L0=0
+- L1=0
+- L2=29-N
+- L3=26+N
+- L4=68
+- L5=25
+- L6=2
+- total=150
+- maturity_arithmetic_check=PASS
+
+If N=8:
+- L2=21
+- L3=34
+
+Spec boundary:
+- no metrics movement in A-026.8-SPEC
+
+### Anti-Inflation Boundaries (A-026.8-SPEC)
+
+- no runtime code changes
+- no test implementation changes
+- no API or router additions
+- no frontend additions
+- no DB mutations/migrations
+- no KPI/Brain/autonomy claims
+- no maturity-level changes in this spec phase
+
+### Definition of Done (A-026.8-SPEC)
+
+- 29-module L2 inventory extracted and verified
+- bounded 6-8 module selection completed (selected N=8)
+- deterministic L3 standard defined
+- deep module-by-module runtime specifications defined
+- expected runtime files and targeted test plan defined
+- expected post-runtime formula documented
+- SBS tracker and normalization spec sections updated
+- standalone A-026.8 spec report created
+
+---
+
 ## A-026.6-SPEC - L4→L5 Evidence / Governance / KPI / Brain-Readiness Batch Specification
 
 **Status**: SPEC ONLY (historical; A-026.6-RUNTIME completed)
