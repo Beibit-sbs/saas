@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-027.4-RUNTIME
-    - current_stage: A-027.4-SPEC complete / P0-P1 new module foundation batch 3 selected
-    - last_completed_action_id: A-027.4-SPEC
-    - next_action_id: A-027.4-RUNTIME
-    - updated_at: 2026-05-12 (A-027.4-SPEC complete: 15 P0/P1 NEW_MODULE candidates selected for L2 foundation; runtime not started)
+    - status: ready_for_A-027.3.R1
+    - current_stage: A-027.1.B1 complete / degree_audit canonical registry amendment
+    - last_completed_action_id: A-027.1.B1
+    - next_action_id: A-027.3.R1
+    - updated_at: 2026-05-12 (A-027.1.B1 complete: UCE-092 canonicalized to degree_audit NEW_MODULE; governance-only fix before A-027.3.R1 runtime evidence reconciliation)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -52,13 +52,27 @@
     - report_file: A-027.1-CONTROLLED_EXPANSION_REGISTRY_AND_GOVERNANCE_LOCK_REPORT.md
     - raw_registry_type_counts: NEW_MODULE=57, WORKFLOW=22, INTEGRATION=16, REPORT_DASHBOARD=15, POLICY_CONTROL=10, BRAIN_SIGNAL=20, AUTONOMOUS_WORKFLOW_CANDIDATE=6, SUBMODULE=1, DATA_ENTITY=1, AUDIT_EVIDENCE_CAPABILITY=1
     - canonical_decision_counts: accepted=138, merged=6, deferred=3, rejected=2, future_total_candidate_tracking_count=149
-    - accepted_type_counts: NEW_MODULE=53, WORKFLOW=20, INTEGRATION=16, REPORT_DASHBOARD=15, POLICY_CONTROL=10, BRAIN_SIGNAL=17, AUTONOMOUS_WORKFLOW_CANDIDATE=6, AUDIT_EVIDENCE_CAPABILITY=1
+    - accepted_type_counts: NEW_MODULE=54, WORKFLOW=19, INTEGRATION=16, REPORT_DASHBOARD=15, POLICY_CONTROL=10, BRAIN_SIGNAL=17, AUTONOMOUS_WORKFLOW_CANDIDATE=6, AUDIT_EVIDENCE_CAPABILITY=1
     - merge_candidates: UCE-010, UCE-020, UCE-021, UCE-068, UCE-093, UCE-132
     - deferred_candidates: UCE-066, UCE-079, UCE-143
     - rejected_candidates: UCE-100, UCE-137
     - a0272_selection_rule: P0/P1 accepted candidates only; defer/reject excluded; merge candidates implemented only through target canonical parents
     - anti_inflation: PASS (planning-only, no runtime changes, no maturity movement, no baseline/extension contamination)
     - next_action_id: A-027.2
+- A-027.1.B1 execution block:
+    - mode: governance_registry_amendment_docs_only
+    - purpose: canonicalize_degree_audit_as_new_module_on_uce_092
+    - amendment_applied: UCE-092 reclassified from degree_audit_workflow (WORKFLOW) to degree_audit (NEW_MODULE)
+    - alias_previous_label: degree_audit_workflow
+    - rationale: degree_audit owns distinct registrar lifecycle/data/evidence/permissions and is modeled as NEW_MODULE
+    - candidate_count_unchanged: 149
+    - accepted_count_unchanged: 138
+    - accepted_type_counts_after_amendment: NEW_MODULE=54, WORKFLOW=19, INTEGRATION=16, REPORT_DASHBOARD=15, POLICY_CONTROL=10, BRAIN_SIGNAL=17, AUTONOMOUS_WORKFLOW_CANDIDATE=6, AUDIT_EVIDENCE_CAPABILITY=1
+    - no_runtime_code: PASS
+    - no_maturity_movement: PASS
+    - no_baseline_extension_metric_change: PASS
+    - runtime_follow_up_required: A-027.3.R1 must reconcile runtime evidence UCE IDs (degree_audit -> UCE-092; transfer_credit_management -> UCE-075)
+    - next_action_id: A-027.3.R1
 - A-027.2 execution block:
     - mode: runtime_implementation_l2_foundation_contracts
     - purpose: implement_p0_new_module_foundation_batch_1
