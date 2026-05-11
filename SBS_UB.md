@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-- status: ready_for_A-026.5-SPEC
-- current_stage: A-026.4.B2.R1 complete / A-026.4 full targeted and continuity pytest confirmed after safety flag remediation
-- last_completed_action_id: A-026.4.B2.R1
-- next_action_id: A-026.5-SPEC
-- updated_at: 2026-05-11 (A-026.4.B2.R1 full targeted and continuity pytest validation complete)
-- latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass)
+- status: ready_for_A-026.5-RUNTIME
+- current_stage: A-026.5-SPEC complete / selected L3→L4 operational visibility batch
+- last_completed_action_id: A-026.5-SPEC
+- next_action_id: A-026.5-RUNTIME
+- updated_at: 2026-05-11 (A-026.5-SPEC L3→L4 operational visibility batch specified)
+- latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-SPEC (spec-only L3→L4 batch selection)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=16, L2=13, L3=32, L4=66, L5=21, L6=2, total=150, arithmetic_check=PASS
 - extension_metrics: 25_L0_modules_PLANNING_ONLY, isolated_from_baseline, total_tracked=175, separation=PASS
@@ -26,6 +26,15 @@
     - full_targeted_pytest: PASS (41 passed, 1 warning)
     - continuity_pytest: PASS (82 passed, 1 warning)
     - verdict: A-026.4-RUNTIME authoritative PASS after full B2 evidence completion
+- A-026.5-SPEC execution block:
+    - l3_inventory_verified: 32 current L3 modules in SBS_UB_150_MODULE_NORMALIZATION.md (PASS)
+    - selected_batch: human_approved_timetable_workflow, timetable_change_proposal, timetable_approval_queue, timetable_change_kpi_dashboard, workload_management, notification_center
+    - selected_batch_size: 6
+    - mode: spec_only_no_runtime_changes
+    - maturity_movement: none in spec; expected runtime formula L3=32-N, L4=66+N; if N=6 then L3=26 and L4=72
+    - l4_standard: tenant-safe read-only admin/API surface with router.py, schemas.py, permission dependency, fail-closed tenant handling, and route/security tests
+    - frontend_included: no (bounded backend/admin operational visibility is sufficient for this batch)
+    - runtime_readiness: A-026.5-RUNTIME may proceed after approval
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory

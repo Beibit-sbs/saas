@@ -505,6 +505,697 @@ If N=8:
 - A-026.5 will be needed for the L3→L4 operational visibility/API planning step.
 - Extension 25 remains unchanged and separate.
 
+## A-026.5-SPEC — L3→L4 Operational Visibility / API Surface Batch Specification
+
+**Status**: SPEC ONLY
+
+**Purpose**: select a bounded current-L3 batch for future A-026.5-RUNTIME and define what honest L4 operational visibility means for each selected module. This section does not create runtime code, routers, schemas, frontend pages, tests, or maturity movement.
+
+### Source-of-Truth Snapshot
+
+- Authoritative tracker: SBS_UB.md
+- Reconciled matrix: SBS_UB_150_MODULE_NORMALIZATION.md
+- Current baseline metrics: L0=0, L1=16, L2=13, L3=32, L4=66, L5=21, L6=2, total=150, arithmetic_check=PASS
+- Extension metrics: extension_total_count=25, total_tracked_modules=175, separation=PASS
+- Last completed action in tracker: A-026.4.B2.R1
+- Next action in tracker before this spec: A-026.5-SPEC
+- Runtime implementation status for A-026.5: not started
+
+### L3 Extraction Summary
+
+Current L3 modules were extracted from the full baseline matrix after A-026.4.B2.R1.
+
+- expected L3 count: 32
+- found L3 count: 32
+- status: PASS
+
+| # | Module | Domain | Current Level | Current Gap | Required Work | Required Tests | Source |
+|---:|---|---|---:|---|---|---|---|
+| 9 | ai_admissions_scoring | Research & Innovation | L3 | API_missing | expose scoring API readiness | route tests | A-023.0 |
+| 10 | ai_copilot_ops | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational visibility / API readiness specification | route or visibility contract tests | A-024.2 |
+| 13 | ai_guardrails | AI/Knowledge/Reasoning | L3 | API_missing | guardrails control API | route tests | A-023.0 |
+| 15 | ai_routing_control | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational visibility / routing control surface readiness | route or visibility contract tests | A-024.1 |
+| 17 | alumni_donation_portal | Administration & Governance | L3 | API_missing | donation API visibility | route tests | A-023.0 |
+| 26 | blockchain_diploma | Administration & Governance | L3 | API_missing | diploma verification API | route tests | A-023.0 |
+| 33 | contracts_hr | Finance & Billing | L3 | API_missing | HR contract API | route tests | A-023.0 |
+| 35 | counseling | Student & Campus Life | L3 | API_missing | counseling API visibility | route tests | A-023.0 |
+| 43 | digital_documents | Administration & Governance | L3 | API_missing | document API visibility | route tests | A-023.0 |
+| 66 | human_approved_timetable_workflow | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational visibility/API readiness specification | route/visibility contract tests | A-026.4-RUNTIME |
+| 70 | internship | Student & Campus Life | L3 | API_missing | internship API visibility | route tests | A-023.0 |
+| 79 | library | Student & Campus Life | L3 | API_missing | library API visibility | route tests | A-023.0 |
+| 82 | lms_content | Administration & Governance | L3 | API_missing | content API visibility | route tests | A-023.0 |
+| 84 | mobile_app | Student & Campus Life | L3 | frontend_missing | mobile app frontend visibility | frontend tests | A-023.0 |
+| 87 | notification_center | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational visibility/API readiness specification | route/visibility contract tests | A-026.4-RUNTIME |
+| 93 | parent_portal | Student & Campus Life | L3 | API_missing | parent portal API | route tests | A-023.0 |
+| 94 | parking | Student & Campus Life | L3 | API_missing | parking API visibility | route tests | A-023.0 |
+| 97 | patents | Research & Innovation | L3 | API_missing | patent API visibility | route tests | A-023.0 |
+| 102 | platform_health | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational health visibility readiness | visibility contract tests | A-024.1 |
+| 103 | platform_shared | Integrations & Platform | L3 | API_missing | shared services API | route tests | A-023.0 |
+| 105 | procurement_approval_workflow | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational workflow visibility/API readiness | route or workflow visibility tests | A-024.2 |
+| 110 | publications | Research & Innovation | L3 | API_missing | publications API visibility | route tests | A-023.0 |
+| 124 | sso_saml | Identity/Access/Security | L3 | API_missing | SAML API visibility | route tests | A-023.0 |
+| 126 | student_feedback | Student & Campus Life | L3 | API_missing | feedback API visibility | route tests | A-023.0 |
+| 127 | student_id_card | Student & Campus Life | L3 | API_missing | ID card API visibility | route tests | A-023.0 |
+| 138 | timetable_approval_queue | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational visibility/API readiness specification | route/visibility contract tests | A-026.4-RUNTIME |
+| 139 | timetable_change_kpi_dashboard | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational visibility/API readiness specification | route/visibility contract tests | A-026.4-RUNTIME |
+| 140 | timetable_change_proposal | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational visibility/API readiness specification | route/visibility contract tests | A-026.4-RUNTIME |
+| 141 | timetable_change_simulation | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational visibility/API readiness specification | route/visibility contract tests | A-026.4-RUNTIME |
+| 142 | timetable_recommendation_bridge | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational visibility/API readiness specification | route/visibility contract tests | A-026.4-RUNTIME |
+| 145 | two_factor_auth | Identity/Access/Security | L3 | API_missing | 2FA API visibility | route tests | A-023.0 |
+| 150 | workload_management | Planned Expansion | L3 | operational_visibility_or_API_depth_needed | operational visibility/API readiness specification | route/visibility contract tests | A-026.4-RUNTIME |
+
+### L4 Readiness Classification
+
+Priority score formula for A-026.5-SPEC: `Visibility Value + Route Feasibility + Security Clarity + Testability + (6 - Frontend Need) + (6 - Blast Radius)`, max 30. Higher scores favor bounded operational visibility with strong tenant/security clarity and low UI or blast-radius risk.
+
+| Module | Visibility Value | Route Feasibility | Security Clarity | Frontend Need | Testability | Blast Radius | Priority Score | Recommendation |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| ai_admissions_scoring | 3 | 4 | 3 | 2 | 4 | 3 | 21 | DEFER_AFTER_VERIFICATION |
+| ai_copilot_ops | 3 | 3 | 2 | 1 | 3 | 4 | 18 | DEFER_AFTER_VERIFICATION |
+| ai_guardrails | 4 | 3 | 2 | 1 | 4 | 4 | 20 | DEFER_A0266 |
+| ai_routing_control | 3 | 3 | 2 | 1 | 3 | 4 | 18 | DEFER_AFTER_VERIFICATION |
+| alumni_donation_portal | 3 | 3 | 3 | 3 | 4 | 3 | 19 | DEFER_AFTER_VERIFICATION |
+| blockchain_diploma | 4 | 4 | 4 | 1 | 4 | 3 | 24 | DEFER_AFTER_VERIFICATION |
+| contracts_hr | 3 | 3 | 4 | 2 | 4 | 3 | 21 | DEFER_AFTER_VERIFICATION |
+| counseling | 4 | 3 | 3 | 4 | 3 | 4 | 17 | DO_NOT_TOUCH_NOW |
+| digital_documents | 4 | 4 | 4 | 2 | 4 | 3 | 23 | DEFER_AFTER_VERIFICATION |
+| human_approved_timetable_workflow | 5 | 5 | 5 | 2 | 5 | 2 | 28 | SELECT_A0265 |
+| internship | 3 | 3 | 3 | 3 | 4 | 3 | 20 | DEFER_AFTER_VERIFICATION |
+| library | 3 | 3 | 3 | 4 | 3 | 3 | 17 | DEFER_AFTER_VERIFICATION |
+| lms_content | 3 | 4 | 3 | 3 | 4 | 3 | 20 | DEFER_AFTER_VERIFICATION |
+| mobile_app | 4 | 2 | 3 | 5 | 2 | 4 | 14 | DO_NOT_TOUCH_NOW |
+| notification_center | 4 | 4 | 4 | 1 | 4 | 3 | 24 | SELECT_A0265 |
+| parent_portal | 3 | 3 | 3 | 4 | 3 | 3 | 17 | DEFER_AFTER_VERIFICATION |
+| parking | 2 | 3 | 3 | 3 | 4 | 2 | 19 | DEFER_AFTER_VERIFICATION |
+| patents | 2 | 3 | 3 | 2 | 4 | 2 | 20 | DEFER_AFTER_VERIFICATION |
+| platform_health | 4 | 4 | 4 | 1 | 4 | 2 | 25 | DEFER_AFTER_VERIFICATION |
+| platform_shared | 3 | 4 | 4 | 1 | 4 | 2 | 24 | DEFER_AFTER_VERIFICATION |
+| procurement_approval_workflow | 4 | 4 | 4 | 2 | 4 | 3 | 23 | DEFER_AFTER_VERIFICATION |
+| publications | 2 | 3 | 3 | 2 | 4 | 2 | 20 | DEFER_AFTER_VERIFICATION |
+| sso_saml | 4 | 3 | 2 | 1 | 3 | 5 | 18 | DO_NOT_TOUCH_NOW |
+| student_feedback | 3 | 4 | 3 | 3 | 4 | 2 | 21 | DEFER_AFTER_VERIFICATION |
+| student_id_card | 3 | 4 | 4 | 2 | 4 | 3 | 22 | DEFER_AFTER_VERIFICATION |
+| timetable_approval_queue | 5 | 5 | 5 | 2 | 5 | 2 | 28 | SELECT_A0265 |
+| timetable_change_kpi_dashboard | 4 | 5 | 5 | 1 | 5 | 2 | 28 | SELECT_A0265 |
+| timetable_change_proposal | 5 | 5 | 5 | 2 | 5 | 2 | 28 | SELECT_A0265 |
+| timetable_change_simulation | 4 | 3 | 3 | 1 | 4 | 4 | 21 | DEFER_AFTER_VERIFICATION |
+| timetable_recommendation_bridge | 4 | 3 | 2 | 1 | 4 | 4 | 20 | DEFER_AFTER_VERIFICATION |
+| two_factor_auth | 4 | 3 | 2 | 1 | 3 | 4 | 19 | DO_NOT_TOUCH_NOW |
+| workload_management | 4 | 4 | 5 | 2 | 5 | 2 | 26 | SELECT_A0265 |
+
+### Selected A-026.5 Batch
+
+Selected batch size: 6.
+
+| Selected Module | Current Level | Target Level | Why Selected | Expected L4 Surface | Required Tests | Risk |
+|---|---:|---:|---|---|---|---|
+| human_approved_timetable_workflow | L3 | L4 | highest operational leverage in the timetable chain; clear read-only admin visibility need | read-only admin workflow status/summary endpoint | route import, schema, permission, tenant isolation, anti-inflation | medium |
+| timetable_change_proposal | L3 | L4 | proposal readiness is product-relevant and naturally exposed as controlled admin summary | read-only proposal readiness/admin summary endpoint | response contract, permission, tenant fail-closed, no-mutation | medium |
+| timetable_approval_queue | L3 | L4 | human review queue needs controlled operational visibility before deeper governance work | read-only approval queue summary/list endpoint | route, permission, queue visibility, tenant leakage denial | medium |
+| timetable_change_kpi_dashboard | L3 | L4 | backend readiness summary is valuable without claiming KPI lineage or frontend dashboard delivery | read-only KPI readiness/admin visibility endpoint | schema, tenant isolation, anti-fake-KPI, permission | medium |
+| workload_management | L3 | L4 | workload planning needs safe admin visibility to support timetable operations | read-only workload readiness/constraint summary endpoint | permission, tenant fail-closed, no mutation, schema | medium |
+| notification_center | L3 | L4 | notification preview/readiness has strong operational value while remaining provider-safe | read-only notification readiness/preview endpoint | permission, tenant isolation, no-provider-call, anti-inflation | high |
+
+Deferred from the timetable chain for this first L4 slice:
+
+- timetable_change_simulation: defer until solver/preview boundary is clearer
+- timetable_recommendation_bridge: defer until recommendation/API boundary is clearer and provider ambiguity is fully isolated
+
+### A-026.5 L4 Operational Visibility Standard
+
+1. Backend API / route surface
+- controlled read-only or admin-safe endpoint only
+- no mutating endpoint unless explicitly re-approved in runtime
+- endpoint must be tenant-safe and must not expose cross-tenant data
+
+2. Schema / response contract
+- Pydantic response schema or schema extension following existing router/schema patterns
+- deterministic response shape
+- no fake data fields and no implied runtime capability beyond L4
+
+3. Permission / RBAC / ABAC
+- `permission_dependency(...)` or repo-equivalent permission gate required
+- no unauthenticated access
+- role/scope documented per route
+- ownership and tenant boundary enforced before response generation
+
+4. Tenant safety
+- tenant derived from auth context via `get_current_tenant` or repo-equivalent
+- fail-closed if tenant is missing or invalid
+- no default tenant fallback
+- response confirms tenant isolation by explicit tenant scope or tenant-bound resource shape
+
+5. Tests
+- route import / registration validation
+- response schema validation
+- permission denial / auth guard validation
+- tenant fail-closed validation
+- no cross-tenant leakage validation where applicable
+- anti-inflation validation
+- read-only / no-mutation validation
+
+6. Frontend/admin visibility
+- frontend is optional, not automatic
+- backend/admin route is sufficient for this bounded batch
+- no broad dashboard or page rewrite in A-026.5-RUNTIME unless explicitly re-approved
+
+7. Anti-inflation
+- no Brain signal claim
+- no KPI lineage claim unless explicitly implemented
+- no autonomous action
+- no solver/AI provider call
+- no L5/L6 claim
+- no fake operational data
+
+### Module-by-Module Deep Specification
+
+#### Module: human_approved_timetable_workflow
+
+##### Current State
+- Current Level: L3
+- Target Level: L4
+- Source: A-026.4-RUNTIME + A-026.4.B2.R1 evidence
+- Existing L3 evidence: deterministic workflow classification, tenant fail-closed behavior, targeted and continuity pytest PASS
+- Primary gap: no controlled operational visibility surface
+
+##### Intended L4 Scope
+- What this module will expose: read-only admin workflow status/readiness summary for human approval operations
+- What this module will NOT expose: approval mutation endpoint, autonomous apply path, cross-tenant queue surface, Brain or KPI claims
+- Read-only or mutating: read-only
+- Product/admin visibility: admin/internal operational visibility only
+
+##### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/human_approved_timetable_workflow/service.py | augment | shape L4 route-facing summary payload |
+| backend/app/modules/human_approved_timetable_workflow/schemas.py | add | response schema for operational summary |
+| backend/app/modules/human_approved_timetable_workflow/router.py | add | tenant-safe admin GET surface |
+
+##### API / Route Contract
+| Method | Path | Purpose | Auth/Permission | Tenant Handling | Response Schema |
+|---|---|---|---|---|---|
+| GET | /api/admin/timetable/human-approval/summary | expose workflow approval visibility summary | permission_dependency("timetable.workflow.read") | tenant from auth context, fail-closed | HumanApprovedTimetableWorkflowVisibilitySchema |
+
+##### Response Schema
+- tenant_id
+- module
+- operational_status
+- visibility_level = "L4"
+- classification
+- allowed_actions
+- forbidden_actions
+- safety_flags
+- evidence_notes
+- no_autonomous_execution = true
+
+##### Permission / Security Design
+- permission required: `timetable.workflow.read`
+- RBAC/ABAC requirement: admin or operations viewer scope only
+- tenant source: `get_current_tenant`
+- fail-closed behavior: 403/404 style denial when tenant or scope invalid
+- cross-tenant prevention: service and router both bind returned summary to authenticated tenant only
+
+##### Tests
+| Test | Purpose |
+|---|---|
+| route import / registration | main.py wiring exists and endpoint registers |
+| response schema contract | payload shape is deterministic and complete |
+| permission denial | unauthorized actor is rejected |
+| tenant fail-closed | missing or invalid tenant denies access |
+| no cross-tenant leakage | tenant A cannot read tenant B summary |
+| anti-inflation | no autonomous/API inflation beyond defined L4 summary |
+
+##### Frontend Decision
+- frontend required: NO
+- reason: bounded admin-safe read-only API is sufficient to qualify operational visibility in this batch
+
+##### Anti-Inflation Boundary
+- no Brain signal
+- no KPI lineage
+- no autonomous execution
+- no solver or AI-provider call
+- no L5/L6 claim
+- no fake data
+
+#### Module: timetable_change_proposal
+
+##### Current State
+- Current Level: L3
+- Target Level: L4
+- Source: A-026.4-RUNTIME + A-026.4.B2.R1 evidence
+- Existing L3 evidence: deterministic proposal evaluation and validation, tenant-safe outputs, 41/82 pytest PASS coverage
+- Primary gap: no controlled admin/API surface for proposal readiness
+
+##### Intended L4 Scope
+- What this module will expose: read-only proposal readiness/status summary endpoint for authorized admins
+- What this module will NOT expose: proposal mutation/apply endpoint, automatic submission, cross-tenant review access
+- Read-only or mutating: read-only
+- Product/admin visibility: admin/internal operational visibility
+
+##### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/timetable_change_proposal/service.py | augment | L4 summary serialization for route |
+| backend/app/modules/timetable_change_proposal/schemas.py | add | response schema for proposal visibility |
+| backend/app/modules/timetable_change_proposal/router.py | add | read-only admin proposal readiness endpoint |
+
+##### API / Route Contract
+| Method | Path | Purpose | Auth/Permission | Tenant Handling | Response Schema |
+|---|---|---|---|---|---|
+| GET | /api/admin/timetable/change-proposals/readiness | expose proposal status/readiness summary | permission_dependency("timetable.change_proposal.read") | tenant from auth context, no fallback | TimetableChangeProposalVisibilitySchema |
+
+##### Response Schema
+- tenant_id
+- module
+- operational_status
+- visibility_level = "L4"
+- classification
+- allowed_actions
+- forbidden_actions
+- safety_flags
+- evidence_notes
+- no_autonomous_execution = true
+
+##### Permission / Security Design
+- permission required: `timetable.change_proposal.read`
+- RBAC/ABAC requirement: timetable-ops/admin reviewer role
+- tenant source: `get_current_tenant`
+- fail-closed behavior: deny if tenant absent, permission absent, or resource not tenant-owned
+- cross-tenant prevention: no proposal summary may be returned across tenant boundary
+
+##### Tests
+| Test | Purpose |
+|---|---|
+| route registration | router imported and included in main app |
+| schema test | response shape and status fields are deterministic |
+| permission denial | unprivileged actor receives denial |
+| tenant fail-closed | invalid tenant is blocked |
+| no cross-tenant leakage | foreign tenant resources not visible |
+| read-only behavior | GET endpoint does not mutate proposal state |
+
+##### Frontend Decision
+- frontend required: NO
+- reason: controlled backend/admin API is sufficient for first L4 slice; UI work would widen blast radius
+
+##### Anti-Inflation Boundary
+- no Brain signal
+- no KPI lineage
+- no autonomous execution
+- no solver or provider call
+- no L5/L6 claim
+- no fake data
+
+#### Module: timetable_approval_queue
+
+##### Current State
+- Current Level: L3
+- Target Level: L4
+- Source: A-026.4-RUNTIME + A-026.4.B2.R1 evidence
+- Existing L3 evidence: deterministic queue-item evaluation and forbidden-action logic
+- Primary gap: no authorized operational visibility surface for queue state and manual decision readiness
+
+##### Intended L4 Scope
+- What this module will expose: read-only queue visibility endpoint for manual-review operations
+- What this module will NOT expose: queue mutation/apply endpoint, hidden reviewer override, autonomous approval path
+- Read-only or mutating: read-only
+- Product/admin visibility: admin/internal review visibility
+
+##### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/timetable_approval_queue/service.py | augment | route-ready queue visibility summary |
+| backend/app/modules/timetable_approval_queue/schemas.py | add | queue visibility schema |
+| backend/app/modules/timetable_approval_queue/router.py | add | admin-safe GET queue summary surface |
+
+##### API / Route Contract
+| Method | Path | Purpose | Auth/Permission | Tenant Handling | Response Schema |
+|---|---|---|---|---|---|
+| GET | /api/admin/timetable/approval-queue/summary | expose queue state and manual decision visibility | permission_dependency("timetable.approval_queue.read") | tenant from auth context, fail-closed | TimetableApprovalQueueVisibilitySchema |
+
+##### Response Schema
+- tenant_id
+- module
+- operational_status
+- visibility_level = "L4"
+- classification
+- allowed_actions
+- forbidden_actions
+- safety_flags
+- evidence_notes
+- no_autonomous_execution = true
+
+##### Permission / Security Design
+- permission required: `timetable.approval_queue.read`
+- RBAC/ABAC requirement: review queue viewer/approver role separation documented in runtime
+- tenant source: `get_current_tenant`
+- fail-closed behavior: deny when tenant/scope missing
+- cross-tenant prevention: queue summaries filtered strictly by tenant context
+
+##### Tests
+| Test | Purpose |
+|---|---|
+| route import / registration | endpoint is wired into app |
+| response schema test | queue summary shape matches schema |
+| permission denial | missing scope denied |
+| tenant fail-closed | invalid tenant denied |
+| no cross-tenant leakage | queue data cannot escape tenant boundary |
+| anti-inflation | response does not imply autonomous approval |
+
+##### Frontend Decision
+- frontend required: NO
+- reason: admin-safe API visibility is enough for this bounded L4 slice
+
+##### Anti-Inflation Boundary
+- no Brain signal
+- no KPI lineage
+- no autonomous execution
+- no hidden approval automation
+- no L5/L6 claim
+- no fake data
+
+#### Module: timetable_change_kpi_dashboard
+
+##### Current State
+- Current Level: L3
+- Target Level: L4
+- Source: A-026.4-RUNTIME + A-026.4.B2.R1 evidence
+- Existing L3 evidence: deterministic readiness classifier, full anti-inflation suite PASS after B2.R1 remediation
+- Primary gap: no controlled operational visibility route for backend KPI readiness
+
+##### Intended L4 Scope
+- What this module will expose: read-only KPI readiness/admin visibility endpoint without KPI lineage or frontend dashboard claim
+- What this module will NOT expose: dashboard UI, KPI calculation engine, Brain mapping, cross-tenant aggregation
+- Read-only or mutating: read-only
+- Product/admin visibility: backend/admin visibility only
+
+##### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/timetable_change_kpi_dashboard/service.py | augment | route-facing KPI readiness summary |
+| backend/app/modules/timetable_change_kpi_dashboard/schemas.py | add | KPI visibility response schema |
+| backend/app/modules/timetable_change_kpi_dashboard/router.py | add | read-only KPI readiness endpoint |
+
+##### API / Route Contract
+| Method | Path | Purpose | Auth/Permission | Tenant Handling | Response Schema |
+|---|---|---|---|---|---|
+| GET | /api/admin/timetable/change-kpi/readiness | expose backend KPI readiness visibility | permission_dependency("timetable.change_kpi.read") | tenant from auth context; no default tenant | TimetableChangeKpiDashboardVisibilitySchema |
+
+##### Response Schema
+- tenant_id
+- module
+- operational_status
+- visibility_level = "L4"
+- classification
+- allowed_actions
+- forbidden_actions
+- safety_flags
+- evidence_notes
+- no_autonomous_execution = true
+
+##### Permission / Security Design
+- permission required: `timetable.change_kpi.read`
+- RBAC/ABAC requirement: admin analytics/timetable visibility scope only
+- tenant source: `get_current_tenant`
+- fail-closed behavior: deny when tenant absent or invalid
+- cross-tenant prevention: no aggregate or foreign-tenant KPI readiness output
+
+##### Tests
+| Test | Purpose |
+|---|---|
+| route import / registration | router exists and is included |
+| schema validation | readiness response matches explicit schema |
+| permission denial | unprivileged actor cannot access route |
+| tenant fail-closed | invalid tenant request denied |
+| anti-fake-KPI | no fabricated KPI values or lineage fields appear |
+| no cross-tenant leakage | summaries remain tenant-bound |
+
+##### Frontend Decision
+- frontend required: NO
+- reason: L4 here is backend/admin operational visibility only; dashboard UI would overclaim surface readiness in this batch
+
+##### Anti-Inflation Boundary
+- no Brain signal
+- no KPI lineage unless explicitly implemented later
+- no autonomous execution
+- no fake KPI values
+- no L5/L6 claim
+- no fake data
+
+#### Module: workload_management
+
+##### Current State
+- Current Level: L3
+- Target Level: L4
+- Source: A-026.4-RUNTIME + A-026.4.B2.R1 evidence
+- Existing L3 evidence: deterministic workload planning classification and policy review boundaries
+- Primary gap: no operational visibility surface for workload readiness and constraints
+
+##### Intended L4 Scope
+- What this module will expose: read-only workload readiness/constraint summary for operations users
+- What this module will NOT expose: assignment mutation, payroll mutation, auto-assignment, cross-tenant planning merge
+- Read-only or mutating: read-only
+- Product/admin visibility: admin/internal operational visibility
+
+##### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/workload_management/service.py | augment | expose route-facing workload visibility summary |
+| backend/app/modules/workload_management/schemas.py | add | workload visibility response schema |
+| backend/app/modules/workload_management/router.py | add | read-only workload readiness endpoint |
+
+##### API / Route Contract
+| Method | Path | Purpose | Auth/Permission | Tenant Handling | Response Schema |
+|---|---|---|---|---|---|
+| GET | /api/admin/workload-management/readiness | expose workload readiness and constraint summary | permission_dependency("workload.read") | tenant from auth context, fail-closed | WorkloadManagementVisibilitySchema |
+
+##### Response Schema
+- tenant_id
+- module
+- operational_status
+- visibility_level = "L4"
+- classification
+- allowed_actions
+- forbidden_actions
+- safety_flags
+- evidence_notes
+- no_autonomous_execution = true
+
+##### Permission / Security Design
+- permission required: `workload.read`
+- RBAC/ABAC requirement: admin/planning viewer scope only
+- tenant source: `get_current_tenant`
+- fail-closed behavior: deny if tenant or scope missing
+- cross-tenant prevention: no merged tenant planning data in responses
+
+##### Tests
+| Test | Purpose |
+|---|---|
+| route registration | router included in app |
+| schema contract | response remains deterministic |
+| permission denial | non-authorized actor blocked |
+| tenant fail-closed | invalid tenant blocked |
+| no cross-tenant leakage | tenant boundary enforced |
+| no mutation | GET route cannot assign or mutate workload |
+
+##### Frontend Decision
+- frontend required: NO
+- reason: bounded API visibility is sufficient and avoids UI-driven blast-radius growth
+
+##### Anti-Inflation Boundary
+- no Brain signal
+- no KPI lineage
+- no autonomous execution
+- no payroll or assignment mutation
+- no L5/L6 claim
+- no fake data
+
+#### Module: notification_center
+
+##### Current State
+- Current Level: L3
+- Target Level: L4
+- Source: A-026.4-RUNTIME + A-026.4.B2.R1 evidence
+- Existing L3 evidence: tenant-safe notification readiness classification without provider calls
+- Primary gap: no operational visibility route for notification readiness/preview state
+
+##### Intended L4 Scope
+- What this module will expose: read-only notification readiness/preview endpoint for admin visibility
+- What this module will NOT expose: send endpoint, provider integration, cross-tenant broadcast, autonomous dispatch
+- Read-only or mutating: read-only
+- Product/admin visibility: admin/internal visibility only
+
+##### Expected Runtime Files
+| File | Action | Purpose |
+|---|---|---|
+| backend/app/modules/notification_center/service.py | augment | route-facing preview/readiness summary |
+| backend/app/modules/notification_center/schemas.py | add | notification visibility response schema |
+| backend/app/modules/notification_center/router.py | add | read-only notification readiness endpoint |
+
+##### API / Route Contract
+| Method | Path | Purpose | Auth/Permission | Tenant Handling | Response Schema |
+|---|---|---|---|---|---|
+| GET | /api/admin/notification-center/readiness | expose notification preview/readiness visibility | permission_dependency("notifications.read") | tenant from auth context, fail-closed | NotificationCenterVisibilitySchema |
+
+##### Response Schema
+- tenant_id
+- module
+- operational_status
+- visibility_level = "L4"
+- classification
+- allowed_actions
+- forbidden_actions
+- safety_flags
+- evidence_notes
+- no_autonomous_execution = true
+
+##### Permission / Security Design
+- permission required: `notifications.read`
+- RBAC/ABAC requirement: notification admin/support visibility scope only
+- tenant source: `get_current_tenant`
+- fail-closed behavior: deny when tenant invalid or missing
+- cross-tenant prevention: preview/readiness state never spans tenants
+
+##### Tests
+| Test | Purpose |
+|---|---|
+| route import / registration | router wiring exists |
+| response schema | preview/readiness shape is deterministic |
+| permission denial | unauthorized actor denied |
+| tenant fail-closed | invalid tenant rejected |
+| no cross-tenant leakage | tenant A cannot read tenant B preview state |
+| no-provider-call | endpoint remains provider-free and read-only |
+
+##### Frontend Decision
+- frontend required: NO
+- reason: admin-safe backend visibility is sufficient for this L4 slice; UI surfacing is deferred to avoid overclaiming product visibility
+
+##### Anti-Inflation Boundary
+- no Brain signal
+- no KPI lineage
+- no autonomous execution
+- no provider call
+- no L5/L6 claim
+- no fake data
+
+### Frontend Decision
+
+- frontend included in A-026.5 selected batch: NO
+- rationale: each selected module can honestly achieve L4 by adding bounded tenant-safe admin/API visibility without a new frontend page; UI work would increase blast radius and require separate build/lint/test commitments without improving the honesty of first-slice L4 claims
+
+### Expected Runtime Files
+
+| File | Expected Action | Reason |
+|---|---|---|
+| backend/app/modules/human_approved_timetable_workflow/service.py | augment | route-facing L4 summary support |
+| backend/app/modules/human_approved_timetable_workflow/schemas.py | add | response schema |
+| backend/app/modules/human_approved_timetable_workflow/router.py | add | read-only admin route |
+| backend/app/modules/timetable_change_proposal/service.py | augment | route-facing L4 summary support |
+| backend/app/modules/timetable_change_proposal/schemas.py | add | response schema |
+| backend/app/modules/timetable_change_proposal/router.py | add | read-only admin route |
+| backend/app/modules/timetable_approval_queue/service.py | augment | route-facing queue visibility summary |
+| backend/app/modules/timetable_approval_queue/schemas.py | add | response schema |
+| backend/app/modules/timetable_approval_queue/router.py | add | read-only admin route |
+| backend/app/modules/timetable_change_kpi_dashboard/service.py | augment | route-facing KPI readiness summary |
+| backend/app/modules/timetable_change_kpi_dashboard/schemas.py | add | response schema |
+| backend/app/modules/timetable_change_kpi_dashboard/router.py | add | read-only admin route |
+| backend/app/modules/workload_management/service.py | augment | route-facing workload visibility summary |
+| backend/app/modules/workload_management/schemas.py | add | response schema |
+| backend/app/modules/workload_management/router.py | add | read-only admin route |
+| backend/app/modules/notification_center/service.py | augment | route-facing notification readiness summary |
+| backend/app/modules/notification_center/schemas.py | add | response schema |
+| backend/app/modules/notification_center/router.py | add | read-only admin route |
+| backend/app/main.py | update | router import and registration |
+| backend/tests/test_a0265_l3_to_l4_operational_visibility.py | add | targeted backend route/security tests |
+| SBS_UB.md | update in runtime | execution state reconciliation |
+| SBS_UB_150_MODULE_NORMALIZATION.md | update in runtime | selected rows would move L3->L4 after validation |
+| A-026.5-RUNTIME-L3_TO_L4_OPERATIONAL_VISIBILITY_REPORT.md | add in runtime | evidence report |
+
+### A-026.5 Targeted Test Plan
+
+Preferred test file: `backend/tests/test_a0265_l3_to_l4_operational_visibility.py`
+
+Backend test groups:
+1. route import / app registration validation
+2. response schema validation
+3. permission denial / auth guard validation
+4. tenant fail-closed validation
+5. tenant isolation / no cross-tenant leakage
+6. operational visibility output validation
+7. anti-inflation validation
+8. no mutation / read-only behavior
+
+Expected backend test count:
+- minimum: 20
+- preferred: 30-50 for the selected 6-module batch
+
+Frontend tests required in this batch: no, because frontend is not selected.
+
+### Expected Maturity Movement
+
+No maturity movement occurs in this spec action.
+
+If A-026.5-RUNTIME succeeds, only the selected modules move from L3 to L4.
+
+Before A-026.5-RUNTIME:
+- L0=0
+- L1=16
+- L2=13
+- L3=32
+- L4=66
+- L5=21
+- L6=2
+
+After A-026.5-RUNTIME if selected batch size is N:
+- L0=0
+- L1=16
+- L2=13
+- L3=32-N
+- L4=66+N
+- L5=21
+- L6=2
+- total=150
+- maturity_arithmetic_check=PASS
+
+If N=6:
+- L0=0
+- L1=16
+- L2=13
+- L3=26
+- L4=72
+- L5=21
+- L6=2
+- total=150
+- maturity_arithmetic_check=PASS
+
+### Security / SaaS Boundaries
+
+- tenant isolation is mandatory for every planned route
+- fail-closed tenant handling is mandatory; no default tenant fallback
+- permission dependency or equivalent RBAC/ABAC gate is mandatory
+- no cross-tenant leakage is allowed in payload, filtering, or resource lookup
+- auditability/evidence notes should be preserved where operational visibility is exposed
+- no provider call, no unsafe automation, and no hidden execution path is allowed in this L4 slice
+
+### Anti-Inflation Boundaries
+
+- no runtime code changes in this spec action
+- no maturity movement in this spec action
+- no fake API or frontend claim
+- no Brain readiness or L5/L6 claim
+- no autonomous action
+- no fake operational data
+
+### Definition of Done for Future A-026.5-RUNTIME
+
+- selected batch remains exactly 6 modules unless re-approved
+- each selected module gets a tenant-safe route surface, response schema, and permission dependency
+- main app route registration is updated and validated
+- targeted backend route/security tests pass
+- no runtime mutation endpoint is introduced unless explicitly re-approved
+- no frontend is added unless separately justified and tested
+- SBS_UB.md metrics remain unchanged until runtime passes
+- the normalized matrix is updated only after implementation and validation
+
 ## Normalization Philosophy
 1. No fake green.
 2. No guessed capability status.
