@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - status: ready_for_A-026.5-SPEC
-- current_stage: A-026.4.B1 complete / Docker-pytest evidence confirmed for A-026.4 runtime
-- last_completed_action_id: A-026.4.B1
+- current_stage: A-026.4.B2.R1 complete / A-026.4 full targeted and continuity pytest confirmed after safety flag remediation
+- last_completed_action_id: A-026.4.B2.R1
 - next_action_id: A-026.5-SPEC
-- updated_at: 2026-05-11 (A-026.4.B1 Docker/pytest validation complete)
-- latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (Docker/pytest validation)
+- updated_at: 2026-05-11 (A-026.4.B2.R1 full targeted and continuity pytest validation complete)
+- latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=16, L2=13, L3=32, L4=66, L5=21, L6=2, total=150, arithmetic_check=PASS
 - extension_metrics: 25_L0_modules_PLANNING_ONLY, isolated_from_baseline, total_tracked=175, separation=PASS
@@ -18,7 +18,14 @@
     - pytest_collect: PASS (32 tests collected)
     - sample_test: PASS (test_human_workflow_classification_and_forbidden_actions: 1 passed in 23.49s)
     - scope_verification: PASS (no files modified; commit 979e1ca unchanged)
-    - verdict: A-026.4-RUNTIME authoritative PASS after B1 Docker/pytest evidence
+    - verdict: PARTIAL_EVIDENCE_ONLY (full targeted and continuity pytest pending at B1 close)
+- A-026.4.B2.R1 remediation block:
+    - failure_detected: KeyError no_autonomous_execution in timetable_change_kpi_dashboard anti-inflation test
+    - scoped_fix: added no_autonomous_execution=True in backend/app/modules/timetable_change_kpi_dashboard/service.py SAFETY_FLAGS
+    - focused_test: PASS (8 passed, 1 warning)
+    - full_targeted_pytest: PASS (41 passed, 1 warning)
+    - continuity_pytest: PASS (82 passed, 1 warning)
+    - verdict: A-026.4-RUNTIME authoritative PASS after full B2 evidence completion
 - A-023.1.B1 validation: PASS (service artifact imports validated; report filename references verified; file-count discrepancy reconciled: 19 total changed files, 16 backend module files; no maturity metric change; next_action_id remains A-023.2)
 
 #### A-023.0 - 150 Module Expansion & Maturity Inventory

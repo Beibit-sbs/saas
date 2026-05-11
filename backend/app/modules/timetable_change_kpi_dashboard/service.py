@@ -15,6 +15,7 @@ SAFETY_FLAGS = {
     "no_api_claim": True,
     "no_frontend_claim": True,
     "no_brain_claim": True,
+    "no_autonomous_execution": True,
     "no_kpi_values_computed": True,
     "no_kpi_lineage_claim": True,
     "no_e2e_claim": True,
