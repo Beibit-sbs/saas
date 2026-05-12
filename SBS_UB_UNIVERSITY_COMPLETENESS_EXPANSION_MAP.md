@@ -1164,3 +1164,306 @@ Baseline remains unchanged:
 
 - next_action_id: A-027.5-SPEC
 - scope: select and plan next controlled expansion batch
+
+## A-027.5-SPEC — Country-Adapter-Ready Integration Contract Foundation Batch Selection
+
+### Why Integrations Are Separate From New Modules
+
+- NEW_MODULE batches (A-027.2, A-027.3, A-027.4) closed the core domain-entity foundation first.
+- Integration contracts are provider-boundary heavy and require explicit no-live-call and no-fake-success controls.
+- A-027.5-SPEC remains planning-only and defines future runtime contracts without any provider execution.
+
+### Kazakhstan-First, Saudi/GCC-Ready Architecture Decision
+
+- Kazakhstan is the first provider-profile pack for runtime onboarding.
+- Core University OS must remain country-neutral and adapter-ready.
+- Provider-specific names are normalized into generic integration modules with profile metadata.
+- Saudi/GCC profiles are placeholders only in A-027.5-SPEC (no runtime implementation claim).
+
+### Accepted Integration Candidate Inventory (Authoritative Set)
+
+| UCE ID | Original Integration Candidate | Priority | Domain | Current Status | Provider Risk | Notes |
+|---|---|---|---|---|---|---|
+| UCE-024 | platonus_integration | P0 | Integration Layer | ACCEPTED_PENDING_RUNTIME | MEDIUM | SIS interoperability contract candidate |
+| UCE-025 | one_c_integration | P0 | Integration Layer | ACCEPTED_PENDING_RUNTIME | HIGH | ERP/HR/finance contract candidate |
+| UCE-026 | bank_gateway_integration | P0 | Integration Layer | ACCEPTED_PENDING_RUNTIME | HIGH | banking/reconciliation boundary |
+| UCE-027 | email_gateway_integration | P1 | Integration Layer | ACCEPTED_PENDING_RUNTIME | MEDIUM | outbound email channel contract |
+| UCE-028 | sms_gateway_integration | P1 | Integration Layer | ACCEPTED_PENDING_RUNTIME | MEDIUM | outbound SMS channel contract |
+| UCE-029 | biometric_device_integration | P2 | Integration Layer | ACCEPTED_PENDING_RUNTIME | HIGH | device and privacy heavy |
+| UCE-030 | egov_integration | P0 | Integration Layer | ACCEPTED_PENDING_RUNTIME | HIGH | government service boundary |
+| UCE-105 | epvo_integration | P1 | Integration Layer / External Systems | ACCEPTED_PENDING_RUNTIME | HIGH | national education provider boundary |
+| UCE-106 | lms_integration | P1 | Integration Layer / External Systems | ACCEPTED_PENDING_RUNTIME | MEDIUM | LMS synchronization contract |
+| UCE-107 | turnstile_sks_integration | P1 | Integration Layer / External Systems | ACCEPTED_PENDING_RUNTIME | HIGH | physical access and privacy boundary |
+| UCE-108 | idp_sso_integration | P1 | IAM / Federation / Privileged Access | ACCEPTED_PENDING_RUNTIME | HIGH | identity federation contract |
+| UCE-109 | eds_signature_integration | P0 | Document Workflow / Archive / EDS | ACCEPTED_PENDING_RUNTIME | HIGH | digital signature trust boundary |
+| UCE-110 | payment_gateway_integration | P1 | Finance / Budget / Billing | ACCEPTED_PENDING_RUNTIME | HIGH | payment provider abstraction |
+| UCE-111 | document_archive_integration | P1 | Document Workflow / Archive / EDS | ACCEPTED_PENDING_RUNTIME | MEDIUM | archive interoperability boundary |
+| UCE-112 | ministry_reporting_integration | P0 | Ministry / Government / Regulatory Reporting | ACCEPTED_PENDING_RUNTIME | HIGH | regulatory reporting exchange |
+| UCE-113 | hr_payroll_system_integration | P0 | Payroll / Position Budgeting Interfaces | ACCEPTED_PENDING_RUNTIME | HIGH | payroll federation boundary |
+
+### Provider-Specific to Generic Normalization
+
+| Original Candidate | Proposed Generic Module | KZ Provider Profile | Future SA/GCC Profile Placeholder | Decision | Rationale |
+|---|---|---|---|---|---|
+| platonus_integration | student_information_system_integration | PLATONUS_KZ | SA_SIS_PROVIDER | GENERIC_MODULE_WITH_KZ_PROVIDER_PROFILE | Prevent core SIS hardcode while keeping KZ-first onboarding |
+| one_c_integration | finance_erp_integration | ONE_C_KZ | SA_ERP_PROVIDER | GENERIC_MODULE_WITH_KZ_PROVIDER_PROFILE | ERP contract should be provider-agnostic in core |
+| egov_integration | government_services_integration | EGOV_KZ | SA_GOVERNMENT_SERVICES_PROVIDER | GENERIC_MODULE_WITH_KZ_PROVIDER_PROFILE | Government adapter portability required |
+| ministry_reporting_integration | regulatory_reporting_integration | MINISTRY_KZ | SA_REGULATORY_REPORTING_PROVIDER | GENERIC_MODULE_WITH_KZ_PROVIDER_PROFILE | Reporting transport and schema must remain adapter-driven |
+| eds_signature_integration | digital_signature_integration | EDS_KZ | SA_DIGITAL_SIGNATURE_PROVIDER | GENERIC_MODULE_WITH_KZ_PROVIDER_PROFILE | Signature provider neutrality required in core |
+| bank_gateway_integration | banking_integration | BANK_GATEWAY_KZ | SA_BANKING_PROVIDER | MERGE_INTO_GENERIC_INTEGRATION | Merged under payment boundary for first runtime batch |
+| payment_gateway_integration | payment_gateway_integration | PAYMENT_GATEWAY_KZ | SA_PAYMENT_PROVIDER | GENERIC_MODULE_WITH_KZ_PROVIDER_PROFILE | Keep generic payment abstraction with multi-profile support |
+| sms_gateway_integration | notification_gateway_integration | SMS_GATEWAY_KZ | SA_SMS_PROVIDER | GENERIC_MODULE_WITH_KZ_PROVIDER_PROFILE | Channel abstraction with no provider hardcode |
+| email_gateway_integration | email_gateway_integration | EMAIL_GATEWAY_KZ | SA_EMAIL_PROVIDER | PROVIDER_SPECIFIC_CONTRACT_OK | Generic enough name; still profile-driven |
+| lms_integration | learning_management_system_integration | LMS_KZ | SA_LMS_PROVIDER | GENERIC_MODULE_WITH_KZ_PROVIDER_PROFILE | LMS adapter portability required |
+| idp_sso_integration | identity_provider_integration | IDP_SSO_KZ | SA_IDENTITY_PROVIDER | GENERIC_MODULE_WITH_KZ_PROVIDER_PROFILE | IdP federation must remain provider-neutral |
+| hr_payroll_system_integration | hr_payroll_integration | HR_PAYROLL_KZ | SA_HR_PAYROLL_PROVIDER | GENERIC_MODULE_WITH_KZ_PROVIDER_PROFILE | Cross-country payroll adapter required |
+
+### Integration Candidate Scoring
+
+| UCE ID | Original Candidate | Generic Module | Priority | KZ Provider Profile | GCC-Ready? | Interoperability Value | Regulatory Value | Contract Clarity | Provider Risk | Score | Recommendation |
+|---|---|---|---|---|---|---:|---:|---:|---|---:|---|
+| UCE-024 | platonus_integration | student_information_system_integration | P0 | PLATONUS_KZ | YES | 5 | 4 | 5 | MEDIUM | 4.7 | SELECT_A0275 |
+| UCE-025 | one_c_integration | finance_erp_integration | P0 | ONE_C_KZ | YES | 5 | 4 | 4 | HIGH | 4.5 | SELECT_A0275 |
+| UCE-030 | egov_integration | government_services_integration | P0 | EGOV_KZ | YES | 5 | 5 | 4 | HIGH | 4.6 | SELECT_A0275 |
+| UCE-112 | ministry_reporting_integration | regulatory_reporting_integration | P0 | MINISTRY_KZ | YES | 5 | 5 | 4 | HIGH | 4.6 | SELECT_A0275 |
+| UCE-109 | eds_signature_integration | digital_signature_integration | P0 | EDS_KZ | YES | 4 | 5 | 4 | HIGH | 4.4 | SELECT_A0275 |
+| UCE-110 | payment_gateway_integration | payment_gateway_integration | P1 | PAYMENT_GATEWAY_KZ | YES | 5 | 3 | 4 | HIGH | 4.3 | SELECT_A0275 |
+| UCE-028 | sms_gateway_integration | notification_gateway_integration | P1 | SMS_GATEWAY_KZ | YES | 4 | 2 | 5 | MEDIUM | 4.0 | SELECT_A0275 |
+| UCE-027 | email_gateway_integration | email_gateway_integration | P1 | EMAIL_GATEWAY_KZ | YES | 4 | 2 | 5 | MEDIUM | 4.0 | SELECT_A0275 |
+| UCE-106 | lms_integration | learning_management_system_integration | P1 | LMS_KZ | YES | 4 | 3 | 4 | MEDIUM | 4.1 | SELECT_A0275 |
+| UCE-108 | idp_sso_integration | identity_provider_integration | P1 | IDP_SSO_KZ | YES | 5 | 4 | 4 | HIGH | 4.4 | SELECT_A0275 |
+| UCE-113 | hr_payroll_system_integration | hr_payroll_integration | P0 | HR_PAYROLL_KZ | YES | 5 | 4 | 4 | HIGH | 4.4 | SELECT_A0275 |
+| UCE-026 | bank_gateway_integration | banking_integration | P0 | BANK_GATEWAY_KZ | YES | 4 | 3 | 3 | HIGH | 3.8 | DEFER_AFTER_SECURITY_SPEC |
+| UCE-029 | biometric_device_integration | biometric_device_integration | P2 | BIOMETRIC_KZ | PARTIAL | 3 | 3 | 2 | HIGH | 3.0 | DEFER_PROVIDER_HEAVY |
+| UCE-105 | epvo_integration | epvo_integration | P1 | EPVO_KZ | PARTIAL | 3 | 4 | 3 | HIGH | 3.4 | DEFER_AFTER_MODULE_FOUNDATION |
+| UCE-107 | turnstile_sks_integration | turnstile_sks_integration | P1 | TURNSTILE_SKS_KZ | PARTIAL | 3 | 2 | 3 | HIGH | 3.1 | DEFER_AFTER_SECURITY_SPEC |
+| UCE-111 | document_archive_integration | document_archive_integration | P1 | ARCHIVE_KZ | PARTIAL | 3 | 4 | 3 | MEDIUM | 3.5 | DEFER_AFTER_MODULE_FOUNDATION |
+
+### Selected A-027.5 Batch (11)
+
+| # | Original UCE ID | Original Candidate | Generic Integration Module | KZ Provider Profile | Future SA/GCC Placeholder | Priority | Initial Target Level | Why Selected | Provider Risk |
+|---:|---|---|---|---|---|---|---:|---|---|
+| 1 | UCE-024 | platonus_integration | student_information_system_integration | PLATONUS_KZ | SA_SIS_PROVIDER | P0 | L2 | Core SIS interoperability dependency for academic lifecycle | MEDIUM |
+| 2 | UCE-025 | one_c_integration | finance_erp_integration | ONE_C_KZ | SA_ERP_PROVIDER | P0 | L2 | Finance/HR interoperability backbone for future workflows | HIGH |
+| 3 | UCE-030 | egov_integration | government_services_integration | EGOV_KZ | SA_GOVERNMENT_SERVICES_PROVIDER | P0 | L2 | Government interface critical for public compliance flows | HIGH |
+| 4 | UCE-112 | ministry_reporting_integration | regulatory_reporting_integration | MINISTRY_KZ | SA_REGULATORY_REPORTING_PROVIDER | P0 | L2 | Regulatory submission boundary is compliance-critical | HIGH |
+| 5 | UCE-109 | eds_signature_integration | digital_signature_integration | EDS_KZ | SA_DIGITAL_SIGNATURE_PROVIDER | P0 | L2 | Signature trust chain is document governance prerequisite | HIGH |
+| 6 | UCE-110 | payment_gateway_integration | payment_gateway_integration | PAYMENT_GATEWAY_KZ | SA_PAYMENT_PROVIDER | P1 | L2 | Payment abstraction needed for billing and reconciliation evidence | HIGH |
+| 7 | UCE-028 | sms_gateway_integration | notification_gateway_integration | SMS_GATEWAY_KZ | SA_SMS_PROVIDER | P1 | L2 | Tenant-safe outbound messaging channel contract | MEDIUM |
+| 8 | UCE-027 | email_gateway_integration | email_gateway_integration | EMAIL_GATEWAY_KZ | SA_EMAIL_PROVIDER | P1 | L2 | Official communications channel contract | MEDIUM |
+| 9 | UCE-106 | lms_integration | learning_management_system_integration | LMS_KZ | SA_LMS_PROVIDER | P1 | L2 | Learning platform interoperability dependency | MEDIUM |
+| 10 | UCE-108 | idp_sso_integration | identity_provider_integration | IDP_SSO_KZ | SA_IDENTITY_PROVIDER | P1 | L2 | Identity federation prerequisite for secure expansion | HIGH |
+| 11 | UCE-113 | hr_payroll_system_integration | hr_payroll_integration | HR_PAYROLL_KZ | SA_HR_PAYROLL_PROVIDER | P0 | L2 | Payroll interoperability dependency for HR operations | HIGH |
+
+### A-027.5 Country-Adapter-Ready Integration Contract Foundation Standard
+
+Every selected integration requires future A-027.5-RUNTIME to create:
+
+- backend/app/modules/<generic_integration_name>/__init__.py
+- backend/app/modules/<generic_integration_name>/service.py
+
+Constants:
+
+- MODULE_NAME
+- ORIGINAL_UCE_ID
+- ORIGINAL_CANDIDATE_NAME
+- TARGET_LEVEL = "L2"
+- CONTRACT_VERSION = "A-027.5"
+- INTEGRATION_STATUS = "CONTRACT_READY"
+- LIVE_PROVIDER_CALLS_ALLOWED = False
+- COUNTRY_ADAPTER_READY = True
+
+Provider profile metadata:
+
+- provider_profiles
+- default_country_code = "KZ"
+- default_provider_profile
+- future_provider_profile_placeholders
+- supported_country_codes = ["KZ"] at foundation stage
+- future_supported_country_codes = ["SA", "AE", "QA", "OM", "BH", "KW"] as placeholders only
+
+Contract constraints:
+
+- tenant fail-closed validation (None/0/<0 rejected; positive int accepted)
+- deterministic contract output only
+- no live external provider call
+- no credential usage, no secret storage, no fake success claim
+- no API/frontend/KPI/Brain/autonomy claim
+- no L3/L4/L5/L6 maturity claim
+
+### Integration-by-Integration Specs
+
+#### Integration: student_information_system_integration
+- Original UCE ID: UCE-024
+- Original candidate: platonus_integration
+- KZ provider profile: PLATONUS_KZ
+- Future SA/GCC placeholder: SA_SIS_PROVIDER
+- Purpose: SIS interoperability contract for student/academic records.
+- Data exchange direction: bidirectional contract metadata only (import/export profile definitions).
+- Required configuration evidence: provider profile id, endpoint template, mapping version, tenant routing key.
+- Expected failure modes: provider_profile_missing, mapping_schema_mismatch, country_adapter_not_supported, tenant_scope_violation.
+- Allowed actions: VALIDATE_PROVIDER_PROFILE, VALIDATE_MAPPING_SCHEMA, PRODUCE_READINESS_CONTRACT.
+- Forbidden actions: LIVE_PLATONUS_CALL, AUTO_SYNC_STUDENTS, AUTO_MUTATE_SIS_DATA, HARD_CODE_PLATONUS_AS_CORE.
+- Credential boundary: credentials never read at L2; references only.
+- Provider boundary: profile metadata only; zero provider IO.
+- Country adapter boundary: KZ default, SA/GCC placeholders retained.
+- Tenant boundary: tenant-scoped contract output only.
+- Anti-fake boundary: no "connected" or "sync_success" claim without live runtime.
+
+#### Integration: finance_erp_integration
+- Original UCE ID: UCE-025
+- Original candidate: one_c_integration
+- KZ provider profile: ONE_C_KZ
+- Future SA/GCC placeholder: SA_ERP_PROVIDER
+- Purpose: ERP interoperability contract for finance/HR.
+- Integration type: ERP adapter contract.
+- Data exchange direction: contract-only bidirectional profile.
+- Required configuration evidence: profile code, chart mapping reference, payroll mapping version.
+- Expected failure modes: profile_not_configured, mapping_incomplete, unsupported_country, evidence_missing.
+- Allowed actions: VALIDATE_PROFILE_SCHEMA, VALIDATE_COUNTRY_ADAPTER, BUILD_CONTRACT_METADATA.
+- Forbidden actions: LIVE_1C_CALL, AUTO_POST_ACCOUNTING_ENTRY, AUTO_SYNC_PAYROLL, HARD_CODE_ONE_C_AS_CORE.
+
+#### Integration: government_services_integration
+- Original UCE ID: UCE-030
+- Original candidate: egov_integration
+- KZ provider profile: EGOV_KZ
+- Future SA/GCC placeholder: SA_GOVERNMENT_SERVICES_PROVIDER
+- Purpose: government service verification/submission boundary contract.
+- Forbidden actions: LIVE_EGOV_CALL, AUTO_SUBMIT_GOVERNMENT_FORM, AUTO_VERIFY_CITIZEN_DATA, HARD_CODE_EGOV_AS_CORE.
+
+#### Integration: regulatory_reporting_integration
+- Original UCE ID: UCE-112
+- Original candidate: ministry_reporting_integration
+- KZ provider profile: MINISTRY_KZ
+- Future SA/GCC placeholder: SA_REGULATORY_REPORTING_PROVIDER
+- Purpose: regulatory reporting exchange contract.
+- Forbidden actions: LIVE_MINISTRY_SUBMISSION, AUTO_SUBMIT_REPORT, AUTO_CERTIFY_REPORT, HARD_CODE_KZ_MINISTRY_AS_CORE.
+
+#### Integration: digital_signature_integration
+- Original UCE ID: UCE-109
+- Original candidate: eds_signature_integration
+- KZ provider profile: EDS_KZ
+- Future SA/GCC placeholder: SA_DIGITAL_SIGNATURE_PROVIDER
+- Purpose: digital signature provider boundary contract.
+- Forbidden actions: LIVE_EDS_SIGNING, AUTO_SIGN_DOCUMENT, STORE_PRIVATE_KEY, HARD_CODE_EDS_AS_CORE.
+
+#### Integration: payment_gateway_integration
+- Original UCE ID: UCE-110
+- Original candidate: payment_gateway_integration
+- KZ provider profile: PAYMENT_GATEWAY_KZ
+- Future SA/GCC placeholder: SA_PAYMENT_PROVIDER
+- Purpose: payment processing and reconciliation contract boundary.
+- Forbidden actions: LIVE_PAYMENT_CALL, LIVE_BANK_CALL, AUTO_CHARGE_CARD, AUTO_REFUND_PAYMENT, AUTO_RECONCILE_PAYMENT.
+
+#### Integration: notification_gateway_integration
+- Original UCE ID: UCE-028
+- Original candidate: sms_gateway_integration
+- KZ provider profile: SMS_GATEWAY_KZ
+- Future SA/GCC placeholder: SA_SMS_PROVIDER
+- Purpose: outbound notification gateway contract.
+- Forbidden actions: LIVE_SMS_SEND, AUTO_SEND_SMS, STORE_PROVIDER_SECRET.
+
+#### Integration: email_gateway_integration
+- Original UCE ID: UCE-027
+- Original candidate: email_gateway_integration
+- KZ provider profile: EMAIL_GATEWAY_KZ
+- Future SA/GCC placeholder: SA_EMAIL_PROVIDER
+- Purpose: official email channel contract.
+- Forbidden actions: LIVE_EMAIL_SEND, AUTO_SEND_EMAIL, STORE_PROVIDER_SECRET.
+
+#### Integration: learning_management_system_integration
+- Original UCE ID: UCE-106
+- Original candidate: lms_integration
+- KZ provider profile: LMS_KZ
+- Future SA/GCC placeholder: SA_LMS_PROVIDER
+- Purpose: LMS interoperability contract.
+- Forbidden actions: LIVE_LMS_CALL, AUTO_SYNC_GRADES, AUTO_CREATE_COURSE.
+
+#### Integration: identity_provider_integration
+- Original UCE ID: UCE-108
+- Original candidate: idp_sso_integration
+- KZ provider profile: IDP_SSO_KZ
+- Future SA/GCC placeholder: SA_IDENTITY_PROVIDER
+- Purpose: SSO and identity federation boundary contract.
+- Forbidden actions: LIVE_IDP_CALL, AUTO_PROVISION_USER, AUTO_GRANT_ROLE, HARD_CODE_IDP_PROVIDER.
+
+#### Integration: hr_payroll_integration
+- Original UCE ID: UCE-113
+- Original candidate: hr_payroll_system_integration
+- KZ provider profile: HR_PAYROLL_KZ
+- Future SA/GCC placeholder: SA_HR_PAYROLL_PROVIDER
+- Purpose: HR/payroll system federation contract.
+- Forbidden actions: LIVE_PAYROLL_CALL, AUTO_SYNC_SALARY, AUTO_CHANGE_EMPLOYEE_PAYROLL.
+
+### Expected Runtime Files (Planning-Only in SPEC)
+
+| File | Expected Action | Reason |
+|---|---|---|
+| backend/app/modules/<generic_integration>/__init__.py | CREATE_IN_RUNTIME | identity constants and country/provider profile metadata |
+| backend/app/modules/<generic_integration>/service.py | CREATE_IN_RUNTIME | deterministic L2 integration contract output only |
+| backend/tests/test_a0275_country_adapter_integration_contracts.py | CREATE_IN_RUNTIME | integration contract safety, adapter, and anti-hardcode validation |
+| SBS_UB.md | UPDATE_IN_RUNTIME | A-027.5 runtime result and counters |
+| SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md | UPDATE_IN_RUNTIME | implementation status update after runtime pass |
+| A-027.5 runtime report | CREATE_IN_RUNTIME | runtime closure evidence |
+
+### A-027.5 Targeted Runtime Test Plan
+
+Preferred runtime test file:
+
+- backend/tests/test_a0275_country_adapter_integration_contracts.py
+
+Test groups:
+
+1. import validation
+2. package metadata validation
+3. tenant fail-closed validation
+4. integration contract output validation
+5. country adapter readiness validation
+6. provider profile validation
+7. future SA/GCC placeholder validation
+8. provider boundary validation
+9. credential boundary validation
+10. no-live-call validation
+11. no-fake-success validation
+12. failure mode validation
+13. allowed/forbidden action validation
+14. safety flag validation
+15. determinism validation
+16. anti-hardcode validation
+
+Expected test count: 100-180 depending selected count.
+
+Validation mode: fast direct Docker.
+
+### Expected Expansion Metric Movement
+
+Current:
+
+- expansion_L2_foundation_count = 38
+- expansion_runtime_implemented_count = 38
+
+If A-027.5 runtime selects N and passes:
+
+- A0275_integration_contract_count = N
+- expansion_L2_foundation_count = 38 + N
+- expansion_runtime_implemented_count = 38 + N
+- baseline_impact = 0
+- extension_impact = 0
+
+Baseline remains unchanged:
+
+- L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+
+### Anti-Fake / Anti-Inflation Review (A-027.5-SPEC)
+
+- No runtime code created in spec phase.
+- No provider call, no credentials, no secrets.
+- No fake integration success claim.
+- No maturity movement in baseline or extension metrics.
+- No country hardcode in core; provider profiles and country adapters only.
+- Expansion remains isolated from baseline and extension.
+
+### Next Action
+
+- next_action_id: A-027.5-RUNTIME
+- scope: implement selected 11 generic L2 country-adapter-ready integration contracts with deterministic no-live-call boundaries.

@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-027.5-SPEC
-    - current_stage: A-027.4-RUNTIME complete / P0-P1 new module foundation batch 3 implemented
-    - last_completed_action_id: A-027.4-RUNTIME
-    - next_action_id: A-027.5-SPEC
-    - updated_at: 2026-05-12 (A-027.4-RUNTIME complete; 15 L2 foundation contracts implemented; 487 tests PASS; expansion metrics updated)
+    - status: ready_for_A-027.5-RUNTIME
+    - current_stage: A-027.5-SPEC complete / country-adapter-ready integration contract foundation batch selected
+    - last_completed_action_id: A-027.5-SPEC
+    - next_action_id: A-027.5-RUNTIME
+    - updated_at: 2026-05-12 (A-027.5-SPEC complete; 11 country-adapter-ready integration contracts selected; Kazakhstan-first profiles with Saudi/GCC placeholders; runtime pending)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -206,6 +206,28 @@
     - report_file: A-027.4-P0_P1_NEW_MODULE_FOUNDATION_BATCH_3_RUNTIME_REPORT.md
     - final_verdict: RUNTIME_COMPLETE_AUTHORITATIVE_PASS
     - next_action_id: A-027.5-SPEC
+- A-027.5-SPEC execution block:
+    - mode: planning_and_specification_only_no_runtime_changes
+    - purpose: select_country_adapter_ready_integration_contract_foundation_batch
+    - source_of_truth_check: PASS (A-027.4-RUNTIME closed; baseline/extension/expansion metrics locked)
+    - accepted_integration_pool: 16 candidates (A-027.1 accepted INTEGRATION set)
+    - runtime_presence_check: PASS (selected integration module folders not implemented yet)
+    - normalization_policy: provider_specific_candidates_mapped_to_generic_modules_with_provider_profiles
+    - selected_batch_count: 11
+    - selected_batch: UCE-024 student_information_system_integration(platonus/PLATONUS_KZ), UCE-025 finance_erp_integration(one_c/ONE_C_KZ), UCE-030 government_services_integration(egov/EGOV_KZ), UCE-112 regulatory_reporting_integration(ministry_reporting/MINISTRY_KZ), UCE-109 digital_signature_integration(eds_signature/EDS_KZ), UCE-110 payment_gateway_integration(payment_gateway/PAYMENT_GATEWAY_KZ), UCE-028 notification_gateway_integration(sms_gateway/SMS_GATEWAY_KZ), UCE-027 email_gateway_integration(email_gateway/EMAIL_GATEWAY_KZ), UCE-106 learning_management_system_integration(lms/LMS_KZ), UCE-108 identity_provider_integration(idp_sso/IDP_SSO_KZ), UCE-113 hr_payroll_integration(hr_payroll_system/HR_PAYROLL_KZ)
+    - selected_batch_priority: P0=6, P1=5 (accepted INTEGRATION only)
+    - strategy_note: Kazakhstan-first provider profiles selected; Saudi/GCC provider profile placeholders preserved
+    - country_adapter_rule: no_country_hardcode_in_core
+    - l2_integration_contract_standard: defined (tenant fail-closed, deterministic, provider_boundary, credential_boundary, expected_failure_modes, no_live_call, no_fake_success)
+    - provider_profile_metadata_required: provider_profiles, default_country_code=KZ, default_provider_profile, future_provider_profile_placeholders, supported_country_codes=[KZ], future_supported_country_codes=[SA,AE,QA,OM,BH,KW]
+    - anti_inflation_spec: PASS (planning only; no service.py/tests/routes/frontend/migrations/provider calls/credentials/secrets)
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - expansion_metrics_current: A0272_implemented_foundation_count=11, A0273_implemented_foundation_count=12, A0274_implemented_foundation_count=15, expansion_L2_foundation_count=38, expansion_runtime_implemented_count=38, baseline_impact=0, extension_impact=0
+    - expansion_metrics_expected_if_runtime_pass: A0275_integration_contract_count=N, expansion_L2_foundation_count=38+N, expansion_runtime_implemented_count=38+N, baseline_impact=0, extension_impact=0
+    - spec_report_file: A-027.5-SPEC-COUNTRY_ADAPTER_INTEGRATION_CONTRACT_FOUNDATION_BATCH_REPORT.md
+    - final_verdict: SPEC_COMPLETE_PASS
+    - next_action_id: A-027.5-RUNTIME
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8
