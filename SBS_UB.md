@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-027.4.B1
-    - current_stage: A-027.3.R2 complete / package metadata UCE IDs reconciled
-    - last_completed_action_id: A-027.3.R2
-    - next_action_id: A-027.4.B1
-    - updated_at: 2026-05-12 (A-027.3.R2 complete: degree_audit package metadata corrected to UCE-092 and transfer_credit_management package metadata corrected to UCE-075; A-027.4.B1 rerun required before A-027.4-RUNTIME)
+    - status: ready_for_A-027.4-RUNTIME
+    - current_stage: A-027.4.B1 complete / UCE ID collision check passed after A-027.3.R2
+    - last_completed_action_id: A-027.4.B1
+    - next_action_id: A-027.4-RUNTIME
+    - updated_at: 2026-05-12 (A-027.4.B1 rerun complete after A-027.3.R2; UCE alignment verified with NO_COLLISION; A-027.4-RUNTIME allowed)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -174,6 +174,19 @@
     - spec_report_file: A-027.4-SPEC-P0_P1_NEW_MODULE_FOUNDATION_BATCH_3_REPORT.md
     - final_verdict: SPEC_COMPLETE_PASS
     - next_action_id: A-027.4.B1
+- A-027.4.B1 execution block:
+    - mode: registry_alignment_and_collision_rerun_docs_only
+    - prerequisite_confirmed: A-027.3.R2 complete
+    - canonical_mappings_verified: degree_audit=UCE-092, transfer_credit_management=UCE-075, disability_support_services=UCE-081, student_financial_hardship=UCE-082
+    - a0274_selected_batch_verification: PASS (15/15 UCE IDs match canonical registry)
+    - collision_result: NO_COLLISION
+    - runtime_scope: no_runtime_code_no_module_creation_no_tests
+    - no_maturity_movement: PASS
+    - no_baseline_extension_metric_change: PASS
+    - safety_decision: A-027.4-RUNTIME allowed
+    - report_file: A-027.4.B1-UCE_ID_COLLISION_CHECK_AND_REGISTRY_ALIGNMENT_REPORT.md
+    - final_verdict: PASS_AUTHORITATIVE
+    - next_action_id: A-027.4-RUNTIME
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8
