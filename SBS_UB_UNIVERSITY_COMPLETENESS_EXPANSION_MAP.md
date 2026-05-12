@@ -1718,3 +1718,221 @@ Baseline remains unchanged:
 
 - next_action_id: A-027.7-SPEC
 - scope: select next controlled runtime depth wave with non-inflation guardrails
+
+## A-027.7-SPEC - Expansion L2→L3 Deterministic Logic Batch Selection
+
+### Why Start L2→L3 Now
+
+- Expansion L2 foundation coverage reached 67 implemented candidates across five runtime waves.
+- Deterministic logic uplift can now focus on safe, high-leverage modules without provider/Brain/autonomy execution.
+- A small first L2→L3 batch is selected to establish repeatable patterns before broader rollout.
+
+### Expansion L2 Inventory Summary (67)
+
+| Source Wave | Implemented Count | Type Mix |
+| --- | ---: | --- |
+| A-027.2 | 11 | NEW_MODULE foundations |
+| A-027.3 | 12 | NEW_MODULE foundations |
+| A-027.4 | 15 | NEW_MODULE foundations |
+| A-027.5 | 11 | INTEGRATION contracts |
+| A-027.6 | 18 | WORKFLOW / REPORT_DASHBOARD / POLICY_CONTROL / BRAIN_SIGNAL / AUDIT_EVIDENCE_CAPABILITY / AUTONOMOUS envelope foundations |
+| Total | 67 | implemented expansion L2 layer |
+
+### Full 67-Candidate Inventory (Implemented L2)
+
+| Source Wave | UCE ID | Candidate / Module | Type | Package | Current Expansion Level | Runtime Status | Risk Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A-027.2 | UCE-001 | staff_recruitment | NEW_MODULE | staff_recruitment | L2 | IMPLEMENTED_FOUNDATION | sensitive HR decision domain |
+| A-027.2 | UCE-002 | staff_onboarding | NEW_MODULE | staff_onboarding | L2 | IMPLEMENTED_FOUNDATION | cross-domain workflow dependencies |
+| A-027.2 | UCE-003 | employee_records | NEW_MODULE | employee_records | L2 | IMPLEMENTED_FOUNDATION | sensitive HR evidence controls |
+| A-027.2 | UCE-009 | document_workflow | NEW_MODULE | document_workflow | L2 | IMPLEMENTED_FOUNDATION | low-risk deterministic candidate |
+| A-027.2 | UCE-011 | order_decree_registry | NEW_MODULE | order_decree_registry | L2 | IMPLEMENTED_FOUNDATION | low-risk deterministic candidate |
+| A-027.2 | UCE-014 | curriculum_mapping | NEW_MODULE | curriculum_mapping | L2 | IMPLEMENTED_FOUNDATION | low-risk deterministic candidate |
+| A-027.2 | UCE-015 | syllabus_management | NEW_MODULE | syllabus_management | L2 | IMPLEMENTED_FOUNDATION | low-risk deterministic candidate |
+| A-027.2 | UCE-019 | international_office | NEW_MODULE | international_office | L2 | IMPLEMENTED_FOUNDATION | multi-party process risk |
+| A-027.2 | UCE-071 | program_learning_outcomes | NEW_MODULE | program_learning_outcomes | L2 | IMPLEMENTED_FOUNDATION | taxonomy complexity |
+| A-027.2 | UCE-072 | course_learning_outcomes | NEW_MODULE | course_learning_outcomes | L2 | IMPLEMENTED_FOUNDATION | taxonomy complexity |
+| A-027.2 | UCE-090 | committee_decision_registry | NEW_MODULE | committee_decision_registry | L2 | IMPLEMENTED_FOUNDATION | governance sensitivity |
+| A-027.3 | UCE-016 | competency_framework | NEW_MODULE | competency_framework | L2 | IMPLEMENTED_FOUNDATION | taxonomy complexity |
+| A-027.3 | UCE-012 | archive_retention_management | NEW_MODULE | archive_retention_management | L2 | IMPLEMENTED_FOUNDATION | legal rule complexity |
+| A-027.3 | UCE-004 | leave_management | NEW_MODULE | leave_management | L2 | IMPLEMENTED_FOUNDATION | HR policy sensitivity |
+| A-027.3 | UCE-005 | performance_appraisal | NEW_MODULE | performance_appraisal | L2 | IMPLEMENTED_FOUNDATION | sensitive scoring risk |
+| A-027.3 | UCE-007 | disciplinary_case_management | NEW_MODULE | disciplinary_case_management | L2 | IMPLEMENTED_FOUNDATION | high sensitivity decisioning |
+| A-027.3 | UCE-092 | degree_audit | NEW_MODULE | degree_audit | L2 | IMPLEMENTED_FOUNDATION | low-risk deterministic candidate |
+| A-027.3 | UCE-075 | transfer_credit_management | NEW_MODULE | transfer_credit_management | L2 | IMPLEMENTED_FOUNDATION | low-risk deterministic candidate |
+| A-027.3 | UCE-074 | prerequisite_management | NEW_MODULE | prerequisite_management | L2 | IMPLEMENTED_FOUNDATION | low-risk deterministic candidate |
+| A-027.3 | UCE-076 | course_catalog_management | NEW_MODULE | course_catalog_management | L2 | IMPLEMENTED_FOUNDATION | low-risk deterministic candidate |
+| A-027.3 | UCE-023 | mou_lifecycle | NEW_MODULE | mou_lifecycle | L2 | IMPLEMENTED_FOUNDATION | legal lifecycle sensitivity |
+| A-027.3 | UCE-022 | partnership_registry | NEW_MODULE | partnership_registry | L2 | IMPLEMENTED_FOUNDATION | legal lifecycle sensitivity |
+| A-027.3 | UCE-070 | staff_exit_offboarding | NEW_MODULE | staff_exit_offboarding | L2 | IMPLEMENTED_FOUNDATION | HR/IAM sensitivity |
+| A-027.4 | UCE-081 | disability_support_services | NEW_MODULE | disability_support_services | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | high sensitivity accommodations |
+| A-027.4 | UCE-017 | dormitory_management | NEW_MODULE | dormitory_management | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | moderate allocation sensitivity |
+| A-027.4 | UCE-013 | incoming_outgoing_correspondence | NEW_MODULE | incoming_outgoing_correspondence | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | low-risk deterministic candidate |
+| A-027.4 | UCE-057 | staff_probation_review | NEW_MODULE | staff_probation_review | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | sensitive HR decisioning |
+| A-027.4 | UCE-060 | timesheet_management | NEW_MODULE | timesheet_management | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | payroll side-effect proximity |
+| A-027.4 | UCE-061 | faculty_attestation | NEW_MODULE | faculty_attestation | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | committee decision sensitivity |
+| A-027.4 | UCE-067 | teaching_load_contracts | NEW_MODULE | teaching_load_contracts | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | assignment sensitivity |
+| A-027.4 | UCE-073 | elective_course_selection | NEW_MODULE | elective_course_selection | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | enrollment side-effect proximity |
+| A-027.4 | UCE-077 | thesis_dissertation_management | NEW_MODULE | thesis_dissertation_management | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | academic decision sensitivity |
+| A-027.4 | UCE-078 | academic_integrity_case_management | NEW_MODULE | academic_integrity_case_management | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | high sensitivity sanctions |
+| A-027.4 | UCE-082 | student_financial_hardship | NEW_MODULE | student_financial_hardship | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | aid decision sensitivity |
+| A-027.4 | UCE-085 | joint_program_management | NEW_MODULE | joint_program_management | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | legal/multi-party complexity |
+| A-027.4 | UCE-086 | inbound_exchange_management | NEW_MODULE | inbound_exchange_management | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | mobility/visa sensitivity |
+| A-027.4 | UCE-087 | outbound_exchange_management | NEW_MODULE | outbound_exchange_management | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | mobility/visa sensitivity |
+| A-027.4 | UCE-089 | document_template_library | NEW_MODULE | document_template_library | L2 | L2_FOUNDATION_IMPLEMENTED_AFTER_A0274 | low-risk deterministic candidate |
+| A-027.5 | UCE-024 | student_information_system_integration | INTEGRATION | student_information_system_integration | L2 | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | provider readiness classification only |
+| A-027.5 | UCE-025 | finance_erp_integration | INTEGRATION | finance_erp_integration | L2 | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | provider readiness classification only |
+| A-027.5 | UCE-030 | government_services_integration | INTEGRATION | government_services_integration | L2 | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | regulatory/provider risk |
+| A-027.5 | UCE-112 | regulatory_reporting_integration | INTEGRATION | regulatory_reporting_integration | L2 | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | safe for readiness-only L3 |
+| A-027.5 | UCE-109 | digital_signature_integration | INTEGRATION | digital_signature_integration | L2 | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | safe for readiness-only L3 |
+| A-027.5 | UCE-110 | payment_gateway_integration | INTEGRATION | payment_gateway_integration | L2 | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | financial/provider risk |
+| A-027.5 | UCE-028 | notification_gateway_integration | INTEGRATION | notification_gateway_integration | L2 | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | messaging/provider risk |
+| A-027.5 | UCE-027 | email_gateway_integration | INTEGRATION | email_gateway_integration | L2 | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | messaging/provider risk |
+| A-027.5 | UCE-106 | learning_management_system_integration | INTEGRATION | learning_management_system_integration | L2 | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | provider readiness classification only |
+| A-027.5 | UCE-108 | identity_provider_integration | INTEGRATION | identity_provider_integration | L2 | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | identity/provider risk |
+| A-027.5 | UCE-113 | hr_payroll_integration | INTEGRATION | hr_payroll_integration | L2 | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | payroll/provider risk |
+| A-027.6 | UCE-054 | brain_decision_audit_trail | AUDIT_EVIDENCE_CAPABILITY | brain_decision_audit_trail | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | safe for readiness-only L3 |
+| A-027.6 | UCE-049 | student_risk_signal_registry | BRAIN_SIGNAL | student_risk_signal_registry | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no execution/scoring allowed |
+| A-027.6 | UCE-050 | finance_anomaly_signal_registry | BRAIN_SIGNAL | finance_anomaly_signal_registry | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no execution/scoring allowed |
+| A-027.6 | UCE-129 | procurement_risk_signal_registry | BRAIN_SIGNAL | procurement_risk_signal_registry | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no execution/scoring allowed |
+| A-027.6 | UCE-051 | academic_quality_signal_registry | BRAIN_SIGNAL | academic_quality_signal_registry | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no execution/scoring allowed |
+| A-027.6 | UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | compliance_calendar_dashboard | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no KPI computation allowed |
+| A-027.6 | UCE-032 | ministry_reporting_dashboard | REPORT_DASHBOARD | ministry_reporting_dashboard | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no KPI computation allowed |
+| A-027.6 | UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | accreditation_dashboard | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no KPI computation allowed |
+| A-027.6 | UCE-031 | rector_strategy_dashboard | REPORT_DASHBOARD | rector_strategy_dashboard | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no KPI computation allowed |
+| A-027.6 | UCE-048 | data_retention_policy_control | POLICY_CONTROL | data_retention_policy_control | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no auto-enforcement allowed |
+| A-027.6 | UCE-046 | consent_management_policy | POLICY_CONTROL | consent_management_policy | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no auto-enforcement allowed |
+| A-027.6 | UCE-047 | third_party_risk_policy | POLICY_CONTROL | third_party_risk_policy | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no auto-enforcement allowed |
+| A-027.6 | UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | rector_resolution_tracking_workflow | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no auto-routing/approval allowed |
+| A-027.6 | UCE-037 | scholarship_committee_workflow | WORKFLOW | scholarship_committee_workflow | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no auto-routing/approval allowed |
+| A-027.6 | UCE-038 | student_appeals_workflow | WORKFLOW | student_appeals_workflow | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no auto-routing/approval allowed |
+| A-027.6 | UCE-098 | procurement_plan_approval_workflow | WORKFLOW | procurement_plan_approval_workflow | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | no auto-routing/approval allowed |
+| A-027.6 | UCE-145 | safe_evidence_summary_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | safe_evidence_summary_agent | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | envelope-only, no execution |
+| A-027.6 | UCE-146 | safe_task_drafting_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | safe_task_drafting_agent | L2 | L2_ENVELOPE_FOUNDATION_IMPLEMENTED_AFTER_A0276 | envelope-only, no execution |
+
+### Exclusion Rules for First L3 Batch
+
+| Candidate | Type | Exclusion Reason | Defer Until |
+| --- | --- | --- | --- |
+| finance_erp_integration, payment_gateway_integration, hr_payroll_integration, identity_provider_integration | INTEGRATION | provider and financial/identity blast-radius risk | DEFER_AFTER_PROVIDER_SPEC |
+| student_risk_signal_registry, finance_anomaly_signal_registry, academic_quality_signal_registry, procurement_risk_signal_registry | BRAIN_SIGNAL | avoid any execution/scoring implication in first L3 wave | DEFER_NEXT_L3_BATCH |
+| safe_evidence_summary_agent, safe_task_drafting_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | autonomy lane must remain envelope-only in first L3 batch | DEFER_AFTER_POLICY_REVIEW |
+| consent_management_policy, third_party_risk_policy, data_retention_policy_control | POLICY_CONTROL | enforcement-adjacent semantics require extra policy gating | DEFER_AFTER_POLICY_REVIEW |
+| disability_support_services, disciplinary_case_management, academic_integrity_case_management, student_financial_hardship, performance_appraisal, staff_probation_review | NEW_MODULE | sensitive human-decision domains | DEFER_NEXT_L3_BATCH |
+
+### Scoring Model for A-027.7
+
+| Criterion | Weight |
+| --- | ---: |
+| deterministic logic clarity | 0.20 |
+| low blast radius | 0.15 |
+| university value | 0.15 |
+| testability without db/provider/frontend | 0.10 |
+| tenant safety clarity | 0.10 |
+| future L4 visibility value | 0.10 |
+| no fake KPI/Brain risk | 0.08 |
+| no autonomous decision risk | 0.06 |
+| no sensitive automatic decision risk | 0.03 |
+| reusability as L3 pattern | 0.03 |
+
+### Selected A-027.7 Batch (10)
+
+| # | UCE ID | Candidate | Type | Source Wave | Package | Current Level | Target Level | Why Selected | L3 Boundary |
+| ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | UCE-009 | document_workflow | NEW_MODULE | A-027.2 | document_workflow | L2 | expansion_L3_DETERMINISTIC_LOGIC | document routing readiness logic has high value and low blast radius | no dispatch execution, no mutation |
+| 2 | UCE-011 | order_decree_registry | NEW_MODULE | A-027.2 | order_decree_registry | L2 | expansion_L3_DETERMINISTIC_LOGIC | governance registry readiness classification is deterministic | no decree enforcement |
+| 3 | UCE-013 | incoming_outgoing_correspondence | NEW_MODULE | A-027.4 | incoming_outgoing_correspondence | L2 | expansion_L3_DETERMINISTIC_LOGIC | correspondence readiness and SLA-state classification is low-risk | no auto-send/close |
+| 4 | UCE-089 | document_template_library | NEW_MODULE | A-027.4 | document_template_library | L2 | expansion_L3_DETERMINISTIC_LOGIC | template lifecycle readiness is deterministic and reusable | no publish/delete execution |
+| 5 | UCE-076 | course_catalog_management | NEW_MODULE | A-027.3 | course_catalog_management | L2 | expansion_L3_DETERMINISTIC_LOGIC | catalog readiness states provide strong L4 visibility foundation | no publish execution |
+| 6 | UCE-015 | syllabus_management | NEW_MODULE | A-027.2 | syllabus_management | L2 | expansion_L3_DETERMINISTIC_LOGIC | syllabus readiness logic is high-value and low side-effect | no approval execution |
+| 7 | UCE-014 | curriculum_mapping | NEW_MODULE | A-027.2 | curriculum_mapping | L2 | expansion_L3_DETERMINISTIC_LOGIC | curriculum traceability readiness logic is deterministic | no automatic curriculum mutation |
+| 8 | UCE-074 | prerequisite_management | NEW_MODULE | A-027.3 | prerequisite_management | L2 | expansion_L3_DETERMINISTIC_LOGIC | prerequisite readiness/risk classification is deterministic | no automatic enrollment enforcement |
+| 9 | UCE-092 | degree_audit | NEW_MODULE | A-027.3 | degree_audit | L2 | expansion_L3_DETERMINISTIC_LOGIC | registrar readiness/risk summary adds high university value | no graduation decision execution |
+| 10 | UCE-075 | transfer_credit_management | NEW_MODULE | A-027.3 | transfer_credit_management | L2 | expansion_L3_DETERMINISTIC_LOGIC | transfer-credit evidence completeness rules are deterministic | no automatic credit award |
+
+### A-027.7 Expansion L3 Deterministic Logic Standard
+
+- NEW_MODULE: deterministic status/readiness/risk/next-step classification only; human review mandatory where sensitive.
+- INTEGRATION: readiness classification only; provider profile and failure-mode readiness; no live call, no credential use.
+- REPORT_DASHBOARD: evidence/source readiness only; no frontend, no KPI computation, no synthetic values.
+- BRAIN_SIGNAL and AUDIT_EVIDENCE_CAPABILITY: readiness classification only; no execution, no recommendation enforcement.
+- AUTONOMOUS candidates: remain non-executing; no send/approve/mutate operations.
+
+Common L3 output fields:
+
+- tenant_id, module, uce_id, maturity_level="L3", expansion_layer="university_completeness"
+- deterministic_logic_ready=True
+- readiness_status, risk_band, evidence_completeness, missing_evidence, recommended_next_step
+- human_review_required, allowed_actions, forbidden_actions, safety_flags
+- next_maturity_gap="L4 operational visibility/API surface required"
+
+Common L3 safety flags:
+
+- no_api_claim=True
+- no_frontend_claim=True
+- no_provider_call=True
+- no_credential_use=True
+- no_kpi_value_claim=True
+- no_brain_execution=True
+- no_autonomous_execution=True
+- no_external_side_effects=True
+- no_l4_claim=True
+- no_l5_claim=True
+- no_l6_claim=True
+
+### Expected Runtime Files (A-027.7-RUNTIME)
+
+| File | Expected Action | Reason |
+| --- | --- | --- |
+| selected backend/app/modules/<module>/service.py | UPDATE_IN_RUNTIME | add deterministic L3 readiness logic functions |
+| backend/tests/test_a0277_expansion_l2_to_l3_deterministic_logic.py | CREATE_IN_RUNTIME | targeted deterministic logic validation |
+| SBS_UB.md | UPDATE_IN_RUNTIME | runtime closure, counters and evidence |
+| SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md | UPDATE_IN_RUNTIME | mark selected candidates with L3 logic status |
+| A-027.7-RUNTIME report | CREATE_IN_RUNTIME | runtime evidence closure |
+
+### A-027.7 Runtime Test Plan (Planned)
+
+- import validation
+- existing L2 contract intact checks
+- L3 function callable checks
+- tenant fail-closed checks
+- deterministic output checks
+- readiness classification checks
+- risk band checks
+- evidence completeness and missing evidence checks
+- recommended next-step checks
+- human review boundary checks
+- anti-inflation checks
+- no API/frontend/provider/KPI/Brain/autonomy checks
+- no L4+ claim checks
+
+Expected runtime test range: 80–180.
+
+### Expected Expansion Metrics (Spec-Only)
+
+Current locked:
+
+- expansion_L2_foundation_count = 67
+- expansion_runtime_implemented_count = 67
+
+If A-027.7 runtime passes for N selected candidates:
+
+- A0277_l3_logic_count = N
+- expansion_L3_logic_count = N
+- expansion_L2_foundation_count remains 67
+- expansion_runtime_implemented_count remains 67
+- baseline_impact = 0
+- extension_impact = 0
+
+### Anti-Fake / Anti-Inflation Review
+
+- spec-only: no runtime code or tests changed in A-027.7-SPEC
+- no fake L3 implementation claim in this phase
+- no KPI fabrication, no Brain execution, no autonomous execution
+- baseline and extension metrics remain unchanged
+- expansion plane remains isolated from baseline and extension planes
+
+### Status
+
+- A-027.7-SPEC: COMPLETE (planning/docs only)
+- next_action_id: A-027.7-RUNTIME
