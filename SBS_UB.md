@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
     - status: ready_for_A-027.4.B1
-    - current_stage: A-027.3.R1 complete / UCE ID runtime evidence reconciled
-    - last_completed_action_id: A-027.3.R1
+    - current_stage: A-027.3.R2 complete / package metadata UCE IDs reconciled
+    - last_completed_action_id: A-027.3.R2
     - next_action_id: A-027.4.B1
-    - updated_at: 2026-05-12 (A-027.3.R1 complete: degree_audit UCE corrected to UCE-092, transfer_credit_management corrected to UCE-075, tests passed; A-027.4.B1 rerun required before A-027.4-RUNTIME)
+    - updated_at: 2026-05-12 (A-027.3.R2 complete: degree_audit package metadata corrected to UCE-092 and transfer_credit_management package metadata corrected to UCE-075; A-027.4.B1 rerun required before A-027.4-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -133,6 +133,20 @@
     - no_baseline_extension_metric_change: PASS
     - safety_decision: A-027.4.B1 must be rerun before A-027.4-RUNTIME
     - report_file: A-027.3.R1-UCE_ID_RUNTIME_EVIDENCE_RECONCILIATION_REPORT.md
+    - final_verdict: PASS_AUTHORITATIVE
+    - next_action_id: A-027.4.B1
+- A-027.3.R2 execution block:
+    - mode: package_metadata_uce_reconciliation_only
+    - purpose: reconcile_remaining_a0273_package_uce_metadata_to_canonical_registry
+    - corrected_package_metadata: degree_audit UCE-081->UCE-092, transfer_credit_management UCE-082->UCE-075
+    - file_scope: backend/app/modules/degree_audit/__init__.py + backend/app/modules/transfer_credit_management/__init__.py
+    - targeted_pytest: PASS (tests/test_a0273_new_module_foundation_batch2.py)
+    - continuity_pytest: PASS (tests/test_a0272_p0_new_module_foundation_contracts.py + tests/test_a0273_new_module_foundation_batch2.py)
+    - business_logic_changes: none
+    - no_maturity_movement: PASS
+    - no_baseline_extension_metric_change: PASS
+    - safety_decision: A-027.4.B1 must be rerun before A-027.4-RUNTIME
+    - report_file: A-027.3.R2-PACKAGE_METADATA_UCE_ID_RECONCILIATION_REPORT.md
     - final_verdict: PASS_AUTHORITATIVE
     - next_action_id: A-027.4.B1
 - A-027.4-SPEC execution block:
