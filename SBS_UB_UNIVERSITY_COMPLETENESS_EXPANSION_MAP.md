@@ -1105,7 +1105,62 @@ Baseline remains unchanged:
 - Baseline/extension separation preserved.
 - Expansion counters remain unchanged during SPEC.
 
+## 9. A-027.4-RUNTIME Completion
+
+### Implementation Summary
+
+- Selected count: 15 modules
+- Implementation class: L2 foundation contracts only
+- Files created: 30 (15 __init__.py + 15 service.py + 1 test file)
+- Docker tests: 487 PASSED
+- Import sanity: PASS
+- Scope validation: NO FORBIDDEN CONTENT
+- Runtime status: COMPLETED
+
+### Implemented Modules
+
+| UCE ID | Module | Domain | Initial Target | Lifecycle Statuses | Allowed Actions | Forbidden Actions | Sensitive Boundary | Evidence |
+|---|---|---|---|---|---|---|---|---|
+| UCE-081 | disability_support_services | Student Support | L2 | REQUESTED, DOCUMENTATION_REVIEW, ACCOMMODATION_REVIEW, APPROVED_MANUAL, CLOSED | REVIEW_SUPPORT_REQUEST, REQUEST_DOCUMENTATION, MARK_READY_FOR_ACCOMMODATION_REVIEW | AUTO_APPROVE_ACCOMMODATION, AUTO_DENY_SUPPORT, AUTO_DISCLOSE_DISABILITY_DATA | no_medical_diagnosis, no_automatic_accommodation_decision, no_disclosure | support_request, consent_record, documentation_evidence |
+| UCE-017 | dormitory_management | Campus Operations | L2 | APPLICATION_SUBMITTED, ELIGIBILITY_REVIEW, ROOM_ASSIGNMENT_REVIEW, APPROVED_MANUAL, CHECKED_OUT | REVIEW_DORMITORY_APPLICATION, REQUEST_ELIGIBILITY_EVIDENCE, MARK_READY_FOR_MANUAL_ROOM_REVIEW | AUTO_ASSIGN_ROOM, AUTO_EVICT_STUDENT, AUTO_CHANGE_HOUSING_FEE | no_automatic_room_assignment, no_automatic_eviction, no_automatic_fee_changes | housing_application, eligibility_record, room_inventory_reference |
+| UCE-013 | incoming_outgoing_correspondence | Communications | L2 | RECEIVED, REGISTERED, ROUTING_REVIEW, RESPONSE_PENDING, CLOSED | REGISTER_CORRESPONDENCE, ROUTE_FOR_REVIEW, REQUEST_RESPONSE_EVIDENCE | AUTO_SEND_OFFICIAL_RESPONSE, AUTO_DELETE_CORRESPONDENCE, AUTO_CLOSE_WITHOUT_REVIEW | no_automatic_response, no_automatic_deletion, no_automatic_closure | correspondence_record, routing_log, response_draft_reference |
+| UCE-057 | staff_probation_review | Faculty Lifecycle | L2 | PROBATION_STARTED, MANAGER_REVIEW, HR_REVIEW, DECISION_PENDING, CLOSED | REVIEW_PROBATION_RECORD, REQUEST_MANAGER_FEEDBACK, MARK_READY_FOR_HR_DECISION | AUTO_CONFIRM_EMPLOYMENT, AUTO_TERMINATE_EMPLOYEE, AUTO_CHANGE_CONTRACT | no_automatic_employment_decision, no_automatic_termination, no_automatic_contract_change | probation_record, manager_feedback, hr_review_note |
+| UCE-060 | timesheet_management | HR / Personnel | L2 | DRAFT, SUBMITTED, MANAGER_REVIEW, HR_REVIEW, CLOSED | REVIEW_TIMESHEET, REQUEST_ATTENDANCE_EVIDENCE, MARK_READY_FOR_APPROVAL_REVIEW | AUTO_APPROVE_TIMESHEET, AUTO_CHANGE_WORK_HOURS, AUTO_TRIGGER_PAYROLL | no_automatic_approval, no_automatic_hour_changes, no_automatic_payroll_trigger | timesheet_record, attendance_reference, manager_review |
+| UCE-061 | faculty_attestation | Faculty Lifecycle | L2 | ATTESTATION_PLANNED, EVIDENCE_COLLECTION, COMMITTEE_REVIEW, DECISION_PENDING, CLOSED | REVIEW_ATTESTATION_CASE, REQUEST_EVIDENCE, MARK_READY_FOR_COMMITTEE_REVIEW | AUTO_ATTEST_FACULTY, AUTO_CHANGE_RANK, AUTO_CHANGE_CONTRACT_STATUS | no_automatic_attestation, no_automatic_rank_change, no_automatic_contract_status_change | attestation_case, teaching_evidence, committee_record |
+| UCE-067 | teaching_load_contracts | Workload / Timetable | L2 | DRAFT, LOAD_REVIEW, CONTRACT_REVIEW, APPROVED_MANUAL, ARCHIVED | REVIEW_TEACHING_LOAD_CONTRACT, REQUEST_LOAD_EVIDENCE, MARK_READY_FOR_MANUAL_APPROVAL | AUTO_ASSIGN_TEACHING_LOAD, AUTO_CHANGE_CONTRACT, AUTO_APPROVE_OVERLOAD | no_automatic_load_assignment, no_automatic_contract_changes, no_automatic_overload_approval | teaching_load_record, contract_reference, department_approval |
+| UCE-073 | elective_course_selection | Academic Affairs | L2 | SELECTION_OPEN, STUDENT_SELECTION_REVIEW, CAPACITY_REVIEW, APPROVED_MANUAL, CLOSED | REVIEW_ELECTIVE_SELECTION, REQUEST_CAPACITY_EVIDENCE, MARK_READY_FOR_REGISTRATION_REVIEW | AUTO_REGISTER_STUDENT, AUTO_OVERRIDE_CAPACITY, AUTO_CHANGE_STUDENT_SELECTION | no_automatic_student_registration, no_automatic_capacity_override, no_automatic_selection_changes | student_selection, course_capacity, eligibility_reference |
+| UCE-077 | thesis_dissertation_management | Academic Affairs | L2 | TOPIC_PROPOSED, SUPERVISOR_REVIEW, COMMITTEE_REVIEW, DEFENSE_READY_REVIEW, CLOSED | REVIEW_THESIS_RECORD, REQUEST_SUPERVISOR_EVIDENCE, MARK_READY_FOR_COMMITTEE_REVIEW | AUTO_APPROVE_TOPIC, AUTO_ASSIGN_GRADE, AUTO_APPROVE_DEFENSE | no_automatic_topic_approval, no_automatic_grade_assignment, no_automatic_defense_approval | thesis_topic, supervisor_record, committee_decision |
+| UCE-078 | academic_integrity_case_management | Assessment / Exams | L2 | CASE_OPENED, EVIDENCE_COLLECTION, COMMITTEE_REVIEW, DECISION_PENDING, CLOSED | REVIEW_INTEGRITY_CASE, REQUEST_EVIDENCE, MARK_READY_FOR_HUMAN_DECISION | AUTO_ACCUSATION, AUTO_PENALTY, AUTO_CHANGE_GRADE | no_automatic_academic_misconduct_decision, no_penalty_automation, no_automatic_grade_change | case_record, evidence_bundle, committee_record |
+| UCE-082 | student_financial_hardship | Student Support | L2 | REQUESTED, DOCUMENTATION_REVIEW, COMMITTEE_REVIEW, DECISION_PENDING, CLOSED | REVIEW_HARDSHIP_REQUEST, REQUEST_FINANCIAL_EVIDENCE, MARK_READY_FOR_COMMITTEE_REVIEW | AUTO_APPROVE_AID, AUTO_REJECT_AID, AUTO_CHANGE_BILLING_BALANCE | no_automatic_aid_approval, no_automatic_aid_rejection, no_automatic_billing_changes | hardship_request, financial_evidence, committee_record |
+| UCE-085 | joint_program_management | International Office | L2 | PROPOSED, PARTNER_REVIEW, ACADEMIC_REVIEW, APPROVED_MANUAL, ACTIVE, CLOSED | REVIEW_JOINT_PROGRAM, REQUEST_PARTNER_EVIDENCE, MARK_READY_FOR_ACADEMIC_REVIEW | AUTO_APPROVE_PROGRAM, AUTO_SIGN_PARTNER_AGREEMENT, AUTO_ENROLL_STUDENTS | no_automatic_program_approval, no_automatic_partner_agreement_signing, no_automatic_student_enrollment | program_proposal, partner_record, academic_approval |
+| UCE-086 | inbound_exchange_management | International Office | L2 | NOMINATION_RECEIVED, DOCUMENT_REVIEW, ELIGIBILITY_REVIEW, APPROVED_MANUAL, CLOSED | REVIEW_INBOUND_EXCHANGE, REQUEST_DOCUMENTATION, MARK_READY_FOR_MANUAL_APPROVAL | AUTO_APPROVE_EXCHANGE, AUTO_ISSUE_VISA_DECISION, AUTO_ENROLL_STUDENT | no_automatic_exchange_approval, no_automatic_visa_decision, no_automatic_student_enrollment | nomination_record, documents, eligibility_review |
+| UCE-087 | outbound_exchange_management | International Office | L2 | APPLICATION_SUBMITTED, ELIGIBILITY_REVIEW, PARTNER_REVIEW, APPROVED_MANUAL, CLOSED | REVIEW_OUTBOUND_EXCHANGE, REQUEST_ELIGIBILITY_EVIDENCE, MARK_READY_FOR_PARTNER_REVIEW | AUTO_APPROVE_MOBILITY, AUTO_SUBMIT_TO_PARTNER, AUTO_CHANGE_ACADEMIC_RECORD | no_automatic_exchange_approval, no_automatic_partner_submission, no_automatic_academic_record_changes | application_record, eligibility_evidence, partner_review |
+| UCE-089 | document_template_library | Document Workflow | L2 | TEMPLATE_DRAFT, OWNER_REVIEW, LEGAL_REVIEW, APPROVED_MANUAL, ARCHIVED | REVIEW_TEMPLATE, REQUEST_LEGAL_EVIDENCE, MARK_READY_FOR_TEMPLATE_APPROVAL | AUTO_APPROVE_TEMPLATE, AUTO_PUBLISH_TEMPLATE, AUTO_DELETE_TEMPLATE | no_automatic_template_approval, no_automatic_template_publication, no_automatic_template_deletion | template_content, owner_review, legal_review |
+
+### Expansion Metrics After A-027.4-RUNTIME
+
+- A0272_implemented_foundation_count = 11
+- A0273_implemented_foundation_count = 12
+- A0274_implemented_foundation_count = 15 ✓
+- expansion_L2_foundation_count = 38 ✓
+- expansion_runtime_implemented_count = 38 ✓
+- baseline_impact = 0 ✓
+- extension_impact = 0 ✓
+
+### Baseline Metrics Unchanged
+
+- L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 ✓
+- maturity_arithmetic_check=PASS ✓
+
+### Verification Evidence
+
+- Docker targeted test: 487 tests PASSED
+- Import sanity: PASS (all 15 modules + services import successfully)
+- Scope validation: PASS (no forbidden content found)
+- Anti-inflation: PASS (no API routes, no frontend, no provider calls, no KPI, no Brain, no autonomous execution, no L3+ claims)
+- Git hygiene: PASS (16 untracked files: 15 module directories + 1 test file)
+
 ### Next Action
 
-- next_action_id: A-027.4-RUNTIME
-- scope: implement 15 selected NEW_MODULE L2 foundation contracts
+- next_action_id: A-027.5-SPEC
+- scope: select and plan next controlled expansion batch
