@@ -1659,7 +1659,7 @@ Baseline remains unchanged:
 - implementation_class: L2 envelope foundation contracts only
 - package_files_created: 36 (18 __init__.py + 18 service.py)
 - test_file_created: backend/tests/test_a0276_workflow_report_policy_brain_envelopes.py
-- targeted_docker_pytest: PASS (253 collected, 252 passed, 1 warning)
+- targeted_docker_pytest: PASS (253 passed, 1 warning)
 - import_sanity: PASS (IMPORT_SANITY_PASS modules=18)
 - continuity_pytest_optional: PASS (A-027.2 through A-027.6, 1203 passed, 1 warning)
 

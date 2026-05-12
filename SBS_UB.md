@@ -280,7 +280,7 @@
     - type_distribution: WORKFLOW=4, REPORT_DASHBOARD=4, POLICY_CONTROL=3, BRAIN_SIGNAL=4, AUDIT_EVIDENCE_CAPABILITY=1, AUTONOMOUS_WORKFLOW_CANDIDATE=2
     - runtime_scope: backend L2 envelope contracts (__init__.py + service.py) + targeted tests only
     - files_created: 36 module files + 1 test file
-    - targeted_docker_pytest: PASS (252 passed)
+    - targeted_docker_pytest: PASS (253 passed)
     - import_sanity: PASS (IMPORT_SANITY_PASS modules=18)
     - optional_continuity_pytest: PASS (A-027.2 + A-027.3 + A-027.4 + A-027.5 + A-027.6, 1203 passed)
     - no_brain_execution: PASS
