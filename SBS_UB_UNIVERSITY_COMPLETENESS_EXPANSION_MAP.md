@@ -1467,3 +1467,77 @@ Baseline remains unchanged:
 
 - next_action_id: A-027.5-RUNTIME
 - scope: implement selected 11 generic L2 country-adapter-ready integration contracts with deterministic no-live-call boundaries.
+
+## A-027.5-RUNTIME — Country-Adapter Integration Contract Foundation
+
+### Runtime Summary
+
+- Selected integrations implemented: 11
+- Implementation class: L2 country-adapter-ready integration contract foundations
+- Files created: 22 module files + 1 targeted test file
+- Targeted Docker tests: PASS (199 passed)
+- Import sanity: PASS (IMPORT_SANITY_PASS modules=11)
+- Optional continuity (A-027.2 through A-027.5): PASS (950 passed)
+- No provider calls, no credentials, no secrets, no fake success, no country hardcode in core
+
+### Implemented Integrations
+
+| Original UCE ID | Original Candidate | Generic Module | KZ Provider Profile | Future SA/GCC Placeholder | Runtime Status | Mapping Status | Next Target | Baseline Impact | Extension Impact | Provider Calls | Credential Use |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| UCE-024 | platonus_integration | student_information_system_integration | PLATONUS_KZ | SA_SIS_PROVIDER | IMPLEMENTED_L2_INTEGRATION_CONTRACT | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | L3 deterministic integration readiness logic | NO | NO | NO | NO |
+| UCE-025 | one_c_integration | finance_erp_integration | ONE_C_KZ | SA_ERP_PROVIDER | IMPLEMENTED_L2_INTEGRATION_CONTRACT | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | L3 deterministic integration readiness logic | NO | NO | NO | NO |
+| UCE-030 | egov_integration | government_services_integration | EGOV_KZ | SA_GOVERNMENT_SERVICES_PROVIDER | IMPLEMENTED_L2_INTEGRATION_CONTRACT | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | L3 deterministic integration readiness logic | NO | NO | NO | NO |
+| UCE-112 | ministry_reporting_integration | regulatory_reporting_integration | MINISTRY_KZ | SA_REGULATORY_REPORTING_PROVIDER | IMPLEMENTED_L2_INTEGRATION_CONTRACT | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | L3 deterministic integration readiness logic | NO | NO | NO | NO |
+| UCE-109 | eds_signature_integration | digital_signature_integration | EDS_KZ | SA_DIGITAL_SIGNATURE_PROVIDER | IMPLEMENTED_L2_INTEGRATION_CONTRACT | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | L3 deterministic integration readiness logic | NO | NO | NO | NO |
+| UCE-110 | payment_gateway_integration | payment_gateway_integration | PAYMENT_GATEWAY_KZ | SA_PAYMENT_PROVIDER | IMPLEMENTED_L2_INTEGRATION_CONTRACT | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | L3 deterministic integration readiness logic | NO | NO | NO | NO |
+| UCE-028 | sms_gateway_integration | notification_gateway_integration | SMS_GATEWAY_KZ | SA_SMS_PROVIDER | IMPLEMENTED_L2_INTEGRATION_CONTRACT | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | L3 deterministic integration readiness logic | NO | NO | NO | NO |
+| UCE-027 | email_gateway_integration | email_gateway_integration | EMAIL_GATEWAY_KZ | SA_EMAIL_PROVIDER | IMPLEMENTED_L2_INTEGRATION_CONTRACT | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | L3 deterministic integration readiness logic | NO | NO | NO | NO |
+| UCE-106 | lms_integration | learning_management_system_integration | LMS_KZ | SA_LMS_PROVIDER | IMPLEMENTED_L2_INTEGRATION_CONTRACT | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | L3 deterministic integration readiness logic | NO | NO | NO | NO |
+| UCE-108 | idp_sso_integration | identity_provider_integration | IDP_SSO_KZ | SA_IDENTITY_PROVIDER | IMPLEMENTED_L2_INTEGRATION_CONTRACT | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | L3 deterministic integration readiness logic | NO | NO | NO | NO |
+| UCE-113 | hr_payroll_system_integration | hr_payroll_integration | HR_PAYROLL_KZ | SA_HR_PAYROLL_PROVIDER | IMPLEMENTED_L2_INTEGRATION_CONTRACT | L2_INTEGRATION_CONTRACT_IMPLEMENTED_AFTER_A0275 | L3 deterministic integration readiness logic | NO | NO | NO | NO |
+
+### Country-Adapter Evidence
+
+- Kazakhstan-first profile metadata present for all 11 modules.
+- Saudi/GCC placeholders preserved for future adapter profiles without core rewrites.
+- Country-neutral generic module naming used for normalized integrations.
+- Safety flag `no_country_hardcode_in_core=True` enforced in all modules.
+
+### Runtime Validation Evidence
+
+- Targeted test file: backend/tests/test_a0275_country_adapter_integration_contracts.py
+- Targeted Docker result: 199 passed, 0 failed
+- Import sanity result: IMPORT_SANITY_PASS modules=11
+- Optional continuity result: 950 passed, 0 failed (A-027.2 to A-027.5)
+- Scope validation: no forbidden runtime behaviors detected
+
+### Anti-Inflation and Safety Review
+
+- No API routes or router wiring
+- No frontend changes
+- No provider runtime calls
+- No credential usage and no secret storage
+- No fake integration success claims
+- No KPI/Brain/autonomous behavior
+- No L3+ claims in runtime contracts
+
+### Expansion Metrics After A-027.5-RUNTIME
+
+- A0272_implemented_foundation_count = 11
+- A0273_implemented_foundation_count = 12
+- A0274_implemented_foundation_count = 15
+- A0275_integration_contract_count = 11
+- expansion_L2_foundation_count = 49
+- expansion_runtime_implemented_count = 49
+- baseline_impact = 0
+- extension_impact = 0
+
+### Baseline and Extension Separation
+
+- Baseline unchanged: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+- Extension unchanged: extension_total_count=25, total_tracked_modules=175
+
+### Next Action
+
+- next_action_id: A-027.6-SPEC
+- scope: plan next controlled expansion/integration depth batch without runtime code in spec phase
