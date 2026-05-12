@@ -1541,3 +1541,112 @@ Baseline remains unchanged:
 
 - next_action_id: A-027.6-SPEC
 - scope: plan next controlled expansion/integration depth batch without runtime code in spec phase
+
+## A-027.6-SPEC - WORKFLOW / REPORT / POLICY / BRAIN SIGNAL ENVELOPE FOUNDATION SELECTION
+
+### Source-of-Truth Anchors
+
+- A-027.5-RUNTIME status confirmed as complete before A-027.6-SPEC planning.
+- Expansion runtime implemented count remains locked at 49 during SPEC (no runtime changes).
+- Candidate source constrained to A-027.1 accepted non-module types only.
+
+### Accepted Non-Module Inventory (A-027.1 Extraction)
+
+| Candidate Type | Accepted Count | Included in A-027.6 Selection Pool | Notes |
+| --- | ---: | ---: | --- |
+| WORKFLOW | 19 | 19 | non-module operational envelopes |
+| REPORT_DASHBOARD | 15 | 15 | reporting envelopes only, no frontend runtime |
+| POLICY_CONTROL | 10 | 10 | governance/policy boundary envelopes |
+| BRAIN_SIGNAL | 17 | 17 | signal registry envelopes only |
+| AUTONOMOUS_WORKFLOW_CANDIDATE | 6 | 6 | safe draft/assist envelopes only |
+| AUDIT_EVIDENCE_CAPABILITY | 1 | 1 | audit envelope foundation |
+| **Total** | **68** | **68** | accepted, non-module, non-integration pool |
+
+### Exclusion Rule Verification
+
+- Excluded all implemented A-027.2/A-027.3/A-027.4 NEW_MODULE runtime candidates.
+- Excluded all implemented A-027.5 INTEGRATION runtime candidates.
+- Excluded merged/deferred/rejected records from A-027.1 lock decisions.
+- Result: eligible pool remained accepted non-module envelope candidates only.
+
+### A-027.6 Scoring Model (SPEC)
+
+| Criterion | Weight |
+| --- | ---: |
+| Governance and compliance leverage | 0.30 |
+| Cross-domain orchestration value | 0.25 |
+| Observability and auditability impact | 0.20 |
+| Operational readiness acceleration | 0.15 |
+| Deterministic envelope feasibility (L2 foundation) | 0.10 |
+
+### Ranked Top Candidates (Pre-Selection)
+
+| Rank | UCE | Canonical Candidate | Type | Score |
+| ---: | --- | --- | --- | ---: |
+| 1 | UCE-054 | brain_decision_audit_trail | AUDIT_EVIDENCE_CAPABILITY | 4.90 |
+| 2 | UCE-049 | student_risk_signal_registry | BRAIN_SIGNAL | 4.80 |
+| 3 | UCE-050 | finance_anomaly_signal_registry | BRAIN_SIGNAL | 4.78 |
+| 4 | UCE-129 | procurement_risk_signal_registry | BRAIN_SIGNAL | 4.74 |
+| 5 | UCE-051 | academic_quality_signal_registry | BRAIN_SIGNAL | 4.70 |
+| 6 | UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | 4.68 |
+| 7 | UCE-032 | ministry_reporting_dashboard | REPORT_DASHBOARD | 4.62 |
+| 8 | UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | 4.58 |
+| 9 | UCE-031 | rector_strategy_dashboard | REPORT_DASHBOARD | 4.55 |
+| 10 | UCE-048 | data_retention_policy_control | POLICY_CONTROL | 4.54 |
+| 11 | UCE-046 | consent_management_policy | POLICY_CONTROL | 4.50 |
+| 12 | UCE-047 | third_party_risk_policy | POLICY_CONTROL | 4.48 |
+| 13 | UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | 4.46 |
+| 14 | UCE-037 | scholarship_committee_workflow | WORKFLOW | 4.43 |
+| 15 | UCE-038 | student_appeals_workflow | WORKFLOW | 4.41 |
+| 16 | UCE-098 | procurement_plan_approval_workflow | WORKFLOW | 4.38 |
+| 17 | UCE-145 | safe_evidence_summary_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | 4.35 |
+| 18 | UCE-146 | safe_task_drafting_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | 4.33 |
+
+### A-027.6 Selected Envelope Foundation Batch (18)
+
+| UCE | Canonical Candidate | Type | Priority Band | Selection Rationale |
+| --- | --- | --- | --- | --- |
+| UCE-054 | brain_decision_audit_trail | AUDIT_EVIDENCE_CAPABILITY | P0 | audit and explainability backbone across all envelope types |
+| UCE-049 | student_risk_signal_registry | BRAIN_SIGNAL | P0 | student success and intervention signal standardization |
+| UCE-050 | finance_anomaly_signal_registry | BRAIN_SIGNAL | P0 | financial risk detection envelope alignment |
+| UCE-129 | procurement_risk_signal_registry | BRAIN_SIGNAL | P0 | procurement risk and vendor control visibility |
+| UCE-051 | academic_quality_signal_registry | BRAIN_SIGNAL | P0 | academic governance quality monitoring envelope |
+| UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | P0 | legal and audit calendar exposure envelope |
+| UCE-032 | ministry_reporting_dashboard | REPORT_DASHBOARD | P0 | ministry/regulator reporting readiness envelope |
+| UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | P0 | accreditation continuity and evidence envelope |
+| UCE-031 | rector_strategy_dashboard | REPORT_DASHBOARD | P1 | executive strategy oversight envelope |
+| UCE-048 | data_retention_policy_control | POLICY_CONTROL | P0 | legal hold and retention policy control envelope |
+| UCE-046 | consent_management_policy | POLICY_CONTROL | P0 | consent governance boundary enforcement envelope |
+| UCE-047 | third_party_risk_policy | POLICY_CONTROL | P0 | external partner risk policy envelope |
+| UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | P0 | rectorate decision execution lifecycle envelope |
+| UCE-037 | scholarship_committee_workflow | WORKFLOW | P1 | high-impact academic governance workflow envelope |
+| UCE-038 | student_appeals_workflow | WORKFLOW | P1 | procedural fairness workflow envelope |
+| UCE-098 | procurement_plan_approval_workflow | WORKFLOW | P1 | controlled procurement governance workflow envelope |
+| UCE-145 | safe_evidence_summary_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | P1 | non-executing draft/evidence summarization assist envelope |
+| UCE-146 | safe_task_drafting_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | P1 | non-executing task drafting and handoff assist envelope |
+
+### Replacement Log (Non-Accepted/Merged Inputs)
+
+- Excluded UCE-010 internal_memo_routing (MERGE_WITH_OTHER_UCE in A-027.1).
+- Excluded merged/deferred/rejected non-module candidates by lock policy.
+- Selected next-highest accepted candidates to maintain 18-item batch size.
+
+### Envelope Contract Rules for A-027.6-RUNTIME
+
+- L2 deterministic envelope contracts only.
+- No autonomous execution, no side effects, no external calls.
+- No dashboard frontend implementation in runtime slice.
+- No KPI computation claims or fabricated outcomes.
+- Tenant validation fail-closed and deterministic outputs mandatory.
+
+### Metrics and Governance Boundaries
+
+- SPEC-phase metric impact: none.
+- Baseline maturity remains locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150.
+- Expansion runtime implemented count remains 49 until A-027.6-RUNTIME closes.
+- Runtime formula if pass: expansion_L2_foundation_count=49+N, expansion_runtime_implemented_count=49+N.
+
+### Status
+
+- A-027.6-SPEC: COMPLETE (planning/docs only)
+- next_action_id: A-027.6-RUNTIME
