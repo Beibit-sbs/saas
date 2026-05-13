@@ -2703,3 +2703,114 @@ Validation mode: fast direct Docker.
 - A-027.10-RUNTIME: COMPLETE
 - final_verdict: A-027.10-RUNTIME CLOSED - PASS
 - next_action_id: A-027.11-SPEC
+
+## A-027.11-SPEC — Expansion L2->L3 Deterministic Logic Batch 5 Selection
+
+### Scope and Guardrails
+
+- mode: planning_only_no_runtime_changes
+- source_of_truth_check: PASS (A-027.10-RUNTIME closed, SBS_UB control block aligned)
+- anti_inflation: PASS (no runtime changes, no maturity movement, no fake implementation claims)
+- baseline_lock: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (UNCHANGED)
+
+### Expansion Inventory Reconciliation
+
+- expansion_L2_foundation_count: 67
+- expansion_runtime_implemented_count: 67
+- already_L3_count_after_A0277_A0278_A0279_A02710: 45
+- remaining_L2_only_candidate_count: 22
+- arithmetic_check: PASS (67 - 45 = 22)
+
+### Remaining Candidate Pool (22)
+
+| UCE ID | Candidate | Type | Source Wave | Initial Risk Class | Batch 5 Decision |
+|---|---|---|---|---|---|
+| UCE-001 | staff_recruitment | NEW_MODULE | A-027.2 | sensitive_but_possible_readiness_only | SELECTED |
+| UCE-007 | disciplinary_case_management | NEW_MODULE | A-027.3 | sensitive_case_decision | DEFERRED |
+| UCE-025 | finance_erp_integration | INTEGRATION | A-027.5 | provider_dependent | DEFERRED |
+| UCE-027 | email_gateway_integration | INTEGRATION | A-027.5 | provider_dependent | DEFERRED |
+| UCE-028 | notification_gateway_integration | INTEGRATION | A-027.5 | provider_dependent | DEFERRED |
+| UCE-030 | government_services_integration | INTEGRATION | A-027.5 | provider_dependent | DEFERRED |
+| UCE-037 | scholarship_committee_workflow | WORKFLOW | A-027.6 | sensitive_but_possible_readiness_only | SELECTED |
+| UCE-038 | student_appeals_workflow | WORKFLOW | A-027.6 | sensitive_but_possible_readiness_only | SELECTED |
+| UCE-047 | third_party_risk_policy | POLICY_CONTROL | A-027.6 | policy_readiness_no_enforcement | SELECTED |
+| UCE-049 | student_risk_signal_registry | BRAIN_SIGNAL | A-027.6 | brain_signal_execution_lane | DEFERRED |
+| UCE-050 | finance_anomaly_signal_registry | BRAIN_SIGNAL | A-027.6 | brain_signal_execution_lane | DEFERRED |
+| UCE-051 | academic_quality_signal_registry | BRAIN_SIGNAL | A-027.6 | brain_signal_execution_lane | DEFERRED |
+| UCE-054 | brain_decision_audit_trail | AUDIT_EVIDENCE_CAPABILITY | A-027.6 | audit_evidence_safe_lane | SELECTED |
+| UCE-078 | academic_integrity_case_management | NEW_MODULE | A-027.4 | sensitive_case_decision | DEFERRED |
+| UCE-081 | disability_support_services | NEW_MODULE | A-027.4 | sensitive_case_decision | DEFERRED |
+| UCE-082 | student_financial_hardship | NEW_MODULE | A-027.4 | sensitive_case_decision | DEFERRED |
+| UCE-108 | identity_provider_integration | INTEGRATION | A-027.5 | provider_dependent | DEFERRED |
+| UCE-110 | payment_gateway_integration | INTEGRATION | A-027.5 | provider_dependent | DEFERRED |
+| UCE-113 | hr_payroll_integration | INTEGRATION | A-027.5 | provider_dependent | DEFERRED |
+| UCE-129 | procurement_risk_signal_registry | BRAIN_SIGNAL | A-027.6 | brain_signal_execution_lane | DEFERRED |
+| UCE-145 | safe_evidence_summary_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | A-027.6 | autonomous_execution_lane | DEFERRED |
+| UCE-146 | safe_task_drafting_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | A-027.6 | autonomous_execution_lane | DEFERRED |
+
+### Exclusion and Deferral Rules Applied
+
+1. Already L3 items from A-027.7/A-027.8/A-027.9/A-027.10 excluded from candidate pool.
+2. Provider-dependent integrations excluded for this deterministic readiness batch.
+3. Brain signal execution lane deferred to dedicated brain-signal wave.
+4. Autonomous workflow candidates deferred to autonomy-governance wave.
+5. Sensitive decision domains deferred unless strict readiness-only classification can be guaranteed.
+
+### Scoring and Batch Selection
+
+Scoring dimensions (1-5 each): deterministic_fit, evidence_availability, tenant_safety, domain_risk_manageability, implementation_isolation, anti_inflation_confidence.
+
+| UCE ID | Candidate | Score (max 30) | Selection Note |
+|---|---|---|---|
+| UCE-054 | brain_decision_audit_trail | 28 | audit-only readiness classification, no execution path |
+| UCE-047 | third_party_risk_policy | 25 | policy readiness only, explicit no enforcement |
+| UCE-001 | staff_recruitment | 24 | readiness-only classification with mandatory human review |
+| UCE-037 | scholarship_committee_workflow | 23 | workflow readiness only, no approval execution |
+| UCE-038 | student_appeals_workflow | 23 | workflow readiness only, no decision execution |
+
+Selected batch size: 5 (safety-constrained below preferred 8-12 range).
+
+### L3 Deterministic Standard for A-027.11
+
+Each selected module must add one `classify_<module>_readiness(...)` function with:
+- deterministic readiness level and risk band
+- evidence completeness score and missing evidence list
+- recommended next safe step
+- `human_review_required=true`
+- explicit `forbidden_actions` for auto-decision/auto-execution
+- tenant fail-closed behavior
+- no provider calls, no side effects, no DB mutation, no API/frontend code
+
+### Expected Runtime Files and Tests (Planning Only)
+
+- service updates: 5 files (`backend/app/modules/<selected_module>/service.py`)
+- new targeted test file: `backend/tests/test_a02711_expansion_l2_to_l3_deterministic_logic_batch5.py`
+- governance updates: `SBS_UB.md`, `SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md`, runtime report file
+
+Planned test groups:
+1. import and symbol presence
+2. L2 contract preservation
+3. classifier deterministic output
+4. tenant fail-closed validation
+5. evidence completeness and missing-evidence behavior
+6. human-review boundary and forbidden-actions validation
+7. anti-inflation forbidden content checks
+
+### Expected Metrics If A-027.11-RUNTIME Passes
+
+- A02711_l3_logic_count = N
+- expansion_L3_logic_count = 45 + N
+- expansion_L2_foundation_count = 67 (UNCHANGED)
+- expansion_runtime_implemented_count = 67 (UNCHANGED)
+- baseline_impact = 0
+- extension_impact = 0
+
+If N=5:
+- A02711_l3_logic_count = 5
+- expansion_L3_logic_count = 50
+
+### Status
+
+- A-027.11-SPEC: COMPLETE
+- final_verdict: SPEC_COMPLETE_PASS
+- next_action_id: A-027.11-RUNTIME
