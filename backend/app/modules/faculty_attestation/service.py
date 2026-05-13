@@ -53,3 +53,92 @@ def get_faculty_attestation_foundation_contract(tenant_id, payload=None):
         },
         "safety_flags": SAFETY_FLAGS,
     }
+
+
+# --- L3 Deterministic Readiness Classifier (A-027.9) ---
+
+A0279_L3_READY = True
+
+
+def classify_faculty_attestation_readiness(tenant_id: int, evidence: dict | None = None) -> dict:
+    """Deterministic L3 readiness classifier. No decision execution, no autonomy, no provider calls."""
+    validate_tenant_id(tenant_id)
+    required_evidence = [
+        "faculty_identity_present",
+        "attestation_period_defined",
+        "required_documents_list_available",
+        "committee_review_required",
+        "compliance_policy_available",
+    ]
+    evidence = evidence or {}
+    present_evidence = [key for key in required_evidence if key in evidence]
+    missing_evidence = [key for key in required_evidence if key not in evidence]
+    present_count = len(present_evidence)
+
+    if present_count == len(required_evidence):
+        readiness_status = "READY_FOR_REVIEW"
+        risk_band = "LOW"
+        recommended_next_step = "READY_FOR_HUMAN_REVIEW"
+    elif present_count >= 3:
+        readiness_status = "PARTIAL_EVIDENCE"
+        risk_band = "MEDIUM"
+        recommended_next_step = "REQUEST_MISSING_EVIDENCE"
+    elif present_count >= 1:
+        readiness_status = "INCOMPLETE_EVIDENCE"
+        risk_band = "HIGH"
+        recommended_next_step = "REQUEST_MISSING_EVIDENCE"
+    else:
+        readiness_status = "BLOCKED_MISSING_EVIDENCE"
+        risk_band = "BLOCKED"
+        recommended_next_step = "BLOCK_UNTIL_REQUIRED_EVIDENCE_PRESENT"
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": UCE_ID,
+        "maturity_level": "L3",
+        "expansion_layer": "university_completeness",
+        "deterministic_logic_ready": True,
+        "readiness_status": readiness_status,
+        "risk_band": risk_band,
+        "evidence_completeness": (present_count * 100) // len(required_evidence),
+        "required_evidence": required_evidence,
+        "present_evidence": present_evidence,
+        "missing_evidence": missing_evidence,
+        "recommended_next_step": recommended_next_step,
+        "human_review_required": True,
+        "allowed_actions": [
+            "ATTESTATION_READINESS_CLASSIFICATION",
+            "COMPLIANCE_EVIDENCE_CHECK",
+            "HUMAN_REVIEW_PREPARATION",
+        ],
+        "forbidden_actions": [
+            "AUTO_PASS_ATTESTATION",
+            "AUTO_FAIL_ATTESTATION",
+            "AUTO_CHANGE_EMPLOYMENT_STATUS",
+            "AUTO_APPLY_SANCTION",
+            "MUTATE_HR_RECORD",
+        ],
+        "l2_contract_preserved": True,
+        "tenant_scoped": True,
+        "l3_boundary": "module_readiness_only_no_decision_execution_or_automation",
+        "next_maturity_gap": "L4 operational visibility/API surface required",
+        "safety_flags": {
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_provider_call": True,
+            "no_credential_use": True,
+            "no_kpi_value_claim": True,
+            "no_brain_execution": True,
+            "no_autonomous_execution": True,
+            "no_external_side_effects": True,
+            "no_db_mutation": True,
+            "no_decision_execution": True,
+            "human_review_required": True,
+            "no_l4_claim": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+            "tenant_fail_closed": True,
+            "l2_contract_preserved": True,
+        },
+    }

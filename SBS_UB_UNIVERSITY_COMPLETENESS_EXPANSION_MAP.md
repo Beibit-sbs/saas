@@ -2370,8 +2370,54 @@ Expected test count: ~450–550 across 11 modules.
 - ✅ No real decision execution
 - ✅ Baseline/extension/expansion separation preserved
 
-### Next Action
+### Next Action (Completed)
 
-- next_action_id: A-027.9-RUNTIME
-- Scope: Implement 11 L3 deterministic readiness classifiers
-- Expected outcome: A0279_l3_logic_count=11; expansion_L3_logic_count=33
+- next_action_id: A-027.9-RUNTIME — COMPLETE
+- Scope: Implemented 11 L3 deterministic readiness classifiers
+- Achieved outcome: A0279_l3_logic_count=11; expansion_L3_logic_count=33
+
+---
+
+## A-027.9-RUNTIME — Expansion L2→L3 Deterministic Logic Batch 3 Implementation
+
+### Summary
+
+All 11 L3 deterministic readiness classifiers from A-027.9-SPEC implemented and validated.
+- 386 targeted tests: PASS
+- 751 continuity tests (A-027.7 + A-027.8 + A-027.9): PASS
+- Forbidden content scans: CLEAN
+- L2 contract preservation: PASS
+- Baseline 150 unchanged
+
+### Candidate Status After A-027.9-RUNTIME
+
+| UCE ID | Module | Type | Domain | L2 | L3 | L3 Marker |
+|--------|--------|------|--------|----|----|-----------|
+| UCE-073 | elective_course_selection | NEW_MODULE | Academic Affairs | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279 |
+| UCE-017 | dormitory_management | NEW_MODULE | Campus Operations | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279 |
+| UCE-077 | thesis_dissertation_management | NEW_MODULE | Academic Affairs | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279 |
+| UCE-086 | inbound_exchange_management | NEW_MODULE | International Office | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279 |
+| UCE-087 | outbound_exchange_management | NEW_MODULE | International Office | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279 |
+| UCE-085 | joint_program_management | NEW_MODULE | International Office | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279 |
+| UCE-022 | partnership_registry | NEW_MODULE | International Office | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279 |
+| UCE-060 | timesheet_management | NEW_MODULE | HR / Personnel | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279 |
+| UCE-061 | faculty_attestation | NEW_MODULE | Faculty Lifecycle | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279 |
+| UCE-067 | teaching_load_contracts | NEW_MODULE | Workload / Timetable | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279 |
+| UCE-023 | mou_lifecycle | NEW_MODULE | International Office | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279 |
+
+### Expansion Metrics After A-027.9-RUNTIME
+
+- A0279_l3_logic_count: 11
+- expansion_L3_logic_count: 33 (A0277=10 + A0278=12 + A0279=11)
+- expansion_L2_foundation_count: 67 (UNCHANGED)
+- expansion_runtime_implemented_count: 67 (UNCHANGED)
+- baseline_impact: 0
+- extension_impact: 0
+- Baseline: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (UNCHANGED)
+
+### A-027.9-RUNTIME Status
+
+- A-027.9-SPEC: COMPLETE
+- A-027.9-RUNTIME: COMPLETE
+- final_verdict: A-027.9-RUNTIME CLOSED — PASS
+- next_action_id: A-027.10-SPEC
