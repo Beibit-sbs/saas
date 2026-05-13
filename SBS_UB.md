@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-027.12-SPEC
-    - current_stage: A-027.11-RUNTIME complete / expansion L2-to-L3 deterministic logic batch 5 implemented
-    - last_completed_action_id: A-027.11-RUNTIME
-    - next_action_id: A-027.12-SPEC
-    - updated_at: 2026-05-13 (A-027.11-RUNTIME complete; 5 deterministic L3 classifiers implemented, expansion L3 moved 45->50, baseline 150 unchanged)
+    - status: ready_for_next_deferred_lane_or_L4_visibility_spec
+    - current_stage: A-027.12-SPEC complete / remaining expansion L2-only candidates classified
+    - last_completed_action_id: A-027.12-SPEC
+    - next_action_id: A-028.0-SPEC
+    - updated_at: 2026-05-13 (A-027.12-SPEC complete; remaining 17 expansion L2-only candidates classified into deferred lanes, no safe runtime batch selected)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -518,6 +518,29 @@
     - runtime_report_file: A-027.11-RUNTIME-EXPANSION_L2_TO_L3_DETERMINISTIC_LOGIC_BATCH5_REPORT.md
     - final_verdict: A-027.11-RUNTIME CLOSED — PASS
     - next_action_id: A-027.12-SPEC
+- A-027.12-SPEC execution block:
+    - mode: planning_only_no_runtime_changes
+    - purpose: remaining_expansion_l2_to_l3_closure_and_deferred_lane_classification
+    - repo_hygiene_check: PASS (only unrelated untracked A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md present)
+    - a02711_runtime_commit_verified: 78b57a5 (test(wave15): A-027.11 implement fifth expansion L3 logic batch)
+    - source_of_truth_check: PASS (A-027.11-RUNTIME closed, next_action_id was A-027.12-SPEC, expansion metrics and baseline/extension anchors aligned)
+    - expansion_inventory_reconciliation: total_l2=67, already_l3_total=50 (A0277=10, A0278=12, A0279=11, A02710=12, A02711=5), remaining_l2_only=17, arithmetic_check=PASS
+    - strategic_option_evaluated: Option_B
+    - strategic_decision: CLOSE_L2_TO_L3_WITHOUT_RUNTIME
+    - rationale: remaining 17 candidates are provider-dependent integrations, brain-signal lanes, autonomy lanes, or high-sensitivity case domains not safe for constrained L3 readiness-only implementation in this wave
+    - selected_batch_size: 0
+    - selected_candidates: none
+    - deferred_candidates_count: 17
+    - deferred_lane_distribution: PROVIDER_DEPENDENT_DEFER=7, BRAIN_SIGNAL_DEFER_TO_A029=4, AUTONOMY_DEFER_TO_A030=2, SENSITIVE_BUT_POSSIBLE_READINESS_ONLY=4
+    - next_wave_recommendation: A-028.0-SPEC (L3->L4 visibility planning and deferred-lane roadmap orchestration)
+    - anti_inflation: PASS (spec-only, no runtime code/tests/API/frontend/provider calls/Brain execution/autonomy claims, no fake L3 movement)
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - expansion_metrics_locked_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, A0277_l3_logic_count=10, A0278_l3_logic_count=12, A0279_l3_logic_count=11, A02710_l3_logic_count=12, A02711_l3_logic_count=5, expansion_L3_logic_count=50, remaining_L2_only=17, baseline_impact=0, extension_impact=0
+    - expansion_metrics_expected_if_runtime_selected: none (A-027.12 runtime not selected)
+    - spec_report_file: A-027.12-SPEC-REMAINING_EXPANSION_L2_TO_L3_CLOSURE_AND_DEFERRED_LANE_REPORT.md
+    - final_verdict: A-027.12-SPEC CLOSED — PASS
+    - next_action_id: A-028.0-SPEC
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

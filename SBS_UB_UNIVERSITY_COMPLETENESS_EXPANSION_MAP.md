@@ -2858,3 +2858,93 @@ If N=5:
 - A-027.11-RUNTIME: COMPLETE
 - final_verdict: A-027.11-RUNTIME CLOSED - PASS
 - next_action_id: A-027.12-SPEC
+
+## A-027.12-SPEC — Remaining Expansion L2→L3 Closure / Deferred Lane Classification
+
+### Why Closure Analysis Is Required
+
+- after A-027.7 through A-027.11, expansion deterministic L3 overlays reached 50 out of 67 implemented expansion foundations
+- remaining candidates are concentrated in deferred-risk lanes (provider, Brain signal, autonomy, high-sensitivity human decision domains)
+- safety-over-count rule applied: do not force unsafe L3 runtime selection
+
+### Expansion Summary After A-027.11-RUNTIME
+
+- expansion_L2_foundation_count: 67
+- expansion_runtime_implemented_count: 67
+- already_l3_overlays: 50
+	- A0277_l3_logic_count: 10
+	- A0278_l3_logic_count: 12
+	- A0279_l3_logic_count: 11
+	- A02710_l3_logic_count: 12
+	- A02711_l3_logic_count: 5
+- remaining_L2_only: 17
+- baseline_impact: 0
+- extension_impact: 0
+
+### Exclusion Confirmation (Already L3)
+
+- A-027.7 excluded: 10
+- A-027.8 excluded: 12
+- A-027.9 excluded: 11
+- A-027.10 excluded: 12
+- A-027.11 excluded: 5
+- total excluded: 50
+
+### Remaining 17 Candidate Safety Classification
+
+| risk_class | count | candidates |
+|---|---:|---|
+| PROVIDER_DEPENDENT_DEFER | 7 | UCE-025, UCE-027, UCE-028, UCE-030, UCE-108, UCE-110, UCE-113 |
+| BRAIN_SIGNAL_DEFER_TO_A029 | 4 | UCE-049, UCE-050, UCE-051, UCE-129 |
+| AUTONOMY_DEFER_TO_A030 | 2 | UCE-145, UCE-146 |
+| SENSITIVE_BUT_POSSIBLE_READINESS_ONLY | 4 | UCE-007, UCE-078, UCE-081, UCE-082 |
+
+### Strategic Option Decision
+
+- option_selected: Option B
+- decision: CLOSE_L2_TO_L3_WITHOUT_RUNTIME
+- selected_runtime_candidates: 0
+- rationale: no remaining candidate satisfies constrained-safe no-provider/no-brain/no-autonomy/no-sensitive-execution boundary with sufficient confidence for immediate A-027.12 runtime
+
+### Deferred Candidate Plan
+
+| UCE ID | candidate | type | defer_reason | future_wave |
+|---|---|---|---|---|
+| UCE-025 | finance_erp_integration | INTEGRATION | provider_dependency | Provider-readiness wave |
+| UCE-027 | email_gateway_integration | INTEGRATION | provider_dependency | Provider-readiness wave |
+| UCE-028 | notification_gateway_integration | INTEGRATION | provider_dependency | Provider-readiness wave |
+| UCE-030 | government_services_integration | INTEGRATION | provider_dependency | Provider-readiness wave |
+| UCE-108 | identity_provider_integration | INTEGRATION | provider_dependency | Provider-readiness wave |
+| UCE-110 | payment_gateway_integration | INTEGRATION | provider_dependency | Provider-readiness wave |
+| UCE-113 | hr_payroll_integration | INTEGRATION | provider_dependency | Provider-readiness wave |
+| UCE-049 | student_risk_signal_registry | BRAIN_SIGNAL | brain_signal_execution_semantics | A-029 Brain signal/governance wave |
+| UCE-050 | finance_anomaly_signal_registry | BRAIN_SIGNAL | brain_signal_execution_semantics | A-029 Brain signal/governance wave |
+| UCE-051 | academic_quality_signal_registry | BRAIN_SIGNAL | brain_signal_execution_semantics | A-029 Brain signal/governance wave |
+| UCE-129 | procurement_risk_signal_registry | BRAIN_SIGNAL | brain_signal_execution_semantics | A-029 Brain signal/governance wave |
+| UCE-145 | safe_evidence_summary_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | autonomy_governance_prerequisite | A-030 human-approved autonomous wave |
+| UCE-146 | safe_task_drafting_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | autonomy_governance_prerequisite | A-030 human-approved autonomous wave |
+| UCE-007 | disciplinary_case_management | NEW_MODULE | high_sensitivity_case_decision_risk | A-027.13-SPEC final sensitive L3 batch |
+| UCE-078 | academic_integrity_case_management | NEW_MODULE | high_sensitivity_case_decision_risk | A-027.13-SPEC final sensitive L3 batch |
+| UCE-081 | disability_support_services | NEW_MODULE | eligibility_and_sensitive_support_decision_risk | A-027.13-SPEC final sensitive L3 batch |
+| UCE-082 | student_financial_hardship | NEW_MODULE | aid_eligibility_and_financial_decision_risk | A-027.13-SPEC final sensitive L3 batch |
+
+### Expected Metrics (SPEC, No Runtime Selected)
+
+- expansion_L3_logic_count remains 50
+- remaining_L2_only remains 17
+- expansion_L2_foundation_count remains 67
+- expansion_runtime_implemented_count remains 67
+- baseline_impact remains 0
+- extension_impact remains 0
+
+### Anti-Fake Review
+
+- no runtime code created: PASS
+- no fake L3 claims for deferred 17: PASS
+- no API/frontend/provider/Brain/autonomy execution claim: PASS
+- baseline/extension/expansion separation preserved: PASS
+
+### Recommended Next Action
+
+- next_action_id: A-028.0-SPEC
+- recommendation_scope: L3->L4 visibility planning plus deferred-lane sequencing (provider, Brain, autonomy, sensitive domains)
