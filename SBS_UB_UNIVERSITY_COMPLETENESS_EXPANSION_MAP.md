@@ -2661,3 +2661,45 @@ Validation mode: fast direct Docker.
 
 - next_action_id: A-027.10-RUNTIME
 - scope: implement selected 12 L3 deterministic readiness classifiers
+
+## A-027.10-RUNTIME — Expansion L2->L3 Deterministic Logic Batch 4 Implementation
+
+### Runtime Scope
+
+- mode: runtime implementation (service-layer deterministic classifiers only)
+- selected_batch_size: 12
+- forbidden runtime scope: no API, no frontend, no provider execution, no DB mutation, no Brain execution, no autonomous execution
+
+### Implemented Markers (12)
+
+| UCE ID | candidate | type | domain | L2 preserved | L3 implemented | marker |
+|---|---|---|---|---|---|---|
+| UCE-002 | staff_onboarding | NEW_MODULE | Faculty / HR | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+| UCE-003 | employee_records | NEW_MODULE | Faculty / HR | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+| UCE-004 | leave_management | NEW_MODULE | HR / Personnel | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+| UCE-005 | performance_appraisal | NEW_MODULE | Faculty Lifecycle | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+| UCE-070 | staff_exit_offboarding | NEW_MODULE | HR / Personnel | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+| UCE-057 | staff_probation_review | NEW_MODULE | Faculty Lifecycle | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+| UCE-016 | competency_framework | NEW_MODULE | Academic Affairs | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+| UCE-012 | archive_retention_management | NEW_MODULE | Library / Archive | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+| UCE-071 | program_learning_outcomes | NEW_MODULE | Academic Affairs | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+| UCE-072 | course_learning_outcomes | NEW_MODULE | Academic Affairs | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+| UCE-090 | committee_decision_registry | NEW_MODULE | Governance | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+| UCE-019 | international_office | NEW_MODULE | International Office | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02710 |
+
+### Expansion Metrics After A-027.10-RUNTIME
+
+- A02710_l3_logic_count: 12
+- expansion_L3_logic_count: 45 (A0277=10 + A0278=12 + A0279=11 + A02710=12)
+- expansion_L2_foundation_count: 67 (UNCHANGED)
+- expansion_runtime_implemented_count: 67 (UNCHANGED)
+- baseline_impact: 0
+- extension_impact: 0
+- Baseline: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (UNCHANGED)
+
+### A-027.10-RUNTIME Status
+
+- A-027.10-SPEC: COMPLETE
+- A-027.10-RUNTIME: COMPLETE
+- final_verdict: A-027.10-RUNTIME CLOSED - PASS
+- next_action_id: A-027.11-SPEC
