@@ -2261,3 +2261,117 @@ If N=12:
 
 - A-027.8-RUNTIME: COMPLETE
 - next_action_id: A-027.9-SPEC
+
+## A-027.9-SPEC — EXPANSION L2→L3 DETERMINISTIC LOGIC BATCH 3 SELECTION
+
+### Strategic Decision
+
+Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch from remaining 45 L2-only expansion candidates (67 total - 22 already L3 after A-027.7/8).
+
+### Current State
+
+- expansion_L2_foundation_count: 67 (locked)
+- expansion_L3_logic_count: 22 (A-027.7: 10 + A-027.8: 12)
+- expansion_L2_foundation_remaining: 45 candidates
+
+### Exclusion Summary
+
+- Already L3 (A-027.7 + A-027.8): 22 candidates (excluded from A-027.9)
+- Safety/maturity deferred: 34 candidates
+  - Brain execution (4 candidates): signal registries
+  - Autonomous execution (2 candidates): safe agents
+  - Provider-heavy integrations (7 candidates): ERP, government, payments, email, SMS, identity, HR/payroll
+  - Sensitive decision boundaries (3 candidates): academic integrity, disability support, financial hardship
+  - Policy enforcement (1 candidate): third_party_risk_policy
+  - Workflow orchestration infrastructure (2 candidates): committee workflows
+  - Other future waves (15 candidates): HR/academic foundation modules
+
+- Selected for A-027.9: 11 candidates
+
+### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
+
+| Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
+|---:|---|---|---|---|---|---:|---|
+| 1 | UCE-073 | elective_course_selection | A-027.4 | elective_course_selection | Academic | 4.8 | Highest score; deterministic selection readiness; high student value |
+| 2 | UCE-017 | dormitory_management | A-027.4 | dormitory_management | Campus | 4.7 | Operational infrastructure; clear boundaries; low blast radius |
+| 3 | UCE-077 | thesis_dissertation_management | A-027.4 | thesis_dissertation_management | Academic | 4.6 | High university value; deterministic progression gates |
+| 4 | UCE-086 | inbound_exchange_management | A-027.4 | inbound_exchange_management | International | 4.5 | Mobility foundation; deterministic readiness classification |
+| 5 | UCE-087 | outbound_exchange_management | A-027.4 | outbound_exchange_management | International | 4.5 | Complements inbound; clear approval gates |
+| 6 | UCE-085 | joint_program_management | A-027.4 | joint_program_management | International | 4.3 | Multi-party governance; deterministic readiness logic |
+| 7 | UCE-022 | partnership_registry | A-027.3 | partnership_registry | International | 4.2 | Governance foundation; enables mobility workflows |
+| 8 | UCE-060 | timesheet_management | A-027.4 | timesheet_management | HR/Workforce | 3.8 | Workforce control; deterministic approval logic |
+| 9 | UCE-061 | faculty_attestation | A-027.4 | faculty_attestation | HR/Workforce | 3.8 | Compliance requirement; clear evidence gates |
+| 10 | UCE-067 | teaching_load_contracts | A-027.4 | teaching_load_contracts | Academic | 3.7 | Assignment readiness; deterministic verification |
+| 11 | UCE-023 | mou_lifecycle | A-027.3 | mou_lifecycle | International | 4.2 | Legal governance; deterministic state machine |
+
+**Batch Profile:**
+- Total selected: 11 modules
+- Average composite score: 4.3
+- Domain distribution: Academic (3), Campus (1), HR/Workforce (2), International (4), Governance (1)
+- All human review gated; all forbidden actions explicit
+
+### L3 Deterministic Logic Standard
+
+**Output Fields (Common):**
+- tenant_id, module, uce_id, maturity_level="L3", expansion_layer
+- deterministic_logic_ready=True
+- readiness_status (READY_FOR_REVIEW | PARTIAL_EVIDENCE | INCOMPLETE_EVIDENCE | BLOCKED_MISSING_EVIDENCE)
+- risk_band (LOW | MEDIUM | HIGH | BLOCKED)
+- evidence_completeness (0-100%)
+- required_evidence, present_evidence, missing_evidence
+- human_review_required=True (always)
+- recommended_next_step
+- allowed_actions, forbidden_actions
+- All 13 safety flags = True
+- l2_contract_preserved=True
+- next_maturity_gap="L4 operational visibility/API surface required"
+
+**Safety Flags (13, all True for A-027.9):**
+- no_api_claim, no_frontend_claim, no_provider_call, no_credential_use
+- no_kpi_value_claim, no_brain_execution, no_autonomous_execution
+- no_external_side_effects, no_db_mutation
+- no_l4_claim, no_l5_claim, no_l6_claim
+- tenant_fail_closed=True
+
+### Candidate-by-Candidate L3 Specs
+
+See A-027.9-SPEC-EXPANSION_L2_TO_L3_DETERMINISTIC_LOGIC_BATCH3_REPORT.md for detailed specs (Section 10).
+
+### Expected Runtime Files (A-027.9-RUNTIME Only)
+
+- 11× backend/app/modules/<module>/service.py (add classify_*_readiness)
+- backend/tests/test_a0279_expansion_l2_to_l3_deterministic_logic_batch3.py
+- SBS_UB.md (update metrics and status)
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md (mark candidates L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0279)
+- A-027.9-RUNTIME report
+
+### Targeted Test Plan
+
+16 test groups covering import, L2 preservation, tenant fail-closed, output structure, readiness/risk/evidence classification, missing evidence, recommended next-steps, human review boundary, sensitive-domain boundary, anti-inflation validation, no API/frontend/provider/KPI/Brain/autonomy claims, no L4+ claims, determinism, continuity with A-027.7+8.
+
+Expected test count: ~450–550 across 11 modules.
+
+### Expected Expansion Metrics (If A-027.9-RUNTIME passes)
+
+- A0279_l3_logic_count: 11
+- expansion_L3_logic_count: 22 + 11 = 33
+- expansion_L2_foundation_count: 67 (UNCHANGED)
+- expansion_runtime_implemented_count: 67 (UNCHANGED)
+- baseline_impact: 0
+- extension_impact: 0
+
+### Anti-Fake / Anti-Inflation Review
+
+- ✅ SPEC-only: no code, tests, or migrations created in this phase
+- ✅ No maturity movement in SPEC: baseline locked at L3=55
+- ✅ All 11 candidates human-review-gated
+- ✅ All forbidden actions explicit
+- ✅ No fake API/frontend/provider/KPI/Brain/autonomy
+- ✅ No real decision execution
+- ✅ Baseline/extension/expansion separation preserved
+
+### Next Action
+
+- next_action_id: A-027.9-RUNTIME
+- Scope: Implement 11 L3 deterministic readiness classifiers
+- Expected outcome: A0279_l3_logic_count=11; expansion_L3_logic_count=33

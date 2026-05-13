@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-027.9-SPEC
-    - current_stage: A-027.8-RUNTIME complete / expansion L2-to-L3 deterministic logic batch 2 implemented
-    - last_completed_action_id: A-027.8-RUNTIME
-    - next_action_id: A-027.9-SPEC
-    - updated_at: 2026-05-13 (A-027.8-RUNTIME complete; second expansion L2-to-L3 deterministic logic batch implemented with deterministic readiness boundaries)
+    - status: ready_for_A-027.9-RUNTIME
+    - current_stage: A-027.9-SPEC complete / expansion L2-to-L3 deterministic logic batch 3 selected
+    - last_completed_action_id: A-027.9-SPEC
+    - next_action_id: A-027.9-RUNTIME
+    - updated_at: 2026-05-13 (A-027.9-SPEC complete; third expansion L2-to-L3 deterministic logic batch selected: 11 modules, average score 4.3, international-heavy for completeness)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -386,6 +386,33 @@
     - runtime_report_file: A-027.8-RUNTIME-EXPANSION_L2_TO_L3_DETERMINISTIC_LOGIC_BATCH2_REPORT.md
     - final_verdict: RUNTIME_COMPLETE_AUTHORITATIVE_PASS
     - next_action_id: A-027.9-SPEC
+- A-027.9-SPEC execution block:
+    - mode: planning_only_no_runtime_code_changes
+    - prerequisite_confirmed: A-027.8-RUNTIME complete and committed (be7ab96)
+    - expansion_inventory_reconciled: 67 L2 foundation total (A-027.2 through A-027.6)
+    - already_L3_count: 22 (A-027.7: 10 + A-027.8: 12)
+    - remaining_L2_only_count: 45
+    - selected_batch_size: 11
+    - selected_candidates: UCE-073 elective_course_selection, UCE-017 dormitory_management, UCE-077 thesis_dissertation_management, UCE-086 inbound_exchange_management, UCE-087 outbound_exchange_management, UCE-085 joint_program_management, UCE-022 partnership_registry, UCE-060 timesheet_management, UCE-061 faculty_attestation, UCE-067 teaching_load_contracts, UCE-023 mou_lifecycle
+    - selected_batch_type_distribution: NEW_MODULE=11 (100%)
+    - selected_batch_domain_distribution: Academic=3, Campus=1, International=4, HR/Workforce=2, Governance=1
+    - selection_criteria: safe_operational_student_campus_international_modules, deterministic_readiness_logic_clear, no_provider_behavior, no_brain_execution, no_autonomous_execution, no_fake_dashboard_kpi, no_policy_enforcement, no_high_stakes_automatic_decisions
+    - candidate_scoring_model: 11_criteria (logic_clarity, safety, university_value, testability, tenant_safety, L4_value, kpi_risk, autonomous_risk, sensitive_decision_risk, reusability, completeness)
+    - average_candidate_score: 4.3 (range: 3.7–4.8)
+    - l3_standard_defined: deterministic_readiness_classification_only, risk_band, evidence_completeness_0_to_100, missing_evidence_detection, recommended_next_step, human_review_required_all_candidates, 13_safety_flags_all_true, forbidden_actions_explicit
+    - sensitive_boundary_review: all_11_candidates_human_review_gated, no_sensitive_decision_execution_risk
+    - deferred_sensitive_domains: academic_integrity_case_management (A-027.10), disability_support_services (A-027.10), student_financial_hardship (A-027.10)
+    - deferred_infrastructure_lanes: brain_signal_execution (A-029), autonomous_execution (A-030), provider_live_behavior (A-027.10)
+    - anti_inflation: PASS (spec-only, no code/tests/migrations, no maturity movement in spec, no fake L3 claims, all human review gated, all forbidden actions explicit)
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - expansion_metrics_locked_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, A0277_l3_logic_count=10, A0278_l3_logic_count=12, expansion_L3_logic_count=22, baseline_impact=0, extension_impact=0
+    - expansion_metrics_expected_if_runtime_pass: A0279_l3_logic_count=11, expansion_L3_logic_count=22+11=33, expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, baseline_impact=0, extension_impact=0
+    - spec_report_file: A-027.9-SPEC-EXPANSION_L2_TO_L3_DETERMINISTIC_LOGIC_BATCH3_REPORT.md
+    - candidate_specs_file: A-027.9-SPEC-EXPANSION_L2_TO_L3_DETERMINISTIC_LOGIC_BATCH3_REPORT.md (Section 10)
+    - expansion_map_update: A-027.9-SPEC section added to SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md
+    - final_verdict: SPEC_COMPLETE_PASS
+    - next_action_id: A-027.9-RUNTIME
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8
