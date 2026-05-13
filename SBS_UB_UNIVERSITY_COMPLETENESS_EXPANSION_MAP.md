@@ -3075,3 +3075,37 @@ Scoring dimensions applied to all 50 L3 candidates:
 - next_action_id: A-028.0.B1
 - action_title: Expansion L3→L4 Pre-Runtime Quality Baseline / Full Gate Confirmation
 - gate_policy: no A-028 L4 runtime start until quality baseline decision report is closed
+
+## A-028.0.B1 - Expansion L3->L4 Pre-Runtime Quality Baseline / Full Gate Confirmation
+
+### Validation Outcome Summary
+
+- Docker freshness: PASS (backend-tests image rebuilt in infra compose context).
+- A-027.7..A-027.11 continuity: FUNCTIONAL_PASS_COVERAGE_BLOCKED (`1268 passed`, `1 warning`, coverage `40.28%` vs required `80%`).
+- tenant/security slice: FUNCTIONAL_PASS_COVERAGE_BLOCKED (`28 passed`, `1 warning`, coverage `41.52%` vs required `80%`).
+- full backend regression: FUNCTIONAL_PASS_COVERAGE_BLOCKED (`1268 passed`, `1 warning`, coverage `40.28%` vs required `80%`).
+- frontend gate: BLOCKED_REGRESSION_FAILURE (`3 failed` files, `12 failed` tests, `802 passed`).
+
+### Forbidden-Lane Review
+
+- broad codebase scan showed expected existing hits in auth/observability/repository areas and was classified as existing non-scope code.
+- focused scan on the 12 selected first-wave L4 candidates showed boundary-only markers (`no_provider_call`, `no_brain_execution`, etc.) and no blocking execution behavior.
+
+### Metrics Integrity
+
+- baseline maturity remains locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150.
+- extension remains locked: extension_total_count=25, total_tracked_modules=175.
+- expansion remains locked: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17.
+- baseline_impact=0, extension_impact=0.
+
+### Decision
+
+- readiness_decision: R3_BLOCKED_REGRESSION_FAILURE
+- A-028 L4 runtime authorization: NOT AUTHORIZED
+- reason: frontend regression failures plus unresolved strict coverage gate gap
+
+### Next Action
+
+- next_action_id: A-028.0.B1.R1
+- action_title: Pre-Runtime Quality Baseline Remediation and Revalidation
+- required_outcome_for_unlock: full gate confirmation without regression failure
