@@ -2421,3 +2421,243 @@ All 11 L3 deterministic readiness classifiers from A-027.9-SPEC implemented and 
 - A-027.9-RUNTIME: COMPLETE
 - final_verdict: A-027.9-RUNTIME CLOSED — PASS
 - next_action_id: A-027.10-SPEC
+
+## A-027.10-SPEC — Expansion L2→L3 Deterministic Logic Batch 4 Selection
+
+### Why Continue L2→L3 Before L4
+
+- Expansion already has broad L2 foundation coverage (67) and three validated L3 batches.
+- Controlled L2→L3 deepening improves deterministic readiness and risk boundaries without claiming L4 visibility/API.
+- This action is SPEC-only and preserves baseline/extension metrics.
+
+### Current Expansion L3 Summary
+
+- After A-027.7: 10 candidates at expansion L3 deterministic logic
+- After A-027.8: +12 candidates
+- After A-027.9: +11 candidates
+- Total expansion L3 logic implemented: 33
+
+### Remaining L2-Only Inventory Summary
+
+- Total expansion L2 implemented: 67
+- Already L3 (A-027.7 + A-027.8 + A-027.9): 33
+- Remaining L2-only candidates: 34
+- Arithmetic check: PASS (67 - 33 = 34)
+
+### Exclusion Confirmation (Already L3)
+
+| Candidate | UCE ID | Reason |
+|---|---|---|
+| document_workflow | UCE-009 | already L3 (A-027.7) |
+| order_decree_registry | UCE-011 | already L3 (A-027.7) |
+| incoming_outgoing_correspondence | UCE-013 | already L3 (A-027.7) |
+| document_template_library | UCE-089 | already L3 (A-027.7) |
+| course_catalog_management | UCE-076 | already L3 (A-027.7) |
+| syllabus_management | UCE-015 | already L3 (A-027.7) |
+| curriculum_mapping | UCE-014 | already L3 (A-027.7) |
+| prerequisite_management | UCE-074 | already L3 (A-027.7) |
+| degree_audit | UCE-092 | already L3 (A-027.7) |
+| transfer_credit_management | UCE-075 | already L3 (A-027.7) |
+| student_information_system_integration | UCE-024 | already L3 (A-027.8) |
+| learning_management_system_integration | UCE-106 | already L3 (A-027.8) |
+| regulatory_reporting_integration | UCE-112 | already L3 (A-027.8) |
+| digital_signature_integration | UCE-109 | already L3 (A-027.8) |
+| compliance_calendar_dashboard | UCE-122 | already L3 (A-027.8) |
+| ministry_reporting_dashboard | UCE-032 | already L3 (A-027.8) |
+| accreditation_dashboard | UCE-114 | already L3 (A-027.8) |
+| rector_strategy_dashboard | UCE-031 | already L3 (A-027.8) |
+| data_retention_policy_control | UCE-048 | already L3 (A-027.8) |
+| consent_management_policy | UCE-046 | already L3 (A-027.8) |
+| rector_resolution_tracking_workflow | UCE-099 | already L3 (A-027.8) |
+| procurement_plan_approval_workflow | UCE-098 | already L3 (A-027.8) |
+| elective_course_selection | UCE-073 | already L3 (A-027.9) |
+| dormitory_management | UCE-017 | already L3 (A-027.9) |
+| thesis_dissertation_management | UCE-077 | already L3 (A-027.9) |
+| inbound_exchange_management | UCE-086 | already L3 (A-027.9) |
+| outbound_exchange_management | UCE-087 | already L3 (A-027.9) |
+| joint_program_management | UCE-085 | already L3 (A-027.9) |
+| partnership_registry | UCE-022 | already L3 (A-027.9) |
+| timesheet_management | UCE-060 | already L3 (A-027.9) |
+| faculty_attestation | UCE-061 | already L3 (A-027.9) |
+| teaching_load_contracts | UCE-067 | already L3 (A-027.9) |
+| mou_lifecycle | UCE-023 | already L3 (A-027.9) |
+
+### Additional Exclusion Rules
+
+| Candidate | Type | Exclusion Reason | Defer Until |
+|---|---|---|---|
+| finance_erp_integration, government_services_integration, payment_gateway_integration, notification_gateway_integration, email_gateway_integration, identity_provider_integration, hr_payroll_integration | INTEGRATION | provider behavior and credentials boundary risk | DEFER_AFTER_PROVIDER_SPEC |
+| student_risk_signal_registry, finance_anomaly_signal_registry, procurement_risk_signal_registry, academic_quality_signal_registry | BRAIN_SIGNAL | avoid score/execution implications in batch 4 | DEFER_NEXT_L3_BATCH |
+| safe_evidence_summary_agent, safe_task_drafting_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | autonomy lane remains non-executing | DEFER_AFTER_POLICY_REVIEW |
+| third_party_risk_policy | POLICY_CONTROL | enforcement-adjacent semantics | DEFER_AFTER_POLICY_REVIEW |
+| academic_integrity_case_management, disability_support_services, student_financial_hardship, disciplinary_case_management | NEW_MODULE sensitive | sanction/accommodation/aid/disciplinary execution risk | DEFER_SENSITIVE_DOMAIN_BATCH |
+
+### Scoring Model
+
+Criteria (1-5 each):
+1. Deterministic logic clarity
+2. Safety / low blast radius
+3. University value
+4. Testability without DB/provider/frontend
+5. Tenant safety clarity
+6. Future L4 visibility value
+7. No fake KPI/Brain risk
+8. No autonomous decision risk
+9. No sensitive automatic decision risk
+10. Reusability as pattern
+11. Completeness contribution
+
+### Selected A-027.10 Batch (12)
+
+| # | UCE ID | Candidate | Type | Source Wave | Package | Current Level | Target Level | Why Selected | L3 Boundary |
+|---:|---|---|---|---|---|---|---|---|---|
+| 1 | UCE-002 | staff_onboarding | NEW_MODULE | A-027.2 | staff_onboarding | L2 | expansion_L3_DETERMINISTIC_LOGIC | high clarity, low blast radius | readiness only, no onboarding execution |
+| 2 | UCE-003 | employee_records | NEW_MODULE | A-027.2 | employee_records | L2 | expansion_L3_DETERMINISTIC_LOGIC | high value shared HR evidence plane | readiness only, no employment decision |
+| 3 | UCE-004 | leave_management | NEW_MODULE | A-027.3 | leave_management | L2 | expansion_L3_DETERMINISTIC_LOGIC | deterministic evidence classification | readiness only, no leave approval execution |
+| 4 | UCE-005 | performance_appraisal | NEW_MODULE | A-027.3 | performance_appraisal | L2 | expansion_L3_DETERMINISTIC_LOGIC | controlled HR readiness uplift | readiness only, no score/decision execution |
+| 5 | UCE-070 | staff_exit_offboarding | NEW_MODULE | A-027.3 | staff_exit_offboarding | L2 | expansion_L3_DETERMINISTIC_LOGIC | lifecycle closure and audit readiness | readiness only, no closure execution |
+| 6 | UCE-057 | staff_probation_review | NEW_MODULE | A-027.4 | staff_probation_review | L2 | expansion_L3_DETERMINISTIC_LOGIC | deterministic checklist semantics | readiness only, no pass/fail decision |
+| 7 | UCE-016 | competency_framework | NEW_MODULE | A-027.3 | competency_framework | L2 | expansion_L3_DETERMINISTIC_LOGIC | accreditation-critical pattern reuse | readiness only, no policy enforcement |
+| 8 | UCE-012 | archive_retention_management | NEW_MODULE | A-027.3 | archive_retention_management | L2 | expansion_L3_DETERMINISTIC_LOGIC | governance and legal evidence value | readiness only, no deletion/disposal |
+| 9 | UCE-071 | program_learning_outcomes | NEW_MODULE | A-027.2 | program_learning_outcomes | L2 | expansion_L3_DETERMINISTIC_LOGIC | outcomes governance completeness | readiness only, no academic action |
+| 10 | UCE-072 | course_learning_outcomes | NEW_MODULE | A-027.2 | course_learning_outcomes | L2 | expansion_L3_DETERMINISTIC_LOGIC | reusable deterministic outcomes pattern | readiness only, no academic action |
+| 11 | UCE-090 | committee_decision_registry | NEW_MODULE | A-027.2 | committee_decision_registry | L2 | expansion_L3_DETERMINISTIC_LOGIC | governance decision evidence chain | readiness only, no decision execution |
+| 12 | UCE-019 | international_office | NEW_MODULE | A-027.2 | international_office | L2 | expansion_L3_DETERMINISTIC_LOGIC | operational completeness in mobility domain | readiness only, no visa/mobility decision |
+
+Substitution applied:
+- `training_certification` was in preferred pool but is not in implemented L2=67 inventory; replaced by `international_office`.
+
+### A-027.10 Expansion L3 Deterministic Logic Standard
+
+- Deterministic readiness classification only
+- Deterministic risk band
+- Evidence completeness 0-100
+- Missing evidence detection
+- Recommended next step
+- human_review_required=True
+- Allowed/forbidden action boundary
+- Tenant fail-closed
+- L2 contract preserved
+- no API/frontend/provider/KPI/Brain/autonomy claims
+- no DB mutation
+- no real decision execution
+- no L4/L5/L6 claim
+
+Common output fields:
+- tenant_id
+- module
+- uce_id
+- maturity_level="L3"
+- expansion_layer="university_completeness"
+- deterministic_logic_ready=True
+- readiness_status
+- risk_band
+- evidence_completeness
+- required_evidence
+- present_evidence
+- missing_evidence
+- recommended_next_step
+- human_review_required
+- allowed_actions
+- forbidden_actions
+- l2_contract_preserved=True
+- tenant_scoped=True
+- sensitive_boundary (where relevant)
+- next_maturity_gap="L4 operational visibility/API surface required"
+- safety_flags
+
+### Candidate-by-Candidate L3 Specs (Batch 4)
+
+For each selected candidate:
+- Planned function pattern: `classify_<module>_readiness(tenant_id, evidence=None)`
+- Input model: tenant_id + evidence dict (presence semantics)
+- Status set: READY_FOR_REVIEW, PARTIAL_EVIDENCE, INCOMPLETE_EVIDENCE, BLOCKED_MISSING_EVIDENCE
+- Risk set: LOW, MEDIUM, HIGH, BLOCKED
+- Next-step set: READY_FOR_HUMAN_REVIEW, REQUEST_MISSING_EVIDENCE, BLOCK_UNTIL_REQUIRED_EVIDENCE_PRESENT
+- Human boundary: required in all states
+- Sensitive boundary: no decision execution, no sanctions, no financial/employment/visa automation
+- Safety flags: 16 flags all true
+
+Module-specific forbidden action emphasis:
+- staff_onboarding: no auto-role/account activation
+- employee_records: no auto-employment/payroll mutation
+- leave_management: no auto-approve/reject leave
+- performance_appraisal: no auto-score/promotion/termination
+- staff_exit_offboarding: no auto-access closure/contract closure
+- staff_probation_review: no auto-confirm/terminate employment
+- competency_framework: no auto-policy enforcement
+- archive_retention_management: no auto-delete/dispose
+- program_learning_outcomes: no automatic curriculum mutation
+- course_learning_outcomes: no automatic grading/rule enforcement
+- committee_decision_registry: no auto-approve/execute committee decisions
+- international_office: no auto-visa/mobility decision
+
+### Expected Runtime Files
+
+| File | Expected Action | Reason |
+|---|---|---|
+| backend/app/modules/<selected_module>/service.py | UPDATE_IN_RUNTIME | add L3 classifier for selected module |
+| backend/tests/test_a02710_expansion_l2_to_l3_deterministic_logic_batch4.py | CREATE_IN_RUNTIME | targeted L3 deterministic logic validation |
+| SBS_UB.md | UPDATE_IN_RUNTIME | runtime closure metrics |
+| SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md | UPDATE_IN_RUNTIME | runtime implementation markers |
+| A-027.10-RUNTIME-EXPANSION_L2_TO_L3_DETERMINISTIC_LOGIC_BATCH4_REPORT.md | CREATE_IN_RUNTIME | runtime evidence report |
+
+### Targeted Test Plan
+
+Preferred runtime test file:
+- backend/tests/test_a02710_expansion_l2_to_l3_deterministic_logic_batch4.py
+
+Test groups:
+1. import validation
+2. existing L2 contract remains intact
+3. L3 function exists and is callable
+4. tenant fail-closed validation
+5. deterministic output validation
+6. readiness classification validation
+7. risk band validation
+8. evidence completeness validation
+9. missing evidence validation
+10. recommended next-step validation
+11. human review boundary validation
+12. sensitive-domain boundary validation where relevant
+13. anti-inflation validation
+14. no API/frontend/provider/KPI/Brain/autonomy validation
+15. no real decision execution validation
+16. no L4+ claim validation
+17. no selected A-027.7/A-027.8/A-027.9 already-L3 candidate modified
+
+Expected test count: 180-320.
+Validation mode: fast direct Docker.
+
+### Expected Expansion Metrics (If A-027.10-RUNTIME passes)
+
+- A02710_l3_logic_count = N
+- expansion_L3_logic_count = 33 + N
+- expansion_L2_foundation_count = 67 (unchanged)
+- expansion_runtime_implemented_count = 67 (unchanged overlay model)
+- baseline_impact = 0
+- extension_impact = 0
+
+### Sensitive-Domain Safety Boundaries
+
+- No eligibility/sanction/accommodation/aid/employment/payroll/legal decision execution
+- No person-scoring output used as decision execution
+- human_review_required always true
+- forbidden_actions explicitly block automation
+
+### Anti-Fake Review
+
+- no code: PASS
+- no maturity movement in SPEC: PASS
+- no fake L3 runtime claim: PASS
+- no fake KPI/dashboard claim: PASS
+- no Brain execution: PASS
+- no autonomous execution: PASS
+- no real decision execution: PASS
+- no baseline change: PASS
+- baseline/extension/expansion separation preserved: PASS
+
+### Next Action
+
+- next_action_id: A-027.10-RUNTIME
+- scope: implement selected 12 L3 deterministic readiness classifiers
