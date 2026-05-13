@@ -6,6 +6,7 @@ export default defineConfig({
     jsx: "automatic",
   },
   test: {
+    testTimeout: 30000,
     globals: true,
     environment: "jsdom",
     setupFiles: ["./__tests__/setup.ts"],

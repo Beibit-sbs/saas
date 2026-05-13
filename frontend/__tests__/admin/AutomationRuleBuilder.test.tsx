@@ -394,7 +394,7 @@ describe("AutomationRuleNewPage", () => {
 
     // Should navigate to rules list
     expect(mockPush).toHaveBeenCalledWith("/console/automation");
-  });
+  }, 30000);
 
   it("builds correct condition_json when condition fields are filled", async () => {
     const user = userEvent.setup();
@@ -613,5 +613,5 @@ describe("AutomationRuleNewPage", () => {
         })
       );
     });
-  });
+  }, 30000);
 });

@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: blocked_pending_A-028.0.B1.R1
-    - current_stage: A-028.0.B1 complete / pre-runtime quality baseline not confirmed
-    - last_completed_action_id: A-028.0.B1
-    - next_action_id: A-028.0.B1.R1
-    - updated_at: 2026-05-14 (A-028.0.B1 closed with regression/coverage blockers; A-028 L4 runtime remains blocked)
+    - status: blocked_pending_A-028.0.B1.R2
+    - current_stage: A-028.0.B1.R1 complete / frontend fixed but backend regression still blocks pre-runtime quality baseline
+    - last_completed_action_id: A-028.0.B1.R1
+    - next_action_id: A-028.0.B1.R2
+    - updated_at: 2026-05-14 (A-028.0.B1.R1 closed with backend LDAP regression blockers; A-028 L4 runtime remains blocked)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -589,6 +589,28 @@
     - report_file: A-028.0.B1-EXPANSION_L4_PRE_RUNTIME_QUALITY_BASELINE_REPORT.md
     - final_verdict: A-028.0.B1 CLOSED — BLOCKED_FOR_A0281_RUNTIME
     - next_action_id: A-028.0.B1.R1
+- A-028.0.B1.R1 execution block:
+    - mode: remediation_and_revalidation_no_A028_runtime
+    - purpose: pre_l4_quality_baseline_remediation_and_revalidation
+    - repo_hygiene_check: PASS (expected non-scope dirty files preserved: backend/.coverage, untracked A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md)
+    - source_of_truth_check: PASS (A-028.0.B1 closed as blocked, next_action_id was A-028.0.B1.R1, runtime remained unauthorized)
+    - frontend_remediation: PASS (AutomationRuleBuilder timeout stabilization + Vitest timeout hardening)
+    - frontend_gate: PASS (118 files passed, 820 tests passed)
+    - continuity_suite_A0277_to_A02711_no_cov: PASS (1268 passed, 1 warning)
+    - tenant_security_slice: FUNCTIONAL_PASS_COVERAGE_BLOCKED (28 passed, 1 warning; coverage 41.52% < 80% in scoped invocation)
+    - full_backend_regression: BLOCKED_BACKEND_REGRESSION_FAILURE (2 failed, 12330 passed, 31 skipped, 88 deselected, 7 warnings; coverage 87.82% PASS)
+    - backend_regression_failures: tests/test_integrations.py::test_ldap_status_endpoint_disabled_by_default; tests/test_ldap.py::test_ldap_status_disabled_by_default
+    - forbidden_scan_selected_12_focus: PASS (no blocking provider/brain/autonomy/mutation execution; boundary markers only)
+    - anti_inflation: PASS (no runtime implementation claims, no metric movement, no fake L4 visibility claims)
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - expansion_metrics_locked_in_baseline: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, baseline_impact=0, extension_impact=0
+    - readiness_decision: R3_BLOCKED_REGRESSION_FAILURE
+    - rationale: frontend regressions are remediated, but backend full regression remains blocked by 2 LDAP-related failures
+    - quality_gate_verdict: A028_L4_RUNTIME_NOT_AUTHORIZED
+    - report_file: A-028.0.B1.R1-PRE_L4_QUALITY_BASELINE_REMEDIATION_REPORT.md
+    - final_verdict: A-028.0.B1.R1 CLOSED — BLOCKED_FOR_A0281_RUNTIME
+    - next_action_id: A-028.0.B1.R2
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

@@ -3109,3 +3109,43 @@ Scoring dimensions applied to all 50 L3 candidates:
 - next_action_id: A-028.0.B1.R1
 - action_title: Pre-Runtime Quality Baseline Remediation and Revalidation
 - required_outcome_for_unlock: full gate confirmation without regression failure
+
+## A-028.0.B1.R1 - Pre-Runtime Quality Baseline Remediation and Revalidation
+
+### Validation Outcome Summary
+
+- frontend remediation: PASS (AutomationRuleBuilder timeout stabilization + vitest timeout hardening).
+- frontend gate: PASS (`118 passed` files, `820 passed` tests).
+- A-027.7..A-027.11 continuity (no-cov): PASS (`1268 passed`, `1 warning`).
+- tenant/security slice: FUNCTIONAL_PASS_COVERAGE_BLOCKED (`28 passed`, `1 warning`, coverage `41.52%` in scoped run).
+- full backend regression: BLOCKED_BACKEND_REGRESSION_FAILURE (`2 failed`, `12330 passed`, `31 skipped`, `88 deselected`, `7 warnings`; coverage `87.82%` PASS).
+
+### Backend Blocking Failures
+
+- tests/test_integrations.py::test_ldap_status_endpoint_disabled_by_default
+- tests/test_ldap.py::test_ldap_status_disabled_by_default
+
+### Forbidden-Lane Review
+
+- focused scan on selected 12 first-wave candidates remains PASS.
+- brain/autonomy references remain boundary markers only.
+- no provider execution and no direct mutation execution was introduced.
+
+### Metrics Integrity
+
+- baseline maturity remains locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150.
+- extension remains locked: extension_total_count=25, total_tracked_modules=175.
+- expansion remains locked: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17.
+- baseline_impact=0, extension_impact=0.
+
+### Decision
+
+- readiness_decision: R3_BLOCKED_REGRESSION_FAILURE
+- A-028 L4 runtime authorization: NOT AUTHORIZED
+- reason: backend full regression still blocked by 2 LDAP-related failing tests
+
+### Next Action
+
+- next_action_id: A-028.0.B1.R2
+- action_title: Backend LDAP regression remediation and pre-L4 gate revalidation
+- required_outcome_for_unlock: backend full regression PASS with frontend/forbidden/metrics reconfirmed
