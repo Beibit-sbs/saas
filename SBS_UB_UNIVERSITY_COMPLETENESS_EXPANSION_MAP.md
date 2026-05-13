@@ -3149,3 +3149,65 @@ Scoring dimensions applied to all 50 L3 candidates:
 - next_action_id: A-028.0.B1.R2
 - action_title: Backend LDAP regression remediation and pre-L4 gate revalidation
 - required_outcome_for_unlock: backend full regression PASS with frontend/forbidden/metrics reconfirmed
+
+## A-028.0.B1.R2 — LDAP Regression Remediation / Full Pre-L4 Gate Revalidation
+
+### R1 Blocker Summary
+
+- R1 blocker was limited to 2 LDAP disabled-by-default failures in full backend regression:
+	- tests/test_integrations.py::test_ldap_status_endpoint_disabled_by_default
+	- tests/test_ldap.py::test_ldap_status_disabled_by_default
+
+### LDAP Root Cause
+
+- root cause category: TEST_ENV_ENABLES_LDAP_UNINTENTIONALLY.
+- LDAP runtime status default read `AUTH_LDAP_ENABLED` from env; test container env-path had it enabled.
+- disabled-by-default tests were correct; test bootstrap lacked an explicit override.
+
+### Remediation Summary
+
+- minimal scoped fix applied in `backend/tests/conftest.py`:
+	- enforce `AUTH_LDAP_ENABLED=false` for pytest bootstrap.
+- no LDAP runtime contract weakening.
+- no skipped/xfail masking.
+
+### Gate Results
+
+- LDAP blocker tests: PASS (2/2).
+- LDAP targeted pack (`test_integrations.py` + `test_ldap.py`): FUNCTIONAL_PASS_COVERAGE_BLOCKED (23 passed, 1 warning).
+- full backend regression: PASS (`12332 passed`, `31 skipped`, `88 deselected`, `7 warnings`, coverage `87.82%` PASS).
+- A-027 continuity no-cov: PASS (`1268 passed`, `1 warning`).
+- tenant/security slice: FUNCTIONAL_PASS_COVERAGE_BLOCKED (`28 passed`, `1 warning`, coverage `41.52%` in scoped run).
+- frontend gate revalidation: BLOCKED_FRONTEND_REGRESSION (`WebhookSubscriptionsUI` failed in consecutive runs: `1 failed` file, `1 failed` test).
+
+### Forbidden-Lane Review
+
+- changed LDAP/test bootstrap scan: no blocking provider/brain/autonomy execution behavior.
+- selected 12 first-wave candidates: boundary text markers only, no blocking execution behavior.
+- mutation scans for selected scope: no blocking direct mutation execution behavior.
+
+### Metrics Integrity
+
+- baseline remains locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150.
+- extension remains locked: extension_total_count=25, total_tracked_modules=175.
+- expansion remains locked: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17.
+- baseline_impact=0, extension_impact=0.
+
+### Final Readiness Decision
+
+- readiness_decision: R3_STILL_BLOCKED_REGRESSION_FAILURE
+- A-028.1-SPEC authorization: NOT AUTHORIZED from this run
+- A-028 L4 runtime authorization: NOT AUTHORIZED (still not started)
+
+### Anti-Fake Confirmation
+
+- LDAP regression was actually remediated and revalidated.
+- no A-028 L4 implementation claim.
+- no baseline/extension/expansion metric inflation.
+- no provider/brain/autonomy execution lane mixing introduced.
+
+### Next Action
+
+- next_action_id: A-028.0.B1.R3
+- action_title: Frontend WebhookSubscriptionsUI regression remediation and full pre-L4 gate reconfirmation
+- required_outcome_for_unlock: frontend gate PASS plus reconfirmed full gate bundle

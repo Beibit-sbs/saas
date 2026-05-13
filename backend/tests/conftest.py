@@ -23,6 +23,9 @@ os.environ.setdefault("INTEGRATIONS_ENCRYPTION_KEY", "test-integration-key-not-f
 # cases where tests intentionally remove DATABASE_URL. Force the documented test
 # override even when docker-compose injects BILLING_DB_ONLY_MODE=true.
 os.environ["BILLING_DB_ONLY_MODE"] = "false"
+# Keep LDAP contract deterministic in tests: disabled unless explicitly configured
+# by test code through integrations settings.
+os.environ["AUTH_LDAP_ENABLED"] = "false"
 # Extend token TTL to 24h so long-running test suites don't expire mid-run
 os.environ.setdefault("AUTH_ACCESS_TOKEN_TTL_MINUTES", "1440")
 
