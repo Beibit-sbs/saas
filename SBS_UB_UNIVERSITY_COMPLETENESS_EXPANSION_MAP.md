@@ -2814,3 +2814,47 @@ If N=5:
 - A-027.11-SPEC: COMPLETE
 - final_verdict: SPEC_COMPLETE_PASS
 - next_action_id: A-027.11-RUNTIME
+
+## A-027.11-RUNTIME — Expansion L2->L3 Deterministic Logic Batch 5 Implementation
+
+### Runtime Scope
+
+- mode: runtime implementation (service-layer deterministic classifiers only)
+- selected_batch_size: 5
+- runtime boundaries: no API, no frontend, no provider calls, no credential usage, no DB mutation, no policy/workflow execution, no Brain execution, no autonomous execution
+
+### Implemented Markers (5)
+
+| UCE ID | candidate | type | source_wave | package | L2 preserved | L3 implemented | marker |
+|---|---|---|---|---|---|---|---|
+| UCE-054 | brain_decision_audit_trail | AUDIT_EVIDENCE_CAPABILITY | A-027.6 | brain_decision_audit_trail | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02711 |
+| UCE-047 | third_party_risk_policy | POLICY_CONTROL | A-027.6 | third_party_risk_policy | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02711 |
+| UCE-001 | staff_recruitment | NEW_MODULE | A-027.2 | staff_recruitment | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02711 |
+| UCE-037 | scholarship_committee_workflow | WORKFLOW | A-027.6 | scholarship_committee_workflow | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02711 |
+| UCE-038 | student_appeals_workflow | WORKFLOW | A-027.6 | student_appeals_workflow | YES | YES | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A02711 |
+
+### Validation Results
+
+- targeted_docker_pytest: PASS (`157 passed, 1 warning`, `--no-cov`)
+- continuity_docker_pytest: PASS (`1268 passed, 1 warning`, A-027.7..A-027.11, `--no-cov`)
+- import_sanity: PASS (selected 5 services import successfully)
+- git_diff_check: PASS (no whitespace/conflict errors)
+- forbidden_scan_result: PASS (all matches classified as ACCEPTED_BOUNDARY_TEXT)
+
+### Expansion Metrics After A-027.11-RUNTIME
+
+- A02711_l3_logic_count: 5
+- expansion_L3_logic_count: 50 (A0277=10 + A0278=12 + A0279=11 + A02710=12 + A02711=5)
+- remaining_L2_only: 17
+- expansion_L2_foundation_count: 67 (UNCHANGED)
+- expansion_runtime_implemented_count: 67 (UNCHANGED)
+- baseline_impact: 0
+- extension_impact: 0
+- baseline_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+
+### Runtime Status
+
+- A-027.11-SPEC: COMPLETE
+- A-027.11-RUNTIME: COMPLETE
+- final_verdict: A-027.11-RUNTIME CLOSED - PASS
+- next_action_id: A-027.12-SPEC

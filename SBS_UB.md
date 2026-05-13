@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-027.11-RUNTIME
-    - current_stage: A-027.11-SPEC complete / expansion L2-to-L3 deterministic logic batch 5 selected
-    - last_completed_action_id: A-027.11-SPEC
-    - next_action_id: A-027.11-RUNTIME
-    - updated_at: 2026-05-13 (A-027.11-SPEC complete; constrained-safe deterministic L3 batch 5 selected with strict exclusions, expected expansion L3 formula locked, baseline 150 unchanged)
+    - status: ready_for_A-027.12-SPEC
+    - current_stage: A-027.11-RUNTIME complete / expansion L2-to-L3 deterministic logic batch 5 implemented
+    - last_completed_action_id: A-027.11-RUNTIME
+    - next_action_id: A-027.12-SPEC
+    - updated_at: 2026-05-13 (A-027.11-RUNTIME complete; 5 deterministic L3 classifiers implemented, expansion L3 moved 45->50, baseline 150 unchanged)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -498,6 +498,26 @@
     - expansion_map_update: A-027.11-SPEC section added to SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md
     - final_verdict: SPEC_COMPLETE_PASS
     - next_action_id: A-027.11-RUNTIME
+- A-027.11-RUNTIME execution block:
+    - mode: runtime_implementation
+    - scope: service-layer L3 deterministic readiness classifiers only (no API, no frontend, no DB mutation, no provider calls, no Brain execution, no autonomous execution, no policy/workflow execution)
+    - selected_batch_size: 5
+    - selected_candidates: UCE-054 brain_decision_audit_trail, UCE-047 third_party_risk_policy, UCE-001 staff_recruitment, UCE-037 scholarship_committee_workflow, UCE-038 student_appeals_workflow
+    - service_files_updated: 5
+    - test_file_created: backend/tests/test_a02711_expansion_l2_to_l3_deterministic_logic_batch5.py
+    - targeted_docker_pytest_result: PASS (157 passed / 0 failed / 1 warning, --no-cov)
+    - continuity_docker_pytest_result: PASS (1268 passed / 0 failed / 1 warning across A-027.7..A-027.11, --no-cov)
+    - import_sanity_result: PASS (selected services import successfully)
+    - l2_preservation_check: PASS (all 5 L2 contracts remain callable and return L2)
+    - forbidden_content_scan: PASS (all hits ACCEPTED_BOUNDARY_TEXT only)
+    - anti_inflation: PASS (no API/frontend/provider execution/credential usage/KPI value claim/Brain execution/autonomous execution/policy-workflow enforcement/DB mutation/L4+ claim)
+    - a02711_l3_logic_count: 5
+    - expansion_metrics_achieved: A0272_implemented_foundation_count=11, A0273_implemented_foundation_count=12, A0274_implemented_foundation_count=15, A0275_integration_contract_count=11, A0276_envelope_foundation_count=18, A0277_l3_logic_count=10, A0278_l3_logic_count=12, A0279_l3_logic_count=11, A02710_l3_logic_count=12, A02711_l3_logic_count=5, expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, baseline_impact=0, extension_impact=0
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - runtime_report_file: A-027.11-RUNTIME-EXPANSION_L2_TO_L3_DETERMINISTIC_LOGIC_BATCH5_REPORT.md
+    - final_verdict: A-027.11-RUNTIME CLOSED — PASS
+    - next_action_id: A-027.12-SPEC
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

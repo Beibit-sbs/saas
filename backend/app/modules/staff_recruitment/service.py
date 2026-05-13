@@ -72,3 +72,154 @@ def get_staff_recruitment_foundation_contract(tenant_id: int, payload: dict | No
             "no_l6_claim": True,
         },
     }
+
+
+# A-027.11 deterministic L3 readiness overlay constants
+A02711_L3_READY = True
+MATURITY_LEVEL = "L3"
+HUMAN_REVIEW_REQUIRED = True
+L2_CONTRACT_PRESERVED = True
+
+READINESS_READY = "READY_FOR_REVIEW"
+READINESS_PARTIAL = "PARTIAL_EVIDENCE"
+READINESS_INCOMPLETE = "INCOMPLETE_EVIDENCE"
+READINESS_BLOCKED = "BLOCKED_MISSING_EVIDENCE"
+
+RISK_LOW = "LOW"
+RISK_MEDIUM = "MEDIUM"
+RISK_HIGH = "HIGH"
+RISK_BLOCKED = "BLOCKED"
+
+NEXT_READY = "READY_FOR_HUMAN_REVIEW"
+NEXT_REQUEST = "REQUEST_MISSING_EVIDENCE"
+NEXT_BLOCK = "BLOCK_UNTIL_REQUIRED_EVIDENCE_PRESENT"
+
+A02711_REQUIRED_EVIDENCE = [
+    "vacancy_request_present",
+    "position_profile_available",
+    "hiring_committee_review_required",
+    "candidate_evidence_policy_available",
+    "human_hr_review_required",
+]
+A02711_MIN_COMPLETENESS_THRESHOLD = 60
+
+A02711_ALLOWED_ACTIONS = [
+    "RECRUITMENT_READINESS_CLASSIFICATION",
+    "MISSING_EVIDENCE_IDENTIFICATION",
+    "HUMAN_REVIEW_PREPARATION",
+]
+
+A02711_FORBIDDEN_ACTIONS = [
+    "AUTO_HIRE_CANDIDATE",
+    "AUTO_REJECT_CANDIDATE",
+    "AUTO_RANK_CANDIDATE",
+    "AUTO_SCORE_CANDIDATE",
+    "AUTO_CREATE_EMPLOYMENT_CONTRACT",
+    "MUTATE_HR_RECORD",
+]
+
+
+def _validate_tenant_id_l3(tenant_id: int) -> int:
+    if tenant_id is None:
+        raise ValueError("invalid_tenant_id: None")
+    if not isinstance(tenant_id, int):
+        raise ValueError("invalid_tenant_id_type")
+    if tenant_id <= 0:
+        raise ValueError(f"invalid_tenant_id: {tenant_id}")
+    return tenant_id
+
+
+def _normalize_present_evidence(present_evidence: list[str] | set[str] | None) -> list[str]:
+    if present_evidence is None:
+        return []
+    if isinstance(present_evidence, set):
+        evidence_values = list(present_evidence)
+    elif isinstance(present_evidence, list):
+        evidence_values = present_evidence
+    else:
+        raise ValueError("present_evidence must be list[str], set[str], or None")
+
+    normalized = {str(item).strip() for item in evidence_values if str(item).strip()}
+    return sorted(normalized)
+
+
+def classify_staff_recruitment_readiness(
+    tenant_id: int,
+    present_evidence: list[str] | set[str] | None = None,
+) -> dict:
+    """Deterministic L3 readiness classification for UCE-001 without hiring decisions."""
+    tenant_id = _validate_tenant_id_l3(tenant_id)
+    present = _normalize_present_evidence(present_evidence)
+
+    required = list(A02711_REQUIRED_EVIDENCE)
+    missing = [item for item in required if item not in present]
+
+    if required:
+        completeness = int(((len(required) - len(missing)) / len(required)) * 100)
+    else:
+        completeness = 100
+
+    if not present:
+        readiness = READINESS_BLOCKED
+    elif not missing:
+        readiness = READINESS_READY
+    elif completeness < A02711_MIN_COMPLETENESS_THRESHOLD:
+        readiness = READINESS_INCOMPLETE
+    else:
+        readiness = READINESS_PARTIAL
+
+    risk_band = {
+        READINESS_READY: RISK_LOW,
+        READINESS_PARTIAL: RISK_MEDIUM,
+        READINESS_INCOMPLETE: RISK_HIGH,
+        READINESS_BLOCKED: RISK_BLOCKED,
+    }[readiness]
+
+    recommended_next_step = {
+        READINESS_READY: NEXT_READY,
+        READINESS_PARTIAL: NEXT_REQUEST,
+        READINESS_INCOMPLETE: NEXT_REQUEST,
+        READINESS_BLOCKED: NEXT_BLOCK,
+    }[readiness]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": UCE_ID,
+        "maturity_level": MATURITY_LEVEL,
+        "expansion_layer": EXPANSION_LAYER,
+        "deterministic_logic_ready": A02711_L3_READY,
+        "readiness_status": readiness,
+        "risk_band": risk_band,
+        "evidence_completeness": completeness,
+        "required_evidence": required,
+        "present_evidence": present,
+        "missing_evidence": missing,
+        "recommended_next_step": recommended_next_step,
+        "human_review_required": HUMAN_REVIEW_REQUIRED,
+        "allowed_actions": list(A02711_ALLOWED_ACTIONS),
+        "forbidden_actions": list(A02711_FORBIDDEN_ACTIONS),
+        "l2_contract_preserved": L2_CONTRACT_PRESERVED,
+        "tenant_scoped": True,
+        "next_maturity_gap": "L4 operational visibility/API surface required",
+        "safety_flags": {
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_provider_call": True,
+            "no_credential_use": True,
+            "no_kpi_value_claim": True,
+            "no_brain_execution": True,
+            "no_autonomous_execution": True,
+            "no_external_side_effects": True,
+            "no_db_mutation": True,
+            "no_decision_execution": True,
+            "no_policy_enforcement": True,
+            "no_workflow_execution": True,
+            "human_review_required": True,
+            "no_l4_claim": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+            "tenant_fail_closed": True,
+            "l2_contract_preserved": True,
+        },
+    }
