@@ -2008,3 +2008,175 @@ If A-027.7 runtime passes for N selected candidates:
 
 - A-027.7-RUNTIME: COMPLETE
 - next_action_id: A-027.8-SPEC
+
+## A-027.8-SPEC - Expansion L2→L3 Deterministic Logic Batch 2 Selection
+
+### Why Batch 2 Now
+
+- A-027.7-RUNTIME completed the first controlled uplift with 10 deterministic L3 classifiers.
+- Expansion inventory now has a clear split: 10 already L3 and 57 remaining L2-only candidates.
+- Batch 2 focuses on low-blast-radius operational readiness surfaces (integration metadata, dashboards, policy/workflow readiness) while keeping strict non-execution boundaries.
+
+### Inventory Reconciliation (Authoritative)
+
+- total expansion L2 implemented foundations: 67
+- already L3 deterministic logic after A-027.7: 10
+- remaining L2-only pool for further L3 uplift: 57
+
+Formula check:
+
+- 67 = 10 + 57 (PASS)
+
+### Remaining 57 Pool by Type
+
+| Type | Remaining Count |
+| --- | ---: |
+| NEW_MODULE | 28 |
+| INTEGRATION | 11 |
+| AUDIT_EVIDENCE_CAPABILITY | 1 |
+| BRAIN_SIGNAL | 4 |
+| REPORT_DASHBOARD | 4 |
+| POLICY_CONTROL | 3 |
+| WORKFLOW | 4 |
+| AUTONOMOUS_WORKFLOW_CANDIDATE | 2 |
+| Total | 57 |
+
+### Exclusion Rules for Batch 2
+
+| Group | Type | Exclusion Reason | Defer Until |
+| --- | --- | --- | --- |
+| finance_erp_integration, payment_gateway_integration, identity_provider_integration, hr_payroll_integration, government_services_integration | INTEGRATION | high provider/financial/identity/regulatory blast radius in runtime | DEFER_AFTER_PROVIDER_HARDENING |
+| student_risk_signal_registry, finance_anomaly_signal_registry, procurement_risk_signal_registry, academic_quality_signal_registry | BRAIN_SIGNAL | avoid any execution/inference interpretation in this wave | DEFER_NEXT_L3_BATCH |
+| safe_evidence_summary_agent, safe_task_drafting_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | autonomy lane remains envelope-only | DEFER_AFTER_AUTONOMY_POLICY_REVIEW |
+| sensitive HR and sanctions modules (performance_appraisal, disciplinary_case_management, staff_probation_review, academic_integrity_case_management, student_financial_hardship, disability_support_services) | NEW_MODULE | sensitive human decision domains | DEFER_WITH_HUMAN_REVIEW_GATES |
+
+### Scoring Model for A-027.8
+
+| Criterion | Weight |
+| --- | ---: |
+| deterministic logic clarity | 0.18 |
+| low blast radius | 0.14 |
+| university operational value | 0.14 |
+| testability without db/provider/frontend | 0.10 |
+| tenant safety clarity | 0.10 |
+| cross-module pattern reuse | 0.10 |
+| L4 visibility foundation value | 0.10 |
+| no provider-runtime dependency risk | 0.07 |
+| no brain/autonomy execution risk | 0.05 |
+| no sensitive auto-decision risk | 0.02 |
+
+### Selected A-027.8 Batch 2 (12)
+
+| # | UCE ID | Candidate | Type | Source Wave | Package | Current Level | Target Level | Why Selected | L3 Boundary |
+| ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | UCE-024 | student_information_system_integration | INTEGRATION | A-027.5 | student_information_system_integration | L2 | expansion_L3_DETERMINISTIC_LOGIC | core upstream-record readiness and mapping completeness with high operational value | no live provider call, no credential use |
+| 2 | UCE-106 | learning_management_system_integration | INTEGRATION | A-027.5 | learning_management_system_integration | L2 | expansion_L3_DETERMINISTIC_LOGIC | deterministic sync-readiness and evidence quality checks | no live provider call, no credential use |
+| 3 | UCE-112 | regulatory_reporting_integration | INTEGRATION | A-027.5 | regulatory_reporting_integration | L2 | expansion_L3_DETERMINISTIC_LOGIC | reporting evidence-readiness classification is deterministic and audit-friendly | no report submission execution |
+| 4 | UCE-109 | digital_signature_integration | INTEGRATION | A-027.5 | digital_signature_integration | L2 | expansion_L3_DETERMINISTIC_LOGIC | signature-readiness envelope has clear deterministic gates | no signing execution |
+| 5 | UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | A-027.6 | compliance_calendar_dashboard | L2 | expansion_L3_DETERMINISTIC_LOGIC | dashboard evidence/source completeness is high-value and low-risk | no KPI value computation |
+| 6 | UCE-032 | ministry_reporting_dashboard | REPORT_DASHBOARD | A-027.6 | ministry_reporting_dashboard | L2 | expansion_L3_DETERMINISTIC_LOGIC | deterministic data-readiness for reporting governance | no KPI value computation |
+| 7 | UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | A-027.6 | accreditation_dashboard | L2 | expansion_L3_DETERMINISTIC_LOGIC | accreditation evidence readiness classification is deterministic | no KPI value computation |
+| 8 | UCE-031 | rector_strategy_dashboard | REPORT_DASHBOARD | A-027.6 | rector_strategy_dashboard | L2 | expansion_L3_DETERMINISTIC_LOGIC | strategic dashboard readiness benefits from deterministic evidence gates | no KPI value computation |
+| 9 | UCE-048 | data_retention_policy_control | POLICY_CONTROL | A-027.6 | data_retention_policy_control | L2 | expansion_L3_DETERMINISTIC_LOGIC | policy evidence-readiness and control-state determinism | no auto-enforcement |
+| 10 | UCE-046 | consent_management_policy | POLICY_CONTROL | A-027.6 | consent_management_policy | L2 | expansion_L3_DETERMINISTIC_LOGIC | consent governance readiness has clear deterministic preconditions | no auto-enforcement |
+| 11 | UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | A-027.6 | rector_resolution_tracking_workflow | L2 | expansion_L3_DETERMINISTIC_LOGIC | workflow readiness/risk logic has high governance leverage | no auto-routing/approval |
+| 12 | UCE-098 | procurement_plan_approval_workflow | WORKFLOW | A-027.6 | procurement_plan_approval_workflow | L2 | expansion_L3_DETERMINISTIC_LOGIC | procurement workflow evidence completeness and readiness is deterministic | no auto-routing/approval |
+
+### A-027.8 Expansion L3 Deterministic Logic Standard
+
+- INTEGRATION: deterministic readiness/risk/evidence classification only; provider metadata interpreted locally; no live call.
+- REPORT_DASHBOARD: evidence/source readiness classification only; no KPI value generation.
+- POLICY_CONTROL: policy readiness and completeness classification only; no enforcement execution.
+- WORKFLOW: workflow readiness and evidence completeness classification only; no route/approve/execute actions.
+
+Common output contract:
+
+- tenant_id, module, uce_id, maturity_level="L3", expansion_layer="university_completeness"
+- deterministic_logic_ready=True
+- readiness_status, risk_band, evidence_completeness, required_evidence, present_evidence, missing_evidence
+- recommended_next_step, human_review_required, allowed_actions, forbidden_actions
+- l2_contract_preserved=True
+- next_maturity_gap="L4 operational visibility/API surface required"
+- safety_flags with no_api_claim/no_frontend_claim/no_provider_call/no_credential_use/no_kpi_value_claim/no_brain_execution/no_autonomous_execution/no_external_side_effects/no_db_mutation/no_l4_claim/no_l5_claim/no_l6_claim
+
+### Candidate-by-Candidate L3 Spec Inputs (Batch 2)
+
+| Candidate | Required Evidence (deterministic keys) |
+| --- | --- |
+| student_information_system_integration | source_contract_profile, field_mapping_spec, data_sync_policy |
+| learning_management_system_integration | lms_endpoint_profile, enrollment_mapping_spec, sync_window_policy |
+| regulatory_reporting_integration | reporting_schema, submission_calendar, compliance_owner_record |
+| digital_signature_integration | signature_profile, document_hash_policy, signer_authority_record |
+| compliance_calendar_dashboard | compliance_source_catalog, reporting_calendar, owner_assignment |
+| ministry_reporting_dashboard | source_registry, publication_calendar, control_owner |
+| accreditation_dashboard | accreditation_criteria_map, evidence_registry, review_calendar |
+| rector_strategy_dashboard | strategic_indicator_catalog, source_registry, governance_owner |
+| data_retention_policy_control | retention_policy_registry, data_classification_map, exception_log |
+| consent_management_policy | consent_policy_registry, consent_evidence_log, revocation_handling_rule |
+| rector_resolution_tracking_workflow | resolution_record, stage_transition_rules, accountable_owner |
+| procurement_plan_approval_workflow | procurement_plan_record, approval_stage_rules, committee_owner |
+
+### Expected Runtime Files (A-027.8-RUNTIME)
+
+| File | Expected Action | Reason |
+| --- | --- | --- |
+| selected backend/app/modules/<module>/service.py | UPDATE_IN_RUNTIME | add deterministic L3 readiness logic functions |
+| backend/tests/test_a0278_expansion_l2_to_l3_deterministic_logic_batch2.py | CREATE_IN_RUNTIME | targeted batch-2 deterministic logic validation |
+| SBS_UB.md | UPDATE_IN_RUNTIME | runtime closure and expansion metrics updates |
+| SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md | UPDATE_IN_RUNTIME | mark selected batch-2 candidates with runtime L3 status |
+| A-027.8-RUNTIME report | CREATE_IN_RUNTIME | runtime evidence closure |
+
+### A-027.8 Runtime Test Plan (Planned)
+
+- import validation
+- L2 contract preservation checks
+- classifier callable checks
+- tenant fail-closed checks
+- readiness/risk/evidence completeness checks
+- missing_evidence deterministic ordering checks
+- recommended_next_step checks
+- human_review boundary and forbidden-action checks
+- anti-inflation checks
+- no API/frontend/provider/KPI/Brain/autonomy/L4+ checks
+
+Expected runtime test range: 120-260.
+
+### Expected Expansion Metrics (Spec-Only)
+
+Current locked:
+
+- A0277_l3_logic_count = 10
+- expansion_L3_logic_count = 10
+- expansion_L2_foundation_count = 67
+- expansion_runtime_implemented_count = 67
+
+If A-027.8 runtime passes for N selected candidates:
+
+- A0278_l3_logic_count = N
+- expansion_L3_logic_count = 10 + N
+- expansion_L2_foundation_count remains 67
+- expansion_runtime_implemented_count remains 67
+- baseline_impact = 0
+- extension_impact = 0
+
+If N=12:
+
+- A0278_l3_logic_count = 12
+- expansion_L3_logic_count = 22
+- expansion_L2_foundation_count = 67
+- expansion_runtime_implemented_count = 67
+- baseline_impact = 0
+- extension_impact = 0
+
+### Anti-Fake / Anti-Inflation Review
+
+- spec-only: no runtime code or tests changed in A-027.8-SPEC
+- no fake runtime implementation claim in this phase
+- no KPI fabrication, no Brain execution, no autonomous execution
+- baseline and extension metrics unchanged
+- expansion plane remains isolated from baseline and extension planes
+
+### Status
+
+- A-027.8-SPEC: COMPLETE (planning/docs only)
+- next_action_id: A-027.8-RUNTIME
