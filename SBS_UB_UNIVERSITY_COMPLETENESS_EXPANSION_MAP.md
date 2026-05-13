@@ -2180,3 +2180,84 @@ If N=12:
 
 - A-027.8-SPEC: COMPLETE (planning/docs only)
 - next_action_id: A-027.8-RUNTIME
+
+## A-027.8-RUNTIME - Expansion L2→L3 Deterministic Logic Batch 2
+
+### Runtime Summary
+
+- selected_count: 12
+- implementation_class: deterministic L3 readiness/risk/evidence logic overlays on existing L2 integration contracts and L2 envelope contracts
+- service_files_updated: 12
+- test_file_created: backend/tests/test_a0278_expansion_l2_to_l3_deterministic_logic_batch2.py
+- targeted_docker_pytest: PASS (204 passed, 1 warning)
+- import_sanity: PASS (IMPORT_SANITY_PASS modules=12)
+- continuity_pytest: PASS (A-027.2 through A-027.8, 1568 passed, 1 warning)
+
+### Implemented L3 Candidates
+
+| UCE ID | Candidate | Type | Source Wave | Package | L2 Contract/Envelope Preserved | L3 Runtime Status | Mapping Status | Next Target | Baseline Impact | Extension Impact | Provider Call | Brain Execution | Autonomous Execution |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| UCE-024 | student_information_system_integration | INTEGRATION | A-027.5 | student_information_system_integration | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+| UCE-106 | learning_management_system_integration | INTEGRATION | A-027.5 | learning_management_system_integration | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+| UCE-112 | regulatory_reporting_integration | INTEGRATION | A-027.5 | regulatory_reporting_integration | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+| UCE-109 | digital_signature_integration | INTEGRATION | A-027.5 | digital_signature_integration | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+| UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | A-027.6 | compliance_calendar_dashboard | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+| UCE-032 | ministry_reporting_dashboard | REPORT_DASHBOARD | A-027.6 | ministry_reporting_dashboard | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+| UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | A-027.6 | accreditation_dashboard | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+| UCE-031 | rector_strategy_dashboard | REPORT_DASHBOARD | A-027.6 | rector_strategy_dashboard | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+| UCE-048 | data_retention_policy_control | POLICY_CONTROL | A-027.6 | data_retention_policy_control | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+| UCE-046 | consent_management_policy | POLICY_CONTROL | A-027.6 | consent_management_policy | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+| UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | A-027.6 | rector_resolution_tracking_workflow | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+| UCE-098 | procurement_plan_approval_workflow | WORKFLOW | A-027.6 | procurement_plan_approval_workflow | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0278 | L4 operational visibility/API surface | NO | NO | NO | NO | NO |
+
+### Runtime Evidence
+
+- L2 function preservation: PASS (all existing integration and envelope contract functions still present and return L2)
+- deterministic classification behavior: PASS (READY_FOR_REVIEW/PARTIAL_EVIDENCE/INCOMPLETE_EVIDENCE/BLOCKED_MISSING_EVIDENCE)
+- deterministic risk behavior: PASS (LOW/MEDIUM/HIGH/BLOCKED by evidence completeness)
+- deterministic evidence completeness: PASS (0-100 from required/present evidence intersection)
+- recommended_next_step behavior: PASS (READY_FOR_HUMAN_REVIEW/REQUEST_MISSING_EVIDENCE/BLOCK_UNTIL_REQUIRED_EVIDENCE_PRESENT)
+- human review boundary: PASS (`human_review_required=True` in all classifiers)
+
+### Type-Specific Boundaries
+
+- integrations readiness-only: PASS (provider metadata preserved, no live provider call, no credential use, no fake success)
+- dashboards source/evidence readiness-only: PASS (no frontend rendering, no KPI value computation)
+- policy controls non-enforcement: PASS (readiness classification only; no delete/block/enforce automation)
+- workflows non-execution: PASS (readiness classification only; no route/approve/execute actions)
+
+### Anti-Inflation Review
+
+- no_api_routes: PASS
+- no_frontend_changes: PASS
+- no_db_migrations_or_mutations: PASS
+- no_provider_calls_or_credentials: PASS
+- no_kpi_value_computation: PASS
+- no_brain_execution: PASS
+- no_autonomous_execution: PASS
+- no_l4_plus_claims: PASS
+
+### Expansion Metrics After A-027.8-RUNTIME
+
+- A0272_implemented_foundation_count = 11
+- A0273_implemented_foundation_count = 12
+- A0274_implemented_foundation_count = 15
+- A0275_integration_contract_count = 11
+- A0276_envelope_foundation_count = 18
+- A0277_l3_logic_count = 10
+- A0278_l3_logic_count = 12
+- expansion_L2_foundation_count = 67
+- expansion_runtime_implemented_count = 67
+- expansion_L3_logic_count = 22
+- baseline_impact = 0
+- extension_impact = 0
+
+### Baseline and Extension Separation
+
+- baseline_maturity_unchanged: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+- extension_metrics_unchanged: extension_total_count=25, total_tracked_modules=175
+
+### Status
+
+- A-027.8-RUNTIME: COMPLETE
+- next_action_id: A-027.9-SPEC

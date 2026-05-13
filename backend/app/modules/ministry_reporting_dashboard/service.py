@@ -142,3 +142,84 @@ def get_ministry_reporting_dashboard_envelope_contract(tenant_id: int, payload: 
         "next_maturity_gap": "L3 deterministic envelope readiness logic required",
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def classify_ministry_reporting_dashboard_readiness(tenant_id: int, evidence: dict | None = None) -> dict:
+    """Deterministic L3 readiness classifier for report evidence readiness only."""
+    tenant_id = validate_tenant_id(tenant_id)
+    required_evidence = [
+        "reporting_template_registry",
+        "reporting_period_policy",
+        "approval_workflow_policy",
+    ]
+    evidence = evidence or {}
+    present_evidence = [key for key in required_evidence if key in evidence]
+    missing_evidence = [key for key in required_evidence if key not in evidence]
+    present_count = len(present_evidence)
+
+    if present_count == len(required_evidence):
+        readiness_status = "READY_FOR_REVIEW"
+        risk_band = "LOW"
+        recommended_next_step = "READY_FOR_HUMAN_REVIEW"
+    elif present_count == 2:
+        readiness_status = "PARTIAL_EVIDENCE"
+        risk_band = "MEDIUM"
+        recommended_next_step = "REQUEST_MISSING_EVIDENCE"
+    elif present_count == 1:
+        readiness_status = "INCOMPLETE_EVIDENCE"
+        risk_band = "HIGH"
+        recommended_next_step = "REQUEST_MISSING_EVIDENCE"
+    else:
+        readiness_status = "BLOCKED_MISSING_EVIDENCE"
+        risk_band = "BLOCKED"
+        recommended_next_step = "BLOCK_UNTIL_REQUIRED_EVIDENCE_PRESENT"
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": UCE_ID,
+        "maturity_level": "L3",
+        "expansion_layer": "university_completeness",
+        "deterministic_logic_ready": True,
+        "readiness_status": readiness_status,
+        "risk_band": risk_band,
+        "evidence_completeness": (present_count * 100) // len(required_evidence),
+        "required_evidence": required_evidence,
+        "present_evidence": present_evidence,
+        "missing_evidence": missing_evidence,
+        "recommended_next_step": recommended_next_step,
+        "human_review_required": True,
+        "allowed_actions": [
+            "REVIEW_READINESS_CLASSIFICATION",
+            "REQUEST_MISSING_EVIDENCE",
+            "PREPARE_HUMAN_REVIEW",
+        ],
+        "forbidden_actions": [
+            "AUTO_RENDER_DASHBOARD",
+            "AUTO_COMPUTE_KPI",
+            "AUTO_SUBMIT_REPORT",
+        ],
+        "l2_contract_preserved": True,
+        "l3_boundary": "dashboard_source_readiness_only_no_frontend_or_kpi_computation",
+        "next_maturity_gap": "L4 operational visibility/API surface required",
+        "safety_flags": {
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_provider_call": True,
+            "no_live_integration_call": True,
+            "no_credential_use": True,
+            "no_secret_storage": True,
+            "no_kpi_value_claim": True,
+            "no_fake_dashboard": True,
+            "no_policy_enforcement": True,
+            "no_report_submission": True,
+            "no_document_signature": True,
+            "no_brain_execution": True,
+            "no_autonomous_execution": True,
+            "no_external_side_effects": True,
+            "no_db_mutation": True,
+            "no_l4_claim": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+        },
+    }
