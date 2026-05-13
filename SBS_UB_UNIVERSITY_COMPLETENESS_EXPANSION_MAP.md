@@ -1936,3 +1936,75 @@ If A-027.7 runtime passes for N selected candidates:
 
 - A-027.7-SPEC: COMPLETE (planning/docs only)
 - next_action_id: A-027.7-RUNTIME
+
+## A-027.7-RUNTIME - Expansion L2→L3 Deterministic Logic Batch
+
+### Runtime Summary
+
+- selected_count: 10
+- implementation_class: deterministic L3 readiness/risk/evidence logic overlays on existing L2 foundations
+- service_files_updated: 10
+- test_file_created: backend/tests/test_a0277_expansion_l2_to_l3_deterministic_logic.py
+- targeted_docker_pytest: PASS (161 passed, 1 warning)
+- import_sanity: PASS (IMPORT_SANITY_PASS modules=10)
+- continuity_pytest: PASS (A-027.2 through A-027.7, 1364 passed, 1 warning)
+
+### Implemented L3 Candidates
+
+| UCE ID | Candidate | Type | Source Wave | Package | L2 Foundation Preserved | L3 Runtime Status | Mapping Status | Next Target | Baseline Impact | Extension Impact | Brain Execution | Autonomous Execution |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| UCE-009 | document_workflow | NEW_MODULE | A-027.2 | document_workflow | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0277 | L4 operational visibility/API surface | NO | NO | NO | NO |
+| UCE-011 | order_decree_registry | NEW_MODULE | A-027.2 | order_decree_registry | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0277 | L4 operational visibility/API surface | NO | NO | NO | NO |
+| UCE-013 | incoming_outgoing_correspondence | NEW_MODULE | A-027.4 | incoming_outgoing_correspondence | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0277 | L4 operational visibility/API surface | NO | NO | NO | NO |
+| UCE-089 | document_template_library | NEW_MODULE | A-027.4 | document_template_library | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0277 | L4 operational visibility/API surface | NO | NO | NO | NO |
+| UCE-076 | course_catalog_management | NEW_MODULE | A-027.3 | course_catalog_management | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0277 | L4 operational visibility/API surface | NO | NO | NO | NO |
+| UCE-015 | syllabus_management | NEW_MODULE | A-027.2 | syllabus_management | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0277 | L4 operational visibility/API surface | NO | NO | NO | NO |
+| UCE-014 | curriculum_mapping | NEW_MODULE | A-027.2 | curriculum_mapping | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0277 | L4 operational visibility/API surface | NO | NO | NO | NO |
+| UCE-074 | prerequisite_management | NEW_MODULE | A-027.3 | prerequisite_management | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0277 | L4 operational visibility/API surface | NO | NO | NO | NO |
+| UCE-092 | degree_audit | NEW_MODULE | A-027.3 | degree_audit | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0277 | L4 operational visibility/API surface | NO | NO | NO | NO |
+| UCE-075 | transfer_credit_management | NEW_MODULE | A-027.3 | transfer_credit_management | YES | IMPLEMENTED_L3_DETERMINISTIC_LOGIC | L3_DETERMINISTIC_LOGIC_IMPLEMENTED_AFTER_A0277 | L4 operational visibility/API surface | NO | NO | NO | NO |
+
+### Runtime Evidence
+
+- L2 function preservation: PASS (all existing `get_<module>_foundation_contract` still present and L2)
+- deterministic classification behavior: PASS (READY_FOR_REVIEW/PARTIAL_EVIDENCE/INCOMPLETE_EVIDENCE/BLOCKED_MISSING_EVIDENCE)
+- deterministic risk behavior: PASS (LOW/MEDIUM/HIGH/BLOCKED by evidence completeness)
+- deterministic evidence completeness: PASS (0-100 from required/present evidence intersection)
+- recommended_next_step behavior: PASS (READY_FOR_HUMAN_REVIEW/REQUEST_MISSING_EVIDENCE/COLLECT_REQUIRED_EVIDENCE/BLOCK_UNTIL_REQUIRED_EVIDENCE_PRESENT)
+- human review boundary: PASS (`human_review_required=True` in all classifiers)
+- UCE preservation: PASS (degree_audit=UCE-092; transfer_credit_management=UCE-075)
+
+### Anti-Inflation Review
+
+- no_api_routes: PASS
+- no_frontend_changes: PASS
+- no_db_migrations_or_mutations: PASS
+- no_provider_calls_or_credentials: PASS
+- no_kpi_value_computation: PASS
+- no_brain_execution: PASS
+- no_autonomous_execution: PASS
+- no_l4_plus_claims: PASS
+
+### Expansion Metrics After A-027.7-RUNTIME
+
+- A0272_implemented_foundation_count = 11
+- A0273_implemented_foundation_count = 12
+- A0274_implemented_foundation_count = 15
+- A0275_integration_contract_count = 11
+- A0276_envelope_foundation_count = 18
+- A0277_l3_logic_count = 10
+- expansion_L2_foundation_count = 67
+- expansion_runtime_implemented_count = 67
+- expansion_L3_logic_count = 10
+- baseline_impact = 0
+- extension_impact = 0
+
+### Baseline and Extension Separation
+
+- baseline_maturity_unchanged: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+- extension_metrics_unchanged: extension_total_count=25, total_tracked_modules=175
+
+### Status
+
+- A-027.7-RUNTIME: COMPLETE
+- next_action_id: A-027.8-SPEC
