@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_next_deferred_lane_or_L4_visibility_spec
-    - current_stage: A-027.12-SPEC complete / remaining expansion L2-only candidates classified
-    - last_completed_action_id: A-027.12-SPEC
-    - next_action_id: A-028.0-SPEC
-    - updated_at: 2026-05-13 (A-027.12-SPEC complete; remaining 17 expansion L2-only candidates classified into deferred lanes, no safe runtime batch selected)
+    - status: ready_for_A-028.0.B1
+    - current_stage: A-028.0-SPEC complete / expansion L3-to-L4 visibility wave planned
+    - last_completed_action_id: A-028.0-SPEC
+    - next_action_id: A-028.0.B1
+    - updated_at: 2026-05-14 (A-028.0-SPEC complete; L3->L4 visibility plan locked, quality baseline gate required before any A-028 runtime)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -541,6 +541,32 @@
     - spec_report_file: A-027.12-SPEC-REMAINING_EXPANSION_L2_TO_L3_CLOSURE_AND_DEFERRED_LANE_REPORT.md
     - final_verdict: A-027.12-SPEC CLOSED — PASS
     - next_action_id: A-028.0-SPEC
+- A-028.0-SPEC execution block:
+    - mode: planning_only_no_runtime_changes
+    - purpose: expansion_l3_to_l4_visibility_wave_planning_and_quality_baseline_decision
+    - repo_hygiene_check: PASS (only unrelated untracked A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md present and preserved)
+    - source_of_truth_check: PASS (A-027.12-SPEC closed, next_action_id was A-028.0-SPEC, expansion metrics and baseline/extension anchors aligned)
+    - a027_ordinary_l2_to_l3_closure_review: PASS (A0277=10, A0278=12, A0279=11, A02710=12, A02711=5, expansion_L3_logic_count=50, remaining_L2_only=17)
+    - strategic_decision: ORDINARY_SAFE_EXPANSION_L2_TO_L3_DEEPENING_CLOSED_FOR_NOW
+    - deferred_lane_summary_confirmed: PROVIDER_READINESS=7, BRAIN_GOVERNANCE=4, AUTONOMY=2, SENSITIVE_DOMAIN_L3=4
+    - coverage_gate_context: A-027.11 functional scoped Docker validation PASS (targeted 157 pass, continuity 1268 pass, both --no-cov) while strict global coverage gate was not reconfirmed in that scoped mode
+    - quality_baseline_option_evaluated: Q1_vs_Q2
+    - quality_baseline_decision: OPTION_Q1_REQUIRED
+    - rationale: no fresh authoritative post-A-027.11 full quality/coverage baseline evidence; must run pre-runtime quality gate before A-028 L4 runtime
+    - quality_baseline_blocker_scope: blocker_before_any_A028_L4_runtime_not_blocking_A0280_SPEC
+    - l4_visibility_candidate_pool_count: 50
+    - first_l4_planning_batch_count: 12
+    - first_l4_planning_batch_profile: high_visibility_value_low_risk_read_only_tenant_safe_no_provider_no_brain_no_autonomy_no_sensitive_execution
+    - first_l4_selected_candidates: UCE-009 document_workflow, UCE-011 order_decree_registry, UCE-013 incoming_outgoing_correspondence, UCE-089 document_template_library, UCE-090 committee_decision_registry, UCE-099 rector_resolution_tracking_workflow, UCE-122 compliance_calendar_dashboard, UCE-114 accreditation_dashboard, UCE-032 ministry_reporting_dashboard, UCE-031 rector_strategy_dashboard, UCE-012 archive_retention_management, UCE-019 international_office
+    - l4_visibility_standard_locked: tenant_safe_read_only_evidence_backed_traceable_no_mutation_no_provider_calls_no_brain_no_autonomy_no_decision_execution
+    - anti_inflation: PASS (spec-only, no runtime code/tests/API/frontend/provider/Brain/autonomy/policy execution, no fake KPI/dashboard, no L4/L5/L6 implementation claim)
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - expansion_metrics_locked_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, A0277_l3_logic_count=10, A0278_l3_logic_count=12, A0279_l3_logic_count=11, A02710_l3_logic_count=12, A02711_l3_logic_count=5, expansion_L3_logic_count=50, remaining_L2_only=17, baseline_impact=0, extension_impact=0
+    - expansion_metrics_expected_if_A0281_runtime_passes_with_N: expansion_L4_visibility_count=N, expansion_L3_logic_count=50 (overlay basis retained unless tracker policy changes), baseline_impact=0, extension_impact=0
+    - spec_report_file: A-028.0-SPEC-EXPANSION_L3_TO_L4_VISIBILITY_WAVE_PLAN.md
+    - final_verdict: A-028.0-SPEC CLOSED — PASS
+    - next_action_id: A-028.0.B1
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

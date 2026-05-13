@@ -2948,3 +2948,130 @@ If N=5:
 
 - next_action_id: A-028.0-SPEC
 - recommendation_scope: L3->L4 visibility planning plus deferred-lane sequencing (provider, Brain, autonomy, sensitive domains)
+
+## A-028.0-SPEC — Expansion L3→L4 Visibility Wave Planning / Quality Baseline Decision
+
+### A-027 Ordinary Expansion L2→L3 Deepening Closure Review
+
+- A-027.7 lifted 10 candidates to L3 deterministic logic.
+- A-027.8 lifted 12 candidates to L3 deterministic logic.
+- A-027.9 lifted 11 candidates to L3 deterministic logic.
+- A-027.10 lifted 12 candidates to L3 deterministic logic.
+- A-027.11 lifted 5 candidates to L3 deterministic logic.
+- total expansion L3 overlay count: 50.
+- remaining expansion L2-only count: 17.
+- A-027.12 selected no runtime batch (Option B) and classified all 17 into deferred lanes.
+- baseline impact: 0.
+- extension impact: 0.
+
+Decision:
+- ordinary safe expansion L2→L3 deepening is CLOSED FOR NOW.
+
+### Current Expansion Metrics (Planning Lock)
+
+- expansion_L2_foundation_count: 67
+- expansion_runtime_implemented_count: 67
+- A0277_l3_logic_count: 10
+- A0278_l3_logic_count: 12
+- A0279_l3_logic_count: 11
+- A02710_l3_logic_count: 12
+- A02711_l3_logic_count: 5
+- expansion_L3_logic_count: 50
+- remaining_L2_only: 17
+- baseline_impact: 0
+- extension_impact: 0
+
+### Remaining 17 L2-Only Deferred Lanes
+
+| Lane | Count | Candidates |
+|---|---:|---|
+| provider-readiness wave | 7 | UCE-025 finance_erp_integration, UCE-027 email_gateway_integration, UCE-028 notification_gateway_integration, UCE-030 government_services_integration, UCE-108 identity_provider_integration, UCE-110 payment_gateway_integration, UCE-113 hr_payroll_integration |
+| A-029 Brain governance wave | 4 | UCE-049 student_risk_signal_registry, UCE-050 finance_anomaly_signal_registry, UCE-051 academic_quality_signal_registry, UCE-129 procurement_risk_signal_registry |
+| A-030 human-approved autonomy wave | 2 | UCE-145 safe_evidence_summary_agent, UCE-146 safe_task_drafting_agent |
+| A-027.13 final sensitive L3 batch | 4 | UCE-007 disciplinary_case_management, UCE-078 academic_integrity_case_management, UCE-081 disability_support_services, UCE-082 student_financial_hardship |
+
+### Quality Baseline Decision Before L4 Runtime
+
+- A-027.11 functional scoped Docker validation: PASS (`157 passed` targeted and `1268 passed` continuity, both `--no-cov`).
+- strict global coverage gate was not reconfirmed in scoped mode (`37.13%` vs required `80%` in prior strict run context).
+- decision: **Option Q1 selected**.
+- quality baseline is mandatory before any A-028 L4 runtime.
+- this is **not** a blocker for A-028.0-SPEC planning completion.
+
+### Expansion L3→L4 Visibility Standard
+
+L4 visibility in this lane is NOT:
+- fake KPI values
+- fake dashboards
+- fake provider integration
+- fake Brain execution
+- fake autonomous execution
+- fake compliance certification
+- fake workflow execution completion
+
+L4 visibility in this lane requires:
+- tenant-safe read-only visibility surface or deterministic admin summary contract
+- explicit auth/rbac/permission boundary if API route is planned
+- no write/mutation side effects
+- evidence-backed fields only
+- source traceability to existing L3 deterministic outputs
+- no provider calls unless a provider-readiness wave explicitly enables it
+- no Brain/autonomy execution
+- no decision execution
+- tests for tenant fail-closed, permission boundaries, output shape, and no-mutation behavior in runtime wave
+
+### 50 L3 Candidate Scoring Summary
+
+Scoring dimensions applied to all 50 L3 candidates:
+1. rector/admin/compliance visibility value
+2. read-only safety feasibility
+3. tenant-safety clarity
+4. evidence-backed output readiness
+5. provider dependency risk
+6. Brain/autonomy dependency risk
+7. sensitive decision risk
+8. implementation simplicity
+9. cross-domain value
+10. future killer-workflow enablement
+
+| Recommendation Bucket | Count | Notes |
+|---|---:|---|
+| SELECT_A028_FIRST_L4_BATCH | 12 | highest-value, low-risk, evidence-ready, non-provider, non-Brain, non-autonomy, non-sensitive |
+| DEFER_AFTER_QUALITY_BASELINE | 20 | potentially suitable but lower immediate value or sequencing dependency |
+| DEFER_PROVIDER_LANE | 4 | provider-dependent integrations already at L3 but not first-lane L4 target |
+| DEFER_BRAIN_A029 | 1 | Brain evidence capability kept with Brain-governance sequencing |
+| DEFER_SENSITIVE_L4 | 9 | elevated human-decision/sanction/support risk |
+| DEFER_LOW_VALUE | 4 | lower near-term rector/admin/compliance visibility value |
+
+### Selected First L4 Visibility Candidate Set (Planning)
+
+| # | UCE ID | Candidate | Type | Domain | Current State | Proposed L4 Surface | Why Selected | L4 Boundary |
+|---:|---|---|---|---|---|---|---|---|
+| 1 | UCE-009 | document_workflow | NEW_MODULE | Document Workflow | L3 deterministic implemented | read-only admin summary endpoint | high cross-domain operational visibility | no dispatch execution, no mutation |
+| 2 | UCE-011 | order_decree_registry | NEW_MODULE | Governance / Document | L3 deterministic implemented | governance summary contract | rector/compliance tracking value | no decree enforcement |
+| 3 | UCE-013 | incoming_outgoing_correspondence | NEW_MODULE | Communications | L3 deterministic implemented | tenant-scoped correspondence visibility report | audit traceability and SLA visibility | no auto-send/close |
+| 4 | UCE-089 | document_template_library | NEW_MODULE | Document Workflow | L3 deterministic implemented | dashboard-ready evidence contract | reusable document governance visibility | no publish/delete execution |
+| 5 | UCE-090 | committee_decision_registry | NEW_MODULE | Governance | L3 deterministic implemented | governance queue summary | strong rector/compliance oversight value | no decision execution |
+| 6 | UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | Governance | L3 deterministic implemented | resolution lifecycle visibility endpoint | direct rector operational visibility | no auto-routing/approval |
+| 7 | UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | Legal / Audit | L3 deterministic implemented | compliance readiness visibility endpoint | compliance critical visibility | no synthetic KPI |
+| 8 | UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | Accreditation | L3 deterministic implemented | accreditation evidence summary endpoint | accreditation governance value | no synthetic KPI |
+| 9 | UCE-032 | ministry_reporting_dashboard | REPORT_DASHBOARD | Regulatory Reporting | L3 deterministic implemented | ministry readiness summary endpoint | regulator-facing operational readiness | no provider submission |
+| 10 | UCE-031 | rector_strategy_dashboard | REPORT_DASHBOARD | Governance / Rectorate | L3 deterministic implemented | rector executive visibility contract | high executive value with low risk | no synthetic KPI |
+| 11 | UCE-012 | archive_retention_management | NEW_MODULE | Library / Archive | L3 deterministic implemented | retention readiness visibility report | compliance/evidence relevance | no enforcement execution |
+| 12 | UCE-019 | international_office | NEW_MODULE | International Office | L3 deterministic implemented | international operations summary endpoint | cross-domain lifecycle visibility | no mobility decision execution |
+
+### Deferred / Excluded Candidate Rationale
+
+| Candidate Group | Reason | Future Wave |
+|---|---|---|
+| provider-dependent L3 integrations | provider risk and connector semantics should stay out of first ordinary L4 visibility lane | provider-readiness sequence |
+| Brain signal registries | explicit Brain governance lane separation | A-029 |
+| autonomous workflow candidates | autonomy lane separation with mandatory human approval governance | A-030 |
+| high-sensitivity decision domains | avoid sanction/aid/disability/integrity semantics in first L4 visibility lane | A-027.13 then later L4 |
+| lower-value or sequencing-dependent candidates | prioritize high-ROI visibility first | defer after first L4 batch |
+
+### Next Action Recommendation
+
+- next_action_id: A-028.0.B1
+- action_title: Expansion L3→L4 Pre-Runtime Quality Baseline / Full Gate Confirmation
+- gate_policy: no A-028 L4 runtime start until quality baseline decision report is closed
