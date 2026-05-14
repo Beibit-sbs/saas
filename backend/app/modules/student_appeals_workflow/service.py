@@ -275,3 +275,79 @@ def classify_student_appeals_workflow_readiness(
             "l2_contract_preserved": True,
         },
     }
+
+
+# A-028.9 L4 Visibility Summary - UCE-038 student_appeals_workflow
+
+def _build_student_appeals_workflow_l4_visibility_summary(l3_output: dict) -> dict:
+    """Build L4 visibility wrapper for student_appeals_workflow L3 readiness."""
+    status = str(l3_output.get("readiness_status", "UNKNOWN"))
+    required_evidence = list(l3_output.get("required_evidence", []))
+    present_evidence = list(l3_output.get("present_evidence", []))
+    missing_evidence = list(l3_output.get("missing_evidence", []))
+    human_review_required = bool(l3_output.get("human_review_required", True))
+
+    return {
+        "tenant_id": l3_output["tenant_id"],
+        "module": MODULE_NAME,
+        "uce_id": UCE_ID,
+        "visibility_level": "L4",
+        "source_maturity_level": "L3",
+        "visibility_type": "READ_ONLY_SERVICE_SUMMARY",
+        "readiness_summary": {
+            "status": status,
+            "evidence_completeness": l3_output.get("evidence_completeness", 0),
+            "recommended_next_step": l3_output.get("recommended_next_step"),
+            "ready_for_human_review": status == "READY_FOR_REVIEW",
+        },
+        "risk_summary": {
+            "risk_band": l3_output.get("risk_band"),
+        },
+        "evidence_summary": {
+            "required_evidence_count": len(required_evidence),
+            "present_evidence_count": len(present_evidence),
+            "missing_evidence_count": len(missing_evidence),
+            "required_evidence": required_evidence,
+            "present_evidence": present_evidence,
+        },
+        "missing_evidence_summary": {
+            "count": len(missing_evidence),
+            "items": missing_evidence,
+        },
+        "human_review_queue_summary": {
+            "candidate_count": 1 if human_review_required else 0,
+            "ready_for_human_review_count": 1 if status == "READY_FOR_REVIEW" else 0,
+            "blocked_count": 1 if status == "BLOCKED_MISSING_EVIDENCE" else 0,
+        },
+        "allowed_actions": list(dict.fromkeys(["VIEW_L4_VISIBILITY_SUMMARY"] + list(l3_output.get("allowed_actions", [])))),
+        "forbidden_actions": list(l3_output.get("forbidden_actions", [])),
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_external_submission": True,
+        "no_brain_execution": True,
+        "no_autonomous_execution": True,
+        "no_workflow_execution": True,
+        "no_decision_execution": True,
+        "no_fake_kpi": True,
+        "no_synthetic_score": True,
+        "no_synthetic_dashboard": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+        "l3_contract_preserved": True,
+        "api_route_deferred_to": "A-028.10",
+    }
+
+
+def get_student_appeals_workflow_l4_visibility_summary(
+    tenant_id: int, present_evidence: list[str] | set[str] | dict | None = None
+) -> dict:
+    """L4 read-only visibility summary for student_appeals_workflow (UCE-038)."""
+    tenant_id = validate_tenant_id(tenant_id)
+    evidence = present_evidence if isinstance(present_evidence, dict) else present_evidence
+    l3_output = classify_student_appeals_workflow_readiness(
+        tenant_id=tenant_id,
+        present_evidence=evidence if isinstance(evidence, (list, set)) else None,
+    )
+    return _build_student_appeals_workflow_l4_visibility_summary(l3_output)
