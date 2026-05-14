@@ -4870,6 +4870,120 @@ Selected all 10 A-028.9 candidates for API routes:
 - next_action_id: A-028.11-SPEC
 - action_title: plan consolidated summary refresh for full 32-route candidate set
 
+## A-028.11-SPEC — Expansion L4 Consolidated Summary Refresh from 22 to 32 Candidates
+
+### Overview
+
+| Field | Value |
+|---|---|
+| action_id | A-028.11-SPEC |
+| action_type | SPEC (docs/planning only — no runtime code) |
+| parent | A-028.10-RUNTIME |
+| scope | Refresh existing `GET /api/admin/expansion/l4/summary` endpoint to cover all 32 L4/API-routed candidates (was 22) |
+| strategy | Extend existing endpoint only — no new endpoint created |
+| candidates in scope | 32 (first wave 12 + second wave 10 + third wave 10) |
+| UCE-046 consent_management_policy | INCLUDED |
+| UCE-098 procurement_plan_approval_workflow | EXCLUDED |
+| report_file | `A-028.11-SPEC-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_32_REPORT.md` |
+
+### Source-of-Truth Check
+
+- status_before_spec: ready_for_A-028.11-SPEC ✅
+- expansion_L4_api_route_count_confirmed: 32 ✅
+- expansion_L4_consolidated_candidate_count_before: 22 ✅
+- CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02811: YES ✅
+
+### 32-Candidate Inventory Summary
+
+| Wave | Batch | UCE IDs | Count | Source Actions |
+|---|---|---|---|---|
+| Wave 1 | A-028.1/2/3 | UCE-009, UCE-011, UCE-013, UCE-089, UCE-090, UCE-099, UCE-122, UCE-114, UCE-032, UCE-031, UCE-012, UCE-019 | 12 | A-028.1, A-028.2, A-028.3 |
+| Wave 2 | A-028.6/7 | UCE-014, UCE-015, UCE-016, UCE-071, UCE-072, UCE-073, UCE-074, UCE-075, UCE-076, UCE-092 | 10 | A-028.6, A-028.7 |
+| Wave 3 | A-028.9/10 | UCE-001, UCE-002, UCE-003, UCE-004, UCE-017, UCE-022, UCE-023, UCE-037, UCE-038, UCE-046 | 10 | A-028.9, A-028.10 |
+| **Total** | | | **32** | A-028.1 – A-028.11 |
+
+### Runtime Changes Required in A-028.11-RUNTIME
+
+| File | Change Type | Description |
+|---|---|---|
+| `router.py` (expansion_visibility) | modify | Extend `CONSOLIDATED_SOURCE_ACTIONS` (+A-028.9/10/11); add 10 catalog entries for wave 3 candidates; add `coverage_version="A-028.11"` and `total_consolidated_candidates=32` to consolidated response |
+| `test_a02811_expansion_l4_consolidated_summary_refresh_32.py` | create | New targeted test suite (100–220 assertions) |
+| `test_a0288_expansion_l4_consolidated_summary_refresh.py` | modify | Adapt hardcoded count=22 assertions |
+| `test_a0284_expansion_l4_consolidated_summary.py` | modify | Adapt source_actions exact-match assertion (currently asserts 6 exact actions) |
+| `test_a02810_expansion_l4_api_routes_batch4.py` | modify | Remove/relax assertion that consolidated count==22 (now superseded by refresh) |
+
+### Candidate Marker Table
+
+| UCE ID | Candidate | L4_READONLY_API_ROUTE_IMPLEMENTED | IN_CONSOLIDATED_BEFORE_A02811 | IN_CONSOLIDATED_AFTER_A02811 |
+|---|---|---|---|---|
+| UCE-009 | document_workflow | ✅ | ✅ | ✅ |
+| UCE-011 | order_decree_registry | ✅ | ✅ | ✅ |
+| UCE-013 | incoming_outgoing_correspondence | ✅ | ✅ | ✅ |
+| UCE-089 | document_template_library | ✅ | ✅ | ✅ |
+| UCE-090 | committee_decision_registry | ✅ | ✅ | ✅ |
+| UCE-099 | rector_resolution_tracking_workflow | ✅ | ✅ | ✅ |
+| UCE-122 | compliance_calendar_dashboard | ✅ | ✅ | ✅ |
+| UCE-114 | accreditation_dashboard | ✅ | ✅ | ✅ |
+| UCE-032 | ministry_reporting_dashboard | ✅ | ✅ | ✅ |
+| UCE-031 | rector_strategy_dashboard | ✅ | ✅ | ✅ |
+| UCE-012 | archive_retention_management | ✅ | ✅ | ✅ |
+| UCE-019 | international_office | ✅ | ✅ | ✅ |
+| UCE-014 | curriculum_mapping | ✅ | ✅ | ✅ |
+| UCE-015 | syllabus_management | ✅ | ✅ | ✅ |
+| UCE-016 | competency_framework | ✅ | ✅ | ✅ |
+| UCE-071 | program_learning_outcomes | ✅ | ✅ | ✅ |
+| UCE-072 | course_learning_outcomes | ✅ | ✅ | ✅ |
+| UCE-073 | elective_course_selection | ✅ | ✅ | ✅ |
+| UCE-074 | prerequisite_management | ✅ | ✅ | ✅ |
+| UCE-075 | transfer_credit_management | ✅ | ✅ | ✅ |
+| UCE-076 | course_catalog_management | ✅ | ✅ | ✅ |
+| UCE-092 | degree_audit | ✅ | ✅ | ✅ |
+| UCE-001 | staff_recruitment | ✅ | ❌ (gap before A02811) | ✅ |
+| UCE-002 | staff_onboarding | ✅ | ❌ (gap before A02811) | ✅ |
+| UCE-003 | employee_records | ✅ | ❌ (gap before A02811) | ✅ |
+| UCE-004 | leave_management | ✅ | ❌ (gap before A02811) | ✅ |
+| UCE-017 | dormitory_management | ✅ | ❌ (gap before A02811) | ✅ |
+| UCE-022 | partnership_registry | ✅ | ❌ (gap before A02811) | ✅ |
+| UCE-023 | mou_lifecycle | ✅ | ❌ (gap before A02811) | ✅ |
+| UCE-037 | scholarship_committee_workflow | ✅ | ❌ (gap before A02811) | ✅ |
+| UCE-038 | student_appeals_workflow | ✅ | ❌ (gap before A02811) | ✅ |
+| UCE-046 | consent_management_policy | ✅ | ❌ (gap before A02811) | ✅ |
+| UCE-098 | procurement_plan_approval_workflow | EXCLUDED | EXCLUDED | EXCLUDED |
+
+### Expected Metric Movement
+
+| Metric | Before A-028.11 | After A-028.11-RUNTIME |
+|---|---|---|
+| expansion_L4_consolidated_summary_count | 1 | 1 (unchanged — refresh, not new endpoint) |
+| expansion_L4_consolidated_candidate_count | 22 | 32 (+10) |
+| A02811_l4_consolidated_summary_refresh_count | — | 1 (new tracking field) |
+| expansion_L4_api_route_count | 32 | 32 (unchanged) |
+| expansion_L4_visibility_count | 32 | 32 (unchanged) |
+| expansion_L3_logic_count | 50 | 50 (unchanged) |
+| baseline_impact | 0 | 0 (unchanged) |
+| extension_impact | 0 | 0 (unchanged) |
+
+### Anti-Fake Gates
+
+- no runtime code written in SPEC: PASS
+- no new visibility functions: PASS (reusing A-028.9 service functions already imported)
+- no fake KPI or synthetic score: PASS
+- no new consolidated endpoint (refresh only): PASS
+- UCE-046 included: PASS
+- UCE-098 excluded: PASS
+- expansion_L4_consolidated_summary_count stays 1: PASS
+- baseline/extension unchanged: PASS
+
+### Final Decision
+
+- final_verdict: A-028.11-SPEC CLOSED — PASS
+- report_file: `A-028.11-SPEC-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_32_REPORT.md`
+
+### Next Action
+
+- next_action_id: A-028.11-RUNTIME
+- action_title: refresh existing consolidated summary endpoint to cover all 32 L4/API-routed candidates
+
 ## A-028.2-SPEC - Expansion L4 Read-Only API Surface / Admin Route Specification
 
 ### A-028.1 Runtime Closure Summary

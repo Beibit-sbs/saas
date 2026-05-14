@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.11-SPEC
-    - current_stage: A-028.10-RUNTIME complete / 10 API routes implemented for A-028.9 batch
-    - last_completed_action_id: A-028.10-RUNTIME
-    - next_action_id: A-028.11-SPEC
-    - updated_at: 2026-05-15 (A-028.10-RUNTIME complete; 10 GET-only API routes added for SPEC-selected candidates; UCE-046 included and UCE-098 excluded; A-028/A-027 continuity and LDAP smoke packs PASS; anti-inflation gates PASS; consolidated summary refresh remains deferred to A-028.11)
+    - status: ready_for_A-028.11-RUNTIME
+    - current_stage: A-028.11-SPEC complete / consolidated L4 summary refresh plan documented (22→32 candidates)
+    - last_completed_action_id: A-028.11-SPEC
+    - next_action_id: A-028.11-RUNTIME
+    - updated_at: 2026-05-15 (A-028.11-SPEC complete; refresh strategy defined; 32-candidate inventory confirmed; UCE-046 included, UCE-098 excluded; no runtime code written)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1194,6 +1194,24 @@
     - runtime_report_file: A-028.10-RUNTIME-EXPANSION_L4_API_ROUTES_BATCH4_REPORT.md
     - final_verdict: A-028.10-RUNTIME CLOSED — PASS_AUTHORITATIVE
     - next_action_id: A-028.11-SPEC
+- A-028.11-SPEC execution block:
+    - mode: spec_planning_only_no_runtime_code
+    - purpose: define_refresh_plan_for_consolidated_l4_summary_endpoint_22_to_32_candidates
+    - source_of_truth_verification: PASS (A-028.10-RUNTIME closed, next_action_id confirmed as A-028.11-SPEC, expansion metrics aligned: L4_api_route=32, consolidated_candidate=22, refresh_deferred confirmed)
+    - strategy_selected: refresh_existing_endpoint_only (no new endpoint created)
+    - endpoint_in_scope: GET /api/admin/expansion/l4/summary (single existing endpoint)
+    - candidates_before: 22 (wave 1 × 12 + wave 2 × 10)
+    - candidates_after_runtime: 32 (wave 1 × 12 + wave 2 × 10 + wave 3 × 10)
+    - uce_046_included: YES (consent_management_policy)
+    - uce_098_excluded: YES (procurement_plan_approval_workflow — no L4 visibility summary)
+    - runtime_files_identified: router.py (CONSOLIDATED_SOURCE_ACTIONS extend, CONSOLIDATED_MODULE_CATALOG +10 entries, coverage_version="A-028.11", total_consolidated_candidates=32); test_a02811 (create); test_a0288/test_a0284/test_a02810 (adapt count=22 assertions)
+    - test_plan: test_a02811_expansion_l4_consolidated_summary_refresh_32.py, 100–220 assertions
+    - expansion_metrics_locked_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, A0281_l4_visibility_count=12, A0286_l4_visibility_count=10, A0289_l4_visibility_count=10, expansion_L4_visibility_count=32, A0282_l4_api_route_count=6, A0283_l4_api_route_count=6, A0287_l4_api_route_count=10, A02810_l4_api_route_count=10, expansion_L4_api_route_count=32, A0288_l4_consolidated_summary_refresh_count=1, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=22, CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02811=YES, baseline_impact=0, extension_impact=0
+    - expected_metric_formula_if_runtime_passes: A02811_l4_consolidated_summary_refresh_count=1, expansion_L4_consolidated_candidate_count=32, expansion_L4_consolidated_summary_count=1 (unchanged — refresh not new endpoint), expansion_L4_api_route_count=32 (unchanged), expansion_L4_visibility_count=32 (unchanged), expansion_L3_logic_count=50 (unchanged), baseline_impact=0, extension_impact=0
+    - anti_inflation: PASS (no runtime code written, no new endpoint, no fake KPI, no synthetic score, no baseline/extension movement, UCE-046 included, UCE-098 excluded, consolidated_summary_count stays 1)
+    - spec_report_file: A-028.11-SPEC-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_32_REPORT.md
+    - final_verdict: A-028.11-SPEC CLOSED — PASS
+    - next_action_id: A-028.11-RUNTIME
 - A-026.10-SPEC execution block:
     - spec_scope: planning_only_no_runtime_code_changes
     - remaining_l2_count_confirmed: 13
