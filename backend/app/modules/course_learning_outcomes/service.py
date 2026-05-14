@@ -13,18 +13,18 @@ L2_CONTRACT_PRESERVED = True
 def get_course_learning_outcomes_foundation_contract(tenant_id: int, payload: dict | None = None) -> dict:
     """
     Return L2 foundation contract for course learning outcomes.
-    
+
     Tenant validation:
     - None/0/-1 rejected
     - positive int accepted
-    
+
     Course-level outcomes definitions. No enforcement, deterministic only.
     """
-    
+
     # Tenant fail-closed validation
     if not tenant_id or tenant_id <= 0:
         raise ValueError(f"invalid_tenant_id: {tenant_id}")
-    
+
     return {
         "tenant_id": tenant_id,
         "module": MODULE_NAME,
@@ -186,4 +186,64 @@ def classify_course_learning_outcomes_readiness(
         "tenant_scoped": True,
         "next_maturity_gap": "L4 operational visibility/API surface required",
         "safety_flags": _build_safety_flags(),
+    }
+
+
+def get_course_learning_outcomes_l4_visibility_summary(tenant_id: int, evidence: dict | None = None) -> dict:
+    """
+    L4 read-only visibility summary for course learning outcomes.
+
+    Wraps L3 deterministic readiness with L4 visibility surface.
+    No mutations, no provider calls, no fake KPI, no L5/L6 claims.
+    Tenant-safe fail-closed behavior.
+    """
+    if not tenant_id or tenant_id <= 0:
+        raise ValueError(f"invalid_tenant_id: {tenant_id}")
+
+    l3_readiness = classify_course_learning_outcomes_readiness(tenant_id, evidence)
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": UCE_ID,
+        "visibility_level": "L4",
+        "source_maturity_level": "L3",
+        "visibility_type": "READ_ONLY_SERVICE_SUMMARY",
+        "expansion_layer": EXPANSION_LAYER,
+        "readiness_summary": {
+            "status": l3_readiness.get("readiness_status"),
+            "risk_band": l3_readiness.get("risk_band"),
+            "evidence_completeness": l3_readiness.get("evidence_completeness"),
+        },
+        "risk_summary": {
+            "risk_band": l3_readiness.get("risk_band"),
+            "missing_evidence": l3_readiness.get("missing_evidence"),
+            "required_next_step": l3_readiness.get("recommended_next_step"),
+        },
+        "evidence_summary": {
+            "required": l3_readiness.get("required_evidence"),
+            "present": l3_readiness.get("present_evidence"),
+            "missing": l3_readiness.get("missing_evidence"),
+        },
+        "missing_evidence_summary": l3_readiness.get("missing_evidence"),
+        "human_review_queue_summary": "REVIEW_READINESS_CLASSIFICATION" if l3_readiness.get("human_review_required") else None,
+        "allowed_actions": l3_readiness.get("allowed_actions"),
+        "forbidden_actions": l3_readiness.get("forbidden_actions"),
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_external_submission": True,
+        "no_brain_execution": True,
+        "no_autonomous_execution": True,
+        "no_workflow_execution": True,
+        "no_decision_execution": True,
+        "no_fake_kpi": True,
+        "no_synthetic_score": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+        "l3_contract_preserved": True,
+        "api_route_deferred_to": "A-028.7",
+        "deterministic": True,
+        "created_at_action_id": "A-028.6-RUNTIME",
     }

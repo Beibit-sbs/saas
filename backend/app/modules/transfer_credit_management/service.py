@@ -15,7 +15,7 @@ def validate_tenant_id(tenant_id: int) -> int:
 def get_transfer_credit_management_foundation_contract(tenant_id: int, payload: dict | None = None) -> dict:
     """L2 foundation contract for transfer_credit_management. No provider calls, no autonomy, deterministic only."""
     validate_tenant_id(tenant_id)
-    
+
     return {
         "tenant_id": tenant_id,
         "module": MODULE_NAME,
@@ -26,7 +26,7 @@ def get_transfer_credit_management_foundation_contract(tenant_id: int, payload: 
         "service_contract_ready": True,
         "tenant_scoped": True,
         "deterministic": True,
-        
+
         "lifecycle_statuses": [
             "REQUESTED",
             "DOCUMENT_REVIEW",
@@ -34,27 +34,27 @@ def get_transfer_credit_management_foundation_contract(tenant_id: int, payload: 
             "APPROVED_MANUAL",
             "REJECTED_MANUAL"
         ],
-        
+
         "allowed_actions": [
             "REVIEW_TRANSFER_REQUEST",
             "REQUEST_TRANSCRIPT_EVIDENCE",
             "MARK_READY_FOR_EQUIVALENCY_REVIEW"
         ],
-        
+
         "forbidden_actions": [
             "NO_AUTO_APPROVE_CREDIT",
             "NO_AUTO_CHANGE_GPA",
             "NO_AUTO_MODIFY_ACADEMIC_RECORD"
         ],
-        
+
         "required_evidence": [
             "external_transcript",
             "equivalency_mapping",
             "approval_record"
         ],
-        
+
         "next_maturity_gap": "L3 deterministic logic: credit equivalency rules and validation",
-        
+
         "safety_flags": {
             "no_api_claim": True,
             "no_frontend_claim": True,
@@ -138,4 +138,63 @@ def classify_transfer_credit_management_readiness(tenant_id: int, evidence: dict
             "no_l5_claim": True,
             "no_l6_claim": True,
         },
+    }
+
+
+def get_transfer_credit_management_l4_visibility_summary(tenant_id: int, evidence: dict | None = None) -> dict:
+    """
+    L4 read-only visibility summary for transfer credit management.
+
+    Wraps L3 deterministic readiness with L4 visibility surface.
+    No mutations, no provider calls, no fake KPI, no L5/L6 claims.
+    Tenant-safe fail-closed behavior.
+    """
+    validate_tenant_id(tenant_id)
+
+    l3_readiness = classify_transfer_credit_management_readiness(tenant_id, evidence)
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": CANONICAL_UCE_ID,
+        "visibility_level": "L4",
+        "source_maturity_level": "L3",
+        "visibility_type": "READ_ONLY_SERVICE_SUMMARY",
+        "expansion_layer": "university_completeness",
+        "readiness_summary": {
+            "status": l3_readiness.get("readiness_status"),
+            "risk_band": l3_readiness.get("risk_band"),
+            "evidence_completeness": l3_readiness.get("evidence_completeness"),
+        },
+        "risk_summary": {
+            "risk_band": l3_readiness.get("risk_band"),
+            "missing_evidence": l3_readiness.get("missing_evidence"),
+            "required_next_step": l3_readiness.get("recommended_next_step"),
+        },
+        "evidence_summary": {
+            "required": l3_readiness.get("required_evidence"),
+            "present": l3_readiness.get("present_evidence"),
+            "missing": l3_readiness.get("missing_evidence"),
+        },
+        "missing_evidence_summary": l3_readiness.get("missing_evidence"),
+        "human_review_queue_summary": "REVIEW_READINESS_CLASSIFICATION" if l3_readiness.get("human_review_required") else None,
+        "allowed_actions": l3_readiness.get("allowed_actions"),
+        "forbidden_actions": l3_readiness.get("forbidden_actions"),
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_external_submission": True,
+        "no_brain_execution": True,
+        "no_autonomous_execution": True,
+        "no_workflow_execution": True,
+        "no_decision_execution": True,
+        "no_fake_kpi": True,
+        "no_synthetic_score": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+        "l3_contract_preserved": True,
+        "api_route_deferred_to": "A-028.7",
+        "deterministic": True,
+        "created_at_action_id": "A-028.6-RUNTIME",
     }
