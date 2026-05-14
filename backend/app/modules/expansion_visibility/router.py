@@ -39,7 +39,7 @@ ExpansionRead = Annotated[None, Depends(permission_dependency("admin.expansion.r
 SummaryBuilder = Callable[[int], dict[str, Any]]
 
 
-CONSOLIDATED_SOURCE_ACTIONS = ["A-028.1", "A-028.2", "A-028.3"]
+CONSOLIDATED_SOURCE_ACTIONS = ["A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8"]
 CONSOLIDATED_MODULE_CATALOG: list[dict[str, Any]] = [
     {
         "uce_id": "UCE-009",
@@ -113,6 +113,66 @@ CONSOLIDATED_MODULE_CATALOG: list[dict[str, Any]] = [
         "domain": "International Office",
         "builder": get_international_office_l4_visibility_summary,
     },
+    {
+        "uce_id": "UCE-014",
+        "module": "curriculum_mapping",
+        "domain": "Academic / Curriculum",
+        "builder": get_curriculum_mapping_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-015",
+        "module": "syllabus_management",
+        "domain": "Academic / Curriculum",
+        "builder": get_syllabus_management_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-016",
+        "module": "competency_framework",
+        "domain": "Academic / Competencies",
+        "builder": get_competency_framework_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-071",
+        "module": "program_learning_outcomes",
+        "domain": "Academic / Outcomes",
+        "builder": get_program_learning_outcomes_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-072",
+        "module": "course_learning_outcomes",
+        "domain": "Academic / Outcomes",
+        "builder": get_course_learning_outcomes_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-073",
+        "module": "elective_course_selection",
+        "domain": "Academic / Enrollment",
+        "builder": get_elective_course_selection_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-074",
+        "module": "prerequisite_management",
+        "domain": "Academic / Prerequisites",
+        "builder": get_prerequisite_management_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-075",
+        "module": "transfer_credit_management",
+        "domain": "Academic / Transfer",
+        "builder": get_transfer_credit_management_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-076",
+        "module": "course_catalog_management",
+        "domain": "Academic / Catalog",
+        "builder": get_course_catalog_management_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-092",
+        "module": "degree_audit",
+        "domain": "Academic / Audit",
+        "builder": get_degree_audit_l4_visibility_summary,
+    },
 ]
 
 
@@ -155,8 +215,15 @@ def _aggregate_missing_evidence(modules: list[dict[str, Any]]) -> dict[str, Any]
     total_missing_entries = 0
 
     for module in modules:
-        summary = module.get("missing_evidence_summary", {})
-        items = summary.get("items", [])
+        summary = module.get("missing_evidence_summary")
+        # Handle both dict format (with "items" key) and list format
+        if isinstance(summary, dict):
+            items = summary.get("items", [])
+        elif isinstance(summary, list):
+            items = summary
+        else:
+            items = []
+            
         if isinstance(items, list):
             total_missing_entries += len(items)
             for item in items:
@@ -180,12 +247,17 @@ def _aggregate_human_review_rollup(modules: list[dict[str, Any]]) -> dict[str, i
         "modules_requiring_human_review_count": 0,
     }
     for module in modules:
-        queue = module.get("human_review_queue_summary", {})
+        queue = module.get("human_review_queue_summary")
+        # Handle both dict format and string format
         if isinstance(queue, dict):
             rollup["candidate_count"] += int(queue.get("candidate_count", 0) or 0)
             rollup["ready_for_human_review_count"] += int(queue.get("ready_for_human_review_count", 0) or 0)
             rollup["pending_manual_evidence_count"] += int(queue.get("pending_manual_evidence_count", 0) or 0)
             rollup["blocked_count"] += int(queue.get("blocked_count", 0) or 0)
+        elif isinstance(queue, str) and queue:
+            # String format means there's a review item present
+            rollup["modules_requiring_human_review_count"] += 1
+            
         if module.get("human_review_required") is True:
             rollup["modules_requiring_human_review_count"] += 1
     return rollup

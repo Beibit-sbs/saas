@@ -769,16 +769,16 @@ def test_a0287_expansion_l4_api_route_count_formula() -> None:
 # ---------------------------------------------------------------------------
 
 def test_a0287_consolidated_summary_refresh_deferred_to_a0288() -> None:
-    # Consolidated endpoint is unchanged — A-028.7 adds individual routes only
+    # Consolidated endpoint is unchanged in A-028.7 — will be refreshed in A-028.8
     # CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A0288 = YES
-    # Verify consolidated still returns 12-module catalog (pre-A-028.7 batch)
+    # As of A-028.8, consolidated now returns 22-module catalog (post-refresh)
     test_client = TestClient(app)
     response = test_client.get(CONSOLIDATED_ROUTE, headers=_headers_with_permission())
     assert response.status_code == 200
     payload = response.json()
     assert payload.get("summary_type") == "EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY"
-    # Consolidated catalog has 12 modules (A-028.1/2/3 batch) — not refreshed in A-028.7
-    assert payload.get("total_l4_visibility_candidates") == 12
+    # Consolidated catalog has 22 modules (A-028.1/2/3 batch + A-028.6/7/8 refresh)
+    assert payload.get("total_l4_visibility_candidates") == 22
 
 
 # ---------------------------------------------------------------------------

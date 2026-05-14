@@ -41,8 +41,18 @@ EXPECTED_MODULES = {
     "rector_strategy_dashboard",
     "archive_retention_management",
     "international_office",
+    "curriculum_mapping",
+    "syllabus_management",
+    "competency_framework",
+    "program_learning_outcomes",
+    "course_learning_outcomes",
+    "elective_course_selection",
+    "prerequisite_management",
+    "transfer_credit_management",
+    "course_catalog_management",
+    "degree_audit",
 }
-EXPECTED_SOURCE_ACTIONS = {"A-028.1", "A-028.2", "A-028.3"}
+EXPECTED_SOURCE_ACTIONS = {"A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8"}
 
 
 @pytest.fixture
@@ -132,8 +142,8 @@ def test_a0284_core_contract_fields(test_client: TestClient) -> None:
     assert payload["visibility_level"] == "L4"
     assert payload["summary_type"] == "EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY"
     assert set(payload["source_actions"]) == EXPECTED_SOURCE_ACTIONS
-    assert payload["total_l4_visibility_candidates"] == 12
-    assert payload["total_api_routed_candidates"] == 12
+    assert payload["total_l4_visibility_candidates"] == 22
+    assert payload["total_api_routed_candidates"] == 22
 
 
 def test_a0284_modules_included_and_complete(test_client: TestClient) -> None:
@@ -141,7 +151,7 @@ def test_a0284_modules_included_and_complete(test_client: TestClient) -> None:
     modules = payload["modules"]
 
     assert isinstance(modules, list)
-    assert len(modules) == 12
+    assert len(modules) == 22
 
     module_ids = {item["module"] for item in modules}
     assert module_ids == EXPECTED_MODULES
@@ -163,7 +173,7 @@ def test_a0284_readiness_counts_derived_unknown_safe(test_client: TestClient) ->
     counts = payload["readiness_status_counts"]
 
     assert isinstance(counts, dict)
-    assert sum(counts.values()) == 12
+    assert sum(counts.values()) == 22
     assert all(isinstance(key, str) and key for key in counts)
     assert all(isinstance(value, int) and value >= 0 for value in counts.values())
 
@@ -173,7 +183,7 @@ def test_a0284_risk_counts_derived_unknown_safe(test_client: TestClient) -> None
     counts = payload["risk_band_counts"]
 
     assert isinstance(counts, dict)
-    assert sum(counts.values()) == 12
+    assert sum(counts.values()) == 22
     assert all(isinstance(key, str) and key for key in counts)
     assert all(isinstance(value, int) and value >= 0 for value in counts.values())
 
@@ -276,7 +286,7 @@ def test_a0284_no_synthetic_score_kpi_ranking_recommendation_fields(test_client:
 
 def test_a0284_source_actions_are_exactly_a0281_to_a0283(test_client: TestClient) -> None:
     payload = _payload(test_client)
-    assert Counter(payload["source_actions"]) == Counter(["A-028.1", "A-028.2", "A-028.3"])
+    assert Counter(payload["source_actions"]) == Counter(["A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8"])
 
 
 @pytest.mark.parametrize("method", ["post", "put", "patch", "delete"])

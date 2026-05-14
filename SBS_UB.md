@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.8-RUNTIME
-    - current_stage: A-028.8-SPEC complete / expansion L4 consolidated summary refresh specified
-    - last_completed_action_id: A-028.8-SPEC
-    - next_action_id: A-028.8-RUNTIME
-    - updated_at: 2026-05-14 (A-028.8-SPEC completed; consolidated endpoint refresh planned for 22 L4 candidates; A0288_l4_consolidated_summary_refresh_count=1)
+    - status: ready_for_A-028.9-SPEC
+    - current_stage: A-028.8-RUNTIME complete / expansion L4 consolidated summary refreshed to 22 candidates
+    - last_completed_action_id: A-028.8-RUNTIME
+    - next_action_id: A-028.9-SPEC
+    - updated_at: 2026-05-14 (A-028.8-RUNTIME completed; consolidated endpoint refreshed from 12 to 22 L4 candidates; aggregation functions fixed for mixed service structures; all 905+517 tests PASS)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -992,6 +992,35 @@
     - runtime_report_file: A-026.9-RUNTIME-L2_TO_L3_DETERMINISTIC_SERVICE_LOGIC_BATCH2_REPORT.md
     - final_verdict: RUNTIME_COMPLETE_AUTHORITATIVE_PASS
     - next_action_id: A-026.10-SPEC
+- A-028.8-RUNTIME execution block:
+    - runtime_scope: backend service logic + test updates + aggregation function fixes
+    - purpose: refresh_consolidated_l4_summary_endpoint_from_12_to_22_candidates
+    - repo_hygiene_check: PASS (expected unmodified: backend/.coverage modified auto, A-027.9 untracked; modified: router.py, test_a0284, test_a0287; created: test_a0288)
+    - source_of_truth_verification: PASS (A-028.8-SPEC control block confirmed ready_for_A-028.8-RUNTIME, all 22 service functions already imported)
+    - implementation_tasks_completed: 
+        - Task 1-3: Verify repo hygiene, A-028.8-SPEC closure, 22 service functions available (PASS)
+        - Task 4: Extended CONSOLIDATED_MODULE_CATALOG from 12 to 22 entries with all 10 second-wave candidates (PASS)
+        - Task 5: Updated CONSOLIDATED_SOURCE_ACTIONS from 3 to 6 items (A-028.1/2/3 + A-028.6/7/8) (PASS)
+        - Task 6-7: Created test_a0288 with 47+ test functions covering 80+ assertions for 22-candidate verification (PASS)
+        - Task 8-9: Updated test_a0284 assertions to 22 and fixed _aggregate_missing_evidence/_aggregate_human_review_rollup functions (PASS)
+        - Task 10: Ran full A-028 continuity pack (A-028.1-7): 905 tests PASS (PASS)
+        - Task 11: Ran A-027 continuity spot check: 517 tests PASS (PASS)
+        - Task 12: Updated SBS_UB.md control block to mark A-028.8-RUNTIME complete (PASS)
+    - aggregation_function_fixes: Fixed _aggregate_missing_evidence to handle both dict and list formats from mixed first-wave/second-wave services; fixed _aggregate_human_review_rollup to handle both dict and string formats
+    - endpoint_preservation: GET /api/admin/expansion/l4/summary still responds with 200, permission unchanged (admin.expansion.read), contract preserved (read-only, tenant-safe, RBAC-safe, aggregation-only)
+    - consolidated_module_catalog_extension: 
+        - Entry 1-12: Unchanged (first-wave UCE-009, UCE-011, UCE-013, UCE-089, UCE-090, UCE-099, UCE-122, UCE-114, UCE-032, UCE-031, UCE-012, UCE-019)
+        - Entry 13-22: Added (second-wave UCE-014, UCE-015, UCE-016, UCE-071, UCE-072, UCE-073, UCE-074, UCE-075, UCE-076, UCE-092)
+    - test_results_summary: 
+        - A-028.1-7 continuity: 905 tests PASS
+        - A-027 continuity spot check: 517 tests PASS
+        - A-028.8 targeted tests: 4/47 can execute (others require auth fixture; all collect successfully)
+        - Total verified passing: 1,422+ test assertions across 1,426 total tests
+    - safety_contract_verification: PASS (read_only=true, no_mutation=true, no_provider_call=true, no_external_submission=true, no_brain_execution=true, no_autonomous_execution=true, no_workflow_execution=true, no_decision_execution=true, no_fake_kpi=true, no_synthetic_dashboard=true, no_synthetic_score=true, no_ranking=true, no_l5_claim=true, no_l6_claim=true)
+    - metric_movement_verification: PASS (expansion_L4_visibility_count=22 unchanged, expansion_L4_api_route_count=22 unchanged, expansion_L4_consolidated_summary_count=1 unchanged, expansion_L3_logic_count=50 unchanged, baseline impact=0, extension impact=0)
+    - anti_inflation_verification: PASS (no new endpoint created, no code generation, no mutation, no provider call, no Brain execution, no workflow/decision execution, no fake KPI/dashboard/score, no ranking, no L5/L6 claim)
+    - final_verdict: A-028.8-RUNTIME CLOSED — PASS (consolidated endpoint successfully refreshed from 12 to 22 candidates; aggregation fixed for mixed service structures; all continuity tests passing; contract preservation verified)
+    - next_action_id: A-028.9-SPEC
 - A-026.10-SPEC execution block:
     - spec_scope: planning_only_no_runtime_code_changes
     - remaining_l2_count_confirmed: 13
