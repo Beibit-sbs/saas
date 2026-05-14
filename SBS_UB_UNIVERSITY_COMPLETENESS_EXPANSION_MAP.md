@@ -4102,6 +4102,48 @@ After A-028.5.B1 closure report is complete and passes all validation:
 | 9 | UCE-076 | course_catalog_management | NEW_MODULE | Academic Affairs | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | catalog governance visibility | no publishing execution |
 | 10 | UCE-092 | degree_audit | NEW_MODULE | Registrar / Academic Affairs | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | graduation governance value | no L5/L6 claim |
 
+### A-028.6-RUNTIME Reconciliation
+
+- commit: e189b87
+- status: CLOSED — PASS
+- implementation_style: service-level read-only L4 visibility summaries only
+- API_ROUTE_DEFERRED_TO_A0287: YES
+- targeted_test_file: backend/tests/test_a0286_expansion_l4_visibility_batch2.py
+- validation_result: 100 passed / 0 failed
+- tenant_safety: PASS
+- no_frontend: PASS
+- no_provider_integration: PASS
+- no_brain_model_execution: PASS
+- no_workflow_execution: PASS
+- no_db_mutation: PASS
+- no_l5_l6_claim: PASS
+- A0286_l4_visibility_count: 10
+- expansion_L4_visibility_count: 22
+- expansion_L4_api_route_count: 12
+- expansion_L4_consolidated_summary_count: 1
+- expansion_L3_logic_count: 50
+- baseline_impact: 0
+- extension_impact: 0
+
+| # | UCE ID | Candidate | Runtime Marker | API Route Marker |
+|---:|---|---|---|---|
+| 1 | UCE-014 | curriculum_mapping | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0286 | API_ROUTE_DEFERRED_TO_A0287 |
+| 2 | UCE-015 | syllabus_management | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0286 | API_ROUTE_DEFERRED_TO_A0287 |
+| 3 | UCE-016 | competency_framework | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0286 | API_ROUTE_DEFERRED_TO_A0287 |
+| 4 | UCE-071 | program_learning_outcomes | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0286 | API_ROUTE_DEFERRED_TO_A0287 |
+| 5 | UCE-072 | course_learning_outcomes | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0286 | API_ROUTE_DEFERRED_TO_A0287 |
+| 6 | UCE-073 | elective_course_selection | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0286 | API_ROUTE_DEFERRED_TO_A0287 |
+| 7 | UCE-074 | prerequisite_management | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0286 | API_ROUTE_DEFERRED_TO_A0287 |
+| 8 | UCE-075 | transfer_credit_management | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0286 | API_ROUTE_DEFERRED_TO_A0287 |
+| 9 | UCE-076 | course_catalog_management | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0286 | API_ROUTE_DEFERRED_TO_A0287 |
+| 10 | UCE-092 | degree_audit | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0286 | API_ROUTE_DEFERRED_TO_A0287 |
+
+### A-028.6-RUNTIME Next Action
+
+- next_action_id: A-028.7-SPEC
+- next_action_title: plan next expansion L4 API route batch
+- note: service summaries are implemented and API routes remain deferred to A-028.7
+
 ### A-028.6 Next Expansion L4 Visibility Standard
 
 - service-level read-only L4 summary first.
