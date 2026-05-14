@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.12-SPEC
-    - current_stage: A-028.11-RUNTIME complete / consolidated L4 summary refreshed from 22 to 32 candidates; 3139 tests pass
-    - last_completed_action_id: A-028.11-RUNTIME
-    - next_action_id: A-028.12-SPEC
-    - updated_at: 2026-05-14 (A-028.11-RUNTIME complete; consolidated L4 summary refreshed 22→32; 223 targeted tests + 1646 A-028 regression + 1268 A-027 regression + 2 LDAP smoke = 3139 total PASS; UCE-046 included, UCE-098 excluded; no new endpoint)
+    - status: ready_for_A-028.12.B1
+    - current_stage: A-028.12-SPEC complete / Wave 17 L4 closure strategy selected (quality baseline gate before new expansion runtime)
+    - last_completed_action_id: A-028.12-SPEC
+    - next_action_id: A-028.12.B1
+    - updated_at: 2026-05-14 (A-028.12-SPEC complete; A-028.11 closure and metrics re-verified; remaining L3-not-L4 inventory reconciled to 18; Option B selected; A-028.12.B1 quality baseline/closure gate queued; no runtime code)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1237,6 +1237,26 @@
     - runtime_report_file: A-028.11-RUNTIME-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_32_REPORT.md
     - final_verdict: A-028.11-RUNTIME CLOSED — PASS
     - next_action_id: A-028.12-SPEC
+- A-028.12-SPEC execution block:
+    - mode: spec_planning_only_no_runtime_code
+    - purpose: expansion_l4_wave17_closure_checkpoint_and_remaining_l3_not_l4_strategy_selection
+    - source_of_truth_verification: PASS (A-028.11-RUNTIME closed at commit 54fa0a9; next_action_id currently A-028.12-SPEC; current achieved expansion metrics confirmed)
+    - a02811_runtime_closure_revalidated: PASS (targeted 223 + A-028 regression 1646 + A-027 regression 1268 + LDAP smoke 2 = 3139 passed, 0 failed)
+    - completed_l4_product_slice: 32_l4_service_summaries + 32_l4_api_routes + 1_consolidated_admin_summary + 32_consolidated_coverage_candidates
+    - expansion_metrics_locked_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, A0281_l4_visibility_count=12, A0286_l4_visibility_count=10, A0289_l4_visibility_count=10, expansion_L4_visibility_count=32, A0282_l4_api_route_count=6, A0283_l4_api_route_count=6, A0287_l4_api_route_count=10, A02810_l4_api_route_count=10, expansion_L4_api_route_count=32, A0288_l4_consolidated_summary_refresh_count=1, A02811_l4_consolidated_summary_refresh_count=1, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=32, baseline_impact=0, extension_impact=0
+    - baseline_metrics_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175, separation=PASS
+    - remaining_l3_not_l4_inventory_count: 18 (reconciled as 50 L3 overlays - 32 L4-visible candidates)
+    - remaining_l2_only_lane_count: 17 (provider=7, brain=4, autonomy=2, sensitive=4)
+    - strategic_option_selected: Option_B_Wave17_quality_baseline_closure_gate
+    - selected_next_action_id: A-028.12.B1
+    - selected_next_action_scope: validation_and_reporting_only (no runtime implementation)
+    - selected_next_action_expected_report: A-028.12.B1-WAVE17_L4_QUALITY_BASELINE_AND_CLOSURE_REPORT.md
+    - source_of_truth_note: A-028.8 runtime report filename not found; only A-028.8-SPEC report exists (report-only naming/evidence artifact mismatch, non-breaking)
+    - anti_inflation: PASS (no code, no routes, no service changes, no tests added, no provider/Brain/autonomy execution, no DB mutation, no fake KPI/dashboard/synthetic score, no baseline or extension movement)
+    - spec_report_file: A-028.12-SPEC-WAVE17_L4_CLOSURE_AND_REMAINING_STRATEGY_REPORT.md
+    - final_verdict: A-028.12-SPEC CLOSED — PASS
+    - next_action_id: A-028.12.B1
 - A-026.10-SPEC execution block:
     - spec_scope: planning_only_no_runtime_code_changes
     - remaining_l2_count_confirmed: 13
