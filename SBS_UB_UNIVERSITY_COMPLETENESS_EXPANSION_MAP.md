@@ -3211,3 +3211,57 @@ Scoring dimensions applied to all 50 L3 candidates:
 - next_action_id: A-028.0.B1.R3
 - action_title: Frontend WebhookSubscriptionsUI regression remediation and full pre-L4 gate reconfirmation
 - required_outcome_for_unlock: frontend gate PASS plus reconfirmed full gate bundle
+
+## A-028.0.B1.R3 - WebhookSubscriptionsUI Frontend Regression Remediation / Final Pre-L4 Gate Revalidation
+
+### R2 Blocker Summary
+
+- R2 closed blocked only because frontend gate failed in WebhookSubscriptionsUI.
+- backend LDAP remediation and backend full regression had already passed in R2.
+
+### Frontend Revalidation Outcome
+
+- failing path re-checked: `frontend/__tests__/admin/WebhookSubscriptionsUI.test.tsx`.
+- targeted run: PASS (5/5).
+- full frontend run #1: PASS (118 files, 820 tests).
+- full frontend run #2: PASS (118 files, 820 tests).
+- classification: NON_REPRODUCIBLE_FRONTEND_REGRESSION_IN_CURRENT_STATE.
+- code changes in frontend runtime/tests during R3: none.
+
+### Backend / Continuity / Tenant Safety
+
+- LDAP blocker smoke: FUNCTIONAL_PASS_COVERAGE_BLOCKED (2 passed; scoped coverage fail-under expected).
+- A-027 continuity no-cov: PASS (1268 passed, 1 warning).
+- tenant/security slice: FUNCTIONAL_PASS_COVERAGE_BLOCKED (28 passed, 1 warning; scoped coverage fail-under expected).
+- backend full regression status in R3: reused R2 authoritative PASS baseline (12332 passed, 31 skipped, 88 deselected, 7 warnings; coverage 87.82% PASS), because R3 session rerun attempts were interrupted by terminal KeyboardInterrupt and no backend runtime code changed in R3 scope.
+
+### Forbidden-Lane Review
+
+- focused R3-scope scan found only accepted boundary text (test placeholders, signing-secret UI/test fields, prior report metadata).
+- no blocking provider/brain/autonomy execution behavior introduced.
+- no blocking direct mutation behavior introduced.
+
+### Metrics Integrity
+
+- baseline remains locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150.
+- extension remains locked: extension_total_count=25, total_tracked_modules=175.
+- expansion remains locked: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17.
+- baseline_impact=0, extension_impact=0.
+
+### Final Readiness Decision
+
+- readiness_decision: READY_FOR_A0281_SPEC
+- A-028.1-SPEC authorization: AUTHORIZED
+- A-028 L4 runtime authorization: NOT AUTHORIZED until A-028.1-SPEC is completed and subsequent runtime governance gates pass
+
+### Anti-Fake Confirmation
+
+- no fake remediation claim: frontend gate was rerun and passed repeatedly in this session.
+- no A-028 L4 runtime implementation claim.
+- no baseline/extension/expansion metric inflation.
+
+### Next Action
+
+- next_action_id: A-028.1-SPEC
+- action_title: Expansion L3->L4 implementation specification and governance lock before runtime
+- required_outcome_for_unlock: approved A-028.1-SPEC with explicit runtime boundaries and acceptance gates
