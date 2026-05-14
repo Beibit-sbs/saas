@@ -1284,6 +1284,29 @@
     - report_file: A-028.12.B1-WAVE17_L4_QUALITY_BASELINE_AND_CLOSURE_REPORT.md
     - closure_decision: CLOSED — WAVE 17 QUALITY BASELINE CONFIRMED (SCOPED)
     - final_verdict: A-028.12.B1 CLOSED — PASS
+- A-028.13-SPEC execution block:
+    - mode: spec_planning_only_no_runtime_code
+    - purpose: remaining_ordinary_expansion_l4_visibility_batch_selection
+    - source_of_truth_verification: PASS (A-028.12.B1 commit ee0a2fa verified; next_action_id currently A-028.13-SPEC; all A-028.12.B1 metrics locked)
+    - a028_quality_baseline_revalidated: PASS (A-028.12.B1 CLOSED — PASS; 2,974 core tests; forbidden scans CLEAN)
+    - remaining_l3_not_l4_inventory_count: 18 (reconciled as 50 L3 overlays - 32 L4-visible candidates)
+    - ordinary_eligible_from_l3_not_l4: 8 (all selected for A-028.13)
+    - remaining_l3_not_l4_excluded: 10 (provider=4, brain=1, sensitive=2, policy/procurement=3)
+    - selected_ordinary_candidates: timesheet_management, faculty_attestation, teaching_load_contracts, staff_exit_offboarding, thesis_dissertation_management, joint_program_management, inbound_exchange_management, outbound_exchange_management
+    - selected_batch_size: 8
+    - implementation_style_selected: Option_S_Service_Summaries_Only
+    - api_route_decision: API_ROUTE_DEFERRED_TO_A02814
+    - expansion_metrics_locked_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, expansion_L4_visibility_count=32, expansion_L4_api_route_count=32, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=32, baseline_impact=0, extension_impact=0
+    - baseline_metrics_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175, separation=PASS
+    - expansion_metrics_expected_if_runtime_pass_n8: A02813_l4_visibility_count=8, expansion_L4_visibility_count=40, expansion_L4_api_route_count=32, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=32, expansion_L3_logic_count=50, remaining_L3_not_L4=10, baseline_impact=0, extension_impact=0
+    - anti_inflation: PASS (no code, no routes, no schema, no frontend, no tests added in spec, no provider/Brain/autonomy execution, no DB mutation, no fake KPI/dashboard/synthetic score, no L5/L6 claim, no baseline or extension movement)
+    - spec_report_file: A-028.13-SPEC-REMAINING_ORDINARY_EXPANSION_L4_VISIBILITY_BATCH_REPORT.md
+    - final_verdict: A-028.13-SPEC CLOSED — PASS
+    - status: ready_for_A-028.13-RUNTIME
+    - current_stage: A-028.13-SPEC complete / remaining ordinary expansion L4 visibility batch selected (service summaries only)
+    - last_completed_action_id: A-028.13-SPEC
+    - next_action_id: A-028.13-RUNTIME
 - A-026.10-SPEC execution block:
     - spec_scope: planning_only_no_runtime_code_changes
     - remaining_l2_count_confirmed: 13
