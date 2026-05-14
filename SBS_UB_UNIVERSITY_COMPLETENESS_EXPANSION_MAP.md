@@ -4144,6 +4144,228 @@ After A-028.5.B1 closure report is complete and passes all validation:
 - next_action_title: plan next expansion L4 API route batch
 - note: service summaries are implemented and API routes remain deferred to A-028.7
 
+## A-028.7-SPEC — Expansion L4 API Routes for A-028.6 Visibility Batch
+
+### Source State (Verified)
+
+- A-028.6.R1 commit: 08fe823 (`docs(wave17): A-028.6.R1 reconcile expansion map markers`)
+- A-028.6-RUNTIME commit: e189b87 (`test(wave17): A-028.6 implement next expansion L4 visibility batch`)
+- A0286_l4_visibility_count: 10
+- expansion_L4_visibility_count: 22
+- expansion_L4_api_route_count: 12
+- expansion_L4_consolidated_summary_count: 1
+- expansion_L3_logic_count: 50
+- baseline_impact: 0
+- extension_impact: 0
+- runtime implementation started in A-028.7: NO (SPEC-only action)
+
+### A-028.6 Route-Ready Assessment (10/10)
+
+| UCE ID | Candidate | L4 Service Function | Route-Ready? | API Currently Exists? | Risk | Notes |
+|---|---|---|---|---|---|---|
+| UCE-014 | curriculum_mapping | get_curriculum_mapping_l4_visibility_summary | YES | NO | low | tenant fail-closed + anti-fake flags + api_route_deferred_to=A-028.7 |
+| UCE-015 | syllabus_management | get_syllabus_management_l4_visibility_summary | YES | NO | low | read-only deterministic summary and forbidden actions preserved |
+| UCE-016 | competency_framework | get_competency_framework_l4_visibility_summary | YES | NO | low | no mutation/provider/Brain/autonomy/workflow/decision |
+| UCE-071 | program_learning_outcomes | get_program_learning_outcomes_l4_visibility_summary | YES | NO | low | tenant fail-closed logic present; L4 wrapper ready |
+| UCE-072 | course_learning_outcomes | get_course_learning_outcomes_l4_visibility_summary | YES | NO | low | no_fake_kpi/no_synthetic_score and forbidden actions present |
+| UCE-073 | elective_course_selection | get_elective_course_selection_l4_visibility_summary | YES | NO | low | no autonomous actions; API still deferred |
+| UCE-074 | prerequisite_management | get_prerequisite_management_l4_visibility_summary | YES | NO | low | rule-enforcement boundaries already encoded |
+| UCE-075 | transfer_credit_management | get_transfer_credit_management_l4_visibility_summary | YES | NO | low | approval/denial/transcript mutation boundaries encoded |
+| UCE-076 | course_catalog_management | get_course_catalog_management_l4_visibility_summary | YES | NO | low | publishing/deactivation boundaries encoded |
+| UCE-092 | degree_audit | get_degree_audit_l4_visibility_summary | YES | NO | low | no graduation clearance/award decision and no L5/L6 claim |
+
+### Existing Route Pattern Reuse (A-028.2 / A-028.3 / A-028.4)
+
+| Pattern | File / Example | Reuse In A-028.7? | Notes |
+|---|---|---|---|
+| Router prefix | backend/app/modules/expansion_visibility/router.py (`/api/admin/expansion/l4`) | YES | keep same prefix |
+| Permission gate | backend/app/modules/expansion_visibility/router.py (`permission_dependency("admin.expansion.read")`) | YES | same permission for all new endpoints |
+| Auth dependency | backend/app/modules/expansion_visibility/router.py (`get_actor`) | YES | unauthenticated remains 401 |
+| Tenant derivation | backend/app/modules/expansion_visibility/router.py (`get_current_tenant`) | YES | fail-closed tenant behavior retained |
+| GET-only route shape | backend/tests/test_a0282_expansion_l4_readonly_api_routes.py and backend/tests/test_a0283_expansion_l4_readonly_api_routes_batch2.py | YES | path contract stays GET-only |
+| Consolidated summary endpoint | backend/tests/test_a0284_expansion_l4_consolidated_summary.py (`/api/admin/expansion/l4/summary`) | PARTIAL | keep unchanged in A-028.7 (defer refresh) |
+
+Route/RBAC stability decision: PASS (no pattern instability detected).
+
+### Selected A-028.7 API Route Batch
+
+Decision: select all 10 A-028.6 candidates for read-only API exposure.
+
+| # | UCE ID | Candidate | Proposed Route | Permission | Route Boundary |
+|---:|---|---|---|---|---|
+| 1 | UCE-014 | curriculum_mapping | GET /api/admin/expansion/l4/curriculum-mapping/summary | admin.expansion.read | read-only wrapper over A-028.6 summary |
+| 2 | UCE-015 | syllabus_management | GET /api/admin/expansion/l4/syllabus-management/summary | admin.expansion.read | no publish/approve execution |
+| 3 | UCE-016 | competency_framework | GET /api/admin/expansion/l4/competency-framework/summary | admin.expansion.read | no scoring/policy execution |
+| 4 | UCE-071 | program_learning_outcomes | GET /api/admin/expansion/l4/program-learning-outcomes/summary | admin.expansion.read | no curriculum/assessment execution |
+| 5 | UCE-072 | course_learning_outcomes | GET /api/admin/expansion/l4/course-learning-outcomes/summary | admin.expansion.read | no grading/workflow execution |
+| 6 | UCE-073 | elective_course_selection | GET /api/admin/expansion/l4/elective-course-selection/summary | admin.expansion.read | no enrollment/seat automation |
+| 7 | UCE-074 | prerequisite_management | GET /api/admin/expansion/l4/prerequisite-management/summary | admin.expansion.read | no enforcement/blocking execution |
+| 8 | UCE-075 | transfer_credit_management | GET /api/admin/expansion/l4/transfer-credit-management/summary | admin.expansion.read | no approve/deny/transcript mutation |
+| 9 | UCE-076 | course_catalog_management | GET /api/admin/expansion/l4/course-catalog-management/summary | admin.expansion.read | no publishing/catalog mutation |
+| 10 | UCE-092 | degree_audit | GET /api/admin/expansion/l4/degree-audit/summary | admin.expansion.read | no graduation decision execution |
+
+### A-028.7 Expansion L4 API Route Standard
+
+- GET only.
+- read-only and tenant-safe.
+- RBAC-safe with `admin.expansion.read`.
+- wrapper over existing A-028.6 L4 service summaries only.
+- no DB mutation, no provider calls, no external submission.
+- no Brain execution, no autonomous execution, no workflow execution, no decision execution.
+- no fake KPI, no synthetic dashboard value, no synthetic score.
+- no L5/L6 claim.
+
+Common requirements:
+- route prefix: `/api/admin/expansion/l4`
+- tenant source: authenticated context / existing tenant guard
+- invalid tenant: fail closed
+- unauthenticated: 401
+- missing permission: 403
+- valid tenant + permission: 200
+
+Common response fields:
+- tenant_id
+- module
+- uce_id
+- visibility_level
+- source_maturity_level
+- visibility_type
+- readiness_summary
+- risk_summary
+- evidence_summary
+- missing_evidence_summary
+- human_review_queue_summary
+- read_only
+- tenant_scoped
+- no_mutation
+- no_provider_call
+- no_external_submission
+- no_brain_execution
+- no_autonomous_execution
+- no_workflow_execution
+- no_decision_execution
+- no_fake_kpi
+- no_synthetic_score
+- no_l5_claim
+- no_l6_claim
+- safety_flags
+- forbidden_actions
+
+### Candidate-by-Candidate API Boundaries
+
+- curriculum_mapping: no curriculum mutation, no mapping approval, no accreditation claim, no workflow execution.
+- syllabus_management: no syllabus publishing, no syllabus approval, no template mutation, no provider call.
+- competency_framework: no competency scoring, no synthetic KPI/score, no policy enforcement, no decision execution.
+- program_learning_outcomes: no curriculum mutation, no assessment enforcement, no decision execution, no fake KPI.
+- course_learning_outcomes: no grading/assessment enforcement, no curriculum mutation, no workflow execution, no fake KPI.
+- elective_course_selection: no auto-enrollment, no seat assignment, no eligibility approval/rejection, no autonomous action.
+- prerequisite_management: no rule enforcement, no registration blocking, no approval/rejection, no provider dependency.
+- transfer_credit_management: no credit approval, no credit denial, no transcript mutation, no decision execution.
+- course_catalog_management: no course publishing, no catalog mutation, no deactivation, no workflow execution.
+- degree_audit: no graduation clearance, no degree award decision, no transcript mutation, no L5/L6 claim.
+
+### Expected A-028.7-RUNTIME Files
+
+Required:
+- backend/app/modules/expansion_visibility/router.py
+- backend/tests/test_a0287_expansion_l4_api_routes_batch3.py
+- SBS_UB.md
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md
+- A-028.7-RUNTIME-EXPANSION_L4_API_ROUTES_BATCH3_REPORT.md
+
+Possible only if required by integration wiring:
+- backend/app/main.py
+- backend/app/modules/rbac/service.py
+
+Default expectation: no selected service.py modifications.
+
+### A-028.7 Test Plan (Runtime)
+
+Preferred test file:
+- backend/tests/test_a0287_expansion_l4_api_routes_batch3.py
+
+Planned groups:
+1. router import / app registration
+2. all selected new paths exist
+3. selected paths are GET-only
+4. selected A-028.6 service summaries still exist
+5. A-028.2 routes still exist
+6. A-028.3 routes still exist
+7. A-028.4 consolidated summary still exists
+8. authentication required (401)
+9. `admin.expansion.read` permission required (403)
+10. invalid tenant fail-closed
+11. valid tenant accepted
+12. valid request returns 200 and preserves service payload
+13. response shape matches standard
+14. visibility_level=L4
+15. source_maturity_level=L3
+16. read_only=True
+17. no_mutation=True
+18. tenant_scoped=True
+19. no_provider_call=True
+20. no_external_submission=True
+21. no_brain_execution=True
+22. no_autonomous_execution=True
+23. no_workflow_execution=True
+24. no_decision_execution=True
+25. no_fake_kpi=True
+26. no_synthetic_score=True
+27. forbidden_actions preserved
+28. candidate-specific boundaries verified
+29. no L5/L6 claim
+30. no state mutation behavior
+31. no duplicate route registration
+32. expansion_L4_visibility_count remains 22
+33. expansion_L4_api_route_count formula documented
+34. A-028.6 visibility tests still pass
+35. A-028.1/A-028.2/A-028.3/A-028.4 continuity checks pass if practical
+36. LDAP smoke remains PASS
+
+Expected assertion volume:
+- 10 routes, approximately 160-320 assertions.
+
+### Expected Metric Movement (A-028.7-RUNTIME)
+
+Current (SPEC, unchanged):
+- expansion_L4_visibility_count = 22
+- expansion_L4_api_route_count = 12
+- expansion_L4_consolidated_summary_count = 1
+- expansion_L3_logic_count = 50
+
+Runtime formula:
+- A0287_l4_api_route_count = N
+- expansion_L4_api_route_count = 12 + N
+- expansion_L4_visibility_count remains 22
+- expansion_L4_consolidated_summary_count remains 1
+- expansion_L3_logic_count remains 50
+- baseline_impact = 0
+- extension_impact = 0
+
+If selected routes all pass (`N=10`):
+- A0287_l4_api_route_count = 10
+- expansion_L4_api_route_count = 22
+
+### Consolidated Summary Handling Decision
+
+- selected option: C0 (leave consolidated summary unchanged in A-028.7)
+- decision marker: CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A0288 = YES
+- reason: keep A-028.7 runtime focused on individual route exposure for the 10 new candidates and preserve A-028.4 consolidated contract.
+
+### Anti-Fake / Anti-Inflation Review
+
+- no runtime code implementation in SPEC: PASS
+- no API implementation claim in SPEC: PASS
+- no frontend/provider/Brain/autonomy/workflow/decision claim: PASS
+- no fake KPI/dashboard/synthetic score claim: PASS
+- baseline/extension metrics unchanged: PASS
+- expansion metrics unchanged in SPEC: PASS
+
+### Next Action
+
+- next_action_id: A-028.7-RUNTIME
+- next_action_title: implement read-only API routes for selected A-028.6 L4 visibility candidates
+
 ### A-028.6 Next Expansion L4 Visibility Standard
 
 - service-level read-only L4 summary first.
