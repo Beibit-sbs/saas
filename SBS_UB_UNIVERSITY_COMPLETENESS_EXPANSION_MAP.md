@@ -3971,6 +3971,71 @@ After A-028.5.B1 closure report is complete and passes all validation:
 - next_action_id: A-028.5.B1
 - next_action_title: Expansion L4 Wave Quality Baseline / Closure Report
 
+## A-028.5.B1 - Expansion L4 Wave Quality Baseline / Closure Report
+
+### Validation Scope
+
+- action type: validation and reporting only.
+- no runtime feature implementation.
+- no new API routes.
+- no service.py modifications.
+- no frontend feature implementation.
+- no migration or mutation logic changes.
+
+### Validation Results Summary
+
+- A-028.1 targeted: PASS (156 passed, 1 warning).
+- A-028.2 targeted: PASS (122 passed, 1 warning).
+- A-028.3 targeted: PASS (118 passed, 1 warning).
+- A-028.4 targeted: PASS (30 passed, 1 warning).
+- combined A-028 pack: PASS (426 passed, 1 warning).
+- A-027 continuity pack: PASS (1268 passed, 1 warning).
+- LDAP smoke: PASS (2 passed, 1 warning).
+- tenant/security slice: PASS (61 passed, 1 warning) using auth/rbac/cross-tenant/fail-closed files.
+- frontend gate: PASS (118 files, 820 tests) using prior A-028.0.B1.R3 command.
+- full backend regression: PASS (12758 passed, 31 skipped, 88 deselected, 7 warnings).
+- coverage gate: PASS (87.89% >= 80%).
+
+### Forbidden Behavior Scan Classification
+
+- provider/credential scan: PASS_CLASSIFIED_EXISTING_NON_SCOPE (`provider_lines=2795`).
+- brain/autonomy token scan: PASS_CLASSIFIED_ACCEPTED_BOUNDARY_TEXT (`brain_lines=286`).
+- mutation scan: PASS_CLASSIFIED_EXISTING_NON_SCOPE (`mutation_lines=825`).
+- blocking execution behavior in A-028 scope: none found.
+
+### Metrics Verification
+
+- baseline locked: `L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150`.
+- extension locked: `extension_total_count=25`, `total_tracked_modules=175`.
+- expansion locked: `expansion_L2_foundation_count=67`, `expansion_runtime_implemented_count=67`, `expansion_L3_logic_count=50`, `remaining_L2_only=17`, `A0281_l4_visibility_count=12`, `expansion_L4_visibility_count=12`, `A0282_l4_api_route_count=6`, `A0283_l4_api_route_count=6`, `expansion_L4_api_route_count=12`, `A0284_l4_consolidated_summary_count=1`, `expansion_L4_consolidated_summary_count=1`, `baseline_impact=0`, `extension_impact=0`.
+
+### Closure Decision
+
+- final_verdict: A-028.5.B1 CLOSED - WAVE 16 QUALITY BASELINE CONFIRMED
+- closure_type: full validation closure confirmed (targeted + continuity + tenant/security + frontend + full backend coverage)
+- report_file: A-028.5.B1-EXPANSION_L4_WAVE_QUALITY_BASELINE_AND_CLOSURE_REPORT.md
+
+### Recommended Next Strategic Lane
+
+- recommended_next_action: A-028.6-SPEC
+- rationale: first 12-candidate expansion L4 slice is stable and fully surfaced; continue ordinary L4 expansion from remaining 38 L3-not-L4 candidates before switching to Brain/provider/sensitive lanes.
+- deferred_alternatives: A-029.0-SPEC (Brain governance), provider-readiness wave, A-027.13-SPEC (sensitive domain), L5 governance-readiness lane.
+
+### Anti-Fake / Anti-Inflation Review
+
+- no runtime feature code added.
+- no fake KPI or synthetic score claims.
+- no provider call or external submission claim.
+- no Brain/autonomy execution claim.
+- no baseline movement.
+- no extension movement.
+- no expansion count inflation.
+
+### Next Action
+
+- next_action_id: A-028.6-SPEC
+- next_action_title: next expansion L4 batch selection from remaining 38 L3-not-L4 candidates
+
 ### Validation Results
 
 - A-028.1 targeted runtime test: PASS (`156 passed`, `1 warning`).
