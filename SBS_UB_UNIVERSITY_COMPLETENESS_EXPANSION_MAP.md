@@ -3618,6 +3618,166 @@ All A-028.1 L4 visibility candidates are now API-routed: `12/12`.
 - next_action_id: A-028.4-SPEC
 - action_title: specify next expansion governance action after full A-028 API exposure closure
 
+## A-028.4-SPEC - Expansion L4 Visibility Consolidation / Next L4 Batch Selection
+
+### A-028.1-A-028.3 Closure Summary
+
+- A-028.1 implemented 12 L4 read-only service summaries.
+- A-028.2 implemented first 6 read-only admin API routes.
+- A-028.3 implemented remaining 6 read-only admin API routes.
+- all 12 A-028.1 L4 visibility candidates are now API-routed (`12/12`).
+- route prefix: `/api/admin/expansion/l4`.
+- permission: `admin.expansion.read`.
+- runtime safety across A-028: GET-only, read-only, tenant-safe, RBAC-safe, no mutation, no provider calls, no Brain/autonomy, no workflow/decision execution, no fake KPI/dashboard, no L5/L6 claim.
+
+### Current Post-A-028.3 Metrics
+
+- expansion_L2_foundation_count=67
+- expansion_runtime_implemented_count=67
+- expansion_L3_logic_count=50
+- remaining_L2_only=17
+- A0281_l4_visibility_count=12
+- expansion_L4_visibility_count=12
+- A0282_l4_api_route_count=6
+- A0283_l4_api_route_count=6
+- expansion_L4_api_route_count=12
+- baseline_impact=0
+- extension_impact=0
+
+### Strategic Option Matrix
+
+| Option | Value | Risk | Prerequisite | Recommended? | Reason |
+|---|---:|---:|---|---|---|
+| Option A - A-028.4-RUNTIME consolidated L4 admin summary endpoint | 5 | 2 | existing 12 API routes and strict aggregation-only contract | YES | highest immediate rector/admin value while reusing evidence-backed read-only outputs |
+| Option B - next L4 batch selection from remaining L3-not-L4 pool | 4 | 3 | inventory/selection sweep over remaining 38 candidates | DEFER | valuable but wider implementation spread than needed now |
+| Option C - A-029 Brain signal governance wave | 4 | 5 | explicit Brain governance controls and policy hardening | DEFER | strategically important but more sensitive than ordinary L4 consolidation |
+| Option D - provider-readiness wave | 4 | 5 | real provider contracts and non-fake integration evidence | DEFER | complex provider semantics and higher false-claim risk |
+| Option E - A-027.13 sensitive domain L3 batch | 4 | 5 | legal/ethical readiness framing and strict human-review safeguards | DEFER | sensitive lane should remain isolated from ordinary L4 consolidation |
+| Option F - quality baseline / full backend confirmation | 3 | 2 | optional broad regression cycle | CONDITIONAL | can be run before runtime if additional confidence is needed |
+
+### Selected Next Action
+
+- selected_option: Option A
+- selected_action_id: A-028.4-RUNTIME
+- selected_action_title: Expansion L4 Consolidated Admin Summary Endpoint
+- rationale: with 12/12 API-routed surfaces complete, one tenant-safe consolidated read-only endpoint provides the strongest product/governance value without adding new module claims.
+
+### A-028.4-RUNTIME Consolidated Endpoint Specification
+
+- route: `GET /api/admin/expansion/l4/summary`
+- permission: `admin.expansion.read`
+- source: aggregate existing A-028.1/A-028.2/A-028.3 outputs only
+- tenant model: tenant-scoped and fail-closed
+
+Required response fields:
+- tenant_id
+- visibility_level=`L4`
+- source=`A-028.1/A-028.2/A-028.3`
+- total_l4_visibility_candidates=`12`
+- total_api_routed_candidates=`12`
+- modules
+- modules_by_domain
+- readiness_status_counts (derived only)
+- risk_band_counts (derived only)
+- missing_evidence_rollup (derived only)
+- human_review_queue_rollup (derived only)
+- safety_flags
+- forbidden_actions_rollup
+- read_only=True
+- no_mutation=True
+- no_fake_kpi=True
+- no_synthetic_dashboard=True
+- no_provider_call=True
+- no_brain_execution=True
+- no_autonomous_execution=True
+- no_decision_execution=True
+
+Forbidden runtime behavior:
+- synthetic score or synthetic KPI creation
+- ranking/recommendation execution
+- provider submission or external transmission
+- Brain/autonomous execution
+- workflow/decision execution
+- mutation
+- frontend implementation claims
+
+### Expected Runtime Files (Option A)
+
+| File | Expected Action | Reason |
+|---|---|---|
+| `backend/app/modules/expansion_visibility/router.py` | update | add consolidated endpoint |
+| `backend/tests/test_a0284_expansion_l4_consolidated_summary.py` | create | endpoint contract/safety tests |
+| `SBS_UB.md` | update | runtime closure and metric record |
+| `SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md` | update | runtime closure and map status |
+| `A-028.4-RUNTIME-EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY_REPORT.md` | create | runtime evidence report |
+
+### Test Plan (Option A)
+
+- consolidated route exists
+- GET only
+- auth required
+- `admin.expansion.read` required
+- invalid tenant fail-closed
+- valid tenant returns `200`
+- `total_l4_visibility_candidates=12`
+- `total_api_routed_candidates=12`
+- all 12 modules present
+- `read_only=True`
+- `no_mutation=True`
+- `no_fake_kpi=True`
+- `no_synthetic_dashboard=True`
+- no provider call
+- no Brain execution
+- no autonomous execution
+- no decision execution
+- no workflow execution
+- `forbidden_actions_rollup` exists
+- no synthetic score field
+- no fake KPI value field
+- A-028.2 targeted tests still pass
+- A-028.3 targeted tests still pass
+- A-028.1 targeted tests still pass
+- LDAP smoke still passes
+- `git diff --check` passes
+
+### Expected Metric Movement (if A-028.4-RUNTIME Passes)
+
+- A0284_l4_consolidated_summary_count=1
+- expansion_L4_consolidated_summary_count=1
+- expansion_L4_visibility_count remains 12
+- expansion_L4_api_route_count remains 12
+- expansion_L3_logic_count remains 50
+- baseline_impact=0
+- extension_impact=0
+
+### Deferred Alternatives
+
+- Option B deferred as follow-on planning once consolidated summary lands.
+- Option C deferred to A-029 Brain governance lane.
+- Option D deferred to provider-readiness lane.
+- Option E deferred to A-027.13 sensitive lane.
+- Option F retained as optional quality confidence step before/around runtime.
+
+### Anti-Fake / Anti-Inflation Review
+
+- planning-only action (no runtime code): PASS
+- no new L4 implementation claim in this spec: PASS
+- no L5/L6 claim: PASS
+- no fake KPI/dashboard claim: PASS
+- no provider/Brain/autonomy claim: PASS
+- no baseline or extension movement: PASS
+- expansion metric separation preserved: PASS
+
+### Final Decision
+
+- final_verdict: A-028.4-SPEC COMPLETE - READY_FOR_A-028.4-RUNTIME
+- report_file: `A-028.4-SPEC-EXPANSION_L4_VISIBILITY_CONSOLIDATION_AND_NEXT_STEP_REPORT.md`
+
+### Next Action
+
+- next_action_id: A-028.4-RUNTIME
+- action_title: implement expansion L4 consolidated admin summary endpoint under strict read-only aggregation boundaries
+
 ### Validation Results
 
 - A-028.1 targeted runtime test: PASS (`156 passed`, `1 warning`).

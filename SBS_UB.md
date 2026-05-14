@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.4-SPEC
-    - current_stage: A-028.3-RUNTIME complete / expansion L4 read-only API routes batch 2 implemented
-    - last_completed_action_id: A-028.3-RUNTIME
-    - next_action_id: A-028.4-SPEC
-    - updated_at: 2026-05-14 (A-028.3-RUNTIME completed; second expansion L4 read-only admin API route batch implemented with tenant-safe permission-guarded execution)
+    - status: ready_for_A-028.4-RUNTIME
+    - current_stage: A-028.4-SPEC complete / expansion L4 consolidated admin summary specified
+    - last_completed_action_id: A-028.4-SPEC
+    - next_action_id: A-028.4-RUNTIME
+    - updated_at: 2026-05-14 (A-028.4-SPEC completed; post-A-028 consolidation selected Option A consolidated read-only admin summary endpoint with strict anti-fake boundaries)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -801,6 +801,28 @@
     - report_file: A-028.3-RUNTIME-EXPANSION_L4_READONLY_API_ROUTES_BATCH2_REPORT.md
     - final_verdict: A-028.3-RUNTIME CLOSED — PASS
     - next_action_id: A-028.4-SPEC
+- A-028.4-SPEC execution block:
+    - mode: planning_only_no_runtime_changes
+    - purpose: consolidate_a028_l4_visibility_surface_and_select_next_safe_runtime_action
+    - repo_hygiene_check: PASS (known non-scope items preserved unstaged: backend/.coverage modified and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md untracked)
+    - source_of_truth_check: PASS (A-028.3-RUNTIME commit 032f9ff verified closed; next action and metric anchors consistent)
+    - closure_review_a0281_to_a0283: PASS (A-028.1 L4 service summaries=12, A-028.2 API routes=6, A-028.3 API routes=6, all 12 API-routed)
+    - strategic_options_evaluated: OPTION_A_CONSOLIDATED_L4_ADMIN_SUMMARY_ENDPOINT, OPTION_B_NEXT_L4_BATCH_SELECTION, OPTION_C_BRAIN_SIGNAL_GOVERNANCE_WAVE, OPTION_D_PROVIDER_READINESS_WAVE, OPTION_E_SENSITIVE_DOMAIN_L3_BATCH, OPTION_F_FULL_BACKEND_QUALITY_BASELINE
+    - selected_option: OPTION_A_CONSOLIDATED_L4_ADMIN_SUMMARY_ENDPOINT
+    - selected_option_reason: highest immediate rector/admin value with lowest execution risk by reusing existing 12 read-only summaries and avoiding provider/brain/autonomy/sensitive lane mixing
+    - deferred_alternatives: OPTION_B deferred after consolidated summary; OPTION_C deferred to A-029 governance; OPTION_D deferred to provider-readiness lane; OPTION_E deferred to A-027.13 sensitive lane; OPTION_F kept as optional pre-runtime confidence action
+    - recommended_runtime_action_id: A-028.4-RUNTIME
+    - recommended_runtime_endpoint: GET /api/admin/expansion/l4/summary
+    - recommended_runtime_permission: admin.expansion.read
+    - recommended_runtime_boundary: aggregation-only over existing 12 summaries, tenant-safe read-only no-mutation no-provider no-brain no-autonomy no-workflow no-decision no-fake-kpi no-synthetic-score
+    - expected_runtime_test_file: backend/tests/test_a0284_expansion_l4_consolidated_summary.py
+    - expected_runtime_files: backend/app/modules/expansion_visibility/router.py, backend/tests/test_a0284_expansion_l4_consolidated_summary.py, SBS_UB.md, SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md, A-028.4-RUNTIME-EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY_REPORT.md
+    - expansion_metrics_locked_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, A0281_l4_visibility_count=12, expansion_L4_visibility_count=12, A0282_l4_api_route_count=6, A0283_l4_api_route_count=6, expansion_L4_api_route_count=12, baseline_impact=0, extension_impact=0
+    - expansion_metrics_expected_if_runtime_pass: A0284_l4_consolidated_summary_count=1, expansion_L4_consolidated_summary_count=1, expansion_L4_visibility_count=12, expansion_L4_api_route_count=12, expansion_L3_logic_count=50, baseline_impact=0, extension_impact=0
+    - anti_inflation: PASS (no runtime code changes, no metric movement in spec, no L5/L6 claim, no fake KPI/dashboard/brain/provider/autonomy claim)
+    - report_file: A-028.4-SPEC-EXPANSION_L4_VISIBILITY_CONSOLIDATION_AND_NEXT_STEP_REPORT.md
+    - final_verdict: A-028.4-SPEC COMPLETE — READY_FOR_A-028.4-RUNTIME
+    - next_action_id: A-028.4-RUNTIME
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8
