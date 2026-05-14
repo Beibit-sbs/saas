@@ -4714,6 +4714,83 @@ If A-028.6-RUNTIME implements N selected summaries:
 - next_action_id: A-028.2-SPEC
 - action_title: specify the next expansion post-A-028.1 batch with the L4 overlay now locked at 12
 
+## A-028.10-SPEC — Expansion L4 API Routes for A-028.9 Visibility Batch
+
+### Purpose
+
+Specify GET API routes for the 10 L4 visibility summaries from A-028.9-RUNTIME.
+
+### Source-of-Truth Verification
+
+- A-028.9.R1 reconciliation: PASS (UCE-046 confirmed as SPEC-selected candidate, UCE-098 correctly deferred)
+- All 10 L4 visibility functions exist and route-ready: PASS
+- Existing route pattern stable and reusable: PASS
+- All 10 candidates selected for API route exposure
+
+### Route Selection
+
+Selected all 10 A-028.9 candidates for API routes:
+1. UCE-001 staff_recruitment
+2. UCE-002 staff_onboarding
+3. UCE-003 employee_records
+4. UCE-004 leave_management
+5. UCE-017 dormitory_management
+6. UCE-022 partnership_registry
+7. UCE-023 mou_lifecycle
+8. UCE-037 scholarship_committee_workflow
+9. UCE-038 student_appeals_workflow
+10. UCE-046 consent_management_policy
+
+**Excluded**: UCE-098 procurement_plan_approval_workflow (correctly deferred per SPEC)
+
+### API Route Standard
+
+- HTTP Method: GET only
+- Prefix: `/api/admin/expansion/l4`
+- Pattern: `/{module-slug}/summary`
+- Permission: `admin.expansion.read`
+- Tenant Source: `get_current_tenant` (fail-closed)
+- Response Contract: Preserves 30-field L4 visibility summary
+- Safety Assertions: visibility_level=L4, source_maturity_level=L3, read_only=true, no_mutation=true, no_provider_call=true, no_brain_execution=true
+
+### Expected Metric Movement
+
+- Current: expansion_L4_api_route_count=22
+- After A-028.10-RUNTIME: expansion_L4_api_route_count=32 (+10)
+- expansion_L4_visibility_count: remains 32
+- baseline_impact: 0
+- extension_impact: 0
+- CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02811: YES
+
+### Test Plan
+
+200+ tests covering:
+- Route registration and HTTP method validation
+- Authentication and permission gating
+- Tenant fail-closed behavior
+- Response schema and safety flags
+- Cross-tenant isolation
+- Backward compatibility with A-028.2/3/7/8
+
+### Anti-Inflation Review
+
+- ✅ No code written (SPEC only)
+- ✅ No new visibility functions (reuse A-028.9)
+- ✅ No fake KPI, synthetic scores, or Brain execution
+- ✅ No provider calls or autonomous actions
+- ✅ No baseline/extension movement
+- ✅ UCE-098 correctly excluded
+
+### Final Decision
+
+- final_verdict: A-028.10-SPEC COMPLETE - READY_FOR_A-028.10-RUNTIME
+- report_file: `A-028.10-SPEC-EXPANSION_L4_API_ROUTES_FOR_A0289_BATCH_REPORT.md`
+
+### Next Action
+
+- next_action_id: A-028.10-RUNTIME
+- action_title: implement 10 GET API routes for A-028.9 L4 visibility batch
+
 ## A-028.2-SPEC - Expansion L4 Read-Only API Surface / Admin Route Specification
 
 ### A-028.1 Runtime Closure Summary

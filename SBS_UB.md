@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.10-SPEC
-    - current_stage: A-028.9.R1 complete / runtime selection reconciled / A-028.9 candidate list verified
-    - last_completed_action_id: A-028.9.R1
-    - next_action_id: A-028.10-SPEC
-    - updated_at: 2026-05-15 (A-028.9.R1 reconciliation complete; user premise incorrect; A-028.9-SPEC actually selected UCE-046, not UCE-098; runtime correctly implemented SPEC batch; 92/92 tests PASS; ready for A-028.10-SPEC)
+    - status: ready_for_A-028.10-RUNTIME
+    - current_stage: A-028.10-SPEC complete / API routes for A-028.9 batch specified
+    - last_completed_action_id: A-028.10-SPEC
+    - next_action_id: A-028.10-RUNTIME
+    - updated_at: 2026-05-15 (A-028.10-SPEC specification complete; 10 API routes specified for 10 SPEC-selected candidates; UCE-046 included UCE-098 correctly excluded; comprehensive test plan documented; anti-inflation gates PASS; ready for A-028.10-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1144,6 +1144,31 @@
     - reconciliation_report_file: A-028.9.R1-RUNTIME_SELECTION_MISMATCH_RECONCILIATION_REPORT.md
     - final_verdict: A-028.9.R1 CLOSED — USER PREMISE INCORRECT, NO ACTUAL MISMATCH (A-028.9-RUNTIME correctly implemented SPEC-selected batch; UCE-046 was SPEC choice, not UCE-098; all verification gates PASS; ready for A-028.10-SPEC)
     - next_action_id: A-028.10-SPEC
+- A-028.10-SPEC execution block:
+    - mode: spec_only_planning_no_runtime_code
+    - purpose: specify_get_api_routes_for_10_a0289_l4_visibility_summaries
+    - source_of_truth_verification: PASS (A-028.9.R1 closed, authoritative candidate list confirmed, all 10 L4 summaries route-ready)
+    - a0289_reconciliation_review: PASS (UCE-046 confirmed as SPEC-selected candidate, UCE-098 correctly deferred, A-028.10 selection uses SPEC authoritative batch)
+    - a0289_l4_route_readiness_assessment: PASS (all 10 candidates have L4 visibility functions with complete safety flags, no API routes currently exist)
+    - existing_route_pattern_review: PASS (prefix=/api/admin/expansion/l4, GET-only, uses established permission/tenant/response pattern from A-028.2/3/7)
+    - selected_api_route_batch: 10_routes_for_10_a0289_candidates (UCE-001 staff-recruitment, UCE-002 staff-onboarding, UCE-003 employee-records, UCE-004 leave-management, UCE-017 dormitory-management, UCE-022 partnership-registry, UCE-023 mou-lifecycle, UCE-037 scholarship-committee-workflow, UCE-038 student-appeals-workflow, UCE-046 consent-management-policy)
+    - api_route_standard:
+        - http_method: GET_only
+        - permission: admin.expansion.read
+        - tenant_source: get_current_tenant_fail_closed
+        - response_contract: preserves_a0289_l4_visibility_summary_30_fields
+        - safety_assertions: visibility_level=L4, source_maturity_level=L3, read_only=true, no_mutation=true, no_provider_call=true, no_brain_execution=true, no_external_submission=true, no_autonomous_execution=true, no_workflow_execution=true, no_decision_execution=true, no_fake_kpi=true, no_synthetic_score=true
+    - expected_runtime_files:
+        - backend/app/modules/expansion_visibility/router.py (add 10 new routes)
+        - backend/tests/test_a02810_expansion_l4_api_routes_batch4.py (create 200+ test cases)
+    - test_plan: 200_to_250_tests (route registration 10, visibility summaries 10, http_method_status 10, auth_permission 30, tenant_fail_closed 30, response_schema 30, safety_flags 40, l4_standard 10, cross_tenant 10, backward_compatibility 5, a0289_continuity 1, forbidden_behavior 20)
+    - expected_metric_formula_if_runtime_passes_with_n10: A02810_l4_api_route_count=10, expansion_L4_api_route_count=32, expansion_L4_visibility_count=32, expansion_L4_consolidated_summary_count=1, expansion_L3_logic_count=50, baseline_impact=0, extension_impact=0, CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02811=YES
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS
+    - expansion_metrics_locked_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, A0281_l4_visibility_count=12, A0286_l4_visibility_count=10, A0289_l4_visibility_count=10, expansion_L4_visibility_count=32, A0282_l4_api_route_count=6, A0283_l4_api_route_count=6, A0287_l4_api_route_count=10, expansion_L4_api_route_count=22, A0288_l4_consolidated_summary_refresh_count=1, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=22, baseline_impact=0, extension_impact=0
+    - anti_inflation: PASS (no code written, no routes created, no service modifications, no schema changes, no fake KPI, no provider call, no Brain execution, no autonomous action, no mutation, no L5/L6 claim, no UCE-098 inclusion, no baseline/extension change)
+    - spec_report_file: A-028.10-SPEC-EXPANSION_L4_API_ROUTES_FOR_A0289_BATCH_REPORT.md
+    - final_verdict: A-028.10-SPEC CLOSED — PASS (10 routes specified for 10 SPEC-selected candidates, read-only API route standard defined, comprehensive test plan documented, expected metrics formula established, UCE-046 included and UCE-098 correctly excluded, all anti-inflation gates passed, ready for A-028.10-RUNTIME)
+    - next_action_id: A-028.10-RUNTIME
 - A-026.10-SPEC execution block:
     - spec_scope: planning_only_no_runtime_code_changes
     - remaining_l2_count_confirmed: 13
