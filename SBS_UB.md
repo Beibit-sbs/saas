@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.3-SPEC
-    - current_stage: A-028.2-RUNTIME complete / expansion L4 read-only API routes implemented
-    - last_completed_action_id: A-028.2-RUNTIME
-    - next_action_id: A-028.3-SPEC
-    - updated_at: 2026-05-14 (A-028.2-RUNTIME completed; 6 expansion L4 read-only admin API routes implemented with tenant-safe permission-guarded execution)
+    - status: ready_for_A-028.3-RUNTIME
+    - current_stage: A-028.3-SPEC complete / expansion L4 read-only API routes batch 2 specified
+    - last_completed_action_id: A-028.3-SPEC
+    - next_action_id: A-028.3-RUNTIME
+    - updated_at: 2026-05-14 (A-028.3-SPEC completed; second expansion L4 read-only API route batch specified with no runtime implementation)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -749,6 +749,27 @@
     - report_file: A-028.2-RUNTIME-EXPANSION_L4_READONLY_API_ROUTES_REPORT.md
     - final_verdict: A-028.2-RUNTIME CLOSED — PASS
     - next_action_id: A-028.3-SPEC
+- A-028.3-SPEC execution block:
+    - mode: planning_only_no_runtime_changes
+    - purpose: specify_second_expansion_l4_read_only_api_route_batch_for_remaining_a0281_visibility_surfaces
+    - repo_hygiene_check: PASS (only non-scope items present before authoring: backend/.coverage modified and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md untracked)
+    - source_of_truth_check: PASS (A-028.2-RUNTIME commit cfb9e90 verified closed; API route metrics and baseline/extension/expansion lock verified; runtime had not started)
+    - remaining_non_api_routed_l4_candidates: UCE-013, UCE-089, UCE-032, UCE-031, UCE-012, UCE-019
+    - remaining_non_api_routed_count: 6
+    - route_ready_assessment: PASS (all 6 remaining A-028.1 L4 summaries exist and preserve read_only/tenant-safe/no-provider/no-brain/no-autonomy/no-mutation boundaries)
+    - selected_api_route_batch: UCE-013, UCE-089, UCE-032, UCE-031, UCE-012, UCE-019
+    - selected_api_route_batch_size: 6
+    - route_strategy: OPTION_A_INDIVIDUAL_ENDPOINTS_UNDER_EXISTING_EXPANSION_ADMIN_ROUTER
+    - route_prefix_reused: /api/admin/expansion/l4
+    - permission_reused: admin.expansion.read
+    - risk_boundary_focus: ministry_reporting_dashboard provider/submission confusion and rector_strategy_dashboard fake-kpi/brain ambiguity addressed by explicit read-only non-claim boundaries
+    - expected_runtime_test_file: backend/tests/test_a0283_expansion_l4_readonly_api_routes_batch2.py
+    - expansion_metrics_locked_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, A0281_l4_visibility_count=12, expansion_L4_visibility_count=12, A0282_l4_api_route_count=6, expansion_L4_api_route_count=6, baseline_impact=0, extension_impact=0
+    - expansion_metrics_expected_if_runtime_pass_n6: A0283_l4_api_route_count=6, expansion_L4_api_route_count=12, expansion_L4_visibility_count=12, expansion_L3_logic_count=50, baseline_impact=0, extension_impact=0
+    - anti_inflation: PASS (no runtime code, no router/service/test/frontend changes, no baseline movement, no extension movement, no L3 reduction, no L4 visibility inflation, no L5/L6 claim)
+    - report_file: A-028.3-SPEC-EXPANSION_L4_READONLY_API_ROUTES_BATCH2_REPORT.md
+    - final_verdict: A-028.3-SPEC COMPLETE — READY_FOR_A-028.3-RUNTIME
+    - next_action_id: A-028.3-RUNTIME
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

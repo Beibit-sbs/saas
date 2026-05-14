@@ -3440,6 +3440,101 @@ Scoring dimensions applied to all 50 L3 candidates:
 - next_action_id: A-028.3-SPEC
 - action_title: specify the next expansion post-A-028.2 batch with the first 6 API routes now implemented
 
+## A-028.3-SPEC - Expansion L4 Read-Only API Routes Batch 2 Specification
+
+### A-028.2 Runtime Closure Summary
+
+- A-028.2-RUNTIME commit verified: `cfb9e90`.
+- implemented route count: `6` under `/api/admin/expansion/l4`.
+- permission baseline: `admin.expansion.read`.
+- full backend PASS evidence: `12610 passed`, `31 skipped`, `88 deselected`, coverage `87.86%`.
+- expansion API overlay after A-028.2: `A0282_l4_api_route_count=6`, `expansion_L4_api_route_count=6`.
+
+### Remaining Non-API-Routed A-028.1 L4 Summaries
+
+| UCE ID | Candidate | Service Function | Route-Ready? | Risk | Notes |
+|---|---|---|---|---|---|
+| UCE-013 | incoming_outgoing_correspondence | `get_incoming_outgoing_correspondence_l4_visibility_summary` | YES | MEDIUM | no auto-send/no auto-close boundary needed in route contract |
+| UCE-089 | document_template_library | `get_document_template_library_l4_visibility_summary` | YES | MEDIUM | no publish/delete/update boundary needed in route contract |
+| UCE-032 | ministry_reporting_dashboard | `get_ministry_reporting_dashboard_l4_visibility_summary` | YES | MEDIUM | provider/submission/fake-status confusion must be explicitly blocked |
+| UCE-031 | rector_strategy_dashboard | `get_rector_strategy_dashboard_l4_visibility_summary` | YES | HIGH | fake-KPI/brain ambiguity requires explicit anti-fake boundary |
+| UCE-012 | archive_retention_management | `get_archive_retention_management_l4_visibility_summary` | YES | MEDIUM | no deletion/disposal/enforcement boundary required |
+| UCE-019 | international_office | `get_international_office_l4_visibility_summary` | YES | MEDIUM | no visa/mobility/partner acceptance boundary required |
+
+### Risk Review
+
+| UCE ID | Candidate | Main Risk | Risk Class | Mitigation | Select? |
+|---|---|---|---|---|---|
+| UCE-013 | incoming_outgoing_correspondence | send/close workflow confusion | MEDIUM | read-only summary only, no send/close/routing execution | YES |
+| UCE-089 | document_template_library | publish/update/delete confusion | MEDIUM | read-only summary only, no publish/delete/update execution | YES |
+| UCE-032 | ministry_reporting_dashboard | provider submission and fake report status confusion | MEDIUM | no provider call, no external submission, no fake status, no synthetic KPI | YES |
+| UCE-031 | rector_strategy_dashboard | fake KPI/synthetic score/Brain execution confusion | HIGH | evidence visibility only; no synthetic KPI, no Brain/autonomous action | YES |
+| UCE-012 | archive_retention_management | deletion/disposal/legal hold enforcement confusion | MEDIUM | retention readiness only, no deletion/disposal/enforcement | YES |
+| UCE-019 | international_office | visa/mobility/partner decision semantics | MEDIUM | readiness only, no visa/mobility/partner approval, no provider call | YES |
+
+### Selected A-028.3 Route Batch
+
+| # | UCE ID | Candidate | Proposed Route | Permission | Why Selected | Route Boundary |
+|---:|---|---|---|---|---|---|
+| 1 | UCE-013 | incoming_outgoing_correspondence | `/api/admin/expansion/l4/incoming-outgoing-correspondence/summary` | `admin.expansion.read` | closes correspondence visibility API surface | no auto-send, no auto-close, no routing execution, no mutation |
+| 2 | UCE-089 | document_template_library | `/api/admin/expansion/l4/document-template-library/summary` | `admin.expansion.read` | closes template governance visibility API surface | no publish, no delete, no update, no mutation |
+| 3 | UCE-032 | ministry_reporting_dashboard | `/api/admin/expansion/l4/ministry-reporting-dashboard/summary` | `admin.expansion.read` | closes ministry readiness visibility with anti-provider guardrails | no provider submission, no fake report status, no external transmission, no synthetic KPI |
+| 4 | UCE-031 | rector_strategy_dashboard | `/api/admin/expansion/l4/rector-strategy-dashboard/summary` | `admin.expansion.read` | closes rector strategy visibility with anti-fake KPI boundaries | no fake KPI, no synthetic management score, no Brain recommendation execution, no autonomous action |
+| 5 | UCE-012 | archive_retention_management | `/api/admin/expansion/l4/archive-retention-management/summary` | `admin.expansion.read` | closes retention readiness API surface | no deletion, no disposal, no legal hold enforcement, no mutation |
+| 6 | UCE-019 | international_office | `/api/admin/expansion/l4/international-office/summary` | `admin.expansion.read` | closes international operations readiness API surface | no visa approval, no mobility approval, no partner acceptance, no provider call, no mutation |
+
+### API Route Standard (Batch 2)
+
+- route strategy: individual `GET` endpoints under `/api/admin/expansion/l4`.
+- permission: `admin.expansion.read`.
+- tenant source of truth: authenticated context via existing tenant guard.
+- response source: existing A-028.1 L4 service summaries only.
+- required invariants: `read_only=True`, `tenant_scoped=True`, `no_mutation=True`, `no_provider_call=True`, `no_brain_execution=True`, `no_autonomous_execution=True`, `no_decision_execution=True`, `no_fake_kpi=True`, `no_synthetic_dashboard=True`, `forbidden_actions` preserved.
+- forbidden runtime behavior: mutation, provider calls, external submission, Brain/autonomy execution, workflow/decision execution, fake KPI/dashboard, L5/L6 claims.
+
+### Expected Runtime Files
+
+| File | Expected Action | Reason |
+|---|---|---|
+| `backend/app/modules/expansion_visibility/router.py` | update | add 6 batch-2 routes |
+| `backend/app/main.py` | likely no change | router already registered |
+| `backend/app/modules/rbac/service.py` | likely no change | permission already wired |
+| `backend/tests/test_a0283_expansion_l4_readonly_api_routes_batch2.py` | create | targeted batch-2 route contract tests |
+| `SBS_UB.md` | update | runtime closure and metrics |
+| `SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md` | update | route implementation markers and closure |
+| `A-028.3-RUNTIME-EXPANSION_L4_READONLY_API_ROUTES_BATCH2_REPORT.md` | create | runtime evidence report |
+
+### Test Plan
+
+- targeted A-028.3 route tests for all selected paths, auth/permission/tenant fail-closed and boundary assertions.
+- regression continuity: rerun A-028.2 targeted, A-028.1 targeted, LDAP smoke, and practical A-027 continuity slice.
+- expected assertions for N=6: approximately `150-330`.
+- validation mode: Docker-only.
+
+### Expected Metric Movement
+
+- locked in spec (unchanged): `expansion_L3_logic_count=50`, `A0281_l4_visibility_count=12`, `expansion_L4_visibility_count=12`, `A0282_l4_api_route_count=6`, `expansion_L4_api_route_count=6`.
+- expected if runtime implements `N` routes: `A0283_l4_api_route_count=N`, `expansion_L4_api_route_count=6+N`, `expansion_L4_visibility_count` remains `12`, `expansion_L3_logic_count` remains `50`, baseline/extension impacts remain `0`.
+- if `N=6`: `A0283_l4_api_route_count=6` and `expansion_L4_api_route_count=12`.
+
+### Anti-Fake / Anti-Inflation Review
+
+- spec-only action: no runtime code.
+- no API implementation claim in this section.
+- no frontend/provider/Brain/autonomy/workflow execution claim.
+- no baseline or extension metric movement.
+- no expansion L4 visibility inflation.
+
+### Final Decision
+
+- final_verdict: A-028.3-SPEC COMPLETE - READY_FOR_A-028.3-RUNTIME
+- report_file: `A-028.3-SPEC-EXPANSION_L4_READONLY_API_ROUTES_BATCH2_REPORT.md`
+
+### Next Action
+
+- next_action_id: A-028.3-RUNTIME
+- action_title: implement the second API batch for the remaining 6 A-028.1 L4 visibility candidates
+
 ### Validation Results
 
 - A-028.1 targeted runtime test: PASS (`156 passed`, `1 warning`).
