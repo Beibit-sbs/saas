@@ -754,14 +754,16 @@ def test_a0287_expansion_l4_api_route_count_formula() -> None:
     a0282_count = len(A0282_EXISTING_PATHS)
     a0283_count = len(A0283_EXISTING_PATHS)
     a0287_count = len(NEW_ROUTE_CONFIGS)
+    a02810_count = 10
     # Consolidated is include_in_schema=False — not in openapi paths
     total_exposed = len([p for p in app.openapi()["paths"] if p.startswith("/api/admin/expansion/l4/")])
 
     assert a0282_count == 6
     assert a0283_count == 6
     assert a0287_count == 10
-    assert total_exposed == 22
-    assert a0282_count + a0283_count + a0287_count == total_exposed
+    assert a02810_count == 10
+    assert total_exposed == 32
+    assert a0282_count + a0283_count + a0287_count + a02810_count == total_exposed
 
 
 # ---------------------------------------------------------------------------

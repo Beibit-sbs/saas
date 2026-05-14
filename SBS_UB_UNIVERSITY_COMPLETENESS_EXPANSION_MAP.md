@@ -4791,6 +4791,85 @@ Selected all 10 A-028.9 candidates for API routes:
 - next_action_id: A-028.10-RUNTIME
 - action_title: implement 10 GET API routes for A-028.9 L4 visibility batch
 
+## A-028.10-RUNTIME — Expansion L4 API Routes for A-028.9 Batch Implementation
+
+### Source State (Verified Before Runtime)
+
+- A-028.10-SPEC closed and route plan locked: PASS
+- expansion_L4_visibility_count: 32 (unchanged)
+- expansion_L4_api_route_count: 22 (before runtime)
+- expansion_L4_consolidated_summary_count: 1 (unchanged)
+- expansion_L3_logic_count: 50 (unchanged)
+- CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02811: YES
+
+### Implemented API Routes (10)
+
+| # | UCE ID | Candidate | Route | Permission | Status |
+|---|--------|-----------|-------|-----------|--------|
+| 1 | UCE-001 | staff_recruitment | GET /api/admin/expansion/l4/staff-recruitment/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| 2 | UCE-002 | staff_onboarding | GET /api/admin/expansion/l4/staff-onboarding/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| 3 | UCE-003 | employee_records | GET /api/admin/expansion/l4/employee-records/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| 4 | UCE-004 | leave_management | GET /api/admin/expansion/l4/leave-management/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| 5 | UCE-017 | dormitory_management | GET /api/admin/expansion/l4/dormitory-management/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| 6 | UCE-022 | partnership_registry | GET /api/admin/expansion/l4/partnership-registry/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| 7 | UCE-023 | mou_lifecycle | GET /api/admin/expansion/l4/mou-lifecycle/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| 8 | UCE-037 | scholarship_committee_workflow | GET /api/admin/expansion/l4/scholarship-committee-workflow/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| 9 | UCE-038 | student_appeals_workflow | GET /api/admin/expansion/l4/student-appeals-workflow/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| 10 | UCE-046 | consent_management_policy | GET /api/admin/expansion/l4/consent-management-policy/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+
+### Candidate Marker Updates
+
+| UCE ID | Candidate | Marker |
+|---|---|---|
+| UCE-001 | staff_recruitment | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| UCE-002 | staff_onboarding | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| UCE-003 | employee_records | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| UCE-004 | leave_management | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| UCE-017 | dormitory_management | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| UCE-022 | partnership_registry | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| UCE-023 | mou_lifecycle | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| UCE-037 | scholarship_committee_workflow | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| UCE-038 | student_appeals_workflow | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+| UCE-046 | consent_management_policy | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02810 |
+
+### Validation Results
+
+- targeted test_a02810: PASS (382 passed)
+- A-028 continuity combined pack: PASS (1423 passed)
+- A-027 continuity pack: PASS (1268 passed)
+- LDAP smoke pair: PASS (2 passed)
+- UCE-098 route check: PASS (not exposed)
+- mutating-method route scan: PASS (GET-only routes)
+
+### Updated Metrics
+
+- A02810_l4_api_route_count: 10
+- expansion_L4_api_route_count: 32 (A0282=6 + A0283=6 + A0287=10 + A02810=10)
+- expansion_L4_visibility_count: 32 (unchanged)
+- expansion_L4_consolidated_summary_count: 1 (unchanged)
+- CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02811: YES
+- baseline_impact: 0
+- extension_impact: 0
+
+### Anti-Inflation Review
+
+- no frontend implementation: PASS
+- no provider/Brain/autonomy execution: PASS
+- no workflow or decision execution: PASS
+- no DB mutation: PASS
+- no fake KPI or synthetic score: PASS
+- UCE-098 excluded: PASS
+
+### Final Decision
+
+- final_verdict: A-028.10-RUNTIME CLOSED - PASS_AUTHORITATIVE
+- report_file: `A-028.10-RUNTIME-EXPANSION_L4_API_ROUTES_BATCH4_REPORT.md`
+
+### Next Action
+
+- next_action_id: A-028.11-SPEC
+- action_title: plan consolidated summary refresh for full 32-route candidate set
+
 ## A-028.2-SPEC - Expansion L4 Read-Only API Surface / Admin Route Specification
 
 ### A-028.1 Runtime Closure Summary

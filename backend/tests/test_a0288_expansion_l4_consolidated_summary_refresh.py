@@ -23,6 +23,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from tests.conftest import ADMIN_HEADERS
 
 
 client = TestClient(app)
@@ -168,8 +169,10 @@ def test_a0288_consolidated_valid_auth_no_permission_returns_403():
 @pytest.mark.authenticated(tenant_id=None)
 def test_a0288_consolidated_invalid_tenant_fails_closed():
     """Invalid tenant_id returns 403 (fail-closed)."""
-    # Set invalid tenant context
-    resp = client.get(CONSOLIDATED_ROUTE, headers={"X-Tenant": "99999"})
+    # Use authenticated headers with an invalid tenant override.
+    headers = dict(ADMIN_HEADERS)
+    headers["X-Tenant-ID"] = "-1"
+    resp = client.get(CONSOLIDATED_ROUTE, headers=headers)
     # Expect 403 or error response, not 200
     assert resp.status_code in [403, 400], f"Invalid tenant should fail-closed, got {resp.status_code}"
 
@@ -181,7 +184,7 @@ def test_a0288_consolidated_invalid_tenant_fails_closed():
 @pytest.mark.authenticated
 def test_a0288_consolidated_returns_200_valid_request():
     """Valid request returns 200 OK."""
-    resp = client.get(CONSOLIDATED_ROUTE)
+    resp = client.get(CONSOLIDATED_ROUTE, headers=ADMIN_HEADERS)
     assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
 
 
@@ -579,8 +582,12 @@ def test_a0288_consolidated_human_review_queue_rollup_no_tasks_created(authentic
     assert resp.status_code == 200
     payload = resp.json()
     hrq = payload.get("human_review_queue_rollup", {})
-    # Should indicate read-only, no tasks created
-    assert "review_count" in hrq or "no_review_created" in hrq
+    # Consolidated rollup must expose queue counters without executing tasks.
+    assert isinstance(hrq, dict)
+    assert "candidate_count" in hrq
+    assert "ready_for_human_review_count" in hrq
+    assert "pending_manual_evidence_count" in hrq
+    assert "blocked_count" in hrq
 
 
 # ============================================================================
@@ -635,9 +642,9 @@ def test_a0288_consolidated_route_does_not_mutate_state(authenticated_client):
 @pytest.fixture
 def authenticated_client():
     """Return a test client with admin.expansion.read permission."""
-    # This would be set up by the test framework to inject auth header
-    # For now, assume the test framework handles this via @pytest.mark.authenticated
-    return client
+    authed = TestClient(app)
+    authed.headers.update(ADMIN_HEADERS)
+    return authed
 
 
 # ============================================================================

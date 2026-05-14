@@ -322,10 +322,12 @@ def test_a0284_metric_formula_contract_documented_by_route_counts() -> None:
     assert len(A0282_ROUTES) == 6
     assert len(A0283_ROUTES) == 6
     assert CONSOLIDATED_ROUTE in all_l4_paths
-    # A-028.7 added 10 individual routes: total = A0282(6) + A0283(6) + A0287(10) + consolidated(1) = 23
+    # A-028.10 added 10 individual routes:
+    # total = A0282(6) + A0283(6) + A0287(10) + A02810(10) + consolidated(1) = 33
     a0287_count = 10
-    assert len(all_l4_paths) == 23
-    assert len(A0282_ROUTES) + len(A0283_ROUTES) + a0287_count + 1 == len(all_l4_paths)
+    a02810_count = 10
+    assert len(all_l4_paths) == 33
+    assert len(A0282_ROUTES) + len(A0283_ROUTES) + a0287_count + a02810_count + 1 == len(all_l4_paths)
 
 
 def test_a0284_no_duplicate_route_registration() -> None:
