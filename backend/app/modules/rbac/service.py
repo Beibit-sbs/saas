@@ -107,6 +107,7 @@ _CANONICAL_AUDITOR_PERMISSIONS: Set[str] = {
 BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     "superadmin": {
         "admin.dashboard.read",
+        "admin.expansion.read",
         "admin.roles.manage",
         "admin.audit.read",
         "admin.integrations.manage",
@@ -151,6 +152,7 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS,
     "admin": {
         "admin.dashboard.read",
+        "admin.expansion.read",
         "admin.roles.manage",
         "admin.audit.read",
         "admin.integrations.manage",

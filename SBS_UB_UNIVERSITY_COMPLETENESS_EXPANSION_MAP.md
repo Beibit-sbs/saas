@@ -3342,18 +3342,103 @@ Scoring dimensions applied to all 50 L3 candidates:
 
 | UCE ID | Candidate | Type | Package | L4 Status | L4 Surface | API Route | Validation |
 |---|---|---|---|---|---|---|---|
-| UCE-009 | document_workflow | NEW_MODULE | document_workflow | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
-| UCE-011 | order_decree_registry | NEW_MODULE | order_decree_registry | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-009 | document_workflow | NEW_MODULE | document_workflow | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
+| UCE-011 | order_decree_registry | NEW_MODULE | order_decree_registry | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
 | UCE-013 | incoming_outgoing_correspondence | NEW_MODULE | incoming_outgoing_correspondence | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
 | UCE-089 | document_template_library | NEW_MODULE | document_template_library | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
-| UCE-090 | committee_decision_registry | NEW_MODULE | committee_decision_registry | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
-| UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | rector_resolution_tracking_workflow | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
-| UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | compliance_calendar_dashboard | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
-| UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | accreditation_dashboard | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-090 | committee_decision_registry | NEW_MODULE | committee_decision_registry | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
+| UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | rector_resolution_tracking_workflow | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
+| UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | compliance_calendar_dashboard | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
+| UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | accreditation_dashboard | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
 | UCE-032 | ministry_reporting_dashboard | REPORT_DASHBOARD | ministry_reporting_dashboard | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
 | UCE-031 | rector_strategy_dashboard | REPORT_DASHBOARD | rector_strategy_dashboard | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
 | UCE-012 | archive_retention_management | NEW_MODULE | archive_retention_management | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
 | UCE-019 | international_office | NEW_MODULE | international_office | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+
+## A-028.2-RUNTIME - Expansion L4 Read-Only API Routes Implementation
+
+### Runtime Boundary Executed
+
+- implemented scope: 6 read-only `GET` admin API routes over existing A-028.1 L4 service summaries.
+- route prefix: `/api/admin/expansion/l4`.
+- permission guard: `admin.expansion.read`.
+- no frontend implementation.
+- no provider calls.
+- no Brain/autonomy execution.
+- no workflow or decision execution.
+- no mutation.
+- no L5/L6 claim.
+
+### Selected API Route Batch
+
+| UCE ID | Candidate | Route | Permission | API Route Status | Validation |
+|---|---|---|---|---|---|
+| UCE-009 | document_workflow | `/api/admin/expansion/l4/document-workflow/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
+| UCE-011 | order_decree_registry | `/api/admin/expansion/l4/order-decree-registry/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
+| UCE-090 | committee_decision_registry | `/api/admin/expansion/l4/committee-decision-registry/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
+| UCE-099 | rector_resolution_tracking_workflow | `/api/admin/expansion/l4/rector-resolution-tracking-workflow/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
+| UCE-122 | compliance_calendar_dashboard | `/api/admin/expansion/l4/compliance-calendar-dashboard/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
+| UCE-114 | accreditation_dashboard | `/api/admin/expansion/l4/accreditation-dashboard/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 | targeted PASS |
+
+### Route-Status Markers for A-028.1 Batch
+
+| UCE ID | Candidate | API Route Marker After A-028.2 |
+|---|---|---|
+| UCE-009 | document_workflow | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 |
+| UCE-011 | order_decree_registry | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 |
+| UCE-090 | committee_decision_registry | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 |
+| UCE-099 | rector_resolution_tracking_workflow | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 |
+| UCE-122 | compliance_calendar_dashboard | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 |
+| UCE-114 | accreditation_dashboard | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 |
+| UCE-013 | incoming_outgoing_correspondence | API_NOT_IMPLEMENTED_IN_A0282 |
+| UCE-089 | document_template_library | API_NOT_IMPLEMENTED_IN_A0282 |
+| UCE-032 | ministry_reporting_dashboard | API_NOT_IMPLEMENTED_IN_A0282 |
+| UCE-031 | rector_strategy_dashboard | API_NOT_IMPLEMENTED_IN_A0282 |
+| UCE-012 | archive_retention_management | API_NOT_IMPLEMENTED_IN_A0282 |
+| UCE-019 | international_office | API_NOT_IMPLEMENTED_IN_A0282 |
+
+### Validation Results
+
+- A-028.2 targeted API tests: PASS (`122 passed`, `1 warning`).
+- A-028.1 targeted tests: PASS (`156 passed`, `1 warning`).
+- A-027 continuity pack: PASS (`1268 passed`, `1 warning`).
+- LDAP smoke: PASS (`2 passed`, `1 warning`).
+- full backend regression: PASS (`12610 passed`, `31 skipped`, `88 deselected`, `7 warnings`, coverage `87.86%`).
+- forbidden scans: PASS (accepted boundary text or existing non-scope persistence code only).
+
+### Metrics After Runtime
+
+- expansion_L2_foundation_count=67
+- expansion_runtime_implemented_count=67
+- expansion_L3_logic_count=50
+- remaining_L2_only=17
+- A0281_l4_visibility_count=12
+- expansion_L4_visibility_count=12
+- A0282_l4_api_route_count=6
+- expansion_L4_api_route_count=6
+- baseline_impact=0
+- extension_impact=0
+
+### Anti-Fake Confirmation
+
+- no frontend claim.
+- no provider call claim.
+- no Brain/autonomy claim.
+- no workflow or decision execution claim.
+- no L4 visibility count inflation.
+- no baseline impact.
+- no extension impact.
+- no L5/L6 claim.
+
+### Final Decision
+
+- final_verdict: A-028.2-RUNTIME CLOSED - PASS
+- report_file: `A-028.2-RUNTIME-EXPANSION_L4_READONLY_API_ROUTES_REPORT.md`
+
+### Next Action
+
+- next_action_id: A-028.3-SPEC
+- action_title: specify the next expansion post-A-028.2 batch with the first 6 API routes now implemented
 
 ### Validation Results
 
