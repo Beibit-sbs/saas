@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.1-SPEC
-    - current_stage: A-028.0.B1.R3 complete / frontend regression not reproducible and final pre-L4 gate reconfirmed
-    - last_completed_action_id: A-028.0.B1.R3
-    - next_action_id: A-028.1-SPEC
-    - updated_at: 2026-05-14 (A-028.0.B1.R3 closed ready for A-028.1-SPEC; A-028 L4 runtime still blocked pending spec and governance)
+    - status: ready_for_A-028.1-RUNTIME
+    - current_stage: A-028.1-SPEC complete / expansion L4 visibility batch 1 specified
+    - last_completed_action_id: A-028.1-SPEC
+    - next_action_id: A-028.1-RUNTIME
+    - updated_at: 2026-05-14 (A-028.1-SPEC completed; A-028.1-RUNTIME authorized for read-only L4 visibility only)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -660,6 +660,25 @@
     - report_file: A-028.0.B1.R3-FRONTEND_REGRESSION_REMEDIATION_AND_FINAL_GATE_REPORT.md
     - final_verdict: A-028.0.B1.R3 CLOSED — READY_FOR_A0281_SPEC
     - next_action_id: A-028.1-SPEC
+- A-028.1-SPEC execution block:
+    - mode: planning_only_no_runtime_changes
+    - purpose: specify_expansion_l4_visibility_batch1_runtime_scope_boundaries_and_acceptance
+    - repo_hygiene_check: PASS (only expected unrelated untracked file preserved: A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md)
+    - source_of_truth_check: PASS (A-028.0.B1.R3 closed ready for spec; runtime remained unauthorized until this action completed)
+    - runtime_boundary_check: PASS (no runtime implementation, no router/service/frontend/test/schema changes in spec scope)
+    - quality_baseline_reference: PASS (authoritative full backend baseline reused from A-028.0.B1.R2: 12332 passed, 31 skipped, 88 deselected, coverage 87.82%)
+    - frontend_gate_reference: PASS (A-028.0.B1.R3 frontend gate passed twice with no backend runtime changes)
+    - selected_runtime_batch: UCE-009, UCE-011, UCE-013, UCE-089, UCE-090, UCE-099, UCE-122, UCE-114, UCE-032, UCE-031, UCE-012, UCE-019
+    - selected_runtime_batch_size: 12
+    - implementation_style: L4-HYBRID (service summaries for all 12; optional read-only admin API wrappers for selected high-value visibility surfaces)
+    - l3_eligibility_check: PASS (all 12 candidates already have implemented L3 deterministic readiness contracts)
+    - runtime_test_file_planned: backend/tests/test_a0281_expansion_l4_visibility_batch1.py
+    - expansion_metrics_locked_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, baseline_impact=0, extension_impact=0
+    - expansion_metrics_expected_if_runtime_pass_n12: A0281_l4_visibility_count=12, expansion_L4_visibility_count=12, expansion_L3_logic_count=50, expansion_L2_foundation_count=67, baseline_impact=0, extension_impact=0
+    - anti_inflation: PASS (no runtime code, no fake L4 claim, no provider/brain/autonomy/mutation authorization, no metric movement)
+    - report_file: A-028.1-SPEC-EXPANSION_L4_VISIBILITY_BATCH1_DEEP_SPECIFICATION_REPORT.md
+    - final_verdict: A-028.1-SPEC COMPLETE — READY_FOR_A-028.1-RUNTIME
+    - next_action_id: A-028.1-RUNTIME
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

@@ -3265,3 +3265,63 @@ Scoring dimensions applied to all 50 L3 candidates:
 - next_action_id: A-028.1-SPEC
 - action_title: Expansion L3->L4 implementation specification and governance lock before runtime
 - required_outcome_for_unlock: approved A-028.1-SPEC with explicit runtime boundaries and acceptance gates
+
+## A-028.1-SPEC - Expansion L3->L4 Visibility Batch 1 Deep Specification
+
+### Eligibility and Runtime Boundary
+
+- A-028.1-SPEC was authorized by A-028.0.B1.R3: PASS.
+- A-028.1-RUNTIME was not authorized until this spec completed: PASS.
+- this action is docs only and does not implement L4 runtime: PASS.
+- authoritative full backend quality baseline remains A-028.0.B1.R2: `12332 passed`, `31 skipped`, `88 deselected`, coverage `87.82%`.
+- frontend gate reference remains A-028.0.B1.R3: PASS twice, no backend runtime changes in R3 scope.
+- all runtime metrics remain locked during this spec.
+
+### Batch-1 Eligibility Table
+
+| UCE ID | Candidate | Type | Source L3 Wave | Package | L3 Function / Contract | Eligible for L4? | Runtime Style | Notes |
+|---|---|---|---|---|---|---|---|---|
+| UCE-009 | document_workflow | NEW_MODULE | A-027.7 | document_workflow | `classify_document_workflow_readiness` | YES | HYBRID | read-only document workflow visibility |
+| UCE-011 | order_decree_registry | NEW_MODULE | A-027.7 | order_decree_registry | `classify_order_decree_registry_readiness` | YES | SERVICE_ONLY | governance summary only |
+| UCE-013 | incoming_outgoing_correspondence | NEW_MODULE | A-027.7 | incoming_outgoing_correspondence | `classify_incoming_outgoing_correspondence_readiness` | YES | HYBRID | correspondence visibility only |
+| UCE-089 | document_template_library | NEW_MODULE | A-027.7 | document_template_library | `classify_document_template_library_readiness` | YES | SERVICE_ONLY | template governance summary only |
+| UCE-090 | committee_decision_registry | NEW_MODULE | A-027.10 | committee_decision_registry | `classify_committee_decision_registry_readiness` | YES | HYBRID | governance queue visibility only |
+| UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | A-027.8 | rector_resolution_tracking_workflow | `classify_rector_resolution_tracking_workflow_readiness` | YES | HYBRID | workflow readiness visibility only |
+| UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | A-027.8 | compliance_calendar_dashboard | `classify_compliance_calendar_dashboard_readiness` | YES | HYBRID | no synthetic KPI |
+| UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | A-027.8 | accreditation_dashboard | `classify_accreditation_dashboard_readiness` | YES | HYBRID | no synthetic KPI |
+| UCE-032 | ministry_reporting_dashboard | REPORT_DASHBOARD | A-027.8 | ministry_reporting_dashboard | `classify_ministry_reporting_dashboard_readiness` | YES | HYBRID | no provider submission |
+| UCE-031 | rector_strategy_dashboard | REPORT_DASHBOARD | A-027.8 | rector_strategy_dashboard | `classify_rector_strategy_dashboard_readiness` | YES | HYBRID | executive visibility only |
+| UCE-012 | archive_retention_management | NEW_MODULE | A-027.10 | archive_retention_management | `classify_archive_retention_management_readiness` | YES | SERVICE_ONLY | no disposal execution |
+| UCE-019 | international_office | NEW_MODULE | A-027.10 | international_office | `classify_international_office_readiness` | YES | HYBRID | no mobility or visa decision execution |
+
+### Read-Only L4 Standard
+
+- allowed: tenant-scoped read-only visibility summaries over existing L3 deterministic outputs.
+- allowed: optional admin read-only API wrappers where existing backend auth and tenant patterns already support them.
+- required output elements: tenant_id, module, uce_id, source_l3_function, readiness_status_counts, risk_band_counts, missing_evidence_summary, human_review_queue_count, tenant_scoped=true, read_only=true.
+- forbidden: mutation, provider calls, Brain execution, autonomy execution, policy enforcement, workflow execution, synthetic KPI values, fake dashboard values.
+- permission default for API wrappers: `admin.dashboard.read` unless runtime integration can safely reuse a stricter existing admin read permission.
+
+### Expected Runtime Files and Tests
+
+- service summary updates expected in all 12 selected module `service.py` files.
+- optional read-only router wrappers expected only for the HYBRID candidates.
+- preferred test file: `backend/tests/test_a0281_expansion_l4_visibility_batch1.py`.
+- required runtime tests include tenant fail-closed, permission boundaries, output shape, no mutation, no provider calls, and no synthetic KPI assertions.
+
+### Metrics Overlay Policy
+
+- locked in spec: `expansion_L2_foundation_count=67`, `expansion_runtime_implemented_count=67`, `expansion_L3_logic_count=50`, `remaining_L2_only=17`, `baseline_impact=0`, `extension_impact=0`.
+- expected if A-028.1-RUNTIME passes with `N=12`: `A0281_l4_visibility_count=12`, `expansion_L4_visibility_count=12`, `expansion_L3_logic_count=50`, `baseline_impact=0`, `extension_impact=0`.
+- overlay rule: L4 adds visibility count without reducing or restating the existing L3 overlay count.
+
+### Final Decision
+
+- final_verdict: A-028.1-SPEC COMPLETE - READY_FOR_A-028.1-RUNTIME
+- report_file: `A-028.1-SPEC-EXPANSION_L4_VISIBILITY_BATCH1_DEEP_SPECIFICATION_REPORT.md`
+
+### Next Action
+
+- next_action_id: A-028.1-RUNTIME
+- action_title: implement expansion L4 read-only visibility batch 1 for the specified 12 candidates
+- required_outcome_for_unlock: targeted runtime implementation and scoped validation with no metric inflation and no forbidden-lane violations
