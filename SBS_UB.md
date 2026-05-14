@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.9-SPEC
-    - current_stage: A-028.8-RUNTIME complete / expansion L4 consolidated summary refreshed to 22 candidates
-    - last_completed_action_id: A-028.8-RUNTIME
-    - next_action_id: A-028.9-SPEC
-    - updated_at: 2026-05-14 (A-028.8-RUNTIME completed; consolidated endpoint refreshed from 12 to 22 L4 candidates; aggregation functions fixed for mixed service structures; all 905+517 tests PASS)
+    - status: ready_for_A-028.9-RUNTIME
+    - current_stage: A-028.9-SPEC complete / next expansion L4 visibility batch 3 selected
+    - last_completed_action_id: A-028.9-SPEC
+    - next_action_id: A-028.9-RUNTIME
+    - updated_at: 2026-05-14 (A-028.9-SPEC completed; 10 candidates selected from 22-eligible pool; service-summary-only implementation style; API routes deferred to A-028.10; expected expansion_L4_visibility_count 22→32 after runtime)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -997,7 +997,7 @@
     - purpose: refresh_consolidated_l4_summary_endpoint_from_12_to_22_candidates
     - repo_hygiene_check: PASS (expected unmodified: backend/.coverage modified auto, A-027.9 untracked; modified: router.py, test_a0284, test_a0287; created: test_a0288)
     - source_of_truth_verification: PASS (A-028.8-SPEC control block confirmed ready_for_A-028.8-RUNTIME, all 22 service functions already imported)
-    - implementation_tasks_completed: 
+    - implementation_tasks_completed:
         - Task 1-3: Verify repo hygiene, A-028.8-SPEC closure, 22 service functions available (PASS)
         - Task 4: Extended CONSOLIDATED_MODULE_CATALOG from 12 to 22 entries with all 10 second-wave candidates (PASS)
         - Task 5: Updated CONSOLIDATED_SOURCE_ACTIONS from 3 to 6 items (A-028.1/2/3 + A-028.6/7/8) (PASS)
@@ -1008,10 +1008,10 @@
         - Task 12: Updated SBS_UB.md control block to mark A-028.8-RUNTIME complete (PASS)
     - aggregation_function_fixes: Fixed _aggregate_missing_evidence to handle both dict and list formats from mixed first-wave/second-wave services; fixed _aggregate_human_review_rollup to handle both dict and string formats
     - endpoint_preservation: GET /api/admin/expansion/l4/summary still responds with 200, permission unchanged (admin.expansion.read), contract preserved (read-only, tenant-safe, RBAC-safe, aggregation-only)
-    - consolidated_module_catalog_extension: 
+    - consolidated_module_catalog_extension:
         - Entry 1-12: Unchanged (first-wave UCE-009, UCE-011, UCE-013, UCE-089, UCE-090, UCE-099, UCE-122, UCE-114, UCE-032, UCE-031, UCE-012, UCE-019)
         - Entry 13-22: Added (second-wave UCE-014, UCE-015, UCE-016, UCE-071, UCE-072, UCE-073, UCE-074, UCE-075, UCE-076, UCE-092)
-    - test_results_summary: 
+    - test_results_summary:
         - A-028.1-7 continuity: 905 tests PASS
         - A-027 continuity spot check: 517 tests PASS
         - A-028.8 targeted tests: 4/47 can execute (others require auth fixture; all collect successfully)
@@ -1021,6 +1021,57 @@
     - anti_inflation_verification: PASS (no new endpoint created, no code generation, no mutation, no provider call, no Brain execution, no workflow/decision execution, no fake KPI/dashboard/score, no ranking, no L5/L6 claim)
     - final_verdict: A-028.8-RUNTIME CLOSED — PASS (consolidated endpoint successfully refreshed from 12 to 22 candidates; aggregation fixed for mixed service structures; all continuity tests passing; contract preservation verified)
     - next_action_id: A-028.9-SPEC
+- A-028.9-SPEC execution block:
+    - mode: planning_only_no_runtime_changes
+    - purpose: select_next_expansion_l4_visibility_batch_3_from_remaining_28_candidates
+    - repo_hygiene_check: PASS (expected non-scope items preserved: backend/.coverage modified, A-027.9 untracked; no unexpected dirty files)
+    - source_of_truth_verification: PASS (A-028.8-RUNTIME closed, next_action_id confirmed as A-028.9-SPEC; expansion metrics verified: L3=50, L4=22, remaining L3-not-L4=28)
+    - remaining_l3_not_l4_candidates_verified: 28 (50 total L3 minus 22 already L4-visible)
+    - deferred_lanes_classified:
+        - provider_dependent: 4 candidates (UCE-024, UCE-106, UCE-109, UCE-112)
+        - sensitive_hr_decisions: 2 candidates (UCE-005, UCE-057)
+    - ordinary_eligible_pool: 22 candidates
+    - selection_criteria_applied: operational_value, governance_value, safety, l3_evidence_readiness, l4_clarity, simplicity (0-5 scale per dimension)
+    - selection_scoring_model: average_score_23.8_across_selected_10 (all scored 22-28, threshold 20+)
+    - selected_batch_size: 10
+    - selected_candidates: UCE-004 (leave_management), UCE-002 (staff_onboarding), UCE-017 (dormitory_management), UCE-037 (scholarship_committee_workflow), UCE-038 (student_appeals_workflow), UCE-022 (partnership_registry), UCE-023 (mou_lifecycle), UCE-046 (consent_management_policy), UCE-001 (staff_recruitment), UCE-003 (employee_records)
+    - implementation_style_selected: OPTION_S (service_summaries_only)
+    - api_route_deferred_to: A-028.10
+    - api_route_deferred_indicator: API_ROUTE_DEFERRED_TO_A02810 = YES
+    - expected_l4_standard:
+        - visibility_level: L4
+        - source_maturity_level: L3
+        - visibility_type: READ_ONLY_SERVICE_SUMMARY
+        - tenant_scoped: true
+        - read_only: true
+        - no_mutation: true
+        - no_provider_call: true
+        - no_external_submission: true
+        - no_brain_execution: true
+        - no_autonomous_execution: true
+        - no_workflow_execution: true
+        - no_decision_execution: true
+        - no_fake_kpi: true
+        - no_synthetic_score: true
+        - no_l5_claim: true
+        - no_l6_claim: true
+        - l3_contract_preserved: true
+        - api_route_deferred_to: A-028.10
+    - expected_runtime_files: 10 service.py files with L4 summaries, test_a0289, SBS_UB.md, expansion map, A-028.9-RUNTIME report
+    - expected_runtime_test_count: 185+ assertions across 10 groups (imports, functions, tenant_safety, fields, forbidden_actions, readiness/risk/evidence, determinism, contract_preservation, no_fake_claims, continuity_gates)
+    - expected_metric_movement:
+        - A0289_l4_visibility_count: 10
+        - expansion_L4_visibility_count: 22 → 32
+        - expansion_L4_api_route_count: 22 (unchanged, routes deferred)
+        - expansion_L4_consolidated_summary_count: 1 (unchanged, consolidated deferred)
+        - expansion_L3_logic_count: 50 (unchanged)
+        - baseline_impact: 0
+        - extension_impact: 0
+    - metric_formula_verification_if_runtime_passes: L4_visibility = A0281(12) + A0286(10) + A0289(10) = 32; api_routes = A0282(6) + A0283(6) + A0287(10) = 22; consolidated = 1; remaining_L3_not_L4 = 50 - 32 = 18
+    - anti_fake_review: PASS (no API routes, no frontend, no fake KPI/dashboard/score, no provider, no Brain, no autonomy, no workflow/decision execution, no DB mutation, no L5/L6 claim, no baseline/extension change)
+    - report_file: A-028.9-SPEC-NEXT_EXPANSION_L4_VISIBILITY_BATCH3_SELECTION_REPORT.md
+    - final_verdict: A-028.9-SPEC CLOSED — PASS (10 candidates selected from ordinary-eligible pool; service-summary-only style; routes deferred; expected 22→32 L4 visibility; all anti-inflation gates passed; ready for A-028.9-RUNTIME)
+    - next_action_id: A-028.9-RUNTIME
 - A-026.10-SPEC execution block:
     - spec_scope: planning_only_no_runtime_code_changes
     - remaining_l2_count_confirmed: 13
@@ -6129,7 +6180,7 @@ backend/app/modules/brain_core/
 # brain_signals table
 class BrainSignal(Base):
     __tablename__ = "brain_signals"
-    
+
     signal_id: UUID = Column(UUID, primary_key=True)
     tenant_id: int = Column(Integer, ForeignKey("tenants.id"))
     correlation_id: UUID = Column(UUID, index=True)
@@ -6148,7 +6199,7 @@ class BrainSignal(Base):
 # brain_decisions table
 class BrainDecision(Base):
     __tablename__ = "brain_decisions"
-    
+
     decision_id: UUID = Column(UUID, primary_key=True)
     tenant_id: int = Column(Integer, ForeignKey("tenants.id"))
     correlation_id: UUID = Column(UUID, index=True)
@@ -6164,11 +6215,11 @@ class BrainDecision(Base):
     created_at: datetime = Column(DateTime)
     created_by: str = Column(String)  # "brain_core"
     policy_snapshot: dict = Column(JSON)  # Policy used for decision
-    
+
 # brain_action_plans table
 class BrainActionPlan(Base):
     __tablename__ = "brain_action_plans"
-    
+
     plan_id: UUID = Column(UUID, primary_key=True)
     decision_id: UUID = Column(UUID, ForeignKey("brain_decisions.decision_id"))
     tenant_id: int = Column(Integer, ForeignKey("tenants.id"))
@@ -6179,7 +6230,7 @@ class BrainActionPlan(Base):
 # brain_outcomes table
 class BrainOutcome(Base):
     __tablename__ = "brain_outcomes"
-    
+
     outcome_id: UUID = Column(UUID, primary_key=True)
     decision_id: UUID = Column(UUID, ForeignKey("brain_decisions.decision_id"))
     tenant_id: int = Column(Integer, ForeignKey("tenants.id"))
@@ -6191,7 +6242,7 @@ class BrainOutcome(Base):
 # brain_explanations table
 class BrainExplanation(Base):
     __tablename__ = "brain_explanations"
-    
+
     explanation_id: UUID = Column(UUID, primary_key=True)
     decision_id: UUID = Column(UUID, ForeignKey("brain_decisions.decision_id"))
     summary: str = Column(String)
@@ -6203,7 +6254,7 @@ class BrainExplanation(Base):
 # brain_policy_profiles table
 class BrainPolicyProfile(Base):
     __tablename__ = "brain_policy_profiles"
-    
+
     profile_id: UUID = Column(UUID, primary_key=True)
     tenant_id: int = Column(Integer, ForeignKey("tenants.id"))
     autonomy_level: str = Column(String)  # Level 0-4
@@ -6223,7 +6274,7 @@ class BrainPolicyProfile(Base):
 class AttendanceRiskDetectedSignal(EventModel):
     event_type = "academic.attendance_risk.detected"
     signal_class = "academic_risk"
-    
+
     student_id: str
     section_id: str
     course_id: str
@@ -6234,7 +6285,7 @@ class AttendanceRiskDetectedSignal(EventModel):
 class GradeRiskDetectedSignal(EventModel):
     event_type = "academic.grade_risk.detected"
     signal_class = "academic_risk"
-    
+
     student_id: str
     course_id: str
     section_id: str
@@ -6245,7 +6296,7 @@ class GradeRiskDetectedSignal(EventModel):
 class ThesisStatusChangedSignal(EventModel):
     event_type = "thesis.status_changed"
     signal_class = "academic_risk"
-    
+
     student_id: str
     thesis_id: str
     old_status: str
@@ -6264,7 +6315,7 @@ class ThesisStatusChangedSignal(EventModel):
 
 class SignalRegistry:
     """Регистр всех известных сигналов и их handlers"""
-    
+
     signals = {
         "academic.attendance_risk.detected": {
             "signal_class": "academic_risk",
@@ -6292,7 +6343,7 @@ class SignalRegistry:
 
 class DecisionRegistry:
     """Регистр всех известных решений и их действий"""
-    
+
     decisions = {
         "student_retention_response": {
             "decision_type": "risk",
@@ -6352,7 +6403,7 @@ class DecisionRegistry:
 6. Reasoning engine: "severity=HIGH, decision_type=risk, actions=[create_intervention, notify_advisor]"
 7. Policy guard: checks tenant policy — approved for semi-autonomous
 8. Action planner: creates BrainActionPlan with 2 actions
-9. Action dispatcher: 
+9. Action dispatcher:
    - Calls interventions API: POST /api/interventions/cases (creates intervention case)
    - Sends notification to advisor: POST /api/notifications/send
 10. BrainDecision status = "dispatched"
@@ -6385,7 +6436,7 @@ class DecisionRegistry:
 # backend/app/modules/brain_core/policy/decision_policy.py
 
 class DecisionPolicyGuard:
-    
+
     async def validate_decision(
         self,
         tenant_id: int,
@@ -6395,7 +6446,7 @@ class DecisionPolicyGuard:
         """
         Проверить, допустимо ли решение
         """
-        
+
         # 1. Check autonomy level
         if policy_profile.autonomy_level < decision.autonomy_level:
             return PolicyValidationResult(
@@ -6404,7 +6455,7 @@ class DecisionPolicyGuard:
                 requires_approval=True,
                 approval_role=policy_profile.approval_role,
             )
-        
+
         # 2. Check approval requirement
         if decision.requires_approval:
             return PolicyValidationResult(
@@ -6413,11 +6464,11 @@ class DecisionPolicyGuard:
                 requires_approval=True,
                 approval_role=policy_profile.approval_role,
             )
-        
+
         # 3. Check tenant-specific constraints
         if decision.decision_type == "risk" and policy_profile.autonomy_level < Level.SEMI_AUTONOMOUS:
             return PolicyValidationResult(approved=False)
-        
+
         # 4. Passed all checks
         return PolicyValidationResult(approved=True)
 
@@ -6429,7 +6480,7 @@ class DecisionPolicyGuard:
 # backend/app/modules/brain_core/reasoning/explanation.py
 
 class ExplanationEngine:
-    
+
     async def build_explanation(
         self,
         signal: BrainSignal,
@@ -6440,28 +6491,28 @@ class ExplanationEngine:
         """
         Построить объяснение решения
         """
-        
+
         summary = f"""
         Student {signal.subject_student_id} shows attendance risk:
         - Current attendance: {context.attendance_rate * 100}%
         - Trend: {context.attendance_trend}
         - Recent grades: {context.recent_grades_avg}
-        
+
         System recommends: {decision.recommended_actions}
         Severity: {decision.severity_score}
         Confidence: {decision.confidence_score}
         """
-        
+
         factors = [
             f"Attendance below 60% threshold ({context.attendance_rate * 100}%)",
             f"Grade trend: {context.grade_trend}",
             f"Last attendance: {context.last_attendance_days} days ago",
         ]
-        
+
         policy_notes = f"Policy allows semi-autonomous intervention creation for academic_risk"
-        
+
         expected_outcome = "Faculty advisor contacted. Student case opened. Support plan created."
-        
+
         return BrainExplanation(
             decision_id=decision.decision_id,
             summary=summary,
@@ -6487,13 +6538,13 @@ class OutcomeTracker:
     Связывает с оригинальными решениями
     Трекирует effectiveness
     """
-    
+
     async def on_intervention_completed(self, event: InterventionCompletedEvent):
         """Получает событие: intervention_case_closed"""
-        
+
         # 1. Find original decision by correlation_id
         decision = await BrainDecision.get_by_correlation_id(event.correlation_id)
-        
+
         # 2. Record outcome
         outcome = BrainOutcome(
             decision_id=decision.decision_id,
@@ -6507,10 +6558,10 @@ class OutcomeTracker:
             effectiveness=self._evaluate_effectiveness(event),
             recorded_at=datetime.now(),
         )
-        
+
         # 3. Update decision status
         decision.status = "completed"
-        
+
         # 4. Log for learning
         await self._log_decision_quality(decision, outcome)
 
@@ -6603,7 +6654,7 @@ from app.shared.events import EventBus
 class SignalListener:
     def __init__(self, event_bus: EventBus):
         self.event_bus = event_bus
-    
+
     async def start(self):
         """Subscribe to canonical brain signals"""
         self.event_bus.subscribe(
@@ -6615,7 +6666,7 @@ class SignalListener:
             self.on_grade_risk
         )
         # ... остальные подписки
-    
+
     async def on_attendance_risk(self, event: Dict):
         signal = await self.process_signal(event)
         await self.context_builder.build_context(signal)
@@ -6693,9 +6744,9 @@ def test_student_risk_classification():
         attendance_rate=0.45,
         grade_trend="declining",
     )
-    
+
     decision = RulesEngine.evaluate("academic_risk", context)
-    
+
     assert decision.decision_type == "risk"
     assert decision.severity_score > 0.7
     assert "create_intervention_case" in decision.recommended_actions
@@ -6704,9 +6755,9 @@ def test_policy_guard_approval():
     """Test: High-risk decision requires approval"""
     decision = BrainDecision(decision_type="risk", severity_score=0.9)
     policy = BrainPolicyProfile(autonomy_level=Level.RECOMMEND_ONLY)
-    
+
     result = PolicyGuard.validate_decision(decision, policy)
-    
+
     assert result.approved == False
     assert result.requires_approval == True
 
@@ -6720,11 +6771,11 @@ def test_policy_guard_approval():
 @pytest.mark.asyncio
 async def test_student_risk_e2e_happy_path():
     """End-to-end: Signal → Decision → Action → Outcome"""
-    
+
     # 1. Setup
     tenant = await create_test_tenant()
     student = await create_test_student(tenant_id=tenant.id)
-    
+
     # 2. Emit signal
     signal_event = AttendanceRiskDetectedSignal(
         tenant_id=tenant.id,
@@ -6732,20 +6783,20 @@ async def test_student_risk_e2e_happy_path():
         attendance_rate=0.45,
     )
     await event_bus.emit(signal_event)
-    
+
     # 3. Wait for processing
     await asyncio.sleep(2)
-    
+
     # 4. Verify decision created
     decision = await BrainDecision.get_by_correlation_id(signal_event.correlation_id)
     assert decision is not None
     assert decision.status == "dispatched"
     assert decision.decision_type == "risk"
-    
+
     # 5. Verify action dispatched (workflow case created)
     workflow_case = await WorkflowCase.get_by_decision_id(decision.decision_id)
     assert workflow_case is not None
-    
+
     # 6. Verify explanation available
     explanation = await BrainExplanation.get_by_decision_id(decision.decision_id)
     assert explanation is not None
@@ -6754,16 +6805,16 @@ async def test_student_risk_e2e_happy_path():
 @pytest.mark.asyncio
 async def test_student_risk_e2e_fail_path():
     """Fail-path: Missing tenant_id → fail-closed"""
-    
+
     signal_event = AttendanceRiskDetectedSignal(
         tenant_id=None,  # Invalid
         student_id="STU-001",
         attendance_rate=0.45,
     )
-    
+
     with pytest.raises(TenantContextMissingError):
         await event_bus.emit(signal_event)
-    
+
     # Verify audit log
     audit_log = await AuditLog.get_recent(event_type="brain_core_validation_error")
     assert audit_log is not None
@@ -6864,10 +6915,10 @@ Brain Core phase считается **successful**, если:
 
 ## §C1 — Brain-Readiness Audit (2026-04-22)
 
-**Методология:** 3 оси по Master Plan §8/§12  
-- **DC** — Domain Coverage (A=Academic / B=StudentSuccess / C=Faculty / D=AdminFinance / E=CampusOps / F=Research / G=Platform)  
-- **BR** — Brain Readiness: ✅ Ready / ⚠️ Partial / ❌ Not ready  
-- **EV** — Execution Value: High / Med / Low  
+**Методология:** 3 оси по Master Plan §8/§12
+- **DC** — Domain Coverage (A=Academic / B=StudentSuccess / C=Faculty / D=AdminFinance / E=CampusOps / F=Research / G=Platform)
+- **BR** — Brain Readiness: ✅ Ready / ⚠️ Partial / ❌ Not ready
+- **EV** — Execution Value: High / Med / Low
 
 **Главный разрыв:** Brain Core получает сигналы через собственный router (тест/мануал), а реальные доменные модули сигналы brain_core **не эмитируют**. Нужен bridging layer — каждый domain-модуль при риске-событии должен публиковать канонический brain signal.
 
@@ -6911,16 +6962,16 @@ Brain Core phase считается **successful**, если:
 
 ### Выводы и приоритеты Phase C
 
-**Closed gap #1 — Real brain signal emission для приоритетных доменов закрыт:**  
+**Closed gap #1 — Real brain signal emission для приоритетных доменов закрыт:**
 `scheduling`, `grades`, `billing`, `faculty` публикуют canonical brain signals из production service-layer при risk-condition; Brain Core может слушать реальные доменные события вместо router-only simulation.
 
-**Critical gap #2 — Нет outcome feedback из доменов:**  
+**Critical gap #2 — Нет outcome feedback из доменов:**
 `interventions`, `workflows` завершают работу, но не отправляют `outcome` обратно в Brain Core. Learning loop разомкнут.
 
-**Critical gap #3 — Compliance Decision type отсутствует:**  
+**Critical gap #3 — Compliance Decision type отсутствует:**
 `accreditation` публикует события, но Brain Core не имеет сценария compliance → remediation workflow.
 
-**Priority order для Phase C:**  
+**Priority order для Phase C:**
 C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (compliance) → C8 (reliability signals) → C9 (autonomy levels UI) → C10 (gate)
 
 После закрытия **Domain Bridge S1-S4** следующий оставшийся structural gap — outcome feedback из execution-доменов обратно в Brain Core learning loop.
@@ -6961,20 +7012,20 @@ C2/C3/C4 (scaffold files) → C5 (DB tables) → C6 (API endpoints) → C7 (comp
 
 ### Ministry KPI Contract v1 (I5)
 
-- **Версия:** `v1`  
-- **Роль доступа:** `ministry.kpi.read`  
-- **Whitelist:** `total_students`, `total_enrollments`, `total_grades_submitted`  
-- **Suppression threshold:** 5 (k-anonymity baseline)  
-- **Suppressed sentinel:** `"suppressed"`  
-- **Аудит:** каждый вызов `apply_ministry_kpi_contract()` записывает audit entry  
+- **Версия:** `v1`
+- **Роль доступа:** `ministry.kpi.read`
+- **Whitelist:** `total_students`, `total_enrollments`, `total_grades_submitted`
+- **Suppression threshold:** 5 (k-anonymity baseline)
+- **Suppressed sentinel:** `"suppressed"`
+- **Аудит:** каждый вызов `apply_ministry_kpi_contract()` записывает audit entry
 - **Модуль:** `app/platform/kpi/ministry_kpi.py`
 
 ### Phase I Gate Summary
 
-- **Safe-gate:** 95/95 тестов I1–I5 прошли в одном прогоне (0 failures)  
-- **Release-gate:** 36/36 meta-тестов I6 прошли (0 failures)  
-- **Tenant-isolation:** отрицательные тесты на cross-tenant leakage — все fail-closed  
-- **Ministry KPI:** suppression + whitelist + audit — contract integrity verified  
+- **Safe-gate:** 95/95 тестов I1–I5 прошли в одном прогоне (0 failures)
+- **Release-gate:** 36/36 meta-тестов I6 прошли (0 failures)
+- **Tenant-isolation:** отрицательные тесты на cross-tenant leakage — все fail-closed
+- **Ministry KPI:** suppression + whitelist + audit — contract integrity verified
 - **Phase I полностью закрыта: 131/131 ✅**
 
 
@@ -7257,8 +7308,8 @@ Full capability matrix is evidence-pending; no guessed FULL/Brain-ready/API/fron
 
 - Date: 2026-05-04
 - Scope: Fix secondary cluster of 21 KPI functionality tests failing due to missing `analytics.data.read` permission context
-- Initial failure cluster: 
-    - **Primary (solved in prior cycles):** Permission gate on `/api/analytics/kpis*` endpoints requiring `analytics.data.read` 
+- Initial failure cluster:
+    - **Primary (solved in prior cycles):** Permission gate on `/api/analytics/kpis*` endpoints requiring `analytics.data.read`
     - **Secondary (solved in A-011.3):** 21 KPI functionality tests using `_tenant_user_headers()` which provides only `["student"]` role without permission, causing 403 denials
     - Test names affected: `test_kpi_source_breakdown_*`, `test_kpi_severity_*`, `test_kpi_policy_pack_*`, `test_kpi_actionability_*` (4+6+5+7 = 22 tests, + tenant isolation variants)
 

@@ -4523,6 +4523,75 @@ If runtime passes:
 - next_action_id: A-028.8-RUNTIME
 - next_action_title: implement consolidated L4 summary refresh for 22 candidates
 
+---
+
+## A-028.9-SPEC — Next Expansion L4 Visibility Batch 3 Selection
+
+### Purpose
+
+Select the next expansion L4 visibility batch following successful A-028.8 consolidated summary refresh. From remaining 28 L3-not-L4 candidates, identify 22 ordinary-eligible candidates (excluding 6 provider-dependent and sensitive-HR candidates), score and rank, then select 10 high-value candidates for service-summary-only L4 visibility implementation in A-028.9-RUNTIME.
+
+### Remaining L3-Not-L4 Inventory (28 Candidates)
+
+Total L3 implementations: 50
+Already L4-visible: 22
+Remaining L3-not-L4: 28
+
+### Excluded Candidates (6 — Deferred Lanes)
+
+**Provider-Dependent (4):**
+- UCE-024 (student_information_system_integration) → Defer to provider-hardening phase
+- UCE-106 (learning_management_system_integration) → Defer to provider-hardening phase
+- UCE-109 (digital_signature_integration) → Defer to provider-hardening phase
+- UCE-112 (regulatory_reporting_integration) → Defer to provider-hardening phase
+
+**Sensitive HR Decisions (2):**
+- UCE-005 (performance_appraisal) → Defer to sensitive-domain governance phase
+- UCE-057 (staff_probation_review) → Defer to sensitive-domain governance phase
+
+### Selected Batch (10 Candidates — Ordinary-Eligible, Scored 22-28)
+
+| # | UCE | Candidate | Type | Domain | Score | Selection |
+|---|---|---|---|---|---:|---|
+| 1 | UCE-004 | leave_management | NEW_MODULE | HR Personnel | 28 | ✅ |
+| 2 | UCE-002 | staff_onboarding | NEW_MODULE | Faculty HR | 25 | ✅ |
+| 3 | UCE-017 | dormitory_management | NEW_MODULE | Campus Ops | 24 | ✅ |
+| 4 | UCE-037 | scholarship_committee_workflow | WORKFLOW | Student Lifecycle | 24 | ✅ |
+| 5 | UCE-038 | student_appeals_workflow | WORKFLOW | Student Lifecycle | 24 | ✅ |
+| 6 | UCE-022 | partnership_registry | NEW_MODULE | International Office | 23 | ✅ |
+| 7 | UCE-023 | mou_lifecycle | NEW_MODULE | International Office | 23 | ✅ |
+| 8 | UCE-046 | consent_management_policy | POLICY_CONTROL | Legal Compliance | 23 | ✅ |
+| 9 | UCE-001 | staff_recruitment | NEW_MODULE | Faculty HR | 22 | ✅ |
+| 10 | UCE-003 | employee_records | NEW_MODULE | Faculty HR | 22 | ✅ |
+
+### Implementation Style
+
+**Selected:** Option S (Service Summaries Only)
+**API Routes:** Deferred to A-028.10 (API_ROUTE_DEFERRED_TO_A02810 = YES)
+
+### Expected Metric Movement (A-028.9-RUNTIME)
+
+- A0289_l4_visibility_count: 10
+- expansion_L4_visibility_count: 22 → 32
+- expansion_L4_api_route_count: 22 (unchanged)
+- expansion_L4_consolidated_summary_count: 1 (unchanged)
+- expansion_L3_logic_count: 50 (unchanged)
+- remaining_L3_not_L4: 28 → 18
+
+### Expected Runtime Files
+
+- 10 service.py files with L4 visibility summaries
+- backend/tests/test_a0289_expansion_l4_visibility_batch3.py
+- SBS_UB.md
+- Expansion map
+- A-028.9-RUNTIME-EXPANSION_L4_VISIBILITY_BATCH3_REPORT.md
+
+### A-028.9-SPEC Next Action
+
+- next_action_id: A-028.9-RUNTIME
+- next_action_title: implement L4 visibility service summaries for 10 selected candidates
+
+
 - service-level read-only L4 summary first.
 - optional API routes only after service summary stability.
 - no frontend.
