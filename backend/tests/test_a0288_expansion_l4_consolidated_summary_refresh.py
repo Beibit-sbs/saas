@@ -228,7 +228,7 @@ def test_a0288_consolidated_total_l4_visibility_candidates_equals_22(authenticat
     resp = authenticated_client.get(CONSOLIDATED_ROUTE)
     assert resp.status_code == 200
     payload = resp.json()
-    assert payload.get("total_l4_visibility_candidates") == 22
+    assert payload.get("total_l4_visibility_candidates") == 32  # A-028.11-RUNTIME: refreshed to 32
 
 
 @pytest.mark.authenticated
@@ -237,7 +237,7 @@ def test_a0288_consolidated_total_api_routed_candidates_equals_22(authenticated_
     resp = authenticated_client.get(CONSOLIDATED_ROUTE)
     assert resp.status_code == 200
     payload = resp.json()
-    assert payload.get("total_api_routed_candidates") == 22
+    assert payload.get("total_api_routed_candidates") == 32  # A-028.11-RUNTIME: refreshed to 32
 
 
 @pytest.mark.authenticated
@@ -248,7 +248,7 @@ def test_a0288_consolidated_total_consolidated_candidates_equals_22(authenticate
     payload = resp.json()
     # This field may or may not exist; check if it does
     if "total_consolidated_candidates" in payload:
-        assert payload.get("total_consolidated_candidates") == 22
+        assert payload.get("total_consolidated_candidates") == 32  # A-028.11-RUNTIME: refreshed to 32
 
 
 # ============================================================================
@@ -262,7 +262,7 @@ def test_a0288_consolidated_modules_length_equals_22(authenticated_client):
     assert resp.status_code == 200
     payload = resp.json()
     modules = payload.get("modules", [])
-    assert len(modules) == 22, f"Expected 22 modules, got {len(modules)}"
+    assert len(modules) == 32, f"Expected 32 modules, got {len(modules)}"  # A-028.11-RUNTIME
 
 
 @pytest.mark.authenticated
@@ -319,8 +319,8 @@ def test_a0288_consolidated_modules_by_domain_covers_all_22(authenticated_client
     for domain, candidates in mbd.items():
         all_domain_candidates.extend(candidates if isinstance(candidates, list) else [])
     
-    assert len(all_domain_candidates) == 22, \
-        f"modules_by_domain should aggregate 22, got {len(all_domain_candidates)}"
+    assert len(all_domain_candidates) == 32, \
+        f"modules_by_domain should aggregate 32, got {len(all_domain_candidates)}"  # A-028.11-RUNTIME
 
 
 @pytest.mark.authenticated

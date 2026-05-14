@@ -612,7 +612,7 @@ def test_a02810_consolidated_summary_refresh_deferred_to_a02811() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload.get("summary_type") == "EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY"
-    assert payload.get("total_l4_visibility_candidates") == 22
+    assert payload.get("total_l4_visibility_candidates") == 32  # A-028.11-RUNTIME: consolidated count refreshed to 32
 
 
 def test_a02810_consolidated_endpoint_is_not_in_openapi_schema() -> None:

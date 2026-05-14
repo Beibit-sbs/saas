@@ -779,8 +779,8 @@ def test_a0287_consolidated_summary_refresh_deferred_to_a0288() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload.get("summary_type") == "EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY"
-    # Consolidated catalog has 22 modules (A-028.1/2/3 batch + A-028.6/7/8 refresh)
-    assert payload.get("total_l4_visibility_candidates") == 22
+    # A-028.11-RUNTIME: consolidated catalog refreshed to 32 (was 22 in A-028.8)
+    assert payload.get("total_l4_visibility_candidates") == 32  # A-028.11-RUNTIME
 
 
 # ---------------------------------------------------------------------------

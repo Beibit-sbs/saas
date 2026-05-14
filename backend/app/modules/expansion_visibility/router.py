@@ -49,7 +49,11 @@ ExpansionRead = Annotated[None, Depends(permission_dependency("admin.expansion.r
 SummaryBuilder = Callable[[int], dict[str, Any]]
 
 
-CONSOLIDATED_SOURCE_ACTIONS = ["A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8"]
+CONSOLIDATED_SOURCE_ACTIONS = [
+    "A-028.1", "A-028.2", "A-028.3",
+    "A-028.6", "A-028.7", "A-028.8",
+    "A-028.9", "A-028.10", "A-028.11",
+]
 CONSOLIDATED_MODULE_CATALOG: list[dict[str, Any]] = [
     {
         "uce_id": "UCE-009",
@@ -183,6 +187,67 @@ CONSOLIDATED_MODULE_CATALOG: list[dict[str, Any]] = [
         "domain": "Academic / Audit",
         "builder": get_degree_audit_l4_visibility_summary,
     },
+    # Wave 3 — A-028.9/A-028.10 candidates (added in A-028.11-RUNTIME)
+    {
+        "uce_id": "UCE-001",
+        "module": "staff_recruitment",
+        "domain": "HR / Recruitment",
+        "builder": get_staff_recruitment_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-002",
+        "module": "staff_onboarding",
+        "domain": "HR / Onboarding",
+        "builder": get_staff_onboarding_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-003",
+        "module": "employee_records",
+        "domain": "HR / Records",
+        "builder": get_employee_records_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-004",
+        "module": "leave_management",
+        "domain": "HR / Leave",
+        "builder": get_leave_management_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-017",
+        "module": "dormitory_management",
+        "domain": "Campus Operations / Dormitory",
+        "builder": get_dormitory_management_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-022",
+        "module": "partnership_registry",
+        "domain": "International Office / Partnerships",
+        "builder": get_partnership_registry_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-023",
+        "module": "mou_lifecycle",
+        "domain": "International Office / Partnerships",
+        "builder": get_mou_lifecycle_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-037",
+        "module": "scholarship_committee_workflow",
+        "domain": "Student Lifecycle / Scholarships",
+        "builder": get_scholarship_committee_workflow_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-038",
+        "module": "student_appeals_workflow",
+        "domain": "Student Lifecycle / Appeals",
+        "builder": get_student_appeals_workflow_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-046",
+        "module": "consent_management_policy",
+        "domain": "Legal / Compliance",
+        "builder": get_consent_management_policy_l4_visibility_summary,
+    },
 ]
 
 
@@ -291,9 +356,11 @@ def _build_consolidated_summary(tenant_id: int) -> dict[str, Any]:
         "tenant_id": tenant_id,
         "visibility_level": "L4",
         "summary_type": "EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY",
+        "coverage_version": "A-028.11",
         "source_actions": list(CONSOLIDATED_SOURCE_ACTIONS),
         "total_l4_visibility_candidates": len(CONSOLIDATED_MODULE_CATALOG),
         "total_api_routed_candidates": len(CONSOLIDATED_MODULE_CATALOG),
+        "total_consolidated_candidates": len(CONSOLIDATED_MODULE_CATALOG),
         "modules": module_summaries,
         "modules_by_domain": _aggregate_modules_by_domain(),
         "readiness_status_counts": _aggregate_status_counts(module_summaries),

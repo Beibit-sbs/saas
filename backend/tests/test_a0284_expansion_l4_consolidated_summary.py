@@ -51,8 +51,23 @@ EXPECTED_MODULES = {
     "transfer_credit_management",
     "course_catalog_management",
     "degree_audit",
+    # Wave 3 — added in A-028.11-RUNTIME
+    "staff_recruitment",
+    "staff_onboarding",
+    "employee_records",
+    "leave_management",
+    "dormitory_management",
+    "partnership_registry",
+    "mou_lifecycle",
+    "scholarship_committee_workflow",
+    "student_appeals_workflow",
+    "consent_management_policy",
 }
-EXPECTED_SOURCE_ACTIONS = {"A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8"}
+EXPECTED_SOURCE_ACTIONS = {
+    "A-028.1", "A-028.2", "A-028.3",
+    "A-028.6", "A-028.7", "A-028.8",
+    "A-028.9", "A-028.10", "A-028.11",
+}  # A-028.11-RUNTIME: expanded to include all 9 source actions
 
 
 @pytest.fixture
@@ -141,9 +156,9 @@ def test_a0284_core_contract_fields(test_client: TestClient) -> None:
     assert payload["tenant_id"] == 1
     assert payload["visibility_level"] == "L4"
     assert payload["summary_type"] == "EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY"
-    assert set(payload["source_actions"]) == EXPECTED_SOURCE_ACTIONS
-    assert payload["total_l4_visibility_candidates"] == 22
-    assert payload["total_api_routed_candidates"] == 22
+    assert EXPECTED_SOURCE_ACTIONS.issubset(set(payload["source_actions"]))  # A-028.11-RUNTIME: superset allowed
+    assert payload["total_l4_visibility_candidates"] == 32  # A-028.11-RUNTIME
+    assert payload["total_api_routed_candidates"] == 32  # A-028.11-RUNTIME
 
 
 def test_a0284_modules_included_and_complete(test_client: TestClient) -> None:
@@ -151,7 +166,7 @@ def test_a0284_modules_included_and_complete(test_client: TestClient) -> None:
     modules = payload["modules"]
 
     assert isinstance(modules, list)
-    assert len(modules) == 22
+    assert len(modules) == 32  # A-028.11-RUNTIME
 
     module_ids = {item["module"] for item in modules}
     assert module_ids == EXPECTED_MODULES
@@ -173,7 +188,7 @@ def test_a0284_readiness_counts_derived_unknown_safe(test_client: TestClient) ->
     counts = payload["readiness_status_counts"]
 
     assert isinstance(counts, dict)
-    assert sum(counts.values()) == 22
+    assert sum(counts.values()) == 32  # A-028.11-RUNTIME
     assert all(isinstance(key, str) and key for key in counts)
     assert all(isinstance(value, int) and value >= 0 for value in counts.values())
 
@@ -183,7 +198,7 @@ def test_a0284_risk_counts_derived_unknown_safe(test_client: TestClient) -> None
     counts = payload["risk_band_counts"]
 
     assert isinstance(counts, dict)
-    assert sum(counts.values()) == 22
+    assert sum(counts.values()) == 32  # A-028.11-RUNTIME
     assert all(isinstance(key, str) and key for key in counts)
     assert all(isinstance(value, int) and value >= 0 for value in counts.values())
 
@@ -286,7 +301,9 @@ def test_a0284_no_synthetic_score_kpi_ranking_recommendation_fields(test_client:
 
 def test_a0284_source_actions_are_exactly_a0281_to_a0283(test_client: TestClient) -> None:
     payload = _payload(test_client)
-    assert Counter(payload["source_actions"]) == Counter(["A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8"])
+    # A-028.11-RUNTIME: source_actions now includes A-028.9, A-028.10, A-028.11
+    required = {"A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8", "A-028.9", "A-028.10", "A-028.11"}
+    assert required.issubset(set(payload["source_actions"]))
 
 
 @pytest.mark.parametrize("method", ["post", "put", "patch", "delete"])

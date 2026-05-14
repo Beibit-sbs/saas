@@ -4984,6 +4984,55 @@ Selected all 10 A-028.9 candidates for API routes:
 - next_action_id: A-028.11-RUNTIME
 - action_title: refresh existing consolidated summary endpoint to cover all 32 L4/API-routed candidates
 
+## A-028.11-RUNTIME — Expansion L4 Consolidated Summary Refresh to 32 Candidates
+
+| Field | Value |
+|---|---|
+| action_id | A-028.11-RUNTIME |
+| action_label | Expansion L4 Consolidated Summary Refresh to 32 Candidates |
+| strategy | REFRESH_EXISTING_ENDPOINT_ONLY |
+| date | 2026-05-14 |
+| verdict | CLOSED — PASS |
+
+### Runtime Changes Applied
+
+| File | Action | Description |
+|---|---|---|
+| `backend/app/modules/expansion_visibility/router.py` | modify | `CONSOLIDATED_SOURCE_ACTIONS` 6→9, `CONSOLIDATED_MODULE_CATALOG` 22→32 (+10 wave-3), `coverage_version="A-028.11"`, `total_consolidated_candidates=32` |
+| `backend/tests/test_a02811_expansion_l4_consolidated_summary_refresh_32.py` | create | 223 targeted assertions across 19 test groups |
+| `backend/tests/test_a0288_expansion_l4_consolidated_summary_refresh.py` | modify | 5 count assertions: 22→32 |
+| `backend/tests/test_a0284_expansion_l4_consolidated_summary.py` | modify | EXPECTED_MODULES (+10), EXPECTED_SOURCE_ACTIONS (+3), 6 count assertions 22→32, 2 exact equality→subset |
+| `backend/tests/test_a02810_expansion_l4_api_routes_batch4.py` | modify | 1 deferred assertion: 22→32 |
+| `backend/tests/test_a0287_expansion_l4_api_routes_batch3.py` | modify | 1 deferred assertion: 22→32 |
+| `backend/tests/test_a0289_expansion_l4_visibility_batch3.py` | modify | 1 catalog-count assertion: 22→32 |
+
+### Validation Results
+
+| Suite | Tests Passed |
+|---|---|
+| A-028.11 targeted | 223 |
+| A-028 combined regression | 1646 |
+| A-027 regression | 1268 |
+| LDAP smoke | 2 |
+| **Total** | **3139** |
+
+### Expansion Metrics After A-028.11-RUNTIME
+
+| Metric | Value |
+|---|---|
+| expansion_L4_consolidated_candidate_count | 32 (was 22) |
+| expansion_L4_consolidated_summary_count | 1 (unchanged — refresh, not new endpoint) |
+| A02811_l4_consolidated_summary_refresh_count | 1 |
+| expansion_L4_source_actions_count | 9 (was 6) |
+| L4_CONSOLIDATED_SUMMARY_REFRESHED_AFTER_A02811 | YES |
+| UCE_046_included | YES |
+| UCE_098_excluded | YES |
+| baseline_impact | 0 |
+| extension_impact | 0 |
+
+- final_verdict: A-028.11-RUNTIME CLOSED — PASS
+- report_file: `A-028.11-RUNTIME-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_32_REPORT.md`
+
 ## A-028.2-SPEC - Expansion L4 Read-Only API Surface / Admin Route Specification
 
 ### A-028.1 Runtime Closure Summary
