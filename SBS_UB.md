@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.4-RUNTIME
-    - current_stage: A-028.4-SPEC complete / expansion L4 consolidated admin summary specified
-    - last_completed_action_id: A-028.4-SPEC
-    - next_action_id: A-028.4-RUNTIME
-    - updated_at: 2026-05-14 (A-028.4-SPEC completed; post-A-028 consolidation selected Option A consolidated read-only admin summary endpoint with strict anti-fake boundaries)
+    - status: ready_for_A-028.5-SPEC
+    - current_stage: A-028.4-RUNTIME complete / expansion L4 consolidated admin summary endpoint implemented
+    - last_completed_action_id: A-028.4-RUNTIME
+    - next_action_id: A-028.5-SPEC
+    - updated_at: 2026-05-14 (A-028.4-RUNTIME completed; consolidated expansion L4 admin summary endpoint implemented with strict aggregation-only anti-fake boundaries)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -823,6 +823,39 @@
     - report_file: A-028.4-SPEC-EXPANSION_L4_VISIBILITY_CONSOLIDATION_AND_NEXT_STEP_REPORT.md
     - final_verdict: A-028.4-SPEC COMPLETE — READY_FOR_A-028.4-RUNTIME
     - next_action_id: A-028.4-RUNTIME
+- A-028.4-RUNTIME execution block:
+    - mode: runtime_implementation
+    - implementation_scope: add consolidated expansion L4 admin summary endpoint over existing 12 read-only module summaries
+    - endpoint: GET /api/admin/expansion/l4/summary
+    - permission_guard: admin.expansion.read
+    - route_prefix_reused: /api/admin/expansion/l4
+    - router_registration_change: NONE (existing app.include_router(expansion_visibility_router) reused)
+    - rbac_wiring_change: NONE (existing admin.expansion.read baseline role wiring reused)
+    - aggregation_source_actions: A-028.1, A-028.2, A-028.3
+    - aggregation_source_count: 12 modules (all existing A-028.1 candidates already API-routed after A-028.3)
+    - aggregation_boundary: evidence-backed field aggregation only; no synthetic KPI, no synthetic score, no ranking, no recommendation execution, no provider call, no external submission, no Brain/autonomy, no workflow/decision execution, no mutation
+    - tenant_fail_closed_evidence: PASS (missing auth 401, missing permission 403, invalid tenant rejected, cross-tenant override rejected)
+    - rbac_permission_evidence: PASS (explicit admin.expansion.read token accepted, missing permission rejected)
+    - read_only_boundary_evidence: PASS (GET only, deterministic repeated responses, no mutation flags true)
+    - a0284_targeted_pytest_no_cov: PASS (30 passed, 1 warning)
+    - a0283_targeted_pytest_no_cov: PASS (118 passed, 1 warning)
+    - a0282_targeted_pytest_no_cov: PASS (122 passed, 1 warning)
+    - a0281_targeted_pytest_no_cov: PASS (156 passed, 1 warning)
+    - continuity_pytest_a0277_to_a02711_no_cov: PASS (1268 passed, 1 warning)
+    - ldap_smoke_pytest_no_cov: PASS (2 passed, 1 warning)
+    - optional_combined_a028_pack_no_cov: PASS (426 passed, 1 warning)
+    - full_backend_pytest: NOT_RUN_IN_A0284_SCOPE (last authoritative baseline remains A-028.2: 12610 passed, 31 skipped, 88 deselected, 7 warnings, coverage 87.86%)
+    - forbidden_scan_provider_credential: PASS_CLASSIFIED_EXISTING_NON_SCOPE (broad repository hits only; no blocking execution behavior in A-028.4 changed files)
+    - forbidden_scan_brain_autonomy: PASS_CLASSIFIED_ACCEPTED_BOUNDARY_TEXT (forbidden action constants and safety markers; no runtime execution added)
+    - forbidden_scan_db_mutation: PASS_CLASSIFIED_EXISTING_NON_SCOPE (existing non-scope repositories/services; no mutation behavior in A-028.4 endpoint)
+    - diff_hygiene: PASS (git diff --check clean)
+    - expansion_metrics_achieved: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, A0281_l4_visibility_count=12, expansion_L4_visibility_count=12, A0282_l4_api_route_count=6, A0283_l4_api_route_count=6, expansion_L4_api_route_count=12, A0284_l4_consolidated_summary_count=1, expansion_L4_consolidated_summary_count=1, baseline_impact=0, extension_impact=0
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - anti_inflation: PASS (no L3 reduction, no L4 visibility inflation, no L4 API route inflation, no baseline/extension movement, no L5/L6 claim)
+    - report_file: A-028.4-RUNTIME-EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY_REPORT.md
+    - final_verdict: A-028.4-RUNTIME CLOSED — PASS
+    - next_action_id: A-028.5-SPEC
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

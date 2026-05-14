@@ -3778,6 +3778,91 @@ Forbidden runtime behavior:
 - next_action_id: A-028.4-RUNTIME
 - action_title: implement expansion L4 consolidated admin summary endpoint under strict read-only aggregation boundaries
 
+## A-028.4-RUNTIME - Expansion L4 Consolidated Admin Summary Endpoint Implementation
+
+### Runtime Scope
+
+- implemented endpoint: `GET /api/admin/expansion/l4/summary`
+- permission: `admin.expansion.read`
+- method: GET only
+- routing pattern reused: existing `backend/app/modules/expansion_visibility/router.py` and existing app router registration
+- rbac wiring reused: existing baseline role permission `admin.expansion.read`
+- no frontend implementation
+- no provider calls
+- no Brain/autonomy execution
+- no workflow/decision execution
+- no mutation
+
+### Consolidated Runtime Marker
+
+- consolidated_summary_status: L4_CONSOLIDATED_ADMIN_SUMMARY_IMPLEMENTED_AFTER_A0284
+
+### Aggregation Boundary
+
+- source actions: A-028.1, A-028.2, A-028.3
+- source module count: 12
+- source modules:
+	- UCE-009 `document_workflow`
+	- UCE-011 `order_decree_registry`
+	- UCE-013 `incoming_outgoing_correspondence`
+	- UCE-089 `document_template_library`
+	- UCE-090 `committee_decision_registry`
+	- UCE-099 `rector_resolution_tracking_workflow`
+	- UCE-122 `compliance_calendar_dashboard`
+	- UCE-114 `accreditation_dashboard`
+	- UCE-032 `ministry_reporting_dashboard`
+	- UCE-031 `rector_strategy_dashboard`
+	- UCE-012 `archive_retention_management`
+	- UCE-019 `international_office`
+- aggregation rules: counts/rollups derived from existing module summaries only
+- anti-fake guardrails: no synthetic KPI, no synthetic score, no ranking, no recommendation execution, no external submission
+
+### Validation Results
+
+- A-028.4 targeted: PASS (`30 passed`, `1 warning`)
+- A-028.3 targeted: PASS (`118 passed`, `1 warning`)
+- A-028.2 targeted: PASS (`122 passed`, `1 warning`)
+- A-028.1 targeted: PASS (`156 passed`, `1 warning`)
+- A-027 continuity (A-027.7..A-027.11): PASS (`1268 passed`, `1 warning`)
+- LDAP smoke: PASS (`2 passed`, `1 warning`)
+- optional combined A-028 pack: PASS (`426 passed`, `1 warning`)
+- full backend in A-028.4 scope: NOT RUN (last authoritative full backend baseline remains A-028.2: `12610 passed`, `31 skipped`, `88 deselected`, `7 warnings`, coverage `87.86%`)
+- forbidden scan classification: PASS (existing non-scope / accepted boundary text only; no blocking execution behavior in A-028.4 changes)
+- `git diff --check`: PASS
+
+### Metrics After A-028.4-RUNTIME
+
+- expansion_L2_foundation_count=67
+- expansion_runtime_implemented_count=67
+- expansion_L3_logic_count=50
+- remaining_L2_only=17
+- A0281_l4_visibility_count=12
+- expansion_L4_visibility_count=12
+- A0282_l4_api_route_count=6
+- A0283_l4_api_route_count=6
+- expansion_L4_api_route_count=12
+- A0284_l4_consolidated_summary_count=1
+- expansion_L4_consolidated_summary_count=1
+- baseline_impact=0
+- extension_impact=0
+
+### Separation and Anti-Inflation Review
+
+- baseline unchanged: `L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150`
+- extension unchanged: `extension_total_count=25`, `total_tracked_modules=175`
+- no expansion inflation: L3 unchanged at 50, L4 visibility unchanged at 12, L4 API routes unchanged at 12
+- no L5/L6 claim
+
+### Final Decision
+
+- final_verdict: A-028.4-RUNTIME CLOSED - PASS
+- report_file: `A-028.4-RUNTIME-EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY_REPORT.md`
+
+### Next Action
+
+- next_action_id: A-028.5-SPEC
+- action_title: expansion L4 post-consolidation specification and next safe batch selection
+
 ### Validation Results
 
 - A-028.1 targeted runtime test: PASS (`156 passed`, `1 warning`).
