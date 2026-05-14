@@ -4366,7 +4366,77 @@ If selected routes all pass (`N=10`):
 - next_action_id: A-028.7-RUNTIME
 - next_action_title: implement read-only API routes for selected A-028.6 L4 visibility candidates
 
-### A-028.6 Next Expansion L4 Visibility Standard
+## A-028.7-RUNTIME — Expansion L4 API Routes for A-028.6 Batch Implementation
+
+### Source State (Verified Before Runtime)
+
+- A-028.7-SPEC commit: b8f950a (`docs(wave17): A-028.7-SPEC specify API routes for second L4 batch`)
+- expansion_L4_visibility_count: 22 (unchanged)
+- expansion_L4_api_route_count: 12 (before runtime)
+- expansion_L4_consolidated_summary_count: 1 (unchanged)
+- expansion_L3_logic_count: 50 (unchanged)
+- A0282_l4_api_route_count: 6
+- A0283_l4_api_route_count: 6
+- baseline_impact: 0
+- extension_impact: 0
+- CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A0288: YES
+
+### Implemented API Routes (10)
+
+| # | UCE ID | Candidate | Route | Permission | Status |
+|---|--------|-----------|-------|-----------|--------|
+| 1 | UCE-014 | curriculum_mapping | GET /api/admin/expansion/l4/curriculum-mapping/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0287 |
+| 2 | UCE-015 | syllabus_management | GET /api/admin/expansion/l4/syllabus-management/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0287 |
+| 3 | UCE-016 | competency_framework | GET /api/admin/expansion/l4/competency-framework/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0287 |
+| 4 | UCE-071 | program_learning_outcomes | GET /api/admin/expansion/l4/program-learning-outcomes/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0287 |
+| 5 | UCE-072 | course_learning_outcomes | GET /api/admin/expansion/l4/course-learning-outcomes/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0287 |
+| 6 | UCE-073 | elective_course_selection | GET /api/admin/expansion/l4/elective-course-selection/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0287 |
+| 7 | UCE-074 | prerequisite_management | GET /api/admin/expansion/l4/prerequisite-management/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0287 |
+| 8 | UCE-075 | transfer_credit_management | GET /api/admin/expansion/l4/transfer-credit-management/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0287 |
+| 9 | UCE-076 | course_catalog_management | GET /api/admin/expansion/l4/course-catalog-management/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0287 |
+| 10 | UCE-092 | degree_audit | GET /api/admin/expansion/l4/degree-audit/summary | admin.expansion.read | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0287 |
+
+### Validation Results
+
+- targeted test_a0287: 379 passed
+- combined A-028 pack (6 files): 749 passed
+- A-027 + A-028.1 continuity (7 files): 1426 passed
+- LDAP smoke: PASS
+- provider scan: NO_PROVIDER_FINDINGS
+- brain/autonomy scan: NO_BRAIN_AUTONOMY_FINDINGS
+- db mutation scan: ACCEPTED_BOUNDARY_TEXT_ONLY
+- git diff --check: PASS
+
+### Updated Expansion API Route Metrics
+
+- A0287_l4_api_route_count: 10
+- expansion_L4_api_route_count: 22 (formula: A0282=6 + A0283=6 + A0287=10)
+- expansion_L4_visibility_count: 22 (unchanged — routes do not add visibility)
+- expansion_L4_consolidated_summary_count: 1 (unchanged — not refreshed in A-028.7)
+- CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A0288: YES
+- baseline_impact: 0
+- extension_impact: 0
+
+### Anti-Fake / Anti-Inflation Review
+
+- no frontend implemented: PASS
+- no fake KPI/dashboard/synthetic score: PASS
+- no provider/Brain/autonomy: PASS
+- no workflow/decision execution: PASS
+- no DB mutation: PASS
+- no baseline movement: PASS
+- no extension movement: PASS
+- no expansion_L4_visibility_count inflation: PASS
+- no consolidated summary refresh: PASS
+- no L5/L6 claim: PASS
+
+### A-028.7-RUNTIME Next Action
+
+- next_action_id: A-028.8-SPEC
+- next_action_title: plan consolidated summary refresh or next expansion wave selection
+- note: CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A0288 = YES
+
+
 
 - service-level read-only L4 summary first.
 - optional API routes only after service summary stability.

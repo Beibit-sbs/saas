@@ -19,6 +19,16 @@ from app.modules.rector_strategy_dashboard.service import get_rector_strategy_da
 from app.modules.rector_resolution_tracking_workflow.service import (
     get_rector_resolution_tracking_workflow_l4_visibility_summary,
 )
+from app.modules.curriculum_mapping.service import get_curriculum_mapping_l4_visibility_summary
+from app.modules.syllabus_management.service import get_syllabus_management_l4_visibility_summary
+from app.modules.competency_framework.service import get_competency_framework_l4_visibility_summary
+from app.modules.program_learning_outcomes.service import get_program_learning_outcomes_l4_visibility_summary
+from app.modules.course_learning_outcomes.service import get_course_learning_outcomes_l4_visibility_summary
+from app.modules.elective_course_selection.service import get_elective_course_selection_l4_visibility_summary
+from app.modules.prerequisite_management.service import get_prerequisite_management_l4_visibility_summary
+from app.modules.transfer_credit_management.service import get_transfer_credit_management_l4_visibility_summary
+from app.modules.course_catalog_management.service import get_course_catalog_management_l4_visibility_summary
+from app.modules.degree_audit.service import get_degree_audit_l4_visibility_summary
 
 
 router = APIRouter(prefix="/api/admin/expansion/l4", tags=["expansion-l4-visibility"])
@@ -349,6 +359,96 @@ def get_international_office_summary(
     tenant: TrustedTenant,
 ) -> dict[str, Any]:
     return _build_summary_response(tenant, get_international_office_l4_visibility_summary)
+
+
+@router.get("/curriculum-mapping/summary")
+def get_curriculum_mapping_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_curriculum_mapping_l4_visibility_summary)
+
+
+@router.get("/syllabus-management/summary")
+def get_syllabus_management_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_syllabus_management_l4_visibility_summary)
+
+
+@router.get("/competency-framework/summary")
+def get_competency_framework_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_competency_framework_l4_visibility_summary)
+
+
+@router.get("/program-learning-outcomes/summary")
+def get_program_learning_outcomes_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_program_learning_outcomes_l4_visibility_summary)
+
+
+@router.get("/course-learning-outcomes/summary")
+def get_course_learning_outcomes_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_course_learning_outcomes_l4_visibility_summary)
+
+
+@router.get("/elective-course-selection/summary")
+def get_elective_course_selection_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_elective_course_selection_l4_visibility_summary)
+
+
+@router.get("/prerequisite-management/summary")
+def get_prerequisite_management_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_prerequisite_management_l4_visibility_summary)
+
+
+@router.get("/transfer-credit-management/summary")
+def get_transfer_credit_management_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_transfer_credit_management_l4_visibility_summary)
+
+
+@router.get("/course-catalog-management/summary")
+def get_course_catalog_management_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_course_catalog_management_l4_visibility_summary)
+
+
+@router.get("/degree-audit/summary")
+def get_degree_audit_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_degree_audit_l4_visibility_summary)
 
 
 @router.get("/summary", include_in_schema=False)

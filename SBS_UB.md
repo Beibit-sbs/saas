@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.7-RUNTIME
-    - current_stage: A-028.7-SPEC complete / expansion L4 API routes for A-028.6 batch specified
-    - last_completed_action_id: A-028.7-SPEC
-    - next_action_id: A-028.7-RUNTIME
-    - updated_at: 2026-05-14 (A-028.7-SPEC completed; 10 A-028.6 L4 summaries selected for read-only API routing; consolidated refresh deferred to A-028.8)
+    - status: ready_for_A-028.8-SPEC
+    - current_stage: A-028.7-RUNTIME complete / expansion L4 API routes for A-028.6 batch implemented
+    - last_completed_action_id: A-028.7-RUNTIME
+    - next_action_id: A-028.8-SPEC
+    - updated_at: 2026-05-14 (A-028.7-RUNTIME completed; 10 API routes implemented; expansion_L4_api_route_count=22; CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A0288=YES)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -935,7 +935,30 @@
     - report_file: A-028.7-SPEC-EXPANSION_L4_API_ROUTES_FOR_A0286_BATCH_REPORT.md
     - final_verdict: A-028.7-SPEC CLOSED — PASS
     - next_action_id: A-028.7-RUNTIME
-- A-026.9-RUNTIME execution block:
+- A-028.7-RUNTIME execution block:
+    - mode: runtime_implementation
+    - purpose: implement_10_read_only_get_api_routes_for_a0286_l4_visibility_batch
+    - spec_commit: b8f950a (docs(wave17): A-028.7-SPEC specify API routes for second L4 batch)
+    - repo_hygiene_check: PASS (known non-scope items preserved unstaged: backend/.coverage modified and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md untracked)
+    - source_of_truth_check: PASS (A-028.7-SPEC closed; next_action_id was A-028.7-RUNTIME; 10 routes selected; permission=admin.expansion.read)
+    - service_summary_verification: PASS (all 10 A-028.6 L4 service summaries confirmed route-ready)
+    - route_pattern_verification: PASS (prefix=/api/admin/expansion/l4, ExpansionRead dependency, _build_summary_response helper, GET-only)
+    - files_changed: backend/app/modules/expansion_visibility/router.py, backend/tests/test_a0287_expansion_l4_api_routes_batch3.py, backend/tests/test_a0283_expansion_l4_readonly_api_routes_batch2.py (count update 12→22), backend/tests/test_a0284_expansion_l4_consolidated_summary.py (count update 13→23)
+    - routes_implemented: 10 (curriculum-mapping, syllabus-management, competency-framework, program-learning-outcomes, course-learning-outcomes, elective-course-selection, prerequisite-management, transfer-credit-management, course-catalog-management, degree-audit)
+    - targeted_test_count: 379 passed
+    - combined_a028_pack: 749 passed (test_a0282+a0283+a0284+a0286+a0287+a0281)
+    - a027_continuity_pack: 1426 passed (a0281+a0277+a0278+a0279+a02710+a02711+LDAP)
+    - forbidden_scan_provider: NO_PROVIDER_FINDINGS
+    - forbidden_scan_brain_autonomy: NO_BRAIN_AUTONOMY_FINDINGS
+    - forbidden_scan_db_mutation: ACCEPTED_BOUNDARY_TEXT_ONLY
+    - git_diff_check: PASS
+    - anti_inflation: PASS (no baseline/extension movement, no expansion_L4_visibility_count inflation, no L5/L6 claim, no fake KPI, no consolidated refresh)
+    - expansion_metrics_achieved: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, A0281_l4_visibility_count=12, A0286_l4_visibility_count=10, expansion_L4_visibility_count=22, A0282_l4_api_route_count=6, A0283_l4_api_route_count=6, A0287_l4_api_route_count=10, expansion_L4_api_route_count=22, expansion_L4_consolidated_summary_count=1, CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A0288=YES, baseline_impact=0, extension_impact=0
+    - baseline_maturity_preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_preserved: extension_total_count=25, total_tracked_modules=175
+    - report_file: A-028.7-RUNTIME-EXPANSION_L4_API_ROUTES_BATCH3_REPORT.md
+    - final_verdict: A-028.7-RUNTIME CLOSED — PASS
+    - next_action_id: A-028.8-SPEC
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8
     - runtime_scope: backend service logic + targeted tests only
