@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.1-RUNTIME
-    - current_stage: A-028.1-SPEC complete / expansion L4 visibility batch 1 specified
-    - last_completed_action_id: A-028.1-SPEC
-    - next_action_id: A-028.1-RUNTIME
-    - updated_at: 2026-05-14 (A-028.1-SPEC completed; A-028.1-RUNTIME authorized for read-only L4 visibility only)
+    - status: ready_for_A-028.2-SPEC
+    - current_stage: A-028.1-RUNTIME complete / expansion L4 visibility batch 1 implemented
+    - last_completed_action_id: A-028.1-RUNTIME
+    - next_action_id: A-028.2-SPEC
+    - updated_at: 2026-05-14 (A-028.1-RUNTIME completed; 12 expansion L4 read-only visibility surfaces implemented with service-only execution and API deferral)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -679,6 +679,29 @@
     - report_file: A-028.1-SPEC-EXPANSION_L4_VISIBILITY_BATCH1_DEEP_SPECIFICATION_REPORT.md
     - final_verdict: A-028.1-SPEC COMPLETE — READY_FOR_A-028.1-RUNTIME
     - next_action_id: A-028.1-RUNTIME
+- A-028.1-RUNTIME execution block:
+    - mode: backend_service_only_l4_visibility_runtime_no_frontend_no_provider_no_api_claim
+    - purpose: implement_expansion_l4_read_only_visibility_batch1_for_selected_l3_candidates
+    - repo_hygiene_check: PASS (non-scope items preserved unstaged: backend/.coverage and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md)
+    - source_of_truth_check: PASS (A-028.1-SPEC commit 577d881 verified; runtime was authorized; metrics matched spec)
+    - selected_runtime_batch: UCE-009, UCE-011, UCE-013, UCE-089, UCE-090, UCE-099, UCE-122, UCE-114, UCE-032, UCE-031, UCE-012, UCE-019
+    - selected_runtime_batch_size: 12
+    - implementation_style_executed: L4-HYBRID (service summaries implemented for all 12; API_ROUTE_DEFERRED_TO_A0282)
+    - runtime_scope: selected service.py files + targeted test + governance docs only
+    - api_route_decision: API_ROUTE_DEFERRED_TO_A0282 (no stable expansion summary route existed; no API overclaim made)
+    - a0281_targeted_pytest_no_cov: PASS (156 passed, 1 warning)
+    - continuity_pytest_a0277_to_a02711_no_cov: PASS (1268 passed, 1 warning)
+    - ldap_smoke_pytest_no_cov: PASS (2 passed, 1 warning)
+    - forbidden_scan_selected_scope: PASS (accepted boundary text only in forbidden_actions and safety flags; no provider, Brain/autonomy, or mutation execution behavior in selected files)
+    - l3_contract_preservation: PASS (existing L3 classifiers remained callable; continuity pack green)
+    - full_backend_regression_status: NOT_RERUN_IN_A0281_SCOPE (R2 remains last authoritative full backend baseline: 12332 passed, 31 skipped, 88 deselected, coverage 87.82%)
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - expansion_metrics_achieved: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, A0281_l4_visibility_count=12, expansion_L4_visibility_count=12, baseline_impact=0, extension_impact=0
+    - anti_inflation: PASS (no baseline movement, no extension movement, no L3 reduction, no API/frontend/provider/Brain/autonomy/workflow execution claim, no L5/L6 claim)
+    - report_file: A-028.1-RUNTIME-EXPANSION_L4_VISIBILITY_BATCH1_REPORT.md
+    - final_verdict: A-028.1-RUNTIME CLOSED — PASS
+    - next_action_id: A-028.2-SPEC
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

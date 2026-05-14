@@ -3325,3 +3325,71 @@ Scoring dimensions applied to all 50 L3 candidates:
 - next_action_id: A-028.1-RUNTIME
 - action_title: implement expansion L4 read-only visibility batch 1 for the specified 12 candidates
 - required_outcome_for_unlock: targeted runtime implementation and scoped validation with no metric inflation and no forbidden-lane violations
+
+## A-028.1-RUNTIME - Expansion L4 Visibility Batch 1 Implementation
+
+### Runtime Boundary Executed
+
+- implementation scope executed: service-level L4 read-only visibility summaries for all 12 selected candidates.
+- API route decision: `API_ROUTE_DEFERRED_TO_A0282`.
+- no frontend implementation.
+- no provider calls.
+- no Brain/autonomy execution.
+- no workflow execution or mutation behavior.
+- no baseline or extension metric movement.
+
+### Selected Batch and L4 Status
+
+| UCE ID | Candidate | Type | Package | L4 Status | L4 Surface | API Route | Validation |
+|---|---|---|---|---|---|---|---|
+| UCE-009 | document_workflow | NEW_MODULE | document_workflow | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-011 | order_decree_registry | NEW_MODULE | order_decree_registry | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-013 | incoming_outgoing_correspondence | NEW_MODULE | incoming_outgoing_correspondence | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-089 | document_template_library | NEW_MODULE | document_template_library | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-090 | committee_decision_registry | NEW_MODULE | committee_decision_registry | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | rector_resolution_tracking_workflow | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | compliance_calendar_dashboard | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | accreditation_dashboard | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-032 | ministry_reporting_dashboard | REPORT_DASHBOARD | ministry_reporting_dashboard | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-031 | rector_strategy_dashboard | REPORT_DASHBOARD | rector_strategy_dashboard | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-012 | archive_retention_management | NEW_MODULE | archive_retention_management | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+| UCE-019 | international_office | NEW_MODULE | international_office | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0281 | service summary | DEFERRED_TO_A0282 | targeted PASS |
+
+### Validation Results
+
+- A-028.1 targeted runtime test: PASS (`156 passed`, `1 warning`).
+- A-027 continuity pack: PASS (`1268 passed`, `1 warning`).
+- LDAP smoke pair: PASS (`2 passed`, `1 warning`).
+- forbidden-scan-selected-scope: PASS (accepted boundary text only).
+- full backend rerun: not executed in A-028.1 scope; R2 remains last authoritative full baseline.
+
+### Metrics After Runtime
+
+- expansion_L2_foundation_count=67
+- expansion_runtime_implemented_count=67
+- expansion_L3_logic_count=50
+- remaining_L2_only=17
+- A0281_l4_visibility_count=12
+- expansion_L4_visibility_count=12
+- baseline_impact=0
+- extension_impact=0
+
+### Anti-Fake Confirmation
+
+- no frontend or dashboard rendering claim.
+- no provider submission claim.
+- no Brain/autonomy execution claim.
+- no workflow execution or mutation claim.
+- no L5/L6 claim.
+- no baseline impact.
+- no extension impact.
+
+### Final Decision
+
+- final_verdict: A-028.1-RUNTIME CLOSED - PASS
+- report_file: `A-028.1-RUNTIME-EXPANSION_L4_VISIBILITY_BATCH1_REPORT.md`
+
+### Next Action
+
+- next_action_id: A-028.2-SPEC
+- action_title: specify the next expansion post-A-028.1 batch with the L4 overlay now locked at 12

@@ -185,3 +185,93 @@ def classify_archive_retention_management_readiness(
         "next_maturity_gap": "L4 operational visibility/API surface required",
         "safety_flags": _build_safety_flags(),
     }
+
+
+def _build_archive_retention_management_l4_visibility_summary(l3_output: dict) -> dict:
+    status = str(l3_output.get("readiness_status", "UNKNOWN"))
+    required_evidence = list(l3_output.get("required_evidence", []))
+    present_evidence = list(l3_output.get("present_evidence", []))
+    missing_evidence = list(l3_output.get("missing_evidence", []))
+    human_review_required = bool(l3_output.get("human_review_required", True))
+
+    return {
+        "tenant_id": l3_output["tenant_id"],
+        "module": MODULE_NAME,
+        "uce_id": UCE_ID,
+        "visibility_level": "L4",
+        "source_maturity_level": "L3",
+        "source_l3_function": "classify_archive_retention_management_readiness",
+        "visibility_type": "archive_retention_readiness_visibility_report",
+        "readiness_summary": {
+            "status": status,
+            "evidence_completeness": l3_output.get("evidence_completeness", 0),
+            "recommended_next_step": l3_output.get("recommended_next_step"),
+            "ready_for_human_review": status == "READY_FOR_REVIEW",
+            "summary_count": 1,
+        },
+        "risk_summary": {
+            "risk_band": l3_output.get("risk_band"),
+            "summary_count": 1,
+        },
+        "evidence_summary": {
+            "required_evidence_count": len(required_evidence),
+            "present_evidence_count": len(present_evidence),
+            "missing_evidence_count": len(missing_evidence),
+            "required_evidence": required_evidence,
+            "present_evidence": present_evidence,
+        },
+        "missing_evidence_summary": {
+            "count": len(missing_evidence),
+            "items": missing_evidence,
+            "has_missing_evidence": bool(missing_evidence),
+        },
+        "human_review_queue_summary": {
+            "candidate_count": 1 if human_review_required else 0,
+            "ready_for_human_review_count": 1 if status == "READY_FOR_REVIEW" else 0,
+            "pending_manual_evidence_count": 1 if human_review_required and status not in {"READY_FOR_REVIEW", "BLOCKED_MISSING_EVIDENCE"} else 0,
+            "blocked_count": 1 if status == "BLOCKED_MISSING_EVIDENCE" else 0,
+        },
+        "allowed_actions": list(dict.fromkeys(["VIEW_L4_VISIBILITY_SUMMARY", *list(l3_output.get("allowed_actions", []))])),
+        "forbidden_actions": list(dict.fromkeys(list(l3_output.get("forbidden_actions", [])))),
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_brain_execution": True,
+        "no_autonomous_execution": True,
+        "no_decision_execution": True,
+        "no_fake_kpi": True,
+        "no_synthetic_dashboard": True,
+        "l3_contract_preserved": True,
+        "audit_visibility_ready": True,
+        "human_review_required": human_review_required,
+        "source_evidence_keys": required_evidence,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+        "next_maturity_gap": "L5 governance/KPI/evidence automation required",
+        "safety_flags": {
+            **_build_safety_flags(),
+            **dict(l3_output.get("safety_flags", {})),
+            "tenant_safe_visibility": True,
+            "read_only": True,
+            "no_db_mutation": True,
+            "no_provider_call": True,
+            "no_external_submission": True,
+            "no_brain_execution": True,
+            "no_autonomous_execution": True,
+            "no_workflow_execution": True,
+            "no_decision_execution": True,
+            "no_fake_kpi": True,
+            "no_synthetic_dashboard": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+            "l3_contract_preserved": True,
+        },
+    }
+
+
+def get_archive_retention_management_l4_visibility_summary(
+    tenant_id: int, present_evidence: list[str] | set[str] | tuple[str, ...] | None = None
+) -> dict:
+    l3_output = classify_archive_retention_management_readiness(tenant_id=tenant_id, present_evidence=present_evidence)
+    return _build_archive_retention_management_l4_visibility_summary(l3_output)
