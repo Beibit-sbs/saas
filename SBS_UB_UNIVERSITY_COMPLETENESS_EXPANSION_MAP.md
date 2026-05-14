@@ -3390,12 +3390,12 @@ Scoring dimensions applied to all 50 L3 candidates:
 | UCE-099 | rector_resolution_tracking_workflow | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 |
 | UCE-122 | compliance_calendar_dashboard | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 |
 | UCE-114 | accreditation_dashboard | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0282 |
-| UCE-013 | incoming_outgoing_correspondence | API_NOT_IMPLEMENTED_IN_A0282 |
-| UCE-089 | document_template_library | API_NOT_IMPLEMENTED_IN_A0282 |
-| UCE-032 | ministry_reporting_dashboard | API_NOT_IMPLEMENTED_IN_A0282 |
-| UCE-031 | rector_strategy_dashboard | API_NOT_IMPLEMENTED_IN_A0282 |
-| UCE-012 | archive_retention_management | API_NOT_IMPLEMENTED_IN_A0282 |
-| UCE-019 | international_office | API_NOT_IMPLEMENTED_IN_A0282 |
+| UCE-013 | incoming_outgoing_correspondence | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
+| UCE-089 | document_template_library | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
+| UCE-032 | ministry_reporting_dashboard | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
+| UCE-031 | rector_strategy_dashboard | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
+| UCE-012 | archive_retention_management | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
+| UCE-019 | international_office | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
 
 ### Validation Results
 
@@ -3534,6 +3534,89 @@ Scoring dimensions applied to all 50 L3 candidates:
 
 - next_action_id: A-028.3-RUNTIME
 - action_title: implement the second API batch for the remaining 6 A-028.1 L4 visibility candidates
+
+## A-028.3-RUNTIME - Expansion L4 Read-Only API Routes Batch 2 Implementation
+
+### Runtime Boundary Executed
+
+- implemented scope: 6 read-only `GET` admin API routes over the remaining A-028.1 L4 service summaries.
+- route prefix reused: `/api/admin/expansion/l4`.
+- permission guard reused: `admin.expansion.read`.
+- no frontend implementation.
+- no provider calls.
+- no Brain/autonomy execution.
+- no workflow or decision execution.
+- no mutation.
+- no L5/L6 claim.
+
+### Selected API Route Batch 2
+
+| UCE ID | Candidate | Route | Permission | API Route Status | Validation |
+|---|---|---|---|---|---|
+| UCE-013 | incoming_outgoing_correspondence | `/api/admin/expansion/l4/incoming-outgoing-correspondence/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 | targeted PASS |
+| UCE-089 | document_template_library | `/api/admin/expansion/l4/document-template-library/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 | targeted PASS |
+| UCE-032 | ministry_reporting_dashboard | `/api/admin/expansion/l4/ministry-reporting-dashboard/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 | targeted PASS |
+| UCE-031 | rector_strategy_dashboard | `/api/admin/expansion/l4/rector-strategy-dashboard/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 | targeted PASS |
+| UCE-012 | archive_retention_management | `/api/admin/expansion/l4/archive-retention-management/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 | targeted PASS |
+| UCE-019 | international_office | `/api/admin/expansion/l4/international-office/summary` | `admin.expansion.read` | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 | targeted PASS |
+
+### Candidate Marker Updates After Runtime
+
+| UCE ID | Candidate | Marker After A-028.3 |
+|---|---|---|
+| UCE-013 | incoming_outgoing_correspondence | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
+| UCE-089 | document_template_library | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
+| UCE-032 | ministry_reporting_dashboard | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
+| UCE-031 | rector_strategy_dashboard | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
+| UCE-012 | archive_retention_management | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
+| UCE-019 | international_office | L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A0283 |
+
+All A-028.1 L4 visibility candidates are now API-routed: `12/12`.
+
+### Validation Results
+
+- A-028.3 targeted API tests: PASS (`118 passed`, `1 warning`).
+- A-028.2 targeted API tests: PASS (`122 passed`, `1 warning`).
+- A-028.1 targeted tests: PASS (`156 passed`, `1 warning`).
+- A-027 continuity pack: PASS (`1268 passed`, `1 warning`).
+- LDAP smoke: PASS (`2 passed`, `1 warning`).
+- full backend rerun: not executed in A-028.3 runtime (A-028.2 remains last full-backend baseline: `12610 passed`, `31 skipped`, `88 deselected`, `7 warnings`, coverage `87.86%`).
+- forbidden scans: PASS classification (no blocking execution behavior in changed runtime scope).
+
+### Metrics After Runtime
+
+- expansion_L2_foundation_count=67
+- expansion_runtime_implemented_count=67
+- expansion_L3_logic_count=50
+- remaining_L2_only=17
+- A0281_l4_visibility_count=12
+- expansion_L4_visibility_count=12
+- A0282_l4_api_route_count=6
+- A0283_l4_api_route_count=6
+- expansion_L4_api_route_count=12
+- baseline_impact=0
+- extension_impact=0
+
+### Anti-Fake Confirmation
+
+- no frontend claim.
+- no provider call claim.
+- no Brain/autonomy claim.
+- no workflow or decision execution claim.
+- no fake KPI/synthetic dashboard claim.
+- no baseline impact.
+- no extension impact.
+- no L5/L6 claim.
+
+### Final Decision
+
+- final_verdict: A-028.3-RUNTIME CLOSED - PASS
+- report_file: `A-028.3-RUNTIME-EXPANSION_L4_READONLY_API_ROUTES_BATCH2_REPORT.md`
+
+### Next Action
+
+- next_action_id: A-028.4-SPEC
+- action_title: specify next expansion governance action after full A-028 API exposure closure
 
 ### Validation Results
 
