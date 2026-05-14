@@ -5337,12 +5337,105 @@ Lane rollup for remaining 18 L3-not-L4:
 
 ### Final Verdict
 
-- **A-028.13-SPEC CLOSED — PASS**
+- **A-028.13-RUNTIME CLOSED — PASS**
 - All 8 ordinary candidates selected and eligible
 - Service-summary-only approach confirmed
 - Ready for A-028.13-RUNTIME
 - Report: `A-028.13-SPEC-REMAINING_ORDINARY_EXPANSION_L4_VISIBILITY_BATCH_REPORT.md`
 - Next action ID: A-028.13-RUNTIME
+
+## A-028.13-RUNTIME — Expansion L4 Visibility Batch 4 Implementation
+
+### Executive Summary
+
+- action_id: A-028.13-RUNTIME
+- mode: RUNTIME (service functions only, no API routes)
+- status: CLOSED — PASS
+- implementation_completed: 8 ordinary L4 service visibility summaries
+- test_results: 112/112 PASS
+- implementation_style_executed: Option S (service summaries only)
+- api_route_decision: API_ROUTE_DEFERRED_TO_A02814
+
+### Implemented L4 Batch (8 Ordinary Candidates)
+
+| UCE ID | Candidate | Type | Domain | L4 Surface | L4 Status | Runtime Status |
+|---|---|---|---|---|---|---|
+| UCE-060 | timesheet_management | NEW_MODULE | HR / Personnel | Timesheet readiness/operational summary | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A02813 | ✅ PASS |
+| UCE-061 | faculty_attestation | NEW_MODULE | Faculty Lifecycle | Faculty attestation readiness/evidence visibility | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A02813 | ✅ PASS |
+| UCE-067 | teaching_load_contracts | NEW_MODULE | Workload / Timetable | Teaching load readiness/workload visibility | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A02813 | ✅ PASS |
+| UCE-070 | staff_exit_offboarding | NEW_MODULE | HR / Personnel | Offboarding readiness/checklist visibility | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A02813 | ✅ PASS |
+| UCE-077 | thesis_dissertation_management | NEW_MODULE | Academic Affairs | Thesis readiness/supervision visibility | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A02813 | ✅ PASS |
+| UCE-085 | joint_program_management | NEW_MODULE | International Office | Joint program readiness/partnership visibility | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A02813 | ✅ PASS |
+| UCE-086 | inbound_exchange_management | NEW_MODULE | International Office | Inbound exchange readiness/mobility visibility | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A02813 | ✅ PASS |
+| UCE-087 | outbound_exchange_management | NEW_MODULE | International Office | Outbound exchange readiness/mobility visibility | L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A02813 | ✅ PASS |
+
+### Implementation Decision Executed
+
+| Decision | Value |
+|---|---|
+| selected_option | Option S — Service Summaries Only |
+| api_route_decision | Deferred to A-028.14 |
+| frontend_included | NO (backend service visibility only) |
+| schema_router_included | NO (deferred; runtime defines service contract only) |
+| l3_contracts_preserved | YES (all 8 preserved and callable) |
+| l4_boundaries_enforced | YES (read-only, tenant-safe, deterministic, evidence-backed) |
+
+### Expected Runtime Files (Delivered)
+
+- 8 service.py files with L4 functions: ✅ ADDED
+- backend/tests/test_a02813_expansion_l4_visibility_batch4.py: ✅ CREATED (112 assertions, all PASS)
+- A-028.13-RUNTIME-EXPANSION_L4_VISIBILITY_BATCH4_REPORT.md: ✅ CREATED
+- SBS_UB.md updates: ✅ COMPLETED
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md updates: ✅ COMPLETED
+
+### Expected Metric Movement (Verified)
+
+**Before A-028.13-RUNTIME:**
+- expansion_L4_visibility_count: 32
+- remaining_L3_not_L4: 18
+
+**After A-028.13-RUNTIME:**
+- A02813_l4_visibility_count: 8 ✅ VERIFIED
+- expansion_L4_visibility_count: 40 ✅ VERIFIED (32+8)
+- remaining_L3_not_L4: 10 ✅ VERIFIED (18-8)
+- expansion_L4_api_route_count: 32 ✅ UNCHANGED
+- expansion_L4_consolidated_summary_count: 1 ✅ UNCHANGED
+- expansion_L4_consolidated_candidate_count: 32 ✅ UNCHANGED
+- expansion_L3_logic_count: 50 ✅ UNCHANGED
+- expansion_L2_foundation_count: 67 ✅ UNCHANGED
+- expansion_runtime_implemented_count: 67 ✅ UNCHANGED
+- remaining_L2_only: 17 ✅ UNCHANGED
+- baseline_impact: 0 ✅ ZERO
+- extension_impact: 0 ✅ ZERO
+
+### Anti-Inflation / Anti-Fake Review (Final)
+
+- no runtime code violations in spec: PASS
+- no API routes implemented: PASS (deferred to A-028.14)
+- no schema/router definitions: PASS (deferred)
+- no fake KPI/dashboard/synthetic scores: PASS
+- no provider call, no Brain execution, no autonomy: PASS
+- no workflow/decision execution, no DB mutation: PASS
+- no baseline maturity change: PASS
+- no extension metric change: PASS
+- expansion metrics kept separate and moved correctly: PASS
+
+### Final Verdict (A-028.13-RUNTIME)
+
+- **A-028.13-RUNTIME CLOSED — PASS**
+- All 8 ordinary candidates successfully implemented
+- Service-summary-only approach executed
+- L3 contracts fully preserved
+- L4 boundaries enforced (read-only, tenant-safe, no-mutation)
+- Metrics updated correctly (expansion_L4_visibility: 32→40, remaining_L3_not_L4: 18→10)
+- No API routes added (deferred to A-028.14)
+- No consolidated summary changes
+- Anti-inflation review passed
+- Ready for A-028.14-SPEC (API routes planning)
+
+- final_verdict: A-028.13-RUNTIME CLOSED — PASS
+- report_file: `A-028.13-RUNTIME-EXPANSION_L4_VISIBILITY_BATCH4_REPORT.md`
+- next_action_id: A-028.14-SPEC
 
 ## A-028.2-SPEC - Expansion L4 Read-Only API Surface / Admin Route Specification
 

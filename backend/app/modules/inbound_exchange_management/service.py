@@ -142,3 +142,70 @@ def classify_inbound_exchange_management_readiness(tenant_id: int, evidence: dic
             "l2_contract_preserved": True,
         },
     }
+
+
+# --- L4 Read-Only Service Visibility Summary (A-028.13) ---
+
+def get_inbound_exchange_management_l4_visibility_summary(tenant_id: int, evidence: dict | None = None) -> dict:
+    """L4 read-only visibility summary. Wraps L3 readiness; no mutations, decisions, or autonomy."""
+    validate_tenant_id(tenant_id)
+
+    # Call L3 readiness classifier
+    l3_output = classify_inbound_exchange_management_readiness(tenant_id, evidence)
+
+    # Wrap in L4 visibility container
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": UCE_ID,
+        "visibility_level": "L4",
+        "source_maturity_level": "L3",
+        "visibility_type": "READ_ONLY_SERVICE_SUMMARY",
+        "readiness_summary": l3_output.get("readiness_status"),
+        "risk_summary": l3_output.get("risk_band"),
+        "evidence_summary": {
+            "total_required": len(l3_output.get("required_evidence", [])),
+            "present_count": len(l3_output.get("present_evidence", [])),
+            "completeness_percent": l3_output.get("evidence_completeness", 0),
+        },
+        "missing_evidence_summary": l3_output.get("missing_evidence", []),
+        "human_review_queue_summary": {
+            "human_review_required": l3_output.get("human_review_required", True),
+            "recommended_next_step": l3_output.get("recommended_next_step"),
+            "readiness_for_review": l3_output.get("readiness_status") == "READY_FOR_REVIEW",
+        },
+        "allowed_actions": ALLOWED_ACTIONS,
+        "forbidden_actions": FORBIDDEN_ACTIONS,
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_external_submission": True,
+        "no_brain_execution": True,
+        "no_autonomous_execution": True,
+        "no_workflow_execution": True,
+        "no_decision_execution": True,
+        "no_fake_kpi": True,
+        "no_synthetic_score": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+        "l3_contract_preserved": True,
+        "api_route_deferred_to": "A-028.14",
+        "safety_flags": {
+            "no_api_claim": True,
+            "no_frontend_claim": True,
+            "no_provider_call": True,
+            "no_credential_use": True,
+            "no_kpi_value_claim": True,
+            "no_brain_execution": True,
+            "no_autonomous_execution": True,
+            "no_external_side_effects": True,
+            "no_db_mutation": True,
+            "no_decision_execution": True,
+            "human_review_required": True,
+            "no_l5_claim": True,
+            "no_l6_claim": True,
+            "tenant_fail_closed": True,
+            "l2_contract_preserved": True,
+        },
+    }
