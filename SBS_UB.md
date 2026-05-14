@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.2-SPEC
-    - current_stage: A-028.1-RUNTIME complete / expansion L4 visibility batch 1 implemented
-    - last_completed_action_id: A-028.1-RUNTIME
-    - next_action_id: A-028.2-SPEC
-    - updated_at: 2026-05-14 (A-028.1-RUNTIME completed; 12 expansion L4 read-only visibility surfaces implemented with service-only execution and API deferral)
+    - status: ready_for_A-028.2-RUNTIME
+    - current_stage: A-028.2-SPEC complete / expansion L4 read-only API surface specified
+    - last_completed_action_id: A-028.2-SPEC
+    - next_action_id: A-028.2-RUNTIME
+    - updated_at: 2026-05-14 (A-028.2-SPEC completed; first expansion L4 read-only admin API route batch specified with no runtime implementation)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -702,6 +702,25 @@
     - report_file: A-028.1-RUNTIME-EXPANSION_L4_VISIBILITY_BATCH1_REPORT.md
     - final_verdict: A-028.1-RUNTIME CLOSED — PASS
     - next_action_id: A-028.2-SPEC
+- A-028.2-SPEC execution block:
+    - mode: planning_only_no_runtime_changes
+    - purpose: specify_expansion_l4_read_only_admin_api_route_batch_over_existing_a0281_service_summaries
+    - repo_hygiene_check: PASS (only non-scope items present before authoring: backend/.coverage modified and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md untracked)
+    - source_of_truth_check: PASS (A-028.1-RUNTIME commit db3c961 verified closed; API_ROUTE_DEFERRED_TO_A0282 verified; no A-028.2 runtime evidence exists yet)
+    - route_pattern_review: PASS (existing reusable conventions confirmed: APIRouter + get_actor + permission_dependency + get_current_tenant)
+    - route_ready_assessment: PASS (all 12 A-028.1 L4 service summaries exist, are read-only, tenant fail-closed, and stable enough for API exposure)
+    - selected_api_route_batch: UCE-009, UCE-011, UCE-090, UCE-099, UCE-122, UCE-114
+    - selected_api_route_batch_size: 6
+    - route_strategy: OPTION_A_INDIVIDUAL_ENDPOINTS_UNDER_DEDICATED_EXPANSION_ADMIN_ROUTER
+    - permission_strategy_specified: preferred permission_dependency("admin.expansion.read") with existing-pattern fallback allowed only if runtime documents the choice explicitly
+    - tenant_strategy_specified: get_current_tenant as source of truth; no query/path tenant override in first runtime batch
+    - expected_runtime_test_file: backend/tests/test_a0282_expansion_l4_readonly_api_routes.py
+    - expansion_metrics_locked_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, A0281_l4_visibility_count=12, expansion_L4_visibility_count=12, baseline_impact=0, extension_impact=0
+    - expansion_metrics_expected_if_runtime_pass_n6: A0282_l4_api_route_count=6, expansion_L4_api_route_count=6, expansion_L4_visibility_count=12, expansion_L3_logic_count=50, baseline_impact=0, extension_impact=0
+    - anti_inflation: PASS (no runtime code, no router/service/test/frontend changes, no baseline movement, no extension movement, no new L4 candidate claim, no L5/L6 claim)
+    - report_file: A-028.2-SPEC-EXPANSION_L4_READONLY_API_SURFACE_REPORT.md
+    - final_verdict: A-028.2-SPEC COMPLETE — READY_FOR_A-028.2-RUNTIME
+    - next_action_id: A-028.2-RUNTIME
 - A-026.9-RUNTIME execution block:
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8

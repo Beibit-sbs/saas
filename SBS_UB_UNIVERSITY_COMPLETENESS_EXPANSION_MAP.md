@@ -3393,3 +3393,100 @@ Scoring dimensions applied to all 50 L3 candidates:
 
 - next_action_id: A-028.2-SPEC
 - action_title: specify the next expansion post-A-028.1 batch with the L4 overlay now locked at 12
+
+## A-028.2-SPEC - Expansion L4 Read-Only API Surface / Admin Route Specification
+
+### A-028.1 Runtime Closure Summary
+
+- A-028.1-RUNTIME commit verified: `db3c961`.
+- API routes remained deferred in A-028.1: `API_ROUTE_DEFERRED_TO_A0282`.
+- L4 service summaries implemented count remains `12`.
+- no frontend, provider, Brain/autonomy, workflow execution, mutation, or L5/L6 claim entered in A-028.1.
+
+### Route / RBAC Pattern Review
+
+- reusable route pattern: FastAPI `APIRouter` with explicit `Depends(get_actor)`, `Depends(permission_dependency(...))`, and `Depends(get_current_tenant)`.
+- reusable tenant guard: `get_current_tenant` treats token tenant as source of truth and fails closed on invalid or mismatched tenant context.
+- reusable auth/RBAC pattern: read-only admin endpoints typically declare read permission per endpoint.
+- reusable test pattern: API tests call `client.get(..., headers=ADMIN_HEADERS)` and assert tenant isolation and permission behavior.
+- risk note: platform admin router cross-tenant override behavior is broader than needed and should not be copied into the first A-028.2 runtime slice.
+
+### Route-Ready Assessment of 12 L4 Summaries
+
+| UCE ID | Candidate | Service Function | Route-Ready? | Reason | Risk |
+|---|---|---|---|---|---|
+| UCE-009 | document_workflow | `get_document_workflow_l4_visibility_summary` | YES | strong tenant/read-only contract | LOW |
+| UCE-011 | order_decree_registry | `get_order_decree_registry_l4_visibility_summary` | YES | governance-safe summary with low ambiguity | LOW |
+| UCE-013 | incoming_outgoing_correspondence | `get_incoming_outgoing_correspondence_l4_visibility_summary` | YES | stable response, but lower initial priority | MEDIUM |
+| UCE-089 | document_template_library | `get_document_template_library_l4_visibility_summary` | YES | stable response, lower rector/admin value | MEDIUM |
+| UCE-090 | committee_decision_registry | `get_committee_decision_registry_l4_visibility_summary` | YES | clear review queue semantics | LOW |
+| UCE-099 | rector_resolution_tracking_workflow | `get_rector_resolution_tracking_workflow_l4_visibility_summary` | YES | strong visibility-only workflow boundary | LOW |
+| UCE-122 | compliance_calendar_dashboard | `get_compliance_calendar_dashboard_l4_visibility_summary` | YES | explicit no-synthetic-KPI boundary | LOW |
+| UCE-114 | accreditation_dashboard | `get_accreditation_dashboard_l4_visibility_summary` | YES | evidence-backed quality summary | LOW |
+| UCE-032 | ministry_reporting_dashboard | `get_ministry_reporting_dashboard_l4_visibility_summary` | YES | provider/submission semantics require caution | MEDIUM |
+| UCE-031 | rector_strategy_dashboard | `get_rector_strategy_dashboard_l4_visibility_summary` | YES | fake-KPI risk requires deferral | HIGH |
+| UCE-012 | archive_retention_management | `get_archive_retention_management_l4_visibility_summary` | YES | disposal semantics require caution | MEDIUM |
+| UCE-019 | international_office | `get_international_office_l4_visibility_summary` | YES | mobility/visa decision semantics require caution | MEDIUM |
+
+### Selected API Route Batch
+
+| # | UCE ID | Candidate | Domain | Existing L4 Service Summary | Proposed API Route | Permission | Why Selected | Boundary |
+|---:|---|---|---|---|---|---|---|---|
+| 1 | UCE-009 | document_workflow | Document Workflow | `get_document_workflow_l4_visibility_summary` | `/api/admin/expansion/l4/document-workflow/summary` | `admin.expansion.read` | high admin value, low ambiguity | no dispatch, no routing, no approval/rejection, no mutation |
+| 2 | UCE-011 | order_decree_registry | Governance / Document | `get_order_decree_registry_l4_visibility_summary` | `/api/admin/expansion/l4/order-decree-registry/summary` | `admin.expansion.read` | governance-safe, simple payload | no signing, no enforcement, no publishing, no mutation |
+| 3 | UCE-090 | committee_decision_registry | Governance | `get_committee_decision_registry_l4_visibility_summary` | `/api/admin/expansion/l4/committee-decision-registry/summary` | `admin.expansion.read` | clear human-review semantics | no decision execution, no task assignment, no closure, no mutation |
+| 4 | UCE-099 | rector_resolution_tracking_workflow | Governance / Rectorate / Strategy | `get_rector_resolution_tracking_workflow_l4_visibility_summary` | `/api/admin/expansion/l4/rector-resolution-tracking-workflow/summary` | `admin.expansion.read` | strong rector/admin value with execution-safe boundary | no auto-routing, no approval, no task execution, no mutation |
+| 5 | UCE-122 | compliance_calendar_dashboard | Legal / Internal Audit | `get_compliance_calendar_dashboard_l4_visibility_summary` | `/api/admin/expansion/l4/compliance-calendar-dashboard/summary` | `admin.expansion.read` | compliance value, explicit no-fake-KPI boundary | no synthetic KPI, no deadline enforcement, no provider submission |
+| 6 | UCE-114 | accreditation_dashboard | Quality Assurance / Accreditation | `get_accreditation_dashboard_l4_visibility_summary` | `/api/admin/expansion/l4/accreditation-dashboard/summary` | `admin.expansion.read` | quality governance value, evidence-backed summary | no fake score, no certification claim, no external submission |
+
+### API Route Standard
+
+- route strategy: individual `GET` endpoints under one dedicated expansion admin router prefix.
+- tenant source of truth: `get_current_tenant` only.
+- permission strategy: `permission_dependency("admin.expansion.read")` preferred.
+- response source: direct wrap of A-028.1 L4 service summary outputs.
+- required response invariants: `read_only=True`, `tenant_scoped=True`, `no_mutation=True`, `forbidden_actions` preserved.
+- forbidden runtime behaviors: mutation, workflow execution, decision execution, provider calls, Brain/autonomy execution, fake KPI/dashboard values.
+
+### Expected Runtime Files
+
+| File | Expected Action | Reason |
+|---|---|---|
+| `backend/app/modules/expansion_visibility/router.py` | create | dedicated read-only admin router |
+| router registry file | update | register the expansion router |
+| selected service files | optional minimal adapter only | avoid logic changes unless necessary |
+| `backend/tests/test_a0282_expansion_l4_readonly_api_routes.py` | create | targeted route contract coverage |
+| `SBS_UB.md` | update | runtime closure tracking |
+| `SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md` | update | runtime outcome tracking |
+| `A-028.2-RUNTIME-EXPANSION_L4_READONLY_API_ROUTES_REPORT.md` | create | authoritative runtime report |
+
+### Test Plan
+
+- targeted test file: `backend/tests/test_a0282_expansion_l4_readonly_api_routes.py`.
+- required checks: route registration, auth, permission/RBAC, invalid tenant fail-closed, valid tenant success, response shape, read-only flags, forbidden-actions preservation, no provider/Brain/autonomy/workflow/decision execution, no fake KPI/dashboard, no L5/L6 claim.
+- continuity/runtime gates: targeted A-028.2 tests, rerun A-028.1 targeted tests, LDAP smoke, scoped forbidden scan, `git diff --check`.
+
+### Expected Metric Movement
+
+- spec preserves current expansion metrics: `expansion_L2_foundation_count=67`, `expansion_runtime_implemented_count=67`, `expansion_L3_logic_count=50`, `remaining_L2_only=17`, `A0281_l4_visibility_count=12`, `expansion_L4_visibility_count=12`, `baseline_impact=0`, `extension_impact=0`.
+- if A-028.2-RUNTIME passes for `N` selected routes: `A0282_l4_api_route_count=N`, `expansion_L4_api_route_count=N`, `expansion_L4_visibility_count` remains `12`, `expansion_L3_logic_count` remains `50`.
+
+### Anti-Fake / Anti-Inflation Review
+
+- docs-only action: PASS.
+- no API runtime implementation claim: PASS.
+- no frontend claim: PASS.
+- no provider/Brain/autonomy claim: PASS.
+- no baseline movement: PASS.
+- no extension movement: PASS.
+- no new L4 visibility candidate claim: PASS.
+
+### Final Decision
+
+- final_verdict: A-028.2-SPEC COMPLETE - READY_FOR_A-028.2-RUNTIME
+- report_file: `A-028.2-SPEC-EXPANSION_L4_READONLY_API_SURFACE_REPORT.md`
+
+### Next Action
+
+- next_action_id: A-028.2-RUNTIME
+- action_title: implement the first six tenant-safe read-only admin API routes over existing A-028.1 L4 service summaries
