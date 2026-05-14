@@ -5437,6 +5437,170 @@ Lane rollup for remaining 18 L3-not-L4:
 - report_file: `A-028.13-RUNTIME-EXPANSION_L4_VISIBILITY_BATCH4_REPORT.md`
 - next_action_id: A-028.14-SPEC
 
+## A-028.14-SPEC — Expansion L4 API Routes Batch 5 Specification
+
+### Executive Summary
+
+- action_id: A-028.14-SPEC
+- mode: SPECIFICATION_PLANNING_ONLY
+- status: CLOSED — PASS
+- specification_created: ✅ YES
+- runtime_implementation_started: NO (deferred to A-028.14-RUNTIME)
+- selected_api_route_count: 8 (exactly 8, not 20)
+- route_strategy: individual GET routes per module (same as A-028.2/3/7/10)
+- consolidated_summary_refresh: DEFERRED_TO_A02815
+
+### A-028.13 Runtime Closure Verification
+
+- Commit: 78d2c14 ✅
+- Verdict: CLOSED — PASS ✅
+- API Routes in A-028.13: NO (deferred as planned) ✅
+- 8 L4 Service Summaries: Implemented and verified ✅
+- Route-Ready Status: ALL 8 READY ✅
+
+### A-028.13 L4 Service Summary Route-Ready Assessment
+
+All 8 candidates from A-028.13 verified as route-ready:
+
+| UCE ID | Candidate | L4 Function | Route-Ready? | API Exists? | Decision |
+|---|---|---|---|---|---|
+| UCE-060 | timesheet_management | `get_timesheet_management_l4_visibility_summary()` | ✅ YES | NO | ✅ SELECT |
+| UCE-061 | faculty_attestation | `get_faculty_attestation_l4_visibility_summary()` | ✅ YES | NO | ✅ SELECT |
+| UCE-067 | teaching_load_contracts | `get_teaching_load_contracts_l4_visibility_summary()` | ✅ YES | NO | ✅ SELECT |
+| UCE-070 | staff_exit_offboarding | `get_staff_exit_offboarding_l4_visibility_summary()` | ✅ YES | NO | ✅ SELECT |
+| UCE-077 | thesis_dissertation_management | `get_thesis_dissertation_management_l4_visibility_summary()` | ✅ YES | NO | ✅ SELECT |
+| UCE-085 | joint_program_management | `get_joint_program_management_l4_visibility_summary()` | ✅ YES | NO | ✅ SELECT |
+| UCE-086 | inbound_exchange_management | `get_inbound_exchange_management_l4_visibility_summary()` | ✅ YES | NO | ✅ SELECT |
+| UCE-087 | outbound_exchange_management | `get_outbound_exchange_management_l4_visibility_summary()` | ✅ YES | NO | ✅ SELECT |
+
+### Selected API Route Batch (A-028.14)
+
+8 new GET routes planned for A-028.13 L4 service summaries:
+
+| # | UCE ID | Candidate | Proposed Route | Permission | Status |
+|---|---|---|---|---|---|
+| 1 | UCE-060 | timesheet_management | GET /api/admin/expansion/l4/timesheet-management/summary | admin.expansion.read | PLANNED |
+| 2 | UCE-061 | faculty_attestation | GET /api/admin/expansion/l4/faculty-attestation/summary | admin.expansion.read | PLANNED |
+| 3 | UCE-067 | teaching_load_contracts | GET /api/admin/expansion/l4/teaching-load-contracts/summary | admin.expansion.read | PLANNED |
+| 4 | UCE-070 | staff_exit_offboarding | GET /api/admin/expansion/l4/staff-exit-offboarding/summary | admin.expansion.read | PLANNED |
+| 5 | UCE-077 | thesis_dissertation_management | GET /api/admin/expansion/l4/thesis-dissertation-management/summary | admin.expansion.read | PLANNED |
+| 6 | UCE-085 | joint_program_management | GET /api/admin/expansion/l4/joint-program-management/summary | admin.expansion.read | PLANNED |
+| 7 | UCE-086 | inbound_exchange_management | GET /api/admin/expansion/l4/inbound-exchange-management/summary | admin.expansion.read | PLANNED |
+| 8 | UCE-087 | outbound_exchange_management | GET /api/admin/expansion/l4/outbound-exchange-management/summary | admin.expansion.read | PLANNED |
+
+### Route Strategy
+
+- **Individual vs Consolidated:** Individual GET routes (one per module)
+- **Reason:** Reuses stable A-028.2/3/7/10 pattern; avoids consolidation complexity
+- **API Routes Planned:** +8 new routes (not 20, not re-implementations of existing 32)
+- **Service Summaries Reused:** All 8 from A-028.13 (no new L4 functions needed)
+- **Consolidated Summary Refresh:** DEFERRED to A-028.15 (no refresh in A-028.14)
+
+### Expected Metric Movement
+
+If A-028.14-RUNTIME successfully implements all 8 routes:
+
+| Metric | Current (A-028.13) | Expected (A-028.14) | Change | Verified |
+|---|---|---|---|---|
+| A02814_l4_api_route_count | — | 8 | NEW | Expected |
+| expansion_L4_api_route_count | 32 | 40 | +8 | Expected (32+8) |
+| expansion_L4_visibility_count | 40 | 40 | NO | Unchanged (API wraps existing) |
+| expansion_L4_consolidated_summary_count | 1 | 1 | NO | Unchanged (no refresh) |
+| expansion_L4_consolidated_candidate_count | 32 | 32 | NO | Unchanged (no refresh) |
+| expansion_L3_logic_count | 50 | 50 | NO | Unchanged |
+| expansion_L2_foundation_count | 67 | 67 | NO | Unchanged |
+| expansion_runtime_implemented_count | 67 | 67 | NO | Unchanged |
+| remaining_L2_only | 17 | 17 | NO | Unchanged |
+| remaining_L3_not_L4 | 10 | 10 | NO | Unchanged |
+| baseline_impact | 0 | 0 | NO | Zero |
+| extension_impact | 0 | 0 | NO | Zero |
+
+**CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02815 = YES**
+
+### Route Standard
+
+All 8 routes must conform to:
+- ✅ GET only (no POST/PUT/PATCH/DELETE)
+- ✅ Read-only (no state mutation)
+- ✅ Tenant-safe (fail-closed on invalid tenant)
+- ✅ RBAC-safe (enforce admin.expansion.read)
+- ✅ Evidence-backed (wrap L3 readiness + L4 summary)
+- ✅ No database mutation
+- ✅ No provider calls
+- ✅ No external submission
+- ✅ No Brain/autonomy execution
+- ✅ No workflow/decision execution
+- ✅ No fake KPI or synthetic data
+- ✅ No L5/L6 claims
+
+### Candidate-by-Candidate Route Boundaries
+
+Each route enforces candidate-specific forbidden action boundaries:
+
+- **UCE-060 (timesheet_management):** no approval/rejection/payroll submission
+- **UCE-061 (faculty_attestation):** no approval/rejection/rank change
+- **UCE-067 (teaching_load_contracts):** no contract signing/workload assignment/salary mutation
+- **UCE-070 (staff_exit_offboarding):** no account deactivation/access revocation/termination
+- **UCE-077 (thesis_dissertation_management):** no grade/defense/committee decisions
+- **UCE-085 (joint_program_management):** no partner approval/program activation/curriculum mutation
+- **UCE-086 (inbound_exchange_management):** no visa/admission/accommodation decisions
+- **UCE-087 (outbound_exchange_management):** no nomination/visa/scholarship decisions
+
+### Expected Runtime Files (A-028.14-RUNTIME)
+
+Files to be created/modified:
+- `backend/app/modules/expansion_visibility/router.py` — Add 8 new GET routes
+- `backend/tests/test_a02814_expansion_l4_api_routes_batch5.py` — 120–260 assertions
+- `SBS_UB.md` — A-028.14-RUNTIME execution block
+- `SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md` — A-028.14-RUNTIME section
+- `A-028.14-RUNTIME-EXPANSION_L4_API_ROUTES_BATCH5_REPORT.md` — Runtime report
+
+### Test Plan for A-028.14-RUNTIME
+
+- Router and import validation: 8 tests
+- Existing routes continuity: 6 tests
+- Authentication and authorization: 64 tests
+- Response contract: 40 tests
+- Field value validation: 32 tests
+- Safety boundary enforcement: 40 tests
+- Multi-tenant isolation: 8 tests
+- Error handling: 24 tests
+- **Expected total:** 120–260 assertions
+
+### Anti-Fake / Anti-Inflation Review
+
+- ✅ No runtime code in SPEC (specification only)
+- ✅ No router.py implementation in SPEC (deferred to A-028.14-RUNTIME)
+- ✅ No API routes actually implemented in SPEC
+- ✅ No tests executed in SPEC (plan defined, execution in runtime)
+- ✅ No database migrations in SPEC
+- ✅ No fake KPI/dashboard values
+- ✅ No synthetic scores
+- ✅ No provider calls planned
+- ✅ No Brain/autonomy execution planned
+- ✅ No workflow/decision execution planned
+- ✅ No database mutations planned
+- ✅ No L5/L6 claims
+- ✅ No consolidated summary refresh in A-028.14 (deferred to A-028.15)
+- ✅ No baseline metric changes (L0-L6 locked)
+- ✅ No extension metric changes (25 modules locked)
+- ✅ Expansion metrics properly separated
+
+### Final Verdict (A-028.14-SPEC)
+
+- **A-028.14-SPEC CLOSED — PASS**
+- Specification complete and comprehensive
+- 8 routes specified with exact boundaries and forbidden actions
+- Test plan ready for A-028.14-RUNTIME
+- Metrics expected movement documented
+- Consolidated refresh properly deferred to A-028.15
+- No anti-inflation violations
+- Ready for A-028.14-RUNTIME
+
+- spec_report_file: `A-028.14-SPEC-EXPANSION_L4_API_ROUTES_BATCH5_REPORT.md`
+- final_verdict: A-028.14-SPEC CLOSED — PASS
+- next_action_id: A-028.14-RUNTIME
+
 ## A-028.2-SPEC - Expansion L4 Read-Only API Surface / Admin Route Specification
 
 ### A-028.1 Runtime Closure Summary

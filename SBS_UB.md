@@ -1334,6 +1334,34 @@
     - current_stage: A-028.13-RUNTIME complete / 8 ordinary expansion L4 visibility summaries implemented
     - last_completed_action_id: A-028.13-RUNTIME
     - next_action_id: A-028.14-SPEC
+- A-028.14-SPEC execution block:
+    - mode: specification_planning_only_no_runtime_code
+    - purpose: define API routes for exposing A-028.13 L4 service summaries
+    - source_verification: A-028.13-RUNTIME CLOSED — PASS (commit 78d2c14)
+    - a02813_l4_service_summaries_route_ready: 8/8 VERIFIED (all route-ready, no existing APIs)
+    - existing_a028_api_route_pattern: REVIEWED and STABLE (reusable pattern confirmed)
+    - selected_api_route_batch: 8 routes (exactly 8, not 20, not re-implementations)
+    - route_strategy: individual_get_routes_per_module (same pattern as A-028.2/3/7/10)
+    - route_prefix: /api/admin/expansion/l4 (same as existing)
+    - permission_required: admin.expansion.read (same as existing)
+    - route_standard: read_only_tenant_safe_rbac_safe_evidence_backed
+    - candidate_by_candidate_specs: COMPLETE (8 candidates with forbidden actions and boundaries)
+    - expected_runtime_files: 5 files (router.py modified, test file new, trackers updated, report new)
+    - test_plan_defined: 120-260 assertions across 8 test groups
+    - consolidated_summary_refresh_decision: DEFERRED_TO_A02815 (option C0, no refresh in A-028.14)
+    - expected_metric_movement: A02814_l4_api_route_count=8, expansion_L4_api_route_count=40, expansion_L4_visibility_count=40 (unchanged), consolidated_summary=32 (unchanged)
+    - baseline_metrics_in_spec: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (UNCHANGED)
+    - extension_metrics_in_spec: extension_total_count=25, total_tracked_modules=175 (UNCHANGED)
+    - expansion_metrics_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, A02813_l4_visibility_count=8, expansion_L4_visibility_count=40, expansion_L4_api_route_count=32, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=32, remaining_L3_not_L4=10, baseline_impact=0, extension_impact=0 (ALL PRESERVED IN SPEC)
+    - expected_formula_after_a02814_runtime: A02814_l4_api_route_count=8, expansion_L4_api_route_count=32+8=40, expansion_L4_visibility_count remains 40, expansion_L4_consolidated_summary_count remains 1, consolidated_candidate_count remains 32, CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02815=YES
+    - anti_inflation: PASS (specification_only, no code, no runtime, no fake kpi, no providers, no brain, no autonomy, no mutations, no baseline/extension changes)
+    - repo_hygiene_snapshot: CLEAN (.coverage modified but not staged, A-027.9 untracked and preserved, no unexpected files)
+    - spec_report_file: A-028.14-SPEC-EXPANSION_L4_API_ROUTES_BATCH5_REPORT.md
+    - final_verdict: A-028.14-SPEC CLOSED — PASS
+    - status: ready_for_A-028.14-RUNTIME
+    - current_stage: A-028.14-SPEC complete / expansion L4 API routes for A-028.13 batch specified
+    - last_completed_action_id: A-028.14-SPEC
+    - next_action_id: A-028.14-RUNTIME
 - A-026.10-SPEC execution block:
     - spec_scope: planning_only_no_runtime_code_changes
     - remaining_l2_count_confirmed: 13
