@@ -1257,6 +1257,33 @@
     - spec_report_file: A-028.12-SPEC-WAVE17_L4_CLOSURE_AND_REMAINING_STRATEGY_REPORT.md
     - final_verdict: A-028.12-SPEC CLOSED — PASS
     - next_action_id: A-028.12.B1
+- A-028.12.B1 execution block:
+    - mode: validation_and_reporting_only
+    - purpose: wave17_l4_quality_baseline_gate_and_closure_decision
+    - repo_hygiene_check: PASS (only expected non-scope items present: backend/.coverage modified, A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md untracked)
+    - source_of_truth_verification: PASS (A-028.12-SPEC commit 8882f15 verified; A-028.11-RUNTIME metrics confirmed locked; no runtime implementation started)
+    - gate1_a028_focused_regression: PASS (1646 tests passed, 42 warnings, 15.26s)
+    - gate2_a027_continuity: PASS (1268 tests passed, 1 warning, 4.78s)
+    - gate3_ldap_smoke: PASS (2 tests passed, 1 warning, 0.12s)
+    - gate4_tenant_security_slice: PASS (58 tests passed, 1 warning, 1.90s)
+    - gate5_frontend: NOT_RUN (optional gate, out-of-scope for backend L4 API validation)
+    - gate6_full_backend: NOT_RUN (optional gate, resource-constrained; last authoritative baseline A-028.5.B1: 12,758 passed; using scoped baseline 2,974 core tests)
+    - total_core_tests_passed: 2974 (1646 + 1268 + 2 + 58)
+    - forbidden_scans_executed: 5 (provider/credential, brain/autonomy, db_mutation, expansion_router_mutation, uce098_boundary)
+    - forbidden_scans_result: CLEAN (all scans cleared; accepted boundary text only; no blocking behavior detected)
+    - metrics_arithmetic_verification: PASS (all expansion, baseline, extension metrics verified; no movement; baseline total=150, maturity_arithmetic_check=PASS)
+    - expansion_metrics_verified: expansion_L4_visibility_count=32, expansion_L4_api_route_count=32, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=32, expansion_L3_logic_count=50, remaining_L2_only=17, baseline_impact=0, extension_impact=0
+    - baseline_metrics_verified: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+    - extension_metrics_verified: extension_total_count=25, total_tracked_modules=175, separation=PASS
+    - uce098_boundary_verification: PASS (explicit test exclusion assertions confirmed; 32 modules indexed, not 33; procurement_plan_approval_workflow NOT in candidate list)
+    - anti_inflation_review: PASS (no runtime code, no metric movement, no fake features, no provider/brain/autonomy/mutation execution, no L5/L6 claim)
+    - status: ready_for_A-028.13-SPEC
+    - current_stage: A-028.12.B1 complete / Wave 17 L4 quality baseline confirmed (scoped)
+    - last_completed_action_id: A-028.12.B1
+    - next_action_id: A-028.13-SPEC
+    - report_file: A-028.12.B1-WAVE17_L4_QUALITY_BASELINE_AND_CLOSURE_REPORT.md
+    - closure_decision: CLOSED — WAVE 17 QUALITY BASELINE CONFIRMED (SCOPED)
+    - final_verdict: A-028.12.B1 CLOSED — PASS
 - A-026.10-SPEC execution block:
     - spec_scope: planning_only_no_runtime_code_changes
     - remaining_l2_count_confirmed: 13
