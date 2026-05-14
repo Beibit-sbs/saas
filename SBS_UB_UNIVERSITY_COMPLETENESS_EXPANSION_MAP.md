@@ -4436,7 +4436,92 @@ If selected routes all pass (`N=10`):
 - next_action_title: plan consolidated summary refresh or next expansion wave selection
 - note: CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A0288 = YES
 
+## A-028.8-SPEC — Expansion L4 Consolidated Summary Refresh for 22 Candidates
 
+### Source State (Verified Before SPEC)
+
+- A-028.7-RUNTIME commit: b9d29ac
+- expansion_L4_visibility_count: 22
+- expansion_L4_api_route_count: 22
+- expansion_L4_consolidated_summary_count: 1
+- expansion_L3_logic_count: 50
+- A0281_l4_visibility_count: 12
+- A0286_l4_visibility_count: 10
+- A0287_l4_api_route_count: 10
+- expansion_L2_foundation_count: 67
+- baseline_impact: 0
+- extension_impact: 0
+- CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A0288: YES
+
+### 22-Candidate Consolidated Scope
+
+Current consolidated endpoint (GET /api/admin/expansion/l4/summary) covers only first 12 candidates:
+- A-028.2: UCE-009, UCE-011, UCE-090, UCE-099, UCE-114, UCE-122 (6)
+- A-028.3: UCE-012, UCE-013, UCE-019, UCE-031, UCE-032, UCE-089 (6)
+
+A-028.8-SPEC plans refresh to include all 22 candidates:
+- Add A-028.6/A-028.7 batch: UCE-014, UCE-015, UCE-016, UCE-071, UCE-072, UCE-073, UCE-074, UCE-075, UCE-076, UCE-092 (10)
+
+### Consolidated Endpoint Refresh Strategy
+
+- Selected option: Refresh existing endpoint only (GET /api/admin/expansion/l4/summary)
+- New endpoint created: NO
+- Permission: admin.expansion.read (unchanged)
+- Contract: Read-only, tenant-safe, RBAC-safe, aggregation-only, evidence-backed (preserved)
+- CONSOLIDATED_MODULE_CATALOG: Extend from 12 to 22 items
+- CONSOLIDATED_SOURCE_ACTIONS: Add "A-028.6", "A-028.7", "A-028.8"
+- Response field updates: total_l4_visibility_candidates (12→22), total_api_routed_candidates (12→22), modules (12→22), modules_by_domain extended, all rollups aggregating 22
+
+### Consolidated Endpoint Safety Contract (Unchanged)
+
+- GET-only
+- Read-only response
+- Tenant-safe fail-closed
+- RBAC/permission-safe
+- Aggregation-only (no computation beyond module summaries)
+- Evidence-backed (no fake values)
+- No DB mutation
+- No provider calls
+- No external submission
+- No Brain execution
+- No autonomous execution
+- No workflow/decision execution
+- No fake KPI, synthetic dashboard, synthetic scores, rankings
+
+### Expected A-028.8-RUNTIME Files
+
+- backend/app/modules/expansion_visibility/router.py: Extend CONSOLIDATED_MODULE_CATALOG and CONSOLIDATED_SOURCE_ACTIONS
+- backend/tests/test_a0288_expansion_l4_consolidated_summary_refresh.py: New test file with 80+ test cases
+- SBS_UB.md: Update execution block
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md: Update execution block
+- A-028.8-RUNTIME-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_REPORT.md: Runtime report
+
+### Expected Metric Movement (A-028.8-RUNTIME)
+
+If runtime passes:
+- A0288_l4_consolidated_summary_refresh_count: 1 (new metric)
+- expansion_L4_consolidated_summary_count: 1 (unchanged — still one endpoint)
+- expansion_L4_consolidated_candidate_count: 22 (if tracked separately)
+- expansion_L4_visibility_count: 22 (unchanged)
+- expansion_L4_api_route_count: 22 (unchanged)
+- expansion_L3_logic_count: 50 (unchanged)
+- baseline_impact: 0 (unchanged)
+- extension_impact: 0 (unchanged)
+
+### Anti-Fake / Anti-Inflation Review
+
+- no runtime code: PASS
+- no new endpoint: PASS
+- no metric inflation: PASS (refresh is not growth)
+- no fake KPI/dashboard/score: PASS
+- no provider/Brain/autonomy/workflow/decision: PASS
+- no baseline/extension movement: PASS
+- no L5/L6 jump: PASS
+
+### A-028.8-SPEC Next Action
+
+- next_action_id: A-028.8-RUNTIME
+- next_action_title: implement consolidated L4 summary refresh for 22 candidates
 
 - service-level read-only L4 summary first.
 - optional API routes only after service summary stability.

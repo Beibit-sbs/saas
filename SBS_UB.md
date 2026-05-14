@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.8-SPEC
-    - current_stage: A-028.7-RUNTIME complete / expansion L4 API routes for A-028.6 batch implemented
-    - last_completed_action_id: A-028.7-RUNTIME
-    - next_action_id: A-028.8-SPEC
-    - updated_at: 2026-05-14 (A-028.7-RUNTIME completed; 10 API routes implemented; expansion_L4_api_route_count=22; CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A0288=YES)
+    - status: ready_for_A-028.8-RUNTIME
+    - current_stage: A-028.8-SPEC complete / expansion L4 consolidated summary refresh specified
+    - last_completed_action_id: A-028.8-SPEC
+    - next_action_id: A-028.8-RUNTIME
+    - updated_at: 2026-05-14 (A-028.8-SPEC completed; consolidated endpoint refresh planned for 22 L4 candidates; A0288_l4_consolidated_summary_refresh_count=1)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -959,6 +959,30 @@
     - report_file: A-028.7-RUNTIME-EXPANSION_L4_API_ROUTES_BATCH3_REPORT.md
     - final_verdict: A-028.7-RUNTIME CLOSED — PASS
     - next_action_id: A-028.8-SPEC
+- A-028.8-SPEC execution block:
+    - mode: planning_only_no_runtime_changes
+    - purpose: plan_consolidated_l4_summary_refresh_for_22_candidates
+    - repo_hygiene_check: PASS (known non-scope items preserved unstaged: backend/.coverage modified and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md untracked)
+    - source_of_truth_check: PASS (A-028.7-RUNTIME commit b9d29ac verified; A-028.7-RUNTIME next_action_id was A-028.8-SPEC; all 22 candidates have L4 summaries and API routes)
+    - current_consolidated_endpoint_gap: existing GET /api/admin/expansion/l4/summary covers only first 12 candidates (A-028.1/2/3); missing all 10 second-wave candidates (A-028.6/7)
+    - 22_candidate_l4_api_inventory_verified: PASS (6 A-028.2 routes + 6 A-028.3 routes + 10 A-028.7 routes = 22 total)
+    - existing_endpoint_refreshable: YES (can safely extend CONSOLIDATED_MODULE_CATALOG from 12 to 22 without breaking contract)
+    - selected_strategy: REFRESH_EXISTING_ENDPOINT_ONLY
+    - new_endpoint_created: NO
+    - endpoint_url: GET /api/admin/expansion/l4/summary (unchanged)
+    - permission: admin.expansion.read (unchanged)
+    - consolidated_source_actions_extension: ["A-028.1", "A-028.2", "A-028.3"] → ["A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8"]
+    - consolidated_module_catalog_size: 12 → 22 (add all 10 second-wave candidates)
+    - response_field_updates_expected: total_l4_visibility_candidates (12→22), total_api_routed_candidates (12→22), modules (12→22), modules_by_domain extended, rollups aggregating all 22
+    - safety_contract_preserved: read-only, tenant-safe, RBAC-safe, aggregation-only, evidence-backed, no mutation, no provider, no Brain, no external submission, no workflow/decision, no fake KPI/dashboard/score, no ranking, no L5/L6
+    - expected_runtime_files: backend/app/modules/expansion_visibility/router.py, backend/tests/test_a0288_expansion_l4_consolidated_summary_refresh.py, SBS_UB.md, SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md, A-028.8-RUNTIME-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_REPORT.md
+    - expected_runtime_test_file: backend/tests/test_a0288_expansion_l4_consolidated_summary_refresh.py
+    - expected_runtime_test_assertion_range: 80-120
+    - expected_metric_movement_if_runtime_passes: A0288_l4_consolidated_summary_refresh_count=1, expansion_L4_consolidated_summary_count=1 (unchanged, not new endpoint), expansion_L4_consolidated_candidate_count=22 (if tracked), expansion_L4_visibility_count=22 (unchanged), expansion_L4_api_route_count=22 (unchanged), expansion_L3_logic_count=50 (unchanged), baseline_impact=0, extension_impact=0
+    - anti_inflation: PASS (no code, no runtime, no new endpoint, no metric inflation, no baseline/extension movement, no fake KPI/dashboard/score, no provider/Brain/autonomy/workflow/decision claim, no L5/L6 jump)
+    - report_file: A-028.8-SPEC-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_REPORT.md
+    - final_verdict: A-028.8-SPEC CLOSED — PASS
+    - next_action_id: A-028.8-RUNTIME
     - selected_batch: parking_permit_ops, parking_enforcement, event_registration_portal, parent_engagement, alumni_relations_ops, donations_fundraising, exam_integrity_analytics, mobile_push_gateway
     - selected_batch_size: 8
     - runtime_scope: backend service logic + targeted tests only
