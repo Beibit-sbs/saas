@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
     - status: ready_for_A-028.10-SPEC
-    - current_stage: A-028.9-RUNTIME complete / next API route batch 3 pending
-    - last_completed_action_id: A-028.9-RUNTIME
+    - current_stage: A-028.9.R1 complete / runtime selection reconciled / A-028.9 candidate list verified
+    - last_completed_action_id: A-028.9.R1
     - next_action_id: A-028.10-SPEC
-    - updated_at: 2026-05-15 (A-028.9-RUNTIME completed; 10 L4 visibility summaries implemented; 92/92 tests PASS; expansion_L4_visibility_count 22→32; ready for A-028.10-SPEC API routes)
+    - updated_at: 2026-05-15 (A-028.9.R1 reconciliation complete; user premise incorrect; A-028.9-SPEC actually selected UCE-046, not UCE-098; runtime correctly implemented SPEC batch; 92/92 tests PASS; ready for A-028.10-SPEC)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1125,6 +1125,24 @@
     - anti_inflation_gate: PASS (no fake implementations, no premature API claims, no unsupported features, no L5/L6 inflation, no baseline corruption)
     - runtime_report_file: A-028.9-RUNTIME-EXPANSION_L4_VISIBILITY_BATCH3_REPORT.md
     - final_verdict: A-028.9-RUNTIME CLOSED — PASS (10 L4 visibility summaries implemented with 92/92 tests, zero regressions, strict governance enforced; expansion_L4_visibility_count 22→32; all anti-inflation gates passed; ready for A-028.10-SPEC)
+    - next_action_id: A-028.9-RUNTIME
+- A-028.9.R1 execution block:
+    - mode: reconciliation_verification_no_code_changes
+    - purpose: reconcile_claimed_runtime_selection_mismatch_between_spec_and_runtime_implementation
+    - source_of_truth_verification: PASS (investigated user claim of mismatch: UCE-098 vs UCE-046)
+    - investigation_finding: USER_PREMISE_INCORRECT
+    - root_cause_analysis: User confused deferred candidate UCE-098 (marked "NO (space limit)") with selected candidate UCE-046 (marked "YES") in A-028.9-SPEC document
+    - spec_actual_selection: UCE-004, UCE-002, UCE-017, UCE-037, UCE-038, UCE-022, UCE-023, UCE-046, UCE-001, UCE-003
+    - runtime_actual_implementation: UCE-001, UCE-002, UCE-003, UCE-004, UCE-017, UCE-022, UCE-023, UCE-037, UCE-038, UCE-046
+    - batch_comparison_result: IDENTICAL (same 10 candidates, order differs but irrelevant)
+    - code_implementation_verified: PASS (all 10 SPEC-selected candidates implemented, UCE-098 not implemented/not selected)
+    - test_coverage_verified: PASS (92/92 tests cover exactly 10 SPEC-selected candidates)
+    - expansion_map_markers_verified: PASS (10 candidates marked L4_READ_ONLY_VISIBILITY_IMPLEMENTED_AFTER_A0289, UCE-098 correctly not marked)
+    - metrics_verified: PASS (expansion_L4_visibility_count=32 correct, a0289_l4_visibility_count=10 correct, no inflation)
+    - regressions_checked: PASS (697+ tests pass across A-028 chain)
+    - forbidden_patterns_scan: PASS (no provider calls, no Brain execution, no DB mutations)
+    - reconciliation_report_file: A-028.9.R1-RUNTIME_SELECTION_MISMATCH_RECONCILIATION_REPORT.md
+    - final_verdict: A-028.9.R1 CLOSED — USER PREMISE INCORRECT, NO ACTUAL MISMATCH (A-028.9-RUNTIME correctly implemented SPEC-selected batch; UCE-046 was SPEC choice, not UCE-098; all verification gates PASS; ready for A-028.10-SPEC)
     - next_action_id: A-028.10-SPEC
 - A-026.10-SPEC execution block:
     - spec_scope: planning_only_no_runtime_code_changes
