@@ -4036,6 +4036,157 @@ After A-028.5.B1 closure report is complete and passes all validation:
 - next_action_id: A-028.6-SPEC
 - next_action_title: next expansion L4 batch selection from remaining 38 L3-not-L4 candidates
 
+## A-028.6-SPEC - Next Expansion L4 Visibility Batch Selection
+
+### A-028.5.B1 Quality Closure Summary
+
+- A-028.5.B1 final verdict: CLOSED - WAVE 16 QUALITY BASELINE CONFIRMED.
+- Full backend regression and coverage gate: PASS (12758 passed, 31 skipped, 88 deselected, 7 warnings, coverage 87.89% >= 80%).
+- Expansion baseline entering A-028.6-SPEC: L3=50, L4 visibility=12, L4 API=12, consolidated=1.
+
+### Candidate Pool Reconciliation
+
+- expansion_L3_logic_count = 50.
+- already L4-visible candidates = 12.
+- remaining L3-not-L4 pool = 38 (reconciled).
+
+### Exclusions by Lane
+
+- provider-readiness explicit deferred IDs overlap in this 38-pool: 0.
+- Brain governance explicit deferred IDs overlap in this 38-pool: 0.
+- autonomy deferred IDs overlap in this 38-pool: 0.
+- sensitive deferred IDs overlap in this 38-pool: 0.
+- additional ordinary-safe exclusions:
+  - provider-style integration candidates: UCE-024, UCE-106, UCE-109, UCE-112.
+  - brain-adjacent candidate: UCE-054.
+- final ordinary-safe L4-eligible pool after exclusions: 33.
+
+### Selection Criteria
+
+- L3 deterministic logic implemented.
+- not provider/Brain/autonomy/sensitive lane.
+- supports read-only evidence-backed L4 visibility.
+- no workflow/decision execution required.
+- tenant-safe fail-closed behavior can be preserved.
+- deterministic testability and clear rector/admin governance value.
+
+### Scoring Table (Top Considered)
+
+| UCE ID | Candidate | Governance | Operational | Safety | L3 Evidence | L4 Clarity | Simplicity | Total | Select? |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---|
+| UCE-014 | curriculum_mapping | 5 | 4 | 5 | 5 | 5 | 5 | 29 | YES |
+| UCE-015 | syllabus_management | 5 | 4 | 5 | 5 | 5 | 5 | 29 | YES |
+| UCE-016 | competency_framework | 5 | 4 | 5 | 5 | 5 | 5 | 29 | YES |
+| UCE-071 | program_learning_outcomes | 5 | 4 | 5 | 5 | 5 | 4 | 28 | YES |
+| UCE-072 | course_learning_outcomes | 5 | 4 | 5 | 5 | 5 | 4 | 28 | YES |
+| UCE-073 | elective_course_selection | 4 | 5 | 5 | 5 | 5 | 4 | 28 | YES |
+| UCE-074 | prerequisite_management | 5 | 4 | 5 | 5 | 5 | 4 | 28 | YES |
+| UCE-075 | transfer_credit_management | 5 | 4 | 5 | 5 | 5 | 4 | 28 | YES |
+| UCE-076 | course_catalog_management | 5 | 4 | 5 | 5 | 5 | 4 | 28 | YES |
+| UCE-092 | degree_audit | 5 | 5 | 5 | 5 | 5 | 3 | 28 | YES |
+| UCE-024 | student_information_system_integration | 4 | 5 | 1 | 5 | 2 | 2 | 19 | NO |
+| UCE-054 | brain_decision_audit_trail | 5 | 3 | 1 | 5 | 2 | 2 | 18 | NO |
+
+### Selected A-028.6 Batch (10)
+
+| # | UCE ID | Candidate | Type | Domain | Current Level | Target Runtime Level | Proposed L4 Surface | Why Selected | L4 Boundary |
+|---:|---|---|---|---|---|---|---|---|---|
+| 1 | UCE-014 | curriculum_mapping | NEW_MODULE | Academic Affairs | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | high governance value | no execution, read-only |
+| 2 | UCE-015 | syllabus_management | NEW_MODULE | Academic Affairs | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | curriculum controls visibility | no mutation |
+| 3 | UCE-016 | competency_framework | NEW_MODULE | Academic Affairs | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | outcomes governance visibility | no synthetic KPI |
+| 4 | UCE-071 | program_learning_outcomes | NEW_MODULE | Academic Affairs | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | quality assurance readiness | no decision execution |
+| 5 | UCE-072 | course_learning_outcomes | NEW_MODULE | Academic Affairs | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | course quality visibility | no workflow execution |
+| 6 | UCE-073 | elective_course_selection | NEW_MODULE | Academic Affairs | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | operational governance value | no autonomous actions |
+| 7 | UCE-074 | prerequisite_management | NEW_MODULE | Academic Affairs | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | policy compliance visibility | no provider calls |
+| 8 | UCE-075 | transfer_credit_management | NEW_MODULE | Registrar | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | registrar oversight value | no approval automation |
+| 9 | UCE-076 | course_catalog_management | NEW_MODULE | Academic Affairs | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | catalog governance visibility | no publishing execution |
+| 10 | UCE-092 | degree_audit | NEW_MODULE | Registrar / Academic Affairs | L3 deterministic | expansion_L4_READ_ONLY_VISIBILITY_BATCH2 | service summary | graduation governance value | no L5/L6 claim |
+
+### A-028.6 Next Expansion L4 Visibility Standard
+
+- service-level read-only L4 summary first.
+- optional API routes only after service summary stability.
+- no frontend.
+- tenant-safe, RBAC-safe, read-only, evidence-backed.
+- no DB mutation, provider calls, Brain/autonomy, workflow/decision execution.
+- no fake KPI, no synthetic score, no L5/L6 claim.
+- preserve L3 contract and deterministic behavior.
+
+Common output contract:
+- tenant_id, module, uce_id, visibility_level=L4, source_maturity_level=L3.
+- readiness_summary, risk_summary, evidence_summary, missing_evidence_summary.
+- human_review_queue_summary, allowed_actions, forbidden_actions.
+- tenant_scoped=True, read_only=True, no_mutation=True.
+- no_provider_call=True, no_brain_execution=True, no_autonomous_execution=True.
+- no_workflow_execution=True, no_decision_execution=True.
+- no_fake_kpi=True, no_synthetic_score=True, l3_contract_preserved=True.
+
+### Candidate-by-Candidate L4 Specs (Selected Batch)
+
+For each selected candidate (UCE-014, UCE-015, UCE-016, UCE-071, UCE-072, UCE-073, UCE-074, UCE-075, UCE-076, UCE-092):
+- current L3 deterministic service contract is source-of-truth.
+- proposed runtime adds service-level L4 visibility summary function only.
+- proposed API route: deferred unless later explicitly approved.
+- tenant safety: fail-closed, tenant-scoped only.
+- non-claims: no provider call, no Brain/autonomy, no workflow/decision execution, no mutation, no L5/L6 claim.
+
+### Implementation Style Decision
+
+- selected option: Option S (service summaries only).
+- reason: safest and consistent with A-028.1 -> A-028.2/A-028.3 -> A-028.4 phased pattern.
+- API decision: API_ROUTE_DEFERRED_TO_A0287.
+
+### Expected Runtime Files (A-028.6-RUNTIME)
+
+- selected module service.py files.
+- backend/tests/test_a0286_expansion_l4_visibility_batch2.py.
+- SBS_UB.md.
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md.
+- A-028.6-RUNTIME-EXPANSION_L4_VISIBILITY_BATCH2_REPORT.md.
+
+### Test Plan
+
+Preferred targeted test file:
+- backend/tests/test_a0286_expansion_l4_visibility_batch2.py.
+
+Required checks include:
+- import/function existence, tenant fail-closed, deterministic output.
+- visibility_level=L4 and source_maturity_level=L3.
+- read_only, tenant_scoped, no_mutation, no_provider_call.
+- no_brain_execution, no_autonomous_execution, no_workflow_execution, no_decision_execution.
+- no_fake_kpi, no_synthetic_score, l3_contract_preserved.
+- candidate-specific forbidden actions present.
+- no L5/L6 claim.
+
+### Expected Metric Movement
+
+Current locked values:
+- expansion_L3_logic_count=50, expansion_L4_visibility_count=12, expansion_L4_api_route_count=12, expansion_L4_consolidated_summary_count=1.
+
+If A-028.6-RUNTIME implements N selected summaries:
+- A0286_l4_visibility_count=N.
+- expansion_L4_visibility_count=12+N.
+- expansion_L4_api_route_count remains 12.
+- expansion_L4_consolidated_summary_count remains 1.
+- expansion_L3_logic_count remains 50.
+- baseline_impact=0, extension_impact=0.
+- A0286_l4_api_route_count=0 (API deferred).
+
+### Anti-Fake / Anti-Inflation Review
+
+- docs-only action: PASS.
+- no runtime implementation claim: PASS.
+- no fake KPI/provider/Brain/autonomy claim: PASS.
+- no baseline movement: PASS.
+- no extension movement: PASS.
+- no expansion movement in spec: PASS.
+
+### Next Action
+
+- next_action_id: A-028.6-RUNTIME
+- next_action_title: implement selected 10-candidate ordinary-safe L4 visibility service summaries
+- api_note: API_ROUTE_DEFERRED_TO_A0287
+
 ### Validation Results
 
 - A-028.1 targeted runtime test: PASS (`156 passed`, `1 warning`).
