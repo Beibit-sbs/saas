@@ -3863,6 +3863,114 @@ Forbidden runtime behavior:
 - next_action_id: A-028.5-SPEC
 - action_title: expansion L4 post-consolidation specification and next safe batch selection
 
+## A-028.5-SPEC - Expansion L4 Wave Closure / Next Strategic Lane Selection
+
+### Wave 16 L4/API/Consolidated Completion Summary
+
+- **A-028.1–A-028.4 completed:** First comprehensive L4 visibility/API/consolidated slice delivered.
+- **12 L4 candidates fully surfaced:** All 12 expansion L4 visibility candidates now have service-level L4 summaries, individual admin API routes (12 total: 6 from A-028.2 + 6 from A-028.3), and consolidated admin summary endpoint (A-028.4).
+- **API Routes:** GET /api/admin/expansion/l4/{module} for each; GET /api/admin/expansion/l4/summary for consolidated.
+- **Permission:** admin.expansion.read across all routes.
+- **Runtime Safety:** All routes GET-only, read-only, tenant-safe, RBAC-safe, aggregation-only, anti-fake boundaries strict.
+
+### Strategic Decision Point
+
+After A-028.1–A-028.4 wave completion, the platform is at a strategic gate. Five main paths available:
+
+| Path | Action ID | Value | Risk | Readiness |
+|---|---|---|---|---|
+| **A. Wave Closure Quality Baseline (Recommended)** | A-028.5.B1 | Hardens Wave 16 evidence; produces closure report | Low | High (validation-only) |
+| **B. Continue L4 Expansion** | A-028.6-SPEC | Expands API coverage to 38 remaining L3-not-L4 | Medium | Medium (design-dependent) |
+| **C. L5 Governance/Evidence Readiness** | A-029.0-SPEC | Deepens governance of 12 first-wave candidates | Medium | Low (new policy layer) |
+| **D. Brain Signal Wave** | A-029-SPEC | Implements signal registries (strategic, sensitive) | High | Low (new AI layer) |
+| **E. Provider-Readiness** | Provider-Wave | Integrates 7 external systems | High | Low (integration-complex) |
+
+### Recommended Primary Path: Option A
+
+**Why A-028.5.B1 Closure Baseline is recommended first:**
+
+1. A-028.3 did not run full backend; A-028.2 baseline is 12610/87.86%. Closure baseline will re-verify no regressions in A-028.3–A-028.4.
+2. Produces formal governance artifact (closure report) for rector/investor review.
+3. Unblocks next strategic decision with high confidence.
+4. Lower implementation load (validation-only) vs. new runtime lanes (B–E).
+5. Prevents hidden regressions from propagating into new waves.
+
+### Strategic Options Detail
+
+- **Option A (A-028.5.B1):** Run comprehensive validation (targeted test suites, optional full backend, optional frontend, optional tenant slice, forbidden scans, metrics checks), produce closure report, then select next lane. Expected output: `A-028.5.B1-EXPANSION_L4_WAVE_QUALITY_BASELINE_AND_CLOSURE_REPORT.md`. Next step after closure: choose B, C, D, E, or alternative.
+- **Option B (A-028.6-SPEC):** Defer after A-028.5.B1 closure. Select 8–15 candidates from 38 remaining L3-not-L4 for next L4 batch. Lower risk but spreads validation effort.
+- **Option C (L5 Governance):** Defer after closure. Requires policy definition of "L5 governance" (audit, evidence, controls). Risk of fake L5 claims without governance boundaries.
+- **Option D (Brain Signals):** Defer after closure. Brain signal governance is strategically important but requires strong policy/ethical boundaries and deep governance controls.
+- **Option E (Provider-Readiness):** Defer after closure. Practical deployment value but complex integration semantics and high risk of fake connectivity claims.
+
+### Expected A-028.5.B1 Closure Scope
+
+**Required Validation:**
+
+1. Repository hygiene check
+2. A-028.1 targeted tests (156) – verify 12 L4 summaries still work
+3. A-028.2 targeted tests (122) – verify first 6 API routes
+4. A-028.3 targeted tests (118) – verify second 6 API routes
+5. A-028.4 targeted tests (30) – verify consolidated endpoint
+6. Combined A-028 pack (426) – verify all together
+7. A-027 continuity (1268) – verify no regressions in prior wave
+8. LDAP smoke (2) – verify auth layer
+9. Optional: Tenant/security slice
+10. Optional: Frontend gate
+11. Optional: Full backend regression
+12. Optional: Coverage gate
+13. Forbidden scans (provider/Brain/mutation)
+14. Git diff --check validation
+15. Metrics arithmetic/separation check
+16. Anti-fake review
+
+**Output:** `A-028.5.B1-EXPANSION_L4_WAVE_QUALITY_BASELINE_AND_CLOSURE_REPORT.md` with full evidence.
+
+**No new runtime code, routes, or features.**
+
+### Metrics Verification (Locked for A-028.5-SPEC)
+
+- expansion_L2_foundation_count = 67 (unchanged)
+- expansion_L3_logic_count = 50 (unchanged)
+- expansion_L4_visibility_count = 12 (unchanged)
+- expansion_L4_api_route_count = 12 (unchanged)
+- expansion_L4_consolidated_summary_count = 1 (unchanged)
+- remaining_L2_only = 17 (unchanged)
+- baseline_impact = 0 (unchanged)
+- extension_impact = 0 (unchanged)
+- baseline maturity: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2 (unchanged)
+
+### Anti-Fake / Anti-Inflation Review
+
+- ✅ No code implementation
+- ✅ No runtime feature addition
+- ✅ No fake API expansion
+- ✅ No fake KPI/dashboard
+- ✅ No synthetic score/ranking
+- ✅ No provider calls
+- ✅ No Brain execution
+- ✅ No autonomy claims
+- ✅ No baseline inflation
+- ✅ No expansion count inflation beyond A-028.4 achievements
+
+### Expected Next Decision
+
+After A-028.5.B1 closure report is complete and passes all validation:
+
+- Select ONE path: Continue L4 (B), start L5 governance (C), start Brain signals (D), start provider-readiness (E), or defer for higher-level strategy review.
+- Closure report will include clear recommendation based on evidence.
+
+### Documentation
+
+- A-028.5-SPEC Plan: `A-028.5-SPEC-EXPANSION_L4_WAVE_CLOSURE_AND_NEXT_STRATEGIC_LANE_REPORT.md` (this document)
+- A-028.5.B1 Runtime Report (TBD): `A-028.5.B1-EXPANSION_L4_WAVE_QUALITY_BASELINE_AND_CLOSURE_REPORT.md`
+
+### Final Verdict
+
+- final_verdict: A-028.5-SPEC COMPLETE - READY_FOR_A-028.5.B1
+- next_action_id: A-028.5.B1
+- next_action_title: Expansion L4 Wave Quality Baseline / Closure Report
+
 ### Validation Results
 
 - A-028.1 targeted runtime test: PASS (`156 passed`, `1 warning`).

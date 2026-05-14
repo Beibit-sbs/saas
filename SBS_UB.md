@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.5-SPEC
-    - current_stage: A-028.4-RUNTIME complete / expansion L4 consolidated admin summary endpoint implemented
-    - last_completed_action_id: A-028.4-RUNTIME
-    - next_action_id: A-028.5-SPEC
-    - updated_at: 2026-05-14 (A-028.4-RUNTIME completed; consolidated expansion L4 admin summary endpoint implemented with strict aggregation-only anti-fake boundaries)
+    - status: ready_for_A-028.5.B1
+    - current_stage: A-028.5-SPEC complete / expansion L4 wave closure quality baseline selected
+    - last_completed_action_id: A-028.5-SPEC
+    - next_action_id: A-028.5.B1
+    - updated_at: 2026-05-14 (A-028.5-SPEC completed; expansion L4 wave 1 closure quality baseline selected; A-028.5.B1-RUNTIME expected next)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
