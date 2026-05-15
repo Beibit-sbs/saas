@@ -5908,3 +5908,115 @@ Expected if A-028.15-RUNTIME passes:
 - A-028 combined pack: 2312 passed
 - A-027 continuity: 2471 passed
 - LDAP smoke: 14 passed
+
+## A-028.16-SPEC — Wave 17 L4 Closure / Remaining 10 L3-not-L4 Strategy
+
+### A-028.15 Runtime Closure Summary
+
+- A-028.15-RUNTIME commit: `3faa533`
+- final_verdict: A-028.15-RUNTIME CLOSED - PASS
+- consolidated endpoint refreshed only: `GET /api/admin/expansion/l4/summary`
+- no new endpoint created
+- no new API routes created
+- `coverage_version = A-028.15`
+
+### Current 40-Candidate L4 Product Slice
+
+| Layer | Count | Evidence | Status |
+|---|---:|---|---|
+| L4 service summaries | 40 | A-028.1 + A-028.6 + A-028.9 + A-028.13 | COMPLETE |
+| L4 API routes | 40 | A-028.2 + A-028.3 + A-028.7 + A-028.10 + A-028.14 | COMPLETE |
+| Consolidated summary endpoint | 1 | A-028.4 + A-028.8 + A-028.11 + A-028.15 | COMPLETE |
+| Consolidated candidate coverage | 40 | A-028.15 consolidated refresh | COMPLETE |
+
+### Current Metrics (Locked in SPEC)
+
+- expansion_L2_foundation_count = 67
+- expansion_runtime_implemented_count = 67
+- expansion_L3_logic_count = 50
+- remaining_L2_only = 17
+- remaining_L3_not_L4 = 10
+- expansion_L4_visibility_count = 40
+- expansion_L4_api_route_count = 40
+- expansion_L4_consolidated_summary_count = 1
+- expansion_L4_consolidated_candidate_count = 40
+- baseline_impact = 0
+- extension_impact = 0
+
+### Remaining 10 L3-not-L4 Inventory (Authoritative)
+
+Reconciliation formula: `50 L3 overlays - 40 L4-visible candidates = 10` (PASS).
+
+| UCE ID | Candidate | Type | Domain | Current State | Deferred Lane | L4 Eligible? | Risk | Proposed Handling |
+|---|---|---|---|---|---|---|---|---|
+| UCE-005 | performance_appraisal | NEW_MODULE | Faculty / HR | L3 deterministic | sensitive-domain | NO (now) | HIGH | defer to sensitive-domain readiness wave |
+| UCE-024 | student_information_system_integration | INTEGRATION | Integrations | L3 deterministic | provider-readiness | NO (now) | HIGH | defer to provider-readiness lane |
+| UCE-047 | third_party_risk_policy | POLICY_CONTROL | Security / Legal | L3 deterministic | deferred-policy | PARTIAL | MEDIUM | policy-governance-first L4 planning |
+| UCE-048 | data_retention_policy_control | POLICY_CONTROL | Compliance | L3 deterministic | deferred-policy | PARTIAL | MEDIUM | policy-governance-first L4 planning |
+| UCE-054 | brain_decision_audit_trail | AUDIT_EVIDENCE_CAPABILITY | AI Governance | L3 deterministic | Brain governance | NO (now) | HIGH | defer to A-029 Brain governance wave |
+| UCE-057 | staff_probation_review | NEW_MODULE | Faculty Lifecycle | L3 deterministic | sensitive-domain | NO (now) | HIGH | defer to sensitive-domain readiness wave |
+| UCE-098 | procurement_plan_approval_workflow | WORKFLOW | Procurement / Contracts / Assets | L3 deterministic | deferred-procurement | PARTIAL | MEDIUM/HIGH | dedicated procurement-safe planning before L4 |
+| UCE-106 | learning_management_system_integration | INTEGRATION | Integrations | L3 deterministic | provider-readiness | NO (now) | HIGH | defer to provider-readiness lane |
+| UCE-109 | digital_signature_integration | INTEGRATION | Integrations | L3 deterministic | provider-readiness | NO (now) | HIGH | defer to provider-readiness lane |
+| UCE-112 | regulatory_reporting_integration | INTEGRATION | Integrations | L3 deterministic | provider-readiness | NO (now) | HIGH | defer to provider-readiness lane |
+
+### Remaining 17 L2-only Lane Classification
+
+| UCE ID | Candidate | Type | Lane | Reason Still L2 | Suggested Future Wave |
+|---|---|---|---|---|---|
+| UCE-025 | finance_erp_integration | INTEGRATION | provider-readiness | provider dependency semantics | provider-readiness wave |
+| UCE-027 | email_gateway_integration | INTEGRATION | provider-readiness | provider dependency semantics | provider-readiness wave |
+| UCE-028 | notification_gateway_integration | INTEGRATION | provider-readiness | provider dependency semantics | provider-readiness wave |
+| UCE-030 | government_services_integration | INTEGRATION | provider-readiness | provider dependency semantics | provider-readiness wave |
+| UCE-108 | identity_provider_integration | INTEGRATION | provider-readiness | provider dependency semantics | provider-readiness wave |
+| UCE-110 | payment_gateway_integration | INTEGRATION | provider-readiness | provider dependency semantics | provider-readiness wave |
+| UCE-113 | hr_payroll_integration | INTEGRATION | provider-readiness | provider dependency semantics | provider-readiness wave |
+| UCE-049 | student_risk_signal_registry | BRAIN_SIGNAL | Brain governance | brain signal execution semantics | A-029 wave |
+| UCE-050 | finance_anomaly_signal_registry | BRAIN_SIGNAL | Brain governance | brain signal execution semantics | A-029 wave |
+| UCE-051 | academic_quality_signal_registry | BRAIN_SIGNAL | Brain governance | brain signal execution semantics | A-029 wave |
+| UCE-129 | procurement_risk_signal_registry | BRAIN_SIGNAL | Brain governance | brain signal execution semantics | A-029 wave |
+| UCE-145 | safe_evidence_summary_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | autonomy governance | autonomy-governance prerequisite | A-030 wave |
+| UCE-146 | safe_task_drafting_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | autonomy governance | autonomy-governance prerequisite | A-030 wave |
+| UCE-007 | disciplinary_case_management | NEW_MODULE | sensitive-domain readiness | high sensitivity case decisions | sensitive-domain wave |
+| UCE-078 | academic_integrity_case_management | NEW_MODULE | sensitive-domain readiness | high sensitivity case decisions | sensitive-domain wave |
+| UCE-081 | disability_support_services | NEW_MODULE | sensitive-domain readiness | sensitive eligibility/accommodation decisions | sensitive-domain wave |
+| UCE-082 | student_financial_hardship | NEW_MODULE | sensitive-domain readiness | aid and financial decision sensitivity | sensitive-domain wave |
+
+### Option Matrix
+
+| Option | Value | Risk | Effort | Recommended? | Reason |
+|---|---:|---:|---:|---|---|
+| Option A — continue remaining L3->L4 visibility | 4 | 4 | 4 | NO | remaining 10 is lane-heavy (provider/Brain/sensitive/procurement-policy) |
+| Option B — Wave 17 full quality baseline / closure gate | 5 | 2 | 3 | YES | validates completed 40-candidate product slice before high-risk lanes |
+| Option C — provider-readiness lane | 4 | 5 | 5 | NO (defer) | high value but integration-boundary risk requires dedicated spec and controls |
+| Option D — Brain governance lane | 4 | 5 | 5 | NO (defer) | strategic but high anti-fake/safety/audit requirements |
+| Option E — sensitive-domain readiness lane | 4 | 5 | 4 | NO (defer) | legal/ethical decision boundary requires dedicated governance-first spec |
+| Option F — product/demo readiness checkpoint | 3 | 2 | 2 | PARTIAL | useful packaging, but quality baseline gate first is stronger control |
+| Option G — baseline 150 uplift | 3 | 3 | 4 | NO | shifts focus away from Wave 17 closure after coherent 40-candidate slice |
+
+### Recommended Next Action
+
+- selected_option: Option B
+- next_action_id: A-028.16.B1
+- rationale: after central consolidated refresh in A-028.15, run a quality baseline/closure gate before entering high-risk deferred lanes
+
+### Expected Scope of A-028.16.B1
+
+- validation/reporting only
+- required packs: A-028 combined, A-027 continuity, tenant/security slice, LDAP smoke, forbidden scans
+- optional packs: full backend and frontend gates if feasible
+- metrics arithmetic re-verification
+- report/tracker closure only
+- expected report: `A-028.16.B1-WAVE17_L4_40_CANDIDATE_QUALITY_BASELINE_AND_CLOSURE_REPORT.md`
+
+### Anti-Fake / Anti-Inflation Review
+
+- no code implementation in A-028.16-SPEC
+- no runtime behavior started
+- no fake KPI/dashboard/synthetic score
+- no provider call or external submission
+- no Brain/autonomy/workflow/decision execution
+- no DB mutation
+- baseline metrics unchanged
+- extension metrics unchanged
+- expansion metrics separated and unchanged in SPEC
