@@ -187,3 +187,111 @@ def classify_digital_signature_integration_readiness(tenant_id: int, evidence: d
             "no_l6_claim": True,
         },
     }
+
+
+def get_digital_signature_provider_readiness_foundation(tenant_id: int) -> dict:
+    """Return deterministic A-029.2 provider readiness foundation (NON_LIVE_READINESS)."""
+    tenant_id = validate_tenant_id(tenant_id)
+
+    required_capabilities = [
+        "signing workflow boundary",
+        "certificate validation contract",
+        "document hash evidence mapping",
+        "signer identity mapping",
+        "non-repudiation audit mapping",
+    ]
+    optional_capabilities = [
+        "signature profile governance mapping",
+        "document lifecycle boundary mapping",
+    ]
+    required_evidence = [
+        "signature_provider_policy",
+        "key_management_boundary",
+        "signer_authorization_policy",
+        "cryptographic_control_policy",
+        "compliance_attestation_policy",
+    ]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": ORIGINAL_UCE_ID,
+        "provider_type": "DIGITAL_SIGNATURE",
+        "provider_key": "EDS_KZ",
+        "provider_label": "Kazakhstan digital signature readiness profile",
+        "country_profile": "KZ",
+        "future_gcc_placeholder": "SA_DIGITAL_SIGNATURE_PROVIDER",
+        "readiness_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "maturity_target": "L2",
+        "integration_mode": "NON_LIVE_READINESS",
+        "live_calls_enabled": False,
+        "credentials_configured": False,
+        "credential_reference": None,
+        "external_submission_enabled": False,
+        "provider_connected": False,
+        "provider_status_claim": "NOT_CONNECTED_NON_LIVE_PROFILE_ONLY",
+        "sync_enabled": False,
+        "readiness_summary": "Digital signature provider readiness profile only; no signing or certificate operations.",
+        "capability_matrix": {
+            "required_capabilities": list(required_capabilities),
+            "optional_capabilities": list(optional_capabilities),
+        },
+        "required_evidence": list(required_evidence),
+        "missing_configuration_evidence": [
+            "certificate authority approval evidence",
+            "production key custody approval",
+        ],
+        "data_categories": [
+            "documents",
+            "signature_requests",
+            "certificate_references",
+        ],
+        "pii_risk_level": "HIGH",
+        "legal_basis_required": True,
+        "security_review_required": True,
+        "owner_role": "signature_governance_lead",
+        "approval_required_before_live": True,
+        "security_requirements": [
+            "strict key custody controls before live mode",
+            "no cryptographic operations in foundation mode",
+            "tenant isolation for signature metadata",
+        ],
+        "legal_requirements": [
+            "electronic signature legal compliance review",
+            "non-repudiation policy approval",
+        ],
+        "audit_requirements": [
+            "immutable signature readiness trail",
+            "human approval trace before live operations",
+        ],
+        "rollback_requirements": [
+            "disable signing capability toggle",
+            "restore non-live profile-only mode",
+        ],
+        "audit_required": True,
+        "rollback_required_before_live": True,
+        "allowed_actions": [
+            "VIEW_PROVIDER_READINESS_PROFILE",
+            "VALIDATE_READINESS_EVIDENCE_GAPS",
+            "PREPARE_HUMAN_REVIEW_PACKET",
+        ],
+        "forbidden_actions": [
+            "no signing",
+            "no certificate validation",
+            "no key storage",
+            "no document submission",
+            "no cryptographic operation",
+            "no live credential check",
+        ],
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_fake_integration_status": True,
+        "no_sync_claim": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }

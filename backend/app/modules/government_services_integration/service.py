@@ -104,3 +104,110 @@ def get_government_services_integration_integration_contract(tenant_id: int, pay
         "next_maturity_gap": "L3 deterministic integration readiness logic required",
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def get_government_services_provider_readiness_foundation(tenant_id: int) -> dict:
+    """Return deterministic A-029.2 provider readiness foundation (NON_LIVE_READINESS)."""
+    tenant_id = validate_tenant_id(tenant_id)
+
+    required_capabilities = [
+        "citizen identity reference boundary",
+        "document request mapping",
+        "status polling contract",
+        "consent requirement mapping",
+        "legal basis mapping",
+    ]
+    optional_capabilities = [
+        "document taxonomy normalization",
+        "government channel fallback mapping",
+    ]
+    required_evidence = [
+        "government_provider_contract",
+        "consent_policy",
+        "verification_scope_policy",
+        "legal_basis_register",
+        "human_review_approval_flow",
+    ]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": ORIGINAL_UCE_ID,
+        "provider_type": "GOVERNMENT_SERVICES",
+        "provider_key": "EGOV_KZ",
+        "provider_label": "eGov Kazakhstan government services readiness profile",
+        "country_profile": "KZ",
+        "future_gcc_placeholder": "SA_GOVERNMENT_SERVICES_PROVIDER",
+        "readiness_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "maturity_target": "L2",
+        "integration_mode": "NON_LIVE_READINESS",
+        "live_calls_enabled": False,
+        "credentials_configured": False,
+        "credential_reference": None,
+        "external_submission_enabled": False,
+        "provider_connected": False,
+        "provider_status_claim": "NOT_CONNECTED_NON_LIVE_PROFILE_ONLY",
+        "sync_enabled": False,
+        "readiness_summary": "Government services provider profile readiness only; no live government interactions.",
+        "capability_matrix": {
+            "required_capabilities": list(required_capabilities),
+            "optional_capabilities": list(optional_capabilities),
+        },
+        "required_evidence": list(required_evidence),
+        "missing_configuration_evidence": [
+            "government connectivity authorization",
+            "regulatory submission approval",
+        ],
+        "data_categories": [
+            "citizen_identity_references",
+            "public_service_requests",
+            "document_status_references",
+        ],
+        "pii_risk_level": "HIGH",
+        "legal_basis_required": True,
+        "security_review_required": True,
+        "owner_role": "public_services_integration_governance_lead",
+        "approval_required_before_live": True,
+        "security_requirements": [
+            "tenant isolation and data minimization",
+            "no credential handling in foundation mode",
+            "no external channel access before approval",
+        ],
+        "legal_requirements": [
+            "regulatory legal basis approval",
+            "consent handling policy validation",
+        ],
+        "audit_requirements": [
+            "immutable readiness evidence trail",
+            "approval traceability for government boundaries",
+        ],
+        "rollback_requirements": [
+            "disable external interaction capability toggle",
+            "restore profile-only non-live state",
+        ],
+        "audit_required": True,
+        "rollback_required_before_live": True,
+        "allowed_actions": [
+            "VIEW_PROVIDER_READINESS_PROFILE",
+            "VALIDATE_READINESS_EVIDENCE_GAPS",
+            "PREPARE_HUMAN_REVIEW_PACKET",
+        ],
+        "forbidden_actions": [
+            "no eGov calls",
+            "no citizen/student data query",
+            "no document status claim",
+            "no external submission",
+            "no credential validation",
+        ],
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_fake_integration_status": True,
+        "no_sync_claim": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }

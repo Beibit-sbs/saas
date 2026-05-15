@@ -104,3 +104,113 @@ def get_identity_provider_integration_integration_contract(tenant_id: int, paylo
         "next_maturity_gap": "L3 deterministic integration readiness logic required",
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def get_identity_provider_readiness_foundation(tenant_id: int) -> dict:
+    """Return deterministic A-029.2 provider readiness foundation (NON_LIVE_READINESS)."""
+    tenant_id = validate_tenant_id(tenant_id)
+
+    required_capabilities = [
+        "identity claim mapping",
+        "role/group mapping",
+        "SSO protocol boundary",
+        "provisioning boundary",
+        "audit trail mapping",
+    ]
+    optional_capabilities = [
+        "session boundary classification",
+        "identity assertion normalization mapping",
+    ]
+    required_evidence = [
+        "idp_metadata_policy",
+        "claim_mapping_policy",
+        "role_mapping_boundary",
+        "sso_protocol_control_policy",
+        "provisioning_boundary_policy",
+    ]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": ORIGINAL_UCE_ID,
+        "provider_type": "IDENTITY_PROVIDER",
+        "provider_key": "IDP_SSO_KZ",
+        "provider_label": "Kazakhstan identity provider / SSO readiness profile",
+        "country_profile": "KZ",
+        "future_gcc_placeholder": "SA_IDENTITY_PROVIDER",
+        "readiness_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "maturity_target": "L2",
+        "integration_mode": "NON_LIVE_READINESS",
+        "live_calls_enabled": False,
+        "credentials_configured": False,
+        "credential_reference": None,
+        "external_submission_enabled": False,
+        "provider_connected": False,
+        "provider_status_claim": "NOT_CONNECTED_NON_LIVE_PROFILE_ONLY",
+        "sync_enabled": False,
+        "readiness_summary": "Identity provider readiness profile only; no live authentication operations.",
+        "capability_matrix": {
+            "required_capabilities": list(required_capabilities),
+            "optional_capabilities": list(optional_capabilities),
+        },
+        "required_evidence": list(required_evidence),
+        "missing_configuration_evidence": [
+            "identity provider production approval",
+            "token issuance governance approval",
+        ],
+        "data_categories": [
+            "users",
+            "roles",
+            "groups",
+            "sessions",
+            "identity_claims",
+        ],
+        "pii_risk_level": "HIGH",
+        "legal_basis_required": True,
+        "security_review_required": True,
+        "owner_role": "identity_governance_lead",
+        "approval_required_before_live": True,
+        "security_requirements": [
+            "no credential, secret, or token handling in foundation mode",
+            "tenant-safe identity domain boundaries",
+            "explicit disablement of live auth/provisioning calls",
+        ],
+        "legal_requirements": [
+            "identity and access legal compliance review",
+            "privacy basis approval for identity claims",
+        ],
+        "audit_requirements": [
+            "immutable identity readiness evidence trail",
+            "human authorization record before live enablement",
+        ],
+        "rollback_requirements": [
+            "disable live identity toggle",
+            "restore profile-only non-live state",
+        ],
+        "audit_required": True,
+        "rollback_required_before_live": True,
+        "allowed_actions": [
+            "VIEW_PROVIDER_READINESS_PROFILE",
+            "VALIDATE_READINESS_EVIDENCE_GAPS",
+            "PREPARE_HUMAN_REVIEW_PACKET",
+        ],
+        "forbidden_actions": [
+            "no live login",
+            "no LDAP/AD bind",
+            "no token issuance",
+            "no user provisioning",
+            "no password handling",
+            "no credential validation",
+        ],
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_fake_integration_status": True,
+        "no_sync_claim": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }

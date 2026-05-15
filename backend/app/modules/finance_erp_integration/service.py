@@ -104,3 +104,112 @@ def get_finance_erp_integration_integration_contract(tenant_id: int, payload: di
         "next_maturity_gap": "L3 deterministic integration readiness logic required",
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def get_finance_erp_provider_readiness_foundation(tenant_id: int) -> dict:
+    """Return deterministic A-029.2 provider readiness foundation (NON_LIVE_READINESS)."""
+    tenant_id = validate_tenant_id(tenant_id)
+
+    required_capabilities = [
+        "account mapping",
+        "invoice export contract",
+        "payment reconciliation contract",
+        "budget code mapping",
+        "audit trail mapping",
+    ]
+    optional_capabilities = [
+        "tax ledger mapping",
+        "cost center alignment",
+    ]
+    required_evidence = [
+        "erp_contract_document",
+        "chart_of_accounts_mapping",
+        "payroll_boundary_policy",
+        "finance_data_governance_policy",
+        "reconciliation_control_policy",
+    ]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": ORIGINAL_UCE_ID,
+        "provider_type": "FINANCE_ERP",
+        "provider_key": "ONE_C_KZ",
+        "provider_label": "1C Kazakhstan finance ERP readiness profile",
+        "country_profile": "KZ",
+        "future_gcc_placeholder": "SA_ERP_PROVIDER",
+        "readiness_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "maturity_target": "L2",
+        "integration_mode": "NON_LIVE_READINESS",
+        "live_calls_enabled": False,
+        "credentials_configured": False,
+        "credential_reference": None,
+        "external_submission_enabled": False,
+        "provider_connected": False,
+        "provider_status_claim": "NOT_CONNECTED_NON_LIVE_PROFILE_ONLY",
+        "sync_enabled": False,
+        "readiness_summary": "Finance ERP provider profile readiness only; no posting or sync operations.",
+        "capability_matrix": {
+            "required_capabilities": list(required_capabilities),
+            "optional_capabilities": list(optional_capabilities),
+        },
+        "required_evidence": list(required_evidence),
+        "missing_configuration_evidence": [
+            "finance production credential approval",
+            "posting control sign-off",
+        ],
+        "data_categories": [
+            "invoices",
+            "payments",
+            "chart_of_accounts",
+            "procurement_financial_records",
+        ],
+        "pii_risk_level": "HIGH",
+        "legal_basis_required": True,
+        "security_review_required": True,
+        "owner_role": "finance_integration_governance_lead",
+        "approval_required_before_live": True,
+        "security_requirements": [
+            "tenant isolation for financial datasets",
+            "no credential handling in foundation mode",
+            "dual-control approval before live posting",
+        ],
+        "legal_requirements": [
+            "financial compliance review",
+            "accounting policy and retention validation",
+        ],
+        "audit_requirements": [
+            "immutable readiness and approval audit trail",
+            "evidence traceability for mappings",
+        ],
+        "rollback_requirements": [
+            "disable provider readiness transition path",
+            "restore non-live profile-only mode",
+        ],
+        "audit_required": True,
+        "rollback_required_before_live": True,
+        "allowed_actions": [
+            "VIEW_PROVIDER_READINESS_PROFILE",
+            "VALIDATE_READINESS_EVIDENCE_GAPS",
+            "PREPARE_HUMAN_REVIEW_PACKET",
+        ],
+        "forbidden_actions": [
+            "no 1C API calls",
+            "no invoice/payment sync",
+            "no accounting mutation",
+            "no financial posting",
+            "no credential validation",
+            "no provider availability claim",
+        ],
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_fake_integration_status": True,
+        "no_sync_claim": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }
