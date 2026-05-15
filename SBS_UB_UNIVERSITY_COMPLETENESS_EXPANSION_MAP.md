@@ -6298,3 +6298,203 @@ A-029.1-SPEC must not:
 - status: ready_for_A-029.1-SPEC
 - last_completed_action_id: A-029.0-SPEC
 - next_action_id: A-029.1-SPEC
+
+## A-029.1-SPEC — Risk Lane Foundation Map and Boundary Specification
+
+### A-029.0 Source State
+
+- source_commit: `3a8a902`
+- source_final_verdict: A-029.0-SPEC CLOSED - PASS
+- source_next_action_id: A-029.1-SPEC
+- runtime_implementation_started: NO
+
+### Current Metrics (Locked)
+
+- baseline unchanged: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension unchanged: extension_total_count=25, total_tracked_modules=175
+- expansion unchanged:
+	- expansion_L2_foundation_count = 67
+	- expansion_runtime_implemented_count = 67
+	- expansion_L3_logic_count = 50
+	- remaining_L2_only = 17
+	- remaining_L3_not_L4 = 10
+	- expansion_L4_visibility_count = 40
+	- expansion_L4_api_route_count = 40
+	- expansion_L4_consolidated_summary_count = 1
+	- expansion_L4_consolidated_candidate_count = 40
+	- baseline_impact = 0
+	- extension_impact = 0
+
+### Remaining 10 L3-not-L4 Inventory (Authoritative)
+
+| UCE ID | Candidate | Domain | Current State | Primary Lane | Secondary Flags | Risk Reason | Safe Next Maturity Target | Proposed Future Action |
+|---|---|---|---|---|---|---|---|---|
+| UCE-005 | performance_appraisal | Faculty / HR | L3 deterministic (A-027.11 chain) | sensitive-domain | none | personnel and adverse-decision sensitivity | L4 read-only sensitive visibility | sensitive readiness spec wave |
+| UCE-024 | student_information_system_integration | Integrations | L3 deterministic (A-027.11 chain) | provider-readiness | none | external provider dependency semantics | L4 read-only provider readiness visibility | provider readiness spec wave |
+| UCE-047 | third_party_risk_policy | Security / Legal | L3 deterministic (A-027.11 chain) | policy/procurement | sensitive-domain | policy enforcement and legal-governance risk | L4 read-only policy readiness visibility | policy/procurement readiness spec |
+| UCE-048 | data_retention_policy_control | Compliance | L3 deterministic (A-027.8 chain) | policy/procurement | sensitive-domain | retention/legal-hold enforcement risk | L4 read-only retention readiness visibility | policy/procurement readiness spec |
+| UCE-054 | brain_decision_audit_trail | AI Governance | L3 deterministic (A-027.11 chain) | Brain governance | policy/procurement | Brain audit semantics need governance-first controls | L4 read-only Brain governance visibility | Brain governance spec wave |
+| UCE-057 | staff_probation_review | Faculty Lifecycle | L3 deterministic (A-027.11 chain) | sensitive-domain | policy/procurement | employment-status and disciplinary sensitivity | L4 read-only sensitive visibility | sensitive readiness spec wave |
+| UCE-098 | procurement_plan_approval_workflow | Procurement / Contracts / Assets | L3 deterministic (A-027.8 chain) | policy/procurement | Brain governance | procurement approval/commitment risk | L4 read-only procurement readiness visibility | policy/procurement readiness spec |
+| UCE-106 | learning_management_system_integration | Integrations | L3 deterministic (A-027.11 chain) | provider-readiness | none | provider contract/governance controls pending | L4 read-only provider readiness visibility | provider readiness spec wave |
+| UCE-109 | digital_signature_integration | Integrations | L3 deterministic (A-027.11 chain) | provider-readiness | policy/procurement | signature trust/legal boundary risk | L4 read-only provider readiness visibility | provider readiness spec wave |
+| UCE-112 | regulatory_reporting_integration | Integrations | L3 deterministic (A-027.11 chain) | provider-readiness | policy/procurement | regulator/provider submission governance risk | L4 read-only provider readiness visibility | provider readiness spec wave |
+
+Lane totals (remaining 10): provider=4, Brain=1, sensitive=2, policy/procurement=3, ordinary=0.
+
+### Remaining 17 L2-only Inventory (Authoritative)
+
+| UCE ID | Candidate | Domain | Current State | Primary Lane | Secondary Flags | Reason Still L2 | Safe Next Maturity Target | Proposed Future Action |
+|---|---|---|---|---|---|---|---|---|
+| UCE-025 | finance_erp_integration | Integrations | L2 envelope foundation (A-027.6) | provider-readiness | policy/procurement | provider dependency semantics unresolved | L3 deterministic provider readiness logic | provider readiness spec wave |
+| UCE-027 | email_gateway_integration | Integrations | L2 envelope foundation (A-027.6) | provider-readiness | none | provider dependency semantics unresolved | L3 deterministic provider readiness logic | provider readiness spec wave |
+| UCE-028 | notification_gateway_integration | Integrations | L2 envelope foundation (A-027.6) | provider-readiness | none | provider dependency semantics unresolved | L3 deterministic provider readiness logic | provider readiness spec wave |
+| UCE-030 | government_services_integration | Integrations | L2 envelope foundation (A-027.6) | provider-readiness | policy/procurement | external government-provider constraints | L3 deterministic provider readiness logic | provider readiness spec wave |
+| UCE-108 | identity_provider_integration | Integrations | L2 envelope foundation (A-027.6) | provider-readiness | sensitive-domain | trust and fail-closed identity governance pending | L3 deterministic provider readiness logic | provider readiness spec wave |
+| UCE-110 | payment_gateway_integration | Integrations | L2 envelope foundation (A-027.6) | provider-readiness | sensitive-domain | payment commitment and provider governance constraints | L3 deterministic provider readiness logic | provider readiness spec wave |
+| UCE-113 | hr_payroll_integration | Integrations | L2 envelope foundation (A-027.6) | provider-readiness | sensitive-domain | payroll provider data transfer governance pending | L3 deterministic provider readiness logic | provider readiness spec wave |
+| UCE-049 | student_risk_signal_registry | AI Governance | L2 envelope foundation (A-027.6) | Brain governance | sensitive-domain | signal governance and human-review boundaries pending | L3 deterministic Brain governance logic | Brain governance spec wave |
+| UCE-050 | finance_anomaly_signal_registry | AI Governance | L2 envelope foundation (A-027.6) | Brain governance | policy/procurement | explainability and governance controls pending | L3 deterministic Brain governance logic | Brain governance spec wave |
+| UCE-051 | academic_quality_signal_registry | AI Governance | L2 envelope foundation (A-027.6) | Brain governance | none | deterministic signal governance layer pending | L3 deterministic Brain governance logic | Brain governance spec wave |
+| UCE-129 | procurement_risk_signal_registry | AI Governance | L2 envelope foundation (A-027.6) | Brain governance | policy/procurement | procurement-risk governance controls pending | L3 deterministic Brain governance logic | Brain governance spec wave |
+| UCE-145 | safe_evidence_summary_agent | Safe autonomy candidate | L2 envelope foundation (A-027.6) | autonomy | Brain governance | autonomy guardrails and approval boundaries undefined | L3 deterministic autonomy readiness | autonomy governance spec wave |
+| UCE-146 | safe_task_drafting_agent | Safe autonomy candidate | L2 envelope foundation (A-027.6) | autonomy | Brain governance | autonomy guardrails and action boundaries undefined | L3 deterministic autonomy readiness | autonomy governance spec wave |
+| UCE-007 | disciplinary_case_management | Student/Faculty governance | L2 envelope foundation (A-027.4) | sensitive-domain | policy/procurement | high-stakes case sensitivity | L3 deterministic sensitive readiness | sensitive readiness spec wave |
+| UCE-078 | academic_integrity_case_management | Academic governance | L2 envelope foundation (A-027.4) | sensitive-domain | policy/procurement | sanction and appeal sensitivity | L3 deterministic sensitive readiness | sensitive readiness spec wave |
+| UCE-081 | disability_support_services | Student services | L2 envelope foundation (A-027.4) | sensitive-domain | policy/procurement | accommodation eligibility sensitivity | L3 deterministic sensitive readiness | sensitive readiness spec wave |
+| UCE-082 | student_financial_hardship | Student finance support | L2 envelope foundation (A-027.4) | sensitive-domain | policy/procurement | aid/eligibility sensitivity | L3 deterministic sensitive readiness | sensitive readiness spec wave |
+
+Lane totals (remaining 17): provider=7, Brain=4, autonomy=2, sensitive=4.
+
+### Candidate-to-Lane Routing Matrix (All 27)
+
+| UCE ID | Candidate | Current State | Primary Lane | Secondary Lane | Recommended Sequence | First Safe Action |
+|---|---|---|---|---|---|---|
+| UCE-005 | performance_appraisal | L3 deterministic | sensitive-domain | none | S1 | sensitive readiness specification |
+| UCE-024 | student_information_system_integration | L3 deterministic | provider-readiness | none | P1 | provider profile/readiness specification |
+| UCE-047 | third_party_risk_policy | L3 deterministic | policy/procurement | sensitive-domain | G1 | policy readiness specification |
+| UCE-048 | data_retention_policy_control | L3 deterministic | policy/procurement | sensitive-domain | G1 | policy readiness specification |
+| UCE-054 | brain_decision_audit_trail | L3 deterministic | Brain governance | policy/procurement | B1 | Brain governance specification |
+| UCE-057 | staff_probation_review | L3 deterministic | sensitive-domain | policy/procurement | S1 | sensitive readiness specification |
+| UCE-098 | procurement_plan_approval_workflow | L3 deterministic | policy/procurement | Brain governance | G1 | procurement readiness specification |
+| UCE-106 | learning_management_system_integration | L3 deterministic | provider-readiness | none | P1 | provider profile/readiness specification |
+| UCE-109 | digital_signature_integration | L3 deterministic | provider-readiness | policy/procurement | P1 | provider profile/readiness specification |
+| UCE-112 | regulatory_reporting_integration | L3 deterministic | provider-readiness | policy/procurement | P1 | provider profile/readiness specification |
+| UCE-025 | finance_erp_integration | L2 envelope foundation | provider-readiness | policy/procurement | P1 | provider registry readiness specification |
+| UCE-027 | email_gateway_integration | L2 envelope foundation | provider-readiness | none | P1 | provider registry readiness specification |
+| UCE-028 | notification_gateway_integration | L2 envelope foundation | provider-readiness | none | P1 | provider registry readiness specification |
+| UCE-030 | government_services_integration | L2 envelope foundation | provider-readiness | policy/procurement | P1 | provider registry readiness specification |
+| UCE-108 | identity_provider_integration | L2 envelope foundation | provider-readiness | sensitive-domain | P1 | provider registry readiness specification |
+| UCE-110 | payment_gateway_integration | L2 envelope foundation | provider-readiness | sensitive-domain | P1 | provider registry readiness specification |
+| UCE-113 | hr_payroll_integration | L2 envelope foundation | provider-readiness | sensitive-domain | P1 | provider registry readiness specification |
+| UCE-049 | student_risk_signal_registry | L2 envelope foundation | Brain governance | sensitive-domain | B1 | Brain governance specification |
+| UCE-050 | finance_anomaly_signal_registry | L2 envelope foundation | Brain governance | policy/procurement | B1 | Brain governance specification |
+| UCE-051 | academic_quality_signal_registry | L2 envelope foundation | Brain governance | none | B1 | Brain governance specification |
+| UCE-129 | procurement_risk_signal_registry | L2 envelope foundation | Brain governance | policy/procurement | B1 | Brain governance specification |
+| UCE-145 | safe_evidence_summary_agent | L2 envelope foundation | autonomy | Brain governance | A1 | autonomy governance specification |
+| UCE-146 | safe_task_drafting_agent | L2 envelope foundation | autonomy | Brain governance | A1 | autonomy governance specification |
+| UCE-007 | disciplinary_case_management | L2 envelope foundation | sensitive-domain | policy/procurement | S1 | sensitive readiness specification |
+| UCE-078 | academic_integrity_case_management | L2 envelope foundation | sensitive-domain | policy/procurement | S1 | sensitive readiness specification |
+| UCE-081 | disability_support_services | L2 envelope foundation | sensitive-domain | policy/procurement | S1 | sensitive readiness specification |
+| UCE-082 | student_financial_hardship | L2 envelope foundation | sensitive-domain | policy/procurement | S1 | sensitive readiness specification |
+
+### Lane Maturity Progression Rules
+
+Provider-readiness lane:
+- L2: provider profile/registry foundation, tenant-safe provider metadata, no credentials, no calls
+- L3: deterministic provider readiness logic, capability matrix, missing configuration evidence, no live integration
+- L4: read-only readiness visibility/API, clearly non-live status classification, no external submission
+- L5: governed sandbox adapter or dry-run contract only when explicitly non-production, audit evidence required, no real credentials/side effects
+- L6: production integration only with credentials governance, legal/security approvals, retries/failure handling/data protection and rollback controls
+
+Brain governance lane:
+- L2: signal registry foundation, evidence source mapping, no model execution
+- L3: deterministic signal-readiness logic, explainability inputs, no autonomous decision
+- L4: read-only governance visibility/API, human-review queue summary, no action execution
+- L5: governed recommendation drafting with explainability and audit, human approval required
+- L6: controlled AI-assisted decision support with policy controls, fairness checks, override and no hidden automation
+
+Sensitive-domain lane:
+- L2: case/readiness foundation, evidence categories, human-review flag
+- L3: deterministic readiness/risk logic, no sanction/eligibility/accommodation decision execution
+- L4: read-only visibility/API, appeal/audit boundary, no automated outcome
+- L5: governed human-review workflow support, recommendation drafting only when non-binding
+- L6: production human-approved decision support with legal policy, audit, fairness, appeal and override
+
+Autonomy lane:
+- L2: draft/evidence-summary foundation, no execution
+- L3: deterministic draft-readiness logic, no send/submit/approve/reject/delete
+- L4: read-only autonomy-readiness visibility/API, human-approval status visibility
+- L5: human-approved draft generation with audit, no direct execution
+- L6: strictly governed automation with explicit approvals, rollback, audit, policy and emergency stop
+
+Policy/procurement lane:
+- L2: policy/procurement readiness foundation and evidence categories
+- L3: deterministic readiness/risk logic, no approval/award/ranking
+- L4: read-only visibility/API, no financial commitment, no contract execution
+- L5: governed review workflow support, human approval required
+- L6: production controlled decision support only with legal/procurement governance, audit, fairness and appeal/override
+
+### Lane Anti-Fake Boundaries
+
+| Lane | Forbidden Claims | Forbidden Runtime Behavior | Required Safety Evidence |
+|---|---|---|---|
+| provider-readiness | fake provider integration, fake live status | live provider calls, credentials use, external submission, side effects | explicit non-live labels, tenant fail-closed checks, permission boundaries, audit-ready boundary |
+| Brain governance | fake Brain execution, fake autonomous decisions, fake KPI/synthetic scores | model-driven action execution, hidden scoring/ranking, workflow execution | deterministic evidence mapping, explainability fields, human-review gates, audit trail |
+| sensitive-domain | automatic sanction/aid/accommodation/eligibility decision claims | hidden/discriminatory scoring, legal/disciplinary decision execution | mandatory human-review boundary, appeal path, audit/fairness evidence |
+| autonomy | autonomous approval/rejection/submission claims | send/submit/approve/reject/delete execution | draft-only evidence, human approval gates, immutable audit trail |
+| policy/procurement | procurement award/ranking/financial commitment execution claims | approve/reject/award/ranking/contract execution/external submission | read-only readiness evidence, legal/procurement governance boundary, audit trail |
+
+### Safe Runtime Sequence Options after A-029.1
+
+| Option | Value | Risk | Effort | Recommended? | Reason |
+|---|---:|---:|---:|---|---|
+| Option A — Provider-readiness foundation | 5 | 3 | 3 | YES | strongest enterprise value with controllable non-live boundaries |
+| Option B — Brain governance foundation | 5 | 4 | 4 | CONDITIONAL | strategic but higher anti-fake enforcement burden |
+| Option C — Sensitive-domain readiness foundation | 5 | 5 | 4 | CONDITIONAL | high institutional value with strongest legal/ethical caution |
+| Option D — Policy/procurement readiness foundation | 4 | 4 | 3 | CONDITIONAL | governance value high but procurement/legal constraints substantial |
+| Option E — Product/demo evidence package | 4 | 1 | 2 | CONDITIONAL | low runtime risk and high commercial value |
+| Option F — Full release quality remediation | 4 | 2 | 4 | CONDITIONAL | quality improvement without feature movement |
+
+### Selected Next Action
+
+- selected_next_action: A-029.2-SPEC
+- selection_title: Provider Readiness Foundation Batch 1
+- rationale:
+	- provider lane is the highest enterprise-value lane with safe non-live entry mode
+	- avoids immediate Brain/autonomy/sensitive execution risk
+	- enables readiness architecture for Platonus/1C/eGov/EDS style integrations without live calls
+
+### Expected Scope for A-029.2-SPEC
+
+- mode: SPEC-only
+- expected_report: `A-029.2-SPEC-PROVIDER_READINESS_FOUNDATION_BATCH1_REPORT.md`
+- expected candidate set (evidence-backed only):
+	- UCE-024 student_information_system_integration
+	- UCE-025 finance_erp_integration
+	- UCE-030 government_services_integration
+	- UCE-108 identity_provider_integration
+	- UCE-109 digital_signature_integration
+	- UCE-112 regulatory_reporting_integration
+- required boundaries:
+	- provider registry/profile model only
+	- no live provider calls
+	- no credentials
+	- no external submission
+	- no mutation
+	- no runtime code
+
+### Anti-Inflation Review
+
+- no runtime implementation in A-029.1-SPEC: PASS
+- no baseline metric movement: PASS
+- no extension metric movement: PASS
+- expansion metrics unchanged in SPEC: PASS
+- no fake provider/Brain/autonomy/sensitive claims: PASS
+
+### Final Decision
+
+- final_verdict: A-029.1-SPEC CLOSED - PASS
+- status: ready_for_A-029.2-SPEC
+- last_completed_action_id: A-029.1-SPEC
+- next_action_id: A-029.2-SPEC

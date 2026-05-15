@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-029.1-SPEC
-    - current_stage: A-029.0-SPEC complete / provider Brain risk lane planning after Wave 17 closure
-    - last_completed_action_id: A-029.0-SPEC
-    - next_action_id: A-029.1-SPEC
-    - updated_at: 2026-05-16 (A-029.0-SPEC completed as planning-only; A-028.16.B1 closure and locked metrics re-verified; remaining 10+17 inventory classified into risk lanes; selected next action A-029.1-SPEC)
+    - status: ready_for_A-029.2-SPEC
+    - current_stage: A-029.1-SPEC complete / risk lane foundation map and boundaries specified
+    - last_completed_action_id: A-029.1-SPEC
+    - next_action_id: A-029.2-SPEC
+    - updated_at: 2026-05-16 (A-029.1-SPEC completed as planning-only; 10+17 candidates assigned to primary lanes; lane maturity rules and anti-fake boundaries locked; selected next action A-029.2-SPEC provider-readiness foundation)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -10302,5 +10302,195 @@ validate -> guard -> cross-entity check -> persist -> publish_event -> brain sig
 - status: ready_for_A-029.1-SPEC
 - last_completed_action_id: A-029.0-SPEC
 - next_action_id: A-029.1-SPEC
+
+## A-029.1-SPEC - Risk Lane Foundation Map and Boundary Specification
+
+### Strategic Decision
+
+- action_id: A-029.1-SPEC
+- mode: SPEC_ONLY_PLANNING
+- runtime_implementation_started: NO
+- source_action: A-029.0-SPEC
+- selected_next_lane: provider-readiness foundation (governance-safe entry)
+- selected_next_action: A-029.2-SPEC
+
+### Source-of-Truth Confirmation
+
+- A-029.0-SPEC commit verified: `3a8a902`
+- A-029.0-SPEC final verdict verified: CLOSED - PASS
+- next_action_id in source state verified: A-029.1-SPEC
+- A-028.16.B1 closure chain verified: `c7fb084` and scoped quality baseline confirmed
+- A-029.1 runtime status: NOT STARTED
+
+### Current Metrics (Locked, Unchanged)
+
+- baseline metrics preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension metrics preserved: extension_total_count=25, total_tracked_modules=175
+- expansion metrics preserved:
+    - expansion_L2_foundation_count = 67
+    - expansion_runtime_implemented_count = 67
+    - expansion_L3_logic_count = 50
+    - remaining_L2_only = 17
+    - remaining_L3_not_L4 = 10
+    - expansion_L4_visibility_count = 40
+    - expansion_L4_api_route_count = 40
+    - expansion_L4_consolidated_summary_count = 1
+    - expansion_L4_consolidated_candidate_count = 40
+    - baseline_impact = 0
+    - extension_impact = 0
+
+### Remaining Inventory Assignment (Primary Lane Required)
+
+- total remaining candidates = 27
+- remaining_L3_not_L4 = 10
+- remaining_L2_only = 17
+- provider lane = 11 total (4 L3 + 7 L2)
+- Brain lane = 5 total (1 L3 + 4 L2)
+- autonomy lane = 2 total (0 L3 + 2 L2)
+- sensitive lane = 6 total (2 L3 + 4 L2)
+- policy/procurement lane = 3 total (all in L3)
+- ordinary eligible = 0
+
+### Lane Maturity Progression Rules
+
+Provider-readiness lane:
+- L2: provider profile and registry foundation, tenant-safe provider metadata, no credentials, no calls
+- L3: deterministic readiness logic, capability matrix, missing-config evidence, no live integration
+- L4: read-only readiness visibility/API, explicitly non-live status labels, no external submission
+- L5: governed sandbox/dry-run adapter only when marked non-production, full audit evidence, no real credentials/side effects
+- L6: production integration only after security/legal/governance approvals, retries/failover/data-protection and rollback controls
+
+Brain governance lane:
+- L2: signal registry foundation, evidence source mapping, no model execution
+- L3: deterministic signal-readiness logic, explainability inputs, no autonomous decision
+- L4: read-only governance visibility/API, human-review queue summary, no action execution
+- L5: governed recommendation drafting with explainability/audit and mandatory human approval
+- L6: controlled AI-assisted decision-support with policy controls, audit trail, fairness checks, override and no hidden automation
+
+Sensitive-domain lane:
+- L2: case-readiness foundation, evidence categories, human-review flag
+- L3: deterministic readiness/risk logic, no sanction/eligibility/accommodation decision execution
+- L4: read-only visibility/API, appeal/audit boundary, no automated outcome
+- L5: governed human-review workflow support, non-binding recommendation drafting only
+- L6: production human-approved decision-support only with legal policy, audit, fairness, appeal and override
+
+Autonomy lane:
+- L2: draft/evidence-summary capability foundation, no execution
+- L3: deterministic draft-readiness logic, no send/submit/approve/reject/delete
+- L4: read-only autonomy-readiness visibility/API, human-approval status visibility
+- L5: human-approved draft generation with audit, no direct execution
+- L6: strictly governed automation with explicit approvals, rollback, audit, policy and emergency stop
+
+Policy/procurement lane:
+- L2: policy/procurement readiness foundation and evidence categories
+- L3: deterministic readiness/risk logic, no approval/award/ranking
+- L4: read-only visibility/API, no financial commitment, no contract execution
+- L5: governed review-workflow support with mandatory human approval
+- L6: production controlled decision-support only with legal/procurement governance, audit, fairness and appeal/override
+
+### Anti-Fake / Anti-Inflation Boundaries by Lane
+
+| Lane | Forbidden Claims | Forbidden Runtime Behavior | Required Safety Evidence |
+|---|---|---|---|
+| provider-readiness | live provider integrated, production-ready connector, real provider status | live provider calls, credentials/secrets usage, external submission, side effects | non-live labeling, tenant fail-closed behavior, permission checks, audit log boundary |
+| Brain governance | autonomous Brain decisions, model-driven execution completed | model-triggered action execution, hidden scoring, workflow dispatch | deterministic logic evidence, explainability fields, human-review boundary, audit trail |
+| sensitive-domain | automatic sanction/aid/accommodation/eligibility decisions | hidden ranking/scoring, disciplinary/legal decision execution | explicit human-review requirement, appeal boundary, fairness and audit controls |
+| autonomy | autonomous approvals/rejections/submissions completed | send/submit/approve/reject/delete automation | draft-only evidence, human-approval gate, immutable audit trail |
+| policy/procurement | automated procurement award or policy enforcement live | approve/reject/award/ranking/financial commitment/contract execution | read-only readiness evidence, legal/procurement governance checks, audit boundary |
+
+### Candidate Routing Matrix (All 27 Remaining)
+
+| UCE ID | Candidate | Current State | Primary Lane | Secondary Lane | Recommended Sequence | First Safe Action |
+|---|---|---|---|---|---|---|
+| UCE-005 | performance_appraisal | L3 deterministic | sensitive-domain | none | Wave S1 | sensitive readiness specification |
+| UCE-024 | student_information_system_integration | L3 deterministic | provider-readiness | none | Wave P1 | provider profile/readiness specification |
+| UCE-047 | third_party_risk_policy | L3 deterministic | policy/procurement | sensitive-domain | Wave G1 | policy readiness specification |
+| UCE-048 | data_retention_policy_control | L3 deterministic | policy/procurement | sensitive-domain | Wave G1 | retention readiness specification |
+| UCE-054 | brain_decision_audit_trail | L3 deterministic | Brain governance | policy/procurement | Wave B1 | Brain governance specification |
+| UCE-057 | staff_probation_review | L3 deterministic | sensitive-domain | policy/procurement | Wave S1 | sensitive readiness specification |
+| UCE-098 | procurement_plan_approval_workflow | L3 deterministic | policy/procurement | Brain governance | Wave G1 | procurement readiness specification |
+| UCE-106 | learning_management_system_integration | L3 deterministic | provider-readiness | none | Wave P1 | provider profile/readiness specification |
+| UCE-109 | digital_signature_integration | L3 deterministic | provider-readiness | policy/procurement | Wave P1 | provider profile/readiness specification |
+| UCE-112 | regulatory_reporting_integration | L3 deterministic | provider-readiness | policy/procurement | Wave P1 | provider profile/readiness specification |
+| UCE-025 | finance_erp_integration | L2 envelope foundation | provider-readiness | policy/procurement | Wave P1 | provider registry foundation spec |
+| UCE-027 | email_gateway_integration | L2 envelope foundation | provider-readiness | none | Wave P1 | provider registry foundation spec |
+| UCE-028 | notification_gateway_integration | L2 envelope foundation | provider-readiness | none | Wave P1 | provider registry foundation spec |
+| UCE-030 | government_services_integration | L2 envelope foundation | provider-readiness | policy/procurement | Wave P1 | provider registry foundation spec |
+| UCE-108 | identity_provider_integration | L2 envelope foundation | provider-readiness | sensitive-domain | Wave P1 | provider registry foundation spec |
+| UCE-110 | payment_gateway_integration | L2 envelope foundation | provider-readiness | sensitive-domain | Wave P1 | provider registry foundation spec |
+| UCE-113 | hr_payroll_integration | L2 envelope foundation | provider-readiness | sensitive-domain | Wave P1 | provider registry foundation spec |
+| UCE-049 | student_risk_signal_registry | L2 envelope foundation | Brain governance | sensitive-domain | Wave B1 | signal registry governance spec |
+| UCE-050 | finance_anomaly_signal_registry | L2 envelope foundation | Brain governance | policy/procurement | Wave B1 | signal registry governance spec |
+| UCE-051 | academic_quality_signal_registry | L2 envelope foundation | Brain governance | none | Wave B1 | signal registry governance spec |
+| UCE-129 | procurement_risk_signal_registry | L2 envelope foundation | Brain governance | policy/procurement | Wave B1 | signal registry governance spec |
+| UCE-145 | safe_evidence_summary_agent | L2 envelope foundation | autonomy | Brain governance | Wave A1 | autonomy governance specification |
+| UCE-146 | safe_task_drafting_agent | L2 envelope foundation | autonomy | Brain governance | Wave A1 | autonomy governance specification |
+| UCE-007 | disciplinary_case_management | L2 envelope foundation | sensitive-domain | policy/procurement | Wave S1 | sensitive readiness specification |
+| UCE-078 | academic_integrity_case_management | L2 envelope foundation | sensitive-domain | policy/procurement | Wave S1 | sensitive readiness specification |
+| UCE-081 | disability_support_services | L2 envelope foundation | sensitive-domain | policy/procurement | Wave S1 | sensitive readiness specification |
+| UCE-082 | student_financial_hardship | L2 envelope foundation | sensitive-domain | policy/procurement | Wave S1 | sensitive readiness specification |
+
+### Safe Runtime Sequence Options after A-029.1
+
+| Option | Value | Risk | Effort | Recommended? | Reason |
+|---|---:|---:|---:|---|---|
+| Option A — provider-readiness foundation | 5 | 3 | 3 | YES | high enterprise value with controllable non-live boundaries |
+| Option B — Brain governance foundation | 5 | 4 | 4 | CONDITIONAL | strategic value but higher anti-fake control burden |
+| Option C — sensitive-domain readiness foundation | 5 | 5 | 4 | CONDITIONAL | high institutional value but legal/ethical caution is strongest |
+| Option D — policy/procurement readiness foundation | 4 | 4 | 3 | CONDITIONAL | governance value high with procurement/legal constraints |
+| Option E — product/demo evidence package | 4 | 1 | 2 | CONDITIONAL | low runtime risk and high commercial value but does not reduce lane backlog |
+| Option F — full release quality remediation | 4 | 2 | 4 | CONDITIONAL | quality uplift without feature movement |
+
+### Selected Next Action
+
+- selected_option: Option A (as first post-foundation lane execution path)
+- action_id: A-029.2-SPEC
+- action_title: Provider Readiness Foundation Batch 1
+- rationale:
+    - provider lane has highest enterprise integration value while remaining non-live
+    - safer than immediate Brain/autonomy/sensitive execution progression
+    - creates deterministic provider-readiness architecture without fake live claims
+
+### Selected Next Action Scope (A-029.2-SPEC)
+
+- mode: SPEC_ONLY
+- expected_report: `A-029.2-SPEC-PROVIDER_READINESS_FOUNDATION_BATCH1_REPORT.md`
+- in_scope:
+    - select provider-readiness batch from evidenced provider candidates only
+    - define provider registry/profile readiness model and capability matrix
+    - define no-live-call, no-credential, no-external-submission boundary
+    - define expected runtime files and tests for future runtime action (specification only)
+    - preserve baseline/extension/expansion metric separation
+- out_of_scope:
+    - no runtime implementation
+    - no provider calls or credentials
+    - no Brain/autonomy/sensitive decision execution
+    - no workflow execution and no DB mutation
+
+### Baseline / Extension / Expansion Separation Review
+
+- baseline metrics unchanged: PASS
+- extension metrics unchanged: PASS
+- expansion metrics unchanged: PASS
+- baseline_impact = 0: PASS
+- extension_impact = 0: PASS
+- no maturity inflation and no L5/L6 jump claims: PASS
+
+### Anti-Fake / Anti-Inflation Review
+
+- no runtime code changes in A-029.1-SPEC: PASS
+- no provider integration implementation: PASS
+- no Brain execution implementation: PASS
+- no autonomy execution implementation: PASS
+- no sensitive-domain decision implementation: PASS
+- no fake KPI/dashboard/synthetic score: PASS
+- no external submission/workflow execution/DB mutation: PASS
+
+### Final Decision
+
+- final_verdict: A-029.1-SPEC CLOSED - PASS
+- status: ready_for_A-029.2-SPEC
+- last_completed_action_id: A-029.1-SPEC
+- next_action_id: A-029.2-SPEC
 
 
