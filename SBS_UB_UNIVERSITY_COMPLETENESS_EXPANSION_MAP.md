@@ -6498,3 +6498,155 @@ Policy/procurement lane:
 - status: ready_for_A-029.2-SPEC
 - last_completed_action_id: A-029.1-SPEC
 - next_action_id: A-029.2-SPEC
+
+## A-029.2-SPEC - Provider Readiness Foundation Batch 1
+
+### Source State
+
+- input action: A-029.1-SPEC CLOSED - PASS
+- input next action: A-029.2-SPEC
+- runtime started: NO
+- objective: choose concrete provider-readiness runtime batch with strict non-live boundaries
+
+### Provider-Readiness Inventory (11)
+
+| UCE ID | Candidate | Generic Module | Current State | KZ Profile | Future GCC Placeholder | Selected in Batch 1 |
+|---|---|---|---|---|---|---|
+| UCE-024 | student_information_system_integration | student_information_system_integration | L3 deterministic | PLATONUS_KZ | SA_SIS_PROVIDER | YES |
+| UCE-025 | finance_erp_integration | finance_erp_integration | L2 envelope foundation | ONE_C_KZ | SA_ERP_PROVIDER | YES |
+| UCE-030 | government_services_integration | government_services_integration | L2 envelope foundation | EGOV_KZ | SA_GOVERNMENT_SERVICES_PROVIDER | YES |
+| UCE-112 | regulatory_reporting_integration | regulatory_reporting_integration | L3 deterministic | MINISTRY_KZ | SA_REGULATORY_REPORTING_PROVIDER | YES |
+| UCE-109 | digital_signature_integration | digital_signature_integration | L3 deterministic | EDS_KZ | SA_DIGITAL_SIGNATURE_PROVIDER | YES |
+| UCE-108 | identity_provider_integration | identity_provider_integration | L2 envelope foundation | IDP_SSO_KZ | SA_IDENTITY_PROVIDER | YES |
+| UCE-027 | email_gateway_integration | email_gateway_integration | L2 envelope foundation | EMAIL_GATEWAY_KZ | SA_EMAIL_PROVIDER | NO |
+| UCE-028 | notification_gateway_integration | notification_gateway_integration | L2 envelope foundation | SMS_GATEWAY_KZ | SA_SMS_PROVIDER | NO |
+| UCE-110 | payment_gateway_integration | payment_gateway_integration | L2 envelope foundation | PAYMENT_GATEWAY_KZ | SA_PAYMENT_PROVIDER | NO |
+| UCE-113 | hr_payroll_integration | hr_payroll_integration | L2 envelope foundation | HR_PAYROLL_KZ | SA_HR_PAYROLL_PROVIDER | NO |
+| UCE-106 | learning_management_system_integration | learning_management_system_integration | L3 deterministic | LMS_KZ | SA_LMS_PROVIDER | NO |
+
+Inventory reconciliation:
+- provider_readiness_inventory_count = 11
+- selected_batch1_count = 6
+- deferred_provider_count = 5
+
+### Option Matrix
+
+| Option | Scope | Count | Value | Risk | Effort | Recommended | Rationale |
+|---|---|---:|---:|---:|---:|---|---|
+| Option A | full provider inventory | 11 | 5 | 4 | 5 | NO | too broad for first controlled runtime step |
+| Option B | core provider subset | 6 | 5 | 3 | 3 | CONDITIONAL | strong but not explicitly country-adapter-first narrative |
+| Option C | gateway-only subset | 4 | 3 | 2 | 2 | NO | lower enterprise integration value |
+| Option D | Kazakhstan-first core provider subset | 6 | 5 | 3 | 3 | YES | best value/risk balance under strict non-live boundary |
+
+### Selected Batch
+
+- selected_option: Option D
+- selected_batch:
+	- UCE-024 student_information_system_integration
+	- UCE-025 finance_erp_integration
+	- UCE-030 government_services_integration
+	- UCE-109 digital_signature_integration
+	- UCE-112 regulatory_reporting_integration
+	- UCE-108 identity_provider_integration
+- deferred_next_provider_candidates:
+	- UCE-027 email_gateway_integration
+	- UCE-028 notification_gateway_integration
+	- UCE-110 payment_gateway_integration
+	- UCE-113 hr_payroll_integration
+	- UCE-106 learning_management_system_integration
+
+### Provider Model (A-029.2-RUNTIME Blueprint)
+
+Expected deterministic model outputs per selected candidate:
+- provider_profile metadata
+- required capability matrix
+- required evidence list
+- missing evidence list
+- security/legal/audit/rollback requirements
+- explicit NON_LIVE_READINESS status and forbidden live actions
+
+Required invariants:
+- live_calls_enabled = False
+- credentials_configured = False
+- external_submission_enabled = False
+- provider_connected = False
+- provider_status_claim = NOT_CONNECTED_NON_LIVE_PROFILE_ONLY
+- tenant_fail_closed = True
+
+### No-Live Boundary (Hard Prohibition)
+
+Forbidden in A-029.2-RUNTIME:
+- live external provider calls
+- secrets/credentials/token provisioning
+- external submission/sync actions
+- digital signing/identity bind/payment initiation
+- success/connected/live status claims
+
+Allowed in A-029.2-RUNTIME:
+- deterministic readiness contracts
+- capability/evidence/readiness summaries
+- tenant-safe fail-closed validation
+- read-only profile classification output
+
+### Candidate-by-Candidate Runtime Specification
+
+| Candidate | Expected Runtime Function | Required Focus | Forbidden Behavior |
+|---|---|---|---|
+| student_information_system_integration | get_student_information_system_provider_readiness_summary | SIS profile/capability/evidence readiness | no SIS live query/sync |
+| finance_erp_integration | get_finance_erp_provider_readiness_summary | ERP profile/capability/evidence readiness | no posting/payment sync |
+| government_services_integration | get_government_services_provider_readiness_summary | eGov profile/capability/evidence readiness | no external governmental submission |
+| digital_signature_integration | get_digital_signature_provider_readiness_summary | signature profile/security/evidence readiness | no signing/cert validation/key storage |
+| regulatory_reporting_integration | get_regulatory_reporting_provider_readiness_summary | reporting profile/compliance readiness | no report upload/submission |
+| identity_provider_integration | get_identity_provider_provider_readiness_summary | IdP profile/auth readiness | no bind/token/provisioning |
+
+### Expected Runtime Files and Tests
+
+Expected runtime files (specification only):
+- backend/app/modules/student_information_system_integration/service.py
+- backend/app/modules/finance_erp_integration/service.py
+- backend/app/modules/government_services_integration/service.py
+- backend/app/modules/digital_signature_integration/service.py
+- backend/app/modules/regulatory_reporting_integration/service.py
+- backend/app/modules/identity_provider_integration/service.py
+- backend/tests/test_a0292_provider_readiness_foundation_batch1.py
+
+Expected test coverage themes:
+- deterministic output shape and non-live readiness status
+- tenant fail-closed behavior
+- forbidden live actions and credentials/submission zeros
+- candidate-specific forbidden action assertions
+- no DB mutation/no workflow execution guarantees
+
+### Expected Metric Movement
+
+For A-029.2-SPEC: no runtime metric movement.
+
+Formula-only anchors for A-029.2-RUNTIME (N = number of implemented provider-readiness modules):
+- A0292_provider_readiness_foundation_count = N
+- provider_readiness_foundation_count = N
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- baseline_impact = 0
+- extension_impact = 0
+
+### Anti-Fake Review
+
+- no runtime implementation in A-029.2-SPEC: PASS
+- no fake provider connected/live claim: PASS
+- no credentials or external submission: PASS
+- no Brain/autonomy/sensitive runtime claim: PASS
+- no baseline/extension metric movement in SPEC: PASS
+
+### Selected Next Action
+
+- action_id: A-029.2-RUNTIME
+- action_title: Provider Readiness Foundation Batch 1 Runtime (non-live only)
+- mode: RUNTIME_IMPLEMENTATION_WITH_STRICT_NON_LIVE_BOUNDARY
+
+### Final Decision
+
+- final_verdict: A-029.2-SPEC CLOSED - PASS
+- status: ready_for_A-029.2-RUNTIME
+- last_completed_action_id: A-029.2-SPEC
+- next_action_id: A-029.2-RUNTIME

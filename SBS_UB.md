@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-029.2-SPEC
-    - current_stage: A-029.1-SPEC complete / risk lane foundation map and boundaries specified
-    - last_completed_action_id: A-029.1-SPEC
-    - next_action_id: A-029.2-SPEC
-    - updated_at: 2026-05-16 (A-029.1-SPEC completed as planning-only; 10+17 candidates assigned to primary lanes; lane maturity rules and anti-fake boundaries locked; selected next action A-029.2-SPEC provider-readiness foundation)
+    - status: ready_for_A-029.2-RUNTIME
+    - current_stage: A-029.2-SPEC complete / provider readiness foundation batch selected
+    - last_completed_action_id: A-029.2-SPEC
+    - next_action_id: A-029.2-RUNTIME
+    - updated_at: 2026-05-16 (A-029.2-SPEC completed as planning-only; provider-readiness inventory reconciled to 11; Kazakhstan-first core batch selected with strict NON_LIVE_READINESS boundaries; no runtime code)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -10492,5 +10492,315 @@ Policy/procurement lane:
 - status: ready_for_A-029.2-SPEC
 - last_completed_action_id: A-029.1-SPEC
 - next_action_id: A-029.2-SPEC
+
+## A-029.2-SPEC - Provider Readiness Foundation Batch 1
+
+### Strategic Decision
+
+- action_id: A-029.2-SPEC
+- mode: SPEC_ONLY_PLANNING
+- runtime_implementation_started: NO
+- selected_option: Option D (Kazakhstan-first core provider batch)
+- selected_count: 6
+- next_action_id: A-029.2-RUNTIME
+
+### Source-of-Truth Confirmation
+
+- source action verified: A-029.1-SPEC commit fe178aa
+- source verdict verified: A-029.1-SPEC CLOSED - PASS
+- source next action verified: A-029.2-SPEC
+- selected next lane verified: provider-readiness foundation
+- provider lane inventory verified: 11 total (4 from remaining L3-not-L4, 7 from remaining L2-only)
+- runtime status at A-029.2-SPEC: NOT STARTED
+
+### Current Metrics (Locked, Unchanged)
+
+- baseline metrics preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension metrics preserved: extension_total_count=25, total_tracked_modules=175
+- expansion metrics preserved:
+    - expansion_L2_foundation_count = 67
+    - expansion_runtime_implemented_count = 67
+    - expansion_L3_logic_count = 50
+    - remaining_L2_only = 17
+    - remaining_L3_not_L4 = 10
+    - expansion_L4_visibility_count = 40
+    - expansion_L4_api_route_count = 40
+    - expansion_L4_consolidated_summary_count = 1
+    - expansion_L4_consolidated_candidate_count = 40
+    - baseline_impact = 0
+    - extension_impact = 0
+
+### Provider-Readiness Inventory (Authoritative 11)
+
+| UCE ID | Candidate | Generic Module | Domain | Current State | Provider Type | KZ Profile | Future GCC Placeholder | Risk | Batch 1? |
+|---|---|---|---|---|---|---|---|---|---|
+| UCE-024 | student_information_system_integration | student_information_system_integration | Integrations | L3 deterministic | SIS | PLATONUS_KZ | SA_SIS_PROVIDER | live-call/credentials/external-submission risk | YES |
+| UCE-025 | finance_erp_integration | finance_erp_integration | Integrations | L2 envelope foundation | Finance ERP | ONE_C_KZ | SA_ERP_PROVIDER | live-call/credentials/financial-side-effect risk | YES |
+| UCE-030 | government_services_integration | government_services_integration | Integrations | L2 envelope foundation | Government services | EGOV_KZ | SA_GOVERNMENT_SERVICES_PROVIDER | live-call/credentials/external-submission risk | YES |
+| UCE-112 | regulatory_reporting_integration | regulatory_reporting_integration | Integrations | L3 deterministic | Regulatory reporting | MINISTRY_KZ | SA_REGULATORY_REPORTING_PROVIDER | submission/status-claim risk | YES |
+| UCE-109 | digital_signature_integration | digital_signature_integration | Integrations | L3 deterministic | Digital signature / EDS | EDS_KZ | SA_DIGITAL_SIGNATURE_PROVIDER | signing/credential/key-storage risk | YES |
+| UCE-108 | identity_provider_integration | identity_provider_integration | Integrations | L2 envelope foundation | Identity provider / SSO | IDP_SSO_KZ | SA_IDENTITY_PROVIDER | bind/token/provisioning risk | YES |
+| UCE-027 | email_gateway_integration | email_gateway_integration | Integrations | L2 envelope foundation | Email gateway | EMAIL_GATEWAY_KZ | SA_EMAIL_PROVIDER | send/external-submission risk | NO |
+| UCE-028 | notification_gateway_integration | notification_gateway_integration | Integrations | L2 envelope foundation | Notification / SMS gateway | SMS_GATEWAY_KZ | SA_SMS_PROVIDER | send/external-submission risk | NO |
+| UCE-110 | payment_gateway_integration | payment_gateway_integration | Integrations | L2 envelope foundation | Payment gateway | PAYMENT_GATEWAY_KZ | SA_PAYMENT_PROVIDER | financial-side-effect risk | NO |
+| UCE-113 | hr_payroll_integration | hr_payroll_integration | Integrations | L2 envelope foundation | HR payroll | HR_PAYROLL_KZ | SA_HR_PAYROLL_PROVIDER | payroll-side-effect and PII risk | NO |
+| UCE-106 | learning_management_system_integration | learning_management_system_integration | Integrations | L3 deterministic | LMS | LMS_KZ | SA_LMS_PROVIDER | sync/status-claim risk | NO |
+
+### Provider Classification
+
+| Provider Type | Candidate | Risk Level | Safe First Capability | Must Avoid |
+|---|---|---|---|---|
+| SIS / student information system | student_information_system_integration | HIGH | profile registry and capability matrix | live SIS query, enrollment/grade sync |
+| Finance ERP | finance_erp_integration | HIGH | profile registry and ledger-readiness requirements | financial posting, invoice/payment sync |
+| Government services | government_services_integration | HIGH | profile registry and legal/readiness requirements | citizen query or external submission |
+| Regulatory reporting | regulatory_reporting_integration | HIGH | reporting-readiness profile and evidence checklist | report upload/submission or success claim |
+| Digital signature / EDS | digital_signature_integration | HIGH | signature-readiness profile and security requirements | signing, cert validation, key storage |
+| Identity provider / SSO | identity_provider_integration | HIGH | idp profile and auth-readiness capability matrix | live bind, token issuance, provisioning |
+| Email gateway | email_gateway_integration | MEDIUM | delivery-readiness profile | live email send |
+| Notification / SMS gateway | notification_gateway_integration | MEDIUM | channel-readiness profile | live SMS/push send |
+| Payment gateway | payment_gateway_integration | HIGH | payment-readiness profile | payment initiation/settlement |
+| HR payroll | hr_payroll_integration | HIGH | payroll-readiness profile | payroll update/sync |
+| LMS / learning management system | learning_management_system_integration | MEDIUM-HIGH | LMS-readiness profile | assignment/grade sync |
+
+### Batch Selection Options
+
+| Option | Count | Value | Risk | Effort | Recommended | Reason |
+|---|---:|---:|---:|---:|---|---|
+| Option A - full 11 provider candidates | 11 | 5 | 4 | 5 | NO | comprehensive but too broad for first runtime batch |
+| Option B - core 6 provider candidates | 6 | 5 | 3 | 3 | CONDITIONAL | strong backbone but not explicitly KZ-context labeled |
+| Option C - gateway/provider-light | 4 | 3 | 2 | 2 | NO | lower strategic impact for university core |
+| Option D - Kazakhstan-first core batch | 6 | 5 | 3 | 3 | YES | best enterprise fit with strict non-live readiness boundary |
+
+### Selected Batch 1 Provider Candidates
+
+- selected_option: Option D
+- selected_count: 6
+- selected_candidates:
+    - UCE-024 student_information_system_integration (PLATONUS_KZ)
+    - UCE-025 finance_erp_integration (ONE_C_KZ)
+    - UCE-030 government_services_integration (EGOV_KZ)
+    - UCE-109 digital_signature_integration (EDS_KZ)
+    - UCE-112 regulatory_reporting_integration (MINISTRY_KZ)
+    - UCE-108 identity_provider_integration (IDP_SSO_KZ)
+
+### Provider Registry / Profile Model (Specification)
+
+Provider Profile fields:
+- provider_profile_id
+- tenant_id
+- provider_type
+- provider_key
+- provider_label
+- country_profile
+- target_system
+- integration_mode = NON_LIVE_READINESS
+- live_calls_enabled = False
+- credentials_configured = False
+- credential_reference = None
+- external_submission_enabled = False
+- sandbox_supported
+- required_capabilities
+- optional_capabilities
+- required_evidence
+- missing_evidence
+- data_categories
+- pii_risk_level
+- legal_basis_required
+- security_review_required
+- owner_role
+- approval_required_before_live
+- audit_required = True
+- rollback_required_before_live = True
+- status = READINESS_PROFILE_ONLY
+
+Provider Readiness Summary fields:
+- tenant_id
+- module
+- uce_id
+- provider_type
+- provider_key
+- readiness_level = L2_PROVIDER_READINESS_FOUNDATION
+- maturity_target = L2
+- integration_mode = NON_LIVE_READINESS
+- live_calls_enabled = False
+- credentials_configured = False
+- external_submission_enabled = False
+- provider_connected = False
+- provider_status_claim = NOT_CONNECTED_NON_LIVE_PROFILE_ONLY
+- readiness_summary
+- capability_matrix
+- missing_configuration_evidence
+- security_requirements
+- legal_requirements
+- audit_requirements
+- rollback_requirements
+- allowed_actions
+- forbidden_actions
+- tenant_scoped = True
+- read_only = True
+- no_mutation = True
+- no_provider_call = True
+- no_credentials = True
+- no_external_submission = True
+- no_fake_integration_status = True
+- no_sync_claim = True
+- no_l4_claim = True
+- no_l5_claim = True
+- no_l6_claim = True
+
+### No-Live-Call Boundary
+
+A-029.2-RUNTIME must not:
+- call external providers
+- store/validate credentials
+- perform connection checks or live status checks
+- perform sync or submission
+- send email/SMS/payment transactions
+- sign documents
+- query SIS/ERP/eGov/EDS/LMS/IDP/payroll endpoints
+- claim connected/provider-available/sync-working status
+
+Allowed in A-029.2-RUNTIME:
+- deterministic provider profile dictionaries/contracts
+- capability matrices
+- required evidence and missing evidence outputs
+- readiness classification
+- security/legal/audit/rollback requirements
+- tenant fail-closed behavior
+- explicit NON_LIVE_READINESS labeling
+
+### Candidate-Specific Provider Readiness Specs (Batch 1)
+
+student_information_system_integration:
+- UCE ID: UCE-024
+- Provider type: SIS
+- KZ profile: PLATONUS_KZ
+- Future GCC placeholder: SA_SIS_PROVIDER
+- Target runtime maturity: L2 provider readiness foundation
+- Expected future service function: get_student_information_system_provider_readiness_summary
+- Expected tests: profile fields, non-live flags, forbidden live actions, determinism
+- Forbidden: no Platonus API calls, no enrollment/grade sync, no live credential checks
+
+finance_erp_integration:
+- UCE ID: UCE-025
+- Provider type: Finance ERP
+- KZ profile: ONE_C_KZ
+- Future GCC placeholder: SA_ERP_PROVIDER
+- Target runtime maturity: L2 provider readiness foundation
+- Expected future service function: get_finance_erp_provider_readiness_summary
+- Expected tests: profile fields, non-live flags, financial action forbids, determinism
+- Forbidden: no 1C calls, no posting/sync, no credential validation
+
+government_services_integration:
+- UCE ID: UCE-030
+- Provider type: Government services
+- KZ profile: EGOV_KZ
+- Future GCC placeholder: SA_GOVERNMENT_SERVICES_PROVIDER
+- Target runtime maturity: L2 provider readiness foundation
+- Expected future service function: get_government_services_provider_readiness_summary
+- Expected tests: profile fields, non-live flags, submission forbids, determinism
+- Forbidden: no eGov calls, no external submission, no query/status claims
+
+digital_signature_integration:
+- UCE ID: UCE-109
+- Provider type: Digital signature / EDS
+- KZ profile: EDS_KZ
+- Future GCC placeholder: SA_DIGITAL_SIGNATURE_PROVIDER
+- Target runtime maturity: L2 provider readiness foundation
+- Expected future service function: get_digital_signature_provider_readiness_summary
+- Expected tests: profile fields, non-live flags, signing/key-storage forbids, determinism
+- Forbidden: no signing, no certificate validation, no key storage
+
+regulatory_reporting_integration:
+- UCE ID: UCE-112
+- Provider type: Regulatory reporting
+- KZ profile: MINISTRY_KZ
+- Future GCC placeholder: SA_REGULATORY_REPORTING_PROVIDER
+- Target runtime maturity: L2 provider readiness foundation
+- Expected future service function: get_regulatory_reporting_provider_readiness_summary
+- Expected tests: profile fields, non-live flags, submission/status-claim forbids, determinism
+- Forbidden: no ministry submission/upload, no compliance success claim
+
+identity_provider_integration:
+- UCE ID: UCE-108
+- Provider type: Identity provider / SSO
+- KZ profile: IDP_SSO_KZ
+- Future GCC placeholder: SA_IDENTITY_PROVIDER
+- Target runtime maturity: L2 provider readiness foundation
+- Expected future service function: get_identity_provider_provider_readiness_summary
+- Expected tests: profile fields, non-live flags, auth action forbids, determinism
+- Forbidden: no live login, no LDAP/AD bind, no token issuance/provisioning
+
+### Expected A-029.2-RUNTIME Files (Specification Only)
+
+- backend/app/modules/student_information_system_integration/service.py
+- backend/app/modules/finance_erp_integration/service.py
+- backend/app/modules/government_services_integration/service.py
+- backend/app/modules/digital_signature_integration/service.py
+- backend/app/modules/regulatory_reporting_integration/service.py
+- backend/app/modules/identity_provider_integration/service.py
+- backend/tests/test_a0292_provider_readiness_foundation_batch1.py
+- SBS_UB.md
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md
+- A-029.2-RUNTIME-PROVIDER_READINESS_FOUNDATION_BATCH1_REPORT.md
+
+### Test Plan for A-029.2-RUNTIME
+
+Preferred test file:
+- backend/tests/test_a0292_provider_readiness_foundation_batch1.py
+
+Required groups (summary):
+- import/function existence for selected modules
+- tenant fail-closed and valid tenant acceptance
+- provider profile/readiness output fields
+- NON_LIVE_READINESS flags and no-provider-call/credential/submission guarantees
+- provider_connected false and NOT_CONNECTED_NON_LIVE_PROFILE_ONLY status claim
+- capability/missing-evidence/security/legal/audit/rollback fields
+- candidate-specific forbidden actions and determinism checks
+- no external HTTP libs, no secrets, no DB mutation, no API route behavior
+- baseline/extension unchanged and expansion separation preserved
+
+Expected assertion volume:
+- 80-180 (depending final selected runtime assertion granularity)
+
+### Expected Metric Movement (Formula Only)
+
+- A-029.2-SPEC metric movement: none
+- if A-029.2-RUNTIME implements N provider-readiness foundations:
+    - A0292_provider_readiness_foundation_count = N
+    - provider_readiness_foundation_count = N
+    - provider_live_call_count = 0
+    - provider_credentials_count = 0
+    - provider_external_submission_count = 0
+    - baseline_impact = 0
+    - extension_impact = 0
+    - ordinary L4 counts remain unchanged unless future SPEC explicitly changes them
+
+### Runtime Non-Claims
+
+- no live provider integration claim
+- no connected/sync-working claim
+- no external submission claim
+- no production integration claim
+- no L4/L5/L6 uplift claim in A-029.2-RUNTIME by default
+
+### Anti-Fake / Anti-Inflation Review
+
+- no code implementation in A-029.2-SPEC: PASS
+- no runtime implementation started: PASS
+- no live provider calls: PASS
+- no credentials/secrets/tokens: PASS
+- no external submission: PASS
+- no fake provider success claims: PASS
+- no Brain/autonomy/sensitive decision execution: PASS
+- baseline and extension unchanged: PASS
+- expansion metrics unchanged in SPEC: PASS
+
+### Final Decision
+
+- final_verdict: A-029.2-SPEC CLOSED - PASS
+- status: ready_for_A-029.2-RUNTIME
+- last_completed_action_id: A-029.2-SPEC
+- next_action_id: A-029.2-RUNTIME
 
 
