@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-029.3-SPEC
-    - current_stage: A-029.2-RUNTIME complete / provider readiness foundation batch 1 implemented
-    - last_completed_action_id: A-029.2-RUNTIME
-    - next_action_id: A-029.3-SPEC
-    - updated_at: 2026-05-16 (A-029.2-RUNTIME completed for 6 selected provider-readiness foundations under strict NON_LIVE_READINESS boundary; no live provider calls, no credentials, no external submissions, no connected/sync claims)
+    - status: ready_for_A-029.3-RUNTIME
+    - current_stage: A-029.3-SPEC complete / provider readiness foundation batch 2 selected
+    - last_completed_action_id: A-029.3-SPEC
+    - next_action_id: A-029.3-RUNTIME
+    - updated_at: 2026-05-16 (A-029.3-SPEC completed as planning-only; deferred provider-gateway inventory reconciled to 5; full deferred batch selected with strict NON_LIVE_READINESS boundaries; no runtime code)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -10918,5 +10918,365 @@ Provider-readiness runtime metrics:
 - status: ready_for_A-029.3-SPEC
 - last_completed_action_id: A-029.2-RUNTIME
 - next_action_id: A-029.3-SPEC
+
+## A-029.3-SPEC - Provider Readiness Foundation Batch 2 / Deferred Provider Gateways
+
+### Strategic Decision
+
+- action_id: A-029.3-SPEC
+- mode: SPEC_ONLY_PLANNING
+- runtime_implementation_started: NO
+- selected_option: Option A (full deferred provider batch)
+- selected_count: 5
+- next_action_id: A-029.3-RUNTIME
+
+### Source-of-Truth Confirmation
+
+- source action verified: A-029.2-RUNTIME commit dea92c5
+- source verdict verified: A-029.2-RUNTIME CLOSED - PASS
+- source next action verified: A-029.3-SPEC
+- provider readiness cumulative count entering A-029.3-SPEC: 6
+- A-029.3 runtime status at spec time: NOT STARTED
+
+### Current Metrics (Locked, Unchanged)
+
+- baseline metrics preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension metrics preserved: extension_total_count=25, total_tracked_modules=175
+- ordinary expansion metrics preserved:
+    - expansion_L2_foundation_count = 67
+    - expansion_runtime_implemented_count = 67
+    - expansion_L3_logic_count = 50
+    - remaining_L2_only = 17
+    - remaining_L3_not_L4 = 10
+    - expansion_L4_visibility_count = 40
+    - expansion_L4_api_route_count = 40
+    - expansion_L4_consolidated_summary_count = 1
+    - expansion_L4_consolidated_candidate_count = 40
+    - baseline_impact = 0
+    - extension_impact = 0
+- provider readiness metrics preserved:
+    - A0292_provider_readiness_foundation_count = 6
+    - provider_readiness_foundation_count = 6
+    - provider_live_call_count = 0
+    - provider_credentials_count = 0
+    - provider_external_submission_count = 0
+    - provider_connected_count = 0
+    - provider_sync_count = 0
+
+### Deferred Provider Inventory (5)
+
+| UCE ID | Candidate | Generic Module | Provider Type | Current State | KZ Profile | Future GCC Placeholder | Risk | Batch 2? |
+|---|---|---|---|---|---|---|---|---|
+| UCE-027 | email_gateway_integration | email_gateway_integration | EMAIL_GATEWAY | L2 envelope foundation | EMAIL_GATEWAY_KZ | SA_EMAIL_PROVIDER | outbound email / credential / delivery status risk | YES |
+| UCE-028 | notification_gateway_integration | notification_gateway_integration | NOTIFICATION_SMS_GATEWAY | L2 envelope foundation | SMS_GATEWAY_KZ | SA_SMS_PROVIDER | outbound SMS / push / delivery status risk | YES |
+| UCE-110 | payment_gateway_integration | payment_gateway_integration | PAYMENT_GATEWAY | L2 envelope foundation | PAYMENT_GATEWAY_KZ | SA_PAYMENT_PROVIDER | financial side-effect / reconciliation risk | YES |
+| UCE-113 | hr_payroll_integration | hr_payroll_integration | HR_PAYROLL | L2 envelope foundation | HR_PAYROLL_KZ | SA_HR_PAYROLL_PROVIDER | payroll / PII / posting risk | YES |
+| UCE-106 | learning_management_system_integration | learning_management_system_integration | LMS | L2 envelope foundation | LMS_KZ | SA_LMS_PROVIDER | course/user sync / grade export risk | YES |
+
+### Batch Selection Options
+
+| Option | Count | Value | Risk | Effort | Recommended | Reason |
+|---|---:|---:|---:|---:|---|---|
+| Option A - full deferred provider batch | 5 | 5 | 3 | 3 | YES | completes deferred provider readiness coverage with bounded non-live scope |
+| Option B - gateway-only batch | 3 | 4 | 3 | 2 | CONDITIONAL | coherent channel group, but leaves HR/LMS for later |
+| Option C - academic/HR batch | 2 | 3 | 2 | 2 | CONDITIONAL | narrow but leaves gateway and payment profiles deferred |
+
+### Selected Batch 2 Provider Candidates
+
+- selected_option: Option A
+- selected_count: 5
+- selected_candidates:
+    - UCE-027 email_gateway_integration (EMAIL_GATEWAY_KZ / SA_EMAIL_PROVIDER)
+    - UCE-028 notification_gateway_integration (SMS_GATEWAY_KZ / SA_SMS_PROVIDER)
+    - UCE-110 payment_gateway_integration (PAYMENT_GATEWAY_KZ / SA_PAYMENT_PROVIDER)
+    - UCE-113 hr_payroll_integration (HR_PAYROLL_KZ / SA_HR_PAYROLL_PROVIDER)
+    - UCE-106 learning_management_system_integration (LMS_KZ / SA_LMS_PROVIDER)
+
+### Provider Registry / Profile Model Reuse
+
+Reused A-029.2 provider profile model with the same non-live foundation fields:
+- provider_profile_id
+- tenant_id
+- provider_type
+- provider_key
+- provider_label
+- country_profile
+- target_system
+- integration_mode = NON_LIVE_READINESS
+- live_calls_enabled = False
+- credentials_configured = False
+- credential_reference = None
+- external_submission_enabled = False
+- sandbox_supported
+- required_capabilities
+- optional_capabilities
+- required_evidence
+- missing_evidence
+- data_categories
+- pii_risk_level
+- legal_basis_required
+- security_review_required
+- owner_role
+- approval_required_before_live
+- audit_required = True
+- rollback_required_before_live = True
+- status = READINESS_PROFILE_ONLY
+
+Reused readiness summary fields:
+- tenant_id
+- module
+- uce_id
+- provider_type
+- provider_key
+- readiness_level = L2_PROVIDER_READINESS_FOUNDATION
+- maturity_target = L2
+- integration_mode = NON_LIVE_READINESS
+- live_calls_enabled = False
+- credentials_configured = False
+- credential_reference = None
+- external_submission_enabled = False
+- provider_connected = False
+- provider_status_claim = NOT_CONNECTED_NON_LIVE_PROFILE_ONLY
+- sync_enabled = False
+- readiness_summary
+- capability_matrix
+- missing_configuration_evidence
+- security_requirements
+- legal_requirements
+- audit_requirements
+- rollback_requirements
+- allowed_actions
+- forbidden_actions
+- tenant_scoped = True
+- read_only = True
+- no_mutation = True
+- no_provider_call = True
+- no_credentials = True
+- no_external_submission = True
+- no_fake_integration_status = True
+- no_sync_claim = True
+- no_l4_claim = True
+- no_l5_claim = True
+- no_l6_claim = True
+
+### No-Live-Call Boundary
+
+A-029.3-RUNTIME must not:
+- call SMTP, SMS, push, payment, HR, or LMS providers
+- validate credentials or store tokens/secrets
+- initiate sends, dispatches, charges, refunds, payroll posting, sync, or course/user updates
+- claim delivery, payment success, payroll success, LMS sync, or provider connected status
+
+Allowed future runtime behavior:
+- deterministic readiness profiles and capability matrices
+- required/missing evidence classification
+- security/legal/audit/rollback requirements
+- tenant fail-closed behavior
+- explicit NON_LIVE_READINESS labeling
+
+### Candidate-by-Candidate Provider Readiness Specs
+
+email_gateway_integration:
+- UCE ID: UCE-027
+- Provider type: EMAIL_GATEWAY
+- KZ profile: EMAIL_GATEWAY_KZ
+- Future GCC placeholder: SA_EMAIL_PROVIDER
+- Current state: L2 envelope foundation
+- Target runtime maturity: L2 provider readiness foundation
+- Required capabilities: outbound channel boundary, template policy mapping, sender-domain policy mapping, audit mapping
+- Required evidence: email_provider_contract, consent_policy, template_policy, sender_domain_policy
+- Missing evidence examples: production sender approval, credential go-live approval
+- Security requirements: no SMTP/API call, no credential validation, tenant isolation
+- Legal requirements: consent and template policy review
+- Audit requirements: delivery boundary evidence, approval trail
+- Rollback requirements: disable email readiness toggle, revert to profile-only mode
+- Allowed actions: view readiness profile, review evidence gaps, prepare human review packet
+- Forbidden actions: no SMTP/API call, no email send, no credential validation, no delivery status claim, no external submission, no template dispatch
+- Non-claims: no live email, no delivery success, no connected status
+- Expected future service function: get_email_gateway_provider_readiness_foundation
+- Expected tests: tenant fail-closed, deterministic profile, no-send/no-credential/no-status claims
+
+notification_gateway_integration:
+- UCE ID: UCE-028
+- Provider type: NOTIFICATION_SMS_GATEWAY
+- KZ profile: SMS_GATEWAY_KZ
+- Future GCC placeholder: SA_SMS_PROVIDER
+- Current state: L2 envelope foundation
+- Target runtime maturity: L2 provider readiness foundation
+- Required capabilities: outbound notification boundary, channel policy mapping, message template policy, audit mapping
+- Required evidence: sms_provider_contract, consent_policy, message_template_policy, channel_boundary_policy
+- Missing evidence examples: production channel approval, sender/brand approval
+- Security requirements: no SMS gateway call, no push dispatch, tenant isolation
+- Legal requirements: consent and channel policy review
+- Audit requirements: dispatch boundary evidence, approval trail
+- Rollback requirements: disable notification readiness toggle, revert to profile-only mode
+- Allowed actions: view readiness profile, review evidence gaps, prepare human review packet
+- Forbidden actions: no SMS gateway call, no push dispatch, no WhatsApp/Telegram send, no delivery status claim, no credential validation, no external submission
+- Non-claims: no live notification, no delivery success, no connected status
+- Expected future service function: get_notification_gateway_provider_readiness_foundation
+- Expected tests: tenant fail-closed, deterministic profile, no-send/no-credential/no-status claims
+
+payment_gateway_integration:
+- UCE ID: UCE-110
+- Provider type: PAYMENT_GATEWAY
+- KZ profile: PAYMENT_GATEWAY_KZ
+- Future GCC placeholder: SA_PAYMENT_PROVIDER
+- Current state: L2 envelope foundation
+- Target runtime maturity: L2 provider readiness foundation
+- Required capabilities: payment boundary, reconciliation mapping, refund boundary, audit mapping
+- Required evidence: payment_provider_contract, reconciliation_policy, pci_boundary_policy, financial_governance_policy
+- Missing evidence examples: production payment approval, risk/compliance approval
+- Security requirements: no payment initiation, no card/bank data handling, no gateway API call
+- Legal requirements: payment governance and PCI boundary review
+- Audit requirements: payment boundary evidence, approval trail
+- Rollback requirements: disable payment readiness toggle, revert to profile-only mode
+- Allowed actions: view readiness profile, review evidence gaps, prepare human review packet
+- Forbidden actions: no payment initiation, no payment capture/refund, no card/bank data handling, no gateway API call, no reconciliation claim, no financial posting
+- Non-claims: no live payment, no settlement success, no connected status
+- Expected future service function: get_payment_gateway_provider_readiness_foundation
+- Expected tests: tenant fail-closed, deterministic profile, no-payment/no-credential/no-status claims
+
+hr_payroll_integration:
+- UCE ID: UCE-113
+- Provider type: HR_PAYROLL
+- KZ profile: HR_PAYROLL_KZ
+- Future GCC placeholder: SA_HR_PAYROLL_PROVIDER
+- Current state: L2 envelope foundation
+- Target runtime maturity: L2 provider readiness foundation
+- Required capabilities: payroll boundary, employee mapping, salary boundary, audit mapping
+- Required evidence: payroll_provider_contract, employee_mapping_policy, salary_boundary_policy, HR governance policy
+- Missing evidence examples: payroll production approval, employee data boundary approval
+- Security requirements: no payroll posting, no employee data sync, no HR provider API call
+- Legal requirements: HR/payroll governance and privacy review
+- Audit requirements: payroll boundary evidence, approval trail
+- Rollback requirements: disable payroll readiness toggle, revert to profile-only mode
+- Allowed actions: view readiness profile, review evidence gaps, prepare human review packet
+- Forbidden actions: no payroll posting, no salary calculation, no employee data sync, no HR provider API call, no credential validation, no external submission
+- Non-claims: no live payroll, no payroll success, no connected status
+- Expected future service function: get_hr_payroll_provider_readiness_foundation
+- Expected tests: tenant fail-closed, deterministic profile, no-posting/no-credential/no-status claims
+
+learning_management_system_integration:
+- UCE ID: UCE-106
+- Provider type: LMS
+- KZ profile: LMS_KZ
+- Future GCC placeholder: SA_LMS_PROVIDER
+- Current state: L2 envelope foundation
+- Target runtime maturity: L2 provider readiness foundation
+- Required capabilities: LMS boundary, course mapping, grade boundary, audit mapping
+- Required evidence: lms_provider_contract, course_mapping_policy, grade_sync_boundary_policy, content boundary policy
+- Missing evidence examples: production LMS approval, sync-governance approval
+- Security requirements: no LMS API call, no course/user sync, no grade import/export
+- Legal requirements: academic governance and privacy review
+- Audit requirements: LMS boundary evidence, approval trail
+- Rollback requirements: disable LMS readiness toggle, revert to profile-only mode
+- Allowed actions: view readiness profile, review evidence gaps, prepare human review packet
+- Forbidden actions: no LMS API call, no course/user sync, no grade import/export, no attendance sync, no content publish, no credential validation
+- Non-claims: no live LMS, no sync success, no connected status
+- Expected future service function: get_learning_management_system_provider_readiness_foundation
+- Expected tests: tenant fail-closed, deterministic profile, no-sync/no-credential/no-status claims
+
+### Expected Runtime Files
+
+Expected A-029.3-RUNTIME files:
+- backend/app/modules/email_gateway_integration/service.py
+- backend/app/modules/notification_gateway_integration/service.py
+- backend/app/modules/payment_gateway_integration/service.py
+- backend/app/modules/hr_payroll_integration/service.py
+- backend/app/modules/learning_management_system_integration/service.py
+- backend/tests/test_a0293_provider_readiness_foundation_batch2.py
+- SBS_UB.md
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md
+- A-029.3-RUNTIME-PROVIDER_READINESS_FOUNDATION_BATCH2_REPORT.md
+
+### Test Plan
+
+Preferred future test file:
+- backend/tests/test_a0293_provider_readiness_foundation_batch2.py
+
+Required groups:
+- selected module imports
+- provider readiness function exists for each selected module
+- tenant fail-closed rejects None / 0 / -1 / non-int
+- valid tenant accepted
+- output includes all common provider readiness fields
+- provider_type, provider_key, provider_label, country_profile, future_gcc_placeholder present
+- readiness_level == L2_PROVIDER_READINESS_FOUNDATION
+- maturity_target == L2
+- integration_mode == NON_LIVE_READINESS
+- live_calls_enabled is False
+- credentials_configured is False
+- credential_reference is None
+- external_submission_enabled is False
+- provider_connected is False
+- provider_status_claim == NOT_CONNECTED_NON_LIVE_PROFILE_ONLY
+- sync_enabled is False
+- capability_matrix present
+- required_evidence present
+- missing_configuration_evidence present
+- security_review_required present
+- legal_basis_required present
+- audit_required is True
+- rollback_required_before_live is True
+- no_provider_call/no_credentials/no_external_submission/no_fake_integration_status/no_sync_claim/no_l4_claim/no_l5_claim/no_l6_claim
+- candidate-specific provider_key and future placeholder match expected values
+- candidate-specific forbidden actions present
+- deterministic output for same tenant
+- no external HTTP libraries used in selected changed files
+- no credentials/secrets/API keys in selected changed files
+- no DB mutation in selected changed files
+- no API route behavior
+- baseline metrics unchanged
+- extension metrics unchanged
+- ordinary L4 metrics unchanged
+- cumulative provider_readiness_foundation_count expected to become 11
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+
+### Expected Metric Movement
+
+For A-029.3-SPEC: no runtime metric movement.
+
+Formula-only anchors for A-029.3-RUNTIME (5 modules):
+- A0293_provider_readiness_foundation_count = 5
+- provider_readiness_foundation_count = 11
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+- baseline_impact = 0
+- extension_impact = 0
+- ordinary L4 counts remain unchanged
+
+### Anti-Fake / Anti-Inflation Review
+
+- no runtime implementation in A-029.3-SPEC: PASS
+- no live provider calls: PASS
+- no credentials/secrets/tokens: PASS
+- no external submission: PASS
+- no fake provider success claims: PASS
+- no provider connected claims: PASS
+- no Brain/autonomy/sensitive runtime claim: PASS
+- no baseline/extension metric movement in SPEC: PASS
+- provider readiness tracked separately: PASS
+
+### Runtime Non-Claims
+
+- no live provider integration claim
+- no connected/sync-working claim
+- no external submission claim
+- no production integration claim
+- no L4/L5/L6 provider maturity claim
+
+### Final Decision
+
+- final_verdict: A-029.3-SPEC CLOSED - PASS
+- status: ready_for_A-029.3-RUNTIME
+- last_completed_action_id: A-029.3-SPEC
+- next_action_id: A-029.3-RUNTIME
 
 
