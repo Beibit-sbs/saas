@@ -104,3 +104,107 @@ def get_email_gateway_integration_integration_contract(tenant_id: int, payload: 
         "next_maturity_gap": "L3 deterministic integration readiness logic required",
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def get_email_gateway_provider_readiness_foundation(tenant_id: int) -> dict:
+    """Return deterministic A-029.3 provider readiness foundation (NON_LIVE_READINESS)."""
+    tenant_id = validate_tenant_id(tenant_id)
+
+    required_capabilities = [
+        "sender identity boundary",
+        "template dispatch contract",
+        "delivery status mapping",
+        "bounce handling boundary",
+        "audit trail mapping",
+    ]
+    required_evidence = [
+        "email_provider_contract_document",
+        "sender_domain_policy",
+        "template_approval_policy",
+        "consent_and_opt_out_boundary",
+        "delivery_audit_requirements",
+    ]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": ORIGINAL_UCE_ID,
+        "provider_type": "EMAIL_GATEWAY",
+        "provider_key": "EMAIL_GATEWAY_KZ",
+        "provider_label": "Kazakhstan email gateway readiness profile",
+        "country_profile": "KZ",
+        "future_gcc_placeholder": "SA_EMAIL_PROVIDER",
+        "readiness_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "maturity_target": "L2",
+        "integration_mode": "NON_LIVE_READINESS",
+        "live_calls_enabled": False,
+        "credentials_configured": False,
+        "credential_reference": None,
+        "external_submission_enabled": False,
+        "provider_connected": False,
+        "provider_status_claim": "NOT_CONNECTED_NON_LIVE_PROFILE_ONLY",
+        "sync_enabled": False,
+        "readiness_summary": "Email gateway provider profile readiness only; no live email sending.",
+        "capability_matrix": {
+            "required_capabilities": list(required_capabilities),
+        },
+        "required_evidence": list(required_evidence),
+        "missing_configuration_evidence": [
+            "provider connectivity approval record",
+            "security sign-off for production SMTP or API credentials",
+        ],
+        "data_categories": [
+            "outbound_email_metadata",
+            "templates",
+            "recipients",
+            "delivery_references",
+        ],
+        "pii_risk_level": "MEDIUM",
+        "legal_basis_required": True,
+        "security_review_required": True,
+        "owner_role": "integration_governance_lead",
+        "approval_required_before_live": True,
+        "security_requirements": [
+            "tenant isolation enforced",
+            "no SMTP credentials in foundation mode",
+            "audit trail required before live transition",
+        ],
+        "legal_requirements": [
+            "consent and opt-out compliance documentation",
+            "data processing legal basis documentation",
+        ],
+        "audit_requirements": [
+            "immutable readiness history",
+            "human approval evidence before live enablement",
+        ],
+        "rollback_requirements": [
+            "disable email gateway mode toggle",
+            "revert to non-live profile-only state",
+        ],
+        "audit_required": True,
+        "rollback_required_before_live": True,
+        "allowed_actions": [
+            "VIEW_EMAIL_GATEWAY_READINESS_PROFILE",
+            "VALIDATE_READINESS_EVIDENCE_GAPS",
+            "PREPARE_HUMAN_REVIEW_PACKET",
+        ],
+        "forbidden_actions": [
+            "no SMTP or API call",
+            "no email send",
+            "no credential validation",
+            "no delivery status claim",
+            "no external submission",
+            "no template dispatch",
+        ],
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_fake_integration_status": True,
+        "no_sync_claim": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }

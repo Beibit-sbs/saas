@@ -187,3 +187,110 @@ def classify_learning_management_system_integration_readiness(tenant_id: int, ev
             "no_l6_claim": True,
         },
     }
+
+
+def get_learning_management_system_provider_readiness_foundation(tenant_id: int) -> dict:
+    """Return deterministic A-029.3 provider readiness foundation (NON_LIVE_READINESS)."""
+    tenant_id = validate_tenant_id(tenant_id)
+
+    required_capabilities = [
+        "course mapping boundary",
+        "user provisioning boundary",
+        "grade import and export boundary",
+        "attendance data boundary",
+        "content publication boundary",
+        "audit trail mapping",
+    ]
+    required_evidence = [
+        "lms_provider_contract_document",
+        "course_mapping_policy",
+        "grade_sync_boundary_policy",
+        "user_provisioning_approval",
+        "content_publication_boundary_policy",
+    ]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": ORIGINAL_UCE_ID,
+        "provider_type": "LMS",
+        "provider_key": "LMS_KZ",
+        "provider_label": "Kazakhstan LMS readiness profile",
+        "country_profile": "KZ",
+        "future_gcc_placeholder": "SA_LMS_PROVIDER",
+        "readiness_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "maturity_target": "L2",
+        "integration_mode": "NON_LIVE_READINESS",
+        "live_calls_enabled": False,
+        "credentials_configured": False,
+        "credential_reference": None,
+        "external_submission_enabled": False,
+        "provider_connected": False,
+        "provider_status_claim": "NOT_CONNECTED_NON_LIVE_PROFILE_ONLY",
+        "sync_enabled": False,
+        "readiness_summary": "LMS provider profile readiness only; no live LMS sync or course management.",
+        "capability_matrix": {
+            "required_capabilities": list(required_capabilities),
+        },
+        "required_evidence": list(required_evidence),
+        "missing_configuration_evidence": [
+            "provider connectivity approval record",
+            "security sign-off for production LMS API credentials",
+        ],
+        "data_categories": [
+            "course_references",
+            "user_references",
+            "grade_references",
+            "attendance_references",
+            "content_references",
+        ],
+        "pii_risk_level": "HIGH",
+        "legal_basis_required": True,
+        "security_review_required": True,
+        "owner_role": "integration_governance_lead",
+        "approval_required_before_live": True,
+        "security_requirements": [
+            "tenant isolation enforced",
+            "no LMS API credentials in foundation mode",
+            "grade and attendance data protection enforced",
+            "audit trail required before live transition",
+        ],
+        "legal_requirements": [
+            "education data governance approval",
+            "data processing legal basis documentation",
+        ],
+        "audit_requirements": [
+            "immutable readiness history",
+            "human approval evidence before live enablement",
+        ],
+        "rollback_requirements": [
+            "disable LMS mode toggle",
+            "revert to non-live profile-only state",
+        ],
+        "audit_required": True,
+        "rollback_required_before_live": True,
+        "allowed_actions": [
+            "VIEW_LMS_READINESS_PROFILE",
+            "VALIDATE_READINESS_EVIDENCE_GAPS",
+            "PREPARE_HUMAN_REVIEW_PACKET",
+        ],
+        "forbidden_actions": [
+            "no LMS API call",
+            "no course or user sync",
+            "no grade import or export",
+            "no attendance sync",
+            "no content publish",
+            "no credential validation",
+        ],
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_fake_integration_status": True,
+        "no_sync_claim": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }

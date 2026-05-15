@@ -104,3 +104,107 @@ def get_notification_gateway_integration_integration_contract(tenant_id: int, pa
         "next_maturity_gap": "L3 deterministic integration readiness logic required",
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def get_notification_gateway_provider_readiness_foundation(tenant_id: int) -> dict:
+    """Return deterministic A-029.3 provider readiness foundation (NON_LIVE_READINESS)."""
+    tenant_id = validate_tenant_id(tenant_id)
+
+    required_capabilities = [
+        "SMS dispatch boundary",
+        "consent mapping",
+        "delivery status mapping",
+        "retry and backoff boundary",
+        "audit trail mapping",
+    ]
+    required_evidence = [
+        "sms_provider_contract_document",
+        "consent_and_opt_out_boundary",
+        "message_template_approval_policy",
+        "delivery_audit_requirements",
+        "retry_policy_document",
+    ]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": ORIGINAL_UCE_ID,
+        "provider_type": "NOTIFICATION_SMS_GATEWAY",
+        "provider_key": "SMS_GATEWAY_KZ",
+        "provider_label": "Kazakhstan SMS/notification gateway readiness profile",
+        "country_profile": "KZ",
+        "future_gcc_placeholder": "SA_SMS_PROVIDER",
+        "readiness_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "maturity_target": "L2",
+        "integration_mode": "NON_LIVE_READINESS",
+        "live_calls_enabled": False,
+        "credentials_configured": False,
+        "credential_reference": None,
+        "external_submission_enabled": False,
+        "provider_connected": False,
+        "provider_status_claim": "NOT_CONNECTED_NON_LIVE_PROFILE_ONLY",
+        "sync_enabled": False,
+        "readiness_summary": "SMS/notification gateway provider profile readiness only; no live SMS or push dispatch.",
+        "capability_matrix": {
+            "required_capabilities": list(required_capabilities),
+        },
+        "required_evidence": list(required_evidence),
+        "missing_configuration_evidence": [
+            "provider connectivity approval record",
+            "security sign-off for production SMS gateway credentials",
+        ],
+        "data_categories": [
+            "phone_references",
+            "notification_templates",
+            "delivery_references",
+            "consent_flags",
+        ],
+        "pii_risk_level": "MEDIUM",
+        "legal_basis_required": True,
+        "security_review_required": True,
+        "owner_role": "integration_governance_lead",
+        "approval_required_before_live": True,
+        "security_requirements": [
+            "tenant isolation enforced",
+            "no SMS gateway credentials in foundation mode",
+            "audit trail required before live transition",
+        ],
+        "legal_requirements": [
+            "consent and opt-out compliance documentation",
+            "data processing legal basis documentation",
+        ],
+        "audit_requirements": [
+            "immutable readiness history",
+            "human approval evidence before live enablement",
+        ],
+        "rollback_requirements": [
+            "disable notification gateway mode toggle",
+            "revert to non-live profile-only state",
+        ],
+        "audit_required": True,
+        "rollback_required_before_live": True,
+        "allowed_actions": [
+            "VIEW_NOTIFICATION_GATEWAY_READINESS_PROFILE",
+            "VALIDATE_READINESS_EVIDENCE_GAPS",
+            "PREPARE_HUMAN_REVIEW_PACKET",
+        ],
+        "forbidden_actions": [
+            "no SMS gateway call",
+            "no push dispatch",
+            "no WhatsApp or Telegram send",
+            "no delivery status claim",
+            "no credential validation",
+            "no external submission",
+        ],
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_fake_integration_status": True,
+        "no_sync_claim": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }

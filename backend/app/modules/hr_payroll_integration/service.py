@@ -104,3 +104,109 @@ def get_hr_payroll_integration_integration_contract(tenant_id: int, payload: dic
         "next_maturity_gap": "L3 deterministic integration readiness logic required",
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def get_hr_payroll_provider_readiness_foundation(tenant_id: int) -> dict:
+    """Return deterministic A-029.3 provider readiness foundation (NON_LIVE_READINESS)."""
+    tenant_id = validate_tenant_id(tenant_id)
+
+    required_capabilities = [
+        "employee identity mapping",
+        "payroll posting boundary",
+        "timesheet handoff boundary",
+        "compensation data protection boundary",
+        "audit trail mapping",
+    ]
+    required_evidence = [
+        "payroll_provider_contract_document",
+        "employee_mapping_policy",
+        "salary_boundary_policy",
+        "timesheet_handoff_requirements",
+        "compensation_data_protection_policy",
+    ]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": ORIGINAL_UCE_ID,
+        "provider_type": "HR_PAYROLL",
+        "provider_key": "HR_PAYROLL_KZ",
+        "provider_label": "Kazakhstan HR payroll readiness profile",
+        "country_profile": "KZ",
+        "future_gcc_placeholder": "SA_HR_PAYROLL_PROVIDER",
+        "readiness_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "maturity_target": "L2",
+        "integration_mode": "NON_LIVE_READINESS",
+        "live_calls_enabled": False,
+        "credentials_configured": False,
+        "credential_reference": None,
+        "external_submission_enabled": False,
+        "provider_connected": False,
+        "provider_status_claim": "NOT_CONNECTED_NON_LIVE_PROFILE_ONLY",
+        "sync_enabled": False,
+        "readiness_summary": "HR payroll provider profile readiness only; no live payroll processing.",
+        "capability_matrix": {
+            "required_capabilities": list(required_capabilities),
+        },
+        "required_evidence": list(required_evidence),
+        "missing_configuration_evidence": [
+            "provider connectivity approval record",
+            "security sign-off for production HR payroll credentials",
+        ],
+        "data_categories": [
+            "employee_references",
+            "payroll_references",
+            "timesheet_references",
+            "position_references",
+        ],
+        "pii_risk_level": "HIGH",
+        "legal_basis_required": True,
+        "security_review_required": True,
+        "owner_role": "integration_governance_lead",
+        "approval_required_before_live": True,
+        "security_requirements": [
+            "tenant isolation enforced",
+            "no payroll credentials in foundation mode",
+            "compensation data protection enforced",
+            "audit trail required before live transition",
+        ],
+        "legal_requirements": [
+            "labor law compliance documentation",
+            "payroll boundary legal basis documentation",
+            "data processing legal basis documentation",
+        ],
+        "audit_requirements": [
+            "immutable readiness history",
+            "human approval evidence before live enablement",
+        ],
+        "rollback_requirements": [
+            "disable HR payroll mode toggle",
+            "revert to non-live profile-only state",
+        ],
+        "audit_required": True,
+        "rollback_required_before_live": True,
+        "allowed_actions": [
+            "VIEW_HR_PAYROLL_READINESS_PROFILE",
+            "VALIDATE_READINESS_EVIDENCE_GAPS",
+            "PREPARE_HUMAN_REVIEW_PACKET",
+        ],
+        "forbidden_actions": [
+            "no payroll posting",
+            "no salary calculation",
+            "no employee data sync",
+            "no HR provider API call",
+            "no credential validation",
+            "no external submission",
+        ],
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_fake_integration_status": True,
+        "no_sync_claim": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }

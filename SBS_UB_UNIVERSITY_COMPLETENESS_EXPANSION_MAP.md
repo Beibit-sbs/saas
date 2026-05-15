@@ -6951,3 +6951,86 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
 - status: ready_for_A-029.3-RUNTIME
 - last_completed_action_id: A-029.3-SPEC
 - next_action_id: A-029.3-RUNTIME
+
+---
+
+## A-029.3-RUNTIME — Provider Readiness Foundation Batch 2
+
+### Implemented Provider Batch 2 (5 modules)
+
+| UCE ID | Candidate | Provider Type | KZ Profile | Future GCC | Marker |
+|---|---|---|---|---|---|
+| UCE-027 | email_gateway_integration | EMAIL_GATEWAY | EMAIL_GATEWAY_KZ | SA_EMAIL_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED_AFTER_A0293 |
+| UCE-028 | notification_gateway_integration | NOTIFICATION_SMS_GATEWAY | SMS_GATEWAY_KZ | SA_SMS_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED_AFTER_A0293 |
+| UCE-110 | payment_gateway_integration | PAYMENT_GATEWAY | PAYMENT_GATEWAY_KZ | SA_PAYMENT_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED_AFTER_A0293 |
+| UCE-113 | hr_payroll_integration | HR_PAYROLL | HR_PAYROLL_KZ | SA_HR_PAYROLL_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED_AFTER_A0293 |
+| UCE-106 | learning_management_system_integration | LMS | LMS_KZ | SA_LMS_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED_AFTER_A0293 |
+
+### Provider Readiness Foundation Model
+
+- integration_mode: NON_LIVE_READINESS
+- live_calls_enabled: False
+- credentials_configured: False
+- credential_reference: None
+- external_submission_enabled: False
+- provider_connected: False
+- provider_status_claim: NOT_CONNECTED_NON_LIVE_PROFILE_ONLY
+- sync_enabled: False
+
+### Non-Live Boundary
+
+- LIVE_PROVIDER_CONNECTED: NOT MARKED
+- PROVIDER_SYNC_ENABLED: NOT MARKED
+- CREDENTIALS_CONFIGURED: NOT MARKED
+- EXTERNAL_SUBMISSION_ENABLED: NOT MARKED
+- L4/L5/L6 provider maturity: NOT CLAIMED
+
+### No-Live-Call Evidence
+
+- external call scan: PASS (no requests/httpx/smtplib/socket in service files)
+- credential scan: PASS (no credential variables)
+- DB mutation scan: NONE FOUND
+- provider fake-status scan: ACCEPTED_BOUNDARY_TEXT only
+
+### Validation Results
+
+- A-029.3 targeted: 261 passed / 14 skipped / 1 warning
+- A-029 provider readiness continuity: 345 passed / 16 skipped / 1 warning
+- A-029/A-028 continuity: 976 passed / 16 skipped / 1 warning
+- A-028 combined pack: 2312 passed / 42 warnings
+- A-027 continuity: 1268 passed / 1 warning
+- LDAP smoke: 2 passed / 1 warning
+
+### Cumulative Provider Readiness Metrics After A-029.3-RUNTIME
+
+- A0292_provider_readiness_foundation_count = 6
+- A0293_provider_readiness_foundation_count = 5
+- provider_readiness_foundation_count = 11
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+- baseline_impact = 0
+- extension_impact = 0
+
+### Ordinary L4 Metrics (unchanged)
+
+- expansion_L4_visibility_count = 40
+- expansion_L4_api_route_count = 40
+- expansion_L4_consolidated_summary_count = 1
+- expansion_L4_consolidated_candidate_count = 40
+- expansion_L3_logic_count = 50
+- expansion_L2_foundation_count = 67
+- expansion_runtime_implemented_count = 67
+- remaining_L2_only = 17
+- remaining_L3_not_L4 = 10
+
+Provider readiness foundation count is tracked separately and does NOT increment ordinary L4/L3/L2 expansion counts.
+
+### Final Decision
+
+- final_verdict: A-029.3-RUNTIME CLOSED — PASS
+- status: ready_for_A-029.4-SPEC
+- last_completed_action_id: A-029.3-RUNTIME
+- next_action_id: A-029.4-SPEC

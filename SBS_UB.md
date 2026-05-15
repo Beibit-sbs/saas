@@ -11280,3 +11280,148 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
 - next_action_id: A-029.3-RUNTIME
 
 
+## A-029.3-RUNTIME — Provider Readiness Foundation Batch 2 / Deferred Provider Gateways
+
+### Control Block
+
+- action_id: A-029.3-RUNTIME
+- phase: Wave 18 — Provider Readiness Foundation
+- type: RUNTIME_ONLY
+- scope: provider readiness foundation batch 2 (5 deferred gateway modules)
+- boundary: NON_LIVE_READINESS only
+- next_action_id: A-029.4-SPEC
+
+### Source-of-Truth Before Runtime
+
+- spec commit verified: 8941540 (A-029.3-SPEC)
+- source next action verified: A-029.3-RUNTIME
+- provider readiness cumulative count entering A-029.3-RUNTIME: 6
+- A0292_provider_readiness_foundation_count = 6
+- provider_readiness_foundation_count = 6
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+- baseline metrics preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension metrics preserved: extension_total_count=25, total_tracked_modules=175
+- ordinary expansion metrics:
+    - expansion_L2_foundation_count = 67
+    - expansion_runtime_implemented_count = 67
+    - expansion_L3_logic_count = 50
+    - remaining_L2_only = 17
+    - remaining_L3_not_L4 = 10
+    - expansion_L4_visibility_count = 40
+    - expansion_L4_api_route_count = 40
+    - expansion_L4_consolidated_summary_count = 1
+    - expansion_L4_consolidated_candidate_count = 40
+    - baseline_impact = 0
+    - extension_impact = 0
+
+### Selected Provider Batch 2 (5 candidates)
+
+| UCE ID | Candidate | Provider Type | KZ Profile | Future GCC | Status |
+|---|---|---|---|---|---|
+| UCE-027 | email_gateway_integration | EMAIL_GATEWAY | EMAIL_GATEWAY_KZ | SA_EMAIL_PROVIDER | IMPLEMENTED |
+| UCE-028 | notification_gateway_integration | NOTIFICATION_SMS_GATEWAY | SMS_GATEWAY_KZ | SA_SMS_PROVIDER | IMPLEMENTED |
+| UCE-110 | payment_gateway_integration | PAYMENT_GATEWAY | PAYMENT_GATEWAY_KZ | SA_PAYMENT_PROVIDER | IMPLEMENTED |
+| UCE-113 | hr_payroll_integration | HR_PAYROLL | HR_PAYROLL_KZ | SA_HR_PAYROLL_PROVIDER | IMPLEMENTED |
+| UCE-106 | learning_management_system_integration | LMS | LMS_KZ | SA_LMS_PROVIDER | IMPLEMENTED |
+
+### Implementation Summary
+
+- service files updated: 5
+- functions added: get_email_gateway_provider_readiness_foundation, get_notification_gateway_provider_readiness_foundation, get_payment_gateway_provider_readiness_foundation, get_hr_payroll_provider_readiness_foundation, get_learning_management_system_provider_readiness_foundation
+- test file created: backend/tests/test_a0293_provider_readiness_foundation_batch2.py
+- runtime report created: A-029.3-RUNTIME-PROVIDER_READINESS_FOUNDATION_BATCH2_REPORT.md
+- shared helper: NOT REQUIRED
+- router/API files: NOT CHANGED
+- frontend: NOT CHANGED
+- DB migration: NOT CHANGED
+
+### Provider Readiness Foundation Model
+
+- registry/profile only: YES
+- integration_mode: NON_LIVE_READINESS
+- live_calls_enabled: False
+- credentials_configured: False
+- credential_reference: None
+- external_submission_enabled: False
+- provider_connected: False
+- provider_status_claim: NOT_CONNECTED_NON_LIVE_PROFILE_ONLY
+- sync_enabled: False
+- no_provider_call: True
+- no_credentials: True
+- no_external_submission: True
+- no_fake_integration_status: True
+- no_sync_claim: True
+- no_l4_claim: True
+- no_l5_claim: True
+- no_l6_claim: True
+
+### Validation Results
+
+- A-029.3 targeted: 261 passed / 14 skipped / 1 warning
+- A-029 provider readiness continuity: 345 passed / 16 skipped / 1 warning
+- A-029/A-028 continuity: 976 passed / 16 skipped / 1 warning
+- A-028 combined pack: 2312 passed / 42 warnings
+- A-027 continuity: 1268 passed / 1 warning
+- LDAP smoke: 2 passed / 1 warning
+- git diff --check: PASS
+- forbidden external call scan: PASS (no blocking findings)
+- credential/secret scan: PASS (no blocking findings)
+- DB mutation scan: NONE FOUND
+- provider fake-status scan: ACCEPTED_BOUNDARY_TEXT only
+
+### Provider Readiness Metrics After A-029.3-RUNTIME
+
+- A0292_provider_readiness_foundation_count = 6
+- A0293_provider_readiness_foundation_count = 5
+- provider_readiness_foundation_count = 11
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+- baseline_impact = 0
+- extension_impact = 0
+
+### Preserved Metrics (unchanged)
+
+- baseline: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension_total_count = 25
+- total_tracked_modules = 175
+- expansion_L2_foundation_count = 67
+- expansion_runtime_implemented_count = 67
+- expansion_L3_logic_count = 50
+- remaining_L2_only = 17
+- remaining_L3_not_L4 = 10
+- expansion_L4_visibility_count = 40
+- expansion_L4_api_route_count = 40
+- expansion_L4_consolidated_summary_count = 1
+- expansion_L4_consolidated_candidate_count = 40
+
+### Anti-Fake / Anti-Inflation Review
+
+- no live provider calls: PASS
+- no credentials/secrets/tokens: PASS
+- no external submission: PASS
+- no fake provider success claims: PASS
+- no provider connected claims: PASS
+- no sync claims: PASS
+- no Brain/autonomy execution: PASS
+- no baseline metric movement: PASS
+- no extension metric movement: PASS
+- no ordinary L4 metric movement: PASS
+- no L4/L5/L6 maturity claim: PASS
+- provider readiness tracked separately: PASS
+- no_fake_integration_status: PASS
+
+### Final Decision
+
+- final_verdict: A-029.3-RUNTIME CLOSED — PASS
+- status: ready_for_A-029.4-SPEC
+- last_completed_action_id: A-029.3-RUNTIME
+- next_action_id: A-029.4-SPEC
+
+

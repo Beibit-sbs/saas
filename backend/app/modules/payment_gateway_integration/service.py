@@ -104,3 +104,110 @@ def get_payment_gateway_integration_integration_contract(tenant_id: int, payload
         "next_maturity_gap": "L3 deterministic integration readiness logic required",
         "safety_flags": dict(SAFETY_FLAGS),
     }
+
+
+def get_payment_gateway_provider_readiness_foundation(tenant_id: int) -> dict:
+    """Return deterministic A-029.3 provider readiness foundation (NON_LIVE_READINESS)."""
+    tenant_id = validate_tenant_id(tenant_id)
+
+    required_capabilities = [
+        "payment initiation boundary",
+        "capture and refund boundary",
+        "reconciliation mapping",
+        "PCI and data-minimization boundary",
+        "audit trail mapping",
+    ]
+    required_evidence = [
+        "payment_provider_contract_document",
+        "reconciliation_policy",
+        "pci_data_minimization_boundary_policy",
+        "refund_approval_requirements",
+        "financial_audit_requirements",
+    ]
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": ORIGINAL_UCE_ID,
+        "provider_type": "PAYMENT_GATEWAY",
+        "provider_key": "PAYMENT_GATEWAY_KZ",
+        "provider_label": "Kazakhstan payment gateway readiness profile",
+        "country_profile": "KZ",
+        "future_gcc_placeholder": "SA_PAYMENT_PROVIDER",
+        "readiness_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "maturity_target": "L2",
+        "integration_mode": "NON_LIVE_READINESS",
+        "live_calls_enabled": False,
+        "credentials_configured": False,
+        "credential_reference": None,
+        "external_submission_enabled": False,
+        "provider_connected": False,
+        "provider_status_claim": "NOT_CONNECTED_NON_LIVE_PROFILE_ONLY",
+        "sync_enabled": False,
+        "readiness_summary": "Payment gateway provider profile readiness only; no live payment processing.",
+        "capability_matrix": {
+            "required_capabilities": list(required_capabilities),
+        },
+        "required_evidence": list(required_evidence),
+        "missing_configuration_evidence": [
+            "provider connectivity approval record",
+            "security sign-off for production payment credentials",
+        ],
+        "data_categories": [
+            "invoices",
+            "payment_references",
+            "reconciliation_references",
+            "payer_identity_references",
+        ],
+        "pii_risk_level": "HIGH",
+        "legal_basis_required": True,
+        "security_review_required": True,
+        "owner_role": "integration_governance_lead",
+        "approval_required_before_live": True,
+        "security_requirements": [
+            "tenant isolation enforced",
+            "no payment credentials in foundation mode",
+            "PCI boundary enforced in profile mode",
+            "audit trail required before live transition",
+        ],
+        "legal_requirements": [
+            "financial transaction legal basis documentation",
+            "PCI-DSS compliance documentation",
+            "data processing legal basis documentation",
+        ],
+        "audit_requirements": [
+            "immutable readiness history",
+            "human approval evidence before live enablement",
+        ],
+        "rollback_requirements": [
+            "disable payment gateway mode toggle",
+            "revert to non-live profile-only state",
+        ],
+        "audit_required": True,
+        "rollback_required_before_live": True,
+        "allowed_actions": [
+            "VIEW_PAYMENT_GATEWAY_READINESS_PROFILE",
+            "VALIDATE_READINESS_EVIDENCE_GAPS",
+            "PREPARE_HUMAN_REVIEW_PACKET",
+        ],
+        "forbidden_actions": [
+            "no payment initiation",
+            "no payment capture",
+            "no refund",
+            "no card or bank data handling",
+            "no gateway API call",
+            "no reconciliation claim",
+            "no financial posting",
+        ],
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_fake_integration_status": True,
+        "no_sync_claim": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }
