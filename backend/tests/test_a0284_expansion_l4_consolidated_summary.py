@@ -62,11 +62,21 @@ EXPECTED_MODULES = {
     "scholarship_committee_workflow",
     "student_appeals_workflow",
     "consent_management_policy",
+    # Wave 4 — added in A-028.15-RUNTIME
+    "timesheet_management",
+    "faculty_attestation",
+    "teaching_load_contracts",
+    "staff_exit_offboarding",
+    "thesis_dissertation_management",
+    "joint_program_management",
+    "inbound_exchange_management",
+    "outbound_exchange_management",
 }
 EXPECTED_SOURCE_ACTIONS = {
     "A-028.1", "A-028.2", "A-028.3",
     "A-028.6", "A-028.7", "A-028.8",
     "A-028.9", "A-028.10", "A-028.11",
+    "A-028.13", "A-028.14", "A-028.15",
 }  # A-028.11-RUNTIME: expanded to include all 9 source actions
 
 
@@ -157,8 +167,8 @@ def test_a0284_core_contract_fields(test_client: TestClient) -> None:
     assert payload["visibility_level"] == "L4"
     assert payload["summary_type"] == "EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY"
     assert EXPECTED_SOURCE_ACTIONS.issubset(set(payload["source_actions"]))  # A-028.11-RUNTIME: superset allowed
-    assert payload["total_l4_visibility_candidates"] == 32  # A-028.11-RUNTIME
-    assert payload["total_api_routed_candidates"] == 32  # A-028.11-RUNTIME
+    assert payload["total_l4_visibility_candidates"] == 40
+    assert payload["total_api_routed_candidates"] == 40
 
 
 def test_a0284_modules_included_and_complete(test_client: TestClient) -> None:
@@ -166,7 +176,7 @@ def test_a0284_modules_included_and_complete(test_client: TestClient) -> None:
     modules = payload["modules"]
 
     assert isinstance(modules, list)
-    assert len(modules) == 32  # A-028.11-RUNTIME
+    assert len(modules) == 40
 
     module_ids = {item["module"] for item in modules}
     assert module_ids == EXPECTED_MODULES
@@ -188,7 +198,7 @@ def test_a0284_readiness_counts_derived_unknown_safe(test_client: TestClient) ->
     counts = payload["readiness_status_counts"]
 
     assert isinstance(counts, dict)
-    assert sum(counts.values()) == 32  # A-028.11-RUNTIME
+    assert sum(counts.values()) == 40
     assert all(isinstance(key, str) and key for key in counts)
     assert all(isinstance(value, int) and value >= 0 for value in counts.values())
 
@@ -198,7 +208,7 @@ def test_a0284_risk_counts_derived_unknown_safe(test_client: TestClient) -> None
     counts = payload["risk_band_counts"]
 
     assert isinstance(counts, dict)
-    assert sum(counts.values()) == 32  # A-028.11-RUNTIME
+    assert sum(counts.values()) == 40
     assert all(isinstance(key, str) and key for key in counts)
     assert all(isinstance(value, int) and value >= 0 for value in counts.values())
 
@@ -302,7 +312,10 @@ def test_a0284_no_synthetic_score_kpi_ranking_recommendation_fields(test_client:
 def test_a0284_source_actions_are_exactly_a0281_to_a0283(test_client: TestClient) -> None:
     payload = _payload(test_client)
     # A-028.11-RUNTIME: source_actions now includes A-028.9, A-028.10, A-028.11
-    required = {"A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8", "A-028.9", "A-028.10", "A-028.11"}
+    required = {
+        "A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8",
+        "A-028.9", "A-028.10", "A-028.11", "A-028.13", "A-028.14", "A-028.15",
+    }
     assert required.issubset(set(payload["source_actions"]))
 
 
@@ -339,12 +352,14 @@ def test_a0284_metric_formula_contract_documented_by_route_counts() -> None:
     assert len(A0282_ROUTES) == 6
     assert len(A0283_ROUTES) == 6
     assert CONSOLIDATED_ROUTE in all_l4_paths
-    # A-028.10 added 10 individual routes:
-    # total = A0282(6) + A0283(6) + A0287(10) + A02810(10) + consolidated(1) = 33
+    # A-028.14 added 8 individual routes:
+    # total = A0282(6) + A0283(6) + A0287(10) + A02810(10) + A02814(8) + consolidated(1) = 41
     a0287_count = 10
     a02810_count = 10
-    assert len(all_l4_paths) == 33
-    assert len(A0282_ROUTES) + len(A0283_ROUTES) + a0287_count + a02810_count + 1 == len(all_l4_paths)
+    a02814_count = 8
+    assert len(A0282_ROUTES) + len(A0283_ROUTES) + a0287_count + a02810_count + a02814_count + 1 == 41
+    assert len(all_l4_paths) == 41
+    assert len(A0282_ROUTES) + len(A0283_ROUTES) + a0287_count + a02810_count + a02814_count + 1 == len(all_l4_paths)
 
 
 def test_a0284_no_duplicate_route_registration() -> None:

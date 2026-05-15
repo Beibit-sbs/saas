@@ -575,18 +575,16 @@ def test_a02814_expansion_l4_api_route_formula() -> None:
     assert total == 40
 
 
-def test_a02814_consolidated_summary_refresh_deferred_to_a02815() -> None:
-    # Consolidated summary candidate count remains 32; refresh deferred to A-028.15.
-    expansion_l4_consolidated_candidate_count = 32
-    consolidated_refresh_deferred = True
-    assert expansion_l4_consolidated_candidate_count == 32
-    assert consolidated_refresh_deferred is True
+def test_a02814_consolidated_summary_refreshed_after_a02815() -> None:
+    # A-028.15 refreshed consolidated candidate coverage from 32 to 40.
+    expansion_l4_consolidated_candidate_count = 40
+    assert expansion_l4_consolidated_candidate_count == 40
 
 
 def test_a02814_consolidated_candidate_count_unchanged() -> None:
-    # expansion_L4_consolidated_candidate_count must remain 32 after A-028.14.
-    expansion_l4_consolidated_candidate_count = 32
-    assert expansion_l4_consolidated_candidate_count == 32
+    # Current consolidated candidate count is 40 after A-028.15 refresh.
+    expansion_l4_consolidated_candidate_count = 40
+    assert expansion_l4_consolidated_candidate_count == 40
 
 
 def test_a02814_no_l5_l6_claim_in_routes() -> None:

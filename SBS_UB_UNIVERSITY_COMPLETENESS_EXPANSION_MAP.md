@@ -5871,3 +5871,40 @@ Expected if A-028.15-RUNTIME passes:
 
 - next_action_id: A-028.2-RUNTIME
 - action_title: implement the first six tenant-safe read-only admin API routes over existing A-028.1 L4 service summaries
+
+## A-028.15-RUNTIME - Expansion L4 Consolidated Summary Refresh to 40
+
+### Runtime Outcome
+
+- final_verdict: A-028.15-RUNTIME CLOSED - PASS
+- report_file: `A-028.15-RUNTIME-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_40_REPORT.md`
+- marker: L4_CONSOLIDATED_SUMMARY_REFRESHED_AFTER_A02815
+
+### Contract Status
+
+- `expansion_L4_consolidated_summary_count = 1` (unchanged)
+- `expansion_L4_consolidated_candidate_count = 40` (refreshed from 32)
+- `expansion_L4_visibility_count = 40` (unchanged)
+- `expansion_L4_api_route_count = 40` (unchanged)
+- `expansion_L3_logic_count = 50` (unchanged)
+
+### A-028.15 Refresh Counter
+
+- `A02815_l4_consolidated_summary_refresh_count = 1`
+
+### Route Integrity
+
+- Consolidated endpoint count remains exactly 1
+- Existing endpoint preserved: `GET /api/admin/expansion/l4/summary`
+- No additional consolidated route introduced
+
+### Validation Snapshot
+
+- A-028.15 targeted: 249 passed
+- A-028.14 targeted: 270 passed
+- A-028.13 visibility: 112 passed
+- A-028.11 consolidated: 258 passed
+- A-028.10 API: 382 passed
+- A-028 combined pack: 2312 passed
+- A-027 continuity: 2471 passed
+- LDAP smoke: 14 passed

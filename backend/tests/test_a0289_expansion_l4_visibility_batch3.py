@@ -359,9 +359,9 @@ class TestA0289L4NoAPIRoute:
         """expansion_visibility router must not be modified by A-028.9."""
         from app.modules.expansion_visibility.router import CONSOLIDATED_MODULE_CATALOG
         
-        # A-028.11-RUNTIME: consolidated catalog now 32 (was 22 in A-028.8; expanded in A-028.11)
+        # A-028.15-RUNTIME: consolidated catalog now 40 (32 + 8 from A-028.14)
         catalog_count = len(CONSOLIDATED_MODULE_CATALOG)
-        assert catalog_count == 32, f"Expected 32 in consolidated catalog (A-028.11), got {catalog_count}"
+        assert catalog_count == 40, f"Expected 40 in consolidated catalog (A-028.15), got {catalog_count}"
 
 
 class TestA0289NoL5L6Claims:

@@ -208,12 +208,15 @@ def test_a0288_consolidated_summary_type(authenticated_client):
 
 @pytest.mark.authenticated
 def test_a0288_consolidated_source_actions_include_all_waves(authenticated_client):
-    """Response source_actions includes A-028.1, A-028.2, A-028.3, A-028.6, A-028.7, A-028.8."""
+    """Response source_actions includes all required consolidation actions through A-028.15."""
     resp = authenticated_client.get(CONSOLIDATED_ROUTE)
     assert resp.status_code == 200
     payload = resp.json()
     source_actions = payload.get("source_actions", [])
-    expected_actions = ["A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8"]
+    expected_actions = [
+        "A-028.1", "A-028.2", "A-028.3", "A-028.6", "A-028.7", "A-028.8",
+        "A-028.9", "A-028.10", "A-028.11", "A-028.13", "A-028.14", "A-028.15",
+    ]
     assert all(action in source_actions for action in expected_actions), \
         f"Missing actions. Expected {expected_actions}, got {source_actions}"
 
@@ -228,7 +231,7 @@ def test_a0288_consolidated_total_l4_visibility_candidates_equals_22(authenticat
     resp = authenticated_client.get(CONSOLIDATED_ROUTE)
     assert resp.status_code == 200
     payload = resp.json()
-    assert payload.get("total_l4_visibility_candidates") == 32  # A-028.11-RUNTIME: refreshed to 32
+    assert payload.get("total_l4_visibility_candidates") == 40
 
 
 @pytest.mark.authenticated
@@ -237,7 +240,7 @@ def test_a0288_consolidated_total_api_routed_candidates_equals_22(authenticated_
     resp = authenticated_client.get(CONSOLIDATED_ROUTE)
     assert resp.status_code == 200
     payload = resp.json()
-    assert payload.get("total_api_routed_candidates") == 32  # A-028.11-RUNTIME: refreshed to 32
+    assert payload.get("total_api_routed_candidates") == 40
 
 
 @pytest.mark.authenticated
@@ -248,7 +251,7 @@ def test_a0288_consolidated_total_consolidated_candidates_equals_22(authenticate
     payload = resp.json()
     # This field may or may not exist; check if it does
     if "total_consolidated_candidates" in payload:
-        assert payload.get("total_consolidated_candidates") == 32  # A-028.11-RUNTIME: refreshed to 32
+        assert payload.get("total_consolidated_candidates") == 40
 
 
 # ============================================================================
@@ -262,7 +265,7 @@ def test_a0288_consolidated_modules_length_equals_22(authenticated_client):
     assert resp.status_code == 200
     payload = resp.json()
     modules = payload.get("modules", [])
-    assert len(modules) == 32, f"Expected 32 modules, got {len(modules)}"  # A-028.11-RUNTIME
+    assert len(modules) == 40, f"Expected 40 modules, got {len(modules)}"
 
 
 @pytest.mark.authenticated
@@ -319,8 +322,8 @@ def test_a0288_consolidated_modules_by_domain_covers_all_22(authenticated_client
     for domain, candidates in mbd.items():
         all_domain_candidates.extend(candidates if isinstance(candidates, list) else [])
     
-    assert len(all_domain_candidates) == 32, \
-        f"modules_by_domain should aggregate 32, got {len(all_domain_candidates)}"  # A-028.11-RUNTIME
+    assert len(all_domain_candidates) == 40, \
+        f"modules_by_domain should aggregate 40, got {len(all_domain_candidates)}"  # A-028.15-RUNTIME
 
 
 @pytest.mark.authenticated

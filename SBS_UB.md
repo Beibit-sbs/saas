@@ -9970,4 +9970,41 @@ validate -> guard -> cross-entity check -> persist -> publish_event -> brain sig
 
 ---
 
+## A-028.15-RUNTIME - Expansion L4 Consolidated Summary Refresh to 40
+
+### Runtime Completion
+
+- action_id: A-028.15-RUNTIME
+- status: CLOSED - PASS
+- report_file: `A-028.15-RUNTIME-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_40_REPORT.md`
+
+### Expansion Metric Updates
+
+- A02815_l4_consolidated_summary_refresh_count: 1
+- expansion_L4_consolidated_summary_count: 1 (unchanged; refresh only)
+- expansion_L4_consolidated_candidate_count: 40
+- expansion_L4_visibility_count: 40 (unchanged)
+- expansion_L4_api_route_count: 40 (unchanged)
+- expansion_L3_logic_count: 50 (unchanged)
+- baseline_impact: 0
+- extension_impact: 0
+
+### Contract Lock
+
+- L4_CONSOLIDATED_SUMMARY_REFRESHED_AFTER_A02815
+- existing consolidated endpoint preserved: `GET /api/admin/expansion/l4/summary`
+- no new expansion route added in A-028.15 runtime
+
+### Validation Snapshot
+
+- A-028.15 targeted: 249 passed
+- A-028 combined pack: 2312 passed
+- A-027 continuity: 2471 passed
+- LDAP smoke: 14 passed
+
+### Next Action
+
+- next_action_id: CONTROLLED_BY_PROGRAM_MANAGER
+- action_title: next expansion step to be assigned after A-028.15 runtime closure
+
 

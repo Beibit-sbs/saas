@@ -1,11 +1,11 @@
 """
 A-028.11-RUNTIME — Expansion L4 Consolidated Summary Refresh to 32 Candidates
-Targeted regression suite for the refreshed consolidated admin summary endpoint.
+Targeted regression suite for the consolidated admin summary endpoint.
 
 Strategy: REFRESH_EXISTING_ENDPOINT_ONLY
 Endpoint:  GET /api/admin/expansion/l4/summary
 Permission: admin.expansion.read
-Candidates: 32 (wave 1×12 + wave 2×10 + wave 3×10)
+Candidates (current runtime): 40 (wave 1×12 + wave 2×10 + wave 3×10 + wave 4×8)
 UCE-046 consent_management_policy: INCLUDED
 UCE-098 procurement_plan_approval_workflow: EXCLUDED
 
@@ -27,7 +27,7 @@ from tests.conftest import ADMIN_HEADERS
 CONSOLIDATED_ROUTE = "/api/admin/expansion/l4/summary"
 PROHIBITED_UCE098_ROUTE = "/api/admin/expansion/l4/procurement-plan-approval-workflow/summary"
 
-# All 32 candidates organised by wave
+# All candidates organised by wave (currently 40 after A-028.15 refresh)
 FIRST_WAVE_CANDIDATES = [
     ("UCE-009", "document_workflow"),
     ("UCE-011", "order_decree_registry"),
@@ -69,15 +69,27 @@ THIRD_WAVE_CANDIDATES = [
     ("UCE-046", "consent_management_policy"),
 ]
 
-ALL_32_CANDIDATES = FIRST_WAVE_CANDIDATES + SECOND_WAVE_CANDIDATES + THIRD_WAVE_CANDIDATES
+FOURTH_WAVE_CANDIDATES = [
+    ("UCE-060", "timesheet_management"),
+    ("UCE-061", "faculty_attestation"),
+    ("UCE-067", "teaching_load_contracts"),
+    ("UCE-070", "staff_exit_offboarding"),
+    ("UCE-077", "thesis_dissertation_management"),
+    ("UCE-085", "joint_program_management"),
+    ("UCE-086", "inbound_exchange_management"),
+    ("UCE-087", "outbound_exchange_management"),
+]
 
-ALL_32_MODULE_NAMES = {module for _, module in ALL_32_CANDIDATES}
-ALL_32_UCE_IDS = {uce_id for uce_id, _ in ALL_32_CANDIDATES}
+ALL_CANDIDATES = FIRST_WAVE_CANDIDATES + SECOND_WAVE_CANDIDATES + THIRD_WAVE_CANDIDATES + FOURTH_WAVE_CANDIDATES
+
+ALL_MODULE_NAMES = {module for _, module in ALL_CANDIDATES}
+ALL_UCE_IDS = {uce_id for uce_id, _ in ALL_CANDIDATES}
 
 EXPECTED_SOURCE_ACTIONS = {
     "A-028.1", "A-028.2", "A-028.3",
     "A-028.6", "A-028.7", "A-028.8",
     "A-028.9", "A-028.10", "A-028.11",
+    "A-028.13", "A-028.14", "A-028.15",
 }
 
 # Individual route paths from all prior batches
@@ -240,11 +252,11 @@ def test_a02811_summary_type_correct(test_client: TestClient) -> None:
     assert payload.get("summary_type") == "EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY"
 
 
-def test_a02811_coverage_version_is_a02811(test_client: TestClient) -> None:
-    """New coverage_version field must be present and set to A-028.11."""
+def test_a02811_coverage_version_is_a02815(test_client: TestClient) -> None:
+    """coverage_version field must be present and set to A-028.15."""
     payload = _payload(test_client)
     cv = payload.get("coverage_version") or payload.get("summary_version")
-    assert cv == "A-028.11", f"Expected coverage_version='A-028.11', got {cv!r}"
+    assert cv == "A-028.15", f"Expected coverage_version='A-028.15', got {cv!r}"
 
 
 def test_a02811_tenant_id_present(test_client: TestClient) -> None:
@@ -255,7 +267,7 @@ def test_a02811_tenant_id_present(test_client: TestClient) -> None:
 
 # ── Group 7: Source Actions ────────────────────────────────────────────────────
 
-def test_a02811_source_actions_include_all_nine_batches(test_client: TestClient) -> None:
+def test_a02811_source_actions_include_all_required_batches(test_client: TestClient) -> None:
     payload = _payload(test_client)
     source_actions = set(payload.get("source_actions", []))
     assert EXPECTED_SOURCE_ACTIONS.issubset(source_actions), (
@@ -278,33 +290,48 @@ def test_a02811_source_actions_includes_a02811(test_client: TestClient) -> None:
     assert "A-028.11" in payload.get("source_actions", [])
 
 
+def test_a02811_source_actions_includes_a02813(test_client: TestClient) -> None:
+    payload = _payload(test_client)
+    assert "A-028.13" in payload.get("source_actions", [])
+
+
+def test_a02811_source_actions_includes_a02814(test_client: TestClient) -> None:
+    payload = _payload(test_client)
+    assert "A-028.14" in payload.get("source_actions", [])
+
+
+def test_a02811_source_actions_includes_a02815(test_client: TestClient) -> None:
+    payload = _payload(test_client)
+    assert "A-028.15" in payload.get("source_actions", [])
+
+
 # ── Group 8: Candidate Counts ──────────────────────────────────────────────────
 
-def test_a02811_total_l4_visibility_candidates_equals_32(test_client: TestClient) -> None:
+def test_a02811_total_l4_visibility_candidates_equals_40(test_client: TestClient) -> None:
     payload = _payload(test_client)
-    assert payload.get("total_l4_visibility_candidates") == 32, (
-        f"Expected 32, got {payload.get('total_l4_visibility_candidates')}"
+    assert payload.get("total_l4_visibility_candidates") == 40, (
+        f"Expected 40, got {payload.get('total_l4_visibility_candidates')}"
     )
 
 
-def test_a02811_total_api_routed_candidates_equals_32(test_client: TestClient) -> None:
+def test_a02811_total_api_routed_candidates_equals_40(test_client: TestClient) -> None:
     payload = _payload(test_client)
-    assert payload.get("total_api_routed_candidates") == 32, (
-        f"Expected 32, got {payload.get('total_api_routed_candidates')}"
+    assert payload.get("total_api_routed_candidates") == 40, (
+        f"Expected 40, got {payload.get('total_api_routed_candidates')}"
     )
 
 
-def test_a02811_total_consolidated_candidates_equals_32(test_client: TestClient) -> None:
+def test_a02811_total_consolidated_candidates_equals_40(test_client: TestClient) -> None:
     payload = _payload(test_client)
-    assert payload.get("total_consolidated_candidates") == 32, (
-        f"Expected 32, got {payload.get('total_consolidated_candidates')}"
+    assert payload.get("total_consolidated_candidates") == 40, (
+        f"Expected 40, got {payload.get('total_consolidated_candidates')}"
     )
 
 
-def test_a02811_modules_length_equals_32(test_client: TestClient) -> None:
+def test_a02811_modules_length_equals_40(test_client: TestClient) -> None:
     payload = _payload(test_client)
     modules = payload.get("modules", [])
-    assert len(modules) == 32, f"Expected 32 modules, got {len(modules)}"
+    assert len(modules) == 40, f"Expected 40 modules, got {len(modules)}"
 
 
 # ── Group 9: Wave Inclusion ────────────────────────────────────────────────────
@@ -328,6 +355,13 @@ def test_a02811_third_wave_candidate_included(test_client: TestClient, uce_id: s
     payload = _payload(test_client)
     module_ids = {m["module"] for m in payload["modules"]}
     assert module in module_ids, f"Wave-3 candidate {uce_id}/{module} not found in modules"
+
+
+@pytest.mark.parametrize("uce_id,module", FOURTH_WAVE_CANDIDATES)
+def test_a02811_fourth_wave_candidate_included(test_client: TestClient, uce_id: str, module: str) -> None:
+    payload = _payload(test_client)
+    module_ids = {m["module"] for m in payload["modules"]}
+    assert module in module_ids, f"Wave-4 candidate {uce_id}/{module} not found in modules"
 
 
 # ── Group 10: UCE Boundary ─────────────────────────────────────────────────────
@@ -355,57 +389,57 @@ def test_a02811_uce098_individual_route_absent() -> None:
 
 
 def test_a02811_total_candidates_is_not_33(test_client: TestClient) -> None:
-    """Confirms UCE-098 is excluded — total is 32, not 33."""
+    """Confirms UCE-098 is excluded — total is 40, not 33."""
     payload = _payload(test_client)
     modules = payload.get("modules", [])
-    assert len(modules) == 32, "UCE-098 exclusion violation: len(modules) must be 32, not 33"
+    assert len(modules) == 40, "UCE-098 exclusion violation: len(modules) must be 40, not 33"
 
 
 # ── Group 11: Modules Set ──────────────────────────────────────────────────────
 
-def test_a02811_all_32_module_names_present(test_client: TestClient) -> None:
+def test_a02811_all_module_names_present(test_client: TestClient) -> None:
     payload = _payload(test_client)
     module_ids = {m["module"] for m in payload["modules"]}
-    assert module_ids == ALL_32_MODULE_NAMES, (
-        f"Module name mismatch. Missing: {ALL_32_MODULE_NAMES - module_ids}. "
-        f"Unexpected: {module_ids - ALL_32_MODULE_NAMES}"
+    assert module_ids == ALL_MODULE_NAMES, (
+        f"Module name mismatch. Missing: {ALL_MODULE_NAMES - module_ids}. "
+        f"Unexpected: {module_ids - ALL_MODULE_NAMES}"
     )
 
 
-def test_a02811_all_32_uce_ids_present(test_client: TestClient) -> None:
+def test_a02811_all_uce_ids_present(test_client: TestClient) -> None:
     payload = _payload(test_client)
     uce_ids = {m.get("uce_id") for m in payload["modules"]}
-    assert ALL_32_UCE_IDS.issubset(uce_ids), (
-        f"Missing UCE IDs: {ALL_32_UCE_IDS - uce_ids}"
+    assert ALL_UCE_IDS.issubset(uce_ids), (
+        f"Missing UCE IDs: {ALL_UCE_IDS - uce_ids}"
     )
 
 
 # ── Group 12: Aggregation ─────────────────────────────────────────────────────
 
-def test_a02811_modules_by_domain_covers_all_32(test_client: TestClient) -> None:
+def test_a02811_modules_by_domain_covers_all_40(test_client: TestClient) -> None:
     payload = _payload(test_client)
     by_domain = payload.get("modules_by_domain", {})
     assert isinstance(by_domain, dict)
     all_domain_candidates = [m for candidates in by_domain.values() for m in candidates]
-    assert len(all_domain_candidates) == 32, (
-        f"modules_by_domain should aggregate 32 candidates, got {len(all_domain_candidates)}"
+    assert len(all_domain_candidates) == 40, (
+        f"modules_by_domain should aggregate 40 candidates, got {len(all_domain_candidates)}"
     )
 
 
-def test_a02811_readiness_status_counts_sums_to_32(test_client: TestClient) -> None:
+def test_a02811_readiness_status_counts_sums_to_40(test_client: TestClient) -> None:
     payload = _payload(test_client)
     counts = payload.get("readiness_status_counts", {})
     assert isinstance(counts, dict)
     total = sum(counts.values())
-    assert total == 32, f"readiness_status_counts total must be 32, got {total}"
+    assert total == 40, f"readiness_status_counts total must be 40, got {total}"
 
 
-def test_a02811_risk_band_counts_sums_to_32(test_client: TestClient) -> None:
+def test_a02811_risk_band_counts_sums_to_40(test_client: TestClient) -> None:
     payload = _payload(test_client)
     counts = payload.get("risk_band_counts", {})
     assert isinstance(counts, dict)
     total = sum(counts.values())
-    assert total == 32, f"risk_band_counts total must be 32, got {total}"
+    assert total == 40, f"risk_band_counts total must be 40, got {total}"
 
 
 def test_a02811_missing_evidence_rollup_present(test_client: TestClient) -> None:
@@ -432,7 +466,7 @@ def test_a02811_forbidden_actions_rollup_present_and_nonempty(test_client: TestC
     payload = _payload(test_client)
     rollup = payload.get("forbidden_actions_rollup", [])
     assert isinstance(rollup, list)
-    assert len(rollup) > 0, "forbidden_actions_rollup must not be empty — boundaries from all 32 modules"
+    assert len(rollup) > 0, "forbidden_actions_rollup must not be empty — boundaries from all 40 modules"
     assert all(isinstance(item, str) and item for item in rollup)
 
 
@@ -597,11 +631,11 @@ def test_a02811_expansion_l4_consolidated_summary_count_remains_1() -> None:
 
 
 def test_a02811_consolidated_candidate_count_equals_32(test_client: TestClient) -> None:
-    """Documents A02811_l4_consolidated_summary_refresh_count=1 and expansion_L4_consolidated_candidate_count=32."""
+    """Documents refreshed consolidated candidate count now equals 40 after A-028.15."""
     payload = _payload(test_client)
     total = payload.get("total_consolidated_candidates") or payload.get("total_l4_visibility_candidates")
-    assert total == 32, (
-        f"expansion_L4_consolidated_candidate_count must be 32, got {total}"
+    assert total == 40, (
+        f"expansion_L4_consolidated_candidate_count must be 40, got {total}"
     )
 
 
@@ -614,7 +648,7 @@ def test_a02811_procurement_plan_approval_not_in_modules(test_client: TestClient
 
 # ── Group 19: Per-Module Quality Checks ───────────────────────────────────────
 
-@pytest.mark.parametrize("uce_id,module", ALL_32_CANDIDATES)
+@pytest.mark.parametrize("uce_id,module", ALL_CANDIDATES)
 def test_a02811_per_module_visibility_level_l4(test_client: TestClient, uce_id: str, module: str) -> None:
     payload = _payload(test_client)
     for m in payload["modules"]:
@@ -626,7 +660,7 @@ def test_a02811_per_module_visibility_level_l4(test_client: TestClient, uce_id: 
     pytest.fail(f"{uce_id}/{module} not found in modules list")
 
 
-@pytest.mark.parametrize("uce_id,module", ALL_32_CANDIDATES)
+@pytest.mark.parametrize("uce_id,module", ALL_CANDIDATES)
 def test_a02811_per_module_read_only_true(test_client: TestClient, uce_id: str, module: str) -> None:
     payload = _payload(test_client)
     for m in payload["modules"]:
@@ -636,7 +670,7 @@ def test_a02811_per_module_read_only_true(test_client: TestClient, uce_id: str, 
     pytest.fail(f"{uce_id}/{module} not found in modules list")
 
 
-@pytest.mark.parametrize("uce_id,module", ALL_32_CANDIDATES)
+@pytest.mark.parametrize("uce_id,module", ALL_CANDIDATES)
 def test_a02811_per_module_no_mutation_true(test_client: TestClient, uce_id: str, module: str) -> None:
     payload = _payload(test_client)
     for m in payload["modules"]:

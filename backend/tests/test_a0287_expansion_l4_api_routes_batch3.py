@@ -762,8 +762,9 @@ def test_a0287_expansion_l4_api_route_count_formula() -> None:
     assert a0283_count == 6
     assert a0287_count == 10
     assert a02810_count == 10
-    assert total_exposed == 32
-    assert a0282_count + a0283_count + a0287_count + a02810_count == total_exposed
+    a02814_count = 8
+    assert total_exposed == 40
+    assert a0282_count + a0283_count + a0287_count + a02810_count + a02814_count == total_exposed
 
 
 # ---------------------------------------------------------------------------
@@ -779,8 +780,8 @@ def test_a0287_consolidated_summary_refresh_deferred_to_a0288() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload.get("summary_type") == "EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY"
-    # A-028.11-RUNTIME: consolidated catalog refreshed to 32 (was 22 in A-028.8)
-    assert payload.get("total_l4_visibility_candidates") == 32  # A-028.11-RUNTIME
+    # A-028.15-RUNTIME: consolidated catalog refreshed to 40 (32 + 8 from A-028.14)
+    assert payload.get("total_l4_visibility_candidates") == 40
 
 
 # ---------------------------------------------------------------------------

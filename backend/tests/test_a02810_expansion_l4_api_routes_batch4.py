@@ -606,14 +606,13 @@ def test_a02810_expansion_l4_api_route_count_formula() -> None:
 
 
 def test_a02810_consolidated_summary_refresh_deferred_to_a02811() -> None:
-    # Consolidated endpoint remains unchanged in A-028.10.
-    # CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02811 = YES
+    # Consolidated endpoint exists and is refreshed by later actions.
     test_client = TestClient(app)
     response = test_client.get(CONSOLIDATED_ROUTE, headers=_headers_with_permission())
     assert response.status_code == 200
     payload = response.json()
     assert payload.get("summary_type") == "EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY"
-    assert payload.get("total_l4_visibility_candidates") == 32  # A-028.11-RUNTIME: consolidated count refreshed to 32
+    assert payload.get("total_l4_visibility_candidates") == 40
 
 
 def test_a02810_consolidated_endpoint_is_not_in_openapi_schema() -> None:

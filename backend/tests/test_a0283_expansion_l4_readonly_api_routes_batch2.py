@@ -154,9 +154,9 @@ def test_a0283_router_import_validation() -> None:
 
 def test_a0283_route_exposure_and_no_duplicate_registration() -> None:
     paths = [path for path in app.openapi()["paths"] if path.startswith("/api/admin/expansion/l4/")]
-    # A-028.10 added 10 more routes: total individual = 32
-    # (A0282×6 + A0283×6 + A0287×10 + A02810×10)
-    assert len(paths) == 32
+    # A-028.14 added 8 more routes: total individual = 40
+    # (A0282×6 + A0283×6 + A0287×10 + A02810×10 + A02814×8)
+    assert len(paths) == 40
     assert len(paths) == len(set(paths))
 
 
@@ -294,8 +294,10 @@ def test_a0283_metric_formula_contract_for_batch2() -> None:
 
     assert a0282_count == 6
     assert a0283_count == 6
-    # A-028.10 added 10 more routes — total individual routes now 32
+    # A-028.14 added 8 more routes — total individual routes now 40
     a0287_count = 10
     a02810_count = 10
-    assert total_exposed == 32
-    assert a0282_count + a0283_count + a0287_count + a02810_count == total_exposed
+    a02814_count = 8
+    assert a0282_count + a0283_count + a0287_count + a02810_count + a02814_count == 40
+    assert total_exposed == 40
+    assert a0282_count + a0283_count + a0287_count + a02810_count + a02814_count == total_exposed

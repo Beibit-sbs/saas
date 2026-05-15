@@ -61,6 +61,7 @@ CONSOLIDATED_SOURCE_ACTIONS = [
     "A-028.1", "A-028.2", "A-028.3",
     "A-028.6", "A-028.7", "A-028.8",
     "A-028.9", "A-028.10", "A-028.11",
+    "A-028.13", "A-028.14", "A-028.15",
 ]
 CONSOLIDATED_MODULE_CATALOG: list[dict[str, Any]] = [
     {
@@ -256,6 +257,55 @@ CONSOLIDATED_MODULE_CATALOG: list[dict[str, Any]] = [
         "domain": "Legal / Compliance",
         "builder": get_consent_management_policy_l4_visibility_summary,
     },
+    # Wave 4 — A-028.13/A-028.14 candidates (added in A-028.15-RUNTIME)
+    {
+        "uce_id": "UCE-060",
+        "module": "timesheet_management",
+        "domain": "HR / Attendance",
+        "builder": get_timesheet_management_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-061",
+        "module": "faculty_attestation",
+        "domain": "HR / Faculty Governance",
+        "builder": get_faculty_attestation_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-067",
+        "module": "teaching_load_contracts",
+        "domain": "Academic / Faculty Load",
+        "builder": get_teaching_load_contracts_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-070",
+        "module": "staff_exit_offboarding",
+        "domain": "HR / Offboarding",
+        "builder": get_staff_exit_offboarding_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-077",
+        "module": "thesis_dissertation_management",
+        "domain": "Academic / Thesis Governance",
+        "builder": get_thesis_dissertation_management_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-085",
+        "module": "joint_program_management",
+        "domain": "Academic / Joint Programs",
+        "builder": get_joint_program_management_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-086",
+        "module": "inbound_exchange_management",
+        "domain": "International Office / Exchange",
+        "builder": get_inbound_exchange_management_l4_visibility_summary,
+    },
+    {
+        "uce_id": "UCE-087",
+        "module": "outbound_exchange_management",
+        "domain": "International Office / Exchange",
+        "builder": get_outbound_exchange_management_l4_visibility_summary,
+    },
 ]
 
 
@@ -273,7 +323,13 @@ def _aggregate_modules_by_domain() -> dict[str, list[str]]:
 def _aggregate_status_counts(modules: list[dict[str, Any]]) -> dict[str, int]:
     counts: Counter[str] = Counter()
     for module in modules:
-        status = module.get("readiness_summary", {}).get("status")
+        readiness_summary = module.get("readiness_summary")
+        if isinstance(readiness_summary, dict):
+            status = readiness_summary.get("status")
+        elif isinstance(readiness_summary, str):
+            status = readiness_summary
+        else:
+            status = None
         if isinstance(status, str) and status.strip():
             counts[status] += 1
         else:
@@ -284,7 +340,13 @@ def _aggregate_status_counts(modules: list[dict[str, Any]]) -> dict[str, int]:
 def _aggregate_risk_counts(modules: list[dict[str, Any]]) -> dict[str, int]:
     counts: Counter[str] = Counter()
     for module in modules:
-        risk = module.get("risk_summary", {}).get("risk_band")
+        risk_summary = module.get("risk_summary")
+        if isinstance(risk_summary, dict):
+            risk = risk_summary.get("risk_band")
+        elif isinstance(risk_summary, str):
+            risk = risk_summary
+        else:
+            risk = None
         if isinstance(risk, str) and risk.strip():
             counts[risk] += 1
         else:
@@ -364,7 +426,7 @@ def _build_consolidated_summary(tenant_id: int) -> dict[str, Any]:
         "tenant_id": tenant_id,
         "visibility_level": "L4",
         "summary_type": "EXPANSION_L4_CONSOLIDATED_ADMIN_SUMMARY",
-        "coverage_version": "A-028.11",
+        "coverage_version": "A-028.15",
         "source_actions": list(CONSOLIDATED_SOURCE_ACTIONS),
         "total_l4_visibility_candidates": len(CONSOLIDATED_MODULE_CATALOG),
         "total_api_routed_candidates": len(CONSOLIDATED_MODULE_CATALOG),
