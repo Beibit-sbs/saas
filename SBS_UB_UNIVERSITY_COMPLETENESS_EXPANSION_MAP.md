@@ -6096,3 +6096,205 @@ Reconciliation formula: `50 L3 overlays - 40 L4-visible candidates = 10` (PASS).
 - final_verdict: A-028.16.B1 CLOSED - SCOPED WAVE 17 40-CANDIDATE QUALITY BASELINE CONFIRMED
 - selected_next_action: A-029.0-SPEC
 - rationale: no fully ordinary-safe candidates remain; next strategic lane requires governance-first provider/Brain/risk planning
+
+## A-029.0-SPEC — Provider / Brain / Risk Lane Planning after Wave 17 Closure
+
+### Executive Summary
+
+- action_type: SPEC / PLANNING ONLY
+- runtime implementation started: NO
+- A-028.16.B1 closure re-verified: YES
+- strategic outcome: select controlled risk-lane planning bridge before runtime
+- selected_next_action: A-029.1-SPEC
+
+### A-028.16.B1 Closure Summary
+
+- commit: `c7fb084`
+- message: `docs(wave17): A-028.16.B1 close 40-candidate quality baseline`
+- final verdict: A-028.16.B1 CLOSED — SCOPED WAVE 17 40-CANDIDATE QUALITY BASELINE CONFIRMED
+- required gates: PASS (A-028 focused, A-027 continuity, LDAP smoke, tenant/security slice, forbidden scans, metrics arithmetic, git diff --check)
+- optional gates: frontend NOT_RUN in current workspace Docker compose path; full backend optional suite not clean but isolated failing group rerun PASS
+
+### Completed Wave 17 L4 Product Slice
+
+| Layer | Count | Evidence | Status |
+|---|---:|---|---|
+| L4 service summaries | 40 | A-028.1 + A-028.6 + A-028.9 + A-028.13 | COMPLETE |
+| L4 API routes | 40 | A-028.2 + A-028.3 + A-028.7 + A-028.10 + A-028.14 | COMPLETE |
+| Consolidated summary endpoint | 1 | A-028.4 + A-028.8 + A-028.11 + A-028.15 | COMPLETE |
+| Consolidated candidate coverage | 40 | coverage_version A-028.15 | COMPLETE |
+
+### Current Metrics (Locked)
+
+- baseline unchanged: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension unchanged: extension_total_count=25, total_tracked_modules=175
+- expansion unchanged:
+	- expansion_L2_foundation_count = 67
+	- expansion_runtime_implemented_count = 67
+	- expansion_L3_logic_count = 50
+	- remaining_L2_only = 17
+	- remaining_L3_not_L4 = 10
+	- expansion_L4_visibility_count = 40
+	- expansion_L4_api_route_count = 40
+	- expansion_L4_consolidated_summary_count = 1
+	- expansion_L4_consolidated_candidate_count = 40
+	- baseline_impact = 0
+	- extension_impact = 0
+
+### Remaining 10 L3-not-L4 Risk Inventory
+
+Reconciliation formula: `50 L3 overlays - 40 L4-visible candidates = 10` (PASS).
+
+| UCE ID | Candidate | Domain | Current State | Lane | Risk Reason | Safe Next Step | Prohibited Behavior |
+|---|---|---|---|---|---|---|---|
+| UCE-005 | performance_appraisal | Faculty / HR | L3 deterministic | sensitive-domain | personnel impact and potential sanction/eligibility sensitivity | classify under sensitive-domain readiness boundaries only | no automatic disciplinary/employment decision execution |
+| UCE-024 | student_information_system_integration | Integrations | L3 deterministic | provider-readiness | provider dependency semantics not validated for live integration | provider registry/profile readiness mapping only | no live provider calls, no credential usage |
+| UCE-047 | third_party_risk_policy | Security / Legal | L3 deterministic | deferred policy/procurement | policy-control governance requires legal-safe controls first | policy-readiness specification only | no policy auto-enforcement/execution |
+| UCE-048 | data_retention_policy_control | Compliance | L3 deterministic | deferred policy/procurement | retention and legal-hold automation risks without legal boundaries | retention readiness classification only | no automatic data enforcement/deletion workflow |
+| UCE-054 | brain_decision_audit_trail | AI Governance | L3 deterministic | Brain governance | Brain audit semantics require governance-first design | define signal/evidence/audit registry and human-review boundary | no autonomous decisions, no model execution actions |
+| UCE-057 | staff_probation_review | Faculty Lifecycle | L3 deterministic | sensitive-domain | employment-status sensitivity and potential adverse decisions | sensitive-domain readiness controls only | no automatic probation outcome execution |
+| UCE-098 | procurement_plan_approval_workflow | Procurement / Contracts / Assets | L3 deterministic | deferred policy/procurement | procurement decisioning and financial commitment risk | procurement readiness policy map only | no approve/reject/award/commit execution |
+| UCE-106 | learning_management_system_integration | Integrations | L3 deterministic | provider-readiness | integration requires provider contract/governance controls | provider contract readiness documentation only | no live LMS provider submission/calls |
+| UCE-109 | digital_signature_integration | Integrations | L3 deterministic | provider-readiness | e-signature provider/legal trust boundary not yet governed | provider readiness and trust-boundary planning only | no live signing flows or external submission |
+| UCE-112 | regulatory_reporting_integration | Integrations | L3 deterministic | provider-readiness | regulator/provider submission pathways require strict governance | reporting readiness and interface classification only | no external regulator/provider submission |
+
+Lane reconciliation (remaining 10):
+- provider lane = 4
+- Brain lane = 1
+- sensitive lane = 2
+- deferred policy/procurement = 3
+- ordinary eligible = 0
+
+### Remaining 17 L2-only Risk Inventory
+
+| UCE ID | Candidate | Domain | Current State | Lane | Reason Still L2 | Suggested Future Wave |
+|---|---|---|---|---|---|---|
+| UCE-025 | finance_erp_integration | Integrations | L2 envelope foundation | provider-readiness | provider dependency semantics and live contract boundaries not ready | provider-readiness wave |
+| UCE-027 | email_gateway_integration | Integrations | L2 envelope foundation | provider-readiness | provider dependency semantics and outbound boundary controls pending | provider-readiness wave |
+| UCE-028 | notification_gateway_integration | Integrations | L2 envelope foundation | provider-readiness | provider dependency semantics and channel governance pending | provider-readiness wave |
+| UCE-030 | government_services_integration | Integrations | L2 envelope foundation | provider-readiness | external governmental provider contract and compliance constraints | provider-readiness wave |
+| UCE-108 | identity_provider_integration | Integrations | L2 envelope foundation | provider-readiness | identity trust and fail-closed provider semantics not yet governed | provider-readiness wave |
+| UCE-110 | payment_gateway_integration | Integrations | L2 envelope foundation | provider-readiness | payment/provider commitment boundary requires stronger governance | provider-readiness wave |
+| UCE-113 | hr_payroll_integration | Integrations | L2 envelope foundation | provider-readiness | payroll provider dependency and data-transfer controls pending | provider-readiness wave |
+| UCE-049 | student_risk_signal_registry | AI Governance | L2 envelope foundation | Brain governance | signal governance and human-review controls required before L3 uplift | Brain governance wave |
+| UCE-050 | finance_anomaly_signal_registry | AI Governance | L2 envelope foundation | Brain governance | signal governance and explainability/audit boundaries pending | Brain governance wave |
+| UCE-051 | academic_quality_signal_registry | AI Governance | L2 envelope foundation | Brain governance | signal governance and deterministic evidence mapping needed | Brain governance wave |
+| UCE-129 | procurement_risk_signal_registry | AI Governance | L2 envelope foundation | Brain governance | procurement-risk signal governance required before execution semantics | Brain governance wave |
+| UCE-145 | safe_evidence_summary_agent | Safe autonomy candidate | L2 envelope foundation | autonomy governance | autonomy guardrails and explicit human approval flow not yet defined | autonomy governance wave |
+| UCE-146 | safe_task_drafting_agent | Safe autonomy candidate | L2 envelope foundation | autonomy governance | autonomy guardrails and action-boundary controls not yet defined | autonomy governance wave |
+| UCE-007 | disciplinary_case_management | Student/Faculty governance | L2 envelope foundation | sensitive-domain readiness | high-stakes disciplinary decisions require strict human-review governance | sensitive-domain readiness wave |
+| UCE-078 | academic_integrity_case_management | Academic governance | L2 envelope foundation | sensitive-domain readiness | case outcome and sanction sensitivity needs governance-first controls | sensitive-domain readiness wave |
+| UCE-081 | disability_support_services | Student services | L2 envelope foundation | sensitive-domain readiness | accommodation eligibility sensitivity requires non-automated boundaries | sensitive-domain readiness wave |
+| UCE-082 | student_financial_hardship | Student finance support | L2 envelope foundation | sensitive-domain readiness | aid/eligibility sensitivity requires strict human-approved flow | sensitive-domain readiness wave |
+
+Lane reconciliation (remaining 17):
+- provider lane = 7
+- Brain lane = 4
+- autonomy lane = 2
+- sensitive lane = 4
+
+### Lane Standards
+
+Provider-readiness lane standard:
+- provider registry/profile only
+- no live provider calls
+- no credentials
+- no external submission
+- no fake integration status
+- readiness classification only
+- sandbox/mock contract allowed only when explicitly marked non-live
+- tenant fail-closed and permission-safe boundary required
+- audit-ready boundary required
+
+Brain governance lane standard:
+- no autonomous decisions
+- no LLM/model execution unless explicitly selected and safely gated
+- signal registry/evidence mapping/human-review boundaries only
+- explainability and audit trail required
+- no fake KPI or synthetic risk score
+- no direct action execution
+
+Sensitive-domain readiness standard:
+- human review required
+- no automatic sanction/aid/accommodation/eligibility decision
+- no hidden ranking
+- no discriminatory scoring
+- no legal/disciplinary decision execution
+- evidence visibility only
+- audit and appeal boundary required
+
+Autonomy lane standard:
+- draft-only or evidence-summary-only
+- no send/submit/approve/reject/delete execution
+- human approval required
+- audit trail mandatory
+- no autonomous execution
+
+Policy/procurement lane standard:
+- read-only policy/procurement readiness first
+- no approval/rejection
+- no procurement award
+- no supplier ranking
+- no financial commitment
+- no contract execution
+- no external submission
+
+### Option Matrix
+
+| Option | Value | Risk | Effort | Recommended? | Reason |
+|---|---:|---:|---:|---|---|
+| Option A — Provider-readiness SPEC | 5 | 5 | 4 | NO (now) | high-value lane but risky as immediate next step without cross-lane foundation |
+| Option B — Brain governance SPEC | 5 | 5 | 4 | NO (now) | strategic lane needs foundational anti-fake boundaries first |
+| Option C — Risk-lane foundation map | 5 | 2 | 3 | YES | safest and most correct bridge after lane-heavy remaining inventory |
+| Option D — Sensitive-domain readiness SPEC | 5 | 5 | 5 | NO (now) | legal/ethical complexity should follow unified boundary model |
+| Option E — Product/demo readiness SPEC | 4 | 2 | 2 | CONDITIONAL | strong packaging value but does not resolve next runtime lane governance |
+| Option F — Baseline 150 uplift | 3 | 3 | 4 | NO | delays required risk-lane governance sequencing |
+| Option G — Full release quality remediation | 4 | 3 | 4 | CONDITIONAL | quality value acknowledged, but this action is lane-planning-first |
+
+### Selected Next Action
+
+- selected_option: Option C
+- next_action_id: A-029.1-SPEC
+- action_title: Risk Lane Foundation Map / Provider-Brain-Sensitive Boundary Specification
+- rationale:
+	- remaining candidates are lane-heavy and not ordinary-safe
+	- direct runtime jump into provider/Brain/sensitive lanes risks fake or inflated claims
+	- foundation mapping provides safe boundaries, lane standards, grouping, and sequence
+
+### Selected Next Action Scope and Non-Scope
+
+Expected report:
+- `A-029.1-SPEC-RISK_LANE_FOUNDATION_MAP_AND_BOUNDARY_SPECIFICATION_REPORT.md`
+
+A-029.1-SPEC should:
+- remain SPEC-only
+- classify all remaining 10 L3-not-L4 and 17 L2-only candidates
+- define lane-specific maturity rules and anti-fake boundaries
+- define safe runtime wave sequence
+- identify first safe runtime wave after A-029.1
+
+A-029.1-SPEC must not:
+- implement provider/Brain/sensitive/autonomy runtime behavior
+- create API routes or frontend components
+- execute workflows or decisions
+- mutate records or trigger external submission
+
+### Anti-Fake / Anti-Inflation Review
+
+- no runtime code written in A-029.0-SPEC: PASS
+- no provider integration implemented: PASS
+- no Brain execution implemented: PASS
+- no autonomy execution implemented: PASS
+- no sensitive-domain decision implementation: PASS
+- no fake KPI/dashboard/synthetic score: PASS
+- no external submission/workflow execution/DB mutation: PASS
+- baseline metrics unchanged: PASS
+- extension metrics unchanged: PASS
+- expansion metrics unchanged and separately tracked: PASS
+
+### Final Decision
+
+- final_verdict: A-029.0-SPEC CLOSED - PASS
+- status: ready_for_A-029.1-SPEC
+- last_completed_action_id: A-029.0-SPEC
+- next_action_id: A-029.1-SPEC

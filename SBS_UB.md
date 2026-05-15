@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-029.0-SPEC
-    - current_stage: A-028.16.B1 complete / Scoped Wave 17 40-candidate quality baseline confirmed
-    - last_completed_action_id: A-028.16.B1
-    - next_action_id: A-029.0-SPEC
-    - updated_at: 2026-05-16 (A-028.16.B1 closure gate executed; required A-028/A-027/LDAP/tenant-security gates passed; metrics unchanged; no runtime code; scoped closure accepted with documented optional-gate limitations)
+    - status: ready_for_A-029.1-SPEC
+    - current_stage: A-029.0-SPEC complete / provider Brain risk lane planning after Wave 17 closure
+    - last_completed_action_id: A-029.0-SPEC
+    - next_action_id: A-029.1-SPEC
+    - updated_at: 2026-05-16 (A-029.0-SPEC completed as planning-only; A-028.16.B1 closure and locked metrics re-verified; remaining 10+17 inventory classified into risk lanes; selected next action A-029.1-SPEC)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -10198,5 +10198,109 @@ validate -> guard -> cross-entity check -> persist -> publish_event -> brain sig
 - status: ready_for_A-029.0-SPEC
 - last_completed_action_id: A-028.16.B1
 - next_action_id: A-029.0-SPEC
+
+## A-029.0-SPEC - Provider / Brain / Risk Lane Planning after Wave 17 Closure
+
+### Strategic Decision
+
+- action_id: A-029.0-SPEC
+- mode: SPEC_ONLY_PLANNING
+- runtime_implementation_started: NO
+- selected_option: Option C
+- selected_next_action: A-029.1-SPEC
+- action_title: Risk Lane Foundation Map / Provider-Brain-Sensitive Boundary Specification
+
+### Source-of-Truth Confirmation
+
+- A-028.16.B1 commit verified: `c7fb084`
+- A-028.16.B1 final verdict verified: CLOSED - SCOPED WAVE 17 40-CANDIDATE QUALITY BASELINE CONFIRMED
+- A-028.15-RUNTIME evidence chain verified: consolidated summary endpoint refreshed to 40 candidate coverage
+- runtime implementation in A-029: NOT STARTED
+
+### Completed Wave 17 L4 Product Slice
+
+| Layer | Count | Evidence | Status |
+|---|---:|---|---|
+| L4 service summaries | 40 | A-028.1 + A-028.6 + A-028.9 + A-028.13 | COMPLETE |
+| L4 API routes | 40 | A-028.2 + A-028.3 + A-028.7 + A-028.10 + A-028.14 | COMPLETE |
+| Consolidated summary endpoint | 1 | A-028.4 + A-028.8 + A-028.11 + A-028.15 | COMPLETE |
+| Consolidated candidate coverage | 40 | coverage_version A-028.15 | COMPLETE |
+
+### Current Metrics (Locked, Unchanged)
+
+- baseline metrics preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension metrics preserved: extension_total_count=25, total_tracked_modules=175
+- expansion metrics preserved:
+    - expansion_L2_foundation_count = 67
+    - expansion_runtime_implemented_count = 67
+    - expansion_L3_logic_count = 50
+    - remaining_L2_only = 17
+    - remaining_L3_not_L4 = 10
+    - expansion_L4_visibility_count = 40
+    - expansion_L4_api_route_count = 40
+    - expansion_L4_consolidated_summary_count = 1
+    - expansion_L4_consolidated_candidate_count = 40
+    - baseline_impact = 0
+    - extension_impact = 0
+
+### Remaining Inventory Classification
+
+- remaining_L3_not_L4 = 10
+- remaining_L2_only = 17
+- ordinary eligible fully ordinary-safe in remaining 10 = 0
+- provider lane = 4 (remaining 10) / 7 (remaining L2-only)
+- Brain lane = 1 (remaining 10) / 4 (remaining L2-only)
+- autonomy lane = 0 (remaining 10) / 2 (remaining L2-only)
+- sensitive lane = 2 (remaining 10) / 4 (remaining L2-only)
+- deferred policy/procurement = UCE-047, UCE-048, UCE-098
+
+### Option Matrix (A-029.0-SPEC)
+
+| Option | Value | Risk | Effort | Recommended? | Reason |
+|---|---:|---:|---:|---|---|
+| Option A — provider-readiness SPEC | 5 | 5 | 4 | NO (now) | high value but immediate lane jump risks integration-claim inflation |
+| Option B — Brain governance SPEC | 5 | 5 | 4 | NO (now) | strategic, but requires pre-defined governance and anti-fake controls first |
+| Option C — risk-lane foundation map | 5 | 2 | 3 | YES | safest high-value planning bridge before any provider/Brain/sensitive runtime |
+| Option D — sensitive-domain readiness SPEC | 5 | 5 | 5 | NO (now) | legal/ethical boundary work should follow unified lane foundation |
+| Option E — product/demo readiness SPEC | 4 | 2 | 2 | CONDITIONAL | useful commercial packaging, but risk-lane control sequencing takes priority |
+| Option F — baseline 150 uplift | 3 | 3 | 4 | NO | strengthens core but delays mandatory risk-lane governance planning |
+| Option G — full release quality remediation | 4 | 3 | 4 | CONDITIONAL | valuable stability effort, not the strategic lane-selection action |
+
+### Selected Next Action Scope
+
+- next_action_id: A-029.1-SPEC
+- expected_report: `A-029.1-SPEC-RISK_LANE_FOUNDATION_MAP_AND_BOUNDARY_SPECIFICATION_REPORT.md`
+- in_scope:
+    - classify all remaining 10 L3-not-L4 and 17 L2-only candidates into canonical lanes
+    - define provider/Brain/sensitive/autonomy/policy lane maturity and evidence standards
+    - define anti-fake boundaries and sequencing guardrails
+    - define safe runtime wave ordering after governance is locked
+- out_of_scope:
+    - no provider integration implementation
+    - no Brain execution/model execution behavior
+    - no autonomy execution behavior
+    - no sensitive-domain decision execution
+    - no procurement/policy workflow execution
+    - no router/service/frontend/runtime code changes
+
+### Anti-Fake / Anti-Inflation Review
+
+- no code implementation in A-029.0-SPEC: PASS
+- no runtime implementation started: PASS
+- no provider integration implemented: PASS
+- no Brain execution implemented: PASS
+- no autonomy execution implemented: PASS
+- no sensitive-domain decision implementation: PASS
+- no fake KPI/dashboard/synthetic score: PASS
+- no external submission/workflow execution/DB mutation: PASS
+- baseline and extension metrics unchanged: PASS
+- expansion metrics remain separately tracked and unchanged: PASS
+
+### Final Decision
+
+- final_verdict: A-029.0-SPEC CLOSED - PASS
+- status: ready_for_A-029.1-SPEC
+- last_completed_action_id: A-029.0-SPEC
+- next_action_id: A-029.1-SPEC
 
 
