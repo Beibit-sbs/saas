@@ -5601,6 +5601,58 @@ Files to be created/modified:
 - final_verdict: A-028.14-SPEC CLOSED — PASS
 - next_action_id: A-028.14-RUNTIME
 
+---
+
+## A-028.14-RUNTIME — Expansion L4 API Routes Batch 5 (UCE-060, 061, 067, 070, 077, 085, 086, 087)
+
+### A-028.14-RUNTIME Status
+
+- **A-028.14-RUNTIME CLOSED — PASS**
+- Implemented 8 read-only GET routes wrapping A-028.13 L4 service summaries.
+- Consolidated summary refresh deferred to A-028.15 (no change in this action).
+
+### Routes Implemented (A-028.14-RUNTIME)
+
+| # | UCE ID | Candidate | Route | Status |
+|---|---|---|---|---|
+| 1 | UCE-060 | timesheet_management | GET /api/admin/expansion/l4/timesheet-management/summary | `L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02814` |
+| 2 | UCE-061 | faculty_attestation | GET /api/admin/expansion/l4/faculty-attestation/summary | `L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02814` |
+| 3 | UCE-067 | teaching_load_contracts | GET /api/admin/expansion/l4/teaching-load-contracts/summary | `L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02814` |
+| 4 | UCE-070 | staff_exit_offboarding | GET /api/admin/expansion/l4/staff-exit-offboarding/summary | `L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02814` |
+| 5 | UCE-077 | thesis_dissertation_management | GET /api/admin/expansion/l4/thesis-dissertation-management/summary | `L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02814` |
+| 6 | UCE-085 | joint_program_management | GET /api/admin/expansion/l4/joint-program-management/summary | `L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02814` |
+| 7 | UCE-086 | inbound_exchange_management | GET /api/admin/expansion/l4/inbound-exchange-management/summary | `L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02814` |
+| 8 | UCE-087 | outbound_exchange_management | GET /api/admin/expansion/l4/outbound-exchange-management/summary | `L4_READONLY_API_ROUTE_IMPLEMENTED_AFTER_A02814` |
+
+### Metric Outcomes (A-028.14-RUNTIME)
+
+| Metric | Before A-028.14 | After A-028.14 | Change |
+|---|---|---|---|
+| A02814_l4_api_route_count | — | 8 | NEW |
+| expansion_L4_api_route_count | 32 | 40 | +8 |
+| expansion_L4_visibility_count | 40 | 40 | UNCHANGED |
+| expansion_L4_consolidated_summary_count | 1 | 1 | UNCHANGED |
+| expansion_L4_consolidated_candidate_count | 32 | 32 | UNCHANGED |
+| CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02815 | YES | YES | UNCHANGED |
+| baseline_impact | 0 | 0 | UNCHANGED |
+| extension_impact | 0 | 0 | UNCHANGED |
+
+### Validation (A-028.14-RUNTIME)
+
+- Test file: `backend/tests/test_a02814_expansion_l4_api_routes_batch5.py`
+- Tests: 270 passed
+- Continuity: A-028.13 (494 pass), A-028.10 (494 pass)
+- Mutation scan: PASS (no POST/PUT/PATCH/DELETE routes added)
+- Provider scan: PASS (no external provider calls in new routes)
+- Brain/autonomy scan: PASS (no AUTO_* execution in router)
+- Tenant fail-closed: PASS (unknown tenant returns 404, not 200)
+- Consolidated summary: UNCHANGED (endpoint and candidate count both unchanged)
+
+- runtime_report_file: `A-028.14-RUNTIME-EXPANSION_L4_API_ROUTES_BATCH5_REPORT.md`
+- final_verdict: A-028.14-RUNTIME CLOSED — PASS
+- last_completed_action_id: A-028.14-RUNTIME
+- next_action_id: A-028.15-SPEC
+
 ## A-028.2-SPEC - Expansion L4 Read-Only API Surface / Admin Route Specification
 
 ### A-028.1 Runtime Closure Summary

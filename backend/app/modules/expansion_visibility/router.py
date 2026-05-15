@@ -39,6 +39,14 @@ from app.modules.mou_lifecycle.service import get_mou_lifecycle_l4_visibility_su
 from app.modules.scholarship_committee_workflow.service import get_scholarship_committee_workflow_l4_visibility_summary
 from app.modules.student_appeals_workflow.service import get_student_appeals_workflow_l4_visibility_summary
 from app.modules.consent_management_policy.service import get_consent_management_policy_l4_visibility_summary
+from app.modules.timesheet_management.service import get_timesheet_management_l4_visibility_summary
+from app.modules.faculty_attestation.service import get_faculty_attestation_l4_visibility_summary
+from app.modules.teaching_load_contracts.service import get_teaching_load_contracts_l4_visibility_summary
+from app.modules.staff_exit_offboarding.service import get_staff_exit_offboarding_l4_visibility_summary
+from app.modules.thesis_dissertation_management.service import get_thesis_dissertation_management_l4_visibility_summary
+from app.modules.joint_program_management.service import get_joint_program_management_l4_visibility_summary
+from app.modules.inbound_exchange_management.service import get_inbound_exchange_management_l4_visibility_summary
+from app.modules.outbound_exchange_management.service import get_outbound_exchange_management_l4_visibility_summary
 
 
 router = APIRouter(prefix="/api/admin/expansion/l4", tags=["expansion-l4-visibility"])
@@ -688,6 +696,82 @@ def get_consent_management_policy_summary(
     tenant: TrustedTenant,
 ) -> dict[str, Any]:
     return _build_summary_response(tenant, get_consent_management_policy_l4_visibility_summary)
+
+
+# A-028.14 — Expansion L4 API Routes Batch 5 (UCE-060, 061, 067, 070, 077, 085, 086, 087)
+# Read-only GET wrappers over A-028.13 L4 service summaries.
+# Consolidated summary refresh deferred to A-028.15.
+
+@router.get("/timesheet-management/summary")
+def get_timesheet_management_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_timesheet_management_l4_visibility_summary)
+
+
+@router.get("/faculty-attestation/summary")
+def get_faculty_attestation_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_faculty_attestation_l4_visibility_summary)
+
+
+@router.get("/teaching-load-contracts/summary")
+def get_teaching_load_contracts_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_teaching_load_contracts_l4_visibility_summary)
+
+
+@router.get("/staff-exit-offboarding/summary")
+def get_staff_exit_offboarding_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_staff_exit_offboarding_l4_visibility_summary)
+
+
+@router.get("/thesis-dissertation-management/summary")
+def get_thesis_dissertation_management_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_thesis_dissertation_management_l4_visibility_summary)
+
+
+@router.get("/joint-program-management/summary")
+def get_joint_program_management_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_joint_program_management_l4_visibility_summary)
+
+
+@router.get("/inbound-exchange-management/summary")
+def get_inbound_exchange_management_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_inbound_exchange_management_l4_visibility_summary)
+
+
+@router.get("/outbound-exchange-management/summary")
+def get_outbound_exchange_management_summary(
+    _: Actor,
+    __: ExpansionRead,
+    tenant: TrustedTenant,
+) -> dict[str, Any]:
+    return _build_summary_response(tenant, get_outbound_exchange_management_l4_visibility_summary)
 
 
 @router.get("/summary", include_in_schema=False)

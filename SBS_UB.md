@@ -1362,6 +1362,46 @@
     - current_stage: A-028.14-SPEC complete / expansion L4 API routes for A-028.13 batch specified
     - last_completed_action_id: A-028.14-SPEC
     - next_action_id: A-028.14-RUNTIME
+- A-028.14-RUNTIME execution block:
+    - runtime_scope: implement 8 read-only GET admin API routes wrapping A-028.13 L4 service summaries (UCE-060, UCE-061, UCE-067, UCE-070, UCE-077, UCE-085, UCE-086, UCE-087)
+    - routes_implemented:
+        - GET /api/admin/expansion/l4/timesheet-management/summary (UCE-060)
+        - GET /api/admin/expansion/l4/faculty-attestation/summary (UCE-061)
+        - GET /api/admin/expansion/l4/teaching-load-contracts/summary (UCE-067)
+        - GET /api/admin/expansion/l4/staff-exit-offboarding/summary (UCE-070)
+        - GET /api/admin/expansion/l4/thesis-dissertation-management/summary (UCE-077)
+        - GET /api/admin/expansion/l4/joint-program-management/summary (UCE-085)
+        - GET /api/admin/expansion/l4/inbound-exchange-management/summary (UCE-086)
+        - GET /api/admin/expansion/l4/outbound-exchange-management/summary (UCE-087)
+    - A02814_l4_api_route_count: 8
+    - expansion_L4_api_route_count: 40 (was 32; +8 from A-028.14)
+    - expansion_L4_visibility_count: 40 (unchanged — no new L4 service summaries)
+    - expansion_L4_consolidated_summary_count: 1 (unchanged — no consolidated refresh)
+    - expansion_L4_consolidated_candidate_count: 32 (unchanged — refresh deferred to A-028.15)
+    - CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02815: YES
+    - expansion_L2_foundation_count: 67 (unchanged)
+    - expansion_runtime_implemented_count: 67 (unchanged)
+    - expansion_L3_logic_count: 50 (unchanged)
+    - remaining_L2_only: 17 (unchanged)
+    - remaining_L3_not_L4: 10 (unchanged)
+    - A02813_l4_visibility_count: 8 (unchanged)
+    - baseline_impact: 0
+    - extension_impact: 0
+    - router_file: backend/app/modules/expansion_visibility/router.py
+    - test_file: backend/tests/test_a02814_expansion_l4_api_routes_batch5.py
+    - test_count: 270 passed
+    - permission: admin.expansion.read (all 8 routes)
+    - rbac: fail-closed (unknown tenant returns 404)
+    - mutation_scan: PASS (no POST/PUT/PATCH/DELETE routes added)
+    - provider_scan: PASS (no provider calls in new routes)
+    - brain_autonomy_scan: PASS (no AUTO_* execution in router)
+    - consolidated_summary_accidental_refresh: NONE (endpoint unchanged)
+    - continuity: A-028.13 (494 pass), A-028.10 (494 pass)
+    - runtime_report_file: A-028.14-RUNTIME-EXPANSION_L4_API_ROUTES_BATCH5_REPORT.md
+    - final_verdict: A-028.14-RUNTIME CLOSED — PASS
+    - status: complete
+    - last_completed_action_id: A-028.14-RUNTIME
+    - next_action_id: A-028.15-SPEC
 - A-026.10-SPEC execution block:
     - spec_scope: planning_only_no_runtime_code_changes
     - remaining_l2_count_confirmed: 13
