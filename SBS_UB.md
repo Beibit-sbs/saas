@@ -1402,6 +1402,42 @@
     - status: complete
     - last_completed_action_id: A-028.14-RUNTIME
     - next_action_id: A-028.15-SPEC
+- A-028.15-SPEC execution block:
+    - mode: specification_planning_only_no_runtime_code
+    - purpose: specify refresh of existing expansion L4 consolidated summary coverage from 32 to 40 candidates
+    - source_verification: A-028.14-RUNTIME CLOSED — PASS (commit e3b6065)
+    - consolidated_endpoint_verified: GET /api/admin/expansion/l4/summary (existing endpoint, no new endpoint required)
+    - current_gap_verified: consolidated_coverage=32 while l4_visibility=40 and api_routes=40
+    - full_inventory_verified: 40/40 candidates have L4 service summary and read-only API route
+    - refresh_strategy_selected: refresh_existing_endpoint_only_no_new_route
+    - permission_required: admin.expansion.read (unchanged)
+    - aggregation_mode: service_summary_builder_calls_only (no internal HTTP recursion)
+    - current_router_consolidated_state_verified:
+        - coverage_version: A-028.11
+        - source_actions: A-028.1, A-028.2, A-028.3, A-028.6, A-028.7, A-028.8, A-028.9, A-028.10, A-028.11
+        - consolidated_catalog_count: 32
+    - target_runtime_contract_for_a02815:
+        - coverage_version: A-028.15
+        - source_actions_must_include: A-028.1, A-028.2, A-028.3, A-028.6, A-028.7, A-028.8, A-028.9, A-028.10, A-028.11, A-028.13, A-028.14, A-028.15
+        - total_l4_visibility_candidates: 40
+        - total_api_routed_candidates: 40
+        - total_consolidated_candidates: 40
+    - expected_runtime_files: backend/app/modules/expansion_visibility/router.py, backend/tests/test_a02815_expansion_l4_consolidated_summary_refresh_40.py, SBS_UB.md, SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md, A-028.15-RUNTIME-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_40_REPORT.md
+    - expected_test_scope_runtime: 120-240 assertions (consolidated endpoint contract, security, safety flags, 40-candidate inclusion, continuity)
+    - anti_fake_boundary_in_spec: no fake_kpi, no synthetic_dashboard, no synthetic_score, no ranking, no recommendation_execution, no provider, no external_submission, no brain, no autonomy, no workflow, no decision_execution, no mutation
+    - runtime_non_claims_in_spec: no runtime implementation started, no test file created, no router/service changes, no consolidated refresh claim
+    - baseline_metrics_in_spec: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS (UNCHANGED)
+    - extension_metrics_in_spec: extension_total_count=25, total_tracked_modules=175 (UNCHANGED)
+    - expansion_metrics_in_spec: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, remaining_L3_not_L4=10, A02813_l4_visibility_count=8, expansion_L4_visibility_count=40, A02814_l4_api_route_count=8, expansion_L4_api_route_count=40, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=32, baseline_impact=0, extension_impact=0 (ALL PRESERVED IN SPEC)
+    - expected_formula_if_a02815_runtime_passes: A02815_l4_consolidated_summary_refresh_count=1, expansion_L4_consolidated_summary_count remains 1, expansion_L4_consolidated_candidate_count=40, expansion_L4_visibility_count remains 40, expansion_L4_api_route_count remains 40, expansion_L3_logic_count remains 50, remaining_L3_not_L4 remains 10, baseline_impact=0, extension_impact=0
+    - anti_inflation: PASS (spec-only, no runtime code, no baseline/extension movement, no L5/L6 claim, no fake KPI inflation)
+    - repo_hygiene_snapshot: PASS (.coverage preserved unstaged, A-027.9 doc preserved untouched)
+    - spec_report_file: A-028.15-SPEC-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_40_REPORT.md
+    - final_verdict: A-028.15-SPEC CLOSED — PASS
+    - status: ready_for_A-028.15-RUNTIME
+    - current_stage: A-028.15-SPEC complete / expansion L4 consolidated summary refresh to 40 candidates specified
+    - last_completed_action_id: A-028.15-SPEC
+    - next_action_id: A-028.15-RUNTIME
 - A-026.10-SPEC execution block:
     - spec_scope: planning_only_no_runtime_code_changes
     - remaining_l2_count_confirmed: 13

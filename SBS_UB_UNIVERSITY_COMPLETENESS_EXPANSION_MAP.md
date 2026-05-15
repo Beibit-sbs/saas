@@ -5653,6 +5653,128 @@ Files to be created/modified:
 - last_completed_action_id: A-028.14-RUNTIME
 - next_action_id: A-028.15-SPEC
 
+---
+
+## A-028.15-SPEC — Expansion L4 Consolidated Summary Refresh from 32 to 40 Candidates
+
+### A-028.14 Runtime Closure Summary
+
+- A-028.14-RUNTIME: CLOSED — PASS
+- Commit: `e3b6065`
+- 8 new read-only admin routes added (UCE-060/061/067/070/077/085/086/087)
+- expansion_L4_api_route_count: 32 -> 40
+- expansion_L4_visibility_count: 40 (unchanged)
+- expansion_L4_consolidated_summary_count: 1 (unchanged)
+- expansion_L4_consolidated_candidate_count: 32 (unchanged)
+- Consolidated refresh in A-028.14: DEFERRED (`CONSOLIDATED_SUMMARY_REFRESH_DEFERRED_TO_A02815=YES`)
+
+### 40-Candidate L4/API-Routed Inventory
+
+| Group | Count | Status |
+|---|---:|---|
+| First wave (UCE-009/011/013/089/090/099/122/114/032/031/012/019) | 12 | L4 + API present |
+| Second wave (UCE-014/015/016/071/072/073/074/075/076/092) | 10 | L4 + API present |
+| Third wave (UCE-001/002/003/004/017/022/023/037/038/046) | 10 | L4 + API present |
+| Fourth wave (UCE-060/061/067/070/077/085/086/087) | 8 | L4 + API present |
+| Total L4 visibility candidates | 40 | VERIFIED |
+| Total read-only API routes | 40 | VERIFIED |
+
+Current consolidated endpoint coverage:
+- `GET /api/admin/expansion/l4/summary` exists and is active
+- Current consolidated catalog coverage: 32/40
+- Gap requiring runtime refresh: 8 candidates
+
+### Selected Refresh Strategy
+
+- Strategy: refresh the existing consolidated endpoint only
+- Endpoint: `GET /api/admin/expansion/l4/summary`
+- New endpoint creation: NO
+- New API route creation: NO
+- Permission: `admin.expansion.read`
+- Aggregation source: direct service summary builders (A-028.1 + A-028.6 + A-028.9 + A-028.13)
+- Internal HTTP self-calls: FORBIDDEN
+
+### Consolidated Refresh Contract (A-028.15-RUNTIME)
+
+- Read-only GET endpoint preserved
+- Tenant-safe and fail-closed behavior preserved
+- RBAC/permission-safe behavior preserved
+- Aggregation-only behavior preserved
+- Evidence-backed outputs only
+- No DB mutation
+- No provider call
+- No external submission
+- No Brain/autonomy/workflow/decision execution
+- No fake KPI/dashboard values
+- No synthetic score
+- No ranking/recommendation execution
+- No L5/L6 claim
+
+Required post-runtime consolidated values:
+- `coverage_version = A-028.15`
+- `source_actions` include: A-028.1, A-028.2, A-028.3, A-028.6, A-028.7, A-028.8, A-028.9, A-028.10, A-028.11, A-028.13, A-028.14, A-028.15
+- `total_l4_visibility_candidates = 40`
+- `total_api_routed_candidates = 40`
+- `total_consolidated_candidates = 40`
+
+### Expected Runtime Files (A-028.15-RUNTIME)
+
+- `backend/app/modules/expansion_visibility/router.py`
+- `backend/tests/test_a02815_expansion_l4_consolidated_summary_refresh_40.py`
+- `SBS_UB.md`
+- `SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md`
+- `A-028.15-RUNTIME-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_40_REPORT.md`
+
+Potential continuity test updates (if hard-coded at 32):
+- `backend/tests/test_a02811_expansion_l4_consolidated_summary_refresh_32.py`
+- `backend/tests/test_a0288_expansion_l4_consolidated_summary_refresh.py`
+- `backend/tests/test_a0284_expansion_l4_consolidated_summary.py`
+- `backend/tests/test_a02814_expansion_l4_api_routes_batch5.py`
+
+### Test Plan (A-028.15-RUNTIME)
+
+- New target test file: `backend/tests/test_a02815_expansion_l4_consolidated_summary_refresh_40.py`
+- Planned groups: route existence/GET-only/auth/rbac/tenant fail-closed/contract fields/coverage version/source actions/40-module inclusion/rollup correctness/safety flags/anti-fake fields/idempotency/no-duplicate-routes/continuity suites
+- Expected assertion volume: 120-240
+- Planned runtime validation packs: A-028.15 targeted, A-028.14 targeted, A-028.13 visibility, A-028.11 consolidated regression, combined A-028 pack, A-027 continuity, LDAP smoke, forbidden scans
+
+### Expected Metric Movement (Runtime Formula Only)
+
+Current (pre-runtime):
+- `expansion_L4_visibility_count = 40`
+- `expansion_L4_api_route_count = 40`
+- `expansion_L4_consolidated_summary_count = 1`
+- `expansion_L4_consolidated_candidate_count = 32`
+- `expansion_L3_logic_count = 50`
+
+Expected if A-028.15-RUNTIME passes:
+- `A02815_l4_consolidated_summary_refresh_count = 1`
+- `expansion_L4_consolidated_summary_count` remains `1` (refresh, not new endpoint)
+- `expansion_L4_consolidated_candidate_count = 40`
+- `expansion_L4_visibility_count` remains `40`
+- `expansion_L4_api_route_count` remains `40`
+- `expansion_L3_logic_count` remains `50`
+- `remaining_L3_not_L4` remains `10`
+- `baseline_impact = 0`
+- `extension_impact = 0`
+
+### Anti-Fake / Anti-Inflation Review
+
+- No runtime code in this SPEC action
+- No consolidated refresh claim in SPEC
+- No new endpoint claim
+- No fake KPI/dashboard/synthetic score/ranking/recommendation execution
+- No provider/Brain/autonomy/workflow/decision/mutation claim
+- Baseline metrics unchanged (150 locked)
+- Extension metrics unchanged (25 locked)
+- Expansion metrics in SPEC unchanged except expected runtime formula documentation
+
+- spec_report_file: `A-028.15-SPEC-EXPANSION_L4_CONSOLIDATED_SUMMARY_REFRESH_40_REPORT.md`
+- final_verdict: A-028.15-SPEC CLOSED — PASS
+- status: ready_for_A-028.15-RUNTIME
+- last_completed_action_id: A-028.15-SPEC
+- next_action_id: A-028.15-RUNTIME
+
 ## A-028.2-SPEC - Expansion L4 Read-Only API Surface / Admin Route Specification
 
 ### A-028.1 Runtime Closure Summary
