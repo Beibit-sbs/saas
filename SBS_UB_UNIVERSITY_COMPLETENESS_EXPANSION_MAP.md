@@ -6020,3 +6020,79 @@ Reconciliation formula: `50 L3 overlays - 40 L4-visible candidates = 10` (PASS).
 - baseline metrics unchanged
 - extension metrics unchanged
 - expansion metrics separated and unchanged in SPEC
+
+## A-028.16.B1 - Wave 17 L4 40-Candidate Quality Baseline / Closure Gate
+
+### Gate Purpose
+
+- validate and close the completed Wave 17 40-candidate Expansion L4 product slice
+- enforce evidence-driven closure without runtime feature implementation
+- confirm metric/arithmetic integrity before entering deferred high-risk lanes
+
+### Gate Results
+
+- A-028 focused regression: PASS (2312 passed)
+- A-027 continuity: PASS (1268 passed)
+- LDAP smoke: PASS (2 passed)
+- tenant/security bounded slice: PASS (97 passed)
+- forbidden scans (expansion visibility scope): PASS (no blocking execution behavior)
+- metrics and arithmetic verification: PASS
+- git diff --check: PASS
+
+### Frontend and Full-Backend Optional Gates
+
+- frontend gate: FRONTEND_GATE_NOT_RUN
+	- `frontend/package.json` exists, but no runnable `frontend-tests` Docker compose service available in current invocation path.
+- full backend regression: attempted but not clean in full-suite context
+	- summary: 8 failed, 14636 passed, 31 skipped, 88 deselected
+	- isolated rerun of failing A-028.14 multi-tenant group: PASS (8 passed)
+	- classified as optional full-suite order-dependent instability and documented limitation
+
+### 40-Candidate Product Slice Closure
+
+| Layer | Count | Status |
+|---|---:|---|
+| L4 service summaries | 40 | CLOSED |
+| L4 API routes | 40 | CLOSED |
+| Consolidated summary endpoint | 1 | CLOSED |
+| Consolidated candidate coverage | 40 | CLOSED |
+
+### Metrics Status (Unchanged)
+
+- baseline unchanged: `L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS`
+- extension unchanged: `extension_total_count=25`, `total_tracked_modules=175`
+- expansion unchanged:
+	- `expansion_L2_foundation_count=67`
+	- `expansion_runtime_implemented_count=67`
+	- `expansion_L3_logic_count=50`
+	- `remaining_L2_only=17`
+	- `remaining_L3_not_L4=10`
+	- `expansion_L4_visibility_count=40`
+	- `expansion_L4_api_route_count=40`
+	- `expansion_L4_consolidated_summary_count=1`
+	- `expansion_L4_consolidated_candidate_count=40`
+	- `baseline_impact=0`
+	- `extension_impact=0`
+
+### Remaining Inventory (Unchanged)
+
+- remaining_L3_not_L4 = 10
+- remaining_L2_only = 17
+- ordinary eligible fully ordinary-safe in remaining 10 = 0
+- provider lane = 4 (remaining 10) / 7 (remaining L2-only)
+- Brain lane = 1 (remaining 10) / 4 (remaining L2-only)
+- autonomy lane = 0 (remaining 10) / 2 (remaining L2-only)
+- sensitive lane = 2 (remaining 10) / 4 (remaining L2-only)
+- deferred policy/procurement: UCE-047, UCE-048, UCE-098
+
+### Forbidden-Scan Decision
+
+- no provider/Brain/autonomy blocking execution behavior in expansion visibility scope
+- broad-scan hits outside scope classified as existing non-scope code
+- closure decision not blocked by forbidden-scan results
+
+### Final Decision
+
+- final_verdict: A-028.16.B1 CLOSED - SCOPED WAVE 17 40-CANDIDATE QUALITY BASELINE CONFIRMED
+- selected_next_action: A-029.0-SPEC
+- rationale: no fully ordinary-safe candidates remain; next strategic lane requires governance-first provider/Brain/risk planning

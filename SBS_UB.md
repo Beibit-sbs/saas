@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-028.16.B1
-    - current_stage: A-028.16-SPEC complete / Wave 17 L4 closure strategy selected after 40-candidate slice
-    - last_completed_action_id: A-028.16-SPEC
-    - next_action_id: A-028.16.B1
-    - updated_at: 2026-05-16 (A-028.16-SPEC complete; A-028.15 runtime closure and metrics re-verified; remaining L3-not-L4 inventory reconciled to 10; Option B selected; A-028.16.B1 quality baseline/closure gate queued; no runtime code)
+    - status: ready_for_A-029.0-SPEC
+    - current_stage: A-028.16.B1 complete / Scoped Wave 17 40-candidate quality baseline confirmed
+    - last_completed_action_id: A-028.16.B1
+    - next_action_id: A-029.0-SPEC
+    - updated_at: 2026-05-16 (A-028.16.B1 closure gate executed; required A-028/A-027/LDAP/tenant-security gates passed; metrics unchanged; no runtime code; scoped closure accepted with documented optional-gate limitations)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -10124,5 +10124,79 @@ validate -> guard -> cross-entity check -> persist -> publish_event -> brain sig
 - last_completed_action_id: A-028.16-SPEC
 - next_action_id: A-028.16.B1
 - action_title: Wave 17 L4 40-candidate quality baseline and closure gate
+
+## A-028.16.B1 - Wave 17 L4 40-Candidate Quality Baseline / Closure Gate
+
+### Strategic Decision
+
+- action_id: A-028.16.B1
+- mode: VALIDATION_REPORTING_ONLY
+- runtime_implementation_started: NO
+- closure_completed: YES
+- quality_decision: QUALITY_BASELINE_CONFIRMED_SCOPED
+
+### Source State
+
+- A-028.16-SPEC commit: `325fb86`
+- A-028.15-RUNTIME commit: `3faa533`
+- expansion_L4_visibility_count: 40
+- expansion_L4_api_route_count: 40
+- expansion_L4_consolidated_summary_count: 1
+- expansion_L4_consolidated_candidate_count: 40
+- expansion_L3_logic_count: 50
+- remaining_L3_not_L4: 10
+- remaining_L2_only: 17
+
+### Required Gate Results
+
+- A-028 focused regression pack: PASS (2312 passed, 0 failed)
+- A-027 continuity pack: PASS (1268 passed, 0 failed)
+- LDAP smoke: PASS (2 passed, 0 failed)
+- tenant/security bounded slice: PASS (97 passed, 0 failed)
+- forbidden scans (expansion scope): PASS (no blocking execution behavior)
+- metrics and arithmetic: PASS (all expected values matched; baseline total=150)
+- git diff --check: PASS
+
+### Optional Gate Notes
+
+- frontend gate: FRONTEND_GATE_NOT_RUN
+    - reason: Docker compose frontend test service not available in current workspace invocation path.
+- full backend regression: attempted, not clean in full-suite context
+    - full-suite result: 8 failed, 14636 passed, 31 skipped, 88 deselected
+    - failing group isolated rerun: PASS (8 passed)
+    - classification: optional full-suite order-dependent instability; documented as limitation
+
+### Forbidden Scan Classification
+
+- ACCEPTED_BOUNDARY_TEXT: yes (`no_provider_call`, `no_autonomous_execution` boundary flags)
+- EXPECTED_EXCLUSION_ASSERTION: yes
+- EXISTING_NON_SCOPE_CODE: present in broad scans outside expansion scope
+- BLOCKING_EXECUTION_BEHAVIOR: none in A-028.16.B1 scope
+
+### Metrics Preservation Confirmation
+
+- baseline metrics preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension metrics preserved: extension_total_count=25, total_tracked_modules=175
+- expansion metrics preserved:
+    - expansion_L2_foundation_count = 67
+    - expansion_runtime_implemented_count = 67
+    - expansion_L3_logic_count = 50
+    - remaining_L2_only = 17
+    - remaining_L3_not_L4 = 10
+    - expansion_L4_visibility_count = 40
+    - expansion_L4_api_route_count = 40
+    - expansion_L4_consolidated_summary_count = 1
+    - expansion_L4_consolidated_candidate_count = 40
+    - baseline_impact = 0
+    - extension_impact = 0
+
+### Closure Decision
+
+- final_verdict: A-028.16.B1 CLOSED - SCOPED WAVE 17 40-CANDIDATE QUALITY BASELINE CONFIRMED
+- limitations: frontend gate not run; optional full-backend full-suite instability observed and documented
+- selected_next_action: A-029.0-SPEC
+- status: ready_for_A-029.0-SPEC
+- last_completed_action_id: A-028.16.B1
+- next_action_id: A-029.0-SPEC
 
 
