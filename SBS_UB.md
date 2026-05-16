@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-029.8-SPEC
-    - current_stage: A-029.7-RUNTIME complete / provider L4 read-only visibility implemented
-    - last_completed_action_id: A-029.7-RUNTIME
-    - next_action_id: A-029.8-SPEC
-    - updated_at: 2026-05-16 (A-029.7-RUNTIME implemented Option A service-level L4 provider read-only visibility summaries for all 11 provider candidates; API routes remained deferred to A-029.8; non-live and locked-zero boundaries preserved)
+    - status: ready_for_A-029.8-RUNTIME
+    - current_stage: A-029.8-SPEC complete / provider L4 read-only API routes selected
+    - last_completed_action_id: A-029.8-SPEC
+    - next_action_id: A-029.8-RUNTIME
+    - updated_at: 2026-05-17 (A-029.8-SPEC completed as planning-only provider L4 read-only API route strategy; Option A selected for A-029.8-RUNTIME with 11 individual GET routes over existing A-029.7 service summaries; NON_LIVE_READINESS and locked-zero provider boundaries preserved)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -12508,5 +12508,134 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
 - current_stage: A-029.7-RUNTIME complete / provider L4 read-only visibility implemented
 - last_completed_action_id: A-029.7-RUNTIME
 - next_action_id: A-029.8-SPEC
+
+## A-029.8-SPEC — Provider L4 Read-Only API Routes
+
+### Source State
+
+- source_action_id: A-029.7-RUNTIME
+- source_commit: 511bbb3
+- source_verdict: A-029.7-RUNTIME CLOSED — PASS
+- source_status: ready_for_A-029.8-SPEC
+- runtime implementation started in this action: NO
+
+### Provider Coverage Confirmation
+
+- provider_readiness_foundation_count = 11
+- provider_l3_deterministic_logic_count = 11
+- provider_l4_visibility_count = 11
+- provider_l4_api_route_count = 0
+- PROVIDER_L4_API_ROUTES_DEFERRED_TO_A0298 = YES
+
+### Provider L4 API Route Standard
+
+- method: GET only
+- route role: read-only wrapper over existing A-029.7 L4 service summary
+- tenant boundary: strict tenant fail-closed via trusted tenant dependency
+- permission boundary: admin.expansion.read (existing stable read permission pattern)
+- integration_mode: NON_LIVE_READINESS
+- no provider call
+- no credentials
+- no external submission
+- no sync
+- no provider connected claim
+- no provider success claim
+- no mutation
+- no workflow/decision execution
+- no Brain/autonomy behavior
+
+### Strategy Option Matrix
+
+| Option | Count | Value | Risk | Effort | Recommended | Reason |
+|---|---:|---:|---:|---:|---|---|
+| Option A — 11 individual read-only GET routes | 11 | 5 | 1 | 2 | YES | direct reuse of A-029.7 service summaries; clearest audit surface |
+| Option B — 1 consolidated endpoint only | 1 | 3 | 2 | 2 | NO | lower drilldown and weaker provider-specific visibility |
+| Option C — 11 individual + 1 consolidated | 12 | 5 | 3 | 4 | CONDITIONAL | high value but larger scope for first route lane |
+| Option D — defer routes again | 0 | 1 | 4 | 1 | NO | conflicts with A-029.7 explicit route deferral to A-029.8 |
+
+### Selected Route Strategy
+
+- selected_strategy: Option A — Individual 11 read-only GET routes
+- selected_route_count: 11
+
+### Selected Provider L4 API Routes
+
+| UCE ID | Candidate | Route | Method | Permission | Source Function | Boundary |
+|---|---|---|---|---|---|---|
+| UCE-024 | student_information_system_integration | /api/admin/provider-readiness/l4/student-information-system/summary | GET | admin.expansion.read | get_student_information_system_provider_l4_visibility_summary | tenant-safe read-only NON_LIVE_READINESS/no-provider-call/no-credentials/no-sync/no-submission/no-mutation |
+| UCE-025 | finance_erp_integration | /api/admin/provider-readiness/l4/finance-erp/summary | GET | admin.expansion.read | get_finance_erp_provider_l4_visibility_summary | tenant-safe read-only NON_LIVE_READINESS/no-provider-call/no-credentials/no-sync/no-submission/no-mutation |
+| UCE-030 | government_services_integration | /api/admin/provider-readiness/l4/government-services/summary | GET | admin.expansion.read | get_government_services_provider_l4_visibility_summary | tenant-safe read-only NON_LIVE_READINESS/no-provider-call/no-credentials/no-sync/no-submission/no-mutation |
+| UCE-109 | digital_signature_integration | /api/admin/provider-readiness/l4/digital-signature/summary | GET | admin.expansion.read | get_digital_signature_provider_l4_visibility_summary | tenant-safe read-only NON_LIVE_READINESS/no-provider-call/no-credentials/no-sync/no-submission/no-mutation |
+| UCE-112 | regulatory_reporting_integration | /api/admin/provider-readiness/l4/regulatory-reporting/summary | GET | admin.expansion.read | get_regulatory_reporting_provider_l4_visibility_summary | tenant-safe read-only NON_LIVE_READINESS/no-provider-call/no-credentials/no-sync/no-submission/no-mutation |
+| UCE-108 | identity_provider_integration | /api/admin/provider-readiness/l4/identity-provider/summary | GET | admin.expansion.read | get_identity_provider_l4_visibility_summary | tenant-safe read-only NON_LIVE_READINESS/no-provider-call/no-credentials/no-sync/no-submission/no-mutation |
+| UCE-027 | email_gateway_integration | /api/admin/provider-readiness/l4/email-gateway/summary | GET | admin.expansion.read | get_email_gateway_provider_l4_visibility_summary | tenant-safe read-only NON_LIVE_READINESS/no-provider-call/no-credentials/no-sync/no-submission/no-mutation |
+| UCE-028 | notification_gateway_integration | /api/admin/provider-readiness/l4/notification-gateway/summary | GET | admin.expansion.read | get_notification_gateway_provider_l4_visibility_summary | tenant-safe read-only NON_LIVE_READINESS/no-provider-call/no-credentials/no-sync/no-submission/no-mutation |
+| UCE-110 | payment_gateway_integration | /api/admin/provider-readiness/l4/payment-gateway/summary | GET | admin.expansion.read | get_payment_gateway_provider_l4_visibility_summary | tenant-safe read-only NON_LIVE_READINESS/no-provider-call/no-credentials/no-sync/no-submission/no-mutation |
+| UCE-113 | hr_payroll_integration | /api/admin/provider-readiness/l4/hr-payroll/summary | GET | admin.expansion.read | get_hr_payroll_provider_l4_visibility_summary | tenant-safe read-only NON_LIVE_READINESS/no-provider-call/no-credentials/no-sync/no-submission/no-mutation |
+| UCE-106 | learning_management_system_integration | /api/admin/provider-readiness/l4/learning-management-system/summary | GET | admin.expansion.read | get_learning_management_system_provider_l4_visibility_summary | tenant-safe read-only NON_LIVE_READINESS/no-provider-call/no-credentials/no-sync/no-submission/no-mutation |
+
+### Expected A-029.8-RUNTIME Files
+
+- backend/app/modules/provider_readiness/router.py OR existing route location aligned with project architecture
+- backend/tests/test_a0298_provider_readiness_l4_api_routes.py
+- SBS_UB.md
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md
+- A-029.8-RUNTIME-PROVIDER_READINESS_L4_API_ROUTES_REPORT.md
+
+### Expected Test Plan (A-029.8-RUNTIME)
+
+- route registration for all 11 provider routes
+- GET-only enforcement and absence of mutating verbs
+- permission and tenant dependencies validated
+- route-to-service function mapping correctness
+- full L4 contract invariants from A-029.7 summary outputs
+- no HTTP provider libraries, secrets, DB mutation, frontend behavior, or Brain/autonomy behavior
+- tracker/report metric assertions for provider API counts and unchanged non-live counters
+
+### Expected Metric Movement (runtime formula only)
+
+- no movement in A-029.8-SPEC (planning-only)
+- if A-029.8-RUNTIME implements Option A:
+    - A0298_provider_l4_api_route_count = 11
+    - provider_l4_api_route_count = 11
+    - provider_l4_visibility_count = 11
+    - provider_l3_deterministic_logic_count = 11
+    - provider_readiness_foundation_count = 11
+    - provider_live_call_count = 0
+    - provider_credentials_count = 0
+    - provider_external_submission_count = 0
+    - provider_connected_count = 0
+    - provider_sync_count = 0
+    - baseline_impact = 0
+    - extension_impact = 0
+    - ordinary expansion metrics unchanged:
+        - expansion_L4_visibility_count = 40
+        - expansion_L4_api_route_count = 40
+        - expansion_L4_consolidated_summary_count = 1
+        - expansion_L4_consolidated_candidate_count = 40
+        - expansion_L3_logic_count = 50
+        - remaining_L3_not_L4 = 10
+        - remaining_L2_only = 17
+
+### Anti-Fake / Anti-Inflation Review
+
+- no code change in A-029.8-SPEC: PASS
+- no runtime route implementation in A-029.8-SPEC: PASS
+- no live provider call/credential/sync/submission plan: PASS
+- no connected/success/provider-availability claim: PASS
+- no L5/L6 maturity claim: PASS
+- no Brain/autonomy/sensitive decision execution: PASS
+- baseline metrics unchanged: PASS
+- extension metrics unchanged: PASS
+- ordinary expansion metrics unchanged: PASS
+- provider-readiness metrics separated from ordinary expansion metrics: PASS
+
+### Final Decision
+
+- final_verdict: A-029.8-SPEC CLOSED — PASS
+- status: ready_for_A-029.8-RUNTIME
+- current_stage: A-029.8-SPEC complete / provider L4 read-only API routes selected
+- last_completed_action_id: A-029.8-SPEC
+- next_action_id: A-029.8-RUNTIME
 
 
