@@ -7459,3 +7459,126 @@ Provider readiness foundation count is tracked separately and does NOT increment
 - status: ready_for_A-029.6-SPEC
 - last_completed_action_id: A-029.5-RUNTIME
 - next_action_id: A-029.6-SPEC
+
+## A-029.6-SPEC — Provider Readiness L3 Quality Baseline / Next Lane Decision
+
+### Source State
+
+- source_action_id: A-029.5-RUNTIME
+- source_commit: cb26afb
+- source_verdict: A-029.5-RUNTIME CLOSED — PASS
+- source_status: ready_for_A-029.6-SPEC
+- runtime implementation started in this action: NO
+
+### Provider L2/L3 Coverage Consolidation
+
+| Layer | Count | Evidence | Status |
+|---|---:|---|---|
+| L2 provider readiness foundation | 11 | A-029.2 + A-029.3 runtime evidence | COMPLETE |
+| L3 deterministic provider readiness logic | 11 | A-029.5 runtime evidence | COMPLETE |
+| Live provider calls | 0 | counters + forbidden-scan evidence | LOCKED_ZERO |
+| Credentials configured | 0 | counters + forbidden-scan evidence | LOCKED_ZERO |
+| External submissions | 0 | counters + forbidden-scan evidence | LOCKED_ZERO |
+| Connected claims | 0 | counters + boundary contract | LOCKED_ZERO |
+| Sync claims | 0 | counters + boundary contract | LOCKED_ZERO |
+
+### 11-Candidate Provider L3 Coverage
+
+| UCE ID | Candidate | Provider Type | KZ Profile | L2 Foundation | L3 Logic | Boundary |
+|---|---|---|---|---|---|---|
+| UCE-024 | student_information_system_integration | SIS | PLATONUS_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-025 | finance_erp_integration | FINANCE_ERP | ONE_C_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-030 | government_services_integration | GOVERNMENT_SERVICES | EGOV_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-109 | digital_signature_integration | DIGITAL_SIGNATURE | EDS_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-112 | regulatory_reporting_integration | REGULATORY_REPORTING | MINISTRY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-108 | identity_provider_integration | IDENTITY_PROVIDER | IDP_SSO_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-027 | email_gateway_integration | EMAIL_GATEWAY | EMAIL_GATEWAY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-028 | notification_gateway_integration | NOTIFICATION_SMS_GATEWAY | SMS_GATEWAY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-110 | payment_gateway_integration | PAYMENT_GATEWAY | PAYMENT_GATEWAY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-113 | hr_payroll_integration | HR_PAYROLL | HR_PAYROLL_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-106 | learning_management_system_integration | LMS | LMS_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+
+### Provider L3 Evidence Review
+
+- all 11 L3 evaluator functions exist and are deterministic
+- all 11 enforce:
+	- readiness_level = L3_PROVIDER_READINESS_DETERMINISTIC_LOGIC
+	- integration_mode = NON_LIVE_READINESS
+	- no_provider_call = True
+	- no_credentials = True
+	- no_external_submission = True
+	- no_provider_connected_claim = True
+	- no_sync_claim = True
+- approved readiness status set enforced
+- approved severity category set enforced
+- approved missing-evidence category set enforced
+
+### Locked-Zero and Non-Movement Metrics
+
+- provider locked-zero counters remain:
+	- provider_live_call_count = 0
+	- provider_credentials_count = 0
+	- provider_external_submission_count = 0
+	- provider_connected_count = 0
+	- provider_sync_count = 0
+- provider coverage metrics remain:
+	- provider_readiness_foundation_count = 11
+	- provider_l3_deterministic_logic_count = 11
+	- A0295_provider_l3_deterministic_logic_count = 11
+- ordinary expansion metrics unchanged:
+	- expansion_L2_foundation_count = 67
+	- expansion_runtime_implemented_count = 67
+	- expansion_L3_logic_count = 50
+	- remaining_L2_only = 17
+	- remaining_L3_not_L4 = 10
+	- expansion_L4_visibility_count = 40
+	- expansion_L4_api_route_count = 40
+	- expansion_L4_consolidated_summary_count = 1
+	- expansion_L4_consolidated_candidate_count = 40
+- baseline_impact = 0
+- extension_impact = 0
+
+### Next Direction Option Matrix
+
+| Option | Value | Risk | Effort | Recommended? | Reason |
+|---|---:|---:|---:|---|---|
+| Option A — A-029.6.B1 L3 quality baseline/consolidation gate | 5 | 1 | 2 | YES | Lowest-risk closure path with strongest evidence hygiene after 11-provider runtime change |
+| Option B — A-029.7-SPEC provider L4 read-only visibility/API | 5 | 3 | 4 | NO (now) | High value but best after A-029.6.B1 baseline closure |
+| Option C — A-030.0-SPEC Brain governance foundation | 4 | 5 | 4 | NO | Strategic value but elevated anti-fake and scope risk |
+| Option D — A-031.0-SPEC product/demo/QS evidence package | 4 | 2 | 3 | CONDITIONAL | Strong commercial value after baseline closure |
+| Option E — A-030.x policy/procurement readiness | 3 | 4 | 4 | NO | Governance value with elevated decision-risk lane |
+| Option F — A-030.x sensitive-domain readiness | 4 | 5 | 5 | NO | High institutional value with highest legal/ethical risk |
+| Option G — full release quality remediation | 3 | 2 | 3 | CONDITIONAL | Quality-focused, no feature movement, may run later |
+
+### Selected Next Action
+
+- selected_option: Option A
+- selected_action_id: A-029.6.B1
+- selected_action_label: Provider readiness L3 11-candidate quality baseline and consolidation gate
+- default post-B1 path if PASS: A-029.7-SPEC
+
+### Selected Next Action Scope (A-029.6.B1)
+
+- validation/reporting only
+- no runtime implementation
+- rerun targeted and continuity test packs
+- rerun provider-focused forbidden scans
+- reconcile metrics and source-of-truth anchors
+- produce B1 closure report and docs updates only
+
+### Anti-Fake Review
+
+- no runtime code added in this action: PASS
+- no live provider integration claim: PASS
+- no credentials/sync/submission claim: PASS
+- no provider connected/success claim: PASS
+- no L4/L5/L6 provider maturity claim: PASS
+- baseline/extension/ordinary expansion unchanged in SPEC: PASS
+- provider-readiness metrics remain separated: PASS
+
+### Final Decision
+
+- final_verdict: A-029.6-SPEC CLOSED — PASS
+- status: ready_for_A-029.6.B1
+- last_completed_action_id: A-029.6-SPEC
+- next_action_id: A-029.6.B1

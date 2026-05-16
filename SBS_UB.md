@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-029.6-SPEC
-    - current_stage: A-029.5-RUNTIME complete / provider readiness L3 deterministic logic implemented
-    - last_completed_action_id: A-029.5-RUNTIME
-    - next_action_id: A-029.6-SPEC
-    - updated_at: 2026-05-16 (A-029.5-RUNTIME completed with full 11 deterministic provider readiness evaluators; strict NON_LIVE_READINESS boundaries validated; provider L3 counts set to 11 with no baseline/extension/L4 inflation)
+    - status: ready_for_A-029.6.B1
+    - current_stage: A-029.6-SPEC complete / provider readiness L3 quality baseline selected
+    - last_completed_action_id: A-029.6-SPEC
+    - next_action_id: A-029.6.B1
+    - updated_at: 2026-05-16 (A-029.6-SPEC completed as planning-only quality-baseline selection; A-029.5 L2/L3 provider coverage consolidated at 11/11 with locked-zero live/credential/submission/connected/sync counters; next action selected as A-029.6.B1)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -11962,5 +11962,158 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
 - current_stage: A-029.5-RUNTIME complete / provider readiness L3 deterministic logic implemented
 - last_completed_action_id: A-029.5-RUNTIME
 - next_action_id: A-029.6-SPEC
+
+## A-029.6-SPEC — Provider Readiness L3 Quality Baseline / Next Lane Decision
+
+### Control Block
+
+- action_id: A-029.6-SPEC
+- phase: Wave 18 — Provider Readiness L3 Post-Runtime Consolidation
+- type: SPEC_ONLY
+- source_action_id: A-029.5-RUNTIME
+- source_commit: cb26afb
+- runtime_implementation_started_in_this_action: NO
+
+### Source-of-Truth Confirmation
+
+- A-029.5-RUNTIME final verdict verified: A-029.5-RUNTIME CLOSED — PASS
+- source status verified: ready_for_A-029.6-SPEC
+- source next action verified: A-029.6-SPEC
+- provider readiness counters verified:
+    - A0292_provider_readiness_foundation_count = 6
+    - A0293_provider_readiness_foundation_count = 5
+    - provider_readiness_foundation_count = 11
+    - A0295_provider_l3_deterministic_logic_count = 11
+    - provider_l3_deterministic_logic_count = 11
+    - provider_live_call_count = 0
+    - provider_credentials_count = 0
+    - provider_external_submission_count = 0
+    - provider_connected_count = 0
+    - provider_sync_count = 0
+- baseline metrics unchanged:
+    - L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension metrics unchanged:
+    - extension_total_count=25
+    - total_tracked_modules=175
+- ordinary expansion metrics unchanged:
+    - expansion_L2_foundation_count = 67
+    - expansion_runtime_implemented_count = 67
+    - expansion_L3_logic_count = 50
+    - remaining_L2_only = 17
+    - remaining_L3_not_L4 = 10
+    - expansion_L4_visibility_count = 40
+    - expansion_L4_api_route_count = 40
+    - expansion_L4_consolidated_summary_count = 1
+    - expansion_L4_consolidated_candidate_count = 40
+    - baseline_impact = 0
+    - extension_impact = 0
+
+### Provider L2/L3 Coverage Consolidation
+
+| Layer | Count | Evidence | Status |
+|---|---:|---|---|
+| L2 provider readiness foundation | 11 | A-029.2 + A-029.3 runtime reports and tracker counters | COMPLETE |
+| L3 deterministic provider readiness logic | 11 | A-029.5 runtime report and tracker counters | COMPLETE |
+| Live provider calls | 0 | tracker counters + forbidden-scan evidence | LOCKED_ZERO |
+| Credentials configured | 0 | tracker counters + forbidden-scan evidence | LOCKED_ZERO |
+| External submissions | 0 | tracker counters + forbidden-scan evidence | LOCKED_ZERO |
+| Connected claims | 0 | tracker counters + boundary contract | LOCKED_ZERO |
+| Sync claims | 0 | tracker counters + boundary contract | LOCKED_ZERO |
+
+### 11-Candidate Provider L3 Coverage
+
+| UCE ID | Candidate | Provider Type | KZ Profile | L2 Foundation | L3 Logic | Boundary |
+|---|---|---|---|---|---|---|
+| UCE-024 | student_information_system_integration | SIS | PLATONUS_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-025 | finance_erp_integration | FINANCE_ERP | ONE_C_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-030 | government_services_integration | GOVERNMENT_SERVICES | EGOV_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-109 | digital_signature_integration | DIGITAL_SIGNATURE | EDS_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-112 | regulatory_reporting_integration | REGULATORY_REPORTING | MINISTRY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-108 | identity_provider_integration | IDENTITY_PROVIDER | IDP_SSO_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-027 | email_gateway_integration | EMAIL_GATEWAY | EMAIL_GATEWAY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-028 | notification_gateway_integration | NOTIFICATION_SMS_GATEWAY | SMS_GATEWAY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-110 | payment_gateway_integration | PAYMENT_GATEWAY | PAYMENT_GATEWAY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-113 | hr_payroll_integration | HR_PAYROLL | HR_PAYROLL_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-106 | learning_management_system_integration | LMS | LMS_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+
+### Provider L3 Evidence Review Summary
+
+- all 11 L3 evaluators exist and are deterministic
+- all 11 evaluators preserve:
+    - readiness_level = L3_PROVIDER_READINESS_DETERMINISTIC_LOGIC
+    - maturity_target = L3
+    - integration_mode = NON_LIVE_READINESS
+    - provider_profile_level = L2_PROVIDER_READINESS_FOUNDATION
+    - deterministic_logic_version = A-029.5
+- readiness statuses restricted to approved set
+- severity values restricted to approved set
+- missing evidence categories restricted to approved set
+- anti-fake flags remain true in all evaluators
+
+### Next Direction Option Matrix
+
+| Option | Value | Risk | Effort | Recommended? | Reason |
+|---|---:|---:|---:|---|---|
+| Option A — A-029.6.B1 Provider L3 quality baseline / consolidation gate | 5 | 1 | 2 | YES | Lowest-risk closure after 11-file runtime change; strongest evidence hygiene before next lane |
+| Option B — A-029.7-SPEC Provider L4 read-only visibility/API | 5 | 3 | 4 | NO (now) | High product value but should follow L3 quality-baseline confirmation |
+| Option C — A-030.0-SPEC Brain governance foundation | 4 | 5 | 4 | NO | Strategic value is high but anti-fake and scope risk are highest |
+| Option D — A-031.0-SPEC Product/Demo/QS evidence package | 4 | 2 | 3 | CONDITIONAL | Useful commercial packaging lane after baseline-gate closure |
+| Option E — A-030.x policy/procurement readiness | 3 | 4 | 4 | NO | Governance value but procurement-decision risk is elevated |
+| Option F — A-030.x sensitive-domain readiness | 4 | 5 | 5 | NO | Institutional value is high but legal/ethical risk is highest |
+| Option G — full release quality remediation | 3 | 2 | 3 | CONDITIONAL | Quality value with no feature movement; can run in parallel later |
+
+### Selected Next Action
+
+- selected_option: Option A
+- selected_action_id: A-029.6.B1
+- selected_action_label: Provider L3 quality baseline / consolidation gate
+- rationale:
+    - A-029.5 runtime changed 11 provider services + targeted suite
+    - provider L2/L3 coverage is now 11/11 and should be baseline-closed before new feature lanes
+    - mirrors successful A-028.16.B1 and A-029.4.B1 quality-closure pattern
+
+### Selected Next Action Scope
+
+- validation/reporting only (no runtime code changes)
+- rerun A-029.5 targeted suite
+- rerun A-029 provider readiness continuity
+- rerun A-029/A-028 continuity
+- rerun A-028 combined pack
+- rerun A-027 continuity
+- rerun LDAP smoke
+- tenant/security slice if feasible
+- provider-focused forbidden scans
+- metrics arithmetic and source-of-truth reconciliation
+- output docs only: tracker, expansion map, A-029.6.B1 report
+
+### Non-Scope (A-029.6-SPEC)
+
+- no service.py/runtime implementation
+- no router/API route changes
+- no frontend changes
+- no DB mutation/migration
+- no provider live integration claims
+- no L4/L5/L6 provider maturity claims
+
+### Anti-Fake / Anti-Inflation Review
+
+- no code added in this action: PASS
+- no runtime implementation in this action: PASS
+- no live provider integration claim: PASS
+- no credentials/sync/submission claim: PASS
+- no connected/success/provider-availability claim: PASS
+- no Brain/autonomy/sensitive execution claim: PASS
+- baseline metrics unchanged: PASS
+- extension metrics unchanged: PASS
+- ordinary expansion metrics unchanged: PASS
+- provider readiness metrics remain separated: PASS
+
+### Final Decision
+
+- final_verdict: A-029.6-SPEC CLOSED — PASS
+- status: ready_for_A-029.6.B1
+- current_stage: A-029.6-SPEC complete / provider readiness L3 quality baseline selected
+- last_completed_action_id: A-029.6-SPEC
+- next_action_id: A-029.6.B1
 
 
