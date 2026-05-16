@@ -45,6 +45,7 @@ from app.modules.billing.router import router as billing_router
 from app.modules.courses.router import router as courses_router
 from app.modules.enrollments.router import router as enrollments_router
 from app.modules.expansion_visibility.router import router as expansion_visibility_router
+from app.modules.provider_readiness.router import router as provider_readiness_router
 from app.modules.faculty.router import router as faculty_router
 from app.modules.feature_flags.router import router as feature_flags_router
 from app.modules.grades.router import router as grades_router
@@ -382,6 +383,7 @@ app.include_router(programs_router)
 app.include_router(courses_router)
 app.include_router(enrollments_router)
 app.include_router(expansion_visibility_router)
+app.include_router(provider_readiness_router)
 app.include_router(grades_router)
 app.include_router(scheduling_router)
 app.include_router(human_approved_timetable_workflow_router)
