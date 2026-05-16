@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-029.9-SPEC
-    - current_stage: A-029.8-RUNTIME complete / provider L4 read-only API routes implemented
-    - last_completed_action_id: A-029.8-RUNTIME
-    - next_action_id: A-029.9-SPEC
-    - updated_at: 2026-05-17 (A-029.8-RUNTIME implemented Option A provider-readiness L4 read-only API routes: 11 GET endpoints under /api/admin/provider-readiness/l4, RBAC/tenant-safe NON_LIVE_READINESS boundaries preserved, no live provider integration claims)
+    - status: ready_for_A-029.9.B1
+    - current_stage: A-029.9-SPEC complete / provider L4 API quality baseline selected
+    - last_completed_action_id: A-029.9-SPEC
+    - next_action_id: A-029.9.B1
+    - updated_at: 2026-05-17 (A-029.9-SPEC completed as planning-only quality baseline / consolidation gate for 11 provider-readiness L4 API routes; no runtime changes; next controlled action selected as A-029.9.B1 validation/reporting gate)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -12700,5 +12700,161 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
 - current_stage: A-029.8-RUNTIME complete / provider L4 read-only API routes implemented
 - last_completed_action_id: A-029.8-RUNTIME
 - next_action_id: A-029.9-SPEC
+
+## A-029.9-SPEC — Provider L4 API Quality Baseline / Consolidation Gate
+
+### Source State
+
+- source_action_id: A-029.8-RUNTIME
+- source_commit: 019bc81
+- source_verdict: A-029.8-RUNTIME CLOSED — PASS
+- source_status: ready_for_A-029.9-SPEC
+- runtime implementation started in this action: NO
+
+### Current Provider Coverage
+
+- provider_readiness_foundation_count = 11
+- provider_l3_deterministic_logic_count = 11
+- provider_l4_visibility_count = 11
+- provider_l4_api_route_count = 11
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+
+### Current Ordinary Expansion State
+
+- expansion_L2_foundation_count = 67
+- expansion_runtime_implemented_count = 67
+- expansion_L3_logic_count = 50
+- remaining_L2_only = 17
+- remaining_L3_not_L4 = 10
+- expansion_L4_visibility_count = 40
+- expansion_L4_api_route_count = 40
+- expansion_L4_consolidated_summary_count = 1
+- expansion_L4_consolidated_candidate_count = 40
+
+### Provider Coverage Consolidation Table
+
+| Layer | Count | Evidence | Status |
+|---|---:|---|---|
+| L2 provider readiness foundation | 11 | A-029.2 + A-029.3 | COMPLETE |
+| L3 deterministic provider readiness logic | 11 | A-029.5 | COMPLETE |
+| L4 provider visibility summaries | 11 | A-029.7 | COMPLETE |
+| L4 provider read-only API routes | 11 | A-029.8 | COMPLETE |
+| Live provider calls | 0 | counters / forbidden scans | LOCKED_ZERO |
+| Credentials configured | 0 | counters / forbidden scans | LOCKED_ZERO |
+| External submissions | 0 | counters / forbidden scans | LOCKED_ZERO |
+| Connected claims | 0 | counters / boundaries | LOCKED_ZERO |
+| Sync claims | 0 | counters / boundaries | LOCKED_ZERO |
+
+### 11-Route Coverage Table
+
+| UCE ID | Candidate | Route | Method | Permission | L4 Service Source | Boundary | Status |
+|---|---|---|---|---|---|---|---|
+| UCE-024 | student_information_system_integration | /api/admin/provider-readiness/l4/student-information-system/summary | GET | admin.expansion.read | get_student_information_system_provider_l4_visibility_summary | NON_LIVE_READINESS / read-only / no-provider-call / no-credentials / no-sync / no-submission / no-mutation | IMPLEMENTED |
+| UCE-025 | finance_erp_integration | /api/admin/provider-readiness/l4/finance-erp/summary | GET | admin.expansion.read | get_finance_erp_provider_l4_visibility_summary | NON_LIVE_READINESS / read-only / no-provider-call / no-credentials / no-sync / no-submission / no-mutation | IMPLEMENTED |
+| UCE-030 | government_services_integration | /api/admin/provider-readiness/l4/government-services/summary | GET | admin.expansion.read | get_government_services_provider_l4_visibility_summary | NON_LIVE_READINESS / read-only / no-provider-call / no-credentials / no-sync / no-submission / no-mutation | IMPLEMENTED |
+| UCE-109 | digital_signature_integration | /api/admin/provider-readiness/l4/digital-signature/summary | GET | admin.expansion.read | get_digital_signature_provider_l4_visibility_summary | NON_LIVE_READINESS / read-only / no-provider-call / no-credentials / no-sync / no-submission / no-mutation | IMPLEMENTED |
+| UCE-112 | regulatory_reporting_integration | /api/admin/provider-readiness/l4/regulatory-reporting/summary | GET | admin.expansion.read | get_regulatory_reporting_provider_l4_visibility_summary | NON_LIVE_READINESS / read-only / no-provider-call / no-credentials / no-sync / no-submission / no-mutation | IMPLEMENTED |
+| UCE-108 | identity_provider_integration | /api/admin/provider-readiness/l4/identity-provider/summary | GET | admin.expansion.read | get_identity_provider_l4_visibility_summary | NON_LIVE_READINESS / read-only / no-provider-call / no-credentials / no-sync / no-submission / no-mutation | IMPLEMENTED |
+| UCE-027 | email_gateway_integration | /api/admin/provider-readiness/l4/email-gateway/summary | GET | admin.expansion.read | get_email_gateway_provider_l4_visibility_summary | NON_LIVE_READINESS / read-only / no-provider-call / no-credentials / no-sync / no-submission / no-mutation | IMPLEMENTED |
+| UCE-028 | notification_gateway_integration | /api/admin/provider-readiness/l4/notification-gateway/summary | GET | admin.expansion.read | get_notification_gateway_provider_l4_visibility_summary | NON_LIVE_READINESS / read-only / no-provider-call / no-credentials / no-sync / no-submission / no-mutation | IMPLEMENTED |
+| UCE-110 | payment_gateway_integration | /api/admin/provider-readiness/l4/payment-gateway/summary | GET | admin.expansion.read | get_payment_gateway_provider_l4_visibility_summary | NON_LIVE_READINESS / read-only / no-provider-call / no-credentials / no-sync / no-submission / no-mutation | IMPLEMENTED |
+| UCE-113 | hr_payroll_integration | /api/admin/provider-readiness/l4/hr-payroll/summary | GET | admin.expansion.read | get_hr_payroll_provider_l4_visibility_summary | NON_LIVE_READINESS / read-only / no-provider-call / no-credentials / no-sync / no-submission / no-mutation | IMPLEMENTED |
+| UCE-106 | learning_management_system_integration | /api/admin/provider-readiness/l4/learning-management-system/summary | GET | admin.expansion.read | get_learning_management_system_provider_l4_visibility_summary | NON_LIVE_READINESS / read-only / no-provider-call / no-credentials / no-sync / no-submission / no-mutation | IMPLEMENTED |
+
+### Option Matrix
+
+| Option | Value | Risk | Effort | Recommended? | Reason |
+|---|---:|---:|---:|---|---|
+| Option A — A-029.9.B1 Provider L4 API Quality Baseline / Consolidation Gate | 5 | 1 | 2 | YES | validates the 11-route API slice before any new surface is added |
+| Option B — A-029.10-SPEC Provider L4 Consolidated Summary Endpoint | 4 | 2 | 2 | CONDITIONAL | useful after quality baseline is confirmed |
+| Option C — A-031.0-SPEC Product / Demo / QS Evidence Package | 4 | 2 | 2 | CONDITIONAL | valuable evidence packaging, but should follow quality gate |
+| Option D — A-030.0-SPEC Brain Governance Foundation | 5 | 4 | 4 | NO | higher fake-risk and sensitive execution surface |
+| Option E — A-030.x Policy/Procurement Readiness | 4 | 3 | 3 | CONDITIONAL | governance value, but not first after route completion |
+| Option F — A-030.x Sensitive-Domain Readiness | 4 | 4 | 4 | CONDITIONAL | high institutional value but higher legal/ethical risk |
+| Option G — Full release quality remediation | 3 | 2 | 4 | CONDITIONAL | quality work is useful, but outside the provider gate sequence |
+
+### Selected Next Action
+
+- selected_next_action_id: A-029.9.B1
+- selected_next_action_name: Provider L4 API Quality Baseline / Consolidation Gate
+- rationale: 11 provider API routes should be quality-baselined before adding a consolidated provider endpoint or moving to Brain/demo lanes
+
+### Selected Next Action Scope
+
+- validation/reporting only
+- no runtime code
+- no service.py changes
+- no router/API changes
+- no frontend
+- no DB migrations
+- no live provider calls
+- no credentials
+- no sync
+- no external submissions
+- no provider connected claims
+- no Brain/autonomy execution
+- no sensitive decision execution
+
+### Expected Validation Scope for A-029.9.B1
+
+- A-029.8 targeted regression
+- A-029 provider readiness continuity
+- A-029/A-028 continuity
+- A-028 combined pack
+- A-027 continuity
+- LDAP smoke
+- provider-specific forbidden scans
+- route mutation scans
+- metrics arithmetic
+- provider L2/L3/L4/API counters verification
+
+### Baseline / Extension / Ordinary Expansion Separation Review
+
+- baseline metrics unchanged: PASS
+- extension metrics unchanged: PASS
+- ordinary expansion metrics unchanged: PASS
+- provider readiness metrics separated from ordinary expansion metrics: PASS
+
+### Provider Readiness Metrics Review
+
+- provider_readiness_foundation_count = 11
+- provider_l3_deterministic_logic_count = 11
+- provider_l4_visibility_count = 11
+- provider_l4_api_route_count = 11
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+
+### Anti-Fake / Anti-Inflation Review
+
+- no runtime implementation: PASS
+- no live provider integration: PASS
+- no credentials/secrets/API keys: PASS
+- no sync/external submission/provider-connected claims: PASS
+- no L5/L6 provider maturity claims: PASS
+- no Brain/autonomy execution claims: PASS
+- baseline metrics unchanged: PASS
+- extension metrics unchanged: PASS
+- ordinary expansion metrics unchanged: PASS
+
+### Runtime Non-Claims
+
+- no code changes beyond documentation in this SPEC action
+- no route or service implementation in this SPEC action
+- no evidence of live provider success or availability claims
+
+### Final Verdict
+
+- final_verdict: A-029.9-SPEC CLOSED — PASS
+- status: ready_for_A-029.9.B1
+- current_stage: A-029.9-SPEC complete / provider L4 API quality baseline selected
+- last_completed_action_id: A-029.9-SPEC
+- next_action_id: A-029.9.B1
 
 
