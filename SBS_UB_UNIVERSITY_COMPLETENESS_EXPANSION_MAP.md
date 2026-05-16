@@ -7034,3 +7034,122 @@ Provider readiness foundation count is tracked separately and does NOT increment
 - status: ready_for_A-029.4-SPEC
 - last_completed_action_id: A-029.3-RUNTIME
 - next_action_id: A-029.4-SPEC
+
+---
+
+## A-029.4-SPEC — Provider Readiness Consolidation / Next Lane Decision
+
+### Source State (A-029.3-RUNTIME)
+
+- source commit: 056e2f5
+- source verdict: A-029.3-RUNTIME CLOSED — PASS
+- source boundary: NON_LIVE_READINESS only
+- source next action: A-029.4-SPEC
+- provider readiness counters at source:
+	- A0292_provider_readiness_foundation_count = 6
+	- A0293_provider_readiness_foundation_count = 5
+	- provider_readiness_foundation_count = 11
+	- provider_live_call_count = 0
+	- provider_credentials_count = 0
+	- provider_external_submission_count = 0
+	- provider_connected_count = 0
+	- provider_sync_count = 0
+
+### 11-Candidate Provider Readiness Coverage Consolidation
+
+| Batch | UCE ID | Candidate | Provider Type | KZ Profile | Future GCC Placeholder | Status |
+|---|---|---|---|---|---|---|
+| Batch 1 | UCE-024 | student_information_system_integration | SIS | PLATONUS_KZ | SA_SIS_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED |
+| Batch 1 | UCE-025 | finance_erp_integration | FINANCE_ERP | ONE_C_KZ | SA_ERP_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED |
+| Batch 1 | UCE-030 | government_services_integration | GOVERNMENT_SERVICES | EGOV_KZ | SA_GOVERNMENT_SERVICES_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED |
+| Batch 1 | UCE-109 | digital_signature_integration | DIGITAL_SIGNATURE | EDS_KZ | SA_DIGITAL_SIGNATURE_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED |
+| Batch 1 | UCE-112 | regulatory_reporting_integration | REGULATORY_REPORTING | MINISTRY_KZ | SA_REGULATORY_REPORTING_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED |
+| Batch 1 | UCE-108 | identity_provider_integration | IDENTITY_PROVIDER | IDP_SSO_KZ | SA_IDENTITY_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED |
+| Batch 2 | UCE-027 | email_gateway_integration | EMAIL_GATEWAY | EMAIL_GATEWAY_KZ | SA_EMAIL_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED_AFTER_A0293 |
+| Batch 2 | UCE-028 | notification_gateway_integration | NOTIFICATION_SMS_GATEWAY | SMS_GATEWAY_KZ | SA_SMS_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED_AFTER_A0293 |
+| Batch 2 | UCE-110 | payment_gateway_integration | PAYMENT_GATEWAY | PAYMENT_GATEWAY_KZ | SA_PAYMENT_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED_AFTER_A0293 |
+| Batch 2 | UCE-113 | hr_payroll_integration | HR_PAYROLL | HR_PAYROLL_KZ | SA_HR_PAYROLL_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED_AFTER_A0293 |
+| Batch 2 | UCE-106 | learning_management_system_integration | LMS | LMS_KZ | SA_LMS_PROVIDER | PROVIDER_READINESS_FOUNDATION_IMPLEMENTED_AFTER_A0293 |
+
+### Coverage and Boundary Confirmation
+
+- Batch 1 count = 6
+- Batch 2 count = 5
+- total provider readiness coverage = 11
+- integration_mode = NON_LIVE_READINESS
+- no live provider calls = PASS
+- no credentials = PASS
+- no external submission = PASS
+- no connected claims = PASS
+- no sync claims = PASS
+
+### Provider Evidence Review
+
+| Candidate | Profile | Capability Matrix | Evidence | Security/Legal/Audit/Rollback | Anti-Fake Flags | Test Evidence |
+|---|---|---|---|---|---|---|
+| student_information_system_integration | PRESENT | PRESENT | PRESENT | PRESENT | PRESENT | A-029.2 targeted PASS |
+| finance_erp_integration | PRESENT | PRESENT | PRESENT | PRESENT | PRESENT | A-029.2 targeted PASS |
+| government_services_integration | PRESENT | PRESENT | PRESENT | PRESENT | PRESENT | A-029.2 targeted PASS |
+| digital_signature_integration | PRESENT | PRESENT | PRESENT | PRESENT | PRESENT | A-029.2 targeted PASS |
+| regulatory_reporting_integration | PRESENT | PRESENT | PRESENT | PRESENT | PRESENT | A-029.2 targeted PASS |
+| identity_provider_integration | PRESENT | PRESENT | PRESENT | PRESENT | PRESENT | A-029.2 targeted PASS |
+| email_gateway_integration | PRESENT | PRESENT | PRESENT | PRESENT | PRESENT | A-029.3 targeted PASS |
+| notification_gateway_integration | PRESENT | PRESENT | PRESENT | PRESENT | PRESENT | A-029.3 targeted PASS |
+| payment_gateway_integration | PRESENT | PRESENT | PRESENT | PRESENT | PRESENT | A-029.3 targeted PASS |
+| hr_payroll_integration | PRESENT | PRESENT | PRESENT | PRESENT | PRESENT | A-029.3 targeted PASS |
+| learning_management_system_integration | PRESENT | PRESENT | PRESENT | PRESENT | PRESENT | A-029.3 targeted PASS |
+
+### Option Matrix
+
+| Option | Value | Risk | Effort | Recommended? | Reason |
+|---|---:|---:|---:|---|---|
+| Option A: Provider readiness L3 deterministic logic | 5 | 3 | 4 | CONDITIONAL | Natural progression after foundation, but baseline gate first reduces regression risk |
+| Option B: Brain governance foundation | 5 | 5 | 5 | NO | High claim/governance risk before provider lane consolidation gate |
+| Option C: Policy/procurement readiness | 4 | 4 | 4 | NO | Useful lane but not lowest-risk immediate follow-up |
+| Option D: Sensitive-domain readiness | 5 | 5 | 5 | NO | High legal and ethical sensitivity; defer until stronger governance baseline |
+| Option E: Product/demo/QS evidence package | 4 | 2 | 3 | CONDITIONAL | Good packaging lane after consolidation baseline closes |
+| Option F: Provider readiness quality baseline | 5 | 1 | 2 | YES | Lowest-risk controlled gate to consolidate 11/11 provider readiness state |
+| Option G: Full release quality remediation | 4 | 3 | 5 | NO | Broader infra lane, not immediate provider-lane next step |
+
+### Selected Next Action
+
+- selected option: Option F
+- selected action: A-029.4.B1 — Provider Readiness Quality Baseline / Consolidation Gate
+- selected scope: validation and reporting only
+- selected non-scope: no runtime/service/router/frontend/test implementation
+- expected report: A-029.4.B1-PROVIDER_READINESS_11_CANDIDATE_QUALITY_BASELINE_AND_CONSOLIDATION_REPORT.md
+
+### Expected Metrics (No Movement)
+
+- provider_readiness_foundation_count = 11
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+- expansion_L4_visibility_count = 40
+- expansion_L4_api_route_count = 40
+- expansion_L4_consolidated_summary_count = 1
+- expansion_L4_consolidated_candidate_count = 40
+- expansion_L3_logic_count = 50
+- baseline_impact = 0
+- extension_impact = 0
+
+### Anti-Fake Review
+
+- no code/runtime implementation in A-029.4-SPEC: PASS
+- no live integration claim: PASS
+- no credentials/secrets/tokens: PASS
+- no external submission claim: PASS
+- no connected/sync claim: PASS
+- no Brain/autonomy execution claim: PASS
+- baseline and extension unchanged: PASS
+- ordinary expansion metrics unchanged: PASS
+- provider readiness tracked separately: PASS
+
+### Final Decision
+
+- final_verdict: A-029.4-SPEC CLOSED — PASS
+- status: ready_for_A-029.4.B1
+- last_completed_action_id: A-029.4-SPEC
+- next_action_id: A-029.4.B1
