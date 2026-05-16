@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-029.6.B1
-    - current_stage: A-029.6-SPEC complete / provider readiness L3 quality baseline selected
-    - last_completed_action_id: A-029.6-SPEC
-    - next_action_id: A-029.6.B1
-    - updated_at: 2026-05-16 (A-029.6-SPEC completed as planning-only quality-baseline selection; A-029.5 L2/L3 provider coverage consolidated at 11/11 with locked-zero live/credential/submission/connected/sync counters; next action selected as A-029.6.B1)
+    - status: ready_for_A-029.7-SPEC
+    - current_stage: A-029.6.B1 complete / provider readiness L3 11-candidate quality baseline confirmed
+    - last_completed_action_id: A-029.6.B1
+    - next_action_id: A-029.7-SPEC
+    - updated_at: 2026-05-16 (A-029.6.B1 closed as scoped validation baseline; required Docker gates PASS, tenant/security bounded slice PASS, forbidden scans non-blocking, provider locked-zero counters preserved; next action selected as A-029.7-SPEC)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -12115,5 +12115,107 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
 - current_stage: A-029.6-SPEC complete / provider readiness L3 quality baseline selected
 - last_completed_action_id: A-029.6-SPEC
 - next_action_id: A-029.6.B1
+
+## A-029.6.B1 — Provider Readiness L3 11-Candidate Quality Baseline / Consolidation Gate
+
+### Scope
+
+- validation/reporting only
+- no runtime implementation changes
+- no router/API/frontend/DB changes
+- no live provider calls, credentials, sync, external submission, or connected claims
+
+### Repo Hygiene Snapshot
+
+| File | Type | Related Action | Risk | Recommended Handling |
+|---|---|---|---|---|
+| backend/.coverage | modified binary | non-scope | low | preserve unstaged |
+| A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md | untracked doc | non-scope | low | preserve untouched/unstaged |
+
+### A-029 Provider L2/L3 Evidence Chain
+
+| Action | Type | Commit | Scope | Result | Evidence |
+|---|---|---|---|---|---|
+| A-029.2-RUNTIME | RUNTIME | dea92c5 | provider L2 foundation batch 1 | PASS | 6 NON_LIVE_READINESS profiles |
+| A-029.3-RUNTIME | RUNTIME | 056e2f5 | provider L2 foundation batch 2 | PASS | 5 NON_LIVE_READINESS profiles |
+| A-029.4.B1 | QUALITY | cc1641b | provider L2 quality baseline | PASS | 11/11 foundation confirmed |
+| A-029.5-SPEC | SPEC | 9b2f78b | provider L3 deterministic logic spec | PASS | full 11 selected |
+| A-029.5-RUNTIME | RUNTIME | cb26afb | provider L3 deterministic logic | PASS | 11 L3 evaluators |
+| A-029.6-SPEC | SPEC | a4b0c2e | provider L3 quality baseline selection | PASS | A-029.6.B1 selected |
+
+### Provider L2/L3 Coverage
+
+| Layer | Count | Status |
+|---|---:|---|
+| L2 provider readiness foundation | 11 | COMPLETE |
+| L3 deterministic provider readiness logic | 11 | COMPLETE |
+| Live provider calls | 0 | LOCKED_ZERO |
+| Credentials configured | 0 | LOCKED_ZERO |
+| External submissions | 0 | LOCKED_ZERO |
+| Connected claims | 0 | LOCKED_ZERO |
+| Sync claims | 0 | LOCKED_ZERO |
+
+### Required Gate Results
+
+- A-029.5 targeted regression: PASS (231 passed, 3 skipped, 1 warning)
+- A-029 provider readiness continuity: PASS (576 passed, 19 skipped, 1 warning)
+- A-029/A-028 continuity: PASS (1207 passed, 19 skipped, 1 warning)
+- A-028 combined pack: PASS (2312 passed, 42 warnings)
+- A-027 continuity: PASS (1268 passed, 1 warning)
+- LDAP smoke: PASS (2 passed, 1 warning)
+- tenant/security bounded slice: PASS (70 passed, 1 warning)
+- optional full backend regression: FULL_BACKEND_NOT_RUN_IN_A0296B1
+
+### Forbidden Scan Result
+
+- external call token scan: non-blocking test-assertion matches
+- credential/secret token scan: non-blocking boundary and test-assertion matches
+- DB mutation scan: no matches
+- fake-status token scan: non-blocking forbidden-action boundary text
+- Brain/autonomy scan: non-blocking forbidden-action boundary text
+- blocking execution/credential/fake-provider findings: NONE
+
+### Metrics and Arithmetic Verification
+
+- baseline metrics preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension metrics preserved: extension_total_count=25, total_tracked_modules=175
+- provider readiness preserved:
+    - A0292_provider_readiness_foundation_count = 6
+    - A0293_provider_readiness_foundation_count = 5
+    - provider_readiness_foundation_count = 11
+    - A0295_provider_l3_deterministic_logic_count = 11
+    - provider_l3_deterministic_logic_count = 11
+    - provider_live_call_count = 0
+    - provider_credentials_count = 0
+    - provider_external_submission_count = 0
+    - provider_connected_count = 0
+    - provider_sync_count = 0
+    - baseline_impact = 0
+    - extension_impact = 0
+- ordinary expansion metrics unchanged:
+    - expansion_L2_foundation_count = 67
+    - expansion_runtime_implemented_count = 67
+    - expansion_L3_logic_count = 50
+    - remaining_L2_only = 17
+    - remaining_L3_not_L4 = 10
+    - expansion_L4_visibility_count = 40
+    - expansion_L4_api_route_count = 40
+    - expansion_L4_consolidated_summary_count = 1
+    - expansion_L4_consolidated_candidate_count = 40
+
+### Non-Claims
+
+- no runtime implementation change in A-029.6.B1
+- no provider L4/L5/L6 maturity claim
+- no live provider integration, credentials, external submission, sync, or connected claim
+- no Brain/autonomy execution
+
+### Final Decision
+
+- final_verdict: A-029.6.B1 CLOSED — SCOPED PROVIDER READINESS L3 11-CANDIDATE QUALITY BASELINE CONFIRMED
+- status: ready_for_A-029.7-SPEC
+- current_stage: A-029.6.B1 complete / provider readiness L3 11-candidate quality baseline confirmed
+- last_completed_action_id: A-029.6.B1
+- next_action_id: A-029.7-SPEC
 
 

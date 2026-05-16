@@ -7582,3 +7582,93 @@ Provider readiness foundation count is tracked separately and does NOT increment
 - status: ready_for_A-029.6.B1
 - last_completed_action_id: A-029.6-SPEC
 - next_action_id: A-029.6.B1
+
+## A-029.6.B1 — Provider Readiness L3 11-Candidate Quality Baseline / Consolidation Gate
+
+### Purpose
+
+- perform post-A-029.5 provider L3 quality-baseline closure for all 11 candidates
+- validate deterministic L2/L3 evidence chain and strict NON_LIVE_READINESS boundaries
+- confirm no metric inflation and no runtime implementation movement
+
+### A-029 L2/L3 Evidence Chain
+
+| Action | Type | Commit | Scope | Result | Evidence |
+|---|---|---|---|---|---|
+| A-029.2-RUNTIME | RUNTIME | dea92c5 | provider L2 foundation batch 1 | PASS | 6 NON_LIVE_READINESS profiles |
+| A-029.3-RUNTIME | RUNTIME | 056e2f5 | provider L2 foundation batch 2 | PASS | 5 NON_LIVE_READINESS profiles |
+| A-029.4.B1 | QUALITY | cc1641b | provider L2 quality baseline | PASS | 11/11 foundation confirmed |
+| A-029.5-SPEC | SPEC | 9b2f78b | provider L3 deterministic logic spec | PASS | full 11 selected |
+| A-029.5-RUNTIME | RUNTIME | cb26afb | provider L3 deterministic logic | PASS | 11 L3 evaluators |
+| A-029.6-SPEC | SPEC | a4b0c2e | provider L3 quality baseline selection | PASS | A-029.6.B1 selected |
+
+### 11/11 Provider L3 Coverage
+
+| UCE ID | Candidate | Provider Type | KZ Profile | L2 Foundation | L3 Logic | Boundary |
+|---|---|---|---|---|---|---|
+| UCE-024 | student_information_system_integration | SIS | PLATONUS_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-025 | finance_erp_integration | FINANCE_ERP | ONE_C_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-030 | government_services_integration | GOVERNMENT_SERVICES | EGOV_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-109 | digital_signature_integration | DIGITAL_SIGNATURE | EDS_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-112 | regulatory_reporting_integration | REGULATORY_REPORTING | MINISTRY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-108 | identity_provider_integration | IDENTITY_PROVIDER | IDP_SSO_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-027 | email_gateway_integration | EMAIL_GATEWAY | EMAIL_GATEWAY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-028 | notification_gateway_integration | NOTIFICATION_SMS_GATEWAY | SMS_GATEWAY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-110 | payment_gateway_integration | PAYMENT_GATEWAY | PAYMENT_GATEWAY_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-113 | hr_payroll_integration | HR_PAYROLL | HR_PAYROLL_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+| UCE-106 | learning_management_system_integration | LMS | LMS_KZ | IMPLEMENTED | IMPLEMENTED | NON_LIVE_READINESS |
+
+### Gate Results
+
+- A-029.5 targeted: PASS (231 passed, 3 skipped, 1 warning)
+- A-029 readiness continuity: PASS (576 passed, 19 skipped, 1 warning)
+- A-029/A-028 continuity: PASS (1207 passed, 19 skipped, 1 warning)
+- A-028 combined: PASS (2312 passed, 42 warnings)
+- A-027 continuity: PASS (1268 passed, 1 warning)
+- LDAP smoke: PASS (2 passed, 1 warning)
+- tenant/security bounded slice: PASS (70 passed, 1 warning)
+- optional full backend: FULL_BACKEND_NOT_RUN_IN_A0296B1
+
+### Forbidden Scan Result
+
+- no blocking execution behavior
+- no blocking credential or secret assignment
+- no blocking fake-provider claim
+- DB mutation scan: no matches
+- all matches were boundary or test-assertion text under NON_LIVE_READINESS controls
+
+### Metrics Non-Movement
+
+- provider readiness metrics unchanged:
+	- provider_readiness_foundation_count = 11
+	- A0295_provider_l3_deterministic_logic_count = 11
+	- provider_l3_deterministic_logic_count = 11
+	- provider_live_call_count = 0
+	- provider_credentials_count = 0
+	- provider_external_submission_count = 0
+	- provider_connected_count = 0
+	- provider_sync_count = 0
+	- baseline_impact = 0
+	- extension_impact = 0
+- ordinary expansion metrics unchanged:
+	- expansion_L2_foundation_count = 67
+	- expansion_runtime_implemented_count = 67
+	- expansion_L3_logic_count = 50
+	- remaining_L2_only = 17
+	- remaining_L3_not_L4 = 10
+	- expansion_L4_visibility_count = 40
+	- expansion_L4_api_route_count = 40
+	- expansion_L4_consolidated_summary_count = 1
+	- expansion_L4_consolidated_candidate_count = 40
+
+### Limitations
+
+- optional full backend regression not run in this scoped closure
+- frontend gate not run (out of provider-readiness backend scope)
+
+### Final Decision
+
+- final_verdict: A-029.6.B1 CLOSED — SCOPED PROVIDER READINESS L3 11-CANDIDATE QUALITY BASELINE CONFIRMED
+- status: ready_for_A-029.7-SPEC
+- last_completed_action_id: A-029.6.B1
+- next_action_id: A-029.7-SPEC
