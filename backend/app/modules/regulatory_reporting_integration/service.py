@@ -359,3 +359,70 @@ def evaluate_regulatory_reporting_provider_readiness_l3(tenant_id: int) -> dict:
         "no_l5_claim": True,
         "no_l6_claim": True,
     }
+
+
+def get_regulatory_reporting_provider_l4_visibility_summary(tenant_id: int) -> dict:
+    """Return deterministic A-029.7 L4 read-only provider visibility summary."""
+    tenant_id = validate_tenant_id(tenant_id)
+    l3_profile = evaluate_regulatory_reporting_provider_readiness_l3(tenant_id)
+    blockers = list(l3_profile.get("go_live_blockers", []))
+    missing_evidence = list(l3_profile.get("missing_evidence_by_category", []))
+    forbidden_actions = list(dict.fromkeys(list(l3_profile.get("forbidden_actions", [])) + [
+        "no ministry submission",
+        "no official compliance certification claim",
+    ]))
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": l3_profile["uce_id"],
+        "provider_type": l3_profile["provider_type"],
+        "provider_key": l3_profile["provider_key"],
+        "readiness_level": "L4_PROVIDER_READONLY_VISIBILITY",
+        "maturity_target": "L4",
+        "visibility_source_level": "L3_PROVIDER_READINESS_DETERMINISTIC_LOGIC",
+        "integration_mode": "NON_LIVE_READINESS",
+        "provider_profile_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "deterministic_logic_version": "A-029.5",
+        "visibility_version": "A-029.7",
+        "provider_connected": False,
+        "live_calls_enabled": False,
+        "credentials_configured": False,
+        "external_submission_enabled": False,
+        "sync_enabled": False,
+        "readiness_status": l3_profile["readiness_status"],
+        "readiness_status_reason": l3_profile["readiness_status_reason"],
+        "blocker_count": l3_profile["blocker_count"],
+        "warning_count": l3_profile["warning_count"],
+        "missing_evidence_count": l3_profile["missing_evidence_count"],
+        "visibility_summary": "Regulatory reporting readiness visibility over ministry schema mapping, evidence lineage, and submission approval boundaries.",
+        "go_live_blocker_summary": "; ".join(blockers) if blockers else "No go-live blockers recorded.",
+        "missing_evidence_summary": ", ".join(missing_evidence) if missing_evidence else "No missing evidence categories recorded.",
+        "security_legal_audit_rollback_summary": (
+            f"security={l3_profile.get('security_completeness_status')}; "
+            f"legal={l3_profile.get('legal_completeness_status')}; "
+            f"audit={l3_profile.get('audit_completeness_status')}; "
+            f"rollback={l3_profile.get('rollback_completeness_status')}"
+        ),
+        "allowed_next_steps": list(l3_profile.get("allowed_next_steps", [])),
+        "forbidden_actions": forbidden_actions,
+        "evidence_refs": [
+            "A-029.2-RUNTIME",
+            "A-029.5-RUNTIME",
+            "A-029.7-RUNTIME",
+        ],
+        "go_live_blockers": blockers,
+        "blocker_details": list(l3_profile.get("blocker_details", [])),
+        "warning_details": list(l3_profile.get("warning_details", [])),
+        "missing_evidence_by_category": missing_evidence,
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_provider_connected_claim": True,
+        "no_sync_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }
