@@ -210,3 +210,67 @@ def get_hr_payroll_provider_readiness_foundation(tenant_id: int) -> dict:
         "no_l5_claim": True,
         "no_l6_claim": True,
     }
+
+
+def evaluate_hr_payroll_provider_readiness_l3(tenant_id: int) -> dict:
+    """Return deterministic A-029.5 L3 provider readiness logic without live integration."""
+    tenant_id = validate_tenant_id(tenant_id)
+    l2_profile = get_hr_payroll_provider_readiness_foundation(tenant_id)
+
+    blocker_details = [
+        {"severity": "HIGH_BLOCKER", "category": "CAPABILITY_MAPPING", "blocker": "missing employee identity mapping"},
+        {"severity": "HIGH_BLOCKER", "category": "CAPABILITY_MAPPING", "blocker": "missing payroll posting boundary"},
+        {"severity": "CRITICAL_BLOCKER", "category": "DATA_PROTECTION", "blocker": "missing compensation data protection review"},
+        {"severity": "CRITICAL_BLOCKER", "category": "LEGAL_BASIS", "blocker": "missing HR legal basis"},
+        {"severity": "CRITICAL_BLOCKER", "category": "SECURITY_REVIEW", "blocker": "no payroll posting/salary calculation allowed in this phase"},
+    ]
+    warning_details = [{"severity": "MEDIUM_WARNING", "category": "OWNER_APPROVAL", "warning": "optional org hierarchy evidence gaps"}]
+    missing_evidence_by_category = sorted({entry["category"] for entry in blocker_details})
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": ORIGINAL_UCE_ID,
+        "provider_type": l2_profile["provider_type"],
+        "provider_key": l2_profile["provider_key"],
+        "readiness_level": "L3_PROVIDER_READINESS_DETERMINISTIC_LOGIC",
+        "maturity_target": "L3",
+        "integration_mode": "NON_LIVE_READINESS",
+        "provider_profile_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "deterministic_logic_version": "A-029.5",
+        "readiness_status": "BLOCKED_LIVE_CALLS_NOT_ALLOWED",
+        "readiness_status_reason": "Live payroll operations remain prohibited and HR/payroll governance evidence is incomplete.",
+        "blocker_count": len(blocker_details),
+        "warning_count": len(warning_details),
+        "missing_evidence_count": len(missing_evidence_by_category),
+        "security_completeness_status": "INCOMPLETE",
+        "legal_completeness_status": "INCOMPLETE",
+        "audit_completeness_status": "INCOMPLETE",
+        "rollback_completeness_status": "INCOMPLETE",
+        "capability_coverage_status": "PARTIAL",
+        "go_live_blockers": [entry["blocker"] for entry in blocker_details],
+        "blocker_details": blocker_details,
+        "warning_details": warning_details,
+        "missing_evidence_by_category": missing_evidence_by_category,
+        "readiness_recommendations": [
+            "Complete payroll boundary and data-protection governance evidence.",
+            "Keep payroll posting and salary calculations disabled in this lane.",
+        ],
+        "allowed_next_steps": [
+            "RUN_GOVERNANCE_REVIEW",
+            "COLLECT_MISSING_EVIDENCE",
+            "PREPARE_MANUAL_APPROVAL_PACKET",
+        ],
+        "forbidden_actions": list(l2_profile.get("forbidden_actions", [])),
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_provider_connected_claim": True,
+        "no_sync_claim": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }

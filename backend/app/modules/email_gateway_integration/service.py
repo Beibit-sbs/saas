@@ -208,3 +208,67 @@ def get_email_gateway_provider_readiness_foundation(tenant_id: int) -> dict:
         "no_l5_claim": True,
         "no_l6_claim": True,
     }
+
+
+def evaluate_email_gateway_provider_readiness_l3(tenant_id: int) -> dict:
+    """Return deterministic A-029.5 L3 provider readiness logic without live integration."""
+    tenant_id = validate_tenant_id(tenant_id)
+    l2_profile = get_email_gateway_provider_readiness_foundation(tenant_id)
+
+    blocker_details = [
+        {"severity": "HIGH_BLOCKER", "category": "OWNER_APPROVAL", "blocker": "missing sender identity policy"},
+        {"severity": "HIGH_BLOCKER", "category": "CAPABILITY_MAPPING", "blocker": "missing template approval boundary"},
+        {"severity": "CRITICAL_BLOCKER", "category": "LEGAL_BASIS", "blocker": "missing consent/unsubscribe boundary"},
+        {"severity": "HIGH_BLOCKER", "category": "AUDIT_PLAN", "blocker": "missing delivery audit design"},
+        {"severity": "CRITICAL_BLOCKER", "category": "SECURITY_REVIEW", "blocker": "no email send allowed in this phase"},
+    ]
+    warning_details = [{"severity": "MEDIUM_WARNING", "category": "MONITORING_PLAN", "warning": "optional bounce analytics evidence gaps"}]
+    missing_evidence_by_category = sorted({entry["category"] for entry in blocker_details})
+
+    return {
+        "tenant_id": tenant_id,
+        "module": MODULE_NAME,
+        "uce_id": ORIGINAL_UCE_ID,
+        "provider_type": l2_profile["provider_type"],
+        "provider_key": l2_profile["provider_key"],
+        "readiness_level": "L3_PROVIDER_READINESS_DETERMINISTIC_LOGIC",
+        "maturity_target": "L3",
+        "integration_mode": "NON_LIVE_READINESS",
+        "provider_profile_level": "L2_PROVIDER_READINESS_FOUNDATION",
+        "deterministic_logic_version": "A-029.5",
+        "readiness_status": "BLOCKED_LIVE_CALLS_NOT_ALLOWED",
+        "readiness_status_reason": "Live email dispatch remains prohibited and readiness evidence is incomplete.",
+        "blocker_count": len(blocker_details),
+        "warning_count": len(warning_details),
+        "missing_evidence_count": len(missing_evidence_by_category),
+        "security_completeness_status": "INCOMPLETE",
+        "legal_completeness_status": "INCOMPLETE",
+        "audit_completeness_status": "INCOMPLETE",
+        "rollback_completeness_status": "INCOMPLETE",
+        "capability_coverage_status": "PARTIAL",
+        "go_live_blockers": [entry["blocker"] for entry in blocker_details],
+        "blocker_details": blocker_details,
+        "warning_details": warning_details,
+        "missing_evidence_by_category": missing_evidence_by_category,
+        "readiness_recommendations": [
+            "Finalize sender, template, and consent governance evidence.",
+            "Maintain no-send boundaries until a future live-approved lane.",
+        ],
+        "allowed_next_steps": [
+            "RUN_GOVERNANCE_REVIEW",
+            "COLLECT_MISSING_EVIDENCE",
+            "PREPARE_MANUAL_APPROVAL_PACKET",
+        ],
+        "forbidden_actions": list(l2_profile.get("forbidden_actions", [])),
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_provider_call": True,
+        "no_credentials": True,
+        "no_external_submission": True,
+        "no_provider_connected_claim": True,
+        "no_sync_claim": True,
+        "no_l4_claim": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+    }
