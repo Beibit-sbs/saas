@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-029.7-SPEC
-    - current_stage: A-029.6.B1 complete / provider readiness L3 11-candidate quality baseline confirmed
-    - last_completed_action_id: A-029.6.B1
-    - next_action_id: A-029.7-SPEC
-    - updated_at: 2026-05-16 (A-029.6.B1 closed as scoped validation baseline; required Docker gates PASS, tenant/security bounded slice PASS, forbidden scans non-blocking, provider locked-zero counters preserved; next action selected as A-029.7-SPEC)
+    - status: ready_for_A-029.7-RUNTIME
+    - current_stage: A-029.7-SPEC complete / provider L4 read-only visibility selected
+    - last_completed_action_id: A-029.7-SPEC
+    - next_action_id: A-029.7-RUNTIME
+    - updated_at: 2026-05-16 (A-029.7-SPEC completed as planning-only provider L4 read-only visibility/API strategy; Option A selected for A-029.7-RUNTIME with service-level summaries only and API routes deferred to A-029.8; non-live and locked-zero boundaries preserved)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -12217,5 +12217,171 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
 - current_stage: A-029.6.B1 complete / provider readiness L3 11-candidate quality baseline confirmed
 - last_completed_action_id: A-029.6.B1
 - next_action_id: A-029.7-SPEC
+
+## A-029.7-SPEC — Provider Readiness L4 Read-Only Visibility/API
+
+### Source State
+
+- source_action_id: A-029.6.B1
+- source_commit: 3fcbff9
+- source_verdict: A-029.6.B1 CLOSED — SCOPED PROVIDER READINESS L3 11-CANDIDATE QUALITY BASELINE CONFIRMED
+- source_status: ready_for_A-029.7-SPEC
+- runtime implementation started in this action: NO
+
+### Provider L2/L3 Coverage Baseline
+
+| Layer | Count | Status |
+|---|---:|---|
+| L2 provider readiness foundation | 11 | COMPLETE |
+| L3 deterministic provider readiness logic | 11 | COMPLETE |
+| Live provider calls | 0 | LOCKED_ZERO |
+| Credentials configured | 0 | LOCKED_ZERO |
+| External submissions | 0 | LOCKED_ZERO |
+| Connected claims | 0 | LOCKED_ZERO |
+| Sync claims | 0 | LOCKED_ZERO |
+
+### L4 Read-Only Visibility Standard
+
+- tenant-safe deterministic read-only summaries over L3 deterministic logic and L2 foundation profiles
+- no live provider calls, credentials, submissions, sync, or connected claims
+- no provider-side effects, workflow execution, or DB mutation
+- no L5/L6 maturity claims
+
+### L4 Output Contract (planned)
+
+- readiness_level = L4_PROVIDER_READONLY_VISIBILITY
+- maturity_target = L4
+- visibility_source_level = L3_PROVIDER_READINESS_DETERMINISTIC_LOGIC
+- integration_mode = NON_LIVE_READINESS
+- provider_profile_level = L2_PROVIDER_READINESS_FOUNDATION
+- deterministic_logic_version = A-029.5
+- visibility_version = A-029.7
+- provider_connected = False
+- live_calls_enabled = False
+- credentials_configured = False
+- external_submission_enabled = False
+- sync_enabled = False
+- tenant_scoped = True
+- read_only = True
+- no_mutation = True
+- no_provider_call = True
+- no_credentials = True
+- no_external_submission = True
+- no_provider_connected_claim = True
+- no_sync_claim = True
+- no_l5_claim = True
+- no_l6_claim = True
+
+### Implementation Option Matrix
+
+| Option | Count | Value | Risk | Effort | Recommended | Reason |
+|---|---:|---:|---:|---:|---|---|
+| Option A — service-level L4 summaries only | 11 summaries, 0 routes | 5 | 1 | 2 | YES | safest controlled progression; mirrors A-028 safe sequencing |
+| Option B — service summaries + 11 API routes | 11 summaries, 11 routes | 5 | 3 | 4 | NO (now) | scope/risk too high for single runtime slice |
+| Option C — service summaries + consolidated summary | 11 summaries + 1 consolidated | 4 | 2 | 3 | CONDITIONAL | acceptable secondary strategy after Option A stabilization |
+| Option D — API-only wrapper over L3 | routes only | 2 | 4 | 3 | NO | lacks explicit L4 service contract layer |
+
+### Selected Strategy
+
+- selected_strategy: Option A — Service-level L4 summaries only
+- selected_count: 11
+- API route decision: deferred
+- PROVIDER_L4_API_ROUTES_DEFERRED_TO_A0298: YES
+
+### Selected 11 Provider Candidates (L4 surface)
+
+| UCE ID | Candidate | Provider Type | KZ Profile | L4 Surface | Boundary |
+|---|---|---|---|---|---|
+| UCE-024 | student_information_system_integration | SIS | PLATONUS_KZ | service summary | NON_LIVE_READINESS read-only boundary |
+| UCE-025 | finance_erp_integration | FINANCE_ERP | ONE_C_KZ | service summary | NON_LIVE_READINESS read-only boundary |
+| UCE-030 | government_services_integration | GOVERNMENT_SERVICES | EGOV_KZ | service summary | NON_LIVE_READINESS read-only boundary |
+| UCE-109 | digital_signature_integration | DIGITAL_SIGNATURE | EDS_KZ | service summary | NON_LIVE_READINESS read-only boundary |
+| UCE-112 | regulatory_reporting_integration | REGULATORY_REPORTING | MINISTRY_KZ | service summary | NON_LIVE_READINESS read-only boundary |
+| UCE-108 | identity_provider_integration | IDENTITY_PROVIDER | IDP_SSO_KZ | service summary | NON_LIVE_READINESS read-only boundary |
+| UCE-027 | email_gateway_integration | EMAIL_GATEWAY | EMAIL_GATEWAY_KZ | service summary | NON_LIVE_READINESS read-only boundary |
+| UCE-028 | notification_gateway_integration | NOTIFICATION_SMS_GATEWAY | SMS_GATEWAY_KZ | service summary | NON_LIVE_READINESS read-only boundary |
+| UCE-110 | payment_gateway_integration | PAYMENT_GATEWAY | PAYMENT_GATEWAY_KZ | service summary | NON_LIVE_READINESS read-only boundary |
+| UCE-113 | hr_payroll_integration | HR_PAYROLL | HR_PAYROLL_KZ | service summary | NON_LIVE_READINESS read-only boundary |
+| UCE-106 | learning_management_system_integration | LMS | LMS_KZ | service summary | NON_LIVE_READINESS read-only boundary |
+
+### Candidate-Specific Planned L4 Summary Functions
+
+- get_student_information_system_provider_l4_visibility_summary
+- get_finance_erp_provider_l4_visibility_summary
+- get_government_services_provider_l4_visibility_summary
+- get_digital_signature_provider_l4_visibility_summary
+- get_regulatory_reporting_provider_l4_visibility_summary
+- get_identity_provider_l4_visibility_summary
+- get_email_gateway_provider_l4_visibility_summary
+- get_notification_gateway_provider_l4_visibility_summary
+- get_payment_gateway_provider_l4_visibility_summary
+- get_hr_payroll_provider_l4_visibility_summary
+- get_learning_management_system_provider_l4_visibility_summary
+
+### Expected Runtime Files (Option A)
+
+- backend/app/modules/student_information_system_integration/service.py
+- backend/app/modules/finance_erp_integration/service.py
+- backend/app/modules/government_services_integration/service.py
+- backend/app/modules/digital_signature_integration/service.py
+- backend/app/modules/regulatory_reporting_integration/service.py
+- backend/app/modules/identity_provider_integration/service.py
+- backend/app/modules/email_gateway_integration/service.py
+- backend/app/modules/notification_gateway_integration/service.py
+- backend/app/modules/payment_gateway_integration/service.py
+- backend/app/modules/hr_payroll_integration/service.py
+- backend/app/modules/learning_management_system_integration/service.py
+- backend/tests/test_a0297_provider_readiness_l4_visibility_summaries.py
+- SBS_UB.md
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md
+- A-029.7-RUNTIME-PROVIDER_READINESS_L4_VISIBILITY_SUMMARIES_REPORT.md
+
+### Expected Metric Movement (runtime formula only)
+
+- no movement in A-029.7-SPEC (planning-only)
+- if A-029.7-RUNTIME implements Option A:
+    - A0297_provider_l4_visibility_count = 11
+    - provider_l4_visibility_count = 11
+    - provider_l4_api_route_count = 0
+    - PROVIDER_L4_API_ROUTES_DEFERRED_TO_A0298 = YES
+    - provider_l3_deterministic_logic_count = 11
+    - provider_readiness_foundation_count = 11
+    - provider_live_call_count = 0
+    - provider_credentials_count = 0
+    - provider_external_submission_count = 0
+    - provider_connected_count = 0
+    - provider_sync_count = 0
+    - baseline_impact = 0
+    - extension_impact = 0
+    - ordinary expansion L4 metrics unchanged:
+        - expansion_L4_visibility_count = 40
+        - expansion_L4_api_route_count = 40
+        - expansion_L4_consolidated_summary_count = 1
+        - expansion_L4_consolidated_candidate_count = 40
+        - expansion_L3_logic_count = 50
+        - remaining_L3_not_L4 = 10
+        - remaining_L2_only = 17
+
+### Anti-Fake / Anti-Inflation Review
+
+- no code in this action: PASS
+- no runtime implementation in this action: PASS
+- no live provider integration claim: PASS
+- no credentials/sync/submission/connected claim: PASS
+- no L5/L6 maturity claim: PASS
+- no Brain/autonomy/sensitive decision execution claim: PASS
+- baseline metrics unchanged: PASS
+- extension metrics unchanged: PASS
+- ordinary expansion metrics unchanged: PASS
+- provider-readiness metrics separated: PASS
+- API routes deferred under Option A: PASS
+
+### Final Decision
+
+- final_verdict: A-029.7-SPEC CLOSED — PASS
+- status: ready_for_A-029.7-RUNTIME
+- current_stage: A-029.7-SPEC complete / provider L4 read-only visibility selected
+- last_completed_action_id: A-029.7-SPEC
+- next_action_id: A-029.7-RUNTIME
 
 

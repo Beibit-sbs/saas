@@ -7672,3 +7672,149 @@ Provider readiness foundation count is tracked separately and does NOT increment
 - status: ready_for_A-029.7-SPEC
 - last_completed_action_id: A-029.6.B1
 - next_action_id: A-029.7-SPEC
+
+## A-029.7-SPEC — Provider Readiness L4 Read-Only Visibility/API
+
+### A-029.6.B1 Source State
+
+- source_commit: 3fcbff9
+- source_verdict: A-029.6.B1 CLOSED — SCOPED PROVIDER READINESS L3 11-CANDIDATE QUALITY BASELINE CONFIRMED
+- source_status: ready_for_A-029.7-SPEC
+- source next action confirmed: A-029.7-SPEC
+
+### Provider L2/L3 Coverage Baseline
+
+| Layer | Count | Status |
+|---|---:|---|
+| L2 provider readiness foundation | 11 | COMPLETE |
+| L3 deterministic provider readiness logic | 11 | COMPLETE |
+| Live provider calls | 0 | LOCKED_ZERO |
+| Credentials configured | 0 | LOCKED_ZERO |
+| External submissions | 0 | LOCKED_ZERO |
+| Connected claims | 0 | LOCKED_ZERO |
+| Sync claims | 0 | LOCKED_ZERO |
+
+### L4 Read-Only Visibility Standard
+
+- summary must be read-only, tenant-safe, deterministic, evidence-backed
+- source level must be L3 deterministic readiness over L2 provider profiles
+- integration_mode remains NON_LIVE_READINESS
+- no live provider call, no credentials, no external submission, no sync, no connected claim
+- no workflow execution and no DB mutation
+- no L5/L6 maturity claim
+
+### Implementation Option Matrix
+
+| Option | Count | Value | Risk | Effort | Recommended | Reason |
+|---|---:|---:|---:|---:|---|---|
+| Option A — service-level L4 summaries only | 11 summaries, 0 routes | 5 | 1 | 2 | YES | safest controlled step and route scope deferred |
+| Option B — service summaries + individual routes | 11 summaries, 11 routes | 5 | 3 | 4 | NO (now) | too much scope in one runtime lane |
+| Option C — service summaries + consolidated summary | 11 summaries + 1 consolidated | 4 | 2 | 3 | CONDITIONAL | acceptable secondary option after Option A |
+| Option D — API-only wrapper over L3 | routes only | 2 | 4 | 3 | NO | missing explicit L4 service contract |
+
+### Selected Strategy
+
+- selected strategy: Option A — Service-level L4 summaries only
+- selected count: 11
+- runtime code in this action: NO (SPEC only)
+
+### Selected 11 Provider Candidates
+
+| UCE ID | Candidate | Provider Type | KZ Profile | L4 Surface | Boundary |
+|---|---|---|---|---|---|
+| UCE-024 | student_information_system_integration | SIS | PLATONUS_KZ | service summary | read-only NON_LIVE_READINESS boundary |
+| UCE-025 | finance_erp_integration | FINANCE_ERP | ONE_C_KZ | service summary | read-only NON_LIVE_READINESS boundary |
+| UCE-030 | government_services_integration | GOVERNMENT_SERVICES | EGOV_KZ | service summary | read-only NON_LIVE_READINESS boundary |
+| UCE-109 | digital_signature_integration | DIGITAL_SIGNATURE | EDS_KZ | service summary | read-only NON_LIVE_READINESS boundary |
+| UCE-112 | regulatory_reporting_integration | REGULATORY_REPORTING | MINISTRY_KZ | service summary | read-only NON_LIVE_READINESS boundary |
+| UCE-108 | identity_provider_integration | IDENTITY_PROVIDER | IDP_SSO_KZ | service summary | read-only NON_LIVE_READINESS boundary |
+| UCE-027 | email_gateway_integration | EMAIL_GATEWAY | EMAIL_GATEWAY_KZ | service summary | read-only NON_LIVE_READINESS boundary |
+| UCE-028 | notification_gateway_integration | NOTIFICATION_SMS_GATEWAY | SMS_GATEWAY_KZ | service summary | read-only NON_LIVE_READINESS boundary |
+| UCE-110 | payment_gateway_integration | PAYMENT_GATEWAY | PAYMENT_GATEWAY_KZ | service summary | read-only NON_LIVE_READINESS boundary |
+| UCE-113 | hr_payroll_integration | HR_PAYROLL | HR_PAYROLL_KZ | service summary | read-only NON_LIVE_READINESS boundary |
+| UCE-106 | learning_management_system_integration | LMS | LMS_KZ | service summary | read-only NON_LIVE_READINESS boundary |
+
+### Candidate-by-Candidate L4 Summary Specs
+
+- student_information_system_integration: get_student_information_system_provider_l4_visibility_summary
+- finance_erp_integration: get_finance_erp_provider_l4_visibility_summary
+- government_services_integration: get_government_services_provider_l4_visibility_summary
+- digital_signature_integration: get_digital_signature_provider_l4_visibility_summary
+- regulatory_reporting_integration: get_regulatory_reporting_provider_l4_visibility_summary
+- identity_provider_integration: get_identity_provider_l4_visibility_summary
+- email_gateway_integration: get_email_gateway_provider_l4_visibility_summary
+- notification_gateway_integration: get_notification_gateway_provider_l4_visibility_summary
+- payment_gateway_integration: get_payment_gateway_provider_l4_visibility_summary
+- hr_payroll_integration: get_hr_payroll_provider_l4_visibility_summary
+- learning_management_system_integration: get_learning_management_system_provider_l4_visibility_summary
+
+### API Route Decision
+
+- routes implemented in A-029.7: NO
+- PROVIDER_L4_API_ROUTES_DEFERRED_TO_A0298 = YES
+- provider_l4_api_route_count expected after A-029.7-RUNTIME Option A: 0
+- A-029.8-SPEC may define route exposure strategy and permissions
+
+### Expected Runtime Files (Option A)
+
+- backend/app/modules/student_information_system_integration/service.py
+- backend/app/modules/finance_erp_integration/service.py
+- backend/app/modules/government_services_integration/service.py
+- backend/app/modules/digital_signature_integration/service.py
+- backend/app/modules/regulatory_reporting_integration/service.py
+- backend/app/modules/identity_provider_integration/service.py
+- backend/app/modules/email_gateway_integration/service.py
+- backend/app/modules/notification_gateway_integration/service.py
+- backend/app/modules/payment_gateway_integration/service.py
+- backend/app/modules/hr_payroll_integration/service.py
+- backend/app/modules/learning_management_system_integration/service.py
+- backend/tests/test_a0297_provider_readiness_l4_visibility_summaries.py
+- SBS_UB.md
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md
+- A-029.7-RUNTIME-PROVIDER_READINESS_L4_VISIBILITY_SUMMARIES_REPORT.md
+
+### Test Plan (runtime target)
+
+- validate L4 summary function existence and contract on all 11 modules
+- validate tenant fail-closed behavior and deterministic output
+- validate NON_LIVE_READINESS and anti-fake flags preserved
+- validate no HTTP/credential/mutation behavior in changed runtime files
+- validate provider L4 metrics and locked-zero counters
+- validate ordinary expansion, baseline, extension metrics unchanged
+
+### Expected Metric Movement
+
+- A-029.7-SPEC (current): no movement
+- if A-029.7-RUNTIME Option A executes:
+	- A0297_provider_l4_visibility_count = 11
+	- provider_l4_visibility_count = 11
+	- provider_l4_api_route_count = 0
+	- PROVIDER_L4_API_ROUTES_DEFERRED_TO_A0298 = YES
+	- provider_l3_deterministic_logic_count = 11
+	- provider_readiness_foundation_count = 11
+	- provider_live_call_count = 0
+	- provider_credentials_count = 0
+	- provider_external_submission_count = 0
+	- provider_connected_count = 0
+	- provider_sync_count = 0
+	- baseline_impact = 0
+	- extension_impact = 0
+	- ordinary expansion metrics unchanged (40/40/1/40; L3=50; remaining 10/17)
+
+### Anti-Fake Review
+
+- no runtime code in A-029.7-SPEC: PASS
+- no live provider integration claim: PASS
+- no credentials/sync/submission/connected claim: PASS
+- no L5/L6 claim: PASS
+- no Brain/autonomy/sensitive decision claim: PASS
+- baseline/extension/ordinary expansion unchanged: PASS
+- provider-readiness metrics separated: PASS
+- API routes deferred under Option A: PASS
+
+### Final Decision
+
+- final_verdict: A-029.7-SPEC CLOSED — PASS
+- status: ready_for_A-029.7-RUNTIME
+- last_completed_action_id: A-029.7-SPEC
+- next_action_id: A-029.7-RUNTIME
