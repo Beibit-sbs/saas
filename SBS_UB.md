@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-029.5-SPEC
-    - current_stage: A-029.4.B1 complete / provider readiness 11-candidate quality baseline confirmed
-    - last_completed_action_id: A-029.4.B1
-    - next_action_id: A-029.5-SPEC
-    - updated_at: 2026-05-16 (A-029.4.B1 scoped quality baseline completed; required provider-readiness gates passed; 11/11 NON_LIVE_READINESS coverage confirmed; next action selected as A-029.5-SPEC)
+    - status: ready_for_A-029.5-RUNTIME
+    - current_stage: A-029.5-SPEC complete / provider readiness L3 deterministic logic selected
+    - last_completed_action_id: A-029.5-SPEC
+    - next_action_id: A-029.5-RUNTIME
+    - updated_at: 2026-05-16 (A-029.5-SPEC completed as planning-only; L3 deterministic provider readiness standard defined for all 11 NON_LIVE_READINESS providers; full-11 runtime option selected)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -11654,5 +11654,213 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
 - current_stage: A-029.4.B1 complete / provider readiness 11-candidate quality baseline confirmed
 - last_completed_action_id: A-029.4.B1
 - next_action_id: A-029.5-SPEC
+
+## A-029.5-SPEC — Provider Readiness L3 Deterministic Logic
+
+### Control Block
+
+- action_id: A-029.5-SPEC
+- phase: Wave 18 — Provider Readiness L3 Planning
+- type: SPEC_ONLY
+- source_action_id: A-029.4.B1
+- source_commit: cc1641b
+- runtime_implementation_started: NO
+
+### Source-of-Truth Confirmation
+
+- A-029.4.B1 closure verified: PASS
+- source next action verified: A-029.5-SPEC
+- provider foundation coverage verified: 11/11
+- provider counters verified:
+    - A0292_provider_readiness_foundation_count = 6
+    - A0293_provider_readiness_foundation_count = 5
+    - provider_readiness_foundation_count = 11
+    - provider_live_call_count = 0
+    - provider_credentials_count = 0
+    - provider_external_submission_count = 0
+    - provider_connected_count = 0
+    - provider_sync_count = 0
+- provider L3 metric state entering SPEC: provider_l3_deterministic_logic_count = NOT_STARTED
+- baseline metrics preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+- extension metrics preserved: extension_total_count=25, total_tracked_modules=175
+- ordinary expansion metrics preserved:
+    - expansion_L2_foundation_count = 67
+    - expansion_runtime_implemented_count = 67
+    - expansion_L3_logic_count = 50
+    - remaining_L2_only = 17
+    - remaining_L3_not_L4 = 10
+    - expansion_L4_visibility_count = 40
+    - expansion_L4_api_route_count = 40
+    - expansion_L4_consolidated_summary_count = 1
+    - expansion_L4_consolidated_candidate_count = 40
+
+### L3 Deterministic Provider Readiness Standard
+
+- deterministic evaluation over existing NON_LIVE_READINESS L2 profile data only
+- no live provider calls
+- no credentials
+- no external submission
+- no provider connected claim
+- no sync
+- no runtime mutation
+- no provider-side side effects
+- no L4 visibility/API claim
+- no L5 sandbox claim
+- no L6 production integration claim
+
+### L3 Output Contract (runtime target)
+
+- tenant_id
+- module
+- uce_id
+- provider_type
+- provider_key
+- readiness_level = L3_PROVIDER_READINESS_DETERMINISTIC_LOGIC
+- maturity_target = L3
+- integration_mode = NON_LIVE_READINESS
+- provider_profile_level = L2_PROVIDER_READINESS_FOUNDATION
+- deterministic_logic_version = A-029.5
+- readiness_status
+- readiness_status_reason
+- blocker_count
+- warning_count
+- missing_evidence_count
+- security_completeness_status
+- legal_completeness_status
+- audit_completeness_status
+- rollback_completeness_status
+- capability_coverage_status
+- go_live_blockers
+- missing_evidence_by_category
+- readiness_recommendations
+- allowed_next_steps
+- forbidden_actions
+- tenant_scoped = True
+- read_only = True
+- no_mutation = True
+- no_provider_call = True
+- no_credentials = True
+- no_external_submission = True
+- no_provider_connected_claim = True
+- no_sync_claim = True
+- no_l4_claim = True
+- no_l5_claim = True
+- no_l6_claim = True
+
+### Allowed readiness_status categories
+
+- PROFILE_COMPLETE_READY_FOR_REVIEW
+- MISSING_CAPABILITY_MAPPING
+- MISSING_SECURITY_REVIEW
+- MISSING_LEGAL_BASIS
+- MISSING_AUDIT_PLAN
+- MISSING_ROLLBACK_PLAN
+- BLOCKED_EXTERNAL_DEPENDENCY_UNAPPROVED
+- BLOCKED_CREDENTIALS_NOT_ALLOWED
+- BLOCKED_LIVE_CALLS_NOT_ALLOWED
+
+### Severity and Missing Evidence Categories
+
+- blocker severity:
+    - CRITICAL_BLOCKER
+    - HIGH_BLOCKER
+    - MEDIUM_WARNING
+    - INFO_GAP
+- missing evidence categories:
+    - CAPABILITY_MAPPING
+    - SECURITY_REVIEW
+    - LEGAL_BASIS
+    - DATA_PROTECTION
+    - AUDIT_PLAN
+    - ROLLBACK_PLAN
+    - OWNER_APPROVAL
+    - EXTERNAL_CONTRACT
+    - SANDBOX_POLICY
+    - MONITORING_PLAN
+
+### Candidate evaluator function targets
+
+- evaluate_student_information_system_provider_readiness_l3
+- evaluate_finance_erp_provider_readiness_l3
+- evaluate_government_services_provider_readiness_l3
+- evaluate_digital_signature_provider_readiness_l3
+- evaluate_regulatory_reporting_provider_readiness_l3
+- evaluate_identity_provider_readiness_l3
+- evaluate_email_gateway_provider_readiness_l3
+- evaluate_notification_gateway_provider_readiness_l3
+- evaluate_payment_gateway_provider_readiness_l3
+- evaluate_hr_payroll_provider_readiness_l3
+- evaluate_learning_management_system_provider_readiness_l3
+
+### Implementation options for A-029.5-RUNTIME
+
+| Option | Count | Value | Risk | Effort | Recommended | Reason |
+|---|---:|---:|---:|---:|---|---|
+| Option A — full provider set | 11 | 5 | 2 | 4 | YES | Foundation coverage is 11/11 and quality-confirmed; deterministic non-live progression remains coherent |
+| Option B — batch 1 core only | 6 | 4 | 2 | 3 | NO | Splits provider lane and delays completion |
+| Option C — batch 2 deferred only | 5 | 3 | 2 | 3 | NO | Leaves core providers at L2 |
+| Option D — extra planning split | 0 | 2 | 1 | 2 | NO | Adds delay without new evidence benefit |
+
+### Selected runtime option
+
+- selected_option: Option A
+- selected_count: 11
+- rationale: full 11 deterministic evaluators preserve provider-lane coherence while retaining NON_LIVE_READINESS boundaries
+
+### Expected A-029.5-RUNTIME files
+
+- backend/app/modules/student_information_system_integration/service.py
+- backend/app/modules/finance_erp_integration/service.py
+- backend/app/modules/government_services_integration/service.py
+- backend/app/modules/digital_signature_integration/service.py
+- backend/app/modules/regulatory_reporting_integration/service.py
+- backend/app/modules/identity_provider_integration/service.py
+- backend/app/modules/email_gateway_integration/service.py
+- backend/app/modules/notification_gateway_integration/service.py
+- backend/app/modules/payment_gateway_integration/service.py
+- backend/app/modules/hr_payroll_integration/service.py
+- backend/app/modules/learning_management_system_integration/service.py
+- backend/tests/test_a0295_provider_readiness_l3_deterministic_logic.py
+- A-029.5-RUNTIME-PROVIDER_READINESS_L3_DETERMINISTIC_LOGIC_REPORT.md
+
+### Expected metric movement (formula only, runtime)
+
+- A0295_provider_l3_deterministic_logic_count = 11
+- provider_l3_deterministic_logic_count = 11
+- provider_readiness_foundation_count = 11
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+- baseline_impact = 0
+- extension_impact = 0
+- ordinary L4 counts remain unchanged:
+    - expansion_L4_visibility_count = 40
+    - expansion_L4_api_route_count = 40
+    - expansion_L4_consolidated_summary_count = 1
+    - expansion_L4_consolidated_candidate_count = 40
+- provider L3 metric should be tracked separately from ordinary expansion_L3_logic_count
+
+### Anti-Fake / Anti-Inflation Review
+
+- no code implementation in A-029.5-SPEC: PASS
+- no runtime implementation in A-029.5-SPEC: PASS
+- no live provider integration claim: PASS
+- no live calls/credentials/submission/sync: PASS
+- no provider connected/available/success claim: PASS
+- no L4/L5/L6 provider maturity claim: PASS
+- no Brain/autonomy/sensitive decision execution: PASS
+- baseline/extension unchanged: PASS
+- ordinary expansion unchanged: PASS
+- provider readiness tracked separately: PASS
+
+### Final Decision
+
+- final_verdict: A-029.5-SPEC CLOSED — PASS
+- status: ready_for_A-029.5-RUNTIME
+- current_stage: A-029.5-SPEC complete / provider readiness L3 deterministic logic selected
+- last_completed_action_id: A-029.5-SPEC
+- next_action_id: A-029.5-RUNTIME
 
 

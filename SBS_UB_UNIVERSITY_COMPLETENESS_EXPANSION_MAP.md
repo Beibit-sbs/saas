@@ -7236,3 +7236,137 @@ Provider readiness foundation count is tracked separately and does NOT increment
 - status: ready_for_A-029.5-SPEC
 - last_completed_action_id: A-029.4.B1
 - next_action_id: A-029.5-SPEC
+
+## A-029.5-SPEC — Provider Readiness L3 Deterministic Logic
+
+### Source State
+
+- source_action_id: A-029.4.B1
+- source_commit: cc1641b
+- source_verdict: PASS (11-candidate provider readiness quality baseline confirmed)
+- source_next_action_id: A-029.5-SPEC
+- provider readiness foundation baseline: 11/11 NON_LIVE_READINESS profiles
+- runtime implementation status in this action: NOT_STARTED
+
+### L3 Deterministic Standard (planning)
+
+- deterministic evaluation over L2 provider readiness profile data only
+- integration_mode remains NON_LIVE_READINESS
+- no live provider calls
+- no credentials
+- no external submission
+- no provider connected claim
+- no sync claim
+- no runtime mutation
+- no L4/L5/L6 maturity claim
+
+### Output Contract and Categories
+
+- required output fields include readiness_status, blocker_count, warning_count, missing_evidence_count,
+  security/legal/audit/rollback completeness status, recommendations, forbidden_actions,
+  and strict no-live/no-credential/no-submission/no-sync/no-claim boundary flags
+- allowed readiness_status values:
+	- PROFILE_COMPLETE_READY_FOR_REVIEW
+	- MISSING_CAPABILITY_MAPPING
+	- MISSING_SECURITY_REVIEW
+	- MISSING_LEGAL_BASIS
+	- MISSING_AUDIT_PLAN
+	- MISSING_ROLLBACK_PLAN
+	- BLOCKED_EXTERNAL_DEPENDENCY_UNAPPROVED
+	- BLOCKED_CREDENTIALS_NOT_ALLOWED
+	- BLOCKED_LIVE_CALLS_NOT_ALLOWED
+- blocker severity set:
+	- CRITICAL_BLOCKER
+	- HIGH_BLOCKER
+	- MEDIUM_WARNING
+	- INFO_GAP
+- missing evidence categories:
+	- CAPABILITY_MAPPING
+	- SECURITY_REVIEW
+	- LEGAL_BASIS
+	- DATA_PROTECTION
+	- AUDIT_PLAN
+	- ROLLBACK_PLAN
+	- OWNER_APPROVAL
+	- EXTERNAL_CONTRACT
+	- SANDBOX_POLICY
+	- MONITORING_PLAN
+
+### Candidate Scope (11)
+
+- UCE-024 student_information_system_integration
+- UCE-025 finance_erp_integration
+- UCE-030 government_services_integration
+- UCE-109 digital_signature_integration
+- UCE-112 regulatory_reporting_integration
+- UCE-108 identity_provider_integration
+- UCE-027 email_gateway_integration
+- UCE-028 notification_gateway_integration
+- UCE-110 payment_gateway_integration
+- UCE-113 hr_payroll_integration
+- UCE-106 learning_management_system_integration
+
+### Runtime Option Matrix
+
+| Option | Count | Value | Risk | Effort | Recommended | Decision |
+|---|---:|---:|---:|---:|---|---|
+| Option A — full 11 deterministic provider evaluators | 11 | 5 | 2 | 4 | YES | SELECTED |
+| Option B — batch 1 core providers only | 6 | 4 | 2 | 3 | NO | NOT_SELECTED |
+| Option C — batch 2 deferred providers only | 5 | 3 | 2 | 3 | NO | NOT_SELECTED |
+| Option D — additional spec split before runtime | 0 | 2 | 1 | 2 | NO | NOT_SELECTED |
+
+### Expected A-029.5-RUNTIME Targets
+
+- provider service files (11):
+	- backend/app/modules/student_information_system_integration/service.py
+	- backend/app/modules/finance_erp_integration/service.py
+	- backend/app/modules/government_services_integration/service.py
+	- backend/app/modules/digital_signature_integration/service.py
+	- backend/app/modules/regulatory_reporting_integration/service.py
+	- backend/app/modules/identity_provider_integration/service.py
+	- backend/app/modules/email_gateway_integration/service.py
+	- backend/app/modules/notification_gateway_integration/service.py
+	- backend/app/modules/payment_gateway_integration/service.py
+	- backend/app/modules/hr_payroll_integration/service.py
+	- backend/app/modules/learning_management_system_integration/service.py
+- tests:
+	- backend/tests/test_a0295_provider_readiness_l3_deterministic_logic.py
+- reports and governance artifacts:
+	- A-029.5-RUNTIME-PROVIDER_READINESS_L3_DETERMINISTIC_LOGIC_REPORT.md
+	- SBS_UB.md
+	- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md
+
+### Expected Metric Profile (runtime formula only)
+
+- A0295_provider_l3_deterministic_logic_count = 11
+- provider_l3_deterministic_logic_count = 11
+- provider_readiness_foundation_count = 11 (unchanged)
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+- baseline_impact = 0
+- extension_impact = 0
+- ordinary L4 metrics unchanged:
+	- expansion_L4_visibility_count = 40
+	- expansion_L4_api_route_count = 40
+	- expansion_L4_consolidated_summary_count = 1
+	- expansion_L4_consolidated_candidate_count = 40
+- ordinary expansion_L3_logic_count remains separate from provider readiness L3 counter
+
+### Anti-Fake Boundary Review
+
+- planning-only action; no runtime implementation claim: PASS
+- no live provider integration/call claim: PASS
+- no credentials/external submission claim: PASS
+- no connected/sync/production-ready claim: PASS
+- no L4/L5/L6 maturity claim for provider lane: PASS
+- baseline/extension/ordinary expansion metrics unchanged in SPEC: PASS
+
+### Final Decision
+
+- final_verdict: A-029.5-SPEC CLOSED — PASS
+- status: ready_for_A-029.5-RUNTIME
+- last_completed_action_id: A-029.5-SPEC
+- next_action_id: A-029.5-RUNTIME
