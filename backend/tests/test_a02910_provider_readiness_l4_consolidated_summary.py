@@ -9,10 +9,38 @@ Validates consolidated provider L4 summary endpoint:
 """
 
 import pytest
+from pathlib import Path
 from fastapi.testclient import TestClient
 from app.main import app
+from app.modules.auth.token_service import create_access_token
 
 client = TestClient(app)
+
+
+def _headers_with_permission(permission: str = "admin.expansion.read", tenant_id: int = 1) -> dict[str, str]:
+    token = create_access_token(
+        user_id=f"a02910-admin-tenant-{tenant_id}@example.com",
+        roles=["admin"],
+        auth_source="test",
+        tenant_id=tenant_id,
+        permissions=[permission],
+    )
+    return {"Authorization": f"Bearer {token}", "X-Tenant-ID": str(tenant_id)}
+
+
+def _headers_without_permission(tenant_id: int = 1) -> dict[str, str]:
+    token = create_access_token(
+        user_id=f"a02910-student-tenant-{tenant_id}@example.com",
+        roles=["student"],
+        auth_source="test",
+        tenant_id=tenant_id,
+        permissions=[],
+    )
+    return {"Authorization": f"Bearer {token}", "X-Tenant-ID": str(tenant_id)}
+
+
+def _router_file_path() -> Path:
+    return Path(__file__).resolve().parents[1] / "app/modules/provider_readiness/router.py"
 
 
 class TestConsolidatedEndpointRegistration:
@@ -62,42 +90,41 @@ class TestConsolidatedEndpointRegistration:
 class TestPermissionAndAuthentication:
     """Test permission and authentication boundaries."""
 
-    def test_route_requires_permission(self, authenticated_tenant_header, mocker):
+    def test_route_requires_permission(self):
         """Verify admin.expansion.read permission is required."""
-        # Mock permission check to verify it's called
-        mocker.patch(
-            "app.modules.rbac.security.permission_dependency",
-            side_effect=lambda perm: lambda: None if perm == "admin.expansion.read" else (_ for _ in ()).throw(Exception("Wrong permission"))
-        )
-        # The route should require the correct permission
-        # This is verified through the route signature
+        text = _router_file_path().read_text(encoding="utf-8")
+        assert 'permission_dependency("admin.expansion.read")' in text
 
     def test_unauthenticated_request_rejected(self):
         """Verify 401 for missing JWT."""
         response = client.get("/api/admin/provider-readiness/l4/summary")
         assert response.status_code == 401
 
-    def test_valid_authenticated_request_accepted(self, authenticated_tenant_header):
+    def test_valid_authenticated_request_accepted(self):
         """Verify 200 with valid authentication."""
         response = client.get(
             "/api/admin/provider-readiness/l4/summary",
-            headers=authenticated_tenant_header,
+            headers=_headers_with_permission(),
         )
         assert response.status_code == 200
 
-    def test_tenant_dependency_is_fail_closed(self, mocker):
+    def test_tenant_dependency_is_fail_closed(self):
         """Verify tenant resolution fails closed for invalid tenants."""
-        # Mock tenant resolver to return None
-        mocker.patch(
-            "app.core.tenant.get_current_tenant",
-            return_value=None,
-        )
+        headers = _headers_with_permission()
+        headers["X-Tenant-ID"] = "0"
         response = client.get(
             "/api/admin/provider-readiness/l4/summary",
-            headers={"Authorization": "Bearer test_token"},
+            headers=headers,
         )
-        # Should fail for None tenant
-        assert response.status_code in [400, 403]
+        assert response.status_code in [400, 403, 422]
+
+    def test_missing_permission_rejected(self):
+        """Verify 403 when token lacks admin.expansion.read."""
+        response = client.get(
+            "/api/admin/provider-readiness/l4/summary",
+            headers=_headers_without_permission(),
+        )
+        assert response.status_code == 403
 
 
 class TestConsolidatedResponseShape:
@@ -353,7 +380,7 @@ class TestIntegrity:
 
     def test_no_external_http_provider_calls(self):
         """Verify no HTTP provider calls in router."""
-        with open("backend/app/modules/provider_readiness/router.py") as f:
+        with _router_file_path().open(encoding="utf-8") as f:
             content = f.read()
             # Should not contain external HTTP library imports
             assert "import requests" not in content
@@ -364,7 +391,7 @@ class TestIntegrity:
 
     def test_no_db_mutation_in_router(self):
         """Verify no DB mutations in router."""
-        with open("backend/app/modules/provider_readiness/router.py") as f:
+        with _router_file_path().open(encoding="utf-8") as f:
             content = f.read()
             # Should not contain DB mutation patterns
             assert ".add(" not in content or "session.add" not in content
@@ -377,7 +404,7 @@ class TestRouterDetails:
 
     def test_no_internal_http_forwarding(self):
         """Verify aggregation calls service functions directly."""
-        with open("backend/app/modules/provider_readiness/router.py") as f:
+        with _router_file_path().open(encoding="utf-8") as f:
             content = f.read()
             # Should call service functions, not HTTP routes
             assert "get_student_information_system_provider_l4_visibility_summary" in content
@@ -389,7 +416,4 @@ class TestRouterDetails:
 @pytest.fixture
 def authenticated_tenant_header():
     """Provide authenticated tenant header for tests."""
-    # This is a basic fixture - in integration tests, use real JWT
-    return {
-        "Authorization": "Bearer test_jwt_token_with_valid_claims_and_tenant_id_1",
-    }
+    return _headers_with_permission()

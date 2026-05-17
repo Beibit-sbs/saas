@@ -8796,3 +8796,81 @@ Option A: One consolidated GET endpoint aggregating 11 existing provider L4 serv
 
 - selected_next_action: A-029.11.B1.R1
 - reason: mandatory gate failures require scoped remediation before any post-Wave-18 strategic branch
+
+## A-029.11.B1.R1 — Provider L4 Consolidated Summary Gate Remediation
+
+### Remediation Purpose
+
+- purpose: remediate A-029.10 consolidated suite blockers from A-029.11.B1
+- scope: narrow, test-focused remediation only
+- runtime feature implementation: none
+
+### Blocker Summary from A-029.11.B1
+
+- blocker class 1: `401 Unauthorized` in authenticated A-029.10 consolidated endpoint checks
+- blocker class 2: path-integrity `FileNotFoundError` on provider router source read
+
+### Root Causes
+
+- 401 Unauthorized root cause:
+	- `authenticated_tenant_header` in `test_a02910` used a fake bearer token string not aligned with active auth dependency;
+	- two tests depended on unavailable `mocker` fixture in Docker test environment.
+- path-integrity FileNotFoundError root cause:
+	- hardcoded `backend/app/...` lookup executed from `/app/backend` CWD resolved to invalid `/app/backend/backend/...` path.
+
+### Remediation Summary
+
+- file remediated: `backend/tests/test_a02910_provider_readiness_l4_consolidated_summary.py`
+- fixes applied:
+	- aligned auth headers with A-029.8 pattern via `create_access_token` helper;
+	- removed `mocker` dependency from scope tests;
+	- replaced fragile path assumptions with robust `Path(__file__).resolve()` based router path resolution.
+- production/runtime provider behavior changes: none
+
+### Validation Results
+
+- Gate 1 A-029.10 targeted: PASS (`51 passed, 1 warning`)
+- Gate 2 A-029 provider continuity: PASS (`1040 passed, 29 skipped, 1 warning`)
+- Gate 3 A-029/A-028 continuity: PASS (`1671 passed, 29 skipped, 1 warning`)
+- Gate 4 A-028 combined: PASS (`2312 passed, 42 warnings`)
+- Gate 5 A-027 continuity: PASS (`1268 passed, 1 warning`)
+- Gate 6 LDAP smoke: PASS (`2 passed, 1 warning`)
+- Gate 7 tenant/security bounded slice: PASS (`56 passed, 1 warning`)
+- Optional full backend: NOT_RUN (`FULL_BACKEND_NOT_RUN_IN_A02911B1R1`)
+
+### Forbidden Scan Classification (Focused Changed Files)
+
+- external call tokens: TEST_ASSERTION / EXPECTED_FALSE_FLAG only
+- credentials/tokens: TEST_ASSERTION / auth fixture token generation only
+- DB mutation tokens: TEST_ASSERTION only
+- fake provider status tokens: ACCEPTED_BOUNDARY_TEXT only
+- brain/autonomy tokens: none
+- mutation route decorators: none
+- internal HTTP forwarding tokens: TEST_ASSERTION / TestClient usage only
+- synthetic score tokens: negative assertion only
+- blocking result: none
+
+### Metrics and Boundary Preservation
+
+- provider metrics unchanged: `11/11/11/11` and risk counters remain zero
+- ordinary expansion metrics unchanged: `67/67/50` with `remaining_L2_only=17`, `remaining_L3_not_L4=10`, `L4 visibility/routes/summary/candidates = 40/40/1/40`
+- baseline unchanged: `L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150`
+- extension unchanged: `extension_total_count=25`, `total_tracked_modules=175`
+
+### Anti-Fake Review
+
+- no live provider call: PASS
+- no credentials: PASS
+- no submission/sync: PASS
+- no provider connected claim: PASS
+- no synthetic score: PASS
+- no Brain/autonomy execution: PASS
+- no DB mutation route introduction: PASS
+
+### Final Decision and Next Action
+
+- final_verdict: A-029.11.B1.R1 CLOSED - REMEDIATION PASS
+- status: ready_for_A-029.11.B1.R2
+- current_stage: A-029.11.B1.R1 complete / blockers remediated and mandatory gates passing
+- last_completed_action_id: A-029.11.B1.R1
+- next_action_id: A-029.11.B1.R2

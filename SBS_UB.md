@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: blocked_A-029.11.B1
-    - current_stage: A-029.11.B1 blocked / mandatory quality gates failed (auth 401 and path integrity failures)
-    - last_completed_action_id: A-029.11-SPEC
-    - next_action_id: A-029.11.B1.R1
-    - updated_at: 2026-05-17 (A-029.11.B1 validation/reporting gate executed; Gate 1 and Gate 2 and Gate 3 failed due 401 Unauthorized on /api/admin/provider-readiness/l4/summary plus test integrity path mismatch in test_a02910 suite; Gate 4, Gate 5, Gate 6, and bounded Gate 7 passed; no runtime code changes performed; provider/expansion/baseline/extension counters remain unchanged; closure marked BLOCKED and routed to A-029.11.B1.R1)
+    - status: ready_for_A-029.11.B1.R2
+    - current_stage: A-029.11.B1.R1 complete / A-029.10 consolidated suite blockers remediated
+    - last_completed_action_id: A-029.11.B1.R1
+    - next_action_id: A-029.11.B1.R2
+    - updated_at: 2026-05-17 (A-029.11.B1.R1 executed in Docker-only scope; remediated A-029.10 test auth setup and path-integrity assumptions in test_a02910; Gate 1 targeted now PASS 51 passed, Gate 2 PASS 1040 passed/29 skipped, Gate 3 PASS 1671 passed/29 skipped, Gate 4 PASS 2312 passed, Gate 5 PASS 1268 passed, Gate 6 PASS 2 passed, Gate 7 PASS 56 passed; no runtime provider feature changes; provider/expansion/baseline/extension counters unchanged; advanced to A-029.11.B1.R2)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -13076,5 +13076,40 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - report_file: A-029.11.B1-PROVIDER_L4_CONSOLIDATED_SUMMARY_QUALITY_BASELINE_AND_WAVE18_CLOSURE_REPORT.md
     - final_verdict: A-029.11.B1 BLOCKED — mandatory gate failures in A-029.10-targeted/continuity suites (401 Unauthorized + test integrity path mismatch)
     - next_action_id: A-029.11.B1.R1
+
+- A-029.11.B1.R1 execution block:
+    - mode: targeted_remediation_runtime_test_scope
+    - purpose: remediate_a02910_consolidated_suite_401_and_path_integrity_failures
+    - source_of_truth_check: PASS (A-029.11.B1 blocked anchor reproduced before remediation)
+    - root_cause_401: invalid_auth_test_fixture_pattern (fake bearer token in authenticated_tenant_header) plus unsupported mocker fixture usage in Docker image
+    - root_cause_path_integrity: test path assumption error (`backend/app/...` relative lookup from `/app/backend` produced invalid `/app/backend/backend/...` path)
+    - files_changed_runtime_scope: backend/tests/test_a02910_provider_readiness_l4_consolidated_summary.py only
+    - remediation_strategy: align auth header/test pattern to A-029.8 token helpers via create_access_token and robust router path resolution via pathlib
+    - runtime_feature_implementation_started: NO
+    - gate_1_a02910_targeted: PASS (51 passed, 1 warning)
+    - gate_2_a029_provider_continuity: PASS (1040 passed, 29 skipped, 1 warning)
+    - gate_3_a029_a028_continuity: PASS (1671 passed, 29 skipped, 1 warning)
+    - gate_4_a028_combined_pack: PASS (2312 passed, 42 warnings)
+    - gate_5_a027_continuity_pack: PASS (1268 passed, 1 warning)
+    - gate_6_ldap_targeted_smoke: PASS (2 passed, 1 warning)
+    - gate_7_tenant_security_bounded_slice: PASS (56 passed, 1 warning)
+    - gate_8_optional_full_backend: NOT_RUN (FULL_BACKEND_NOT_RUN_IN_A02911B1R1)
+    - forbidden_scan_external_calls: TEST_ASSERTION_OR_EXPECTED_FALSE_FLAG_ONLY
+    - forbidden_scan_credentials: TEST_ASSERTION_OR_AUTH_TEST_FIXTURE_ONLY
+    - forbidden_scan_db_mutation: TEST_ASSERTION_ONLY
+    - forbidden_scan_fake_provider_status: ACCEPTED_BOUNDARY_TEXT
+    - forbidden_scan_brain_autonomy: NO_MATCH
+    - mutation_route_decorator_scan: NO_MATCH
+    - internal_http_forwarding_scan: TEST_ASSERTION_OR_TESTCLIENT_USAGE_ONLY
+    - synthetic_score_scan: TEST_ASSERTION_ONLY
+    - blocking_scan_result_for_r1_scope: NONE
+    - metrics_arithmetic_check: PASS
+    - provider_readiness_metrics_recheck: provider_readiness_foundation_count=11, provider_l3_deterministic_logic_count=11, provider_l4_visibility_count=11, provider_l4_api_route_count=11, provider_l4_consolidated_summary_count=1, provider_live_call_count=0, provider_credentials_count=0, provider_external_submission_count=0, provider_connected_count=0, provider_sync_count=0
+    - ordinary_expansion_metrics_recheck: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, remaining_L3_not_L4=10, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=40
+    - baseline_maturity_preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_preserved: extension_total_count=25, total_tracked_modules=175
+    - report_file: A-029.11.B1.R1-PROVIDER_L4_CONSOLIDATED_SUMMARY_GATE_REMEDIATION_REPORT.md
+    - final_verdict: A-029.11.B1.R1 CLOSED - REMEDIATION PASS
+    - next_action_id: A-029.11.B1.R2
 
 
