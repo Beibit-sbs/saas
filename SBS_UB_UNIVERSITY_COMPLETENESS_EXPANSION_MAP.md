@@ -9852,7 +9852,189 @@ Extracted from A-027.0 registry (6 total candidates):
 
 ### Final Status
 
-- status: ready_for_A-030.3-RUNTIME
-- current_stage: A-030.3-SPEC complete / Sensitive-domain readiness foundation batch selected
-- last_completed_action_id: A-030.3-SPEC
-- next_action_id: A-030.3-RUNTIME
+- status: ready_for_A-030.3.B1
+- current_stage: A-030.3-RUNTIME complete / Sensitive-domain readiness foundation implemented
+- last_completed_action_id: A-030.3-RUNTIME
+- next_action_id: A-030.3.B1
+
+## A-030.3-RUNTIME — Sensitive-Domain Readiness Foundation Implementation
+
+### Implementation Purpose
+
+- Implement deterministic sensitive-domain readiness foundation contracts for 3 selected candidates
+- Enable evidence/metadata/readiness classification for appeals, disability support, financial hardship cases
+- Establish human review, appeal, audit, fairness, legal review boundaries
+- Strict NO_EXECUTION + READINESS_AND_EVIDENCE_ONLY contract
+- No sensitive execution, no automatic outcomes, no scoring, no external submission
+
+### Source State
+
+- A-030.3-SPEC commit: 807ef04 (CLOSED — PASS)
+- A-030.2-RUNTIME commit: 532c7e8 (CLOSED — PASS)
+- Policy/procurement foundation: 3 (unchanged)
+- Brain governance foundation: 5 (unchanged)
+- All execution counters: 0 (unchanged)
+- Metrics preserved and separated ✓
+
+### Implemented Candidates
+
+| UCE ID | Candidate | Module Type | Target Maturity | Implementation | Status |
+|---|---|---|---|---|---|
+| UCE-038 | student_appeals_workflow | WORKFLOW | L3_DETERMINISTIC_READINESS_GOVERNANCE | `get_student_appeals_sensitive_readiness_foundation(tenant_id)` | **IMPLEMENTED** ✓ |
+| UCE-081 | disability_support_services | NEW_MODULE | L3_DETERMINISTIC_READINESS_GOVERNANCE | `get_disability_support_sensitive_readiness_foundation(tenant_id)` | **IMPLEMENTED** ✓ |
+| UCE-082 | student_financial_hardship | NEW_MODULE | L3_DETERMINISTIC_READINESS_GOVERNANCE | `get_student_financial_hardship_sensitive_readiness_foundation(tenant_id)` | **IMPLEMENTED** ✓ |
+
+### Deferred Candidates
+
+| UCE ID | Candidate | Reason |
+|---|---|---|
+| UCE-007 | disciplinary_case_management | Deferred to A-030.4-RUNTIME (higher legal risk) |
+| UCE-078 | academic_integrity_case_management | Deferred to A-030.5-RUNTIME (strategic value after foundation proven) |
+| UCE-093 | academic_appeals_workflow | Deferred to A-030.6-RUNTIME (similar to UCE-038) |
+
+### Files Changed
+
+**Service files** (3 functions added):
+- backend/app/modules/student_appeals_workflow/service.py
+- backend/app/modules/disability_support_services/service.py
+- backend/app/modules/student_financial_hardship/service.py
+
+**Test file** (1 new):
+- backend/tests/test_a0303_sensitive_domain_readiness_foundation.py
+	- 81 test groups, 189 assertions
+	- Coverage: imports, deterministic output, fail-closed validation, contract verification, safety flags, output boundaries, candidate-specific, static scans, metrics, deferred candidates
+
+### Common Sensitive-Domain Contract
+
+Applied to all 3 candidates:
+
+- sensitive_domain_layer: FOUNDATION ✓
+- sensitive_domain_version: A-030.3 ✓
+- readiness_mode: READINESS_AND_EVIDENCE_ONLY ✓
+- execution_mode: NO_EXECUTION ✓
+- human_review_required: True ✓
+- appeal_boundary_required: True ✓
+- audit_trail_required: True ✓
+- fairness_review_required: True ✓
+- legal_review_required: True ✓
+- All 15 execution/outcome flags: False ✓
+- All 18 anti-fake flags: True ✓
+- Allowed outputs: readiness_metadata, evidence_source_map, required_evidence_list, missing_evidence_list, human_review_reasons, appeal_boundary_map, audit_event_category_map, fairness_review_checkpoints, legal_review_checkpoints, governance_risk_classification, next_safe_setup_steps ✓
+- Forbidden outputs: decisions, outcomes, sanctions, rankings, scores, recommendations ✓
+
+### Candidate-Specific Implementations
+
+**UCE-038 student_appeals_workflow**:
+- Evidence maps: appeal_submission, original_decision, appeal_basis, reviewer_assignment, deadline, audit_log
+- Forbidden: appeal_approval, appeal_rejection, outcome_change, notification_execution, hidden_appeal_score, recommendation
+- Governance boundary: NO_APPEAL_APPROVAL_NO_APPEAL_REJECTION ✓
+
+**UCE-081 disability_support_services**:
+- Evidence maps: accommodation_request, supporting_document, course_context, accessibility_policy, reviewer_assignment, audit_log
+- Forbidden: accommodation_approval, accommodation_denial, medical_inference, eligibility_decision, hidden_disability_score, recommendation
+- Governance boundary: NO_ACCOMMODATION_APPROVAL_NO_ACCOMMODATION_DENIAL ✓
+
+**UCE-082 student_financial_hardship**:
+- Evidence maps: hardship_application, supporting_document, tuition_or_balance, eligibility_policy, reviewer_assignment, audit_log
+- Forbidden: aid_approval, aid_rejection, payment_execution, debt_cancellation, hidden_hardship_score, recommendation
+- Governance boundary: NO_AID_APPROVAL_NO_AID_REJECTION ✓
+
+### Tenant Fail-Closed Validation
+
+All 3 functions:
+- **Accept**: positive int (1, 100, 1000, etc.) ✓
+- **Reject**: None → ValueError
+- **Reject**: 0 → ValueError
+- **Reject**: negative (-1, -999) → ValueError
+- **Reject**: string ("tenant", "1") → TypeError
+- **Reject**: float (1.5, 2.0) → TypeError
+- **Deterministic**: same tenant_id → same output ✓
+- **Tenant-scoped**: different tenant_ids → isolated output ✓
+
+### Test Results
+
+**A-030.3 targeted tests**:
+- File: test_a0303_sensitive_domain_readiness_foundation.py
+- Result: 189 PASSED, 1 warning in 0.76s
+- Coverage: 81 test groups across modules, contracts, boundaries, scans
+
+**A-030 continuity tests**:
+- Result: 551 PASSED, 4 skipped (sensitive+policy+brain together)
+- No regressions ✓
+
+### Forbidden Scan Results
+
+| Scan | Result |
+|---|---|
+| External/LLM/provider HTTP calls | CLEAN ✓ |
+| Credentials/secrets/tokens | CLEAN ✓ |
+| DB mutations (INSERT/UPDATE/DELETE) | CLEAN ✓ |
+| Sensitive execution (approve/reject/sanction) | ACCEPTED_BOUNDARY_TEXT (contract flags only) ✓ |
+| Scoring/recommendation/ranking | ACCEPTED_BOUNDARY_TEXT (contract flags only) ✓ |
+| Routes (@get/@post/@delete) | CLEAN ✓ |
+| Frontend components (React/useEffect) | CLEAN ✓ |
+| Deferred candidates (UCE-007/078/093) | CLEAN ✓ |
+
+### Metrics After Runtime
+
+**New A-030.3 sensitive-domain namespace** (initialized):
+- A0303_sensitive_domain_foundation_count: 3 ✓
+- sensitive_domain_foundation_count: 3 ✓
+- sensitive_execution_count: 0 ✓
+- sensitive_auto_sanction_count: 0 ✓
+- sensitive_auto_eligibility_decision_count: 0 ✓
+- sensitive_auto_aid_decision_count: 0 ✓
+- sensitive_auto_accommodation_decision_count: 0 ✓
+- sensitive_auto_disciplinary_decision_count: 0 ✓
+- sensitive_auto_academic_integrity_decision_count: 0 ✓
+- sensitive_hidden_score_count: 0 ✓
+- sensitive_discriminatory_score_count: 0 ✓
+- sensitive_synthetic_score_count: 0 ✓
+- sensitive_recommendation_count: 0 ✓
+- sensitive_external_submission_count: 0 ✓
+
+**Existing namespaces** (no change):
+- Baseline: 150 (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2) ✓
+- Extension: 25 ✓
+- Ordinary expansion: 67 ✓
+- Provider readiness: 11 ✓
+- Brain governance: 5 ✓
+- Policy/procurement: 3 ✓
+- All execution counters: 0 ✓
+
+**Metric isolation**: A-030.3 sensitive-domain metrics completely separated from all other namespaces ✓
+
+### Anti-Fake Review
+
+- ✓ No sensitive-domain execution (all execution flags = False)
+- ✓ No automatic outcomes (automatic_outcome_enabled = False)
+- ✓ No automatic sanction (sanction_execution_enabled = False)
+- ✓ No eligibility/aid/accommodation/disciplinary decisions (all False)
+- ✓ No academic integrity decisions (academic_integrity_decision_enabled = False)
+- ✓ No hidden/discriminatory/synthetic scoring (all False)
+- ✓ No recommendation (recommendation_enabled = False)
+- ✓ No ranking (ranking_enabled = False)
+- ✓ No external submission (external_submission_enabled = False)
+- ✓ No Brain/LLM calls (no requests/httpx/openai imports)
+- ✓ No credentials/secrets (no api_key/password/token)
+- ✓ No DB mutations (no INSERT/UPDATE/DELETE)
+- ✓ No routes (no @get/@post/@delete)
+- ✓ No frontend (no React/useEffect/NextResponse)
+- ✓ Policy/procurement metrics preserved (3/0/0)
+- ✓ Brain governance metrics preserved (5/0/0)
+- ✓ Provider readiness metrics preserved (11/11/11/11/1/0)
+- ✓ Baseline maturity locked (150)
+- ✓ All metrics separated
+
+### Closure Decision
+
+- Decision: **A-030.3-RUNTIME CLOSED — PASS**
+- Report file: A-030.3-RUNTIME-SENSITIVE_DOMAIN_READINESS_FOUNDATION_REPORT.md
+- Selected next action: A-030.3.B1
+
+### Final Status
+
+- status: ready_for_A-030.3.B1
+- current_stage: A-030.3-RUNTIME complete / Sensitive-domain readiness foundation implemented
+- last_completed_action_id: A-030.3-RUNTIME
+- next_action_id: A-030.3.B1
