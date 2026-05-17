@@ -10759,3 +10759,36 @@ Reason:
 ### Next Action
 - next_action_id: A-030.4.B1.R4
 - R4 scope: Gate2/Gate3/Gate4 controlled continuity rerun and final confirmation.
+
+## A-030.4.B1.R4 - Disciplinary Continuity Revalidation After Hang Fix
+
+**Status**: BLOCKED (A-030.3 file timeout in controlled split revalidation)
+
+### R3 Remediation Carry-Forward
+- R3 fix remained valid: A-030.4 targeted file passed quickly and deterministically.
+- No runtime behavior change was introduced by the R3 fix.
+
+### Controlled Continuity Revalidation
+- A-030.4 targeted sanity: PASS (93 passed, 1 warning)
+- A-030 mini split:
+  - A-030.4 file: PASS
+  - A-030.3 file: TIMEOUT (exit 124)
+  - First blocker file: tests/test_a0303_sensitive_domain_readiness_foundation.py
+
+### Gate Results
+- Gate2 A-030 full continuity: NOT RUN (blocked by A-030.3 timeout)
+- Gate3 A-028 combined: NOT RUN
+- Gate4 A-027 continuity: NOT RUN
+
+### Preservation Checks
+- Metrics unchanged: baseline, extension, ordinary, provider, Brain, policy, and sensitive counters preserved.
+- Anti-fake preserved: no runtime code changes and no new test-harness change beyond the prior R3 file-local override.
+- Deferred candidates preserved: UCE-078 and UCE-093 remain deferred.
+
+### Final Decision
+- Decision: A-030.4.B1.R4 BLOCKED
+- Reason: controlled continuity split revalidation timed out in A-030.3 file.
+- Selected next action: A-030.4.B1.R5
+
+### Report Link
+- report_file: A-030.4.B1.R4-DISCIPLINARY_CONTINUITY_REVALIDATION_AFTER_HANG_FIX_REPORT.md
