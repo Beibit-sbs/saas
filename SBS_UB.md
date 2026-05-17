@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-030.3-SPEC
-    - current_stage: A-030.2.B1 complete / Policy-procurement readiness foundation quality baseline confirmed
-    - last_completed_action_id: A-030.2.B1
-    - next_action_id: A-030.3-SPEC
+    - status: ready_for_A-030.3-RUNTIME
+    - current_stage: A-030.3-SPEC complete / Sensitive-domain readiness foundation batch selected
+    - last_completed_action_id: A-030.3-SPEC
+    - next_action_id: A-030.3-RUNTIME
     - updated_at: 2026-05-17 (A-030.2-RUNTIME implementation executed for UCE-047 UCE-048 UCE-098 with deterministic READINESS_AND_EVIDENCE_ONLY and NO_EXECUTION contracts; targeted gate PASS (47 passed, 4 skipped); A-030 continuity PASS (1402 passed, 33 skipped); A-028 combined PASS (2312 passed); A-027 continuity PASS (1268 passed); LDAP smoke PASS (2 passed); optional tenant/security slice PASS (56 passed); forbidden scans show no blocking behavior (boundary-text and legacy no_secret/no_credential markers only); policy/procurement metrics materialized at foundation_count=3 and all execution/award/commitment/external/score counters=0; baseline/extension/ordinary expansion/provider/Brain metrics preserved)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
@@ -13451,4 +13451,81 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - final_verdict: A-030.2.B1 CLOSED — SCOPED POLICY / PROCUREMENT READINESS FOUNDATION QUALITY BASELINE CONFIRMED
     - selected_next_action: A-030.3-SPEC (Sensitive-Domain Readiness Foundation)
     - next_action_id: A-030.3-SPEC
+
+- A-030.3-SPEC sensitive-domain readiness foundation planning block:
+    - mode: planning_and_specification_only
+    - purpose: select_sensitive_domain_readiness_foundation_batch
+    - action_type: SPECIFICATION
+    - source_of_truth_check: PASS (A-030.2.B1 commit c97464c closed, A-030.2-RUNTIME commit 532c7e8 verified, metrics preserved)
+    - candidate_extraction: PASS (6 sensitive-domain candidates identified from A-027.0 registry)
+    - sensitive_candidates_extracted: UCE-007 (disciplinary), UCE-038 (appeals), UCE-078 (academic_integrity), UCE-081 (disability), UCE-082 (financial_hardship), UCE-093 (academic_appeals)
+    - batch_strategy_selected: Option B — Safer 3-candidate core human-review batch
+    - selected_batch_count: 3
+    - selected_batch: UCE-038 student_appeals_workflow, UCE-081 disability_support_services, UCE-082 student_financial_hardship
+    - batch_justification: appeals (positive rights), disability (P0 compliance value), hardship (student retention); safe distribution of legal/ethical risk
+    - sensitive_domain_layer: FOUNDATION
+    - sensitive_domain_version: A-030.3
+    - readiness_mode: READINESS_AND_EVIDENCE_ONLY
+    - execution_mode: NO_EXECUTION
+    - maturity_target: L3_DETERMINISTIC_READINESS_GOVERNANCE
+    - human_review_required: True
+    - appeal_boundary_required: True
+    - audit_trail_required: True
+    - fairness_review_required: True
+    - legal_review_required: True
+    - automatic_outcome_enabled: False
+    - sanction_execution_enabled: False
+    - eligibility_decision_enabled: False
+    - aid_decision_enabled: False
+    - accommodation_decision_enabled: False
+    - disciplinary_decision_enabled: False
+    - academic_integrity_decision_enabled: False
+    - hidden_scoring_enabled: False
+    - discriminatory_scoring_enabled: False
+    - synthetic_score_enabled: False
+    - ranking_enabled: False
+    - recommendation_enabled: False
+    - autonomous_decision_enabled: False
+    - external_submission_enabled: False
+    - expected_A0303_sensitive_domain_foundation_count: 3
+    - expected_sensitive_domain_foundation_count: 3
+    - expected_sensitive_execution_count: 0
+    - expected_sensitive_auto_sanction_count: 0
+    - expected_sensitive_auto_eligibility_decision_count: 0
+    - expected_sensitive_auto_aid_decision_count: 0
+    - expected_sensitive_auto_accommodation_decision_count: 0
+    - expected_sensitive_auto_disciplinary_decision_count: 0
+    - expected_sensitive_auto_academic_integrity_decision_count: 0
+    - expected_sensitive_hidden_score_count: 0
+    - expected_sensitive_discriminatory_score_count: 0
+    - expected_sensitive_synthetic_score_count: 0
+    - expected_sensitive_recommendation_count: 0
+    - expected_sensitive_external_submission_count: 0
+    - expected_baseline_impact: 0
+    - expected_extension_impact: 0
+    - expected_ordinary_expansion_impact: 0
+    - expected_provider_readiness_impact: 0
+    - expected_brain_governance_impact: 0
+    - expected_policy_procurement_impact: 0
+    - policy_procurement_metrics_preserved: A0302_policy_procurement_foundation_count=3, policy_execution_count=0, procurement_execution_count=0
+    - brain_governance_metrics_preserved: A0301_brain_governance_foundation_count=5, brain_execution_count=0, brain_llm_call_count=0, brain_autonomous_decision_count=0
+    - provider_readiness_metrics_preserved: provider_readiness_foundation_count=11, provider_l3_deterministic_logic_count=11, provider_l4_visibility_count=11, provider_l4_api_route_count=11
+    - ordinary_expansion_metrics_preserved: expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, remaining_L2_only=17, remaining_L3_not_L4=10
+    - baseline_maturity_preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_preserved: extension_total_count=25, total_tracked_modules=175
+    - no_runtime_code: True (SPEC-only)
+    - no_sensitive_execution: True
+    - no_automatic_sanction: True
+    - no_automatic_eligibility_decision: True
+    - no_automatic_aid_accommodation_decision: True
+    - no_hidden_discriminatory_synthetic_scoring: True
+    - no_recommendation: True
+    - no_ranking: True
+    - no_external_submission: True
+    - metric_separation: CONFIRMED (A-030.3 sensitive namespace isolated)
+    - anti_fake_review: PASS (specification-only, no code, metric separation preserved)
+    - report_file: A-030.3-SPEC-SENSITIVE_DOMAIN_READINESS_FOUNDATION_REPORT.md
+    - closure_decision: CLOSED_SPEC_PASS
+    - final_verdict: A-030.3-SPEC CLOSED — PASS
+    - next_action_id: A-030.3-RUNTIME
 

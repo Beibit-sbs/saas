@@ -9713,3 +9713,146 @@ New Brain governance metric namespace (separate from all existing):
 - current_stage: A-030.2.B1 complete / Policy-procurement readiness foundation quality baseline confirmed
 - last_completed_action_id: A-030.2.B1
 - next_action_id: A-030.3-SPEC
+
+## A-030.3-SPEC — Sensitive-Domain Readiness Foundation
+
+### Planning Purpose
+
+- Plan sensitive-domain readiness foundation batch after policy/procurement baseline
+- Identify safe sensitive-domain governance lane candidates
+- Define strict NO_EXECUTION + READINESS_AND_EVIDENCE_ONLY contract
+- Select 3-candidate core human-review batch
+- Separate sensitive-domain metrics from all other namespaces
+- Prepare specification for future A-030.3-RUNTIME implementation
+
+### Source State
+
+- A-030.2.B1 commit: c97464c (CLOSED — PASS)
+- A-030.2-RUNTIME commit: 532c7e8 (CLOSED — PASS)
+- Policy/procurement foundation: 3
+- Brain governance foundation: 5
+- All execution counters: 0
+- Metrics preserved and separated ✓
+
+### Sensitive-Domain Candidate Extraction
+
+Extracted from A-027.0 registry (6 total candidates):
+
+| UCE ID | Candidate | Category | Priority | Batch Decision |
+|---|---|---|---|---|
+| UCE-007 | disciplinary_case_management | Disciplinary | P1 | DEFERRED |
+| UCE-038 | student_appeals_workflow | Appeals | P1 | **SELECTED** |
+| UCE-078 | academic_integrity_case_management | Academic Integrity | P1 | DEFERRED |
+| UCE-081 | disability_support_services | Disability / Accommodation | P0 | **SELECTED** |
+| UCE-082 | student_financial_hardship | Financial Hardship / Aid | P1 | **SELECTED** |
+| UCE-093 | academic_appeals_workflow | Appeals | P1 | DEFERRED |
+
+### Batch Strategy
+
+- **Option Selected**: Option B — Safer 3-candidate core human-review batch
+- **Rationale**: High legal/ethical risk; establish shared contract on smaller batch before expanding
+- **Selected count**: 3
+- **Selected batch**: UCE-038, UCE-081, UCE-082
+- **Justification**: Appeals (fairness-first), Disability (P0 compliance), Hardship (retention); safe risk distribution
+
+### Sensitive-Domain Foundation Contract
+
+**Common fields for all 3 candidates**:
+- sensitive_domain_layer: FOUNDATION ✓
+- sensitive_domain_version: A-030.3 ✓
+- readiness_mode: READINESS_AND_EVIDENCE_ONLY ✓
+- execution_mode: NO_EXECUTION ✓
+- human_review_required: True ✓
+- appeal_boundary_required: True ✓
+- audit_trail_required: True ✓
+- fairness_review_required: True ✓
+- legal_review_required: True ✓
+- All execution/outcome flags: False ✓
+- All anti-fake flags: True ✓
+
+**Allowed outputs**: Evidence, metadata, readiness classification, appeal/audit boundaries ✓
+**Forbidden outputs**: Decisions, outcomes, sanctions, rankings, scores, recommendations ✓
+
+### Candidate-Specific Contracts
+
+**UCE-038 student_appeals_workflow**:
+- Evidence maps: appeal submission, original decision, basis, reviewer, deadline, audit log
+- Forbidden: appeal approval/rejection, outcome change, automatic decision
+
+**UCE-081 disability_support_services**:
+- Evidence maps: accommodation request, documents, context, policy, reviewer, audit log, data protection
+- Forbidden: accommodation approval/denial, medical inference, disclosure, automatic decision
+
+**UCE-082 student_financial_hardship**:
+- Evidence maps: application, income/documents, tuition/balance, policy, reviewer, audit log
+- Forbidden: aid approval/rejection, payment, debt cancellation, automatic decision
+
+### Expected A-030.3-RUNTIME Files
+
+**Service files** (3 total):
+- backend/app/modules/student_appeals_workflow/service.py
+- backend/app/modules/disability_support_services/service.py
+- backend/app/modules/student_financial_hardship/service.py
+
+**Test file**:
+- backend/tests/test_a0303_sensitive_domain_readiness_foundation.py (120–160 assertions)
+
+**Documentation**:
+- SBS_UB.md (update)
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md (update)
+- A-030.3-RUNTIME-SENSITIVE_DOMAIN_READINESS_FOUNDATION_REPORT.md
+
+### Expected Metrics (Future)
+
+**New sensitive-domain namespace**:
+- A0303_sensitive_domain_foundation_count: 3
+- sensitive_execution_count: 0
+- sensitive_auto_sanction_count: 0
+- sensitive_auto_eligibility_decision_count: 0
+- sensitive_auto_aid_decision_count: 0
+- sensitive_auto_accommodation_decision_count: 0
+- sensitive_auto_disciplinary_decision_count: 0
+- sensitive_auto_academic_integrity_decision_count: 0
+- sensitive_hidden_score_count: 0
+- sensitive_discriminatory_score_count: 0
+- sensitive_synthetic_score_count: 0
+- sensitive_recommendation_count: 0
+- sensitive_external_submission_count: 0
+
+**Existing namespaces** (no change):
+- Baseline: 150 (L0–L6 unchanged)
+- Extension: 25 (unchanged)
+- Ordinary expansion: 67 (unchanged)
+- Provider readiness: 11 (unchanged)
+- Brain governance: 5 (unchanged)
+- Policy/procurement: 3 (unchanged)
+- All execution counters: 0 (unchanged)
+
+**Metric isolation**: Sensitive-domain metrics in separate A-030.3 namespace ✓
+
+### Anti-Fake Review
+
+- ✓ No code written (SPEC-only)
+- ✓ No sensitive execution
+- ✓ No automatic sanction/eligibility/aid/accommodation/disciplinary/academic integrity decisions
+- ✓ No hidden/discriminatory/synthetic scoring
+- ✓ No recommendation/ranking
+- ✓ No external submission or Brain/LLM execution
+- ✓ Policy/procurement preserved (3/0/0/0/0/0/0/0/0)
+- ✓ Brain governance preserved (5/0/0/0/0/0/0/0)
+- ✓ Provider readiness preserved (11/11/11/11/1/0)
+- ✓ Baseline maturity locked (150)
+- ✓ All metrics separated
+
+### Closure Decision
+
+- Decision: A-030.3-SPEC CLOSED — PASS
+- Report file: A-030.3-SPEC-SENSITIVE_DOMAIN_READINESS_FOUNDATION_REPORT.md
+- Selected next action: A-030.3-RUNTIME
+
+### Final Status
+
+- status: ready_for_A-030.3-RUNTIME
+- current_stage: A-030.3-SPEC complete / Sensitive-domain readiness foundation batch selected
+- last_completed_action_id: A-030.3-SPEC
+- next_action_id: A-030.3-RUNTIME
