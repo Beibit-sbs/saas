@@ -9444,9 +9444,80 @@ New Brain governance metric namespace (separate from all existing):
 - selected_next_action: A-030.2-SPEC
 - rationale: proceed with lane breadth via Policy/Procurement Readiness Foundation after Brain foundation baseline confirmation
 
+---
+
+## A-030.2-SPEC — Policy / Procurement Readiness Foundation
+
+### Scope and Mode
+
+- mode: planning_only_no_runtime_changes
+- source_of_truth_check: PASS (A-030.1.B1 commit e61e34b and A-030.1-RUNTIME commit 6697816 confirmed)
+- dirty_tree_classification: PASS (non-scope only: backend/.coverage modified, A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md untracked)
+- runtime_implementation_started_in_spec: NO
+
+### Candidate Inventory
+
+| UCE ID | Candidate | Domain | Current Maturity | Deferred Reason | Decision |
+|---|---|---|---|---|---|
+| UCE-047 | third_party_risk_policy | Policy Control | L3 deterministic | policy/procurement sensitive-domain governance | INCLUDED |
+| UCE-048 | data_retention_policy_control | Policy Control | L3 deterministic | retention/legal-hold governance risk | INCLUDED |
+| UCE-098 | procurement_plan_approval_workflow | Workflow (Procurement) | L3 deterministic | procurement decision and financial commitment risk | INCLUDED_WITH_STRICT_NO_EXECUTION |
+
+### Option Matrix and Selection
+
+| Option | Composition | Count | Decision |
+|---|---|---:|---|
+| Option A | UCE-047 + UCE-048 + UCE-098 | 3 | SELECTED |
+| Option B | UCE-047 + UCE-048 | 2 | NOT_SELECTED |
+| Option C | UCE-098 only | 1 | NOT_SELECTED |
+| Option D | defer A-030.2 and continue Brain-only deepening | 0 | NOT_SELECTED |
+
+### Selected Policy / Procurement Contract Boundary
+
+- policy_procurement_layer: FOUNDATION
+- policy_procurement_version: A-030.2
+- readiness_mode: READINESS_AND_EVIDENCE_ONLY
+- execution_mode: NO_EXECUTION
+- hard_forbidden: no_auto_approval, no_auto_rejection, no_award_decision, no_vendor_ranking, no_financial_commitment, no_contract_execution, no_external_submission, no_hidden_score, no_synthetic_score, no_autonomous_decision
+- no_l5_claim: PASS
+- no_l6_claim: PASS
+
+### Expected Runtime Metrics (formula only)
+
+- A0302_policy_procurement_foundation_count=3
+- policy_procurement_foundation_count=3
+- policy_execution_count=0
+- procurement_execution_count=0
+- procurement_award_count=0
+- procurement_financial_commitment_count=0
+- policy_procurement_external_submission_count=0
+- policy_procurement_hidden_score_count=0
+- policy_procurement_synthetic_score_count=0
+- baseline_impact=0
+- extension_impact=0
+- ordinary_expansion_impact=0
+- provider_readiness_impact=0
+- brain_governance_impact=0
+
+### Namespace Preservation Check
+
+- baseline preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+- extension preserved: extension_total_count=25, total_tracked_modules=175
+- ordinary expansion preserved: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, remaining_L3_not_L4=10, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=40
+- provider preserved: provider_readiness_foundation_count=11, provider_l3_deterministic_logic_count=11, provider_l4_visibility_count=11, provider_l4_api_route_count=11, provider_l4_consolidated_summary_count=1, provider_live_call_count=0, provider_credentials_count=0, provider_external_submission_count=0, provider_connected_count=0, provider_sync_count=0
+- Brain preserved: A0301_brain_governance_foundation_count=5, brain_governance_foundation_count=5, brain_execution_count=0, brain_llm_call_count=0, brain_autonomous_decision_count=0, brain_action_execution_count=0, brain_hidden_score_count=0, brain_synthetic_score_count=0
+
+### Closure Decision
+
+- decision: A-030.2-SPEC CLOSED — PASS
+- rationale: Option A maximizes lane closure while preserving strict NO_EXECUTION boundaries
+- anti_fake_review: PASS (no runtime code, no route/frontend/db changes, no execution claims)
+- report_file: A-030.2-SPEC-POLICY_PROCUREMENT_READINESS_FOUNDATION_REPORT.md
+- selected_next_action: A-030.2-RUNTIME
+
 ### Final Status
 
-- status: ready_for_A-030.2-SPEC
-- current_stage: A-030.1.B1 complete / Brain governance foundation quality baseline confirmed
-- last_completed_action_id: A-030.1.B1
-- next_action_id: A-030.2-SPEC
+- status: ready_for_A-030.2-RUNTIME
+- current_stage: A-030.2-SPEC complete / Policy-Procurement readiness foundation selected
+- last_completed_action_id: A-030.2-SPEC
+- next_action_id: A-030.2-RUNTIME
