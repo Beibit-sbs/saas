@@ -10467,3 +10467,90 @@ Neither candidate implemented in A-030.4-RUNTIME.
 - **Current Stage**: A-030.4-RUNTIME complete / Disciplinary sensitive readiness foundation implemented
 - **Last Completed**: A-030.4-RUNTIME
 - **Next Action**: A-030.4.B1 (quality baseline validation)
+
+## A-030.4.B1 — Disciplinary Sensitive Readiness Foundation Quality Baseline
+
+**Status**: BLOCKED (requires A-030.4.B1.R1 rerun)
+
+### Quality Gate Purpose
+
+- Validate A-030.4-RUNTIME disciplinary sensitive foundation closure evidence.
+- Reconfirm no disciplinary execution, sanction, guilt/finding, outcome change, status change, notification execution, scoring, recommendation, or external submission.
+- Reconfirm metric namespace separation and no maturity inflation.
+
+### Source State Confirmed
+
+- A-030.4-RUNTIME commit: 4825dd9
+- A-030.4-SPEC commit: 84f25a8
+- Implemented candidate: UCE-007 disciplinary_case_management
+- Deferred preserved: UCE-078 academic_integrity_case_management, UCE-093 academic_appeals_workflow
+- Runtime boundary: NO_SANCTION_NO_DISCIPLINARY_OUTCOME + READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION
+
+### Disciplinary Candidate Coverage
+
+| UCE ID | Candidate | Target Maturity | Implemented | Boundary |
+|---|---|---|---|---|
+| UCE-007 | disciplinary_case_management | L3 deterministic readiness governance | YES | NO_SANCTION_NO_DISCIPLINARY_OUTCOME |
+
+### Deferred Candidate Preservation
+
+| UCE ID | Candidate | Status | Reason |
+|---|---|---|---|
+| UCE-078 | academic_integrity_case_management | DEFERRED | Academic integrity finding / penalty boundary |
+| UCE-093 | academic_appeals_workflow | DEFERRED | Academic appeal decision / outcome-change boundary |
+
+### Disciplinary Sensitive Contract Verification
+
+- sensitive_domain_layer = FOUNDATION
+- sensitive_domain_version = A-030.4
+- readiness_mode = READINESS_AND_EVIDENCE_ONLY
+- execution_mode = NO_EXECUTION
+- human_review_required = True
+- appeal_boundary_required = True
+- audit_trail_required = True
+- fairness_review_required = True
+- legal_review_required = True
+- all disciplinary/sanction/outcome/notification/scoring/recommendation/submission execution flags = False
+- tenant_scoped/read_only/no_mutation and all no_* anti-fake flags = True
+
+### Gate Results
+
+- Gate 1 A-030.4 targeted: PASS (93 passed)
+- Gate 2 A-030 continuity: NOT_COMPLETED_IN_BOUNDED_WINDOW
+- Gate 3 A-028 combined: NOT_COMPLETED_IN_BOUNDED_WINDOW
+- Gate 4 A-027 continuity: NOT_COMPLETED_IN_BOUNDED_WINDOW
+- Gate 5 LDAP smoke: PASS (2 passed)
+- Gate 6 tenant/security: PASS (56 passed)
+- Gate 7 full backend optional: NOT_RUN
+
+### Forbidden Scan Results
+
+- External/LLM/provider calls: CLEAN
+- Credential/secret patterns: CLEAN
+- DB mutation patterns: CLEAN
+- Route/frontend scope patterns: CLEAN
+- Disciplinary/scoring term hits: ACCEPTED_BOUNDARY_TEXT (disabled flags/forbidden output vocabulary only)
+- Deferred candidate runtime implementation scan: CLEAN
+
+### Metrics Unchanged / Separated
+
+- A0304_sensitive_deferred_foundation_count = 1
+- A0304_disciplinary_sensitive_foundation_count = 1
+- sensitive_domain_foundation_count = 4
+- sensitive execution/outcome/scoring/submission counters remain 0
+- baseline/extension/ordinary/provider/Brain/policy metrics remain unchanged
+
+### Anti-Fake Review
+
+- No runtime feature implementation in B1
+- No sensitive-domain execution behavior introduced
+- No disciplinary execution, sanction, guilt/finding, or outcome mutation
+- No status change, notification execution, scoring, ranking, recommendation, or external submission
+- No Brain execution, no LLM/provider live calls, no DB mutation
+
+### Closure Decision
+
+- Decision: A-030.4.B1 BLOCKED
+- Reason: Mandatory continuity gate (A-030) did not complete within bounded Docker validation window; evidence-driven closure cannot be claimed.
+- Remediation: A-030.4.B1.R1 isolated sequential reruns for Gate2/Gate3/Gate4 with final closure check.
+- Selected next action: A-030.4.B1.R1
