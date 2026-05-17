@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: blocked_A-030.4.B1.R1
-    - current_stage: A-030.4.B1.R1 blocked / Docker validation infrastructure hang on continuity gates
-    - last_completed_action_id: A-030.4.B1
-    - next_action_id: A-030.4.B1.R2
-    - updated_at: 2026-05-17 (A-030.4.B1.R1 remediation attempted with fast Docker direct mode; Gate1 A-030.4 targeted verified PASS (93 passed, 1 warning); Gate5 LDAP verified PASS (2 passed, 1 warning); Gate6 tenant/security verified PASS (56 passed, 1 warning); forbidden scans and metrics verified CLEAN/STABLE; Gate2 A-030 continuity experienced process hang (~2 hours bounded run, ~40 minutes split mode); Gate3 A-028 combined not attempted; Gate4 A-027 continuity not attempted; Docker infrastructure hang classification (not functional failure); escalation set to A-030.4.B1.R2 for Docker hygiene investigation and targeted hang diagnosis)
+    - status: blocked_A-030.4.B1.R2
+    - current_stage: A-030.4.B1.R2 blocked / isolated hanging file identified in tests/test_a0304_disciplinary_sensitive_readiness_foundation.py (suspected stall at TestAntiFakeFlags::test_no_hidden_score_true)
+    - last_completed_action_id: A-030.4.B1.R1
+    - next_action_id: A-030.4.B1.R3
+    - updated_at: 2026-05-17 (A-030.4.B1.R2 diagnosis executed with strict Docker-only escalation; Task0-4 passed including infra/.env, ai_default, image, container python sanity, pytest version, and collect-only (93 collected); Task5 timed out at 300s with A0304_VERBOSE_EXIT_CODE=124 and no final pytest summary; hang isolated to A-030.4 targeted file with last emitted line at/after TestAntiFakeFlags::test_no_hidden_score_true; Gate2/Gate3/Gate4 split diagnosis intentionally not started per stop-on-targeted-hang policy; classification set to isolated hanging test/file requiring focused R3 investigation)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -13731,7 +13731,7 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - remediation_action: rerun Gate2/Gate3/Gate4 in isolated sequential Docker sessions and close as A-030.4.B1.R1
     - report_file: A-030.4.B1-DISCIPLINARY_SENSITIVE_READINESS_FOUNDATION_QUALITY_BASELINE_REPORT.md
     - final_verdict: A-030.4.B1 BLOCKED — mandatory continuity gate not completed in bounded run
-    - next_action_id: A-030.4.B1.R2
+    - next_action_id: A-030.4.B1.R3
 
 - A-030.4.B1.R1 disciplinary sensitive continuity gate revalidation block:
     - mode: validation_and_reporting_only_with_docker_hygiene
@@ -13752,4 +13752,32 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - report_file: A-030.4.B1.R1-DISCIPLINARY_SENSITIVE_CONTINUITY_GATE_REVALIDATION_REPORT.md
     - final_verdict: A-030.4.B1.R1 BLOCKED — Docker validation infrastructure hang prevented continuity revalidation
     - recommended_next_action_r2: manual Docker process hygiene + check database/network health + run minimal container sanity command + run one trivial pytest/import command first + then run exact slow file with -vv -s to identify hanging test + only then rerun Gate2/Gate3/Gate4
-    - next_action_id: A-030.4.B1.R2
+    - next_action_id: A-030.4.B1.R3
+
+- A-030.4.B1.R2 disciplinary validation infrastructure diagnosis block:
+    - mode: validation_only_docker_infrastructure_diagnosis
+    - purpose: isolate_hang_root_cause_from_minimal_checks_upward
+    - repo_hygiene_snapshot: PASS (non-scope only: backend/.coverage deleted; A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md untracked)
+    - docker_state_snapshot: CAPTURED (docker version/info/ps/system df logs in .gate-logs/r2)
+    - stale_ai_backend_tests_containers_found: 0
+    - stale_ai_backend_tests_containers_stopped: 0
+    - env_file_check: PASS (infra/.env exists)
+    - network_check: PASS (ai_default present)
+    - image_check: PASS (ai-backend-tests:latest present)
+    - container_python_sanity: PASS (exit=0)
+    - pytest_version_sanity: PASS (exit=0)
+    - a0304_collect_only: PASS (exit=0, 93 collected)
+    - a0304_verbose_targeted: TIMEOUT (exit=124)
+    - hanging_file_identified: tests/test_a0304_disciplinary_sensitive_readiness_foundation.py
+    - hanging_test_suspected: TestAntiFakeFlags::test_no_hidden_score_true (last emitted line before timeout)
+    - gate2_split_diagnosis: NOT_RUN (blocked by targeted hang per escalation rule)
+    - gate3_split_diagnosis: NOT_RUN
+    - gate4_split_diagnosis: NOT_RUN
+    - metrics_preservation: PASS (baseline/extension/ordinary/provider/Brain/policy/sensitive unchanged)
+    - anti_fake_preservation: PASS (no runtime code; no test code; no service/router/frontend modifications)
+    - deferred_candidates_preserved: PASS (UCE-078 and UCE-093 remain deferred)
+    - quality_gate_status: BLOCKED
+    - root_cause_classification: ISOLATED_HANGING_TEST_OR_RUNTIME_EXECUTION_HANG
+    - report_file: A-030.4.B1.R2-DISCIPLINARY_VALIDATION_INFRASTRUCTURE_DIAGNOSIS_REPORT.md
+    - final_verdict: A-030.4.B1.R2 BLOCKED — isolated hanging test identified
+    - next_action_id: A-030.4.B1.R3

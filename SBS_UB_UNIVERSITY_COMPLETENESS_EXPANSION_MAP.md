@@ -10662,3 +10662,56 @@ Evidence preserved: A-030.4 targeted PASS (93), LDAP smoke PASS (2), tenant/secu
 **next_action_id: A-030.4.B1.R2**
 
 Expected timeline: Infrastructure investigation and minimal hang diagnosis before next rerun attempt.
+
+## A-030.4.B1.R2 - Validation Infrastructure Diagnosis
+
+**Status**: BLOCKED (isolated hanging file/test identified)
+
+### R1 Blocker Summary
+- R1 classification remained Docker validation infrastructure hang (not functional failure).
+- Continuity gates stayed incomplete because bounded execution windows did not produce final summaries.
+
+### Docker Cleanup and Baseline
+- Docker state captured in .gate-logs/r2 (docker_version, docker_info, docker_ps_before, docker_system_df).
+- Stale ai-backend-tests containers at start: 0.
+- Stale ai-backend-tests containers stopped: 0.
+- Memory/disk snapshots captured (free -h, df -h).
+
+### Prerequisite Checks
+- infra/.env: PASS
+- ai_default network: PASS
+- ai-backend-tests image: PASS
+
+### Minimal Sanity Escalation
+- Container Python sanity (timeout 60s): PASS, exit=0
+- Pytest version (timeout 90s): PASS, exit=0
+- A-030.4 collect-only (timeout 120s): PASS, exit=0 (93 tests collected)
+
+### Targeted Hang Reproduction
+- A-030.4 targeted verbose run (timeout 300s): TIMEOUT, exit=124
+- Hanging file isolated: tests/test_a0304_disciplinary_sensitive_readiness_foundation.py
+- Last emitted test line before timeout: TestAntiFakeFlags::test_no_hidden_score_true
+- Pytest final summary was not emitted.
+
+### Split Diagnosis Decision
+- Gate2 split: NOT_RUN
+- Gate3 split: NOT_RUN
+- Gate4 split: NOT_RUN
+
+Reason:
+- R2 stop policy was triggered at targeted-file hang stage, so escalation to continuity packs was intentionally blocked.
+
+### Preservation Checks
+- Metrics unchanged: baseline/extension/ordinary/provider/Brain/policy/sensitive families stable.
+- Anti-fake unchanged: no runtime code changes, no test modifications, no service/router/frontend edits.
+- Deferred candidates preserved: UCE-078 and UCE-093 remain not implemented.
+
+### Final Decision
+- Decision: A-030.4.B1.R2 BLOCKED
+- Classification: isolated hanging test/file identified during Docker validation runtime
+- No runtime implementation started
+- No quality closure pass claimed for A-030.4.B1 in this phase
+
+### Next Action
+- Selected next action: A-030.4.B1.R3
+- Focus: pinpoint exact hanging step inside isolated file run, stabilize deterministic completion, then resume Gate2/Gate3/Gate4 continuity evidence.
