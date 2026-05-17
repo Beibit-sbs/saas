@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-029.10-SPEC
-    - current_stage: A-029.9.B1 complete / provider L4 API 11-route quality baseline confirmed
-    - last_completed_action_id: A-029.9.B1
-    - next_action_id: A-029.10-SPEC
-    - updated_at: 2026-05-17 (A-029.9-SPEC completed as planning-only quality baseline / consolidation gate for 11 provider-readiness L4 API routes; no runtime changes; next controlled action selected as A-029.9.B1 validation/reporting gate)
+    - status: ready_for_A-029.10-RUNTIME
+    - current_stage: A-029.10-SPEC complete / provider L4 consolidated summary endpoint selected
+    - last_completed_action_id: A-029.10-SPEC
+    - next_action_id: A-029.10-RUNTIME
+    - updated_at: 2026-05-17 (A-029.10-SPEC complete as planning-only provider L4 consolidated summary endpoint specification; no runtime code; expected metric movement: provider_l4_consolidated_summary_count = 1; next controlled action selected as A-029.10-RUNTIME implementation)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -12973,5 +12973,26 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
 - current_stage: A-029.9.B1 complete / provider L4 API 11-route quality baseline confirmed
 - last_completed_action_id: A-029.9.B1
 - next_action_id: A-029.10-SPEC
+
+- A-029.10-SPEC execution block:
+    - mode: planning_and_specification_only_no_code
+    - purpose: specify_provider_l4_consolidated_summary_endpoint
+    - source_of_truth_check: PASS (A-029.9.B1 closed, provider baseline locked at 11/11/11/11)
+    - consolidated_endpoint_standard: GET /api/admin/provider-readiness/l4/summary, admin.expansion.read permission, NON_LIVE_READINESS boundary
+    - selected_aggregation_strategy: direct service function calls to 11 existing A-029.7 provider L4 summaries
+    - selected_implementation_option: Option A — one consolidated provider L4 summary endpoint
+    - consolidated_response_contract: readiness_level=L4_PROVIDER_READONLY_CONSOLIDATED_SUMMARY, maturity_target=L4, aggregation_source_level=L4_PROVIDER_READONLY_VISIBILITY, integration_mode=NON_LIVE_READINESS, coverage_version=A-029.10, providers=[11 summaries], all counter rollups, anti-fake flags
+    - provider_aggregation_sources: UCE-024/UCE-025/UCE-030/UCE-109/UCE-112/UCE-108/UCE-027/UCE-028/UCE-110/UCE-113/UCE-106 (all 11 candidates)
+    - expected_runtime_files: backend/app/modules/provider_readiness/router.py (modified), backend/tests/test_a02910_provider_readiness_l4_consolidated_summary.py (created), A-029.10-RUNTIME-PROVIDER_L4_CONSOLIDATED_SUMMARY_ENDPOINT_REPORT.md (created)
+    - test_plan_groups: route registration, permission/auth, tenant safety, response shape, provider aggregation, counter rollups, forbidden actions, determinism, code integrity, metrics arithmetic, aggregation strategy (60+ tests, 180–320 assertions)
+    - expected_metric_movement_if_runtime_option_a: A02910_provider_l4_consolidated_summary_count=1, provider_l4_consolidated_summary_count=1, provider_l4_api_route_count=11, provider_l4_visibility_count=11, provider_l3_deterministic_logic_count=11, provider_readiness_foundation_count=11, provider_live_call_count=0, provider_credentials_count=0, provider_external_submission_count=0, provider_connected_count=0, provider_sync_count=0, baseline_impact=0, extension_impact=0, ordinary_expansion_L4_unchanged, baseline_metrics_unchanged
+    - anti_inflation_spec: PASS (no code, no runtime, no provider live integration, no credentials, no sync, no external submission, no fake connected status, no L5/L6 claim, no Brain execution, provider readiness separated)
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_locked: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - ordinary_expansion_metrics_current: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, remaining_L3_not_L4=10, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=40 (unchanged)
+    - provider_readiness_metrics_current: provider_readiness_foundation_count=11, provider_l3_deterministic_logic_count=11, provider_l4_visibility_count=11, provider_l4_api_route_count=11, provider_l4_consolidated_summary_count=0, provider_live_call_count=0, provider_credentials_count=0, provider_external_submission_count=0, provider_connected_count=0, provider_sync_count=0
+    - spec_report_file: A-029.10-SPEC-PROVIDER_L4_CONSOLIDATED_SUMMARY_ENDPOINT_REPORT.md
+    - final_verdict: SPEC_COMPLETE_PASS
+    - next_action_id: A-029.10-RUNTIME
 
 

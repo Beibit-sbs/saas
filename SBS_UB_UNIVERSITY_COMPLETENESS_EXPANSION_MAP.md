@@ -8282,3 +8282,97 @@ Provider readiness foundation count is tracked separately and does NOT increment
 - current_stage: A-029.9.B1 complete / provider L4 API 11-route quality baseline confirmed
 - last_completed_action_id: A-029.9.B1
 - next_action_id: A-029.10-SPEC
+
+## A-029.10-SPEC — Provider L4 Consolidated Summary Endpoint
+
+### Source State
+
+- source_action_id: A-029.9.B1
+- source_commit: 865463e
+- source_verdict: A-029.9.B1 CLOSED — SCOPED PROVIDER L4 API 11-ROUTE QUALITY BASELINE CONFIRMED
+- source_status: ready_for_A-029.10-SPEC
+- runtime implementation started: NO
+
+### Provider L2/L3/L4/API Coverage Baseline
+
+- provider_readiness_foundation_count = 11
+- provider_l3_deterministic_logic_count = 11
+- provider_l4_visibility_count = 11
+- provider_l4_api_route_count = 11
+- provider_l4_consolidated_summary_count = 0 (planning only in this SPEC)
+
+### Consolidated Endpoint Definition
+
+- Method: GET only
+- URL: /api/admin/provider-readiness/l4/summary
+- Permission: admin.expansion.read
+- Boundary: NON_LIVE_READINESS / read-only / tenant-safe / deterministic
+- Aggregation: 11 existing provider L4 service summaries via direct function calls
+- Response: consolidated contract with 11 provider records + rollups + anti-fake flags
+
+### Response Contract (Summary)
+
+- readiness_level = L4_PROVIDER_READONLY_CONSOLIDATED_SUMMARY
+- maturity_target = L4
+- aggregation_source_level = L4_PROVIDER_READONLY_VISIBILITY
+- integration_mode = NON_LIVE_READINESS
+- coverage_version = A-029.10
+- total_provider_candidates = 11
+- provider_l4_visibility_count = 11
+- provider_l4_api_route_count = 11
+- providers = [11 provider summaries with readiness_level, blockers, evidence]
+- provider_connected_count = 0
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_sync_count = 0
+- no_provider_call = True
+- no_credentials = True
+- no_external_submission = True
+- no_provider_connected_claim = True
+- no_sync_claim = True
+- no_l5_claim = True
+- no_l6_claim = True
+- read_only = True
+- no_mutation = True
+- tenant_scoped = True
+
+### Selected Implementation Strategy
+
+Option A: One consolidated GET endpoint aggregating 11 existing provider L4 service summaries via direct function calls.
+
+### Expected Metric Movement (A-029.10-RUNTIME)
+
+- A02910_provider_l4_consolidated_summary_count = 1
+- provider_l4_consolidated_summary_count = 1
+- provider_l4_api_route_count = 11 (unchanged)
+- provider_l3_deterministic_logic_count = 11 (unchanged)
+- provider_readiness_foundation_count = 11 (unchanged)
+- provider_live_call_count = 0 (unchanged)
+- provider_credentials_count = 0 (unchanged)
+- provider_external_submission_count = 0 (unchanged)
+- provider_connected_count = 0 (unchanged)
+- provider_sync_count = 0 (unchanged)
+- expansion_L4 metrics unchanged
+- baseline metrics unchanged (L3=55, L4=68, L5=25, L6=2, total=150)
+- extension metrics unchanged (extension_total_count=25, total_tracked_modules=175)
+
+### Anti-Fake Review
+
+- no code: PASS (SPEC-only)
+- no runtime: PASS (SPEC-only)
+- no credentials: PASS
+- no sync: PASS
+- no external submission: PASS
+- no fake connected status: PASS
+- no L5/L6 claim: PASS
+- no Brain execution: PASS
+- provider metrics separated: PASS
+
+### Final Verdict
+
+- final_verdict: A-029.10-SPEC CLOSED — PASS
+- status: ready_for_A-029.10-RUNTIME
+- current_stage: A-029.10-SPEC complete / provider L4 consolidated summary endpoint selected
+- last_completed_action_id: A-029.10-SPEC
+- next_action_id: A-029.10-RUNTIME
