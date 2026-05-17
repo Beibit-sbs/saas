@@ -1,19 +1,31 @@
-"""Deterministic L2 envelope contract for finance_anomaly_signal_registry (A-027.6)."""
+"""Deterministic L2 envelope + A-030.1 Brain Governance Foundation contract
+for curriculum_gap_signal_registry (UCE-132).
+
+L2 envelope: expansion registry base (A-029 planned).
+A-030.1: L3 deterministic signal governance readiness logic.
+
+NO Brain execution. NO LLM. NO autonomous decisions. Evidence map only.
+Human review required before any action.
+"""
 
 from __future__ import annotations
 
-MODULE_NAME = "finance_anomaly_signal_registry"
-UCE_ID = "UCE-050"
+# ──────────────────────────────────────────────────────────────────────────────
+# L2 Envelope Foundation (expansion registry base)
+# ──────────────────────────────────────────────────────────────────────────────
+
+MODULE_NAME = "curriculum_gap_signal_registry"
+UCE_ID = "UCE-132"
 CANDIDATE_TYPE = "BRAIN_SIGNAL"
 TARGET_LEVEL = "L2"
-CONTRACT_VERSION = "A-027.6"
+CONTRACT_VERSION = "A-030.1"
 ENVELOPE_STATUS = "ENVELOPE_READY"
 ENVELOPE_ONLY = True
 RUNTIME_EXECUTION_ALLOWED = False
 HUMAN_APPROVAL_REQUIRED = True
 CONTRACT_KIND = "brain_signal_envelope"
-DOMAIN_CONTEXT = "Finance"
-PURPOSE = "Signal taxonomy envelope for finance anomaly governance"
+DOMAIN_CONTEXT = "Curriculum Governance"
+PURPOSE = "Signal taxonomy envelope for curriculum gap governance"
 
 EVIDENCE_REQUIREMENTS = [
     "governance_policy_reference",
@@ -84,7 +96,7 @@ SAFETY_FLAGS = {
 
 
 def validate_tenant_id(tenant_id: int) -> int:
-    """Fail-closed tenant validation for envelope contracts."""
+    """Fail-closed tenant validation."""
     if tenant_id is None:
         raise ValueError("tenant_id is required")
     if not isinstance(tenant_id, int):
@@ -94,7 +106,9 @@ def validate_tenant_id(tenant_id: int) -> int:
     return tenant_id
 
 
-def get_finance_anomaly_signal_registry_envelope_contract(tenant_id: int, payload: dict | None = None) -> dict:
+def get_curriculum_gap_signal_registry_envelope_contract(
+    tenant_id: int, payload: dict | None = None
+) -> dict:
     """Return deterministic L2 envelope metadata without runtime execution."""
     tenant_id = validate_tenant_id(tenant_id)
     _ = payload
@@ -150,40 +164,40 @@ SIGNAL_REGISTRY_MODE = "READINESS_AND_EVIDENCE_ONLY"
 EXECUTION_MODE = "NO_EXECUTION"
 
 _A0301_EVIDENCE_SOURCE_MAP = {
-    "budget_variance_evidence": "budget_allocation_records, variance_reports, period_comparisons",
-    "payment_reconciliation_evidence": "payment_ledger_entries, reconciliation_logs, clearance_status",
-    "billing_reconciliation_evidence": "billing_cycle_records, invoice_match_logs, outstanding_balance_flags",
-    "finance_erp_readiness_evidence": "erp_connection_status_docs, data_schema_alignment_records",
-    "audit_log_evidence": "finance_audit_trail_logs, approval_chain_records, change_history",
+    "course_learning_outcomes_evidence": "course_syllabus_records, clo_definition_docs, assessment_alignment_records",
+    "program_learning_outcomes_evidence": "program_specification_docs, plo_matrix_records, graduate_attribute_mappings",
+    "assessment_alignment_evidence": "assessment_task_records, learning_outcome_coverage_maps, gap_identification_logs",
+    "curriculum_mapping_evidence": "curriculum_map_docs, subject_sequence_records, prerequisite_chain_docs",
+    "accreditation_reference_evidence": "accreditation_standard_references, external_benchmark_docs, compliance_readiness_records",
 }
 
 _A0301_REQUIRED_EVIDENCE = [
-    "budget_variance_evidence",
-    "payment_reconciliation_evidence",
-    "billing_reconciliation_evidence",
-    "finance_erp_readiness_evidence",
-    "audit_log_evidence",
+    "course_learning_outcomes_evidence",
+    "program_learning_outcomes_evidence",
+    "assessment_alignment_evidence",
+    "curriculum_mapping_evidence",
+    "accreditation_reference_evidence",
 ]
 
 _A0301_MISSING_EVIDENCE_CATEGORIES = [
-    "live_erp_feed_confirmation",
-    "automated_reconciliation_pipeline_readiness",
-    "external_audit_system_connection",
+    "automated_curriculum_map_feed",
+    "real_time_accreditation_standard_sync",
+    "assessment_gap_analysis_system_connection",
 ]
 
 _A0301_EXPLAINABILITY_INPUT_MAP = {
-    "signal_source": "budget variance + payment reconciliation + audit logs",
-    "human_readable_context": "Evidence map for finance auditor to assess anomaly signal readiness",
+    "signal_source": "course learning outcomes + program outcomes + curriculum maps",
+    "human_readable_context": "Evidence map for curriculum committee to assess gap signal readiness",
     "explainability_level": "FOUNDATION_READINESS",
     "no_hidden_computation": True,
     "no_synthetic_output": True,
 }
 
 _A0301_HUMAN_REVIEW_REASONS = [
-    "Finance anomaly classification requires human finance officer review",
-    "No automated payment execution or fraud accusation is permitted",
-    "Evidence completeness must be verified by responsible finance authority",
-    "Any anomaly escalation requires human approval before any action",
+    "Curriculum gap classification requires human curriculum committee review",
+    "No automatic curriculum change or department ranking is permitted",
+    "Evidence completeness must be verified by responsible academic authority",
+    "Any gap finding escalation requires human approval before any action",
 ]
 
 _A0301_AUDIT_EVENT_CATEGORY_MAP = {
@@ -194,9 +208,9 @@ _A0301_AUDIT_EVENT_CATEGORY_MAP = {
 }
 
 _A0301_GOVERNANCE_RISK_CLASSIFICATION = {
-    "domain": "finance_governance",
-    "risk_boundary": "NO_PAYMENT_NO_FRAUD_ACCUSATION",
-    "sensitivity": "CRITICAL",
+    "domain": "curriculum_governance",
+    "risk_boundary": "NO_CURRICULUM_CHANGE_NO_RANKING",
+    "sensitivity": "HIGH",
     "human_escalation_required": True,
 }
 
@@ -223,23 +237,22 @@ _A0301_FORBIDDEN_OUTPUTS = [
     "notification_send",
     "workflow_execution",
     "sensitive_eligibility_decision",
-    "payment_execution",
-    "fraud_accusation",
-    "account_freeze",
-    "external_reporting",
-    "hidden_anomaly_score",
+    "automatic_curriculum_change",
+    "ranking_departments",
+    "synthetic_gap_score",
+    "accreditation_decision",
 ]
 
 _A0301_NEXT_SAFE_SETUP_STEPS = [
-    "Map verified budget data source fields with finance office approval",
-    "Confirm payment ledger schema alignment before any feed integration",
-    "Validate billing reconciliation record format with treasury team",
-    "Define human reviewer assignment protocol for each anomaly signal category",
+    "Map verified course learning outcome records with curriculum committee approval",
+    "Confirm program outcome schema alignment before any feed integration",
+    "Validate assessment alignment gap identification format with academic team",
+    "Define human reviewer assignment protocol for each curriculum gap signal category",
     "Document evidence lineage policy before any further maturity advance",
 ]
 
 
-def get_finance_anomaly_signal_governance_foundation(tenant_id: int) -> dict:
+def get_curriculum_gap_signal_governance_foundation(tenant_id: int) -> dict:
     """Return deterministic L3 signal governance readiness contract (A-030.1).
 
     NO execution. NO LLM. NO autonomous decisions. Evidence map only.
@@ -250,7 +263,7 @@ def get_finance_anomaly_signal_governance_foundation(tenant_id: int) -> dict:
     return {
         "uce_id": UCE_ID,
         "module_key": MODULE_NAME,
-        "module_name": "Finance Anomaly Signal Registry",
+        "module_name": "Curriculum Gap Signal Registry",
         "brain_governance_layer": BRAIN_GOVERNANCE_LAYER,
         "brain_governance_version": BRAIN_GOVERNANCE_VERSION,
         "maturity_target": A0301_MATURITY_TARGET,

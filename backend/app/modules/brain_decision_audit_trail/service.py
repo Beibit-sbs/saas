@@ -285,3 +285,152 @@ def classify_brain_decision_audit_trail_readiness(
             "l2_contract_preserved": True,
         },
     }
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# A-030.1 Brain Governance Foundation — L4 Read-Only Governance Visibility
+# ──────────────────────────────────────────────────────────────────────────────
+
+BRAIN_GOVERNANCE_LAYER = "FOUNDATION"
+BRAIN_GOVERNANCE_VERSION = "A-030.1"
+A0301_MATURITY_TARGET = "L4_READONLY_GOVERNANCE_VISIBILITY"
+SIGNAL_REGISTRY_MODE = "READINESS_AND_EVIDENCE_ONLY"
+EXECUTION_MODE = "NO_EXECUTION"
+
+_A0301_EVIDENCE_SOURCE_MAP = {
+    "decision_context_evidence": "decision_context_records, signal_input_snapshots, reasoning_context_docs",
+    "source_evidence_refs": "evidence_lineage_references, source_document_links, approval_chain_refs",
+    "human_reviewer_evidence": "human_reviewer_assignment_records, review_completion_logs, override_records",
+    "override_reason_evidence": "override_justification_docs, escalation_reason_logs, exception_records",
+    "timestamp_category_evidence": "decision_timestamp_logs, category_assignment_records, version_history",
+}
+
+_A0301_REQUIRED_EVIDENCE = [
+    "decision_context_evidence",
+    "source_evidence_refs",
+    "human_reviewer_evidence",
+    "override_reason_evidence",
+    "timestamp_category_evidence",
+]
+
+_A0301_MISSING_EVIDENCE_CATEGORIES = [
+    "structured_audit_trail_schema_definition",
+    "human_reviewer_identity_binding_protocol",
+    "immutable_audit_log_storage_readiness",
+]
+
+_A0301_EXPLAINABILITY_INPUT_MAP = {
+    "signal_source": "decision context + source evidence refs + human reviewer records",
+    "human_readable_context": "Governance audit visibility map for responsible AI officer review",
+    "explainability_level": "L4_VISIBILITY_FOUNDATION",
+    "no_hidden_computation": True,
+    "no_synthetic_output": True,
+}
+
+_A0301_HUMAN_REVIEW_REASONS = [
+    "Brain decision audit requires human governance officer review",
+    "No actual decision execution is permitted by this module",
+    "Audit trail categories must be verified by responsible AI governance officer",
+    "Any audit finding escalation requires human approval before any action",
+]
+
+_A0301_AUDIT_EVENT_CATEGORY_MAP = {
+    "audit_foundation_readiness_check": "AUDIT_GOVERNANCE",
+    "human_reviewer_assignment": "AUDIT_HUMAN_DECISION",
+    "evidence_gap_identified": "AUDIT_EVIDENCE_GAP",
+    "governance_visibility_check": "AUDIT_FOUNDATION_VALIDATION",
+    "override_reason_capture": "AUDIT_OVERRIDE_TRACKING",
+}
+
+_A0301_GOVERNANCE_RISK_CLASSIFICATION = {
+    "domain": "brain_audit_governance",
+    "risk_boundary": "NO_DECISION_EXECUTION",
+    "sensitivity": "CRITICAL",
+    "human_escalation_required": True,
+}
+
+_A0301_ALLOWED_OUTPUTS = [
+    "signal_registry_metadata",
+    "evidence_source_map",
+    "required_evidence_list",
+    "missing_evidence_list",
+    "explainability_input_map",
+    "human_review_reasons",
+    "audit_event_category_map",
+    "governance_risk_classification",
+    "next_safe_setup_steps",
+]
+
+_A0301_FORBIDDEN_OUTPUTS = [
+    "actual_decision_execution",
+    "fake_past_decisions",
+    "autonomous_approvals",
+    "retroactive_audit_fabrication",
+    "final_decision",
+    "recommendation_to_approve_or_reject",
+    "synthetic_score",
+    "hidden_ranking",
+    "automated_action",
+    "provider_call",
+    "llm_generated_decision",
+    "notification_send",
+    "workflow_execution",
+]
+
+_A0301_NEXT_SAFE_SETUP_STEPS = [
+    "Define audit trail schema fields with AI governance committee",
+    "Establish human reviewer identity binding protocol",
+    "Map evidence lineage fields to immutable storage readiness requirements",
+    "Define override reason capture categories with human approver",
+    "Document audit event taxonomy before any further maturity advance",
+]
+
+
+def get_brain_decision_audit_trail_governance_visibility(tenant_id: int) -> dict:
+    """Return deterministic L4 read-only governance visibility contract (A-030.1).
+
+    NO execution. NO LLM. NO autonomous decisions. Audit event map only.
+    Human review required before any action.
+    """
+    tenant_id = validate_tenant_id(tenant_id)
+
+    return {
+        "uce_id": UCE_ID,
+        "module_key": MODULE_NAME,
+        "module_name": "Brain Decision Audit Trail",
+        "brain_governance_layer": BRAIN_GOVERNANCE_LAYER,
+        "brain_governance_version": BRAIN_GOVERNANCE_VERSION,
+        "maturity_target": A0301_MATURITY_TARGET,
+        "signal_registry_mode": SIGNAL_REGISTRY_MODE,
+        "execution_mode": EXECUTION_MODE,
+        "llm_calls_enabled": False,
+        "model_provider_configured": False,
+        "autonomous_decision_enabled": False,
+        "action_execution_enabled": False,
+        "hidden_scoring_enabled": False,
+        "synthetic_score_enabled": False,
+        "human_review_required": True,
+        "tenant_id": tenant_id,
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_brain_execution": True,
+        "no_llm_call": True,
+        "no_autonomous_action": True,
+        "no_auto_approval": True,
+        "no_auto_rejection": True,
+        "no_sensitive_decision": True,
+        "no_procurement_decision": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+        "evidence_source_map": dict(_A0301_EVIDENCE_SOURCE_MAP),
+        "required_evidence": list(_A0301_REQUIRED_EVIDENCE),
+        "missing_evidence_categories": list(_A0301_MISSING_EVIDENCE_CATEGORIES),
+        "explainability_input_map": dict(_A0301_EXPLAINABILITY_INPUT_MAP),
+        "human_review_reasons": list(_A0301_HUMAN_REVIEW_REASONS),
+        "audit_event_category_map": dict(_A0301_AUDIT_EVENT_CATEGORY_MAP),
+        "governance_risk_classification": dict(_A0301_GOVERNANCE_RISK_CLASSIFICATION),
+        "allowed_outputs": list(_A0301_ALLOWED_OUTPUTS),
+        "forbidden_outputs": list(_A0301_FORBIDDEN_OUTPUTS),
+        "next_safe_setup_steps": list(_A0301_NEXT_SAFE_SETUP_STEPS),
+    }
