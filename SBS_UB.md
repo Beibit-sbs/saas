@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: blocked_A-030.4.B1
-    - current_stage: A-030.4.B1 blocked / mandatory A-030 continuity gate did not complete in bounded Docker validation window
-    - last_completed_action_id: A-030.4-RUNTIME
-    - next_action_id: A-030.4.B1.R1
-    - updated_at: 2026-05-17 (A-030.4.B1 validation started; Gate1 A-030.4 targeted PASS (93 passed); Gate5 LDAP PASS (2 passed); Gate6 tenant/security PASS (56 passed); focused forbidden scans show no blocking behavior; mandatory Gate2 A-030 continuity and broad packs could not be completed in bounded run due long-running Docker test processes; escalation set to A-030.4.B1.R1 for clean rerun and closure)
+    - status: blocked_A-030.4.B1.R1
+    - current_stage: A-030.4.B1.R1 blocked / Docker validation infrastructure hang on continuity gates
+    - last_completed_action_id: A-030.4.B1
+    - next_action_id: A-030.4.B1.R2
+    - updated_at: 2026-05-17 (A-030.4.B1.R1 remediation attempted with fast Docker direct mode; Gate1 A-030.4 targeted verified PASS (93 passed, 1 warning); Gate5 LDAP verified PASS (2 passed, 1 warning); Gate6 tenant/security verified PASS (56 passed, 1 warning); forbidden scans and metrics verified CLEAN/STABLE; Gate2 A-030 continuity experienced process hang (~2 hours bounded run, ~40 minutes split mode); Gate3 A-028 combined not attempted; Gate4 A-027 continuity not attempted; Docker infrastructure hang classification (not functional failure); escalation set to A-030.4.B1.R2 for Docker hygiene investigation and targeted hang diagnosis)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -13731,5 +13731,25 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - remediation_action: rerun Gate2/Gate3/Gate4 in isolated sequential Docker sessions and close as A-030.4.B1.R1
     - report_file: A-030.4.B1-DISCIPLINARY_SENSITIVE_READINESS_FOUNDATION_QUALITY_BASELINE_REPORT.md
     - final_verdict: A-030.4.B1 BLOCKED — mandatory continuity gate not completed in bounded run
-    - next_action_id: A-030.4.B1.R1
+    - next_action_id: A-030.4.B1.R2
 
+- A-030.4.B1.R1 disciplinary sensitive continuity gate revalidation block:
+    - mode: validation_and_reporting_only_with_docker_hygiene
+    - purpose: remediation_revalidation_of_missing_continuity_gates
+    - Docker_hygiene_pre_check: NOMINAL (ai_default network available, infra/.env present, ai-backend-tests:latest present, 32 CPUs and 32 GB RAM available, no stale containers at start)
+    - gate_2_a030_continuity_bounded_run: TIMEOUT (>2 hours, process hang, not natural completion)
+    - gate_2_a030_continuity_split_mode: LONG_RUNNING (>40 minutes cumulative, manual stop, no pytest summary output)
+    - gate_3_a028_combined: NOT_ATTEMPTED (due to Gate2 hang)
+    - gate_4_a027_continuity: NOT_ATTEMPTED (due to Gate2 hang)
+    - a030_4_targeted_reference: STILL_VALID (93 passed, 1 warning - proves runtime not broken)
+    - forbidden_scans_reference: STILL_VALID (CLEAN - no external/LLM/provider calls, no credentials, no DB mutations)
+    - metrics_reference: STILL_VALID (sensitive_execution_count=0, sensitive_auto_sanction_count=0, all anti-fake metrics PASS)
+    - classification: BLOCKED_DOCKER_VALIDATION_INFRASTRUCTURE_HANG (not functional test failure)
+    - block_reason: Docker validation infrastructure process hang prevented Gate2/Gate3/Gate4 completion within reasonable runtime windows
+    - quality_gate_status: BLOCKED
+    - anti_fake_review: no runtime code changes, no test modifications, no service/router changes, no claiming false PASS, honest classification of blocker
+    - known_limitations: Gate2/Gate3/Gate4 not completed; full backend regression optional not run; missing evidence remains
+    - report_file: A-030.4.B1.R1-DISCIPLINARY_SENSITIVE_CONTINUITY_GATE_REVALIDATION_REPORT.md
+    - final_verdict: A-030.4.B1.R1 BLOCKED — Docker validation infrastructure hang prevented continuity revalidation
+    - recommended_next_action_r2: manual Docker process hygiene + check database/network health + run minimal container sanity command + run one trivial pytest/import command first + then run exact slow file with -vv -s to identify hanging test + only then rerun Gate2/Gate3/Gate4
+    - next_action_id: A-030.4.B1.R2

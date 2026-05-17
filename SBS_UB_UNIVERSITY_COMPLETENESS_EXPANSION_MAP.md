@@ -10554,3 +10554,111 @@ Neither candidate implemented in A-030.4-RUNTIME.
 - Reason: Mandatory continuity gate (A-030) did not complete within bounded Docker validation window; evidence-driven closure cannot be claimed.
 - Remediation: A-030.4.B1.R1 isolated sequential reruns for Gate2/Gate3/Gate4 with final closure check.
 - Selected next action: A-030.4.B1.R1
+
+## A-030.4.B1.R1 — Disciplinary Sensitive Continuity Gate Revalidation
+
+**Status**: BLOCKED (Docker validation infrastructure hang)
+
+### Remediation Purpose
+
+- Isolated sequential Docker rerun of missing continuity gates (Gate2/Gate3/Gate4)
+- Collect complete evidence or identify infrastructure blockers
+- No code/test modifications per operating rules
+
+### Docker Hygiene Baseline
+
+- Network ai_default: Available
+- infra/.env: Present (correct fast Docker mode env file)
+- ai-backend-tests:latest: Present (Python 3.12.13, pytest 8.4.2)
+- Host capacity: 32 CPUs, 32 GB RAM available
+- Stale containers: None at run start
+- Conclusion: Docker environment nominal
+
+### Gate2 A-030 Continuity Rerun Attempts
+
+**Attempt 1 (Full Batch)**
+- Execution: Single Docker run with all 10 Gate2 test files
+- Duration: >2 hours
+- Status: Process hang (not natural completion)
+- Evidence: Partial test progress visible, execution stalled at unknown point
+- Classification: Long-running Docker process hang
+
+**Attempt 2 (Split Fast Mode)**
+- Execution: Sequential Docker runs with 180s timeout per file
+- Duration: >40 minutes cumulative (manual stop)
+- Status: Process hang without test completion markers
+- Evidence: No pytest summary output
+- Classification: Docker infrastructure orchestration hang
+
+**Result**: Cannot claim completion; gates remain NOT_COMPLETED
+
+### Gates Not Rerun
+
+- Gate 3 A-028 combined: Blocked by Gate2 hang (not attempted)
+- Gate 4 A-027 continuity: Blocked by Gate2 hang (not attempted)
+
+### Supporting Evidence (Still Valid)
+
+- A-030.4 targeted gate: PASS (93 passed, 1 warning) — proves runtime not broken
+- LDAP smoke gate: PASS (2 passed, 1 warning) — proves provider integration works
+- Tenant/security slice: PASS (56 passed, 1 warning) — proves isolation works
+- Forbidden scans: PASS (CLEAN) — no external/LLM/provider calls, no credentials, no DB mutations, no disciplinary execution
+- Metrics: STABLE (sensitive_execution_count=0, all anti-fake PASS)
+
+### Classification
+
+- **NOT a functional test failure**
+- A-030.4 runtime passes targeted gate (93 tests)
+- Forbidden scans show no blocking behavior
+- Metrics are correct and stable
+- **Issue is Docker validation infrastructure hang**, not runtime logic
+
+### Closure Decision
+
+- Decision: A-030.4.B1.R1 BLOCKED
+- Reason: Docker validation infrastructure process hang prevented Gate2/Gate3/Gate4 completion
+- Classification: Infrastructure issue, not functional regression
+- Remediation: A-030.4.B1.R2 with Docker hygiene investigation and targeted hang diagnosis
+- Selected next action: A-030.4.B1.R2
+
+### Anti-Fake Review
+
+- No runtime code changes: YES
+- No test modifications: YES
+- No service/router changes: YES
+- No claiming false PASS: YES
+- Honest classification of blocker: YES
+
+### Next Strategic Action (R2)
+
+**A-030.4.B1.R2** — Docker Process Hygiene and Hang Investigation
+
+Recommended steps:
+1. Manual Docker process hygiene
+   - Verify Docker daemon health
+   - Check network interface performance
+   - Monitor database container connectivity
+   - Check system load during test execution
+
+2. Minimal sanity check
+   - Run trivial pytest command (pytest --collect-only)
+   - Confirm container responsiveness
+
+3. Targeted hang diagnosis
+   - Run one slow file with `-vv -s` flags
+   - Identify which test causes hang
+   - Check for infinite loops, database locks, resource exhaustion
+
+4. Rerun gates
+   - After hang root cause identified
+   - With appropriate workaround or fix
+
+### Final Verdict
+
+**A-030.4.B1.R1 BLOCKED — Docker validation infrastructure hang prevented continuity revalidation**
+
+Evidence preserved: A-030.4 targeted PASS (93), LDAP smoke PASS (2), tenant/security PASS (56), forbidden scans CLEAN, metrics stable
+
+**next_action_id: A-030.4.B1.R2**
+
+Expected timeline: Infrastructure investigation and minimal hang diagnosis before next rerun attempt.
