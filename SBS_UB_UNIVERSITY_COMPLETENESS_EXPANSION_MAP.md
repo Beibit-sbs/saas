@@ -8516,3 +8516,150 @@ Option A: One consolidated GET endpoint aggregating 11 existing provider L4 serv
 - current_stage: A-029.10-RUNTIME complete / provider L4 consolidated summary endpoint implemented
 - last_completed_action_id: A-029.10-RUNTIME
 - next_action_id: A-029.11-SPEC
+
+## A-029.11-SPEC — Provider L4 Consolidated Summary Quality Baseline / Wave 18 Closure
+
+### Source State
+
+- source_action_id: A-029.10.R1
+- source_commit: 83cdb37
+- source_verdict: A-029.10.R1 CLOSED — DOCS/MAP RECONCILIATION PASS
+- source_runtime_commit: fa825c1
+- source_runtime_verdict: A-029.10-RUNTIME CLOSED — PASS
+- source_of_truth_consistency: PASS (tracker, map, runtime report aligned)
+- runtime_implementation_started_in_A02911: NO
+
+### Provider Lane Coverage (Wave 18)
+
+| Layer | Count | Evidence | Status |
+|---|---:|---|---|
+| Provider L2 foundation | 11 | A-029.2 + A-029.3 | COMPLETE |
+| Provider L2 quality baseline | 1 | A-029.4.B1 | COMPLETE |
+| Provider L3 deterministic logic | 11 | A-029.5 | COMPLETE |
+| Provider L3 quality baseline | 1 | A-029.6.B1 | COMPLETE |
+| Provider L4 service summaries | 11 | A-029.7 | COMPLETE |
+| Provider L4 API routes | 11 | A-029.8 | COMPLETE |
+| Provider L4 API quality baseline | 1 | A-029.9.B1 | COMPLETE |
+| Provider L4 consolidated endpoint | 1 | A-029.10 | COMPLETE |
+| Expansion map reconciliation | 1 | A-029.10.R1 | COMPLETE |
+| Live provider calls | 0 | counters / scans | LOCKED_ZERO |
+| Credentials configured | 0 | counters / scans | LOCKED_ZERO |
+| External submissions | 0 | counters / scans | LOCKED_ZERO |
+| Connected claims | 0 | counters / scans | LOCKED_ZERO |
+| Sync claims | 0 | counters / scans | LOCKED_ZERO |
+
+### A-029 Evidence Chain
+
+| Action | Type | Commit | Scope | Result | Notes |
+|---|---|---|---|---|---|
+| A-029.0-SPEC | SPEC | 3a8a902 | provider/Brain/risk lane planning | PASS | risk lane planning |
+| A-029.1-SPEC | SPEC | fe178aa | risk lane map | PASS | provider lane selected |
+| A-029.2-SPEC | SPEC | a4682c1 | provider batch 1 spec | PASS | 6 selected |
+| A-029.2-RUNTIME | RUNTIME | dea92c5 | provider L2 batch 1 | PASS | 6 implemented |
+| A-029.3-SPEC | SPEC | 8941540 | provider batch 2 spec | PASS | 5 selected |
+| A-029.3-RUNTIME | RUNTIME | 056e2f5 | provider L2 batch 2 | PASS | 5 implemented |
+| A-029.4-SPEC | SPEC | ef74de5 | L2 consolidation | PASS | B1 selected |
+| A-029.4.B1 | QUALITY | cc1641b | L2 quality baseline | PASS | 11/11 foundation |
+| A-029.5-SPEC | SPEC | 9b2f78b | L3 logic spec | PASS | full 11 |
+| A-029.5-RUNTIME | RUNTIME | cb26afb | L3 deterministic logic | PASS | 11/11 |
+| A-029.6-SPEC | SPEC | a4b0c2e | L3 quality baseline spec | PASS | B1 selected |
+| A-029.6.B1 | QUALITY | 3fcbff9 | L3 quality baseline | PASS | 11/11 L3 |
+| A-029.7-SPEC | SPEC | 23ba595 | L4 summaries spec | PASS | API deferred |
+| A-029.7-RUNTIME | RUNTIME | 511bbb3 | L4 service summaries | PASS | 11/11 |
+| A-029.8-SPEC | SPEC | 61d8166 | L4 API routes spec | PASS | 11 routes |
+| A-029.8-RUNTIME | RUNTIME | 019bc81 | L4 API routes | PASS | 11/11 |
+| A-029.9-SPEC | SPEC | e5a0666 | L4 API quality spec | PASS | B1 selected |
+| A-029.9.B1 | QUALITY | 865463e | L4 API baseline | PASS | 11-route baseline |
+| A-029.10-SPEC | SPEC | 1627eaf | consolidated endpoint spec | PASS | 1 endpoint |
+| A-029.10-RUNTIME | RUNTIME | fa825c1 | consolidated endpoint | PASS | 1 endpoint |
+| A-029.10.R1 | DOCS | 83cdb37 | map reconciliation | PASS | marker added |
+
+### Consolidated Endpoint State (Read-Only)
+
+- endpoint: GET /api/admin/provider-readiness/l4/summary
+- permission: admin.expansion.read
+- boundary: NON_LIVE_READINESS / GET-only / read-only / tenant-safe / RBAC-safe
+- aggregation: direct service calls to 11 provider L4 summaries
+- internal_http_forwarding: NO
+- provider_live_call_count: 0
+- provider_credentials_count: 0
+- provider_external_submission_count: 0
+- provider_connected_count: 0
+- provider_sync_count: 0
+- synthetic_score: NOT_PRESENT
+
+### A-029.11.B1 Quality Gate Definition (Selected)
+
+- selected_next_action: A-029.11.B1
+- gate_mode: validation_and_reporting_only
+- scope: verify consolidated endpoint behavior, provider continuity, cross-wave continuity, forbidden scans, and metric arithmetic
+- non_scope: runtime code, service/router/api changes, frontend, migrations
+- expected_report_file: A-029.11.B1-PROVIDER_L4_CONSOLIDATED_SUMMARY_QUALITY_BASELINE_AND_WAVE18_CLOSURE_REPORT.md
+- expected_result_if_pass: provider lane Wave 18 closed as scoped backend provider-readiness lane
+
+### Expected Validation Plan (A-029.11.B1)
+
+- Gate 1: A-029.10 targeted test (test_a02910_provider_readiness_l4_consolidated_summary.py)
+- Gate 2: A-029 provider continuity (A-029.2, A-029.3, A-029.5, A-029.7, A-029.8, A-029.10 packs)
+- Gate 3: A-029/A-028 continuity relevant pack
+- Gate 4: A-028 combined pack
+- Gate 5: A-027 continuity pack
+- Gate 6: LDAP smoke
+- Gate 7: tenant/security slice (if feasible)
+- Gate 8: forbidden scans (external calls, credentials/secrets, DB mutation, fake provider status, Brain/autonomy tokens, mutation route decorators, internal HTTP forwarding, synthetic score)
+- Gate 9: metrics arithmetic and source-of-truth anchors
+- Optional gates: full backend, frontend gate, product demo gate (document NOT_RUN when skipped)
+
+### Next Strategic Option Matrix (Post-B1)
+
+| Option | Value | Risk | Effort | Recommended? | Reason |
+|---|---:|---:|---:|---|---|
+| Option A — A-029.11.B1 provider closure baseline | 5 | 1 | 2 | YES | closes provider lane evidence chain with lowest risk |
+| Option B — A-031.0-SPEC product/demo/QS package | 5 | 2 | 3 | AFTER_B1 | high commercial value with low runtime risk |
+| Option C — A-030.0-SPEC Brain governance foundation | 5 | 4 | 4 | AFTER_B1 | strategic value but higher anti-fake/governance risk |
+| Option D — A-030.x policy/procurement readiness | 4 | 4 | 4 | AFTER_B1 | governance value with procurement/legal risk |
+| Option E — A-030.x sensitive-domain readiness | 5 | 5 | 5 | AFTER_B1 | high institutional value with high ethical/legal risk |
+| Option F — full release quality remediation | 4 | 2 | 3 | CONDITIONAL | quality hardening without feature movement |
+| Option G — frontend/product UI wave | 4 | 3 | 4 | AFTER_B1 | product value but should follow baseline/package gate |
+
+### Expected Metric Preservation (SPEC Locked)
+
+- provider_readiness_foundation_count = 11
+- provider_l3_deterministic_logic_count = 11
+- provider_l4_visibility_count = 11
+- provider_l4_api_route_count = 11
+- provider_l4_consolidated_summary_count = 1
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+- expansion_L4_visibility_count = 40
+- expansion_L4_api_route_count = 40
+- expansion_L4_consolidated_summary_count = 1
+- expansion_L4_consolidated_candidate_count = 40
+- expansion_L3_logic_count = 50
+- remaining_L3_not_L4 = 10
+- remaining_L2_only = 17
+- baseline_impact = 0
+- extension_impact = 0
+
+### Anti-Fake / Anti-Inflation Review
+
+- no code in A-029.11-SPEC: PASS
+- no runtime implementation in A-029.11-SPEC: PASS
+- no fake provider integration claims: PASS
+- no live provider call claims: PASS
+- no credentials/sync/submission/connected claims: PASS
+- no synthetic score: PASS
+- no Brain/autonomy/sensitive decision execution claims: PASS
+- no L5/L6 provider maturity claim: PASS
+- baseline/extension/ordinary expansion/provider metric separation preserved: PASS
+
+### Final Decision
+
+- final_verdict: A-029.11-SPEC CLOSED — PASS
+- status: ready_for_A-029.11.B1
+- current_stage: A-029.11-SPEC complete / provider L4 consolidated summary quality baseline selected
+- last_completed_action_id: A-029.11-SPEC
+- next_action_id: A-029.11.B1
