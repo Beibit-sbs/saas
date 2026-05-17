@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: blocked_A-030.4.B1.R2
-    - current_stage: A-030.4.B1.R2 blocked / isolated hanging file identified in tests/test_a0304_disciplinary_sensitive_readiness_foundation.py (suspected stall at TestAntiFakeFlags::test_no_hidden_score_true)
-    - last_completed_action_id: A-030.4.B1.R1
-    - next_action_id: A-030.4.B1.R3
-    - updated_at: 2026-05-17 (A-030.4.B1.R2 diagnosis executed with strict Docker-only escalation; Task0-4 passed including infra/.env, ai_default, image, container python sanity, pytest version, and collect-only (93 collected); Task5 timed out at 300s with A0304_VERBOSE_EXIT_CODE=124 and no final pytest summary; hang isolated to A-030.4 targeted file with last emitted line at/after TestAntiFakeFlags::test_no_hidden_score_true; Gate2/Gate3/Gate4 split diagnosis intentionally not started per stop-on-targeted-hang policy; classification set to isolated hanging test/file requiring focused R3 investigation)
+    - status: ready_for_A-030.4.B1.R4
+    - current_stage: A-030.4.B1.R3 complete / targeted test harness timeout remediated for A-030.4 file
+    - last_completed_action_id: A-030.4.B1.R3
+    - next_action_id: A-030.4.B1.R4
+    - updated_at: 2026-05-17 (A-030.4.B1.R3 completed; isolated timeout in A-030.4 targeted test file was classified as test-harness fixture overhead; applied minimal module-local fixture override in backend/tests/test_a0304_disciplinary_sensitive_readiness_foundation.py only; exact previously timing-out class path now PASS; full A-030.4 targeted now PASS (93 passed); A-030 mini continuity run remained bounded-window timeout at 22 percent progress; no runtime feature changes; next action set to A-030.4.B1.R4 for continuity gate reruns)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -13731,7 +13731,7 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - remediation_action: rerun Gate2/Gate3/Gate4 in isolated sequential Docker sessions and close as A-030.4.B1.R1
     - report_file: A-030.4.B1-DISCIPLINARY_SENSITIVE_READINESS_FOUNDATION_QUALITY_BASELINE_REPORT.md
     - final_verdict: A-030.4.B1 BLOCKED — mandatory continuity gate not completed in bounded run
-    - next_action_id: A-030.4.B1.R3
+    - next_action_id: A-030.4.B1.R4
 
 - A-030.4.B1.R1 disciplinary sensitive continuity gate revalidation block:
     - mode: validation_and_reporting_only_with_docker_hygiene
@@ -13752,7 +13752,7 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - report_file: A-030.4.B1.R1-DISCIPLINARY_SENSITIVE_CONTINUITY_GATE_REVALIDATION_REPORT.md
     - final_verdict: A-030.4.B1.R1 BLOCKED — Docker validation infrastructure hang prevented continuity revalidation
     - recommended_next_action_r2: manual Docker process hygiene + check database/network health + run minimal container sanity command + run one trivial pytest/import command first + then run exact slow file with -vv -s to identify hanging test + only then rerun Gate2/Gate3/Gate4
-    - next_action_id: A-030.4.B1.R3
+    - next_action_id: A-030.4.B1.R4
 
 - A-030.4.B1.R2 disciplinary validation infrastructure diagnosis block:
     - mode: validation_only_docker_infrastructure_diagnosis
@@ -13780,4 +13780,25 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - root_cause_classification: ISOLATED_HANGING_TEST_OR_RUNTIME_EXECUTION_HANG
     - report_file: A-030.4.B1.R2-DISCIPLINARY_VALIDATION_INFRASTRUCTURE_DIAGNOSIS_REPORT.md
     - final_verdict: A-030.4.B1.R2 BLOCKED — isolated hanging test identified
-    - next_action_id: A-030.4.B1.R3
+    - next_action_id: A-030.4.B1.R4
+
+- A-030.4.B1.R3 a0304 targeted test hang remediation block:
+    - mode: test_harness_isolation_and_minimal_remediation
+    - source_state: A-030.4.B1.R2 BLOCKED with targeted timeout evidence
+    - collect_only_result: PASS (exit=0)
+    - antifake_class_result_before_fix: TIMEOUT_CLASS_WINDOW (exit=124)
+    - test_no_hidden_score_true_result: PASS (exit=0)
+    - isolated_root_cause: TEST_FIXTURE_HANG (global per-test reset overhead causing timeout-equivalent blockage)
+    - remediation_type: TEST_HARNESS_ONLY
+    - remediation_file: backend/tests/test_a0304_disciplinary_sensitive_readiness_foundation.py
+    - remediation_detail: module-local autouse reset_shared_state override to avoid unnecessary full global reset for this read-only contract file
+    - exact_path_after_fix: PASS (TestAntiFakeFlags class, exit=0)
+    - a0304_targeted_after_fix: PASS (93 passed, exit=0)
+    - a030_mini_continuity_after_fix: TIMEOUT_IN_BOUNDED_WINDOW (exit=124, progress to 22 percent)
+    - runtime_behavior_change: NONE
+    - metrics_preservation: PASS
+    - anti_fake_preservation: PASS
+    - deferred_candidates_preserved: PASS (UCE-078 and UCE-093 remain deferred)
+    - report_file: A-030.4.B1.R3-A0304_TARGETED_TEST_HANG_REMEDIATION_REPORT.md
+    - final_verdict: A-030.4.B1.R3 CLOSED — TARGETED TEST HANG REMEDIATED
+    - next_action_id: A-030.4.B1.R4

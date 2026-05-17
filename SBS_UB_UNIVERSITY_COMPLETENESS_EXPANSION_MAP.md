@@ -10715,3 +10715,47 @@ Reason:
 ### Next Action
 - Selected next action: A-030.4.B1.R3
 - Focus: pinpoint exact hanging step inside isolated file run, stabilize deterministic completion, then resume Gate2/Gate3/Gate4 continuity evidence.
+
+## A-030.4.B1.R3 - A-030.4 Targeted Test Hang Remediation
+
+**Status**: CLOSED (targeted test-harness timeout remediated)
+
+### R2 Carry-over
+- R2 isolated timeout behavior to backend/tests/test_a0304_disciplinary_sensitive_readiness_foundation.py.
+- Suspected last emitted point in R2 was around AntiFakeFlags sequence.
+
+### Isolation Result
+- collect-only: PASS
+- TestAntiFakeFlags class (bounded run before fix): timeout classification
+- test_no_hidden_score_true single test: PASS
+- AntiFakeFlags individual tests: PASS
+- Root cause: cumulative harness overhead from global autouse reset fixture (not runtime feature defect)
+
+### Root Cause Classification
+- TEST_FIXTURE_HANG
+
+### Remediation
+- Type: test-harness only
+- File changed: backend/tests/test_a0304_disciplinary_sensitive_readiness_foundation.py
+- Action: module-local override of reset_shared_state autouse fixture for this file
+- Runtime behavior changed: NO
+
+### Validation
+- Exact previously timing-out class path after fix: PASS
+- A-030.4 targeted after fix: PASS (93 passed)
+- A-030 mini continuity after fix: bounded-window timeout (exit 124, progress to 22 percent)
+
+### Preservation Checks
+- Metrics unchanged
+- Anti-fake constraints unchanged
+- UCE-078 / UCE-093 remain deferred
+- No A-030.5 work
+- No L5/L6 claim
+
+### Final Decision
+- Decision: A-030.4.B1.R3 CLOSED - TARGETED TEST HANG REMEDIATED
+- Remaining continuity confirmation moved to R4
+
+### Next Action
+- next_action_id: A-030.4.B1.R4
+- R4 scope: Gate2/Gate3/Gate4 controlled continuity rerun and final confirmation.
