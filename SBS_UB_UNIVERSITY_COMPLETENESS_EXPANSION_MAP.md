@@ -9089,3 +9089,114 @@ Option A: One consolidated GET endpoint aggregating 11 existing provider L4 serv
 - current_stage: A-030.0-SPEC complete / backend-depth continuation selected after Wave 18 provider closure
 - last_completed_action_id: A-030.0-SPEC
 - next_action_id: A-030.1-SPEC
+
+---
+
+## A-030.1-SPEC — Brain Governance Foundation Batch Selection / Safety Contract
+
+### Source State (entering A-030.1-SPEC)
+
+- A-030.0-SPEC commit: a427fc2
+- message: docs(wave19): A-030.0-SPEC plan brain governance risk continuation
+- verdict at A-030.0-SPEC: CLOSED — PASS
+- next_action_id at A-030.0: A-030.1-SPEC (confirmed)
+- Brain governance selected as next backend-depth lane
+- A-031.0-SPEC deferred (not cancelled)
+
+### Brain Governance Candidate Inventory
+
+| UCE ID | Candidate | Type | Current State | Batch Decision |
+|---|---|---|---|---|
+| UCE-049 | student_risk_signal_registry | BRAIN_SIGNAL | L2_ENVELOPE_FOUNDATION (A-027.6) | BRAIN_GOVERNANCE_FOUNDATION_SELECTED_FOR_A0301 |
+| UCE-050 | finance_anomaly_signal_registry | BRAIN_SIGNAL | L2_ENVELOPE_FOUNDATION (A-027.6) | BRAIN_GOVERNANCE_FOUNDATION_SELECTED_FOR_A0301 |
+| UCE-051 | academic_quality_signal_registry | BRAIN_SIGNAL | L2_ENVELOPE_FOUNDATION (A-027.6) | BRAIN_GOVERNANCE_FOUNDATION_SELECTED_FOR_A0301 |
+| UCE-054 | brain_decision_audit_trail | AUDIT_EVIDENCE_CAPABILITY | L3_DETERMINISTIC_LOGIC (A-027.11) | BRAIN_GOVERNANCE_FOUNDATION_SELECTED_FOR_A0301 |
+| UCE-132 | curriculum_gap_signal_registry | BRAIN_SIGNAL | L2 (expansion registry base) | BRAIN_GOVERNANCE_FOUNDATION_SELECTED_FOR_A0301 |
+
+### Batch Strategy Option Matrix
+
+| Option | Count | Value | Risk | Effort | Recommended | Reason |
+|---|---:|---:|---:|---:|---|---|
+| A — Full 5-candidate Brain governance foundation | 5 | 5 | 2 | 3 | YES | Coherent Brain governance substrate; all candidates have existing L2/L3 base |
+| B — 3-candidate core signal batch | 3 | 4 | 2 | 2 | CONDITIONAL | Best if scope concerns arise |
+| C — Audit-first batch (UCE-054 only) | 1 | 2 | 1 | 1 | NO | Weakest standalone value |
+| D — Defer Brain, select policy/procurement | 3 | 3 | 2 | 2 | NO | Contradicts A-030.0 strategy |
+
+Selected: Option A — Full 5-candidate Brain governance foundation batch
+
+### Brain Governance Foundation Contract
+
+Common contract for all 5 candidates:
+- brain_governance_layer: FOUNDATION
+- brain_governance_version: A-030.1
+- signal_registry_mode: READINESS_AND_EVIDENCE_ONLY
+- execution_mode: NO_EXECUTION
+- llm_calls_enabled: False
+- model_provider_configured: False
+- autonomous_decision_enabled: False
+- action_execution_enabled: False
+- hidden_scoring_enabled: False
+- synthetic_score_enabled: False
+- human_review_required: True
+- no_brain_execution: True
+- no_llm_call: True
+- no_autonomous_action: True
+- no_sensitive_decision: True
+- no_procurement_decision: True
+- no_l5_claim: True
+- no_l6_claim: True
+
+### Candidate-Specific Target Runtime Maturity
+
+| UCE ID | Candidate | Target Maturity | Target Boundary |
+|---|---|---|---|
+| UCE-049 | student_risk_signal_registry | L3 deterministic signal governance readiness | NO_EXECUTION; evidence/taxonomy only |
+| UCE-050 | finance_anomaly_signal_registry | L3 deterministic signal governance readiness | NO_EXECUTION; evidence/taxonomy only |
+| UCE-051 | academic_quality_signal_registry | L3 deterministic signal governance readiness | NO_EXECUTION; evidence/taxonomy only |
+| UCE-054 | brain_decision_audit_trail | L4 read-only governance visibility deepening | NO_EXECUTION; audit category map only |
+| UCE-132 | curriculum_gap_signal_registry | L3 deterministic signal governance readiness | NO_EXECUTION; evidence/taxonomy only |
+
+### Expected Metric Movement After A-030.1-RUNTIME
+
+New Brain governance metric namespace (separate from all existing):
+- A0301_brain_governance_foundation_count = 5
+- brain_governance_foundation_count = 5
+- brain_execution_count = 0
+- brain_llm_call_count = 0
+- brain_autonomous_decision_count = 0
+- baseline_impact = 0
+- extension_impact = 0
+- ordinary_expansion_impact = 0
+- provider_readiness_impact = 0
+
+### Anti-Fake Review
+
+- no runtime code written: PASS
+- no Brain execution: PASS
+- no LLM calls: PASS
+- no autonomous action: PASS
+- no hidden scoring: PASS
+- no synthetic score: PASS
+- no provider live integration: PASS
+- no credentials: PASS
+- no sensitive decisions: PASS
+- no procurement decisions: PASS
+- baseline unchanged: PASS
+- extension unchanged: PASS
+- ordinary expansion unchanged: PASS
+- provider readiness preserved: PASS
+
+### Metric Preservation
+
+- provider metrics unchanged: 11/11/11/11/1 with all risk counters = 0
+- ordinary expansion unchanged: 67/67/50, remaining=17/10, L4=40/40/1/40
+- baseline unchanged: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+- extension unchanged: extension_total_count=25, total_tracked_modules=175
+
+### Final Decision
+
+- final_verdict: A-030.1-SPEC CLOSED — PASS
+- status: ready_for_A-030.1-RUNTIME
+- current_stage: A-030.1-SPEC complete / Brain governance foundation batch selected (5 candidates)
+- last_completed_action_id: A-030.1-SPEC
+- next_action_id: A-030.1-RUNTIME

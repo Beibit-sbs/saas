@@ -1,10 +1,10 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-030.1-SPEC
-    - current_stage: A-030.0-SPEC complete / backend-depth continuation selected after Wave 18 provider closure
-    - last_completed_action_id: A-030.0-SPEC
-    - next_action_id: A-030.1-SPEC
-    - updated_at: 2026-05-17 (A-030.0-SPEC executed as planning-only Brain/governance/risk lane continuation SPEC; strategic pivot from A-031.0-SPEC (demo not urgent) to A-030.1-SPEC (Brain governance foundation); A-031.0-SPEC deferred not cancelled; no runtime code changes; provider/baseline/extension/ordinary expansion counters unchanged; previous_next_action A-031.0-SPEC superseded by user clarification; Brain governance lane selected as next backend-depth focus)
+    - status: ready_for_A-030.1-RUNTIME
+    - current_stage: A-030.1-SPEC complete / Brain governance foundation batch selected (5 candidates)
+    - last_completed_action_id: A-030.1-SPEC
+    - next_action_id: A-030.1-RUNTIME
+    - updated_at: 2026-05-17 (A-030.1-SPEC executed as planning-only Brain governance foundation batch selection; Option A selected (UCE-049 UCE-050 UCE-051 UCE-054 UCE-132); full runtime safety contract defined; no runtime code changes; provider/baseline/extension/ordinary expansion counters unchanged; Brain governance metric namespace defined separately; expected A0301_brain_governance_foundation_count=5 brain_execution_count=0 brain_llm_call_count=0 brain_autonomous_decision_count=0 baseline_impact=0 extension_impact=0)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -13170,5 +13170,48 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - closure_decision: CLOSED_SPEC_PASS
     - final_verdict: A-030.0-SPEC CLOSED — PASS
     - next_action_id: A-030.1-SPEC
+
+- A-030.1-SPEC execution block:
+    - mode: planning_only_no_runtime_changes
+    - purpose: brain_governance_foundation_batch_selection_and_safety_contract
+    - action_type: SPEC
+    - source_of_truth_check: PASS (A-030.0-SPEC commit a427fc2 confirmed; all anchors intact; next_action_id was A-030.1-SPEC)
+    - runtime_implementation_started: NO
+    - selected_batch_option: Option_A_Full_5_candidate_Brain_governance_foundation
+    - selected_candidates: UCE-049_student_risk_signal_registry, UCE-050_finance_anomaly_signal_registry, UCE-051_academic_quality_signal_registry, UCE-054_brain_decision_audit_trail, UCE-132_curriculum_gap_signal_registry
+    - A0301_brain_governance_foundation_selected_count: 5
+    - brain_governance_layer: FOUNDATION
+    - brain_governance_version: A-030.1
+    - signal_registry_mode: READINESS_AND_EVIDENCE_ONLY
+    - execution_mode: NO_EXECUTION
+    - llm_calls_enabled: False
+    - model_provider_configured: False
+    - autonomous_decision_enabled: False
+    - action_execution_enabled: False
+    - hidden_scoring_enabled: False
+    - synthetic_score_enabled: False
+    - human_review_required: True
+    - candidate_target_maturity: UCE-049_L3, UCE-050_L3, UCE-051_L3, UCE-054_L4_governance_visibility_deepening, UCE-132_L3
+    - expected_A0301_brain_governance_foundation_count: 5
+    - expected_brain_execution_count: 0
+    - expected_brain_llm_call_count: 0
+    - expected_brain_autonomous_decision_count: 0
+    - expected_brain_action_execution_count: 0
+    - expected_brain_hidden_score_count: 0
+    - expected_brain_synthetic_score_count: 0
+    - expected_baseline_impact: 0
+    - expected_extension_impact: 0
+    - expected_ordinary_expansion_impact: 0
+    - expected_provider_readiness_impact: 0
+    - anti_fake_review: PASS (no code, no runtime, no Brain execution, no LLM calls, no credentials, no autonomous decisions, no action execution, no hidden scoring, no synthetic score, no sensitive decisions, no procurement decisions, no provider calls)
+    - metrics_arithmetic_check: PASS
+    - provider_readiness_metrics_preserved: provider_readiness_foundation_count=11, provider_l3_deterministic_logic_count=11, provider_l4_visibility_count=11, provider_l4_api_route_count=11, provider_l4_consolidated_summary_count=1, provider_live_call_count=0, provider_credentials_count=0, provider_external_submission_count=0, provider_connected_count=0, provider_sync_count=0
+    - ordinary_expansion_metrics_preserved: expansion_L2_foundation_count=67, expansion_runtime_implemented_count=67, expansion_L3_logic_count=50, remaining_L2_only=17, remaining_L3_not_L4=10, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, expansion_L4_consolidated_summary_count=1, expansion_L4_consolidated_candidate_count=40
+    - baseline_maturity_preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_preserved: extension_total_count=25, total_tracked_modules=175
+    - report_file: A-030.1-SPEC-BRAIN_GOVERNANCE_FOUNDATION_BATCH_SELECTION_REPORT.md
+    - closure_decision: CLOSED_SPEC_PASS
+    - final_verdict: A-030.1-SPEC CLOSED — PASS
+    - next_action_id: A-030.1-RUNTIME
 
 
