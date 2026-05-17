@@ -9329,3 +9329,124 @@ New Brain governance metric namespace (separate from all existing):
 - current_stage: A-030.1-RUNTIME complete / Brain governance foundation implemented
 - last_completed_action_id: A-030.1-RUNTIME
 - next_action_id: A-030.1.B1
+
+---
+
+## A-030.1.B1 — Brain Governance Foundation Quality Baseline
+
+### Quality Gate Purpose
+
+- validate A-030.1-RUNTIME stability with evidence-driven Docker gates
+- confirm Brain governance boundaries remain strict (NO_EXECUTION)
+- confirm metrics separation and non-movement across baseline/extension/ordinary/provider domains
+- produce controlled closure decision for the next strategic lane
+
+### Source State (entering A-030.1.B1)
+
+- A-030.1-RUNTIME commit: 6697816
+- A-030.1-SPEC commit: 0a6b7c1
+- status_before_B1: ready_for_A-030.1.B1
+- next_action_before_B1: A-030.1.B1
+
+### Implemented Brain Candidate Coverage (verified)
+
+| UCE ID | Candidate | Target Maturity | Implemented | Boundary |
+|---|---|---|---|---|
+| UCE-049 | student_risk_signal_registry | L3 deterministic signal governance logic | YES | NO_EXECUTION |
+| UCE-050 | finance_anomaly_signal_registry | L3 deterministic signal governance logic | YES | NO_EXECUTION |
+| UCE-051 | academic_quality_signal_registry | L3 deterministic signal governance logic | YES | NO_EXECUTION |
+| UCE-054 | brain_decision_audit_trail | L4 read-only governance visibility | YES | NO_EXECUTION |
+| UCE-132 | curriculum_gap_signal_registry | L3 deterministic signal governance logic | YES | NO_EXECUTION |
+
+### Brain Governance Contract Verification
+
+- brain_governance_layer=FOUNDATION: PASS
+- brain_governance_version=A-030.1: PASS
+- signal_registry_mode=READINESS_AND_EVIDENCE_ONLY: PASS
+- execution_mode=NO_EXECUTION: PASS
+- llm_calls_enabled=False: PASS
+- model_provider_configured=False: PASS
+- autonomous_decision_enabled=False: PASS
+- action_execution_enabled=False: PASS
+- hidden_scoring_enabled=False: PASS
+- synthetic_score_enabled=False: PASS
+- human_review_required=True: PASS
+- tenant_scoped/read_only/no_mutation: PASS
+- no_brain_execution/no_llm_call/no_autonomous_action: PASS
+- no_auto_approval/no_auto_rejection: PASS
+- no_sensitive_decision/no_procurement_decision: PASS
+- no_l5_claim/no_l6_claim: PASS
+
+### Gate Results
+
+- A-030.1 targeted regression: PASS (315 passed, 1 warning)
+- A-030/A-029 continuity: PASS (1355 passed, 29 skipped, 1 warning)
+- A-028 combined pack: PASS (2312 passed, 42 warnings)
+- A-027 continuity pack: PASS (1268 passed, 1 warning)
+- LDAP smoke: PASS (2 passed, 1 warning)
+- tenant/security slice: PASS (56 passed, 1 warning)
+- optional full backend: FULL_BACKEND_NOT_RUN_IN_A0301B1
+- git diff --check: PASS
+
+### Forbidden Scan Results (A-030.1 commit scope)
+
+- external/LLM/provider scan: PASS (TEST_ASSERTION only)
+- credential/secret scan: PASS (ACCEPTED_BOUNDARY_TEXT + TEST_ASSERTION only)
+- DB mutation scan: PASS (TEST_ASSERTION only)
+- Brain execution/autonomy scan: PASS (ACCEPTED_BOUNDARY_TEXT + TEST_ASSERTION only)
+- score/recommendation scan: PASS (ACCEPTED_BOUNDARY_TEXT + EXPECTED_FORBIDDEN_ACTION + TEST_ASSERTION only)
+- route/frontend scan: PASS (TEST_ASSERTION only)
+- blocking findings: NONE
+
+### Brain Metrics (unchanged)
+
+- A0301_brain_governance_foundation_count=5
+- brain_governance_foundation_count=5
+- brain_execution_count=0
+- brain_llm_call_count=0
+- brain_autonomous_decision_count=0
+- brain_action_execution_count=0
+- brain_hidden_score_count=0
+- brain_synthetic_score_count=0
+- baseline_impact=0
+- extension_impact=0
+- ordinary_expansion_impact=0
+- provider_readiness_impact=0
+
+### Baseline/Extension/Ordinary/Provider Non-Movement
+
+- baseline unchanged: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+- extension unchanged: extension_total_count=25, total_tracked_modules=175
+- ordinary expansion unchanged: 67/67/50, remaining=17/10, L4=40/40/1/40
+- provider readiness unchanged: 11/11/11/11/1 and risk counters=0
+
+### Anti-Fake Review
+
+- no runtime feature code in B1: PASS
+- no Brain execution: PASS
+- no LLM/provider calls: PASS
+- no autonomous/action execution: PASS
+- no hidden/synthetic scoring: PASS
+- no recommendation execution: PASS
+- no sensitive/procurement decision execution: PASS
+- no provider live integration/external submission: PASS
+- no baseline/extension/ordinary/provider metric inflation: PASS
+- Brain metrics separated from other namespaces: PASS
+
+### Closure Decision
+
+- decision: A-030.1.B1 CLOSED — SCOPED BRAIN GOVERNANCE FOUNDATION QUALITY BASELINE CONFIRMED
+- reason: all required scoped gates PASS, no blocking findings, metrics unchanged
+- limitations: full backend regression not run in B1 scope
+
+### Selected Next Action
+
+- selected_next_action: A-030.2-SPEC
+- rationale: proceed with lane breadth via Policy/Procurement Readiness Foundation after Brain foundation baseline confirmation
+
+### Final Status
+
+- status: ready_for_A-030.2-SPEC
+- current_stage: A-030.1.B1 complete / Brain governance foundation quality baseline confirmed
+- last_completed_action_id: A-030.1.B1
+- next_action_id: A-030.2-SPEC
