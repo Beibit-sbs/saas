@@ -8663,3 +8663,136 @@ Option A: One consolidated GET endpoint aggregating 11 existing provider L4 serv
 - current_stage: A-029.11-SPEC complete / provider L4 consolidated summary quality baseline selected
 - last_completed_action_id: A-029.11-SPEC
 - next_action_id: A-029.11.B1
+
+## A-029.11.B1 — Provider L4 Consolidated Summary Quality Baseline / Wave 18 Closure
+
+### Closure Gate Purpose
+
+- purpose: execute mandatory quality baseline closure gate after A-029.10-RUNTIME implementation and A-029.10.R1 map reconciliation
+- mode: validation/reporting only
+- runtime_code_changes: none
+
+### Source State
+
+- source_spec: A-029.11-SPEC (commit 82163f2)
+- source_runtime: A-029.10-RUNTIME (commit fa825c1)
+- source_reconciliation: A-029.10.R1 (commit 83cdb37)
+- source_of_truth_continuity: PASS
+
+### A-029 Evidence Chain
+
+| Action | Type | Commit | Scope | Result |
+|---|---|---|---|---|
+| A-029.0-SPEC | SPEC | 3a8a902 | provider/Brain/risk lane planning | PASS |
+| A-029.1-SPEC | SPEC | fe178aa | risk lane map | PASS |
+| A-029.2-SPEC | SPEC | a4682c1 | provider batch 1 spec | PASS |
+| A-029.2-RUNTIME | RUNTIME | dea92c5 | provider L2 batch 1 | PASS |
+| A-029.3-SPEC | SPEC | 8941540 | provider batch 2 spec | PASS |
+| A-029.3-RUNTIME | RUNTIME | 056e2f5 | provider L2 batch 2 | PASS |
+| A-029.4-SPEC | SPEC | ef74de5 | L2 consolidation | PASS |
+| A-029.4.B1 | QUALITY | cc1641b | L2 quality baseline | PASS |
+| A-029.5-SPEC | SPEC | 9b2f78b | L3 logic spec | PASS |
+| A-029.5-RUNTIME | RUNTIME | cb26afb | L3 deterministic logic | PASS |
+| A-029.6-SPEC | SPEC | a4b0c2e | L3 quality baseline spec | PASS |
+| A-029.6.B1 | QUALITY | 3fcbff9 | L3 quality baseline | PASS |
+| A-029.7-SPEC | SPEC | 23ba595 | L4 summaries spec | PASS |
+| A-029.7-RUNTIME | RUNTIME | 511bbb3 | L4 service summaries | PASS |
+| A-029.8-SPEC | SPEC | 61d8166 | L4 API routes spec | PASS |
+| A-029.8-RUNTIME | RUNTIME | 019bc81 | L4 API routes | PASS |
+| A-029.9-SPEC | SPEC | e5a0666 | L4 API quality spec | PASS |
+| A-029.9.B1 | QUALITY | 865463e | L4 API baseline | PASS |
+| A-029.10-SPEC | SPEC | 1627eaf | consolidated endpoint spec | PASS |
+| A-029.10-RUNTIME | RUNTIME | fa825c1 | consolidated endpoint | PASS |
+| A-029.10.R1 | DOCS | 83cdb37 | map reconciliation | PASS |
+| A-029.11-SPEC | SPEC | 82163f2 | Wave 18 closure baseline spec | PASS |
+
+### Provider Lane Coverage Review
+
+| Layer | Count | Status |
+|---|---:|---|
+| Provider L2 foundation | 11 | COMPLETE |
+| Provider L2 quality baseline | 1 | COMPLETE |
+| Provider L3 deterministic logic | 11 | COMPLETE |
+| Provider L3 quality baseline | 1 | COMPLETE |
+| Provider L4 service summaries | 11 | COMPLETE |
+| Provider L4 API routes | 11 | COMPLETE |
+| Provider L4 API quality baseline | 1 | COMPLETE |
+| Provider L4 consolidated endpoint | 1 | COMPLETE |
+| Expansion map reconciliation | 1 | COMPLETE |
+| Live provider calls | 0 | LOCKED_ZERO |
+| Credentials configured | 0 | LOCKED_ZERO |
+| External submissions | 0 | LOCKED_ZERO |
+| Connected claims | 0 | LOCKED_ZERO |
+| Sync claims | 0 | LOCKED_ZERO |
+
+### Consolidated Endpoint Review
+
+- endpoint: GET /api/admin/provider-readiness/l4/summary
+- permission: admin.expansion.read
+- boundary: NON_LIVE_READINESS
+- aggregation: direct service calls, no internal HTTP forwarding
+
+### Required Gate Results
+
+- Gate 1 (A-029.10 targeted): FAIL (401 Unauthorized and path integrity FileNotFoundError in test_a02910 suite)
+- Gate 2 (A-029 provider continuity): FAIL (6 failed, 997 passed, 29 skipped, 36 errors)
+- Gate 3 (A-029/A-028 continuity): FAIL (6 failed, 1628 passed, 29 skipped, 36 errors)
+- Gate 4 (A-028 combined): PASS (2312 passed)
+- Gate 5 (A-027 continuity): PASS (1268 passed)
+- Gate 6 (LDAP smoke): PASS (2 passed)
+- Gate 7 (tenant/security bounded): PASS (56 passed)
+- Gate 8 optional full backend: NOT_RUN (FULL_BACKEND_NOT_RUN_IN_A02911B1 due mandatory failures)
+
+### Forbidden and Safety Scans
+
+- external calls scan: NON_BLOCKING_EXISTING_NON_SCOPE_CODE
+- credential/secret scan: NON_BLOCKING_EXISTING_NON_SCOPE_CODE
+- DB mutation scan: NON_BLOCKING_EXISTING_NON_SCOPE_CODE
+- fake provider status token scan: NON_BLOCKING_EXISTING_NON_SCOPE_CODE
+- Brain/autonomy token scan: NON_BLOCKING_EXISTING_NON_SCOPE_CODE
+- mutation route decorator scan: NON_BLOCKING_EXISTING_NON_SCOPE_CODE
+- internal HTTP forwarding scan: NON_BLOCKING_EXISTING_NON_SCOPE_CODE
+- synthetic score token scan: NON_BLOCKING_EXISTING_NON_SCOPE_CODE
+- blocking result in B1 scope: NONE_NEW_FROM_B1
+
+### Metrics Preservation
+
+- provider_readiness_foundation_count = 11
+- provider_l3_deterministic_logic_count = 11
+- provider_l4_visibility_count = 11
+- provider_l4_api_route_count = 11
+- provider_l4_consolidated_summary_count = 1
+- provider_live_call_count = 0
+- provider_credentials_count = 0
+- provider_external_submission_count = 0
+- provider_connected_count = 0
+- provider_sync_count = 0
+- expansion_L4_visibility_count = 40
+- expansion_L4_api_route_count = 40
+- expansion_L4_consolidated_summary_count = 1
+- expansion_L4_consolidated_candidate_count = 40
+- expansion_L3_logic_count = 50
+- remaining_L3_not_L4 = 10
+- remaining_L2_only = 17
+- baseline L0/L1/L2/L3/L4/L5/L6 total unchanged at 150
+- extension_total_count unchanged at 25
+- total_tracked_modules unchanged at 175
+- baseline_impact = 0
+- extension_impact = 0
+
+### Limitations / Deferred Gates
+
+- full backend optional gate not executed after mandatory gate failures
+
+### Final Closure Decision
+
+- final_verdict: A-029.11.B1 BLOCKED — mandatory gate failures in provider consolidated suite (401 Unauthorized + path integrity mismatch)
+- status: blocked_A-029.11.B1
+- current_stage: A-029.11.B1 blocked / remediation required before closure
+- last_completed_action_id: A-029.11-SPEC
+- next_action_id: A-029.11.B1.R1
+
+### Selected Next Strategic Action
+
+- selected_next_action: A-029.11.B1.R1
+- reason: mandatory gate failures require scoped remediation before any post-Wave-18 strategic branch
