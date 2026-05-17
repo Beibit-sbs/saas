@@ -10792,3 +10792,41 @@ Reason:
 
 ### Report Link
 - report_file: A-030.4.B1.R4-DISCIPLINARY_CONTINUITY_REVALIDATION_AFTER_HANG_FIX_REPORT.md
+
+## A-030.4.B1.R5 - A-030.3 Sensitive-Domain Test Hang Remediation
+
+**Status**: BLOCKED (A-030.3 remediated; bounded mini continuity now blocked at A-030.2 path)
+
+### R4 Blocker Carry-Forward
+- R4 blocker was a bounded timeout in tests/test_a0303_sensitive_domain_readiness_foundation.py during controlled split continuity.
+
+### A-030.3 Hang Isolation
+- collect-only: PASS (189 collected)
+- verbose/class isolation under bounds: timeout behavior reproduced without a single intrinsic failing test
+- single-test discriminator: PASS
+- classification: TEST_FIXTURE_HANG / cumulative test-harness overhead
+
+### Remediation
+- Type: test-harness only
+- File changed: backend/tests/test_a0303_sensitive_domain_readiness_foundation.py
+- Action: module-local autouse fixture override for reset_shared_state
+- Runtime behavior changed: NO
+
+### Validation
+- A-030.3 targeted after fix: PASS (189 passed, 1 warning)
+- A-030.4 targeted safety: PASS (93 passed, 1 warning)
+- A-030.4 + A-030.3 pair: PASS (282 passed, 1 warning)
+- A-030 mini continuity (A-030.4 + A-030.3 + A-030.2 + A-030.1): TIMEOUT (exit 124)
+- Post-fix discriminator located remaining bounded-window blocker at A-030.2 path.
+
+### Preservation Checks
+- Metrics unchanged
+- Anti-fake preserved
+- Deferred UCE-078/UCE-093 preserved
+- No new runtime claim
+- No A-030.5 claim
+- No L5/L6 claim
+
+### Next Action
+- next_action_id: A-030.4.B1.R6
+- Scope: continue bounded continuity recovery from post-R5 state, starting with A-030.2 timeout-path isolation.

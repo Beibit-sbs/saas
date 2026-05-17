@@ -29,6 +29,18 @@ from backend.app.modules.disability_support_services.service import get_disabili
 from backend.app.modules.student_financial_hardship.service import get_student_financial_hardship_sensitive_readiness_foundation
 
 
+@pytest.fixture(autouse=True)
+def reset_shared_state(monkeypatch):
+    """Module-local harness override.
+
+    The global autouse fixture in conftest performs a full platform state reset
+    before every test, which is unnecessary for this pure read-only contract file
+    and can trigger timeout-based false hang classification under bounded Docker runs.
+    """
+    monkeypatch.setenv("RBAC_ALLOW_DEV_FALLBACK", "true")
+    yield
+
+
 SELECTED_CANDIDATES = [
     ("UCE-038", "student_appeals_workflow", get_student_appeals_sensitive_readiness_foundation),
     ("UCE-081", "disability_support_services", get_disability_support_sensitive_readiness_foundation),
