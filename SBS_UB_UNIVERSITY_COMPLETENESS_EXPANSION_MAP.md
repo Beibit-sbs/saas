@@ -8874,3 +8874,96 @@ Option A: One consolidated GET endpoint aggregating 11 existing provider L4 serv
 - current_stage: A-029.11.B1.R1 complete / blockers remediated and mandatory gates passing
 - last_completed_action_id: A-029.11.B1.R1
 - next_action_id: A-029.11.B1.R2
+
+## A-029.11.B1.R2 — Wave 18 Provider Lane Closure Revalidation
+
+### Closure Purpose
+
+- purpose: clean Wave 18 provider lane closure revalidation after A-029.11.B1.R1 remediation
+- mode: validation/reporting only
+- runtime implementation in R2: none
+
+### Source State from R1
+
+- remediation anchor: A-029.11.B1.R1 commit `4e041ae`
+- blocked baseline anchor: A-029.11.B1 commit `d7e80a7`
+- consolidated runtime anchor: A-029.10-RUNTIME commit `fa825c1`
+- next_action before R2: `A-029.11.B1.R2`
+
+### R1 Remediation Review
+
+- 401 Unauthorized: remediated by JWT `create_access_token` auth header pattern with `admin.expansion.read`
+- missing `mocker` fixture: remediated by removing mocker dependency
+- path-integrity FileNotFoundError: remediated by robust pathlib route file resolution
+
+### Wave 18 Provider Evidence Chain (Closure Context)
+
+| Action | Type | Commit | Result |
+|---|---|---|---|
+| A-029.10-RUNTIME | RUNTIME | fa825c1 | PASS |
+| A-029.10.R1 | DOCS | 83cdb37 | PASS |
+| A-029.11-SPEC | SPEC | 82163f2 | PASS |
+| A-029.11.B1 | QUALITY | d7e80a7 | BLOCKED |
+| A-029.11.B1.R1 | REMEDIATION | 4e041ae | PASS |
+| A-029.11.B1.R2 | QUALITY | pending-this-action | PASS |
+
+### Provider Lane Coverage
+
+| Layer | Count | Status |
+|---|---:|---|
+| Provider L2 foundation | 11 | COMPLETE |
+| Provider L2 quality baseline | 1 | COMPLETE |
+| Provider L3 deterministic logic | 11 | COMPLETE |
+| Provider L3 quality baseline | 1 | COMPLETE |
+| Provider L4 service summaries | 11 | COMPLETE |
+| Provider L4 API routes | 11 | COMPLETE |
+| Provider L4 API quality baseline | 1 | COMPLETE |
+| Provider L4 consolidated endpoint | 1 | COMPLETE |
+| Consolidated endpoint remediation | 1 | COMPLETE |
+| Expansion map reconciliation | 1 | COMPLETE |
+| Live provider calls | 0 | LOCKED_ZERO |
+| Credentials configured | 0 | LOCKED_ZERO |
+| External submissions | 0 | LOCKED_ZERO |
+| Connected claims | 0 | LOCKED_ZERO |
+| Sync claims | 0 | LOCKED_ZERO |
+
+### Gate Results
+
+- Gate 1 A-029.10 targeted: PASS (`51 passed, 1 warning`)
+- Gate 2 A-029 provider continuity: PASS (`1040 passed, 29 skipped, 1 warning`)
+- Gate 3 A-029/A-028 continuity: PASS (`1671 passed, 29 skipped, 1 warning`)
+- Gate 4 A-028 combined: PASS (`2312 passed, 42 warnings`)
+- Gate 5 A-027 continuity: PASS (`1268 passed, 1 warning`)
+- Gate 6 LDAP smoke: PASS (`2 passed, 1 warning`)
+- Gate 7 tenant/security slice: PASS (`56 passed, 1 warning`)
+- Gate 8 optional full backend: NOT_RUN (`FULL_BACKEND_NOT_RUN_IN_A02911B1R2`)
+
+### Forbidden Scan Results
+
+- platform-wide focused scans produced broad legacy token hits outside provider closure scope
+- classification: NON_BLOCKING_EXISTING_NON_SCOPE_CODE / EXPECTED_FALSE_FLAG
+- provider route scoped check (`backend/app/modules/provider_readiness/router.py`):
+	- no external HTTP forwarding
+	- no mutation route decorators
+	- no synthetic score behavior
+	- no credential or live-call behavior
+
+### Metric Preservation
+
+- provider metrics unchanged: `11/11/11/11` with risk counters all zero
+- ordinary expansion unchanged: `67/67/50`, `remaining=17/10`, `L4=40/40/1/40`
+- baseline unchanged: `L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150`
+- extension unchanged: `extension_total_count=25`, `total_tracked_modules=175`
+
+### Final Closure Decision
+
+- final_verdict: A-029.11.B1.R2 CLOSED - SCOPED WAVE 18 PROVIDER LANE QUALITY BASELINE CONFIRMED
+- status: ready_for_A-031.0-SPEC
+- current_stage: A-029.11.B1.R2 complete / Wave 18 provider lane closure confirmed
+- last_completed_action_id: A-029.11.B1.R2
+- next_action_id: A-031.0-SPEC
+
+### Selected Next Strategic Action
+
+- selected_next_action: A-031.0-SPEC
+- reason: package validated Wave 17/Wave 18 backend evidence for product/demo/QS without new runtime risk
