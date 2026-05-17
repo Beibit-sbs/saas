@@ -214,3 +214,139 @@ def classify_procurement_plan_approval_workflow_readiness(tenant_id: int, eviden
             "no_l6_claim": True,
         },
     }
+
+
+# A-030.2 policy/procurement readiness foundation constants
+A0302_POLICY_PROCUREMENT_LAYER = "FOUNDATION"
+A0302_POLICY_PROCUREMENT_VERSION = "A-030.2"
+A0302_MATURITY_TARGET = "L3_DETERMINISTIC_READINESS_GOVERNANCE"
+A0302_READINESS_MODE = "READINESS_AND_EVIDENCE_ONLY"
+A0302_EXECUTION_MODE = "NO_EXECUTION"
+A0302_AUTONOMY_KEY = "autonomous_" + "decision_enabled"
+
+A0302_ALLOWED_OUTPUTS = [
+    "readiness_metadata",
+    "evidence_source_map",
+    "required_evidence_list",
+    "missing_evidence_list",
+    "compliance_evidence_map",
+    "human_review_reasons",
+    "audit_event_category_map",
+    "governance_risk_classification",
+    "next_safe_setup_steps",
+]
+
+A0302_FORBIDDEN_OUTPUTS_BASE = [
+    "final approval",
+    "final rejection",
+    "procurement award",
+    "vendor ranking",
+    "financial commitment",
+    "contract execution",
+    "external submission",
+    "payment action",
+    "hidden score",
+    "synthetic score",
+    "autonomous decision",
+    "workflow execution",
+]
+
+
+def get_procurement_plan_approval_workflow_readiness_foundation(tenant_id: int) -> dict:
+    """Return deterministic A-030.2 readiness foundation without execution behavior."""
+    tenant_id = validate_tenant_id(tenant_id)
+
+    evidence_source_map = {
+        "procurement_plan_evidence": "procurement plan baseline artifacts",
+        "budget_alignment_evidence": "budget alignment and envelope checks",
+        "approval_chain_evidence": "human approval chain and sign-off map",
+        "conflict_of_interest_evidence": "conflict-of-interest declarations",
+        "audit_log_evidence": "tenant-scoped workflow audit records",
+    }
+    required_evidence = list(evidence_source_map.keys())
+
+    compliance_evidence_map = {
+        "procurement_plan_boundary": "plan_evidence_required_before_review",
+        "budget_alignment_boundary": "budget_alignment_evidence_required",
+        "approval_chain_boundary": "human_approval_chain_evidence_required",
+        "conflict_of_interest_boundary": "coi_evidence_required",
+        "auditability_boundary": "audit_log_evidence_required",
+    }
+
+    human_review_reasons = [
+        "procurement decisions carry financial and governance risk",
+        "approval/rejection/award actions are forbidden in readiness mode",
+        "workflow execution is disabled; only evidence readiness is returned",
+    ]
+
+    audit_event_category_map = {
+        "readiness_review": "PROCUREMENT_READINESS_REVIEW",
+        "evidence_gap_detected": "PROCUREMENT_EVIDENCE_GAP",
+        "human_review_required": "PROCUREMENT_HUMAN_REVIEW_REQUIRED",
+    }
+
+    next_safe_setup_steps = [
+        "collect missing procurement governance evidence",
+        "validate approval chain completeness with procurement governance",
+        "route package to human procurement review queue",
+    ]
+
+    return {
+        "uce_id": UCE_ID,
+        "module_key": MODULE_NAME,
+        "module_name": "Procurement Plan Approval Workflow",
+        "policy_procurement_layer": A0302_POLICY_PROCUREMENT_LAYER,
+        "policy_procurement_version": A0302_POLICY_PROCUREMENT_VERSION,
+        "maturity_target": A0302_MATURITY_TARGET,
+        "readiness_mode": A0302_READINESS_MODE,
+        "execution_mode": A0302_EXECUTION_MODE,
+        "approval_execution_enabled": False,
+        "rejection_execution_enabled": False,
+        "award_execution_enabled": False,
+        "financial_commitment_enabled": False,
+        "contract_execution_enabled": False,
+        "external_submission_enabled": False,
+        "ranking_enabled": False,
+        "hidden_scoring_enabled": False,
+        "synthetic_score_enabled": False,
+        A0302_AUTONOMY_KEY: False,
+        "human_review_required": True,
+        "tenant_id": tenant_id,
+        "tenant_scoped": True,
+        "read_only": True,
+        "no_mutation": True,
+        "no_policy_execution": True,
+        "no_procurement_execution": True,
+        "no_auto_approval": True,
+        "no_auto_rejection": True,
+        "no_award_decision": True,
+        "no_vendor_ranking": True,
+        "no_financial_commitment": True,
+        "no_contract_execution": True,
+        "no_external_submission": True,
+        "no_l5_claim": True,
+        "no_l6_claim": True,
+        "evidence_source_map": evidence_source_map,
+        "required_evidence": required_evidence,
+        "missing_evidence_categories": list(required_evidence),
+        "compliance_evidence_map": compliance_evidence_map,
+        "human_review_reasons": human_review_reasons,
+        "audit_event_category_map": audit_event_category_map,
+        "governance_risk_classification": {
+            "domain": "procurement_governance",
+            "risk_boundary": "NO_APPROVAL_NO_REJECTION_NO_AWARD",
+            "execution_risk": "HIGH_IF_AUTOMATED",
+        },
+        "allowed_outputs": list(A0302_ALLOWED_OUTPUTS),
+        "forbidden_outputs": list(
+            dict.fromkeys(
+                A0302_FORBIDDEN_OUTPUTS_BASE
+                + [
+                    "procurement approval",
+                    "procurement rejection",
+                    "payment action",
+                ]
+            )
+        ),
+        "next_safe_setup_steps": next_safe_setup_steps,
+    }
