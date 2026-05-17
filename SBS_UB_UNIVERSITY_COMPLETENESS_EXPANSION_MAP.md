@@ -10138,3 +10138,239 @@ All 3 functions:
 - current_stage: A-030.3.B1 complete / Sensitive-domain readiness foundation quality baseline confirmed
 - last_completed_action_id: A-030.3.B1
 - next_action_id: A-030.4-SPEC
+
+## A-030.4-SPEC — Remaining Sensitive-Domain Deferred Batch Planning
+
+### Planning Purpose
+
+- Plan remaining 3 deferred sensitive-domain candidates after A-030.3.B1 baseline
+- Classify deferred candidates by legal/ethical risk
+- Decide optimal batch strategy for implementation
+- Define enhanced safety contracts for disciplinary, academic integrity, academic appeals governance
+- Prepare runtime specification for A-030.4-RUNTIME
+
+### Source State (A-030.3.B1 Verified)
+
+- A-030.3.B1 commit: 22d3647 (CLOSED — PASS)
+- A-030.3-RUNTIME commit: 0e78070 (CLOSED — PASS)
+- Implemented sensitive-domain foundation: 3 (UCE-038, UCE-081, UCE-082)
+- Deferred sensitive-domain candidates: 3 (UCE-007, UCE-078, UCE-093)
+- Quality gate tests: 1838+ PASS
+- Forbidden scans: 8/8 CLEAN
+- Sensitive-domain metrics: foundation_count=3, all execution counters=0
+
+### Implemented Sensitive-Domain Foundation Coverage
+
+| UCE ID | Candidate | Status | Verified |
+|---|---|---|---|
+| UCE-038 | student_appeals_workflow | IMPLEMENTED | ✅ A-030.3.B1 |
+| UCE-081 | disability_support_services | IMPLEMENTED | ✅ A-030.3.B1 |
+| UCE-082 | student_financial_hardship | IMPLEMENTED | ✅ A-030.3.B1 |
+
+### Deferred Sensitive-Domain Candidate Inventory
+
+| UCE ID | Candidate | Type | Risk | Batch Decision |
+|---|---|---|---|---|
+| UCE-007 | disciplinary_case_management | NEW_MODULE | HIGH | **SELECTED_FOR_A0304_RUNTIME** |
+| UCE-078 | academic_integrity_case_management | NEW_MODULE | HIGH | DEFERRED_AFTER_A0304_SPEC |
+| UCE-093 | academic_appeals_workflow | WORKFLOW | HIGH | DEFERRED_AFTER_A0305_SPEC |
+
+### Deferred Candidate Risk Classification
+
+**UCE-007 disciplinary_case_management**:
+- Core risk: Sanction authority, conduct finding, disciplinary outcome, student status impact
+- Boundary: Evidence/readiness only, human review, legal review, appeal boundary, audit trail
+- Risk level: HIGH
+
+**UCE-078 academic_integrity_case_management**:
+- Core risk: Integrity finding, grade penalty, academic sanction, academic record impact
+- Boundary: Evidence/readiness only, human review, fairness review, legal review, appeal boundary
+- Risk level: HIGH
+
+**UCE-093 academic_appeals_workflow**:
+- Core risk: Appeal decision, academic outcome change, notification execution
+- Boundary: Evidence/readiness only, independent reviewer, appeal deadline, audit trail
+- Risk level: HIGH
+
+### Batch Strategy Options
+
+| Option | Candidates | Value | Risk | Effort | Recommended |
+|---|---|---|---|---|---|
+| A | Full 3-candidate (UCE-007+078+093) | 5 | 5 | 4 | CONDITIONAL |
+| B | One-by-one staged (UCE-007 first) | 4 | 3 | 5 | **YES — SELECTED** |
+| C | Academic pair (UCE-078+093) | 4 | 4 | 4 | NO |
+| D | Appeals-only (UCE-093) | 3 | 3 | 2 | CONDITIONAL |
+| E | Defer all sensitive | 0 | 5 | 3 | NO |
+
+### Selected Strategy
+
+**Decision**: ✅ **Option B — One-by-one Staged Sensitive Continuation**
+
+**Rationale**:
+- A-030.4-RUNTIME: UCE-007 disciplinary_case_management
+- A-030.5-SPEC/RUNTIME: UCE-078 academic_integrity_case_management (after A-030.4 proven safe)
+- A-030.6-SPEC/RUNTIME: UCE-093 academic_appeals_workflow (after A-030.5 proven safe)
+
+**Why B over A (full batch)**:
+- Three simultaneous high-risk boundaries increase correlated failure risk
+- Narrower scope per action = easier testing and remediation
+- Sequential validation gates improve safety
+
+**Why UCE-007 first**:
+- Highest institutional impact (conduct policy, HR boundaries)
+- Builds disciplinary foundation before academic appeals
+- Disciplinary completion creates precedent for academic governance boundaries
+
+### Common Deferred-Sensitive Foundation Contract
+
+Applied to all future deferred-sensitive candidates:
+- sensitive_domain_layer = FOUNDATION
+- sensitive_domain_version = A-030.4 (or A-030.5/A-030.6 for future)
+- readiness_mode = READINESS_AND_EVIDENCE_ONLY
+- execution_mode = NO_EXECUTION
+- human_review_required = True
+- appeal_boundary_required = True
+- audit_trail_required = True
+- fairness_review_required = True
+- legal_review_required = True
+- All 14 execution flags = False
+- All 18 anti-fake flags = True
+
+**Allowed outputs**: Evidence, metadata, readiness classification, boundaries, checkpoints
+**Forbidden outputs**: Decisions, outcomes, sanctions, scores, recommendations
+
+### UCE-007 Disciplinary Case Management Contract (A-030.4-RUNTIME)
+
+**Module**: disciplinary_case_management
+**Target maturity**: L3 deterministic readiness governance
+
+**Evidence sources**: case_record, policy_reference, hearing_notice, respondent_statement, reviewer_assignment, audit_log
+
+**Boundaries**:
+- disciplinary_policy_boundary
+- hearing_notice_boundary
+- respondent_response_boundary
+- independent_reviewer_boundary
+- appeal_rights_boundary
+- auditability_boundary
+
+**Fairness checkpoints**: reviewer_independence, conflict_of_interest, evidence_completeness, proportionality, equal_treatment
+
+**Legal checkpoints**: policy_basis, due_process_notice, record_retention, appeal_rights_notice
+
+**Governance risk**: NO_SANCTION_NO_DISCIPLINARY_OUTCOME
+
+**Forbidden outputs**: sanction, guilt_finding, disciplinary_decision, disciplinary_outcome, student_status_change, notification_execution, hidden_conduct_score, recommendation
+
+### Future UCE-078 Academic Integrity Boundary (A-030.5-SPEC)
+
+**Governance risk**: NO_INTEGRITY_FINDING_NO_GRADE_PENALTY
+- Core risk: Integrity finding, grade penalty, academic record impact
+- Boundary: Evidence/readiness, human review, fairness review, legal review
+- Status: DEFERRED_AFTER_A0304_SPEC
+- Reason: Implement disciplinary foundation first, then academic boundaries
+
+### Future UCE-093 Academic Appeals Boundary (A-030.6-SPEC)
+
+**Governance risk**: NO_APPEAL_APPROVAL_NO_APPEAL_REJECTION_NO_OUTCOME_CHANGE
+- Core risk: Appeal decision, academic outcome change, academic record impact
+- Boundary: Evidence/readiness, independent reviewer, appeal deadline, audit trail
+- Status: DEFERRED_AFTER_A0305_SPEC
+- Reason: Implement academic integrity first, then appeals governance
+
+### Expected A-030.4-RUNTIME Files
+
+**Service implementation** (if approved):
+- backend/app/modules/disciplinary_case_management/service.py
+- Function: get_disciplinary_sensitive_readiness_foundation(tenant_id)
+
+**Test file**:
+- backend/tests/test_a0304_disciplinary_sensitive_readiness_foundation.py
+- Coverage: 80–160 assertions
+
+**Documentation**:
+- SBS_UB.md (A-030.4-RUNTIME section)
+- SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md (A-030.4-RUNTIME section)
+- A-030.4-RUNTIME-DISCIPLINARY_SENSITIVE_READINESS_FOUNDATION_REPORT.md
+
+### Expected Test Plan (A-030.4-RUNTIME)
+
+**Test groups** (45+ assertions):
+1. Import validation (3)
+2. Deterministic output (3)
+3. Fail-closed tenant validation (5)
+4. Common contract fields (25)
+5. Execution flags (14)
+6. Anti-fake flags (18)
+7. Evidence source map (6)
+8. Appeal boundary map (6)
+9. Fairness checkpoints (5)
+10. Legal checkpoints (4)
+11. Forbidden outputs (8)
+12. Allowed outputs (8)
+13. External calls scan (3)
+14. Credentials scan (3)
+15. DB mutation scan (3)
+16. Routes scan (3)
+17. Frontend scan (3)
+18. Metrics verification (8)
+
+**Total**: 80–160 assertions expected
+
+### Expected Metric Movement (A-030.4-RUNTIME)
+
+**A-030.4-SPEC** (planning only):
+- No runtime metrics change
+
+**Expected future A-030.4-RUNTIME**:
+- A0304_sensitive_deferred_foundation_count = 1
+- A0304_disciplinary_sensitive_foundation_count = 1
+- sensitive_domain_foundation_count = 4 cumulative (if cumulative tracking)
+- All execution/outcome/scoring counters = 0
+- Baseline/extension/ordinary/provider/Brain/policy metrics UNCHANGED
+
+### Baseline / Extension / Ordinary Expansion Separation Review
+
+- Baseline (150): UNCHANGED ✓
+- Extension (25): UNCHANGED ✓
+- Ordinary expansion (67/50/40): UNCHANGED ✓
+- All metrics isolated from sensitive-domain namespace ✓
+
+### Provider / Brain / Policy Metrics Preservation
+
+- Provider readiness (11): UNCHANGED ✓
+- Brain governance (5): UNCHANGED ✓
+- Policy/procurement (3): UNCHANGED ✓
+- All metrics isolated from sensitive-domain namespace ✓
+
+### Anti-Fake Review
+
+- ✓ No code written (SPEC-only)
+- ✓ No sensitive execution
+- ✓ No disciplinary execution
+- ✓ No sanction/guilt finding/disciplinary outcome
+- ✓ No academic integrity execution
+- ✓ No academic appeals execution
+- ✓ No sanction/penalty/decision execution
+- ✓ No notification execution
+- ✓ No hidden/discriminatory/synthetic scoring
+- ✓ No recommendation/ranking
+- ✓ No external submission
+- ✓ No Brain/LLM execution
+- ✓ No provider calls
+- ✓ All existing metrics preserved
+- ✓ No baseline/extension/ordinary/provider/Brain/policy changes
+
+### Closure Decision
+
+- Decision: **A-030.4-SPEC CLOSED — PASS (PLANNING_COMPLETE)**
+- Planning status: Complete and ready for human review
+- Report file: A-030.4-SPEC-REMAINING_SENSITIVE_DOMAIN_DEFERRED_BATCH_PLANNING_REPORT.md
+- Recommended next action: **A-030.4-RUNTIME — Disciplinary Case Management** (if approved)
+
+### Final Status
+
+- status: ready_for_A-030.4-RUNTIME
+- current_stage: A-030.4-SPEC complete / Remaining sensitive-domain deferred batch planned
+- last_completed_action_id: A-030.4-SPEC
+- next_action_id: A-030.4-RUNTIME (if approved) or A-030.4-SPEC.R1 (if revisions needed)

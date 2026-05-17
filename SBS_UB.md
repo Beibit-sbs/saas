@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-030.4-SPEC
-    - current_stage: A-030.3.B1 complete / Sensitive-domain readiness foundation quality baseline confirmed
-    - last_completed_action_id: A-030.3.B1
-    - next_action_id: A-030.4-SPEC
+    - status: ready_for_A-030.4-RUNTIME
+    - current_stage: A-030.4-SPEC complete / Remaining sensitive-domain deferred batch planned
+    - last_completed_action_id: A-030.4-SPEC
+    - next_action_id: A-030.4-RUNTIME
     - updated_at: 2026-05-17 (A-030.2-RUNTIME implementation executed for UCE-047 UCE-048 UCE-098 with deterministic READINESS_AND_EVIDENCE_ONLY and NO_EXECUTION contracts; targeted gate PASS (47 passed, 4 skipped); A-030 continuity PASS (1402 passed, 33 skipped); A-028 combined PASS (2312 passed); A-027 continuity PASS (1268 passed); LDAP smoke PASS (2 passed); optional tenant/security slice PASS (56 passed); forbidden scans show no blocking behavior (boundary-text and legacy no_secret/no_credential markers only); policy/procurement metrics materialized at foundation_count=3 and all execution/award/commitment/external/score counters=0; baseline/extension/ordinary expansion/provider/Brain metrics preserved)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
@@ -13542,6 +13542,18 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - next_action_id: A-030.4-SPEC
 
 - A-030.3-SPEC sensitive-domain readiness foundation planning block:
+
+- A-030.4-SPEC deferred sensitive-domain batch planning block:
+    - mode: planning_and_specification_only
+    - purpose: plan_remaining_sensitive_domain_deferred_candidates
+    - source_status: A-030.3.B1 CLOSED—PASS (commit 22d3647)
+    - implemented_sensitive_foundation: 3 (UCE-038, UCE-081, UCE-082)
+    - deferred_candidates_classified: 3 (UCE-007, UCE-078, UCE-093)
+    - batch_strategy_selected: Option B — One-by-one staged sensitive continuation
+    - selected_next_candidate: UCE-007 disciplinary_case_management
+    - planning_verdict: PASS (PLANNING_COMPLETE)
+    - report_file: A-030.4-SPEC-REMAINING_SENSITIVE_DOMAIN_DEFERRED_BATCH_PLANNING_REPORT.md
+    - next_action_id: A-030.4-RUNTIME
     - mode: planning_and_specification_only
     - purpose: select_sensitive_domain_readiness_foundation_batch
     - action_type: SPECIFICATION
