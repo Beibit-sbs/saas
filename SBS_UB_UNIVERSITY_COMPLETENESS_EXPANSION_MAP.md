@@ -8967,3 +8967,125 @@ Option A: One consolidated GET endpoint aggregating 11 existing provider L4 serv
 
 - selected_next_action: A-031.0-SPEC
 - reason: package validated Wave 17/Wave 18 backend evidence for product/demo/QS without new runtime risk
+
+---
+
+## A-030.0-SPEC — Brain / Governance / Risk Lane Continuation Planning
+
+### Source State (entering A-030.0-SPEC)
+
+- A-029.11.B1.R2 commit: dd0481d
+- message: docs(wave18): A-029.11.B1.R2 confirm provider lane closure
+- verdict at R2: A-029.11.B1.R2 CLOSED — SCOPED WAVE 18 PROVIDER LANE QUALITY BASELINE CONFIRMED
+- next_action_id at R2: A-031.0-SPEC
+- user clarification: demo/QS package not urgent; continue backend depth first
+
+### Strategic Pivot
+
+- previous selected next_action_id: A-031.0-SPEC
+- pivot decision: A-031.0-SPEC DEFERRED (not cancelled) — user preference for backend depth first
+- new next action: A-030.1-SPEC (Brain Governance Foundation Batch Selection)
+- reason: provider lane closed; Brain governance is the highest-value next depth layer; demo packaging more credible after A-030 wave; avoids premature product claims
+- no runtime code written in A-030.0-SPEC
+- no metrics changed
+
+### Remaining Risk-Lane Inventory
+
+| Lane | Remaining Count | Known Candidates | Risk | Recommended Handling |
+|---|---:|---|---|---|
+| Brain governance (signal registries + audit trail governance depth) | 5 | UCE-049 student_risk_signal_registry, UCE-050 finance_anomaly_signal_registry, UCE-051 academic_quality_signal_registry, UCE-054 brain_decision_audit_trail (governance depth), UCE-132 curriculum_gap_signal_registry | MODERATE | Select first — highest strategic differentiator |
+| Policy/procurement lane | 3 | UCE-047 third_party_risk_policy, UCE-048 data_retention_policy_control, UCE-098 procurement_plan_approval_workflow | MODERATE | Follow Brain; governance contracts first |
+| Sensitive-domain lane | 6 | UCE-007 disciplinary_case_management, UCE-078 academic_integrity_case_management, UCE-081 disability_support_services, UCE-082 student_financial_hardship, UCE-083 student_orientation_management, UCE-056 staff_onboarding | HIGH | Defer until Brain governance validated |
+| Autonomy lane | 2 (foundation-ready) | UCE-053 safe_autonomous_notification_agent, UCE-145 safe_evidence_summary_agent (UCE-146 UCE-149 in broader pool) | HIGHEST | Defer after Brain and policy lanes |
+| Product/Demo/QS package | 0 new features needed | A-031.0-SPEC | LOW | Deferred, not cancelled |
+
+### Lane Safety Standards Summary
+
+**Brain governance lane:**
+- L2 = signal registry / evidence source map only
+- L3 = deterministic signal readiness and explainability inputs only
+- L4 = read-only governance visibility / human review dashboard API only
+- Prohibited: no autonomous decisions, no LLM calls, no action execution, no auto-approve/reject, no hidden scoring, no synthetic scores
+
+**Policy/procurement lane:**
+- L2 = readiness/evidence foundation
+- L3 = deterministic risk/readiness classification
+- L4 = read-only visibility
+- Prohibited: no award/ranking/approval/rejection, no financial commitment, no contract execution, no external submission
+
+**Sensitive-domain lane:**
+- L2 = case/evidence foundation + human-review flag
+- L3 = deterministic readiness logic only
+- L4 = read-only visibility + appeal/audit boundary
+- Prohibited: no automatic sanction, no automatic aid/accommodation, no hidden/discriminatory scoring, no eligibility decision
+
+**Autonomy lane:**
+- L2 = draft/evidence-summary foundation
+- L3 = deterministic draft readiness only
+- L4 = read-only readiness visibility
+- Prohibited: no send/submit/approve/reject/delete, no direct execution, no silent automation
+
+### Option Matrix
+
+| Option | Value | Risk | Effort | Recommended | Reason |
+|---|---:|---:|---:|---|---|
+| A — Brain Governance Foundation (A-030.1-SPEC) | 5 | 3 | 3 | YES | Highest strategic differentiator for AI University OS; safe to plan at signal registry level |
+| B — Policy/Procurement Readiness Foundation | 4 | 2 | 2 | CONDITIONAL | Best as Wave 19-B after Brain |
+| C — Sensitive-Domain Readiness Foundation | 4 | 5 | 4 | DEFER | Legal/ethical risk; needs governance boundary first |
+| D — Autonomy Draft-Only Foundation | 4 | 5 | 4 | DEFER | Must follow Brain and policy lanes |
+| E — A-031.0-SPEC Product/Demo/QS Package | 3 | 1 | 2 | DEFER_NOT_CANCEL | User says not urgent |
+| F — Full Release Quality Remediation | 3 | 1 | 3 | OPTIONAL | Can follow if full-backend gate becomes priority |
+| G — Frontend/Product UI Wave | 3 | 2 | 5 | DEFER | Should follow A-031 |
+
+### Selected Next Action
+
+- selected_next_action: A-030.1-SPEC
+- full name: Brain Governance Foundation Batch Selection / Safety Contract
+- scope: SPEC-only; signal registry/audit governance batch selection; safety contract definition; no runtime code
+- non-scope: no Brain runtime, no LLM calls, no autonomous decisions, no provider calls, no frontend
+
+### Proposed A-030 Sequence
+
+1. A-030.0-SPEC — Brain/Governance/Risk Lane Continuation Planning ← complete
+2. A-030.1-SPEC — Brain Governance Foundation Batch Selection / Safety Contract
+3. A-030.1-RUNTIME — Brain Governance Foundation Implementation (if SPEC passes)
+4. A-030.1.B1 — Brain Governance Foundation Quality Baseline
+5. A-030.2-SPEC — Policy/Procurement Readiness Foundation
+6. A-030.2-RUNTIME — Policy/Procurement Readiness Implementation
+7. A-030.3-SPEC — Sensitive-Domain Readiness Foundation
+8. A-030.4-SPEC — Autonomy Draft-Only Foundation
+9. A-031.0-SPEC — Product/Demo/QS Evidence Package (deferred; when user decides)
+
+### Anti-Fake Review
+
+- no runtime code written: PASS
+- no Brain execution: PASS
+- no LLM calls: PASS
+- no autonomous action: PASS
+- no provider live integration: PASS
+- no credentials: PASS
+- no sync: PASS
+- no external submission: PASS
+- no synthetic score: PASS
+- no hidden decisions: PASS
+- no sensitive decision execution: PASS
+- no procurement decision execution: PASS
+- baseline unchanged: PASS
+- extension unchanged: PASS
+- ordinary expansion unchanged: PASS
+- provider readiness preserved: PASS
+
+### Metric Preservation
+
+- provider metrics unchanged: 11/11/11/11 with all risk counters = 0
+- ordinary expansion unchanged: 67/67/50, remaining=17/10, L4=40/40/1/40
+- baseline unchanged: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+- extension unchanged: extension_total_count=25, total_tracked_modules=175
+
+### Final Decision
+
+- final_verdict: A-030.0-SPEC CLOSED — PASS
+- status: ready_for_A-030.1-SPEC
+- current_stage: A-030.0-SPEC complete / backend-depth continuation selected after Wave 18 provider closure
+- last_completed_action_id: A-030.0-SPEC
+- next_action_id: A-030.1-SPEC
