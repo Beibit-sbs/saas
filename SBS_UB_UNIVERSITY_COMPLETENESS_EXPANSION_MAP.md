@@ -9631,9 +9631,85 @@ New Brain governance metric namespace (separate from all existing):
 - report_file: A-030.2-RUNTIME-POLICY_PROCUREMENT_READINESS_FOUNDATION_REPORT.md
 - selected_next_action: A-030.2.B1
 
+## A-030.2.B1 — Policy / Procurement Readiness Foundation Quality Baseline
+
+### Quality Gate Purpose
+
+- Validate A-030.2-RUNTIME implementation closure
+- Verify all 3 policy/procurement candidates implemented
+- Verify policy/procurement contract boundaries (NO_EXECUTION, READINESS_AND_EVIDENCE_ONLY)
+- Run comprehensive quality gates and forbidden scans
+- Confirm metric separation and arithmetic
+- Baseline / extension / ordinary / provider / Brain metrics remain unchanged
+
+### Source State
+
+- A-030.2-RUNTIME commit: 532c7e8 (CLOSED — PASS)
+- A-030.2-SPEC commit: 3fa76e9 (CLOSED — PASS)
+- Policy/procurement foundation count: 3
+- All execution counters: 0
+
+### Candidate Coverage
+
+| UCE ID | Candidate | Target Maturity | Status |
+|---|---|---|---|
+| UCE-047 | third_party_risk_policy | L3 deterministic readiness governance | IMPLEMENTED |
+| UCE-048 | data_retention_policy_control | L3 deterministic readiness governance | IMPLEMENTED |
+| UCE-098 | procurement_plan_approval_workflow | L3 deterministic readiness governance | IMPLEMENTED |
+
+**Coverage: 3/3** ✓
+
+### Gate Results
+
+- A-030.2 targeted: PASS (47 passed, 4 skipped)
+- A-030 continuity: PASS (1402 passed, 33 skipped)
+- A-028 combined: PASS (2312 passed)
+- A-027 continuity: PASS (1268 passed)
+- LDAP smoke: PASS (2 passed)
+- Tenant/security: PASS (56 passed)
+- Optional full backend: NOT_RUN (scoped gates sufficient)
+- **Total: 5,087 tests, all PASS** ✓
+
+### Forbidden Scans
+
+- External/LLM/provider: PASS (no matches)
+- Credentials/secrets: PASS (ACCEPTED_BOUNDARY_TEXT only)
+- DB mutation: PASS (no matches)
+- Policy/procurement execution: PASS (boundary text only)
+- Brain execution: PASS (no matches)
+- Score/recommendation: PASS (boundary text only)
+- Route/frontend: PASS (no matches)
+- **No blocking findings** ✓
+
+### Metrics Non-Movement
+
+- Baseline: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 ✓
+- Extension: 25 ✓
+- Ordinary expansion: 67 L2, 50 L3, 40 L4 ✓
+- Provider readiness: 11 foundation, 11 L3, 11 L4 visibility, 11 L4 routes, 1 consolidated ✓
+- Brain governance: 5 foundation, 0 execution, 0 LLM calls ✓
+- **All metrics preserved** ✓
+
+### Anti-Fake Review
+
+- No policy execution ✓
+- No procurement execution ✓
+- No approval/rejection/award ✓
+- No ranking/scoring/recommendations ✓
+- No financial commitment/contract/external ✓
+- No Brain execution/LLM ✓
+- No baseline/extension changes ✓
+- **PASS** ✓
+
+### Closure Decision
+
+- Selected next action: A-030.3-SPEC (Sensitive-Domain Readiness Foundation)
+- Report file: A-030.2.B1-POLICY_PROCUREMENT_READINESS_FOUNDATION_QUALITY_BASELINE_REPORT.md
+- Final verdict: A-030.2.B1 CLOSED — SCOPED QUALITY BASELINE CONFIRMED
+
 ### Final Status
 
-- status: ready_for_A-030.2.B1
-- current_stage: A-030.2-RUNTIME complete / Policy-procurement readiness foundation implemented
-- last_completed_action_id: A-030.2-RUNTIME
-- next_action_id: A-030.2.B1
+- status: ready_for_A-030.3-SPEC
+- current_stage: A-030.2.B1 complete / Policy-procurement readiness foundation quality baseline confirmed
+- last_completed_action_id: A-030.2.B1
+- next_action_id: A-030.3-SPEC
