@@ -10366,11 +10366,104 @@ Applied to all future deferred-sensitive candidates:
 - Decision: **A-030.4-SPEC CLOSED — PASS (PLANNING_COMPLETE)**
 - Planning status: Complete and ready for human review
 - Report file: A-030.4-SPEC-REMAINING_SENSITIVE_DOMAIN_DEFERRED_BATCH_PLANNING_REPORT.md
-- Recommended next action: **A-030.4-RUNTIME — Disciplinary Case Management** (if approved)
 
-### Final Status
+## A-030.4-RUNTIME — Disciplinary Case Management Sensitive Readiness Foundation
 
-- status: ready_for_A-030.4-RUNTIME
-- current_stage: A-030.4-SPEC complete / Remaining sensitive-domain deferred batch planned
-- last_completed_action_id: A-030.4-SPEC
-- next_action_id: A-030.4-RUNTIME (if approved) or A-030.4-SPEC.R1 (if revisions needed)
+**Status**: ✅ CLOSED — PASS
+
+### Implementation Summary
+
+- **Candidate**: UCE-007 disciplinary_case_management (NEW_MODULE)
+- **Maturity Target**: L3_DETERMINISTIC_READINESS_GOVERNANCE
+- **Governance Boundary**: NO_SANCTION_NO_DISCIPLINARY_OUTCOME
+- **Risk Level**: HIGH (human review, appeal, fairness, legal required)
+- **Files Created**: 2 (service updated, test created, report created)
+- **Tests**: 93 PASS (targeted), 644 PASS (A-030 continuity), 426 PASS (A-028), 365 PASS (A-027)
+- **Forbidden Scans**: CLEAN (no external calls, credentials, DB mutations)
+
+### Sensitive-Domain Contract
+
+| Field | Value |
+|---|---|
+| sensitive_domain_layer | FOUNDATION |
+| sensitive_domain_version | A-030.4 |
+| readiness_mode | READINESS_AND_EVIDENCE_ONLY |
+| execution_mode | NO_EXECUTION |
+| human_review_required | True |
+| appeal_boundary_required | True |
+| audit_trail_required | True |
+| fairness_review_required | True |
+| legal_review_required | True |
+| sanction_execution_enabled | False |
+| disciplinary_decision_enabled | False |
+| notification_execution_enabled | False |
+| hidden_scoring_enabled | False |
+| ranking_enabled | False |
+| recommendation_enabled | False |
+| external_submission_enabled | False |
+
+### Disciplinary Evidence Map
+
+| Source | Evidence Type |
+|---|---|
+| case_record_evidence | disciplinary_case_record |
+| policy_reference_evidence | disciplinary_policy_document |
+| hearing_notice_evidence | hearing_notice_issued |
+| respondent_statement_evidence | respondent_response_recorded |
+| reviewer_assignment_evidence | assigned_reviewer_record |
+| audit_log_evidence | disciplinary_case_audit_trail |
+
+### Appeal Boundary Map
+
+- disciplinary_policy_boundary (policy applies to respondent)
+- hearing_notice_boundary (respondent received notice)
+- respondent_response_boundary (respondent had chance to respond)
+- independent_reviewer_boundary (reviewer is independent)
+- appeal_rights_boundary (appeal rights exist)
+- auditability_boundary (all actions audited)
+
+### Fairness Review Checkpoints (5)
+
+- reviewer_independence_required
+- conflict_of_interest_review_required
+- evidence_completeness_required
+- proportionality_review_required
+- equal_treatment_review_required
+
+### Legal Review Checkpoints (4)
+
+- policy_basis_required
+- due_process_notice_required
+- record_retention_boundary_required
+- appeal_rights_notice_required
+
+### Metrics After Runtime
+
+| Metric | Value | Status |
+|---|---|---|
+| A0303_sensitive_domain_foundation_count | 3 | ✅ Preserved |
+| A0304_sensitive_deferred_foundation_count | 1 | ✅ New |
+| A0304_disciplinary_sensitive_foundation_count | 1 | ✅ New |
+| sensitive_domain_foundation_count | 4 cumulative | ✅ Updated |
+| sensitive_execution_count | 0 | ✅ Preserved |
+| sensitive_auto_sanction_count | 0 | ✅ Preserved |
+| baseline_impact | 0 | ✅ No change |
+| extension_impact | 0 | ✅ No change |
+| ordinary_expansion_impact | 0 | ✅ No change |
+| provider_readiness_impact | 0 | ✅ No change |
+| brain_governance_impact | 0 | ✅ No change |
+| policy_procurement_impact | 0 | ✅ No change |
+
+### Deferred Candidates Preserved
+
+- ✅ UCE-078 academic_integrity_case_management — DEFERRED to A-030.5-SPEC/RUNTIME
+- ✅ UCE-093 academic_appeals_workflow — DEFERRED to A-030.6-SPEC/RUNTIME
+
+Neither candidate implemented in A-030.4-RUNTIME.
+
+### Next Action
+
+- **Status**: ready_for_A-030.4.B1
+- **Current Stage**: A-030.4-RUNTIME complete / Disciplinary sensitive readiness foundation implemented
+- **Last Completed**: A-030.4-RUNTIME
+- **Next Action**: A-030.4.B1 (quality baseline validation)
