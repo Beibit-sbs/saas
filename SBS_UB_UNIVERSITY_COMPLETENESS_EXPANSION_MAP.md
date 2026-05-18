@@ -9,12 +9,27 @@ Key result:
 - The registry spans modules, workflows, integrations, reports, policy controls, Brain signals, autonomous workflow candidates, data entities, and audit evidence capabilities.
 - Baseline metrics remain unchanged.
 
-## A-030.4.B1 Continuity Timeout Ledger (R8-R10)
+## A-030.4.B1 Continuity Timeout Ledger (R8-R11)
 
 - A-030.4.B1.R8: BLOCKED (A-028 combined gate timeout in bounded Docker validation).
 - A-030.4.B1.R9: BLOCKED (split isolation stopped at tests/test_a0281_expansion_l4_visibility_batch1.py, exit 124).
 - A-030.4.B1.R10: PASS (A-028.1 timeout remediated by module-local test-harness override in backend/tests/test_a0281_expansion_l4_visibility_batch1.py; post-fix targeted 156 passed and A-030 mini sanity 644 passed, 4 skipped).
-- Next action: A-030.4.B1.R11 (re-run bounded A-028 combined gate sequence end-to-end).
+- A-030.4.B1.R11: BLOCKED (A-028 split continuation stopped at tests/test_a0282_expansion_l4_readonly_api_routes.py, exit 124).
+- Next action: A-030.4.B1.R12 (isolate A-028.2 bounded timeout path).
+
+## A-030.4.B1.R11 - A-028 Combined Re-run and Gate4 Continuity
+
+- R10 remediation baseline confirmed: A-028.1 timeout fix remained effective.
+- A-028.1 sanity in R11: PASS (156 passed, 1 warning in 0.12s).
+- A-028 split continuation from A-028.2 onward: BLOCKED at first file.
+- Blocking artifact: .gate-logs/r11/r11_a0282.exit = 124.
+- stop marker: .gate-logs/r11/stop_reason.log = STOP_ON_r11_a0282_EXIT_CODE=124.
+- A-028 combined retry: NOT RUN (split prerequisite failed).
+- Gate4 A-027 continuity: NOT RUN (A-028 combined not reached).
+- closure decision: BLOCKED in R11, escalation to A-030.4.B1.R12.
+- metrics unchanged and anti-fake preserved.
+- UCE-078 and UCE-093 remain deferred.
+- no runtime implementation started.
 
 ## 2. Current Baseline 150 Status
 
