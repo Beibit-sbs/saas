@@ -7,6 +7,12 @@ import importlib
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def reset_shared_state() -> None:
+    # Keep this read-only contract suite isolated from heavy global reset overhead.
+    yield
+
+
 MODULE_CONFIGS = [
     {
         "id": "document_workflow",
