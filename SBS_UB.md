@@ -13821,3 +13821,50 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - report_file: A-030.4.B1.R4-DISCIPLINARY_CONTINUITY_REVALIDATION_AFTER_HANG_FIX_REPORT.md
     - final_verdict: A-030.4.B1.R4 BLOCKED — A-030.3 sensitive-domain continuity file timed out
     - next_action_id: A-030.4.B1.R5
+
+- A-030.4.B1.R5 a0303 sensitive-domain test hang remediation block:
+    - mode: test_harness_isolation_and_minimal_remediation
+    - source_state: A-030.4.B1.R4 BLOCKED with A-030.3 split timeout evidence
+    - collect_only_result: PASS (exit=0, 189 collected)
+    - isolated_root_cause: TEST_FIXTURE_HANG (global per-test reset overhead causing bounded-window timeout)
+    - remediation_type: TEST_HARNESS_ONLY
+    - remediation_file: backend/tests/test_a0303_sensitive_domain_readiness_foundation.py
+    - remediation_detail: module-local autouse reset_shared_state override for this read-only contract file
+    - a0303_targeted_after_fix: PASS (189 passed, 1 warning, exit=0)
+    - a0304_targeted_safety_after_fix: PASS (93 passed, 1 warning, exit=0)
+    - a0304_a0303_pair_after_fix: PASS (282 passed, 1 warning, exit=0)
+    - a030_mini_continuity_after_fix: TIMEOUT_IN_BOUNDED_WINDOW (exit=124)
+    - post_fix_remaining_blocker_path: A-030.2
+    - runtime_behavior_change: NONE
+    - metrics_preservation: PASS
+    - anti_fake_preservation: PASS
+    - deferred_candidates_preserved: PASS (UCE-078 and UCE-093 remain deferred)
+    - report_file: A-030.4.B1.R5-A0303_SENSITIVE_DOMAIN_TEST_HANG_REMEDIATION_REPORT.md
+    - final_verdict: A-030.4.B1.R5 BLOCKED — A-030.3 remediated, continuity blocker shifted to A-030.2
+    - next_action_id: A-030.4.B1.R6
+
+- A-030.4.B1.R6 a0302 policy/procurement timeout-path isolation block:
+    - mode: test_harness_isolation_and_minimal_remediation
+    - source_state: A-030.4.B1.R5 BLOCKED with downstream A-030.2 bounded timeout evidence
+    - collect_only_result: PASS (exit=0, 51 collected)
+    - verbose_targeted_result: TIMEOUT_IN_BOUNDED_WINDOW (exit=124)
+    - single_test_discriminator: PASS (1 passed in 26.81s, exit=0)
+    - no_warnings_discriminator: TIMEOUT_EXIT_WITH_FULL_SUMMARY (exit=124, 47 passed, 4 skipped in 779.19s)
+    - maxfail_discriminator: TIMEOUT_EXIT_WITH_FULL_SUMMARY (exit=124, 47 passed, 4 skipped in 764.74s)
+    - isolated_root_cause: TEST_FIXTURE_HANG (global per-test reset overhead causing timeout-exit classification)
+    - remediation_type: TEST_HARNESS_ONLY
+    - remediation_file: backend/tests/test_a0302_policy_procurement_readiness_foundation.py
+    - remediation_detail: module-local autouse reset_shared_state override for this read-only contract file
+    - a0302_targeted_after_fix: PASS (47 passed, 4 skipped, 1 warning in 0.10s, exit=0)
+    - a0303_a0304_pair_after_fix: PASS (282 passed, 1 warning in 0.23s, exit=0)
+    - a030_mini_continuity_after_fix: TIMEOUT_IN_BOUNDED_WINDOW (exit=124)
+    - gate2_full_continuity: BLOCKED (bounded timeout persists)
+    - gate3_a028_combined: NOT_RUN
+    - gate4_a027_continuity: NOT_RUN
+    - runtime_behavior_change: NONE
+    - metrics_preservation: PASS
+    - anti_fake_preservation: PASS
+    - deferred_candidates_preserved: PASS (UCE-078 and UCE-093 remain deferred)
+    - report_file: A-030.4.B1.R6-A0302_POLICY_PROCUREMENT_TEST_TIMEOUT_REMEDIATION_REPORT.md
+    - final_verdict: A-030.4.B1.R6 BLOCKED — A-030.2 targeted timeout remediated, bounded mini continuity still timed out
+    - next_action_id: A-030.4.B1.R7

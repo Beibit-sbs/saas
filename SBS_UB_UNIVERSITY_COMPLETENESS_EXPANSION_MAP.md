@@ -10830,3 +10830,47 @@ Reason:
 ### Next Action
 - next_action_id: A-030.4.B1.R6
 - Scope: continue bounded continuity recovery from post-R5 state, starting with A-030.2 timeout-path isolation.
+
+## A-030.4.B1.R6 - A-030.2 Policy/Procurement Test Timeout Path Isolation
+
+**Status**: BLOCKED (A-030.2 targeted timeout remediated; bounded mini continuity still timed out)
+
+### R5 Carry-Forward
+- R5 remediated A-030.3 harness timeout and moved bounded continuity blocker to A-030.2 path.
+
+### A-030.2 Timeout Isolation
+- collect-only: PASS (51 collected, exit=0)
+- verbose targeted run (420s): TIMEOUT (exit=124)
+- single-test discriminator: PASS (1 passed in 26.81s)
+- no-warnings discriminator: exit=124 while full summary reported 47 passed, 4 skipped in 779.19s
+- maxfail discriminator: exit=124 while full summary reported 47 passed, 4 skipped in 764.74s
+- Classification: TEST_FIXTURE_HANG / cumulative test-harness overhead (not intrinsic assertion failure)
+
+### Remediation
+- Type: test-harness only
+- File changed: backend/tests/test_a0302_policy_procurement_readiness_foundation.py
+- Action: module-local autouse fixture override for reset_shared_state
+- Runtime behavior changed: NO
+
+### Post-Fix Validation
+- A-030.2 targeted after fix: PASS (47 passed, 4 skipped, 1 warning in 0.10s; exit=0)
+- A-030.3 + A-030.4 safety pair: PASS (282 passed, 1 warning in 0.23s; exit=0)
+- A-030 mini continuity (A-030.4 + A-030.3 + A-030.2 + A-030.1): TIMEOUT (exit=124)
+
+### Gate Status
+- Gate2 full A-030 continuity: BLOCKED in bounded window
+- Gate3 A-028 combined: NOT RUN
+- Gate4 A-027 continuity: NOT RUN
+
+### Preservation Checks
+- Metrics unchanged
+- Anti-fake preserved
+- Deferred UCE-078/UCE-093 preserved
+- No runtime feature implementation started
+- No A-030.5 claim
+- No L5/L6 claim
+
+### Final Decision
+- Decision: A-030.4.B1.R6 BLOCKED
+- Report file: A-030.4.B1.R6-A0302_POLICY_PROCUREMENT_TEST_TIMEOUT_REMEDIATION_REPORT.md
+- Selected next action: A-030.4.B1.R7
