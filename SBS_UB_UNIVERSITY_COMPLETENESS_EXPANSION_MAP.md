@@ -1,4 +1,4 @@
-# SBS_UB University Completeness Expansion Map
+]633;E;sed -n '1,11p' SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C]633;E;sed -n '1,13p' SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C# SBS_UB University Completeness Expansion Map
 
 ## 1. Executive Summary
 
@@ -8,6 +8,13 @@ Key result:
 - A new University Completeness Expansion Candidate Registry is defined with 54 candidates.
 - The registry spans modules, workflows, integrations, reports, policy controls, Brain signals, autonomous workflow candidates, data entities, and audit evidence capabilities.
 - Baseline metrics remain unchanged.
+
+## A-030.4.B1 Continuity Timeout Ledger (R8-R10)
+
+- A-030.4.B1.R8: BLOCKED (A-028 combined gate timeout in bounded Docker validation).
+- A-030.4.B1.R9: BLOCKED (split isolation stopped at tests/test_a0281_expansion_l4_visibility_batch1.py, exit 124).
+- A-030.4.B1.R10: PASS (A-028.1 timeout remediated by module-local test-harness override in backend/tests/test_a0281_expansion_l4_visibility_batch1.py; post-fix targeted 156 passed and A-030 mini sanity 644 passed, 4 skipped).
+- Next action: A-030.4.B1.R11 (re-run bounded A-028 combined gate sequence end-to-end).
 
 ## 2. Current Baseline 150 Status
 
