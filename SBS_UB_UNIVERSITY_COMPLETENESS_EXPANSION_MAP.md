@@ -10922,3 +10922,38 @@ Reason:
 - Decision: A-030.4.B1.R7 CLOSED - A-030.1 Brain governance test timeout remediated
 - Report file: A-030.4.B1.R7-A0301_BRAIN_GOVERNANCE_TEST_TIMEOUT_REMEDIATION_REPORT.md
 - Selected next action: A-030.4.B1.R8
+
+## A-030.4.B1.R8 - Final Continuity Confirmation / Disciplinary Sensitive Baseline Closure
+
+**Status**: BLOCKED (Gate3 bounded timeout; strict stop policy applied)
+
+### R7 Carry-Forward
+- R7 remediated the A-030.1 timeout path and restored bounded A-030 mini continuity PASS.
+- R8 scope was continuity closure only: reconfirm Gate2, then Gate3, then Gate4 only if Gate3 passed.
+
+### Task Readiness Checks
+- Task0 repo hygiene: PASS (only non-scope dirt remained: backend/.coverage, .gate-logs/, A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md).
+- Task1 Docker hygiene: PASS (infra/.env present, ai_default network present, ai-backend-tests:latest present, resource logs captured).
+- Task2 source-of-truth and metric anchors: PASS (R7/R8 markers, commit anchor chain, and baseline maturity references confirmed).
+
+### Gate Results
+- Gate2 A-030 mini continuity reconfirm: PASS (644 passed, 4 skipped, 1 warning, exit=0).
+- Gate3 A-028 combined (bounded 1200s): TIMEOUT (exit=124).
+- Gate3 tail signal: "got 3 SIGTERM/SIGINTs, forcefully exiting".
+- Gate4 A-027 continuity: NOT RUN (required stop-on-failure policy).
+
+### Preservation Checks
+- Runtime behavior unchanged.
+- No new test-harness remediation was applied in R8.
+- Anti-fake constraints preserved.
+- Deferred UCE-078/UCE-093 preserved.
+- Metrics anchors remained stable.
+
+### Final Decision
+- Decision: A-030.4.B1.R8 BLOCKED.
+- Reason: mandatory Gate3 A-028 combined continuity did not complete inside bounded Docker window.
+- Report file: A-030.4.B1.R8-FINAL_DISCIPLINARY_SENSITIVE_CONTINUITY_CLOSURE_REPORT.md
+
+### Next Action
+- next_action_id: A-030.4.B1.R9
+- R9 scope: isolate Gate3 A-028 timeout path under Docker-only constraints and recover closure path before any Gate4 attempt.

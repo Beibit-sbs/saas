@@ -13899,3 +13899,25 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - report_file: A-030.4.B1.R7-A0301_BRAIN_GOVERNANCE_TEST_TIMEOUT_REMEDIATION_REPORT.md
     - final_verdict: A-030.4.B1.R7 CLOSED — A-030.1 Brain governance test timeout remediated
     - next_action_id: A-030.4.B1.R8
+
+- A-030.4.B1.R8 final continuity confirmation / disciplinary sensitive baseline closure block:
+    - mode: validation_and_reporting_only_with_stop_on_failure
+    - source_state: A-030.4.B1.R7 CLOSED with bounded A-030 mini continuity restored
+    - task0_repo_hygiene_snapshot: PASS (non-scope only: backend/.coverage, .gate-logs/, A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md)
+    - task1_docker_hygiene: PASS (infra/.env present, ai_default present, ai-backend-tests:latest present, free/df logs captured)
+    - task2_source_of_truth_and_metrics: PASS (R7/R8 anchors and locked metric baselines confirmed in tracker artifacts)
+    - gate2_a030_mini_continuity_reconfirm: PASS (644 passed, 4 skipped, 1 warning, exit=0)
+    - gate3_a028_combined_bounded: TIMEOUT_IN_BOUNDED_WINDOW (exit=124, forceful SIGTERM/SIGINT termination)
+    - gate4_a027_continuity: NOT_RUN (strict stop-on-gate3-failure policy)
+    - optional_ldap_smoke: NOT_RUN
+    - optional_tenant_security_slice: NOT_RUN
+    - runtime_behavior_change: NONE
+    - test_harness_change: NONE
+    - metrics_preservation: PASS
+    - anti_fake_preservation: PASS
+    - deferred_candidates_preserved: PASS (UCE-078 and UCE-093 remain deferred)
+    - quality_gate_status: BLOCKED
+    - block_reason: mandatory Gate3 A-028 combined continuity did not complete within bounded Docker window
+    - report_file: A-030.4.B1.R8-FINAL_DISCIPLINARY_SENSITIVE_CONTINUITY_CLOSURE_REPORT.md
+    - final_verdict: A-030.4.B1.R8 BLOCKED - final continuity closure incomplete due Gate3 bounded timeout
+    - next_action_id: A-030.4.B1.R9
