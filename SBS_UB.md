@@ -13921,3 +13921,34 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - report_file: A-030.4.B1.R8-FINAL_DISCIPLINARY_SENSITIVE_CONTINUITY_CLOSURE_REPORT.md
     - final_verdict: A-030.4.B1.R8 BLOCKED - final continuity closure incomplete due Gate3 bounded timeout
     - next_action_id: A-030.4.B1.R9
+
+- A-030.4.B1.R9 A-028 combined gate timeout isolation block:
+    - mode: validation_and_reporting_only_with_split_isolation
+    - source_state: A-030.4.B1.R8 BLOCKED (Gate3 combined timeout)
+    - task0_repo_hygiene_snapshot: PASS (non-scope only: backend/.coverage, .gate-logs/, A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md)
+    - task1_docker_hygiene: PASS
+    - task2_source_of_truth_and_metrics: PASS
+    - optional_a030_mini_reconfirm: SKIPPED (R8 PASS evidence remains valid; no post-R8 A-030 code changes)
+    - gate3_a028_split_validation: BLOCKED
+    - gate3_a028_split_first_file: tests/test_a0281_expansion_l4_visibility_batch1.py
+    - gate3_a028_split_first_file_exit_code: 124
+    - gate3_a028_split_stop_reason: STOP_ON_r9_a0281_EXIT_CODE=124
+    - gate3_a028_split_first_file_verbose_exit_code: 124
+    - gate3_a028_combined_retry: NOT_RUN (split prerequisite not met)
+    - gate4_a027_continuity: NOT_RUN (Gate3 unresolved)
+    - optional_ldap_smoke: NOT_RUN
+    - optional_tenant_security_slice: NOT_RUN
+    - runtime_behavior_change: NONE
+    - test_harness_change: NONE
+    - metrics_preservation: PASS
+    - anti_fake_preservation: PASS
+    - deferred_candidates_preserved: PASS (UCE-078 and UCE-093 remain deferred)
+    - quality_gate_status: BLOCKED
+    - root_cause_classification: A028_HANGING_FILE
+    - block_reason: A-028 split validation timed out at first file under bounded Docker execution
+    - report_file: A-030.4.B1.R9-A028_COMBINED_GATE_TIMEOUT_ISOLATION_REPORT.md
+    - final_verdict: A-030.4.B1.R9 BLOCKED - A-028 split validation failed/timed out at tests/test_a0281_expansion_l4_visibility_batch1.py
+    - status: blocked_A-030.4.B1.R9
+    - current_stage: A-030.4.B1.R9 blocked / A-028 split timeout at tests/test_a0281_expansion_l4_visibility_batch1.py
+    - last_completed_action_id: A-030.4.B1.R8
+    - next_action_id: A-030.4.B1.R10

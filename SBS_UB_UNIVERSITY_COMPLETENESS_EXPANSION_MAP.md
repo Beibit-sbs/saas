@@ -10957,3 +10957,42 @@ Reason:
 ### Next Action
 - next_action_id: A-030.4.B1.R9
 - R9 scope: isolate Gate3 A-028 timeout path under Docker-only constraints and recover closure path before any Gate4 attempt.
+
+## A-030.4.B1.R9 - A-028 Combined Gate Timeout Isolation
+
+**Status**: BLOCKED (split validation timeout at first A-028 file)
+
+### R8 Blocker Carry-Forward
+- R8 closed as BLOCKED because Gate3 A-028 combined timed out with exit 124.
+- R9 scope was split isolation first, no runtime implementation.
+
+### A-028 Split Validation Results
+- Split mode started in required A-028 order under bounded Docker execution.
+- First file timed out: tests/test_a0281_expansion_l4_visibility_batch1.py (exit 124).
+- Stop reason recorded: STOP_ON_r9_a0281_EXIT_CODE=124.
+- Verbose rerun of same file also exited 124.
+
+### A-028 Combined Retry Result
+- NOT RUN.
+- Reason: split prerequisite did not pass.
+
+### Gate4 Result
+- Gate4 A-027 continuity: NOT RUN.
+- Reason: Gate3 unresolved.
+
+### Preservation Checks
+- Metrics unchanged.
+- Anti-fake constraints preserved.
+- UCE-078/UCE-093 deferred state preserved.
+- No runtime implementation started.
+- No Brain execution/LLM/autonomy/policy/procurement/sensitive execution.
+- No L5/L6 claim.
+
+### Final Decision
+- Decision: A-030.4.B1.R9 BLOCKED.
+- Reason: A-028 split validation failed/timed out at tests/test_a0281_expansion_l4_visibility_batch1.py.
+- Report file: A-030.4.B1.R9-A028_COMBINED_GATE_TIMEOUT_ISOLATION_REPORT.md
+
+### Next Action
+- next_action_id: A-030.4.B1.R10
+- R10 scope: deeper timeout-path isolation for tests/test_a0281_expansion_l4_visibility_batch1.py in Docker-only validation mode.
