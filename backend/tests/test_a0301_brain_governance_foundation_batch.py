@@ -16,6 +16,17 @@ import importlib
 import inspect
 import pytest
 
+
+@pytest.fixture(autouse=True)
+def reset_shared_state(monkeypatch):
+    """Module-local harness override for bounded Docker test stability.
+
+    This read-only contract suite does not require the expensive global reset
+    from conftest before every test.
+    """
+    monkeypatch.setenv("RBAC_ALLOW_DEV_FALLBACK", "true")
+    yield
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Group 1 — Module imports
 # ──────────────────────────────────────────────────────────────────────────────

@@ -10874,3 +10874,51 @@ Reason:
 - Decision: A-030.4.B1.R6 BLOCKED
 - Report file: A-030.4.B1.R6-A0302_POLICY_PROCUREMENT_TEST_TIMEOUT_REMEDIATION_REPORT.md
 - Selected next action: A-030.4.B1.R7
+
+## A-030.4.B1.R7 - A-030.1 Brain Governance Test Timeout Remediation
+
+**Status**: CLOSED (A-030.1 timeout path remediated; bounded mini continuity now passes)
+
+### R6 Blocker Carry-Forward
+- R6 remediated A-030.2 harness timeout but bounded mini continuity still timed out.
+- Remaining downstream blocker was expected in tests/test_a0301_brain_governance_foundation_batch.py.
+
+### A-030.1 Timeout Isolation
+- A-030.4 targeted sanity: PASS (93 passed)
+- A-030.3 targeted safety: PASS (189 passed)
+- A-030.2 targeted safety: PASS (47 passed, 4 skipped)
+- A-030.1 targeted before fix: TIMEOUT (exit=124)
+- collect-only: PASS (315 collected)
+- verbose targeted: TIMEOUT (exit=124, pre-summary)
+- function-level discriminators (early and late tests): PASS
+- no-warnings/maxfail discriminators: TIMEOUT (exit=124)
+- Classification: TEST_FIXTURE_HANG / cumulative global autouse fixture overhead.
+
+### Remediation
+- Type: test-harness only
+- File changed: backend/tests/test_a0301_brain_governance_foundation_batch.py
+- Action: module-local autouse fixture override for reset_shared_state
+- Runtime behavior changed: NO
+
+### Post-Fix Validation
+- A-030.1 targeted after fix: PASS (315 passed, 1 warning in 0.22s)
+- A-030.2 + A-030.3 + A-030.4 safety: PASS (329 passed, 4 skipped, 1 warning in 0.30s)
+- A-030 mini continuity (A-030.4 + A-030.3 + A-030.2 + A-030.1): PASS (644 passed, 4 skipped, 1 warning in 0.48s)
+
+### Gate Status
+- Gate2 full A-030 continuity: PASS
+- Gate3 A-028 combined: NOT RUN (deferred to R8)
+- Gate4 A-027 continuity: NOT RUN (deferred to R8)
+
+### Preservation Checks
+- Metrics unchanged
+- Anti-fake preserved
+- Deferred UCE-078/UCE-093 preserved
+- No runtime feature implementation started
+- No A-030.5 claim
+- No L5/L6 claim
+
+### Final Decision
+- Decision: A-030.4.B1.R7 CLOSED - A-030.1 Brain governance test timeout remediated
+- Report file: A-030.4.B1.R7-A0301_BRAIN_GOVERNANCE_TEST_TIMEOUT_REMEDIATION_REPORT.md
+- Selected next action: A-030.4.B1.R8

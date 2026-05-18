@@ -13868,3 +13868,34 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - report_file: A-030.4.B1.R6-A0302_POLICY_PROCUREMENT_TEST_TIMEOUT_REMEDIATION_REPORT.md
     - final_verdict: A-030.4.B1.R6 BLOCKED — A-030.2 targeted timeout remediated, bounded mini continuity still timed out
     - next_action_id: A-030.4.B1.R7
+
+- A-030.4.B1.R7 a0301 Brain governance timeout-path isolation block:
+    - mode: test_harness_isolation_and_minimal_remediation
+    - source_state: A-030.4.B1.R6 BLOCKED with downstream A-030.1 bounded timeout evidence
+    - a0304_targeted_sanity_before_fix: PASS (93 passed, 1 warning, exit=0)
+    - a0303_targeted_sanity_before_fix: PASS (189 passed, 1 warning, exit=0)
+    - a0302_targeted_sanity_before_fix: PASS (47 passed, 4 skipped, 1 warning, exit=0)
+    - a0301_targeted_before_fix: TIMEOUT_IN_BOUNDED_WINDOW (exit=124)
+    - a0301_collect_only_result: PASS (exit=0, 315 collected)
+    - a0301_verbose_before_fix: TIMEOUT_IN_BOUNDED_WINDOW (exit=124, pre-summary)
+    - single_test_discriminator_start: PASS (1 passed in 22.15s, exit=0)
+    - single_test_discriminator_end: PASS (1 passed in 21.38s, exit=0)
+    - no_warnings_discriminator: TIMEOUT_IN_BOUNDED_WINDOW (exit=124)
+    - maxfail_discriminator: TIMEOUT_IN_BOUNDED_WINDOW (exit=124)
+    - isolated_root_cause: TEST_FIXTURE_HANG (global per-test reset overhead causing bounded timeout)
+    - remediation_type: TEST_HARNESS_ONLY
+    - remediation_file: backend/tests/test_a0301_brain_governance_foundation_batch.py
+    - remediation_detail: module-local autouse reset_shared_state override for this read-only contract file
+    - runtime_behavior_change: NONE
+    - a0301_targeted_after_fix: PASS (315 passed, 1 warning in 0.22s, exit=0)
+    - a0302_a0303_a0304_safety_after_fix: PASS (329 passed, 4 skipped, 1 warning in 0.30s, exit=0)
+    - a030_mini_continuity_after_fix: PASS (644 passed, 4 skipped, 1 warning in 0.48s, exit=0)
+    - gate2_full_continuity: PASS
+    - gate3_a028_combined: NOT_RUN
+    - gate4_a027_continuity: NOT_RUN
+    - metrics_preservation: PASS
+    - anti_fake_preservation: PASS
+    - deferred_candidates_preserved: PASS (UCE-078 and UCE-093 remain deferred)
+    - report_file: A-030.4.B1.R7-A0301_BRAIN_GOVERNANCE_TEST_TIMEOUT_REMEDIATION_REPORT.md
+    - final_verdict: A-030.4.B1.R7 CLOSED — A-030.1 Brain governance test timeout remediated
+    - next_action_id: A-030.4.B1.R8
