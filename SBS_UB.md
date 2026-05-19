@@ -1,9 +1,9 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-030.5-SPEC
-    - current_stage: A-030.4.B1.R13 CLOSED / disciplinary sensitive quality baseline revalidated
-    - last_completed_action_id: A-030.4.B1.R13
-    - next_action_id: A-030.5-SPEC
-    - updated_at: 2026-05-19 (R13 closed A-030.4.B1 disciplinary quality baseline: A-028 combined 2312 PASS in 16.18s, Gate4 A-027 1268 PASS in 3.57s, LDAP smoke 2 PASS, tenant-security 56 PASS; all metrics locked; zero production code changes; next action: A-030.5-SPEC)
+    - status: ready_for_A-030.5-RUNTIME
+    - current_stage: A-030.5-SPEC complete / academic integrity sensitive-domain foundation specified
+    - last_completed_action_id: A-030.5-SPEC
+    - next_action_id: A-030.5-RUNTIME
+    - updated_at: 2026-05-19 (A-030.5-SPEC complete: UCE-078 academic_integrity_case_management selected; L3 DETERMINISTIC_READINESS_GOVERNANCE target; READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_FINDING_NO_PENALTY boundary; service contract and test plan specified; no runtime code; next action: A-030.5-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -13952,3 +13952,49 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - current_stage: A-030.4.B1.R9 blocked / A-028 split timeout at tests/test_a0281_expansion_l4_visibility_batch1.py
     - last_completed_action_id: A-030.4.B1.R8
     - next_action_id: A-030.4.B1.R10
+
+- A-030.5-SPEC academic integrity sensitive-domain foundation specification block:
+    - mode: spec_only_no_runtime_code
+    - source_state: A-030.4.B1.R13 CLOSED (338d0e1) / disciplinary sensitive quality baseline revalidated
+    - task0_repo_hygiene: PASS (non-scope only: backend/.coverage, .gate-logs/, A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md)
+    - task1_source_of_truth: PASS (ready_for_A-030.5-SPEC confirmed, A-030.4.B1 closed, UCE-078 deferred and not runtime-implemented)
+    - task2_metrics_source_check: PASS (all metrics confirmed locked: baseline 150, extension 25, sensitive_domain_foundation_count=4, all execution counters=0)
+    - selected_candidate: UCE-078 academic_integrity_case_management
+    - target_maturity: L3_DETERMINISTIC_READINESS_GOVERNANCE
+    - boundary: READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_FINDING_NO_PENALTY
+    - risk_level: HIGH (academic integrity finding, grade penalty, disciplinary cascade, student status risk)
+    - module_path: backend/app/modules/academic_integrity_case_management/service.py
+    - function_name: get_academic_integrity_case_management_sensitive_readiness_foundation(tenant_id: int) -> dict
+    - tenant_validation: fail-closed (None/0/negative/string/bool/float → ValueError; positive int accepted)
+    - forbidden_actions_count: 17
+    - forbidden_actions: academic_integrity_finding, plagiarism_finding, cheating_finding, guilt_determination, grade_penalty, disciplinary_penalty, sanction, student_status_change, notification_execution, recommendation, ranking, external_submission, hidden_score, synthetic_score, discriminatory_score, llm_call, brain_execution, autonomous_decision
+    - anti_fake_flags_count: 20
+    - expected_test_file: backend/tests/test_a0305_academic_integrity_sensitive_readiness_foundation.py
+    - expected_test_categories: 40
+    - expected_test_count_approx: 40-60 (parametrized expansion)
+    - expected_validation_gates: targeted, sensitive_continuity, mini_continuity, forbidden_scan, git_diff_check
+    - expected_A0305_academic_integrity_sensitive_foundation_count: 1
+    - expected_sensitive_domain_foundation_count_after_runtime: 5
+    - expected_sensitive_execution_count: 0
+    - expected_sensitive_auto_sanction_count: 0
+    - expected_sensitive_auto_disciplinary_decision_count: 0
+    - expected_sensitive_auto_academic_integrity_decision_count: 0
+    - expected_sensitive_hidden_score_count: 0
+    - expected_sensitive_discriminatory_score_count: 0
+    - expected_sensitive_synthetic_score_count: 0
+    - expected_sensitive_recommendation_count: 0
+    - expected_sensitive_external_submission_count: 0
+    - deferred_UCE_093_preserved: PASS (academic_appeals_workflow deferred to A-030.6)
+    - runtime_behavior_change: NONE
+    - test_code_created: NONE
+    - api_route_created: NONE
+    - frontend_change: NONE
+    - db_migration: NONE
+    - l5_l6_claim: NONE
+    - anti_fake_review: PASS (all 23 checks confirmed)
+    - report_file: A-030.5-SPEC-ACADEMIC_INTEGRITY_SENSITIVE_DOMAIN_FOUNDATION_REPORT.md
+    - final_verdict: A-030.5-SPEC CLOSED — PASS
+    - status: ready_for_A-030.5-RUNTIME
+    - current_stage: A-030.5-SPEC complete / academic integrity sensitive-domain foundation specified
+    - last_completed_action_id: A-030.5-SPEC
+    - next_action_id: A-030.5-RUNTIME

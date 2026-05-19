@@ -11151,3 +11151,87 @@ Reason:
 - Mode: SPEC only (no runtime)
 - Risk: HIGH (academic integrity finding, sanction risk)
 
+
+## A-030.5-SPEC — Academic Integrity Case Management Sensitive-Domain Foundation Specification
+
+**Status**: A-030.5-SPEC CLOSED — PASS
+
+**Source State**: A-030.4.B1 CLOSED at 338d0e1 / ready_for_A-030.5-SPEC
+
+### Selected Candidate
+
+| Field | Value |
+|-------|-------|
+| UCE ID | UCE-078 |
+| Module | academic_integrity_case_management |
+| Domain | Assessment / Exams / Proctoring |
+| Priority | P1 |
+| Status | A-030.5-SPEC_SELECTED_FOR_RUNTIME |
+| Target maturity | L3 DETERMINISTIC_READINESS_GOVERNANCE |
+| Risk level | HIGH |
+
+### Deferred (Not Selected in A-030.5)
+- UCE-093 academic_appeals_workflow → DEFERRED to A-030.6 (unchanged, preserved)
+
+### Sensitive-Domain Foundation Chain
+- A-030.3: UCE-038 (student_appeals), UCE-081 (disability_support), UCE-082 (student_financial_hardship) — IMPLEMENTED L3 ✅
+- A-030.4: UCE-007 (disciplinary_case_management) — IMPLEMENTED L3 ✅
+- A-030.5: UCE-078 (academic_integrity_case_management) — A-030.5-SPEC_SELECTED_FOR_RUNTIME
+- A-030.6: UCE-093 (academic_appeals_workflow) — DEFERRED
+
+### Runtime Boundary
+```
+READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_FINDING_NO_PENALTY
+```
+
+### Forbidden Actions (17)
+academic_integrity_finding, plagiarism_finding, cheating_finding, guilt_determination, grade_penalty, disciplinary_penalty, sanction, student_status_change, notification_execution, recommendation, ranking, external_submission, hidden_score, synthetic_score, discriminatory_score, llm_call, brain_execution, autonomous_decision
+
+### Expected Runtime Contract
+
+**Module path**: `backend/app/modules/academic_integrity_case_management/service.py`
+
+**Function**: `get_academic_integrity_case_management_sensitive_readiness_foundation(tenant_id: int) -> dict`
+
+**Tenant validation**: fail-closed (None/0/negative/string/bool/float → ValueError)
+
+**Key output fields**:
+- module, uce_id, maturity, readiness_layer, execution_mode, boundary, tenant_id
+- academic_integrity_case_governance (allowed states, allowed human actions, forbidden auto actions)
+- evidence_envelope (case_record, evidence_bundle, committee_record — shape only)
+- policy_reference_envelope
+- human_review_envelope (human_review_required=True)
+- committee_review_envelope (committee_review_required=True)
+- fairness_review_envelope (fairness_review_required=True)
+- appeal_boundary (appeal_available=True)
+- audit_trail_readiness
+- forbidden_actions (17 items)
+- anti_fake_flags (20 flags, all True)
+- metric_contract
+
+### Expected Tests
+**File**: `backend/tests/test_a0305_academic_integrity_sensitive_readiness_foundation.py`
+**Categories**: 40 categories, ~40-60 tests
+
+### Expected Metrics (Post A-030.5-RUNTIME)
+- A0305_academic_integrity_sensitive_foundation_count = 1 (NEW)
+- sensitive_domain_foundation_count = 5 (was 4; +1 for UCE-078)
+- All execution/scoring/submission counters remain 0
+- All other namespaces unchanged
+
+### Anti-Fake Review
+- No runtime code created in spec ✅
+- No test code created in spec ✅
+- No API route ✅
+- No DB/migration ✅
+- No finding, penalty, sanction ✅
+- No LLM/Brain/autonomy ✅
+- No hidden/synthetic/discriminatory score ✅
+- No L5/L6 claim ✅
+- UCE-093 preserved deferred ✅
+
+### Next Action
+- next_action_id: A-030.5-RUNTIME
+- Scope: implement UCE-078 per A-030.5-SPEC contract
+- Commit: test(wave19): A-030.5 implement academic integrity sensitive foundation
+
