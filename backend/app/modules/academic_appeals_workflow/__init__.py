@@ -1,0 +1,6 @@
+"""academic_appeals_workflow Module - L3 Sensitive-Domain Foundation (UCE-093)."""
+MODULE_NAME = "academic_appeals_workflow"
+UCE_ID = "UCE-093"
+TARGET_LEVEL = "L3"
+CONTRACT_VERSION = "A-030.6"
+FOUNDATION_STATUS = "SENSITIVE_READINESS_FOUNDATION"
