@@ -11278,3 +11278,57 @@ academic_integrity_finding, plagiarism_finding, cheating_finding, guilt_determin
 ### Next Action
 - next_action_id: A-030.5-B1
 - Scope: quality baseline confirmation for A-030.5-RUNTIME
+
+---
+
+## A-030.5-B1 — Academic Integrity Sensitive Foundation Quality Baseline
+
+**Action**: A-030.5-B1
+**Status**: CLOSED — PASS
+**Date**: 2026-05-19
+
+### Runtime Reference
+- Runtime commit: 957f8a8 — test(wave19): A-030.5 implement academic integrity foundation
+- Candidate: UCE-078 academic_integrity_case_management
+- Maturity: L3_DETERMINISTIC_READINESS_GOVERNANCE
+- Boundary: NO_EXECUTION + NO_FINDING_NO_PENALTY
+
+### Gate Results
+| Gate | Files | Result | Count |
+|------|-------|--------|-------|
+| Gate 1 — Targeted | test_a0305 | **PASS** | 146/146 |
+| Gate 2 — Sensitive continuity | test_a0305 + test_a0304 | **PASS** | 239/239 |
+| Gate 3 — Full A-030.x chain | test_a0305 through test_a0301 | **PASS** | 790 passed, 4 skipped |
+| Optional A-028 sanity | test_a0281 + test_a0282 | NON-BLOCKING TIMEOUT | Known TestClient+DB hang |
+
+### Metrics Confirmation
+- `A0305_academic_integrity_sensitive_foundation_count`: 1 ✅
+- `sensitive_domain_foundation_count`: 5 ✅
+- All sensitive execution/scoring/submission counters: 0 ✅
+- Baseline: L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150 ✅ (unchanged)
+- Extension: 25 ✅ (unchanged)
+- Ordinary expansion: L2=67/L3=50/L4=40 ✅ (unchanged)
+- Provider readiness: 11 ✅ (unchanged)
+- Brain governance: A0301_count=5, all counters=0 ✅ (unchanged)
+- Policy/procurement: A0302_count=3, all counters=0 ✅ (unchanged)
+
+### Anti-Fake Confirmation
+- 24/24 anti-fake flags confirmed TRUE
+- Boundary: READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_FINDING_NO_PENALTY
+- No API/frontend/DB: CONFIRMED (git diff clean of route/frontend/migration files)
+
+### UCE-078 Status
+- UCE-078 academic_integrity_case_management: **IMPLEMENTED** — L3 sensitive readiness governance ✅
+
+### UCE-093 Deferred Status
+- UCE-093 academic_appeals_workflow: **DEFERRED** to A-030.6 ✅
+- deferred_candidate preserved in appeal_boundary ✅
+
+### Not Marked
+- A-030.6 runtime: NOT YET
+- UCE-093 implemented: NOT YET
+- L5/L6 claims: NONE
+
+### Next Action
+- next_action_id: A-030.6-SPEC
+- Scope: select next sensitive-domain candidate; UCE-093 is primary deferred candidate

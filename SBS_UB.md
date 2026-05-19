@@ -1,8 +1,8 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-030.5-B1
-    - current_stage: A-030.5-RUNTIME complete / academic integrity sensitive-domain foundation implemented
-    - last_completed_action_id: A-030.5-RUNTIME
-    - next_action_id: A-030.5-B1
+    - status: ready_for_A-030.6-SPEC
+    - current_stage: A-030.5-B1 complete / academic integrity sensitive-domain foundation quality baseline confirmed
+    - last_completed_action_id: A-030.5-B1
+    - next_action_id: A-030.6-SPEC
     - updated_at: 2026-05-19 (A-030.5-SPEC complete: UCE-078 academic_integrity_case_management selected; L3 DETERMINISTIC_READINESS_GOVERNANCE target; READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_FINDING_NO_PENALTY boundary; service contract and test plan specified; no runtime code; next action: A-030.5-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
@@ -13994,10 +13994,10 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - anti_fake_review: PASS (all 23 checks confirmed)
     - report_file: A-030.5-SPEC-ACADEMIC_INTEGRITY_SENSITIVE_DOMAIN_FOUNDATION_REPORT.md
     - final_verdict: A-030.5-SPEC CLOSED — PASS
-    - status: ready_for_A-030.5-B1
-    - current_stage: A-030.5-RUNTIME complete / academic integrity sensitive-domain foundation implemented
-    - last_completed_action_id: A-030.5-RUNTIME
-    - next_action_id: A-030.5-B1
+    - status: ready_for_A-030.6-SPEC
+    - current_stage: A-030.5-B1 complete / academic integrity sensitive-domain foundation quality baseline confirmed
+    - last_completed_action_id: A-030.5-B1
+    - next_action_id: A-030.6-SPEC
 
 - action_id: A-030.5-RUNTIME
     - mode: runtime_implementation_sensitive_domain_foundation
@@ -14031,3 +14031,38 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - sensitive_domain_foundation_count: 5
     - report_file: A-030.5-RUNTIME-ACADEMIC_INTEGRITY_SENSITIVE_DOMAIN_FOUNDATION_REPORT.md
     - final_verdict: A-030.5-RUNTIME CLOSED — PASS
+
+- action_id: A-030.5-B1
+    - mode: quality_baseline_confirmation
+    - purpose: validate_and_close_A-030.5-RUNTIME_quality_baseline
+    - runtime_commit: 957f8a8 — test(wave19): A-030.5 implement academic integrity foundation
+    - task0_hygiene: PASS (HEAD=957f8a8, only .coverage modified, no unexpected dirty files)
+    - task1_source_of_truth: PASS (A-030.5-RUNTIME complete, next=A-030.5-B1, UCE-078 implemented, UCE-093 deferred)
+    - task2_metrics_source: PASS (A0305_academic_integrity_sensitive_foundation_count=1, sensitive_domain_foundation_count=5, all execution counters=0)
+    - task3_docker_hygiene: PASS (no running containers, ai_default network up, ai-backend-tests:latest present, 15Gi RAM)
+    - task4_gate1_targeted: PASS (146 passed, 0 failed, 0.12s)
+    - task5_gate2_continuity: PASS (239 passed, 0 failed, 0.21s — A-030.5+A-030.4)
+    - task6_gate3_full_chain: PASS (790 passed, 4 skipped, 0 failed, 0.61s — full A-030.x)
+    - task7_optional_a028_sanity: NON-BLOCKING TIMEOUT (test_a0282 TestClient+live-DB hang known pattern, not A-030.5 regression)
+    - task8_forbidden_scan: PASS (135 lines all data strings, no executable forbidden behavior, no route/frontend/DB change)
+    - task9_metrics_anchor: PASS (all sensitive/brain/policy/provider/expansion/baseline metrics confirmed locked)
+    - gate1_result: 146 passed, 0 failed
+    - gate2_result: 239 passed, 0 failed
+    - gate3_result: 790 passed, 4 skipped, 0 failed
+    - anti_fake_review: PASS (24/24 anti-fake flags TRUE)
+    - deferred_UCE_093_preserved: PASS (academic_appeals_workflow deferred, deferred_candidate=UCE-093 in appeal_boundary)
+    - no_api_frontend_db: PASS (git diff --name-only shows NO_ROUTE_FRONTEND_DB_CHANGE)
+    - baseline_non_movement: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150)
+    - extension_non_movement: PASS (extension_total_count=25, total_tracked=175)
+    - ordinary_expansion_non_movement: PASS (L2=67, L3=50, L4=40 unchanged)
+    - provider_readiness_non_movement: PASS (provider_count=11 unchanged)
+    - brain_governance_non_movement: PASS (A0301_count=5, all counters=0)
+    - policy_procurement_non_movement: PASS (A0302_count=3, all counters=0)
+    - sensitive_metrics_confirmed: A0305_count=1, sensitive_domain_foundation_count=5, all execution=0
+    - quality_decision: CLOSED — PASS
+    - report_file: A-030.5-B1-ACADEMIC_INTEGRITY_SENSITIVE_FOUNDATION_QUALITY_BASELINE_REPORT.md
+    - final_verdict: A-030.5-B1 CLOSED — SCOPED ACADEMIC INTEGRITY QUALITY BASELINE CONFIRMED
+    - status: ready_for_A-030.6-SPEC
+    - current_stage: A-030.5-B1 complete / academic integrity sensitive-domain foundation quality baseline confirmed
+    - last_completed_action_id: A-030.5-B1
+    - next_action_id: A-030.6-SPEC
