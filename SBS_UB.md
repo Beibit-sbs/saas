@@ -1,8 +1,8 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-030.5-RUNTIME
-    - current_stage: A-030.5-SPEC complete / academic integrity sensitive-domain foundation specified
-    - last_completed_action_id: A-030.5-SPEC
-    - next_action_id: A-030.5-RUNTIME
+    - status: ready_for_A-030.5-B1
+    - current_stage: A-030.5-RUNTIME complete / academic integrity sensitive-domain foundation implemented
+    - last_completed_action_id: A-030.5-RUNTIME
+    - next_action_id: A-030.5-B1
     - updated_at: 2026-05-19 (A-030.5-SPEC complete: UCE-078 academic_integrity_case_management selected; L3 DETERMINISTIC_READINESS_GOVERNANCE target; READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_FINDING_NO_PENALTY boundary; service contract and test plan specified; no runtime code; next action: A-030.5-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
@@ -13994,7 +13994,40 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - anti_fake_review: PASS (all 23 checks confirmed)
     - report_file: A-030.5-SPEC-ACADEMIC_INTEGRITY_SENSITIVE_DOMAIN_FOUNDATION_REPORT.md
     - final_verdict: A-030.5-SPEC CLOSED — PASS
-    - status: ready_for_A-030.5-RUNTIME
-    - current_stage: A-030.5-SPEC complete / academic integrity sensitive-domain foundation specified
-    - last_completed_action_id: A-030.5-SPEC
-    - next_action_id: A-030.5-RUNTIME
+    - status: ready_for_A-030.5-B1
+    - current_stage: A-030.5-RUNTIME complete / academic integrity sensitive-domain foundation implemented
+    - last_completed_action_id: A-030.5-RUNTIME
+    - next_action_id: A-030.5-B1
+
+- action_id: A-030.5-RUNTIME
+    - mode: runtime_implementation_sensitive_domain_foundation
+    - purpose: implement_UCE-078_academic_integrity_sensitive_readiness_foundation
+    - candidate: UCE-078 academic_integrity_case_management
+    - target_maturity: L3_DETERMINISTIC_READINESS_GOVERNANCE
+    - boundary: READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_FINDING_NO_PENALTY
+    - task0_hygiene: PASS (clean repo, HEAD=59fc34d, .coverage only modified)
+    - task1_source_of_truth: PASS (ready_for_A-030.5-RUNTIME confirmed, UCE-078 selected)
+    - task2_metrics_source: PASS (sensitive_domain_foundation_count=4, all execution counters=0)
+    - task3_pattern_inspection: PASS (disciplinary_case_management reference read)
+    - task4_init_module: UPDATED (existing __init__.py updated to L3 + A-030.5 contract version)
+    - task5_service_implementation: COMPLETE
+      - validate_tenant_id: strict (rejects None/bool/float/string/0/negative → ValueError)
+      - function: get_academic_integrity_case_management_sensitive_readiness_foundation
+      - output_sections: academic_integrity_case_governance, evidence_envelope, policy_reference_envelope, human_review_envelope, committee_review_envelope, fairness_review_envelope, appeal_boundary, audit_trail_readiness, forbidden_actions(18), anti_fake_flags(24), metric_contract
+    - task6_test_file: CREATED (backend/tests/test_a0305_academic_integrity_sensitive_readiness_foundation.py, 146 tests)
+    - task7_gate1: PASS (146 passed, 0 failed, --network ai_default --env-file infra/.env, 0.15s)
+    - task8_gate2: PASS (239 passed A-030.5+A-030.4, 0 failed, 0.22s)
+    - task9_gate3: PASS (790 passed, 4 skipped, 0 failed — full A-030.x chain regression)
+    - task10_forbidden_scan: PASS (no TestClient, no live calls, no DB access, no API routes)
+    - runtime_files_modified: backend/app/modules/academic_integrity_case_management/__init__.py, backend/app/modules/academic_integrity_case_management/service.py
+    - runtime_files_created: backend/tests/test_a0305_academic_integrity_sensitive_readiness_foundation.py
+    - api_route_created: NONE
+    - frontend_change: NONE
+    - db_migration: NONE
+    - l5_l6_claim: NONE
+    - deferred_UCE_093_preserved: PASS (academic_appeals_workflow deferred, deferred_candidate=UCE-093 in appeal_boundary)
+    - metric_contract: A0305_academic_integrity_sensitive_foundation_count=1, sensitive_domain_foundation_count_after_runtime=5, all execution counters=0
+    - A0305_academic_integrity_sensitive_foundation_count: 1
+    - sensitive_domain_foundation_count: 5
+    - report_file: A-030.5-RUNTIME-ACADEMIC_INTEGRITY_SENSITIVE_DOMAIN_FOUNDATION_REPORT.md
+    - final_verdict: A-030.5-RUNTIME CLOSED — PASS

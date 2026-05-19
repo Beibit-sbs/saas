@@ -11235,3 +11235,46 @@ academic_integrity_finding, plagiarism_finding, cheating_finding, guilt_determin
 - Scope: implement UCE-078 per A-030.5-SPEC contract
 - Commit: test(wave19): A-030.5 implement academic integrity sensitive foundation
 
+
+---
+
+## A-030.5-RUNTIME — Academic Integrity Sensitive-Domain Foundation (UCE-078)
+
+**Action**: A-030.5-RUNTIME
+**Status**: COMPLETE
+**Commit**: test(wave19): A-030.5 implement academic integrity foundation
+
+### Runtime Implementation
+- **Module**: `backend/app/modules/academic_integrity_case_management/`
+- **UCE-ID**: UCE-078
+- **Maturity**: L3_DETERMINISTIC_READINESS_GOVERNANCE
+- **Boundary**: READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_FINDING_NO_PENALTY
+
+### Files Changed
+- `backend/app/modules/academic_integrity_case_management/__init__.py` — updated (TARGET_LEVEL=L3, CONTRACT_VERSION=A-030.5)
+- `backend/app/modules/academic_integrity_case_management/service.py` — updated (strict validate_tenant_id, new L3 function)
+- `backend/tests/test_a0305_academic_integrity_sensitive_readiness_foundation.py` — created (146 tests)
+
+### Gate Results
+- Gate 1 (targeted): 146 passed, 0 failed
+- Gate 2 (A-030.5 + A-030.4): 239 passed, 0 failed
+- Gate 3 (full A-030.x chain): 790 passed, 4 skipped, 0 failed
+
+### Metric Contract
+- `sensitive_domain_foundation_count`: 4 → **5**
+- `A0305_academic_integrity_sensitive_foundation_count`: 1
+- All execution counters: 0
+
+### Sensitive-Domain Chain (5 total)
+1. UCE-038 disability_support_services (A-030.3)
+2. UCE-081 student_financial_hardship (A-030.3)
+3. UCE-082 student_appeals_workflow (A-030.3)
+4. UCE-007 disciplinary_case_management (A-030.4)
+5. UCE-078 academic_integrity_case_management (A-030.5) ← NEW
+
+### Deferred
+- UCE-093 academic_appeals_workflow → A-030.6 (appeal_boundary.deferred_candidate preserved)
+
+### Next Action
+- next_action_id: A-030.5-B1
+- Scope: quality baseline confirmation for A-030.5-RUNTIME
