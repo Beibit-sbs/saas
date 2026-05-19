@@ -1,9 +1,9 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: blocked_A-030.4.B1.R11
-    - current_stage: A-030.4.B1.R11 blocked / A-028 split continuation timed out at tests/test_a0282_expansion_l4_readonly_api_routes.py
-    - last_completed_action_id: A-030.4.B1.R10
-    - next_action_id: A-030.4.B1.R12
-    - updated_at: 2026-05-18 (R11 revalidated A-028.1 sanity PASS 156 in 0.12s, then A-028 split continuation stopped at r11_a0282 with exit 124 under 300s bounded Docker run; per strict policy A-028 combined retry and Gate4 A-027 continuity were not run; no runtime feature changes)
+    - status: ready_for_A-030.4.B1.R13
+    - current_stage: A-030.4.B1.R12 PASS / A-028.2 timeout remediated via module-scoped TestClient fixture
+    - last_completed_action_id: A-030.4.B1.R12
+    - next_action_id: A-030.4.B1.R13
+    - updated_at: 2026-05-19 (R12 remediated A-028.2 timeout from 30m18s→1.71s via module-scoped fixture; A-028.2 targeted 122 PASS, A-028 pair 278 PASS, A-030 continuity 648 PASS; all contract/RBAC/metrics preserved; zero production code changes; test-harness-only remediation; next action: A-028 combined retry + Gate4 A-027)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS

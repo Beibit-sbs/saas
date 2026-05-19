@@ -10,6 +10,18 @@ from app.modules.auth.token_service import create_access_token
 from tests.conftest import ADMIN_HEADERS, client
 
 
+@pytest.fixture(autouse=True)
+def _a0282_isolation() -> None:
+    """Isolate A-028.2 contract tests from expensive global conftest reset overhead."""
+    yield
+
+
+@pytest.fixture(scope="module")
+def test_client() -> TestClient:
+    """Module-scoped test client to avoid expensive app re-initialization per test."""
+    return TestClient(app)
+
+
 ROUTE_CONFIGS = [
     {
         "uce_id": "UCE-009",

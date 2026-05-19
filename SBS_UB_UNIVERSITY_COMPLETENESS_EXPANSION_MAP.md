@@ -11018,3 +11018,76 @@ Reason:
 ### Next Action
 - next_action_id: A-030.4.B1.R10
 - R10 scope: deeper timeout-path isolation for tests/test_a0281_expansion_l4_visibility_batch1.py in Docker-only validation mode.
+
+## A-030.4.B1.R10 - A-028.1 Visibility Batch Test Timeout Remediation
+
+**Status**: PASS
+
+### R9 Blocker Resolution
+- R9 failed at A-028.1 split validation timeout (exit 124)
+- R10 applied module-local autouse fixture override
+- Remediation class: TEST_HARNESS_CUMULATIVE_OVERHEAD
+
+### A-028.1 Remediation Results
+- Targeted: 156 passed in 0.12s ✅
+- A-030 continuity: 644 passed, 4 skipped in 0.50s ✅
+
+### Gate Result
+- Gate3 A-028 split continuation: prerequisite PASS, ready for combined retry
+
+### Next Action
+- next_action_id: A-030.4.B1.R11
+- R11 scope: A-028 combined retry + Gate4 A-027 continuity validation
+
+## A-030.4.B1.R11 - A-028 Combined Re-run and Gate4 Continuity Report
+
+**Status**: BLOCKED
+
+### R10 Successful Baseline
+- A-028.1 remediation: 156 PASS in 0.12s ✅
+
+### R11 Execution
+- A-028.2 readonly api routes test: exit 124 (timeout after 300s bounded Docker window)
+- Immediate halt per stop-on-failure policy
+- A-028 combined retry: NOT RUN (prerequisite blocked)
+- Gate4 A-027: NOT RUN (Gate3 unresolved)
+
+### Next Action
+- next_action_id: A-030.4.B1.R12
+- R12 scope: deep remediation of tests/test_a0282_expansion_l4_readonly_api_routes.py timeout path
+
+## A-030.4.B1.R12 - A-028.2 Readonly API Routes Test Timeout Remediation
+
+**Status**: PASS ✅
+
+### R11 Blocker Resolution
+- R11 timeout at A-028.2 (30m18s / 1818s hang)
+- Root cause: expensive per-test TestClient re-initialization
+- Fixture scope: function (default) → module (efficient reuse)
+
+### A-028.2 Remediation Results
+- Targeted: 122 passed in 1.71s (99.4% faster) ✅
+- A-028 pair (A-028.1+2): 278 passed in 1.75s ✅
+- A-030 continuity: 648 passed in 0.59s ✅
+
+### Contract Preservation
+- All 122 A-028.2 assertions verified (GET-only, RBAC, tenant, read-only)
+- All anti-fake flags confirmed
+- All metrics locked and separated by namespace
+- Zero production code changes (test-harness-only remediation)
+
+### Test File Changes
+- backend/tests/test_a0282_expansion_l4_readonly_api_routes.py
+- Change: Added scope="module" to test_client fixture
+- Impact: Fixture now reused across all 122 tests in module instead of per-test initialization
+
+### Gate Result
+- A-028.2 fast remediation: ✅ PASS
+- A-028 pair validation: ✅ PASS (278 tests)
+- A-030 sanity: ✅ PASS (648 tests)
+- Total evidence: 926 tests, all PASS
+
+### Next Action
+- next_action_id: A-030.4.B1.R13
+- R13 scope: A-028 combined full-file retry + Gate4 A-027 continuity completion
+
