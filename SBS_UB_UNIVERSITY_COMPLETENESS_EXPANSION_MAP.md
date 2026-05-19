@@ -11639,3 +11639,79 @@ A-031.0-SPEC: **CLOSED — FULL PRODUCTIZATION ROADMAP SELECTED**
 ### Next Action
 - next_action_id: **A-031.1-SPEC**
 - Focus: Detailed backend domain specification for rector_assignment_workflow — DB schema, API contract, service function specs, test plan
+
+---
+
+## A-031.1-SPEC — Rector Assignment Workflow Backend Domain / API Specification
+
+**Date**: 2026-05-20  
+**Action ID**: A-031.1-SPEC  
+**Mode**: spec_only / docs_only  
+**Status**: CLOSED
+
+### Summary
+
+A-031.1-SPEC produced the complete backend blueprint for the `rector_assignment_workflow` module under the RECTOR_ASSIGNMENT_EXECUTION_CONTROL_OS vertical.
+
+### DB Schema Specification
+
+10 tables specified:
+- `rector_assignments` — core assignment entity (27 columns, BigInteger PK, tenant_id BigInteger)
+- `rector_assignment_tasks` — child tasks per assignment
+- `rector_assignment_assignees` — role-on-assignment association table
+- `rector_assignment_reports` — progress reports submitted by executors
+- `rector_assignment_evidence` — FILE/LINK/TEXT evidence (HTTPS-only for URLs)
+- `rector_assignment_comments` — threaded comments with INTERNAL/ASSIGNEES/LEADERSHIP visibility
+- `rector_assignment_status_history` — INSERT-only immutable audit trail for every transition
+- `rector_assignment_escalations` — escalation records with level and resolution
+- `rector_assignment_templates` — reusable assignment templates
+- `rector_assignment_audit_events` — domain-scoped INSERT-only audit log
+
+**Pattern**: All tables use `BigInteger` PK, `BigInteger tenant_id`, `VARCHAR(32/64)` enums with CHECK constraints. Zero PostgreSQL native ENUMs. Full index coverage on `(tenant_id, status)`, `(tenant_id, due_date)`, etc.
+
+### API Contract
+
+24 routes under `/api/admin/rector-assignments`:
+- CRUD: list, create, detail, update
+- Lifecycle: assign, accept, submit_report, review_report, return, complete, escalate, cancel, archive
+- Sub-resources: evidence list/attach, comments list/add, audit trail read
+- Dashboard: `/dashboard/summary` (computed-only, fake_metrics=False)
+- Templates: list, create, update
+
+Permission pattern: `admin.rector_assignments.X` (20 permission strings, 7 roles, RBAC + ABAC service-layer checks)
+
+### 11-Status Lifecycle
+
+`DRAFT → ASSIGNED → ACCEPTED → IN_PROGRESS → REPORT_SUBMITTED → COMPLETED`  
+With branches: `RETURNED_FOR_REVISION`, `OVERDUE` (computed), `ESCALATED`, `CANCELLED`, `ARCHIVED`  
+Full forbidden-transition enforcement. INSERT-only status_history on every transition.
+
+### Service Contract
+
+20 service functions specified with full signatures, return types, error types, and side effects.
+
+### Test Plan
+
+4 test files, target 155–225 tests:
+- `test_a0311_rector_assignment_domain.py` (60–80 tests)
+- `test_a0311_rector_assignment_api.py` (50–70 tests)
+- `test_a0311_rector_assignment_security.py` (30–50 tests)
+- `test_a0311_rector_assignment_dashboard.py` (15–25 tests)
+
+### Architecture Alignment
+
+Confirmed against existing project patterns:
+- `permission_dependency("admin.rector_assignments.X")` from `app.modules.rbac.security`
+- `get_current_tenant` from `app.core.tenant` (token source-of-truth)
+- `log_admin_action` / `build_audit_action` from `app.modules.audit`
+- `validate_tenant_id_provided`, `DomainValidationError`, `TenantResourceNotFoundError`, `OptimisticLockConflictError` from `app.core.module_helpers.service_validation`
+- `BigInteger` PK, `tenant_id: Mapped[str]` style adjusted to `BigInteger` based on pattern (note: `academic_records` uses BigInteger not String for tenant_id in query context)
+
+### Metrics
+
+Zero metric movement. L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150 unchanged.  
+This is specification-only. Metrics advance in A-031.1-RUNTIME after test evidence collected.
+
+### Next Action
+
+**A-031.1-RUNTIME** — Implement `rector_assignment_workflow` backend module per this spec.
