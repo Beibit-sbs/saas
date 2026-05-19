@@ -11091,3 +11091,63 @@ Reason:
 - next_action_id: A-030.4.B1.R13
 - R13 scope: A-028 combined full-file retry + Gate4 A-027 continuity completion
 
+
+## A-030.4.B1.R13 — A-028 Combined Full Retry and A-027 Continuity
+
+**Status**: CLOSED — DISCIPLINARY SENSITIVE QUALITY BASELINE REVALIDATED ✅
+
+### R12 Remediation Summary
+- R12 fixed A-028.2 timeout (30m18s → 1.71s) via module-scoped TestClient fixture
+- Commit: bf602c2
+
+### Key Diagnosis (R13)
+- `--network ai_default --env-file infra/.env` pattern causes DB/LDAP connection hangs
+- infra/.env contains DATABASE_URL + AUTH_LDAP_ENABLED=true (live connections)
+- Correct pattern: direct Docker without --network/--env-file (activates in-memory isolation)
+- All prior successful runs (R10, R12) used this correct pattern
+
+### A-028.1 + A-028.2 Sanity
+- 278 passed in 1.71s ✅
+
+### A-028 Split Continuation (A-028.3 through A-028.15, 11 files)
+- test_a0283: 118 passed ✅
+- test_a0284: 30 passed ✅
+- test_a0286: 100 passed ✅
+- test_a0287: 379 passed ✅
+- test_a0288: 44 passed ✅
+- test_a0289: 92 passed ✅
+- test_a02810: 382 passed ✅
+- test_a02811: 258 passed ✅
+- test_a02813: 112 passed ✅
+- test_a02814: 270 passed ✅
+- test_a02815: 249 passed ✅
+- Split total: 2034 tests PASS
+
+### A-028 Combined Full Retry
+- 2312 passed in 16.18s ✅ (all 13 files)
+
+### Gate4 A-027 Continuity
+- 1268 passed in 3.57s ✅ (5 deterministic logic files)
+
+### Optional Gates
+- LDAP smoke: 2 passed ✅
+- Tenant/security: 56 passed ✅
+
+### Metrics
+- All baseline, extension, ordinary expansion, provider, Brain, policy, sensitive metrics: UNCHANGED ✅
+- Sensitive execution counters: all 0 ✅
+- UCE-078 / UCE-093 deferred: confirmed ✅
+- No L5/L6 claim ✅
+- No runtime code: confirmed ✅
+
+### Closure Decision
+- Decision: A-030.4.B1 CLOSED ✅
+- Reason: All required gates passed
+- Total test evidence: 3638+ tests PASS, 0 failures
+
+### Next Action
+- next_action_id: A-030.5-SPEC
+- Scope: UCE-078 academic_integrity_case_management sensitive domain specification
+- Mode: SPEC only (no runtime)
+- Risk: HIGH (academic integrity finding, sanction risk)
+
