@@ -11552,3 +11552,90 @@ A-030.6-B1: **CLOSED — PASS**
 ### Next Action
 - next_action_id: A-031.0-SPEC
 - Rationale: A-030 sensitive-domain chain 6/6 complete; tracker roadmap indicates A-031.0-SPEC as post-A-030 closure action
+
+---
+
+## A-031.0-SPEC — Full Productization / Rector Assignment OS Roadmap
+
+### Status
+A-031.0-SPEC: **CLOSED — FULL PRODUCTIZATION ROADMAP SELECTED**
+
+### Post-A-030 Closure State
+- A-030 sensitive-domain chain: 6/6 COMPLETE (UCE-038, UCE-081, UCE-082, UCE-007, UCE-078, UCE-093)
+- Source commit: `632996f` — `docs(wave19): A-030.6-B1 confirm academic appeals baseline`
+- Maturity baseline: L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150 (locked)
+- Extension total: 25 (locked)
+- All metrics: UNCHANGED
+
+### Productization Decision
+- **Selected**: FULL_PRODUCTIZATION track
+- **Rejected**: demo-only, QS-only, another backend-readiness-only wave
+- **Rationale**: Foundation (150 modules, 6 sensitive-domain, 5 brain governance, 3 policy/procurement, 6 provider readiness) is sufficient; product bottleneck is operational UI and end-to-end workflows
+
+### Selected Vertical: RECTOR_ASSIGNMENT_EXECUTION_CONTROL_OS
+- Primary users: Rector, Vice Rector/Prorectors, Directors/Deans, Executors, Controllers, Auditors, Platform Admin
+- Core value: Real operational workflow for leadership assignment control — create, assign, track, report, review, escalate, audit, dashboard — backed by real data
+- Product boundary: REAL_DATA_ONLY / TENANT_ISOLATED / RBAC_ENFORCED / NO_AI_AUTONOMY / AUDIT_EVERY_MUTATION
+
+### Why Selected from Expansion Map Evidence
+
+#### Governance / Rectorate / Strategy — P0 Gaps Addressed
+| Gap | Expansion Map Evidence | Related UCE |
+|-----|----------------------|------------|
+| rector escalation chain | P0 gap, line 52 | UCE-099 |
+| rector strategy dashboard | P0 gap, line 52 | UCE-031 |
+| strategy execution office | P0 gap, PARTIAL_BUT_NEEDS_WORKFLOWS, line 82 | UCE-099 |
+| weak strategic execution model | HIGH priority, line 82 | UCE-099 + new modules |
+
+#### Document Management — P0 Gaps Addressed
+| Gap | Expansion Map Evidence | Related UCE |
+|-----|----------------------|------------|
+| document_workflow | WEAK, P0, line 103 | UCE-009 |
+| order_decree_registry | P0, line 154 | UCE-011 |
+| decree routing workflow | P0 gap, line 73 | UCE-009 + UCE-011 |
+| document SLA dashboard | P1 gap, line 73 | UCE-120 |
+
+### Related UCE Candidates (Targeted for A-031.1+)
+| UCE | Module | Vertical | Priority | Current Maturity | Target |
+|-----|--------|----------|----------|-----------------|--------|
+| UCE-099 | rector_resolution_tracking_workflow | Governance/Rectorate/Strategy | P0 | L2 | L3+ (A-031.1) |
+| UCE-031 | rector_strategy_dashboard | Governance | P0 | L1 | L3+dashboard (A-031.1) |
+| UCE-009 | document_workflow | Document Management | P0 | L2 | L3 (A-031.1 or A-031.2) |
+| UCE-011 | order_decree_registry | Governance/Document | P0 | L2 | L3 (A-031.1 or A-031.2) |
+| UCE-013 | incoming_outgoing_correspondence | Communications | P1 | L2 | L3 (A-031.2+) |
+| UCE-120 | document_workflow_dashboard | Document Workflow/Archive | P1 | L2 | L4 (A-031.3+) |
+
+### Spec Scope Summary
+| Dimension | Defined In A-031.0-SPEC |
+|-----------|------------------------|
+| Product roles | 7 roles defined |
+| Permission matrix | 12 permissions × 7 roles |
+| Domain entities | 11 entities |
+| Lifecycle statuses | 11 statuses |
+| Core workflows | 7 workflows |
+| UI portals | 4 portals |
+| Backend modules expected | 8 modules |
+| API routes expected | 25+ routes |
+
+### Implementation Not Started
+- No runtime service.py created: NONE
+- No tests created: NONE
+- No API routes created: NONE
+- No frontend components created: NONE
+- No DB migrations created: NONE
+- No maturity elevation: NONE
+
+### Roadmap Summary
+| Action | Type | Focus |
+|--------|------|-------|
+| A-031.1-SPEC | SPEC | Backend domain/API/DB schema spec |
+| A-031.1-RUNTIME | RUNTIME | Backend services + API routes + tests |
+| A-031.2-FRONTEND-SPEC | SPEC | Role-based UI component spec |
+| A-031.2-FRONTEND | RUNTIME | React/Next.js portals |
+| A-031.3-E2E | VALIDATION | Docker/Nginx end-to-end workflow tests |
+| A-031.4-B1 | QUALITY | Security/tenant/audit/performance gate |
+| A-031.5 | EXPANSION | Reporting/dashboard/outbox expansion |
+
+### Next Action
+- next_action_id: **A-031.1-SPEC**
+- Focus: Detailed backend domain specification for rector_assignment_workflow — DB schema, API contract, service function specs, test plan
