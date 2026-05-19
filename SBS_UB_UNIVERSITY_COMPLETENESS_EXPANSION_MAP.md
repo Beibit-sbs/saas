@@ -11474,3 +11474,81 @@ appeal_decision, appeal_approval, appeal_rejection, academic_ruling, grade_chang
 ### Next Action
 - next_action_id: A-030.6-B1
 - Scope: A-030.6 confirm baseline — pytest gate evidence, commit verification, metrics lock, output
+
+---
+
+## A-030.6-B1 — Academic Appeals Sensitive Foundation Quality Baseline
+
+### Status
+A-030.6-B1: **CLOSED — PASS**
+
+### Source State
+- Runtime commit: `9fc6e43` — `test(wave19): A-030.6 implement academic appeals foundation`
+- UCE-093 status: `A-030.6-RUNTIME_IMPLEMENTED_L3_READINESS_GOVERNANCE` (confirmed)
+
+### Gate Results
+| Gate | Tests | Exit | Status |
+|------|-------|------|--------|
+| Gate 1: A-030.6 targeted | 164 passed, 0 failed | 0 | **PASS** |
+| Gate 2: A-030.6 + A-030.5 continuity | 310 passed, 0 failed | 0 | **PASS** |
+| Gate 3: full A-030.x chain | 954 passed, 4 skipped, 0 failed | 0 | **PASS** |
+| Optional A-028.1/A-028.2 sanity | TIMEOUT 600s | 124 | NON-BLOCKING (known pattern) |
+
+### Forbidden Scan
+- 658 grep hits across all A-030.6 files — all classified as data strings, test assertions, or documentation
+- No executable forbidden behavior
+- git diff scope check: NO_ROUTE_FRONTEND_DB_CHANGE
+
+### Metrics Confirmed
+| Metric | Value |
+|--------|-------|
+| A0306_academic_appeals_sensitive_foundation_count | 1 |
+| sensitive_domain_foundation_count | 6 |
+| sensitive_auto_appeal_decision_count | 0 |
+| All sensitive execution/scoring/submission counters | 0 |
+| Baseline L0/L1/L2/L3/L4/L5/L6/total | 0/0/0/55/68/25/2/150 UNCHANGED |
+| Extension count | 25 UNCHANGED |
+| Brain governance | UNCHANGED |
+| Policy/procurement | UNCHANGED |
+| Provider readiness | UNCHANGED |
+
+### Anti-Fake Confirmation
+- anti_fake_flags: 30 items, all True (verified in test)
+- forbidden_actions: 20 items (verified in test)
+- no_appeal_decision: ENFORCED
+- no_academic_ruling: ENFORCED
+- no_grade_change: ENFORCED
+- no_penalty_reversal: ENFORCED
+- no_disciplinary_reversal: ENFORCED
+- no_cross_case_decision_execution: ENFORCED
+- no_integrity_finding_override: ENFORCED
+- no_disciplinary_outcome_override: ENFORCED
+- due_process_review_required: CONFIRMED
+- conflict_of_interest_review_required: CONFIRMED
+- no_l5_claim: CONFIRMED
+- no_l6_claim: CONFIRMED
+- Anti-fake review: PASS
+
+### Related Case Boundaries
+- UCE-078 academic_integrity_case_management: string reference only, 0 imports in service.py, no override
+- UCE-007 disciplinary_case_management: string reference only, 0 imports in service.py, no override
+
+### Sensitive-Domain Chain 6/6 Complete
+| # | UCE | Module | A-Action | Status |
+|---|-----|--------|----------|--------|
+| 1 | UCE-038 | disability_support_services | A-030.3 | ✅ L3 |
+| 2 | UCE-081 | student_financial_hardship | A-030.3 | ✅ L3 |
+| 3 | UCE-082 | student_appeals_workflow | A-030.3 | ✅ L3 |
+| 4 | UCE-007 | disciplinary_case_management | A-030.4 | ✅ L3 |
+| 5 | UCE-078 | academic_integrity_case_management | A-030.5 | ✅ L3 |
+| 6 | UCE-093 | academic_appeals_workflow | A-030.6 | ✅ **L3** |
+
+### No API / Frontend / DB
+- No routes introduced
+- No frontend modified
+- No DB migrations
+- CONFIRMED
+
+### Next Action
+- next_action_id: A-031.0-SPEC
+- Rationale: A-030 sensitive-domain chain 6/6 complete; tracker roadmap indicates A-031.0-SPEC as post-A-030 closure action
