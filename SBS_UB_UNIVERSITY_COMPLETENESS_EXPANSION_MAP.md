@@ -11332,3 +11332,92 @@ academic_integrity_finding, plagiarism_finding, cheating_finding, guilt_determin
 ### Next Action
 - next_action_id: A-030.6-SPEC
 - Scope: select next sensitive-domain candidate; UCE-093 is primary deferred candidate
+
+---
+
+## A-030.6-SPEC — Academic Appeals Workflow Sensitive-Domain Foundation Specification
+
+**Action**: A-030.6-SPEC
+**Status**: CLOSED — PASS
+**Type**: SPEC-ONLY / DOCS-ONLY
+**Date**: 2026-05-20
+
+### Source State After A-030.5-B1 Closure
+- Prior closure: A-030.5-B1 (commit 6bc5eae)
+- sensitive_domain_foundation_count: 5
+- All execution counters: 0
+- UCE-093 academic_appeals_workflow: DEFERRED — preserved in UCE-078 appeal_boundary
+- Tracker status: ready_for_A-030.6-SPEC
+
+### Sensitive-Domain Chain After A-030.5-B1
+| # | UCE-ID | Module | Action | Status |
+|---|--------|--------|--------|--------|
+| 1 | UCE-038 | disability_support_services | A-030.3 | IMPLEMENTED L3 |
+| 2 | UCE-081 | student_financial_hardship | A-030.3 | IMPLEMENTED L3 |
+| 3 | UCE-082 | student_appeals_workflow | A-030.3 | IMPLEMENTED L3 |
+| 4 | UCE-007 | disciplinary_case_management | A-030.4 | IMPLEMENTED L3 |
+| 5 | UCE-078 | academic_integrity_case_management | A-030.5 | IMPLEMENTED L3 |
+| 6 | UCE-093 | academic_appeals_workflow | A-030.6 | **A-030.6-SPEC_SELECTED_FOR_RUNTIME** |
+
+### Selected Candidate
+- UCE-ID: UCE-093
+- Module: academic_appeals_workflow
+- Sensitive-domain type: APPEALS_WORKFLOW
+- Risk level: CRITICAL / SENSITIVE-TIER-1
+- Target maturity: L3_DETERMINISTIC_READINESS_GOVERNANCE
+
+### Runtime Boundary
+**READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_APPEAL_DECISION_NO_ACADEMIC_RULING**
+
+### Forbidden Actions (20)
+appeal_decision, appeal_approval, appeal_rejection, academic_ruling, grade_change, penalty_reversal, disciplinary_reversal, sanction_reversal, student_status_change, notification_execution, recommendation, ranking, prioritization_score, external_submission, hidden_score, synthetic_score, discriminatory_score, llm_call, brain_execution, autonomous_decision
+
+### Related Case Boundaries
+- UCE-007 disciplinary_case_management: REFERENCED (not overridden)
+- UCE-078 academic_integrity_case_management: REFERENCED (not overridden)
+- no_cross_case_decision_execution: True
+- no_integrity_finding_override: True
+- no_disciplinary_outcome_override: True
+
+### Expected Runtime Contract
+- Module: `backend/app/modules/academic_appeals_workflow/service.py`
+- Function: `get_academic_appeals_workflow_sensitive_readiness_foundation(tenant_id: int) -> dict`
+- Envelope sections: academic_appeals_governance, appeal_intake_envelope, evidence_review_envelope, policy_reference_envelope, committee_review_envelope, fairness_review_envelope, due_process_envelope, conflict_of_interest_envelope, decision_boundary, audit_trail_readiness, related_case_boundaries, forbidden_actions (20), anti_fake_flags (28), metric_contract
+- Validate: fail-closed, bool checked before int, None/0/negative/str/bool/float → ValueError
+
+### Expected Tests
+- File: `tests/test_a0306_academic_appeals_sensitive_readiness_foundation.py`
+- Count: ~120–150 tests, ~23 classes
+- Fixture: reset_shared_state autouse
+- Pattern: pure Python service, no TestClient, no network calls
+
+### Expected Validation Gates
+- Gate 1 (targeted): all new tests pass
+- Gate 2 (A-030.6 + A-030.5): continuity pass
+- Gate 3 (full A-030.x chain): full continuity pass
+- Optional A-028 sanity: NON-BLOCKING TIMEOUT permitted (known pattern)
+- Forbidden scan: CLEAN
+- git diff --check: PASS
+
+### Expected Metrics After A-030.6-RUNTIME
+- A0306_academic_appeals_sensitive_foundation_count: 1 (NEW)
+- sensitive_domain_foundation_count: 6 (was 5)
+- sensitive_auto_appeal_decision_count: 0 (NEW counter)
+- All other counters: 0 (unchanged)
+- Baseline/extension/expansion/provider/brain/policy: all unchanged
+
+### UCE-093 Runtime Status
+- UCE-093 academic_appeals_workflow: **A-030.6-SPEC_SELECTED_FOR_RUNTIME**
+- Not yet implemented as runtime
+- Not yet marked as L3 complete
+- Implementation begins in A-030.6-RUNTIME
+
+### Spec Anti-Fake: CONFIRMED
+- No runtime code introduced in spec
+- No test code introduced in spec
+- No API routes, frontend, DB changes
+- No appeal decision, ruling, reversal, LLM/Brain, L5/L6 claims
+
+### Next Action
+- next_action_id: A-030.6-RUNTIME
+- Scope: implement UCE-093 per contract in A-030.6-SPEC report

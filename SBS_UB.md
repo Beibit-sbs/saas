@@ -1,8 +1,8 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-030.6-SPEC
-    - current_stage: A-030.5-B1 complete / academic integrity sensitive-domain foundation quality baseline confirmed
-    - last_completed_action_id: A-030.5-B1
-    - next_action_id: A-030.6-SPEC
+    - status: ready_for_A-030.6-RUNTIME
+    - current_stage: A-030.6-SPEC complete / academic appeals sensitive-domain foundation specified
+    - last_completed_action_id: A-030.6-SPEC
+    - next_action_id: A-030.6-RUNTIME
     - updated_at: 2026-05-19 (A-030.5-SPEC complete: UCE-078 academic_integrity_case_management selected; L3 DETERMINISTIC_READINESS_GOVERNANCE target; READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_FINDING_NO_PENALTY boundary; service contract and test plan specified; no runtime code; next action: A-030.5-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
@@ -13994,10 +13994,10 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - anti_fake_review: PASS (all 23 checks confirmed)
     - report_file: A-030.5-SPEC-ACADEMIC_INTEGRITY_SENSITIVE_DOMAIN_FOUNDATION_REPORT.md
     - final_verdict: A-030.5-SPEC CLOSED — PASS
-    - status: ready_for_A-030.6-SPEC
-    - current_stage: A-030.5-B1 complete / academic integrity sensitive-domain foundation quality baseline confirmed
-    - last_completed_action_id: A-030.5-B1
-    - next_action_id: A-030.6-SPEC
+    - status: ready_for_A-030.6-RUNTIME
+    - current_stage: A-030.6-SPEC complete / academic appeals sensitive-domain foundation specified
+    - last_completed_action_id: A-030.6-SPEC
+    - next_action_id: A-030.6-RUNTIME
 
 - action_id: A-030.5-RUNTIME
     - mode: runtime_implementation_sensitive_domain_foundation
@@ -14062,7 +14062,55 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - quality_decision: CLOSED — PASS
     - report_file: A-030.5-B1-ACADEMIC_INTEGRITY_SENSITIVE_FOUNDATION_QUALITY_BASELINE_REPORT.md
     - final_verdict: A-030.5-B1 CLOSED — SCOPED ACADEMIC INTEGRITY QUALITY BASELINE CONFIRMED
-    - status: ready_for_A-030.6-SPEC
-    - current_stage: A-030.5-B1 complete / academic integrity sensitive-domain foundation quality baseline confirmed
-    - last_completed_action_id: A-030.5-B1
-    - next_action_id: A-030.6-SPEC
+    - status: ready_for_A-030.6-RUNTIME
+    - current_stage: A-030.6-SPEC complete / academic appeals sensitive-domain foundation specified
+    - last_completed_action_id: A-030.6-SPEC
+    - next_action_id: A-030.6-RUNTIME
+
+- action_id: A-030.6-SPEC
+    - mode: specification_only
+    - purpose: define_A-030.6-RUNTIME_academic_appeals_sensitive_domain_foundation
+    - type: SPEC-ONLY / DOCS-ONLY
+    - source_commit: 6bc5eae — docs(wave19): A-030.5-B1 confirm academic integrity baseline
+    - task0_hygiene: PASS (HEAD=6bc5eae, only .coverage/.gate-logs/A-027.9 non-scope dirty)
+    - task1_source_of_truth: PASS (A-030.5-B1 closed, ready_for_A-030.6-SPEC confirmed, UCE-093 DEFERRED, UCE-078 L3 readiness only)
+    - task2_metrics_source: PASS (sensitive_domain_foundation_count=5, all execution counters=0, baseline locked L0=0..L6=2 total=150)
+    - selected_candidate: UCE-093 academic_appeals_workflow
+    - target_maturity: L3_DETERMINISTIC_READINESS_GOVERNANCE
+    - boundary: READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_APPEAL_DECISION_NO_ACADEMIC_RULING
+    - runtime_module_path: backend/app/modules/academic_appeals_workflow/
+    - runtime_function: get_academic_appeals_workflow_sensitive_readiness_foundation(tenant_id: int) -> dict
+    - validate_tenant_id: fail-closed (bool/float/str/None/0/negative → ValueError; bool checked before int)
+    - expected_test_file: tests/test_a0306_academic_appeals_sensitive_readiness_foundation.py
+    - expected_test_count: ~120-150 tests (~23 classes)
+    - expected_forbidden_actions: 20 items (appeal_decision, appeal_approval, appeal_rejection, academic_ruling, grade_change, penalty_reversal, disciplinary_reversal, sanction_reversal, student_status_change, notification_execution, recommendation, ranking, prioritization_score, external_submission, hidden_score, synthetic_score, discriminatory_score, llm_call, brain_execution, autonomous_decision)
+    - expected_anti_fake_flags: 28 flags all True (adds due_process_required, conflict_of_interest_review_required vs UCE-078)
+    - expected_related_case_boundaries: UCE-007 (disciplinary) + UCE-078 (academic_integrity) referenced, no override
+    - expected_new_metric: A0306_academic_appeals_sensitive_foundation_count=1
+    - expected_sensitive_domain_foundation_count_after_runtime: 6
+    - expected_new_counter: sensitive_auto_appeal_decision_count=0
+    - expected_execution_counters_after_runtime: all=0
+    - baseline_non_movement: L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150 unchanged
+    - extension_non_movement: 25 unchanged
+    - expansion_non_movement: L2=67/L3=50/L4=40 unchanged
+    - provider_non_movement: 11 unchanged
+    - brain_non_movement: A0301_count=5, all counters=0 unchanged
+    - policy_non_movement: A0302_count=3, all counters=0 unchanged
+    - runtime_code_in_spec: NONE (spec-only action)
+    - test_code_in_spec: NONE (spec-only action)
+    - api_route_in_spec: NONE
+    - frontend_in_spec: NONE
+    - db_migration_in_spec: NONE
+    - appeal_decision_permitted: NEVER
+    - academic_ruling_permitted: NEVER
+    - grade_change_permitted: NEVER
+    - penalty_reversal_permitted: NEVER
+    - llm_brain_autonomy_permitted: NEVER
+    - l5_l6_claim: NONE
+    - anti_fake_review: PASS (spec-only, no executable code, all boundaries confirmed)
+    - report_file: A-030.6-SPEC-ACADEMIC_APPEALS_SENSITIVE_DOMAIN_FOUNDATION_REPORT.md
+    - final_verdict: A-030.6-SPEC CLOSED — ACADEMIC APPEALS SENSITIVE-DOMAIN FOUNDATION SPECIFIED
+    - status: ready_for_A-030.6-RUNTIME
+    - current_stage: A-030.6-SPEC complete / academic appeals sensitive-domain foundation specified
+    - last_completed_action_id: A-030.6-SPEC
+    - next_action_id: A-030.6-RUNTIME
