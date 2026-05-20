@@ -321,3 +321,166 @@ export interface AssignmentTemplateUpdatePayload {
   template_body?: string;
   is_active?: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// A-031.5 Outbox / SLA / Escalation types
+// Enums must match backend string literals exactly.
+// ---------------------------------------------------------------------------
+
+export enum OutboxEventStatus {
+  PENDING = 'PENDING',
+  READY = 'READY',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum OutboxChannel {
+  IN_APP = 'IN_APP',
+  EMAIL = 'EMAIL',
+  SMS = 'SMS',
+}
+
+export enum EscalateToRole {
+  CONTROLLER = 'CONTROLLER',
+  PRORECTOR = 'PRORECTOR',
+  RECTOR = 'RECTOR',
+  PLATFORM_ADMIN = 'PLATFORM_ADMIN',
+}
+
+export interface RectorAssignmentOutboxEvent {
+  id: number;
+  tenant_id: number;
+  assignment_id: number;
+  event_type: string;
+  recipient_user_id?: number;
+  recipient_role?: string;
+  channel: OutboxChannel;
+  payload_json?: Record<string, unknown>;
+  status: OutboxEventStatus;
+  retry_count: number;
+  next_retry_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OutboxEventListResponse {
+  items: RectorAssignmentOutboxEvent[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface OutboxEventFilters {
+  status?: OutboxEventStatus;
+  event_type?: string;
+  channel?: OutboxChannel;
+  assignment_id?: number;
+  page?: number;
+  page_size?: number;
+}
+
+export interface RectorAssignmentSlaPolicy {
+  id: number;
+  tenant_id: number;
+  name: string;
+  priority: AssignmentPriority;
+  due_days: number;
+  warning_before_hours: number;
+  overdue_after_hours: number;
+  escalation_after_hours: number;
+  is_active: boolean;
+  archived_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SlaPolicyCreatePayload {
+  name: string;
+  priority: AssignmentPriority;
+  due_days: number;
+  warning_before_hours: number;
+  overdue_after_hours: number;
+  escalation_after_hours: number;
+}
+
+export interface SlaPolicyUpdatePayload {
+  name?: string;
+  priority?: AssignmentPriority;
+  due_days?: number;
+  warning_before_hours?: number;
+  overdue_after_hours?: number;
+  escalation_after_hours?: number;
+}
+
+export interface RectorAssignmentEscalationPolicy {
+  id: number;
+  tenant_id: number;
+  assignment_priority: AssignmentPriority;
+  escalation_level: number;
+  escalate_to_role: EscalateToRole;
+  escalate_after_hours: number;
+  require_manual_confirmation: boolean;
+  is_active: boolean;
+  archived_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EscalationPolicyCreatePayload {
+  assignment_priority: AssignmentPriority;
+  escalation_level: number;
+  escalate_to_role: EscalateToRole;
+  escalate_after_hours: number;
+  require_manual_confirmation?: boolean;
+}
+
+export interface EscalationPolicyUpdatePayload {
+  assignment_priority?: AssignmentPriority;
+  escalation_level?: number;
+  escalate_to_role?: EscalateToRole;
+  escalate_after_hours?: number;
+  require_manual_confirmation?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard analytics expansion types (A-031.5)
+// All optional — backend may omit if not computed.
+// ---------------------------------------------------------------------------
+
+export interface OverdueAgingBuckets {
+  one_to_seven_days: number;
+  eight_to_fourteen_days: number;
+  fifteen_to_thirty_days: number;
+  over_thirty_days: number;
+}
+
+export interface CompletionTrendPoint {
+  week_start: string;
+  completed_count: number;
+}
+
+export interface ReportSubmissionCompliance {
+  compliance_rate: number;
+  compliant_count: number;
+  non_compliant_count: number;
+}
+
+export interface UnitCompletionRow {
+  unit_id: number;
+  unit_name: string;
+  total: number;
+  completed: number;
+  overdue: number;
+  completion_rate: number;
+}
+
+/** Extended dashboard summary — all analytics fields are optional (backend may omit). */
+export interface DashboardSummaryExpanded extends DashboardSummary {
+  overdue_aging_buckets?: OverdueAgingBuckets;
+  completion_trend_by_week?: CompletionTrendPoint[];
+  report_submission_compliance?: number;
+  escalation_rate?: number;
+  average_revision_cycles?: number;
+  evidence_attachment_rate?: number;
+  assignments_without_recent_report?: number;
+  unit_completion_table?: UnitCompletionRow[];
+}

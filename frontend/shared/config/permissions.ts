@@ -219,6 +219,11 @@ export const PERMISSIONS = {
   RECTOR_ASSIGNMENTS_COMMENT: "admin.rector_assignments.comment",
   RECTOR_ASSIGNMENTS_AUDIT_READ: "admin.rector_assignments.audit.read",
   RECTOR_ASSIGNMENTS_TEMPLATES_MANAGE: "admin.rector_assignments.templates.manage",
+  // A-031.5 expansion permissions
+  RECTOR_ASSIGNMENTS_OUTBOX_READ: "admin.rector_assignments.outbox.read",
+  RECTOR_ASSIGNMENTS_OUTBOX_MANAGE: "admin.rector_assignments.outbox.manage",
+  RECTOR_ASSIGNMENTS_SLA_MANAGE: "admin.rector_assignments.sla.manage",
+  RECTOR_ASSIGNMENTS_ESCALATION_POLICY_MANAGE: "admin.rector_assignments.escalation_policy.manage",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

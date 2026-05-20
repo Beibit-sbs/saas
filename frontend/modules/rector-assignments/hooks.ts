@@ -24,8 +24,18 @@ import type {
   AssignmentUpdatePayload,
   CommentCreatePayload,
   DashboardSummary,
+  DashboardSummaryExpanded,
   EvidenceCreatePayload,
+  OutboxEventFilters,
+  OutboxEventListResponse,
   RectorAssignment,
+  RectorAssignmentOutboxEvent,
+  RectorAssignmentSlaPolicy,
+  RectorAssignmentEscalationPolicy,
+  SlaPolicyCreatePayload,
+  SlaPolicyUpdatePayload,
+  EscalationPolicyCreatePayload,
+  EscalationPolicyUpdatePayload,
   StatusActionPayload,
 } from './types';
 
@@ -47,6 +57,10 @@ const CACHE_KEYS = {
   ESCALATIONS_DETAIL: (id: string | number) => ['rector-assignments:escalations-detail', String(id)] as const,
   TEMPLATES: ['rector-assignments:templates'] as const,
   MY: ['rector-assignments:my'] as const,
+  OUTBOX: ['rector-assignments:outbox'] as const,
+  OUTBOX_ASSIGNMENT: (id: string | number) => ['rector-assignments:outbox', String(id)] as const,
+  SLA_POLICIES: ['rector-assignments:sla-policies'] as const,
+  ESCALATION_POLICIES: ['rector-assignments:escalation-policies'] as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -57,7 +71,7 @@ const CACHE_KEYS = {
 export function useRectorAssignmentDashboard() {
   return useQuery({
     queryKey: CACHE_KEYS.DASHBOARD,
-    queryFn: () => apiGet<DashboardSummary>(`${RECTOR_BASE}/dashboard/summary`),
+    queryFn: () => apiGet<DashboardSummaryExpanded>(`${RECTOR_BASE}/dashboard/summary`),
     staleTime: 60000,
   });
 }
@@ -345,6 +359,168 @@ export function useUpdateTemplate(id: string | number) {
       apiPatch<AssignmentTemplate>(`${RECTOR_BASE}/templates/${id}`, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CACHE_KEYS.TEMPLATES });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// A-031.5 Outbox hooks
+// ---------------------------------------------------------------------------
+
+/** Global outbox event list — requires outbox.read permission */
+export function useOutboxEvents(filters?: OutboxEventFilters) {
+  return useQuery({
+    queryKey: [...CACHE_KEYS.OUTBOX, filters],
+    queryFn: () => {
+      const params: Record<string, string | number> = {};
+      if (filters?.status) params.status = filters.status;
+      if (filters?.event_type) params.event_type = filters.event_type;
+      if (filters?.channel) params.channel = filters.channel;
+      if (filters?.assignment_id) params.assignment_id = filters.assignment_id;
+      if (filters?.page) params.page = filters.page;
+      if (filters?.page_size) params.page_size = filters.page_size;
+      return apiGet<OutboxEventListResponse>(`${RECTOR_BASE}/outbox`, params);
+    },
+    staleTime: 30000,
+  });
+}
+
+/** Outbox events for a specific assignment — requires outbox.read */
+export function useAssignmentOutboxEvents(id: string | number) {
+  return useQuery({
+    queryKey: CACHE_KEYS.OUTBOX_ASSIGNMENT(id),
+    queryFn: () => apiGet<RectorAssignmentOutboxEvent[]>(`${RECTOR_BASE}/${id}/outbox`),
+    enabled: !!id,
+    staleTime: 30000,
+  });
+}
+
+/** Mark outbox event READY — requires outbox.manage */
+export function useMarkOutboxEventReady(assignmentId: string | number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (eventId: number) =>
+      apiPost<RectorAssignmentOutboxEvent>(
+        `${RECTOR_BASE}/${assignmentId}/outbox/${eventId}/ready`,
+        {},
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.OUTBOX_ASSIGNMENT(assignmentId) });
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.OUTBOX });
+    },
+  });
+}
+
+/** Cancel outbox event — requires outbox.manage */
+export function useCancelOutboxEvent(assignmentId: string | number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (eventId: number) =>
+      apiPost<RectorAssignmentOutboxEvent>(
+        `${RECTOR_BASE}/${assignmentId}/outbox/${eventId}/cancel`,
+        {},
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.OUTBOX_ASSIGNMENT(assignmentId) });
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.OUTBOX });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// A-031.5 SLA Policy hooks
+// ---------------------------------------------------------------------------
+
+export function useSlaPolicies() {
+  return useQuery({
+    queryKey: CACHE_KEYS.SLA_POLICIES,
+    queryFn: () => apiGet<RectorAssignmentSlaPolicy[]>(`${RECTOR_BASE}/sla-policies`),
+    staleTime: 60000,
+  });
+}
+
+export function useCreateSlaPolicy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: SlaPolicyCreatePayload) =>
+      apiPost<RectorAssignmentSlaPolicy>(`${RECTOR_BASE}/sla-policies`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.SLA_POLICIES });
+    },
+  });
+}
+
+export function useUpdateSlaPolicy(policyId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: SlaPolicyUpdatePayload) =>
+      apiPut<RectorAssignmentSlaPolicy>(`${RECTOR_BASE}/sla-policies/${policyId}`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.SLA_POLICIES });
+    },
+  });
+}
+
+/** Archive SLA policy (backend DELETE = archive, not hard delete) */
+export function useArchiveSlaPolicy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (policyId: number) =>
+      apiDelete(`${RECTOR_BASE}/sla-policies/${policyId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.SLA_POLICIES });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// A-031.5 Escalation Policy hooks
+// ---------------------------------------------------------------------------
+
+export function useEscalationPolicies() {
+  return useQuery({
+    queryKey: CACHE_KEYS.ESCALATION_POLICIES,
+    queryFn: () => apiGet<RectorAssignmentEscalationPolicy[]>(`${RECTOR_BASE}/escalation-policies`),
+    staleTime: 60000,
+  });
+}
+
+export function useCreateEscalationPolicy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: EscalationPolicyCreatePayload) =>
+      apiPost<RectorAssignmentEscalationPolicy>(
+        `${RECTOR_BASE}/escalation-policies`,
+        payload,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.ESCALATION_POLICIES });
+    },
+  });
+}
+
+export function useUpdateEscalationPolicy(policyId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: EscalationPolicyUpdatePayload) =>
+      apiPut<RectorAssignmentEscalationPolicy>(
+        `${RECTOR_BASE}/escalation-policies/${policyId}`,
+        payload,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.ESCALATION_POLICIES });
+    },
+  });
+}
+
+/** Archive escalation policy (backend DELETE = archive, not hard delete) */
+export function useArchiveEscalationPolicy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (policyId: number) =>
+      apiDelete(`${RECTOR_BASE}/escalation-policies/${policyId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CACHE_KEYS.ESCALATION_POLICIES });
     },
   });
 }

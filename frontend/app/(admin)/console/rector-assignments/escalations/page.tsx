@@ -18,6 +18,7 @@ import { RequirePermission } from '@/shared/auth/permission-gate';
 import { PageHeader } from '@/shared/ui/page-header';
 import { LoadingState, ErrorState } from '@/shared/ui/page-states';
 import { Badge } from '@/shared/ui/badge';
+import { EscalationQueuePanel } from '@/modules/rector-assignments/components/EscalationQueuePanel';
 
 export default function EscalationsPage() {
   const { data: escalatedList, isLoading, isError } = useRectorAssignmentList({
@@ -34,7 +35,10 @@ export default function EscalationsPage() {
           title="Escalation Queue"
         />
 
-        <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+          {/* A-031.5 Escalation Queue Panel */}
+          <EscalationQueuePanel />
+
           {escalatedList && escalatedList.length > 0 ? (
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-100">

@@ -26,7 +26,10 @@ import {
   useCancelAssignment,
   useArchiveAssignment,
   useAddComment,
+  useSlaPolicies,
 } from '@/modules/rector-assignments/hooks';
+import { AssignmentSlaBadge } from '@/modules/rector-assignments/components/AssignmentSlaBadge';
+import { AssignmentNotificationTimeline } from '@/modules/rector-assignments/components/AssignmentNotificationTimeline';
 import {
   STATUS_LABELS,
   STATUS_BADGE_VARIANTS,
@@ -46,7 +49,7 @@ import { LoadingState, ErrorState } from '@/shared/ui/page-states';
 import { Badge } from '@/shared/ui/badge';
 import { ConfirmActionDialog } from '@/shared/ui/confirm-action-dialog';
 
-type Tab = 'overview' | 'reports' | 'evidence' | 'comments' | 'history' | 'audit';
+type Tab = 'overview' | 'reports' | 'evidence' | 'comments' | 'history' | 'audit' | 'notifications';
 
 export default function AssignmentDetailPage() {
   const params = useParams();
@@ -65,6 +68,7 @@ export default function AssignmentDetailPage() {
   const { data: evidence } = useAssignmentEvidence(id);
   const { data: reports } = useAssignmentReports(id);
   const { data: audit } = useAssignmentAudit(id);
+  const { data: slaPolicies } = useSlaPolicies();
 
   const assignMut = useAssignAssignment(id);
   const acceptMut = useAcceptAssignment(id);
@@ -78,13 +82,16 @@ export default function AssignmentDetailPage() {
   if (isLoading) return <LoadingState message="Loading assignment..." />;
   if (isError || !a) return <ErrorState message="Failed to load assignment." />;
 
-  const TABS: { key: Tab; label: string }[] = [
+  const matchedSlaPolicy = slaPolicies?.find((p) => !p.archived_at && p.priority === a?.priority);
+
+  const TABS: { key: Tab; label: string; permission?: string }[] = [
     { key: 'overview', label: 'Overview' },
     { key: 'reports', label: `Reports (${reports?.length ?? 0})` },
     { key: 'evidence', label: `Evidence (${evidence?.length ?? 0})` },
     { key: 'comments', label: `Comments (${comments?.length ?? 0})` },
     { key: 'history', label: 'History' },
     { key: 'audit', label: 'Audit' },
+    { key: 'notifications', label: 'Notifications', permission: PERMISSIONS.RECTOR_ASSIGNMENTS_OUTBOX_READ },
   ];
 
   async function handleComment(e: React.FormEvent) {
@@ -111,6 +118,7 @@ export default function AssignmentDetailPage() {
               {STATUS_LABELS[a.status] ?? a.status}
             </Badge>
             <span className="text-sm text-gray-600">Priority: {a.priority}</span>
+            <AssignmentSlaBadge assignment={a} slaPolicy={matchedSlaPolicy} />
             {a.due_date && (
               <span className="text-sm text-gray-600">
                 Due:{' '}
@@ -256,22 +264,32 @@ export default function AssignmentDetailPage() {
 
           {/* Tab Navigation */}
           <div className="flex gap-2 border-b border-gray-200" role="tablist">
-            {TABS.map((tab) => (
-              <button
-                key={tab.key}
-                role="tab"
-                aria-selected={activeTab === tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.key
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-                data-testid={`tab-${tab.key}`}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {TABS.map((tab) => {
+              const btn = (
+                <button
+                  key={tab.key}
+                  role="tab"
+                  aria-selected={activeTab === tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === tab.key
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                  data-testid={`tab-${tab.key}`}
+                >
+                  {tab.label}
+                </button>
+              );
+              if (tab.permission) {
+                return (
+                  <PermissionGate key={tab.key} permission={tab.permission}>
+                    {btn}
+                  </PermissionGate>
+                );
+              }
+              return btn;
+            })}
           </div>
 
           {/* Tab Panels */}
@@ -525,6 +543,15 @@ export default function AssignmentDetailPage() {
                     <p className="text-sm text-gray-500">No audit events recorded.</p>
                   )}
                 </div>
+              </RequirePermission>
+            )}
+
+            {activeTab === 'notifications' && (
+              <RequirePermission permission={PERMISSIONS.RECTOR_ASSIGNMENTS_OUTBOX_READ}>
+                <AssignmentNotificationTimeline
+                  assignmentId={id}
+                  canManage={false}
+                />
               </RequirePermission>
             )}
           </div>

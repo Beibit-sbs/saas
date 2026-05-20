@@ -27,6 +27,7 @@ import { PageHeader } from '@/shared/ui/page-header';
 import { LoadingState, ErrorState } from '@/shared/ui/page-states';
 import { Badge } from '@/shared/ui/badge';
 import { ShieldAlert } from 'lucide-react';
+import { DashboardAnalyticsSection } from '@/modules/rector-assignments/components/DashboardAnalytics';
 
 // ---------------------------------------------------------------------------
 // DataQualityError — shown when fake_metrics guard or data_source guard fails
@@ -175,6 +176,44 @@ export default function RectorAssignmentsPage() {
               </div>
             </section>
           )}
+
+          {/* Analytics widgets — A-031.5 */}
+          {dashboardData && (
+            <DashboardAnalyticsSection dashboard={dashboardData} />
+          )}
+
+          {/* Quick nav links — A-031.5 */}
+          <section data-testid="expansion-links-section">
+            <div className="flex flex-wrap gap-3">
+              <PermissionGate permission={PERMISSIONS.RECTOR_ASSIGNMENTS_OUTBOX_READ}>
+                <Link
+                  href="/console/rector-assignments/notifications"
+                  className="px-4 py-2 border border-gray-300 bg-white text-sm rounded hover:bg-gray-50"
+                  data-testid="nav-notifications"
+                >
+                  Notification Registry
+                </Link>
+              </PermissionGate>
+              <PermissionGate permission={PERMISSIONS.RECTOR_ASSIGNMENTS_SLA_MANAGE}>
+                <Link
+                  href="/console/rector-assignments/sla-policies"
+                  className="px-4 py-2 border border-gray-300 bg-white text-sm rounded hover:bg-gray-50"
+                  data-testid="nav-sla-policies"
+                >
+                  SLA Policies
+                </Link>
+              </PermissionGate>
+              <PermissionGate permission={PERMISSIONS.RECTOR_ASSIGNMENTS_ESCALATION_POLICY_MANAGE}>
+                <Link
+                  href="/console/rector-assignments/escalation-policies"
+                  className="px-4 py-2 border border-gray-300 bg-white text-sm rounded hover:bg-gray-50"
+                  data-testid="nav-escalation-policies"
+                >
+                  Escalation Policies
+                </Link>
+              </PermissionGate>
+            </div>
+          </section>
 
           {/* Filters + Create Button */}
           <section data-testid="filters-section">
