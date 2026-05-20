@@ -12124,7 +12124,7 @@ First full Rector Assignment OS product slice closed before this spec.
 |---|---|
 | A-031.5-SPEC | CLOSED (this action) |
 | A-031.5-RUNTIME | PENDING — outbox + SLA + dashboard expansion |
-| A-031.5-FRONTEND | PENDING — implement widgets specified in A-031.5-FRONTEND-SPEC |
+| A-031.5-FRONTEND | CLOSED — 8 components, 3 routes, 11 hooks, 4 permissions, 895 tests PASS (commit 6da4828) |
 | A-031.5-E2E | PENDING — overdue/SLA/outbox workflow E2E |
 | A-031.5-B1 | PENDING — expanded product quality baseline |
 
@@ -12276,3 +12276,104 @@ Full frontend specification for A-031.5 backend expansion: notification outbox i
 **A-031.5-FRONTEND-SPEC CLOSED — RECTOR ASSIGNMENT SLA OUTBOX REPORTING UI SPECIFIED**
 
 **Next Action**: A-031.5-FRONTEND
+
+---
+
+## A-031.5-FRONTEND — Rector Assignment SLA / Outbox / Reporting UI Implementation
+
+**Action ID**: A-031.5-FRONTEND
+**Type**: Frontend Implementation
+**Source**: A-031.5-FRONTEND-SPEC (commit 575460d)
+**Implementation Commit**: `6da4828`
+**Date**: 2026-05-20
+**Status**: CLOSED
+
+### Implementation Summary
+
+Implemented the full rector assignment SLA / outbox / reporting UI expansion as specified in A-031.5-FRONTEND-SPEC.
+
+**8 new components** (`frontend/modules/rector-assignments/components/`):
+- `OutboxStatusBadge.tsx` — PENDING/READY/CANCELLED badge with "Intent only" tooltip
+- `AssignmentNotificationTimeline.tsx` — per-assignment outbox timeline (intent only)
+- `OutboxRegistry.tsx` — global outbox browser with mark-ready/cancel (permission-gated)
+- `AssignmentSlaBadge.tsx` — client-side SLA state badge (no_policy/within_sla/warning/overdue)
+- `SlaPolicyManager.tsx` — full CRUD for SLA policies (archive-only, no hard delete)
+- `EscalationPolicyManager.tsx` — CRUD for escalation policies (manual confirmation default)
+- `EscalationQueuePanel.tsx` — manual escalation queue (no autonomous dispatch)
+- `DashboardAnalytics.tsx` — 6 analytics widgets + `DashboardAnalyticsSection` composite
+
+**3 new routes** (permission-gated):
+- `/console/rector-assignments/notifications` — `RequirePermission(OUTBOX_READ)`
+- `/console/rector-assignments/sla-policies` — `RequirePermission(SLA_MANAGE)`
+- `/console/rector-assignments/escalation-policies` — `RequirePermission(ESCALATION_POLICY_MANAGE)`
+
+**11 new hooks** (`hooks.ts`): outbox x4, SLA x4, escalation x4
+
+**4 new permission constants** (`permissions.ts`):
+- `admin.rector_assignments.outbox.read`
+- `admin.rector_assignments.outbox.manage`
+- `admin.rector_assignments.sla.manage`
+- `admin.rector_assignments.escalation_policy.manage`
+
+**15+ new types/enums** (`types.ts`): `OutboxEventStatus`, `OutboxChannel`, `EscalateToRole`, `DashboardSummaryExpanded`, etc.
+
+**Updated pages**: dashboard (analytics + nav), `[id]` (notifications tab + SLA badge), escalations (EscalationQueuePanel)
+
+**10 new test files** — 128 total test files / 895 tests PASS
+
+### Anti-Fake Guarantees
+- No Send Now / Dispatch action buttons
+- "Live email/SMS dispatch is not enabled" label present
+- "Manual confirmation required" label present
+- All 6 analytics widgets render "unavailable" when undefined (never fake zero)
+- `fake_metrics` and `data_source` guards active
+- No mock production data in production components
+- No backend changes
+
+**A-031.5-FRONTEND CLOSED — RECTOR ASSIGNMENT SLA OUTBOX REPORTING UI IMPLEMENTED**
+
+**Next Action**: A-031.5-FRONTEND-B1
+
+---
+
+## A-031.5-FRONTEND-B1 — Rector Assignment SLA / Outbox / Reporting UI Quality Baseline
+
+**Action ID**: A-031.5-FRONTEND-B1
+**Type**: Quality Baseline Confirmation
+**Source Commit**: `6da4828` (A-031.5-FRONTEND)
+**Date**: 2026-05-20
+**Status**: CLOSED
+
+### Validation Results
+
+| Gate | Result |
+|------|--------|
+| Repo hygiene | CLEAN |
+| Source-of-truth | CONFIRMED |
+| Evidence inventory | COMPLETE (8 components, 3 routes, 10 test files) |
+| Frontend tests | 128 files PASS / 895 tests PASS / exit 0 |
+| TypeScript | CLEAN / exit 0 |
+| No Send Now button | CONFIRMED |
+| No Dispatch button | CONFIRMED |
+| Live dispatch disabled label | PRESENT |
+| Manual confirmation label | PRESENT |
+| Computed from assignments label | PRESENT |
+| Unavailable not fake zero | CONFIRMED |
+| fake_metrics guard | ACTIVE |
+| data_source guard | ACTIVE |
+| No mock production data | CONFIRMED |
+| API/BFF pattern | CORRECT |
+| 4 new permissions gated | CONFIRMED |
+| Backend unchanged | CONFIRMED (fa9d4d5) |
+| Metrics unchanged | CONFIRMED L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150 |
+
+All 18 gates PASS.
+
+### Known Limitations
+- Backend SLA/outbox/escalation-policy routes not yet implemented (frontend-first spec)
+- No live notification dispatch — intent records only
+- E2E validation deferred to A-031.5-E2E
+
+**A-031.5-FRONTEND-B1 CLOSED — RECTOR ASSIGNMENT SLA OUTBOX REPORTING UI QUALITY BASELINE CONFIRMED**
+
+**Next Action**: A-031.5-E2E
