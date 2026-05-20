@@ -12124,7 +12124,7 @@ First full Rector Assignment OS product slice closed before this spec.
 |---|---|
 | A-031.5-SPEC | CLOSED (this action) |
 | A-031.5-RUNTIME | PENDING — outbox + SLA + dashboard expansion |
-| A-031.5-FRONTEND | PENDING — notification/SLA/reporting widgets |
+| A-031.5-FRONTEND | PENDING — implement widgets specified in A-031.5-FRONTEND-SPEC |
 | A-031.5-E2E | PENDING — overdue/SLA/outbox workflow E2E |
 | A-031.5-B1 | PENDING — expanded product quality baseline |
 
@@ -12230,3 +12230,49 @@ Extension: extension_total_count=25, total_tracked_modules=175 — UNCHANGED
 ### Next Action
 
 **A-031.5-FRONTEND-SPEC** — Rector Assignment SLA / Notification Widgets Specification
+
+## A-031.5-FRONTEND-SPEC — Rector Assignment SLA / Outbox / Reporting UI Specification
+
+**Action ID**: A-031.5-FRONTEND-SPEC
+**Type**: frontend_specification (SPEC-ONLY / DOCS-ONLY)
+**Status**: CLOSED
+**Date**: 2026-05-20
+**Source**: A-031.5-B1 (commit a324e92; all 10 B1 gates PASS)
+
+### Summary
+
+Full frontend specification for A-031.5 backend expansion: notification outbox intent registry, SLA policy manager, escalation policy manager, and expanded dashboard analytics widgets.
+
+### New Routes Specified
+- `/console/rector-assignments/notifications` — outbox registry (RequirePermission: outbox.read)
+- `/console/rector-assignments/sla-policies` — SLA policy manager (RequirePermission: sla.manage)
+- `/console/rector-assignments/escalation-policies` — escalation policy manager (RequirePermission: escalation_policy.manage)
+
+### Types Specified
+- 6 new enums: OutboxEventStatus, OutboxChannel, OutboxEventType, SlaPolicyPriority, EscalationTargetRole, (+ variants)
+- 14 new interfaces: RectorAssignmentOutboxEvent, SlaPolicy, EscalationPolicy, DashboardSummaryExpanded, supporting payloads
+- Extends existing DashboardSummary (backward-compatible)
+
+### Hooks Specified
+- 11 new React Query hooks (4 outbox + 4 SLA + 3 escalation)
+- All BFF-proxied via RECTOR_BASE
+
+### Permission Constants Specified
+- 4 new constants: RECTOR_ASSIGNMENTS_OUTBOX_READ, OUTBOX_MANAGE, SLA_MANAGE, ESCALATION_POLICY_MANAGE
+
+### Components Specified
+- 6 dashboard analytics widgets
+- 3 outbox/notification components
+- 2 SLA policy components + badge
+- 3 escalation policy components
+
+### Anti-Fake Requirements
+- 7 required visible labels including "Dispatch disabled", "Live email/SMS dispatch is not enabled", "Manual confirmation required"
+- DataQualityError guard: fake_metrics !== false OR data_source !== "computed_from_assignments" → block all analytics widgets
+
+### Test Plan
+- 10 test files specified with coverage criteria
+
+**A-031.5-FRONTEND-SPEC CLOSED — RECTOR ASSIGNMENT SLA OUTBOX REPORTING UI SPECIFIED**
+
+**Next Action**: A-031.5-FRONTEND
