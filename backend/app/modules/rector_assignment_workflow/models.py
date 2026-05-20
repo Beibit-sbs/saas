@@ -140,6 +140,17 @@ class AuditEventType:
     ASSIGNMENT_ARCHIVED = "ASSIGNMENT_ARCHIVED"
     TEMPLATE_CREATED = "TEMPLATE_CREATED"
     TEMPLATE_UPDATED = "TEMPLATE_UPDATED"
+    # A-031.5-RUNTIME additions
+    OUTBOX_EVENT_CREATED = "OUTBOX_EVENT_CREATED"
+    OUTBOX_EVENT_READY_MARKED = "OUTBOX_EVENT_READY_MARKED"
+    OUTBOX_EVENT_CANCELLED = "OUTBOX_EVENT_CANCELLED"
+    SLA_POLICY_CREATED = "SLA_POLICY_CREATED"
+    SLA_POLICY_UPDATED = "SLA_POLICY_UPDATED"
+    SLA_POLICY_ARCHIVED = "SLA_POLICY_ARCHIVED"
+    ESCALATION_POLICY_CREATED = "ESCALATION_POLICY_CREATED"
+    ESCALATION_POLICY_UPDATED = "ESCALATION_POLICY_UPDATED"
+    ESCALATION_POLICY_ARCHIVED = "ESCALATION_POLICY_ARCHIVED"
+    OVERDUE_EVENT_QUEUED = "OVERDUE_EVENT_QUEUED"
 
 
 # ---------------------------------------------------------------------------
@@ -481,4 +492,185 @@ class RectorAssignmentAuditEvent(Base):
         Index("ix_rector_assignment_audit_events_tenant_assignment", "tenant_id", "assignment_id"),
         Index("ix_rector_assignment_audit_events_tenant_event_type", "tenant_id", "event_type"),
         Index("ix_rector_assignment_audit_events_tenant_created", "tenant_id", "created_at"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: Outbox / SLA / Escalation Policy
+# ---------------------------------------------------------------------------
+
+class OutboxEventType:
+    """Rector Assignment outbox event type constants."""
+    ASSIGNMENT_CREATED = "rector_assignment.created"
+    ASSIGNMENT_ASSIGNED = "rector_assignment.assigned"
+    ASSIGNMENT_ACCEPTED = "rector_assignment.accepted"
+    REPORT_SUBMITTED = "rector_assignment.report_submitted"
+    RETURNED_FOR_REVISION = "rector_assignment.returned_for_revision"
+    ASSIGNMENT_COMPLETED = "rector_assignment.completed"
+    ASSIGNMENT_ESCALATED = "rector_assignment.escalated"
+    OVERDUE_DETECTED = "rector_assignment.overdue_detected"
+    COMMENT_ADDED = "rector_assignment.comment_added"
+    EVIDENCE_ATTACHED = "rector_assignment.evidence_attached"
+
+    ALL = frozenset({
+        ASSIGNMENT_CREATED, ASSIGNMENT_ASSIGNED, ASSIGNMENT_ACCEPTED,
+        REPORT_SUBMITTED, RETURNED_FOR_REVISION, ASSIGNMENT_COMPLETED,
+        ASSIGNMENT_ESCALATED, OVERDUE_DETECTED, COMMENT_ADDED, EVIDENCE_ATTACHED,
+    })
+
+
+class OutboxChannel:
+    IN_APP = "IN_APP"
+    EMAIL = "EMAIL"
+    SMS = "SMS"
+    ALL = frozenset({"IN_APP", "EMAIL", "SMS"})
+
+
+class OutboxStatus:
+    """First-runtime statuses: PENDING/READY/CANCELLED only.
+    DISPATCHED/FAILED reserved for future dispatcher runtime.
+    """
+    PENDING = "PENDING"
+    READY = "READY"
+    CANCELLED = "CANCELLED"
+    ALL_FIRST_RUNTIME = frozenset({"PENDING", "READY", "CANCELLED"})
+
+
+class SlaPolicyPriority:
+    NORMAL = "NORMAL"
+    HIGH = "HIGH"
+    URGENT = "URGENT"
+    CRITICAL = "CRITICAL"
+
+
+class EscalationTargetRole:
+    CONTROLLER = "CONTROLLER"
+    PRORECTOR = "PRORECTOR"
+    RECTOR = "RECTOR"
+    PLATFORM_ADMIN = "PLATFORM_ADMIN"
+    ALL = frozenset({"CONTROLLER", "PRORECTOR", "RECTOR", "PLATFORM_ADMIN"})
+
+
+# ---------------------------------------------------------------------------
+# Table 11: rector_assignment_outbox_events (INSERT-ONLY intent rows)
+# ---------------------------------------------------------------------------
+
+class RectorAssignmentOutboxEvent(Base):
+    """Notification intent outbox. INSERT-ONLY for first runtime.
+    No live provider dispatch. PENDING/READY/CANCELLED statuses only.
+    No hard delete. Tenant-scoped.
+    """
+    __tablename__ = "rector_assignment_outbox_events"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+    assignment_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("rector_assignments.id"), nullable=False,
+    )
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    recipient_user_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    recipient_role: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    channel: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=OutboxChannel.IN_APP,
+        server_default="IN_APP",
+    )
+    payload_json: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default="'{}'::jsonb",
+    )
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=OutboxStatus.PENDING,
+        server_default="PENDING",
+    )
+    retry_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0",
+    )
+    next_retry_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("NOW()"),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("NOW()"),
+    )
+
+    __table_args__ = (
+        Index("ix_rao_outbox_tenant_assignment", "tenant_id", "assignment_id"),
+        Index("ix_rao_outbox_tenant_status", "tenant_id", "status"),
+        Index("ix_rao_outbox_tenant_event_type", "tenant_id", "event_type"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Table 12: rector_assignment_sla_policies
+# ---------------------------------------------------------------------------
+
+class RectorAssignmentSlaPolicy(Base):
+    """Per-tenant SLA policy configuration. Soft-delete only.
+    Drives due-date suggestions, overdue classification, escalation thresholds.
+    """
+    __tablename__ = "rector_assignment_sla_policies"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    priority: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    due_days: Mapped[int] = mapped_column(Integer, nullable=False, default=14, server_default="14")
+    warning_before_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=48, server_default="48")
+    overdue_after_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    escalation_after_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=72, server_default="72")
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true"),
+    )
+    created_by_user_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("NOW()"),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("NOW()"),
+    )
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_rao_sla_tenant_active", "tenant_id", "is_active"),
+        Index("ix_rao_sla_tenant_priority", "tenant_id", "priority"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Table 13: rector_assignment_escalation_policies
+# ---------------------------------------------------------------------------
+
+class RectorAssignmentEscalationPolicy(Base):
+    """Per-tenant escalation policy configuration. Soft-delete only.
+    Level 1-4 mapped to CONTROLLER/PRORECTOR/RECTOR/PLATFORM_ADMIN.
+    require_manual_confirmation=True is the safe default.
+    """
+    __tablename__ = "rector_assignment_escalation_policies"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+    assignment_priority: Mapped[str] = mapped_column(String(20), nullable=False)
+    escalation_level: Mapped[int] = mapped_column(Integer, nullable=False)
+    escalate_to_role: Mapped[str] = mapped_column(String(100), nullable=False)
+    escalate_after_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=72, server_default="72")
+    require_manual_confirmation: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true"),
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true"),
+    )
+    created_by_user_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("NOW()"),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("NOW()"),
+    )
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_rao_esc_policy_tenant_active", "tenant_id", "is_active"),
+        Index("ix_rao_esc_policy_tenant_level", "tenant_id", "escalation_level"),
+        Index("ix_rao_esc_policy_tenant_priority", "tenant_id", "assignment_priority"),
     )

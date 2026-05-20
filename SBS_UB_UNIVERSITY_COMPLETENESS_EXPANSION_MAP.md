@@ -12136,3 +12136,42 @@ Extension: extension_total_count=25, total_tracked_modules=175 — UNCHANGED
 ### Next Action
 
 **A-031.5-RUNTIME** — Rector Assignment OS notification outbox + SLA policy + dashboard expansion runtime implementation.
+
+---
+
+## A-031.5-RUNTIME — Rector Assignment Outbox / SLA / Escalation Policy Expansion
+
+**Action ID**: A-031.5-RUNTIME  
+**Status**: RUNTIME_COMPLETE  
+**Commit**: test(wave20): A-031.5 implement rector assignment expansion  
+
+### What Was Built
+
+- **3 new DB tables**: `rector_assignment_outbox_events`, `rector_assignment_sla_policies`, `rector_assignment_escalation_policies`
+- **12 new API routes**: tenant-wide outbox list, SLA policy CRUD, escalation policy CRUD, per-assignment outbox list + mark-ready + cancel
+- **Dashboard expansion**: `DashboardSummaryResponse` extended with 8 new optional analytics fields (overdue aging, weekly trend, compliance, escalation rate, etc.)
+- **Outbox wiring**: `_queue_outbox_event()` called from 9 lifecycle service functions (create/assign/accept/submit-report/attach-evidence/add-comment/return-for-revision/complete/escalate)
+- **RBAC**: 4 new permissions (`outbox.read`, `outbox.manage`, `sla.manage`, `escalation_policy.manage`) added to admin + owner/superadmin roles
+- **Alembic migration**: revision `ar46st58uv69`
+
+### Tests
+
+| Suite | Count | Result |
+|---|---|---|
+| test_a0315_rector_assignment_outbox_sla.py | new | PASS |
+| test_a0315_rector_assignment_dashboard_expansion.py | new | PASS |
+| test_a0315_rector_assignment_policy_security.py | new | PASS |
+| Total new | 188 | PASS |
+| A-031.1 continuity | 110 | PASS |
+| A-030 continuity | 362 | PASS |
+
+### Safety Constraints
+
+- `fake_metrics = False` (hardcoded + guard assertion in `get_dashboard_summary`)
+- No hard delete (outbox=cancel-only; SLA/escalation=archive-only)
+- No live dispatch (no smtplib/twilio/vonage/requests.post)
+- Baseline maturity: L0=0 L1=0 L2=0 L3=55 L4=68 L5=25 L6=2 total=150 (UNCHANGED)
+
+### Next Action
+
+**A-031.5-B1** — Post-implementation baseline closure and graduation evidence.

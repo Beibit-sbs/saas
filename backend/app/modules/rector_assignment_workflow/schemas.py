@@ -372,3 +372,156 @@ class DashboardSummaryResponse(BaseModel):
     top_overdue: list[dict]
     data_source: str = "computed_from_assignments"
     fake_metrics: bool = False
+    # A-031.5-RUNTIME expansion fields
+    overdue_aging_buckets: "OverdueAgingBuckets | None" = None
+    completion_trend_by_week: "list[WeeklyTrend]" = Field(default_factory=list)
+    report_submission_compliance: float | None = None
+    escalation_rate: float | None = None
+    average_revision_cycles: float | None = None
+    evidence_attachment_rate: float | None = None
+    assignments_without_recent_report: int = 0
+    unit_completion_table: "list[UnitCompletionEntry]" = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: Dashboard expansion sub-schemas
+# ---------------------------------------------------------------------------
+
+class OverdueAgingBuckets(BaseModel):
+    days_1_3: int = 0
+    days_4_7: int = 0
+    days_8_14: int = 0
+    days_15_plus: int = 0
+
+
+class WeeklyTrend(BaseModel):
+    week_start: "date"
+    completed_count: int = 0
+    created_count: int = 0
+
+
+class UnitCompletionEntry(BaseModel):
+    unit_id: int | None = None
+    unit_name: str | None = None
+    total: int = 0
+    completed: int = 0
+    overdue: int = 0
+    completion_rate: float | None = None
+
+
+# Trigger model rebuild so forward refs resolve
+DashboardSummaryResponse.model_rebuild()
+
+
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: Outbox event schemas
+# ---------------------------------------------------------------------------
+
+class RectorAssignmentOutboxEventResponse(BaseModel):
+    id: int
+    tenant_id: int
+    assignment_id: int
+    event_type: str
+    recipient_user_id: int | None
+    recipient_role: str | None
+    channel: str
+    payload_json: dict
+    status: str
+    retry_count: int
+    next_retry_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class RectorAssignmentOutboxEventListResponse(BaseModel):
+    items: list[RectorAssignmentOutboxEventResponse]
+    total: int
+
+
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: SLA Policy schemas
+# ---------------------------------------------------------------------------
+
+class RectorAssignmentSlaPolicyCreateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    priority: str | None = None
+    due_days: int = Field(..., ge=1)
+    warning_before_hours: int = Field(48, ge=1)
+    overdue_after_hours: int = Field(0, ge=0)
+    escalation_after_hours: int = Field(72, ge=1)
+
+
+class RectorAssignmentSlaPolicyUpdateRequest(BaseModel):
+    name: str | None = None
+    priority: str | None = None
+    due_days: int | None = Field(None, ge=1)
+    warning_before_hours: int | None = Field(None, ge=1)
+    overdue_after_hours: int | None = Field(None, ge=0)
+    escalation_after_hours: int | None = Field(None, ge=1)
+
+
+class RectorAssignmentSlaPolicyResponse(BaseModel):
+    id: int
+    tenant_id: int
+    name: str
+    priority: str | None
+    due_days: int
+    warning_before_hours: int
+    overdue_after_hours: int
+    escalation_after_hours: int
+    is_active: bool
+    created_by_user_id: int | None
+    created_at: datetime
+    updated_at: datetime
+    archived_at: datetime | None
+
+    model_config = {"from_attributes": True}
+
+
+class RectorAssignmentSlaPolicyListResponse(BaseModel):
+    items: list[RectorAssignmentSlaPolicyResponse]
+    total: int
+
+
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: Escalation Policy schemas
+# ---------------------------------------------------------------------------
+
+class RectorAssignmentEscalationPolicyCreateRequest(BaseModel):
+    assignment_priority: str = Field(..., min_length=1, max_length=20)
+    escalation_level: int = Field(..., ge=1, le=4)
+    escalate_to_role: str = Field(..., min_length=1, max_length=100)
+    escalate_after_hours: int = Field(72, ge=1)
+    require_manual_confirmation: bool = True
+
+
+class RectorAssignmentEscalationPolicyUpdateRequest(BaseModel):
+    assignment_priority: str | None = None
+    escalation_level: int | None = Field(None, ge=1, le=4)
+    escalate_to_role: str | None = None
+    escalate_after_hours: int | None = Field(None, ge=1)
+    require_manual_confirmation: bool | None = None
+
+
+class RectorAssignmentEscalationPolicyResponse(BaseModel):
+    id: int
+    tenant_id: int
+    assignment_priority: str
+    escalation_level: int
+    escalate_to_role: str
+    escalate_after_hours: int
+    require_manual_confirmation: bool
+    is_active: bool
+    created_by_user_id: int | None
+    created_at: datetime
+    updated_at: datetime
+    archived_at: datetime | None
+
+    model_config = {"from_attributes": True}
+
+
+class RectorAssignmentEscalationPolicyListResponse(BaseModel):
+    items: list[RectorAssignmentEscalationPolicyResponse]
+    total: int

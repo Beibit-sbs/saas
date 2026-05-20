@@ -574,3 +574,521 @@ def repo_compute_dashboard_summary(db: Session, tenant_id: int) -> dict:
         "data_source": "computed_from_assignments",
         "fake_metrics": False,
     }
+
+
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: Outbox event repository functions
+# ---------------------------------------------------------------------------
+
+from app.modules.rector_assignment_workflow.models import (  # noqa: E402  (appended import)
+    AuditEventType,
+    OutboxChannel,
+    OutboxStatus,
+    RectorAssignmentEscalationPolicy,
+    RectorAssignmentOutboxEvent,
+    RectorAssignmentSlaPolicy,
+)
+
+
+def repo_create_outbox_event(
+    db: Session,
+    *,
+    tenant_id: int,
+    assignment_id: int,
+    event_type: str,
+    channel: str = OutboxChannel.IN_APP,
+    recipient_user_id: int | None = None,
+    recipient_role: str | None = None,
+    payload_json: dict | None = None,
+) -> RectorAssignmentOutboxEvent:
+    now = datetime.now(UTC)
+    event = RectorAssignmentOutboxEvent(
+        tenant_id=tenant_id,
+        assignment_id=assignment_id,
+        event_type=event_type,
+        channel=channel,
+        recipient_user_id=recipient_user_id,
+        recipient_role=recipient_role,
+        payload_json=payload_json or {},
+        status=OutboxStatus.PENDING,
+        retry_count=0,
+        next_retry_at=None,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(event)
+    db.flush()
+    db.refresh(event)
+    return event
+
+
+def repo_get_outbox_event(
+    db: Session, tenant_id: int, event_id: int,
+) -> RectorAssignmentOutboxEvent | None:
+    stmt = select(RectorAssignmentOutboxEvent).where(
+        and_(
+            RectorAssignmentOutboxEvent.tenant_id == tenant_id,
+            RectorAssignmentOutboxEvent.id == event_id,
+        )
+    )
+    return db.execute(stmt).scalar_one_or_none()
+
+
+def repo_list_assignment_outbox_events(
+    db: Session,
+    tenant_id: int,
+    assignment_id: int,
+    *,
+    status: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> tuple[list[RectorAssignmentOutboxEvent], int]:
+    filters = [
+        RectorAssignmentOutboxEvent.tenant_id == tenant_id,
+        RectorAssignmentOutboxEvent.assignment_id == assignment_id,
+    ]
+    if status is not None:
+        filters.append(RectorAssignmentOutboxEvent.status == status)
+    stmt = (
+        select(RectorAssignmentOutboxEvent)
+        .where(and_(*filters))
+        .order_by(desc(RectorAssignmentOutboxEvent.created_at))
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    count_stmt = (
+        select(func.count(RectorAssignmentOutboxEvent.id)).where(and_(*filters))
+    )
+    items = list(db.execute(stmt).scalars().all())
+    total = db.execute(count_stmt).scalar_one()
+    return items, total
+
+
+def repo_list_outbox_events(
+    db: Session,
+    tenant_id: int,
+    *,
+    status: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> tuple[list[RectorAssignmentOutboxEvent], int]:
+    filters = [RectorAssignmentOutboxEvent.tenant_id == tenant_id]
+    if status is not None:
+        filters.append(RectorAssignmentOutboxEvent.status == status)
+    stmt = (
+        select(RectorAssignmentOutboxEvent)
+        .where(and_(*filters))
+        .order_by(desc(RectorAssignmentOutboxEvent.created_at))
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    count_stmt = (
+        select(func.count(RectorAssignmentOutboxEvent.id)).where(and_(*filters))
+    )
+    items = list(db.execute(stmt).scalars().all())
+    total = db.execute(count_stmt).scalar_one()
+    return items, total
+
+
+def repo_mark_outbox_event_ready(
+    db: Session, event: RectorAssignmentOutboxEvent,
+) -> RectorAssignmentOutboxEvent:
+    event.status = OutboxStatus.READY
+    event.updated_at = datetime.now(UTC)
+    db.flush()
+    db.refresh(event)
+    return event
+
+
+def repo_cancel_outbox_event(
+    db: Session, event: RectorAssignmentOutboxEvent,
+) -> RectorAssignmentOutboxEvent:
+    event.status = OutboxStatus.CANCELLED
+    event.updated_at = datetime.now(UTC)
+    db.flush()
+    db.refresh(event)
+    return event
+
+
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: SLA Policy repository functions
+# ---------------------------------------------------------------------------
+
+def repo_create_sla_policy(
+    db: Session,
+    *,
+    tenant_id: int,
+    name: str,
+    priority: str | None,
+    due_days: int,
+    warning_before_hours: int = 48,
+    overdue_after_hours: int = 0,
+    escalation_after_hours: int = 72,
+    created_by_user_id: int | None = None,
+) -> RectorAssignmentSlaPolicy:
+    now = datetime.now(UTC)
+    policy = RectorAssignmentSlaPolicy(
+        tenant_id=tenant_id,
+        name=name,
+        priority=priority,
+        due_days=due_days,
+        warning_before_hours=warning_before_hours,
+        overdue_after_hours=overdue_after_hours,
+        escalation_after_hours=escalation_after_hours,
+        is_active=True,
+        created_by_user_id=created_by_user_id,
+        created_at=now,
+        updated_at=now,
+        archived_at=None,
+    )
+    db.add(policy)
+    db.flush()
+    db.refresh(policy)
+    return policy
+
+
+def repo_get_sla_policy(
+    db: Session, tenant_id: int, policy_id: int,
+) -> RectorAssignmentSlaPolicy | None:
+    stmt = select(RectorAssignmentSlaPolicy).where(
+        and_(
+            RectorAssignmentSlaPolicy.tenant_id == tenant_id,
+            RectorAssignmentSlaPolicy.id == policy_id,
+        )
+    )
+    return db.execute(stmt).scalar_one_or_none()
+
+
+def repo_list_sla_policies(
+    db: Session,
+    tenant_id: int,
+    *,
+    active_only: bool = True,
+    page: int = 1,
+    page_size: int = 50,
+) -> tuple[list[RectorAssignmentSlaPolicy], int]:
+    filters = [RectorAssignmentSlaPolicy.tenant_id == tenant_id]
+    if active_only:
+        filters.append(RectorAssignmentSlaPolicy.is_active == True)  # noqa: E712
+    stmt = (
+        select(RectorAssignmentSlaPolicy)
+        .where(and_(*filters))
+        .order_by(RectorAssignmentSlaPolicy.id)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    count_stmt = (
+        select(func.count(RectorAssignmentSlaPolicy.id)).where(and_(*filters))
+    )
+    items = list(db.execute(stmt).scalars().all())
+    total = db.execute(count_stmt).scalar_one()
+    return items, total
+
+
+def repo_update_sla_policy(
+    db: Session, policy: RectorAssignmentSlaPolicy, **kwargs: object,
+) -> RectorAssignmentSlaPolicy:
+    kwargs.setdefault("updated_at", datetime.now(UTC))
+    for k, v in kwargs.items():
+        setattr(policy, k, v)
+    db.flush()
+    db.refresh(policy)
+    return policy
+
+
+def repo_archive_sla_policy(
+    db: Session, policy: RectorAssignmentSlaPolicy,
+) -> RectorAssignmentSlaPolicy:
+    now = datetime.now(UTC)
+    policy.is_active = False
+    policy.archived_at = now
+    policy.updated_at = now
+    db.flush()
+    db.refresh(policy)
+    return policy
+
+
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: Escalation Policy repository functions
+# ---------------------------------------------------------------------------
+
+def repo_create_escalation_policy(
+    db: Session,
+    *,
+    tenant_id: int,
+    assignment_priority: str,
+    escalation_level: int,
+    escalate_to_role: str,
+    escalate_after_hours: int = 72,
+    require_manual_confirmation: bool = True,
+    created_by_user_id: int | None = None,
+) -> RectorAssignmentEscalationPolicy:
+    now = datetime.now(UTC)
+    policy = RectorAssignmentEscalationPolicy(
+        tenant_id=tenant_id,
+        assignment_priority=assignment_priority,
+        escalation_level=escalation_level,
+        escalate_to_role=escalate_to_role,
+        escalate_after_hours=escalate_after_hours,
+        require_manual_confirmation=require_manual_confirmation,
+        is_active=True,
+        created_by_user_id=created_by_user_id,
+        created_at=now,
+        updated_at=now,
+        archived_at=None,
+    )
+    db.add(policy)
+    db.flush()
+    db.refresh(policy)
+    return policy
+
+
+def repo_get_escalation_policy(
+    db: Session, tenant_id: int, policy_id: int,
+) -> RectorAssignmentEscalationPolicy | None:
+    stmt = select(RectorAssignmentEscalationPolicy).where(
+        and_(
+            RectorAssignmentEscalationPolicy.tenant_id == tenant_id,
+            RectorAssignmentEscalationPolicy.id == policy_id,
+        )
+    )
+    return db.execute(stmt).scalar_one_or_none()
+
+
+def repo_list_escalation_policies(
+    db: Session,
+    tenant_id: int,
+    *,
+    active_only: bool = True,
+    page: int = 1,
+    page_size: int = 50,
+) -> tuple[list[RectorAssignmentEscalationPolicy], int]:
+    filters = [RectorAssignmentEscalationPolicy.tenant_id == tenant_id]
+    if active_only:
+        filters.append(RectorAssignmentEscalationPolicy.is_active == True)  # noqa: E712
+    stmt = (
+        select(RectorAssignmentEscalationPolicy)
+        .where(and_(*filters))
+        .order_by(
+            RectorAssignmentEscalationPolicy.assignment_priority,
+            RectorAssignmentEscalationPolicy.escalation_level,
+        )
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    count_stmt = (
+        select(func.count(RectorAssignmentEscalationPolicy.id)).where(and_(*filters))
+    )
+    items = list(db.execute(stmt).scalars().all())
+    total = db.execute(count_stmt).scalar_one()
+    return items, total
+
+
+def repo_update_escalation_policy(
+    db: Session, policy: RectorAssignmentEscalationPolicy, **kwargs: object,
+) -> RectorAssignmentEscalationPolicy:
+    kwargs.setdefault("updated_at", datetime.now(UTC))
+    for k, v in kwargs.items():
+        setattr(policy, k, v)
+    db.flush()
+    db.refresh(policy)
+    return policy
+
+
+def repo_archive_escalation_policy(
+    db: Session, policy: RectorAssignmentEscalationPolicy,
+) -> RectorAssignmentEscalationPolicy:
+    now = datetime.now(UTC)
+    policy.is_active = False
+    policy.archived_at = now
+    policy.updated_at = now
+    db.flush()
+    db.refresh(policy)
+    return policy
+
+
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: Expanded dashboard computation
+# ---------------------------------------------------------------------------
+
+def repo_compute_expanded_dashboard_fields(db: Session, tenant_id: int) -> dict:
+    """Compute the 8 additional dashboard fields added in A-031.5-RUNTIME.
+    Returns dict that MUST be merged into repo_compute_dashboard_summary output.
+    fake_metrics must remain False; data_source must remain 'computed_from_assignments'.
+    """
+    from datetime import date as _date, timedelta as _td
+
+    now = datetime.now(UTC)
+
+    # 1. Overdue aging buckets
+    today = now.date()
+    buckets = {"days_1_3": 0, "days_4_7": 0, "days_8_14": 0, "days_15_plus": 0}
+    overdue_stmt = select(RectorAssignment.due_date).where(
+        and_(
+            RectorAssignment.tenant_id == tenant_id,
+            RectorAssignment.is_archived == False,  # noqa: E712
+            RectorAssignment.due_date < today,
+            RectorAssignment.status.notin_(
+                [AssignmentStatus.COMPLETED, AssignmentStatus.CANCELLED, AssignmentStatus.ARCHIVED]
+            ),
+        )
+    )
+    for row in db.execute(overdue_stmt).all():
+        if row.due_date is None:
+            continue
+        delta = (today - row.due_date).days
+        if 1 <= delta <= 3:
+            buckets["days_1_3"] += 1
+        elif 4 <= delta <= 7:
+            buckets["days_4_7"] += 1
+        elif 8 <= delta <= 14:
+            buckets["days_8_14"] += 1
+        else:
+            buckets["days_15_plus"] += 1
+
+    # 2. Completion trend by week (last 4 weeks)
+    weekly_trend = []
+    for week_offset in range(3, -1, -1):
+        week_start = today - _td(days=today.weekday() + week_offset * 7)
+        week_end = week_start + _td(days=6)
+        comp_stmt = select(func.count(RectorAssignment.id)).where(
+            and_(
+                RectorAssignment.tenant_id == tenant_id,
+                RectorAssignment.completed_at >= datetime(week_start.year, week_start.month, week_start.day, tzinfo=UTC),
+                RectorAssignment.completed_at <= datetime(week_end.year, week_end.month, week_end.day, 23, 59, 59, tzinfo=UTC),
+            )
+        )
+        created_stmt = select(func.count(RectorAssignment.id)).where(
+            and_(
+                RectorAssignment.tenant_id == tenant_id,
+                RectorAssignment.created_at >= datetime(week_start.year, week_start.month, week_start.day, tzinfo=UTC),
+                RectorAssignment.created_at <= datetime(week_end.year, week_end.month, week_end.day, 23, 59, 59, tzinfo=UTC),
+            )
+        )
+        completed_count = db.execute(comp_stmt).scalar_one()
+        created_count = db.execute(created_stmt).scalar_one()
+        weekly_trend.append({
+            "week_start": week_start.isoformat(),
+            "completed_count": completed_count,
+            "created_count": created_count,
+        })
+
+    # 3. Report submission compliance
+    active_status_list = list(AssignmentStatus.ACTIVE)
+    active_stmt = select(func.count(RectorAssignment.id)).where(
+        and_(
+            RectorAssignment.tenant_id == tenant_id,
+            RectorAssignment.is_archived == False,  # noqa: E712
+            RectorAssignment.status.in_(active_status_list),
+        )
+    )
+    total_active = db.execute(active_stmt).scalar_one()
+    submitted_stmt = select(func.count(RectorAssignment.id)).where(
+        and_(
+            RectorAssignment.tenant_id == tenant_id,
+            RectorAssignment.status == AssignmentStatus.REPORT_SUBMITTED,
+        )
+    )
+    total_with_report = db.execute(submitted_stmt).scalar_one()
+    report_submission_compliance: float | None = None
+    if total_active and total_active > 0:
+        report_submission_compliance = round(total_with_report / total_active, 4)
+
+    # 4. Escalation rate (last 30 days)
+    cutoff_30 = now - timedelta(days=30)
+    total_30_stmt = select(func.count(RectorAssignment.id)).where(
+        and_(
+            RectorAssignment.tenant_id == tenant_id,
+            RectorAssignment.created_at >= cutoff_30,
+        )
+    )
+    escalated_30_stmt = select(func.count(RectorAssignment.id)).where(
+        and_(
+            RectorAssignment.tenant_id == tenant_id,
+            RectorAssignment.created_at >= cutoff_30,
+            RectorAssignment.status == AssignmentStatus.ESCALATED,
+        )
+    )
+    total_30 = db.execute(total_30_stmt).scalar_one()
+    escalated_30 = db.execute(escalated_30_stmt).scalar_one()
+    escalation_rate: float | None = round(escalated_30 / total_30, 4) if total_30 > 0 else None
+
+    # 5. Average revision cycles
+    from sqlalchemy import text as _text
+    avg_rev_stmt = _text(
+        "SELECT AVG(revision_count) FROM ("
+        "  SELECT assignment_id, COUNT(*) AS revision_count"
+        "  FROM rector_assignment_status_history"
+        "  WHERE tenant_id = :tid AND new_status = 'RETURNED_FOR_REVISION'"
+        "  GROUP BY assignment_id"
+        ") sub"
+    )
+    avg_rev = db.execute(avg_rev_stmt, {"tid": tenant_id}).scalar_one()
+    average_revision_cycles: float | None = float(avg_rev) if avg_rev is not None else None
+
+    # 6. Evidence attachment rate
+    assignments_with_evidence_stmt = _text(
+        "SELECT COUNT(DISTINCT assignment_id) FROM rector_assignment_evidence"
+        " WHERE tenant_id = :tid AND is_deleted = false"
+    )
+    total_all_stmt = select(func.count(RectorAssignment.id)).where(
+        RectorAssignment.tenant_id == tenant_id,
+    )
+    assignments_with_ev = db.execute(assignments_with_evidence_stmt, {"tid": tenant_id}).scalar_one()
+    total_all = db.execute(total_all_stmt).scalar_one()
+    evidence_attachment_rate: float | None = round(assignments_with_ev / total_all, 4) if total_all > 0 else None
+
+    # 7. Assignments without recent report (active and no report in last 14 days)
+    cutoff_14 = now - timedelta(days=14)
+    no_recent_report_stmt = _text(
+        "SELECT COUNT(*) FROM rector_assignments ra"
+        " WHERE ra.tenant_id = :tid"
+        "   AND ra.is_archived = false"
+        "   AND ra.status IN ('ACCEPTED','IN_PROGRESS','OVERDUE')"
+        "   AND NOT EXISTS ("
+        "     SELECT 1 FROM rector_assignment_reports r"
+        "     WHERE r.tenant_id = :tid AND r.assignment_id = ra.id"
+        "       AND r.created_at >= :cutoff"
+        "   )"
+    )
+    assignments_without_recent_report = db.execute(
+        no_recent_report_stmt, {"tid": tenant_id, "cutoff": cutoff_14}
+    ).scalar_one()
+
+    # 8. Unit completion table
+    unit_comp_stmt = _text(
+        "SELECT responsible_unit_id,"
+        "  COUNT(*) AS total,"
+        "  SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed,"
+        "  SUM(CASE WHEN status NOT IN ('COMPLETED','CANCELLED','ARCHIVED')"
+        "       AND due_date < NOW() THEN 1 ELSE 0 END) AS overdue"
+        " FROM rector_assignments"
+        " WHERE tenant_id = :tid AND is_archived = false"
+        " GROUP BY responsible_unit_id"
+        " LIMIT 30"
+    )
+    unit_completion_table = []
+    for row in db.execute(unit_comp_stmt, {"tid": tenant_id}).all():
+        total = row.total or 0
+        completed = row.completed or 0
+        overdue = row.overdue or 0
+        comp_rate = round(completed / total, 4) if total > 0 else None
+        unit_completion_table.append({
+            "unit_id": row.responsible_unit_id,
+            "unit_name": None,
+            "total": total,
+            "completed": completed,
+            "overdue": overdue,
+            "completion_rate": comp_rate,
+        })
+
+    return {
+        "overdue_aging_buckets": buckets,
+        "completion_trend_by_week": weekly_trend,
+        "report_submission_compliance": report_submission_compliance,
+        "escalation_rate": escalation_rate,
+        "average_revision_cycles": average_revision_cycles,
+        "evidence_attachment_rate": evidence_attachment_rate,
+        "assignments_without_recent_report": int(assignments_without_recent_report),
+        "unit_completion_table": unit_completion_table,
+    }

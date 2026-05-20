@@ -208,6 +208,11 @@ def create_assignment(
         )
     except Exception:
         pass
+    _queue_outbox_event(
+        db, tenant_id, assignment.id, OutboxEventType.ASSIGNMENT_CREATED,
+        actor_user_id=originator_user_id, actor_role=originator_role,
+        request_id=request_id, payload={"title": payload.title},
+    )
     db.commit()
     db.refresh(assignment)
     return assignment
@@ -325,6 +330,10 @@ def assign_assignment(
         actor_user_id=actor_user_id, actor_role=actor_role, request_id=request_id,
         payload={"assignee_count": len(payload.assignees)},
     )
+    _queue_outbox_event(
+        db, tenant_id, assignment.id, OutboxEventType.ASSIGNMENT_ASSIGNED,
+        actor_user_id=actor_user_id, actor_role=actor_role, request_id=request_id,
+    )
     db.commit()
     db.refresh(assignment)
     return assignment
@@ -353,6 +362,10 @@ def accept_assignment(
         db, tenant_id, AuditEventType.ASSIGNMENT_ACCEPTED,
         "assignment", "accepted",
         assignment_id=assignment.id,
+        actor_user_id=actor_user_id, request_id=request_id,
+    )
+    _queue_outbox_event(
+        db, tenant_id, assignment.id, OutboxEventType.ASSIGNMENT_ACCEPTED,
         actor_user_id=actor_user_id, request_id=request_id,
     )
     db.commit()
@@ -405,6 +418,11 @@ def submit_assignment_report(
         actor_user_id=actor_user_id, request_id=request_id,
         payload={"report_id": report.id, "progress_percent": payload.progress_percent},
     )
+    _queue_outbox_event(
+        db, tenant_id, assignment.id, OutboxEventType.REPORT_SUBMITTED,
+        actor_user_id=actor_user_id, request_id=request_id,
+        payload={"report_id": report.id},
+    )
     db.commit()
     db.refresh(report)
     return report
@@ -441,6 +459,11 @@ def attach_assignment_evidence(
         actor_user_id=actor_user_id, request_id=request_id,
         payload={"evidence_id": evidence.id, "evidence_type": payload.evidence_type},
     )
+    _queue_outbox_event(
+        db, tenant_id, assignment.id, OutboxEventType.EVIDENCE_ATTACHED,
+        actor_user_id=actor_user_id, request_id=request_id,
+        payload={"evidence_id": evidence.id},
+    )
     db.commit()
     db.refresh(evidence)
     return evidence
@@ -473,6 +496,10 @@ def add_assignment_comment(
         actor_user_id=actor_user_id, request_id=request_id,
         payload={"comment_id": comment.id, "visibility": payload.visibility},
     )
+    _queue_outbox_event(
+        db, tenant_id, assignment.id, OutboxEventType.COMMENT_ADDED,
+        actor_user_id=actor_user_id, actor_role=actor_role, request_id=request_id,
+    )
     db.commit()
     db.refresh(comment)
     return comment
@@ -500,6 +527,11 @@ def return_assignment_for_revision(
         db, tenant_id, AuditEventType.RETURNED_FOR_REVISION,
         "assignment", "returned",
         assignment_id=assignment.id,
+        actor_user_id=actor_user_id, actor_role=actor_role, request_id=request_id,
+        payload={"reason": reason},
+    )
+    _queue_outbox_event(
+        db, tenant_id, assignment.id, OutboxEventType.RETURNED_FOR_REVISION,
         actor_user_id=actor_user_id, actor_role=actor_role, request_id=request_id,
         payload={"reason": reason},
     )
@@ -531,6 +563,10 @@ def complete_assignment(
         assignment_id=assignment.id,
         actor_user_id=actor_user_id, actor_role=actor_role, request_id=request_id,
         payload={"note": note},
+    )
+    _queue_outbox_event(
+        db, tenant_id, assignment.id, OutboxEventType.ASSIGNMENT_COMPLETED,
+        actor_user_id=actor_user_id, actor_role=actor_role, request_id=request_id,
     )
     db.commit()
     db.refresh(assignment)
@@ -569,6 +605,11 @@ def escalate_assignment(
         assignment_id=assignment.id,
         actor_user_id=actor_user_id, actor_role=actor_role, request_id=request_id,
         payload={"escalation_id": escalation.id, "level": payload.escalation_level, "reason": payload.reason},
+    )
+    _queue_outbox_event(
+        db, tenant_id, assignment.id, OutboxEventType.ASSIGNMENT_ESCALATED,
+        actor_user_id=actor_user_id, actor_role=actor_role, request_id=request_id,
+        payload={"level": payload.escalation_level},
     )
     db.commit()
     db.refresh(assignment)
@@ -726,6 +767,11 @@ def get_dashboard_summary(tenant_id: int, db: Session) -> dict:
     result = repo_compute_dashboard_summary(db, tenant_id)
     assert result["fake_metrics"] is False, "dashboard must never emit fake_metrics=True"
     assert result["data_source"] == "computed_from_assignments"
+    try:
+        expanded = repo_compute_expanded_dashboard_fields(db, tenant_id)
+        result.update(expanded)
+    except Exception:
+        _logger.exception("expanded dashboard fields computation failed — returning base fields only")
     return result
 
 
@@ -831,3 +877,376 @@ def list_assignment_comments(
     validate_tenant_id_provided(tenant_id)
     repo_require_assignment(db, tenant_id, assignment_id)
     return repo_list_comments(db, tenant_id, assignment_id, exclude_internal=exclude_internal)
+
+
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: Outbox service helpers (imported at end to avoid circular deps)
+# ---------------------------------------------------------------------------
+
+from app.modules.rector_assignment_workflow.models import (  # noqa: E402
+    OutboxEventType,
+    RectorAssignmentEscalationPolicy,
+    RectorAssignmentOutboxEvent,
+    RectorAssignmentSlaPolicy,
+)
+from app.modules.rector_assignment_workflow.repository import (  # noqa: E402
+    repo_archive_escalation_policy,
+    repo_archive_sla_policy,
+    repo_cancel_outbox_event,
+    repo_compute_expanded_dashboard_fields,
+    repo_create_escalation_policy,
+    repo_create_outbox_event,
+    repo_create_sla_policy,
+    repo_get_escalation_policy,
+    repo_get_outbox_event,
+    repo_get_sla_policy,
+    repo_list_assignment_outbox_events,
+    repo_list_escalation_policies,
+    repo_list_outbox_events,
+    repo_list_sla_policies,
+    repo_mark_outbox_event_ready,
+    repo_update_escalation_policy,
+    repo_update_sla_policy,
+)
+from app.modules.rector_assignment_workflow.schemas import (  # noqa: E402
+    RectorAssignmentEscalationPolicyCreateRequest,
+    RectorAssignmentEscalationPolicyUpdateRequest,
+    RectorAssignmentSlaPolicyCreateRequest,
+    RectorAssignmentSlaPolicyUpdateRequest,
+)
+
+
+def _queue_outbox_event(
+    db: Session,
+    tenant_id: int,
+    assignment_id: int,
+    event_type: str,
+    *,
+    actor_user_id: int | None = None,
+    actor_role: str | None = None,
+    request_id: str | None = None,
+    payload: dict | None = None,
+) -> RectorAssignmentOutboxEvent:
+    """Create an outbox event row + audit it. No external dispatch."""
+    event = repo_create_outbox_event(
+        db,
+        tenant_id=tenant_id,
+        assignment_id=assignment_id,
+        event_type=event_type,
+        payload_json=payload or {},
+    )
+    _write_audit(
+        db, tenant_id, AuditEventType.OUTBOX_EVENT_CREATED,
+        "outbox_event", "created",
+        assignment_id=assignment_id,
+        actor_user_id=actor_user_id,
+        actor_role=actor_role,
+        request_id=request_id,
+        payload={"outbox_event_id": event.id, "event_type": event_type},
+    )
+    return event
+
+
+# ---------------------------------------------------------------------------
+# Outbox management service functions
+# ---------------------------------------------------------------------------
+
+def list_assignment_outbox_events(
+    tenant_id: int,
+    assignment_id: int,
+    db: Session,
+    *,
+    status: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> tuple[list[RectorAssignmentOutboxEvent], int]:
+    validate_tenant_id_provided(tenant_id)
+    repo_require_assignment(db, tenant_id, assignment_id)
+    return repo_list_assignment_outbox_events(
+        db, tenant_id, assignment_id, status=status, page=page, page_size=page_size,
+    )
+
+
+def list_outbox_events(
+    tenant_id: int,
+    db: Session,
+    *,
+    status: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> tuple[list[RectorAssignmentOutboxEvent], int]:
+    validate_tenant_id_provided(tenant_id)
+    return repo_list_outbox_events(db, tenant_id, status=status, page=page, page_size=page_size)
+
+
+def mark_outbox_event_ready(
+    tenant_id: int,
+    assignment_id: int,
+    event_id: int,
+    actor_user_id: int,
+    db: Session,
+    *,
+    request_id: str | None = None,
+) -> RectorAssignmentOutboxEvent:
+    validate_tenant_id_provided(tenant_id)
+    repo_require_assignment(db, tenant_id, assignment_id)
+    event = repo_get_outbox_event(db, tenant_id, event_id)
+    if event is None or event.assignment_id != assignment_id:
+        raise TenantResourceNotFoundError(f"outbox event {event_id} not found")
+    if event.status != "PENDING":
+        raise DomainValidationError(f"outbox event is not PENDING (current: {event.status})")
+    event = repo_mark_outbox_event_ready(db, event)
+    _write_audit(
+        db, tenant_id, AuditEventType.OUTBOX_EVENT_READY_MARKED,
+        "outbox_event", "ready_marked",
+        assignment_id=assignment_id,
+        actor_user_id=actor_user_id, request_id=request_id,
+        payload={"outbox_event_id": event_id},
+    )
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+def cancel_outbox_event(
+    tenant_id: int,
+    assignment_id: int,
+    event_id: int,
+    actor_user_id: int,
+    db: Session,
+    *,
+    request_id: str | None = None,
+) -> RectorAssignmentOutboxEvent:
+    validate_tenant_id_provided(tenant_id)
+    repo_require_assignment(db, tenant_id, assignment_id)
+    event = repo_get_outbox_event(db, tenant_id, event_id)
+    if event is None or event.assignment_id != assignment_id:
+        raise TenantResourceNotFoundError(f"outbox event {event_id} not found")
+    if event.status not in ("PENDING", "READY"):
+        raise DomainValidationError(f"outbox event cannot be cancelled in status {event.status}")
+    event = repo_cancel_outbox_event(db, event)
+    _write_audit(
+        db, tenant_id, AuditEventType.OUTBOX_EVENT_CANCELLED,
+        "outbox_event", "cancelled",
+        assignment_id=assignment_id,
+        actor_user_id=actor_user_id, request_id=request_id,
+        payload={"outbox_event_id": event_id},
+    )
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+# ---------------------------------------------------------------------------
+# SLA Policy service functions
+# ---------------------------------------------------------------------------
+
+def create_sla_policy(
+    tenant_id: int,
+    actor_user_id: int,
+    payload: RectorAssignmentSlaPolicyCreateRequest,
+    db: Session,
+    *,
+    request_id: str | None = None,
+) -> RectorAssignmentSlaPolicy:
+    validate_tenant_id_provided(tenant_id)
+    policy = repo_create_sla_policy(
+        db,
+        tenant_id=tenant_id,
+        name=payload.name,
+        priority=payload.priority,
+        due_days=payload.due_days,
+        warning_before_hours=payload.warning_before_hours,
+        overdue_after_hours=payload.overdue_after_hours,
+        escalation_after_hours=payload.escalation_after_hours,
+        created_by_user_id=actor_user_id,
+    )
+    _write_audit(
+        db, tenant_id, AuditEventType.SLA_POLICY_CREATED,
+        "sla_policy", "created",
+        actor_user_id=actor_user_id, request_id=request_id,
+        payload={"policy_id": policy.id, "name": payload.name},
+    )
+    db.commit()
+    db.refresh(policy)
+    return policy
+
+
+def list_sla_policies(
+    tenant_id: int,
+    db: Session,
+    *,
+    active_only: bool = True,
+    page: int = 1,
+    page_size: int = 50,
+) -> tuple[list[RectorAssignmentSlaPolicy], int]:
+    validate_tenant_id_provided(tenant_id)
+    return repo_list_sla_policies(db, tenant_id, active_only=active_only, page=page, page_size=page_size)
+
+
+def update_sla_policy(
+    tenant_id: int,
+    policy_id: int,
+    actor_user_id: int,
+    payload: RectorAssignmentSlaPolicyUpdateRequest,
+    db: Session,
+    *,
+    request_id: str | None = None,
+) -> RectorAssignmentSlaPolicy:
+    validate_tenant_id_provided(tenant_id)
+    policy = repo_get_sla_policy(db, tenant_id, policy_id)
+    if policy is None:
+        raise TenantResourceNotFoundError(f"SLA policy {policy_id} not found")
+    if not policy.is_active:
+        raise DomainValidationError("cannot update archived SLA policy")
+    updates: dict = {}
+    for field in ("name", "priority", "due_days", "warning_before_hours",
+                  "overdue_after_hours", "escalation_after_hours"):
+        val = getattr(payload, field, None)
+        if val is not None:
+            updates[field] = val
+    if updates:
+        policy = repo_update_sla_policy(db, policy, **updates)
+    _write_audit(
+        db, tenant_id, AuditEventType.SLA_POLICY_UPDATED,
+        "sla_policy", "updated",
+        actor_user_id=actor_user_id, request_id=request_id,
+        payload={"policy_id": policy_id, "updates": list(updates.keys())},
+    )
+    db.commit()
+    db.refresh(policy)
+    return policy
+
+
+def archive_sla_policy(
+    tenant_id: int,
+    policy_id: int,
+    actor_user_id: int,
+    db: Session,
+    *,
+    request_id: str | None = None,
+) -> RectorAssignmentSlaPolicy:
+    validate_tenant_id_provided(tenant_id)
+    policy = repo_get_sla_policy(db, tenant_id, policy_id)
+    if policy is None:
+        raise TenantResourceNotFoundError(f"SLA policy {policy_id} not found")
+    if not policy.is_active:
+        raise DomainValidationError("SLA policy is already archived")
+    policy = repo_archive_sla_policy(db, policy)
+    _write_audit(
+        db, tenant_id, AuditEventType.SLA_POLICY_ARCHIVED,
+        "sla_policy", "archived",
+        actor_user_id=actor_user_id, request_id=request_id,
+        payload={"policy_id": policy_id},
+    )
+    db.commit()
+    db.refresh(policy)
+    return policy
+
+
+# ---------------------------------------------------------------------------
+# Escalation Policy service functions
+# ---------------------------------------------------------------------------
+
+def create_escalation_policy(
+    tenant_id: int,
+    actor_user_id: int,
+    payload: RectorAssignmentEscalationPolicyCreateRequest,
+    db: Session,
+    *,
+    request_id: str | None = None,
+) -> RectorAssignmentEscalationPolicy:
+    validate_tenant_id_provided(tenant_id)
+    policy = repo_create_escalation_policy(
+        db,
+        tenant_id=tenant_id,
+        assignment_priority=payload.assignment_priority,
+        escalation_level=payload.escalation_level,
+        escalate_to_role=payload.escalate_to_role,
+        escalate_after_hours=payload.escalate_after_hours,
+        require_manual_confirmation=payload.require_manual_confirmation,
+        created_by_user_id=actor_user_id,
+    )
+    _write_audit(
+        db, tenant_id, AuditEventType.ESCALATION_POLICY_CREATED,
+        "escalation_policy", "created",
+        actor_user_id=actor_user_id, request_id=request_id,
+        payload={"policy_id": policy.id, "level": payload.escalation_level},
+    )
+    db.commit()
+    db.refresh(policy)
+    return policy
+
+
+def list_escalation_policies(
+    tenant_id: int,
+    db: Session,
+    *,
+    active_only: bool = True,
+    page: int = 1,
+    page_size: int = 50,
+) -> tuple[list[RectorAssignmentEscalationPolicy], int]:
+    validate_tenant_id_provided(tenant_id)
+    return repo_list_escalation_policies(
+        db, tenant_id, active_only=active_only, page=page, page_size=page_size,
+    )
+
+
+def update_escalation_policy(
+    tenant_id: int,
+    policy_id: int,
+    actor_user_id: int,
+    payload: RectorAssignmentEscalationPolicyUpdateRequest,
+    db: Session,
+    *,
+    request_id: str | None = None,
+) -> RectorAssignmentEscalationPolicy:
+    validate_tenant_id_provided(tenant_id)
+    policy = repo_get_escalation_policy(db, tenant_id, policy_id)
+    if policy is None:
+        raise TenantResourceNotFoundError(f"escalation policy {policy_id} not found")
+    if not policy.is_active:
+        raise DomainValidationError("cannot update archived escalation policy")
+    updates: dict = {}
+    for field in ("assignment_priority", "escalation_level", "escalate_to_role",
+                  "escalate_after_hours", "require_manual_confirmation"):
+        val = getattr(payload, field, None)
+        if val is not None:
+            updates[field] = val
+    if updates:
+        policy = repo_update_escalation_policy(db, policy, **updates)
+    _write_audit(
+        db, tenant_id, AuditEventType.ESCALATION_POLICY_UPDATED,
+        "escalation_policy", "updated",
+        actor_user_id=actor_user_id, request_id=request_id,
+        payload={"policy_id": policy_id, "updates": list(updates.keys())},
+    )
+    db.commit()
+    db.refresh(policy)
+    return policy
+
+
+def archive_escalation_policy(
+    tenant_id: int,
+    policy_id: int,
+    actor_user_id: int,
+    db: Session,
+    *,
+    request_id: str | None = None,
+) -> RectorAssignmentEscalationPolicy:
+    validate_tenant_id_provided(tenant_id)
+    policy = repo_get_escalation_policy(db, tenant_id, policy_id)
+    if policy is None:
+        raise TenantResourceNotFoundError(f"escalation policy {policy_id} not found")
+    if not policy.is_active:
+        raise DomainValidationError("escalation policy is already archived")
+    policy = repo_archive_escalation_policy(db, policy)
+    _write_audit(
+        db, tenant_id, AuditEventType.ESCALATION_POLICY_ARCHIVED,
+        "escalation_policy", "archived",
+        actor_user_id=actor_user_id, request_id=request_id,
+        payload={"policy_id": policy_id},
+    )
+    db.commit()
+    db.refresh(policy)
+    return policy

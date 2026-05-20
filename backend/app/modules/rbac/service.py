@@ -168,6 +168,10 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.rector_assignments.templates.manage",
         "admin.rector_assignments.dashboard.read",
         "admin.rector_assignments.admin",
+        "admin.rector_assignments.outbox.read",
+        "admin.rector_assignments.outbox.manage",
+        "admin.rector_assignments.sla.manage",
+        "admin.rector_assignments.escalation_policy.manage",
     }
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS,
     "admin": {
@@ -235,6 +239,10 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.rector_assignments.templates.manage",
         "admin.rector_assignments.dashboard.read",
         "admin.rector_assignments.admin",
+        "admin.rector_assignments.outbox.read",
+        "admin.rector_assignments.outbox.manage",
+        "admin.rector_assignments.sla.manage",
+        "admin.rector_assignments.escalation_policy.manage",
     }
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS,
     "auditor": {

@@ -22,10 +22,16 @@ AUDIT_READ = "admin.rector_assignments.audit.read"
 TEMPLATES_MANAGE = "admin.rector_assignments.templates.manage"
 DASHBOARD_READ = "admin.rector_assignments.dashboard.read"
 ADMIN = "admin.rector_assignments.admin"
+# A-031.5-RUNTIME additions
+OUTBOX_READ = "admin.rector_assignments.outbox.read"
+OUTBOX_MANAGE = "admin.rector_assignments.outbox.manage"
+SLA_MANAGE = "admin.rector_assignments.sla.manage"
+ESCALATION_POLICY_MANAGE = "admin.rector_assignments.escalation_policy.manage"
 
 ALL_PERMISSIONS = frozenset({
     CREATE, READ, READ_ALL, READ_DEPARTMENT, ASSIGN, ACCEPT,
     REPORT_SUBMIT, REPORT_REVIEW, EVIDENCE_ATTACH, COMMENT,
     STATUS_CHANGE, COMPLETE, RETURN, ESCALATE, CANCEL, ARCHIVE,
     AUDIT_READ, TEMPLATES_MANAGE, DASHBOARD_READ, ADMIN,
+    OUTBOX_READ, OUTBOX_MANAGE, SLA_MANAGE, ESCALATION_POLICY_MANAGE,
 })

@@ -50,6 +50,16 @@ from app.modules.rector_assignment_workflow.schemas import (
     ReportReviewRequest,
     StatusActionRequest,
     AssignmentUpdateRequest,
+    RectorAssignmentEscalationPolicyCreateRequest,
+    RectorAssignmentEscalationPolicyListResponse,
+    RectorAssignmentEscalationPolicyResponse,
+    RectorAssignmentEscalationPolicyUpdateRequest,
+    RectorAssignmentOutboxEventListResponse,
+    RectorAssignmentOutboxEventResponse,
+    RectorAssignmentSlaPolicyCreateRequest,
+    RectorAssignmentSlaPolicyListResponse,
+    RectorAssignmentSlaPolicyResponse,
+    RectorAssignmentSlaPolicyUpdateRequest,
 )
 from app.modules.rector_assignment_workflow.service import (
     accept_assignment,
@@ -75,6 +85,18 @@ from app.modules.rector_assignment_workflow.service import (
     submit_assignment_report,
     update_assignment,
     update_assignment_template,
+    archive_escalation_policy,
+    archive_sla_policy,
+    cancel_outbox_event,
+    create_escalation_policy,
+    create_sla_policy,
+    list_assignment_outbox_events,
+    list_escalation_policies,
+    list_outbox_events,
+    list_sla_policies,
+    mark_outbox_event_ready,
+    update_escalation_policy,
+    update_sla_policy,
 )
 
 router = APIRouter(prefix="/api/admin/rector-assignments", tags=["rector-assignments"])
@@ -167,6 +189,187 @@ def update_template_endpoint(
     try:
         tmpl = update_assignment_template(tenant_id, template_id, int(actor), body, db)
         return AssignmentTemplateResponse.model_validate(tmpl)
+    except Exception as exc:
+        _handle(exc)
+
+
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: Outbox (tenant-wide), SLA Policies, Escalation Policies
+# (must come before /{assignment_id} routes)
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/outbox",
+    response_model=RectorAssignmentOutboxEventListResponse,
+)
+def list_all_outbox_events_endpoint(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.OUTBOX_READ))],
+    tenant: _Tenant,
+    db: _DB,
+    status: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
+) -> RectorAssignmentOutboxEventListResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        items, total = list_outbox_events(tenant_id, db, status=status, page=page, page_size=page_size)
+        return RectorAssignmentOutboxEventListResponse(
+            items=[RectorAssignmentOutboxEventResponse.model_validate(e) for e in items],
+            total=total,
+        )
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/sla-policies", response_model=RectorAssignmentSlaPolicyListResponse)
+def list_sla_policies_endpoint(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SLA_MANAGE))],
+    tenant: _Tenant,
+    db: _DB,
+    active_only: bool = Query(default=True),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
+) -> RectorAssignmentSlaPolicyListResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        items, total = list_sla_policies(tenant_id, db, active_only=active_only, page=page, page_size=page_size)
+        return RectorAssignmentSlaPolicyListResponse(
+            items=[RectorAssignmentSlaPolicyResponse.model_validate(p) for p in items],
+            total=total,
+        )
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.post("/sla-policies", response_model=RectorAssignmentSlaPolicyResponse, status_code=201)
+def create_sla_policy_endpoint(
+    body: RectorAssignmentSlaPolicyCreateRequest,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SLA_MANAGE))],
+    tenant: _Tenant,
+    db: _DB,
+) -> RectorAssignmentSlaPolicyResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        policy = create_sla_policy(tenant_id, int(actor), body, db)
+        return RectorAssignmentSlaPolicyResponse.model_validate(policy)
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.patch("/sla-policies/{policy_id}", response_model=RectorAssignmentSlaPolicyResponse)
+def update_sla_policy_endpoint(
+    policy_id: int,
+    body: RectorAssignmentSlaPolicyUpdateRequest,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SLA_MANAGE))],
+    tenant: _Tenant,
+    db: _DB,
+) -> RectorAssignmentSlaPolicyResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        policy = update_sla_policy(tenant_id, policy_id, int(actor), body, db)
+        return RectorAssignmentSlaPolicyResponse.model_validate(policy)
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.post("/sla-policies/{policy_id}/archive", response_model=RectorAssignmentSlaPolicyResponse)
+def archive_sla_policy_endpoint(
+    policy_id: int,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SLA_MANAGE))],
+    tenant: _Tenant,
+    db: _DB,
+) -> RectorAssignmentSlaPolicyResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        policy = archive_sla_policy(tenant_id, policy_id, int(actor), db)
+        return RectorAssignmentSlaPolicyResponse.model_validate(policy)
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/escalation-policies", response_model=RectorAssignmentEscalationPolicyListResponse)
+def list_escalation_policies_endpoint(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.ESCALATION_POLICY_MANAGE))],
+    tenant: _Tenant,
+    db: _DB,
+    active_only: bool = Query(default=True),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
+) -> RectorAssignmentEscalationPolicyListResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        items, total = list_escalation_policies(
+            tenant_id, db, active_only=active_only, page=page, page_size=page_size,
+        )
+        return RectorAssignmentEscalationPolicyListResponse(
+            items=[RectorAssignmentEscalationPolicyResponse.model_validate(p) for p in items],
+            total=total,
+        )
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.post(
+    "/escalation-policies",
+    response_model=RectorAssignmentEscalationPolicyResponse,
+    status_code=201,
+)
+def create_escalation_policy_endpoint(
+    body: RectorAssignmentEscalationPolicyCreateRequest,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.ESCALATION_POLICY_MANAGE))],
+    tenant: _Tenant,
+    db: _DB,
+) -> RectorAssignmentEscalationPolicyResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        policy = create_escalation_policy(tenant_id, int(actor), body, db)
+        return RectorAssignmentEscalationPolicyResponse.model_validate(policy)
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.patch(
+    "/escalation-policies/{policy_id}",
+    response_model=RectorAssignmentEscalationPolicyResponse,
+)
+def update_escalation_policy_endpoint(
+    policy_id: int,
+    body: RectorAssignmentEscalationPolicyUpdateRequest,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.ESCALATION_POLICY_MANAGE))],
+    tenant: _Tenant,
+    db: _DB,
+) -> RectorAssignmentEscalationPolicyResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        policy = update_escalation_policy(tenant_id, policy_id, int(actor), body, db)
+        return RectorAssignmentEscalationPolicyResponse.model_validate(policy)
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.post(
+    "/escalation-policies/{policy_id}/archive",
+    response_model=RectorAssignmentEscalationPolicyResponse,
+)
+def archive_escalation_policy_endpoint(
+    policy_id: int,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.ESCALATION_POLICY_MANAGE))],
+    tenant: _Tenant,
+    db: _DB,
+) -> RectorAssignmentEscalationPolicyResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        policy = archive_escalation_policy(tenant_id, policy_id, int(actor), db)
+        return RectorAssignmentEscalationPolicyResponse.model_validate(policy)
     except Exception as exc:
         _handle(exc)
 
@@ -555,5 +758,77 @@ def get_audit_endpoint(
             items=[AssignmentAuditEventResponse.model_validate(e) for e in items],
             total=len(items),
         )
+    except Exception as exc:
+        _handle(exc)
+
+
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# A-031.5-RUNTIME: Outbox per-assignment routes
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/{assignment_id}/outbox",
+    response_model=RectorAssignmentOutboxEventListResponse,
+)
+def list_assignment_outbox_events_endpoint(
+    assignment_id: int,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.OUTBOX_READ))],
+    tenant: _Tenant,
+    db: _DB,
+    status: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
+) -> RectorAssignmentOutboxEventListResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        items, total = list_assignment_outbox_events(
+            tenant_id, assignment_id, db, status=status, page=page, page_size=page_size,
+        )
+        return RectorAssignmentOutboxEventListResponse(
+            items=[RectorAssignmentOutboxEventResponse.model_validate(e) for e in items],
+            total=total,
+        )
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.post(
+    "/{assignment_id}/outbox/{event_id}/ready",
+    response_model=RectorAssignmentOutboxEventResponse,
+)
+def mark_outbox_event_ready_endpoint(
+    assignment_id: int,
+    event_id: int,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.OUTBOX_MANAGE))],
+    tenant: _Tenant,
+    db: _DB,
+) -> RectorAssignmentOutboxEventResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        event = mark_outbox_event_ready(tenant_id, assignment_id, event_id, int(actor), db)
+        return RectorAssignmentOutboxEventResponse.model_validate(event)
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.post(
+    "/{assignment_id}/outbox/{event_id}/cancel",
+    response_model=RectorAssignmentOutboxEventResponse,
+)
+def cancel_outbox_event_endpoint(
+    assignment_id: int,
+    event_id: int,
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.OUTBOX_MANAGE))],
+    tenant: _Tenant,
+    db: _DB,
+) -> RectorAssignmentOutboxEventResponse:
+    tenant_id = int(tenant["id"])
+    try:
+        event = cancel_outbox_event(tenant_id, assignment_id, event_id, int(actor), db)
+        return RectorAssignmentOutboxEventResponse.model_validate(event)
     except Exception as exc:
         _handle(exc)

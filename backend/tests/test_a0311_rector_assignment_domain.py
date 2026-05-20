@@ -60,7 +60,7 @@ class TestModuleImports:
 
     def test_all_permissions_frozenset(self):
         assert isinstance(permissions.ALL_PERMISSIONS, frozenset)
-        assert len(permissions.ALL_PERMISSIONS) == 20
+        assert len(permissions.ALL_PERMISSIONS) == 24  # updated for A-031.5-RUNTIME (+4 new perms)
 
     def test_models_importable(self):
         assert RectorAssignment.__tablename__ == "rector_assignments"
