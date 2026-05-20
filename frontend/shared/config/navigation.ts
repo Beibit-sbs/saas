@@ -638,6 +638,35 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
       },
     ],
   },
+  {
+    label: "Rector Assignments",
+    items: [
+      {
+        label: "Assignment Registry",
+        href: "/console/rector-assignments",
+        icon: ClipboardList,
+        permission: PERMISSIONS.RECTOR_ASSIGNMENTS_DASHBOARD_READ,
+      },
+      {
+        label: "My Assignments",
+        href: "/console/my-assignments",
+        icon: ClipboardCheck,
+        permission: PERMISSIONS.RECTOR_ASSIGNMENTS_LIST,
+      },
+      {
+        label: "Templates",
+        href: "/console/rector-assignments/templates",
+        icon: Package,
+        permission: PERMISSIONS.RECTOR_ASSIGNMENTS_TEMPLATES_MANAGE,
+      },
+      {
+        label: "Overdue & Escalations",
+        href: "/console/rector-assignments/overdue",
+        icon: AlertTriangle,
+        permission: PERMISSIONS.RECTOR_ASSIGNMENTS_DASHBOARD_READ,
+      },
+    ],
+  },
 ];
 
 /**

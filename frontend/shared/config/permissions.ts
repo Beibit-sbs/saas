@@ -198,6 +198,27 @@ export const PERMISSIONS = {
   // Model Evaluation (Phase XII4)
   MODEL_EVALUATION_READ: "model_evaluation.read",
   MODEL_EVALUATION_WRITE: "model_evaluation.write",
+
+  // Rector Assignments (Wave 20 / A-031.1)
+  RECTOR_ASSIGNMENTS_DASHBOARD_READ: "admin.rector_assignments.dashboard.read",
+  RECTOR_ASSIGNMENTS_LIST: "admin.rector_assignments.read",
+  RECTOR_ASSIGNMENTS_LIST_ALL: "admin.rector_assignments.read_all",
+  RECTOR_ASSIGNMENTS_LIST_DEPARTMENT: "admin.rector_assignments.read_department",
+  RECTOR_ASSIGNMENTS_CREATE: "admin.rector_assignments.create",
+  RECTOR_ASSIGNMENTS_ASSIGN: "admin.rector_assignments.assign",
+  RECTOR_ASSIGNMENTS_ACCEPT: "admin.rector_assignments.accept",
+  RECTOR_ASSIGNMENTS_RETURN: "admin.rector_assignments.return",
+  RECTOR_ASSIGNMENTS_COMPLETE: "admin.rector_assignments.complete",
+  RECTOR_ASSIGNMENTS_ESCALATE: "admin.rector_assignments.escalate",
+  RECTOR_ASSIGNMENTS_CANCEL: "admin.rector_assignments.cancel",
+  RECTOR_ASSIGNMENTS_ARCHIVE: "admin.rector_assignments.archive",
+  RECTOR_ASSIGNMENTS_STATUS_CHANGE: "admin.rector_assignments.status.change",
+  RECTOR_ASSIGNMENTS_REPORT_SUBMIT: "admin.rector_assignments.report.submit",
+  RECTOR_ASSIGNMENTS_REPORT_REVIEW: "admin.rector_assignments.report.review",
+  RECTOR_ASSIGNMENTS_EVIDENCE_ATTACH: "admin.rector_assignments.evidence.attach",
+  RECTOR_ASSIGNMENTS_COMMENT: "admin.rector_assignments.comment",
+  RECTOR_ASSIGNMENTS_AUDIT_READ: "admin.rector_assignments.audit.read",
+  RECTOR_ASSIGNMENTS_TEMPLATES_MANAGE: "admin.rector_assignments.templates.manage",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
