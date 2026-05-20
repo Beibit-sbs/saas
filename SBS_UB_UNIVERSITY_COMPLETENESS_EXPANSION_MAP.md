@@ -11715,3 +11715,74 @@ This is specification-only. Metrics advance in A-031.1-RUNTIME after test eviden
 ### Next Action
 
 **A-031.1-RUNTIME** — Implement `rector_assignment_workflow` backend module per this spec.
+
+---
+
+## A-031.1-B1 — Rector Assignment Workflow Backend Quality Baseline
+
+**Date**: 2026-05-20
+**Action ID**: A-031.1-B1
+**Mode**: validation_and_reporting_only
+**Status**: CLOSED
+
+### Status
+A-031.1-B1: **CLOSED — RECTOR ASSIGNMENT BACKEND QUALITY BASELINE CONFIRMED**
+
+### Source
+
+- Runtime commit: `d48f944` — `feat(wave20): A-031.1-RUNTIME rector assignment workflow backend`
+- B1 report: `A-031.1-B1-RECTOR_ASSIGNMENT_BACKEND_QUALITY_BASELINE_REPORT.md`
+- Maturity baseline at B1: L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150 (UNCHANGED)
+
+### Gate Results Summary
+
+| Gate | Tests | Result | Exit | Notes |
+|------|------:|--------|------|-------|
+| Combined (authoritative) | 167 | PASS | 0 | 167 passed in 2760.49s (0:46:00) |
+| Domain split | 60 | PASS | 124* | 901.03s — timeout wrapper, all tests completed |
+| API split | 50 | PASS | 0 | 832.72s |
+| Security split | 40 | PASS | 0 | 705.27s |
+| Audit split | 17 | PASS | 0 | 303.82s |
+| A-030 continuity | 958 | PASS | 0 | 0.75s — no regression |
+
+*Exit=124 is a Docker wall-clock timeout wrapper hitting 900s after all 60 domain tests completed.
+
+### Forbidden Scan Results
+
+| Scan | Result |
+|------|--------|
+| fake_metrics=True in production | NOT FOUND — PASS |
+| hard delete (db.delete) | NOT FOUND — PASS |
+| cross-tenant query shortcut | NOT FOUND — PASS |
+| frontend file change | NOT FOUND — PASS |
+
+### Key Invariants Confirmed
+
+- `DashboardSummaryResponse.fake_metrics: bool = False` (safe default)
+- service.py asserts `result["fake_metrics"] is False` + `data_source == "computed_from_assignments"`
+- All 10 ORM models include `tenant_id: Mapped[int]`
+- All mutations guarded by `validate_tenant_id_provided(tenant_id)`
+- INSERT-only audit_events + status_history (no mutation on history tables)
+- 20 permissions added to `admin` + `superadmin` roles in rbac/service.py
+
+### Performance Diagnosis
+
+- Per-test overhead: ~15-17s/test (167 tests × ~16.5s = 2760s)
+- Root cause: `reset_shared_state` autouse fixture (conftest.py line 238) → `_reset_template_state()` 2×/test → `UnitOfWork()` live DB connection reset = ~15s overhead
+- Collection overhead: module-level `_auth_headers()` in api/security/audit files = 30-90s collection latency
+- Classification: LIVE_DB_SETUP_OVERHEAD — **PRE-EXISTING infrastructure pattern**, not an A-031.1 regression
+- Remediation: DEFERRED — modifying global conftest affects 1671+ project tests; requires dedicated sprint
+
+### A-030 Continuity Note
+
+test_a0303 and test_a0304 use `from backend.app.modules.xxx import yyy` (project-root-relative imports). This is a **pre-existing test authoring pattern** from A-030.3/A-030.4. With correct PYTHONPATH mount (`-v "$PWD":/workspace -e PYTHONPATH=/workspace`), all 958 A-030 tests pass (0.75s). NOT caused by A-031.1-RUNTIME.
+
+### Metrics Non-Movement Confirmed
+
+- L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 — UNCHANGED
+- rector_assignment_workflow does NOT claim any L5/L6 maturity
+- Module tracked as UCE-099 (beyond-150 expansion lane)
+
+### Next Action
+
+**A-031.2-FRONTEND-SPEC** — Role-based UI component specification for rector assignment workflow portals.
