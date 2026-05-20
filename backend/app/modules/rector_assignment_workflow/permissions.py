@@ -1,0 +1,31 @@
+"""Rector Assignment Workflow — Permission constants."""
+
+from __future__ import annotations
+
+CREATE = "admin.rector_assignments.create"
+READ = "admin.rector_assignments.read"
+READ_ALL = "admin.rector_assignments.read_all"
+READ_DEPARTMENT = "admin.rector_assignments.read_department"
+ASSIGN = "admin.rector_assignments.assign"
+ACCEPT = "admin.rector_assignments.accept"
+REPORT_SUBMIT = "admin.rector_assignments.report.submit"
+REPORT_REVIEW = "admin.rector_assignments.report.review"
+EVIDENCE_ATTACH = "admin.rector_assignments.evidence.attach"
+COMMENT = "admin.rector_assignments.comment"
+STATUS_CHANGE = "admin.rector_assignments.status.change"
+COMPLETE = "admin.rector_assignments.complete"
+RETURN = "admin.rector_assignments.return"
+ESCALATE = "admin.rector_assignments.escalate"
+CANCEL = "admin.rector_assignments.cancel"
+ARCHIVE = "admin.rector_assignments.archive"
+AUDIT_READ = "admin.rector_assignments.audit.read"
+TEMPLATES_MANAGE = "admin.rector_assignments.templates.manage"
+DASHBOARD_READ = "admin.rector_assignments.dashboard.read"
+ADMIN = "admin.rector_assignments.admin"
+
+ALL_PERMISSIONS = frozenset({
+    CREATE, READ, READ_ALL, READ_DEPARTMENT, ASSIGN, ACCEPT,
+    REPORT_SUBMIT, REPORT_REVIEW, EVIDENCE_ATTACH, COMMENT,
+    STATUS_CHANGE, COMPLETE, RETURN, ESCALATE, CANCEL, ARCHIVE,
+    AUDIT_READ, TEMPLATES_MANAGE, DASHBOARD_READ, ADMIN,
+})

@@ -1,8 +1,8 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-031.1-RUNTIME
+    - status: ready_for_A-031.1-B1
     - current_stage: A-031.1-SPEC complete / rector assignment backend domain DB API contract specified
-    - last_completed_action_id: A-031.1-SPEC
-    - next_action_id: A-031.1-RUNTIME
+    - last_completed_action_id: A-031.1-RUNTIME
+    - next_action_id: A-031.1-B1
     - updated_at: 2026-05-19 (A-030.5-SPEC complete: UCE-078 academic_integrity_case_management selected; L3 DETERMINISTIC_READINESS_GOVERNANCE target; READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_FINDING_NO_PENALTY boundary; service contract and test plan specified; no runtime code; next action: A-030.5-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
@@ -13143,7 +13143,7 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - closure_decision: CLOSED_SCOPED_PROVIDER_LANE_QUALITY_BASELINE_CONFIRMED
     - selected_next_action: A-031.0-SPEC
     - final_verdict: A-029.11.B1.R2 CLOSED - SCOPED WAVE 18 PROVIDER LANE QUALITY BASELINE CONFIRMED
-    - next_action_id: A-031.1-RUNTIME
+    - next_action_id: A-031.1-B1
 
 - A-030.0-SPEC execution block:
     - mode: planning_only_no_runtime_changes
@@ -13994,10 +13994,10 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - anti_fake_review: PASS (all 23 checks confirmed)
     - report_file: A-030.5-SPEC-ACADEMIC_INTEGRITY_SENSITIVE_DOMAIN_FOUNDATION_REPORT.md
     - final_verdict: A-030.5-SPEC CLOSED — PASS
-    - status: ready_for_A-031.1-RUNTIME
+    - status: ready_for_A-031.1-B1
     - current_stage: A-031.1-SPEC complete / rector assignment backend domain DB API contract specified
-    - last_completed_action_id: A-031.1-SPEC
-    - next_action_id: A-031.1-RUNTIME
+    - last_completed_action_id: A-031.1-RUNTIME
+    - next_action_id: A-031.1-B1
 
 - action_id: A-030.5-RUNTIME
     - mode: runtime_implementation_sensitive_domain_foundation
@@ -14062,10 +14062,10 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - quality_decision: CLOSED — PASS
     - report_file: A-030.5-B1-ACADEMIC_INTEGRITY_SENSITIVE_FOUNDATION_QUALITY_BASELINE_REPORT.md
     - final_verdict: A-030.5-B1 CLOSED — SCOPED ACADEMIC INTEGRITY QUALITY BASELINE CONFIRMED
-    - status: ready_for_A-031.1-RUNTIME
+    - status: ready_for_A-031.1-B1
     - current_stage: A-031.1-SPEC complete / rector assignment backend domain DB API contract specified
-    - last_completed_action_id: A-031.1-SPEC
-    - next_action_id: A-031.1-RUNTIME
+    - last_completed_action_id: A-031.1-RUNTIME
+    - next_action_id: A-031.1-B1
 
 - action_id: A-030.6-SPEC
     - mode: specification_only
@@ -14110,10 +14110,10 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - anti_fake_review: PASS (spec-only, no executable code, all boundaries confirmed)
     - report_file: A-030.6-SPEC-ACADEMIC_APPEALS_SENSITIVE_DOMAIN_FOUNDATION_REPORT.md
     - final_verdict: A-030.6-SPEC CLOSED — ACADEMIC APPEALS SENSITIVE-DOMAIN FOUNDATION SPECIFIED
-    - status: ready_for_A-031.1-RUNTIME
+    - status: ready_for_A-031.1-B1
     - current_stage: A-031.1-SPEC complete / rector assignment backend domain DB API contract specified
-    - last_completed_action_id: A-031.1-SPEC
-    - next_action_id: A-031.1-RUNTIME
+    - last_completed_action_id: A-031.1-RUNTIME
+    - next_action_id: A-031.1-B1
 - A-030.6-RUNTIME execution block:
     - mode: sensitive_domain_foundation_runtime_implementation
     - implemented_candidate: UCE-093 / academic_appeals_workflow
@@ -14189,7 +14189,7 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - no_api_frontend_db: CONFIRMED
     - report_file: A-030.6-B1-ACADEMIC_APPEALS_SENSITIVE_FOUNDATION_QUALITY_BASELINE_REPORT.md
     - final_verdict: A-030.6-B1 CLOSED — SCOPED ACADEMIC APPEALS QUALITY BASELINE CONFIRMED
-    - next_action_id: A-031.1-RUNTIME
+    - next_action_id: A-031.1-B1
 - A-031.0-SPEC execution block:
     - mode: spec_only / docs_only
     - source_state: A-030.6-B1 commit 632996f — ready_for_A-031.0-SPEC
@@ -14223,7 +14223,7 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - migrations_created: NONE
     - report_file: A-031.0-SPEC-FULL_PRODUCTIZATION_RECTOR_ASSIGNMENT_OS_ROADMAP_REPORT.md
     - final_verdict: A-031.0-SPEC CLOSED — FULL PRODUCTIZATION ROADMAP SELECTED
-    - next_action_id: A-031.1-RUNTIME
+    - next_action_id: A-031.1-B1
 
 ---
 A-031.1-SPEC execution block:
@@ -14245,4 +14245,39 @@ A-031.1-SPEC execution block:
     - report_file: A-031.1-SPEC-RECTOR_ASSIGNMENT_WORKFLOW_BACKEND_DOMAIN_API_REPORT.md
     - commit: pending
     - status: CLOSED
-    - next_action_id: A-031.1-RUNTIME
+    - next_action_id: A-031.1-B1
+A-031.1-RUNTIME execution block:
+    - action_id: A-031.1-RUNTIME
+    - mode: backend_runtime_implementation
+    - implemented_candidate: UCE-099 / rector_assignment_workflow
+    - product_vertical: RECTOR_ASSIGNMENT_EXECUTION_CONTROL_OS
+    - target: PRODUCT_RUNTIME_FOUNDATION
+    - module_path: backend/app/modules/rector_assignment_workflow/
+    - router_prefix: /api/admin/rector-assignments
+    - route_count: 24
+    - orm_tables: 10 (rector_assignments, rector_assignment_tasks, rector_assignment_assignees, rector_assignment_reports, rector_assignment_evidence, rector_assignment_comments, rector_assignment_status_history, rector_assignment_escalations, rector_assignment_templates, rector_assignment_audit_events)
+    - source_files:
+        - __init__.py (MODULE_NAME, CONTRACT_VERSION, UCE_PRIMARY, UCE_RELATED)
+        - permissions.py (20 permission constants + ALL_PERMISSIONS frozenset)
+        - models.py (9 enums + 10 ORM models with all indexes)
+        - schemas.py (13 request + 14 response schemas)
+        - dependencies.py (get_rector_assignment_db with perf_segment)
+        - repository.py (25+ repository functions including repo_compute_dashboard_summary)
+        - service.py (20+ service functions, _transition helper, _write_audit helper)
+        - router.py (24 routes, _handle error mapper)
+    - migration: zq35rs47tu58_a031_1_create_rector_assignment_workflow_tables.py (down_revision=yp24qr56st78)
+    - main_py_edits: import + session_factory try/except + include_router (4 injection points)
+    - test_files:
+        - backend/tests/test_a0311_rector_assignment_domain.py (~60 tests, 8 classes)
+        - backend/tests/test_a0311_rector_assignment_api.py (~49 tests, 4 classes)
+        - backend/tests/test_a0311_rector_assignment_security.py (~43 tests, 6 classes)
+        - backend/tests/test_a0311_rector_assignment_audit.py (~28 tests, 5 classes)
+    - gate1_import: PASS (python -c import, 23 routes registered)
+    - gate2_domain: 59/60 PASS (1 fixed: test_permissions_importable expected wrong constant)
+    - gate_all_nocover: 167 tests collected, running
+    - anti_fake_scan: CLEAN (no fake_metrics=True, no hardcoded data)
+    - dashboard_invariants: fake_metrics=False enforced at schema+service+test level
+    - audit_invariants: INSERT-ONLY audit_events + status_history, build_audit_action canonical format
+    - report_file: A-031.1-RUNTIME-RECTOR_ASSIGNMENT_WORKFLOW_BACKEND_IMPLEMENTATION_REPORT.md
+    - status: CLOSED
+    - next_action_id: A-031.1-B1
