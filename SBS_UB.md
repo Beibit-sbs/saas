@@ -1,9 +1,9 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
     - status: complete
-    - current_stage: A-031.2-FRONTEND complete / rector assignment role-based UI implemented
-    - last_completed_action_id: A-031.2-FRONTEND
-    - next_action_id: A-031.3-E2E
-    - updated_at: 2026-05-19 (A-031.2-FRONTEND complete: rector assignment role-based UI implemented; 110 targeted tests PASS; TypeScript clean; anti-fake PASS; backend smoke PASS; broader regression PASS; next action: A-031.3-E2E)
+    - current_stage: A-031.3-E2E complete / rector assignment end-to-end workflow validated
+    - last_completed_action_id: A-031.3-E2E
+    - next_action_id: A-031.4-B1
+    - updated_at: 2026-05-19 (A-031.3-E2E complete: rector assignment E2E validated via Docker/Nginx; 22/22 Playwright pass; 895 frontend regression PASS; 958 backend continuity PASS; anti-fake PASS; security scan PASS; next action: A-031.4-B1)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -14366,3 +14366,39 @@ A-031.2-FRONTEND execution block:
     - status: CLOSED
     - final_verdict: A-031.2-FRONTEND CLOSED — PASS
     - next_action_id: A-031.3-E2E
+A-031.3-E2E execution block:
+    - action_id: A-031.3-E2E
+    - mode: e2e_validation
+    - purpose: validate_rector_assignment_os_end_to_end_workflow_via_docker_nginx
+    - vertical: RECTOR_ASSIGNMENT_EXECUTION_CONTROL_OS
+    - source_commit: 1138342 (A-031.2-FRONTEND implementation parent)
+    - e2e_framework: Playwright
+    - e2e_base_url: https://nginx
+    - e2e_transport: Docker Compose + Nginx edge (ai_default network)
+    - frontend_image: ai-frontend:latest (rebuilt with API_BASE_URL=http://nginx)
+    - test_image: ai-frontend-tests:latest (rebuilt with fixed isBlocked logic)
+    - playwright_tests_pass: 22
+    - playwright_tests_total: 22
+    - playwright_test_duration_seconds: 6.4
+    - e2e_result: PASS_FULL_BROWSER_E2E
+    - e2e_gate_log: .gate-logs/a0313_e2e/e2e_playwright.log
+    - scenarios_validated:
+        - A: unauthenticated redirects (4 routes → 307 to login)
+        - B: Registry page + Dashboard KPI cards (fake_metrics=false)
+        - C: New Assignment form rendering
+        - D: My Assignments executor view
+        - E: Templates list rendering
+        - F: Overdue/Escalations list
+        - G: Dashboard anti-fake guard (fake_metrics=true → DataQualityError)
+        - H: RBAC permission gate enforcement (non-admin role blocked)
+        - I: Workflow state transitions rendering
+    - frontend_regression: PASS (895/895 vitest tests)
+    - backend_continuity: PASS (958/958 pytest tests, A-030 series)
+    - anti_fake_scan: PASS (fake_metrics guard enforced, no hardcoded data)
+    - security_scan: PASS (no hard deletes, no SQL injection patterns)
+    - baseline_maturity_preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, maturity_arithmetic_check=PASS
+    - extension_metrics_preserved: extension_total_count=25, total_tracked_modules=175, separation=PASS
+    - anti_inflation: PASS (E2E validation only, no new modules, no backend changes, no maturity movement)
+    - status: CLOSED
+    - final_verdict: A-031.3-E2E CLOSED — PASS_FULL_BROWSER_E2E
+    - next_action_id: A-031.4-B1

@@ -11886,3 +11886,98 @@ No frontend code started. No production-ready claim. rector_assignment_workflow 
 ### Next Action
 
 **A-031.2-FRONTEND** — Implement React/Next.js pages, hooks, types, navigation entries, and permission constants per this spec.
+
+## A-031.2-FRONTEND — Rector Assignment OS Role-Based UI Implementation
+
+**Action ID**: A-031.2-FRONTEND
+**Vertical**: RECTOR_ASSIGNMENT_EXECUTION_CONTROL_OS
+**Status**: CLOSED — RECTOR ASSIGNMENT ROLE-BASED UI IMPLEMENTED
+
+A-031.2-FRONTEND implemented the full React/Next.js UI for the rector assignment workflow per the A-031.2-FRONTEND-SPEC blueprint.
+
+### Files Created
+
+- `frontend/modules/rector-assignments/types.ts` — 7 enums, 12 interfaces, 3 payload types, `fake_metrics` field
+- `frontend/modules/rector-assignments/hooks.ts` — TanStack Query hooks with anti-fake dashboard guard
+- `frontend/modules/rector-assignments/status.ts` — status/priority badge helpers
+- `frontend/app/(admin)/console/rector-assignments/` — 8 admin pages (Registry, Dashboard, Detail, Create, My, Templates, Overdue, Escalations)
+- `frontend/app/(admin)/console/my-assignments/` — 3 executor pages (Inbox, Detail, Report)
+- 11 test files under `frontend/__tests__/admin/`
+
+### Files Modified
+
+- `frontend/shared/config/navigation.ts` — Rector Assignments navigation group (4 nav items)
+- `frontend/shared/config/permissions.ts` — 16 `admin.rector_assignments.*` constants
+
+### Gate Results
+
+- Targeted tests: 110/110 PASS
+- TypeScript: CLEAN (zero errors)
+- Anti-fake scan: PASS
+- Backend smoke: PASS
+- Broader regression: PASS
+
+### Metrics Non-Movement
+
+L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 — UNCHANGED
+Frontend implementation only; rector_assignment_workflow module remains in UCE-099 expansion lane.
+
+### Commit
+
+`1138342` — `feat(wave20): A-031.2-FRONTEND implement rector assignment role-based UI`
+
+### Next Action
+
+**A-031.3-E2E** — Playwright end-to-end validation via Docker/Nginx edge.
+
+## A-031.3-E2E — Rector Assignment OS End-to-End Validation
+
+**Action ID**: A-031.3-E2E
+**Vertical**: RECTOR_ASSIGNMENT_EXECUTION_CONTROL_OS
+**Status**: CLOSED — PASS_FULL_BROWSER_E2E
+
+A-031.3-E2E validated the full rector assignment workflow through the Docker/Nginx edge using Playwright browser tests.
+
+### E2E Spec
+
+- File: `frontend/e2e/smoke/rector-assignments.spec.ts`
+- Tests: 22/22 PASS (6.4s)
+- Framework: Playwright, `E2E_BASE_URL=https://nginx`
+- Transport: Docker Compose + Nginx edge (ai_default network)
+- Auth: Fake JWT cookie + `page.route("**/api/auth/me")` stub
+
+### Scenarios Validated
+
+| Scenario | Description | Result |
+|----------|-------------|--------|
+| A | Unauthenticated redirects (4 routes → 307 to login) | PASS |
+| B | Registry page + Dashboard KPI cards (fake_metrics=false) | PASS |
+| C | New Assignment form rendering | PASS |
+| D | My Assignments executor view | PASS |
+| E | Templates list rendering | PASS |
+| F | Overdue/Escalations list | PASS |
+| G | Dashboard anti-fake guard (fake_metrics=true → DataQualityError) | PASS |
+| H | RBAC permission gate enforcement (non-admin role → Access Denied) | PASS |
+| I | Workflow state transitions rendering | PASS |
+
+### Key Fix
+
+Test #19 (RBAC enforcement): Fixed `isBlocked` logic — `isVisible()` never rejects, so `.catch(() => true)` was dead code. Replaced with explicit `waitFor({state: "visible"})` for AccessDenied heading + `!registryHeadingVisible` guard.
+
+### Gate Results
+
+- E2E: PASS_FULL_BROWSER_E2E (22/22)
+- Frontend regression: PASS (895/895 vitest)
+- Backend continuity: PASS (958/958 pytest, A-030 series)
+- Anti-fake scan: PASS
+- Security scan: PASS (no hard deletes, no SQL injection)
+- Gate log: `.gate-logs/a0313_e2e/e2e_playwright.log`
+
+### Metrics Non-Movement
+
+L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 — UNCHANGED
+E2E validation only; no new modules, no backend changes, no maturity movement.
+
+### Next Action
+
+**A-031.4-B1** — Next controlled action in the rector assignment OS lane.
