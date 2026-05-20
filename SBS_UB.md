@@ -1,9 +1,9 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-031.5-B1
-    - current_stage: A-031.5-RUNTIME complete / rector assignment outbox SLA escalation policy expansion implemented
-    - last_completed_action_id: A-031.5-RUNTIME
-    - next_action_id: A-031.5-B1
-    - updated_at: 2026-05-20 (A-031.5-RUNTIME complete: rector assignment outbox/SLA/escalation policy expansion; 3 new tables; 12 new routes; 188 new tests passing; no fake metrics; no hard delete; baseline metrics unchanged; next action: A-031.5-B1)
+    - status: ready_for_A-031.5-FRONTEND-SPEC
+    - current_stage: A-031.5-B1 complete / rector assignment reporting notifications SLA baseline confirmed
+    - last_completed_action_id: A-031.5-B1
+    - next_action_id: A-031.5-FRONTEND-SPEC
+    - updated_at: 2026-05-20 (A-031.5-B1 complete: rector assignment outbox/SLA/escalation baseline confirmed; 188 targeted+167 A031.1+954 A030 PASS; no fake metrics; no hard delete; no live dispatch; metrics unchanged; next action: A-031.5-FRONTEND-SPEC)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -14531,3 +14531,42 @@ A-031.5-RUNTIME execution block:
     - baseline_maturity_preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (unchanged)
     - next_action_id: A-031.5-B1
     - status: RUNTIME_COMPLETE
+
+A-031.5-B1 execution block:
+    - action_id: A-031.5-B1
+    - action_type: quality_baseline_validation
+    - source_commit: fa9d4d5 (A-031.5-RUNTIME)
+    - b1_commit: docs(wave20): A-031.5-B1 confirm rector assignment expansion baseline
+    - gate_results:
+        - import_model_schema_sanity: PASS (3 models + 4 schemas resolve; tenant_id confirmed)
+        - migration_model_metadata: PASS (3 tables with tenant_id; __tablename__ verified)
+        - targeted_a0315_tests: PASS (188 passed, 0 failed)
+        - a0311_continuity: PASS (167 passed; full suite)
+        - a030_continuity: PASS (954 passed, 4 skipped; full 6-file suite)
+        - no_provider_dispatch: PASS (0 production hits; guard tests only)
+        - anti_fake_dashboard: PASS (guard assertion present; no fake_metrics=True in prod)
+        - no_hard_delete: PASS (0 hard delete hits)
+        - rbac_tenant_scan: PASS (all routes RBAC-protected; 4 perms in both roles)
+        - git_diff_check: PASS
+    - quality_evidence:
+        - outbox_rows_only: confirmed (no live dispatch)
+        - no_live_email_sms: confirmed
+        - no_provider_call: confirmed
+        - sla_policy: implemented (archive-only)
+        - escalation_policy: implemented (manual-confirmation default; archive-only)
+        - dashboard_fake_metrics: False (hardcoded + guard)
+        - dashboard_data_source: computed_from_assignments (hardcoded + guard)
+        - no_hard_delete: confirmed
+        - tenant_isolation: confirmed (97 tenant_id refs in repository)
+        - rbac_enforced: confirmed (permission_dependency on all routes)
+        - audit_trail: confirmed (outbox events audit-logged)
+    - limitations:
+        - outbox_consumer: not implemented (intent queue only; dispatch deferred)
+        - sla_evaluation: not applied to live assignments (deferred)
+        - escalation_trigger: manual-confirmation only (no autonomous trigger)
+        - dashboard_caching: no cache layer (performance gap acknowledged)
+    - baseline_maturity_preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (unchanged)
+    - extension_metrics_preserved: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - final_decision: A-031.5-B1 CLOSED — RECTOR ASSIGNMENT EXPANSION QUALITY BASELINE CONFIRMED
+    - next_action_id: A-031.5-FRONTEND-SPEC
+    - status: BASELINE_CONFIRMED

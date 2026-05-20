@@ -11644,9 +11644,9 @@ A-031.0-SPEC: **CLOSED — FULL PRODUCTIZATION ROADMAP SELECTED**
 
 ## A-031.1-SPEC — Rector Assignment Workflow Backend Domain / API Specification
 
-**Date**: 2026-05-20  
-**Action ID**: A-031.1-SPEC  
-**Mode**: spec_only / docs_only  
+**Date**: 2026-05-20
+**Action ID**: A-031.1-SPEC
+**Mode**: spec_only / docs_only
 **Status**: CLOSED
 
 ### Summary
@@ -11682,8 +11682,8 @@ Permission pattern: `admin.rector_assignments.X` (20 permission strings, 7 roles
 
 ### 11-Status Lifecycle
 
-`DRAFT → ASSIGNED → ACCEPTED → IN_PROGRESS → REPORT_SUBMITTED → COMPLETED`  
-With branches: `RETURNED_FOR_REVISION`, `OVERDUE` (computed), `ESCALATED`, `CANCELLED`, `ARCHIVED`  
+`DRAFT → ASSIGNED → ACCEPTED → IN_PROGRESS → REPORT_SUBMITTED → COMPLETED`
+With branches: `RETURNED_FOR_REVISION`, `OVERDUE` (computed), `ESCALATED`, `CANCELLED`, `ARCHIVED`
 Full forbidden-transition enforcement. INSERT-only status_history on every transition.
 
 ### Service Contract
@@ -11709,7 +11709,7 @@ Confirmed against existing project patterns:
 
 ### Metrics
 
-Zero metric movement. L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150 unchanged.  
+Zero metric movement. L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150 unchanged.
 This is specification-only. Metrics advance in A-031.1-RUNTIME after test evidence collected.
 
 ### Next Action
@@ -12141,9 +12141,9 @@ Extension: extension_total_count=25, total_tracked_modules=175 — UNCHANGED
 
 ## A-031.5-RUNTIME — Rector Assignment Outbox / SLA / Escalation Policy Expansion
 
-**Action ID**: A-031.5-RUNTIME  
-**Status**: RUNTIME_COMPLETE  
-**Commit**: test(wave20): A-031.5 implement rector assignment expansion  
+**Action ID**: A-031.5-RUNTIME
+**Status**: RUNTIME_COMPLETE
+**Commit**: test(wave20): A-031.5 implement rector assignment expansion
 
 ### What Was Built
 
@@ -12175,3 +12175,58 @@ Extension: extension_total_count=25, total_tracked_modules=175 — UNCHANGED
 ### Next Action
 
 **A-031.5-B1** — Post-implementation baseline closure and graduation evidence.
+
+---
+
+## A-031.5-B1 — Rector Assignment Reporting / Notifications / SLA Quality Baseline
+
+**Action ID**: A-031.5-B1
+**Status**: BASELINE_CONFIRMED
+**Source Commit**: fa9d4d5 (A-031.5-RUNTIME)
+**B1 Commit**: docs(wave20): A-031.5-B1 confirm rector assignment expansion baseline
+
+### Gate Results
+
+| Gate | Result |
+|---|---|
+| Import / model / schema sanity | ✅ PASS |
+| Migration / model metadata | ✅ PASS |
+| Targeted A-031.5 (188 tests) | ✅ PASS |
+| A-031.1 continuity (167 tests) | ✅ PASS |
+| A-030 continuity (954 tests, 4 skipped) | ✅ PASS |
+| No provider / no live dispatch | ✅ PASS |
+| Anti-fake / dashboard scan | ✅ PASS |
+| No hard delete | ✅ PASS |
+| RBAC / tenant scan | ✅ PASS |
+| git diff --check | ✅ PASS |
+
+### Implementation Evidence
+
+| Item | Value |
+|---|---|
+| DB tables | rector_assignment_outbox_events, rector_assignment_sla_policies, rector_assignment_escalation_policies |
+| Migration | ar46st58uv69 |
+| New API routes | 12 |
+| Dashboard fields added | 8 |
+| Lifecycle outbox transitions | 9 |
+| RBAC permissions added | 4 (outbox.read, outbox.manage, sla.manage, escalation_policy.manage) |
+| Roles updated | admin + owner/superadmin |
+| Fake metrics | False (hardcoded + guard) |
+| Live dispatch | None |
+| Hard delete | None |
+| Metrics | L0=0 L1=0 L2=0 L3=55 L4=68 L5=25 L6=2 total=150 (UNCHANGED) |
+
+### Known Limitations
+
+- Outbox = intent queue only (no consumer/dispatcher)
+- SLA evaluation not applied to live assignments (deferred)
+- Escalation trigger is manual-confirmation only
+- Dashboard caching not implemented
+
+### Final Decision
+
+**A-031.5-B1 CLOSED — RECTOR ASSIGNMENT EXPANSION QUALITY BASELINE CONFIRMED**
+
+### Next Action
+
+**A-031.5-FRONTEND-SPEC** — Rector Assignment SLA / Notification Widgets Specification
