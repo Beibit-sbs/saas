@@ -12042,3 +12042,97 @@ First complete productization vertical confirmed:
 ### Next Action
 
 **A-031.5-SPEC** — Rector Assignment OS expansion planning (notification/outbox, reporting/dashboard expansion, SLA hardening, pilot rollout package).
+
+---
+
+## A-031.5-SPEC — Rector Assignment Reporting / Notifications / SLA Expansion
+
+**Action ID**: A-031.5-SPEC
+**Track**: RECTOR_ASSIGNMENT_PRODUCT_EXPANSION
+**Type**: SPEC-ONLY / DOCS-ONLY
+**Date**: 2026-05-20
+**Status**: SPEC_COMPLETE
+
+### Source State
+
+Source: A-031.4-B1 (`d50499f`) — PASS_SCOPED_PRODUCT_SLICE + PASS_WITH_PERFORMANCE_NOTE
+First full Rector Assignment OS product slice closed before this spec.
+
+### Selected Expansion Batch
+
+**Option A — Notification / Outbox Foundation**
+- Table: `rector_assignment_outbox_events`
+- 10 event types covering full assignment lifecycle
+- PENDING/READY status only in first runtime
+- No live email/SMS/provider dispatch
+- Channel intent storage: IN_APP / EMAIL / SMS
+
+**Option B — SLA / Overdue / Escalation Policy**
+- Tables: `rector_assignment_sla_policies` + `rector_assignment_escalation_policies`
+- Formalizes existing `due_date` + `is_overdue` with policy-driven rules
+- Escalation levels 1-4 mapped to CONTROLLER/PRORECTOR/RECTOR/PLATFORM_ADMIN
+- `require_manual_confirmation = True` by default in first runtime
+- No punitive action; no grade/student impact
+
+**Option C — Reporting / Dashboard Expansion**
+- Extends existing `DashboardSummaryResponse` (already has 21 computed fields)
+- New fields: `overdue_aging_buckets` (1-3/4-7/8-14/15+ days), `completion_trend_by_week`,
+  `report_submission_compliance`, `escalation_rate`, `average_revision_cycles`,
+  `evidence_attachment_rate`, `assignments_without_recent_report`, `unit_completion_table`
+- All computed from source DB; `fake_metrics = False` mandatory; `data_source = "computed_from_assignments"` mandatory
+
+**Option D — Performance Follow-up Plan** (quality prerequisite, not product feature)
+- Fixture pooling + DB snapshot restore + fast/slow markers
+- Target: reduce 167 test / 46 min to ≤600s
+
+**Option E — Pilot Rollout Checklist** (planning artifact, not validated until A-031.5-B1)
+- Roles seed + SLA defaults + sandboxed notifications + rollback plan + training guide
+
+### UI Expansion Expectations (future, not implemented)
+
+| Component | Purpose |
+|---|---|
+| `AssignmentNotificationTimeline` | Read-only outbox event timeline for assignment |
+| `AssignmentSlaBadge` | ON_TRACK / DUE_SOON / OVERDUE visual badge |
+| `OverdueAgingWidget` | Dashboard aging buckets chart |
+| `UnitPerformanceTable` | Sortable completion rate by unit |
+| `EscalationPolicyManager` | CRUD for escalation policies |
+| `ReportComplianceWidget` | Compliance gauge/bar widget |
+
+### Constraints
+
+- No runtime implementation started
+- No live notification dispatch
+- No provider integration
+- No autonomous assignment decisions
+- No grade/student/punitive actions
+- No production-ready claim
+- No L5/L6 claim
+- No metric movement
+
+### Related Capabilities
+
+- UCE-099 rector_resolution_tracking_workflow (primary)
+- UCE-031 rector_strategy_dashboard
+- UCE-009 document_workflow
+- UCE-011 order_decree_registry
+- UCE-013 incoming_outgoing_correspondence
+
+### A-031.5 Chain
+
+| Action | Status |
+|---|---|
+| A-031.5-SPEC | CLOSED (this action) |
+| A-031.5-RUNTIME | PENDING — outbox + SLA + dashboard expansion |
+| A-031.5-FRONTEND | PENDING — notification/SLA/reporting widgets |
+| A-031.5-E2E | PENDING — overdue/SLA/outbox workflow E2E |
+| A-031.5-B1 | PENDING — expanded product quality baseline |
+
+### Metrics Preservation
+
+Baseline metrics: L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150 — UNCHANGED
+Extension: extension_total_count=25, total_tracked_modules=175 — UNCHANGED
+
+### Next Action
+
+**A-031.5-RUNTIME** — Rector Assignment OS notification outbox + SLA policy + dashboard expansion runtime implementation.

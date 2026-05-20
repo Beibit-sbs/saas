@@ -1,9 +1,9 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-031.5-SPEC
-    - current_stage: A-031.4-B1 complete / rector assignment OS product quality baseline confirmed
-    - last_completed_action_id: A-031.4-B1
-    - next_action_id: A-031.5-SPEC
-    - updated_at: 2026-05-20 (A-031.4-B1 complete: first full product slice closed; PASS_SCOPED_PRODUCT_SLICE; backend 167/167+E2E 22/22+frontend 895/895+A030 958/958; anti-fake/security/tenant/RBAC/audit PASS; LIVE_DB_SETUP_OVERHEAD non-blocking; metrics unchanged; next action: A-031.5-SPEC)
+    - status: ready_for_A-031.5-RUNTIME
+    - current_stage: A-031.5-SPEC complete / rector assignment reporting notifications SLA expansion specified
+    - last_completed_action_id: A-031.5-SPEC
+    - next_action_id: A-031.5-RUNTIME
+    - updated_at: 2026-05-20 (A-031.5-SPEC complete: rector assignment reporting/notifications/SLA expansion specified; Option A outbox contract+Option B SLA/escalation policy+Option C dashboard expansion; no runtime implementation; no fake metrics; baseline metrics unchanged; next action: A-031.5-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -14445,3 +14445,59 @@ A-031.4-B1 execution block:
     - status: CLOSED
     - final_verdict: A-031.4-B1 CLOSED — SCOPED RECTOR ASSIGNMENT OS PRODUCT QUALITY BASELINE CONFIRMED
     - next_action_id: A-031.5-SPEC
+A-031.5-SPEC execution block:
+    - action_id: A-031.5-SPEC
+    - type: SPEC_ONLY / DOCS_ONLY
+    - track: RECTOR_ASSIGNMENT_PRODUCT_EXPANSION
+    - scope: REPORTING_NOTIFICATIONS_SLA_EXPANSION
+    - source_commit: d50499f
+    - source_action: A-031.4-B1 (PASS_SCOPED_PRODUCT_SLICE + PASS_WITH_PERFORMANCE_NOTE)
+    - selected_batch: Option A (outbox) + Option B (SLA/escalation) + Option C (dashboard expansion)
+    - option_a_outbox:
+        - table: rector_assignment_outbox_events
+        - event_types: rector_assignment.created/assigned/accepted/report_submitted/returned_for_revision/completed/escalated/overdue_detected/comment_added/evidence_attached
+        - status_lifecycle: PENDING/READY only in first runtime; DISPATCHED/FAILED/CANCELLED reserved
+        - channels: IN_APP/EMAIL/SMS (channel intent only; no live dispatch)
+        - no_live_email: CONFIRMED
+        - no_live_sms: CONFIRMED
+        - no_provider_call: CONFIRMED
+        - audit_required: every outbox row must have corresponding audit event
+        - tenant_scoped: mandatory
+    - option_b_sla_escalation:
+        - tables: rector_assignment_sla_policies + rector_assignment_escalation_policies
+        - overdue_computation: due_date + active status + overdue_after_hours
+        - due_soon_computation: warning_before_hours before due_date, computed at query time
+        - escalation_levels: 1-4 (maps to existing escalation_level field)
+        - default_require_manual_confirmation: True
+        - no_punitive_action: CONFIRMED
+        - no_grade_impact: CONFIRMED
+        - soft_delete_only: CONFIRMED
+    - option_c_dashboard_expansion:
+        - new_fields: overdue_aging_buckets + completion_trend_by_week + report_submission_compliance + escalation_rate + average_revision_cycles + evidence_attachment_rate + assignments_without_recent_report + unit_completion_table
+        - fake_metrics_guard: fake_metrics MUST remain False
+        - data_source_guard: data_source MUST remain computed_from_assignments
+        - null_policy: null returned when no data; 0 only when genuinely zero
+        - no_mock_values: CONFIRMED
+    - option_d_performance_follow_up:
+        - problem: 167 tests / 2760s / 46 min wall clock; LIVE_DB_SETUP_OVERHEAD
+        - proposed: module-scoped fixture pooling + DB snapshot restore + fast/slow markers
+        - classification: quality prerequisite before broad regression gates; not a product feature
+    - option_e_pilot_readiness:
+        - checklist: tenant seed plan + roles mapping + SLA defaults + notification sandboxed + audit export + rollback plan + training guide
+        - status: NOT_VALIDATED_UNTIL_A-031.5-B1
+    - runtime_split: single A-031.5-RUNTIME recommended; split to A-031.5A/B if scope exceeds ~300 backend lines
+    - ui_expansion_expectations: AssignmentNotificationTimeline + AssignmentSlaBadge + OverdueAgingWidget + UnitPerformanceTable + EscalationPolicyManager + ReportComplianceWidget (not implemented in spec)
+    - no_runtime_code: CONFIRMED
+    - no_backend_changes: CONFIRMED
+    - no_frontend_changes: CONFIRMED
+    - no_tests_created: CONFIRMED
+    - no_migrations: CONFIRMED
+    - no_notification_dispatch: CONFIRMED
+    - no_fake_dashboard: CONFIRMED
+    - no_production_ready_claim: CONFIRMED
+    - no_L5_L6_claim: CONFIRMED
+    - baseline_maturity_preserved: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (unchanged)
+    - extension_metrics_preserved: extension_total_count=25, total_tracked_modules=175 (unchanged)
+    - related_capabilities: UCE-099 rector_resolution_tracking_workflow / UCE-031 rector_strategy_dashboard / UCE-009 document_workflow / UCE-011 order_decree_registry / UCE-013 incoming_outgoing_correspondence
+    - next_action_id: A-031.5-RUNTIME
+    - status: SPEC_COMPLETE
