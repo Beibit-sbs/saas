@@ -11786,3 +11786,103 @@ test_a0303 and test_a0304 use `from backend.app.modules.xxx import yyy` (project
 ### Next Action
 
 **A-031.2-FRONTEND-SPEC** — Role-based UI component specification for rector assignment workflow portals.
+
+---
+
+## A-031.2-FRONTEND-SPEC — Rector Assignment OS Role-Based UI Specification
+
+**Date**: 2026-05-20
+**Action ID**: A-031.2-FRONTEND-SPEC
+**Mode**: spec_only / docs_only
+**Status**: CLOSED
+
+### Status
+A-031.2-FRONTEND-SPEC: **CLOSED — RECTOR ASSIGNMENT ROLE-BASED UI SPECIFIED**
+
+### Source
+
+- A-031.1-B1 commit: `27f9eca` — `docs(wave20): A-031.1-B1 confirm rector assignment backend baseline`
+- A-031.1-RUNTIME commit: `d48f944` — backend 167/167 tests PASS
+- Backend baseline: L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150 (UNCHANGED)
+
+### Frontend Architecture Findings
+
+| Finding | Value |
+|---------|-------|
+| Framework | Next.js App Router — `/app/(admin)/console/...` |
+| State management | TanStack Query (`useQuery` + `useMutation`) |
+| API client | `apiGet/apiPost/apiPut/apiPatch/apiDelete` from `@/shared/api/client` |
+| BFF pattern | Catch-all `/api/bff/[...path]/route.ts` — no new route file needed |
+| Auth | Cookie-based (`app_access_token`/`admin_token`), `credentials: "include"` |
+| Permission gate | `RequirePermission` from `@/shared/auth/permission-gate` |
+| UI components | Badge, Button, Card, Dialog, Input, Table from `@/components/ui/` |
+| Module pattern | `frontend/modules/{name}/hooks.ts` + `types.ts` |
+
+### Selected Strategy
+
+**ADMIN_CONSOLE_EXPANSION** — All rector-assignment portals live within the existing admin console. Executor inbox is a filtered view within the same console. The catch-all BFF proxy handles all API paths without a dedicated BFF route file.
+
+### Route Map
+
+| Route | Purpose | Roles |
+|-------|---------|-------|
+| `/console/rector-assignments` | Dashboard + registry | Rector, Controller, Secretary, Admin, Auditor |
+| `/console/rector-assignments/new` | Create form | Rector, Controller, Secretary, Admin |
+| `/console/rector-assignments/templates` | Template manager | Admin, Controller |
+| `/console/rector-assignments/overdue` | Overdue board | Rector, Controller, Secretary |
+| `/console/rector-assignments/escalations` | Escalation queue | Rector, Controller, Secretary |
+| `/console/rector-assignments/[id]` | Detail with tabs | All permitted |
+| `/console/rector-assignments/[id]/reports` | Report timeline | Rector, Controller, Director |
+| `/console/rector-assignments/[id]/audit` | Audit trail | Auditor, Admin, Rector |
+| `/console/my-assignments` | Executor inbox | Executor, Director, any assignee |
+| `/console/my-assignments/[id]` | Executor detail | Executor (assignee) |
+| `/console/my-assignments/[id]/report` | Submit report | Executor (assignee) |
+
+### Role Portals
+
+| Role | Primary Entry | Key Actions |
+|------|--------------|-------------|
+| Rector / Vice Rector | `/console/rector-assignments` | Create, assign, review, return, complete, escalate, audit |
+| Controller / Secretary | `/console/rector-assignments` | Draft, monitor, overdue board, escalation queue, audit |
+| Executor | `/console/my-assignments` | Accept, submit report, attach evidence, comment |
+| Director / Dean | `/console/rector-assignments` (unit-filtered) | Review unit reports, assign co-executors |
+| Auditor / Observer | `/console/rector-assignments` (read-only) | View audit trail, evidence, registry |
+| Platform Admin | `/console/rector-assignments/templates` | Template CRUD, configuration |
+
+### Dashboard Real-Data Rules
+
+1. Must call `GET /api/admin/rector-assignments/dashboard/summary` — no other source
+2. Assert `data.fake_metrics === false` before rendering any KPI value
+3. Assert `data.data_source === "computed_from_assignments"` before rendering
+4. If either guard fails → render `DataQualityError` state, not KPI values
+5. No hardcoded dashboard fallbacks
+
+### Permission Constants Specified
+
+16 new constants for `frontend/shared/config/permissions.ts` (prefix: `admin.rector_assignments.*`):
+- DASHBOARD_READ, LIST, CREATE, DETAIL, ASSIGN, ACCEPT, RETURN, COMPLETE, ESCALATE, CANCEL, ARCHIVE, REPORT_SUBMIT, EVIDENCE_ATTACH, COMMENT_ADD, AUDIT_READ, TEMPLATES_MANAGE
+
+### Component Groups Specified
+
+21 components across: `RectorAssignmentDashboard`, `AssignmentKpiCards`, `AssignmentStatusChart`, `AssignmentRegistryTable`, `AssignmentFilters`, `AssignmentCreateForm`, `AssignmentDetailHeader`, `AssignmentLifecycleBadge`, `AssignmentActionsBar`, `AssignmentTasksPanel`, `AssignmentReportsTimeline`, `AssignmentReportForm`, `AssignmentEvidencePanel`, `AssignmentCommentsPanel`, `AssignmentStatusHistoryPanel`, `AssignmentAuditTrailPanel`, `AssignmentTemplateManager`, `ExecutorAssignmentInbox`, `OverdueEscalationBoard`, `PermissionGate`, `StatusTransitionDialog`
+
+### TypeScript Types Specified
+
+- 7 enums: AssignmentStatus (11 values), AssignmentPriority, RecurrenceType, ReportStatus, EvidenceType, CommentVisibility
+- 12 interfaces: RectorAssignment, AssignmentTask, AssignmentAssignee, AssignmentReport, AssignmentEvidence, AssignmentComment, AssignmentStatusHistory, AssignmentEscalation, AssignmentTemplate, AssignmentAuditEvent, DashboardSummary
+- 3 payload types: AssignmentCreatePayload, ReportCreatePayload, EvidenceAttachPayload
+
+### Frontend Test Plan
+
+10 test files: RectorAssignmentsPage, AssignmentDetailPage, AssignmentCreateForm, ExecutorAssignmentsPage, AssignmentReportForm, AssignmentApiClient, AssignmentPermissionGate, AssignmentLifecycleBadge, AssignmentTemplateManager, AssignmentAuditTrail
+
+Mandatory anti-fake test coverage: fake_metrics guard, data_source guard, no hardcoded values.
+
+### Metrics Non-Movement
+
+L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 — UNCHANGED
+No frontend code started. No production-ready claim. rector_assignment_workflow in UCE-099 expansion lane only.
+
+### Next Action
+
+**A-031.2-FRONTEND** — Implement React/Next.js pages, hooks, types, navigation entries, and permission constants per this spec.

@@ -1,8 +1,8 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-031.2-FRONTEND-SPEC
-    - current_stage: A-031.1-B1 complete / rector assignment backend quality baseline confirmed
-    - last_completed_action_id: A-031.1-B1
-    - next_action_id: A-031.2-FRONTEND-SPEC
+    - status: ready_for_A-031.2-FRONTEND
+    - current_stage: A-031.2-FRONTEND-SPEC complete / rector assignment role-based UI specified
+    - last_completed_action_id: A-031.2-FRONTEND-SPEC
+    - next_action_id: A-031.2-FRONTEND
     - updated_at: 2026-05-19 (A-030.5-SPEC complete: UCE-078 academic_integrity_case_management selected; L3 DETERMINISTIC_READINESS_GOVERNANCE target; READINESS_AND_EVIDENCE_ONLY + NO_EXECUTION + NO_FINDING_NO_PENALTY boundary; service contract and test plan specified; no runtime code; next action: A-030.5-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
@@ -13994,9 +13994,9 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - anti_fake_review: PASS (all 23 checks confirmed)
     - report_file: A-030.5-SPEC-ACADEMIC_INTEGRITY_SENSITIVE_DOMAIN_FOUNDATION_REPORT.md
     - final_verdict: A-030.5-SPEC CLOSED — PASS
-    - status: ready_for_A-031.2-FRONTEND-SPEC
-    - current_stage: A-031.1-B1 complete / rector assignment backend quality baseline confirmed
-    - last_completed_action_id: A-031.1-B1
+    - status: ready_for_A-031.2-FRONTEND
+    - current_stage: A-031.2-FRONTEND-SPEC complete / rector assignment role-based UI specified
+    - last_completed_action_id: A-031.2-FRONTEND-SPEC
     - next_action_id: A-031.2-FRONTEND-SPEC
 
 - action_id: A-030.5-RUNTIME
@@ -14062,9 +14062,9 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - quality_decision: CLOSED — PASS
     - report_file: A-030.5-B1-ACADEMIC_INTEGRITY_SENSITIVE_FOUNDATION_QUALITY_BASELINE_REPORT.md
     - final_verdict: A-030.5-B1 CLOSED — SCOPED ACADEMIC INTEGRITY QUALITY BASELINE CONFIRMED
-    - status: ready_for_A-031.2-FRONTEND-SPEC
-    - current_stage: A-031.1-B1 complete / rector assignment backend quality baseline confirmed
-    - last_completed_action_id: A-031.1-B1
+    - status: ready_for_A-031.2-FRONTEND
+    - current_stage: A-031.2-FRONTEND-SPEC complete / rector assignment role-based UI specified
+    - last_completed_action_id: A-031.2-FRONTEND-SPEC
     - next_action_id: A-031.2-FRONTEND-SPEC
 
 - action_id: A-030.6-SPEC
@@ -14110,9 +14110,9 @@ Formula-only anchors for A-029.3-RUNTIME (5 modules):
     - anti_fake_review: PASS (spec-only, no executable code, all boundaries confirmed)
     - report_file: A-030.6-SPEC-ACADEMIC_APPEALS_SENSITIVE_DOMAIN_FOUNDATION_REPORT.md
     - final_verdict: A-030.6-SPEC CLOSED — ACADEMIC APPEALS SENSITIVE-DOMAIN FOUNDATION SPECIFIED
-    - status: ready_for_A-031.2-FRONTEND-SPEC
-    - current_stage: A-031.1-B1 complete / rector assignment backend quality baseline confirmed
-    - last_completed_action_id: A-031.1-B1
+    - status: ready_for_A-031.2-FRONTEND
+    - current_stage: A-031.2-FRONTEND-SPEC complete / rector assignment role-based UI specified
+    - last_completed_action_id: A-031.2-FRONTEND-SPEC
     - next_action_id: A-031.2-FRONTEND-SPEC
 - A-030.6-RUNTIME execution block:
     - mode: sensitive_domain_foundation_runtime_implementation
@@ -14304,3 +14304,31 @@ A-031.1-B1 execution block:
     - status: CLOSED
     - final_verdict: A-031.1-B1 CLOSED — RECTOR ASSIGNMENT BACKEND QUALITY BASELINE CONFIRMED
     - next_action_id: A-031.2-FRONTEND-SPEC
+A-031.2-FRONTEND-SPEC execution block:
+    - action_id: A-031.2-FRONTEND-SPEC
+    - action_type: SPEC_ONLY / DOCS_ONLY
+    - report_file: A-031.2-FRONTEND-SPEC-RECTOR_ASSIGNMENT_OS_ROLE_BASED_UI_REPORT.md
+    - source_commit: 27f9eca (A-031.1-B1)
+    - backend_api_base: /api/admin/rector-assignments
+    - frontend_strategy: ADMIN_CONSOLE_EXPANSION
+    - no_bff_route_needed: TRUE (catch-all proxy handles all paths)
+    - module_location: frontend/modules/rector-assignments/
+    - pages_location: frontend/app/(admin)/console/rector-assignments/ + console/my-assignments/
+    - state_management: TanStack Query
+    - api_client: apiGet/apiPost/apiPut/apiPatch via BFF proxy
+    - portals: Rector/ViceRector, Controller/Secretary, Executor, Director/Dean, Auditor, Admin
+    - routes_specified: 11 routes (8 admin + 3 executor)
+    - pages_specified: 10 pages
+    - permission_constants_specified: 16 (admin.rector_assignments.*)
+    - navigation_group: Rector Assignments (4 nav items)
+    - component_groups_specified: 21 components
+    - typescript_types_specified: 7 enums + 12 interfaces + 3 payload types
+    - test_plan: 10 test files specified
+    - anti_fake_dashboard_guard: REQUIRED (fake_metrics===false + data_source check)
+    - no_frontend_code_created: TRUE
+    - no_backend_code_created: TRUE
+    - no_tests_created: TRUE
+    - metrics_unchanged: L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150
+    - status: CLOSED
+    - final_verdict: A-031.2-FRONTEND-SPEC CLOSED — RECTOR ASSIGNMENT ROLE-BASED UI SPECIFIED
+    - next_action_id: A-031.2-FRONTEND
