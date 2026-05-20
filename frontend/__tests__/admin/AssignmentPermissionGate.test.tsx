@@ -85,6 +85,6 @@ describe('AssignmentPermissionGate', () => {
 
   it('has exactly 19 RECTOR_ASSIGNMENTS_ permission constants', () => {
     const rectorKeys = Object.keys(PERMISSIONS).filter((k) => k.startsWith('RECTOR_ASSIGNMENTS_'));
-    expect(rectorKeys).toHaveLength(19);
+    expect(rectorKeys).toHaveLength(23);
   });
 });

@@ -12,12 +12,15 @@ import { OutboxEventStatus, OutboxChannel } from '@/modules/rector-assignments/t
 
 const PENDING_EVENT: RectorAssignmentOutboxEvent = {
   id: 1,
+  tenant_id: 1,
   assignment_id: 42,
   event_type: 'ASSIGNMENT_APPROACHING_DEADLINE',
   status: OutboxEventStatus.PENDING,
   channel: OutboxChannel.IN_APP,
   recipient_user_id: 99,
+  retry_count: 0,
   created_at: '2024-03-01T10:00:00Z',
+  updated_at: '2024-03-01T10:00:00Z',
 };
 
 const READY_EVENT: RectorAssignmentOutboxEvent = {
@@ -46,9 +49,9 @@ describe('AssignmentNotificationTimeline', () => {
   it('renders outbox event rows', () => {
     render(<AssignmentNotificationTimeline assignmentId={42} canManage={false} />);
     expect(screen.getByTestId('notification-timeline')).toBeTruthy();
-    expect(screen.getByTestId('outbox-event-1')).toBeTruthy();
-    expect(screen.getByTestId('outbox-event-2')).toBeTruthy();
-    expect(screen.getByTestId('outbox-event-3')).toBeTruthy();
+    expect(screen.getByTestId('outbox-row-1')).toBeTruthy();
+    expect(screen.getByTestId('outbox-row-2')).toBeTruthy();
+    expect(screen.getByTestId('outbox-row-3')).toBeTruthy();
   });
 
   it('shows required dispatch disabled notice', () => {
@@ -82,7 +85,7 @@ describe('AssignmentNotificationTimeline', () => {
     expect(screen.queryByTestId('cancel-event-1')).toBeNull();
   });
 
-  it('shows loading skeleton', () => {
+  it('shows loading skeleton', async () => {
     const hooks = await import('@/modules/rector-assignments/hooks');
     vi.mocked(hooks.useAssignmentOutboxEvents).mockReturnValueOnce({
       data: undefined,

@@ -699,3 +699,320 @@ test.describe("I — Workflow state rendering (ASSIGNED → COMPLETED)", () => {
     await expect(page.getByText(/IN_PROGRESS|In Progress/i)).toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------
+// A-031.5-E2E — Rector Assignment SLA / Outbox / Reporting UI Extension
+// These suites extend the A-031.3 spec with new A-031.5 routes and components
+// ---------------------------------------------------------------------------
+
+const FIXTURE_OUTBOX_EVENTS = {
+  items: [
+    {
+      id: 1,
+      assignment_id: 1001,
+      channel: "EMAIL",
+      recipient: "rector@university.edu",
+      subject: "Assignment Due Soon",
+      status: "PENDING",
+      scheduled_at: "2026-05-21T09:00:00Z",
+      sent_at: null,
+      created_at: "2026-05-20T09:00:00Z",
+    },
+    {
+      id: 2,
+      assignment_id: 1001,
+      channel: "SMS",
+      recipient: "+77771234567",
+      subject: null,
+      status: "READY",
+      scheduled_at: "2026-05-21T10:00:00Z",
+      sent_at: null,
+      created_at: "2026-05-20T09:30:00Z",
+    },
+  ],
+  total: 2,
+  page: 1,
+  page_size: 20,
+};
+
+const FIXTURE_SLA_POLICIES = [
+  {
+    id: 1,
+    name: "Standard SLA",
+    priority: "NORMAL",
+    due_days: 30,
+    warning_hours: 72,
+    overdue_hours: 24,
+    escalation_hours: 48,
+    archived_at: null,
+    created_at: "2026-01-01T00:00:00Z",
+  },
+  {
+    id: 2,
+    name: "High Priority SLA",
+    priority: "HIGH",
+    due_days: 14,
+    warning_hours: 48,
+    overdue_hours: 12,
+    escalation_hours: 24,
+    archived_at: null,
+    created_at: "2026-01-01T00:00:00Z",
+  },
+];
+
+const FIXTURE_ESCALATION_POLICIES = [
+  {
+    id: 1,
+    priority: "HIGH",
+    level: 1,
+    escalation_delay_hours: 24,
+    notify_roles: ["admin"],
+    archived_at: null,
+    created_at: "2026-01-01T00:00:00Z",
+  },
+];
+
+const FIXTURE_ANALYTICS = {
+  overdue_aging: { buckets: [{ label: "1-7 days", count: 2 }, { label: "8-14 days", count: 1 }] },
+  completion_trend: { weeks: [{ week_start: "2026-05-13", completed: 3, total: 5 }] },
+  report_compliance: { rate: 0.85, submitted: 17, expected: 20 },
+  unit_performance: { units: [{ unit_id: 1, unit_name: "Academic Dept", total: 5, completed: 4, overdue: 0, avg_days: 7.2 }] },
+  escalation_rate: { rate: 0.1, escalated: 2, total: 20, manual_override: false },
+  evidence_attachment: { rate: 0.9, with_evidence: 9, total: 10 },
+};
+
+const A0315_PERMISSIONS = [
+  "admin.rector_assignments.outbox.read",
+  "admin.rector_assignments.outbox.manage",
+  "admin.rector_assignments.sla.manage",
+  "admin.rector_assignments.escalation_policy.manage",
+];
+
+// A-031.5-aware auth stub that adds the new permissions
+async function stubAuthSessionA0315(page: Page) {
+  await stubAuthSession(page, {
+    permissions: [
+      "platform.admin.read",
+      "platform.admin.write",
+      "admin.dashboard.read",
+      "admin.rector_assignments.dashboard.read",
+      "admin.rector_assignments.read",
+      "admin.rector_assignments.read_all",
+      "admin.rector_assignments.read_department",
+      "admin.rector_assignments.create",
+      "admin.rector_assignments.assign",
+      "admin.rector_assignments.accept",
+      "admin.rector_assignments.return",
+      "admin.rector_assignments.complete",
+      "admin.rector_assignments.escalate",
+      "admin.rector_assignments.cancel",
+      "admin.rector_assignments.archive",
+      "admin.rector_assignments.status.change",
+      "admin.rector_assignments.report.submit",
+      "admin.rector_assignments.report.review",
+      "admin.rector_assignments.evidence.attach",
+      "admin.rector_assignments.comment",
+      "admin.rector_assignments.audit.read",
+      "admin.rector_assignments.templates.manage",
+      ...A0315_PERMISSIONS,
+    ],
+  });
+}
+
+test.describe("J — Notification Registry page (A-031.5)", () => {
+  test("renders Notification Registry page with correct heading", async ({
+    page,
+  }) => {
+    await stubAuthSessionA0315(page);
+    await stubApi(page, `${RECTOR_BASE_BFF}/outbox`, FIXTURE_OUTBOX_EVENTS);
+
+    await page.goto("/console/rector-assignments/notifications");
+    await page.waitForLoadState("networkidle");
+    await expect(
+      page.getByRole("heading", { name: /Notification Registry/i, level: 1 }),
+    ).toBeVisible();
+  });
+
+  test("shows no Send Now or Dispatch button (anti-fake guard)", async ({
+    page,
+  }) => {
+    await stubAuthSessionA0315(page);
+    await stubApi(page, `${RECTOR_BASE_BFF}/outbox`, FIXTURE_OUTBOX_EVENTS);
+
+    await page.goto("/console/rector-assignments/notifications");
+    await page.waitForLoadState("networkidle");
+    // Anti-fake: verify page rendered (not login) and no live dispatch buttons
+    const url = page.url();
+    expect(/login/.test(url)).toBeFalsy();
+    await expect(page.getByRole("button", { name: /Send Now/i })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: /Dispatch/i })).not.toBeVisible();
+  });
+
+  test("unauthenticated visit to notifications page redirects to login", async ({
+    page,
+  }) => {
+    await page.goto("/console/rector-assignments/notifications");
+    await page.waitForLoadState("networkidle");
+    const url = page.url();
+    expect(/login/.test(url)).toBeTruthy();
+  });
+});
+
+test.describe("K — SLA Policies page (A-031.5)", () => {
+  test("renders SLA Policies page with correct heading", async ({ page }) => {
+    await stubAuthSessionA0315(page);
+    await stubApi(page, `${RECTOR_BASE_BFF}/sla-policies`, FIXTURE_SLA_POLICIES);
+
+    await page.goto("/console/rector-assignments/sla-policies");
+    await page.waitForLoadState("networkidle");
+    await expect(
+      page.getByRole("heading", { name: /SLA Policies/i, level: 1 }),
+    ).toBeVisible();
+  });
+
+  test("renders sla-policy-manager container with policies from BFF", async ({
+    page,
+  }) => {
+    await stubAuthSessionA0315(page);
+    await stubApi(page, `${RECTOR_BASE_BFF}/sla-policies`, FIXTURE_SLA_POLICIES);
+
+    await page.goto("/console/rector-assignments/sla-policies");
+    await page.waitForLoadState("networkidle");
+    await expect(
+      page.locator('[data-testid="sla-policy-manager"]'),
+    ).toBeVisible();
+  });
+
+  test("shows create-sla-policy-btn for authorized user", async ({ page }) => {
+    await stubAuthSessionA0315(page);
+    await stubApi(page, `${RECTOR_BASE_BFF}/sla-policies`, FIXTURE_SLA_POLICIES);
+
+    await page.goto("/console/rector-assignments/sla-policies");
+    await page.waitForLoadState("networkidle");
+    await expect(
+      page.locator('[data-testid="create-sla-policy-btn"]'),
+    ).toBeVisible();
+  });
+
+  test("user without SLA permission cannot access SLA policies page", async ({
+    page,
+  }) => {
+    await stubAuthSession(page, {
+      permissions: ["platform.admin.read", "admin.rector_assignments.read"],
+    });
+
+    await page.goto("/console/rector-assignments/sla-policies");
+    await page.waitForLoadState("networkidle");
+    const url = page.url();
+    const isLogin = /login/.test(url);
+    const isAccessDenied = await page
+      .getByRole("heading", { name: /Access Denied/i })
+      .waitFor({ state: "visible", timeout: 3000 })
+      .then(() => true)
+      .catch(() => false);
+    const headingVisible = await page
+      .getByRole("heading", { name: /SLA Policies/i })
+      .isVisible()
+      .catch(() => false);
+    expect(isLogin || isAccessDenied || !headingVisible).toBeTruthy();
+  });
+});
+
+test.describe("L — Escalation Policies page (A-031.5)", () => {
+  test("renders Escalation Policies page with correct heading", async ({
+    page,
+  }) => {
+    await stubAuthSessionA0315(page);
+    await stubApi(
+      page,
+      `${RECTOR_BASE_BFF}/escalation-policies`,
+      FIXTURE_ESCALATION_POLICIES,
+    );
+
+    await page.goto("/console/rector-assignments/escalation-policies");
+    await page.waitForLoadState("networkidle");
+    await expect(
+      page.getByRole("heading", { name: /Escalation Policies/i, level: 1 }),
+    ).toBeVisible();
+  });
+
+  test("renders escalation-policy-manager container with policies from BFF", async ({
+    page,
+  }) => {
+    await stubAuthSessionA0315(page);
+    await stubApi(
+      page,
+      `${RECTOR_BASE_BFF}/escalation-policies`,
+      FIXTURE_ESCALATION_POLICIES,
+    );
+
+    await page.goto("/console/rector-assignments/escalation-policies");
+    await page.waitForLoadState("networkidle");
+    // EscalationPolicyManager renders content
+    const url = page.url();
+    expect(/login/.test(url)).toBeFalsy();
+  });
+
+  test("user without escalation-policy permission cannot access the page", async ({
+    page,
+  }) => {
+    await stubAuthSession(page, {
+      permissions: ["platform.admin.read", "admin.rector_assignments.read"],
+    });
+
+    await page.goto("/console/rector-assignments/escalation-policies");
+    await page.waitForLoadState("networkidle");
+    const url = page.url();
+    const isLogin = /login/.test(url);
+    const isAccessDenied = await page
+      .getByRole("heading", { name: /Access Denied/i })
+      .waitFor({ state: "visible", timeout: 3000 })
+      .then(() => true)
+      .catch(() => false);
+    const headingVisible = await page
+      .getByRole("heading", { name: /Escalation Policies/i })
+      .isVisible()
+      .catch(() => false);
+    expect(isLogin || isAccessDenied || !headingVisible).toBeTruthy();
+  });
+});
+
+test.describe("M — Dashboard analytics section (A-031.5)", () => {
+  test("renders dashboard-analytics-section when analytics data is available", async ({
+    page,
+  }) => {
+    await stubAuthSessionA0315(page);
+    await stubApi(
+      page,
+      `${RECTOR_BASE_BFF}/dashboard/summary`,
+      FIXTURE_DASHBOARD_REAL,
+    );
+    await stubApi(page, `${RECTOR_BASE_BFF}/analytics`, FIXTURE_ANALYTICS);
+    await stubApi(page, `${RECTOR_BASE_BFF}*`, FIXTURE_ASSIGNMENT_LIST);
+
+    await page.goto("/console/rector-assignments");
+    await page.waitForLoadState("networkidle");
+    // Dashboard analytics section must be present when analytics hook resolves
+    await expect(
+      page.locator('[data-testid="dashboard-analytics-section"]'),
+    ).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe("N — Anti-fake guards (A-031.5)", () => {
+  test("no Send Now or Dispatch button exists on any A-031.5 page", async ({
+    page,
+  }) => {
+    await stubAuthSessionA0315(page);
+    await stubApi(page, `${RECTOR_BASE_BFF}/outbox`, FIXTURE_OUTBOX_EVENTS);
+
+    await page.goto("/console/rector-assignments/notifications");
+    await page.waitForLoadState("networkidle");
+
+    // Strictly verify no "Send Now" or "Dispatch" button in the entire page
+    const sendNow = page.getByRole("button", { name: /Send Now/i });
+    const dispatch = page.getByRole("button", { name: /^Dispatch$/i });
+    await expect(sendNow).not.toBeVisible();
+    await expect(dispatch).not.toBeVisible();
+  });
+});

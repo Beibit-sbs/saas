@@ -42,7 +42,7 @@ import {
   canArchiveByStatus,
 } from '@/modules/rector-assignments/status';
 import { AssignmentStatus, CommentVisibility } from '@/modules/rector-assignments/types';
-import { PERMISSIONS } from '@/shared/config/permissions';
+import { PERMISSIONS, type Permission } from '@/shared/config/permissions';
 import { PermissionGate, RequirePermission } from '@/shared/auth/permission-gate';
 import { PageHeader } from '@/shared/ui/page-header';
 import { LoadingState, ErrorState } from '@/shared/ui/page-states';
@@ -84,7 +84,7 @@ export default function AssignmentDetailPage() {
 
   const matchedSlaPolicy = slaPolicies?.find((p) => !p.archived_at && p.priority === a?.priority);
 
-  const TABS: { key: Tab; label: string; permission?: string }[] = [
+  const TABS: { key: Tab; label: string; permission?: Permission }[] = [
     { key: 'overview', label: 'Overview' },
     { key: 'reports', label: `Reports (${reports?.length ?? 0})` },
     { key: 'evidence', label: `Evidence (${evidence?.length ?? 0})` },

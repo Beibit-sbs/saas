@@ -93,7 +93,7 @@ describe('EscalationQueuePanel', () => {
     expect(screen.queryByText(/Trigger Automatically/i)).toBeNull();
   });
 
-  it('shows empty state when no escalations', () => {
+  it('shows empty state when no escalations', async () => {
     const hooks = await import('@/modules/rector-assignments/hooks');
     vi.mocked(hooks.useRectorAssignmentList).mockReturnValueOnce({
       data: [],

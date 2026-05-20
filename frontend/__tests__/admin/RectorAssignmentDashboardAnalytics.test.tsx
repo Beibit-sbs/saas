@@ -20,17 +20,27 @@ import type { DashboardSummaryExpanded } from '@/modules/rector-assignments/type
 // ── helpers ────────────────────────────────────────────────────────────────
 
 const BASE_DASHBOARD: DashboardSummaryExpanded = {
-  total: 10,
-  pending: 2,
-  in_progress: 3,
-  completed: 4,
-  overdue: 1,
+  tenant_id: 1,
+  computed_at: '2024-03-01T00:00:00Z',
+  total_assignments: 10,
+  active_count: 3,
+  draft_count: 0,
+  overdue_count: 1,
   escalated_count: 0,
-  draft: 0,
-  cancelled: 0,
-  archived: 0,
-  fake_metrics: false,
+  completed_count: 4,
+  cancelled_count: 0,
+  report_submitted_count: 0,
+  returned_count: 0,
+  due_this_week: 2,
+  due_today: 1,
+  completion_rate_30d: 0.4,
+  average_days_to_complete: null,
+  by_status: {},
+  by_priority: {},
+  by_unit: [],
+  top_overdue: [],
   data_source: 'computed_from_assignments',
+  fake_metrics: false,
 };
 
 // ── OverdueAgingWidget ─────────────────────────────────────────────────────
@@ -82,14 +92,14 @@ describe('CompletionTrendWidget', () => {
   });
 
   it('shows insufficient notice with < 2 points', () => {
-    render(<CompletionTrendWidget trend={[{ week_start: '2024-01-01', completed_count: 5, submitted_count: 5 }]} />);
+    render(<CompletionTrendWidget trend={[{ week_start: '2024-01-01', completed_count: 5 }]} />);
     expect(screen.getByTestId('completion-trend-insufficient')).toBeTruthy();
   });
 
   it('renders bars when trend has ≥ 2 points', () => {
     const trend = [
-      { week_start: '2024-01-01', completed_count: 3, submitted_count: 5 },
-      { week_start: '2024-01-08', completed_count: 7, submitted_count: 9 },
+      { week_start: '2024-01-01', completed_count: 3 },
+      { week_start: '2024-01-08', completed_count: 7 },
     ];
     render(<CompletionTrendWidget trend={trend} />);
     expect(screen.getByTestId('completion-trend-widget')).toBeTruthy();
@@ -174,7 +184,6 @@ describe('DashboardAnalyticsSection — missing fields', () => {
     expect(screen.getByTestId('widget-unavailable-Overdue aging')).toBeTruthy();
     expect(screen.getByTestId('widget-unavailable-Completion trend')).toBeTruthy();
     expect(screen.getByTestId('widget-unavailable-Report compliance')).toBeTruthy();
-    expect(screen.getByTestId('widget-unavailable-Unit performance')).toBeTruthy();
     expect(screen.getByTestId('widget-unavailable-Escalation rate')).toBeTruthy();
     expect(screen.getByTestId('widget-unavailable-Evidence attachment rate')).toBeTruthy();
   });

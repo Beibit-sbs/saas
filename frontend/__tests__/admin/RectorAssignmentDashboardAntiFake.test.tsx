@@ -19,17 +19,27 @@ import {
 import type { DashboardSummaryExpanded } from '@/modules/rector-assignments/types';
 
 const CLEAN_DASHBOARD: DashboardSummaryExpanded = {
-  total: 10,
-  pending: 2,
-  in_progress: 3,
-  completed: 4,
-  overdue: 1,
+  tenant_id: 1,
+  computed_at: '2024-03-01T00:00:00Z',
+  total_assignments: 10,
+  active_count: 3,
+  draft_count: 0,
+  overdue_count: 1,
   escalated_count: 0,
-  draft: 0,
-  cancelled: 0,
-  archived: 0,
-  fake_metrics: false,
+  completed_count: 4,
+  cancelled_count: 0,
+  report_submitted_count: 0,
+  returned_count: 0,
+  due_this_week: 2,
+  due_today: 1,
+  completion_rate_30d: 0.4,
+  average_days_to_complete: null,
+  by_status: {},
+  by_priority: {},
+  by_unit: [],
+  top_overdue: [],
   data_source: 'computed_from_assignments',
+  fake_metrics: false,
 };
 
 describe('Anti-fake guard — undefined fields show unavailable not 0', () => {

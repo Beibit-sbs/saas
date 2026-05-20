@@ -13,13 +13,15 @@ import { AssignmentPriority, EscalateToRole } from '@/modules/rector-assignments
 const POLICIES: RectorAssignmentEscalationPolicy[] = [
   {
     id: 1,
+    tenant_id: 1,
     assignment_priority: AssignmentPriority.HIGH,
     escalation_level: 2,
     escalate_to_role: EscalateToRole.PRORECTOR,
     escalate_after_hours: 48,
     require_manual_confirmation: true,
-    archived_at: null,
+    is_active: true,
     created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
   },
 ];
 

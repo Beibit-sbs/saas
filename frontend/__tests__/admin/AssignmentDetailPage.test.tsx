@@ -32,6 +32,10 @@ vi.mock('@/modules/rector-assignments/hooks', () => ({
   useCancelAssignment: vi.fn(),
   useArchiveAssignment: vi.fn(),
   useAddComment: vi.fn(),
+  useSlaPolicies: vi.fn(),
+  useAssignmentOutboxEvents: vi.fn(),
+  useMarkOutboxEventReady: vi.fn(),
+  useCancelOutboxEvent: vi.fn(),
 }));
 
 import * as hooks from '@/modules/rector-assignments/hooks';
@@ -77,6 +81,10 @@ beforeEach(() => {
   vi.mocked(hooks.useCancelAssignment).mockReturnValue(noopMutation() as any);
   vi.mocked(hooks.useArchiveAssignment).mockReturnValue(noopMutation() as any);
   vi.mocked(hooks.useAddComment).mockReturnValue(noopMutation() as any);
+  vi.mocked(hooks.useSlaPolicies).mockReturnValue({ data: [], isLoading: false, isError: false } as any);
+  vi.mocked(hooks.useAssignmentOutboxEvents).mockReturnValue({ data: [], isLoading: false, isError: false } as any);
+  vi.mocked(hooks.useMarkOutboxEventReady).mockReturnValue(noopMutation() as any);
+  vi.mocked(hooks.useCancelOutboxEvent).mockReturnValue(noopMutation() as any);
 });
 
 describe('AssignmentDetailPage', () => {

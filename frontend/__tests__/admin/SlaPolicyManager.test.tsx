@@ -8,18 +8,21 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SlaPolicyManager } from '@/modules/rector-assignments/components/SlaPolicyManager';
 import type { RectorAssignmentSlaPolicy } from '@/modules/rector-assignments/types';
+import { AssignmentPriority } from '@/modules/rector-assignments/types';
 
 const POLICIES: RectorAssignmentSlaPolicy[] = [
   {
     id: 1,
+    tenant_id: 1,
     name: 'Normal 30d',
-    priority: 'NORMAL',
+    priority: AssignmentPriority.NORMAL,
     due_days: 30,
     warning_before_hours: 48,
     overdue_after_hours: 24,
     escalation_after_hours: 72,
-    archived_at: null,
+    is_active: true,
     created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
   },
 ];
 

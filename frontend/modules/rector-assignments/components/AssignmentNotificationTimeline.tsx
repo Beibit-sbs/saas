@@ -33,7 +33,7 @@ export function AssignmentNotificationTimeline({
       </div>
 
       {isLoading && (
-        <div className="space-y-2">
+        <div className="space-y-2" data-testid="notification-timeline-loading">
           {[0, 1, 2].map((i) => (
             <div key={i} className="h-14 rounded bg-gray-100 animate-pulse" />
           ))}

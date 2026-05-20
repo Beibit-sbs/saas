@@ -13,27 +13,33 @@ import { OutboxEventStatus, OutboxChannel } from '@/modules/rector-assignments/t
 const EVENTS: RectorAssignmentOutboxEvent[] = [
   {
     id: 10,
+    tenant_id: 1,
     assignment_id: 1,
     event_type: 'ASSIGNMENT_OVERDUE',
     status: OutboxEventStatus.PENDING,
     channel: OutboxChannel.EMAIL,
     recipient_user_id: 11,
+    retry_count: 0,
     created_at: '2024-03-01T08:00:00Z',
+    updated_at: '2024-03-01T08:00:00Z',
   },
   {
     id: 11,
+    tenant_id: 1,
     assignment_id: 2,
     event_type: 'ASSIGNMENT_APPROACHING_DEADLINE',
     status: OutboxEventStatus.READY,
     channel: OutboxChannel.SMS,
     recipient_user_id: 22,
+    retry_count: 0,
     created_at: '2024-03-02T09:00:00Z',
+    updated_at: '2024-03-02T09:00:00Z',
   },
 ];
 
 vi.mock('@/modules/rector-assignments/hooks', () => ({
   useOutboxEvents: vi.fn(() => ({
-    data: { events: EVENTS, total: 2, page: 1, page_size: 50 },
+    data: { items: EVENTS, total: 2, page: 1, page_size: 50 },
     isLoading: false,
     isError: false,
   })),
@@ -57,8 +63,8 @@ describe('OutboxRegistry', () => {
   it('renders event rows', () => {
     render(<OutboxRegistry />);
     expect(screen.getByTestId('outbox-registry')).toBeTruthy();
-    expect(screen.getByTestId('outbox-row-10')).toBeTruthy();
-    expect(screen.getByTestId('outbox-row-11')).toBeTruthy();
+    expect(screen.getByTestId('outbox-global-row-10')).toBeTruthy();
+    expect(screen.getByTestId('outbox-global-row-11')).toBeTruthy();
   });
 
   it('shows "Dispatch disabled" label', () => {
@@ -73,7 +79,7 @@ describe('OutboxRegistry', () => {
 
   it('shows provider out of scope notice', () => {
     render(<OutboxRegistry />);
-    expect(screen.getByText(/Provider delivery is out of scope/i)).toBeTruthy();
+    expect(screen.getByTestId('outbox-dispatch-disabled-notice').textContent).toMatch(/Provider delivery is out of scope/i);
   });
 
   it('does NOT show "Send Now" button', () => {
@@ -88,7 +94,7 @@ describe('OutboxRegistry', () => {
 
   it('shows Mark Ready button for PENDING events', () => {
     render(<OutboxRegistry />);
-    expect(screen.getByTestId('mark-ready-10')).toBeTruthy();
+    expect(screen.getByTestId('global-mark-ready-10')).toBeTruthy();
   });
 
   it('does NOT show Mark Ready for READY events', () => {
