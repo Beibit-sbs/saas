@@ -12724,3 +12724,24 @@ Supporting:
 **A-032.1-SPEC CLOSED — DOCUMENT / DECREE / CORRESPONDENCE BACKEND CONTRACT SPECIFIED**
 
 **Next Action**: A-032.1-RUNTIME
+
+---
+
+## A-032.2-FRONTEND-SPEC — Document / Decree / Correspondence Role-Based UI Specification
+
+- source_A0321B1_commit: 9aa97cd
+- source_report: A-032.1-B1-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_QUALITY_BASELINE_REPORT.md
+- strategic_decision: specify role-based UI on top of the existing document_workflow_os backend without starting frontend runtime
+- frontend_module_path: frontend/modules/document-workflow/
+- app_route_prefix: frontend/app/(admin)/console/documents/
+- route_map: 12 admin-console routes covering registry, create, detail, audit, decrees, correspondence, dashboard, and archive
+- future_module_files: types.ts, api.ts, hooks.ts, permissions.ts, guards.ts, components/, __tests__/
+- permission_model: admin.documents.*, admin.decrees.*, admin.correspondence.*, admin.resolutions.*, admin.documents.dashboard.read, admin.documents.admin
+- anti_fake_ui_boundaries: no auto-sign, no auto-approve, no fake registry number, no fake sent/delivered status, no provider delivery claim, no mock production data, dashboard blocked unless fake_metrics=False and data_source=computed_from_documents
+- assignment_integration_boundary: assignment links remain human-initiated only; no Rector Assignment status mutation
+- frontend_test_plan: 10 test files; target 120-220 tests
+- future_e2e_plan: A-032.3 scenarios documented for document, decree, correspondence, assignment-link, dashboard, and security flows
+- implementation_started: NO
+- metrics_unchanged: PASS (baseline_total=150, extension_total_count=25, total_tracked_modules=175, expansion_L2=67, expansion_L3=50, expansion_L4_visibility=40, expansion_L4_api=40)
+- final_verdict: A-032.2-FRONTEND-SPEC CLOSED — DOCUMENT / DECREE / CORRESPONDENCE ROLE-BASED UI SPECIFIED
+- next_action_id: A-032.2-FRONTEND

@@ -1,12 +1,35 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-032.1-RUNTIME
-    - current_stage: A-032.1-SPEC complete / document decree correspondence backend domain DB API contract specified
-    - last_completed_action_id: A-032.1-SPEC
-    - next_action_id: A-032.1-RUNTIME
-    - updated_at: 2026-05-21 (A-032.1-SPEC complete: document_workflow_os module strategy selected; 14 doc_ tables; 7 enums; 35 schemas; 40 repo methods; 27 service functions; 33 API routes; 28 permissions; 4 lifecycle state machines; A-031 integration contract; dashboard anti-fake contract; test plan 180-260 tests; 8 validation gates; SPEC-only no runtime; metrics unchanged L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150; next action: A-032.1-RUNTIME)
+    - status: ready_for_A-032.2-FRONTEND
+    - current_stage: A-032.2-FRONTEND-SPEC complete / document decree correspondence role-based UI specified
+    - last_completed_action_id: A-032.2-FRONTEND-SPEC
+    - next_action_id: A-032.2-FRONTEND
+    - updated_at: 2026-05-21 (A-032.2-FRONTEND-SPEC complete as docs-only role-based UI specification for document_workflow_os; frontend/modules/document-workflow strategy selected; 12 admin-console routes specified; typed API client, hooks, permission model, component plan, anti-fake dashboard/data_source guards, frontend test plan, and future A-032.3-E2E plan documented; no frontend runtime started, no backend changes, no tests, no migrations, no maturity movement; next action: A-032.2-FRONTEND)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
+- A-032.2-FRONTEND-SPEC execution block:
+    - mode: spec_only_docs_only
+    - purpose: document_decree_correspondence_role_based_ui_specification
+    - source_of_truth_check: PASS (A-032.1-B1 commit 9aa97cd verified; source status before spec was ready_for_A-032.2-FRONTEND-SPEC)
+    - source_commit: 9aa97cd
+    - report_file: A-032.2-FRONTEND-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_ROLE_BASED_UI_REPORT.md
+    - frontend_module_path: frontend/modules/document-workflow/
+    - route_count_specified: 12
+    - route_prefix: /console/documents
+    - type_surface_specified: PASS
+    - api_client_specified: PASS
+    - hooks_specified: PASS
+    - permissions_specified: PASS
+    - components_specified: PASS (26 named components; runtime may merge SignedMetadataNotice if strict cap needed)
+    - anti_fake_ui_requirements: PASS (no fake registry numbers, no fake sent/delivered status, no auto-sign, no auto-approve, no provider delivery claim, no mock production data)
+    - dashboard_guard_contract: PASS (fake_metrics=False and data_source=computed_from_documents required for KPI rendering)
+    - frontend_test_plan: PASS (10 files; target 120-220 tests)
+    - future_e2e_plan: PASS (A-032.3 scenarios documented)
+    - metrics_unchanged: PASS (baseline total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2=67; expansion_L3=50; expansion_L4_visibility=40; expansion_L4_api=40; provider_readiness_foundation_count=11)
+    - frontend_runtime_started: NO
+    - no_production_ready_claim: PASS
+    - final_verdict: A-032.2-FRONTEND-SPEC CLOSED — DOCUMENT / DECREE / CORRESPONDENCE ROLE-BASED UI SPECIFIED
+    - next_action_id: A-032.2-FRONTEND
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
