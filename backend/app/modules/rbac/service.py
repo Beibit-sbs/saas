@@ -123,6 +123,45 @@ _EXECUTIVE_CONTROL_TOWER_AUDITOR_PERMISSIONS: Set[str] = {
     "admin.executive_control_tower.metric_registry.read",
 }
 
+_STUDENT_LIFECYCLE_PERMISSIONS: Set[str] = {
+    "student_lifecycle.applicants.read",
+    "student_lifecycle.applicants.create",
+    "student_lifecycle.applicants.update",
+    "student_lifecycle.applicants.status.update",
+    "student_lifecycle.students.read",
+    "student_lifecycle.students.create",
+    "student_lifecycle.students.update",
+    "student_lifecycle.students.status.update",
+    "student_lifecycle.enrollment.read",
+    "student_lifecycle.enrollment.create",
+    "student_lifecycle.enrollment.update",
+    "student_lifecycle.enrollment.review",
+    "student_lifecycle.records.read",
+    "student_lifecycle.records.create",
+    "student_lifecycle.records.result_metadata.write",
+    "student_lifecycle.transcripts.read",
+    "student_lifecycle.transcripts.preview",
+    "student_lifecycle.degree_progress.read",
+    "student_lifecycle.degree_progress.compute",
+    "student_lifecycle.graduation_readiness.review",
+    "student_lifecycle.requests.read",
+    "student_lifecycle.requests.create",
+    "student_lifecycle.requests.review",
+    "student_lifecycle.appeals.read",
+    "student_lifecycle.appeals.create",
+    "student_lifecycle.appeals.review",
+    "student_lifecycle.interventions.read",
+    "student_lifecycle.interventions.signal.create",
+    "student_lifecycle.interventions.plan.create",
+    "student_lifecycle.interventions.followup.write",
+    "student_lifecycle.audit.read",
+    "student_lifecycle.evidence.read",
+    "student_lifecycle.evidence.attach",
+    "student_lifecycle.dashboard.read",
+    "student_lifecycle.health.read",
+    "student_lifecycle.admin.read",
+}
+
 BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     "superadmin": {
         "admin.dashboard.read",
@@ -201,7 +240,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.executive_control_tower.department.read",
         "admin.executive_control_tower.metric_registry.read",
     }
-    | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS,
+    | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS
+    | _STUDENT_LIFECYCLE_PERMISSIONS,
     "admin": {
         "admin.dashboard.read",
         "admin.expansion.read",
@@ -281,7 +321,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.executive_control_tower.department.read",
         "admin.executive_control_tower.metric_registry.read",
     }
-    | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS,
+    | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS
+    | _STUDENT_LIFECYCLE_PERMISSIONS,
     "auditor": {
         "admin.audit.read",
         "admin.dashboard.read",
