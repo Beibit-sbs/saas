@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-032.3-E2E
-    - current_stage: A-032.2-FRONTEND-B1 complete / document decree correspondence UI quality baseline confirmed
+    - status: blocked_A-032.3-E2E
+    - current_stage: A-032.3-E2E blocked / browser path serves stale frontend image and frontend rebuild is blocked by current TypeScript errors in document_workflow api filters
     - last_completed_action_id: A-032.2-FRONTEND-B1
-    - next_action_id: A-032.3-E2E
-    - updated_at: 2026-05-21 (A-032.2-FRONTEND-B1 closed as validation/reporting-only quality baseline confirmation for document_workflow_os UI; source frontend runtime commit d8c8d2d verified; 12 admin-console route files confirmed; duplicate route typo classified as SUMMARY_TYPO_ONLY; Docker Compose type-check PASS; authoritative targeted host Vitest PASS 14/14; compose targeted test image freshness caveat reproduced and documented as non-blocking FRONTEND_TEST_IMAGE_FRESHNESS_CAVEAT; anti-fake labels, dashboard guards, BFF usage, permission gating, and backend non-change all confirmed; no frontend feature work, no backend changes, no migrations, no E2E, no production-ready claim, no maturity movement; next action: A-032.3-E2E)
+    - next_action_id: A-032.3-E2E.R1
+    - updated_at: 2026-05-21 (A-032.3-E2E blocked during validation-only browser/runtime gate for document_workflow_os; static route inventory PASS 12/12; backend route inventory PASS 33 routes; targeted frontend Vitest PASS 14/14; A-032.1 backend smoke PASS 28/28; A-031 continuity PASS 359/359; anti-fake labels and dashboard guards remain present; frontend-tests image was stale and required rebuild to see the new smoke spec; rerun then confirmed the live browser path frontend image is stale and missing /console/documents routes; rebuilding the image-based frontend service is currently blocked by TypeScript errors in frontend/modules/document-workflow/api.ts filter typing; no backend changes, no migrations, no provider integration, no auto-signature, no auto-approval, no fake registry/delivery claim, no production-ready claim, no maturity movement; next action: A-032.3-E2E.R1)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -82,6 +82,36 @@
     - no_production_ready_claim: PASS
     - final_verdict: A-032.2-FRONTEND-B1 CLOSED — DOCUMENT / DECREE / CORRESPONDENCE UI QUALITY BASELINE CONFIRMED
     - next_action_id: A-032.3-E2E
+- A-032.3-E2E execution block:
+    - mode: validation_and_reporting_only
+    - purpose: validate_document_decree_correspondence_workflow_browser_runtime_path
+    - source_of_truth_check: PASS (A-032.2-FRONTEND-B1 commit 07d451b verified; source status before E2E was ready_for_A-032.3-E2E)
+    - source_commit: 07d451b
+    - source_frontend_commit: d8c8d2d
+    - source_backend_commit: d1c16f3
+    - report_file: A-032.3-E2E-DOCUMENT_DECREE_CORRESPONDENCE_WORKFLOW_E2E_REPORT.md
+    - gate_log_dir: .gate-logs/a0323_e2e
+    - repo_hygiene: PASS (expected non-scope dirt only plus new scoped E2E spec file)
+    - docker_environment_hygiene: PASS (backend/frontend/nginx healthy before E2E)
+    - route_inventory: PASS (12/12 static routes present)
+    - backend_api_inventory: PASS (33 routes)
+    - targeted_frontend_tests: PASS (14/14)
+    - backend_smoke_a0321: PASS (28/28)
+    - continuity_a031: PASS (359/359)
+    - anti_fake_scan: PASS
+    - required_labels_scan: PASS
+    - dashboard_guard_scan: PASS
+    - backend_non_change_review: PASS (backend/.coverage only)
+    - playwright_spec_file: frontend/e2e/smoke/a0323-document-workflow.spec.ts
+    - frontend_tests_image_rebuild: PASS (required so frontend-tests could see the new spec)
+    - playwright_execution: BLOCKED_BROWSER_E2E (spec discovered and executed after frontend-tests rebuild, but browser path served stale frontend image and first route/UI assertions failed)
+    - live_frontend_runtime_check: FAIL (running frontend container missing /app/app/(admin)/console/documents)
+    - frontend_rebuild_attempt: FAIL (blocked by TypeScript errors in frontend/modules/document-workflow/api.ts filter typing)
+    - docker_typecheck: FAIL (same api.ts filter typing errors)
+    - no_production_ready_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
+    - final_verdict: A-032.3-E2E BLOCKED — BROWSER PATH SERVES STALE FRONTEND IMAGE AND REQUIRED FRONTEND REBUILD IS BLOCKED BY CURRENT TYPESCRIPT ERRORS IN DOCUMENT_WORKFLOW API FILTERS
+    - next_action_id: A-032.3-E2E.R1
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling

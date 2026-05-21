@@ -12827,3 +12827,35 @@ Metrics preserved:
 
 - final_verdict: A-032.2-FRONTEND-B1 CLOSED — DOCUMENT / DECREE / CORRESPONDENCE UI QUALITY BASELINE CONFIRMED
 - next_action_id: A-032.3-E2E
+
+## A-032.3-E2E - Document / Decree / Correspondence Workflow E2E
+
+- source_A0322_FRONTEND_B1_commit: 07d451b
+- source_A0322_FRONTEND_commit: d8c8d2d
+- source_A0321_B1_commit: 9aa97cd
+- source_A0321_RUNTIME_commit: d1c16f3
+- source_report: A-032.2-FRONTEND-B1-DOCUMENT_DECREE_CORRESPONDENCE_UI_QUALITY_BASELINE_REPORT.md
+- e2e_report: A-032.3-E2E-DOCUMENT_DECREE_CORRESPONDENCE_WORKFLOW_E2E_REPORT.md
+- mode: validation_and_reporting_only
+- route_inventory: PASS (12/12 static routes present)
+- backend_api_inventory: PASS (33 routes)
+- targeted_frontend_tests: PASS (14/14)
+- backend_smoke_a0321: PASS (28/28)
+- continuity_a031: PASS (359/359)
+- anti_fake_scan: PASS
+- required_labels_scan: PASS
+- dashboard_guard_scan: PASS
+- backend_non_change: PASS (backend/.coverage only)
+- playwright_spec_file: frontend/e2e/smoke/a0323-document-workflow.spec.ts
+- frontend_tests_image_rebuild: PASS
+- playwright_result: BLOCKED_BROWSER_E2E
+- blocked_reason: live browser path serves stale frontend image; running frontend container missing /app/app/(admin)/console/documents; required frontend rebuild currently fails on frontend/modules/document-workflow/api.ts filter typing errors
+- security_permission_scenario: NOT_RUN_BROWSER_BLOCKED
+- assignment_link_boundary: STATIC_PASS / BROWSER_BLOCKED
+- dashboard_guard: STATIC_PASS / BROWSER_BLOCKED
+- anti_fake_boundaries_preserved: no auto-sign, no auto-approve, no fake registry, no fake sent or delivered state, no provider delivery claim, no mock production data, no hardcoded KPI values
+- metrics_unchanged: PASS (baseline_total=150, extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11)
+- no_production_ready_claim: PASS
+- no_l5_l6_claim: PASS
+- final_verdict: A-032.3-E2E BLOCKED - browser path serves stale frontend image and required frontend rebuild is blocked by current TypeScript errors in document_workflow api filters
+- next_action_id: A-032.3-E2E.R1
