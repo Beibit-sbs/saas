@@ -1,9 +1,9 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-032.0-SPEC
-    - current_stage: A-031.6-B1 complete / rector assignment pilot package quality baseline confirmed
-    - last_completed_action_id: A-031.6-B1
-    - next_action_id: A-032.0-SPEC
-    - updated_at: 2026-05-21 (A-031.6-B1 complete: all gates pass; 171/171 targeted PASS; A-030 continuity 954 PASS; import sanity PASS; anti-fake scan PASS; DB safety PASS; privacy scan PASS; package summary role_matrix=6/users=7/templates=5/sla=3/escalation=1/seeds=10/scenarios=6/guides=5; metrics unchanged L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150; quality baseline confirmed; next action: A-032.0-SPEC)
+    - status: ready_for_A-032.1-SPEC
+    - current_stage: A-032.0-SPEC complete / document decree correspondence workflow productization selected
+    - last_completed_action_id: A-032.0-SPEC
+    - next_action_id: A-032.1-SPEC
+    - updated_at: 2026-05-21 (A-032.0-SPEC complete: DOCUMENT_DECREE_CORRESPONDENCE_WORKFLOW_OS selected; UCE-009/UCE-011/UCE-013 primary + UCE-099/UCE-031 linked; 3 lifecycles defined; 15 domain entities; 40+ routes; 9 roles; anti-fake boundaries; roadmap A-032.1→A-032.4; SPEC-only no runtime; metrics unchanged L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150; next action: A-032.1-SPEC)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -14873,3 +14873,88 @@ A-031.5-FRONTEND-B1 execution block:
 ### Final Decision
 - verdict: A-031.6-B1 CLOSED — RECTOR ASSIGNMENT PILOT PACKAGE QUALITY BASELINE CONFIRMED
 - next_action_id: A-032.0-SPEC
+
+---
+
+## A-032.0-SPEC — Document / Decree / Correspondence Workflow Productization
+
+### Action
+- action_id: A-032.0-SPEC
+- action_type: SPEC-ONLY (no runtime implementation)
+- wave: 21
+- source_commit: 139dbc1 (A-031.6-B1)
+- status: CLOSED
+
+### Product Decision
+- selected_vertical: DOCUMENT_DECREE_CORRESPONDENCE_WORKFLOW_OS
+- rationale: natural governance extension of Rector Assignment OS
+  (assignments → resolutions → official documents → correspondence → execution → audit → archive)
+
+### A-031 Closure Evidence
+- A-031.6-B1 commit: 139dbc1
+- A-031 chain: COMPLETE (core backend + frontend + E2E + SLA + pilot package all closed)
+- pre-condition: SATISFIED
+
+### Selected UCE Scope
+- primary:
+  - UCE-009 document_workflow (L2 FOUNDATION_READY → productization target)
+  - UCE-011 order_decree_registry (L2 FOUNDATION_READY → productization target)
+  - UCE-013 incoming_outgoing_correspondence (L2 FOUNDATION_READY → productization target)
+- linked:
+  - UCE-099 rector_resolution_tracking_workflow (L2 ENVELOPE_READY → resolution layer)
+  - UCE-031 rector_strategy_dashboard (L2 → executive visibility layer)
+- supporting:
+  - digital_documents (L2 → attachment/version tracking)
+  - document_template_library (L2 → template storage)
+
+### Lifecycle Definitions
+- document_lifecycle: DRAFT→REGISTERED→UNDER_REVIEW→RETURNED_FOR_REVISION/APPROVED→SIGNED→ISSUED→LINKED_TO_ASSIGNMENT→IN_EXECUTION→EXECUTION_REPORTED→ARCHIVED/CANCELLED
+- decree_lifecycle: DRAFT_ORDER→LEGAL_REVIEW→RECTOR_REVIEW→APPROVED_FOR_SIGNING→SIGNED→REGISTERED→PUBLISHED_INTERNAL→ASSIGNED_FOR_EXECUTION→EXECUTION_TRACKED→COMPLETED→ARCHIVED/CANCELLED
+- correspondence_incoming_lifecycle: RECEIVED→REGISTERED→CLASSIFIED→ROUTED→ASSIGNED→IN_PROGRESS→RESPONDED→ARCHIVED
+- correspondence_outgoing_lifecycle: DRAFT→UNDER_REVIEW→APPROVED→REGISTERED→SENT→DELIVERED_METADATA_ONLY→ARCHIVED
+
+### Domain / API / Permission Expectations
+- domain_entities: 15 (Document, DocumentVersion, DocumentStatusHistory, DocumentAuditEvent, DocumentReview, OrderDecree, OrderDecreeRegistryEntry, CorrespondenceItem, CorrespondenceRoute, CorrespondenceRegistryEntry, Resolution, ResolutionAssignmentLink, DocumentAssignmentLink, ArchiveRecord, DashboardSummary)
+- api_route_groups: Documents (12 routes), Decrees (9 routes), Correspondence (9 routes), Dashboard/Resolutions (5 routes)
+- permission_count: 22 permissions
+- roles: rector, prorector, chancellery_clerk, document_controller, department_director, document_executor, legal_reviewer, document_auditor, platform_admin
+
+### Integration with Rector Assignment OS
+- document_to_assignment_link: DocumentAssignmentLink (human-initiated only)
+- decree_to_assignment_link: OrderDecree.linked_assignment_id (human confirmation required)
+- correspondence_to_assignment_link: CorrespondenceItem.linked_assignment_id (human-initiated)
+- assignment_evidence_to_document: via DocumentAssignmentLink (link_type=EVIDENCE)
+- no_circular_auto_mutation: TRUE
+- no_automatic_assignment_creation: TRUE
+
+### Anti-Fake Boundaries
+- no_auto_signing: TRUE
+- no_auto_approval: TRUE
+- no_fake_registry_number: TRUE
+- no_fake_sent_delivered: TRUE
+- no_provider_integration: TRUE
+- no_ai_generated_document_body: TRUE
+- no_fake_dashboard_metrics: TRUE
+- no_hard_delete: TRUE
+- no_production_ready_claim: TRUE
+- no_l5_l6_claim: TRUE
+
+### Maturity Metrics (unchanged — LOCKED)
+- L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150
+- arithmetic_check: PASS
+- maturity_arithmetic_check: PASS
+- no_maturity_movement_in_spec: TRUE
+
+### Roadmap
+- A-032.1-SPEC: backend domain/DB/API detailed specification
+- A-032.1-RUNTIME: backend models/services/routes/tests
+- A-032.1-B1: backend quality baseline
+- A-032.2-FRONTEND-SPEC: role-based UI specification
+- A-032.2-FRONTEND: frontend implementation
+- A-032.2-B1: frontend quality baseline
+- A-032.3-E2E: document/decree/correspondence workflow E2E
+- A-032.4-B1: product slice quality baseline
+
+### Final Decision
+- verdict: A-032.0-SPEC CLOSED — DOCUMENT / DECREE / CORRESPONDENCE WORKFLOW PRODUCTIZATION SELECTED
+- next_action_id: A-032.1-SPEC

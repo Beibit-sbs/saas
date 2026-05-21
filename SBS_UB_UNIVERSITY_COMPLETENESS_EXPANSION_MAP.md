@@ -12618,3 +12618,75 @@ The Rector Assignment OS is the **first fully validated product vertical** in th
 **A-031.6-B1 CLOSED — RECTOR ASSIGNMENT PILOT PACKAGE QUALITY BASELINE CONFIRMED**
 
 **Next Action**: A-032.0-SPEC
+
+---
+
+## A-032.0-SPEC — Document / Decree / Correspondence Workflow Productization
+
+- action_id: A-032.0-SPEC
+- action_type: SPEC-ONLY (no runtime implementation)
+- wave: 21
+- source_commit: 139dbc1 (A-031.6-B1 CLOSED)
+- status: CLOSED
+- date: 2026-05-21
+
+### Source State
+- A-031.6-B1 commit: 139dbc1
+- A-031 chain: COMPLETE
+- tracker status before: ready_for_A-032.0-SPEC
+
+### Product Decision
+- selected_vertical: DOCUMENT_DECREE_CORRESPONDENCE_WORKFLOW_OS
+- rationale: natural governance extension of Rector Assignment OS
+- product_flow: assignments → resolutions → official documents → correspondence → execution → audit → archive
+
+### Selected UCE Candidates
+
+Primary:
+- UCE-009 | document_workflow | L2 FOUNDATION_READY | P0
+- UCE-011 | order_decree_registry | L2 FOUNDATION_READY | P0
+- UCE-013 | incoming_outgoing_correspondence | L2 FOUNDATION_READY | P1
+
+Linked:
+- UCE-099 | rector_resolution_tracking_workflow | L2 ENVELOPE_READY | P0
+- UCE-031 | rector_strategy_dashboard | L2 | P1
+
+Supporting:
+- digital_documents | L2
+- document_template_library | L2
+
+### Lifecycle Definitions
+- document: DRAFT→REGISTERED→UNDER_REVIEW→(RETURNED/APPROVED)→SIGNED→ISSUED→ARCHIVED/CANCELLED
+- decree: DRAFT_ORDER→LEGAL_REVIEW→RECTOR_REVIEW→APPROVED_FOR_SIGNING→SIGNED→REGISTERED→PUBLISHED_INTERNAL→ASSIGNED_FOR_EXECUTION→COMPLETED→ARCHIVED/CANCELLED
+- correspondence_incoming: RECEIVED→REGISTERED→CLASSIFIED→ROUTED→ASSIGNED→IN_PROGRESS→RESPONDED→ARCHIVED
+- correspondence_outgoing: DRAFT→UNDER_REVIEW→APPROVED→REGISTERED→SENT→DELIVERED_METADATA_ONLY→ARCHIVED
+
+### Domain Model
+- 15 domain entities defined
+- 9 roles specified
+- 22 permissions defined
+- 40+ API routes specified
+
+### Roadmap
+- A-032.1-SPEC: backend domain/DB/API detailed specification
+- A-032.1-RUNTIME: backend implementation
+- A-032.1-B1: backend quality baseline
+- A-032.2-FRONTEND-SPEC → A-032.2-FRONTEND → A-032.2-B1
+- A-032.3-E2E → A-032.4-B1
+
+### Anti-Fake Boundaries
+- no_auto_signing: TRUE
+- no_auto_approval: TRUE
+- no_fake_registry_number: TRUE
+- no_fake_sent_delivered: TRUE
+- no_provider_integration: TRUE
+- no_runtime_started: TRUE
+- no_production_ready_claim: TRUE
+- no_l5_l6_claim: TRUE
+
+### Metrics (unchanged — LOCKED)
+- L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150
+
+**A-032.0-SPEC CLOSED — DOCUMENT / DECREE / CORRESPONDENCE WORKFLOW PRODUCTIZATION SELECTED**
+
+**Next Action**: A-032.1-SPEC
