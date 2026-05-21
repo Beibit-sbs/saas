@@ -510,18 +510,21 @@ test.describe("A-032.3 document workflow smoke", () => {
 
     await page.goto("/console/documents");
     await expect(page.locator('[data-testid="document-registry-no-hard-delete"]')).toBeVisible();
-    await expect(page.getByText(/hard delete/i)).toHaveCount(1);
+    await expect(page.getByRole("button", { name: /^delete$/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /hard delete/i })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /^delete$/i })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /hard delete/i })).toHaveCount(0);
 
     await page.goto(`/console/documents/${FIXTURE_DOCUMENT.id}`);
-    await expect(page.getByText("Signature metadata only.")).toBeVisible();
-    await expect(page.getByText("No automatic signing.")).toBeVisible();
-    await expect(page.getByText("Registry number is assigned by registration workflow.")).toBeVisible();
-    await expect(page.getByText("Assignment link is human-initiated.")).toBeVisible();
-    await expect(page.getByText("No assignment status is changed by document workflow.")).toBeVisible();
+    await expect(page.locator('[data-testid="signature-metadata-notice"]')).toBeVisible();
+    await expect(page.locator('[data-testid="no-automatic-signing-notice"]')).toBeVisible();
+    await expect(page.locator('[data-testid="registry-official-notice"]')).toBeVisible();
+    await expect(page.locator('[data-testid="assignment-link-human-notice"]')).toBeVisible();
+    await expect(page.locator('[data-testid="assignment-link-status-notice"]')).toBeVisible();
     await expect(page.getByRole("button", { name: /approve/i })).toBeVisible();
 
     await page.goto("/console/documents/new");
-    await page.getByLabel(/Title/i).fill("E2E Created Document");
+    await page.getByPlaceholder("Senate briefing note").fill("E2E Created Document");
     await page.getByRole("button", { name: /Create document/i }).click();
     await expect(page.getByRole("link", { name: /Open created document/i })).toBeVisible();
   });
@@ -577,7 +580,8 @@ test.describe("A-032.3 document workflow smoke", () => {
     await stubDocumentWorkflowApis(fakePage, { dashboardMode: "fake" });
     await fakePage.goto("/console/documents/dashboard");
     await expect(fakePage.locator('[data-testid="document-workflow-data-quality-error"]')).toBeVisible();
-    await expect(fakePage.getByText(/Dashboard data could not be verified/i)).toBeVisible();
+    await expect(fakePage.getByText(/^Dashboard data could not be verified\.$/)).toBeVisible();
+    await expect(fakePage.getByText(/fake_metrics=true/i)).toBeVisible();
     await fakePage.close();
   });
 
@@ -589,7 +593,10 @@ test.describe("A-032.3 document workflow smoke", () => {
     await expect(page.getByText("Archived Policy Memo")).toBeVisible();
     await expect(page.getByText("Archived Rector Order")).toBeVisible();
     await expect(page.getByText("Archived Ministry Letter")).toBeVisible();
-    await expect(page.getByText(/hard delete/i)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^delete$/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /hard delete/i })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /^delete$/i })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /hard delete/i })).toHaveCount(0);
   });
 
   test("read-only permissions hide mutation UI and block create route access", async ({ page }) => {

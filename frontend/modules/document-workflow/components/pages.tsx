@@ -1332,13 +1332,6 @@ export function ArchivePage() {
   const decrees = useDecrees({ status: 'ARCHIVED', page_size: 100 });
   const correspondence = useCorrespondence({ status: 'ARCHIVED', page_size: 100 });
 
-  if (documents.isLoading || decrees.isLoading || correspondence.isLoading) {
-    return <LoadingState message="Loading archive records..." />;
-  }
-  if (documents.error || decrees.error || correspondence.error) {
-    return <ErrorState error={documents.error || decrees.error || correspondence.error} title="Failed to load archive records" onRetry={() => { documents.refetch(); decrees.refetch(); correspondence.refetch(); }} />;
-  }
-
   const records = useMemo<ArchiveRecord[]>(() => {
     const documentRecords = (documents.data?.items ?? [])
       .filter((item) => isArchiveRecord(item.archived_at))
@@ -1351,6 +1344,13 @@ export function ArchivePage() {
       .map((item) => ({ kind: 'correspondence' as const, id: item.id, title: item.subject, status: item.status, archived_at: item.archived_at, registry_number: item.registry_number }));
     return [...documentRecords, ...decreeRecords, ...correspondenceRecords];
   }, [correspondence.data?.items, decrees.data?.items, documents.data?.items]);
+
+  if (documents.isLoading || decrees.isLoading || correspondence.isLoading) {
+    return <LoadingState message="Loading archive records..." />;
+  }
+  if (documents.error || decrees.error || correspondence.error) {
+    return <ErrorState error={documents.error || decrees.error || correspondence.error} title="Failed to load archive records" onRetry={() => { documents.refetch(); decrees.refetch(); correspondence.refetch(); }} />;
+  }
 
   return (
     <RequirePermission permission={DOCUMENT_WORKFLOW_PERMISSIONS.DOCUMENTS_READ}>

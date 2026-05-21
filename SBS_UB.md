@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: blocked_A-032.3-E2E.R1
-    - current_stage: A-032.3-E2E.R1 blocked / api.ts filter typing fixed and live frontend rebuilt, but browser E2E still fails on archive route rendering plus over-strict Playwright assertions
-    - last_completed_action_id: A-032.2-FRONTEND-B1
-    - next_action_id: A-032.3-E2E.R2
-    - updated_at: 2026-05-21 (A-032.3-E2E.R1 remediation reran the blocked document_workflow_os browser gate from d316fb5; frontend/modules/document-workflow/api.ts filter typing was fixed; Docker frontend typecheck PASS; targeted frontend Vitest PASS 14/14; frontend-tests image rebuild PASS; live frontend image rebuild PASS and standalone runtime now contains /app/.next/server/app/(admin)/console/documents; Playwright rerun executed against the rebuilt runtime and produced 3 passed / 4 failed, with archive route heading/content still not rendering as expected and two over-strict text assertions failing on duplicate visible copy; A-032.1 backend smoke PASS 28/28; A-031 continuity PASS 359/359; anti-fake guards and required labels remain present; backend non-change remains limited to backend/.coverage; no backend changes, no migrations, no provider integration, no auto-signature, no auto-approval, no fake registry/delivery claim, no production-ready claim, no maturity movement; next action: A-032.3-E2E.R2)
+    - status: ready_for_A-032.4-B1
+    - current_stage: A-032.3-E2E.R2 closed / document_workflow_os browser E2E validated after archive runtime remediation and Playwright assertion alignment
+    - last_completed_action_id: A-032.3-E2E.R2
+    - next_action_id: A-032.4-B1
+    - updated_at: 2026-05-21 (A-032.3-E2E.R2 closed the remaining document_workflow_os browser blockers from 9bfbf32 with frontend-only remediation; frontend/modules/document-workflow/components/pages.tsx ArchivePage hook order was stabilized to remove the archive route client exception; frontend/e2e/smoke/a0323-document-workflow.spec.ts assertions were narrowed to stable rendered contracts and the create-form title step now uses the rendered placeholder; authoritative Playwright PASS 7/7; Docker frontend typecheck PASS; targeted frontend Vitest PASS 14/14; frontend-tests image rebuild PASS; live frontend image rebuild/restart PASS; standalone runtime route presence PASS with 12 page.js artifacts under /app/.next/server/app/(admin)/console/documents; A-032.1 backend smoke PASS 28/28; exact A-031 continuity PASS 359/359; anti-fake guards, required labels, and dashboard trust checks preserved; backend non-change remains limited to backend/.coverage; no backend changes, no migrations, no provider integration, no auto-signature, no auto-approval, no fake registry/delivery claim, no production-ready claim, no maturity movement; next action: A-032.4-B1)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -142,6 +142,37 @@
     - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
     - final_verdict: A-032.3-E2E.R1 BLOCKED — ORIGINAL TYPESCRIPT/REBUILD BLOCKER RESOLVED, BUT BROWSER E2E STILL FAILS ON ARCHIVE ROUTE RENDERING AND OVER-STRICT PLAYWRIGHT ASSERTIONS
     - next_action_id: A-032.3-E2E.R2
+- A-032.3-E2E.R2 execution block:
+    - mode: remediation_and_revalidation_only
+    - purpose: remediate_archive_runtime_defect_and_finalize_document_workflow_browser_e2e
+    - source_of_truth_check: PASS (A-032.3-E2E.R1 commit 9bfbf32 verified; source status before R2 was blocked_A-032.3-E2E.R1 with next action A-032.3-E2E.R2)
+    - source_commit: 9bfbf32
+    - remediation_report: A-032.3-E2E.R2-DOCUMENT_WORKFLOW_PLAYWRIGHT_ASSERTION_ARCHIVE_ROUTE_REMEDIATION_REPORT.md
+    - remediation_files: frontend/modules/document-workflow/components/pages.tsx; frontend/e2e/smoke/a0323-document-workflow.spec.ts
+    - remediation_scope: PASS (frontend-only archive runtime fix plus minimal Playwright assertion updates; no backend changes, no migrations, no new product features)
+    - archive_runtime_root_cause: PASS (ArchivePage hook order changed across loading/error/render branches and caused a client-side exception)
+    - archive_runtime_fix: PASS
+    - playwright_assertion_alignment: PASS
+    - create_form_locator_alignment: PASS
+    - authoritative_playwright_execution: PASS (7/7)
+    - docker_typecheck_after_r2: PASS
+    - targeted_frontend_tests: PASS (14/14)
+    - frontend_tests_image_rebuild: PASS
+    - live_frontend_build: PASS
+    - live_frontend_restart: PASS
+    - live_frontend_route_presence: PASS (12 page.js artifacts under /app/.next/server/app/(admin)/console/documents)
+    - backend_smoke_a0321: PASS (28/28)
+    - continuity_a031: PASS (359/359)
+    - auto_sign_approve_scan: PASS (0 hits)
+    - fake_ui_scan: PASS_WITH_EXPECTED_GUARD_REFERENCES
+    - required_labels_scan: PASS
+    - dashboard_guard_scan: PASS
+    - backend_non_change_review: PASS (backend/.coverage only)
+    - git_diff_check: PASS
+    - no_production_ready_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
+    - final_verdict: A-032.3-E2E.R2 CLOSED — DOCUMENT / DECREE / CORRESPONDENCE WORKFLOW E2E VALIDATED
+    - next_action_id: A-032.4-B1
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling

@@ -12881,3 +12881,29 @@ Metrics preserved:
 - no_l5_l6_claim: PASS
 - final_verdict: A-032.3-E2E.R1 BLOCKED - original TypeScript/rebuild blocker resolved, but browser E2E still fails on archive route rendering and over-strict Playwright assertions
 - next_action_id: A-032.3-E2E.R2
+
+## A-032.3-E2E.R2 - Document Workflow Playwright Assertion / Archive Route Remediation
+
+- source_A0323_E2E_R1_commit: 9bfbf32
+- closure_report: A-032.3-E2E.R2-DOCUMENT_WORKFLOW_PLAYWRIGHT_ASSERTION_ARCHIVE_ROUTE_REMEDIATION_REPORT.md
+- remediation_files: frontend/modules/document-workflow/components/pages.tsx; frontend/e2e/smoke/a0323-document-workflow.spec.ts
+- archive_runtime_fix: PASS (ArchivePage hook order stabilized; archive route now renders in browser E2E)
+- playwright_assertion_alignment: PASS
+- create_form_locator_alignment: PASS
+- authoritative_playwright_result: PASS (7/7)
+- docker_typecheck: PASS
+- targeted_frontend_tests: PASS (14/14)
+- frontend_tests_rebuild: PASS
+- live_frontend_rebuild: PASS
+- live_route_presence: PASS (12 page.js artifacts under /app/.next/server/app/(admin)/console/documents)
+- backend_smoke_a0321: PASS (28/28)
+- continuity_a031: PASS (359/359)
+- anti_fake_scan: PASS
+- required_labels_scan: PASS
+- dashboard_guard_scan: PASS
+- backend_non_change: PASS (backend/.coverage only)
+- metrics_unchanged: PASS (baseline_total=150, extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11)
+- no_production_ready_claim: PASS
+- no_l5_l6_claim: PASS
+- final_verdict: A-032.3-E2E.R2 CLOSED - DOCUMENT / DECREE / CORRESPONDENCE WORKFLOW E2E VALIDATED
+- next_action_id: A-032.4-B1
