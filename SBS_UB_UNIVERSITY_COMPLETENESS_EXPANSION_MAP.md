@@ -12672,7 +12672,7 @@ Supporting:
 - A-032.1-RUNTIME: backend implementation
 - A-032.1-B1: backend quality baseline
 - A-032.2-FRONTEND-SPEC → A-032.2-FRONTEND → A-032.2-B1
-- A-032.3-E2E → A-032.4-B1 → A-032.5-PACKAGE-SPEC → A-033.0-SPEC
+- A-032.3-E2E → A-032.4-B1 → A-032.5-PACKAGE-SPEC → A-033.0-SPEC → A-033.1-SPEC
 
 ### Anti-Fake Boundaries
 - no_auto_signing: TRUE
@@ -12953,3 +12953,29 @@ Metrics preserved:
 - recommended_direction: Executive Dashboard / Strategy KPI Control Tower
 - final_verdict: A-032.5-PACKAGE-SPEC CLOSED - EXECUTIVE GOVERNANCE SUITE INTERNALLY PACKAGED
 - next_action_id: A-033.0-SPEC
+
+## A-033.0-SPEC - Executive Dashboard / Strategy KPI Control Tower Planning
+
+- source_A0325_package_commit: 77a7970
+- planning_report: A-033.0-SPEC-EXECUTIVE_DASHBOARD_STRATEGY_KPI_CONTROL_TOWER_PLANNING_REPORT.md
+- product_layer_name: Executive Dashboard / Strategy KPI Control Tower
+- product_layer_identity: read-only executive command center above Executive Governance Suite
+- data_sources:
+  - Rector Assignment OS evidence
+  - Document / Decree / Correspondence Workflow OS evidence
+  - platform tenant/RBAC/audit/guard controls
+- dashboard_sections:
+  - Executive Overview
+  - Assignment Execution
+  - Document / Decree / Correspondence
+  - SLA / Risk / Bottleneck
+  - Strategy KPI Layer
+  - Audit / Compliance
+- metric_registry_recommendation: A-033.1-SPEC must define strict metric registry before runtime
+- anti_fake_rules: no fake KPI, no hardcoded metric, no autonomous decision, no auto-escalation, no provider integration, no production-ready claim, no L5/L6 claim
+- runtime_started: NO
+- metrics_unchanged: PASS (baseline_total=150, extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11)
+- recommended_next_action: A-033.1-SPEC
+- recommended_direction: Executive Control Tower Data Contract / Metric Registry
+- final_verdict: A-033.0-SPEC CLOSED - EXECUTIVE DASHBOARD / STRATEGY KPI CONTROL TOWER PLANNED
+- next_action_id: A-033.1-SPEC

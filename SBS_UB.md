@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-033.0-SPEC
-    - current_stage: A-032.5-PACKAGE-SPEC complete / executive governance suite internally packaged
-    - last_completed_action_id: A-032.5-PACKAGE-SPEC
-    - next_action_id: A-033.0-SPEC
-    - updated_at: 2026-05-21 (A-032.5-PACKAGE-SPEC completed the internal product packaging specification for the Executive Governance Suite using the two already closed product verticals: Rector Assignment OS and Document / Decree / Correspondence Workflow OS; the package spec defined the suite identity, included capability groups, evidence matrix, product map, internal demo story, readiness scoring, gaps before future sales, and internal-only positioning; business decision remained not selling yet, no public launch started, no production-ready claim, no GCC readiness claim, no Arabic runtime claim, no provider integration claim, no auto-signature claim, no fake registry claim, and no L5/L6 claim; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25 and total_tracked_modules=175; next action selected as A-033.0-SPEC for the Executive Dashboard / Strategy KPI Control Tower)
+    - status: ready_for_A-033.1-SPEC
+    - current_stage: A-033.0-SPEC complete / executive dashboard strategy KPI control tower planned
+    - last_completed_action_id: A-033.0-SPEC
+    - next_action_id: A-033.1-SPEC
+    - updated_at: 2026-05-21 (A-033.0-SPEC completed the planning specification for the Executive Dashboard / Strategy KPI Control Tower as the next product layer above the Executive Governance Suite; the plan defined the product layer identity, primary users, evidence-backed data sources, dashboard sections, metric contract requirements, backend module strategy, read-only API route strategy, permission strategy, frontend surface strategy, anti-fake rules, readiness target, roadmap options, and the recommended next action A-033.1-SPEC for the Executive Control Tower Data Contract / Metric Registry; this action remained spec-only and docs-only with no runtime implementation, no backend changes, no frontend changes, no tests, no migrations, no hardcoded KPI, no fake metrics, no autonomous decisioning, no provider integration, no production-ready claim, and no L5/L6 claim; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25 and total_tracked_modules=175)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -234,6 +234,40 @@
     - recommended_next_action: A-033.0-SPEC (Executive Dashboard / Strategy KPI Control Tower)
     - final_verdict: A-032.5-PACKAGE-SPEC CLOSED — EXECUTIVE GOVERNANCE SUITE INTERNALLY PACKAGED
     - next_action_id: A-033.0-SPEC
+- A-033.0-SPEC execution block:
+    - mode: spec_only_docs_only
+    - purpose: plan_executive_dashboard_strategy_kpi_control_tower_above_executive_governance_suite
+    - source_of_truth_check: PASS (A-032.5-PACKAGE-SPEC commit 77a7970 verified; source status before planning was ready_for_A-033.0-SPEC)
+    - source_commit: 77a7970
+    - report_file: A-033.0-SPEC-EXECUTIVE_DASHBOARD_STRATEGY_KPI_CONTROL_TOWER_PLANNING_REPORT.md
+    - product_layer_name: Executive Dashboard / Strategy KPI Control Tower
+    - product_layer_positioning: PASS (control tower above Executive Governance Suite; read-only evidence summarization layer)
+    - primary_users_defined: PASS (Rector/President, Vice Rector, Strategy Office Director, Chief of Staff/Executive Secretary, Department Director/Dean, Internal Auditor, Platform Admin)
+    - data_sources_defined: PASS (Rector Assignment OS, Document Workflow OS, and platform controls only)
+    - dashboard_sections_defined: PASS (executive overview, assignment execution, document/decree/correspondence, SLA/risk/bottleneck, strategy KPI layer, audit/compliance)
+    - metric_contract_defined: PASS (metric registry fields, data_source computed_from_governance_workflows, fake_metrics false, incomplete data semantics)
+    - backend_module_strategy_defined: PASS (future read-only executive_control_tower module)
+    - api_route_strategy_defined: PASS (GET-only read routes under /api/admin/executive-control-tower)
+    - permission_strategy_defined: PASS
+    - frontend_surface_strategy_defined: PASS
+    - anti_fake_rules_defined: PASS
+    - roadmap_options_defined: PASS
+    - recommended_next_action: A-033.1-SPEC (Executive Control Tower Data Contract / Metric Registry)
+    - runtime_implementation_started: NO
+    - backend_changes: NO
+    - frontend_changes: NO
+    - tests_created: NO
+    - migrations_created: NO
+    - no_fake_kpi: PASS
+    - no_hardcoded_metric: PASS
+    - no_autonomous_decision: PASS
+    - no_auto_escalation: PASS
+    - no_provider_integration: PASS
+    - no_production_ready_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
+    - final_verdict: A-033.0-SPEC CLOSED — EXECUTIVE DASHBOARD / STRATEGY KPI CONTROL TOWER PLANNED
+    - next_action_id: A-033.1-SPEC
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
