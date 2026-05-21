@@ -12690,3 +12690,37 @@ Supporting:
 **A-032.0-SPEC CLOSED — DOCUMENT / DECREE / CORRESPONDENCE WORKFLOW PRODUCTIZATION SELECTED**
 
 **Next Action**: A-032.1-SPEC
+
+---
+
+## A-032.1-SPEC — Document / Decree / Correspondence Backend Domain DB API Contract
+
+- action_id: A-032.1-SPEC
+- action_type: SPEC-ONLY / DOCS-ONLY
+- wave: 21
+- date: 2026-05-21
+- source: A-032.0-SPEC commit 9be3f3f
+
+### Contract Summary
+- module_path: backend/app/modules/document_workflow_os/
+- table_prefix: doc_ / db_tables: 14
+- enum_classes: 7 (DocumentStatus, DecreeStatus, CorrespondenceDirection, IncomingCorrespondenceStatus, OutgoingCorrespondenceStatus, DocumentType, ReviewDecision, AuditEventType)
+- schemas: 35 (20 request + 15 response)
+- repository_methods: 40
+- service_functions: 27
+- api_routes: 33 (12 document + 9 decree + 8 correspondence + 4 resolution/link)
+- permissions: 28
+- lifecycle_state_machines: 4
+- test_plan: 4 files / 180-260 tests
+- validation_gates: 8
+
+### Anti-Fake Contract Preserved
+- no_auto_signing / no_auto_approval / no_fake_registry / no_fake_sent_delivered (SENT_METADATA_ONLY explicit)
+- no_provider_integration / no_hard_delete / fake_metrics_always_false / no_l5_l6_claim
+
+### Metrics
+- L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150 (UNCHANGED)
+
+**A-032.1-SPEC CLOSED — DOCUMENT / DECREE / CORRESPONDENCE BACKEND CONTRACT SPECIFIED**
+
+**Next Action**: A-032.1-RUNTIME

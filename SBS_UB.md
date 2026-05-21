@@ -1,9 +1,9 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-032.1-SPEC
-    - current_stage: A-032.0-SPEC complete / document decree correspondence workflow productization selected
-    - last_completed_action_id: A-032.0-SPEC
-    - next_action_id: A-032.1-SPEC
-    - updated_at: 2026-05-21 (A-032.0-SPEC complete: DOCUMENT_DECREE_CORRESPONDENCE_WORKFLOW_OS selected; UCE-009/UCE-011/UCE-013 primary + UCE-099/UCE-031 linked; 3 lifecycles defined; 15 domain entities; 40+ routes; 9 roles; anti-fake boundaries; roadmap A-032.1→A-032.4; SPEC-only no runtime; metrics unchanged L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150; next action: A-032.1-SPEC)
+    - status: ready_for_A-032.1-RUNTIME
+    - current_stage: A-032.1-SPEC complete / document decree correspondence backend domain DB API contract specified
+    - last_completed_action_id: A-032.1-SPEC
+    - next_action_id: A-032.1-RUNTIME
+    - updated_at: 2026-05-21 (A-032.1-SPEC complete: document_workflow_os module strategy selected; 14 doc_ tables; 7 enums; 35 schemas; 40 repo methods; 27 service functions; 33 API routes; 28 permissions; 4 lifecycle state machines; A-031 integration contract; dashboard anti-fake contract; test plan 180-260 tests; 8 validation gates; SPEC-only no runtime; metrics unchanged L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150; next action: A-032.1-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -14958,3 +14958,53 @@ A-031.5-FRONTEND-B1 execution block:
 ### Final Decision
 - verdict: A-032.0-SPEC CLOSED — DOCUMENT / DECREE / CORRESPONDENCE WORKFLOW PRODUCTIZATION SELECTED
 - next_action_id: A-032.1-SPEC
+
+## A-032.1-SPEC — Document / Decree / Correspondence Backend Domain DB API Contract
+
+- action_id: A-032.1-SPEC
+- action_type: SPEC-ONLY / DOCS-ONLY (no runtime implementation)
+- wave: 21
+- date: 2026-05-21
+- source_state: A-032.0-SPEC commit 9be3f3f / tracker_status_before: ready_for_A-032.1-SPEC
+- strategic_decision: single productized module backend/app/modules/document_workflow_os/
+- backend_contract:
+    - module_path: backend/app/modules/document_workflow_os/
+    - files: __init__.py, dependencies.py, models.py, permissions.py, repository.py, schemas.py, service.py, router.py
+    - table_prefix: doc_
+    - db_tables_count: 14 (doc_documents, doc_document_versions, doc_document_status_history, doc_audit_events, doc_document_reviews, doc_order_decrees, doc_decree_registry_entries, doc_correspondence_items, doc_correspondence_routes, doc_correspondence_registry_entries, doc_resolutions, doc_resolution_assignment_links, doc_document_assignment_links, doc_archive_records)
+    - enum_classes_count: 7 (DocumentStatus x12, DecreeStatus x12, CorrespondenceDirection x2, IncomingCorrespondenceStatus x8, OutgoingCorrespondenceStatus x7, DocumentType x9, ReviewDecision x3, AuditEventType x26)
+    - request_schemas_count: 20
+    - response_schemas_count: 15
+    - total_schemas_count: 35
+    - repository_methods_count: 40
+    - service_functions_count: 27
+    - api_routes_count: 33 (12 document + 9 decree + 8 correspondence + 4 resolution/link)
+    - permissions_count: 28
+    - router_prefix: /api/admin/documents
+    - lifecycle_state_machines: 4 (document, decree, incoming_correspondence, outgoing_correspondence)
+    - a031_integration_contract: human-initiated links only; cross-module ref by BigInteger ID; no A-031 table mutations; ASSIGNMENT_LINKED audit event
+    - dashboard_contract: computed_from_documents; fake_metrics=False hardcoded; DASHBOARD_VIEWED audit event
+    - test_plan: 4 test files; target 180-260 tests
+    - validation_gates: 8
+- anti_fake_review:
+    - no_auto_signing: TRUE
+    - no_auto_approval: TRUE
+    - no_fake_registry_number: TRUE
+    - no_fake_sent_delivered: TRUE (SENT_METADATA_ONLY/DELIVERED_METADATA_ONLY explicit labels)
+    - no_provider_integration: TRUE
+    - no_live_email_sms: TRUE
+    - no_hard_delete: TRUE
+    - fake_metrics_always_false: TRUE
+    - no_l5_l6_claim: TRUE
+    - no_production_ready_claim: TRUE
+    - no_cross_tenant_leak: TRUE
+- metrics_preservation:
+    - L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (UNCHANGED)
+    - arithmetic_check: PASS
+    - no_runtime_code_created: TRUE
+- files_changed:
+    - A-032.1-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md (created)
+    - SBS_UB.md (updated)
+    - SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md (updated)
+- verdict: A-032.1-SPEC CLOSED — DOCUMENT / DECREE / CORRESPONDENCE BACKEND CONTRACT SPECIFIED
+- next_action_id: A-032.1-RUNTIME
