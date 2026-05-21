@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-035.3-FRONTEND-SPEC
-    - current_stage: A-035.2-B1 complete / student lifecycle backend foundation quality baseline confirmed
-    - last_completed_action_id: A-035.2-B1
-    - next_action_id: A-035.3-FRONTEND-SPEC
-    - updated_at: 2026-05-22 (A-035.2-B1 validated the Student Lifecycle Suite backend foundation against A-035.2-RUNTIME commit 5b19e41; repo hygiene remained limited to expected non-scope dirt at backend/.coverage, .gate-logs/, and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md; artifact inventory confirmed backend/app/modules/student_lifecycle/ with __init__.py, permissions.py, dependencies.py, models.py, schemas.py, repository.py, service.py, and router.py, migration backend/alembic/versions/uq35sl24rt80_a0352_student_lifecycle_tables.py, the four focused Student Lifecycle backend test files, and the A-035.2 runtime report; import sanity passed with 44 routes and 14 sl_ tables, metadata sanity passed with the expected 14-table set, targeted Student Lifecycle backend tests passed at 38 passed / 0 failed, selected continuity passed at 192 passed / 0 failed across auth and Executive Control Tower coverage, RBAC baseline review confirmed student_lifecycle permission coverage, anti-fake and no-provider scans passed with expected boundary text only, no-hard-delete scan returned 0 runtime hits, frontend non-change passed, runtime non-change in B1 passed, and git diff --check passed; no backend runtime implementation, frontend implementation, migrations, new routes, new models, new service logic, provider integration, Platonus live integration, SIS sync, official transcript issuing, autonomous decisions, hidden risk scoring, fake KPI, production-ready claims, sales-ready claims, or L5/L6 claims were introduced; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; the recommended next action is A-035.3-FRONTEND-SPEC for Student Lifecycle Suite Frontend UI Contract)
+    - status: ready_for_A-035.3-FRONTEND
+    - current_stage: A-035.3-FRONTEND-SPEC complete / student lifecycle frontend UI contract specified
+    - last_completed_action_id: A-035.3-FRONTEND-SPEC
+    - next_action_id: A-035.3-FRONTEND
+    - updated_at: 2026-05-22 (A-035.3-FRONTEND-SPEC specified the Student Lifecycle Suite frontend UI contract on top of A-035.2-B1 commit 7fe068e; the spec defined the frontend module strategy at frontend/modules/student-lifecycle/, a 20-route map under /console/student-lifecycle, page contracts for overview, applicants, students, enrollment, academic records, transcript previews, degree progress, requests, appeals, interventions, and audit, the planned component surface, type contract, API client contract, hook contract, permission and guard model, sensitive UI labels, frontend test plan, future E2E plan, anti-fake and no-overclaim rules, and the recommended runtime subset; no frontend runtime code, backend runtime code, routes, components, tests, Playwright specs, migrations, seed data, real student data, real applicant data, credentials, provider integration, Platonus live integration, SIS sync, official transcript issuing, fake transcript UI, hidden score UI, discriminatory score UI, autonomous decision UI, fake KPI, production-ready claims, sales-ready claims, GCC readiness claims, or L5/L6 claims were introduced; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; the recommended next action is A-035.3-FRONTEND for Student Lifecycle Suite frontend runtime implementation)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -53,6 +53,51 @@
     - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
     - final_verdict: A-035.2-B1 CLOSED - STUDENT LIFECYCLE SUITE BACKEND FOUNDATION QUALITY BASELINE CONFIRMED
     - next_action_id: A-035.3-FRONTEND-SPEC
+- A-035.3-FRONTEND-SPEC execution block:
+    - mode: spec_only_docs_only
+    - purpose: student_lifecycle_frontend_ui_contract_specification
+    - source_of_truth_check: PASS (A-035.2-B1 commit 7fe068e verified; source status before spec was ready_for_A-035.3-FRONTEND-SPEC)
+    - source_commit: 7fe068e
+    - report_file: A-035.3-FRONTEND-SPEC-STUDENT_LIFECYCLE_SUITE_FRONTEND_UI_CONTRACT_REPORT.md
+    - frontend_module_path: frontend/modules/student-lifecycle/
+    - route_count_specified: 20
+    - route_prefix: /console/student-lifecycle
+    - page_contracts_specified: PASS (overview, applicants, students, enrollment, academic-records, transcripts, degree-progress, requests, appeals, interventions, audit; detail routes planned and deferrable)
+    - component_contract_specified: PASS (43 named components across shared, overview, applicants/admissions, students/enrollment, academic/transcript/degree, requests/appeals/interventions, audit)
+    - type_contract_specified: PASS
+    - api_client_contract_specified: PASS
+    - hook_contract_specified: PASS
+    - permission_guard_model_specified: PASS
+    - sensitive_ui_labels_specified: PASS
+    - frontend_test_plan_specified: PASS (7 planned test files; 80-160 expected tests when runtime exists)
+    - future_e2e_plan_specified: PASS (14 planned scenarios for A-035.4-E2E)
+    - recommended_runtime_subset_specified: PASS (11 initial routes; detail routes deferred)
+    - no_runtime_code: PASS
+    - no_frontend_runtime_changes: PASS
+    - no_backend_runtime_changes: PASS
+    - no_tests_created: PASS
+    - no_playwright_specs_created: PASS
+    - no_real_student_data: PASS
+    - no_real_applicant_data: PASS
+    - no_credentials: PASS
+    - no_provider_integration_claim: PASS
+    - no_platonus_live_integration_claim: PASS
+    - no_sis_sync_claim: PASS
+    - no_official_transcript_issuing_claim: PASS
+    - no_fake_transcript_ui: PASS
+    - no_hidden_score_ui: PASS
+    - no_discriminatory_score_ui: PASS
+    - no_autonomous_admission_decision_ui: PASS
+    - no_autonomous_appeal_decision_ui: PASS
+    - no_automatic_graduation_eligibility_ui: PASS
+    - no_fake_kpi: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
+    - final_verdict: A-035.3-FRONTEND-SPEC CLOSED - STUDENT LIFECYCLE SUITE FRONTEND UI CONTRACT SPECIFIED
+    - next_action_id: A-035.3-FRONTEND
 - A-032.2-FRONTEND-SPEC execution block:
     - mode: spec_only_docs_only
     - purpose: document_decree_correspondence_role_based_ui_specification

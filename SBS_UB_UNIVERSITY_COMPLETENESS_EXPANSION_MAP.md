@@ -13423,3 +13423,17 @@ Metrics preserved:
 - no_production_ready_claim: PASS
 - recommended_next_action: A-035.3-FRONTEND-SPEC - Student Lifecycle Suite Frontend UI Contract
 - next_action_id: A-035.3-FRONTEND-SPEC
+
+## A-035.3-FRONTEND-SPEC - Student Lifecycle Suite Frontend UI Contract
+
+- source_A0352_B1_commit: 7fe068e
+- report_file: A-035.3-FRONTEND-SPEC-STUDENT_LIFECYCLE_SUITE_FRONTEND_UI_CONTRACT_REPORT.md
+- frontend_module_strategy: frontend/modules/student-lifecycle/ with api.ts, types.ts, hooks.ts, guards.ts, constants.ts, and components/ planned but not created in this action
+- route_map: 20 planned routes under /console/student-lifecycle covering overview, applicants, admissions, students, enrollment, academic-records, transcripts, degree-progress, requests, appeals, interventions, and audit
+- sensitive_ui_labels: human review required, no automated decision, provider not enabled, metadata only, incomplete data, source unavailable, unofficial preview, no fake transcript, no hidden risk score, no discriminatory score, support visibility only
+- permission_guard_model: section permission groups plus helper guards for dashboard, applicants, students, enrollment, records, transcripts, degree progress, requests, appeals, interventions, and audit
+- recommended_runtime_subset: 11 initial routes with module api/types/hooks/guards/components; detail routes and complex create-edit flows deferred
+- future_e2e_plan: 14 planned scenarios in frontend/e2e/smoke/a0354-student-lifecycle-suite.spec.ts
+- anti_fake_no_overclaim_boundaries: no runtime code, no frontend/backend changes, no tests, no Playwright specs, no provider integration, no Platonus live integration, no SIS sync, no official transcript issuing, no fake transcript UI, no hidden score UI, no autonomous decision UI, no fake KPI, no production-ready or L5/L6 claims
+- recommended_next_action: A-035.3-FRONTEND - Student Lifecycle Suite Frontend Runtime
+- next_action_id: A-035.3-FRONTEND
