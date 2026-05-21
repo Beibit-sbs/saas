@@ -254,6 +254,17 @@ export const PERMISSIONS = {
   CORRESPONDENCE_ARCHIVE: "admin.correspondence.archive",
   RESOLUTIONS_CREATE: "admin.resolutions.create",
   RESOLUTIONS_LINK_ASSIGNMENT: "admin.resolutions.link_assignment",
+
+  // Executive Control Tower (Wave 22 / A-033.2)
+  EXECUTIVE_CONTROL_TOWER_READ: "admin.executive_control_tower.read",
+  EXECUTIVE_CONTROL_TOWER_SUMMARY_READ: "admin.executive_control_tower.summary.read",
+  EXECUTIVE_CONTROL_TOWER_ASSIGNMENTS_READ: "admin.executive_control_tower.assignments.read",
+  EXECUTIVE_CONTROL_TOWER_DOCUMENTS_READ: "admin.executive_control_tower.documents.read",
+  EXECUTIVE_CONTROL_TOWER_SLA_RISK_READ: "admin.executive_control_tower.sla_risk.read",
+  EXECUTIVE_CONTROL_TOWER_STRATEGY_READ: "admin.executive_control_tower.strategy.read",
+  EXECUTIVE_CONTROL_TOWER_AUDIT_READ: "admin.executive_control_tower.audit.read",
+  EXECUTIVE_CONTROL_TOWER_DEPARTMENT_READ: "admin.executive_control_tower.department.read",
+  EXECUTIVE_CONTROL_TOWER_METRIC_REGISTRY_READ: "admin.executive_control_tower.metric_registry.read",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
