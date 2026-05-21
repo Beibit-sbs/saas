@@ -128,6 +128,7 @@ from app.platform.router_developer_api import router as platform_developer_api_r
 from app.platform.router_internal import router as platform_v1_internal_router
 from app.platform.router_mcp import router as platform_v1_mcp_router
 from app.platform.router_semantic import router as platform_v2_semantic_router
+from app.modules.document_workflow_os.router import router as doc_workflow_router
 from app.modules.rector_assignment_workflow.router import router as rector_assignment_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.interventions.router import router as interventions_router
@@ -307,6 +308,7 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.grades_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.workflows_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.rector_assignment_session_factory = make_session_factory(_admissions_engine)
+        fastapi_app.state.doc_workflow_session_factory = make_session_factory(_admissions_engine)
         logger.info("admissions database engine initialised (pool_size=5, max_overflow=10)")
     except RuntimeError as exc:
         fastapi_app.state.admissions_engine = None
@@ -315,6 +317,7 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.grades_session_factory = None
         fastapi_app.state.workflows_session_factory = None
         fastapi_app.state.rector_assignment_session_factory = None
+        fastapi_app.state.doc_workflow_session_factory = None
         logger.warning(
             "admissions database not configured — admissions endpoints will return HTTP 503. "
             "Reason: %s",
@@ -459,6 +462,7 @@ app.include_router(platform_v1_internal_router)
 app.include_router(platform_v1_mcp_router)
 app.include_router(platform_v2_semantic_router)
 app.include_router(rector_assignment_router)
+app.include_router(doc_workflow_router)
 
 
 def _register_optional_routers(fastapi_app: FastAPI) -> None:
