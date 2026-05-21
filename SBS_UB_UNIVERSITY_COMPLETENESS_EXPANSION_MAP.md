@@ -12672,7 +12672,7 @@ Supporting:
 - A-032.1-RUNTIME: backend implementation
 - A-032.1-B1: backend quality baseline
 - A-032.2-FRONTEND-SPEC → A-032.2-FRONTEND → A-032.2-B1
-- A-032.3-E2E → A-032.4-B1 → A-032.5-PACKAGE-SPEC → A-033.0-SPEC → A-033.1-SPEC
+- A-032.3-E2E → A-032.4-B1 → A-032.5-PACKAGE-SPEC → A-033.0-SPEC → A-033.1-SPEC → A-033.1-RUNTIME
 
 ### Anti-Fake Boundaries
 - no_auto_signing: TRUE
@@ -12979,3 +12979,28 @@ Metrics preserved:
 - recommended_direction: Executive Control Tower Data Contract / Metric Registry
 - final_verdict: A-033.0-SPEC CLOSED - EXECUTIVE DASHBOARD / STRATEGY KPI CONTROL TOWER PLANNED
 - next_action_id: A-033.1-SPEC
+
+## A-033.1-SPEC - Executive Control Tower Data Contract / Metric Registry
+
+- source_A0330_spec_commit: 1733ef3
+- metric_registry_report: A-033.1-SPEC-EXECUTIVE_CONTROL_TOWER_DATA_CONTRACT_METRIC_REGISTRY_REPORT.md
+- registry_schema: canonical MetricDefinition with deterministic tenant-scoped anti-fake contract
+- metric_groups:
+  - EXECUTIVE_OVERVIEW
+  - ASSIGNMENT_EXECUTION
+  - DOCUMENT_WORKFLOW
+  - DECREE_WORKFLOW
+  - CORRESPONDENCE_WORKFLOW
+  - SLA_RISK_BOTTLENECK
+  - STRATEGY_KPI
+  - AUDIT_COMPLIANCE
+  - DEPARTMENT_PERFORMANCE
+- route_contract: GET-only read routes under /api/admin/executive-control-tower including summary, assignments, documents, decrees, correspondence, sla-risk, strategy-kpis, audit-compliance, department-performance, metric-registry, metrics/{metric_id}, and health
+- response_contract: every response must include fake_metrics=False, data_source=computed_from_governance_workflows, incomplete_data, generated_at, limitations, and evidence_links where applicable
+- anti_fake_rules: no fake KPI, no hardcoded metric, no fake trend, no hidden score, no autonomous decision, no auto-escalation, no provider integration, no production-ready claim, no L5/L6 claim
+- runtime_started: NO
+- metrics_unchanged: PASS (baseline_total=150, extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11)
+- recommended_next_action: A-033.1-RUNTIME
+- recommended_direction: Executive Control Tower Metric Registry / Read-Only Backend Foundation
+- final_verdict: A-033.1-SPEC CLOSED - EXECUTIVE CONTROL TOWER DATA CONTRACT / METRIC REGISTRY SPECIFIED
+- next_action_id: A-033.1-RUNTIME
