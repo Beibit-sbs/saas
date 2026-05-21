@@ -13375,3 +13375,17 @@ Metrics preserved:
 - sensitive_domain_boundaries: no_real_student_data, no_real_applicant_data, no_credentials, no_autonomous_admission_decision, no_autonomous_appeal_decision, no_automatic_graduation_eligibility_decision, no_fake_transcript, no_fake_digital_signature, no_hidden_student_risk_score, no_discriminatory_score, no_Platonus_live_integration_claim, no_SIS_sync_claim
 - evidence_roadmap: A-035.2-SPEC, A-035.2-RUNTIME, A-035.2-B1, A-035.3-FRONTEND-SPEC, A-035.3-FRONTEND, A-035.3-B1, A-035.4-E2E, A-035.5-B1
 - next_action_id: A-035.2-SPEC
+
+## A-035.2-SPEC - Student Lifecycle Suite Backend Domain / DB / API Contract
+
+- source_A0351_SPEC_commit: 5f29f40
+- report_file: A-035.2-SPEC-STUDENT_LIFECYCLE_SUITE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+- backend_module_strategy: backend/app/modules/student_lifecycle/ with __init__.py, dependencies.py, models.py, permissions.py, repository.py, schemas.py, service.py, router.py
+- selected_db_table_contract_count: 35
+- enum_lifecycle_contract: ApplicantStatus, AdmissionReviewStatus, StudentStatus, EnrollmentStatus, AcademicRecordStatus, TranscriptPreviewStatus, DegreeProgressStatus, StudentRequestStatus, StudentAppealStatus, InterventionStatus, StudentLifecycleAuditEventType
+- api_route_contract: /api/admin/student-lifecycle with applicants, admissions, students, enrollment, academic-records, transcripts, degree-progress, requests, appeals, interventions, audit, evidence, dashboard, health groups
+- permissions_contract: 45-50 planned student_lifecycle.* permissions across admissions, applicants, students, enrollment, records, transcripts, degree progress, requests, appeals, interventions, audit, evidence, dashboard, health, admin
+- first_runtime_subset: module skeleton plus 14-table subset and basic applicants, students, enrollment, academic-record, transcript preview, degree progress, requests, appeals, interventions, audit, dashboard, health routes
+- anti_fake_sensitive_boundaries: no_real_student_data, no_real_applicant_data, no_credentials, no_provider_integration, no_Platonus_live_integration_claim, no_SIS_sync_claim, no_autonomous_admission_decision, no_autonomous_appeal_decision, no_automatic_graduation_eligibility_decision, no_fake_transcript, no_fake_digital_signature, no_hidden_student_risk_score, no_discriminatory_score
+- recommended_next_action: A-035.2-RUNTIME - Student Lifecycle Suite Backend Foundation
+- next_action_id: A-035.2-RUNTIME

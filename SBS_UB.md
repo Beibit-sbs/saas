@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-035.2-SPEC
-    - current_stage: A-035.1-SPEC complete / student lifecycle product map and workflow specification complete
-    - last_completed_action_id: A-035.1-SPEC
-    - next_action_id: A-035.2-SPEC
-    - updated_at: 2026-05-22 (A-035.1-SPEC defined the Student Lifecycle Suite product map, workflow model, lifecycle states, role model, permission concept, domain entity map, frontend surface map, backend and API direction, sensitive-domain risk classification, anti-fake boundaries, and future E2E plan on top of A-035.0-SPEC commit 3827eac; repo hygiene remained limited to expected non-scope dirt at backend/.coverage, .gate-logs/, and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md; source-of-truth verification confirmed A-035.0-SPEC was closed and already handed off to A-035.1-SPEC; no backend runtime changes, frontend changes, tests, Playwright changes, migrations, API routes, seed execution, real student data, real applicant data, credentials, provider integrations, Platonus live integration claims, SIS sync claims, fake transcript claims, hidden risk scores, discriminatory scores, autonomous admission decisions, autonomous appeal decisions, automatic graduation eligibility decisions, fake KPI, production-ready claims, sales-ready claims, GCC readiness claims, or L5/L6 claims were introduced; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; the recommended next action is A-035.2-SPEC for Student Lifecycle Suite Backend Domain / DB / API Contract)
+    - status: ready_for_A-035.2-RUNTIME
+    - current_stage: A-035.2-SPEC complete / student lifecycle backend domain db api contract specified
+    - last_completed_action_id: A-035.2-SPEC
+    - next_action_id: A-035.2-RUNTIME
+    - updated_at: 2026-05-22 (A-035.2-SPEC defined the Student Lifecycle Suite backend module strategy, database table contract, enum and lifecycle contract, schema groups, repository and service contracts, router and API contract, permissions contract, audit model, dashboard summary contract, first runtime subset recommendation, backend test plan, and runtime validation gates on top of A-035.1-SPEC commit 5f29f40; repo hygiene remained limited to expected non-scope dirt at backend/.coverage, .gate-logs/, and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md; source-of-truth verification confirmed A-035.1-SPEC was closed and already handed off to A-035.2-SPEC; no backend runtime changes, frontend changes, tests, Playwright changes, migrations, models, DB tables, API routes, seed execution, real student data, real applicant data, credentials, provider integrations, Platonus live integration claims, SIS sync claims, fake transcript claims, hidden risk scores, discriminatory scores, autonomous admission decisions, autonomous appeal decisions, automatic graduation eligibility decisions, fake KPI, production-ready claims, sales-ready claims, GCC readiness claims, or L5/L6 claims were introduced; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; the recommended next action is A-035.2-RUNTIME for Student Lifecycle Suite Backend Foundation)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -665,6 +665,53 @@
     - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
     - final_verdict: A-035.1-SPEC CLOSED - STUDENT LIFECYCLE SUITE PRODUCT MAP / WORKFLOW SPECIFIED
     - next_action_id: A-035.2-SPEC
+- A-035.2-SPEC execution block:
+    - mode: spec_only_docs_only
+    - purpose: student_lifecycle_suite_backend_domain_db_api_contract
+    - source_of_truth_check: PASS (A-035.1-SPEC commit 5f29f40 verified; source status before spec was ready_for_A-035.2-SPEC)
+    - source_commit: 5f29f40
+    - report_file: A-035.2-SPEC-STUDENT_LIFECYCLE_SUITE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+    - backend_module_strategy_defined: PASS (backend/app/modules/student_lifecycle/)
+    - db_table_contract_defined: PASS (35 tables)
+    - enum_lifecycle_contract_defined: PASS
+    - schema_contract_defined: PASS (55-65 planned schemas)
+    - repository_contract_defined: PASS (60-75 planned methods)
+    - service_contract_defined: PASS (30-40 planned functions)
+    - api_route_contract_defined: PASS (~60 routes)
+    - permissions_contract_defined: PASS (45-50 planned permissions)
+    - audit_event_model_defined: PASS
+    - dashboard_summary_contract_defined: PASS
+    - first_runtime_subset_defined: PASS
+    - backend_test_plan_defined: PASS
+    - runtime_validation_gates_defined: PASS
+    - no_runtime_code: PASS
+    - no_backend_changes: PASS
+    - no_frontend_changes: PASS
+    - no_tests_created: PASS
+    - no_migrations_created: PASS
+    - no_db_tables_created: PASS
+    - no_api_routes_created: PASS
+    - no_student_data: PASS
+    - no_applicant_data: PASS
+    - no_credentials: PASS
+    - no_provider_integration: PASS
+    - no_platonus_live_integration_claim: PASS
+    - no_SIS_sync_claim: PASS
+    - no_autonomous_admission_decision: PASS
+    - no_autonomous_appeal_decision: PASS
+    - no_automatic_graduation_eligibility_decision: PASS
+    - no_fake_transcript: PASS
+    - no_fake_digital_signature: PASS
+    - no_hidden_student_risk_score: PASS
+    - no_discriminatory_score: PASS
+    - no_fake_kpi: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
+    - final_verdict: A-035.2-SPEC CLOSED - STUDENT LIFECYCLE SUITE BACKEND CONTRACT SPECIFIED
+    - next_action_id: A-035.2-RUNTIME
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
