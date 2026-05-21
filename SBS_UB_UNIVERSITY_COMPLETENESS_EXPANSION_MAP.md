@@ -13361,3 +13361,17 @@ Metrics preserved:
 - anti_fake_sensitive_domain_boundaries: no_real_student_data, no_real_applicant_data, no_credentials, no_autonomous_admission_decision, no_autonomous_appeal_decision, no_automatic_graduation_eligibility_decision, no_fake_official_transcript, no_fake_digital_signature, no_fake_SIS_sync, no_provider_integration_claim, no_Platonus_live_integration_claim, no_hidden_student_risk_score, no_discriminatory_score, no_production_ready_claim, no_sales_ready_claim, no_L5_L6_claim
 - recommended_next_action: A-035.1-SPEC - Student Lifecycle Suite Product Map / Workflow Specification
 - next_action_id: A-035.1-SPEC
+
+## A-035.1-SPEC - Student Lifecycle Suite Product Map / Workflow Specification
+
+- source_A0350_SPEC_commit: 3827eac
+- report_file: A-035.1-SPEC-STUDENT_LIFECYCLE_SUITE_PRODUCT_MAP_WORKFLOW_SPECIFICATION_REPORT.md
+- selected_suite: Student Lifecycle Suite
+- selected_module_scope: admissions, applicant_management, student_profile, enrollment, academic_records, transcript, degree_progress, graduation_readiness, student_requests, student_appeals_workflow, interventions, student_success_risk_visibility
+- core_flows: applicant_to_student; profile_and_enrollment; academic_record_and_transcript_preview; degree_progress_and_graduation_readiness; student_requests_and_appeals; intervention_and_student_success_visibility
+- roles: Admissions Officer, Registrar, Academic Advisor, Department Director / Dean, Faculty Member, Student Affairs Officer, Student Support Officer, Student / Applicant, Internal Auditor, Platform Admin
+- backend_api_direction: backend/app/modules/student_lifecycle/ with applicants, admissions, students, enrollment, academic-records, transcripts, degree-progress, requests, appeals, interventions, audit groups; tenant fail-closed, RBAC-gated, audit-backed, no provider integration
+- frontend_surface_map: /console/student-lifecycle plus applicants, admissions, students, students/[id], enrollment, academic-records, transcripts, degree-progress, requests, appeals, interventions, audit
+- sensitive_domain_boundaries: no_real_student_data, no_real_applicant_data, no_credentials, no_autonomous_admission_decision, no_autonomous_appeal_decision, no_automatic_graduation_eligibility_decision, no_fake_transcript, no_fake_digital_signature, no_hidden_student_risk_score, no_discriminatory_score, no_Platonus_live_integration_claim, no_SIS_sync_claim
+- evidence_roadmap: A-035.2-SPEC, A-035.2-RUNTIME, A-035.2-B1, A-035.3-FRONTEND-SPEC, A-035.3-FRONTEND, A-035.3-B1, A-035.4-E2E, A-035.5-B1
+- next_action_id: A-035.2-SPEC
