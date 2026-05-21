@@ -1,0 +1,1 @@
+export { DegreeProgressPage as default } from '@/modules/student-lifecycle/components/pages';

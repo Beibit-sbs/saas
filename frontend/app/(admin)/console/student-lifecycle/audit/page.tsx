@@ -1,0 +1,1 @@
+export { StudentLifecycleAuditPage as default } from '@/modules/student-lifecycle/components/pages';

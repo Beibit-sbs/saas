@@ -1,0 +1,1 @@
+export { TranscriptPreviewsPage as default } from '@/modules/student-lifecycle/components/pages';
