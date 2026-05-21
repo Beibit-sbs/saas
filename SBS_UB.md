@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-034.3-SPEC
-    - current_stage: A-034.2-B1 complete / unified suite E2E and internal demo hardening quality baseline confirmed
-    - last_completed_action_id: A-034.2-B1
-    - next_action_id: A-034.3-SPEC
-    - updated_at: 2026-05-22 (A-034.2-B1 validated A-034.2-RUNTIME commit 1253b1c and confirmed the unified Executive Governance Suite E2E / internal demo hardening quality baseline; repo hygiene remained limited to expected non-scope dirt at backend/.coverage, .gate-logs/, and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md; the unified Playwright spec file and A-034.2 runtime report both existed; SBS_UB.md still reflected ready_for_A-034.2-B1 before closeout and the expansion map contained the A-034.2-RUNTIME entry; fresh Docker Compose reruns passed for frontend type-check, the targeted Executive Control Tower Vitest pack (26/26), the unified Chromium Playwright suite (11 passed, 1 intentional skip), and backend continuity (35/35); the skipped scenario remained explicitly classified as NOT_RUN_UNTIL_PERMISSION_FIXTURE rather than as a hidden runtime failure; anti-fake/no-overclaim review and mutation/provider UI review passed with expected negative-boundary hits only; no backend runtime source changes, no frontend runtime feature changes, no migrations, no new product routes, no real users, no real personal data, no credentials, no fake KPI, no provider integration, no live dispatch, no production-ready claims, no sales-ready claims, no GCC readiness claims, no Arabic runtime claims, and no L5/L6 claims were introduced; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; the recommended next action is A-034.3-SPEC for the internal demo evidence pack and screenshot script)
+    - status: ready_for_A-034.3-RUNTIME
+    - current_stage: A-034.3-SPEC complete / internal demo evidence pack and screenshot script specified
+    - last_completed_action_id: A-034.3-SPEC
+    - next_action_id: A-034.3-RUNTIME
+    - updated_at: 2026-05-22 (A-034.3-SPEC defined the Executive Governance Suite internal demo evidence pack and screenshot/script plan on top of A-034.2-B1 commit 186d7bc; repo hygiene remained limited to expected non-scope dirt at backend/.coverage, .gate-logs/, and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md; source-of-truth verification confirmed A-034.2-B1 was closed and already handed off to A-034.3-SPEC; the plan defined the internal-only evidence pack identity, a 7 to 10 minute narrative titled From Rector Decision to Evidence-Based Execution Control, a 12-item screenshot set, screenshot naming convention, route-by-route screenshot plan, future evidence directory structure, screenshot capture rules, speaker notes, fallback plan, no-overclaim checklist, future runtime acceptance checklist, and the recommended next action A-034.3-RUNTIME; no backend runtime changes, frontend changes, Playwright changes, screenshots, demo execution, tests, migrations, new routes, seed execution, real users, real personal data, credentials, fake screenshots, fake demo evidence, fake KPI, public sales materials, production-ready claims, sales-ready claims, GCC readiness claims, Arabic runtime claims, provider integration claims, autonomous decisions, or L5/L6 claims were introduced; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; the recommended next action is A-034.3-RUNTIME for internal demo evidence pack and screenshot/script artifacts)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -527,6 +527,49 @@
     - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
     - final_verdict: A-034.2-B1 CLOSED - EXECUTIVE GOVERNANCE SUITE UNIFIED E2E / INTERNAL DEMO HARDENING QUALITY BASELINE CONFIRMED
     - next_action_id: A-034.3-SPEC
+- A-034.3-SPEC execution block:
+    - mode: spec_only_docs_only
+    - purpose: executive_governance_suite_internal_demo_evidence_pack_screenshot_script
+    - source_of_truth_check: PASS (A-034.2-B1 commit 186d7bc verified; source status before spec was ready_for_A-034.3-SPEC)
+    - source_commit: 186d7bc
+    - report_file: A-034.3-SPEC-EXECUTIVE_GOVERNANCE_SUITE_INTERNAL_DEMO_EVIDENCE_PACK_SCREENSHOT_SCRIPT_REPORT.md
+    - demo_evidence_pack_identity_defined: PASS
+    - demo_narrative_defined: PASS (7 to 10 minute internal walkthrough)
+    - screenshot_set_defined: PASS (12 planned screenshots)
+    - evidence_directory_structure_defined: PASS
+    - screenshot_capture_rules_defined: PASS
+    - speaker_notes_defined: PASS
+    - fallback_plan_defined: PASS
+    - no_overclaim_checklist_defined: PASS
+    - acceptance_checklist_defined: PASS
+    - future_runtime_path_defined: PASS (recommended A-034.3-RUNTIME)
+    - no_runtime_code: PASS
+    - no_backend_changes: PASS
+    - no_frontend_changes: PASS
+    - no_playwright_spec_changes: PASS
+    - no_screenshots_captured: PASS
+    - no_demo_executed: PASS
+    - no_tests_created: PASS
+    - no_migrations_created: PASS
+    - no_new_routes_created: PASS
+    - no_seed_execution: PASS
+    - no_real_users: PASS
+    - no_real_personal_data: PASS
+    - no_credentials: PASS
+    - no_fake_screenshot: PASS
+    - no_fake_demo_evidence: PASS
+    - no_fake_kpi: PASS
+    - no_sales_launch: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_arabic_runtime_claim: PASS
+    - no_l5_l6_claim: PASS
+    - no_provider_integration_claim: PASS
+    - no_autonomous_decision: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
+    - final_verdict: A-034.3-SPEC CLOSED - EXECUTIVE GOVERNANCE SUITE INTERNAL DEMO EVIDENCE PACK / SCREENSHOT SCRIPT SPECIFIED
+    - next_action_id: A-034.3-RUNTIME
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
