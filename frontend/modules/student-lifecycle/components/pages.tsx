@@ -132,6 +132,8 @@ export function ApplicantsPage() {
     ? [
         {
           id: firstApplicant.id,
+          tenant_id: firstApplicant.tenant_id,
+          applicant_id: firstApplicant.id,
           previous_status: null,
           new_status: firstApplicant.status,
           created_at: firstApplicant.updated_at,

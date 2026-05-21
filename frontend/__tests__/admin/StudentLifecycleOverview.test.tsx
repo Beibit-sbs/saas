@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { StudentLifecycleOverviewDashboard } from '@/modules/student-lifecycle/components';
 import { EXPECTED_DATA_SOURCE } from '@/modules/student-lifecycle/constants';
+import type { StudentLifecycleDashboardResponse, StudentLifecycleHealthResponse } from '@/modules/student-lifecycle/types';
 
-const dashboard = {
+const dashboard: StudentLifecycleDashboardResponse = {
   tenant_id: 1,
   generated_at: '2026-05-22T00:00:00Z',
   fake_metrics: false,
@@ -25,7 +26,7 @@ const dashboard = {
   hidden_score_present: false,
 };
 
-const health = {
+const health: StudentLifecycleHealthResponse = {
   tenant_id: 1,
   generated_at: '2026-05-22T00:00:00Z',
   module_name: 'student_lifecycle',
