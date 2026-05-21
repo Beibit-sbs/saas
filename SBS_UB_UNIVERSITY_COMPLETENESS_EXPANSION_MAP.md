@@ -12377,3 +12377,163 @@ All 18 gates PASS.
 **A-031.5-FRONTEND-B1 CLOSED — RECTOR ASSIGNMENT SLA OUTBOX REPORTING UI QUALITY BASELINE CONFIRMED**
 
 **Next Action**: A-031.5-E2E
+
+---
+
+## A-031.5-E2E — Rector Assignment SLA / Outbox / Reporting UI E2E Validation
+
+**Action ID**: A-031.5-E2E
+**Type**: E2E Validation
+**Source Commit**: `be36f2b` (A-031.5-FRONTEND-B1)
+**Result Commit**: `9048564`
+**Date**: 2026-05-20
+**Status**: CLOSED
+**Vertical**: RECTOR_ASSIGNMENT_EXECUTION_CONTROL_OS
+
+### Validation Results
+
+| Gate | Result |
+|------|--------|
+| Repo hygiene | CLEAN |
+| Source-of-truth | CONFIRMED |
+| E2E Playwright | 34/34 PASS / 15.5s |
+| Vitest | 990/990 PASS / 138 files |
+| TypeScript | CLEAN / 0 errors |
+| Backend continuity | 310/310 PASS |
+| Anti-fake | CLEAN |
+
+### Root Cause Fixes Applied
+
+**J-1 (Critical)** — `FIXTURE_OUTBOX_EVENTS` was a bare array `[ev1, ev2]`. Component `OutboxRegistry` calls `data.items.length` where `data: OutboxEventListResponse = { items, total, page, page_size }`. Fix: changed fixture to `{ items: [...], total: 2, page: 1, page_size: 20 }`.
+
+**TypeScript (17 errors / 8 files)** — Missing required fields (`tenant_id`, `retry_count`, `updated_at`), string-vs-enum mismatches (`priority`, `recurrence_type`), `null` vs `undefined` on optional fields, excess properties.
+
+**Vitest runtime** — Testid mismatches (`sla-badge-no_policy` vs `sla-badge-no-policy`), missing mocks (`useSlaPolicies`, `useAssignmentOutboxEvents`), wrong DashboardSummary field names, removed non-existent widget-unavailable test.
+
+**Component** — Added `data-testid="notification-timeline-loading"` to loading skeleton in `AssignmentNotificationTimeline.tsx`.
+
+**A-031.5-E2E CLOSED — RECTOR ASSIGNMENT SLA OUTBOX REPORTING UI E2E VALIDATED**
+
+**Next Action**: A-031.6-SPEC
+
+---
+
+## A-031.6-SPEC — Rector Assignment OS Pilot Readiness / Rollout Package Specification
+
+**Action ID**: A-031.6-SPEC
+**Type**: Pilot Readiness / Rollout Package Specification (SPEC-ONLY / DOCS-ONLY)
+**Source Commit**: `9048564` (A-031.5-E2E)
+**Date**: 2026-05-21
+**Status**: CLOSED
+**Vertical**: RECTOR_ASSIGNMENT_EXECUTION_CONTROL_OS
+**Track**: RECTOR_ASSIGNMENT_OS_PILOT_READINESS
+
+### Strategic Context
+
+The Rector Assignment OS is the **first fully validated product vertical** in the SBS University AI OS project. After completing the full build chain (A-031.0-SPEC through A-031.5-E2E), A-031.6-SPEC packages the vertical for controlled institutional pilot readiness before starting the next product vertical (A-032.0).
+
+### A-031 Product Evidence Chain
+
+| Step | Commit | Key Result |
+|------|--------|------------|
+| A-031.0-SPEC | `d2c9c7c` | Track: FULL_PRODUCTIZATION selected |
+| A-031.1-RUNTIME | `d48f944` | Backend: 167/167 PASS |
+| A-031.1-B1 | `27f9eca` | Backend baseline confirmed |
+| A-031.2-FRONTEND | `1138342` | UI: 110 targeted / 895 regression PASS |
+| A-031.3-E2E | `a5d55e9` | Core E2E PASS |
+| A-031.5-RUNTIME | `fa9d4d5` | Expansion: 3 tables, 12 routes, 9 hooks, 8 dashboard fields |
+| A-031.5-B1 | `a324e92` | Expansion baseline confirmed |
+| A-031.5-FRONTEND | `6da4828` | Expansion UI: 895 PASS |
+| A-031.5-FRONTEND-B1 | `be36f2b` | Expansion UI baseline: 18/18 PASS |
+| A-031.5-E2E | `9048564` | Full E2E: 34/34, 990/990, 0 TS, 310 backend PASS |
+
+### Pilot Readiness Decision
+
+- **Package selected**: `RECTOR_ASSIGNMENT_OS_PILOT_READINESS`
+- **Pilot option**: Option A — Rectorate + controlled executor group (first); Option B (one faculty) after success
+- **Next runtime**: A-031.6-RUNTIME — seed data, templates, SLA/escalation defaults
+
+### Pilot Scope
+
+| Property | Value |
+|----------|-------|
+| Pilot name | Rector Assignment OS — Controlled Institutional Pilot (CIP-001) |
+| Duration | 2 weeks initial / 4 weeks extended |
+| Assignments | 10 seeded / 10–20 live |
+| Users | 7 seed placeholders |
+| Templates | 5 standard templates |
+| SLA policies | 3 (CRITICAL/HIGH/NORMAL) |
+| Escalation levels | 4 (Controller → Prorector → Rector → Admin) |
+| Live dispatch | DISABLED — intent-only |
+
+### Seed User Roles
+
+| Username | Role |
+|----------|------|
+| `pilot_rector` | `rector_assignment_admin` |
+| `pilot_controller` | `rector_assignment_controller` |
+| `pilot_director` | `rector_assignment_reviewer` |
+| `pilot_executor_1` | `rector_assignment_executor` |
+| `pilot_executor_2` | `rector_assignment_executor` |
+| `pilot_auditor` | `rector_assignment_auditor` |
+| `pilot_admin` | `platform_admin` |
+
+### SLA Policy Defaults
+
+| Policy | Priority | Due Days | Warning | Escalation |
+|--------|----------|----------|---------|------------|
+| Critical SLA | CRITICAL | 1 | 6h | 6h |
+| High SLA | HIGH | 3 | 24h | 24h |
+| Normal SLA | NORMAL | 7 | 48h | 48h |
+
+### Assignment Templates
+
+1. `rector_weekly_report` — Weekly executive summary (NORMAL, 7d)
+2. `infra_issue_resolution` — Infrastructure issue resolution (HIGH, 3d)
+3. `accreditation_evidence` — Accreditation evidence request (HIGH, 3d)
+4. `procurement_status_update` — Procurement status update (NORMAL, 7d)
+5. `academic_kpi_followup` — Academic department KPI follow-up (NORMAL, 7d)
+
+### Demo Scenarios (6)
+
+1. Create and assign from template
+2. Executor accepts and submits report
+3. Review and return for revision / resubmit
+4. Complete assignment (audit trail)
+5. Overdue / escalation (pre-seeded; manual queue; no auto-dispatch)
+6. Auditor read-only (mutation denied)
+
+### Support / Rollback Plan
+
+- Support: Pilot Owner, Technical Owner, Functional Owner, Platform Admin
+- Issue triage: P1 (security, < 1h), P2 (blocker, < 4h), P3 (functional, 1 day), P4/P5 (deferred)
+- Rollback: archive assignments → disable routes → preserve audit → no DROP TABLE → explicit approval required
+
+### Pilot Acceptance Criteria
+
+- 90% of pilot scenarios completed without P1/P2 blocker
+- Zero tenant/security incidents
+- Zero fake/placeholder data in pilot UI
+- Zero live email/SMS dispatched
+- All critical issues documented
+
+### A-032 Transition
+
+- **A-032.0-SPEC title**: Document / Decree / Correspondence Workflow Productization
+- **A-032 gate**: starts only after A-031.6-RUNTIME CLOSED
+- **Related UCE**: UCE-009, UCE-011, UCE-013, UCE-099, UCE-031
+
+### Anti-Fake Guarantees
+
+- No runtime code implemented
+- No backend/frontend/test changes
+- No migrations, no seed scripts (deferred to A-031.6-RUNTIME)
+- No real personal data
+- No live provider dispatch
+- No production-ready claim
+- No L5/L6 elevation
+- Metrics unchanged: L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150
+
+**A-031.6-SPEC CLOSED — RECTOR ASSIGNMENT PILOT READINESS PACKAGE SPECIFIED**
+
+**Next Action**: A-031.6-RUNTIME

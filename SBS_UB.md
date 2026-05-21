@@ -1,9 +1,9 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-031.6-SPEC
-    - current_stage: A-031.5-E2E complete / rector assignment SLA outbox reporting UI E2E validated
-    - last_completed_action_id: A-031.5-E2E
-    - next_action_id: A-031.6-SPEC
-    - updated_at: 2026-05-20 (A-031.5-E2E complete: 34/34 Playwright E2E pass, 990/990 vitest pass, 0 TypeScript errors, 310 backend continuity pass, anti-fake clean; next action: A-031.6-SPEC)
+    - status: ready_for_A-031.6-RUNTIME
+    - current_stage: A-031.6-SPEC complete / rector assignment pilot readiness rollout package specified
+    - last_completed_action_id: A-031.6-SPEC
+    - next_action_id: A-031.6-RUNTIME
+    - updated_at: 2026-05-21 (A-031.6-SPEC complete: pilot readiness package specified; Option A pilot (Rectorate + controlled executor); 7 seed users; 5 templates; 3 SLA policies; 1 escalation policy (4 levels); 6 demo scenarios; training guides; support/rollback plan; acceptance criteria; A-031.6-RUNTIME selected (seed/template package); A-032.0-SPEC deferred; metrics unchanged L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150; next action: A-031.6-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -14664,3 +14664,114 @@ A-031.5-FRONTEND-B1 execution block:
     - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (unchanged)
     - final_decision: A-031.5-FRONTEND-B1 CLOSED — RECTOR ASSIGNMENT SLA OUTBOX REPORTING UI QUALITY BASELINE CONFIRMED
     - next_action_id: A-031.5-E2E
+
+---
+
+## A-031.5-E2E — Rector Assignment SLA / Outbox / Reporting UI E2E Validation
+
+- action_id: A-031.5-E2E
+- type: E2E Validation
+- source_commit: be36f2b (A-031.5-FRONTEND-B1)
+- result_commit: 9048564
+- date: 2026-05-20
+- status: CLOSED
+- vertical: RECTOR_ASSIGNMENT_EXECUTION_CONTROL_OS
+
+### Validation Results
+
+| Gate | Result |
+|------|--------|
+| Repo hygiene | CLEAN |
+| Source-of-truth | CONFIRMED (ready_for_A-031.5-E2E) |
+| Evidence inventory | COMPLETE (8 A-031 artifacts) |
+| E2E Playwright (34 tests) | 34/34 PASS / 15.5s |
+| Vitest (990 tests, 138 files) | 990/990 PASS |
+| TypeScript type-check | CLEAN / 0 errors |
+| Backend continuity | 310/310 PASS |
+| Anti-fake | CLEAN |
+| STALE_TERMINAL | docker build terminal interrupted — non-authoritative, ignored |
+
+### Issues Found and Fixed
+
+| ID | Description | Fix |
+|----|-------------|-----|
+| J-1 | FIXTURE_OUTBOX_EVENTS was bare array; component expects `OutboxEventListResponse` | Changed to `{ items: [...], total: 2, page: 1, page_size: 20 }` |
+| TS-01..08 | 17 TypeScript errors in 8 `__tests__/admin/` files | Added missing fields (tenant_id, retry_count, updated_at), fixed enums, null→undefined |
+| V-01..10 | Vitest runtime failures: wrong testids, missing mocks, wrong fixture field names | Fixed testids (underscores), added useSlaPolicies/outbox hooks, corrected DashboardSummary fields |
+| C-01 | AssignmentNotificationTimeline loading skeleton had no testid | Added `data-testid="notification-timeline-loading"` |
+
+### Files Changed
+- `frontend/e2e/smoke/rector-assignments.spec.ts` (fixture fix + test cleanup)
+- `frontend/__tests__/admin/*.tsx` (8 files: fixture/mock/testid corrections)
+- `frontend/modules/rector-assignments/components/AssignmentNotificationTimeline.tsx` (testid)
+- `frontend/app/(admin)/console/rector-assignments/[id]/page.tsx` (Permission type import)
+
+    - l5_l6_claim: NONE
+    - production_ready_claim: NONE
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (unchanged)
+    - final_decision: A-031.5-E2E CLOSED — RECTOR ASSIGNMENT SLA OUTBOX REPORTING UI E2E VALIDATED
+    - next_action_id: A-031.6-SPEC
+
+---
+
+## A-031.6-SPEC — Rector Assignment OS Pilot Readiness / Rollout Package Specification
+
+- action_id: A-031.6-SPEC
+- type: Pilot Readiness / Rollout Package Specification (SPEC-ONLY / DOCS-ONLY)
+- source_commit: 9048564 (A-031.5-E2E)
+- date: 2026-05-21
+- status: CLOSED
+- vertical: RECTOR_ASSIGNMENT_EXECUTION_CONTROL_OS
+- track: RECTOR_ASSIGNMENT_OS_PILOT_READINESS
+
+### Pilot Readiness Decision
+- package: RECTOR_ASSIGNMENT_OS_PILOT_READINESS
+- pilot_option: Option A — Rectorate + one controlled executor group
+- pilot_duration: 2 weeks initial / 4 weeks extended
+- pilot_scale: 10–20 assignments, 5–10 users, 5 templates
+- live_dispatch: DISABLED — intent-only outbox
+- next_runtime: A-031.6-RUNTIME (seed/template/role package)
+
+### Pilot Scope Summary
+- 7 seed users: pilot_rector, pilot_controller, pilot_director, pilot_executor_1, pilot_executor_2, pilot_auditor, pilot_admin
+- 6 roles: rector_assignment_admin, controller, reviewer, executor, auditor, platform_admin
+- 10 seed assignments (mix of statuses)
+- 5 assignment templates: weekly_report, infra_issue_resolution, accreditation_evidence, procurement_status_update, academic_kpi_followup
+- 3 SLA policies: CRITICAL (1d/6h), HIGH (3d/24h), NORMAL (7d/48h)
+- 1 escalation policy: 4-level (controller→prorector→rector→admin), all manual_confirmation=True
+- 6 demo scenarios documented
+- 5 training guides outlined
+- Support plan + rollback plan + security checklist + acceptance criteria defined
+
+### Anti-Fake Verification
+- no_runtime_code: TRUE
+- no_backend_changes: TRUE
+- no_frontend_changes: TRUE
+- no_tests: TRUE
+- no_migrations: TRUE
+- no_seed_scripts_yet: TRUE (deferred to A-031.6-RUNTIME)
+- no_real_personal_data: TRUE
+- no_live_dispatch: TRUE
+- no_provider_integration: TRUE
+- no_fake_dashboard: TRUE
+- no_production_ready_claim: TRUE
+- no_l5_l6_claim: TRUE
+
+### A-032 Transition
+- A-032.0-SPEC: DEFERRED until A-031.6-RUNTIME closes
+- A-032 planned_title: Document / Decree / Correspondence Workflow Productization
+- related_UCE: UCE-009, UCE-011, UCE-013, UCE-099, UCE-031
+
+### Acceptance Criteria Summary
+- 90% pilot scenarios completed without P1/P2 blocker
+- zero tenant/security incidents
+- zero fake/placeholder data in UI
+- no live email/SMS dispatch
+- all P1/P2 issues documented
+
+    - l5_l6_claim: NONE
+    - production_ready_claim: NONE
+    - pilot_executed_claim: NONE
+    - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (unchanged)
+    - final_decision: A-031.6-SPEC CLOSED — RECTOR ASSIGNMENT PILOT READINESS PACKAGE SPECIFIED
+    - next_action_id: A-031.6-RUNTIME
