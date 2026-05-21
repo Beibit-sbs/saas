@@ -13058,3 +13058,16 @@ Metrics preserved:
 - no_l5_l6_claim: PASS
 - final_verdict: A-033.1-B1 CLOSED - EXECUTIVE CONTROL TOWER BACKEND FOUNDATION QUALITY BASELINE CONFIRMED
 - next_action_id: A-033.2-FRONTEND-SPEC
+
+## A-033.2-FRONTEND-SPEC - Executive Control Tower Frontend UI Contract
+
+- source_A0331_B1_commit: 409222e
+- future_module_path: frontend/modules/executive-control-tower/
+- route_map: /console/executive-control-tower, /assignments, /documents, /sla-risk, /strategy, /audit, /departments, /metric-registry
+- guard_contract: block widgets unless fake_metrics is false and data_source is computed_from_governance_workflows; show incomplete-data, stale-data, unavailable, future-contract, and foundation-only states explicitly
+- component_plan: ControlTowerShell, ControlTowerHeader, ControlTowerNavTabs, MetricCard, MetricGroupPanel, EvidenceLinkList, IncompleteDataNotice, StaleMetricBadge, FutureContractBadge, FoundationOnlyBadge, DataSourceGuardPanel, PermissionDeniedPanel, section panels, MetricRegistryTable, MetricDetailDrawer, ControlTowerHealthPanel
+- anti_fake_UI_rules: no fake KPI, no hardcoded metric values, no fake trend, no hidden score, no synthetic department ranking, no autonomous decision implication, no auto-escalation, no provider integration, no production-ready claim, no L5/L6 claim
+- frontend_test_plan: future GET-only client, trust guards, unavailable vs zero rendering, evidence and limitations visibility, 79-metric registry coverage, permission-gated navigation, and no mutation-action assertions
+- future_E2E_plan: overview guard enforcement, 79-metric registry route, strategy future-contract state, department operational visibility without ranking, SLA/risk without auto-escalation, audit route without production-ready or L5/L6 claims
+- metrics_unchanged: PASS
+- next_action_id: A-033.2-FRONTEND

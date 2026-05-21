@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-033.2-FRONTEND-SPEC
-    - current_stage: A-033.1-B1 complete / executive control tower backend foundation quality baseline confirmed
-    - last_completed_action_id: A-033.1-B1
-    - next_action_id: A-033.2-FRONTEND-SPEC
-    - updated_at: 2026-05-21 (A-033.1-B1 validated and closed the Executive Control Tower backend foundation quality baseline against runtime commit 89e57c1 without changing backend runtime, frontend runtime, routes, migrations, or tests; repository hygiene remained scoped to backend/.coverage, .gate-logs/, and A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md; runtime artifact inventory confirmed backend/app/modules/executive_control_tower plus backend/tests/test_a0331_executive_control_tower_metric_registry.py; static validation confirmed 79 unique registry metrics across 9 groups and 12 GET-only routes under /api/admin/executive-control-tower; executable validation passed with targeted backend tests 157/157, A-032.1 backend smoke 28/28, and A-031 continuity 359/359; anti-fake scan passed with runtime clean and test-only negative assertion tokens, mutation scan was empty, frontend non-change checks passed, route registration remained wired in backend/app/main.py, and git diff --check passed; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; recommended next action is A-033.2-FRONTEND-SPEC for Executive Control Tower Frontend Specification)
+    - status: ready_for_A-033.2-FRONTEND
+    - current_stage: A-033.2-FRONTEND-SPEC complete / executive control tower frontend UI contract specified
+    - last_completed_action_id: A-033.2-FRONTEND-SPEC
+    - next_action_id: A-033.2-FRONTEND
+    - updated_at: 2026-05-21 (A-033.2-FRONTEND-SPEC completed the Executive Control Tower frontend UI specification from source commit 409222e without starting frontend runtime implementation or modifying backend runtime, frontend runtime, routes, components, tests, or migrations; the spec defined a future frontend/modules/executive-control-tower/ module using existing module-local patterns for types, api, hooks, permissions, guards, and components; it specified 8 read-only console routes under /console/executive-control-tower, a trust-guard contract that blocks widgets unless fake_metrics is false and data_source equals computed_from_governance_workflows, incomplete-data and stale-data handling, permission-gated navigation, evidence-aware metric presentation, anti-fake UI rules, a future frontend test plan, and a future A-033.3-E2E plan; the spec preserved the backend foundation constraints of 79 unique metrics, 9 groups, 12 GET-only routes, and 9 admin.executive_control_tower.* read scopes, made no production-ready or L5/L6 claim, and left maturity and expansion metrics unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; recommended next action is A-033.2-FRONTEND for Executive Control Tower frontend runtime implementation)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -377,6 +377,42 @@
     - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
     - final_verdict: A-033.1-B1 CLOSED — EXECUTIVE CONTROL TOWER BACKEND FOUNDATION QUALITY BASELINE CONFIRMED
     - next_action_id: A-033.2-FRONTEND-SPEC
+- A-033.2-FRONTEND-SPEC execution block:
+    - mode: spec_only_docs_only
+    - purpose: specify_executive_control_tower_frontend_ui_contract
+    - source_of_truth_check: PASS (A-033.1-B1 commit 409222e verified; source status before spec was ready_for_A-033.2-FRONTEND-SPEC)
+    - source_commit: 409222e
+    - report_file: A-033.2-FRONTEND-SPEC-EXECUTIVE_CONTROL_TOWER_FRONTEND_UI_CONTRACT_REPORT.md
+    - frontend_module_strategy: PASS (future frontend/modules/executive-control-tower/ with types, api, hooks, permissions, guards, and components)
+    - routes: PASS (8 read-only console routes under /console/executive-control-tower)
+    - types: PASS
+    - API_client: PASS
+    - hooks: PASS
+    - permissions: PASS
+    - guards: PASS
+    - components: PASS
+    - anti_fake_UI_rules: PASS
+    - frontend_test_plan: PASS
+    - future_E2E_plan: PASS
+    - frontend_implementation_started: NO
+    - backend_changes: NO
+    - frontend_changes: NO
+    - routes_created: NO
+    - components_created: NO
+    - tests_created: NO
+    - migrations_created: NO
+    - no_fake_kpi: PASS
+    - no_hardcoded_metric: PASS
+    - no_fake_trend: PASS
+    - no_hidden_score: PASS
+    - no_autonomous_decision: PASS
+    - no_auto_escalation: PASS
+    - no_provider_integration: PASS
+    - no_production_ready_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS
+    - final_verdict: A-033.2-FRONTEND-SPEC CLOSED — EXECUTIVE CONTROL TOWER FRONTEND UI CONTRACT SPECIFIED
+    - next_action_id: A-033.2-FRONTEND
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
