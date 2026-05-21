@@ -104,6 +104,25 @@ _CANONICAL_AUDITOR_PERMISSIONS: Set[str] = {
     "procurement.read",
 }
 
+_EXECUTIVE_CONTROL_TOWER_PERMISSIONS: Set[str] = {
+    "admin.executive_control_tower.read",
+    "admin.executive_control_tower.summary.read",
+    "admin.executive_control_tower.assignments.read",
+    "admin.executive_control_tower.documents.read",
+    "admin.executive_control_tower.sla_risk.read",
+    "admin.executive_control_tower.strategy.read",
+    "admin.executive_control_tower.audit.read",
+    "admin.executive_control_tower.department.read",
+    "admin.executive_control_tower.metric_registry.read",
+}
+
+_EXECUTIVE_CONTROL_TOWER_AUDITOR_PERMISSIONS: Set[str] = {
+    "admin.executive_control_tower.read",
+    "admin.executive_control_tower.summary.read",
+    "admin.executive_control_tower.audit.read",
+    "admin.executive_control_tower.metric_registry.read",
+}
+
 BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     "superadmin": {
         "admin.dashboard.read",
@@ -172,6 +191,15 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.rector_assignments.outbox.manage",
         "admin.rector_assignments.sla.manage",
         "admin.rector_assignments.escalation_policy.manage",
+        "admin.executive_control_tower.read",
+        "admin.executive_control_tower.summary.read",
+        "admin.executive_control_tower.assignments.read",
+        "admin.executive_control_tower.documents.read",
+        "admin.executive_control_tower.sla_risk.read",
+        "admin.executive_control_tower.strategy.read",
+        "admin.executive_control_tower.audit.read",
+        "admin.executive_control_tower.department.read",
+        "admin.executive_control_tower.metric_registry.read",
     }
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS,
     "admin": {
@@ -243,6 +271,15 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.rector_assignments.outbox.manage",
         "admin.rector_assignments.sla.manage",
         "admin.rector_assignments.escalation_policy.manage",
+        "admin.executive_control_tower.read",
+        "admin.executive_control_tower.summary.read",
+        "admin.executive_control_tower.assignments.read",
+        "admin.executive_control_tower.documents.read",
+        "admin.executive_control_tower.sla_risk.read",
+        "admin.executive_control_tower.strategy.read",
+        "admin.executive_control_tower.audit.read",
+        "admin.executive_control_tower.department.read",
+        "admin.executive_control_tower.metric_registry.read",
     }
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS,
     "auditor": {
@@ -262,6 +299,7 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "federation.read",
         "developer_platform.read",
     }
+    | _EXECUTIVE_CONTROL_TOWER_AUDITOR_PERMISSIONS
     | _CANONICAL_AUDITOR_PERMISSIONS,
     "student": {
         "enrollments.read",

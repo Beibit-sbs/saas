@@ -1,0 +1,1 @@
+"""Executive Control Tower read-only backend foundation."""

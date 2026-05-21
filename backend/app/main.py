@@ -128,6 +128,7 @@ from app.platform.router_developer_api import router as platform_developer_api_r
 from app.platform.router_internal import router as platform_v1_internal_router
 from app.platform.router_mcp import router as platform_v1_mcp_router
 from app.platform.router_semantic import router as platform_v2_semantic_router
+from app.modules.executive_control_tower.router import router as executive_control_tower_router
 from app.modules.document_workflow_os.router import router as doc_workflow_router
 from app.modules.rector_assignment_workflow.router import router as rector_assignment_router
 from app.modules.profiles.router import router as profiles_router
@@ -463,6 +464,7 @@ app.include_router(platform_v1_mcp_router)
 app.include_router(platform_v2_semantic_router)
 app.include_router(rector_assignment_router)
 app.include_router(doc_workflow_router)
+app.include_router(executive_control_tower_router)
 
 
 def _register_optional_routers(fastapi_app: FastAPI) -> None:
