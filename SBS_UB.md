@@ -1,9 +1,9 @@
 ]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-031.6-RUNTIME
-    - current_stage: A-031.6-SPEC complete / rector assignment pilot readiness rollout package specified
-    - last_completed_action_id: A-031.6-SPEC
-    - next_action_id: A-031.6-RUNTIME
-    - updated_at: 2026-05-21 (A-031.6-SPEC complete: pilot readiness package specified; Option A pilot (Rectorate + controlled executor); 7 seed users; 5 templates; 3 SLA policies; 1 escalation policy (4 levels); 6 demo scenarios; training guides; support/rollback plan; acceptance criteria; A-031.6-RUNTIME selected (seed/template package); A-032.0-SPEC deferred; metrics unchanged L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150; next action: A-031.6-RUNTIME)
+    - status: ready_for_A-031.6-B1
+    - current_stage: A-031.6-RUNTIME complete / rector assignment pilot seed template role package implemented
+    - last_completed_action_id: A-031.6-RUNTIME
+    - next_action_id: A-031.6-B1
+    - updated_at: 2026-05-21 (A-031.6-RUNTIME complete: pilot_package.py created (Option A pure-data seed module, 13 functions); 171 validation tests pass; Gate 1 import sanity PASS; Gate 2 171/171 targeted PASS; Gate 4 954 A-030 continuity PASS; Gate 5 anti-fake scan PASS; Gate 6 diff check PASS; metrics unchanged L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150; next action: A-031.6-B1)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -14775,3 +14775,63 @@ A-031.5-FRONTEND-B1 execution block:
     - baseline_maturity_locked: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (unchanged)
     - final_decision: A-031.6-SPEC CLOSED — RECTOR ASSIGNMENT PILOT READINESS PACKAGE SPECIFIED
     - next_action_id: A-031.6-RUNTIME
+
+---
+
+## A-031.6-RUNTIME — Rector Assignment OS Pilot Seed Template Role Package
+
+### Action
+- action_id: A-031.6-RUNTIME
+- action_type: RUNTIME (implementation)
+- wave: 20
+- parent_spec: A-031.6-SPEC
+- status: COMPLETE
+
+### Implementation (Option A — Pure-Data Seed Module)
+- file_created: backend/app/modules/rector_assignment_workflow/pilot_package.py
+- mode: pure Python deterministic data module (no DB, no external calls)
+- lines: ~580
+- functions: 13
+  - get_pilot_role_matrix() → 6 roles with permissions/allowed/forbidden actions
+  - get_pilot_users() → 7 placeholder users (@pilot.local, password=None, is_placeholder=True)
+  - get_pilot_assignment_templates() → 5 templates (NORMAL/HIGH, 3–7 days)
+  - get_pilot_sla_policies() → 3 policies (CRITICAL/HIGH/NORMAL)
+  - get_pilot_escalation_policies() → 1 policy, 4 levels (CONTROLLER/PRORECTOR/RECTOR/PLATFORM_ADMIN)
+  - get_pilot_seed_assignments() → 10 assignments (10 distinct statuses)
+  - get_pilot_demo_scenarios() → 6 scenarios with steps/acceptance_check/anti_fake_check
+  - get_pilot_training_guides() → 5 guides
+  - get_pilot_support_plan() → P1–P5 triage, daily_checkin_required=True
+  - get_pilot_rollback_plan() → no_drop_table=True, preserve_audit_data=True, explicit_approval_required=True
+  - get_pilot_acceptance_criteria() → 90% threshold, zero-security, zero-live-dispatch
+  - get_pilot_readiness_package() → aggregator (all 12 sections)
+  - validate_pilot_package() → returns PASS/FAIL with errors/warnings list
+
+### Test File
+- file_created: backend/tests/test_a0316_rector_assignment_pilot_package.py
+- tests: 171
+- sections: 15 (metadata, roles, users, templates, SLA, escalation, assignments, scenarios, guides, support, rollback, acceptance, full package, validation, anti-fake)
+
+### Gate Evidence
+- Gate 1 (import sanity): PASS — A0316_IMPORT_SANITY_PASS
+- Gate 2 (targeted tests): PASS — 171/171 passed in 0.67s
+- Gate 4 (A-030 continuity): PASS — 954 passed, 4 skipped
+- Gate 5 (anti-fake scan): PASS — no live dispatch, no real secrets
+- Gate 6 (diff check): PASS
+
+### Anti-Fake / Governance
+- no_backend_side_effects: TRUE (pure data, no DB writes)
+- no_live_dispatch: TRUE (LIVE_DISPATCH_ENABLED = False)
+- no_provider_integration: TRUE (PROVIDER_INTEGRATION_ENABLED = False)
+- no_real_personal_data: TRUE (REAL_PERSONAL_DATA_INCLUDED = False)
+- no_production_ready_claim: TRUE (PRODUCTION_READY_CLAIM = False)
+- no_l5_l6_claim: TRUE (L5_L6_ELEVATION_CLAIMED = False)
+- no_autonomous_escalation: TRUE (AUTONOMOUS_ESCALATION_ENABLED = False)
+- no_passwords_in_users: TRUE
+- all_emails_pilot_local: TRUE
+
+### Maturity Metrics (unchanged)
+- L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 (LOCKED)
+
+### Next Action
+- next_action_id: A-031.6-B1
+- A-031.6-B1: Pilot onboarding brief / kick-off materials (or next wave as directed)

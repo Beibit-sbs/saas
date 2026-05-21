@@ -12537,3 +12537,50 @@ The Rector Assignment OS is the **first fully validated product vertical** in th
 **A-031.6-SPEC CLOSED — RECTOR ASSIGNMENT PILOT READINESS PACKAGE SPECIFIED**
 
 **Next Action**: A-031.6-RUNTIME
+
+---
+
+## A-031.6-RUNTIME — Rector Assignment OS Pilot Seed Template Role Package
+
+### Status
+- **status**: COMPLETE
+- **action_type**: RUNTIME (implementation)
+- **wave**: 20
+- **date**: 2026-05-21
+
+### Implementation Summary
+- Pure-data seed module (Option A): `backend/app/modules/rector_assignment_workflow/pilot_package.py`
+- 13 functions, ~580 lines, no DB, no external calls, no live dispatch
+- 6 pilot roles with full permission matrices
+- 7 placeholder pilot users (all @pilot.local, password=None, is_placeholder=True)
+- 5 assignment templates (NORMAL/HIGH priority, 3–7 day due dates)
+- 3 SLA policies (CRITICAL/HIGH/NORMAL)
+- 1 escalation policy (4 levels, all require_manual_confirmation=True, no autonomous action)
+- 10 seed assignments (10 statuses: DRAFT/ASSIGNED/ACCEPTED/IN_PROGRESS/REPORT_SUBMITTED/RETURNED_FOR_REVISION/COMPLETED/OVERDUE/ESCALATED/CANCELLED)
+- 6 demo scenarios with steps, acceptance checks, and anti-fake checks
+- 5 training guide outlines
+- Support plan with P1–P5 triage, daily_checkin_required=True
+- Rollback plan (no_drop_table, preserve_audit_data, explicit_approval_required, no_hard_delete)
+- Acceptance criteria (90% threshold, zero security incidents, zero live dispatch, zero fake metrics)
+- `validate_pilot_package()` returns PASS/FAIL with errors and warnings
+
+### Test Evidence
+- `backend/tests/test_a0316_rector_assignment_pilot_package.py`: 171 tests across 15 sections
+- Gate 1 (import sanity): PASS
+- Gate 2 (targeted 171/171): PASS in 0.67s
+- Gate 4 (A-030 continuity 954 passed): PASS
+- Gate 5 (anti-fake scan): PASS
+- Gate 6 (diff check): PASS
+
+### Anti-Fake Guarantees
+- LIVE_DISPATCH_ENABLED = False
+- PROVIDER_INTEGRATION_ENABLED = False
+- REAL_PERSONAL_DATA_INCLUDED = False
+- PRODUCTION_READY_CLAIM = False
+- L5_L6_ELEVATION_CLAIMED = False
+- AUTONOMOUS_ESCALATION_ENABLED = False
+- Metrics unchanged: L0=0/L1=0/L2=0/L3=55/L4=68/L5=25/L6=2/total=150
+
+**A-031.6-RUNTIME CLOSED — RECTOR ASSIGNMENT PILOT SEED TEMPLATE ROLE PACKAGE IMPLEMENTED**
+
+**Next Action**: A-031.6-B1
