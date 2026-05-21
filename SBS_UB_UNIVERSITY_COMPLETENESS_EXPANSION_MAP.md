@@ -13349,3 +13349,15 @@ Metrics preserved:
 - no_overclaim_checklist: PASS
 - future_runtime_path: PASS (recommended A-034.3-RUNTIME)
 - next_action_id: A-034.3-RUNTIME
+
+## A-035.0-SPEC - Student Lifecycle Suite Product Vertical Selection
+
+- source_A0343_SPEC_commit: 01244e8
+- report_file: A-035.0-SPEC-STUDENT_LIFECYCLE_SUITE_PRODUCT_VERTICAL_SELECTION_REPORT.md
+- A0343_runtime_deferral_marker: A-034.3-RUNTIME_DEFERRED_UNTIL_PRE_DEMO_PHASE
+- selected_vertical: Student Lifecycle Suite
+- selected_initial_slice: Student Lifecycle Suite Foundation Slice
+- candidate_module_map: admissions, applicant_management, student_profile, enrollment, academic_records, transcript, degree_progress, graduation_readiness, student_requests, student_appeals_workflow, interventions, student_success_risk_visibility
+- anti_fake_sensitive_domain_boundaries: no_real_student_data, no_real_applicant_data, no_credentials, no_autonomous_admission_decision, no_autonomous_appeal_decision, no_automatic_graduation_eligibility_decision, no_fake_official_transcript, no_fake_digital_signature, no_fake_SIS_sync, no_provider_integration_claim, no_Platonus_live_integration_claim, no_hidden_student_risk_score, no_discriminatory_score, no_production_ready_claim, no_sales_ready_claim, no_L5_L6_claim
+- recommended_next_action: A-035.1-SPEC - Student Lifecycle Suite Product Map / Workflow Specification
+- next_action_id: A-035.1-SPEC
