@@ -129,7 +129,7 @@ function makeSectionResponse<T extends { metric_group: string; group_label: stri
     metric_group,
     group_label,
     metrics,
-  } as T;
+  } as unknown as T;
 }
 
 const overviewMetrics = [
