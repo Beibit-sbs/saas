@@ -42,9 +42,29 @@ import type {
 
 const BASE = '/api/admin/documents';
 
+type QueryValue = string | number | boolean | null | undefined;
+
+function toQueryParams<T extends object>(filters?: T) {
+  if (!filters) {
+    return undefined;
+  }
+
+  const params: Record<string, string | number | boolean | undefined> = {};
+
+  for (const [key, value] of Object.entries(filters) as Array<[string, QueryValue]>) {
+    if (value === undefined || value === null || value === '') {
+      continue;
+    }
+
+    params[key] = value;
+  }
+
+  return params;
+}
+
 export const documentWorkflowApi = {
   listDocuments: (params?: DocumentListFilters) =>
-    apiGet<DocumentListResponse>(BASE, params),
+    apiGet<DocumentListResponse>(BASE, toQueryParams(params)),
   createDocument: (payload: DocumentCreatePayload) => apiPost<Document>(BASE, payload),
   getDocument: (documentId: number | string) => apiGet<DocumentDetail>(`${BASE}/${documentId}`),
   updateDocument: (documentId: number | string, payload: DocumentUpdatePayload) =>
@@ -74,7 +94,7 @@ export const documentWorkflowApi = {
   ) => apiPost<DocumentAssignmentLink>(`${BASE}/${documentId}/link-assignment/${assignmentId}`, payload),
 
   listDecrees: (params?: DecreeListFilters) =>
-    apiGet<DecreeListResponse>(`${BASE}/decrees`, params),
+    apiGet<DecreeListResponse>(`${BASE}/decrees`, toQueryParams(params)),
   createDecree: (payload: DecreeCreatePayload) =>
     apiPost<OrderDecree>(`${BASE}/decrees`, payload),
   getDecree: (decreeId: number | string) => apiGet<OrderDecree>(`${BASE}/decrees/${decreeId}`),
@@ -96,7 +116,7 @@ export const documentWorkflowApi = {
     apiPost<OrderDecree>(`${BASE}/decrees/${decreeId}/archive`, payload),
 
   listCorrespondence: (params?: CorrespondenceListFilters) =>
-    apiGet<CorrespondenceListResponse>(`${BASE}/correspondence`, params),
+    apiGet<CorrespondenceListResponse>(`${BASE}/correspondence`, toQueryParams(params)),
   createIncomingCorrespondence: (payload: CorrespondenceIncomingCreatePayload) =>
     apiPost<CorrespondenceItem>(`${BASE}/correspondence/incoming`, payload),
   createOutgoingCorrespondence: (payload: CorrespondenceOutgoingCreatePayload) =>

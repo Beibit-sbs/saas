@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: blocked_A-032.3-E2E
-    - current_stage: A-032.3-E2E blocked / browser path serves stale frontend image and frontend rebuild is blocked by current TypeScript errors in document_workflow api filters
+    - status: blocked_A-032.3-E2E.R1
+    - current_stage: A-032.3-E2E.R1 blocked / api.ts filter typing fixed and live frontend rebuilt, but browser E2E still fails on archive route rendering plus over-strict Playwright assertions
     - last_completed_action_id: A-032.2-FRONTEND-B1
-    - next_action_id: A-032.3-E2E.R1
-    - updated_at: 2026-05-21 (A-032.3-E2E blocked during validation-only browser/runtime gate for document_workflow_os; static route inventory PASS 12/12; backend route inventory PASS 33 routes; targeted frontend Vitest PASS 14/14; A-032.1 backend smoke PASS 28/28; A-031 continuity PASS 359/359; anti-fake labels and dashboard guards remain present; frontend-tests image was stale and required rebuild to see the new smoke spec; rerun then confirmed the live browser path frontend image is stale and missing /console/documents routes; rebuilding the image-based frontend service is currently blocked by TypeScript errors in frontend/modules/document-workflow/api.ts filter typing; no backend changes, no migrations, no provider integration, no auto-signature, no auto-approval, no fake registry/delivery claim, no production-ready claim, no maturity movement; next action: A-032.3-E2E.R1)
+    - next_action_id: A-032.3-E2E.R2
+    - updated_at: 2026-05-21 (A-032.3-E2E.R1 remediation reran the blocked document_workflow_os browser gate from d316fb5; frontend/modules/document-workflow/api.ts filter typing was fixed; Docker frontend typecheck PASS; targeted frontend Vitest PASS 14/14; frontend-tests image rebuild PASS; live frontend image rebuild PASS and standalone runtime now contains /app/.next/server/app/(admin)/console/documents; Playwright rerun executed against the rebuilt runtime and produced 3 passed / 4 failed, with archive route heading/content still not rendering as expected and two over-strict text assertions failing on duplicate visible copy; A-032.1 backend smoke PASS 28/28; A-031 continuity PASS 359/359; anti-fake guards and required labels remain present; backend non-change remains limited to backend/.coverage; no backend changes, no migrations, no provider integration, no auto-signature, no auto-approval, no fake registry/delivery claim, no production-ready claim, no maturity movement; next action: A-032.3-E2E.R2)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -112,6 +112,36 @@
     - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
     - final_verdict: A-032.3-E2E BLOCKED — BROWSER PATH SERVES STALE FRONTEND IMAGE AND REQUIRED FRONTEND REBUILD IS BLOCKED BY CURRENT TYPESCRIPT ERRORS IN DOCUMENT_WORKFLOW API FILTERS
     - next_action_id: A-032.3-E2E.R1
+- A-032.3-E2E.R1 execution block:
+    - mode: remediation_and_revalidation_only
+    - purpose: remediate_document_workflow_typescript_filter_blocker_and_rerun_browser_e2e
+    - source_of_truth_check: PASS (A-032.3-E2E commit d316fb5 verified; source status before R1 was blocked_A-032.3-E2E with next action A-032.3-E2E.R1)
+    - source_commit: d316fb5
+    - remediation_report: A-032.3-E2E.R1-DOCUMENT_WORKFLOW_E2E_REMEDIATION_REPORT.md
+    - remediation_file: frontend/modules/document-workflow/api.ts
+    - remediation_scope: PASS (minimal query-filter normalization only; no backend changes, no migrations, no new product features)
+    - typescript_root_cause: PASS (typed list filter interfaces lacked the record shape required by shared apiGet query params)
+    - typescript_fix: PASS
+    - docker_typecheck_after_fix: PASS
+    - targeted_frontend_tests: PASS (14/14)
+    - frontend_tests_image_rebuild: PASS
+    - frontend_tests_spec_visibility: PASS
+    - live_frontend_build: PASS
+    - live_frontend_restart: PASS
+    - live_frontend_route_presence: PASS_WITH_STANDALONE_LAYOUT (/app/.next/server/app/(admin)/console/documents present after rebuild; legacy /app/app path no longer authoritative)
+    - playwright_execution: FAIL (3 passed, 4 failed)
+    - playwright_failure_classification: BLOCKED_BROWSER_E2E
+    - playwright_failure_details: archive route heading/content did not render as expected in browser E2E; document registry hard-delete assertion and dashboard guard assertion were over-strict and matched duplicate visible UI text
+    - backend_smoke_a0321: PASS (28/28)
+    - continuity_a031: PASS (359/359)
+    - anti_fake_scan: PASS
+    - required_labels_scan: PASS
+    - dashboard_guard_scan: PASS
+    - backend_non_change_review: PASS (backend/.coverage only)
+    - no_production_ready_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
+    - final_verdict: A-032.3-E2E.R1 BLOCKED — ORIGINAL TYPESCRIPT/REBUILD BLOCKER RESOLVED, BUT BROWSER E2E STILL FAILS ON ARCHIVE ROUTE RENDERING AND OVER-STRICT PLAYWRIGHT ASSERTIONS
+    - next_action_id: A-032.3-E2E.R2
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling

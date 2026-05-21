@@ -12859,3 +12859,25 @@ Metrics preserved:
 - no_l5_l6_claim: PASS
 - final_verdict: A-032.3-E2E BLOCKED - browser path serves stale frontend image and required frontend rebuild is blocked by current TypeScript errors in document_workflow api filters
 - next_action_id: A-032.3-E2E.R1
+
+## A-032.3-E2E.R1 - Document Workflow E2E Remediation
+
+- source_A0323_E2E_commit: d316fb5
+- remediation_report: A-032.3-E2E.R1-DOCUMENT_WORKFLOW_E2E_REMEDIATION_REPORT.md
+- remediation_summary: frontend/modules/document-workflow/api.ts filter typing fixed via minimal query normalization; frontend-tests and live frontend images rebuilt; browser runtime now contains the document workflow route artifacts in standalone output
+- typescript_result: PASS
+- targeted_frontend_tests: PASS (14/14)
+- frontend_tests_rebuild: PASS
+- live_frontend_rebuild: PASS
+- live_route_presence: PASS_WITH_STANDALONE_LAYOUT (/app/.next/server/app/(admin)/console/documents present after rebuild)
+- playwright_result: BLOCKED_BROWSER_E2E
+- blocked_reason: Playwright rerun improved to 3 passed / 4 failed, but archive route heading/content did not render as expected and two strict text assertions matched duplicate visible UI text
+- backend_smoke_a0321: PASS (28/28)
+- continuity_a031: PASS (359/359)
+- anti_fake_scan: PASS
+- backend_non_change: PASS (backend/.coverage only)
+- metrics_unchanged: PASS (baseline_total=150, extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11)
+- no_production_ready_claim: PASS
+- no_l5_l6_claim: PASS
+- final_verdict: A-032.3-E2E.R1 BLOCKED - original TypeScript/rebuild blocker resolved, but browser E2E still fails on archive route rendering and over-strict Playwright assertions
+- next_action_id: A-032.3-E2E.R2
