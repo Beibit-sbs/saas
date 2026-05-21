@@ -1,9 +1,9 @@
-]633;E;sed -n '1p' SBS_UB.md;9ce3b6cd-e75d-4a5f-8b39-7dace194cfee]633;C]633;E;sed -n '1p' SBS_UB.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-032.2-FRONTEND
-    - current_stage: A-032.2-FRONTEND-SPEC complete / document decree correspondence role-based UI specified
-    - last_completed_action_id: A-032.2-FRONTEND-SPEC
-    - next_action_id: A-032.2-FRONTEND
-    - updated_at: 2026-05-21 (A-032.2-FRONTEND-SPEC complete as docs-only role-based UI specification for document_workflow_os; frontend/modules/document-workflow strategy selected; 12 admin-console routes specified; typed API client, hooks, permission model, component plan, anti-fake dashboard/data_source guards, frontend test plan, and future A-032.3-E2E plan documented; no frontend runtime started, no backend changes, no tests, no migrations, no maturity movement; next action: A-032.2-FRONTEND)
+- run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
+    - status: ready_for_A-032.3-E2E
+    - current_stage: A-032.2-FRONTEND-B1 complete / document decree correspondence UI quality baseline confirmed
+    - last_completed_action_id: A-032.2-FRONTEND-B1
+    - next_action_id: A-032.3-E2E
+    - updated_at: 2026-05-21 (A-032.2-FRONTEND-B1 closed as validation/reporting-only quality baseline confirmation for document_workflow_os UI; source frontend runtime commit d8c8d2d verified; 12 admin-console route files confirmed; duplicate route typo classified as SUMMARY_TYPO_ONLY; Docker Compose type-check PASS; authoritative targeted host Vitest PASS 14/14; compose targeted test image freshness caveat reproduced and documented as non-blocking FRONTEND_TEST_IMAGE_FRESHNESS_CAVEAT; anti-fake labels, dashboard guards, BFF usage, permission gating, and backend non-change all confirmed; no frontend feature work, no backend changes, no migrations, no E2E, no production-ready claim, no maturity movement; next action: A-032.3-E2E)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -30,6 +30,58 @@
     - no_production_ready_claim: PASS
     - final_verdict: A-032.2-FRONTEND-SPEC CLOSED — DOCUMENT / DECREE / CORRESPONDENCE ROLE-BASED UI SPECIFIED
     - next_action_id: A-032.2-FRONTEND
+- A-032.2-FRONTEND execution block:
+    - mode: frontend_runtime_only
+    - purpose: implement_document_decree_correspondence_ui
+    - source_of_truth_check: PASS (A-032.2-FRONTEND-SPEC commit 84faffd verified; source status before runtime was ready_for_A-032.2-FRONTEND)
+    - source_commit: 84faffd
+    - implementation_commit: d8c8d2d
+    - report_file: A-032.2-FRONTEND-DOCUMENT_DECREE_CORRESPONDENCE_UI_IMPLEMENTATION_REPORT.md
+    - gate_log_dir: .gate-logs/a0322_frontend
+    - frontend_module_path: frontend/modules/document-workflow/
+    - route_count_implemented: 12
+    - typed_api_surface: PASS
+    - hooks_surface: PASS
+    - permission_surface: PASS
+    - ui_routes: PASS
+    - anti_fake_labels: PASS
+    - dashboard_guard_contract: PASS
+    - docker_typecheck: PASS
+    - targeted_host_vitest: PASS (14 passed)
+    - docker_targeted_vitest_file_view: NON_BLOCKING_ENVIRONMENT_VIEW_MISMATCH
+    - backend_non_change_check: PASS (backend code unchanged; pre-existing backend/.coverage remained dirty)
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175)
+    - final_verdict: A-032.2-FRONTEND CLOSED — DOCUMENT / DECREE / CORRESPONDENCE UI IMPLEMENTED
+    - next_action_id: A-032.2-FRONTEND-B1
+- A-032.2-FRONTEND-B1 execution block:
+    - mode: validation_and_reporting_only
+    - purpose: confirm_document_decree_correspondence_ui_quality_baseline
+    - source_of_truth_check: PASS (A-032.2-FRONTEND commit d8c8d2d verified; tracker top-of-file handoff lag corrected during docs-only B1 closure)
+    - source_commit: d8c8d2d
+    - source_spec_commit: 84faffd
+    - report_file: A-032.2-FRONTEND-B1-DOCUMENT_DECREE_CORRESPONDENCE_UI_QUALITY_BASELINE_REPORT.md
+    - gate_log_dir: .gate-logs/a0322_frontend_b1
+    - repo_hygiene: PASS (expected non-scope dirt only: backend/.coverage, .gate-logs/, A-027.9-BATCH3_SELECTION_AND_SPECIFICATION.md)
+    - route_inventory: PASS (12/12 expected route files present)
+    - duplicate_route_check: PASS (SUMMARY_TYPO_ONLY; no duplicated /console/documents/console/documents path found)
+    - implementation_evidence: PASS (module, typed API/hooks/guards, permissions, components, tests, and implementation report present)
+    - docker_typecheck: PASS
+    - targeted_frontend_tests: PASS (authoritative host Vitest 14/14)
+    - compose_targeted_test_caveat: FRONTEND_TEST_IMAGE_FRESHNESS_CAVEAT (compose targeted selection reproduced No test files found)
+    - anti_fake_scan: PASS
+    - required_labels_scan: PASS
+    - dashboard_guard_scan: PASS
+    - api_bff_scan: PASS
+    - direct_backend_url_scan: PASS
+    - permission_scan: PASS
+    - backend_non_change_review: PASS (no backend code diff since d8c8d2d; only backend/.coverage dirty in worktree)
+    - route_export_scan: PASS_WITH_EXPORT_SYNTAX_VARIANT (3 literal export default + 9 re-export-as-default = 12/12 default exports)
+    - git_diff_check: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
+    - no_e2e_claim: PASS
+    - no_production_ready_claim: PASS
+    - final_verdict: A-032.2-FRONTEND-B1 CLOSED — DOCUMENT / DECREE / CORRESPONDENCE UI QUALITY BASELINE CONFIRMED
+    - next_action_id: A-032.3-E2E
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling

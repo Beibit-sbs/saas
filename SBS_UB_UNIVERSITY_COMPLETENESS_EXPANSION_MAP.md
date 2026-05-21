@@ -12745,3 +12745,85 @@ Supporting:
 - metrics_unchanged: PASS (baseline_total=150, extension_total_count=25, total_tracked_modules=175, expansion_L2=67, expansion_L3=50, expansion_L4_visibility=40, expansion_L4_api=40)
 - final_verdict: A-032.2-FRONTEND-SPEC CLOSED — DOCUMENT / DECREE / CORRESPONDENCE ROLE-BASED UI SPECIFIED
 - next_action_id: A-032.2-FRONTEND
+
+## A-032.2-FRONTEND — Document / Decree / Correspondence UI Implementation
+
+- source_A0322_SPEC_commit: 84faffd
+- implementation_commit: d8c8d2d
+- source_report: A-032.2-FRONTEND-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_ROLE_BASED_UI_REPORT.md
+- implementation_report: A-032.2-FRONTEND-DOCUMENT_DECREE_CORRESPONDENCE_UI_IMPLEMENTATION_REPORT.md
+- module_root: frontend/modules/document-workflow/
+- implemented_routes: 12 admin-console pages under frontend/app/(admin)/console/documents/
+- implemented_surface: typed API client, hooks, permissions, guards, registry/detail/audit views, decree views, correspondence views, dashboard, archive, and targeted admin tests
+- anti_fake_boundaries_preserved: no auto-sign, no auto-approve, no fake registry numbers, no fake sent/delivered status, no provider delivery claim, no mock production data, dashboard blocked unless fake_metrics=False and data_source=computed_from_documents
+- assignment_integration_boundary: assignment links remain human-initiated only; no Rector Assignment status mutation
+- docker_typecheck: PASS
+- targeted_frontend_tests: PASS (14/14)
+- backend_non_change: PASS
+- metrics_unchanged: PASS (baseline_total=150, extension_total_count=25, total_tracked_modules=175, expansion_L2=67, expansion_L3=50, expansion_L4_visibility=40, expansion_L4_api=40)
+- final_verdict: A-032.2-FRONTEND CLOSED — DOCUMENT / DECREE / CORRESPONDENCE UI IMPLEMENTED
+- next_action_id: A-032.2-FRONTEND-B1
+
+## A-032.2-FRONTEND-B1 — Document / Decree / Correspondence UI Quality Baseline
+
+- source_A0322_FRONTEND_commit: d8c8d2d
+- source_A0322_SPEC_commit: 84faffd
+- source_report: A-032.2-FRONTEND-DOCUMENT_DECREE_CORRESPONDENCE_UI_IMPLEMENTATION_REPORT.md
+- baseline_report: A-032.2-FRONTEND-B1-DOCUMENT_DECREE_CORRESPONDENCE_UI_QUALITY_BASELINE_REPORT.md
+- mode: validation_and_reporting_only
+- tracker_state_before_docs_closure: ready_for_A-032.2-FRONTEND / next_action_id=A-032.2-FRONTEND
+
+Route inventory confirmed:
+- /console/documents
+- /console/documents/new
+- /console/documents/[id]
+- /console/documents/[id]/audit
+- /console/documents/decrees
+- /console/documents/decrees/new
+- /console/documents/decrees/[id]
+- /console/documents/correspondence
+- /console/documents/correspondence/incoming/new
+- /console/documents/correspondence/outgoing/new
+- /console/documents/dashboard
+- /console/documents/archive
+
+Validation summary:
+- route_inventory: PASS (12/12)
+- duplicate_route_check: PASS (SUMMARY_TYPO_ONLY)
+- docker_typecheck: PASS
+- targeted_frontend_tests: PASS (host Vitest 14/14)
+- compose_targeted_test_caveat: FRONTEND_TEST_IMAGE_FRESHNESS_CAVEAT
+- anti_fake_labels: PASS
+- dashboard_guards: PASS
+- api_bff_review: PASS
+- permission_ui_review: PASS
+- backend_non_change: PASS
+- route_export_scan: PASS_WITH_EXPORT_SYNTAX_VARIANT
+- git_diff_check: PASS
+
+Quality boundaries preserved:
+- no auto-sign button
+- no auto-approve button
+- no fake registry numbers
+- no fake sent/delivered status
+- no provider delivery status claim
+- no mock production data fallback
+- dashboard widgets blocked unless fake_metrics=False and data_source=computed_from_documents
+- assignment links remain human-initiated only; no Rector Assignment status mutation
+- no backend code changes
+- no E2E claim
+- no production-ready claim
+- no maturity movement
+
+Metrics preserved:
+- baseline_total=150
+- extension_total_count=25
+- total_tracked_modules=175
+- expansion_L2_foundation_count=67
+- expansion_L3_logic_count=50
+- expansion_L4_visibility_count=40
+- expansion_L4_api_route_count=40
+- provider_readiness_foundation_count=11
+
+- final_verdict: A-032.2-FRONTEND-B1 CLOSED — DOCUMENT / DECREE / CORRESPONDENCE UI QUALITY BASELINE CONFIRMED
+- next_action_id: A-032.3-E2E
