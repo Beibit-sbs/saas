@@ -1,0 +1,1 @@
+export { OutgoingCorrespondenceCreatePage as default } from '@/modules/document-workflow/components/pages';

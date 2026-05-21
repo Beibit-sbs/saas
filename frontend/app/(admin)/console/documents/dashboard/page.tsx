@@ -1,0 +1,1 @@
+export { DocumentWorkflowDashboardPage as default } from '@/modules/document-workflow/components/pages';

@@ -1,0 +1,1 @@
+export { DocumentCreatePage as default } from '@/modules/document-workflow/components/pages';

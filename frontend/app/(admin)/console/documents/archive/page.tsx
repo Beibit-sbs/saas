@@ -1,0 +1,1 @@
+export { ArchivePage as default } from '@/modules/document-workflow/components/pages';

@@ -1,0 +1,1 @@
+export { DocumentRegistryPage as default } from '@/modules/document-workflow/components/pages';

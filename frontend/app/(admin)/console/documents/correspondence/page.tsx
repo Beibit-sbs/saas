@@ -1,0 +1,1 @@
+export { CorrespondenceRegistryPage as default } from '@/modules/document-workflow/components/pages';

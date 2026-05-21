@@ -1,0 +1,1 @@
+export { DecreeRegistryPage as default } from '@/modules/document-workflow/components/pages';

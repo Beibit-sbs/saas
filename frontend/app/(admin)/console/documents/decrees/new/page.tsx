@@ -1,0 +1,1 @@
+export { DecreeCreatePage as default } from '@/modules/document-workflow/components/pages';
