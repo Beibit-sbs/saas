@@ -2842,6 +2842,25 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - metrics_unchanged: PASS
 - next_action_id: A-037.2-B1
 
+## A-037.2-B1 - Research / Science Backend Foundation Quality Baseline
+
+- source_A0372_runtime_commit: a149c36
+- source_A0372_spec_commit: 02b5564
+- backend_module_path: backend/app/modules/research_science/
+- migration_file: backend/alembic/versions/rs37a2rt01_a0372_research_science_tables.py
+- table_count: 15
+- route_count: 43
+- permission_count: 40
+- targeted_test_contract_result: BLOCKED (expected backend/tests/test_a0372_research_science_audit_evidence_security.py missing)
+- targeted_test_diagnostic_runtime_path: PASS (44 passed, 0 failed using backend/tests/test_a0372_research_science_audit_security.py)
+- continuity_result: PASS (100 passed, 0 failed)
+- import_sanity: PASS
+- rbac_review: PASS
+- anti_fake_scan: PASS
+- backend_only_scope: PASS
+- limitations: frontend_not_implemented; e2e_not_implemented; provider_integrations_not_implemented; official_verification_not_implemented; exact_test_artifact_contract_incomplete_due_to_missing_expected_filename
+- next_action_id: A-037.2-B1.R1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
