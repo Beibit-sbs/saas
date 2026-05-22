@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-036.1-SPEC
-    - current_stage: A-036.0-SPEC complete / academic operations suite product vertical selected
-    - last_completed_action_id: A-036.0-SPEC
-    - next_action_id: A-036.1-SPEC
-    - updated_at: 2026-05-22 (A-036.0-SPEC verified the source-of-truth handoff from A-035.5-B1 commit f32f86e, confirmed Executive Governance Suite and Student Lifecycle Suite as CLOSED / BASELINED internal product verticals, reviewed next-vertical options across Academic Operations Suite, Quality / Accreditation Suite, HR / Staff Governance Suite, and Finance / Procurement / Asset Suite, and selected Academic Operations Suite as the third major product vertical for SBS UB; the spec defined the suite identity, initial candidate module scope across curriculum, course catalog, academic calendar, timetable, room allocation, attendance, teaching load, exams, gradebook metadata, dashboard, faculty assignment visibility, and policy exception tracking, plus core flows, role model, sensitive-domain boundaries, and the A-036 evidence roadmap through A-036.5-B1; this action remained spec-only and docs-only with no backend runtime, no frontend runtime, no tests, no Playwright specs, no migrations, no provider integration, no Platonus/SIS integration, no fake grades, no fake exams, no fake attendance, no automated grading, no automatic student sanction, no hidden score, no fake KPI, and no production-ready, sales-ready, GCC-ready, or L5/L6 claims; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; the recommended next action is A-036.1-SPEC for Academic Operations Suite Product Map / Workflow Specification)
+    - status: ready_for_A-036.2-SPEC
+    - current_stage: A-036.1-SPEC complete / academic operations product map and workflow specification complete
+    - last_completed_action_id: A-036.1-SPEC
+    - next_action_id: A-036.2-SPEC
+    - updated_at: 2026-05-22 (A-036.1-SPEC verified the A-036.0-SPEC handoff from commit 56ce59f, confirmed Academic Operations Suite as the selected third product vertical, and defined the detailed product map and workflow specification across suite identity, selected module scope, six core flows, lifecycle state model, role model, permission model concept, domain entity map, frontend surface map, backend/API direction, sensitive-domain risk classification, anti-fake and no-overclaim boundaries, future E2E plan, and evidence roadmap; this action remained spec-only and docs-only with no backend runtime, no frontend runtime, no migrations, no models, no API routes, no tests, no Playwright specs, no provider integration, no Platonus/SIS integration, no fake grades, no fake exams, no fake attendance, no automated grading, no automatic student sanction, no automatic faculty workload decision, no hidden faculty or student score, no fake KPI, and no production-ready, sales-ready, GCC-ready, or L5/L6 claims; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; the recommended next action is A-036.2-SPEC for Academic Operations Suite Backend Domain / DB / API Contract)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1058,6 +1058,52 @@
     - recommended_next_action: A-036.1-SPEC
     - final_verdict: A-036.0-SPEC CLOSED - ACADEMIC OPERATIONS SUITE PRODUCT VERTICAL SELECTED
     - next_action_id: A-036.1-SPEC
+- A-036.1-SPEC execution block:
+    - mode: specification_only_docs_only_product_map_and_workflow_definition
+    - purpose: academic_operations_suite_product_map_and_workflow_specification
+    - source_of_truth_check: PASS (A-036.0-SPEC commit 56ce59f verified; source status before A-036.1-SPEC was ready_for_A-036.1-SPEC)
+    - source_commit: 56ce59f
+    - report_file: A-036.1-SPEC-ACADEMIC_OPERATIONS_SUITE_PRODUCT_MAP_WORKFLOW_SPECIFICATION_REPORT.md
+    - repo_hygiene: PASS (expected non-scope dirt only)
+    - suite_identity_defined: PASS
+    - selected_module_scope_defined: PASS (12 modules)
+    - core_product_flows_defined: PASS (6 flows)
+    - lifecycle_state_model_defined: PASS
+    - role_model_defined: PASS (11 roles)
+    - permission_model_concept_defined: PASS
+    - domain_entity_map_defined: PASS
+    - frontend_surface_map_defined: PASS (12 planned routes under /console/academic-operations)
+    - backend_api_direction_defined: PASS (future academic_operations module, ao_ prefix, /api/admin/academic-operations)
+    - sensitive_domain_risk_classification_defined: PASS
+    - anti_fake_no_overclaim_boundaries_defined: PASS
+    - future_e2e_plan_defined: PASS (14 planned scenarios)
+    - evidence_roadmap_defined: PASS (A-036.2-SPEC through A-036.5-B1)
+    - runtime_implementation_started: PASS_FALSE
+    - no_backend_runtime_changes: PASS
+    - no_frontend_runtime_changes: PASS
+    - no_tests_created: PASS
+    - no_playwright_specs_created: PASS
+    - no_migrations_created: PASS
+    - no_real_academic_data: PASS
+    - no_credentials: PASS
+    - no_provider_integration: PASS
+    - no_platonus_sis_integration: PASS
+    - no_fake_grades: PASS
+    - no_fake_exams: PASS
+    - no_fake_attendance: PASS
+    - no_automated_grading: PASS
+    - no_automatic_student_sanction: PASS
+    - no_automatic_faculty_workload_decision: PASS
+    - no_hidden_faculty_or_student_score: PASS
+    - no_fake_kpi: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
+    - recommended_next_action: A-036.2-SPEC
+    - final_verdict: A-036.1-SPEC CLOSED - ACADEMIC OPERATIONS SUITE PRODUCT MAP / WORKFLOW SPECIFIED
+    - next_action_id: A-036.2-SPEC
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
