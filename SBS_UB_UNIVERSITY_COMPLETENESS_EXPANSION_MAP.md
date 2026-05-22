@@ -2796,6 +2796,25 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - metrics_unchanged: PASS
 - next_action_id: A-037.1-SPEC
 
+## A-037.1-SPEC - Research / Science Suite Product Map / Workflow Specification
+
+- source_A0370_spec_commit: cc43041
+- source_A0365_b1_commit: cfe94ba
+- product_identity: Research / Science Suite as the fourth product vertical covering internal research operations, evidence-first governance, and science dashboards with human review required
+- role_model: rector_or_president; vice_rector_for_science; research_office_director; dean_or_department_director; faculty_researcher; student_researcher; scientific_supervisor; ethics_committee_member; grant_coordinator; internal_auditor_quality_officer; platform_admin
+- workflow_map: research_project_lifecycle; student_research_work; scientific_supervision; publication_registry; conference_participation; grant_application_tracking; grant_execution_and_deliverables; research_ethics_workflow; research_evidence_repository; science_dashboard_and_research_performance; bridge_workflow
+- capability_families: research_operations; publications; conferences; grants; research_data_and_labs; ethics_and_compliance; dashboards_and_analytics; bridges; brain_and_ai_readiness; forbidden_and_sensitive
+- backend_preview: future backend/app/modules/research_science with rs_research_projects, rs_student_research_work, rs_scientific_supervision, rs_publication_registry, rs_conference_participation, rs_grant_applications, rs_grant_deliverables, rs_research_ethics_requests, rs_research_ethics_amendments, rs_research_evidence_metadata, rs_research_bridge_metadata, rs_research_dashboard_snapshots, rs_research_audit_events, rs_research_status_history, and rs_research_limitations plus /api/admin/research-science route family
+- frontend_preview: future frontend/modules/research-science with 13 admin routes and boundary banners for metadata-only research foundation
+- e2e_preview: future a0374 research-science smoke path with 13 route flow, 13 scenario groups, and no-overclaim assertions
+- dashboard_contract: fake_metrics=false; data_source=computed_from_research_science_metadata; incomplete_data supported; provider_integration_enabled=false; official_verification_enabled=false; hidden_score_present=false; human_review_required=true; limitations visible
+- evidence_model: publication_evidence; conference_certificate_metadata; grant_application_evidence; grant_deliverable_evidence; ethics_protocol_evidence; supervision_milestone_evidence; research_project_deliverable_evidence; dataset_metadata_evidence; lab_usage_metadata_evidence; audit_attachment_metadata with metadata_only review states and no external verification claim
+- brain_readiness: research_activity_signal_registry; publication_evidence_quality_signal; grant_execution_risk_signal; research_output_gap_signal; scientific_supervision_delay_signal; ethics_review_delay_signal; research_dashboard_quality_signal; safe_research_summary_agent; safe_publication_metadata_draft_agent; safe_grant_report_draft_agent; safe_ethics_review_summary_agent; safe_research_evidence_summary_agent
+- bridge_model: research_to_executive_governance; research_to_accreditation; research_to_student_lifecycle; research_to_academic_operations; research_to_library_repository; research_to_document_workflow; research_to_finance_procurement; research_to_integration_provider
+- forbidden_actions: fake_publication; fake_conference_certificate; fake_grant_award; fake_grant_evidence; fake_citation_score; hidden_researcher_score; hidden_faculty_score; hidden_student_research_score; discriminatory_research_score; autonomous_ethics_approval; autonomous_grant_submission; autonomous_publication_verification; autonomous_researcher_ranking; external_database_sync_claim_without_provider; official_ranking_claim_without_verified_source
+- metrics_unchanged: PASS
+- next_action_id: A-037.2-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

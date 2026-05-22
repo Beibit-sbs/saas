@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-037.1-SPEC
-     - current_stage: A-037.0-SPEC complete / research science suite product vertical selected
-     - last_completed_action_id: A-037.0-SPEC
-    - next_action_id: A-037.1-SPEC
-     - updated_at: 2026-05-23 (A-037.0-SPEC selected Research / Science Suite as the fourth major SBS UB product vertical from source A-036.5-B1 commit cfe94ba after confirming completed vertical count 3, matrix anchor commit c79cc31, and 467 master matrix rows; the action evaluated Research / Science, Quality / Accreditation, HR / Staff Governance, Finance / Procurement / Asset, Campus / Facilities / Housing, Integration / Provider, and Academic Operations Demo Evidence options, selected Research / Science Suite because it best completes the university mission beyond governance, student lifecycle, and academic operations, defined 60 candidate capabilities across research operations, publications, conferences, grants, research data, labs, ethics, dashboards, bridges, Brain readiness, and forbidden actions, defined future backend, frontend, and E2E previews under metadata-only and evidence-only boundaries, defined Brain rules with human review required, defined bridge dependencies to governance, accreditation, student lifecycle, academic operations, library, document workflow, finance, and future provider layers, preserved anti-fake and no-overclaim boundaries including no fake publications, no fake conference certificates, no fake grant evidence, no autonomous ethics approval, no autonomous grant submission, no autonomous publication verification, no hidden researcher score, no provider integration, and no production/sales/GCC/L5/L6 claims, and kept metrics unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11, and brain_governance_foundation_count=5; with Research / Science Suite selected and no runtime started, the next action is A-037.1-SPEC)
+    - status: ready_for_A-037.2-SPEC
+     - current_stage: A-037.1-SPEC complete / research science suite product map and workflow specification complete
+     - last_completed_action_id: A-037.1-SPEC
+    - next_action_id: A-037.2-SPEC
+     - updated_at: 2026-05-23 (A-037.1-SPEC completed the Research / Science Suite product map and workflow specification from source A-037.0-SPEC commit cc43041, source A-036.5-B1 commit cfe94ba, and matrix commit c79cc31 after confirming completed vertical count 3 and tracker handoff readiness; the action defined product identity, the 11-role model, 11 workflow groups, 10 capability families, family-by-family capability classification, future backend product map with controlled rs_ table planning and /api/admin/research-science preview, future frontend product map with 13 planned admin routes, future browser E2E product map with 13 scenario groups, dashboard contract, evidence model, audit and status model, permission model preview, Brain readiness map, bridge model, and forbidden-action boundaries, preserved the rules that capability rows do not equal backend packages and that Research / Science should remain one future module with bounded subdomains, preserved anti-fake and no-overclaim boundaries including no fake publications, no fake conference certificates, no fake grant evidence, no autonomous ethics approval, no autonomous grant submission, no autonomous publication verification, no hidden researcher, faculty, or student research score, no provider integration, and no production/sales/GCC/L5/L6 claims, and kept metrics unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11, and brain_governance_foundation_count=5; with product map and workflow specification complete and no runtime started, the next action is A-037.2-SPEC)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1737,6 +1737,56 @@
     - recommended_next_action: A-037.1-SPEC
     - final_verdict: A-037.0-SPEC CLOSED - RESEARCH / SCIENCE SUITE PRODUCT VERTICAL SELECTED
     - next_action_id: A-037.1-SPEC
+- A-037.1-SPEC execution block:
+    - mode: specification_only_docs_only_product_map_and_workflow_definition
+    - purpose: research_science_suite_product_map_and_workflow_specification
+    - source_of_truth_check: PASS (A-037.0-SPEC commit cc43041 verified; source status before A-037.1-SPEC was ready_for_A-037.1-SPEC)
+    - source_commit: cc43041
+    - source_a0365_b1_commit: cfe94ba
+    - source_matrix_commit: c79cc31
+    - report_file: A-037.1-SPEC-RESEARCH_SCIENCE_SUITE_PRODUCT_MAP_WORKFLOW_SPECIFICATION_REPORT.md
+    - repo_hygiene: PASS (expected non-scope dirt only)
+    - product_identity_defined: PASS
+    - role_model_defined: PASS (11 roles)
+    - workflow_map_defined: PASS (11 workflow groups)
+    - capability_family_map_defined: PASS (10 families)
+    - capability_classification_defined: PASS (family-by-family classification with capability row != backend package rule)
+    - backend_product_map_preview_defined: PASS (future research_science module, rs_ table set, /api/admin/research-science, 35-45 routes)
+    - frontend_product_map_preview_defined: PASS (13 planned routes under /console/research-science)
+    - e2e_product_map_preview_defined: PASS (13 scenario groups)
+    - dashboard_contract_defined: PASS
+    - evidence_model_defined: PASS
+    - audit_and_status_model_defined: PASS
+    - permission_model_preview_defined: PASS
+    - brain_readiness_map_defined: PASS
+    - bridge_model_defined: PASS
+    - forbidden_actions_defined: PASS
+    - runtime_implementation_started: PASS_FALSE
+    - no_backend_runtime_changes: PASS
+    - no_frontend_runtime_changes: PASS
+    - no_tests_created: PASS
+    - no_playwright_specs_created: PASS
+    - no_migrations_created: PASS
+    - no_models_created: PASS
+    - no_routes_created: PASS
+    - no_real_research_data: PASS
+    - no_real_faculty_or_student_research_data: PASS
+    - no_credentials: PASS
+    - no_provider_integration: PASS
+    - no_fake_publications: PASS
+    - no_fake_conference_certificates: PASS
+    - no_fake_grant_evidence: PASS
+    - no_autonomous_ethics_approval: PASS
+    - no_autonomous_grant_submission: PASS
+    - no_hidden_researcher_score: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+    - recommended_next_action: A-037.2-SPEC
+    - final_verdict: A-037.1-SPEC CLOSED - RESEARCH / SCIENCE SUITE PRODUCT MAP / WORKFLOW SPECIFICATION COMPLETE
+    - next_action_id: A-037.2-SPEC
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
