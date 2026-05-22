@@ -2421,9 +2421,6 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - api_route_contract: 78 explicit routes under /api/admin/academic-operations across curriculum, course-catalog, calendar, timetable, rooms, attendance, teaching-load, exams, gradebook, policy-exceptions, dashboard, audit, evidence, and health
 - permissions_contract: 56 academic_operations.* permissions across curriculum, course-catalog, calendar, timetable, rooms, attendance, teaching-load, exams, gradebook, policy-exceptions, dashboard, audit, evidence, health, and admin
 - first_runtime_subset: 16 tables and 45-55 routes for controlled backend foundation runtime
-- recommended_next_action: A-036.2-RUNTIME
-- next_action_id: A-036.2-RUNTIME
-
 ## A-036.2-B1 - Academic Operations Backend Contract Deep Scope Reconciliation
 
 - source_A0362_spec_commit: 2a8461d
@@ -2435,6 +2432,21 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - revised_runtime_subset: controlled A-036.2-RUNTIME backend foundation with 18-22 tables and 55-70 routes, centered on 16 core product modules plus audit and evidence support
 - bridge_contracts: Student Lifecycle read-only bridge; Executive Governance summary bridge; Document / Order metadata linkage bridge; future Quality / Accreditation evidence bridge
 - strengthened_sensitive_boundaries: no fake academic debt, no fake retake status, no fake thesis readiness, no fake practice completion, no automatic academic dismissal, no hidden workload or attendance-risk scoring, no official transcript or order publication claims
+- recommended_next_action: A-036.2-RUNTIME
+- next_action_id: A-036.2-RUNTIME
+
+## A-036.2-B1.R1 - Academic Operations Existing Module Reconciliation / No-Duplicate Scope Repair
+
+- source_A0362_B1_commit: e807b17
+- reconciliation_sources: SBS_UB.md; SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md; SBS_UB_150_MODULE_NORMALIZATION.md
+- reconciliation_decision: desired 28-item Academic Operations scope is not 28 new backend packages and must be repaired against canonical registry state before runtime
+- classification_counts: EXISTING_CANONICAL_MODULE=3; EXISTING_ADJACENT_MODULE=11; BRIDGE_TO_EXISTING_VERTICAL=8; NEW_TRUE_MODULE=6; DEFERRED_FUTURE_VERTICAL=0 within the 28 Academic Operations modules
+- existing_canonical_mappings: course_catalog -> course_catalog_management UCE-076; elective_course_selection -> UCE-073; academic_committee_decisions -> committee_decision_registry UCE-090
+- existing_adjacent_mappings: curriculum_management -> UCE-014/UCE-015/UCE-016/UCE-071/UCE-072; prerequisite_validation -> UCE-074; teaching_load_management -> UCE-067 plus workload_management; thesis_supervision_management -> UCE-077 plus UCE-094; academic_debt_tracking -> UCE-092 plus UCE-075; academic_operations_dashboard -> academic and student success visibility canonicals
+- bridge_mappings: course_registration -> enrollment and registrar context; timetable_management -> scheduling and timetable workflows; classroom_room_allocation -> room_booking; attendance_tracking -> attendance; grade and exam appeals -> student_appeals_workflow and academic_appeals_workflow; academic_order_linkage -> document_workflow and order_decree_registry; student_academic_support_tracking -> counseling and support canonicals
+- new_true_modules_after_repair: academic_group_management; cohort_management; gradebook_metadata; retake_management; summer_semester_management; advisor_tutor_management
+- duplicate_scope_repair: runtime must reuse canonicals and bridge to existing verticals instead of creating duplicate Academic Operations packages
+- research_science_suite_status: remains deferred to future vertical and unchanged by R1
 - recommended_next_action: A-036.2-RUNTIME
 - next_action_id: A-036.2-RUNTIME
 
