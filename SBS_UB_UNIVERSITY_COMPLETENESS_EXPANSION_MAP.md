@@ -2387,6 +2387,19 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - recommended_next_action: A-036.0-SPEC - Academic Operations Suite Product Vertical Selection
 - next_action_id: A-036.0-SPEC
 
+## A-036.0-SPEC - Academic Operations Suite Product Vertical Selection
+
+- source_A0355_b1_commit: f32f86e
+- completed_vertical_count: 2
+- completed_verticals: Executive Governance Suite; Student Lifecycle Suite
+- selected_next_vertical: Academic Operations Suite
+- candidate_module_scope: curriculum_management; course_catalog; academic_calendar; timetable_management; classroom_room_allocation; attendance_tracking; teaching_load_management; exam_planning; gradebook_metadata; academic_operations_dashboard; faculty_assignment_visibility; academic_policy_exception_tracking
+- core_product_flows: curriculum_to_course_catalog; academic_calendar_to_timetable; teaching_load_and_faculty_assignment; attendance_operations; exam_planning_and_gradebook_metadata; academic_operations_visibility
+- anti_fake_boundaries: no fake grades; no fake exams; no fake attendance; no automatic grading; no automatic sanction; no hidden score; no provider or Platonus/SIS integration claims; no production-ready claim
+- evidence_roadmap: A-036.0-SPEC; A-036.1-SPEC; A-036.2-SPEC; A-036.2-RUNTIME; A-036.2-B1; A-036.3-FRONTEND-SPEC; A-036.3-FRONTEND; A-036.3-B1; A-036.4-E2E; A-036.4-B1; A-036.5-B1
+- metrics_unchanged: PASS
+- next_action_id: A-036.1-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

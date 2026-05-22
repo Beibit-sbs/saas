@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-036.0-SPEC
-    - current_stage: A-035.5-B1 complete / student lifecycle suite product vertical closed and baselined
-    - last_completed_action_id: A-035.5-B1
-    - next_action_id: A-036.0-SPEC
-    - updated_at: 2026-05-22 (A-035.5-B1 validated the full Student Lifecycle Suite chain from A-035.0-SPEC through A-035.4-B1 using authoritative reports, tracker references, product artifact inventory, lightweight source route recount at 11, lightweight backend sanity rerun exit 0 against the Student Lifecycle models and router, prior backend evidence confirming 14 tables, 44 routes, 36 permissions, 38 targeted backend tests passed, and 192 continuity tests passed, prior frontend evidence confirming TypeScript PASS, 11 routes, and 27 targeted frontend tests passed, prior browser evidence confirming source routes 11, built routes 11, Nginx ready=true, and Playwright Chromium 14 passed; anti-fake and sensitive-boundary review passed with expected boundary text and negative assertions only, runtime source non-change in A-035.5-B1 remained clean, metrics stayed unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; Student Lifecycle Suite is now CLOSED / BASELINED as an internal product vertical, with no backend runtime changes, no frontend runtime changes, no provider integration, no Platonus live integration, no SIS sync, no official transcript issuing, no hidden score, no autonomous decisions, and no production-ready, sales-ready, GCC-ready, or L5/L6 claims; the selected next vertical is Academic Operations Suite and the recommended next action is A-036.0-SPEC)
+    - status: ready_for_A-036.1-SPEC
+    - current_stage: A-036.0-SPEC complete / academic operations suite product vertical selected
+    - last_completed_action_id: A-036.0-SPEC
+    - next_action_id: A-036.1-SPEC
+    - updated_at: 2026-05-22 (A-036.0-SPEC verified the source-of-truth handoff from A-035.5-B1 commit f32f86e, confirmed Executive Governance Suite and Student Lifecycle Suite as CLOSED / BASELINED internal product verticals, reviewed next-vertical options across Academic Operations Suite, Quality / Accreditation Suite, HR / Staff Governance Suite, and Finance / Procurement / Asset Suite, and selected Academic Operations Suite as the third major product vertical for SBS UB; the spec defined the suite identity, initial candidate module scope across curriculum, course catalog, academic calendar, timetable, room allocation, attendance, teaching load, exams, gradebook metadata, dashboard, faculty assignment visibility, and policy exception tracking, plus core flows, role model, sensitive-domain boundaries, and the A-036 evidence roadmap through A-036.5-B1; this action remained spec-only and docs-only with no backend runtime, no frontend runtime, no tests, no Playwright specs, no migrations, no provider integration, no Platonus/SIS integration, no fake grades, no fake exams, no fake attendance, no automated grading, no automatic student sanction, no hidden score, no fake KPI, and no production-ready, sales-ready, GCC-ready, or L5/L6 claims; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; the recommended next action is A-036.1-SPEC for Academic Operations Suite Product Map / Workflow Specification)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1017,6 +1017,47 @@
     - selected_next_vertical: Academic Operations Suite
     - final_verdict: A-035.5-B1 CLOSED - STUDENT LIFECYCLE SUITE PRODUCT VERTICAL CLOSED / BASELINED
     - next_action_id: A-036.0-SPEC
+- A-036.0-SPEC execution block:
+    - mode: specification_only_docs_only_product_strategy
+    - purpose: academic_operations_suite_product_vertical_selection
+    - source_of_truth_check: PASS (A-035.5-B1 commit f32f86e verified; source status before A-036.0-SPEC was ready_for_A-036.0-SPEC)
+    - source_commit: f32f86e
+    - report_file: A-036.0-SPEC-ACADEMIC_OPERATIONS_SUITE_PRODUCT_VERTICAL_SELECTION_REPORT.md
+    - repo_hygiene: PASS (expected non-scope dirt only)
+    - completed_verticals_confirmed: PASS (Executive Governance Suite; Student Lifecycle Suite)
+    - options_considered: PASS (Academic Operations Suite; Quality / Accreditation Suite; HR / Staff Governance Suite; Finance / Procurement / Asset Suite)
+    - selected_vertical: Academic Operations Suite
+    - selected_vertical_reason: PASS (best next operating layer after governance and student lifecycle)
+    - candidate_module_scope_defined: PASS (12 modules)
+    - core_product_flows_defined: PASS (6 flows)
+    - role_model_defined: PASS (11 roles)
+    - sensitive_domain_boundaries_defined: PASS
+    - evidence_roadmap_defined: PASS (A-036.0-SPEC through A-036.5-B1)
+    - runtime_implementation_started: PASS_FALSE
+    - no_backend_runtime_changes: PASS
+    - no_frontend_runtime_changes: PASS
+    - no_tests_created: PASS
+    - no_playwright_specs_created: PASS
+    - no_migrations_created: PASS
+    - no_real_academic_data: PASS
+    - no_credentials: PASS
+    - no_provider_integration: PASS
+    - no_platonus_sis_integration: PASS
+    - no_fake_grades: PASS
+    - no_fake_exams: PASS
+    - no_fake_attendance: PASS
+    - no_automated_grading: PASS
+    - no_automatic_student_sanction: PASS
+    - no_hidden_score: PASS
+    - no_fake_kpi: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
+    - recommended_next_action: A-036.1-SPEC
+    - final_verdict: A-036.0-SPEC CLOSED - ACADEMIC OPERATIONS SUITE PRODUCT VERTICAL SELECTED
+    - next_action_id: A-036.1-SPEC
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
