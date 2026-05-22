@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-     - status: ready_for_A-036.4-E2E-SPEC
-      - current_stage: A-036.3-FRONTEND-B1 complete / academic operations frontend runtime quality baseline confirmed
-      - last_completed_action_id: A-036.3-FRONTEND-B1
-     - next_action_id: A-036.4-E2E-SPEC
-      - updated_at: 2026-05-22 (A-036.3-FRONTEND-B1 validated the Academic Operations frontend runtime from source commit 20b9c51 against source spec commit af9b1d5, backend baseline commit 751fa24, backend runtime commit c74cb12, and matrix commit c79cc31 without implementing new frontend runtime, without adding routes, components, API methods, tests, Playwright specs, backend changes, migrations, or provider integrations; the baseline confirmed the frontend module at frontend/modules/academic-operations/, 13 admin routes under /console/academic-operations, 8 targeted AcademicOperations test files, TypeScript PASS via local npx tsc --noEmit, targeted Vitest PASS with 25 passed, permission registry and guard review PASS, boundary/no-fake UI review PASS, no-overclaim review PASS with expected negative boundary text only, backend non-change PASS with only backend/.coverage as expected non-scope dirt, and preservation of metadata-only foundation, fake_metrics=false, matrix rows 467, no official grade publication UI, no official transcript update UI, no automated grading UI, no sanction UI, no hidden score UI, no provider or Platonus/SIS UI, no fake KPI UI, no delete/publish/sync/sanction UI, and unchanged metrics at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11, and brain_governance_foundation_count=5; with the frontend runtime quality baseline confirmed, the next action is A-036.4-E2E-SPEC)
+     - status: ready_for_A-036.4-E2E
+      - current_stage: A-036.4-E2E-SPEC complete / academic operations browser validation plan specified
+      - last_completed_action_id: A-036.4-E2E-SPEC
+     - next_action_id: A-036.4-E2E
+      - updated_at: 2026-05-22 (A-036.4-E2E-SPEC specified the Academic Operations browser validation plan from source frontend baseline commit cb1f6c3 and frontend runtime commit 20b9c51 while preserving the validated source anchors af9b1d5, 751fa24, c74cb12, and c79cc31; the spec defined the planned Playwright target at frontend/e2e/smoke/a0364-academic-operations-suite.spec.ts, a 13-route browser flow, 12 scenario groups, global boundary assertions, negative no-overclaim assertions, permission smoke fallback rules, fixture categories for dashboard, matrix summary, registries, bridges, and audit/evidence, future Docker/nginx Playwright commands, future supporting TypeScript and Vitest commands, future no-overclaim source scan commands, and acceptance criteria without starting E2E runtime, without creating a Playwright spec, without creating screenshots or demo evidence, without changing frontend or backend runtime, without adding provider/Platonus/SIS integration, without claiming official grade publication, automated grading, sanction, hidden score, fake KPI, or production/sales/GCC/L5/L6 readiness, and with metrics unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11, and brain_governance_foundation_count=5; with the browser validation plan specified and no runtime started in this action, the next action is A-036.4-E2E)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1542,6 +1542,40 @@
     - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
     - final_verdict: A-036.3-FRONTEND-B1 CLOSED - ACADEMIC OPERATIONS FRONTEND RUNTIME QUALITY BASELINE CONFIRMED
     - next_action_id: A-036.4-E2E-SPEC
+- A-036.4-E2E-SPEC execution block:
+    - mode: e2e_spec_only
+    - purpose: academic_operations_browser_validation_plan_specification
+    - source_of_truth_check: PASS (A-036.3-FRONTEND-B1 commit cb1f6c3 verified; source status before spec was ready_for_A-036.4-E2E-SPEC)
+    - source_commit: cb1f6c3
+    - source_frontend_runtime_commit: 20b9c51
+    - source_frontend_spec_commit: af9b1d5
+    - source_backend_baseline_commit: 751fa24
+    - source_backend_runtime_commit: c74cb12
+    - source_matrix_commit: c79cc31
+    - report_file: A-036.4-E2E-SPEC-ACADEMIC_OPERATIONS_SUITE_BROWSER_VALIDATION_PLAN_REPORT.md
+    - planned_playwright_spec_path: frontend/e2e/smoke/a0364-academic-operations-suite.spec.ts
+    - planned_route_count: 13
+    - planned_scenario_count: 12
+    - planned_fixture_categories: dashboardFixture; matrixSummaryFixture; registryFixture; bridgeFixture; auditEvidenceFixture
+    - planned_no_overclaim_dom_assertions: PASS
+    - no_e2e_runtime_started: PASS
+    - no_playwright_spec_created: PASS
+    - no_frontend_runtime_changes: PASS
+    - no_backend_changes: PASS
+    - no_real_academic_data: PASS
+    - no_real_student_or_faculty_or_grade_data: PASS
+    - no_provider_or_platonus_sis_integration: PASS
+    - no_official_grade_publication_claim: PASS
+    - no_automated_grading_or_sanction_claim: PASS
+    - no_hidden_score_claim: PASS
+    - no_fake_kpi_claim: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+    - final_verdict: A-036.4-E2E-SPEC CLOSED - ACADEMIC OPERATIONS BROWSER VALIDATION PLAN SPECIFIED
+    - next_action_id: A-036.4-E2E
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling

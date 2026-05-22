@@ -2698,6 +2698,21 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - recommended_next_action: A-036.4-E2E-SPEC
 - next_action_id: A-036.4-E2E-SPEC
 
+## A-036.4-E2E-SPEC - Academic Operations Browser Validation Plan
+
+- source_frontend_b1_commit: cb1f6c3
+- source_frontend_runtime_commit: 20b9c51
+- source_frontend_spec_commit: af9b1d5
+- planned_e2e_spec_path: frontend/e2e/smoke/a0364-academic-operations-suite.spec.ts
+- planned_route_flow_count: 13
+- planned_scenario_count: 12
+- planned_fixture_categories: dashboardFixture; matrixSummaryFixture; registryFixture; bridgeFixture; auditEvidenceFixture
+- planned_no_overclaim_browser_assertions: no publish official grade; no calculate grade; no approve grade; no sanction; no dismiss; no Sync with Platonus; no Sync with SIS; no provider dispatch; no production-ready; no sales-ready; no GCC-ready; no L5/L6 claim
+- limitations: no_e2e_runtime_started; no_playwright_spec_created; permission_smoke_depends_on_existing_role_fixture_support; full_467_row_runtime_not_implemented; metadata_only_fixture_rule_required
+- metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+- recommended_next_action: A-036.4-E2E
+- next_action_id: A-036.4-E2E
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
