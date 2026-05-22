@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-037.0-SPEC
-     - current_stage: A-036.5-B1 complete / academic operations suite product vertical closure quality baseline confirmed
-     - last_completed_action_id: A-036.5-B1
-    - next_action_id: A-037.0-SPEC
-     - updated_at: 2026-05-22 (A-036.5-B1 closed the Academic Operations Suite as a product vertical baseline from source A-036.4-B1 commit ba4fe5b, source A-036.4-E2E commit ab40c56, source A-036.3-FRONTEND-B1 commit cb1f6c3, source A-036.2-B1 commit 751fa24, and source matrix commit c79cc31; the action confirmed backend PASS with 19 ao_ tables, 40 routes, 40 permissions, and 100 targeted tests passed, confirmed frontend PASS with 13 routes, TypeScript PASS, and 25 targeted frontend tests passed, confirmed browser E2E PASS with 13 routes, 12 scenarios, and Playwright 12 passed in Chromium, confirmed matrix-guided canonical reuse PASS with no duplicate canonical modules, confirmed product closure PASS with completed vertical count 3, confirmed internal-only readiness classification without production/sales/GCC/L5/L6 claims, confirmed anti-fake and no-overclaim boundaries including no official grade publication, no automated grading, no hidden score, no provider or Platonus/SIS integration, no fake KPI, and no real academic/student/faculty/grade data, and kept metrics unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11, and brain_governance_foundation_count=5; with Academic Operations now CLOSED / BASELINED as the third completed product vertical, the next action is A-037.0-SPEC)
+    - status: ready_for_A-037.1-SPEC
+     - current_stage: A-037.0-SPEC complete / research science suite product vertical selected
+     - last_completed_action_id: A-037.0-SPEC
+    - next_action_id: A-037.1-SPEC
+     - updated_at: 2026-05-23 (A-037.0-SPEC selected Research / Science Suite as the fourth major SBS UB product vertical from source A-036.5-B1 commit cfe94ba after confirming completed vertical count 3, matrix anchor commit c79cc31, and 467 master matrix rows; the action evaluated Research / Science, Quality / Accreditation, HR / Staff Governance, Finance / Procurement / Asset, Campus / Facilities / Housing, Integration / Provider, and Academic Operations Demo Evidence options, selected Research / Science Suite because it best completes the university mission beyond governance, student lifecycle, and academic operations, defined 60 candidate capabilities across research operations, publications, conferences, grants, research data, labs, ethics, dashboards, bridges, Brain readiness, and forbidden actions, defined future backend, frontend, and E2E previews under metadata-only and evidence-only boundaries, defined Brain rules with human review required, defined bridge dependencies to governance, accreditation, student lifecycle, academic operations, library, document workflow, finance, and future provider layers, preserved anti-fake and no-overclaim boundaries including no fake publications, no fake conference certificates, no fake grant evidence, no autonomous ethics approval, no autonomous grant submission, no autonomous publication verification, no hidden researcher score, no provider integration, and no production/sales/GCC/L5/L6 claims, and kept metrics unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11, and brain_governance_foundation_count=5; with Research / Science Suite selected and no runtime started, the next action is A-037.1-SPEC)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1692,6 +1692,51 @@
     - selected_next_vertical: Research / Science Suite
     - final_verdict: A-036.5-B1 CLOSED - ACADEMIC OPERATIONS SUITE PRODUCT VERTICAL CLOSURE QUALITY BASELINE CONFIRMED
     - next_action_id: A-037.0-SPEC
+- A-037.0-SPEC execution block:
+    - mode: specification_only_docs_only_product_strategy
+    - purpose: research_science_suite_product_vertical_selection
+    - source_of_truth_check: PASS (A-036.5-B1 commit cfe94ba verified; source status before A-037.0-SPEC was ready_for_A-037.0-SPEC)
+    - source_commit: cfe94ba
+    - report_file: A-037.0-SPEC-RESEARCH_SCIENCE_SUITE_PRODUCT_VERTICAL_SELECTION_REPORT.md
+    - repo_hygiene: PASS (expected non-scope dirt only)
+    - completed_vertical_count_confirmed: PASS (3)
+    - completed_verticals_confirmed: PASS (Executive Governance Suite; Student Lifecycle Suite; Academic Operations Suite)
+    - options_considered: PASS (Research / Science Suite; Quality / Accreditation Suite; HR / Staff Governance Suite; Finance / Procurement / Asset Suite; Campus / Facilities / Housing Suite; Integration / Provider Suite; Academic Operations Demo Evidence Pack)
+    - selected_vertical: Research / Science Suite
+    - selected_vertical_reason: PASS (best next university-mission layer after governance, student lifecycle, and academic operations)
+    - candidate_capability_count: 60
+    - capability_families_defined: PASS (research operations; publications; conferences; grants; research data/labs; ethics/compliance; dashboards; bridges; Brain readiness; forbidden actions)
+    - backend_preview_defined: PASS
+    - frontend_preview_defined: PASS
+    - e2e_preview_defined: PASS
+    - brain_readiness_defined: PASS
+    - bridge_map_defined: PASS
+    - sensitivity_boundaries_defined: PASS
+    - expected_roadmap_defined: PASS (A-037.0-SPEC through A-037.5-B1)
+    - runtime_implementation_started: PASS_FALSE
+    - no_backend_runtime_changes: PASS
+    - no_frontend_runtime_changes: PASS
+    - no_tests_created: PASS
+    - no_playwright_specs_created: PASS
+    - no_migrations_created: PASS
+    - no_real_research_data: PASS
+    - no_real_faculty_or_student_research_data: PASS
+    - no_credentials: PASS
+    - no_provider_integration: PASS
+    - no_fake_publications: PASS
+    - no_fake_conference_certificates: PASS
+    - no_fake_grant_evidence: PASS
+    - no_autonomous_ethics_approval: PASS
+    - no_autonomous_grant_submission: PASS
+    - no_hidden_researcher_score: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+    - recommended_next_action: A-037.1-SPEC
+    - final_verdict: A-037.0-SPEC CLOSED - RESEARCH / SCIENCE SUITE PRODUCT VERTICAL SELECTED
+    - next_action_id: A-037.1-SPEC
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling

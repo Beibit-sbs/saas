@@ -2776,9 +2776,25 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - known_limitations: full_467_row_runtime_not_implemented; full_28_module_runtime_not_implemented; official_grade_publication_not_implemented; provider_platonus_sis_not_implemented; screenshots_not_created; demo_evidence_not_created; internal_baseline_only
 - recommended_next_action: A-037.0-SPEC - Research / Science Suite Product Vertical Selection
 - next_action_id: A-037.0-SPEC
-- metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
-- recommended_next_action: A-036.4-B1
-- next_action_id: A-036.4-B1
+
+## A-037.0-SPEC - Research / Science Suite Product Vertical Selection
+
+- source_A0365_b1_commit: cfe94ba
+- completed_vertical_count: 3
+- completed_verticals: Executive Governance Suite; Student Lifecycle Suite; Academic Operations Suite
+- selected_vertical: Research / Science Suite
+- tagline: From student research work and scientific supervision to publications, conferences, grants, ethics approval, research evidence, and science dashboards
+- candidate_capability_count: 60
+- capability_families: research_operations; publications; conferences; grants; research_data_and_labs; ethics_and_compliance; dashboards; bridges; brain_readiness; forbidden_actions
+- backend_preview: future backend/app/modules/research_science with controlled metadata/evidence foundation only
+- frontend_preview: future frontend/modules/research-science with 13-route admin surface and boundary labels
+- e2e_preview: future a037x research-science Playwright smoke with 12 scenarios and no-overclaim scan
+- brain_readiness: research_activity_signal_registry; publication_evidence_quality_signal; grant_execution_risk_signal; research_output_gap_signal; scientific_supervision_delay_signal; ethics_review_delay_signal; safe_research_summary_agent; safe_grant_report_draft_agent; safe_publication_metadata_draft_agent
+- bridge_map: research_to_executive_governance; research_to_accreditation; research_to_student_lifecycle; research_to_academic_operations; research_to_library_repository; research_to_document_workflow; research_to_finance_procurement; research_to_integration_provider
+- risk_boundaries: no_fake_publication; no_fake_conference_certificate; no_fake_grant_evidence; no_fake_citation_score; no_hidden_researcher_score; no_autonomous_ethics_approval; no_autonomous_grant_submission; no_autonomous_publication_verification; no_external_database_sync_claim_without_provider
+- expected_roadmap: A-037.0-SPEC; A-037.1-SPEC; A-037.2-SPEC; A-037.2-RUNTIME; A-037.2-B1; A-037.3-FRONTEND-SPEC; A-037.3-FRONTEND; A-037.3-FRONTEND-B1; A-037.4-E2E-SPEC; A-037.4-E2E; A-037.4-B1; A-037.5-B1
+- metrics_unchanged: PASS
+- next_action_id: A-037.1-SPEC
 
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
