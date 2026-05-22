@@ -2815,6 +2815,22 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - metrics_unchanged: PASS
 - next_action_id: A-037.2-SPEC
 
+## A-037.2-SPEC - Research / Science Suite Backend Domain / DB / API Contract
+
+- source_A0371_spec_commit: 10d833e
+- backend_module_path: backend/app/modules/research_science/
+- module_identity: TARGET_LEVEL=L3; CONTRACT_VERSION=A-037.2; FOUNDATION_STATUS=RESEARCH_SCIENCE_METADATA_EVIDENCE_BACKEND_FOUNDATION; RUNTIME_MODE=METADATA_EVIDENCE_ONLY; OFFICIAL_VERIFICATION_MODE=NOT_IMPLEMENTED; PROVIDER_INTEGRATION_MODE=FUTURE_READINESS_ONLY; AUTONOMY_MODE=FORBIDDEN
+- rs_table_contract: 15 initial tables (rs_research_projects; rs_student_research_work; rs_scientific_supervision; rs_publication_registry; rs_conference_participation; rs_grant_applications; rs_grant_deliverables; rs_research_ethics_requests; rs_research_ethics_amendments; rs_research_evidence_metadata; rs_research_bridge_metadata; rs_research_dashboard_snapshots; rs_research_audit_events; rs_research_status_history; rs_research_limitations) and 5 optional later tables
+- route_prefix: /api/admin/research-science
+- route_count_expectation: 38-45
+- permission_namespace: research_science.*
+- dashboard_contract: contract_version=A-037.2; source_spec_commit=10d833e; master_matrix_commit=c79cc31; master_matrix_rows=467; capability_count=60; fake_metrics=false; data_source=computed_from_research_science_metadata; incomplete_data supported; limitations visible
+- evidence_audit_bridge_contract: metadata-only evidence types; append-only audit and status history; read_only_first bridges; mutation_allowed=false; provider_sync_enabled=false; external_submission_enabled=false
+- test_plan: backend models, services, API, and audit/evidence security suites; 140-220 targeted tests expected
+- runtime_acceptance_criteria: module exists; migration exists; router registered; RBAC baseline aligned if required; route count 38-45; anti-fake/provider/no-hidden-score scans PASS; backend-only scope PASS
+- metrics_unchanged: PASS
+- next_action_id: A-037.2-RUNTIME
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
