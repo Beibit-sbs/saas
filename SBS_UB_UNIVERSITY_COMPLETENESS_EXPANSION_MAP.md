@@ -2677,6 +2677,27 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - recommended_next_action: A-036.3-FRONTEND-B1
 - next_action_id: A-036.3-FRONTEND-B1
 
+## A-036.3-FRONTEND-B1 - Academic Operations Frontend Runtime Quality Baseline
+
+- source_frontend_runtime_commit: 20b9c51
+- source_spec_commit: af9b1d5
+- source_backend_baseline_commit: 751fa24
+- source_backend_runtime_commit: c74cb12
+- source_matrix_commit: c79cc31
+- report_file: A-036.3-FRONTEND-B1-ACADEMIC_OPERATIONS_SUITE_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
+- frontend_module_path: frontend/modules/academic-operations/
+- route_count: 13
+- test_count: 8
+- TypeScript_result: PASS
+- targeted_test_result: PASS (25 passed, 0 failed)
+- permission_guard_review: PASS
+- no_overclaim_scan: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- backend_non_change: PASS_WITH_EXPECTED_COVERAGE_ARTIFACT_ONLY
+- limitations: e2e_not_implemented; optional_detail_routes_deferred; complex_create_update_forms_disabled_or_limited; provider_platonus_sis_not_implemented; official_grade_publication_not_implemented; full_467_row_runtime_not_implemented
+- metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+- recommended_next_action: A-036.4-E2E-SPEC
+- next_action_id: A-036.4-E2E-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
