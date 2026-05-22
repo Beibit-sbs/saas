@@ -602,6 +602,650 @@ The following section seeds the Full University OS universe and guarantees the l
 - Matrix framework created: yes
 - Full-system ambition preserved: yes
 - Duplicate prevention added: yes
-- Exhaustive per-row completion done: no
-- Reason exhaustive row completion is deferred: authoritative sources fully lock `175 + 54` plus seeded vertical universes, but do not yet canonically enumerate every row in a `450-520+` universe without further reconciliation work
-- Recommended next action: `A-036.2-B2.R1`
+- Exhaustive per-row completion done: yes
+- Exhaustive completion method: authoritative baseline 150 table, authoritative controlled extension 25 table, authoritative UCE-001..149 registry, plus non-duplicate supplemental vertical / bridge / Brain / integration / dashboard / evidence / forbidden rows
+- Recommended next action: `A-036.2-RUNTIME`
+
+## 22. Exhaustive Row Completion Method
+
+- B2.R1 treats the authoritative source tables as row bodies and resolves the remaining taxonomy fields by explicit per-plane inheritance rather than inventing new canonicals.
+- A capability row still does not equal a backend package. Where a requested capability already exists as a baseline or UCE row, B2.R1 reuses that row and does not create a duplicate alias row.
+- For `BASELINE_150` rows below, `capability_id = BAS-001..BAS-150`, `canonical_module_name = Module`, `source_plane = BASELINE_150`, `source_reference = Verified Level Source`, `backend_needed = ALREADY_EXISTS`, `duplicate_risk = NONE`, and the remaining fields inherit from the source level, gap, and domain family.
+- For `CONTROLLED_EXTENSION_25` rows below, `capability_id = EXT-001..EXT-025`, `source_plane = CONTROLLED_EXTENSION_25`, `implementation_status = PLANNED`, `maturity_level = L0`, `runtime_evidence = NO_RUNTIME_EVIDENCE`, `credentials = false`, and any unresolved canonical is marked `PENDING_SOURCE_RECONCILIATION` rather than invented.
+- For `UNIVERSITY_COMPLETENESS_EXPANSION` rows below, `capability_id = UCE-xxx`, `source_plane = UNIVERSITY_COMPLETENESS_EXPANSION`, `source_reference = next wave anchor`, `implementation_status = PLANNED`, and no UCE row is treated as already implemented unless separately evidenced elsewhere.
+- Domain-to-vertical inheritance for BAS / EXT / UCE rows follows the matrix vertical map: Academic/Registrar/Curriculum to Academic Operations, Student/Support to Student Lifecycle or Student Support, Finance/Procurement/Assets to Finance, Security/IAM to Security, Integrations/Platform to IT Ops or Integration / Provider, Library / Archive / Document to Library / Knowledge / Archive, Research / Ethics / IP to Research / Science, Campus / Facilities / Housing / Transport to Campus / Facilities / Housing, and Governance / Rectorate / Strategy to Executive Governance.
+- Anti-fake inheritance for all rows: docs-only planning, no hidden score, no fake KPI, no fake grades, no fake attendance, no live provider claim, no autonomous decision claim, and no L5/L6 inflation.
+
+## 23. BASELINE_150_ROW_COMPLETION_STATUS
+
+- status: `FULL_FROM_AUTHORITATIVE_SOURCE`
+- source_file: `SBS_UB_150_MODULE_NORMALIZATION.md`
+- source_range: authoritative baseline matrix rows `1..150`
+- row_count: `150`
+- completion_note: every baseline row is adopted from the authoritative normalization table and inherits the missing taxonomy fields from Section 22.
+
+| # | Module | Domain | Current Level | Bucket | Verified Level Source | Capability Verification Status | Primary Gap | Target Next Level | Required Work | Required Tests | Risk | Priority | A-026.x Action |
+|---:|---|---|---:|---|---|---|---|---:|---|---|---|---|---|
+| 1 | academic_integrity | Administration & Governance | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | E2E path and gate evidence | gate continuity | high | medium | A-026.7 |
+| 2 | academic_records | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | KPI lineage mapping | lineage contract | medium | medium | A-026.6 |
+| 3 | access_control | Identity/Access/Security | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | E2E and gate evidence | gate continuity | high | high | A-026.7 |
+| 4 | accreditation | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | KPI evidence lineage | lineage mapping | medium | low | A-026.6 |
+| 5 | accreditation_compliance | Planned Expansion | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-027.0 |
+| 6 | admin | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L5 | verify admin API scope | route tests | medium | low | A-026.5 |
+| 7 | admissions | Administration & Governance | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | E2E for admissions workflows | gate continuity | high | high | A-026.7 |
+| 8 | advising | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | frontend_missing | L5 | verify advising dashboard UX | frontend tests | medium | medium | A-026.5 |
+| 9 | ai_admissions_scoring | Research & Innovation | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | expose scoring API readiness | route tests | medium | high | A-026.5 |
+| 10 | ai_copilot_ops | Planned Expansion | L3 | C | A-024.2 | EVIDENCED_L3_AFTER_A0242 | operational_visibility_or_API_depth_needed | L4 | operational visibility / API readiness specification | route or visibility contract tests | medium | high | A-026.5 |
+| 11 | ai_cost_governance | Planned Expansion | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-027.0 |
+| 12 | ai_gateway | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | Brain signal gateway mapping | mapping tests | medium | high | A-026.6 |
+| 13 | ai_guardrails | AI/Knowledge/Reasoning | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | guardrails control API | route tests | medium | high | A-026.5 |
+| 14 | ai_plagiarism | Research & Innovation | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-027.0 |
+| 15 | ai_routing_control | Planned Expansion | L3 | C | A-024.1 | EVIDENCED_L3_AFTER_A0241 | operational_visibility_or_API_depth_needed | L4 | operational visibility / routing control surface readiness | route or visibility contract tests | medium | high | A-026.5 |
+| 16 | alumni | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | alumni metrics lineage | lineage mapping | medium | low | A-026.6 |
+| 17 | alumni_donation_portal | Administration & Governance | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | donation API visibility | route tests | medium | medium | A-026.5 |
+| 18 | alumni_relations_ops | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
+| 19 | analytics | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | analytics brain mapping | mapping tests | medium | medium | A-026.6 |
+| 20 | asset_inventory | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | asset KPI lineage | lineage mapping | medium | medium | A-026.6 |
+| 21 | attendance | Student & Campus Life | L4 | D | A-024.4 | EVIDENCED_L4_AFTER_A0244 | KPI_evidence_or_Brain_mapping_missing | L5-readiness | attendance KPI/evidence lineage and governance mapping | lineage/mapping contract tests | medium | high | A-026.6 |
+| 22 | audit | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | audit trail evidence mapping | lineage mapping | medium | high | A-026.6 |
+| 23 | auth | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | auth event mapping | mapping tests | medium | high | A-026.6 |
+| 24 | backup | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify backup determinism | deterministic unit tests | medium | low | A-026.5 |
+| 25 | billing | Finance & Billing | L6 | F | A-023.0 | EVIDENCED_LEVEL_ONLY | preserve_only | L6 | preserve gate continuity | regression tests | medium | high | A-026.7 |
+| 26 | blockchain_diploma | Administration & Governance | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | diploma verification API | route tests | medium | medium | A-026.5 |
+| 27 | brain_core | AI/Knowledge/Reasoning | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | brain E2E and gates | gate continuity | high | high | A-026.7 |
+| 28 | budget_planning | Finance & Billing | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | budget planning E2E gates | gate continuity | high | high | A-026.7 |
+| 29 | campus_sla | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | SLA KPI lineage | lineage mapping | medium | low | A-026.6 |
+| 30 | career_services | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | career outcomes mapping | lineage mapping | medium | medium | A-026.6 |
+| 31 | communications | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | comms event mapping | mapping tests | medium | low | A-026.6 |
+| 32 | conference_management | Research & Innovation | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | low | A-027.0 |
+| 33 | contracts_hr | Finance & Billing | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | HR contract API | route tests | medium | low | A-026.5 |
+| 34 | contracts_legal_repository | Planned Expansion | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-027.0 |
+| 35 | counseling | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | counseling API visibility | route tests | medium | high | A-026.5 |
+| 36 | counseling_case_management | Planned Expansion | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-027.0 |
+| 37 | courses | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | course KPI mapping | lineage mapping | medium | high | A-026.6 |
+| 38 | currency_localization | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | currency signal mapping | mapping tests | medium | low | A-026.6 |
+| 39 | degree_progress | Core Academic | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | degree E2E and gates | gate continuity | high | high | A-026.7 |
+| 40 | delinquency_collections | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | delinquency KPI lineage | lineage mapping | medium | high | A-026.6 |
+| 41 | developer_portal | Planned Expansion | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | low | A-027.0 |
+| 42 | digital_certificates | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
+| 43 | digital_documents | Administration & Governance | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | document API visibility | route tests | medium | low | A-026.5 |
+| 44 | dining | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | dining KPI mapping | lineage mapping | medium | low | A-026.6 |
+| 45 | donations_fundraising | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
+| 46 | enrollments | Core Academic | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | enrollment E2E and gates | gate continuity | high | high | A-026.7 |
+| 47 | equipment_booking | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | equipment utilization signal | mapping tests | medium | medium | A-026.6 |
+| 48 | event_registration_portal | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
+| 49 | events_management | Student & Campus Life | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | events E2E and gates | gate continuity | high | high | A-026.7 |
+| 50 | exam_governance | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | exam metrics mapping | lineage mapping | medium | high | A-026.6 |
+| 51 | exam_integrity_analytics | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
+| 52 | exam_proctoring | Workflow & Process Automation | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | proctoring E2E and gates | gate continuity | high | high | A-026.7 |
+| 53 | expense_controls | Finance & Billing | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | expense E2E and gates | gate continuity | high | high | A-026.7 |
+| 54 | facilities_work_orders | Workflow & Process Automation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | work order KPI mapping | lineage mapping | medium | medium | A-026.6 |
+| 55 | faculty | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | faculty workload signal | mapping tests | medium | high | A-026.6 |
+| 56 | faculty_copilot | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | copilot research signal | mapping tests | medium | high | A-026.6 |
+| 57 | faculty_performance_kpis | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | performance KPI lineage | lineage mapping | medium | high | A-026.6 |
+| 58 | feature_flags | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify feature flag scope | contract tests | medium | low | A-026.5 |
+| 59 | federation_management | Planned Expansion | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | low | A-027.0 |
+| 60 | financial_aid | Finance & Billing | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | aid E2E and gates | gate continuity | high | high | A-026.7 |
+| 61 | grades | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | grading KPI lineage | lineage mapping | medium | high | A-026.6 |
+| 62 | health_services | Planned Expansion | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | low | A-027.0 |
+| 63 | help | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify help desk scope | contract tests | medium | low | A-026.5 |
+| 64 | housing | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | housing KPI mapping | lineage mapping | medium | medium | A-026.6 |
+| 65 | hr_payroll | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | payroll KPI lineage | lineage mapping | medium | high | A-026.6 |
+| 66 | human_approved_timetable_workflow | Planned Expansion | L5 | E | A-026.6-RUNTIME | EVIDENCED_L5_READY_AFTER_A0266 | autonomous_execution_and_closed_loop_validation_missing | L6-readiness | controlled human-approved closed-loop governance / autonomous boundary validation | closed-loop safety / no-autonomy-breakout / human approval tests | medium | high | A-026.7 |
+| 67 | i18n | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify i18n contract completeness | contract tests | medium | low | A-026.5 |
+| 68 | identity | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | identity event mapping | mapping tests | medium | high | A-026.6 |
+| 69 | integrations | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify integration breadth | contract tests | medium | low | A-026.5 |
+| 70 | internship | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | internship API visibility | route tests | medium | medium | A-026.5 |
+| 71 | internship_marketplace | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
+| 72 | interventions | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | intervention signal mapping | mapping tests | medium | high | A-026.6 |
+| 73 | invoices | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | invoice KPI lineage | lineage mapping | medium | high | A-026.6 |
+| 74 | ip_management | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | IP portfolio signal | mapping tests | medium | medium | A-026.6 |
+| 75 | jobs | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify job board scope | contract tests | medium | low | A-026.5 |
+| 76 | knowledge_retrieval | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | retrieval signal mapping | mapping tests | medium | high | A-026.6 |
+| 77 | lab_operations | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
+| 78 | ldap | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify LDAP integration scope | contract tests | medium | medium | A-026.5 |
+| 79 | library | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | library API visibility | route tests | medium | medium | A-026.5 |
+| 80 | library_circulation | Planned Expansion | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-027.0 |
+| 81 | lms_assessment_center | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
+| 82 | lms_content | Administration & Governance | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | content API visibility | route tests | medium | medium | A-026.5 |
+| 83 | local_user_management | Planned Expansion | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | high | high | A-027.0 |
+| 84 | mobile_app | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | frontend_missing | L4 | mobile app frontend visibility | frontend tests | medium | medium | A-026.5 |
+| 85 | mobile_push_gateway | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
+| 86 | model_evaluation | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | model eval signal mapping | mapping tests | medium | high | A-026.6 |
+| 87 | notification_center | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | high | high | A-026.6 |
+| 88 | observability | Integrations & Platform | L4 | D | A-024.3 | EVIDENCED_L4_AFTER_A0243 | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
+| 89 | online_payments | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | payment KPI lineage | lineage mapping | medium | high | A-026.6 |
+| 90 | operations | Administration & Governance | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | ops E2E and gates | gate continuity | high | high | A-026.7 |
+| 91 | org_structure | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | org KPI mapping | lineage mapping | medium | low | A-026.6 |
+| 92 | parent_engagement | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
+| 93 | parent_portal | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | parent portal API | route tests | medium | medium | A-026.5 |
+| 94 | parking | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | parking API visibility | route tests | medium | low | A-026.5 |
+| 95 | parking_enforcement | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
+| 96 | parking_permit_ops | Planned Expansion | L3 | C | A-026.9-RUNTIME | EVIDENCED_L3_AFTER_A0269 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.10-SPEC |
+| 97 | patents | Research & Innovation | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | patent API visibility | route tests | medium | low | A-026.5 |
+| 98 | payment_reconciliation | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | reconciliation KPI mapping | lineage mapping | medium | high | A-026.6 |
+| 99 | pdpl | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify PDPL contract completeness | contract tests | medium | medium | A-026.5 |
+| 100 | plans | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | planning KPI mapping | lineage mapping | medium | low | A-026.6 |
+| 101 | platform | Integrations & Platform | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | verification_pending | L5 | verify platform contract | contract tests | medium | low | A-026.5 |
+| 102 | platform_health | Planned Expansion | L3 | C | A-024.1 | EVIDENCED_L3_AFTER_A0241 | operational_visibility_or_API_depth_needed | L4 | operational health visibility readiness | visibility contract tests | medium | low | A-026.5 |
+| 103 | platform_shared | Integrations & Platform | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | shared services API | route tests | medium | low | A-026.5 |
+| 104 | procurement | Finance & Billing | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | procurement E2E and gates | gate continuity | high | high | A-026.7 |
+| 105 | procurement_approval_workflow | Planned Expansion | L3 | C | A-024.2 | EVIDENCED_L3_AFTER_A0242 | operational_visibility_or_API_depth_needed | L4 | operational workflow visibility/API readiness | route or workflow visibility tests | medium | high | A-026.5 |
+| 106 | profiles | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | profile signal mapping | mapping tests | medium | low | A-026.6 |
+| 107 | programs | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | program KPI mapping | lineage mapping | medium | high | A-026.6 |
+| 108 | prompt_management | Research & Innovation | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | prompt signal mapping | mapping tests | medium | high | A-026.6 |
+| 109 | publication_registry | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
+| 110 | publications | Research & Innovation | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | publications API visibility | route tests | medium | low | A-026.5 |
+| 111 | quotas | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | quota KPI lineage | lineage mapping | medium | low | A-026.6 |
+| 112 | rbac | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | RBAC event mapping | mapping tests | medium | high | A-026.6 |
+| 113 | records_hub | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
+| 114 | research | Research & Innovation | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | research E2E and gates | gate continuity | high | high | A-026.7 |
+| 115 | research_ethics | Research & Innovation | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | ethics E2E and gates | gate continuity | high | high | A-026.7 |
+| 116 | research_grants | Planned Expansion | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-027.0 |
+| 117 | research_projects | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
+| 118 | room_booking | Core Academic | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | room booking E2E gates | gate continuity | high | high | A-026.7 |
+| 119 | scheduling | Core Academic | L6 | F | A-023.0 | EVIDENCED_LEVEL_ONLY | preserve_only | L6 | preserve gate continuity | regression tests | medium | high | A-026.7 |
+| 120 | scholarship | Finance & Billing | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | scholarship E2E gates | gate continuity | high | high | A-026.7 |
+| 121 | security | Identity/Access/Security | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | security E2E and gates | gate continuity | high | high | A-026.7 |
+| 122 | security_operations | Identity/Access/Security | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | security ops E2E gates | gate continuity | high | high | A-026.7 |
+| 123 | service_accounts | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | account signal mapping | mapping tests | medium | low | A-026.6 |
+| 124 | sso_saml | Identity/Access/Security | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | SAML API visibility | route tests | medium | high | A-026.5 |
+| 125 | student_ai_tutor | Research & Innovation | L3 | C | A-026.10-RUNTIME | EVIDENCED_L3_AFTER_A02610 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-027.0 |
+| 126 | student_feedback | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | feedback API visibility | route tests | medium | low | A-026.5 |
+| 127 | student_id_card | Student & Campus Life | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | ID card API visibility | route tests | medium | low | A-026.5 |
+| 128 | student_life | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | life KPI mapping | lineage mapping | medium | medium | A-026.6 |
+| 129 | student_portal | Student & Campus Life | L4 | D | A-024.4 | EVIDENCED_L4_AFTER_A0244 | KPI_evidence_or_Brain_mapping_missing | L5-readiness | student portal evidence/governance mapping | lineage/mapping contract tests | medium | high | A-026.6 |
+| 130 | student_services | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | services KPI mapping | lineage mapping | medium | medium | A-026.6 |
+| 131 | student_success_analytics | Planned Expansion | L3 | C | A-026.8-RUNTIME | EVIDENCED_L3_AFTER_A0268 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility/security contract tests | medium | high | A-026.9 |
+| 132 | students | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | student KPI mapping | lineage mapping | medium | high | A-026.6 |
+| 133 | subscriptions | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | subscription KPI lineage | lineage mapping | medium | low | A-026.6 |
+| 134 | syllabus_governance | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | syllabus signal mapping | mapping tests | medium | high | A-026.6 |
+| 135 | teaching_quality | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | quality signal mapping | mapping tests | medium | high | A-026.6 |
+| 136 | tenants | Identity/Access/Security | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | tenant event mapping | mapping tests | medium | high | A-026.6 |
+| 137 | thesis | Research & Innovation | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | thesis E2E and gates | gate continuity | high | high | A-026.7 |
+| 138 | timetable_approval_queue | Planned Expansion | L5 | E | A-026.6-RUNTIME | EVIDENCED_L5_READY_AFTER_A0266 | autonomous_execution_and_closed_loop_validation_missing | L6-readiness | controlled human-approved closed-loop governance / autonomous boundary validation | closed-loop safety / no-autonomy-breakout / human approval tests | medium | high | A-026.7 |
+| 139 | timetable_change_kpi_dashboard | Planned Expansion | L5 | E | A-026.6-RUNTIME | EVIDENCED_L5_READY_AFTER_A0266 | autonomous_execution_and_closed_loop_validation_missing | L6-readiness | controlled human-approved closed-loop governance / autonomous boundary validation | closed-loop safety / no-autonomy-breakout / human approval tests | medium | medium | A-026.7 |
+| 140 | timetable_change_proposal | Planned Expansion | L4 | D | A-026.5-RUNTIME | EVIDENCED_L4_AFTER_A0265_RUNTIME | KPI_evidence_or_Brain_mapping_missing | L5-readiness | KPI/evidence/Brain-readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
+| 141 | timetable_change_simulation | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
+| 142 | timetable_recommendation_bridge | Planned Expansion | L3 | C | A-026.4-RUNTIME | EVIDENCED_L3_AFTER_A0264 | operational_visibility_or_API_depth_needed | L4 | operational visibility/API readiness specification | route/visibility contract tests | medium | high | A-026.5 |
+| 143 | transcripts | Core Academic | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | transcript KPI mapping | lineage mapping | medium | high | A-026.6 |
+| 144 | transport | Student & Campus Life | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | transport KPI mapping | lineage mapping | medium | low | A-026.6 |
+| 145 | two_factor_auth | Identity/Access/Security | L3 | C | A-023.0 | EVIDENCED_LEVEL_ONLY | API_missing | L4 | 2FA API visibility | route tests | medium | high | A-026.5 |
+| 146 | university_core | Administration & Governance | L4 | D | A-024.5 | EVIDENCED_L4_AFTER_A0245 | KPI_evidence_or_Brain_mapping_missing | L5-readiness | university core evidence readiness mapping | lineage/mapping contract tests | medium | high | A-026.6 |
+| 147 | usage | Finance & Billing | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | KPI_evidence_missing | L5 | usage KPI lineage | lineage mapping | medium | high | A-026.6 |
+| 148 | visitor_management | Student & Campus Life | L5 | E | A-023.0 | EVIDENCED_LEVEL_ONLY | E2E_gate_missing | L6 | visitor E2E and gates | gate continuity | high | high | A-026.7 |
+| 149 | workflows | Administration & Governance | L4 | D | A-023.0 | EVIDENCED_LEVEL_ONLY | Brain_mapping_missing | L5 | workflow signal mapping | mapping tests | medium | medium | A-026.6 |
+| 150 | workload_management | Planned Expansion | L5 | E | A-026.6-RUNTIME | EVIDENCED_L5_READY_AFTER_A0266 | autonomous_execution_and_closed_loop_validation_missing | L6-readiness | controlled human-approved closed-loop governance / autonomous boundary validation | closed-loop safety / no-autonomy-breakout / human approval tests | medium | high | A-026.7 |
+
+## 24. CONTROLLED_EXTENSION_25_ROW_COMPLETION_STATUS
+
+- status: `FULL_FROM_AUTHORITATIVE_SOURCE`
+- source_file: `SBS_UB_150_MODULE_NORMALIZATION.md`
+- row_count: `25`
+- completion_note: extension rows are adopted from the authoritative extension registry and inherit unresolved taxonomy fields from Section 22 without inventing canonicals.
+
+| # | Extension Module | Domain | Initial Level | Runtime Created? | Baseline Impact | Capability Status | Related Killer Workflow | Required Work | Priority | Future Action |
+|---:|---|---|---:|---|---|---|---|---|---|---|
+| 1 | digital_credentials_wallet | Academic | L0 | NO | NO | PLANNING_ONLY | digital credential issuance governance | define service contract and governance policy | high | A-027+ |
+| 2 | micro_credentials_stack | Academic | L0 | NO | NO | PLANNING_ONLY | stackable credential design governance | design credential stacking model | high | A-027+ |
+| 3 | alumni_career_outcomes | Student Success | L0 | NO | NO | PLANNING_ONLY | alumni outcomes analytics | define outcomes schema and KPI lineage | medium | A-026+ |
+| 4 | grant_peer_review | Research | L0 | NO | NO | PLANNING_ONLY | research grant peer-review workflow | define review FSM and approval queues | high | A-027+ |
+| 5 | research_data_governance | Research | L0 | NO | NO | PLANNING_ONLY | research data access and retention | define data governance policy contracts | high | A-027+ |
+| 6 | llm_eval_harness | AI Platform | L0 | NO | NO | PLANNING_ONLY | model evaluation deterministic gates | define evaluation service contract | high | A-025.2 |
+| 7 | prompt_lifecycle_governance | AI Platform | L0 | NO | NO | PLANNING_ONLY | prompt release governance approval | define prompt version and release FSM | high | A-025.2 |
+| 8 | knowledge_retrieval_fabric | AI Platform | L0 | NO | NO | PLANNING_ONLY | retrieval quality audit and drift | define orchestration and lineage contracts | high | A-025.2 |
+| 9 | ai_model_registry | AI Platform | L0 | NO | NO | PLANNING_ONLY | model governance and policy hooks | define model lifecycle inventory | high | A-025.3 |
+| 10 | model_cost_optimizer | Finance/AI | L0 | NO | NO | PLANNING_ONLY | cost optimization recommendations | define cost optimization advisory service | medium | A-026+ |
+| 11 | copilot_safety_ops | AI Governance | L0 | NO | NO | PLANNING_ONLY | policy violation triage queue | define safety gate and policy FSM | high | A-025.3 |
+| 12 | policy_simulation_lab | Governance | L0 | NO | NO | PLANNING_ONLY | policy impact simulation | define no-mutation simulation contracts | medium | A-026+ |
+| 13 | incident_command_center | Security/Governance | L0 | NO | NO | PLANNING_ONLY | cross-domain incident dispatch | define incident FSM and routing rules | high | A-026+ |
+| 14 | threat_intel_fusion | Security | L0 | NO | NO | PLANNING_ONLY | threat signal normalization | define threat signal fusion service | high | A-026+ |
+| 15 | privacy_request_orchestrator | Compliance | L0 | NO | NO | PLANNING_ONLY | DSAR and privacy operations | define privacy request FSM and SLA | high | A-026+ |
+| 16 | data_retention_orchestrator | Compliance | L0 | NO | NO | PLANNING_ONLY | retention policy enforcement | define retention policy service contract | high | A-026+ |
+| 17 | billing_reconciliation_ops | Finance | L0 | NO | NO | PLANNING_ONLY | reconciliation discrepancy closure | define reconciliation workflow FSM | high | A-025.3 |
+| 18 | revenue_leak_detection | Finance | L0 | NO | NO | PLANNING_ONLY | revenue anomaly surfacing | define anomaly detection and alert service | medium | A-026+ |
+| 19 | procurement_vendor_risk | Procurement | L0 | NO | NO | PLANNING_ONLY | vendor risk assessment workflow | define risk scoring and audit lineage | high | A-026+ |
+| 20 | classroom_iot_telemetry | Campus | L0 | NO | NO | PLANNING_ONLY | IoT telemetry ingestion | define telemetry ingestion contracts | medium | A-027+ |
+| 21 | energy_optimization_ops | Campus | L0 | NO | NO | PLANNING_ONLY | energy optimization recommendations | define optimization advisory service | medium | A-027+ |
+| 22 | transport_fleet_ops | Campus | L0 | NO | NO | PLANNING_ONLY | fleet operations visibility | define fleet status and incident service | medium | A-027+ |
+| 23 | admissions_yield_prediction | Admissions | L0 | NO | NO | PLANNING_ONLY | yield prediction advisory workflow | define yield advisory service and guidance | high | A-026+ |
+| 24 | student_success_playbooks | Student Success | L0 | NO | NO | PLANNING_ONLY | intervention playbook approvals | define playbook orchestration and approval FSM | high | A-026+ |
+| 25 | faculty_workload_optimizer | HR/Faculty | L0 | NO | NO | PLANNING_ONLY | workload planning recommendations | define workload advisory service | high | A-027+ |
+
+## 25. UNIVERSITY_COMPLETENESS_EXPANSION_ROW_COMPLETION_STATUS
+
+- status: `FULL_FROM_AUTHORITATIVE_SOURCE`
+- source_file: `SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md`
+- row_count: `149`
+- completion_note: B2.R1 adopts `UCE-001..149` as the authoritative completeness-expansion row body; no UCE candidate is auto-promoted to runtime and all provider rows remain non-live-first.
+
+| capability_id | capability_name | capability_type | domain | summary | gap | priority | current_expansion_level | next_wave | notes |
+|---|---|---|---|---|---|---|---|---|---|
+| UCE-001 | staff_recruitment | NEW_MODULE | Faculty / HR | hiring lifecycle and approvals | HR process stack missing | P0 | L2 | A-027.2 | tenant-safe recruitment contract |
+| UCE-002 | staff_onboarding | NEW_MODULE | Faculty / HR | onboarding tasks and compliance | onboarding workflow missing | P0 | L2 | A-027.2 | links HR and IAM |
+| UCE-003 | employee_records | NEW_MODULE | Faculty / HR | canonical employee profile and employment state | fragmented employee evidence | P0 | L2 | A-027.2 | no payroll mutation in first slice |
+| UCE-004 | leave_management | NEW_MODULE | Faculty / HR | leave requests and balances governance | no leave lifecycle | P1 | L2 | A-027.2 | read-only visibility first |
+| UCE-005 | performance_appraisal | NEW_MODULE | Faculty / HR | formal appraisal cycle | no formal appraisal module | P1 | L2 | A-027.3 | evidence-based reviews |
+| UCE-006 | training_certification | NEW_MODULE | Faculty / HR | mandatory training tracking | compliance training gap | P1 | L2 | A-027.3 | policy-linked controls |
+| UCE-007 | disciplinary_case_management | NEW_MODULE | Faculty / HR | disciplinary case lifecycle | no controlled disciplinary process | P1 | L2 | A-027.3 | strict human review boundaries |
+| UCE-008 | position_budgeting | NEW_MODULE | Faculty / HR | staffing plan to budget alignment | HR-finance planning gap | P1 | L2 | A-027.3 | integrates with budget_planning |
+| UCE-009 | document_workflow | NEW_MODULE | Document Management | formal document routing lifecycle | digital docs too generic | P0 | L2 | A-027.2 | decree/memo routing core |
+| UCE-010 | internal_memo_routing | NEW_MODULE | Document Management | inter-office memo approvals | no memo workflow module | P1 | L2 | A-027.3 | can later merge with document_workflow |
+| UCE-011 | order_decree_registry | NEW_MODULE | Governance / Document | legal orders and decrees register | no dedicated decree governance | P0 | L2 | A-027.2 | high compliance value |
+| UCE-012 | archive_retention_management | NEW_MODULE | Library / Archive | retention schedules and disposal controls | retention controls weak | P0 | L2 | A-027.2 | policy-coupled module |
+| UCE-013 | incoming_outgoing_correspondence | NEW_MODULE | Communications | official correspondence tracking | correspondence traceability gap | P1 | L2 | A-027.3 | SLA and audit required |
+| UCE-014 | curriculum_mapping | NEW_MODULE | Academic Affairs | map courses to outcomes and competencies | curriculum traceability missing | P0 | L2 | A-027.2 | core accreditation driver |
+| UCE-015 | syllabus_management | NEW_MODULE | Academic Affairs | syllabus lifecycle and version control | missing lifecycle workflow | P0 | L2 | A-027.2 | policy and approval bound |
+| UCE-016 | competency_framework | NEW_MODULE | Academic Affairs | competency model governance | no competency catalog module | P0 | L2 | A-027.3 | supports outcomes tracking |
+| UCE-017 | dormitory_management | NEW_MODULE | Campus Operations | housing allocation and occupancy control | housing depth weak | P1 | L2 | A-027.3 | tenant and room boundaries |
+| UCE-018 | transport_shuttle_management | NEW_MODULE | Campus Operations | shuttle operations and incidents | transport operations gap | P2 | L2 | A-027.3 | integrates with transport |
+| UCE-019 | international_office | NEW_MODULE | International Office | mobility, exchange, visa support operations | domain missing | P0 | L2 | A-027.2 | foundational international domain |
+| UCE-020 | visa_support | SUBMODULE | International Office | visa case handling in international office | visa workflow absent | P1 | L2 | A-027.3 | submodule under UCE-019 |
+| UCE-021 | unified_party_profile | DATA_ENTITY | Data / Master Data | shared identity graph for student-staff-parent-party links | cross-domain entity fragmentation | P1 | L1 | A-027.1 | entity governance only |
+| UCE-022 | partnership_registry | NEW_MODULE | International Office | partnership and agreement inventory | no dedicated partnership module | P1 | L2 | A-027.3 | ties to legal/contracts |
+| UCE-023 | mou_lifecycle | NEW_MODULE | International Office | MOU draft-review-sign-renew-close lifecycle | MOU process missing | P1 | L2 | A-027.3 | high inter-domain value |
+| UCE-024 | platonus_integration | INTEGRATION | Integration Layer | SIS interop for enrollment and records | connector absent | P0 | L2 | A-027.2 | integration contract only |
+| UCE-025 | one_c_integration | INTEGRATION | Integration Layer | HR/finance ERP synchronization | ERP connector absent | P0 | L2 | A-027.2 | strict anti-mutation start |
+| UCE-026 | bank_gateway_integration | INTEGRATION | Integration Layer | payment and reconciliation exchange | payment rails incomplete | P0 | L2 | A-027.2 | read/verify first |
+| UCE-027 | email_gateway_integration | INTEGRATION | Integration Layer | controlled outbound email channel | no unified gateway contract | P1 | L2 | A-027.3 | provider-safe boundaries |
+| UCE-028 | sms_gateway_integration | INTEGRATION | Integration Layer | controlled outbound SMS channel | no unified gateway contract | P1 | L2 | A-027.3 | provider-safe boundaries |
+| UCE-029 | biometric_device_integration | INTEGRATION | Integration Layer | access/attendance device federation | device integration gap | P2 | L2 | A-027.3 | tenant and privacy guard |
+| UCE-030 | egov_integration | INTEGRATION | Integration Layer | government filing and verification exchange | ministry/reporting interop weak | P0 | L2 | A-027.2 | regulatory high priority |
+| UCE-031 | rector_strategy_dashboard | REPORT_DASHBOARD | Governance | executive operational and strategic visibility | no unified rector dashboard | P0 | L1 | A-027.5 | depends on evidence contracts |
+| UCE-032 | ministry_reporting_dashboard | REPORT_DASHBOARD | Regulatory Reporting | ministry pack status and evidence lineage | reporting orchestration weak | P0 | L1 | A-027.5 | no fake filing claims |
+| UCE-033 | finance_executive_dashboard | REPORT_DASHBOARD | Finance | consolidated finance risk and close metrics | fragmented finance visibility | P1 | L1 | A-027.5 | fed by UCE-026 workflows |
+| UCE-034 | student_success_dashboard | REPORT_DASHBOARD | Student Success | intervention outcomes and leading indicators | student support visibility fragmented | P1 | L1 | A-027.5 | links interventions and counseling |
+| UCE-035 | security_risk_dashboard | REPORT_DASHBOARD | Security | SOC and IAM risk overview | no single security command view | P1 | L1 | A-027.5 | fed by SOC workflows |
+| UCE-036 | ai_governance_dashboard | REPORT_DASHBOARD | AI Governance | AI model/prompt/risk transparency | governance visibility spread across modules | P1 | L1 | A-027.5 | evidence and policy first |
+| UCE-037 | scholarship_committee_workflow | WORKFLOW | Student Lifecycle | committee approvals and exceptions | scholarship decision workflow incomplete | P1 | L2 | A-027.4 | orchestrates existing modules |
+| UCE-038 | student_appeals_workflow | WORKFLOW | Student Lifecycle | appeals intake-review-resolution process | no formal appeals workflow | P1 | L2 | A-027.4 | human-review mandatory |
+| UCE-039 | academic_calendar_governance_workflow | WORKFLOW | Academic Affairs | calendar proposal-review-publish approvals | no governance workflow | P1 | L2 | A-027.4 | avoids direct publish automation |
+| UCE-040 | grant_deliverable_tracking_workflow | WORKFLOW | Research | deliverable deadlines and evidence closure | grant follow-through gap | P1 | L2 | A-027.4 | linked to research_grants |
+| UCE-041 | financial_close_workflow | WORKFLOW | Finance | month-end close checklist and approvals | financial close lifecycle missing | P0 | L2 | A-027.4 | high executive value |
+| UCE-042 | internal_audit_case_workflow | WORKFLOW | Audit / Compliance | audit case handling and remediation closure | audit process fragmentation | P0 | L2 | A-027.4 | ties to legal and policy controls |
+| UCE-043 | campus_incident_response_workflow | WORKFLOW | Campus Operations | incident triage and escalation routing | emergency workflows fragmented | P1 | L2 | A-027.4 | cross-module orchestration |
+| UCE-044 | emergency_drill_workflow | WORKFLOW | Campus Operations | preparedness drill planning and evidence | no drill lifecycle module | P2 | L2 | A-027.4 | evidence-focused first |
+| UCE-045 | data_privacy_request_policy | POLICY_CONTROL | Compliance | DSAR response obligations and SLA policy | policy governance not explicit | P0 | L1 | A-027.1 | control definition only |
+| UCE-046 | consent_management_policy | POLICY_CONTROL | Compliance | legal consent model and revocation handling | consent control missing | P0 | L1 | A-027.1 | prerequisite for outreach automation |
+| UCE-047 | third_party_risk_policy | POLICY_CONTROL | Security / Legal | vendor and partner risk control baseline | third-party governance weak | P1 | L1 | A-027.1 | policy first, implementation later |
+| UCE-048 | data_retention_policy_control | POLICY_CONTROL | Compliance | retention categories and legal hold controls | retention governance gap | P0 | L1 | A-027.1 | paired with UCE-012 |
+| UCE-049 | student_risk_signal_registry | BRAIN_SIGNAL | Student Success | normalized student risk signal definitions | no central signal registry | P1 | L1 | A-029 | candidate-only, no execution |
+| UCE-050 | finance_anomaly_signal_registry | BRAIN_SIGNAL | Finance | normalized finance anomaly signal taxonomy | finance signal fragmentation | P1 | L1 | A-029 | candidate-only, no execution |
+| UCE-051 | academic_quality_signal_registry | BRAIN_SIGNAL | Academic Affairs | quality and outcome signal definitions | quality signal gap | P1 | L1 | A-029 | candidate-only, no execution |
+| UCE-052 | security_risk_signal_registry | BRAIN_SIGNAL | Security | security threat and control signal taxonomy | SOC signal standardization missing | P1 | L1 | A-029 | candidate-only, no execution |
+| UCE-053 | safe_autonomous_notification_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | AI / Automation | proposes low-risk notification drafts for approval | no safe autonomous candidate lane | P2 | L1 | A-030 | human approval required |
+| UCE-054 | brain_decision_audit_trail | AUDIT_EVIDENCE_CAPABILITY | AI Governance | captures recommendation-to-decision lineage | no unified decision evidence chain | P0 | L1 | A-029 | mandatory before autonomy expansion |
+| UCE-055 | staff_recruitment | NEW_MODULE | HR / Personnel | hiring request-to-offer lifecycle | no dedicated recruitment lifecycle | P0 | L2 | A-027.2 | tenant-safe contracts only |
+| UCE-056 | staff_onboarding | NEW_MODULE | Faculty Lifecycle | onboarding checkpoints and policy tasks | no structured onboarding module | P0 | L2 | A-027.2 | links HR and IAM controls |
+| UCE-057 | staff_probation_review | NEW_MODULE | Faculty Lifecycle | probation evaluation and outcomes | probation governance gap | P1 | L2 | A-027.3 | human review required |
+| UCE-058 | employee_records | NEW_MODULE | HR / Personnel | canonical employment profile lifecycle | fragmented HR evidence | P0 | L2 | A-027.2 | no payroll mutation in first slice |
+| UCE-059 | leave_management | NEW_MODULE | HR / Personnel | leave request and approval lifecycle | leave process missing | P1 | L2 | A-027.3 | policy-bound leave rules |
+| UCE-060 | timesheet_management | NEW_MODULE | HR / Personnel | timesheet capture and approval | no unified timesheet controls | P1 | L2 | A-027.3 | deterministic approvals |
+| UCE-061 | faculty_attestation | NEW_MODULE | Faculty Lifecycle | yearly faculty attestation and compliance | attestation workflow missing | P1 | L2 | A-027.3 | evidence-first design |
+| UCE-062 | faculty_promotion | NEW_MODULE | Faculty Lifecycle | promotion dossier and committee outcomes | no promotion lifecycle module | P1 | L2 | A-027.3 | strong audit trail needed |
+| UCE-063 | performance_appraisal | NEW_MODULE | Faculty Lifecycle | appraisal goals, cycles, and outcomes | appraisal stack incomplete | P1 | L2 | A-027.3 | human-reviewed scoring only |
+| UCE-064 | training_certification | NEW_MODULE | Faculty Lifecycle | mandatory training completion tracking | training governance gap | P1 | L2 | A-027.3 | compliance-linked controls |
+| UCE-065 | disciplinary_case_management | NEW_MODULE | Faculty Lifecycle | disciplinary case intake-review-resolution | no controlled disciplinary module | P1 | L2 | A-027.3 | strict safety boundaries |
+| UCE-066 | succession_planning | NEW_MODULE | Governance / HR | leadership continuity planning | succession governance missing | P2 | L2 | A-027.3 | planning-only first |
+| UCE-067 | teaching_load_contracts | NEW_MODULE | Workload / Timetable / Capacity | formal teaching load obligations | workload contract gap | P1 | L2 | A-027.3 | links faculty and timetable |
+| UCE-068 | adjunct_faculty_management | NEW_MODULE | Faculty Lifecycle | adjunct engagement and contract states | adjunct lifecycle missing | P1 | L2 | A-027.3 | tenant and legal boundaries |
+| UCE-069 | vacancy_planning | NEW_MODULE | HR / Personnel | planned vacancy forecast and approvals | staffing planning gap | P2 | L2 | A-027.3 | tied to position budgets |
+| UCE-070 | staff_exit_offboarding | NEW_MODULE | HR / Personnel | offboarding task and entitlement closure | offboarding process missing | P1 | L2 | A-027.3 | IAM and asset closure links |
+| UCE-071 | program_learning_outcomes | NEW_MODULE | Curriculum / Programs / Competencies | program-level outcomes catalog | outcomes traceability gap | P0 | L2 | A-027.2 | accreditation-critical |
+| UCE-072 | course_learning_outcomes | NEW_MODULE | Curriculum / Programs / Competencies | course outcome definitions and mapping | CLO governance missing | P0 | L2 | A-027.2 | ties to syllabus and assessment |
+| UCE-073 | elective_course_selection | NEW_MODULE | Academic Affairs | elective demand and approval lifecycle | elective workflow incomplete | P1 | L2 | A-027.3 | bounded selection policy |
+| UCE-074 | prerequisite_management | NEW_MODULE | Curriculum / Programs / Competencies | prerequisite rule governance | prerequisite rule engine missing | P1 | L2 | A-027.3 | deterministic validation boundaries |
+| UCE-075 | transfer_credit_management | NEW_MODULE | Registrar / Student Records | transfer credit evaluation workflow | transfer credit lifecycle missing | P1 | L2 | A-027.3 | human-approved evaluation |
+| UCE-076 | course_catalog_management | NEW_MODULE | Academic Affairs | versioned course catalog publication lifecycle | no dedicated catalog module | P1 | L2 | A-027.3 | no direct publish automation |
+| UCE-077 | thesis_dissertation_management | NEW_MODULE | Academic Affairs | end-to-end thesis/dissertation governance | thesis lifecycle fragmented | P1 | L2 | A-027.3 | review-gated progression |
+| UCE-078 | academic_integrity_case_management | NEW_MODULE | Assessment / Exams / Proctoring | integrity case handling and adjudication | core integrity module too broad for caseflow | P1 | L2 | A-027.3 | strict human decision boundary |
+| UCE-079 | meal_plan_management | NEW_MODULE | Student Life / Clubs / Discipline / Appeals | meal plan enrollment and eligibility | cafeteria-service governance missing | P2 | L2 | A-027.3 | no billing mutation first |
+| UCE-080 | student_clubs_management | NEW_MODULE | Student Life / Clubs / Discipline / Appeals | club registry, approvals, and activities | student club governance missing | P2 | L2 | A-027.3 | policy-bound approvals |
+| UCE-081 | disability_support_services | NEW_MODULE | Student Support / Health / Counseling | accommodations case lifecycle and evidence | disability support flow missing | P0 | L2 | A-027.2 | sensitive data controls required |
+| UCE-082 | student_financial_hardship | NEW_MODULE | Student Support / Health / Counseling | hardship case intake and review | hardship intervention flow missing | P1 | L2 | A-027.3 | links aid and counseling |
+| UCE-083 | student_orientation_management | NEW_MODULE | Student Lifecycle | orientation planning and completion tracking | orientation lifecycle missing | P2 | L2 | A-027.3 | event and student links |
+| UCE-084 | graduation_ceremony_management | NEW_MODULE | Student Lifecycle | ceremony eligibility and logistics | graduation operations gap | P2 | L2 | A-027.3 | readiness and attendance tracking |
+| UCE-085 | joint_program_management | NEW_MODULE | International Office / Mobility / Partnerships | joint program governance and obligations | partnerships not lifecycle-managed | P1 | L2 | A-027.3 | multi-party control boundaries |
+| UCE-086 | inbound_exchange_management | NEW_MODULE | International Office / Mobility / Partnerships | inbound exchange admissions and support | inbound process missing | P1 | L2 | A-027.3 | ties visa and registrar |
+| UCE-087 | outbound_exchange_management | NEW_MODULE | International Office / Mobility / Partnerships | outbound exchange application and approvals | outbound process missing | P1 | L2 | A-027.3 | policy and risk checks |
+| UCE-088 | international_grant_coordination | NEW_MODULE | International Office / Mobility / Partnerships | international grant lifecycle coordination | cross-border grant workflow gap | P2 | L2 | A-027.3 | integration-ready design |
+| UCE-089 | document_template_library | NEW_MODULE | Document Workflow / Archive / EDS | controlled template versioning and approvals | template governance not explicit | P1 | L2 | A-027.3 | links document workflow |
+| UCE-090 | committee_decision_registry | NEW_MODULE | Governance / Rectorate / Strategy | formal committee resolutions and decisions | decision evidence chain missing | P0 | L2 | A-027.2 | critical governance evidence |
+| UCE-091 | payroll_interface_workflow | WORKFLOW | Payroll / Position Budgeting Interfaces | orchestrate payroll data handoff approvals | payroll interface workflow missing | P0 | L2 | A-027.4 | no direct payroll execution |
+| UCE-092 | degree_audit | NEW_MODULE | Registrar / Student Records | degree audit governance lifecycle and evidence | registrar audit module gap | P0 | L2 | A-027.3.R1 | A-027.1.B1 canonical amendment; alias_previous_label=degree_audit_workflow |
+| UCE-093 | academic_appeals_workflow | WORKFLOW | Student Life / Clubs / Discipline / Appeals | appeal intake-review-resolution flow | appeals orchestration incomplete | P1 | L2 | A-027.4 | committee gates required |
+| UCE-094 | thesis_supervision_workflow | WORKFLOW | Academic Affairs | supervisor assignment and milestone approvals | supervision orchestration fragmented | P1 | L2 | A-027.4 | no autonomous approval |
+| UCE-095 | graduation_clearance_workflow | WORKFLOW | Registrar / Student Records | cross-domain graduation readiness clearance | fragmented clearance checks | P1 | L2 | A-027.4 | deterministic checklist orchestration |
+| UCE-096 | inventory_writeoff_workflow | WORKFLOW | Procurement / Contracts / Assets | controlled writeoff review and approval routing | writeoff path not standardized | P1 | L2 | A-027.4 | audit trail mandatory |
+| UCE-097 | contract_obligation_tracking_workflow | WORKFLOW | Legal / Internal Audit | monitor obligation due dates and escalations | legal obligation tracking gap | P0 | L2 | A-027.4 | compliance critical |
+| UCE-098 | procurement_plan_approval_workflow | WORKFLOW | Procurement / Contracts / Assets | annual procurement plan approval orchestration | planning approvals fragmented | P1 | L2 | A-027.4 | risk and budget gates |
+| UCE-099 | rector_resolution_tracking_workflow | WORKFLOW | Governance / Rectorate / Strategy | track resolution execution and closure evidence | strategy execution visibility gap | P0 | L2 | A-027.4 | rectorate governance value |
+| UCE-100 | emergency_drill_execution_workflow | WORKFLOW | Sustainability / ESG / Safety | drill planning-to-execution evidence flow | safety drill workflow missing | P1 | L2 | A-027.4 | no automated emergency actions |
+| UCE-101 | service_catalog_request_workflow | WORKFLOW | IT Operations / DevOps / Release Governance | service request intake and approvals | service catalog orchestration gap | P1 | L2 | A-027.4 | ties helpdesk and IAM |
+| UCE-102 | helpdesk_ticket_escalation_workflow | WORKFLOW | IT Operations / DevOps / Release Governance | deterministic escalation routing | escalation policy not formalized | P1 | L2 | A-027.4 | SLA evidence first |
+| UCE-103 | ethics_amendment_workflow | WORKFLOW | Ethics / Compliance / IP / Tech Transfer | amendment submission and committee handling | ethics change workflow missing | P1 | L2 | A-027.4 | research governance critical |
+| UCE-104 | patent_application_workflow | WORKFLOW | Ethics / Compliance / IP / Tech Transfer | patent filing review and approval flow | patent lifecycle orchestration weak | P2 | L2 | A-027.4 | commercialization linkage |
+| UCE-105 | epvo_integration | INTEGRATION | Integration Layer / External Systems | national education platform interoperability | connector absent | P1 | L2 | A-027.3 | contract only, no live provider |
+| UCE-106 | lms_integration | INTEGRATION | Integration Layer / External Systems | federated LMS synchronization contracts | LMS connector incomplete | P1 | L2 | A-027.3 | read and reconcile first |
+| UCE-107 | turnstile_sks_integration | INTEGRATION | Integration Layer / External Systems | turnstile access event federation | physical access integration missing | P1 | L2 | A-027.3 | security and privacy boundaries |
+| UCE-108 | idp_sso_integration | INTEGRATION | IAM / Federation / Privileged Access | external IdP SSO interoperability | SSO federation depth gap | P1 | L2 | A-027.3 | no privileged bypass |
+| UCE-109 | eds_signature_integration | INTEGRATION | Document Workflow / Archive / EDS | digital signature verification gateway | e-signature connector missing | P0 | L2 | A-027.2 | compliance-critical |
+| UCE-110 | payment_gateway_integration | INTEGRATION | Finance / Budget / Billing | payment provider abstraction and evidence | payment integration fragmentation | P1 | L2 | A-027.3 | no autonomous settlement |
+| UCE-111 | document_archive_integration | INTEGRATION | Document Workflow / Archive / EDS | archive system sync and retrieval contracts | archive interop gap | P1 | L2 | A-027.3 | retention policy compatibility |
+| UCE-112 | ministry_reporting_integration | INTEGRATION | Ministry / Government / Regulatory Reporting | machine-readable reporting exchange | ministry interface missing | P0 | L2 | A-027.2 | regulatory priority |
+| UCE-113 | hr_payroll_system_integration | INTEGRATION | Payroll / Position Budgeting Interfaces | HR to payroll system federation | payroll connector missing | P0 | L2 | A-027.2 | contract-only first |
+| UCE-114 | accreditation_dashboard | REPORT_DASHBOARD | Quality Assurance / Accreditation | accreditation readiness and gap visibility | no dedicated accreditation dashboard | P0 | L2 | A-027.5 | evidence-backed only |
+| UCE-115 | research_performance_dashboard | REPORT_DASHBOARD | Research / Grants / Publications | publication/grant/lab KPI visibility | research reporting fragmentation | P1 | L2 | A-027.5 | no synthetic KPIs |
+| UCE-116 | hr_dashboard | REPORT_DASHBOARD | HR / Personnel | staffing, attrition, compliance visibility | no unified HR dashboard | P1 | L2 | A-027.5 | policy-compliant aggregations |
+| UCE-117 | campus_operations_dashboard | REPORT_DASHBOARD | Campus / Facilities / Maintenance | facilities, incidents, maintenance visibility | campus ops view fragmented | P1 | L2 | A-027.5 | tenant and role scopes |
+| UCE-118 | international_office_dashboard | REPORT_DASHBOARD | International Office / Mobility / Partnerships | mobility and partnerships visibility | domain dashboard missing | P1 | L2 | A-027.5 | interop-dependent |
+| UCE-119 | curriculum_quality_dashboard | REPORT_DASHBOARD | Curriculum / Programs / Competencies | curriculum and outcomes quality tracking | quality dashboard gap | P1 | L2 | A-027.5 | evidence lineage required |
+| UCE-120 | document_workflow_dashboard | REPORT_DASHBOARD | Document Workflow / Archive / EDS | document SLA and routing bottleneck visibility | document governance visibility weak | P1 | L2 | A-027.5 | no fake processing claims |
+| UCE-121 | procurement_risk_dashboard | REPORT_DASHBOARD | Procurement / Contracts / Assets | vendor and obligation risk visibility | procurement risk reporting gap | P1 | L2 | A-027.5 | depends on workflow evidence |
+| UCE-122 | compliance_calendar_dashboard | REPORT_DASHBOARD | Legal / Internal Audit | deadline and remediation calendar visibility | compliance calendar gap | P0 | L2 | A-027.5 | critical for audit readiness |
+| UCE-123 | academic_integrity_policy_control | POLICY_CONTROL | Assessment / Exams / Proctoring | codified integrity decision boundaries | policy control missing | P0 | L1 | A-027.1 | no automatic sanctions |
+| UCE-124 | examination_governance_policy_control | POLICY_CONTROL | Assessment / Exams / Proctoring | exam board and change governance constraints | governance policy not explicit | P1 | L1 | A-027.1 | policy-only first |
+| UCE-125 | laboratory_safety_policy_control | POLICY_CONTROL | Sustainability / ESG / Safety | lab safety control baseline and escalation rules | safety policy control gap | P1 | L1 | A-027.1 | ties lab operations |
+| UCE-126 | campus_emergency_response_policy_control | POLICY_CONTROL | Sustainability / ESG / Safety | emergency protocol control definitions | emergency policy set incomplete | P1 | L1 | A-027.1 | no autonomous emergency actions |
+| UCE-127 | records_retention_legal_hold_policy_control | POLICY_CONTROL | Legal / Internal Audit | legal hold and retention precedence rules | retention/legal hold policy gap | P0 | L1 | A-027.1 | audit-critical |
+| UCE-128 | ai_model_risk_policy_control | POLICY_CONTROL | AI Governance / Brain / Agents | AI model risk classification and controls | AI risk policy controls missing | P1 | L1 | A-027.1 | governance foundation |
+| UCE-129 | procurement_risk_signal_registry | BRAIN_SIGNAL | Procurement / Contracts / Assets | normalized procurement risk signal taxonomy | procurement signal standard missing | P1 | L2 | A-029 | candidate-only signals |
+| UCE-130 | facility_risk_signal_registry | BRAIN_SIGNAL | Campus / Facilities / Maintenance | facilities risk signal standards | facility signal gap | P1 | L2 | A-029 | candidate-only signals |
+| UCE-131 | hr_risk_signal_registry | BRAIN_SIGNAL | HR / Personnel | HR risk and compliance signal taxonomy | HR signal governance missing | P1 | L2 | A-029 | candidate-only signals |
+| UCE-132 | curriculum_gap_signal_registry | BRAIN_SIGNAL | Curriculum / Programs / Competencies | curriculum quality gap signal definitions | quality signal gap | P1 | L2 | A-029 | no autonomous action |
+| UCE-133 | document_delay_signal_registry | BRAIN_SIGNAL | Document Workflow / Archive / EDS | document routing delay signal standards | no standardized delay signals | P1 | L2 | A-029 | supports document dashboard |
+| UCE-134 | compliance_deadline_signal_registry | BRAIN_SIGNAL | Legal / Internal Audit | compliance deadline risk signals | deadline signal model missing | P0 | L2 | A-029 | audit-critical |
+| UCE-135 | integration_failure_signal_registry | BRAIN_SIGNAL | Integration Layer / External Systems | standardized integration failure signals | integration reliability signal gap | P0 | L2 | A-029 | drives resilience reviews |
+| UCE-136 | enrollment_conversion_signal_registry | BRAIN_SIGNAL | Admissions / Enrollment | admissions conversion signal taxonomy | admissions signal standard missing | P2 | L2 | A-029 | explainability boundary |
+| UCE-137 | dropout_prevention_signal_registry | BRAIN_SIGNAL | Student Lifecycle | dropout risk signal standardization | student risk signal depth gap | P1 | L2 | A-029 | human review required |
+| UCE-138 | scholarship_abuse_signal_registry | BRAIN_SIGNAL | Student Lifecycle | scholarship misuse risk indicators | scholarship controls under-modeled | P1 | L2 | A-029 | no enforcement automation |
+| UCE-139 | payroll_anomaly_signal_registry | BRAIN_SIGNAL | Payroll / Position Budgeting Interfaces | payroll anomaly signal taxonomy | payroll oversight gap | P1 | L2 | A-029 | policy and audit bound |
+| UCE-140 | contract_breach_signal_registry | BRAIN_SIGNAL | Legal / Internal Audit | contract breach early-warning signals | legal risk signal standards missing | P1 | L2 | A-029 | legal review required |
+| UCE-141 | cyber_threat_signal_registry | BRAIN_SIGNAL | Security / Access Control / SOC | cyber risk signal standardization | SOC signal taxonomy incomplete | P1 | L2 | A-029 | no auto-block execution |
+| UCE-142 | sustainability_esg_signal_registry | BRAIN_SIGNAL | Sustainability / ESG / Safety | ESG and safety signal governance | ESG signal registry missing | P2 | L2 | A-029 | evidence-driven only |
+| UCE-143 | commercialization_pipeline_signal_registry | BRAIN_SIGNAL | Commercialization / Continuing Education / Online Programs | commercialization pipeline health signals | commercialization signal gap | P2 | L2 | A-029 | candidate-only signals |
+| UCE-144 | brain_signal_quality_monitor | BRAIN_SIGNAL | AI Governance / Brain / Agents | detect drift/quality issues in signal pipelines | signal quality governance gap | P1 | L2 | A-029 | no autonomous correction |
+| UCE-145 | safe_evidence_summary_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | AI Governance / Brain / Agents | draft evidence summaries for human review | manual evidence summarization bottleneck | P2 | L1 | A-030 | human approval mandatory |
+| UCE-146 | safe_task_drafting_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | Governance / Rectorate / Strategy | draft task cards and action templates | manual planning overhead | P2 | L1 | A-030 | no direct execution rights |
+| UCE-147 | safe_report_draft_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | Data / BI / KPI / Reporting | draft report narrative from approved evidence | reporting drafting bottleneck | P2 | L1 | A-030 | human sign-off required |
+| UCE-148 | safe_document_routing_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | Document Workflow / Archive / EDS | suggest routing path for incoming documents | routing triage latency | P2 | L1 | A-030 | cannot auto-approve |
+| UCE-149 | safe_compliance_calendar_agent | AUTONOMOUS_WORKFLOW_CANDIDATE | Legal / Internal Audit | draft reminder schedule for compliance deadlines | calendar maintenance burden | P2 | L1 | A-030 | no autonomous enforcement |
+
+## 26. Product Vertical Exhaustive Rows
+
+| vertical_id | vertical_name | status | included_capabilities | missing_capabilities | canonical_modules_reused | bridge_dependencies | brain_readiness | provider_needs | dashboard_needs | sensitivity | recommended_next_action |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| VRT-201 | Executive Governance Suite | CLOSED_BASELINED | university_core, admin, plans, workflows, rector strategy visibility, committee and decree governance | deeper policy simulation and decision audit overlays | university_core, admin, workflows, UCE-090, UCE-011 | academic_operations_to_executive_governance_bridge, ministry_reporting_to_regulatory_compliance_bridge | GOVERNANCE_ONLY | NON_LIVE_PROFILE_ONLY | rector_strategy_dashboard, executive_control_tower | HIGH | preserve canonicals; expand via controlled bridges |
+| VRT-202 | Student Lifecycle Suite | CLOSED_BASELINED | admissions, students, enrollments, academic_records, student_portal, interventions, appeals, success visibility | hardship, disability, wellbeing escalation depth | admissions, students, enrollments, academic_records, student_portal, UCE-038 | academic_operations_to_student_lifecycle_bridge, attendance_to_student_support_bridge | SIGNAL_READY | NON_LIVE_PROFILE_ONLY | student_lifecycle_dashboard, student_success_dashboard | HIGH | preserve canonicals; reuse registrar and support anchors |
+| VRT-203 | Academic Operations Suite | SPECIFIED_AND_RECONCILED | BAS academic substrate plus UCE-039, UCE-073, UCE-076, UCE-090 and the 28-row reconciliation set below | six true-new modules and bridge wrappers only | attendance, room_booking, workload_management, course_catalog_management, elective_course_selection, committee_decision_registry | academic_operations_to_student_lifecycle_bridge, academic_operations_to_document_workflow_bridge, academic_operations_to_quality_accreditation_bridge | GOVERNANCE_ONLY | FUTURE_READINESS_ONLY | academic_operations_dashboard | HIGH | A-036.2-RUNTIME with canonical reuse only |
+| VRT-204 | Research / Science Suite | FUTURE_VERTICAL | research, research_ethics, research_grants, research_projects, publication_registry, publications, thesis | science dashboard, data management, grants execution evidence depth | research, research_ethics, research_grants, publications, BAS thesis | research_to_accreditation_bridge, thesis_to_research_science_bridge | GOVERNANCE_ONLY | NON_LIVE_PROFILE_ONLY | research_science_dashboard, research_performance_dashboard | HIGH | A-037.0-SPEC |
+| VRT-205 | Quality / Accreditation Suite | FUTURE_VERTICAL | accreditation, accreditation_compliance, curriculum mapping, learning outcomes, quality dashboards | institutional accreditation, nonconformance closure, evidence repository depth | accreditation, accreditation_compliance, UCE-014, UCE-071, UCE-072, UCE-114, UCE-119 | academic_operations_to_quality_accreditation_bridge, ministry_reporting_to_regulatory_compliance_bridge | SIGNAL_READY | NON_LIVE_PROFILE_ONLY | accreditation_dashboard, academic_quality_scorecard | HIGH | future vertical planning |
+| VRT-206 | HR / Staff Governance Suite | FUTURE_VERTICAL | UCE-001..008, UCE-055..070, hr_payroll, faculty, workload anchors | staff requests, staff appeals, compliance dashboard depth | hr_payroll, faculty, workload_management, UCE-067 | HR_to_academic_operations_teaching_load_bridge | SIGNAL_READY | NON_LIVE_PROFILE_ONLY | HR_operations_dashboard, hr_dashboard | HIGH | future vertical planning |
+| VRT-207 | Finance / Procurement / Asset Suite | PARTIAL_OVERLAY | billing, budget_planning, procurement, asset_inventory, online_payments, quotas, subscriptions, UCE-041, UCE-098 | tax reporting, close orchestration depth, vendor risk overlays | billing, budget_planning, procurement, asset_inventory, online_payments | finance_to_procurement_asset_bridge, ministry_reporting_to_regulatory_compliance_bridge | SIGNAL_READY | NON_LIVE_PROFILE_ONLY | finance_executive_dashboard, procurement_risk_dashboard | HIGH | preserve canonicals and extend cautiously |
+| VRT-208 | Legal / Compliance / Audit Suite | FUTURE_VERTICAL | audit, UCE-042, UCE-045..048, UCE-097, UCE-122, UCE-127 | regulatory register and exception depth | audit, workflows, document_workflow | document_workflow_to_order_decree_bridge, ministry_reporting_to_regulatory_compliance_bridge | SIGNAL_READY | NON_LIVE_PROFILE_ONLY | compliance_dashboard, compliance_calendar_dashboard | HIGH | future vertical planning |
+| VRT-209 | Campus / Facilities / Housing Suite | FUTURE_VERTICAL | facilities_work_orders, housing, transport, parking, UCE-017, UCE-018, UCE-043, UCE-117 | housing assignment workflow, safety dashboard, energy ops depth | facilities_work_orders, housing, transport, parking | attendance_to_student_support_bridge, provider_layer_to_all_verticals_bridge | SIGNAL_READY | NON_LIVE_PROFILE_ONLY | campus_operations_dashboard | MEDIUM | future vertical planning |
+| VRT-210 | Library / Knowledge / Archive Suite | PARTIAL_OVERLAY | library, library_circulation, digital_documents, knowledge_retrieval, archive retention controls, records_hub | digital repository and freshness dashboards | library, digital_documents, knowledge_retrieval, UCE-012 | document_workflow_to_order_decree_bridge, thesis_to_research_science_bridge | GOVERNANCE_ONLY | READ_ONLY_INTEGRATION | library_archive_dashboard | MEDIUM | future vertical planning |
+| VRT-211 | International / Mobility / Partnerships Suite | FUTURE_VERTICAL | UCE-019..023, UCE-085..088, mobility dashboards | visa status integration and agreement workflow depth | partnership_registry, mou_lifecycle, international_office | practice_to_partnership_registry_bridge | SIGNAL_READY | NON_LIVE_PROFILE_ONLY | international_mobility_dashboard, international_office_dashboard | MEDIUM | future vertical planning |
+| VRT-212 | Student Support / Health / Career / Alumni Suite | FUTURE_VERTICAL | counseling, counseling_case_management, health_services, career_services, alumni, UCE-081, UCE-082 | wellbeing and escalation signal depth | counseling, health_services, career_services, alumni | attendance_to_student_support_bridge, academic_operations_to_student_lifecycle_bridge | SIGNAL_READY | NON_LIVE_PROFILE_ONLY | student_success_dashboard | HIGH | future vertical planning |
+| VRT-213 | Communications / Notifications Suite | PARTIAL_OVERLAY | communications, notification_center, parent_portal, parent_engagement, email/sms gateway readiness | crisis communication workflow and reliability dashboards | communications, notification_center, parent_portal | provider_layer_to_all_verticals_bridge | GOVERNANCE_ONLY | NON_LIVE_PROFILE_ONLY | communications_reliability_dashboard | MEDIUM | preserve canonicals and add reliability layers |
+| VRT-214 | Security / IAM / SOC Suite | PARTIAL_OVERLAY | auth, rbac, access_control, security, security_operations, sso_saml, ldap | PAM, federation depth, SOC case workflow | auth, rbac, access_control, security, security_operations, sso_saml | provider_layer_to_all_verticals_bridge, brain_layer_to_all_signal_enabled_verticals_bridge | SIGNAL_READY | READ_ONLY_INTEGRATION | security_risk_dashboard | HIGH | preserve canonicals and deepen later |
+| VRT-215 | IT Operations / DevOps / Platform / SRE Suite | PARTIAL_OVERLAY | platform, platform_health, observability, jobs, feature_flags, developer_portal, platform_shared | release readiness and rollback depth | platform, platform_health, observability, jobs, feature_flags, platform_shared | provider_layer_to_all_verticals_bridge | GOVERNANCE_ONLY | READ_ONLY_INTEGRATION | platform_reliability_dashboard | MEDIUM | preserve canonicals; formalize ops overlays later |
+| VRT-216 | Data / Analytics / KPI / BI Suite | PARTIAL_OVERLAY | analytics, model_evaluation, prompt_management, knowledge_retrieval, KPI-quality signals | KPI registry, data lineage, trust pack, BI warehouse integration | analytics, model_evaluation, prompt_management | brain_layer_to_all_signal_enabled_verticals_bridge | NON_LIVE_PROFILE_ONLY | executive_data_trust_dashboard, KPI_quality_dashboard | HIGH | future vertical planning |
+| VRT-217 | Integration / Provider Suite | FUTURE_VERTICAL | platonus, 1C, payment, bank, IdP, LMS, eGov, ministry reporting, EDS, biometric, SIEM, IoT readiness rows | live execution remains deferred | UCE-024..030, UCE-105..113 | provider_layer_to_all_verticals_bridge | GOVERNANCE_ONLY | NON_LIVE_PROFILE_ONLY | integration_health_dashboard, provider_readiness_dashboard | HIGH | future vertical planning |
+| VRT-218 | Ministry / Government / Regulatory Reporting Suite | FUTURE_VERTICAL | ministry reporting dashboard and integration, compliance calendar, reporting evidence pack planning | submission and correction workflow depth | UCE-030, UCE-032, UCE-112, UCE-122 | ministry_reporting_to_regulatory_compliance_bridge | GOVERNANCE_ONLY | NON_LIVE_PROFILE_ONLY | ministry_reporting_dashboard | HIGH | future vertical planning |
+| VRT-219 | Brain Governance / Agent Suite | PARTIAL_OVERLAY | brain_core, ai_guardrails, ai_gateway, prompt_management, signal registries, safe draft agents | human review queue and cost governance depth | brain_core, ai_guardrails, ai_gateway, prompt_management, UCE-049..054, UCE-129..149 | brain_layer_to_all_signal_enabled_verticals_bridge | GOVERNANCE_ONLY | FORBIDDEN | ai_governance_dashboard, signal_health_dashboard | HIGH | governance-only expansion |
+| VRT-220 | Evidence / Audit / Trust Layer | FUTURE_VERTICAL | audit, brain decision audit, dashboard evidence, compliance evidence, limitations registry | consolidated trust registry and evidence repository depth | audit, workflows, document_workflow, UCE-054 | document_workflow_to_order_decree_bridge, provider_layer_to_all_verticals_bridge | GOVERNANCE_ONLY | NON_LIVE_PROFILE_ONLY | data_trust_dashboard, decision_audit_dashboard | HIGH | future vertical planning |
+
+## 27. Academic Operations 28-Item Exhaustive Rows
+
+| row_id | capability_name | classification | canonical_or_adjacent_anchor | duplicate_risk | no_duplicate_action | runtime_lane | bridge_dependencies | anti_fake_boundaries | next_action |
+|---|---|---|---|---|---|---|---|---|---|
+| VRT-301 | curriculum_management | EXISTING_ADJACENT_MODULE | UCE-014, UCE-015, UCE-016, UCE-071, UCE-072 | HIGH | keep aggregate umbrella only; no duplicate package | bridge_or_aggregate | academic_operations_to_quality_accreditation_bridge | no fake curriculum quality score | reuse canonicals |
+| VRT-302 | course_catalog | EXISTING_CANONICAL_MODULE | UCE-076 course_catalog_management | NONE | map directly to UCE-076 | canonical_reuse | academic_operations_to_document_workflow_bridge | no direct publish automation | canonical reuse |
+| VRT-303 | academic_calendar | EXISTING_ADJACENT_MODULE | UCE-039 academic_calendar_governance_workflow | MEDIUM | reuse governance workflow and metadata | adjacent_reuse | academic_operations_to_executive_governance_bridge | no autonomous calendar publish | adjacent reuse |
+| VRT-304 | academic_group_management | NEW_TRUE_MODULE | no direct canonical anchor | LOW | keep as bounded new module | true_new | academic_operations_to_student_lifecycle_bridge | no hidden classification score | runtime later |
+| VRT-305 | cohort_management | NEW_TRUE_MODULE | no direct canonical anchor | LOW | keep bounded to cohort metadata only | true_new | academic_operations_to_student_lifecycle_bridge | no duplicate student record core | runtime later |
+| VRT-306 | course_registration | BRIDGE_TO_EXISTING_VERTICAL | enrollments / academic_records | RESOLVED_BY_BRIDGE | implement as registrar bridge only | bridge_only | academic_operations_to_student_lifecycle_bridge | no direct registrar duplication | bridge first |
+| VRT-307 | elective_course_selection | EXISTING_CANONICAL_MODULE | UCE-073 elective_course_selection | NONE | map directly to UCE-073 | canonical_reuse | academic_operations_to_student_lifecycle_bridge | no hidden ranking or seat score | canonical reuse |
+| VRT-308 | prerequisite_validation | EXISTING_ADJACENT_MODULE | UCE-074 prerequisite_management | MEDIUM | keep as validation behavior over prerequisite rules | adjacent_reuse | gradebook_to_academic_records_bridge | no fake prerequisite pass | adjacent reuse |
+| VRT-309 | timetable_management | BRIDGE_TO_EXISTING_VERTICAL | scheduling + timetable governance family | RESOLVED_BY_BRIDGE | no duplicate timetable package | bridge_only | academic_operations_to_student_lifecycle_bridge | no autonomous timetable execution | bridge first |
+| VRT-310 | classroom_room_allocation | BRIDGE_TO_EXISTING_VERTICAL | room_booking | RESOLVED_BY_BRIDGE | keep as room bridge | bridge_only | academic_operations_to_student_lifecycle_bridge | no duplicate room inventory | bridge first |
+| VRT-311 | attendance_tracking | BRIDGE_TO_EXISTING_VERTICAL | attendance | RESOLVED_BY_BRIDGE | reuse baseline attendance | bridge_only | attendance_to_student_support_bridge | no fake attendance | bridge first |
+| VRT-312 | teaching_load_management | EXISTING_ADJACENT_MODULE | workload_management + UCE-067 | HIGH | keep orchestration over existing canonicals | adjacent_reuse | HR_to_academic_operations_teaching_load_bridge | no automatic workload sanction | adjacent reuse |
+| VRT-313 | faculty_assignment_visibility | EXISTING_ADJACENT_MODULE | teaching_load_contracts + workload visibility | MEDIUM | derived visibility only | adjacent_reuse | HR_to_academic_operations_teaching_load_bridge | no hidden faculty score | adjacent reuse |
+| VRT-314 | exam_planning | EXISTING_ADJACENT_MODULE | exam_governance + exam_proctoring | MEDIUM | preserve existing exam canonicals | adjacent_reuse | academic_operations_to_quality_accreditation_bridge | no automated exam outcome | adjacent reuse |
+| VRT-315 | gradebook_metadata | NEW_TRUE_MODULE | no direct canonical anchor | LOW | keep metadata-only module | true_new | gradebook_to_academic_records_bridge | no grade mutation automation | runtime later |
+| VRT-316 | grade_appeal_management | BRIDGE_TO_EXISTING_VERTICAL | UCE-038 + UCE-093 | RESOLVED_BY_BRIDGE | subtype over appeals canonicals only | bridge_only | student_appeals_to_academic_committee_bridge | no automated grade change | bridge first |
+| VRT-317 | exam_appeal_management | BRIDGE_TO_EXISTING_VERTICAL | UCE-038 + UCE-093 | RESOLVED_BY_BRIDGE | subtype over appeals canonicals only | bridge_only | student_appeals_to_academic_committee_bridge | no automated exam outcome change | bridge first |
+| VRT-318 | academic_debt_tracking | EXISTING_ADJACENT_MODULE | UCE-092 + UCE-075 | MEDIUM | reuse audit and transfer credit evidence | adjacent_reuse | gradebook_to_academic_records_bridge | no hidden debt score | adjacent reuse |
+| VRT-319 | retake_management | NEW_TRUE_MODULE | no direct canonical anchor | LOW | keep bounded retake workflow | true_new | gradebook_to_academic_records_bridge | no autonomous retake approval | runtime later |
+| VRT-320 | summer_semester_management | NEW_TRUE_MODULE | no direct canonical anchor | LOW | keep bounded semester overlay | true_new | academic_operations_to_student_lifecycle_bridge | no duplicate registrar term core | runtime later |
+| VRT-321 | student_practice_management | EXISTING_ADJACENT_MODULE | internship / internship_marketplace | MEDIUM | map to internship practice domain | adjacent_reuse | practice_to_partnership_registry_bridge | no fake completion status | adjacent reuse |
+| VRT-322 | thesis_supervision_management | EXISTING_ADJACENT_MODULE | UCE-077 + UCE-094 | MEDIUM | reuse thesis canonicals | adjacent_reuse | thesis_to_research_science_bridge | no autonomous approval | adjacent reuse |
+| VRT-323 | academic_committee_decisions | EXISTING_CANONICAL_MODULE | UCE-090 committee_decision_registry | NONE | map directly to UCE-090 | canonical_reuse | student_appeals_to_academic_committee_bridge | no hidden committee score | canonical reuse |
+| VRT-324 | academic_policy_exception_tracking | EXISTING_ADJACENT_MODULE | UCE-093 + UCE-090 | MEDIUM | keep as exception overlay over existing canonicals | adjacent_reuse | academic_operations_to_executive_governance_bridge | no policy exception auto-approval | adjacent reuse |
+| VRT-325 | academic_order_linkage | BRIDGE_TO_EXISTING_VERTICAL | UCE-009 + UCE-011 | RESOLVED_BY_BRIDGE | metadata bridge only | bridge_only | academic_order_to_document_decree_bridge | no official decree generation automation | bridge first |
+| VRT-326 | advisor_tutor_management | NEW_TRUE_MODULE | no direct canonical anchor | LOW | keep bounded assignment metadata | true_new | academic_operations_to_student_lifecycle_bridge | no hidden tutor ranking | runtime later |
+| VRT-327 | student_academic_support_tracking | BRIDGE_TO_EXISTING_VERTICAL | counseling_case_management + support canonicals | RESOLVED_BY_BRIDGE | cross-module support bridge only | bridge_only | attendance_to_student_support_bridge | no duplicate support stack | bridge first |
+| VRT-328 | academic_operations_dashboard | EXISTING_ADJACENT_MODULE | student_success_dashboard + curriculum_quality_dashboard + attendance visibility | MEDIUM | aggregate existing canonicals only | aggregate_visibility | academic_operations_to_quality_accreditation_bridge | no fake KPI | aggregate reuse |
+
+## 28. Brain Layer Supplemental Rows
+
+| capability_id | capability_name | source_plane | capability_type | implementation_status | brain_readiness | duplicate_risk | next_action | notes |
+|---|---|---|---|---|---|---|---|---|
+| BRN-101 | decision_audit_trail | BRAIN_LAYER | AUDIT_EVIDENCE_CAPABILITY | PLANNED | GOVERNANCE_ONLY | LOW | A-036.2-RUNTIME | complements UCE-054 without replacing it |
+| BRN-102 | recommendation_audit | BRAIN_LAYER | AUDIT_EVIDENCE_CAPABILITY | PLANNED | GOVERNANCE_ONLY | LOW | A-036.2-RUNTIME | recommendation lineage only |
+| BRN-103 | human_review_queue | BRAIN_LAYER | WORKFLOW | PLANNED | HUMAN_REVIEW_QUEUE_READY | NONE | A-036.2-RUNTIME | human review required by default |
+| BRN-104 | brain_human_review_workflow | BRAIN_LAYER | WORKFLOW | PLANNED | HUMAN_REVIEW_QUEUE_READY | LOW | A-036.2-RUNTIME | no autonomous approval |
+| BRN-105 | safe_policy_draft_agent | BRAIN_LAYER | AUTONOMOUS_WORKFLOW_CANDIDATE | PLANNED | SAFE_AGENT_DRAFT_ONLY | LOW | future governance slice | draft-only, no enactment |
+| BRN-106 | safe_minutes_summary_agent | BRAIN_LAYER | AUTONOMOUS_WORKFLOW_CANDIDATE | PLANNED | SAFE_AGENT_DRAFT_ONLY | LOW | future governance slice | draft-only, no binding publication |
+| BRN-107 | ai_governance_dashboard | BRAIN_LAYER | REPORT_DASHBOARD | PLANNED | GOVERNANCE_ONLY | RESOLVED_BY_ALIAS | reuse UCE-036 | crosswalks to UCE-036 |
+| BRN-108 | decision_audit_dashboard | BRAIN_LAYER | REPORT_DASHBOARD | PLANNED | GOVERNANCE_ONLY | LOW | future governance slice | evidence and review only |
+| BRN-109 | signal_health_dashboard | BRAIN_LAYER | REPORT_DASHBOARD | PLANNED | GOVERNANCE_ONLY | LOW | future governance slice | signal quality and lag visibility |
+| BRN-110 | model_registry | BRAIN_LAYER | DATA_ENTITY | PLANNED | GOVERNANCE_ONLY | RESOLVED_BY_ALIAS | reuse EXT-009 | alias to ai_model_registry inventory |
+| BRN-111 | ai_cost_governance | BRAIN_LAYER | POLICY_CONTROL | PLANNED | GOVERNANCE_ONLY | RESOLVED_BY_ALIAS | reuse BAS-011 | canonical baseline row already exists |
+| BRN-112 | autonomous_workflow_candidate_registry | BRAIN_LAYER | DATA_ENTITY | PLANNED | GOVERNANCE_ONLY | LOW | future governance slice | registry only, no execution |
+| BRN-113 | forbidden_autonomous_action_registry | BRAIN_LAYER | POLICY_CONTROL | PLANNED | FORBIDDEN | LOW | preserve registry | mirrors forbidden section |
+| BRN-114 | ai_gateway | BRAIN_LAYER | INTEGRATION | PLANNED | GOVERNANCE_ONLY | RESOLVED_BY_ALIAS | reuse BAS-012 | canonical baseline row already exists |
+
+## 29. Integration Layer Supplemental Rows
+
+| capability_id | capability_name | source_plane | implementation_status | provider_integration_need | credentials | live_submission | external_sync | duplicate_risk | next_action | notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| INT-101 | integration_registry_ops | INTEGRATION_LAYER | PLANNED | NON_LIVE_PROFILE_ONLY | false | false | false | NONE | future integration slice | provider inventory only |
+| INT-102 | student_information_system_integration | INTEGRATION_LAYER | PLANNED | NON_LIVE_PROFILE_ONLY | false | false | false | RESOLVED_BY_ALIAS | reuse UCE-024 | alias to platonus_integration |
+| INT-103 | finance_erp_integration | INTEGRATION_LAYER | PLANNED | NON_LIVE_PROFILE_ONLY | false | false | false | RESOLVED_BY_ALIAS | reuse UCE-025 | alias to one_c_integration |
+| INT-104 | government_services_integration | INTEGRATION_LAYER | PLANNED | NON_LIVE_PROFILE_ONLY | false | false | false | RESOLVED_BY_ALIAS | reuse UCE-030 | alias to egov integration |
+| INT-105 | regulatory_reporting_integration | INTEGRATION_LAYER | PLANNED | NON_LIVE_PROFILE_ONLY | false | false | false | RESOLVED_BY_ALIAS | reuse UCE-112 | alias to ministry reporting integration |
+| INT-106 | digital_signature_integration | INTEGRATION_LAYER | PLANNED | NON_LIVE_PROFILE_ONLY | false | false | false | RESOLVED_BY_ALIAS | reuse UCE-109 | alias to EDS signature integration |
+| INT-107 | eds_kz_provider | INTEGRATION_LAYER | PLANNED | NON_LIVE_PROFILE_ONLY | false | false | false | LOW | future provider profile | provider profile only |
+| INT-108 | identity_provider_integration | INTEGRATION_LAYER | PLANNED | NON_LIVE_PROFILE_ONLY | false | false | false | RESOLVED_BY_ALIAS | reuse UCE-108 | IdP alias row |
+| INT-109 | library_repository_integration | INTEGRATION_LAYER | PLANNED | READ_ONLY_INTEGRATION | false | false | false | LOW | future library slice | read-only first |
+| INT-110 | siem_integration | INTEGRATION_LAYER | PLANNED | READ_ONLY_INTEGRATION | false | false | false | LOW | future security slice | read-only telemetry only |
+| INT-111 | iot_device_integration | INTEGRATION_LAYER | PLANNED | NON_LIVE_PROFILE_ONLY | false | false | false | LOW | future campus slice | profile first |
+| INT-112 | integration_health_dashboard | INTEGRATION_LAYER | PLANNED | NON_LIVE_PROFILE_ONLY | false | false | false | LOW | future integration slice | operational visibility only |
+
+## 30. Bridge Rows
+
+| capability_id | capability_name | source_plane | mutation_allowed | read_only_first | audit_required | duplicate_risk | next_action | notes |
+|---|---|---|---|---|---|---|---|---|
+| BRG-101 | academic_operations_to_student_lifecycle_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | runtime bridge only | registrar/student data reused |
+| BRG-102 | academic_operations_to_document_workflow_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | runtime bridge only | decree/document reuse |
+| BRG-103 | academic_operations_to_executive_governance_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | runtime bridge only | rectorate visibility only |
+| BRG-104 | academic_operations_to_quality_accreditation_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | runtime bridge only | no duplicate quality package |
+| BRG-105 | student_lifecycle_to_executive_control_tower_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | future vertical slice | executive visibility only |
+| BRG-106 | research_to_accreditation_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | future vertical slice | evidence lineage only |
+| BRG-107 | HR_to_academic_operations_teaching_load_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | future HR slice | no duplicate workload core |
+| BRG-108 | finance_to_procurement_asset_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | preserve canonicals | finance/procurement reuse |
+| BRG-109 | provider_layer_to_all_verticals_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | future integration slice | provider profiles only |
+| BRG-110 | brain_layer_to_all_signal_enabled_verticals_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | future governance slice | governance only |
+| BRG-111 | document_workflow_to_order_decree_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | preserve canonicals | document and decree reuse |
+| BRG-112 | academic_order_to_document_decree_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | preserve canonicals | academic order linkage bridge |
+| BRG-113 | student_appeals_to_academic_committee_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | preserve canonicals | appeals and committee reuse |
+| BRG-114 | gradebook_to_academic_records_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | preserve canonicals | metadata only |
+| BRG-115 | attendance_to_student_support_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | preserve canonicals | support escalation only |
+| BRG-116 | thesis_to_research_science_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | future research slice | thesis and research reuse |
+| BRG-117 | practice_to_partnership_registry_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | future international slice | practice/partnership reuse |
+| BRG-118 | ministry_reporting_to_regulatory_compliance_bridge | BRIDGE_CAPABILITY | false | true | true | RESOLVED_BY_BRIDGE | future ministry slice | compliance evidence only |
+
+## 31. Forbidden Action Registry Exhaustive Rows
+
+| capability_id | capability_name | implementation_status | brain_readiness | provider_integration_need | anti_fake_boundaries | next_action |
+|---|---|---|---|---|---|---|
+| FORBID-101 | autonomous_admissions_decision_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-102 | autonomous_grading_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-103 | autonomous_student_sanction_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-104 | autonomous_academic_dismissal_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-105 | autonomous_procurement_decision_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-106 | autonomous_hr_disciplinary_decision_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-107 | autonomous_financial_approval_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-108 | autonomous_provider_submission_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-109 | hidden_student_score_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-110 | hidden_faculty_score_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-111 | discriminatory_score_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-112 | fake_kpi_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-113 | fake_grade_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-114 | fake_attendance_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+| FORBID-115 | fake_accreditation_status_FORBIDDEN | FORBIDDEN | FORBIDDEN | FORBIDDEN | hard prohibition | never implement as autonomous action |
+
+## 32. Evidence / Audit / Trust Layer Rows
+
+| capability_id | capability_name | capability_type | implementation_status | source_plane | next_action | notes |
+|---|---|---|---|---|---|---|
+| VRT-401 | audit_events | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | preserve canonical audit layers | audit event registry |
+| VRT-402 | status_history | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | preserve append-only history | status lineage capability |
+| VRT-403 | evidence_metadata | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | evidence metadata registry |
+| VRT-404 | evidence_repository | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | evidence package store |
+| VRT-405 | dashboard_evidence_lineage | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | no fake metric lineage |
+| VRT-406 | human_review_evidence | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | review evidence only |
+| VRT-407 | decision_evidence_pack | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | decision packets |
+| VRT-408 | provider_readiness_evidence | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | non-live provider evidence |
+| VRT-409 | compliance_evidence | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | compliance packs |
+| VRT-410 | accreditation_evidence | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | accreditation packs |
+| VRT-411 | academic_operations_evidence | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | academic ops evidence |
+| VRT-412 | student_lifecycle_evidence | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | lifecycle evidence |
+| VRT-413 | executive_governance_evidence | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | rectorate evidence |
+| VRT-414 | research_evidence | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | research evidence |
+| VRT-415 | finance_audit_evidence | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | finance evidence |
+| VRT-416 | security_audit_evidence | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | security evidence |
+| VRT-417 | data_quality_evidence | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | KPI/data quality evidence |
+| VRT-418 | no_fake_metrics_contract | POLICY_CONTROL | PLANNED | PRODUCT_VERTICAL | preserve anti-fake controls | trust contract only |
+| VRT-419 | limitations_registry | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | incomplete/limited evidence registry |
+| VRT-420 | incomplete_data_registry | AUDIT_EVIDENCE_CAPABILITY | PLANNED | PRODUCT_VERTICAL | future trust slice | incomplete data disclosures |
+
+## 33. Row Count Summary
+
+- baseline_150_rows_count: `150`
+- extension_25_rows_count: `25`
+- expansion_uce_rows_count: `149`
+- vertical_capability_rows_count: `48`
+- brain_rows_count: `14`
+- integration_rows_count: `12`
+- dashboard_rows_count: `16`
+- bridge_rows_count: `18`
+- forbidden_action_rows_count: `15`
+- evidence_trust_rows_count: `20`
+- total_matrix_rows_count: `467`
+- target_check: `PASS` (`467 > 300` and inside the preferred `450-520+` planning range)
+
+## 34. Duplicate Prevention / Canonical Reuse Review
+
+- capability row does not equal backend package
+- canonical module name remains the source of truth
+- duplicate risk must be classified before runtime starts
+- bridge rows must not become duplicate modules
+- future verticals must reconcile before runtime, not after runtime drift appears
+- Academic Operations B1.R1 remains the template for future no-duplicate checks
+- BAS / UCE rows are reused first; aliases and future overlays stay explicit rather than silently cloning canonicals
+
+## 35. Must-Not-Forget Lists Refresh
+
+### A. Must not forget — core University OS capabilities
+
+- baseline 150 canonicals
+- extension 25 overlays
+- UCE-001..149 completeness expansion rows
+- vertical summary rows and bridge rows
+- forbidden action registry and evidence / trust layers
+
+### B. Already covered — do not duplicate
+
+- admissions, students, enrollments, academic_records, attendance, room_booking, billing, procurement, auth, rbac, security, observability, platform, university_core
+- UCE-009 document_workflow, UCE-011 order_decree_registry, UCE-038 student_appeals_workflow, UCE-073 elective_course_selection, UCE-076 course_catalog_management, UCE-090 committee_decision_registry, UCE-092 degree_audit
+
+### C. Bridge required — do not create standalone duplicate
+
+- course_registration
+- timetable_management
+- classroom_room_allocation
+- attendance_tracking
+- grade_appeal_management
+- exam_appeal_management
+- academic_order_linkage
+- student_academic_support_tracking
+
+### D. Future verticals
+
+- Research / Science
+- Quality / Accreditation
+- HR / Staff Governance
+- Campus / Facilities / Housing
+- International / Mobility / Partnerships
+- Integration / Provider
+- Ministry / Government / Regulatory Reporting
+- Evidence / Audit / Trust Layer
+
+### E. Brain layer candidates
+
+- signal registries, review queues, draft-only safe agents, decision audit, signal health dashboards, model registry, autonomous workflow candidate registry
+
+### F. Provider / integration candidates
+
+- SIS / Platonus, 1C / ERP, eGov, EDS, payment, bank, IdP, LMS, SIEM, IoT, biometric and library repository profiles
+
+### G. Dashboards required
+
+- rector strategy, student lifecycle, academic operations, research science, accreditation, finance executive, HR operations, security risk, integration health, ministry reporting, campus operations, library archive, AI governance, data trust, KPI quality, provider readiness, compliance, document SLA and academic quality scorecard
+
+### H. Sensitive deferred modules
+
+- grading and publication surfaces
+- sanctions and dismissals
+- procurement and financial approvals
+- HR disciplinary outcomes
+- provider submission execution
+
+### I. Forbidden autonomous actions
+
+- all `FORBID-101..115` actions above
+
+### J. High-value demo capabilities
+
+- executive control tower
+- student lifecycle dashboard
+- academic operations dashboard
+- document workflow plus decree registry
+- finance executive dashboard
+- research performance dashboard
+- AI governance dashboard
+
+### K. Enterprise / GCC / compliance future readiness capabilities
+
+- audit evidence lineage
+- provider readiness evidence
+- ministry reporting evidence packs
+- policy controls and retention workflows
+- decision audit trails and human review queues
+
+## 36. Current Matrix Decision After B2.R1
+
+- Matrix framework created: yes
+- Exhaustive source-anchored row completion done: yes
+- Baseline 150 inventory resolved: yes
+- Controlled extension 25 inventory resolved: yes
+- UCE inventory resolved: yes (`149` rows)
+- Vertical, Brain, integration, bridge, forbidden, and evidence supplemental rows added: yes
+- Total matrix rows now exceed 300: yes (`467`)
+- Duplicate prevention preserved: yes
+- Metrics changed: no
+- Recommended next action: `A-036.2-RUNTIME`
