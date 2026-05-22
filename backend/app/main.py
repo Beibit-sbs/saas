@@ -132,6 +132,7 @@ from app.modules.executive_control_tower.router import router as executive_contr
 from app.modules.document_workflow_os.router import router as doc_workflow_router
 from app.modules.academic_operations.router import router as academic_operations_router
 from app.modules.student_lifecycle.router import router as student_lifecycle_router
+from app.modules.research_science.router import router as research_science_router
 from app.modules.rector_assignment_workflow.router import router as rector_assignment_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.interventions.router import router as interventions_router
@@ -314,6 +315,7 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.doc_workflow_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.academic_operations_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.student_lifecycle_session_factory = make_session_factory(_admissions_engine)
+        fastapi_app.state.research_science_session_factory = make_session_factory(_admissions_engine)
         logger.info("admissions database engine initialised (pool_size=5, max_overflow=10)")
     except RuntimeError as exc:
         fastapi_app.state.admissions_engine = None
@@ -325,6 +327,7 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.doc_workflow_session_factory = None
         fastapi_app.state.academic_operations_session_factory = None
         fastapi_app.state.student_lifecycle_session_factory = None
+        fastapi_app.state.research_science_session_factory = None
         logger.warning(
             "admissions database not configured — admissions endpoints will return HTTP 503. "
             "Reason: %s",
@@ -473,6 +476,7 @@ app.include_router(doc_workflow_router)
 app.include_router(executive_control_tower_router)
 app.include_router(academic_operations_router)
 app.include_router(student_lifecycle_router)
+app.include_router(research_science_router)
 
 
 def _register_optional_routers(fastapi_app: FastAPI) -> None:

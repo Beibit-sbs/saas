@@ -2831,6 +2831,17 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - metrics_unchanged: PASS
 - next_action_id: A-037.2-RUNTIME
 
+## A-037.2-RUNTIME - Research / Science Suite Backend Foundation
+
+- source_A0372_spec_commit: 02b5564
+- module_path: backend/app/modules/research_science/
+- delivered_runtime_foundation: 8 module files; 15 rs_ ORM tables; 43 routes; 40 permissions; migration plus targeted backend tests
+- runtime_surfaces: projects; student_research; supervision; publications; conferences; grants; grant_deliverables; ethics; ethics_amendments; evidence; audit; bridges; dashboard; health; limitations; matrix-summary
+- validation: focused_targeted_pytest PASS (44 passed, 0 failed); continuity_a0362 PASS (100 passed, 0 failed); static_error_checks PASS; tenant_fail_closed PASS; anti_fake_shell_scan PASS; backend_only_scope PASS
+- runtime_boundaries_preserved: no_frontend_changes; no_provider_integration; no_external_database_sync; no_official_verification; no_fake_publications; no_fake_conference_certificates; no_fake_grant_evidence; no_autonomous_ethics_approval; no_autonomous_grant_submission; no_autonomous_publication_verification; no_hidden_researcher_or_faculty_or_student_research_score
+- metrics_unchanged: PASS
+- next_action_id: A-037.2-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

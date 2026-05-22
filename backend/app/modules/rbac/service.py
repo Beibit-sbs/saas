@@ -225,6 +225,69 @@ _ACADEMIC_OPERATIONS_AUDITOR_PERMISSIONS: Set[str] = {
     "academic_operations.degree_audit_bridge.read",
 }
 
+_RESEARCH_SCIENCE_PERMISSIONS: Set[str] = {
+    "research_science.overview.read",
+    "research_science.dashboard.read",
+    "research_science.health.read",
+    "research_science.matrix.read",
+    "research_science.limitations.read",
+    "research_science.projects.read",
+    "research_science.projects.create",
+    "research_science.projects.update",
+    "research_science.student_research.read",
+    "research_science.student_research.create",
+    "research_science.student_research.update",
+    "research_science.supervision.read",
+    "research_science.supervision.create",
+    "research_science.supervision.update",
+    "research_science.publications.read",
+    "research_science.publications.create",
+    "research_science.publications.update",
+    "research_science.conferences.read",
+    "research_science.conferences.create",
+    "research_science.conferences.update",
+    "research_science.grants.read",
+    "research_science.grants.create",
+    "research_science.grants.update",
+    "research_science.grant_deliverables.read",
+    "research_science.grant_deliverables.create",
+    "research_science.grant_deliverables.update",
+    "research_science.ethics.read",
+    "research_science.ethics.create",
+    "research_science.ethics.update",
+    "research_science.ethics_amendments.read",
+    "research_science.ethics_amendments.create",
+    "research_science.ethics_amendments.update",
+    "research_science.evidence.read",
+    "research_science.evidence.attach",
+    "research_science.audit.read",
+    "research_science.bridges.read",
+    "research_science.bridges.create",
+    "research_science.bridges.update",
+    "research_science.admin.read",
+    "research_science.admin.configure",
+}
+
+_RESEARCH_SCIENCE_AUDITOR_PERMISSIONS: Set[str] = {
+    "research_science.overview.read",
+    "research_science.dashboard.read",
+    "research_science.health.read",
+    "research_science.matrix.read",
+    "research_science.limitations.read",
+    "research_science.projects.read",
+    "research_science.student_research.read",
+    "research_science.supervision.read",
+    "research_science.publications.read",
+    "research_science.conferences.read",
+    "research_science.grants.read",
+    "research_science.grant_deliverables.read",
+    "research_science.ethics.read",
+    "research_science.ethics_amendments.read",
+    "research_science.evidence.read",
+    "research_science.audit.read",
+    "research_science.bridges.read",
+}
+
 BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     "superadmin": {
         "admin.dashboard.read",
@@ -305,7 +368,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     }
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS
     | _STUDENT_LIFECYCLE_PERMISSIONS
-    | _ACADEMIC_OPERATIONS_PERMISSIONS,
+    | _ACADEMIC_OPERATIONS_PERMISSIONS
+    | _RESEARCH_SCIENCE_PERMISSIONS,
     "admin": {
         "admin.dashboard.read",
         "admin.expansion.read",
@@ -387,7 +451,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     }
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS
     | _STUDENT_LIFECYCLE_PERMISSIONS
-    | _ACADEMIC_OPERATIONS_PERMISSIONS,
+    | _ACADEMIC_OPERATIONS_PERMISSIONS
+    | _RESEARCH_SCIENCE_PERMISSIONS,
     "auditor": {
         "admin.audit.read",
         "admin.dashboard.read",
@@ -407,7 +472,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     }
     | _EXECUTIVE_CONTROL_TOWER_AUDITOR_PERMISSIONS
     | _CANONICAL_AUDITOR_PERMISSIONS
-    | _ACADEMIC_OPERATIONS_AUDITOR_PERMISSIONS,
+    | _ACADEMIC_OPERATIONS_AUDITOR_PERMISSIONS
+    | _RESEARCH_SCIENCE_AUDITOR_PERMISSIONS,
     "student": {
         "enrollments.read",
         "grades.read",
