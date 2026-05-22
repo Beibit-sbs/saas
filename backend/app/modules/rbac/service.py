@@ -162,6 +162,69 @@ _STUDENT_LIFECYCLE_PERMISSIONS: Set[str] = {
     "student_lifecycle.admin.read",
 }
 
+_ACADEMIC_OPERATIONS_PERMISSIONS: Set[str] = {
+    "academic_operations.overview.read",
+    "academic_operations.dashboard.read",
+    "academic_operations.health.read",
+    "academic_operations.audit.read",
+    "academic_operations.evidence.read",
+    "academic_operations.evidence.attach",
+    "academic_operations.academic_groups.read",
+    "academic_operations.academic_groups.create",
+    "academic_operations.academic_groups.update",
+    "academic_operations.cohorts.read",
+    "academic_operations.cohorts.create",
+    "academic_operations.cohorts.update",
+    "academic_operations.gradebook_metadata.read",
+    "academic_operations.gradebook_metadata.create",
+    "academic_operations.gradebook_metadata.update",
+    "academic_operations.retake_management.read",
+    "academic_operations.retake_management.create",
+    "academic_operations.retake_management.update",
+    "academic_operations.summer_semester.read",
+    "academic_operations.summer_semester.create",
+    "academic_operations.summer_semester.update",
+    "academic_operations.advisor_tutor.read",
+    "academic_operations.advisor_tutor.create",
+    "academic_operations.advisor_tutor.update",
+    "academic_operations.canonical_bridge.read",
+    "academic_operations.canonical_bridge.create",
+    "academic_operations.canonical_bridge.update",
+    "academic_operations.student_lifecycle_bridge.read",
+    "academic_operations.document_workflow_bridge.read",
+    "academic_operations.executive_governance_bridge.read",
+    "academic_operations.quality_accreditation_bridge.read",
+    "academic_operations.course_catalog_bridge.read",
+    "academic_operations.elective_selection_bridge.read",
+    "academic_operations.committee_decision_bridge.read",
+    "academic_operations.prerequisite_bridge.read",
+    "academic_operations.teaching_load_bridge.read",
+    "academic_operations.thesis_bridge.read",
+    "academic_operations.degree_audit_bridge.read",
+    "academic_operations.admin.read",
+    "academic_operations.admin.configure",
+}
+
+_ACADEMIC_OPERATIONS_AUDITOR_PERMISSIONS: Set[str] = {
+    "academic_operations.overview.read",
+    "academic_operations.dashboard.read",
+    "academic_operations.health.read",
+    "academic_operations.audit.read",
+    "academic_operations.evidence.read",
+    "academic_operations.canonical_bridge.read",
+    "academic_operations.student_lifecycle_bridge.read",
+    "academic_operations.document_workflow_bridge.read",
+    "academic_operations.executive_governance_bridge.read",
+    "academic_operations.quality_accreditation_bridge.read",
+    "academic_operations.course_catalog_bridge.read",
+    "academic_operations.elective_selection_bridge.read",
+    "academic_operations.committee_decision_bridge.read",
+    "academic_operations.prerequisite_bridge.read",
+    "academic_operations.teaching_load_bridge.read",
+    "academic_operations.thesis_bridge.read",
+    "academic_operations.degree_audit_bridge.read",
+}
+
 BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     "superadmin": {
         "admin.dashboard.read",
@@ -241,7 +304,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.executive_control_tower.metric_registry.read",
     }
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS
-    | _STUDENT_LIFECYCLE_PERMISSIONS,
+    | _STUDENT_LIFECYCLE_PERMISSIONS
+    | _ACADEMIC_OPERATIONS_PERMISSIONS,
     "admin": {
         "admin.dashboard.read",
         "admin.expansion.read",
@@ -322,7 +386,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "admin.executive_control_tower.metric_registry.read",
     }
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS
-    | _STUDENT_LIFECYCLE_PERMISSIONS,
+    | _STUDENT_LIFECYCLE_PERMISSIONS
+    | _ACADEMIC_OPERATIONS_PERMISSIONS,
     "auditor": {
         "admin.audit.read",
         "admin.dashboard.read",
@@ -341,7 +406,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
         "developer_platform.read",
     }
     | _EXECUTIVE_CONTROL_TOWER_AUDITOR_PERMISSIONS
-    | _CANONICAL_AUDITOR_PERMISSIONS,
+    | _CANONICAL_AUDITOR_PERMISSIONS
+    | _ACADEMIC_OPERATIONS_AUDITOR_PERMISSIONS,
     "student": {
         "enrollments.read",
         "grades.read",
