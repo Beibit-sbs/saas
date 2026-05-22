@@ -2756,6 +2756,26 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - backend_non_change: PASS_WITH_EXPECTED_COVERAGE_ARTIFACT_ONLY
 - limitations: screenshots_not_committed; demo_evidence_not_created; provider_platonus_sis_not_implemented; official_grade_publication_not_implemented; full_467_row_runtime_not_implemented; optional_detail_routes_deferred; complex_create_update_forms_disabled_or_limited; compose_frontend_tests_depends_on_unrelated_backend_health
 - next_action_id: A-036.5-B1
+
+## A-036.5-B1 - Academic Operations Suite Product Vertical Closure / Quality Baseline
+
+- source_b1_commit: ba4fe5b
+- source_e2e_commit: ab40c56
+- source_frontend_commit: 20b9c51
+- source_backend_commit: c74cb12
+- source_matrix_commit: c79cc31
+- report_file: A-036.5-B1-ACADEMIC_OPERATIONS_SUITE_PRODUCT_VERTICAL_CLOSURE_QUALITY_BASELINE_REPORT.md
+- academic_operations_suite_status: CLOSED / BASELINED
+- backend_summary: PASS (19 ao_ tables; 40 routes; 40 permissions; 100 targeted backend tests passed; 38 continuity tests passed)
+- frontend_summary: PASS (13 routes; TypeScript PASS; 25 targeted frontend tests passed)
+- e2e_summary: PASS (13 route flow; 12 scenarios; Playwright Chromium 12 passed)
+- matrix_guided_canonical_reuse: PASS
+- no_duplicate_modules: PASS
+- completed_vertical_count: 3
+- readiness_classification: engineering_baseline=PASS_80_85; internal_demo_readiness=PARTIAL_INTERNAL_75_80; internal_pilot_readiness=PARTIAL_INTERNAL_65_70; production_readiness=NOT_CLAIMED; sales_readiness=NOT_CLAIMED; gcc_readiness=NOT_CLAIMED; l5_l6=NOT_CLAIMED
+- known_limitations: full_467_row_runtime_not_implemented; full_28_module_runtime_not_implemented; official_grade_publication_not_implemented; provider_platonus_sis_not_implemented; screenshots_not_created; demo_evidence_not_created; internal_baseline_only
+- recommended_next_action: A-037.0-SPEC - Research / Science Suite Product Vertical Selection
+- next_action_id: A-037.0-SPEC
 - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
 - recommended_next_action: A-036.4-B1
 - next_action_id: A-036.4-B1
