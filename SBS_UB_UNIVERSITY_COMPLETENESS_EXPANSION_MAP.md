@@ -2740,6 +2740,26 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - recommended_next_action: A-036.4-B1
 - next_action_id: A-036.4-B1
 
+## A-036.4-B1 - Academic Operations E2E Browser Validation Quality Baseline
+
+- source_e2e_commit: ab40c56
+- source_e2e_spec_commit: cc05261
+- source_frontend_b1_commit: cb1f6c3
+- report_file: A-036.4-B1-ACADEMIC_OPERATIONS_E2E_BROWSER_VALIDATION_QUALITY_BASELINE_REPORT.md
+- playwright_spec_path: frontend/e2e/smoke/a0364-academic-operations-suite.spec.ts
+- route_flow_count: 13
+- scenario_count: 12
+- Playwright_result: PASS (12 passed, Chromium, carried forward from ab40c56)
+- TypeScript_result: PASS
+- targeted_frontend_test_result: PASS (25 passed, 0 failed)
+- no_overclaim_scan: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- backend_non_change: PASS_WITH_EXPECTED_COVERAGE_ARTIFACT_ONLY
+- limitations: screenshots_not_committed; demo_evidence_not_created; provider_platonus_sis_not_implemented; official_grade_publication_not_implemented; full_467_row_runtime_not_implemented; optional_detail_routes_deferred; complex_create_update_forms_disabled_or_limited; compose_frontend_tests_depends_on_unrelated_backend_health
+- next_action_id: A-036.5-B1
+- metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+- recommended_next_action: A-036.4-B1
+- next_action_id: A-036.4-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
