@@ -2421,7 +2421,20 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - api_route_contract: 78 explicit routes under /api/admin/academic-operations across curriculum, course-catalog, calendar, timetable, rooms, attendance, teaching-load, exams, gradebook, policy-exceptions, dashboard, audit, evidence, and health
 - permissions_contract: 56 academic_operations.* permissions across curriculum, course-catalog, calendar, timetable, rooms, attendance, teaching-load, exams, gradebook, policy-exceptions, dashboard, audit, evidence, health, and admin
 - first_runtime_subset: 16 tables and 45-55 routes for controlled backend foundation runtime
-- anti_fake_sensitive_boundaries: no fake grades; no fake exams; no fake attendance; no automated grading; no automatic sanction; no automatic faculty workload decision; no hidden score; no official grade publication claim; no provider or Platonus/SIS integration claims; no production-ready claim
+- recommended_next_action: A-036.2-RUNTIME
+- next_action_id: A-036.2-RUNTIME
+
+## A-036.2-B1 - Academic Operations Backend Contract Deep Scope Reconciliation
+
+- source_A0362_spec_commit: 2a8461d
+- original_scope_preserved: 12-module product scope from A-036.1-SPEC and narrow 38-table backend contract from A-036.2-SPEC remain historically correct and closed
+- reconciled_academic_operations_scope: 28 product modules across academic structure, registration, scheduling, attendance, load, exam and gradebook, recovery, practice, thesis, committees, orders, advising, support, and dashboard visibility
+- research_science_suite_deferred: future separate vertical with student_research_work, research_activity_tracking, research_projects, publication_registry, conference_participation_tracking, grant_application_tracking, scientific_supervision_management, research_ethics_approval, and science_dashboard
+- runtime_lanes: Lane A core runtime foundation; Lane B extended academic progress and recovery; Lane C sensitive appeals and decisions; Lane D practice, thesis, advising, and support; Lane E governance bridge
+- revised_full_scope_direction: approximately 70-95 tables, 120-160 API routes, 90-120 permissions, and 120-180 schemas for enterprise full-scope Academic Operations
+- revised_runtime_subset: controlled A-036.2-RUNTIME backend foundation with 18-22 tables and 55-70 routes, centered on 16 core product modules plus audit and evidence support
+- bridge_contracts: Student Lifecycle read-only bridge; Executive Governance summary bridge; Document / Order metadata linkage bridge; future Quality / Accreditation evidence bridge
+- strengthened_sensitive_boundaries: no fake academic debt, no fake retake status, no fake thesis readiness, no fake practice completion, no automatic academic dismissal, no hidden workload or attendance-risk scoring, no official transcript or order publication claims
 - recommended_next_action: A-036.2-RUNTIME
 - next_action_id: A-036.2-RUNTIME
 
