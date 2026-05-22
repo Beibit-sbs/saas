@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-036.2-SPEC
-    - current_stage: A-036.1-SPEC complete / academic operations product map and workflow specification complete
-    - last_completed_action_id: A-036.1-SPEC
-    - next_action_id: A-036.2-SPEC
-    - updated_at: 2026-05-22 (A-036.1-SPEC verified the A-036.0-SPEC handoff from commit 56ce59f, confirmed Academic Operations Suite as the selected third product vertical, and defined the detailed product map and workflow specification across suite identity, selected module scope, six core flows, lifecycle state model, role model, permission model concept, domain entity map, frontend surface map, backend/API direction, sensitive-domain risk classification, anti-fake and no-overclaim boundaries, future E2E plan, and evidence roadmap; this action remained spec-only and docs-only with no backend runtime, no frontend runtime, no migrations, no models, no API routes, no tests, no Playwright specs, no provider integration, no Platonus/SIS integration, no fake grades, no fake exams, no fake attendance, no automated grading, no automatic student sanction, no automatic faculty workload decision, no hidden faculty or student score, no fake KPI, and no production-ready, sales-ready, GCC-ready, or L5/L6 claims; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; the recommended next action is A-036.2-SPEC for Academic Operations Suite Backend Domain / DB / API Contract)
+    - status: ready_for_A-036.2-RUNTIME
+    - current_stage: A-036.2-SPEC complete / academic operations backend domain db api contract specified
+    - last_completed_action_id: A-036.2-SPEC
+    - next_action_id: A-036.2-RUNTIME
+    - updated_at: 2026-05-22 (A-036.2-SPEC verified the A-036.1-SPEC handoff from commit 90d8cc4, confirmed Academic Operations Suite as ready for backend-contract specification, and defined the precise backend module, database, API, permissions, audit, dashboard, validation-gate, and runtime-subset contract for future implementation; the spec fixed the future module path at backend/app/modules/academic_operations/, the table prefix at ao_, the router prefix at /api/admin/academic-operations, the full DB contract at 38 tables, the lifecycle/event enum family, 69 named schemas, 83 repository methods, 41 service functions, 78 explicit API routes, and 56 permission constants, plus tenant fail-closed rules, audit/event requirements, dashboard fake_metrics=false rules, sensitive-domain safeguards, focused backend test files, 12 runtime validation gates, and the controlled first runtime subset of 16 tables and 45-55 routes for A-036.2-RUNTIME; this action remained spec-only and docs-only with no backend runtime, no frontend runtime, no migrations, no models, no API routes, no tests, no Playwright specs, no provider integration, no Platonus/SIS integration, no fake grades, no fake exams, no fake attendance, no automated grading, no automatic student sanction, no automatic faculty workload decision, no hidden faculty or student score, no fake KPI, and no production-ready, sales-ready, GCC-ready, or L5/L6 claims; metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, and provider_readiness_foundation_count=11; the recommended next action is A-036.2-RUNTIME for Academic Operations Suite Backend Foundation)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1104,6 +1104,58 @@
     - recommended_next_action: A-036.2-SPEC
     - final_verdict: A-036.1-SPEC CLOSED - ACADEMIC OPERATIONS SUITE PRODUCT MAP / WORKFLOW SPECIFIED
     - next_action_id: A-036.2-SPEC
+- A-036.2-SPEC execution block:
+    - mode: specification_only_docs_only_backend_domain_db_api_contract_definition
+    - purpose: academic_operations_suite_backend_domain_db_api_contract
+    - source_of_truth_check: PASS (A-036.1-SPEC commit 90d8cc4 verified; source status before A-036.2-SPEC was ready_for_A-036.2-SPEC)
+    - source_commit: 90d8cc4
+    - report_file: A-036.2-SPEC-ACADEMIC_OPERATIONS_SUITE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+    - repo_hygiene: PASS (expected non-scope dirt only)
+    - backend_module_strategy_defined: PASS (future academic_operations package with permissions/dependencies/models/schemas/repository/service/router)
+    - database_table_contract_defined: PASS (38 tables)
+    - enum_lifecycle_contract_defined: PASS
+    - schema_contract_defined: PASS (69 named schemas)
+    - repository_contract_defined: PASS (83 methods)
+    - service_contract_defined: PASS (41 functions)
+    - api_route_contract_defined: PASS (78 routes under /api/admin/academic-operations)
+    - permissions_contract_defined: PASS (56 permissions)
+    - audit_event_model_defined: PASS
+    - dashboard_contract_defined: PASS (fake_metrics=false, metadata-derived, incomplete-data-safe)
+    - first_runtime_subset_defined: PASS (16 tables, 45-55 routes, backend foundation scope)
+    - backend_test_plan_defined: PASS
+    - runtime_validation_gates_defined: PASS (12 gates)
+    - tenant_fail_closed_model_defined: PASS
+    - sensitive_domain_risk_classification_defined: PASS
+    - anti_fake_no_overclaim_boundaries_defined: PASS
+    - runtime_implementation_started: PASS_FALSE
+    - no_backend_runtime_changes: PASS
+    - no_frontend_runtime_changes: PASS
+    - no_tests_created: PASS
+    - no_playwright_specs_created: PASS
+    - no_migrations_created: PASS
+    - no_real_academic_data: PASS
+    - no_real_student_or_faculty_data: PASS
+    - no_real_grade_data: PASS
+    - no_credentials: PASS
+    - no_provider_integration: PASS
+    - no_platonus_sis_integration: PASS
+    - no_fake_grades: PASS
+    - no_fake_exams: PASS
+    - no_fake_attendance: PASS
+    - no_automated_grading: PASS
+    - no_automatic_student_sanction: PASS
+    - no_automatic_faculty_workload_decision: PASS
+    - no_hidden_faculty_or_student_score: PASS
+    - no_fake_kpi: PASS
+    - no_official_grade_publication_claim: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
+    - recommended_next_action: A-036.2-RUNTIME
+    - final_verdict: A-036.2-SPEC CLOSED - ACADEMIC OPERATIONS SUITE BACKEND CONTRACT SPECIFIED
+    - next_action_id: A-036.2-RUNTIME
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling

@@ -2411,6 +2411,20 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - sensitive_domain_boundaries: no fake grades; no fake exams; no fake attendance; no automated grading; no automatic sanction; no automatic faculty workload decision; no hidden score; no provider or Platonus/SIS integration claims; no production-ready claim
 - evidence_roadmap: A-036.2-SPEC; A-036.2-RUNTIME; A-036.2-B1; A-036.3-FRONTEND-SPEC; A-036.3-FRONTEND; A-036.3-B1; A-036.4-E2E; A-036.4-B1; A-036.5-B1
 - next_action_id: A-036.2-SPEC
+
+## A-036.2-SPEC - Academic Operations Suite Backend Domain / DB / API Contract
+
+- source_A0361_spec_commit: 90d8cc4
+- backend_module_strategy: future backend/app/modules/academic_operations package with __init__, permissions, dependencies, models, schemas, repository, service, and router plus future alembic contract file
+- selected_db_table_contract_count: 38 tables with ao_ prefix, tenant fail-closed scope, status-history, audit-events, dashboard snapshots, and evidence metadata
+- enum_lifecycle_contract: AcademicDraftStatus; CurriculumStatus; CourseCatalogStatus; AcademicCalendarStatus; TimetableStatus; RoomAllocationStatus; AttendanceStatus; TeachingLoadStatus; ExamPlanStatus; GradebookMetadataStatus; PolicyExceptionStatus; AcademicOperationsAuditEventType
+- api_route_contract: 78 explicit routes under /api/admin/academic-operations across curriculum, course-catalog, calendar, timetable, rooms, attendance, teaching-load, exams, gradebook, policy-exceptions, dashboard, audit, evidence, and health
+- permissions_contract: 56 academic_operations.* permissions across curriculum, course-catalog, calendar, timetable, rooms, attendance, teaching-load, exams, gradebook, policy-exceptions, dashboard, audit, evidence, health, and admin
+- first_runtime_subset: 16 tables and 45-55 routes for controlled backend foundation runtime
+- anti_fake_sensitive_boundaries: no fake grades; no fake exams; no fake attendance; no automated grading; no automatic sanction; no automatic faculty workload decision; no hidden score; no official grade publication claim; no provider or Platonus/SIS integration claims; no production-ready claim
+- recommended_next_action: A-036.2-RUNTIME
+- next_action_id: A-036.2-RUNTIME
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
