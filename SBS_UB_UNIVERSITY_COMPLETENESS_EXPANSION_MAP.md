@@ -2450,6 +2450,26 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - recommended_next_action: A-036.2-RUNTIME
 - next_action_id: A-036.2-RUNTIME
 
+## A-036.2-B2 - Full University OS Capability Master Matrix / Brain-Ready Completeness Reconciliation
+
+- source_A0362_B1R1_commit: f30a1c9
+- master_matrix_file: SBS_UB_FULL_UNIVERSITY_OS_CAPABILITY_MASTER_MATRIX.md
+- report_file: A-036.2-B2-FULL_UNIVERSITY_OS_CAPABILITY_MASTER_MATRIX_BRAIN_READY_COMPLETENESS_RECONCILIATION_REPORT.md
+- why_needed: A-036.2-B1.R1 proved that desired capability lists can mix canonicals, adjacent canonicals, bridges, and true-new modules; therefore runtime must not continue without a full University OS capability matrix
+- full_university_os_principle: SBS UB target is Full University OS capability universe, not only the baseline 150 modules
+- locked_foundation: baseline_target_modules=150; controlled_extension_modules=25; total_tracked_modules=175; expansion_registry_candidates=54
+- full_capability_universe_target: may exceed 300 and may reach 450-520+ capability rows once modules, workflows, bridges, dashboards, Brain signals, integrations, evidence layers, and forbidden autonomous actions are exhaustively enumerated
+- coverage_planes: baseline_150; controlled_extension_25; university_completeness_expansion; product_vertical; bridge_capability; brain_layer; integration_layer; reporting_dashboard; forbidden_action_registry; future_vertical
+- vertical_map: Executive Governance and Student Lifecycle closed; Academic Operations specified and reconciled; Research, Quality, HR, Campus, International, Integration, Brain, Ministry and other families preserved as future or partial verticals rather than forgotten backlog
+- brain_layer_map: signal registries, decision audit, human review queue, safe drafting agents, governance dashboards, and forbidden autonomy boundaries tracked as first-class capabilities
+- provider_map: SIS, 1C/ERP, eGov, EDS, ministry reporting, IDP/SSO, LMS, email, SMS, payment, bank, payroll, biometric, library, BI, SIEM, and IoT provider profiles tracked as non-live-first readiness rows
+- dashboard_map: executive, student lifecycle, academic operations, research, accreditation, finance, HR, security, integration, ministry, campus, library, AI governance, provider readiness, compliance, document SLA, and academic quality dashboards tracked together
+- bridge_map: academic-to-registrar, academic-to-document, academic-to-governance, academic-to-quality, research-to-accreditation, HR-to-teaching-load, provider-to-all-verticals, and Brain-to-signal-enabled-verticals bridges tracked explicitly
+- duplicate_prevention: canonical module reuse is mandatory and a capability row does not equal a backend package
+- exhaustive_row_completion_status: framework and seeded universe created; exhaustive row-complete enumeration deferred to B2.R1
+- recommended_next_action: A-036.2-B2.R1
+- next_action_id: A-036.2-B2.R1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
