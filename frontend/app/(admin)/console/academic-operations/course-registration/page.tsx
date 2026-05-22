@@ -1,0 +1,1 @@
+export { AcademicOperationsCourseRegistrationPage as default } from '@/modules/academic-operations/pages';

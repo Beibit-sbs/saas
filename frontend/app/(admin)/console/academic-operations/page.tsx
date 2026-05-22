@@ -1,0 +1,1 @@
+export { AcademicOperationsOverviewPage as default } from '@/modules/academic-operations/pages';

@@ -2650,6 +2650,33 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - recommended_next_action: A-036.3-FRONTEND
 - next_action_id: A-036.3-FRONTEND
 
+## A-036.3-FRONTEND - Academic Operations Suite Frontend Runtime
+
+- source_spec_commit: af9b1d5
+- source_backend_baseline_commit: 751fa24
+- source_backend_runtime_commit: c74cb12
+- source_matrix_commit: c79cc31
+- report_file: A-036.3-FRONTEND-ACADEMIC_OPERATIONS_SUITE_FRONTEND_RUNTIME_REPORT.md
+- frontend_module_path: frontend/modules/academic-operations/
+- route_count: 13
+- route_scope: overview; dashboard; matrix; academic-groups; cohorts; course-registration; gradebook-metadata; retakes; summer-semesters; advisor-tutor; bridges; audit-evidence; limitations
+- component_groups: shell_and_boundary_banner; dashboard_and_matrix_panels; metadata_registries; bridge_panel; audit_evidence_panel; limitations_panel
+- shared_permission_registry_update: PASS
+- typescript_result: PASS
+- targeted_frontend_tests: PASS (25 passed, 0 failed across 8 files)
+- route_inventory_result: PASS
+- no_overclaim_scan: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- backend_non_change: PASS_WITH_EXPECTED_COVERAGE_ARTIFACT_ONLY
+- no_fake_grade_ui: PASS
+- no_official_grade_publication_ui: PASS
+- no_automated_grading_ui: PASS
+- no_hidden_score_ui: PASS
+- no_provider_or_platonus_sis_ui: PASS
+- limitations: e2e_not_implemented; optional_detail_routes_deferred; create_update_forms_hidden_or_limited; provider_platonus_sis_not_implemented; official_grade_publication_not_implemented; full_467_row_runtime_not_implemented
+- metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+- recommended_next_action: A-036.3-FRONTEND-B1
+- next_action_id: A-036.3-FRONTEND-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

@@ -1,0 +1,1 @@
+export { AcademicOperationsSummerSemestersPage as default } from '@/modules/academic-operations/pages';

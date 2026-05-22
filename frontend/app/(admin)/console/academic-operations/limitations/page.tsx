@@ -1,0 +1,1 @@
+export { AcademicOperationsLimitationsPage as default } from '@/modules/academic-operations/pages';

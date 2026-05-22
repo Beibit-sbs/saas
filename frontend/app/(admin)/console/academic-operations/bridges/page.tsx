@@ -1,0 +1,1 @@
+export { AcademicOperationsBridgesPage as default } from '@/modules/academic-operations/pages';

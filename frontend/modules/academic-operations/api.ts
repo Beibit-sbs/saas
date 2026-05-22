@@ -1,0 +1,87 @@
+import { apiGet, apiPatch, apiPost } from '@/shared/api/client';
+import { ACADEMIC_OPERATIONS_API_PATHS } from './constants';
+import type {
+  AcademicGroup,
+  AcademicGroupCreateRequest,
+  AcademicGroupUpdateRequest,
+  AcademicOperationsAuditEvent,
+  AcademicOperationsCanonicalReuseSummary,
+  AcademicOperationsDashboard,
+  AcademicOperationsEvidence,
+  AcademicOperationsEvidenceCreateRequest,
+  AcademicOperationsHealth,
+  AcademicOperationsListResponse,
+  AcademicOperationsMatrixSummary,
+  AdvisorTutorAssignment,
+  AdvisorTutorAssignmentCreateRequest,
+  AdvisorTutorAssignmentUpdateRequest,
+  BridgeSummary,
+  CanonicalModuleBridge,
+  CanonicalModuleBridgeCreateRequest,
+  Cohort,
+  CohortCreateRequest,
+  CohortUpdateRequest,
+  CourseRegistrationMetadata,
+  CourseRegistrationMetadataCreateRequest,
+  GradebookMetadata,
+  GradebookMetadataCreateRequest,
+  GradebookMetadataUpdateRequest,
+  RetakePlan,
+  RetakePlanCreateRequest,
+  RetakePlanUpdateRequest,
+  SummerSemesterTerm,
+  SummerSemesterTermCreateRequest,
+  SummerSemesterTermUpdateRequest,
+} from './types';
+
+export const academicOperationsApi = {
+  getAcademicOperationsHealth: () => apiGet<AcademicOperationsHealth>(ACADEMIC_OPERATIONS_API_PATHS.health),
+  getAcademicOperationsDashboard: () => apiGet<AcademicOperationsDashboard>(ACADEMIC_OPERATIONS_API_PATHS.dashboard),
+  getAcademicOperationsMatrixSummary: () => apiGet<AcademicOperationsMatrixSummary>(ACADEMIC_OPERATIONS_API_PATHS.matrixSummary),
+  getAcademicOperationsCanonicalReuseSummary: () => apiGet<AcademicOperationsCanonicalReuseSummary>(ACADEMIC_OPERATIONS_API_PATHS.canonicalReuseSummary),
+
+  listAcademicGroups: () => apiGet<AcademicOperationsListResponse<AcademicGroup>>(ACADEMIC_OPERATIONS_API_PATHS.academicGroups),
+  getAcademicGroup: (id: number | string) => apiGet<AcademicGroup>(`${ACADEMIC_OPERATIONS_API_PATHS.academicGroups}/${id}`),
+  createAcademicGroup: (payload: AcademicGroupCreateRequest) => apiPost<AcademicGroup>(ACADEMIC_OPERATIONS_API_PATHS.academicGroups, payload),
+  updateAcademicGroup: (id: number | string, payload: AcademicGroupUpdateRequest) => apiPatch<AcademicGroup>(`${ACADEMIC_OPERATIONS_API_PATHS.academicGroups}/${id}`, payload),
+
+  listCohorts: () => apiGet<AcademicOperationsListResponse<Cohort>>(ACADEMIC_OPERATIONS_API_PATHS.cohorts),
+  getCohort: (id: number | string) => apiGet<Cohort>(`${ACADEMIC_OPERATIONS_API_PATHS.cohorts}/${id}`),
+  createCohort: (payload: CohortCreateRequest) => apiPost<Cohort>(ACADEMIC_OPERATIONS_API_PATHS.cohorts, payload),
+  updateCohort: (id: number | string, payload: CohortUpdateRequest) => apiPatch<Cohort>(`${ACADEMIC_OPERATIONS_API_PATHS.cohorts}/${id}`, payload),
+
+  listCourseRegistrationMetadata: () => apiGet<AcademicOperationsListResponse<CourseRegistrationMetadata>>(ACADEMIC_OPERATIONS_API_PATHS.courseRegistration),
+  createCourseRegistrationMetadata: (payload: CourseRegistrationMetadataCreateRequest) => apiPost<CourseRegistrationMetadata>(ACADEMIC_OPERATIONS_API_PATHS.courseRegistration, payload),
+
+  listGradebookMetadata: () => apiGet<AcademicOperationsListResponse<GradebookMetadata>>(ACADEMIC_OPERATIONS_API_PATHS.gradebookMetadata),
+  getGradebookMetadata: (id: number | string) => apiGet<GradebookMetadata>(`${ACADEMIC_OPERATIONS_API_PATHS.gradebookMetadata}/${id}`),
+  createGradebookMetadata: (payload: GradebookMetadataCreateRequest) => apiPost<GradebookMetadata>(ACADEMIC_OPERATIONS_API_PATHS.gradebookMetadata, payload),
+  updateGradebookMetadata: (id: number | string, payload: GradebookMetadataUpdateRequest) => apiPatch<GradebookMetadata>(`${ACADEMIC_OPERATIONS_API_PATHS.gradebookMetadata}/${id}`, payload),
+
+  listRetakePlans: () => apiGet<AcademicOperationsListResponse<RetakePlan>>(ACADEMIC_OPERATIONS_API_PATHS.retakes),
+  getRetakePlan: (id: number | string) => apiGet<RetakePlan>(`${ACADEMIC_OPERATIONS_API_PATHS.retakes}/${id}`),
+  createRetakePlan: (payload: RetakePlanCreateRequest) => apiPost<RetakePlan>(ACADEMIC_OPERATIONS_API_PATHS.retakes, payload),
+  updateRetakePlan: (id: number | string, payload: RetakePlanUpdateRequest) => apiPatch<RetakePlan>(`${ACADEMIC_OPERATIONS_API_PATHS.retakes}/${id}`, payload),
+
+  listSummerSemesterTerms: () => apiGet<AcademicOperationsListResponse<SummerSemesterTerm>>(ACADEMIC_OPERATIONS_API_PATHS.summerSemesters),
+  getSummerSemesterTerm: (id: number | string) => apiGet<SummerSemesterTerm>(`${ACADEMIC_OPERATIONS_API_PATHS.summerSemesters}/${id}`),
+  createSummerSemesterTerm: (payload: SummerSemesterTermCreateRequest) => apiPost<SummerSemesterTerm>(ACADEMIC_OPERATIONS_API_PATHS.summerSemesters, payload),
+  updateSummerSemesterTerm: (id: number | string, payload: SummerSemesterTermUpdateRequest) => apiPatch<SummerSemesterTerm>(`${ACADEMIC_OPERATIONS_API_PATHS.summerSemesters}/${id}`, payload),
+
+  listAdvisorTutorAssignments: () => apiGet<AcademicOperationsListResponse<AdvisorTutorAssignment>>(ACADEMIC_OPERATIONS_API_PATHS.advisorTutor),
+  getAdvisorTutorAssignment: (id: number | string) => apiGet<AdvisorTutorAssignment>(`${ACADEMIC_OPERATIONS_API_PATHS.advisorTutor}/${id}`),
+  createAdvisorTutorAssignment: (payload: AdvisorTutorAssignmentCreateRequest) => apiPost<AdvisorTutorAssignment>(ACADEMIC_OPERATIONS_API_PATHS.advisorTutor, payload),
+  updateAdvisorTutorAssignment: (id: number | string, payload: AdvisorTutorAssignmentUpdateRequest) => apiPatch<AdvisorTutorAssignment>(`${ACADEMIC_OPERATIONS_API_PATHS.advisorTutor}/${id}`, payload),
+
+  listBridges: () => apiGet<AcademicOperationsListResponse<CanonicalModuleBridge>>(ACADEMIC_OPERATIONS_API_PATHS.bridges),
+  createBridge: (payload: CanonicalModuleBridgeCreateRequest) => apiPost<CanonicalModuleBridge>(ACADEMIC_OPERATIONS_API_PATHS.bridges, payload),
+  getCanonicalBridgeSummary: () => apiGet<AcademicOperationsCanonicalReuseSummary>(ACADEMIC_OPERATIONS_API_PATHS.bridgeCanonical),
+  getStudentLifecycleBridgeSummary: () => apiGet<BridgeSummary[]>(ACADEMIC_OPERATIONS_API_PATHS.bridgeStudentLifecycle),
+  getDocumentWorkflowBridgeSummary: () => apiGet<BridgeSummary[]>(ACADEMIC_OPERATIONS_API_PATHS.bridgeDocumentWorkflow),
+  getExecutiveGovernanceBridgeSummary: () => apiGet<BridgeSummary[]>(ACADEMIC_OPERATIONS_API_PATHS.bridgeExecutiveGovernance),
+  getQualityAccreditationBridgeSummary: () => apiGet<BridgeSummary[]>(ACADEMIC_OPERATIONS_API_PATHS.bridgeQualityAccreditation),
+
+  listAuditEvents: () => apiGet<AcademicOperationsAuditEvent[]>(ACADEMIC_OPERATIONS_API_PATHS.audit),
+  listEvidence: () => apiGet<AcademicOperationsListResponse<AcademicOperationsEvidence>>(ACADEMIC_OPERATIONS_API_PATHS.evidence),
+  attachEvidence: (payload: AcademicOperationsEvidenceCreateRequest) => apiPost<AcademicOperationsEvidence>(ACADEMIC_OPERATIONS_API_PATHS.evidence, payload),
+};

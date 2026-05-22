@@ -1,0 +1,1 @@
+export { AcademicOperationsMatrixPage as default } from '@/modules/academic-operations/pages';

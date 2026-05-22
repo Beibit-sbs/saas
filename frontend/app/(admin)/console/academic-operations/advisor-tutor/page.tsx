@@ -1,0 +1,1 @@
+export { AcademicOperationsAdvisorTutorPage as default } from '@/modules/academic-operations/pages';

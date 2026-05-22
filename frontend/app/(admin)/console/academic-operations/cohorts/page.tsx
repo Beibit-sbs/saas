@@ -1,0 +1,1 @@
+export { AcademicOperationsCohortsPage as default } from '@/modules/academic-operations/pages';

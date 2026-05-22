@@ -1,0 +1,1 @@
+export { AcademicOperationsAcademicGroupsPage as default } from '@/modules/academic-operations/pages';

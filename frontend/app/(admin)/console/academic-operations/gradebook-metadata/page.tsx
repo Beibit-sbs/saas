@@ -1,0 +1,1 @@
+export { AcademicOperationsGradebookMetadataPage as default } from '@/modules/academic-operations/pages';
