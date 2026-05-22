@@ -2713,6 +2713,33 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - recommended_next_action: A-036.4-E2E
 - next_action_id: A-036.4-E2E
 
+## A-036.4-E2E - Academic Operations Browser Validation Runtime
+
+- source_plan_commit: cc05261
+- source_frontend_b1_commit: cb1f6c3
+- source_frontend_runtime_commit: 20b9c51
+- source_frontend_spec_commit: af9b1d5
+- source_backend_baseline_commit: 751fa24
+- source_backend_runtime_commit: c74cb12
+- source_matrix_commit: c79cc31
+- report_file: A-036.4-E2E-ACADEMIC_OPERATIONS_SUITE_BROWSER_VALIDATION_REPORT.md
+- playwright_spec_path: frontend/e2e/smoke/a0364-academic-operations-suite.spec.ts
+- route_flow_count: 13
+- scenario_count: 12
+- TypeScript_result: PASS
+- targeted_test_result: PASS (25 passed, 0 failed)
+- playwright_result: PASS (12 passed, Chromium, 1.9m)
+- playwright_runtime_path: direct ai-frontend-tests image on ai_default network with E2E_BASE_URL=https://nginx
+- permission_smoke: PASS
+- no_overclaim_dom_assertions: PASS
+- route_inventory_validation: PASS (13 route files present)
+- backend_non_change: PASS_WITH_EXPECTED_COVERAGE_ARTIFACT_ONLY
+- anti_fake_no_overclaim_review: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- limitations: frontend_runtime_not_production_ready; provider_platonus_sis_not_implemented; official_grade_publication_not_implemented; official_transcript_update_not_implemented; full_467_row_runtime_not_implemented; optional_detail_routes_deferred; complex_create_update_forms_disabled_or_limited; compose_frontend_tests_depends_on_unrelated_backend_health
+- metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+- recommended_next_action: A-036.4-B1
+- next_action_id: A-036.4-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
