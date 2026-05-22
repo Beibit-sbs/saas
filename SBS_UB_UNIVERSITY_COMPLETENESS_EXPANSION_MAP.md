@@ -2620,6 +2620,36 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - recommended_next_action: A-036.3-FRONTEND-SPEC
 - next_action_id: A-036.3-FRONTEND-SPEC
 
+## A-036.3-FRONTEND-SPEC - Academic Operations Suite Frontend Contract
+
+- source_A0362_B1_commit: 751fa24
+- source_backend_runtime_commit: c74cb12
+- source_matrix_commit: c79cc31
+- report_file: A-036.3-FRONTEND-SPEC-ACADEMIC_OPERATIONS_SUITE_FRONTEND_CONTRACT_REPORT.md
+- backend_module_path: backend/app/modules/academic_operations/
+- backend_route_prefix: /api/admin/academic-operations
+- backend_route_count: 40
+- backend_permission_count: 40
+- frontend_module_path_plan: frontend/modules/academic-operations/
+- planned_core_frontend_route_count: 13
+- planned_core_routes: /console/academic-operations; /console/academic-operations/dashboard; /console/academic-operations/matrix; /console/academic-operations/academic-groups; /console/academic-operations/cohorts; /console/academic-operations/course-registration; /console/academic-operations/gradebook-metadata; /console/academic-operations/retakes; /console/academic-operations/summer-semesters; /console/academic-operations/advisor-tutor; /console/academic-operations/bridges; /console/academic-operations/audit-evidence; /console/academic-operations/limitations
+- optional_detail_routes_deferred: academic-groups/[id]; cohorts/[id]; gradebook-metadata/[id]; retakes/[id]; summer-semesters/[id]; advisor-tutor/[id]
+- component_plan: shell_nav_header_boundary_limitations; dashboard_matrix_summary; metadata_registries; bridge_cards; audit_evidence_tables; permission_and_boundary_guards
+- permission_guard_plan: map frontend guards to backend read permissions first; keep mutation affordances hidden or disabled until safe forms exist
+- boundary_no_fake_ui_plan: metadata-only foundation; no official grade publication; no official transcript update; no automated grading; no automatic sanction; no hidden score; no provider sync; no Platonus/SIS integration; no fake KPI; human review required; canonical reuse; matrix-guided 467 planning rows
+- dashboard_matrix_contract: fake_metrics=false; matrix commit c79cc31; matrix rows 467; controlled subset only; incomplete data handling required
+- canonical_bridge_contract: course catalog canonical reuse; committee decision registry reuse; student lifecycle bridge; document workflow bridge; executive governance bridge; quality accreditation bridge; no duplicate module warning; read-only-first by default
+- audit_evidence_contract: audit metadata only; evidence metadata only; no fake evidence; no official legal document claim
+- future_targeted_frontend_tests: 8 files; expected 25-45 tests
+- future_e2e_plan: 17-step navigation and guard scenario for overview, matrix, registries, bridges, and audit/evidence
+- no_frontend_runtime_started: PASS_TRUE
+- no_backend_changes: PASS_TRUE
+- no_provider_or_platonus_sis_ui_claim: PASS_TRUE
+- no_fake_grade_or_hidden_score_ui_claim: PASS_TRUE
+- metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+- recommended_next_action: A-036.3-FRONTEND
+- next_action_id: A-036.3-FRONTEND
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

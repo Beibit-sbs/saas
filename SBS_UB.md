@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-036.3-FRONTEND-SPEC
-    - current_stage: A-036.2-B1 complete / academic operations backend foundation quality baseline confirmed
-    - last_completed_action_id: A-036.2-B1
-    - next_action_id: A-036.3-FRONTEND-SPEC
-    - updated_at: 2026-05-22 (A-036.2-B1 validated the already-implemented Academic Operations backend foundation from runtime commit c74cb12 against matrix commit c79cc31 and confirmed a validation-only quality baseline with no new backend runtime, no frontend runtime, no new migration, no new model, no new route, no new test, no provider integration, no Platonus or SIS sync, and no real academic, student, faculty, or grade data; artifact inventory passed for backend/app/modules/academic_operations, backend/alembic/versions/ao36rt52uv71_a0362_academic_operations_tables.py, the four focused A-036.2 test files, and the runtime report; import sanity confirmed 19 ao_ tables, 40 routes, MASTER_MATRIX_COMMIT c79cc31, and MASTER_MATRIX_ROW_COUNT 467; route and RBAC inventory confirmed 40 routes and 40 Academic Operations permissions; targeted A-036.2 backend tests passed at 100 passed and selected A-035.2 continuity passed at 38 passed; anti-fake scan passed with expected boundary text only, duplicate-module scan was empty, frontend non-change passed, backend source non-change in B1 passed, and metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11, and brain_governance_foundation_count=5; with the backend baseline confirmed and no new feature work performed in B1, the next action remains A-036.3-FRONTEND-SPEC)
+     - status: ready_for_A-036.3-FRONTEND
+      - current_stage: A-036.3-FRONTEND-SPEC complete / academic operations frontend contract specified
+      - last_completed_action_id: A-036.3-FRONTEND-SPEC
+     - next_action_id: A-036.3-FRONTEND
+      - updated_at: 2026-05-22 (A-036.3-FRONTEND-SPEC validated the A-036.2-B1 source commit 751fa24, backend runtime commit c74cb12, and matrix commit c79cc31, then specified the Academic Operations frontend contract without starting frontend runtime, without creating frontend routes, React components, API client code, frontend tests, Playwright specs, backend changes, migrations, or new backend routes; the spec anchored a planned module path at frontend/modules/academic-operations/, a 13-route admin plan under /console/academic-operations, a permission and guard contract aligned to the 40 backend permissions, a UX contract for dashboard, matrix, metadata registries, bridges, audit, evidence, and limitations, a no-fake boundary label set preserving metadata-only foundation, no official grade publication, no official transcript update, no automated grading, no sanction, no hidden score, no provider sync, no Platonus or SIS integration, no fake KPI, and canonical reuse with 467 planning rows, plus a future targeted frontend test plan and E2E plan; backend source evidence remained unchanged at 19 ao_ tables, 40 routes, 40 permissions, targeted backend tests 100 passed, A-035 continuity 38 passed, and metrics remained unchanged at L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150 with extension_total_count=25, total_tracked_modules=175, expansion_L2_foundation_count=67, expansion_L3_logic_count=50, expansion_L4_visibility_count=40, expansion_L4_api_route_count=40, provider_readiness_foundation_count=11, and brain_governance_foundation_count=5; with the frontend contract specified and runtime still not started, the next action is A-036.3-FRONTEND)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1434,6 +1434,46 @@
     - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
     - final_verdict: A-036.2-B1 CLOSED - ACADEMIC OPERATIONS BACKEND FOUNDATION QUALITY BASELINE CONFIRMED
     - next_action_id: A-036.3-FRONTEND-SPEC
+- A-036.3-FRONTEND-SPEC execution block:
+    - mode: frontend_spec_only
+    - purpose: academic_operations_frontend_contract_specification
+    - source_of_truth_check: PASS (A-036.2-B1 commit 751fa24 verified; tracker state before this spec was ready_for_A-036.3-FRONTEND-SPEC)
+    - source_commit: 751fa24
+    - source_backend_runtime_commit: c74cb12
+    - source_matrix_commit: c79cc31
+    - report_file: A-036.3-FRONTEND-SPEC-ACADEMIC_OPERATIONS_SUITE_FRONTEND_CONTRACT_REPORT.md
+    - planned_frontend_module_path: frontend/modules/academic-operations/
+    - planned_core_route_count: 13
+    - planned_optional_detail_route_count: 6
+    - planned_component_groups: layout_shared; dashboard_summary; registry_surfaces; bridge_surfaces; audit_evidence; guards_and_boundaries
+    - planned_test_files: 8
+    - backend_surface_anchor: PASS (route_prefix=/api/admin/academic-operations; route_count=40; permission_count=40)
+    - backend_baseline_anchor: PASS (ao_tables=19; targeted_tests=100 passed; continuity=38 passed; matrix_rows=467)
+    - frontend_module_absent_before_spec: PASS
+    - no_frontend_runtime_started: PASS
+    - no_frontend_routes_created: PASS
+    - no_react_components_created: PASS
+    - no_api_client_code_created: PASS
+    - no_frontend_tests_created: PASS
+    - no_playwright_specs_created: PASS
+    - no_backend_changes: PASS
+    - no_migrations_created: PASS
+    - no_new_backend_routes: PASS
+    - no_real_academic_data: PASS
+    - no_real_student_or_faculty_data: PASS
+    - no_real_grade_data: PASS
+    - no_credentials: PASS
+    - no_provider_or_platonus_sis_ui: PASS
+    - no_fake_grade_ui: PASS
+    - no_automated_grading_ui: PASS
+    - no_hidden_score_ui: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+    - final_verdict: A-036.3-FRONTEND-SPEC CLOSED - ACADEMIC OPERATIONS SUITE FRONTEND CONTRACT SPECIFIED
+    - next_action_id: A-036.3-FRONTEND
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
