@@ -2933,6 +2933,23 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - acceptance_criteria: route flow 13/13; chromium pass; no-overclaim DOM assertions pass; no backend changes; no frontend runtime changes beyond Playwright spec unless justified; no screenshots; no demo evidence; metrics unchanged
 - next_action_id: A-037.4-E2E
 
+## A-037.4-E2E - Research / Science Browser Validation Runtime
+
+- source_a0374_spec_commit: 0e8be6e
+- source_frontend_b1_commit: 017d5f5
+- playwright_spec_path: frontend/e2e/smoke/a0374-research-science-suite.spec.ts
+- route_flow_count: 13
+- scenario_test_count: 13
+- playwright_result: PASS (13 passed, 0 failed; chromium)
+- typescript_result: PASS
+- targeted_frontend_tests: PASS (31 passed, 0 failed)
+- no_overclaim_dom_result: PASS
+- no_overclaim_source_scan: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- backend_non_change: PASS_WITH_EXPECTED_COVERAGE_ARTIFACT_ONLY (backend/.coverage)
+- limitations: provider integrations not implemented; official verification not implemented; frontend not production-ready; full Research / Science vertical not closed; compose frontend-tests wrapper still depends on unrelated backend health
+- report_file: A-037.4-E2E-RESEARCH_SCIENCE_SUITE_BROWSER_VALIDATION_REPORT.md
+- next_action_id: A-037.4-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
