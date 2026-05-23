@@ -2970,6 +2970,23 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-037.4-B1-RESEARCH_SCIENCE_SUITE_BROWSER_VALIDATION_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-037.5-B1
 
+## A-037.5-B1 - Research / Science Product Vertical Closure
+
+- source_a0374_b1_commit: 9a6ee56
+- source_a0374_e2e_commit: c074a2c
+- source_backend_runtime_commit: a149c36
+- source_frontend_runtime_commit: 56098ca
+- vertical_closure: PASS
+- backend_evidence: PASS (15 rs_ tables; 43 routes; 40 permissions; 44 passed)
+- frontend_evidence: PASS (7 module files; 13 route pages; 31 passed; TypeScript PASS)
+- e2e_evidence: PASS (13 route flow; 13 scenarios; 13 passed, chromium)
+- completed_vertical_count: 4
+- closed_verticals: Executive Governance Suite; Student Lifecycle Suite; Academic Operations Suite; Research / Science Suite
+- limitations: provider integrations not implemented; official verification not implemented; not production-ready; full Research / Science vertical depth not complete
+- recommended_next_vertical: Quality / Accreditation Suite
+- report_file: A-037.5-B1-RESEARCH_SCIENCE_SUITE_PRODUCT_VERTICAL_CLOSURE_REPORT.md
+- next_action_id: A-038.0-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
