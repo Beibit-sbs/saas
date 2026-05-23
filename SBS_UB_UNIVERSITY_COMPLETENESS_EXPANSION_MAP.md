@@ -2861,6 +2861,21 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - limitations: frontend_not_implemented; e2e_not_implemented; provider_integrations_not_implemented; official_verification_not_implemented; exact_test_artifact_contract_incomplete_due_to_missing_expected_filename
 - next_action_id: A-037.2-B1.R1
 
+## A-037.2-B1.R1 - Research / Science Test Artifact Contract Reconciliation
+
+- source_blocker_commit: e025640
+- source_runtime_commit: a149c36
+- old_file_path: backend/tests/test_a0372_research_science_audit_security.py
+- new_file_path: backend/tests/test_a0372_research_science_audit_evidence_security.py
+- exact_targeted_test_result: PASS (44 passed, 0 failed)
+- continuity_result: PASS (100 passed, 0 failed)
+- no_runtime_logic_changes: PASS
+- no_frontend_changes: PASS
+- anti_fake_scan: PASS
+- backend_only_scope: PASS
+- final_a0372_b1_status_after_r1: CLOSED / PASS
+- next_action_id: A-037.3-FRONTEND-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
