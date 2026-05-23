@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-037.3-FRONTEND-SPEC
-     - current_stage: A-037.2-B1.R1 complete / research science backend quality baseline unblocked and confirmed
-     - last_completed_action_id: A-037.2-B1.R1
-    - next_action_id: A-037.3-FRONTEND-SPEC
-     - updated_at: 2026-05-23 (A-037.2-B1.R1 reconciled the Research / Science test artifact contract from blocker commit e025640 against runtime commit a149c36 by renaming backend/tests/test_a0372_research_science_audit_security.py to backend/tests/test_a0372_research_science_audit_evidence_security.py, with no backend runtime logic changes and no frontend changes; import sanity PASS with 15 rs_ tables, 43 routes, 40 permissions, exact targeted A-037.2 tests PASS with 44 passed 0 failed, adjacent A-036.2 continuity PASS with 100 passed 0 failed, RBAC review PASS, migration/model review PASS, anti-fake scan PASS, backend-only scope PASS, and boundaries preserved with no real research data, no provider integration, no external database sync, no official verification, no fake publications, no fake conference certificates, no fake grant evidence, no autonomous ethics approval, no autonomous grant submission, no autonomous publication verification, no hidden researcher/faculty/student research score, and no production/sales/GCC/L5/L6 claim, with metrics unchanged; final A-037.2-B1 verdict after R1 is CLOSED / PASS and the next action is A-037.3-FRONTEND-SPEC)
+    - status: ready_for_A-037.3-FRONTEND
+     - current_stage: A-037.3-FRONTEND-SPEC complete / research science frontend contract specified
+     - last_completed_action_id: A-037.3-FRONTEND-SPEC
+    - next_action_id: A-037.3-FRONTEND
+     - updated_at: 2026-05-23 (A-037.3-FRONTEND-SPEC specified the Research / Science Suite frontend contract from source A-037.2-B1.R1 commit da12c7d and backend runtime commit a149c36, confirmed the validated backend baseline of backend/app/modules/research_science, migration backend/alembic/versions/rs37a2rt01_a0372_research_science_tables.py, 15 rs_ tables, 43 routes, 40 permissions, exact targeted backend tests PASS with 44 passed 0 failed, and adjacent A-036.2 continuity PASS with 100 passed 0 failed, then defined the future frontend module path frontend/modules/research-science/, 13 admin routes under /console/research-science, component groups, types contract, API client contract, guard and permission contract, boundary labels, constants contract, page UX contract, targeted frontend test plan, runtime acceptance criteria, no-overclaim source scan plan, and future E2E preview, with no frontend runtime started, no frontend files created, no backend changes, no real research data, no provider integration, no external database sync, no official verification, no fake publications, no fake conference certificates, no fake grant evidence, no autonomous ethics approval, no autonomous grant submission, no autonomous publication verification, no hidden researcher score, and no production/sales/GCC/L5/L6 claim, with metrics unchanged; the next action is A-037.3-FRONTEND)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -1967,6 +1967,46 @@
     - final_a0372_b1_verdict_after_r1: CLOSED / PASS
     - recommended_next_action: A-037.3-FRONTEND-SPEC
     - next_action_id: A-037.3-FRONTEND-SPEC
+- A-037.3-FRONTEND-SPEC execution block:
+    - mode: frontend_spec_only_docs_only_contract_definition
+    - purpose: specify_research_science_frontend_contract
+    - source_of_truth_check: PASS (A-037.2-B1.R1 commit da12c7d verified; source status before A-037.3-FRONTEND-SPEC was ready_for_A-037.3-FRONTEND-SPEC)
+    - source_a0372_b1_r1_commit: da12c7d
+    - source_a0372_runtime_commit: a149c36
+    - backend_baseline_confirmed: PASS
+    - frontend_module_path_planned: frontend/modules/research-science/
+    - planned_route_count: 13
+    - component_groups_specified: PASS
+    - types_contract_specified: PASS
+    - api_client_contract_specified: PASS
+    - guards_specified: PASS
+    - boundary_labels_specified: PASS
+    - constants_contract_specified: PASS
+    - page_ux_specified: PASS
+    - frontend_test_plan_specified: PASS
+    - future_e2e_preview_specified: PASS
+    - no_runtime_started: PASS
+    - no_frontend_files_created: PASS
+    - no_backend_changes: PASS
+    - no_real_research_data: PASS
+    - no_provider_integration: PASS
+    - no_external_database_sync: PASS
+    - no_fake_publications: PASS
+    - no_fake_conference_certificates: PASS
+    - no_fake_grant_evidence: PASS
+    - no_autonomous_ethics_approval: PASS
+    - no_autonomous_grant_submission: PASS
+    - no_autonomous_publication_verification: PASS
+    - no_hidden_researcher_score: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+    - report_file: A-037.3-FRONTEND-SPEC-RESEARCH_SCIENCE_SUITE_FRONTEND_CONTRACT_REPORT.md
+    - final_verdict: A-037.3-FRONTEND-SPEC CLOSED - RESEARCH / SCIENCE FRONTEND CONTRACT SPECIFIED
+    - recommended_next_action: A-037.3-FRONTEND
+    - next_action_id: A-037.3-FRONTEND
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling

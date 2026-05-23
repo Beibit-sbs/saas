@@ -2876,6 +2876,20 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - final_a0372_b1_status_after_r1: CLOSED / PASS
 - next_action_id: A-037.3-FRONTEND-SPEC
 
+## A-037.3-FRONTEND-SPEC - Research / Science Suite Frontend Contract
+
+- source_a0372_b1_r1_commit: da12c7d
+- source_backend_runtime_commit: a149c36
+- frontend_module_path: frontend/modules/research-science/
+- planned_routes: 13 under /console/research-science
+- component_groups: shell; dashboard; registries; evidence_audit; bridges; limitations_safety
+- api_client_contract: specified
+- guard_contract: specified
+- boundary_labels: specified
+- frontend_test_plan: 8 targeted files / 25-45 tests planned
+- e2e_preview: frontend/e2e/smoke/a0374-research-science-suite.spec.ts with 13 route flows and no-overclaim assertions
+- next_action_id: A-037.3-FRONTEND
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
