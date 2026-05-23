@@ -2921,6 +2921,18 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-037.3-FRONTEND-B1-RESEARCH_SCIENCE_SUITE_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-037.4-E2E-SPEC
 
+## A-037.4-E2E-SPEC - Research / Science Browser Validation Plan
+
+- source_frontend_b1_commit: 017d5f5
+- source_frontend_runtime_commit: 56098ca
+- planned_playwright_spec_path: frontend/e2e/smoke/a0374-research-science-suite.spec.ts
+- route_flow_count: 13
+- scenario_group_count: 13
+- no_overclaim_dom_assertion_plan: specified
+- runtime_command_plan: direct ai-frontend-tests image on ai_default with E2E_BASE_URL=https://nginx
+- acceptance_criteria: route flow 13/13; chromium pass; no-overclaim DOM assertions pass; no backend changes; no frontend runtime changes beyond Playwright spec unless justified; no screenshots; no demo evidence; metrics unchanged
+- next_action_id: A-037.4-E2E
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

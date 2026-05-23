@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-037.4-E2E-SPEC
-     - current_stage: A-037.3-FRONTEND-B1 complete / research science frontend runtime quality baseline confirmed
-     - last_completed_action_id: A-037.3-FRONTEND-B1
-    - next_action_id: A-037.4-E2E-SPEC
-     - updated_at: 2026-05-23 (A-037.3-FRONTEND-B1 validated the Research / Science Suite frontend runtime from source A-037.3-FRONTEND commit 56098ca, preserved alignment to A-037.3-FRONTEND-SPEC commit 0d85d8b, A-037.2-B1.R1 commit da12c7d, and backend runtime commit a149c36, confirmed frontend/modules/research-science/ with 7 runtime files, confirmed 13 admin routes under /console/research-science, confirmed the research_science permission registry entries, confirmed 8 targeted frontend test files, reran frontend TypeScript validation, reran targeted frontend Vitest with 31 passed 0 failed, confirmed route inventory at 13 route files, confirmed no-overclaim scan with expected negative boundary text only, confirmed backend non-change with only backend/.coverage visible in backend diff, introduced no backend changes, no Playwright, no real research data, no fake publications, no fake conference certificates, no fake grant evidence, no autonomous ethics approval UI, no autonomous grant submission UI, no autonomous publication verification UI, no hidden researcher score UI, no provider/Scopus/WoS/ORCID/ministry sync UI, no external database sync UI, no official verification UI, and no production/sales/GCC/L5/L6 claim, with metrics unchanged; the next action is A-037.4-E2E-SPEC)
+    - status: ready_for_A-037.4-E2E
+     - current_stage: A-037.4-E2E-SPEC complete / research science browser validation plan specified
+     - last_completed_action_id: A-037.4-E2E-SPEC
+    - next_action_id: A-037.4-E2E
+     - updated_at: 2026-05-23 (A-037.4-E2E-SPEC specified the Research / Science Suite browser validation plan from source A-037.3-FRONTEND-B1 commit 017d5f5, preserved alignment to frontend runtime commit 56098ca, frontend spec commit 0d85d8b, backend baseline commit da12c7d, backend runtime commit a149c36, and matrix commit c79cc31 with 467 rows, defined the future Playwright spec path frontend/e2e/smoke/a0374-research-science-suite.spec.ts, defined a 13-route browser flow and 13 scenario groups, defined page assertion coverage, negative DOM no-overclaim assertions, auth and fixture strategy, direct ai-frontend-tests runtime command, supporting TypeScript and targeted frontend test validation, and future runtime acceptance criteria, with no runtime started, no Playwright spec created, no frontend runtime changes, no backend changes, no real research data, no provider integration, no external database sync, no fake publications, no fake conference certificates, no fake grant evidence, no autonomous ethics approval, no autonomous grant submission, no autonomous publication verification, no hidden researcher score, and no production/sales/GCC/L5/L6 claim, with metrics unchanged; the next action is A-037.4-E2E)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -2092,6 +2092,47 @@
     - final_verdict: A-037.3-FRONTEND-B1 CLOSED - RESEARCH / SCIENCE FRONTEND RUNTIME QUALITY BASELINE CONFIRMED
     - recommended_next_action: A-037.4-E2E-SPEC
     - next_action_id: A-037.4-E2E-SPEC
+- A-037.4-E2E-SPEC execution block:
+    - mode: browser_validation_spec_only_docs_only
+    - purpose: specify_research_science_browser_validation_plan
+    - source_of_truth_check: PASS (A-037.3-FRONTEND-B1 commit 017d5f5 verified; source status before A-037.4-E2E-SPEC was ready_for_A-037.4-E2E-SPEC)
+    - source_frontend_b1_commit: 017d5f5
+    - source_frontend_runtime_commit: 56098ca
+    - source_frontend_spec_commit: 0d85d8b
+    - source_a0372_b1_r1_commit: da12c7d
+    - source_a0372_runtime_commit: a149c36
+    - source_matrix_commit: c79cc31
+    - master_matrix_rows: 467
+    - planned_playwright_spec_path: frontend/e2e/smoke/a0374-research-science-suite.spec.ts
+    - planned_route_flow_count: 13
+    - planned_scenario_group_count: 13
+    - runtime_command_planned: PASS
+    - no_overclaim_dom_assertions_planned: PASS
+    - typescript_support_planned: PASS
+    - targeted_frontend_test_support_planned: PASS
+    - no_runtime_started: PASS
+    - no_playwright_spec_created: PASS
+    - no_frontend_runtime_changes: PASS
+    - no_backend_changes: PASS
+    - no_real_research_data: PASS
+    - no_provider_integration: PASS
+    - no_external_database_sync: PASS
+    - no_fake_publications: PASS
+    - no_fake_conference_certificates: PASS
+    - no_fake_grant_evidence: PASS
+    - no_autonomous_ethics_approval: PASS
+    - no_autonomous_grant_submission: PASS
+    - no_autonomous_publication_verification: PASS
+    - no_hidden_researcher_score: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+    - report_file: A-037.4-E2E-SPEC-RESEARCH_SCIENCE_SUITE_BROWSER_VALIDATION_PLAN_REPORT.md
+    - final_verdict: A-037.4-E2E-SPEC CLOSED - RESEARCH / SCIENCE BROWSER VALIDATION PLAN SPECIFIED
+    - recommended_next_action: A-037.4-E2E
+    - next_action_id: A-037.4-E2E
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
