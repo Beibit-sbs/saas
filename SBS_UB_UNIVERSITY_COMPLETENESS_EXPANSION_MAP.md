@@ -2950,6 +2950,26 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-037.4-E2E-RESEARCH_SCIENCE_SUITE_BROWSER_VALIDATION_REPORT.md
 - next_action_id: A-037.4-B1
 
+## A-037.4-B1 - Research / Science Browser Validation Quality Baseline
+
+- source_a0374_e2e_commit: c074a2c
+- source_a0374_spec_commit: 0e8be6e
+- source_frontend_b1_commit: 017d5f5
+- playwright_spec_path: frontend/e2e/smoke/a0374-research-science-suite.spec.ts
+- route_flow_count: 13
+- scenario_count: 13
+- playwright_result: PASS (13 passed, 0 failed; chromium)
+- typescript_result: PASS
+- targeted_frontend_tests: PASS (31 passed, 0 failed)
+- route_inventory: PASS (13 page.tsx files under /console/research-science)
+- no_overclaim_dom_result: PASS
+- no_overclaim_source_scan: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- backend_non_change: PASS_WITH_EXPECTED_COVERAGE_ARTIFACT_ONLY (backend/.coverage)
+- screenshot_demo_evidence_review: PASS
+- limitations: provider integrations not implemented; official verification not implemented; frontend not production-ready; full Research / Science vertical not closed; product vertical closure not yet run
+- report_file: A-037.4-B1-RESEARCH_SCIENCE_SUITE_BROWSER_VALIDATION_QUALITY_BASELINE_REPORT.md
+- next_action_id: A-037.5-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
