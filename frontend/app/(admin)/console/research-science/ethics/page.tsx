@@ -1,0 +1,1 @@
+export { ResearchEthicsPage as default } from '@/modules/research-science/pages';

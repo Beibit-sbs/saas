@@ -1,0 +1,1 @@
+export { GrantApplicationPage as default } from '@/modules/research-science/pages';

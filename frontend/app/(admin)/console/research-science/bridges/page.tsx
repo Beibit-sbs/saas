@@ -1,0 +1,1 @@
+export { ResearchBridgePage as default } from '@/modules/research-science/pages';

@@ -2890,6 +2890,21 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - e2e_preview: frontend/e2e/smoke/a0374-research-science-suite.spec.ts with 13 route flows and no-overclaim assertions
 - next_action_id: A-037.3-FRONTEND
 
+## A-037.3-FRONTEND - Research / Science Suite Frontend Runtime
+
+- source_frontend_spec_commit: 0d85d8b
+- source_a0372_b1_r1_commit: da12c7d
+- source_backend_runtime_commit: a149c36
+- frontend_module_path: frontend/modules/research-science/
+- runtime_module_files: 7
+- implemented_routes: 13 under /console/research-science
+- targeted_frontend_tests: PASS (8 files / 31 tests)
+- typescript_validation: PASS
+- no_overclaim_source_scan: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- backend_non_change: PASS_WITH_EXPECTED_COVERAGE_ARTIFACT_ONLY (backend/.coverage)
+- report_file: A-037.3-FRONTEND-RESEARCH_SCIENCE_SUITE_FRONTEND_RUNTIME_REPORT.md
+- next_action_id: A-037.3-FRONTEND-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

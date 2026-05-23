@@ -1,0 +1,1 @@
+export { ScientificSupervisionPage as default } from '@/modules/research-science/pages';

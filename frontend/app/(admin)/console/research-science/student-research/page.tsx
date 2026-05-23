@@ -1,0 +1,1 @@
+export { StudentResearchWorkPage as default } from '@/modules/research-science/pages';

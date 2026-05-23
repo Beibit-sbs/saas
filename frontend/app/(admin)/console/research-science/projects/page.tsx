@@ -1,0 +1,1 @@
+export { ResearchProjectsPage as default } from '@/modules/research-science/pages';

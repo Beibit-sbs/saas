@@ -1,0 +1,1 @@
+export { ConferenceParticipationPage as default } from '@/modules/research-science/pages';
