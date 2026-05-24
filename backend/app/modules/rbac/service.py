@@ -288,6 +288,93 @@ _RESEARCH_SCIENCE_AUDITOR_PERMISSIONS: Set[str] = {
     "research_science.bridges.read",
 }
 
+_QUALITY_ACCREDITATION_PERMISSIONS: Set[str] = {
+    "quality_accreditation.overview.read",
+    "quality_accreditation.dashboard.read",
+    "quality_accreditation.health.read",
+    "quality_accreditation.matrix.read",
+    "quality_accreditation.limitations.read",
+    "quality_accreditation.standards.read",
+    "quality_accreditation.standards.create",
+    "quality_accreditation.standards.update",
+    "quality_accreditation.criteria.read",
+    "quality_accreditation.criteria.create",
+    "quality_accreditation.criteria.update",
+    "quality_accreditation.evidence.read",
+    "quality_accreditation.evidence.attach",
+    "quality_accreditation.evidence.review",
+    "quality_accreditation.evidence.limitations.manage",
+    "quality_accreditation.program_readiness.read",
+    "quality_accreditation.program_readiness.update",
+    "quality_accreditation.institutional_readiness.read",
+    "quality_accreditation.institutional_readiness.update",
+    "quality_accreditation.self_assessment.read",
+    "quality_accreditation.self_assessment.create",
+    "quality_accreditation.self_assessment.update",
+    "quality_accreditation.improvement_plans.read",
+    "quality_accreditation.improvement_plans.create",
+    "quality_accreditation.improvement_plans.update",
+    "quality_accreditation.internal_audits.read",
+    "quality_accreditation.internal_audits.create",
+    "quality_accreditation.internal_audits.update",
+    "quality_accreditation.audit_findings.read",
+    "quality_accreditation.audit_findings.update",
+    "quality_accreditation.program_review.read",
+    "quality_accreditation.program_review.create",
+    "quality_accreditation.program_review.update",
+    "quality_accreditation.learning_outcomes.read",
+    "quality_accreditation.feedback.read",
+    "quality_accreditation.feedback.metadata.create",
+    "quality_accreditation.committee.read",
+    "quality_accreditation.committee.update",
+    "quality_accreditation.external_review.read",
+    "quality_accreditation.external_review.create",
+    "quality_accreditation.external_review.update",
+    "quality_accreditation.gap_analysis.read",
+    "quality_accreditation.gap_analysis.update",
+    "quality_accreditation.calendar.read",
+    "quality_accreditation.calendar.update",
+    "quality_accreditation.risk_register.read",
+    "quality_accreditation.risk_register.update",
+    "quality_accreditation.bridges.read",
+    "quality_accreditation.bridges.create",
+    "quality_accreditation.bridges.update",
+    "quality_accreditation.brain_signals.read",
+    "quality_accreditation.audit.read",
+    "quality_accreditation.status_history.read",
+    "quality_accreditation.admin.read",
+    "quality_accreditation.admin.configure",
+}
+
+_QUALITY_ACCREDITATION_AUDITOR_PERMISSIONS: Set[str] = {
+    "quality_accreditation.overview.read",
+    "quality_accreditation.dashboard.read",
+    "quality_accreditation.health.read",
+    "quality_accreditation.matrix.read",
+    "quality_accreditation.limitations.read",
+    "quality_accreditation.standards.read",
+    "quality_accreditation.criteria.read",
+    "quality_accreditation.evidence.read",
+    "quality_accreditation.program_readiness.read",
+    "quality_accreditation.institutional_readiness.read",
+    "quality_accreditation.self_assessment.read",
+    "quality_accreditation.improvement_plans.read",
+    "quality_accreditation.internal_audits.read",
+    "quality_accreditation.audit_findings.read",
+    "quality_accreditation.program_review.read",
+    "quality_accreditation.learning_outcomes.read",
+    "quality_accreditation.feedback.read",
+    "quality_accreditation.committee.read",
+    "quality_accreditation.external_review.read",
+    "quality_accreditation.gap_analysis.read",
+    "quality_accreditation.calendar.read",
+    "quality_accreditation.risk_register.read",
+    "quality_accreditation.bridges.read",
+    "quality_accreditation.brain_signals.read",
+    "quality_accreditation.audit.read",
+    "quality_accreditation.status_history.read",
+}
+
 BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     "superadmin": {
         "admin.dashboard.read",
@@ -369,7 +456,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS
     | _STUDENT_LIFECYCLE_PERMISSIONS
     | _ACADEMIC_OPERATIONS_PERMISSIONS
-    | _RESEARCH_SCIENCE_PERMISSIONS,
+    | _RESEARCH_SCIENCE_PERMISSIONS
+    | _QUALITY_ACCREDITATION_PERMISSIONS,
     "admin": {
         "admin.dashboard.read",
         "admin.expansion.read",
@@ -452,7 +540,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _CANONICAL_PLATFORM_ADMIN_PERMISSIONS
     | _STUDENT_LIFECYCLE_PERMISSIONS
     | _ACADEMIC_OPERATIONS_PERMISSIONS
-    | _RESEARCH_SCIENCE_PERMISSIONS,
+    | _RESEARCH_SCIENCE_PERMISSIONS
+    | _QUALITY_ACCREDITATION_PERMISSIONS,
     "auditor": {
         "admin.audit.read",
         "admin.dashboard.read",
@@ -473,7 +562,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _EXECUTIVE_CONTROL_TOWER_AUDITOR_PERMISSIONS
     | _CANONICAL_AUDITOR_PERMISSIONS
     | _ACADEMIC_OPERATIONS_AUDITOR_PERMISSIONS
-    | _RESEARCH_SCIENCE_AUDITOR_PERMISSIONS,
+    | _RESEARCH_SCIENCE_AUDITOR_PERMISSIONS
+    | _QUALITY_ACCREDITATION_AUDITOR_PERMISSIONS,
     "student": {
         "enrollments.read",
         "grades.read",

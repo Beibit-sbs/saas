@@ -3012,7 +3012,7 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - brain_readiness: 9 signals and 6 safe draft-only agents with human_review_required=true
 - forbidden_actions: official accreditation approval; automatic accreditation decision; official ministry submission; official ranking claim; fake accreditation evidence; fake quality score; fake survey results; hidden program/faculty/student scores; autonomous quality sanction; automatic program closure; provider/external sync; production/sales/GCC/L5/L6 claims
 - roadmap: A-038.2-SPEC; A-038.2-RUNTIME; A-038.2-B1; A-038.3-FRONTEND-SPEC; A-038.3-FRONTEND; A-038.3-FRONTEND-B1; A-038.4-E2E-SPEC; A-038.4-E2E; A-038.4-B1; A-038.5-B1
-- next_action_id: A-038.2-SPEC
+- next_action_id: A-038.2-B1
 
 ## A-038.2-SPEC - Quality / Accreditation Backend Domain / DB / API Contract
 
@@ -3027,6 +3027,20 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - test_plan: 4 files; 180-260 targeted tests
 - acceptance_criteria: module files, migration, 32 qa_ tables, 55-70 routes, 55-70 permissions, tenant fail-closed, RBAC, audit/status/evidence/bridge/dashboard support, no provider sync, no external DB sync, no official approval/submission/ranking claim, no fake evidence, no hidden score, no autonomous decision, targeted tests PASS
 - next_action_id: A-038.2-RUNTIME
+
+## A-038.2-RUNTIME - Quality / Accreditation Backend Foundation
+
+- source_a0382_spec_commit: ad2cad9
+- implemented_module_path: backend/app/modules/quality_accreditation/
+- router_prefix: /api/admin/quality-accreditation
+- implemented_route_count: 70
+- implemented_permission_count: 55
+- implemented_table_count: 32
+- migration_file: backend/alembic/versions/qa38a2rt01_a0382_quality_accreditation_tables.py
+- validation: models 4/4 PASS; services 11/11 PASS; security 4/4 PASS; focused api checks PASS; research science continuity models 6/6 PASS
+- runtime_boundaries: metadata_evidence_only; tenant_fail_closed; no_provider_sync; no_external_db_sync; no_official_approval; no_official_submission; no_official_ranking_claim; no_fake_evidence; no_fake_metrics; no_hidden_scores; no_autonomous_decision
+- report_file: A-038.2-RUNTIME-QUALITY_ACCREDITATION_SUITE_BACKEND_FOUNDATION_REPORT.md
+- next_action_id: A-038.2-B1
 
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
