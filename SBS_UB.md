@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-038.1-SPEC
-     - current_stage: A-038.0-SPEC complete / quality accreditation suite product vertical selected
-     - last_completed_action_id: A-038.0-SPEC
-    - next_action_id: A-038.1-SPEC
-     - updated_at: 2026-05-24 (A-038.0-SPEC selected Quality / Accreditation Suite as the fifth SBS UB product vertical from source A-037.5-B1 commit e8dd4a0, A-037.4-B1 commit 9a6ee56, A-037.4-E2E commit c074a2c, frontend B1 commit 017d5f5, backend B1.R1 commit da12c7d, backend runtime commit a149c36, and matrix commit c79cc31 with 467 rows, confirmed completed vertical count remained 4 with Executive Governance Suite, Student Lifecycle Suite, Academic Operations Suite, and Research / Science Suite closed, selected Quality / Accreditation Suite because it consumes evidence from the four closed verticals and advances institutional quality assurance and accreditation readiness without provider integration, defined a 28-capability candidate map, role model, workflow groups, backend preview, frontend preview, browser E2E preview, forbidden actions, Brain readiness, bridge dependencies, and roadmap, started no runtime work, introduced no backend/frontend/Playwright changes, used no real accreditation data, made no provider integration claim, no official accreditation approval claim, no official ministry submission claim, no official ranking claim, no fake quality or accreditation evidence, no hidden scores, and no production/sales/GCC/L5/L6 claim, with metrics unchanged; the next action is A-038.1-SPEC)
+    - status: ready_for_A-038.2-SPEC
+     - current_stage: A-038.1-SPEC complete / quality accreditation product map workflow specified
+     - last_completed_action_id: A-038.1-SPEC
+    - next_action_id: A-038.2-SPEC
+     - updated_at: 2026-05-24 (A-038.1-SPEC specified the Quality / Accreditation Suite product map and workflow from source A-038.0-SPEC commit 7da0c70 and A-037.5-B1 commit e8dd4a0, preserved completed vertical count at 4 with Executive Governance Suite, Student Lifecycle Suite, Academic Operations Suite, and Research / Science Suite closed, defined product map architecture, 10 capability families, a 44-row detailed capability map, role and permission model, workflow specification, evidence model, dashboard model, bridge model, backend preview with 32 qa_ tables, frontend preview with 19 routes, E2E preview with 19 scenarios, Brain readiness, forbidden actions, and the A-038 roadmap, started no runtime work, introduced no backend/frontend/Playwright changes, used no real accreditation data, made no provider integration claim, no official accreditation approval, no official ministry submission, no official ranking claim, no fake quality or accreditation evidence, no hidden scores, and no production/sales/GCC/L5/L6 claim, with metrics unchanged; the next action is A-038.2-SPEC)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -2299,6 +2299,46 @@
     - final_verdict: A-038.0-SPEC CLOSED - QUALITY / ACCREDITATION SUITE PRODUCT VERTICAL SELECTED
     - recommended_next_action: A-038.1-SPEC
     - next_action_id: A-038.1-SPEC
+- A-038.1-SPEC execution block:
+    - mode: product_map_workflow_spec_only_docs_only
+    - purpose: specify_quality_accreditation_product_map_and_workflow
+    - source_of_truth_check: PASS (A-038.0-SPEC commit 7da0c70 verified; source status before A-038.1-SPEC was ready_for_A-038.1-SPEC)
+    - source_a0380_spec_commit: 7da0c70
+    - source_a0375_b1_commit: e8dd4a0
+    - product_map_architecture_defined: PASS
+    - capability_family_count: 10
+    - detailed_capability_count: 44
+    - role_and_permission_model_defined: PASS
+    - workflow_specification_defined: PASS
+    - evidence_model_defined: PASS
+    - dashboard_model_defined: PASS
+    - bridge_model_defined: PASS
+    - backend_preview_defined: PASS (32 qa_ tables; future route count 55-70)
+    - frontend_preview_defined: PASS (19 routes)
+    - e2e_preview_defined: PASS (19 scenarios)
+    - brain_readiness_defined: PASS
+    - forbidden_actions_defined: PASS
+    - roadmap_defined: PASS
+    - no_runtime_started: PASS
+    - no_backend_changes: PASS
+    - no_frontend_changes: PASS
+    - no_playwright_changes: PASS
+    - no_real_accreditation_data: PASS
+    - no_provider_integration: PASS
+    - no_official_accreditation_approval: PASS
+    - no_official_ministry_submission: PASS
+    - no_official_ranking_claim: PASS
+    - no_fake_quality_accreditation_evidence: PASS
+    - no_hidden_scores: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+    - report_file: A-038.1-SPEC-QUALITY_ACCREDITATION_SUITE_PRODUCT_MAP_WORKFLOW_SPECIFICATION_REPORT.md
+    - final_verdict: A-038.1-SPEC CLOSED - QUALITY / ACCREDITATION PRODUCT MAP / WORKFLOW SPECIFIED
+    - recommended_next_action: A-038.2-SPEC
+    - next_action_id: A-038.2-SPEC
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling

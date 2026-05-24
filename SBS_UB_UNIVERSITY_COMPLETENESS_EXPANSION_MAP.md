@@ -3000,6 +3000,20 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - forbidden_actions: official accreditation approval; automatic accreditation decision; official ministry submission; official ranking claim; fake accreditation evidence; fake quality score; fake survey results; hidden program/faculty/student scores; provider/external sync claims; production/sales/GCC/L5/L6 claims
 - next_action_id: A-038.1-SPEC
 
+## A-038.1-SPEC - Quality / Accreditation Product Map / Workflow Specification
+
+- source_a0380_spec_commit: 7da0c70
+- selected_vertical: Quality / Accreditation Suite
+- capability_families: 10 families across governance foundation, standards mapping, evidence traceability, program readiness, institutional readiness, improvement/audit, feedback metadata, external review metadata, cross-suite bridges, and dashboard/Brain/safe agents
+- detailed_capability_count: 44
+- backend_preview: 32 qa_ tables under backend/app/modules/quality_accreditation/ with future route prefix /api/admin/quality-accreditation and expected route count 55-70
+- frontend_preview: frontend/modules/quality-accreditation/ with 19 future admin routes
+- e2e_preview: frontend/e2e/smoke/a0384-quality-accreditation-suite.spec.ts with 19 scenarios and no-overclaim negative assertions
+- brain_readiness: 9 signals and 6 safe draft-only agents with human_review_required=true
+- forbidden_actions: official accreditation approval; automatic accreditation decision; official ministry submission; official ranking claim; fake accreditation evidence; fake quality score; fake survey results; hidden program/faculty/student scores; autonomous quality sanction; automatic program closure; provider/external sync; production/sales/GCC/L5/L6 claims
+- roadmap: A-038.2-SPEC; A-038.2-RUNTIME; A-038.2-B1; A-038.3-FRONTEND-SPEC; A-038.3-FRONTEND; A-038.3-FRONTEND-B1; A-038.4-E2E-SPEC; A-038.4-E2E; A-038.4-B1; A-038.5-B1
+- next_action_id: A-038.2-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
