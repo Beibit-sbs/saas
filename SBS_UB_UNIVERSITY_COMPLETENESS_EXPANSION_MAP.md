@@ -2987,6 +2987,19 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-037.5-B1-RESEARCH_SCIENCE_SUITE_PRODUCT_VERTICAL_CLOSURE_REPORT.md
 - next_action_id: A-038.0-SPEC
 
+## A-038.0-SPEC - Quality / Accreditation Suite Product Vertical Selection
+
+- source_a0375_b1_commit: e8dd4a0
+- completed_vertical_count: 4
+- selected_vertical: Quality / Accreditation Suite
+- candidate_capability_map: 28 capabilities across framework, standards mapping, readiness, evidence, self-assessment, improvement plan, audit, program review, learning outcomes, feedback, surveys, committee, external review, gap analysis, dashboard, calendar, risk register, bridges, Brain signals, and safe agents
+- backend_preview: backend/app/modules/quality_accreditation/ with qa_ table family and /api/admin/quality-accreditation future route prefix
+- frontend_preview: frontend/modules/quality-accreditation/ with 19 future admin routes
+- e2e_preview: frontend/e2e/smoke/a0384-quality-accreditation-suite.spec.ts with 19-route browser flow
+- bridge_dependencies: Executive Governance; Student Lifecycle; Academic Operations; Research / Science; Document Workflow; future HR / Staff Governance; future Finance / Procurement / Assets
+- forbidden_actions: official accreditation approval; automatic accreditation decision; official ministry submission; official ranking claim; fake accreditation evidence; fake quality score; fake survey results; hidden program/faculty/student scores; provider/external sync claims; production/sales/GCC/L5/L6 claims
+- next_action_id: A-038.1-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
