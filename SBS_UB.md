@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-038.2-SPEC
-     - current_stage: A-038.1-SPEC complete / quality accreditation product map workflow specified
-     - last_completed_action_id: A-038.1-SPEC
-    - next_action_id: A-038.2-SPEC
-     - updated_at: 2026-05-24 (A-038.1-SPEC specified the Quality / Accreditation Suite product map and workflow from source A-038.0-SPEC commit 7da0c70 and A-037.5-B1 commit e8dd4a0, preserved completed vertical count at 4 with Executive Governance Suite, Student Lifecycle Suite, Academic Operations Suite, and Research / Science Suite closed, defined product map architecture, 10 capability families, a 44-row detailed capability map, role and permission model, workflow specification, evidence model, dashboard model, bridge model, backend preview with 32 qa_ tables, frontend preview with 19 routes, E2E preview with 19 scenarios, Brain readiness, forbidden actions, and the A-038 roadmap, started no runtime work, introduced no backend/frontend/Playwright changes, used no real accreditation data, made no provider integration claim, no official accreditation approval, no official ministry submission, no official ranking claim, no fake quality or accreditation evidence, no hidden scores, and no production/sales/GCC/L5/L6 claim, with metrics unchanged; the next action is A-038.2-SPEC)
+    - status: ready_for_A-038.2-RUNTIME
+     - current_stage: A-038.2-SPEC complete / quality accreditation backend domain db api contract specified
+     - last_completed_action_id: A-038.2-SPEC
+    - next_action_id: A-038.2-RUNTIME
+     - updated_at: 2026-05-24 (A-038.2-SPEC specified the Quality / Accreditation Suite backend domain, DB, API, permissions, schema, repository, service, migration, test, and acceptance contract from source A-038.1-SPEC commit 1253e19, A-038.0-SPEC commit 7da0c70, and A-037.5-B1 commit e8dd4a0, preserved completed vertical count at 4 with Executive Governance Suite, Student Lifecycle Suite, Academic Operations Suite, and Research / Science Suite closed, defined backend module identity for backend/app/modules/quality_accreditation/, 32 qa_ tables, enum/status contract, 55 permissions, schema contract, repository contract, service contract, API router contract with 55-70 implemented routes and 76 contract verb-path combinations, migration contract, test plan covering 4 files and 180-260 targeted tests, validation gates, and acceptance criteria, started no runtime work, introduced no backend/frontend/Playwright changes, used no real accreditation data, made no provider integration claim, no official accreditation approval, no official ministry submission, no official ranking claim, no fake quality or accreditation evidence, no hidden scores, and no production/sales/GCC/L5/L6 claim, with metrics unchanged; the next action is A-038.2-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -2339,6 +2339,45 @@
     - final_verdict: A-038.1-SPEC CLOSED - QUALITY / ACCREDITATION PRODUCT MAP / WORKFLOW SPECIFIED
     - recommended_next_action: A-038.2-SPEC
     - next_action_id: A-038.2-SPEC
+- A-038.2-SPEC execution block:
+    - mode: backend_contract_spec_only_docs_only
+    - purpose: specify_quality_accreditation_backend_domain_db_api_contract
+    - source_of_truth_check: PASS (A-038.1-SPEC commit 1253e19 verified; source status before A-038.2-SPEC was ready_for_A-038.2-SPEC)
+    - source_a0381_spec_commit: 1253e19
+    - source_a0380_spec_commit: 7da0c70
+    - source_a0375_b1_commit: e8dd4a0
+    - backend_module_identity_defined: PASS
+    - database_table_contract_defined: PASS (32 qa_ tables)
+    - enum_status_contract_defined: PASS
+    - permission_contract_defined: PASS (55 permissions)
+    - schema_contract_defined: PASS
+    - repository_contract_defined: PASS
+    - service_contract_defined: PASS
+    - api_router_contract_defined: PASS (55-70 implemented routes; 76 contract verb-path combinations)
+    - migration_contract_defined: PASS
+    - test_plan_defined: PASS (4 files; 180-260 targeted tests)
+    - validation_gates_defined: PASS
+    - acceptance_criteria_defined: PASS
+    - no_runtime_started: PASS
+    - no_backend_changes: PASS
+    - no_frontend_changes: PASS
+    - no_playwright_changes: PASS
+    - no_real_accreditation_data: PASS
+    - no_provider_integration: PASS
+    - no_official_accreditation_approval: PASS
+    - no_official_ministry_submission: PASS
+    - no_official_ranking_claim: PASS
+    - no_fake_quality_accreditation_evidence: PASS
+    - no_hidden_scores: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5)
+    - report_file: A-038.2-SPEC-QUALITY_ACCREDITATION_SUITE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+    - final_verdict: A-038.2-SPEC CLOSED - QUALITY / ACCREDITATION BACKEND DOMAIN / DB / API CONTRACT SPECIFIED
+    - recommended_next_action: A-038.2-RUNTIME
+    - next_action_id: A-038.2-RUNTIME
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling

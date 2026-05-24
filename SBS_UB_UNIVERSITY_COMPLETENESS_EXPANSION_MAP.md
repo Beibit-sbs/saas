@@ -3014,6 +3014,20 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - roadmap: A-038.2-SPEC; A-038.2-RUNTIME; A-038.2-B1; A-038.3-FRONTEND-SPEC; A-038.3-FRONTEND; A-038.3-FRONTEND-B1; A-038.4-E2E-SPEC; A-038.4-E2E; A-038.4-B1; A-038.5-B1
 - next_action_id: A-038.2-SPEC
 
+## A-038.2-SPEC - Quality / Accreditation Backend Domain / DB / API Contract
+
+- source_a0381_spec_commit: 1253e19
+- backend_module_path: backend/app/modules/quality_accreditation/
+- table_prefix: qa_
+- planned_table_count: 32
+- route_prefix: /api/admin/quality-accreditation
+- expected_route_count: 55-70
+- permission_namespace: quality_accreditation.*
+- expected_permission_count: 55-70
+- test_plan: 4 files; 180-260 targeted tests
+- acceptance_criteria: module files, migration, 32 qa_ tables, 55-70 routes, 55-70 permissions, tenant fail-closed, RBAC, audit/status/evidence/bridge/dashboard support, no provider sync, no external DB sync, no official approval/submission/ranking claim, no fake evidence, no hidden score, no autonomous decision, targeted tests PASS
+- next_action_id: A-038.2-RUNTIME
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
