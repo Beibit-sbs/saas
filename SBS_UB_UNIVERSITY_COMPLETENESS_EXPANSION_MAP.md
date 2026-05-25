@@ -3012,7 +3012,7 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - brain_readiness: 9 signals and 6 safe draft-only agents with human_review_required=true
 - forbidden_actions: official accreditation approval; automatic accreditation decision; official ministry submission; official ranking claim; fake accreditation evidence; fake quality score; fake survey results; hidden program/faculty/student scores; autonomous quality sanction; automatic program closure; provider/external sync; production/sales/GCC/L5/L6 claims
 - roadmap: A-038.2-SPEC; A-038.2-RUNTIME; A-038.2-B1; A-038.3-FRONTEND-SPEC; A-038.3-FRONTEND; A-038.3-FRONTEND-B1; A-038.4-E2E-SPEC; A-038.4-E2E; A-038.4-B1; A-038.5-B1
-- next_action_id: A-038.3-FRONTEND-SPEC
+- next_action_id: A-038.3-FRONTEND
 
 ## A-038.2-SPEC - Quality / Accreditation Backend Domain / DB / API Contract
 
@@ -3058,6 +3058,22 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - limitations: frontend not implemented; E2E not implemented; provider integrations not implemented; official approval/submission/ranking not implemented; full vertical not closed
 - report_file: A-038.2-B1-QUALITY_ACCREDITATION_SUITE_BACKEND_FOUNDATION_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-038.3-FRONTEND-SPEC
+
+## A-038.3-FRONTEND-SPEC - Quality / Accreditation Frontend Contract
+
+- source_a0382_b1_commit: fb2734c
+- source_backend_runtime_commit: f97ce31
+- frontend_module_path: frontend/modules/quality-accreditation/
+- planned_routes: 19
+- component_groups: layout_shell; dashboard_summary; standards_evidence; readiness_reports; improvement_audit; program_review_feedback; committee_external_review; calendar_risk; audit_history; bridges; limitations_safety
+- api_client_contract: specified for health, overview, dashboard, matrix summary, limitations, frameworks, standards, criteria, evidence, readiness, self-assessment, improvement, audits, program review, feedback, committee, external review, gap analysis, calendar, risks, bridges, brain signals, audit, status history
+- guard_contract: specified with quality_accreditation.* read/create/update guards and forbidden action helper
+- boundary_labels: specified with global and page-specific no-overclaim copy
+- frontend_test_plan: 9 targeted test files; expected 35-60 tests
+- e2e_preview: frontend/e2e/smoke/a0384-quality-accreditation-suite.spec.ts with 19 route scenarios and negative DOM assertions
+- runtime_scope: spec_only_no_runtime; no frontend files created; no backend changes; no Playwright changes
+- report_file: A-038.3-FRONTEND-SPEC-QUALITY_ACCREDITATION_SUITE_FRONTEND_CONTRACT_REPORT.md
+- next_action_id: A-038.3-FRONTEND
 
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
