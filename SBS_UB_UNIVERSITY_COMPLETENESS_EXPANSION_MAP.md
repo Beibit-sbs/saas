@@ -3238,6 +3238,27 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-039.0-SPEC-NEXT_PRODUCT_VERTICAL_SELECTION_WAVE28_REPORT.md
 - next_action_id: A-039.1-SPEC
 
+## A-039.1-SPEC - HR / Staff Governance Suite Product Map / Workflow Specification
+
+- source_a0390_spec_commit: 449a407
+- mode: product_map_workflow_spec_only
+- selected_vertical: HR / Staff Governance Suite
+- capability_family_count: 14
+- detailed_capability_count: 54
+- workflow_group_count: 12
+- role_count: 15
+- canonical_reuse_required: PASS
+- bridge_first_required: PASS
+- backend_preview_table_count_range: 24-36
+- backend_preview_route_count_range: 45-65
+- backend_preview_permission_count_range: 40-60
+- frontend_preview_route_count_range: 16-22
+- future_e2e_spec: frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts
+- anti_fake_boundaries: no automatic hiring/firing; no automatic HR disciplinary decision; no automatic leave approval/rejection; no hidden employee/faculty score; no provider live payroll/1C claim; no production/sales/GCC/L5/L6 claim
+- metrics_unchanged: PASS
+- report_file: A-039.1-SPEC-HR_STAFF_GOVERNANCE_SUITE_PRODUCT_MAP_WORKFLOW_SPECIFICATION_REPORT.md
+- next_action_id: A-039.2-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

@@ -188,6 +188,26 @@ Extension interpretation:
 - metrics_unchanged: PASS
 - forbidden_boundaries: no automatic hiring/firing decision; no automatic HR disciplinary decision; no automatic leave approval/rejection; no hidden employee/faculty score; no provider live payroll/1C claim; no production/sales/GCC/L5/L6 claim
 
+## A-039.1-SPEC HR / Staff Governance Product Map Note
+
+- source_a0390_spec_commit: 449a407
+- selected_vertical: HR / Staff Governance Suite
+- mode: product_map_workflow_spec_only
+- capability_family_count: 14
+- detailed_capability_count: 54
+- workflow_group_count: 12
+- role_count: 15
+- future_backend_module_preview: backend/app/modules/hr_staff_governance/
+- future_frontend_module_preview: frontend/modules/hr-staff-governance/
+- future_e2e_spec_preview: frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts
+- canonical_reuse_required: YES
+- bridge_first_required: YES
+- no_duplicate_canonicals: YES
+- no_runtime_claim: YES
+- metrics_unchanged: PASS
+- forbidden_boundaries: no automatic hiring/firing; no automatic HR disciplinary decision; no automatic leave approval/rejection; no hidden employee/faculty score; no provider live payroll/1C claim; no production/sales/GCC/L5/L6 claim
+- next_action_id: A-039.2-SPEC
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`
