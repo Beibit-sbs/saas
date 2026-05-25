@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-038.4-E2E-SPEC
-     - current_stage: A-038.3-FRONTEND-B1 complete / quality accreditation frontend runtime quality baseline confirmed
-     - last_completed_action_id: A-038.3-FRONTEND-B1
-    - next_action_id: A-038.4-E2E-SPEC
-     - updated_at: 2026-05-25 (A-038.3-FRONTEND-B1 validated the existing Quality / Accreditation Suite frontend runtime from source A-038.3-FRONTEND commit b01e5d3, A-038.3-FRONTEND-SPEC commit 1c37e31, A-038.2-B1 commit fb2734c, A-038.2-RUNTIME commit f97ce31, A-038.2-SPEC commit ad2cad9, A-038.1-SPEC commit 1253e19, and A-038.0-SPEC commit 7da0c70, confirmed frontend/modules/quality-accreditation/ remained intact with 7 module files, 19 admin route pages, 55 shared QUALITY_ACCREDITATION permission constants, and 9 targeted frontend test files, revalidated TypeScript PASS, targeted frontend tests PASS at 37/37, route inventory PASS at 19 files, no-overclaim source scan PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY, backend non-change PASS with backend/.coverage only, and Playwright non-change PASS, confirmed the runtime remained metadata-only, no-fake, no-overclaim, non-provider, non-official, non-hidden-score, and non-autonomous, made no frontend runtime changes, no backend changes, and no Playwright changes, preserved baseline and extension metrics unchanged with completed vertical count still 4, and advanced the next action to A-038.4-E2E-SPEC)
+    - status: ready_for_A-038.4-E2E
+     - current_stage: A-038.4-E2E-SPEC complete / quality accreditation browser validation plan specified
+     - last_completed_action_id: A-038.4-E2E-SPEC
+    - next_action_id: A-038.4-E2E
+     - updated_at: 2026-05-25 (A-038.4-E2E-SPEC documented the Quality / Accreditation Suite browser validation plan from source A-038.3-FRONTEND-B1 commit 255c753, A-038.3-FRONTEND commit b01e5d3, A-038.3-FRONTEND-SPEC commit 1c37e31, A-038.2-B1 commit fb2734c, A-038.2-RUNTIME commit f97ce31, A-038.2-SPEC commit ad2cad9, A-038.1-SPEC commit 1253e19, and A-038.0-SPEC commit 7da0c70, confirmed the frontend baseline remained the authoritative source, defined the future Playwright spec path frontend/e2e/smoke/a0384-quality-accreditation-suite.spec.ts, specified a 19-route browser flow and 19 scenario groups, defined positive boundary assertions, global negative DOM assertions, auth and fixture strategy, Docker/Nginx execution command, supporting validation gates, no-overclaim scan plan, and runtime acceptance criteria, made no Playwright runtime changes, no frontend runtime changes, and no backend changes, preserved metrics unchanged with completed vertical count still 4, and advanced the next action to A-038.4-E2E)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -2585,6 +2585,53 @@
     - final_verdict: A-038.3-FRONTEND-B1 CLOSED - QUALITY / ACCREDITATION FRONTEND RUNTIME QUALITY BASELINE CONFIRMED
     - recommended_next_action: A-038.4-E2E-SPEC
     - next_action_id: A-038.4-E2E-SPEC
+- A-038.4-E2E-SPEC execution block:
+    - mode: browser_validation_spec_only_docs_only
+    - purpose: specify_quality_accreditation_browser_validation_plan
+    - source_of_truth_check: PASS (A-038.3-FRONTEND-B1 commit 255c753 verified; source status before A-038.4-E2E-SPEC was ready_for_A-038.4-E2E-SPEC)
+    - source_frontend_b1_commit: 255c753
+    - source_frontend_runtime_commit: b01e5d3
+    - source_frontend_spec_commit: 1c37e31
+    - source_a0382_b1_commit: fb2734c
+    - source_a0382_runtime_commit: f97ce31
+    - source_a0382_spec_commit: ad2cad9
+    - source_a0381_spec_commit: 1253e19
+    - source_a0380_spec_commit: 7da0c70
+    - frontend_baseline_confirmed: PASS
+    - planned_playwright_spec_path: frontend/e2e/smoke/a0384-quality-accreditation-suite.spec.ts
+    - planned_route_flow_count: 19
+    - planned_scenario_group_count: 19
+    - positive_boundary_assertions_defined: PASS
+    - global_negative_dom_assertions_defined: PASS
+    - auth_fixture_strategy_defined: PASS
+    - docker_nginx_runtime_command_defined: PASS
+    - supporting_validation_gates_defined: PASS
+    - no_overclaim_source_scan_plan_defined: PASS
+    - runtime_acceptance_criteria_defined: PASS
+    - no_runtime_started: PASS
+    - no_playwright_spec_created: PASS
+    - no_frontend_runtime_changes: PASS
+    - no_backend_changes: PASS
+    - no_real_accreditation_data: PASS
+    - no_provider_integration: PASS
+    - no_external_database_sync: PASS
+    - no_official_accreditation_approval: PASS
+    - no_official_ministry_submission: PASS
+    - no_official_ranking_claim: PASS
+    - no_fake_quality_accreditation_evidence: PASS
+    - no_fake_quality_score: PASS
+    - no_fake_survey_result: PASS
+    - no_hidden_scores: PASS
+    - no_autonomous_accreditation_decision: PASS
+    - no_production_ready_claim: PASS
+    - no_sales_ready_claim: PASS
+    - no_gcc_readiness_claim: PASS
+    - no_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5; completed_vertical_count=4)
+    - report_file: A-038.4-E2E-SPEC-QUALITY_ACCREDITATION_SUITE_BROWSER_VALIDATION_PLAN_REPORT.md
+    - final_verdict: A-038.4-E2E-SPEC CLOSED - QUALITY / ACCREDITATION BROWSER VALIDATION PLAN SPECIFIED
+    - recommended_next_action: A-038.4-E2E
+    - next_action_id: A-038.4-E2E
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling

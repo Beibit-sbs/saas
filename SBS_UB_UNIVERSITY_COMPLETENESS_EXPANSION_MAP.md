@@ -3012,7 +3012,7 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - brain_readiness: 9 signals and 6 safe draft-only agents with human_review_required=true
 - forbidden_actions: official accreditation approval; automatic accreditation decision; official ministry submission; official ranking claim; fake accreditation evidence; fake quality score; fake survey results; hidden program/faculty/student scores; autonomous quality sanction; automatic program closure; provider/external sync; production/sales/GCC/L5/L6 claims
 - roadmap: A-038.2-SPEC; A-038.2-RUNTIME; A-038.2-B1; A-038.3-FRONTEND-SPEC; A-038.3-FRONTEND; A-038.3-FRONTEND-B1; A-038.4-E2E-SPEC; A-038.4-E2E; A-038.4-B1; A-038.5-B1
-- next_action_id: A-038.4-E2E-SPEC
+- next_action_id: A-038.4-E2E
 
 ## A-038.2-SPEC - Quality / Accreditation Backend Domain / DB / API Contract
 
@@ -3111,6 +3111,22 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - limitations: metadata/evidence-only runtime; E2E not implemented; provider integrations not implemented; official approval/submission/ranking not implemented; frontend not production-ready; full Quality / Accreditation vertical not closed
 - report_file: A-038.3-FRONTEND-B1-QUALITY_ACCREDITATION_SUITE_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-038.4-E2E-SPEC
+
+## A-038.4-E2E-SPEC - Quality / Accreditation Browser Validation Plan
+
+- source_a0383_frontend_b1_commit: 255c753
+- source_a0383_frontend_commit: b01e5d3
+- future_playwright_spec_path: frontend/e2e/smoke/a0384-quality-accreditation-suite.spec.ts
+- browser_route_flow: 19
+- scenario_groups: 19
+- positive_boundary_assertions: metadata/evidence-only quality foundation; accreditation readiness not approval; evidence metadata only; human review required; no official accreditation approval; no official ministry submission; no official ranking claim; no automatic accreditation decision; no fake accreditation evidence; no fake quality score; no fake survey results; no hidden program/faculty/student score; no provider sync; no external database sync; fake_metrics=false; fake_evidence=false; incomplete_data supported; Read-only-first bridge
+- negative_dom_assertions: forbid official approval/submission/ranking, automatic accreditation decision, fake evidence/score/survey actions, hidden score UI, provider/external sync UI, auto close program, autonomous sanctions, and production/sales/GCC/L5/L6 positive claims
+- docker_nginx_command: docker run --rm --network ai_default --env-file .env -e E2E_BASE_URL=https://nginx -v /home/sbs/AI/frontend:/app -w /app ai-frontend-tests npx playwright test e2e/smoke/a0384-quality-accreditation-suite.spec.ts --project=chromium
+- supporting_validation_gates: TypeScript PASS required; targeted frontend tests PASS 37/37 required; route inventory PASS 19 required
+- no_overclaim_scan_plan: grep future spec plus quality-accreditation runtime, routes, and tests; expected PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- runtime_acceptance_criteria: 19 routes; 19 scenario groups; chromium pass; TypeScript pass; targeted frontend tests pass 37/37; route inventory pass 19; no-overclaim DOM assertions pass; no-overclaim source scan pass; backend non-change pass; no screenshots/demo_evidence/playwright-report/test-results committed
+- report_file: A-038.4-E2E-SPEC-QUALITY_ACCREDITATION_SUITE_BROWSER_VALIDATION_PLAN_REPORT.md
+- next_action_id: A-038.4-E2E
 
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
