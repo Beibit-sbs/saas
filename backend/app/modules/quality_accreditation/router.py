@@ -125,8 +125,14 @@ def _register_collection_routes(
     create_permission: str | None = None,
     update_permission: str | None = None,
 ):
-    def list_endpoint(actor: _Actor, _: Annotated[None, Depends(permission_dependency(read_permission))], tenant: _Tenant, db: _DB) -> QualityRecordListResponse:
+    def list_endpoint(
+        actor: str = Depends(get_actor),
+        permission_check: None = Depends(permission_dependency(read_permission)),
+        tenant: int = Depends(require_quality_accreditation_tenant),
+        db: Session = Depends(get_quality_accreditation_db),
+    ) -> QualityRecordListResponse:
         try:
+            del permission_check
             return QualityRecordListResponse(items=[_resp(item, QualityRecordResponse) for item in service.list_resource_service(db, tenant, resource_key)])
         except Exception as exc:
             _handle(exc)
@@ -135,8 +141,15 @@ def _register_collection_routes(
     router.add_api_route(path, list_endpoint, methods=["GET"], response_model=QualityRecordListResponse)
 
     if create_permission is not None:
-        def create_endpoint(payload: dict[str, Any] = Body(...), actor: _Actor = None, _: Annotated[None, Depends(permission_dependency(create_permission))] = None, tenant: _Tenant = None, db: _DB = None) -> QualityRecordResponse:
+        def create_endpoint(
+            payload: dict[str, Any] = Body(...),
+            actor: str = Depends(get_actor),
+            permission_check: None = Depends(permission_dependency(create_permission)),
+            tenant: int = Depends(require_quality_accreditation_tenant),
+            db: Session = Depends(get_quality_accreditation_db),
+        ) -> QualityRecordResponse:
             try:
+                del permission_check
                 body = _parse_payload(QualityRecordRequest, payload)
                 return _resp(service.create_resource_service(db, tenant, actor, resource_key, body), QualityRecordResponse)
             except Exception as exc:
@@ -146,8 +159,16 @@ def _register_collection_routes(
         router.add_api_route(path, create_endpoint, methods=["POST"], response_model=QualityRecordResponse, status_code=201)
 
     if update_permission is not None:
-        def update_endpoint(resource_id: int, payload: dict[str, Any] = Body(...), actor: _Actor = None, _: Annotated[None, Depends(permission_dependency(update_permission))] = None, tenant: _Tenant = None, db: _DB = None) -> QualityRecordResponse:
+        def update_endpoint(
+            resource_id: int,
+            payload: dict[str, Any] = Body(...),
+            actor: str = Depends(get_actor),
+            permission_check: None = Depends(permission_dependency(update_permission)),
+            tenant: int = Depends(require_quality_accreditation_tenant),
+            db: Session = Depends(get_quality_accreditation_db),
+        ) -> QualityRecordResponse:
             try:
+                del permission_check
                 body = _parse_payload(QualityRecordRequest, payload)
                 return _resp(service.update_resource_service(db, tenant, actor, resource_key, resource_id, body), QualityRecordResponse)
             except Exception as exc:
