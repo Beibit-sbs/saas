@@ -174,6 +174,20 @@ Extension interpretation:
 | Communications / Notification Suite | PARTIAL_CANONICAL | communications, notification_center, parent_portal | correspondence, crisis workflow, reliability layer | to governance, student lifecycle, provider layer | notification failure signal | email/SMS deferred | communications reliability dashboard | medium | preserve canonicals and expand |
 | Ministry / Regulatory Reporting Suite | FUTURE_VERTICAL | reporting spread across modules only | orchestrator, submission/correction, evidence pack | to compliance, finance, academic, executive | filing compliance risk | government integrations deferred | ministry dashboard | critical | future vertical planning |
 
+## A-039.0-SPEC Wave 28 Vertical Selection Note
+
+- source_a0385_b1_commit: 2bd55b2
+- completed_vertical_count_at_selection: 5
+- selected_wave28_vertical: HR / Staff Governance Suite
+- selected_next_action: A-039.1-SPEC
+- selection_rationale: high operational value; strong rector/admin demo value; existing UCE staff lifecycle runway; bridge value to Academic Operations, IAM, and Finance; feasible metadata/evidence/human-review-first opening slice without live provider dependency
+- canonical_reuse_required: YES
+- bridge_first_required: YES
+- no_duplicate_canonicals: YES
+- no_runtime_claim: YES
+- metrics_unchanged: PASS
+- forbidden_boundaries: no automatic hiring/firing decision; no automatic HR disciplinary decision; no automatic leave approval/rejection; no hidden employee/faculty score; no provider live payroll/1C claim; no production/sales/GCC/L5/L6 claim
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

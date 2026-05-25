@@ -3223,6 +3223,21 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-038.5-B1-QUALITY_ACCREDITATION_SUITE_VERTICAL_CLOSURE_READINESS_BASELINE_REPORT.md
 - next_action_id: A-039.0-SPEC
 
+## A-039.0-SPEC - Next Product Vertical Selection / Wave 28 Planning
+
+- source_a0385_b1_commit: 2bd55b2
+- mode: spec_only / vertical_selection_planning
+- master_matrix_used: YES
+- closed_vertical_count_before_selection: 5
+- selected_wave28_vertical: HR / Staff Governance Suite
+- selected_next_action: A-039.1-SPEC
+- selection_reason: high operational value; strong rector/admin demo value; existing UCE staff candidates; bridge value to academic operations, IAM, and finance; feasible metadata/evidence/human-review foundation without live provider dependency
+- initial_action_chain: A-039.1-SPEC -> A-039.2-SPEC -> A-039.2-RUNTIME -> A-039.2-B1 -> A-039.3-FRONTEND-SPEC -> A-039.3-FRONTEND -> A-039.3-FRONTEND-B1 -> A-039.4-E2E-SPEC -> A-039.4-E2E -> A-039.4-B1 -> A-039.5-B1
+- anti_fake_boundaries: no automatic hiring/firing; no automatic HR disciplinary decision; no automatic leave approval/rejection; no hidden employee/faculty score; no provider live payroll/1C claim; no production/sales/GCC/L5/L6 claim
+- metrics_unchanged: PASS
+- report_file: A-039.0-SPEC-NEXT_PRODUCT_VERTICAL_SELECTION_WAVE28_REPORT.md
+- next_action_id: A-039.1-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
