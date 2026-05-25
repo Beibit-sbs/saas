@@ -1,0 +1,1 @@
+export { QualityAccreditationBridgesPage as default } from '@/modules/quality-accreditation/pages';

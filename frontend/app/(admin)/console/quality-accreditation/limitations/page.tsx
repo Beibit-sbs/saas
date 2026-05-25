@@ -1,0 +1,1 @@
+export { QualityAccreditationLimitationsPage as default } from '@/modules/quality-accreditation/pages';

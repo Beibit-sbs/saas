@@ -1,0 +1,1 @@
+export { QualityAccreditationStakeholderFeedbackPage as default } from '@/modules/quality-accreditation/pages';

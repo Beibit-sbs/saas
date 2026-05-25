@@ -1,0 +1,1 @@
+export { QualityAccreditationExternalReviewPage as default } from '@/modules/quality-accreditation/pages';

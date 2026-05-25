@@ -1,0 +1,1 @@
+export { QualityAccreditationCalendarPage as default } from '@/modules/quality-accreditation/pages';

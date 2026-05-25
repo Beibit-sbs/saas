@@ -1,0 +1,1 @@
+export { QualityAccreditationRiskRegisterPage as default } from '@/modules/quality-accreditation/pages';
