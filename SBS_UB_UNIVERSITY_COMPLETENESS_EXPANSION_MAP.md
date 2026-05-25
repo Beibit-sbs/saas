@@ -3126,7 +3126,28 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - no_overclaim_scan_plan: grep future spec plus quality-accreditation runtime, routes, and tests; expected PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
 - runtime_acceptance_criteria: 19 routes; 19 scenario groups; chromium pass; TypeScript pass; targeted frontend tests pass 37/37; route inventory pass 19; no-overclaim DOM assertions pass; no-overclaim source scan pass; backend non-change pass; no screenshots/demo_evidence/playwright-report/test-results committed
 - report_file: A-038.4-E2E-SPEC-QUALITY_ACCREDITATION_SUITE_BROWSER_VALIDATION_PLAN_REPORT.md
-- next_action_id: A-038.4-E2E
+- next_action_id: A-038.4-B1
+
+## A-038.4-E2E - Quality / Accreditation Browser Validation Runtime
+
+- source_a0384_spec_commit: 8654d88
+- source_a0383_frontend_b1_commit: 255c753
+- source_a0383_frontend_commit: b01e5d3
+- playwright_spec_path: frontend/e2e/smoke/a0384-quality-accreditation-suite.spec.ts
+- browser_route_flow: 19
+- scenario_groups: 19 + boundary coverage
+- typescript_result: PASS
+- targeted_frontend_test_result: PASS (37/37)
+- route_inventory_result: PASS (19 route files)
+- playwright_runtime_result: PASS (20 passed; 0 failed; chromium; authoritative duration 1.4m)
+- browser_runtime_environment: PASS_WITH_FRONTEND_NGINX_REUSE (direct ai-frontend-tests path; frontend/nginx containers reused after unrelated backend compose health blocker)
+- no_overclaim_dom_assertions: PASS
+- no_overclaim_source_scan: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- backend_non_change_result: PASS (backend/.coverage only)
+- artifact_hygiene_result: PASS
+- limitations: provider integrations not implemented; official approval/submission/ranking not implemented; frontend runtime not production-ready; full Quality / Accreditation vertical not closed; A-038.4-B1 pending
+- report_file: A-038.4-E2E-QUALITY_ACCREDITATION_SUITE_BROWSER_VALIDATION_REPORT.md
+- next_action_id: A-038.4-B1
 
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
