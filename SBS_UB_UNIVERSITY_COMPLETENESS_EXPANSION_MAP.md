@@ -3259,6 +3259,26 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-039.1-SPEC-HR_STAFF_GOVERNANCE_SUITE_PRODUCT_MAP_WORKFLOW_SPECIFICATION_REPORT.md
 - next_action_id: A-039.2-SPEC
 
+## A-039.2-SPEC - HR / Staff Governance Suite Backend Domain / DB / API Contract
+
+- source_a0391_spec_commit: eaff24f
+- mode: backend_domain_db_api_contract_spec_only
+- selected_vertical: HR / Staff Governance Suite
+- backend_module_path: backend/app/modules/hr_staff_governance/
+- table_prefix: hr_
+- planned_table_count: 36
+- route_prefix: /api/admin/hr-staff-governance
+- expected_route_count: 62
+- expected_permission_count: 56
+- permission_namespace: hr_staff_governance.*
+- runtime_mode: METADATA_EVIDENCE_HUMAN_REVIEW_ONLY
+- test_plan: 4 files / 180-260 tests
+- bridge_first_required: PASS
+- anti_fake_boundaries: no automatic hiring/firing; no automatic HR disciplinary decision; no automatic leave approval/rejection; no automatic payroll execution; no autonomous access revocation; no hidden employee/faculty score; no provider live integration; no production/sales/GCC/L5/L6 claim
+- metrics_unchanged: PASS
+- report_file: A-039.2-SPEC-HR_STAFF_GOVERNANCE_SUITE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+- next_action_id: A-039.2-RUNTIME
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

@@ -208,6 +208,28 @@ Extension interpretation:
 - forbidden_boundaries: no automatic hiring/firing; no automatic HR disciplinary decision; no automatic leave approval/rejection; no hidden employee/faculty score; no provider live payroll/1C claim; no production/sales/GCC/L5/L6 claim
 - next_action_id: A-039.2-SPEC
 
+## A-039.2-SPEC HR / Staff Governance Backend Contract Note
+
+- source_a0391_spec_commit: eaff24f
+- selected_vertical: HR / Staff Governance Suite
+- mode: backend_domain_db_api_contract_spec_only
+- future_backend_module: backend/app/modules/hr_staff_governance/
+- table_prefix: hr_
+- planned_table_count: 36
+- route_prefix: /api/admin/hr-staff-governance
+- expected_route_count: 62
+- expected_permission_count: 56
+- permission_namespace: hr_staff_governance.*
+- runtime_mode: METADATA_EVIDENCE_HUMAN_REVIEW_ONLY
+- test_plan: 4 files / 180-260 tests
+- bridge_first_required: YES
+- provider_live_integration: FORBIDDEN
+- automatic_hr_decision: FORBIDDEN
+- hidden_score: FORBIDDEN
+- metrics_unchanged: PASS
+- report_file: A-039.2-SPEC-HR_STAFF_GOVERNANCE_SUITE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+- next_action_id: A-039.2-RUNTIME
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

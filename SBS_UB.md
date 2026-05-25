@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-    - status: ready_for_A-039.2-SPEC
-      - current_stage: A-039.1-SPEC complete / HR staff governance product map and workflow specified
-      - last_completed_action_id: A-039.1-SPEC
-     - next_action_id: A-039.2-SPEC
-      - updated_at: 2026-05-26 (A-039.1-SPEC used SBS_UB_FULL_UNIVERSITY_OS_CAPABILITY_MASTER_MATRIX.md as the authoritative completeness and reconciliation matrix to specify the HR / Staff Governance Suite product map and workflow model after A-039.0-SPEC, fixed the suite identity to metadata/evidence/human-review-only mode, defined 14 capability families, 54 detailed capabilities, 12 workflow groups, and 15 roles, preserved canonical reuse and bridge-first planning across payroll, IAM, workload, document, audit, and notification planes, kept provider and Brain layers non-live and governance-only, preserved all baseline and expansion metrics unchanged, and advanced the next action to A-039.2-SPEC)
+    - status: ready_for_A-039.2-RUNTIME
+      - current_stage: A-039.2-SPEC complete / HR staff governance backend contract specified
+      - last_completed_action_id: A-039.2-SPEC
+     - next_action_id: A-039.2-RUNTIME
+      - updated_at: 2026-05-26 (A-039.2-SPEC used A-039.1-SPEC and SBS_UB_FULL_UNIVERSITY_OS_CAPABILITY_MASTER_MATRIX.md as the authoritative product-map and completeness inputs to specify the HR / Staff Governance Suite backend domain, DB, API, permission, schema, repository, service, dashboard, bridge, provider-readiness, Brain-readiness, and test contract, fixed one controlled backend module at backend/app/modules/hr_staff_governance/, fixed a 36-table hr_ table plan, fixed a 62-route API contract and 56-permission namespace, preserved metadata/evidence/human-review-only operating mode, kept provider and autonomy boundaries forbidden, preserved all baseline and expansion metrics unchanged, and advanced the next action to A-039.2-RUNTIME)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -2803,6 +2803,32 @@
     - final_verdict: A-039.1-SPEC CLOSED - HR STAFF GOVERNANCE PRODUCT MAP / WORKFLOW SPECIFIED
     - recommended_next_action: A-039.2-SPEC
     - next_action_id: A-039.2-SPEC
+- A-039.2-SPEC execution block:
+    - mode: backend_domain_db_api_contract_spec_only
+    - purpose: specify_hr_staff_governance_backend_domain_db_api_contract
+    - source_a0391_spec_commit: eaff24f
+    - backend_module_path: backend/app/modules/hr_staff_governance/
+    - table_prefix: hr_
+    - planned_table_count: 36
+    - route_prefix: /api/admin/hr-staff-governance
+    - expected_route_count: 62
+    - expected_permission_count: 56
+    - permission_namespace: hr_staff_governance.*
+    - runtime_mode: METADATA_EVIDENCE_HUMAN_REVIEW_ONLY
+    - test_plan: 4 files / 180-260 tests
+    - no_runtime_code_added: PASS
+    - no_backend_changes: PASS
+    - no_frontend_changes: PASS
+    - no_playwright_changes: PASS
+    - no_provider_live_integration: PASS
+    - no_hr_automatic_decision_claim: PASS
+    - no_hidden_score_claim: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS
+    - report_file: A-039.2-SPEC-HR_STAFF_GOVERNANCE_SUITE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+    - final_verdict: A-039.2-SPEC CLOSED - HR STAFF GOVERNANCE BACKEND DOMAIN / DB / API CONTRACT SPECIFIED
+    - recommended_next_action: A-039.2-RUNTIME
+    - next_action_id: A-039.2-RUNTIME
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
