@@ -3149,6 +3149,31 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-038.4-E2E-QUALITY_ACCREDITATION_SUITE_BROWSER_VALIDATION_REPORT.md
 - next_action_id: A-038.4-B1
 
+## A-038.4-B1 - Quality / Accreditation Browser Validation Quality Baseline
+
+- source_a0384_e2e_commit: 3f41ab2
+- source_a0384_spec_commit: 8654d88
+- source_a0383_frontend_b1_commit: 255c753
+- source_a0383_frontend_commit: b01e5d3
+- mode: validation_reporting_only
+- playwright_spec_path: frontend/e2e/smoke/a0384-quality-accreditation-suite.spec.ts
+- e2e_report_file: A-038.4-E2E-QUALITY_ACCREDITATION_SUITE_BROWSER_VALIDATION_REPORT.md
+- b1_report_file: A-038.4-B1-QUALITY_ACCREDITATION_BROWSER_VALIDATION_QUALITY_BASELINE_REPORT.md
+- browser_route_flow: PASS 19/19
+- scenario_groups: PASS 19 + boundary coverage
+- typescript_result: PASS
+- targeted_frontend_test_result: PASS 37/37
+- route_inventory_result: PASS 19
+- playwright_runtime_result: PASS 20/20 chromium, 1.4m
+- no_overclaim_source_scan: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- backend_non_change_result: PASS
+- artifact_hygiene_result: PASS
+- anti_fake_review: PASS
+- metrics_unchanged: PASS
+- quality_decision: BASELINE_CONFIRMED
+- limitations: provider integrations not implemented; official approval/submission/ranking not implemented; frontend runtime not production-ready; full Quality / Accreditation vertical not closed
+- next_action_id: A-038.5-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
