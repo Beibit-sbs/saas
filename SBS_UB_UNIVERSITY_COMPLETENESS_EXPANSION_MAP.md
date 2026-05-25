@@ -3174,6 +3174,20 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - limitations: provider integrations not implemented; official approval/submission/ranking not implemented; frontend runtime not production-ready; full Quality / Accreditation vertical not closed
 - next_action_id: A-038.5-B1
 
+## A-038.5-SCOPE-SPEC - Quality / Accreditation Post-Browser Baseline Scope Clarification
+
+- source_a0384_b1_commit: 5b854ee
+- mode: scope_clarification_spec_only
+- discovered_gap: A-038.5-B1 existed as roadmap/handoff target without standalone title/scope
+- selected_A0385_B1_title: Quality / Accreditation Suite Vertical Closure / Readiness Baseline
+- selected_A0385_B1_type: QUALITY_BASELINE_B1 / VERTICAL_CLOSURE_B1
+- future_report_file: A-038.5-B1-QUALITY_ACCREDITATION_SUITE_VERTICAL_CLOSURE_READINESS_BASELINE_REPORT.md
+- future_scope: verify backend/frontend/E2E/browser baselines and close vertical readiness
+- future_non_scope: no runtime, no backend/frontend/Playwright changes, no provider integration, no official approval/submission/ranking, no production/GCC/L5/L6 claims
+- metrics_unchanged: PASS
+- report_file: A-038.5-SCOPE-SPEC-QUALITY_ACCREDITATION_POST_BROWSER_BASELINE_SCOPE_CLARIFICATION_REPORT.md
+- next_action_id: A-038.5-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
