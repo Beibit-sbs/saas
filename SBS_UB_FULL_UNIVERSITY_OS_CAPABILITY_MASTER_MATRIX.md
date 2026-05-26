@@ -807,6 +807,31 @@ Extension interpretation:
 - report_file: A-041.2-RUNTIME.R1-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_RUNTIME_VALIDATION_RECOVERY_REPORT.md
 - next_action_id: A-041.2-B1
 
+## A-041.2-B1 Document / Decree / Correspondence Backend Quality Baseline Note
+
+- source_a0412_runtime_commit: b9a6188
+- source_a0412_runtime_r1_commit: e476642
+- selected_vertical: Document / Decree / Correspondence Suite
+- mode: validation_reporting_only / backend_runtime_quality_baseline
+- backend_module_path: backend/app/modules/document_decree_correspondence/
+- migration_file: backend/alembic/versions/ddc0412rt01_a0412_document_decree_correspondence_tables.py
+- table_count: 26
+- route_count: 53
+- permission_count: 50
+- targeted_backend_test_result: PASS (121 passed, 1 warning, 0.69s; docker ai-backend-tests targeted pack)
+- source_inventory_result: PASS 26/53/50
+- no_frontend_changes: PASS
+- no_playwright_changes: PASS
+- no_fake_documents: PASS
+- no_fake_decrees: PASS
+- no_fake_signature: PASS
+- no_external_submission_claim: PASS
+- no_automatic_rector_decision: PASS
+- no_hidden_staff_or_department_score: PASS
+- metrics_unchanged: PASS
+- report_file: A-041.2-B1-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_RUNTIME_QUALITY_BASELINE_REPORT.md
+- next_action_id: A-041.3-FRONTEND-SPEC
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

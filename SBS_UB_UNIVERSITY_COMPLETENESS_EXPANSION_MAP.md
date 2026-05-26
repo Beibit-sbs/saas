@@ -3758,6 +3758,23 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-041.2-RUNTIME.R1-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_RUNTIME_VALIDATION_RECOVERY_REPORT.md
 - next_action_id: A-041.2-B1
 
+## A-041.2-B1 - Document / Decree / Correspondence Backend Runtime Quality Baseline
+
+- source_a0412_runtime_commit: b9a6188
+- source_a0412_runtime_r1_commit: e476642
+- mode: validation_reporting_only / backend_runtime_quality_baseline
+- selected_vertical: Document / Decree / Correspondence Suite
+- backend_module_path: backend/app/modules/document_decree_correspondence/
+- migration_file: backend/alembic/versions/ddc0412rt01_a0412_document_decree_correspondence_tables.py
+- table_count: 26
+- route_count: 53
+- permission_count: 50
+- targeted_backend_test_result: PASS (121 passed, 1 warning, 0.69s; docker ai-backend-tests targeted pack)
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-041.2-B1-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_RUNTIME_QUALITY_BASELINE_REPORT.md
+- next_action_id: A-041.3-FRONTEND-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
