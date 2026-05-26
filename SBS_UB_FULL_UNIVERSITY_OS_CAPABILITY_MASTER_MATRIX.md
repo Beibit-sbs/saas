@@ -272,6 +272,27 @@ Extension interpretation:
 - report_file: A-039.2-B1-HR_STAFF_GOVERNANCE_SUITE_BACKEND_FOUNDATION_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-039.3-FRONTEND-SPEC
 
+## A-039.3-FRONTEND-SPEC HR / Staff Governance Frontend Contract Note
+
+- source_a0392_b1_commit: c72e6c0
+- selected_vertical: HR / Staff Governance Suite
+- mode: frontend_contract_spec_only
+- frontend_module_path: frontend/modules/hr-staff-governance/
+- route_family: /console/hr-staff-governance
+- planned_route_count: 20
+- api_base: /api/admin/hr-staff-governance
+- backend_route_count_used: 62
+- backend_permission_count_used: 56
+- frontend_test_plan: 8 files / 40-60 tests
+- future_e2e_spec: frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts
+- provider_live_integration: FORBIDDEN
+- automatic_hr_decision_ui: FORBIDDEN
+- hidden_score_ui: FORBIDDEN
+- payroll_execution_ui: FORBIDDEN
+- metrics_unchanged: PASS
+- report_file: A-039.3-FRONTEND-SPEC-HR_STAFF_GOVERNANCE_SUITE_FRONTEND_CONTRACT_REPORT.md
+- next_action_id: A-039.3-FRONTEND
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

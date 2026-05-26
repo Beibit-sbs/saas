@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-039.3-FRONTEND-SPEC
-                - current_stage: A-039.2-B1 complete / HR staff governance backend foundation quality baseline confirmed
-                - last_completed_action_id: A-039.2-B1
-            - next_action_id: A-039.3-FRONTEND-SPEC
-                - updated_at: 2026-05-26 (A-039.2-B1 revalidated the A-039.2-RUNTIME HR backend foundation from commit 38e3638, confirmed the runtime artifact inventory, reconfirmed the 36-table hr_ metadata surface, 62-route API surface, and 56-permission namespace, reran the authoritative targeted Docker suite with 33 passed and 1 warning, passed adjacent A-038.2 continuity with 37 passed and 1 warning, confirmed Docker import sanity, corrected the runtime migration artifact so the required integrity script now sees 36 create_table and 36 drop_table operations, preserved backend-only scope with no frontend or Playwright changes, preserved all baseline and expansion metrics unchanged, and advanced the next action to A-039.3-FRONTEND-SPEC)
+          - status: ready_for_A-039.3-FRONTEND
+                - current_stage: A-039.3-FRONTEND-SPEC complete / HR staff governance frontend contract specified
+                - last_completed_action_id: A-039.3-FRONTEND-SPEC
+            - next_action_id: A-039.3-FRONTEND
+                - updated_at: 2026-05-26 (A-039.3-FRONTEND-SPEC used A-039.2-B1, A-039.2-RUNTIME, and A-039.2-SPEC as the authoritative backend baseline and API contract to specify the HR / Staff Governance Suite frontend contract, fixed one future frontend module at frontend/modules/hr-staff-governance/, fixed a 20-route /console/hr-staff-governance route family, mapped the frontend API base to /api/admin/hr-staff-governance with backend counts of 62 routes and 56 permissions, defined future API client, types, guards, boundary labels, page and component surfaces, dashboard widgets, UX flows, frontend unit-test planning, and future E2E preview, preserved metadata/evidence/human-review-only mode and all anti-fake UI boundaries, added no runtime code, created no frontend files, changed no backend or Playwright code, preserved all baseline and expansion metrics unchanged, and advanced the next action to A-039.3-FRONTEND)
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS
@@ -2880,6 +2880,32 @@
     - final_verdict: A-039.2-B1 CLOSED - HR STAFF GOVERNANCE BACKEND FOUNDATION QUALITY BASELINE CONFIRMED
     - recommended_next_action: A-039.3-FRONTEND-SPEC
     - next_action_id: A-039.3-FRONTEND-SPEC
+- A-039.3-FRONTEND-SPEC execution block:
+    - mode: frontend_contract_spec_only
+    - purpose: specify_hr_staff_governance_frontend_contract
+    - source_a0392_b1_commit: c72e6c0
+    - selected_vertical: HR / Staff Governance Suite
+    - frontend_module_path: frontend/modules/hr-staff-governance/
+    - route_family: /console/hr-staff-governance
+    - planned_route_count: 20
+    - api_base: /api/admin/hr-staff-governance
+    - backend_route_count_used: 62
+    - backend_permission_count_used: 56
+    - frontend_test_plan: 8 files / 40-60 tests
+    - future_e2e_spec: frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts
+    - no_runtime_code_added: PASS
+    - no_frontend_files_created: PASS
+    - no_backend_changes: PASS
+    - no_playwright_changes: PASS
+    - no_provider_live_integration: PASS
+    - no_hr_automatic_decision_ui: PASS
+    - no_hidden_score_ui: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS
+    - report_file: A-039.3-FRONTEND-SPEC-HR_STAFF_GOVERNANCE_SUITE_FRONTEND_CONTRACT_REPORT.md
+    - final_verdict: A-039.3-FRONTEND-SPEC CLOSED - HR STAFF GOVERNANCE FRONTEND CONTRACT SPECIFIED
+    - recommended_next_action: A-039.3-FRONTEND
+    - next_action_id: A-039.3-FRONTEND
 - A-027.0 execution block:
     - mode: planning_only_no_runtime_changes
     - strategic_decision: 150_is_baseline_core_not_final_ceiling
