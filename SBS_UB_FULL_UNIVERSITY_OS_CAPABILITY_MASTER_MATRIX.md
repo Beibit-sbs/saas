@@ -486,6 +486,24 @@ Extension interpretation:
 - metrics_unchanged: PASS
 - forbidden_boundaries: no bank/payment/ERP execution; no automatic financial close; no automatic procurement approval; no official tax/regulatory filing claim; no hidden finance score; no production/sales/GCC/L5/L6 claim
 
+## A-040.1-SPEC Finance / Procurement / Asset Product Map Note
+
+- source_a0400_spec_commits: 4a11b71, f2037c9
+- selected_vertical: Finance / Procurement / Asset Suite
+- mode: product_map_workflow_spec_only
+- planned_frontend_route_count: 22
+- workflow_group_count: 16
+- capability_family_count: 25
+- canonical_reuse: PASS
+- no_live_bank_integration: PASS
+- no_live_erp_sync: PASS
+- no_payment_execution: PASS
+- no_automatic_procurement_approval: PASS
+- no_hidden_finance_or_vendor_score: PASS
+- metrics_unchanged: PASS
+- report_file: A-040.1-SPEC-FINANCE_PROCUREMENT_ASSET_SUITE_PRODUCT_MAP_WORKFLOW_REPORT.md
+- next_action_id: A-040.2-SPEC
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

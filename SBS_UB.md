@@ -1,9 +1,39 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-040.1-SPEC
-                - current_stage: A-040.0-SPEC complete / Finance procurement asset suite selected for Wave 29
-                - last_completed_action_id: A-040.0-SPEC
-            - next_action_id: A-040.1-SPEC
-                - updated_at: 2026-05-26 (A-040.0-SPEC verified source-of-truth state after A-039.5-B1 commit fedac67, confirmed completed_vertical_count remained 6, compared the strongest remaining candidates across the master matrix and expansion map, selected Finance / Procurement / Asset Suite as the next Wave 29 product vertical based on strong canonical backend/frontend readiness, critical product and rector/admin value, manageable non-live provider posture, bridge value to governance/audit/provider lanes, and a feasible bounded backend-to-frontend-to-browser-to-closure path, confirmed no backend changes, no frontend changes, no Playwright changes, no bank/ERP/payment execution claim, no automatic financial close, no automatic procurement approval, no hidden finance score, and no production/sales/GCC/L5/L6 claim, preserved baseline maturity metrics, kept completed_vertical_count unchanged at 6, and advanced the next action to A-040.1-SPEC)
+          - status: ready_for_A-040.2-SPEC
+                - current_stage: A-040.1-SPEC complete / finance procurement asset product map specified
+                - last_completed_action_id: A-040.1-SPEC
+            - next_action_id: A-040.2-SPEC
+                - updated_at: 2026-05-26 (A-040.1-SPEC verified source-of-truth handoff from A-040.0-SPEC commits 4a11b71 and f2037c9, inspected existing billing, budget_planning, procurement, asset_inventory, and online_payments canonicals plus current admin-route anchors, specified the Finance / Procurement / Asset Suite product map, workflow groups, role model, capability families, backend/frontend/E2E previews, bridge model, evidence model, audit model, provider-readiness boundaries, and no-overclaim rules, confirmed docs-only scope with no backend changes, no frontend changes, no Playwright changes, no live bank integration, no live ERP/1C sync, no payment execution, no automatic procurement approval, no automatic budget approval, no hidden finance or vendor score, and no production/sales/GCC/L5/L6 claim, preserved baseline maturity metrics, kept completed_vertical_count unchanged at 6, and advanced the next action to A-040.2-SPEC)
+- A-040.1-SPEC execution block:
+    - mode: product_map_workflow_spec_only
+    - purpose: specify_finance_procurement_asset_suite_product_map
+    - source_a0400_spec_commits: 4a11b71, f2037c9
+    - selected_vertical: Finance / Procurement / Asset Suite
+    - planned_backend_wrapper: backend/app/modules/finance_procurement_asset/ if needed; canonical reuse first
+    - planned_frontend_module: frontend/modules/finance-procurement-asset/
+    - planned_route_family: /console/finance-procurement-asset
+    - planned_frontend_route_count: 22
+    - planned_e2e_spec: frontend/e2e/smoke/a0404-finance-procurement-asset-suite.spec.ts
+    - workflow_group_count: 16
+    - capability_family_count: 25
+    - canonical_reuse: PASS
+    - bridge_first_required: PASS
+    - no_live_bank_integration: PASS
+    - no_live_erp_sync: PASS
+    - no_payment_execution: PASS
+    - no_automatic_procurement_approval: PASS
+    - no_automatic_budget_approval: PASS
+    - no_hidden_finance_or_vendor_score: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - metrics_unchanged: PASS
+    - report_file: A-040.1-SPEC-FINANCE_PROCUREMENT_ASSET_SUITE_PRODUCT_MAP_WORKFLOW_REPORT.md
+    - final_verdict: A-040.1-SPEC CLOSED - FINANCE PROCUREMENT ASSET PRODUCT MAP SPECIFIED
+    - recommended_next_action: A-040.2-SPEC
+    - next_action_id: A-040.2-SPEC
 - A-040.0-SPEC execution block:
     - mode: product_vertical_selection_spec_only
     - purpose: select_next_product_vertical_for_wave29

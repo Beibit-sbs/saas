@@ -3506,6 +3506,22 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-040.0-SPEC-NEXT_PRODUCT_VERTICAL_SELECTION_WAVE29_REPORT.md
 - next_action_id: A-040.1-SPEC
 
+## A-040.1-SPEC - Finance / Procurement / Asset Suite Product Map
+
+- source_a0400_spec_commits: 4a11b71, f2037c9
+- mode: product_map_workflow_spec_only
+- selected_vertical: Finance / Procurement / Asset Suite
+- planned_frontend_route_count: 22
+- workflow_group_count: 16
+- capability_family_count: 25
+- backend_preview: canonical reuse first; wrapper only if needed
+- frontend_preview: frontend/modules/finance-procurement-asset/
+- e2e_preview: frontend/e2e/smoke/a0404-finance-procurement-asset-suite.spec.ts
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-040.1-SPEC-FINANCE_PROCUREMENT_ASSET_SUITE_PRODUCT_MAP_WORKFLOW_REPORT.md
+- next_action_id: A-040.2-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
