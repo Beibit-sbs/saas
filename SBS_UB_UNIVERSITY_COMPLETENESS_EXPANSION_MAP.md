@@ -3833,6 +3833,30 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-041.3-FRONTEND-B1-DOCUMENT_DECREE_CORRESPONDENCE_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-041.4-E2E-SPEC
 
+## A-041.4-E2E-SPEC - Document / Decree / Correspondence Browser Validation Plan
+
+- source_a0413_frontend_b1_commit: a4f580b
+- source_a0413_frontend_commit: 80c8f7b
+- mode: browser_validation_plan_spec_only
+- selected_vertical: Document / Decree / Correspondence Suite
+- future_e2e_spec: frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts
+- route_coverage_target: 23
+- scenario_group_count_target: 25
+- e2e_runtime_base_url_contract: E2E_BASE_URL=https://nginx
+- e2e_project_target: chromium
+- auth_strategy: deterministic_fake_admin_and_restricted_user_stubs
+- metadata_stub_strategy: deterministic_metadata_evidence_readiness_only_payloads
+- permission_denial_smoke_required: YES
+- no_overclaim_dom_scan_required: YES
+- anti_fake_boundaries: preserved
+- runtime_started: NO
+- backend_changed: NO
+- frontend_changed: NO
+- playwright_spec_created: NO
+- metrics_unchanged: PASS
+- report_file: A-041.4-E2E-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_BROWSER_VALIDATION_PLAN_REPORT.md
+- next_action_id: A-041.4-E2E
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

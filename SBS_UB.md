@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-041.4-E2E-SPEC
-                - current_stage: A-041.3-FRONTEND-B1 complete / document decree correspondence frontend runtime quality baseline confirmed
-                - last_completed_action_id: A-041.3-FRONTEND-B1
-            - next_action_id: A-041.4-E2E-SPEC
-                - updated_at: 2026-05-27 (A-041.3-FRONTEND-B1 performed validation/reporting-only frontend runtime quality baseline confirmation for document decree correspondence using source frontend runtime commit 80c8f7b and source frontend spec commit 270e607, re-verified module inventory (7 files), route inventory (23), and frontend test inventory (8 files), re-ran TypeScript PASS (TS_EXIT=0), re-ran targeted frontend tests PASS (8 files, 58 passed), re-ran no-overclaim scan PASS, confirmed no backend/runtime/Playwright scope changes, preserved anti-fake and no-overclaim boundaries, preserved locked baseline metrics and completed_vertical_count=7, and advanced next action to A-041.4-E2E-SPEC)
+          - status: ready_for_A-041.4-E2E
+                - current_stage: A-041.4-E2E-SPEC complete / document decree correspondence browser validation plan documented
+                - last_completed_action_id: A-041.4-E2E-SPEC
+            - next_action_id: A-041.4-E2E
+                - updated_at: 2026-05-27 (A-041.4-E2E-SPEC performed documentation/reporting-only browser validation planning for document decree correspondence, confirmed future spec identity frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts, locked route coverage target (23) and scenario group target (25), specified docker/nginx runtime contract with E2E_BASE_URL=https://nginx, documented deterministic auth and metadata stub strategy, documented permission-denial fail-closed and cross-route no-overclaim requirements, confirmed no backend/frontend runtime changes and no Playwright spec creation in spec scope, preserved locked baseline metrics and completed_vertical_count=7, and advanced next action to A-041.4-E2E)
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
@@ -162,6 +162,42 @@
     - final_verdict: A-041.3-FRONTEND-B1 CLOSED - DOCUMENT DECREE CORRESPONDENCE FRONTEND RUNTIME QUALITY BASELINE CONFIRMED
     - recommended_next_action: A-041.4-E2E-SPEC
     - next_action_id: A-041.4-E2E-SPEC
+- A-041.4-E2E-SPEC execution block:
+    - mode: browser_validation_plan_spec_only
+    - purpose: specify_document_decree_correspondence_browser_validation_plan
+    - source_a0413_frontend_b1_commit: a4f580b
+    - source_a0413_frontend_commit: 80c8f7b
+    - source_a0413_frontend_spec_commit: 270e607
+    - selected_vertical: Document / Decree / Correspondence Suite
+    - future_e2e_spec: frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts
+    - route_coverage_target: 23
+    - scenario_group_count_target: 25
+    - e2e_runtime_base_url_contract: E2E_BASE_URL=https://nginx
+    - e2e_project_target: chromium
+    - auth_strategy: deterministic_fake_admin_and_restricted_user_stubs
+    - metadata_stub_strategy: deterministic_metadata_evidence_readiness_only_payloads
+    - permission_denial_smoke_required: PASS (planned)
+    - no_overclaim_dom_scan_required: PASS (planned)
+    - no_fake_documents: PASS
+    - no_fake_decrees: PASS
+    - no_fake_signature: PASS
+    - no_fake_delivery_confirmation: PASS
+    - no_automatic_rector_decision: PASS
+    - no_automatic_decree_approval: PASS
+    - no_automatic_document_signing: PASS
+    - no_external_submission_claim: PASS
+    - no_official_legal_effect_claim: PASS
+    - no_hidden_staff_or_department_score: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; completed_vertical_count=7)
+    - report_file: A-041.4-E2E-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_BROWSER_VALIDATION_PLAN_REPORT.md
+    - final_verdict: A-041.4-E2E-SPEC CLOSED - DOCUMENT DECREE CORRESPONDENCE BROWSER VALIDATION PLAN DOCUMENTED
+    - recommended_next_action: A-041.4-E2E
+    - next_action_id: A-041.4-E2E
 - A-041.1-SPEC execution block:
     - mode: product_map_workflow_spec_only
     - purpose: specify_document_decree_correspondence_suite_product_map
