@@ -472,6 +472,20 @@ Extension interpretation:
 - report_file: A-039.5-B1-HR_STAFF_GOVERNANCE_SUITE_PRODUCT_VERTICAL_CLOSURE_REPORT.md
 - next_action_id: A-040.0-SPEC
 
+## A-040.0-SPEC Wave 29 Vertical Selection Note
+
+- source_a0395_b1_commit: fedac67
+- completed_vertical_count_at_selection: 6
+- selected_wave29_vertical: Finance / Procurement / Asset Suite
+- selected_next_action: A-040.1-SPEC
+- selection_rationale: critical product value; strongest current canonical backend/frontend footprint among remaining non-closed verticals; prior finance/procurement/asset evidence already exists; bridge value to governance, audit, and provider lanes; feasible non-live-first opening slice without bank, ERP, or payment execution
+- canonical_reuse_required: YES
+- bridge_first_required: YES
+- no_duplicate_canonicals: YES
+- no_runtime_claim: YES
+- metrics_unchanged: PASS
+- forbidden_boundaries: no bank/payment/ERP execution; no automatic financial close; no automatic procurement approval; no official tax/regulatory filing claim; no hidden finance score; no production/sales/GCC/L5/L6 claim
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`
