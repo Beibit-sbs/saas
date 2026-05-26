@@ -136,6 +136,7 @@ from app.modules.research_science.router import router as research_science_route
 from app.modules.quality_accreditation.router import router as quality_accreditation_router
 from app.modules.hr_staff_governance.router import router as hr_staff_governance_router
 from app.modules.finance_procurement_asset.router import router as finance_procurement_asset_router
+from app.modules.document_decree_correspondence.router import router as document_decree_correspondence_router
 from app.modules.rector_assignment_workflow.router import router as rector_assignment_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.interventions.router import router as interventions_router
@@ -489,6 +490,7 @@ app.include_router(research_science_router)
 app.include_router(quality_accreditation_router)
 app.include_router(hr_staff_governance_router)
 app.include_router(finance_procurement_asset_router)
+app.include_router(document_decree_correspondence_router)
 
 
 def _register_optional_routers(fastapi_app: FastAPI) -> None:

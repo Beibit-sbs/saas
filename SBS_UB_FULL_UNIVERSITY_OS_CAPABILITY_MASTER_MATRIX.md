@@ -777,6 +777,33 @@ Extension interpretation:
 - report_file: A-041.2-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
 - next_action_id: A-041.2-RUNTIME
 
+## A-041.2-RUNTIME Document / Decree / Correspondence Backend Runtime Note
+
+- source_a0412_runtime_start_commit: b357a0a
+- source_a0412_spec_commit: f85706c
+- selected_vertical: Document / Decree / Correspondence Suite
+- mode: backend_runtime_implementation
+- runtime_module_path: backend/app/modules/document_decree_correspondence/
+- runtime_module_file_count: 8
+- migration_file: backend/alembic/versions/ddc0412rt01_a0412_document_decree_correspondence_tables.py
+- runtime_test_files_added: 4
+- table_inventory_result: PASS 26/26
+- route_inventory_result: PASS 53/53
+- permission_inventory_result: PASS 50/50
+- compile_result: PASS
+- forbidden_surface_scan_result: PASS
+- docker_runtime_validation: BLOCKED (docker unavailable)
+- local_pytest_runtime_validation: BLOCKED (venv missing pip/pytest/sqlalchemy)
+- no_fake_documents: PASS
+- no_fake_decrees: PASS
+- no_fake_signature: PASS
+- no_external_submission_execution: PASS
+- no_automatic_rector_decision: PASS
+- no_hidden_staff_or_department_score: PASS
+- metrics_unchanged: PASS
+- report_file: A-041.2-RUNTIME-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_RUNTIME_REPORT.md
+- next_action_id: A-041.2-B1
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`
