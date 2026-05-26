@@ -3489,6 +3489,23 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-039.5-B1-HR_STAFF_GOVERNANCE_SUITE_PRODUCT_VERTICAL_CLOSURE_REPORT.md
 - next_action_id: A-040.0-SPEC
 
+## A-040.0-SPEC - Wave 29 Vertical Selection
+
+- source_a0395_b1_commit: fedac67
+- completed_vertical_count_at_selection: 6
+- selected_wave29_vertical: Finance / Procurement / Asset Suite
+- selection_basis: strong existing canonical module coverage across billing, budget_planning, procurement, asset_inventory, and online_payments; P0 product value; medium gap severity; feasible non-live-first provider posture
+- deferred_options: Security / IAM / SOC Suite (cross-cutting and more provider-coupled); Integration / Provider Suite (provider-led and future-vertical weighted); Campus / Facilities / Housing Suite (lower immediate executive leverage); Ministry / Regulatory Reporting Suite (higher official-posture overclaim risk)
+- canonical_reuse_required: YES
+- bridge_first_required: YES
+- no_duplicate_canonicals: YES
+- no_runtime_claim: YES
+- no_live_bank_erp_payment_claim: YES
+- no_hidden_finance_score: YES
+- metrics_unchanged: PASS
+- report_file: A-040.0-SPEC-NEXT_PRODUCT_VERTICAL_SELECTION_WAVE29_REPORT.md
+- next_action_id: A-040.1-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

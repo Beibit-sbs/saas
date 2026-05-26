@@ -1,9 +1,45 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-040.0-SPEC
-                - current_stage: A-039.5-B1 complete / HR staff governance product vertical closed
-                - last_completed_action_id: A-039.5-B1
-            - next_action_id: A-040.0-SPEC
-                - updated_at: 2026-05-26 (A-039.5-B1 verified the full HR vertical chain from A-039.0-SPEC through A-039.4-B1, confirmed backend baseline PASS at A-039.2-B1 with 36 tables, 62 routes, and 56 permissions, confirmed frontend baseline PASS at A-039.3-FRONTEND-B1 with 7 module files, 20 routes, TypeScript PASS, and 8 files / 54 tests, confirmed browser baseline PASS at A-039.4-B1 with authoritative full Docker/Nginx Chromium PASS at 41/41 in 9.0m and route coverage PASS at 20/20 sourced from commit 6c924c1, confirmed no backend changes, no frontend runtime changes, no Playwright changes, no provider live sync, no payroll execution, no automatic HR decision, no hidden score, and no production/sales/GCC/L5/L6 claim, preserved baseline maturity metrics, advanced completed_vertical_count from 5 to 6 under existing vertical closure policy, and advanced the next action to A-040.0-SPEC)
+          - status: ready_for_A-040.1-SPEC
+                - current_stage: A-040.0-SPEC complete / Finance procurement asset suite selected for Wave 29
+                - last_completed_action_id: A-040.0-SPEC
+            - next_action_id: A-040.1-SPEC
+                - updated_at: 2026-05-26 (A-040.0-SPEC verified source-of-truth state after A-039.5-B1 commit fedac67, confirmed completed_vertical_count remained 6, compared the strongest remaining candidates across the master matrix and expansion map, selected Finance / Procurement / Asset Suite as the next Wave 29 product vertical based on strong canonical backend/frontend readiness, critical product and rector/admin value, manageable non-live provider posture, bridge value to governance/audit/provider lanes, and a feasible bounded backend-to-frontend-to-browser-to-closure path, confirmed no backend changes, no frontend changes, no Playwright changes, no bank/ERP/payment execution claim, no automatic financial close, no automatic procurement approval, no hidden finance score, and no production/sales/GCC/L5/L6 claim, preserved baseline maturity metrics, kept completed_vertical_count unchanged at 6, and advanced the next action to A-040.1-SPEC)
+- A-040.0-SPEC execution block:
+    - mode: product_vertical_selection_spec_only
+    - purpose: select_next_product_vertical_for_wave29
+    - source_of_truth_check: PASS (A-039.5-B1 commit fedac67 verified; source status before selection was ready_for_A-040.0-SPEC)
+    - source_a0395_b1_commit: fedac67
+    - source_a0394_b1_commit: 36a7d1a
+    - source_a0394_e2e_r3_commit: 6c924c1
+    - authoritative_matrix_file: SBS_UB_FULL_UNIVERSITY_OS_CAPABILITY_MASTER_MATRIX.md
+    - authoritative_expansion_file: SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md
+    - completed_vertical_count_at_selection: 6
+    - closed_verticals_confirmed: PASS (Executive Governance Suite; Student Lifecycle Suite; Academic Operations Suite; Research / Science Suite; Quality / Accreditation Suite; HR / Staff Governance Suite)
+    - options_considered: PASS (Finance / Procurement / Asset Suite; Security / IAM / SOC Suite; Integration / Provider Suite; Campus / Facilities / Housing Suite; Ministry / Regulatory Reporting Suite)
+    - selected_vertical: Finance / Procurement / Asset Suite
+    - selection_basis: PASS (strong canonical backend/frontend readiness; critical product value; manageable non-live provider posture; bridge value to governance/audit/provider lanes; bounded backend-to-frontend-to-browser-to-closure path)
+    - canonical_backend_reuse: PASS (billing; budget_planning; procurement; asset_inventory; online_payments)
+    - existing_frontend_surface: PASS (billing, budget-planning, procurement-workflow, and asset-inventory admin routes with targeted frontend coverage anchors)
+    - existing_browser_evidence: PASS (billing smoke coverage exists; broader finance browser path feasible without live provider dependency)
+    - provider_posture: PASS (bank/ERP/payment live integrations remain deferred / non-live-profile-only)
+    - no_runtime_changes: PASS
+    - no_backend_changes: PASS
+    - no_frontend_changes: PASS
+    - no_playwright_changes: PASS
+    - no_provider_live_integration: PASS
+    - no_bank_execution: PASS
+    - no_erp_execution: PASS
+    - no_payment_execution: PASS
+    - no_automatic_financial_close: PASS
+    - no_automatic_procurement_approval: PASS
+    - no_official_tax_or_regulatory_filing_claim: PASS
+    - no_hidden_finance_score: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5; completed_vertical_count=6)
+    - report_file: A-040.0-SPEC-NEXT_PRODUCT_VERTICAL_SELECTION_WAVE29_REPORT.md
+    - final_verdict: A-040.0-SPEC CLOSED - FINANCE / PROCUREMENT / ASSET SUITE SELECTED FOR WAVE 29
+    - recommended_next_action: A-040.1-SPEC
+    - next_action_id: A-040.1-SPEC
 - A-039.3-FRONTEND execution block:
 - A-039.3-FRONTEND execution block:
 - A-039.3-FRONTEND execution block:
