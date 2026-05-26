@@ -230,6 +230,28 @@ Extension interpretation:
 - report_file: A-039.2-SPEC-HR_STAFF_GOVERNANCE_SUITE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
 - next_action_id: A-039.2-RUNTIME
 
+## A-039.2-RUNTIME HR / Staff Governance Backend Foundation Note
+
+- source_a0392_spec_commit: 09e968b
+- selected_vertical: HR / Staff Governance Suite
+- mode: backend_runtime_only
+- backend_module_path: backend/app/modules/hr_staff_governance/
+- migration_file: backend/alembic/versions/hr39a2rt01_a0392_hr_staff_governance_tables.py
+- table_prefix: hr_
+- orm_table_count: 36
+- route_prefix: /api/admin/hr-staff-governance
+- route_count: 62
+- permission_count: 56
+- runtime_mode: METADATA_EVIDENCE_HUMAN_REVIEW_ONLY
+- test_scope_note: focused targeted runtime proof only (spec plan 4 files / 180-260 tests; runtime delivered 4 files / 33 tests)
+- focused_targeted_pytest: PASS (33 passed, 0 failed)
+- provider_live_integration: FORBIDDEN
+- automatic_hr_decision: FORBIDDEN
+- hidden_score: FORBIDDEN
+- metrics_unchanged: PASS
+- report_file: A-039.2-RUNTIME-HR_STAFF_GOVERNANCE_SUITE_BACKEND_FOUNDATION_REPORT.md
+- next_action_id: A-039.2-B1
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

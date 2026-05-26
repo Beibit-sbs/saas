@@ -1,0 +1,52 @@
+"""HR / Staff Governance backend foundation module."""
+
+from app.modules.hr_staff_governance import (
+    dependencies,
+    models,
+    permissions,
+    repository,
+    router,
+    schemas,
+    service,
+)
+
+MODULE_NAME = models.MODULE_NAME
+TABLE_PREFIX = models.TABLE_PREFIX
+TARGET_LEVEL = models.TARGET_LEVEL
+CONTRACT_VERSION = models.CONTRACT_VERSION
+FOUNDATION_STATUS = models.FOUNDATION_STATUS
+SOURCE_SPEC_COMMIT = models.SOURCE_SPEC_COMMIT
+SOURCE_PRODUCT_MAP_COMMIT = models.SOURCE_PRODUCT_MAP_COMMIT
+SOURCE_VERTICAL_SELECTION_COMMIT = models.SOURCE_VERTICAL_SELECTION_COMMIT
+PRODUCT_VERTICAL = models.PRODUCT_VERTICAL
+CAPABILITY_FAMILY_COUNT = models.CAPABILITY_FAMILY_COUNT
+DETAILED_CAPABILITY_COUNT = models.DETAILED_CAPABILITY_COUNT
+WORKFLOW_GROUP_COUNT = models.WORKFLOW_GROUP_COUNT
+ROLE_COUNT = models.ROLE_COUNT
+RUNTIME_MODE = models.RUNTIME_MODE
+DATA_SOURCE = models.DATA_SOURCE
+
+__all__ = [
+    "CAPABILITY_FAMILY_COUNT",
+    "CONTRACT_VERSION",
+    "DATA_SOURCE",
+    "DETAILED_CAPABILITY_COUNT",
+    "FOUNDATION_STATUS",
+    "MODULE_NAME",
+    "PRODUCT_VERTICAL",
+    "ROLE_COUNT",
+    "RUNTIME_MODE",
+    "SOURCE_PRODUCT_MAP_COMMIT",
+    "SOURCE_SPEC_COMMIT",
+    "SOURCE_VERTICAL_SELECTION_COMMIT",
+    "TABLE_PREFIX",
+    "TARGET_LEVEL",
+    "WORKFLOW_GROUP_COUNT",
+    "dependencies",
+    "models",
+    "permissions",
+    "repository",
+    "router",
+    "schemas",
+    "service",
+]
