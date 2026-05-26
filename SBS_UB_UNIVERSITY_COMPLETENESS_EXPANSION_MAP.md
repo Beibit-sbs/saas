@@ -3670,6 +3670,27 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-040.4-B1-FINANCE_PROCUREMENT_ASSET_BROWSER_VALIDATION_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-040.5-B1
 
+## A-040.5-B1 - Finance / Procurement / Asset Suite Product Vertical Closure
+
+- source_a0404_b1_commit: ff60c16
+- source_a0404_e2e_commit: aef3d9c
+- mode: validation_reporting_only / product_vertical_closure
+- selected_vertical: Finance / Procurement / Asset Suite
+- backend_baseline: PASS
+- frontend_baseline: PASS
+- browser_baseline: PASS
+- route_coverage_result: PASS 22/22
+- full_chromium_result: PASS 28/28 in 7.2m
+- product_vertical_closed: PASS
+- completed_vertical_count: 7
+- production_ready_claim: NO
+- sales_ready_claim: NO
+- gcc_ready_claim: NO
+- anti_fake_boundaries: preserved
+- metrics_unchanged_except_completed_vertical_count: PASS
+- report_file: A-040.5-B1-FINANCE_PROCUREMENT_ASSET_SUITE_PRODUCT_VERTICAL_CLOSURE_REPORT.md
+- next_action_id: A-041.0-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
