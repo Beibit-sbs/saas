@@ -736,6 +736,26 @@ Extension interpretation:
 - report_file: A-041.0-SPEC-NEXT_PRODUCT_VERTICAL_SELECTION_WAVE30_REPORT.md
 - next_action_id: A-041.1-SPEC
 
+## A-041.1-SPEC Document / Decree / Correspondence Product Map Note
+
+- source_a0410_spec_commit: fd9d172
+- selected_vertical: Document / Decree / Correspondence Suite
+- mode: product_map_workflow_spec_only
+- planned_frontend_route_count: 23
+- workflow_group_count: 19
+- capability_family_count: 26
+- canonical_reuse: PASS
+- a032_scoped_slice_reuse_reviewed: PASS
+- no_fake_documents: PASS
+- no_fake_decrees: PASS
+- no_fake_signature: PASS
+- no_external_submission_claim: PASS
+- no_automatic_rector_decision: PASS
+- no_hidden_staff_or_department_score: PASS
+- metrics_unchanged: PASS
+- report_file: A-041.1-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_SUITE_PRODUCT_MAP_WORKFLOW_REPORT.md
+- next_action_id: A-041.2-SPEC
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

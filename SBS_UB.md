@@ -1,9 +1,42 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-041.1-SPEC
-                - current_stage: A-041.0-SPEC complete / next product vertical selected
-                - last_completed_action_id: A-041.0-SPEC
-            - next_action_id: A-041.1-SPEC
-                - updated_at: 2026-05-26 (A-041.0-SPEC verified source commit 1eb2d3f for the closed Finance / Procurement / Asset vertical, confirmed completed_vertical_count remains 7, inspected the remaining candidate lanes against current tracker, master-matrix, expansion-map, and existing repo artifacts, selected Document / Decree / Correspondence Suite as the next product vertical for Wave 30 because it offers the strongest rectorate-facing value and the strongest existing backend/frontend/E2E readiness runway from the prior scoped A-032 slice, deferred Student Services / Campus Life, Security / Access / Compliance, Integration / Provider Readiness, AI Brain / Governance Console, and Infrastructure / Operations / SRE, defined the full A-041.1-SPEC through A-041.5-B1 chain, preserved spec-only scope with no runtime started, no backend changes, no frontend changes, and no Playwright changes, preserved no fake documents, no fake decrees, no fake signature, no fake delivery confirmation, no automatic rector decision, no automatic decree approval, no external submission claim, no production, sales, GCC, L5, or L6 claim, preserved locked metrics, and advanced the next action to A-041.1-SPEC)
+          - status: ready_for_A-041.2-SPEC
+                - current_stage: A-041.1-SPEC complete / document decree correspondence product map specified
+                - last_completed_action_id: A-041.1-SPEC
+            - next_action_id: A-041.2-SPEC
+                - updated_at: 2026-05-26 (A-041.1-SPEC verified source commit fd9d172 for the selected Document / Decree / Correspondence Suite, inventoried the existing canonical backend, frontend, route, and test anchors, reviewed the prior A-032 scoped slice for reuse without counting it as an A-041 closed vertical, defined the product map, role model, 19 workflow groups, 26 capability families, backend preview, frontend preview, E2E preview, bridge model, evidence, audit, and archive model, defined signature-readiness and delivery-readiness as explicit non-live boundaries, preserved canonical reuse first with backend/app/modules/document_decree_correspondence/ only if needed, preserved no fake documents, no fake decrees, no fake signature, no fake delivery confirmation, no automatic rector decision, no automatic decree approval, no external submission claim, no hidden staff or department score, preserved spec-only scope with no runtime started, no backend changes, no frontend changes, and no Playwright changes, preserved locked metrics, and advanced the next action to A-041.2-SPEC)
+- A-041.1-SPEC execution block:
+    - mode: product_map_workflow_spec_only
+    - purpose: specify_document_decree_correspondence_suite_product_map
+    - source_a0410_spec_commit: fd9d172
+    - selected_vertical: Document / Decree / Correspondence Suite
+    - planned_backend_wrapper: backend/app/modules/document_decree_correspondence/ if needed; canonical reuse first
+    - planned_frontend_module: frontend/modules/document-decree-correspondence/
+    - planned_route_family: /console/document-decree-correspondence
+    - planned_frontend_route_count: 23
+    - planned_e2e_spec: frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts
+    - workflow_group_count: 19
+    - capability_family_count: 26
+    - canonical_reuse: PASS
+    - a032_scoped_slice_reuse_reviewed: PASS
+    - bridge_first_required: PASS
+    - no_fake_documents: PASS
+    - no_fake_decrees: PASS
+    - no_fake_signature: PASS
+    - no_fake_delivery_confirmation: PASS
+    - no_automatic_rector_decision: PASS
+    - no_automatic_decree_approval: PASS
+    - no_external_submission_claim: PASS
+    - no_hidden_staff_or_department_score: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - metrics_unchanged: PASS
+    - report_file: A-041.1-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_SUITE_PRODUCT_MAP_WORKFLOW_REPORT.md
+    - final_verdict: A-041.1-SPEC CLOSED - DOCUMENT DECREE CORRESPONDENCE PRODUCT MAP SPECIFIED
+    - recommended_next_action: A-041.2-SPEC
+    - next_action_id: A-041.2-SPEC
 - A-040.4-E2E-SPEC execution block:
     - mode: browser_validation_plan_spec_only
     - purpose: specify_finance_procurement_asset_browser_validation_plan

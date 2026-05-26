@@ -3705,6 +3705,23 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-041.0-SPEC-NEXT_PRODUCT_VERTICAL_SELECTION_WAVE30_REPORT.md
 - next_action_id: A-041.1-SPEC
 
+## A-041.1-SPEC - Document / Decree / Correspondence Suite Product Map
+
+- source_a0410_spec_commit: fd9d172
+- mode: product_map_workflow_spec_only
+- selected_vertical: Document / Decree / Correspondence Suite
+- planned_frontend_route_count: 23
+- workflow_group_count: 19
+- capability_family_count: 26
+- backend_preview: canonical reuse first; wrapper only if needed
+- frontend_preview: frontend/modules/document-decree-correspondence/
+- e2e_preview: frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts
+- a032_scoped_slice_reuse_reviewed: PASS
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-041.1-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_SUITE_PRODUCT_MAP_WORKFLOW_REPORT.md
+- next_action_id: A-041.2-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
