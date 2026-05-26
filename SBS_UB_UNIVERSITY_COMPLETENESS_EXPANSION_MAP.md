@@ -15009,3 +15009,27 @@ Metrics preserved:
 - no_fake_kpi_or_production_ready_claim: PASS
 - recommended_next_action: A-035.3-FRONTEND-B1 - Student Lifecycle Suite Frontend Runtime Quality Baseline
 - next_action_id: A-035.3-FRONTEND-B1
+
+## A-041.4-E2E Document / Decree / Correspondence Browser Validation Runtime Note
+
+- source_a0414_e2e_spec_commit: 6029cac
+- selected_vertical: Document / Decree / Correspondence Suite
+- mode: browser_validation_runtime
+- playwright_spec: frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts
+- route_coverage_target: 23
+- route_coverage_result: PASS 23/23 (implementation inventory)
+- scenario_group_count: 25
+- typescript_result: PASS (TS_EXIT=0)
+- targeted_frontend_test_result: PASS (8 files, 58 passed)
+- chromium_result: BLOCKED (full docker/nginx path unstable)
+- blocker_signals:
+	- repeated ddc-page-shell non-render failures in full-run path
+	- intermittent 404 permission-denial state in unstable sequences
+	- one run terminated with exit code 137
+- no_overclaim_source_scan: PASS
+- no_backend_changes: PASS (source non-change)
+- no_frontend_runtime_changes: PASS
+- metrics_unchanged: PASS
+- report_file: A-041.4-E2E-DOCUMENT_DECREE_CORRESPONDENCE_BROWSER_VALIDATION_REPORT.md
+- final_verdict: A-041.4-E2E BLOCKED - DOCUMENT DECREE CORRESPONDENCE BROWSER VALIDATION RUNTIME UNSTABLE
+- next_action_id: A-041.4-E2E.R1

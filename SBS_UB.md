@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-041.4-E2E
-                - current_stage: A-041.4-E2E-SPEC complete / document decree correspondence browser validation plan documented
+          - status: blocked_on_A-041.4-E2E.R1
+                - current_stage: A-041.4-E2E blocked / document decree correspondence browser validation runtime unstable in full chromium path
                 - last_completed_action_id: A-041.4-E2E-SPEC
-            - next_action_id: A-041.4-E2E
-                - updated_at: 2026-05-27 (A-041.4-E2E-SPEC performed documentation/reporting-only browser validation planning for document decree correspondence, confirmed future spec identity frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts, locked route coverage target (23) and scenario group target (25), specified docker/nginx runtime contract with E2E_BASE_URL=https://nginx, documented deterministic auth and metadata stub strategy, documented permission-denial fail-closed and cross-route no-overclaim requirements, confirmed no backend/frontend runtime changes and no Playwright spec creation in spec scope, preserved locked baseline metrics and completed_vertical_count=7, and advanced next action to A-041.4-E2E)
+            - next_action_id: A-041.4-E2E.R1
+                - updated_at: 2026-05-27 (A-041.4-E2E implemented frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts with route coverage target 23 and scenario groups 25 plus deterministic auth/bootstrap/API stubs and no-overclaim checks, validated TypeScript PASS and targeted frontend tests PASS with route inventory PASS 23, but full docker/nginx chromium runtime remained unstable with repeated ddc-page-shell non-render failures, intermittent 404 permission-denial path, and one exit-137 terminated run; blocked verdict recorded and next action moved to A-041.4-E2E.R1)
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
@@ -198,6 +198,42 @@
     - final_verdict: A-041.4-E2E-SPEC CLOSED - DOCUMENT DECREE CORRESPONDENCE BROWSER VALIDATION PLAN DOCUMENTED
     - recommended_next_action: A-041.4-E2E
     - next_action_id: A-041.4-E2E
+- A-041.4-E2E execution block:
+    - mode: browser_validation_runtime
+    - purpose: validate_document_decree_correspondence_browser_runtime
+    - source_a0414_e2e_spec_commit: 6029cac
+    - source_a0413_frontend_b1_commit: a4f580b
+    - source_a0413_frontend_commit: 80c8f7b
+    - source_a0413_frontend_spec_commit: 270e607
+    - selected_vertical: Document / Decree / Correspondence Suite
+    - playwright_spec: frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts
+    - route_coverage_target: 23
+    - route_coverage_result: PASS 23/23 (implementation inventory)
+    - scenario_group_count: 25
+    - typescript_result: PASS (TS_EXIT=0)
+    - targeted_frontend_test_result: PASS (8 files, 58 passed)
+    - chromium_result: BLOCKED (full docker/nginx path unstable; repeated ddc-page-shell non-render failures and exit 137 observed)
+    - permission_denial_runtime_result: BLOCKED (404 fail state observed in unstable full-run path)
+    - no_overclaim_source_scan: PASS
+    - no_fake_document_ui: PASS
+    - no_fake_decree_ui: PASS
+    - no_fake_signature_ui: PASS
+    - no_fake_delivery_confirmation_ui: PASS
+    - no_automatic_rector_decision_ui: PASS
+    - no_automatic_decree_approval_ui: PASS
+    - no_automatic_document_signing_ui: PASS
+    - no_external_submission_ui: PASS
+    - no_official_legal_effect_ui: PASS
+    - no_hidden_staff_or_department_score_ui: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: YES
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; completed_vertical_count=7)
+    - report_file: A-041.4-E2E-DOCUMENT_DECREE_CORRESPONDENCE_BROWSER_VALIDATION_REPORT.md
+    - final_verdict: A-041.4-E2E BLOCKED - DOCUMENT DECREE CORRESPONDENCE BROWSER VALIDATION RUNTIME UNSTABLE
+    - recommended_next_action: A-041.4-E2E.R1
+    - next_action_id: A-041.4-E2E.R1
 - A-041.1-SPEC execution block:
     - mode: product_map_workflow_spec_only
     - purpose: specify_document_decree_correspondence_suite_product_map
