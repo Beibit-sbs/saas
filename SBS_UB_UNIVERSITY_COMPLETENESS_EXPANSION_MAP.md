@@ -3469,6 +3469,26 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-039.4-B1-HR_STAFF_GOVERNANCE_BROWSER_VALIDATION_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-039.5-B1
 
+## A-039.5-B1 - HR / Staff Governance Suite Product Vertical Closure
+
+- source_a0394_b1_commit: 36a7d1a
+- source_a0394_e2e_r3_commit: 6c924c1
+- mode: validation_reporting_only / product_vertical_closure
+- selected_vertical: HR / Staff Governance Suite
+- backend_baseline: PASS
+- frontend_baseline: PASS
+- browser_baseline: PASS
+- route_coverage_result: PASS 20/20
+- full_chromium_result: PASS 41/41 in 9.0m
+- product_vertical_closed: PASS
+- production_ready_claim: NO
+- sales_ready_claim: NO
+- gcc_ready_claim: NO
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-039.5-B1-HR_STAFF_GOVERNANCE_SUITE_PRODUCT_VERTICAL_CLOSURE_REPORT.md
+- next_action_id: A-040.0-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
