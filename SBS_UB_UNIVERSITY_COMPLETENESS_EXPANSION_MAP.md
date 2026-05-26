@@ -3357,6 +3357,26 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-039.3-FRONTEND-HR_STAFF_GOVERNANCE_SUITE_FRONTEND_RUNTIME_REPORT.md
 - next_action_id: A-039.3-FRONTEND-B1
 
+## A-039.3-FRONTEND-B1 - HR / Staff Governance Frontend Runtime Quality Baseline
+
+- source_a0393_frontend_commit: 32e5bb0
+- mode: validation_reporting_only / frontend_quality_baseline
+- selected_vertical: HR / Staff Governance Suite
+- frontend_module_path: frontend/modules/hr-staff-governance/
+- route_family: /console/hr-staff-governance
+- module_files_count: 7
+- route_page_count: 20
+- frontend_test_files_count: 8
+- targeted_frontend_test_result: PASS (8 files, 54 tests)
+- typescript_result: PASS (npx tsc --noEmit exit 0)
+- route_inventory_result: PASS 20
+- no_backend_changes: PASS
+- no_playwright_changes: PASS
+- anti_fake_boundaries: no automatic hiring/firing UI; no automatic HR disciplinary UI; no automatic leave approval/rejection UI; no payroll execution UI; no provider live sync UI; no autonomous access revocation UI; no hidden employee/faculty score UI; no production/sales/GCC/L5/L6 claim
+- metrics_unchanged: PASS
+- report_file: A-039.3-FRONTEND-B1-HR_STAFF_GOVERNANCE_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
+- next_action_id: A-039.4-E2E-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
