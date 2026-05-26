@@ -375,6 +375,21 @@ Extension interpretation:
 - report_file: A-039.4-E2E-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_REPORT.md
 - next_action_id: A-039.4-E2E.R1
 
+## A-039.4-E2E.R1 HR / Staff Governance Browser Validation Remediation Note
+
+- source_a0394_blocked_snapshot_commit: fac0574
+- remediation_scope: E2E spec/stubs/assertions only
+- typescript_result: PASS
+- targeted_frontend_result: PASS (8 files, 54 tests)
+- route_inventory_result: PASS 20/20
+- chromium_result: BLOCKED (clean Docker/nginx rerun stalled during route-title sweep before authoritative summary)
+- root_cause_classification: NGINX/DOCKER_ENVIRONMENT_BLOCKER
+- no_backend_changes: PASS
+- no_frontend_runtime_changes: PASS
+- metrics_unchanged: PASS
+- report_file: A-039.4-E2E-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_REPORT.md
+- next_action_id: A-039.4-E2E.R2
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

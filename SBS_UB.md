@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: blocked_A-039.4-E2E
-                - current_stage: A-039.4-E2E blocked / HR staff governance browser validation runtime failed mounted Chromium run
+          - status: blocked_A-039.4-E2E.R1
+                - current_stage: A-039.4-E2E.R1 blocked / clean Docker-nginx Chromium rerun stalled during route-title sweep after spec-only remediation
                 - last_completed_action_id: A-039.4-E2E-SPEC
-            - next_action_id: A-039.4-E2E.R1
-                - updated_at: 2026-05-26 (A-039.4-E2E preserved the interrupted workspace as a normalized blocked snapshot, retained frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts and the runtime report, and aligned the trackers to the latest authoritative mounted Chromium result of 9 failed / 17 passed with the four route-coverage sweep failures plus Scenario 7, Scenario 11, Scenario 14, Scenario 19, and Scenario 20 still blocked; no backend runtime, migration, or frontend product-route changes were made, metrics remained unchanged, and the next action remained A-039.4-E2E.R1)
+            - next_action_id: A-039.4-E2E.R2
+                - updated_at: 2026-05-26 (A-039.4-E2E.R1 started from blocked snapshot commit fac0574, applied E2E-spec-only remediation in frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts for transient navigation retries, exact forbidden-action matching, permission-denial fallback handling, and boundary/footer sweep logic, then revalidated local TypeScript PASS, targeted frontend tests PASS at 8 files / 54 tests, and route inventory PASS at 20 routes; the clean Docker/Nginx Chromium rerun did not reach an authoritative final summary and stalled during the route-title sweep under the mounted browser runtime, so no backend runtime, migration, or frontend product-route changes were made, metrics remained unchanged, and the next action advanced to A-039.4-E2E.R2)
 - A-039.3-FRONTEND execution block:
 - A-039.3-FRONTEND execution block:
 - A-039.3-FRONTEND execution block:
