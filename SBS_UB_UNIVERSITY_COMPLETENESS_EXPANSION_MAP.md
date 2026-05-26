@@ -3775,6 +3775,25 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-041.2-B1-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-041.3-FRONTEND-SPEC
 
+## A-041.3-FRONTEND-SPEC - Document / Decree / Correspondence Frontend Contract
+
+- source_a0412_b1_commit: d483c59
+- mode: frontend_contract_spec_only
+- selected_vertical: Document / Decree / Correspondence Suite
+- planned_frontend_module: frontend/modules/document-decree-correspondence/
+- planned_route_family: /console/document-decree-correspondence
+- planned_frontend_route_count: 23
+- backend_api_base: /api/admin/document-decree-correspondence
+- backend_route_count_used: 53
+- backend_permission_count_used: 50
+- planned_frontend_test_files_count: 8
+- planned_frontend_test_count: 55-75
+- planned_e2e_spec: frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-041.3-FRONTEND-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_FRONTEND_CONTRACT_REPORT.md
+- next_action_id: A-041.3-FRONTEND
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

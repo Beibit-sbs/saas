@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-041.3-FRONTEND-SPEC
-                - current_stage: A-041.2-B1 complete / document decree correspondence backend runtime quality baseline confirmed
-                - last_completed_action_id: A-041.2-B1
-            - next_action_id: A-041.3-FRONTEND-SPEC
-                - updated_at: 2026-05-26 (A-041.2-B1 verified source runtime commit b9a6188 and runtime recovery commit e476642, confirmed backend runtime artifact inventory (8 module files, migration, 4 tests), revalidated source inventory DDC_TABLE_COUNT=26 DDC_ROUTE_COUNT=53 DDC_PERMISSION_COUNT=50, reran targeted Docker backend tests with ai-backend-tests and observed PASS (121 passed, 1 warning, 0.69s), verified migration create and drop parity PASS 26/26, recorded local import inventory constraint (No module named fastapi), confirmed no-overclaim and no forbidden executable capability, verified no frontend and no Playwright changes, preserved locked metrics and completed_vertical_count=7, and advanced next action to A-041.3-FRONTEND-SPEC)
+          - status: ready_for_A-041.3-FRONTEND
+                - current_stage: A-041.3-FRONTEND-SPEC complete / document decree correspondence frontend contract specified
+                - last_completed_action_id: A-041.3-FRONTEND-SPEC
+            - next_action_id: A-041.3-FRONTEND
+                - updated_at: 2026-05-26 (A-041.3-FRONTEND-SPEC verified source backend baseline commit d483c59 and runtime commits e476642 and b9a6188, confirmed backend contract inputs (API base /api/admin/document-decree-correspondence, route count 53, permission count 50), inspected existing frontend architecture patterns across finance, HR, quality, research, academic operations, and student lifecycle modules, specified frontend contract only for planned module frontend/modules/document-decree-correspondence/ and planned route family /console/document-decree-correspondence with 23 planned routes, specified type, API client, guards, boundary label, page model, test plan, and future E2E preview contracts, preserved strict anti-fake and no-overclaim boundaries, recorded no runtime start and no backend, frontend, or Playwright changes, preserved locked metrics and completed_vertical_count=7, and advanced next action to A-041.3-FRONTEND)
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
@@ -58,6 +58,40 @@
     - final_verdict: A-041.2-B1 CLOSED - DOCUMENT DECREE CORRESPONDENCE BACKEND RUNTIME QUALITY BASELINE CONFIRMED
     - recommended_next_action: A-041.3-FRONTEND-SPEC
     - next_action_id: A-041.3-FRONTEND-SPEC
+- A-041.3-FRONTEND-SPEC execution block:
+    - mode: frontend_contract_spec_only
+    - purpose: specify_document_decree_correspondence_frontend_contract
+    - source_a0412_b1_commit: d483c59
+    - selected_vertical: Document / Decree / Correspondence Suite
+    - planned_frontend_module: frontend/modules/document-decree-correspondence/
+    - planned_route_family: /console/document-decree-correspondence
+    - planned_frontend_route_count: 23
+    - backend_api_base: /api/admin/document-decree-correspondence
+    - backend_route_count_used: 53
+    - backend_permission_count_used: 50
+    - planned_frontend_test_files_count: 8
+    - planned_frontend_test_count: 55-75
+    - planned_e2e_spec: frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts
+    - no_fake_documents: PASS
+    - no_fake_decrees: PASS
+    - no_fake_signature: PASS
+    - no_fake_delivery_confirmation: PASS
+    - no_automatic_rector_decision: PASS
+    - no_automatic_decree_approval: PASS
+    - no_automatic_document_signing: PASS
+    - no_external_submission_claim: PASS
+    - no_official_legal_effect_claim: PASS
+    - no_hidden_staff_or_department_score: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - metrics_unchanged: PASS
+    - report_file: A-041.3-FRONTEND-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_FRONTEND_CONTRACT_REPORT.md
+    - final_verdict: A-041.3-FRONTEND-SPEC CLOSED - DOCUMENT DECREE CORRESPONDENCE FRONTEND CONTRACT SPECIFIED
+    - recommended_next_action: A-041.3-FRONTEND
+    - next_action_id: A-041.3-FRONTEND
 - A-041.1-SPEC execution block:
     - mode: product_map_workflow_spec_only
     - purpose: specify_document_decree_correspondence_suite_product_map

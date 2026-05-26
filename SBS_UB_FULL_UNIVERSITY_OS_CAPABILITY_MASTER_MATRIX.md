@@ -832,6 +832,30 @@ Extension interpretation:
 - report_file: A-041.2-B1-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-041.3-FRONTEND-SPEC
 
+## A-041.3-FRONTEND-SPEC Document / Decree / Correspondence Frontend Contract Note
+
+- source_a0412_b1_commit: d483c59
+- selected_vertical: Document / Decree / Correspondence Suite
+- mode: frontend_contract_spec_only
+- planned_frontend_module: frontend/modules/document-decree-correspondence/
+- planned_route_family: /console/document-decree-correspondence
+- planned_frontend_route_count: 23
+- backend_api_base: /api/admin/document-decree-correspondence
+- backend_route_count_used: 53
+- backend_permission_count_used: 50
+- planned_frontend_test_files_count: 8
+- planned_frontend_test_count: 55-75
+- planned_e2e_spec: frontend/e2e/smoke/a0414-document-decree-correspondence-suite.spec.ts
+- no_fake_documents: PASS
+- no_fake_decrees: PASS
+- no_fake_signature: PASS
+- no_external_submission_claim: PASS
+- no_automatic_rector_decision: PASS
+- no_hidden_staff_or_department_score: PASS
+- metrics_unchanged: PASS
+- report_file: A-041.3-FRONTEND-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_FRONTEND_CONTRACT_REPORT.md
+- next_action_id: A-041.3-FRONTEND
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`
