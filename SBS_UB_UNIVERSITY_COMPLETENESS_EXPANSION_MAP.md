@@ -3585,6 +3585,23 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-040.3-FRONTEND-SPEC-FINANCE_PROCUREMENT_ASSET_FRONTEND_CONTRACT_REPORT.md
 - next_action_id: A-040.3-FRONTEND
 
+## A-040.3-FRONTEND - Finance / Procurement / Asset Frontend Runtime
+
+- source_a0403_frontend_spec_commit: 1834b69
+- mode: frontend_runtime
+- selected_vertical: Finance / Procurement / Asset Suite
+- frontend_module_path: frontend/modules/finance-procurement-asset/
+- route_family: /console/finance-procurement-asset
+- implemented_route_count: 22
+- backend_route_count_used: 53
+- backend_permission_count_used: 48
+- targeted_frontend_test_result: PASS (8 files, 53 passed)
+- typescript_result: PASS (npx tsc --noEmit; TSC_PASS)
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-040.3-FRONTEND-FINANCE_PROCUREMENT_ASSET_FRONTEND_RUNTIME_REPORT.md
+- next_action_id: A-040.3-FRONTEND-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
