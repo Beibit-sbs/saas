@@ -3691,6 +3691,20 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-040.5-B1-FINANCE_PROCUREMENT_ASSET_SUITE_PRODUCT_VERTICAL_CLOSURE_REPORT.md
 - next_action_id: A-041.0-SPEC
 
+## A-041.0-SPEC - Next Product Vertical Selection / Wave 30 Planning
+
+- source_a0405_b1_commit: 1eb2d3f
+- completed_vertical_count: 7
+- mode: product_vertical_selection_spec_only
+- selected_vertical: Document / Decree / Correspondence Suite
+- selected_reason: strongest rectorate-facing value among remaining candidates; existing document/decree/correspondence evidence runway; safe non-live-first planning lane
+- deferred_verticals: Student Services / Campus Life Suite; Security / Access / Compliance Suite; Integration / Provider Readiness Product Suite; AI Brain / Governance Console Suite; Infrastructure / Operations / SRE Suite
+- planned_chain: A-041.1-SPEC -> A-041.2-SPEC/RUNTIME/B1 -> A-041.3-FRONTEND-SPEC/FRONTEND/B1 -> A-041.4-E2E-SPEC/E2E/B1 -> A-041.5-B1
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-041.0-SPEC-NEXT_PRODUCT_VERTICAL_SELECTION_WAVE30_REPORT.md
+- next_action_id: A-041.1-SPEC
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
