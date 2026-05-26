@@ -633,6 +633,24 @@ Extension interpretation:
 - report_file: A-040.3-FRONTEND-B1-FINANCE_PROCUREMENT_ASSET_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-040.4-E2E-SPEC
 
+## A-040.4-E2E-SPEC Finance / Procurement / Asset Browser Validation Plan Note
+
+- source_a0403_frontend_b1_commit: df70019
+- selected_vertical: Finance / Procurement / Asset Suite
+- mode: browser_validation_plan_spec_only
+- future_e2e_spec: frontend/e2e/smoke/a0404-finance-procurement-asset-suite.spec.ts
+- route_coverage_target: 22
+- scenario_group_count: 28
+- docker_nginx_contract: E2E_BASE_URL=https://nginx
+- no_live_bank_integration: PASS
+- no_live_erp_sync: PASS
+- no_payment_execution: PASS
+- no_automatic_procurement_approval: PASS
+- no_hidden_finance_or_vendor_score: PASS
+- metrics_unchanged: PASS
+- report_file: A-040.4-E2E-SPEC-FINANCE_PROCUREMENT_ASSET_BROWSER_VALIDATION_PLAN_REPORT.md
+- next_action_id: A-040.4-E2E
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

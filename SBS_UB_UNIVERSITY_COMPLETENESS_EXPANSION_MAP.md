@@ -3620,6 +3620,22 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-040.3-FRONTEND-B1-FINANCE_PROCUREMENT_ASSET_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-040.4-E2E-SPEC
 
+## A-040.4-E2E-SPEC - Finance / Procurement / Asset Browser Validation Plan
+
+- source_a0403_frontend_b1_commit: df70019
+- mode: browser_validation_plan_spec_only
+- selected_vertical: Finance / Procurement / Asset Suite
+- future_e2e_spec: frontend/e2e/smoke/a0404-finance-procurement-asset-suite.spec.ts
+- route_coverage_target: 22
+- scenario_group_count: 28
+- docker_nginx_contract: E2E_BASE_URL=https://nginx
+- auth_strategy: fake-authenticated finance admin plus restricted user
+- bff_api_stub_strategy: deterministic metadata-only finance-procurement-asset stubs
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-040.4-E2E-SPEC-FINANCE_PROCUREMENT_ASSET_BROWSER_VALIDATION_PLAN_REPORT.md
+- next_action_id: A-040.4-E2E
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
