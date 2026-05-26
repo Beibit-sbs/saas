@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-041.2-SPEC
-                - current_stage: A-041.1-SPEC complete / document decree correspondence product map specified
-                - last_completed_action_id: A-041.1-SPEC
-            - next_action_id: A-041.2-SPEC
-                - updated_at: 2026-05-26 (A-041.1-SPEC verified source commit fd9d172 for the selected Document / Decree / Correspondence Suite, inventoried the existing canonical backend, frontend, route, and test anchors, reviewed the prior A-032 scoped slice for reuse without counting it as an A-041 closed vertical, defined the product map, role model, 19 workflow groups, 26 capability families, backend preview, frontend preview, E2E preview, bridge model, evidence, audit, and archive model, defined signature-readiness and delivery-readiness as explicit non-live boundaries, preserved canonical reuse first with backend/app/modules/document_decree_correspondence/ only if needed, preserved no fake documents, no fake decrees, no fake signature, no fake delivery confirmation, no automatic rector decision, no automatic decree approval, no external submission claim, no hidden staff or department score, preserved spec-only scope with no runtime started, no backend changes, no frontend changes, and no Playwright changes, preserved locked metrics, and advanced the next action to A-041.2-SPEC)
+          - status: ready_for_A-041.2-RUNTIME
+                - current_stage: A-041.2-SPEC complete / document decree correspondence backend contract specified
+                - last_completed_action_id: A-041.2-SPEC
+            - next_action_id: A-041.2-RUNTIME
+                - updated_at: 2026-05-26 (A-041.2-SPEC verified source commit f85706c for the selected Document / Decree / Correspondence Suite, confirmed the tracker handoff from A-041.1-SPEC, inspected the existing canonical backend modules and A-032 scoped slice evidence, chose canonical reuse first with backend/app/modules/document_decree_correspondence/ allowed only if needed, defined the backend domain, 26 planned ddc_ wrapper tables, 53 fail-closed API routes, 50 permissions under document_decree_correspondence.*, service and repository contract, audit/evidence/archive model, signature-readiness and delivery-readiness boundaries, bridge model, and future runtime acceptance criteria, preserved no fake documents, no fake decrees, no fake signature, no fake delivery confirmation, no automatic rector decision, no automatic decree approval, no automatic document signing, no external submission claim, no official legal effect claim, no hidden staff or department score, preserved spec-only scope with no runtime started, no backend changes, no frontend changes, and no Playwright changes, preserved locked metrics, and advanced the next action to A-041.2-RUNTIME)
 - A-041.1-SPEC execution block:
     - mode: product_map_workflow_spec_only
     - purpose: specify_document_decree_correspondence_suite_product_map
@@ -37,6 +37,40 @@
     - final_verdict: A-041.1-SPEC CLOSED - DOCUMENT DECREE CORRESPONDENCE PRODUCT MAP SPECIFIED
     - recommended_next_action: A-041.2-SPEC
     - next_action_id: A-041.2-SPEC
+- A-041.2-SPEC execution block:
+    - mode: backend_domain_db_api_contract_spec_only
+    - purpose: specify_document_decree_correspondence_backend_contract
+    - source_a0411_spec_commit: f85706c
+    - selected_vertical: Document / Decree / Correspondence Suite
+    - backend_architecture: canonical reuse first; wrapper backend/app/modules/document_decree_correspondence/ allowed if needed
+    - canonical_backend_modules: document_workflow, order_decree_registry, incoming_outgoing_correspondence, document_template_library, rector_resolution_tracking_workflow, committee_decision_registry
+    - a032_scoped_slice_reuse_reviewed: PASS
+    - planned_wrapper_table_count: 26
+    - planned_api_route_count: 53
+    - planned_permission_count: 50
+    - permission_namespace: document_decree_correspondence.*
+    - planned_runtime_module_files: 8
+    - planned_migration_prefix: ddc_
+    - no_fake_documents: PASS
+    - no_fake_decrees: PASS
+    - no_fake_signature: PASS
+    - no_fake_delivery_confirmation: PASS
+    - no_automatic_rector_decision: PASS
+    - no_automatic_decree_approval: PASS
+    - no_automatic_document_signing: PASS
+    - no_external_submission_claim: PASS
+    - no_official_legal_effect_claim: PASS
+    - no_hidden_staff_or_department_score: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - metrics_unchanged: PASS
+    - report_file: A-041.2-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+    - final_verdict: A-041.2-SPEC CLOSED - DOCUMENT DECREE CORRESPONDENCE BACKEND CONTRACT SPECIFIED
+    - recommended_next_action: A-041.2-RUNTIME
+    - next_action_id: A-041.2-RUNTIME
 - A-040.4-E2E-SPEC execution block:
     - mode: browser_validation_plan_spec_only
     - purpose: specify_finance_procurement_asset_browser_validation_plan

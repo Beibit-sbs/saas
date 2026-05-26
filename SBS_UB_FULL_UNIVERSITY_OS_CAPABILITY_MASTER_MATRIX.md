@@ -756,6 +756,27 @@ Extension interpretation:
 - report_file: A-041.1-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_SUITE_PRODUCT_MAP_WORKFLOW_REPORT.md
 - next_action_id: A-041.2-SPEC
 
+## A-041.2-SPEC Document / Decree / Correspondence Backend Contract Note
+
+- source_a0411_spec_commit: f85706c
+- selected_vertical: Document / Decree / Correspondence Suite
+- mode: backend_domain_db_api_contract_spec_only
+- backend_architecture: canonical reuse first; wrapper if needed
+- planned_wrapper_table_count: 26
+- planned_api_route_count: 53
+- planned_permission_count: 50
+- permission_namespace: document_decree_correspondence.*
+- a032_scoped_slice_reuse_reviewed: PASS
+- no_fake_documents: PASS
+- no_fake_decrees: PASS
+- no_fake_signature: PASS
+- no_external_submission_claim: PASS
+- no_automatic_rector_decision: PASS
+- no_hidden_staff_or_department_score: PASS
+- metrics_unchanged: PASS
+- report_file: A-041.2-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+- next_action_id: A-041.2-RUNTIME
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`
