@@ -566,6 +566,26 @@ Extension interpretation:
 - report_file: A-040.2-B1-FINANCE_PROCUREMENT_ASSET_BACKEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-040.3-FRONTEND-SPEC
 
+## A-040.3-FRONTEND-SPEC Finance / Procurement / Asset Frontend Contract Note
+
+- source_a0402_b1_commit: 0453fbd
+- selected_vertical: Finance / Procurement / Asset Suite
+- mode: frontend_contract_spec_only
+- planned_frontend_module: frontend/modules/finance-procurement-asset/
+- planned_route_family: /console/finance-procurement-asset
+- planned_route_count: 22
+- backend_api_base: /api/admin/finance-procurement-asset
+- backend_route_count_used: 53
+- backend_permission_count_used: 48
+- no_live_bank_integration_ui: PASS
+- no_live_erp_sync_ui: PASS
+- no_payment_execution_ui: PASS
+- no_automatic_procurement_approval_ui: PASS
+- no_hidden_finance_or_vendor_score_ui: PASS
+- metrics_unchanged: PASS
+- report_file: A-040.3-FRONTEND-SPEC-FINANCE_PROCUREMENT_ASSET_FRONTEND_CONTRACT_REPORT.md
+- next_action_id: A-040.3-FRONTEND
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

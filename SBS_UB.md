@@ -1,9 +1,41 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-040.3-FRONTEND-SPEC
-                - current_stage: A-040.2-B1 complete / finance procurement asset backend runtime quality baseline confirmed
-                - last_completed_action_id: A-040.2-B1
-            - next_action_id: A-040.3-FRONTEND-SPEC
-                - updated_at: 2026-05-26 (A-040.2-B1 verified source-of-truth handoff from A-040.2-RUNTIME commit 0394414, confirmed runtime artifact inventory for backend/app/modules/finance_procurement_asset/, the A-040.2 migration, the A-040.2 runtime report, and the 4 focused backend test files, reran the targeted Docker validation pack with 48 passed and 1 warning, reconfirmed exact runtime inventories of 53 routes, 24 tables, and 48 permissions, reconfirmed no frontend changes, no Playwright changes, no live bank integration, no live ERP/1C sync, no payment execution, no automatic procurement approval, no automatic budget approval, no automatic vendor award, no official tax or regulatory filing, no hidden finance or vendor score, preserved baseline maturity metrics, and advanced the next action to A-040.3-FRONTEND-SPEC)
+          - status: ready_for_A-040.3-FRONTEND
+                - current_stage: A-040.3-FRONTEND-SPEC complete / finance procurement asset frontend contract specified
+                - last_completed_action_id: A-040.3-FRONTEND-SPEC
+            - next_action_id: A-040.3-FRONTEND
+                - updated_at: 2026-05-26 (A-040.3-FRONTEND-SPEC verified source-of-truth handoff from A-040.2-B1 commit 0453fbd, inspected established frontend suite module patterns, derived the future finance procurement asset frontend contract from the confirmed backend runtime and baseline, specified frontend/modules/finance-procurement-asset/ with 7 planned module files, specified /console/finance-procurement-asset with 22 planned routes, aligned the future API client to /api/admin/finance-procurement-asset using the confirmed backend counts of 53 routes and 48 permissions, specified 8 future frontend test files with an expected range of 50-70 tests, specified the future smoke spec frontend/e2e/smoke/a0404-finance-procurement-asset-suite.spec.ts, preserved no live bank integration UI, no live ERP/1C sync UI, no payment execution UI, no automatic procurement approval UI, no automatic budget approval UI, no automatic vendor award UI, no hidden finance or vendor score UI, preserved no production, sales, GCC, L5, or L6 claim, kept the action docs-only with no backend changes, no frontend changes, no Playwright changes, and advanced the next action to A-040.3-FRONTEND)
+- A-040.3-FRONTEND-SPEC execution block:
+    - mode: frontend_contract_spec_only
+    - purpose: specify_finance_procurement_asset_frontend_contract
+    - source_a0402_b1_commit: 0453fbd
+    - source_a0402_runtime_commit: 0394414
+    - selected_vertical: Finance / Procurement / Asset Suite
+    - planned_frontend_module: frontend/modules/finance-procurement-asset/
+    - planned_route_family: /console/finance-procurement-asset
+    - planned_route_count: 22
+    - backend_api_base: /api/admin/finance-procurement-asset
+    - backend_route_count_used: 53
+    - backend_permission_count_used: 48
+    - planned_frontend_test_files: 8
+    - planned_frontend_test_count: 50-70
+    - planned_e2e_spec: frontend/e2e/smoke/a0404-finance-procurement-asset-suite.spec.ts
+    - no_live_bank_integration_ui: PASS
+    - no_live_erp_sync_ui: PASS
+    - no_payment_execution_ui: PASS
+    - no_automatic_procurement_approval_ui: PASS
+    - no_automatic_budget_approval_ui: PASS
+    - no_automatic_vendor_award_ui: PASS
+    - no_hidden_finance_or_vendor_score_ui: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - metrics_unchanged: PASS
+    - report_file: A-040.3-FRONTEND-SPEC-FINANCE_PROCUREMENT_ASSET_FRONTEND_CONTRACT_REPORT.md
+    - final_verdict: A-040.3-FRONTEND-SPEC CLOSED - FINANCE PROCUREMENT ASSET FRONTEND CONTRACT SPECIFIED
+    - recommended_next_action: A-040.3-FRONTEND
+    - next_action_id: A-040.3-FRONTEND
 - A-040.2-B1 execution block:
     - mode: validation_reporting_only / backend_runtime_quality_baseline
     - purpose: confirm_finance_procurement_asset_backend_runtime_quality_baseline
