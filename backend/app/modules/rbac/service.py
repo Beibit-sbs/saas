@@ -375,6 +375,89 @@ _QUALITY_ACCREDITATION_AUDITOR_PERMISSIONS: Set[str] = {
     "quality_accreditation.status_history.read",
 }
 
+_FINANCE_PROCUREMENT_ASSET_PERMISSIONS: Set[str] = {
+    "finance_procurement_asset.overview.read",
+    "finance_procurement_asset.readiness.read",
+    "finance_procurement_asset.limitations.read",
+    "finance_procurement_asset.dashboard.read",
+    "finance_procurement_asset.billing.read",
+    "finance_procurement_asset.billing.evidence",
+    "finance_procurement_asset.receivables.read",
+    "finance_procurement_asset.budget_plans.read",
+    "finance_procurement_asset.budget_plans.manage",
+    "finance_procurement_asset.budget_controls.read",
+    "finance_procurement_asset.budget_controls.review",
+    "finance_procurement_asset.procurement_requests.read",
+    "finance_procurement_asset.procurement_requests.manage",
+    "finance_procurement_asset.procurement_reviews.read",
+    "finance_procurement_asset.procurement_reviews.review",
+    "finance_procurement_asset.vendors.read",
+    "finance_procurement_asset.vendors.manage",
+    "finance_procurement_asset.contracts.read",
+    "finance_procurement_asset.contracts.evidence",
+    "finance_procurement_asset.purchase_requests.read",
+    "finance_procurement_asset.purchase_requests.manage",
+    "finance_procurement_asset.purchase_orders.read",
+    "finance_procurement_asset.purchase_orders.metadata",
+    "finance_procurement_asset.assets.read",
+    "finance_procurement_asset.assets.metadata",
+    "finance_procurement_asset.asset_lifecycle.read",
+    "finance_procurement_asset.asset_lifecycle.manage",
+    "finance_procurement_asset.inventory_movements.read",
+    "finance_procurement_asset.inventory_movements.metadata",
+    "finance_procurement_asset.payment_readiness.read",
+    "finance_procurement_asset.payment_readiness.evidence",
+    "finance_procurement_asset.erp_readiness.read",
+    "finance_procurement_asset.erp_readiness.evidence",
+    "finance_procurement_asset.bank_readiness.read",
+    "finance_procurement_asset.bank_readiness.evidence",
+    "finance_procurement_asset.payment_gateway_readiness.read",
+    "finance_procurement_asset.payment_gateway_readiness.evidence",
+    "finance_procurement_asset.provider_readiness.read",
+    "finance_procurement_asset.provider_readiness.evidence",
+    "finance_procurement_asset.audit.read",
+    "finance_procurement_asset.audit.write",
+    "finance_procurement_asset.evidence.read",
+    "finance_procurement_asset.evidence.write",
+    "finance_procurement_asset.bridges.executive.read",
+    "finance_procurement_asset.bridges.hr_payroll.read",
+    "finance_procurement_asset.bridges.document_contracts.read",
+    "finance_procurement_asset.bridges.provider_readiness.read",
+    "finance_procurement_asset.metadata.read",
+}
+
+_FINANCE_PROCUREMENT_ASSET_AUDITOR_PERMISSIONS: Set[str] = {
+    "finance_procurement_asset.overview.read",
+    "finance_procurement_asset.readiness.read",
+    "finance_procurement_asset.limitations.read",
+    "finance_procurement_asset.dashboard.read",
+    "finance_procurement_asset.billing.read",
+    "finance_procurement_asset.receivables.read",
+    "finance_procurement_asset.budget_plans.read",
+    "finance_procurement_asset.budget_controls.read",
+    "finance_procurement_asset.procurement_requests.read",
+    "finance_procurement_asset.procurement_reviews.read",
+    "finance_procurement_asset.vendors.read",
+    "finance_procurement_asset.contracts.read",
+    "finance_procurement_asset.purchase_requests.read",
+    "finance_procurement_asset.purchase_orders.read",
+    "finance_procurement_asset.assets.read",
+    "finance_procurement_asset.asset_lifecycle.read",
+    "finance_procurement_asset.inventory_movements.read",
+    "finance_procurement_asset.payment_readiness.read",
+    "finance_procurement_asset.erp_readiness.read",
+    "finance_procurement_asset.bank_readiness.read",
+    "finance_procurement_asset.payment_gateway_readiness.read",
+    "finance_procurement_asset.provider_readiness.read",
+    "finance_procurement_asset.audit.read",
+    "finance_procurement_asset.evidence.read",
+    "finance_procurement_asset.bridges.executive.read",
+    "finance_procurement_asset.bridges.hr_payroll.read",
+    "finance_procurement_asset.bridges.document_contracts.read",
+    "finance_procurement_asset.bridges.provider_readiness.read",
+    "finance_procurement_asset.metadata.read",
+}
+
 BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     "superadmin": {
         "admin.dashboard.read",
@@ -457,7 +540,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _STUDENT_LIFECYCLE_PERMISSIONS
     | _ACADEMIC_OPERATIONS_PERMISSIONS
     | _RESEARCH_SCIENCE_PERMISSIONS
-    | _QUALITY_ACCREDITATION_PERMISSIONS,
+    | _QUALITY_ACCREDITATION_PERMISSIONS
+    | _FINANCE_PROCUREMENT_ASSET_PERMISSIONS,
     "admin": {
         "admin.dashboard.read",
         "admin.expansion.read",
@@ -541,7 +625,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _STUDENT_LIFECYCLE_PERMISSIONS
     | _ACADEMIC_OPERATIONS_PERMISSIONS
     | _RESEARCH_SCIENCE_PERMISSIONS
-    | _QUALITY_ACCREDITATION_PERMISSIONS,
+    | _QUALITY_ACCREDITATION_PERMISSIONS
+    | _FINANCE_PROCUREMENT_ASSET_PERMISSIONS,
     "auditor": {
         "admin.audit.read",
         "admin.dashboard.read",
@@ -563,7 +648,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _CANONICAL_AUDITOR_PERMISSIONS
     | _ACADEMIC_OPERATIONS_AUDITOR_PERMISSIONS
     | _RESEARCH_SCIENCE_AUDITOR_PERMISSIONS
-    | _QUALITY_ACCREDITATION_AUDITOR_PERMISSIONS,
+    | _QUALITY_ACCREDITATION_AUDITOR_PERMISSIONS
+    | _FINANCE_PROCUREMENT_ASSET_AUDITOR_PERMISSIONS,
     "student": {
         "enrollments.read",
         "grades.read",

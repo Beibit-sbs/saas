@@ -3537,6 +3537,22 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-040.2-SPEC-FINANCE_PROCUREMENT_ASSET_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
 - next_action_id: A-040.2-RUNTIME
 
+## A-040.2-RUNTIME - Finance / Procurement / Asset Backend Runtime
+
+- source_a0402_spec_commit: c9df3fa
+- mode: backend_runtime
+- selected_vertical: Finance / Procurement / Asset Suite
+- backend_module_path: backend/app/modules/finance_procurement_asset/
+- migration_file: backend/alembic/versions/fpa40a2rt01_a0402_finance_procurement_asset_tables.py
+- implemented_table_count: 24
+- implemented_route_count: 53
+- implemented_permission_count: 48
+- targeted_backend_test_result: PASS (48 passed, 1 warning)
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-040.2-RUNTIME-FINANCE_PROCUREMENT_ASSET_BACKEND_RUNTIME_REPORT.md
+- next_action_id: A-040.2-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

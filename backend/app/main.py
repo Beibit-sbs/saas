@@ -135,6 +135,7 @@ from app.modules.student_lifecycle.router import router as student_lifecycle_rou
 from app.modules.research_science.router import router as research_science_router
 from app.modules.quality_accreditation.router import router as quality_accreditation_router
 from app.modules.hr_staff_governance.router import router as hr_staff_governance_router
+from app.modules.finance_procurement_asset.router import router as finance_procurement_asset_router
 from app.modules.rector_assignment_workflow.router import router as rector_assignment_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.interventions.router import router as interventions_router
@@ -319,6 +320,8 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.student_lifecycle_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.research_science_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.quality_accreditation_session_factory = make_session_factory(_admissions_engine)
+        fastapi_app.state.hr_staff_governance_session_factory = make_session_factory(_admissions_engine)
+        fastapi_app.state.finance_procurement_asset_session_factory = make_session_factory(_admissions_engine)
         logger.info("admissions database engine initialised (pool_size=5, max_overflow=10)")
     except RuntimeError as exc:
         fastapi_app.state.admissions_engine = None
@@ -332,6 +335,8 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.student_lifecycle_session_factory = None
         fastapi_app.state.research_science_session_factory = None
         fastapi_app.state.quality_accreditation_session_factory = None
+        fastapi_app.state.hr_staff_governance_session_factory = None
+        fastapi_app.state.finance_procurement_asset_session_factory = None
         logger.warning(
             "admissions database not configured — admissions endpoints will return HTTP 503. "
             "Reason: %s",
@@ -483,6 +488,7 @@ app.include_router(student_lifecycle_router)
 app.include_router(research_science_router)
 app.include_router(quality_accreditation_router)
 app.include_router(hr_staff_governance_router)
+app.include_router(finance_procurement_asset_router)
 
 
 def _register_optional_routers(fastapi_app: FastAPI) -> None:
