@@ -390,6 +390,23 @@ Extension interpretation:
 - report_file: A-039.4-E2E-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_REPORT.md
 - next_action_id: A-039.4-E2E.R2
 
+## A-039.4-E2E.R2 HR / Staff Governance Route-Title Sweep Isolation Note
+
+- source_a0394_r1_commit: c56cfde
+- remediation_scope: E2E spec route-title isolation only
+- route_title_isolation_result: PASS (route-title groups A-D passed 4/4 in 1.4m under Docker/nginx Chromium)
+- typescript_result: PASS
+- targeted_frontend_result: PASS (8 files, 54 tests)
+- route_inventory_result: PASS 20/20
+- full_chromium_result: BLOCKED (clean full Docker/nginx rerun advanced through route-title groups A-D but did not produce an authoritative terminal summary)
+- route_coverage_result: BLOCKED_IN_FLIGHT_AFTER_ROUTE_TITLE_GROUPS
+- root_cause_classification: FULL_SUITE_RUNTIME_STABILITY_BLOCKER
+- no_backend_changes: PASS
+- no_frontend_runtime_changes: PASS
+- metrics_unchanged: PASS
+- report_file: A-039.4-E2E-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_REPORT.md
+- next_action_id: A-039.4-E2E.R3
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

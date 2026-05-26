@@ -3412,6 +3412,24 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - final_verdict: A-039.4-E2E BLOCKED - HR STAFF GOVERNANCE BROWSER VALIDATION RUNTIME FAILED MOUNTED CHROMIUM RUN
 - next_action_id: A-039.4-E2E.R1
 
+## A-039.4-E2E.R2 - HR / Staff Governance Suite Route-Title Sweep Isolation
+
+- source_a0394_r1_commit: c56cfde
+- remediation_scope: E2E spec route-title isolation only
+- route_title_isolation_result: PASS (route-title groups A-D passed 4/4 in 1.4m under Docker/nginx Chromium)
+- typescript_result: PASS
+- targeted_frontend_result: PASS (8 files, 54 tests)
+- route_inventory_result: PASS 20/20
+- full_chromium_result: BLOCKED (clean full Docker/nginx rerun advanced through route-title groups A-D but did not produce an authoritative terminal summary)
+- route_coverage_result: BLOCKED_IN_FLIGHT_AFTER_ROUTE_TITLE_GROUPS
+- root_cause_classification: FULL_SUITE_RUNTIME_STABILITY_BLOCKER
+- no_backend_changes: PASS
+- no_frontend_runtime_changes: PASS
+- anti_fake_boundaries: preserved
+- report_file: A-039.4-E2E-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_REPORT.md
+- final_verdict: A-039.4-E2E.R2 BLOCKED - FULL SUITE RUNTIME STABILITY BLOCKER AFTER ROUTE-TITLE ISOLATION PASSED
+- next_action_id: A-039.4-E2E.R3
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

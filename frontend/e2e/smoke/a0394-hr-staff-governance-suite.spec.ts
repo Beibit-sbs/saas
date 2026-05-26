@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Browser, type Page, type Route } from '@playwright/test';
 
 const API_BASE = '/api/admin/hr-staff-governance';
 const BFF_BASE = '/api/bff/admin/hr-staff-governance';
@@ -605,6 +605,13 @@ const HR_ROUTES = [
   },
 ] as const;
 
+const ROUTE_TITLE_GROUPS = [
+  { label: 'A', routes: HR_ROUTES.slice(0, 5) },
+  { label: 'B', routes: HR_ROUTES.slice(5, 10) },
+  { label: 'C', routes: HR_ROUTES.slice(10, 15) },
+  { label: 'D', routes: HR_ROUTES.slice(15, 20) },
+] as const;
+
 if (HR_ROUTES.length !== 20) {
   throw new Error(`HR browser route flow must stay at 20, received ${HR_ROUTES.length}`);
 }
@@ -916,6 +923,22 @@ async function openAndAssertRoute(page: Page, route: (typeof HR_ROUTES)[number])
   await expectForbiddenDomAbsent(page);
 }
 
+async function visitRouteTitleWithFreshPage(browser: Browser, route: (typeof HR_ROUTES)[number]) {
+  const page = await browser.newPage({ ignoreHTTPSErrors: true });
+
+  try {
+    page.setDefaultTimeout(15_000);
+    page.setDefaultNavigationTimeout(15_000);
+    await setAuthenticatedHrAdmin(page);
+    await gotoHrRoute(page, route.path);
+    await expectRouteShell(page, route.title);
+    await expectCommonRuntimeSafety(page);
+    await expectForbiddenDomAbsent(page);
+  } finally {
+    await page.close();
+  }
+}
+
 test.describe('A-039.4 HR / Staff Governance route coverage', () => {
   test.describe.configure({ timeout: 180_000 });
 
@@ -932,14 +955,15 @@ test.describe('A-039.4 HR / Staff Governance route coverage', () => {
     }
   });
 
-  test('each route shows route-specific title', async ({ page }) => {
-    await setAuthenticatedHrAdmin(page);
-
-    for (const route of HR_ROUTES) {
-      await gotoHrRoute(page, route.path);
-      await expect(page.getByRole('heading', { name: route.title, level: 1 })).toBeVisible();
-    }
-  });
+  for (const group of ROUTE_TITLE_GROUPS) {
+    test(`route-title group ${group.label} shows route-specific titles`, async ({ browser }) => {
+      for (const route of group.routes) {
+        await test.step(`route-title ${route.key} ${route.path} -> ${route.title}`, async () => {
+          await visitRouteTitleWithFreshPage(browser, route);
+        });
+      }
+    });
+  }
 
   test('each route shows at least one HR boundary label or the no-overclaim footer', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
