@@ -1,0 +1,1 @@
+export { HrStaffGovernanceFacultyProfilePage as default } from '@/modules/hr-staff-governance/pages';

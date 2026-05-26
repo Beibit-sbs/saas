@@ -293,6 +293,29 @@ Extension interpretation:
 - report_file: A-039.3-FRONTEND-SPEC-HR_STAFF_GOVERNANCE_SUITE_FRONTEND_CONTRACT_REPORT.md
 - next_action_id: A-039.3-FRONTEND
 
+## A-039.3-FRONTEND HR / Staff Governance Frontend Runtime Note
+
+- source_a0393_frontend_spec_commit: 4fa0ff0
+- source_a0392_b1_commit: c72e6c0
+- selected_vertical: HR / Staff Governance Suite
+- mode: frontend_runtime_only
+- frontend_module_path: frontend/modules/hr-staff-governance/
+- module_files_count: 7
+- route_family: /console/hr-staff-governance
+- route_count: 20
+- api_base: /api/admin/hr-staff-governance
+- backend_route_count_used: 62
+- backend_permission_count_used: 56
+- targeted_frontend_tests: PASS (8 files, 54 tests)
+- typescript_validation: PASS
+- route_inventory_result: PASS (20 route files)
+- no_overclaim_result: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_AND_FORBIDDEN_LIST_REFERENCES_ONLY
+- backend_non_change_result: PASS (backend/.coverage only; no backend source changes)
+- no_playwright_changes: PASS
+- metrics_unchanged: PASS
+- report_file: A-039.3-FRONTEND-HR_STAFF_GOVERNANCE_SUITE_FRONTEND_RUNTIME_REPORT.md
+- next_action_id: A-039.3-FRONTEND-B1
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

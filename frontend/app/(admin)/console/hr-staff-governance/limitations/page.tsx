@@ -1,0 +1,1 @@
+export { HrStaffGovernanceLimitationsPage as default } from '@/modules/hr-staff-governance/pages';
