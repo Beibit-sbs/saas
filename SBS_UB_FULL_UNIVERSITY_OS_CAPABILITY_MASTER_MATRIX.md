@@ -339,6 +339,26 @@ Extension interpretation:
 - report_file: A-039.3-FRONTEND-B1-HR_STAFF_GOVERNANCE_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-039.4-E2E-SPEC
 
+## A-039.4-E2E-SPEC HR / Staff Governance Browser Validation Plan Note
+
+- source_a0393_frontend_b1_commit: 2ebeb84
+- selected_vertical: HR / Staff Governance Suite
+- mode: browser_validation_plan_spec_only
+- future_e2e_spec: frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts
+- browser_route_coverage_target: 20
+- scenario_group_count: 21
+- docker_nginx_contract: E2E_BASE_URL=https://nginx
+- no_playwright_runtime_created: PASS
+- no_frontend_changes: PASS
+- no_backend_changes: PASS
+- no_provider_live_sync: PASS
+- no_payroll_execution: PASS
+- no_automatic_hr_decision: PASS
+- no_hidden_score: PASS
+- metrics_unchanged: PASS
+- report_file: A-039.4-E2E-SPEC-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_PLAN_REPORT.md
+- next_action_id: A-039.4-E2E
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

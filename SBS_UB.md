@@ -1,9 +1,10 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-039.4-E2E-SPEC
-                - current_stage: A-039.3-FRONTEND-B1 complete / HR staff governance frontend runtime quality baseline confirmed
-                - last_completed_action_id: A-039.3-FRONTEND-B1
-            - next_action_id: A-039.4-E2E-SPEC
-                - updated_at: 2026-05-26 (A-039.3-FRONTEND-B1 validated the committed HR / Staff Governance Suite frontend runtime from 32e5bb0 in reporting-only scope, confirmed the runtime still consists of 7 module files, 20 admin route pages, and 8 targeted frontend test files, confirmed static safety flags and metadata/evidence/human-review-only posture, reran frontend TypeScript validation and the exact targeted Vitest pack at 8 files / 54 tests with PASS results, confirmed route inventory PASS at 20, confirmed the no-overclaim scan only matched expected negative-boundary and forbidden-label references, confirmed no backend source changes beyond pre-existing backend/.coverage dirt and no Playwright changes, preserved baseline and expansion metrics unchanged including completed_vertical_count=5, added no runtime code, added no backend changes, added no Playwright changes, and advanced the next action to A-039.4-E2E-SPEC)
+          - status: ready_for_A-039.4-E2E
+                - current_stage: A-039.4-E2E-SPEC complete / HR staff governance browser validation plan specified
+                - last_completed_action_id: A-039.4-E2E-SPEC
+            - next_action_id: A-039.4-E2E
+                - updated_at: 2026-05-26 (A-039.4-E2E-SPEC documented the browser validation plan for the HR / Staff Governance Suite in spec-only scope, anchored the future Playwright path at frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts, fixed the browser route coverage target at 20 routes and the scenario-group count at 21, defined Docker/Nginx-only execution through E2E_BASE_URL=https://nginx, defined the fake-authenticated HR admin plus restricted-user auth strategy, defined deterministic metadata-only BFF/API stubs and fixture groups, defined positive boundary assertions, negative DOM/no-overclaim assertions, permission-denial smoke, and future runtime acceptance criteria, created no Playwright runtime, created no E2E spec file, ran no browser tests, changed no frontend runtime, changed no backend runtime, preserved all baseline and expansion metrics unchanged, and advanced the next action to A-039.4-E2E)
+- A-039.3-FRONTEND execution block:
 - A-039.3-FRONTEND execution block:
 - A-039.3-FRONTEND execution block:
     - mode: frontend_runtime_only
@@ -68,6 +69,34 @@
     - final_verdict: A-039.3-FRONTEND-B1 CLOSED - HR STAFF GOVERNANCE FRONTEND RUNTIME QUALITY BASELINE CONFIRMED
     - recommended_next_action: A-039.4-E2E-SPEC
     - next_action_id: A-039.4-E2E-SPEC
+- A-039.4-E2E-SPEC execution block:
+    - mode: browser_validation_plan_spec_only
+    - purpose: specify_hr_staff_governance_browser_validation_plan
+    - source_of_truth_check: PASS (A-039.3-FRONTEND-B1 commit 2ebeb84 verified; source status before A-039.4-E2E-SPEC was ready_for_A-039.4-E2E-SPEC)
+    - source_a0393_frontend_b1_commit: 2ebeb84
+    - source_a0393_frontend_commit: 32e5bb0
+    - selected_vertical: HR / Staff Governance Suite
+    - future_e2e_spec: frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts
+    - browser_route_coverage_target: 20
+    - scenario_group_count: 21
+    - docker_nginx_contract: E2E_BASE_URL=https://nginx
+    - auth_stub_strategy: fake-authenticated HR admin plus restricted user
+    - bff_api_stub_strategy: deterministic metadata-only /api/admin/hr-staff-governance/* stubs
+    - no_playwright_runtime_created: PASS
+    - no_e2e_spec_created: PASS
+    - no_frontend_changes: PASS
+    - no_backend_changes: PASS
+    - no_browser_tests_run: PASS
+    - no_provider_live_sync: PASS
+    - no_payroll_execution: PASS
+    - no_automatic_hr_decision: PASS
+    - no_hidden_score: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11; brain_governance_foundation_count=5; completed_vertical_count=5)
+    - report_file: A-039.4-E2E-SPEC-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_PLAN_REPORT.md
+    - final_verdict: A-039.4-E2E-SPEC CLOSED - HR STAFF GOVERNANCE BROWSER VALIDATION PLAN SPECIFIED
+    - recommended_next_action: A-039.4-E2E
+    - next_action_id: A-039.4-E2E
 - latest_runtime_reconciliation: A-026.3-RUNTIME (8 L0/L1→L2 modules) + A-026.3.B3 (4 A-024 L2→L3) + A-026.3.B4 (4 A-024 L3→L4) + A-026.4-RUNTIME (8 L2→L3 deterministic logic) + A-026.4.B1 (partial Docker/pytest evidence) + A-026.4.B2.R1 (full targeted and continuity pytest pass) + A-026.5-RUNTIME (6 L3→L4 operational visibility modules with full targeted+continuity evidence) + A-026.6-SPEC (planning-only L4→L5-readiness batch definition) + A-026.6-RUNTIME (4 L4→L5 evidence/governance/KPI/Brain-readiness modules) + A-026.10-RUNTIME (13 final L2→L3 deterministic service logic modules)
 - decomposition_status: SBS_UB.md authoritative; split docs are SUPPORTING DRAFTS ONLY — anti-loss audit pending
 - maturity_metrics: L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150, arithmetic_check=PASS, maturity_arithmetic_check=PASS

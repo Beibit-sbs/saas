@@ -3377,6 +3377,22 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-039.3-FRONTEND-B1-HR_STAFF_GOVERNANCE_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-039.4-E2E-SPEC
 
+## A-039.4-E2E-SPEC - HR / Staff Governance Suite Browser Validation Plan
+
+- source_a0393_frontend_b1_commit: 2ebeb84
+- mode: browser_validation_plan_spec_only
+- selected_vertical: HR / Staff Governance Suite
+- future_e2e_spec: frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts
+- browser_route_coverage_target: 20
+- scenario_group_count: 21
+- docker_nginx_contract: E2E_BASE_URL=https://nginx
+- auth_stub_strategy: fake-authenticated HR admin plus restricted user
+- bff_api_stub_strategy: deterministic metadata-only /api/admin/hr-staff-governance/* stubs
+- anti_fake_boundaries: no fake HR data; no fake payroll data; no automatic hiring/firing UI; no automatic HR disciplinary UI; no automatic leave approval/rejection UI; no payroll execution UI; no provider live sync UI; no autonomous access revocation UI; no hidden employee/faculty score UI; no production/sales/GCC/L5/L6 claim
+- metrics_unchanged: PASS
+- report_file: A-039.4-E2E-SPEC-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_PLAN_REPORT.md
+- next_action_id: A-039.4-E2E
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
