@@ -3430,6 +3430,24 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - final_verdict: A-039.4-E2E.R2 BLOCKED - FULL SUITE RUNTIME STABILITY BLOCKER AFTER ROUTE-TITLE ISOLATION PASSED
 - next_action_id: A-039.4-E2E.R3
 
+## A-039.4-E2E.R3 - HR / Staff Governance Suite Full Suite Stability Isolation
+
+- source_a0394_r2_commit: 3f176ce
+- remediation_scope: E2E spec group isolation only
+- group_00_05_result: PASS (9/9 in 2.8m)
+- group_06_09_result: PASS (11/11 in 3.0m)
+- group_10_13_result: PASS (10/10 in 1.1m)
+- group_14_17_result: PASS (11/11 in 2.3m)
+- full_chromium_result: PASS (41/41 in 9.0m)
+- route_coverage_result: PASS 20/20
+- root_cause_classification: FULL_SUITE_AGGREGATION_STABILITY_BLOCKER_RESOLVED_BY_GROUP_SPLITTING_AND_FRESH_PAGE_ISOLATION
+- no_backend_changes: PASS
+- no_frontend_runtime_changes: PASS
+- anti_fake_boundaries: preserved
+- report_file: A-039.4-E2E-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_REPORT.md
+- final_verdict: A-039.4-E2E CLOSED - HR STAFF GOVERNANCE BROWSER VALIDATION RUNTIME CONFIRMED AFTER R3
+- next_action_id: A-039.4-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

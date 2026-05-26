@@ -923,7 +923,7 @@ async function openAndAssertRoute(page: Page, route: (typeof HR_ROUTES)[number])
   await expectForbiddenDomAbsent(page);
 }
 
-async function visitRouteTitleWithFreshPage(browser: Browser, route: (typeof HR_ROUTES)[number]) {
+async function visitRouteWithFreshPage(browser: Browser, route: (typeof HR_ROUTES)[number]) {
   const page = await browser.newPage({ ignoreHTTPSErrors: true });
 
   try {
@@ -939,188 +939,216 @@ async function visitRouteTitleWithFreshPage(browser: Browser, route: (typeof HR_
   }
 }
 
+async function expectBoundaryFooterForRoute(browser: Browser, route: (typeof HR_ROUTES)[number]) {
+  const page = await browser.newPage({ ignoreHTTPSErrors: true });
+
+  try {
+    page.setDefaultTimeout(15_000);
+    page.setDefaultNavigationTimeout(15_000);
+    await setAuthenticatedHrAdmin(page);
+    await gotoHrRoute(page, route.path);
+    await expectRouteShell(page, route.title);
+    const noOverclaimFooter = page.getByTestId('hr-no-overclaim-footer');
+    const bodyText = await page.locator('body').innerText();
+    const hasBoundaryLabel = REQUIRED_BOUNDARY_LABELS.some((label) => bodyText.includes(label));
+    const noOverclaimFooterCount = await noOverclaimFooter.count();
+
+    expect(
+      hasBoundaryLabel || noOverclaimFooterCount > 0,
+      `Route ${route.key} (${route.path}) did not render any required boundary label or the no-overclaim footer`,
+    ).toBe(true);
+
+    if (noOverclaimFooterCount > 0) {
+      await expect(noOverclaimFooter.first()).toBeVisible();
+    }
+  } finally {
+    await page.close();
+  }
+}
+
 test.describe('A-039.4 HR / Staff Governance route coverage', () => {
   test.describe.configure({ timeout: 180_000 });
 
-  test('route inventory has exactly 20 routes', async () => {
+  test('R3-GROUP-00 route inventory has exactly 20 routes', async () => {
     expect(HR_ROUTES).toHaveLength(20);
   });
 
-  test('full access HR admin can visit all 20 routes', async ({ page }) => {
-    await setAuthenticatedHrAdmin(page);
-
-    for (const route of HR_ROUTES) {
-      await gotoHrRoute(page, route.path);
-      await expectRouteShell(page, route.title);
-    }
-  });
-
   for (const group of ROUTE_TITLE_GROUPS) {
-    test(`route-title group ${group.label} shows route-specific titles`, async ({ browser }) => {
+    test(`R3-GROUP-01 full-access route sweep group ${group.label} covers ${group.routes.length} routes`, async ({ browser }) => {
       for (const route of group.routes) {
-        await test.step(`route-title ${route.key} ${route.path} -> ${route.title}`, async () => {
-          await visitRouteTitleWithFreshPage(browser, route);
+        await test.step(`full-access ${route.key} ${route.path} -> ${route.title}`, async () => {
+          await visitRouteWithFreshPage(browser, route);
         });
       }
     });
   }
 
-  test('each route shows at least one HR boundary label or the no-overclaim footer', async ({ page }) => {
-    await setAuthenticatedHrAdmin(page);
+  const routeTitleGroupLabels = {
+    A: 'R3-GROUP-02',
+    B: 'R3-GROUP-03',
+    C: 'R3-GROUP-04',
+    D: 'R3-GROUP-05',
+  } as const;
 
-    for (const route of HR_ROUTES) {
-      await gotoHrRoute(page, route.path);
-      const boundaryBanner = page.getByTestId('hr-boundary-banner');
-      const noOverclaimFooter = page.getByTestId('hr-no-overclaim-footer');
-      const bodyText = await page.locator('body').innerText();
-      const hasBoundaryLabel = REQUIRED_BOUNDARY_LABELS.some((label) => bodyText.includes(label));
-      const noOverclaimFooterCount = await noOverclaimFooter.count();
-
-      expect(hasBoundaryLabel || noOverclaimFooterCount > 0).toBe(true);
-
-      if (noOverclaimFooterCount > 0) {
-        await expect(noOverclaimFooter.first()).toBeVisible();
+  for (const group of ROUTE_TITLE_GROUPS) {
+    test(`${routeTitleGroupLabels[group.label]} route-title group ${group.label} shows route-specific titles`, async ({ browser }) => {
+      for (const route of group.routes) {
+        await test.step(`route-title ${route.key} ${route.path} -> ${route.title}`, async () => {
+          await visitRouteWithFreshPage(browser, route);
+        });
       }
-    }
-  });
+    });
+  }
 
-  test('all routes avoid forbidden DOM labels and actions', async ({ page }) => {
-    await setAuthenticatedHrAdmin(page);
+  for (const group of ROUTE_TITLE_GROUPS) {
+    test(`R3-GROUP-06 boundary/footer sweep group ${group.label} covers ${group.routes.length} routes`, async ({ browser }) => {
+      for (const route of group.routes) {
+        await test.step(`boundary-footer ${route.key} ${route.path} -> ${route.title}`, async () => {
+          await expectBoundaryFooterForRoute(browser, route);
+        });
+      }
+    });
+  }
 
-    for (const route of HR_ROUTES) {
-      await gotoHrRoute(page, route.path);
-      await expectForbiddenDomAbsent(page);
-    }
-  });
+  for (const group of ROUTE_TITLE_GROUPS) {
+    test(`R3-GROUP-07 forbidden DOM sweep group ${group.label} covers ${group.routes.length} routes`, async ({ browser }) => {
+      for (const route of group.routes) {
+        await test.step(`forbidden-dom ${route.key} ${route.path} -> ${route.title}`, async () => {
+          await visitRouteWithFreshPage(browser, route);
+        });
+      }
+    });
+  }
 });
 
 test.describe('A-039.4 HR / Staff Governance scenario groups', () => {
   test.describe.configure({ timeout: 120_000 });
 
-  test('Scenario 1 — Authenticated admin entry and shell bootstrap', async ({ page }) => {
+  test('R3-GROUP-08 Scenario 1 — Authenticated admin entry and shell bootstrap', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[0]);
     await expect(page.locator('nav[aria-label="HR staff governance navigation"] a')).toHaveCount(20);
   });
 
-  test('Scenario 2 — HR overview / readiness / limitations', async ({ page }) => {
+  test('R3-GROUP-08 Scenario 2 — HR overview / readiness / limitations', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[0]);
     await gotoHrRoute(page, '/console/hr-staff-governance/limitations');
     await expectRequiredBoundaryLabels(page);
   });
 
-  test('Scenario 3 — Dashboard incomplete-data and fakeMetrics=false boundary', async ({ page }) => {
+  test('R3-GROUP-09 Scenario 3 — Dashboard incomplete-data and fakeMetrics=false boundary', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[1]);
     await expect(page.getByTestId('hr-boundary-fakemetrics-false')).toBeVisible();
     await expect(page.getByTestId('hr-boundary-fakehrdata-false')).toBeVisible();
   });
 
-  test('Scenario 4 — Recruitment metadata and hiring human-review-only boundary', async ({ page }) => {
+  test('R3-GROUP-10 Scenario 4 — Recruitment metadata and hiring human-review-only boundary', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[2]);
     await expect(page.getByTestId('hr-review-panel-human-review-boundary')).toContainText('No automatic HR decisions are available.');
   });
 
-  test('Scenario 5 — Onboarding and probation metadata evidence', async ({ page }) => {
+  test('R3-GROUP-10 Scenario 5 — Onboarding and probation metadata evidence', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[3]);
     await expect(page.getByTestId('hr-evidence-table')).toContainText('PATCH /api/admin/hr-staff-governance/onboarding-cases/{resource_id}');
   });
 
-  test('Scenario 6 — Employee records and staff profile evidence', async ({ page }) => {
+  test('R3-GROUP-10 Scenario 6 — Employee records and staff profile evidence', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[4]);
     await gotoHrRoute(page, HR_ROUTES[5].path);
     await openAndAssertRoute(page, HR_ROUTES[5]);
   });
 
-  test('Scenario 7 — Faculty profile and workload visibility bridge', async ({ page }) => {
+  test('R3-GROUP-11 Scenario 7 — Faculty profile and workload visibility bridge', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[6]);
     await gotoHrRoute(page, HR_ROUTES[16].path);
     await openAndAssertRoute(page, HR_ROUTES[16]);
   });
 
-  test('Scenario 8 — Leave request human-review-only boundary', async ({ page }) => {
+  test('R3-GROUP-12 Scenario 8 — Leave request human-review-only boundary', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[7]);
     await expect(page.getByTestId('hr-review-panel-human-review-boundary')).toContainText('No automatic HR decisions are available.');
   });
 
-  test('Scenario 9 — Performance appraisal no hidden score boundary', async ({ page }) => {
+  test('R3-GROUP-12 Scenario 9 — Performance appraisal no hidden score boundary', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[8]);
     await expect(page.getByTestId('hr-boundary-no-hidden-employee-faculty-score')).toBeVisible();
   });
 
-  test('Scenario 10 — Training certification expiry and compliance evidence', async ({ page }) => {
+  test('R3-GROUP-12 Scenario 10 — Training certification expiry and compliance evidence', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[9]);
     await expect(page.getByTestId('hr-boundary-incomplete-data-supported')).toBeVisible();
   });
 
-  test('Scenario 11 — Staff requests and appeals review boundary', async ({ page }) => {
+  test('R3-GROUP-13 Scenario 11 — Staff requests and appeals review boundary', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[10]);
     await gotoHrRoute(page, HR_ROUTES[11].path);
     await openAndAssertRoute(page, HR_ROUTES[11]);
   });
 
-  test('Scenario 12 — HR policy exceptions review boundary', async ({ page }) => {
+  test('R3-GROUP-13 Scenario 12 — HR policy exceptions review boundary', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[12]);
     await expect(page.getByTestId('hr-human-review-badge').first()).toBeVisible();
   });
 
-  test('Scenario 13 — Disciplinary case human-review-only boundary', async ({ page }) => {
+  test('R3-GROUP-14 Scenario 13 — Disciplinary case human-review-only boundary', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[13]);
     await expect(page.getByTestId('hr-boundary-no-automatic-disciplinary-decision')).toBeVisible();
   });
 
-  test('Scenario 14 — Offboarding and access lifecycle review-only boundary', async ({ page }) => {
+  test('R3-GROUP-14 Scenario 14 — Offboarding and access lifecycle review-only boundary', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[14]);
     await gotoHrRoute(page, HR_ROUTES[15].path);
     await openAndAssertRoute(page, HR_ROUTES[15]);
   });
 
-  test('Scenario 15 — Workload bridge read-only academic context', async ({ page }) => {
+  test('R3-GROUP-11 Scenario 15 — Workload bridge read-only academic context', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[16]);
     await expect(page.getByTestId('hr-bridge-idp-sso-kz')).toBeVisible();
   });
 
-  test('Scenario 16 — Payroll readiness provider-deferred boundary', async ({ page }) => {
+  test('R3-GROUP-15 Scenario 16 — Payroll readiness provider-deferred boundary', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[17]);
     await expect(page.getByTestId('hr-boundary-no-payroll-execution')).toBeVisible();
   });
 
-  test('Scenario 17 — Provider readiness non-live boundary', async ({ page }) => {
+  test('R3-GROUP-15 Scenario 17 — Provider readiness non-live boundary', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[18]);
     await expect(page.getByTestId('hr-boundary-no-provider-live-sync')).toBeVisible();
   });
 
-  test('Scenario 18 — Limitations and safety-boundary page', async ({ page }) => {
+  test('R3-GROUP-17 Scenario 18 — Limitations and safety-boundary page', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[19]);
     await expect(page.getByTestId('hr-no-overclaim-footer')).toContainText('No production/sales/GCC/L5/L6 claim.');
   });
 
-  test('Scenario 19 — No-overclaim DOM scan across all routes', async ({ page }) => {
-    await setAuthenticatedHrAdmin(page);
+  for (const group of ROUTE_TITLE_GROUPS) {
+    test(`R3-GROUP-17 Scenario 19 group ${group.label} — No-overclaim DOM scan across ${group.routes.length} routes`, async ({ browser }) => {
+      for (const route of group.routes) {
+        await test.step(`no-overclaim ${route.key} ${route.path} -> ${route.title}`, async () => {
+          await visitRouteWithFreshPage(browser, route);
+        });
+      }
+    });
+  }
 
-    for (const route of HR_ROUTES) {
-      await gotoHrRoute(page, route.path);
-      await expectForbiddenDomAbsent(page);
-    }
-  });
-
-  test('Scenario 20 — Permission-denial fail-closed smoke', async ({ page }) => {
+  test('R3-GROUP-16 Scenario 20 — Permission-denial fail-closed smoke', async ({ page }) => {
     await setRestrictedHrUser(page);
 
     for (const path of [
@@ -1135,7 +1163,7 @@ test.describe('A-039.4 HR / Staff Governance scenario groups', () => {
     }
   });
 
-  test('Scenario 21 — Suite closeout and route count assertion', async ({ page }) => {
+  test('R3-GROUP-17 Scenario 21 — Suite closeout and route count assertion', async ({ page }) => {
     await setAuthenticatedHrAdmin(page);
     await openAndAssertRoute(page, HR_ROUTES[0]);
     expect(HR_ROUTES).toHaveLength(20);
