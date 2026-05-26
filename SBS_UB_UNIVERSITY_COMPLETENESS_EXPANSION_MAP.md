@@ -3285,17 +3285,35 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - mode: backend_runtime_only
 - selected_vertical: HR / Staff Governance Suite
 - backend_module_path: backend/app/modules/hr_staff_governance/
+- migration_file: backend/alembic/versions/hr39a2rt01_a0392_hr_staff_governance_tables.py
 - table_prefix: hr_
 - orm_table_count: 36
 - route_prefix: /api/admin/hr-staff-governance
 - route_count: 62
 - permission_count: 56
 - runtime_mode: METADATA_EVIDENCE_HUMAN_REVIEW_ONLY
-- focused_targeted_pytest: PASS (28 passed, 0 failed)
+- test_scope_note: focused targeted runtime proof only (spec plan 4 files / 180-260 tests; runtime delivered 4 files / 33 tests)
+- focused_targeted_pytest: PASS (33 passed, 0 failed)
 - anti_fake_boundaries: no automatic hiring/firing; no automatic HR disciplinary decision; no automatic leave approval/rejection; no automatic payroll execution; no autonomous access revocation; no hidden employee/faculty score; no provider live integration; no production/sales/GCC/L5/L6 claim
 - metrics_unchanged: PASS
 - report_file: A-039.2-RUNTIME-HR_STAFF_GOVERNANCE_SUITE_BACKEND_FOUNDATION_REPORT.md
 - next_action_id: A-039.2-B1
+
+## A-039.2-B1 - HR / Staff Governance Suite Backend Foundation Quality Baseline
+
+- source_a0392_runtime_commit: 38e3638
+- backend_module_path: backend/app/modules/hr_staff_governance/
+- migration_file: backend/alembic/versions/hr39a2rt01_a0392_hr_staff_governance_tables.py
+- table_count: 36
+- route_count: 62
+- permission_count: 56
+- validation_results: migration integrity PASS (36 create / 36 drop / sets match); targeted HR pack 33 passed, 1 warning; Docker import sanity PASS
+- continuity_results: quality accreditation 37 passed, 1 warning PASS
+- no_overclaim_result: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- backend_only_scope: PASS_WITH_MINIMAL_B1_RUNTIME_ARTIFACT_REPAIR (no frontend changes; one narrow migration repair only)
+- limitations: frontend not implemented; E2E not implemented; provider integrations not implemented; payroll execution not implemented; runtime test scope remains focused 4 files / 33 tests
+- report_file: A-039.2-B1-HR_STAFF_GOVERNANCE_SUITE_BACKEND_FOUNDATION_QUALITY_BASELINE_REPORT.md
+- next_action_id: A-039.3-FRONTEND-SPEC
 
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 

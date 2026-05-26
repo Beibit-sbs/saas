@@ -252,6 +252,26 @@ Extension interpretation:
 - report_file: A-039.2-RUNTIME-HR_STAFF_GOVERNANCE_SUITE_BACKEND_FOUNDATION_REPORT.md
 - next_action_id: A-039.2-B1
 
+## A-039.2-B1 HR / Staff Governance Backend Foundation Quality Baseline Note
+
+- source_a0392_runtime_commit: 38e3638
+- selected_vertical: HR / Staff Governance Suite
+- mode: validation_reporting_with_minimal_runtime_artifact_repair
+- backend_module_path: backend/app/modules/hr_staff_governance/
+- migration_file: backend/alembic/versions/hr39a2rt01_a0392_hr_staff_governance_tables.py
+- table_count: 36
+- route_count: 62
+- permission_count: 56
+- migration_integrity: PASS (36 create_table, 36 drop_table, sets match)
+- import_sanity: PASS (Docker authoritative)
+- targeted_validation: PASS (33 passed, 1 warning)
+- continuity_a0382_validation: PASS (37 passed, 1 warning)
+- no_overclaim_result: PASS_WITH_EXPECTED_NEGATIVE_BOUNDARY_TEXT_ONLY
+- backend_only_scope: PASS_WITH_MINIMAL_B1_RUNTIME_ARTIFACT_REPAIR
+- metrics_unchanged: PASS
+- report_file: A-039.2-B1-HR_STAFF_GOVERNANCE_SUITE_BACKEND_FOUNDATION_QUALITY_BASELINE_REPORT.md
+- next_action_id: A-039.3-FRONTEND-SPEC
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`
