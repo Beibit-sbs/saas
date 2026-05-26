@@ -1,9 +1,40 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-040.2-SPEC
-                - current_stage: A-040.1-SPEC complete / finance procurement asset product map specified
-                - last_completed_action_id: A-040.1-SPEC
-            - next_action_id: A-040.2-SPEC
-                - updated_at: 2026-05-26 (A-040.1-SPEC verified source-of-truth handoff from A-040.0-SPEC commits 4a11b71 and f2037c9, inspected existing billing, budget_planning, procurement, asset_inventory, and online_payments canonicals plus current admin-route anchors, specified the Finance / Procurement / Asset Suite product map, workflow groups, role model, capability families, backend/frontend/E2E previews, bridge model, evidence model, audit model, provider-readiness boundaries, and no-overclaim rules, confirmed docs-only scope with no backend changes, no frontend changes, no Playwright changes, no live bank integration, no live ERP/1C sync, no payment execution, no automatic procurement approval, no automatic budget approval, no hidden finance or vendor score, and no production/sales/GCC/L5/L6 claim, preserved baseline maturity metrics, kept completed_vertical_count unchanged at 6, and advanced the next action to A-040.2-SPEC)
+          - status: ready_for_A-040.2-RUNTIME
+                - current_stage: A-040.2-SPEC complete / finance procurement asset backend contract specified
+                - last_completed_action_id: A-040.2-SPEC
+            - next_action_id: A-040.2-RUNTIME
+                - updated_at: 2026-05-26 (A-040.2-SPEC verified source-of-truth handoff from A-040.1-SPEC commit ef32c5c, inspected the existing billing, budget_planning, procurement, asset_inventory, and online_payments backend canonicals plus current tracker and finance bridge records, specified the Finance / Procurement / Asset Suite backend architecture, DB/table contract, repository/service contract, API route contract, permission model, schema contract, audit and evidence model, bridge model, and provider-readiness boundaries, confirmed canonical reuse first with wrapper backend/app/modules/finance_procurement_asset/ allowed only if needed, confirmed docs-only scope with no backend changes, no frontend changes, no Playwright changes, no live bank integration, no live ERP/1C sync, no payment execution, no automatic procurement approval, no automatic budget approval, no automatic vendor award, no official tax or regulatory filing, no hidden finance or vendor score, and no production/sales/GCC/L5/L6 claim, preserved baseline maturity metrics, and advanced the next action to A-040.2-RUNTIME)
+- A-040.2-SPEC execution block:
+    - mode: backend_domain_db_api_contract_spec_only
+    - purpose: specify_finance_procurement_asset_backend_contract
+    - source_a0401_spec_commit: ef32c5c
+    - selected_vertical: Finance / Procurement / Asset Suite
+    - backend_architecture: canonical reuse first; wrapper backend/app/modules/finance_procurement_asset/ allowed if needed
+    - canonical_backend_modules: billing, budget_planning, procurement, asset_inventory, online_payments
+    - planned_wrapper_table_count: 24
+    - planned_api_route_count: 53
+    - planned_permission_count: 48
+    - permission_namespace: finance_procurement_asset.*
+    - planned_runtime_module_files: 8
+    - planned_migration_prefix: fpa_
+    - no_live_bank_integration: PASS
+    - no_live_erp_sync: PASS
+    - no_payment_execution: PASS
+    - no_automatic_procurement_approval: PASS
+    - no_automatic_budget_approval: PASS
+    - no_automatic_vendor_award: PASS
+    - no_official_tax_or_regulatory_filing: PASS
+    - no_hidden_finance_or_vendor_score: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - metrics_unchanged: PASS
+    - report_file: A-040.2-SPEC-FINANCE_PROCUREMENT_ASSET_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+    - final_verdict: A-040.2-SPEC CLOSED - FINANCE PROCUREMENT ASSET BACKEND CONTRACT SPECIFIED
+    - recommended_next_action: A-040.2-RUNTIME
+    - next_action_id: A-040.2-RUNTIME
 - A-040.1-SPEC execution block:
     - mode: product_map_workflow_spec_only
     - purpose: specify_finance_procurement_asset_suite_product_map

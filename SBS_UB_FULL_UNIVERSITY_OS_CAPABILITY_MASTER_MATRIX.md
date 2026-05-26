@@ -504,6 +504,25 @@ Extension interpretation:
 - report_file: A-040.1-SPEC-FINANCE_PROCUREMENT_ASSET_SUITE_PRODUCT_MAP_WORKFLOW_REPORT.md
 - next_action_id: A-040.2-SPEC
 
+## A-040.2-SPEC Finance / Procurement / Asset Backend Contract Note
+
+- source_a0401_spec_commit: ef32c5c
+- selected_vertical: Finance / Procurement / Asset Suite
+- mode: backend_domain_db_api_contract_spec_only
+- backend_architecture: canonical reuse first; wrapper if needed
+- planned_wrapper_table_count: 24
+- planned_api_route_count: 53
+- planned_permission_count: 48
+- permission_namespace: finance_procurement_asset.*
+- no_live_bank_integration: PASS
+- no_live_erp_sync: PASS
+- no_payment_execution: PASS
+- no_automatic_procurement_approval: PASS
+- no_hidden_finance_or_vendor_score: PASS
+- metrics_unchanged: PASS
+- report_file: A-040.2-SPEC-FINANCE_PROCUREMENT_ASSET_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+- next_action_id: A-040.2-RUNTIME
+
 ## 10. Academic Operations 28-Item Reconciliation
 
 - `EXISTING_CANONICAL_MODULE = 3`

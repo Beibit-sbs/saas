@@ -3522,6 +3522,21 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-040.1-SPEC-FINANCE_PROCUREMENT_ASSET_SUITE_PRODUCT_MAP_WORKFLOW_REPORT.md
 - next_action_id: A-040.2-SPEC
 
+## A-040.2-SPEC - Finance / Procurement / Asset Backend Contract
+
+- source_a0401_spec_commit: ef32c5c
+- mode: backend_domain_db_api_contract_spec_only
+- selected_vertical: Finance / Procurement / Asset Suite
+- backend_architecture: canonical reuse first; wrapper backend/app/modules/finance_procurement_asset/ allowed if needed
+- planned_wrapper_table_count: 24
+- planned_api_route_count: 53
+- planned_permission_count: 48
+- permission_namespace: finance_procurement_asset.*
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-040.2-SPEC-FINANCE_PROCUREMENT_ASSET_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+- next_action_id: A-040.2-RUNTIME
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |
