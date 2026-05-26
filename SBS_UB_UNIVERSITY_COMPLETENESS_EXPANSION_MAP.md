@@ -3232,7 +3232,7 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - selected_wave28_vertical: HR / Staff Governance Suite
 - selected_next_action: A-039.1-SPEC
 - selection_reason: high operational value; strong rector/admin demo value; existing UCE staff candidates; bridge value to academic operations, IAM, and finance; feasible metadata/evidence/human-review foundation without live provider dependency
-- initial_action_chain: A-039.1-SPEC -> A-039.2-SPEC -> A-039.2-RUNTIME -> A-039.2-B1 -> A-039.3-FRONTEND-SPEC -> A-039.3-FRONTEND -> A-039.3-FRONTEND-B1 -> A-039.4-E2E-SPEC -> A-039.4-E2E -> A-039.4-B1 -> A-039.5-B1
+- initial_action_chain: A-039.1-SPEC -> A-039.2-SPEC -> A-039.2-RUNTIME -> A-039.2-B1 -> A-039.3-FRONTEND-SPEC -> A-039.3-FRONTEND -> A-039.3-FRONTEND-B1 -> A-039.4-E2E-SPEC -> A-039.4-E2E -> A-039.4-E2E.R1
 - anti_fake_boundaries: no automatic hiring/firing; no automatic HR disciplinary decision; no automatic leave approval/rejection; no hidden employee/faculty score; no provider live payroll/1C claim; no production/sales/GCC/L5/L6 claim
 - metrics_unchanged: PASS
 - report_file: A-039.0-SPEC-NEXT_PRODUCT_VERTICAL_SELECTION_WAVE28_REPORT.md
@@ -3392,6 +3392,25 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - metrics_unchanged: PASS
 - report_file: A-039.4-E2E-SPEC-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_PLAN_REPORT.md
 - next_action_id: A-039.4-E2E
+
+## A-039.4-E2E - HR / Staff Governance Suite Browser Validation Runtime
+
+- source_a0394_e2e_spec_commit: 5ecdf43
+- source_a0393_frontend_b1_commit: 2ebeb84
+- mode: browser_validation_runtime_blocked
+- selected_vertical: HR / Staff Governance Suite
+- playwright_spec: frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts
+- chromium_result: BLOCKED (9 failed / 17 passed)
+- route_coverage_result: BLOCKED
+- failed_scenarios: route coverage sweep failures x4; Scenario 7; Scenario 11; Scenario 14; Scenario 19; Scenario 20
+- root_cause_classification: PENDING_R1_TRIAGE
+- no_backend_changes: PASS
+- no_frontend_runtime_changes: PASS
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-039.4-E2E-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_REPORT.md
+- final_verdict: A-039.4-E2E BLOCKED - HR STAFF GOVERNANCE BROWSER VALIDATION RUNTIME FAILED MOUNTED CHROMIUM RUN
+- next_action_id: A-039.4-E2E.R1
 
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 

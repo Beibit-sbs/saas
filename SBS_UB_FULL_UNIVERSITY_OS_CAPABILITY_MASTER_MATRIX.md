@@ -357,7 +357,23 @@ Extension interpretation:
 - no_hidden_score: PASS
 - metrics_unchanged: PASS
 - report_file: A-039.4-E2E-SPEC-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_PLAN_REPORT.md
-- next_action_id: A-039.4-E2E
+- next_action_id: A-039.4-E2E.R1
+
+## A-039.4-E2E HR / Staff Governance Browser Validation Runtime Note
+
+- source_a0394_e2e_spec_commit: 5ecdf43
+- selected_vertical: HR / Staff Governance Suite
+- mode: browser_validation_runtime_blocked
+- playwright_spec: frontend/e2e/smoke/a0394-hr-staff-governance-suite.spec.ts
+- chromium_result: BLOCKED (9 failed / 17 passed)
+- route_coverage_result: BLOCKED
+- failed_scenarios: route coverage sweep failures x4; Scenario 7; Scenario 11; Scenario 14; Scenario 19; Scenario 20
+- root_cause_classification: PENDING_R1_TRIAGE
+- no_backend_changes: PASS
+- no_frontend_runtime_changes: PASS
+- metrics_unchanged: PASS
+- report_file: A-039.4-E2E-HR_STAFF_GOVERNANCE_SUITE_BROWSER_VALIDATION_REPORT.md
+- next_action_id: A-039.4-E2E.R1
 
 ## 10. Academic Operations 28-Item Reconciliation
 
