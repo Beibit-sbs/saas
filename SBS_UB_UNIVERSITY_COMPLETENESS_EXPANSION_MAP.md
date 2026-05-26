@@ -3738,6 +3738,26 @@ Continue controlled L2→L3 deepening before L4. A-027.9 selects third batch fro
 - report_file: A-041.2-SPEC-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
 - next_action_id: A-041.2-RUNTIME
 
+## A-041.2-RUNTIME - Document / Decree / Correspondence Backend Runtime
+
+- source_a0412_runtime_commit: b9a6188
+- mode: backend_runtime_implementation_and_validation_recovery
+- selected_vertical: Document / Decree / Correspondence Suite
+- runtime_module_path: backend/app/modules/document_decree_correspondence/
+- runtime_module_file_count: 8
+- migration_file: backend/alembic/versions/ddc0412rt01_a0412_document_decree_correspondence_tables.py
+- runtime_test_files_added: 4
+- implemented_table_count: 26
+- implemented_route_count: 53
+- implemented_permission_count: 50
+- source_inventory_result: PASS (DDC_TABLE_COUNT=26, DDC_ROUTE_COUNT=53, DDC_PERMISSION_COUNT=50)
+- docker_targeted_backend_tests: PASS (121 passed)
+- import_inventory_result: BLOCKED_LOCAL_ENV (No module named fastapi)
+- no_overclaim_result: PASS
+- anti_fake_boundaries: preserved
+- report_file: A-041.2-RUNTIME.R1-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_RUNTIME_VALIDATION_RECOVERY_REPORT.md
+- next_action_id: A-041.2-B1
+
 ### Selected A-027.9 Batch (11 modules, 100% NEW_MODULE type)
 
 | Rank | UCE ID | Candidate | Source Wave | Package | Domain | Score | Why Selected |

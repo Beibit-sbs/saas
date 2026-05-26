@@ -787,13 +787,16 @@ Extension interpretation:
 - runtime_module_file_count: 8
 - migration_file: backend/alembic/versions/ddc0412rt01_a0412_document_decree_correspondence_tables.py
 - runtime_test_files_added: 4
+- implemented_table_count: 26
+- implemented_route_count: 53
+- implemented_permission_count: 50
 - table_inventory_result: PASS 26/26
 - route_inventory_result: PASS 53/53
 - permission_inventory_result: PASS 50/50
 - compile_result: PASS
 - forbidden_surface_scan_result: PASS
-- docker_runtime_validation: BLOCKED (docker unavailable)
-- local_pytest_runtime_validation: BLOCKED (venv missing pip/pytest/sqlalchemy)
+- docker_runtime_validation: PASS (targeted Docker tests, 121 passed)
+- local_import_runtime_validation: BLOCKED_LOCAL_ENV (No module named fastapi)
 - no_fake_documents: PASS
 - no_fake_decrees: PASS
 - no_fake_signature: PASS
@@ -801,7 +804,7 @@ Extension interpretation:
 - no_automatic_rector_decision: PASS
 - no_hidden_staff_or_department_score: PASS
 - metrics_unchanged: PASS
-- report_file: A-041.2-RUNTIME-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_RUNTIME_REPORT.md
+- report_file: A-041.2-RUNTIME.R1-DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_RUNTIME_VALIDATION_RECOVERY_REPORT.md
 - next_action_id: A-041.2-B1
 
 ## 10. Academic Operations 28-Item Reconciliation
