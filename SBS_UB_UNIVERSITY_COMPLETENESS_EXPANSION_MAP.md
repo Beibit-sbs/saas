@@ -15487,3 +15487,19 @@ Metrics preserved:
 - metrics_unchanged: PASS
 - report_file: A-043.1-SPEC-SECURITY_ACCESS_COMPLIANCE_SUITE_PRODUCT_MAP_WORKFLOW_REPORT.md
 - next_action_id: A-043.2-SPEC
+
+## A-043.2-SPEC - Security / Access / Compliance Backend Contract
+
+- source_a0431_spec_commit: e320562
+- mode: backend_domain_db_api_contract_spec_only
+- selected_vertical: Security / Access / Compliance Suite
+- completed_vertical_count_current: 9
+- backend_architecture: canonical reuse first; wrapper backend/app/modules/security_access_compliance/ allowed if needed
+- planned_wrapper_table_count: 24
+- planned_api_route_count: 47
+- planned_permission_count: 44
+- permission_namespace: security_access_compliance.*
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-043.2-SPEC-SECURITY_ACCESS_COMPLIANCE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+- next_action_id: A-043.2-RUNTIME

@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-043.2-SPEC
-                - current_stage: A-043.1-SPEC complete / security access compliance product map specified
-                - last_completed_action_id: A-043.1-SPEC
-            - next_action_id: A-043.2-SPEC
-                - updated_at: 2026-05-27 (A-043.1-SPEC docs-only product-map/workflow specification completed for Security / Access / Compliance Suite; workflow_group_count=22; capability_family_count=27; planned_frontend_route_count=23; planned_backend_route_count=47; no runtime implementation started; metrics unchanged)
+          - status: ready_for_A-043.2-RUNTIME
+                - current_stage: A-043.2-SPEC complete / security access compliance backend contract specified
+                - last_completed_action_id: A-043.2-SPEC
+            - next_action_id: A-043.2-RUNTIME
+                - updated_at: 2026-05-27 (A-043.2-SPEC docs-only backend domain/db/api contract completed for Security / Access / Compliance Suite; planned_wrapper_table_count=24; planned_api_route_count=47; planned_permission_count=44; no runtime implementation started; metrics unchanged)
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
@@ -304,6 +304,39 @@
     - final_verdict: A-043.1-SPEC CLOSED - SECURITY ACCESS COMPLIANCE PRODUCT MAP SPECIFIED
     - recommended_next_action: A-043.2-SPEC
     - next_action_id: A-043.2-SPEC
+- A-043.2-SPEC execution block:
+    - mode: backend_domain_db_api_contract_spec_only
+    - purpose: specify_security_access_compliance_backend_contract
+    - source_a0431_spec_commit: e320562
+    - selected_vertical: Security / Access / Compliance Suite
+    - completed_vertical_count_current: 9
+    - backend_architecture: canonical reuse first; wrapper backend/app/modules/security_access_compliance/ allowed if needed
+    - planned_wrapper_table_count: 24
+    - planned_api_route_count: 47
+    - planned_permission_count: 44
+    - permission_namespace: security_access_compliance.*
+    - planned_runtime_module_files: 8
+    - planned_migration_prefix: sac_
+    - no_fake_security_certification: PASS
+    - no_fake_compliance_certification: PASS
+    - no_fake_legal_regulatory_compliance_claim: PASS
+    - no_fake_soc_siem_claim: PASS
+    - no_fake_incident_resolution: PASS
+    - no_fake_audit_proof: PASS
+    - no_fake_risk_score: PASS
+    - no_hidden_user_risk_score: PASS
+    - no_autonomous_enforcement: PASS
+    - no_external_regulator_submission: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - metrics_unchanged: PASS
+    - report_file: A-043.2-SPEC-SECURITY_ACCESS_COMPLIANCE_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+    - final_verdict: A-043.2-SPEC CLOSED - SECURITY ACCESS COMPLIANCE BACKEND CONTRACT SPECIFIED
+    - recommended_next_action: A-043.2-RUNTIME
+    - next_action_id: A-043.2-RUNTIME
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
