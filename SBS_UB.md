@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: ready_for_A-043.4-E2E-SPEC
-                    - current_stage: A-043.3-FRONTEND-B1 complete / security access compliance frontend runtime quality baseline confirmed
-                    - last_completed_action_id: A-043.3-FRONTEND-B1
-                        - next_action_id: A-043.4-E2E-SPEC
-                    - updated_at: 2026-05-27 (A-043.3-FRONTEND-B1 validation/reporting-only baseline completed for Security / Access / Compliance Suite; source_frontend_runtime_commit=c68ae25; module_file_count=7; route_count=23; backend_route_count_used=47; backend_table_count_used=24; backend_permission_count_used=44; targeted_frontend_tests=PASS (9 specs, 125 tests); typescript=PASS; no backend/playwright changes; metrics unchanged)
+                        - status: ready_for_A-043.4-E2E
+                    - current_stage: A-043.4-E2E-SPEC complete / security access compliance browser validation plan specified
+                    - last_completed_action_id: A-043.4-E2E-SPEC
+                        - next_action_id: A-043.4-E2E
+                    - updated_at: 2026-05-27 (A-043.4-E2E-SPEC docs-only planning completed for Security / Access / Compliance Suite; source_frontend_b1_commit=3b3c2b7; future_playwright_spec=frontend/e2e/smoke/a0434-security-access-compliance-suite.spec.ts; route_coverage_target=23; scenario_group_count_target=25; docker_nginx_contract=E2E_BASE_URL=https://nginx; deterministic stub and denial/no-overclaim/artifact hygiene plans specified; no runtime started; no backend/frontend runtime/playwright changes; metrics unchanged)
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
@@ -506,6 +506,43 @@
     - final_verdict: A-043.3-FRONTEND-B1 CLOSED - SECURITY ACCESS COMPLIANCE FRONTEND RUNTIME QUALITY BASELINE CONFIRMED
     - recommended_next_action: A-043.4-E2E-SPEC
     - next_action_id: A-043.4-E2E-SPEC
+
+- A-043.4-E2E-SPEC execution block:
+    - mode: browser_validation_plan_spec_only
+    - purpose: plan_security_access_compliance_browser_validation
+    - source_a0433_frontend_b1_commit: 3b3c2b7
+    - source_a0433_frontend_commit: c68ae25
+    - source_a0432_b1_commit: 4c7e89a
+    - selected_vertical: Security / Access / Compliance Suite
+    - future_playwright_spec: frontend/e2e/smoke/a0434-security-access-compliance-suite.spec.ts
+    - route_coverage_target: 23
+    - scenario_group_count_target: 25
+    - docker_nginx_contract: E2E_BASE_URL=https://nginx
+    - auth_strategy: fake-authenticated SAC admin + restricted user
+    - bff_api_stub_strategy: deterministic metadata-only SAC stubs
+    - permission_denial_smoke_required: YES
+    - no_overclaim_dom_scan_required: YES
+    - artifact_hygiene_required: YES
+    - no_fake_security_certification_ui: PASS
+    - no_fake_compliance_certification_ui: PASS
+    - no_fake_legal_regulatory_compliance_claim_ui: PASS
+    - no_fake_soc_siem_claim_ui: PASS
+    - no_fake_incident_resolution_ui: PASS
+    - no_fake_audit_proof_ui: PASS
+    - no_fake_risk_score_ui: PASS
+    - no_hidden_user_risk_score_ui: PASS
+    - no_autonomous_enforcement_ui: PASS
+    - no_external_regulator_submission_ui: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - playwright_runtime_started: NO
+    - playwright_spec_created: NO
+    - backend_changed: NO
+    - frontend_runtime_changed: NO
+    - metrics_unchanged: PASS
+    - report_file: A-043.4-E2E-SPEC-SECURITY_ACCESS_COMPLIANCE_BROWSER_VALIDATION_PLAN_REPORT.md
+    - final_verdict: A-043.4-E2E-SPEC CLOSED - SECURITY ACCESS COMPLIANCE BROWSER VALIDATION PLAN SPECIFIED
+    - recommended_next_action: A-043.4-E2E
+    - next_action_id: A-043.4-E2E
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness

@@ -15604,3 +15604,19 @@ Metrics preserved:
 - metrics_unchanged: PASS
 - report_file: A-043.3-FRONTEND-B1-SECURITY_ACCESS_COMPLIANCE_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-043.4-E2E-SPEC
+
+## A-043.4-E2E-SPEC - Security / Access / Compliance Browser Validation Plan
+
+- source_a0433_frontend_b1_commit: 3b3c2b7
+- mode: browser_validation_plan_spec_only
+- selected_vertical: Security / Access / Compliance Suite
+- future_playwright_spec: frontend/e2e/smoke/a0434-security-access-compliance-suite.spec.ts
+- route_coverage_target: 23
+- scenario_group_count_target: 25
+- docker_nginx_contract: E2E_BASE_URL=https://nginx
+- auth_strategy: fake-authenticated SAC admin + restricted user
+- bff_api_stub_strategy: deterministic metadata-only SAC stubs
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-043.4-E2E-SPEC-SECURITY_ACCESS_COMPLIANCE_BROWSER_VALIDATION_PLAN_REPORT.md
+- next_action_id: A-043.4-E2E
