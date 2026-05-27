@@ -15455,3 +15455,17 @@ Metrics preserved:
 - completed_vertical_count_after: 9
 - report_file: A-042.5-B1-STUDENT_SERVICES_WELFARE_SUPPORT_PRODUCT_VERTICAL_CLOSURE_REPORT.md
 - next_action_id: A-043.0-SPEC
+
+## A-043.0-SPEC - Next Product Vertical Selection After Student Services Closure
+
+- source_a0425_b1_commit: 2048d33
+- completed_vertical_count_current: 9
+- mode: next_product_vertical_selection_spec_only
+- selected_vertical: Security / Access / Compliance Suite
+- selected_reason: best post-A042 strategic fit for governance, risk, and demo value while staying within metadata/readiness/evidence and human-review-first boundaries
+- deferred_candidates: Integration / Provider Readiness Product Suite; AI Brain / Governance Console Suite; Infrastructure / Operations / SRE Suite; Campus / Facilities / Housing / Transport Suite; Library / Archive / Knowledge Suite; International Office / Mobility / Partnerships Suite; Communications / Notification / Community Suite; Career / Alumni / Employer Relations
+- runtime_started: NO
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-043.0-SPEC-NEXT_PRODUCT_VERTICAL_SELECTION_AFTER_STUDENT_SERVICES_CLOSURE_REPORT.md
+- next_action_id: A-043.1-SPEC
