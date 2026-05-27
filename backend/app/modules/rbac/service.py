@@ -458,6 +458,21 @@ _FINANCE_PROCUREMENT_ASSET_AUDITOR_PERMISSIONS: Set[str] = {
     "finance_procurement_asset.metadata.read",
 }
 
+_STUDENT_SERVICES_SUPPORT_PERMISSIONS: Set[str] = {
+    "admin.student_services.read",
+    "admin.student_services.write",
+    "admin.student_services.assign",
+    "admin.student_services.escalate",
+    "admin.student_services.dashboard.read",
+    "admin.student_services.audit.read",
+}
+
+_STUDENT_SERVICES_SUPPORT_AUDITOR_PERMISSIONS: Set[str] = {
+    "admin.student_services.read",
+    "admin.student_services.dashboard.read",
+    "admin.student_services.audit.read",
+}
+
 BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     "superadmin": {
         "admin.dashboard.read",
@@ -541,7 +556,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _ACADEMIC_OPERATIONS_PERMISSIONS
     | _RESEARCH_SCIENCE_PERMISSIONS
     | _QUALITY_ACCREDITATION_PERMISSIONS
-    | _FINANCE_PROCUREMENT_ASSET_PERMISSIONS,
+    | _FINANCE_PROCUREMENT_ASSET_PERMISSIONS
+    | _STUDENT_SERVICES_SUPPORT_PERMISSIONS,
     "admin": {
         "admin.dashboard.read",
         "admin.expansion.read",
@@ -626,7 +642,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _ACADEMIC_OPERATIONS_PERMISSIONS
     | _RESEARCH_SCIENCE_PERMISSIONS
     | _QUALITY_ACCREDITATION_PERMISSIONS
-    | _FINANCE_PROCUREMENT_ASSET_PERMISSIONS,
+    | _FINANCE_PROCUREMENT_ASSET_PERMISSIONS
+    | _STUDENT_SERVICES_SUPPORT_PERMISSIONS,
     "auditor": {
         "admin.audit.read",
         "admin.dashboard.read",
@@ -649,7 +666,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _ACADEMIC_OPERATIONS_AUDITOR_PERMISSIONS
     | _RESEARCH_SCIENCE_AUDITOR_PERMISSIONS
     | _QUALITY_ACCREDITATION_AUDITOR_PERMISSIONS
-    | _FINANCE_PROCUREMENT_ASSET_AUDITOR_PERMISSIONS,
+    | _FINANCE_PROCUREMENT_ASSET_AUDITOR_PERMISSIONS
+    | _STUDENT_SERVICES_SUPPORT_AUDITOR_PERMISSIONS,
     "student": {
         "enrollments.read",
         "grades.read",
