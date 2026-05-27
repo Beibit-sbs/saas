@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-042.2-SPEC
-                - current_stage: A-042.1-SPEC complete / student services suite product map specified
-                - last_completed_action_id: A-042.1-SPEC
-            - next_action_id: A-042.2-SPEC
-                - updated_at: 2026-05-27 (A-042.1-SPEC completed as docs-only/spec-only product map and workflow definition for Student Services / Welfare / Support Suite; canonical reuse and anti-fake/no-autonomy boundaries preserved; no runtime/API/provider changes and metrics unchanged)
+          - status: ready_for_A-042.2-RUNTIME
+                - current_stage: A-042.2-SPEC complete / backend domain db service api contract specified
+                - last_completed_action_id: A-042.2-SPEC
+            - next_action_id: A-042.2-RUNTIME
+                - updated_at: 2026-05-27 (A-042.2-SPEC completed as docs-only/spec-only backend domain, database, service, and API contract definition for Student Services / Welfare / Support Suite; strict no-runtime/no-provider-live/no-autonomy boundaries preserved; no runtime/API behavior changes and metrics unchanged)
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
@@ -454,6 +454,37 @@
     - final_verdict: A-042.1-SPEC CLOSED - STUDENT SERVICES WELFARE SUPPORT SUITE PRODUCT MAP AND WORKFLOW SPECIFIED
     - recommended_next_action: A-042.2-SPEC
     - next_action_id: A-042.2-SPEC
+- A-042.2-SPEC execution block:
+    - mode: backend_domain_db_service_api_contract_spec_only
+    - purpose: specify_student_services_welfare_support_backend_domain_db_service_api_contract
+    - source_a0421_spec_commit: 4e7a2a6
+    - source_a0420_spec_commit: b29bf38
+    - selected_vertical: Student Services / Welfare / Support Suite
+    - planned_backend_module: backend/app/modules/student_services_support/
+    - planned_entity_count: 12
+    - planned_enum_count: 10
+    - planned_service_function_count: 14
+    - planned_api_route_count: 15
+    - planned_permission_count: 6
+    - tenant_isolation_contract_defined: PASS
+    - audit_event_contract_defined: PASS
+    - dashboard_computation_contract_defined: PASS
+    - anti_fake_boundaries_defined: PASS
+    - no_autonomous_decision_claim: PASS
+    - no_provider_live_claim: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - migration_changed: NO
+    - api_behavior_changed: NO
+    - provider_integration_added: NO
+    - metrics_unchanged: PASS
+    - report_file: A-042.2-SPEC-STUDENT_SERVICES_WELFARE_SUPPORT_BACKEND_DOMAIN_DB_API_CONTRACT_REPORT.md
+    - final_verdict: A-042.2-SPEC CLOSED - STUDENT SERVICES WELFARE SUPPORT BACKEND DOMAIN DB SERVICE API CONTRACT SPECIFIED
+    - recommended_next_action: A-042.2-RUNTIME
+    - next_action_id: A-042.2-RUNTIME
 - A-041.1-SPEC execution block:
     - mode: product_map_workflow_spec_only
     - purpose: specify_document_decree_correspondence_suite_product_map
