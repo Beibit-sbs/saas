@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-042.4-E2E-SPEC
-                - current_stage: A-042.3-FRONTEND-B1 complete / frontend quality baseline confirmed for Student Services / Welfare / Support
-                - last_completed_action_id: A-042.3-FRONTEND-B1
-            - next_action_id: A-042.4-E2E-SPEC
-                - updated_at: 2026-05-27 (A-042.3-FRONTEND-B1 validation/reporting-only closure complete; frontend type-check PASS, targeted StudentServicesSupport tests PASS 10 files/29 tests, route/permission/boundary/dashboard/no-overclaim/scope-hygiene checks PASS; strict no-provider-live/no-autonomy/no-fake boundaries preserved)
+          - status: ready_for_A-042.4-E2E
+                - current_stage: A-042.4-E2E-SPEC complete / browser validation plan specified for Student Services / Welfare / Support
+                - last_completed_action_id: A-042.4-E2E-SPEC
+            - next_action_id: A-042.4-E2E
+                - updated_at: 2026-05-27 (A-042.4-E2E-SPEC docs-only closure complete; future Playwright target/frontend/e2e/smoke/a0424-student-services-welfare-support-suite.spec.ts, 10-route coverage, scenario groups, auth/fixture/BFF stubbing, boundary/negative DOM assertions, Docker/Nginx execution plan, and runtime acceptance criteria specified; no runtime/frontend/backend/API changes)
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
@@ -143,6 +143,34 @@
     - final_verdict: A-042.3-FRONTEND-B1 CLOSED - STUDENT SERVICES WELFARE SUPPORT FRONTEND QUALITY BASELINE CONFIRMED
     - recommended_next_action: A-042.4-E2E-SPEC
     - next_action_id: A-042.4-E2E-SPEC
+- A-042.4-E2E-SPEC execution block:
+    - mode: browser_validation_plan_spec_only
+    - purpose: specify_student_services_welfare_support_browser_validation_plan
+    - source_a0423_frontend_b1_commit: 9a20d1a
+    - source_a0423_frontend_commit: 995c4d6
+    - source_a0423_frontend_spec_commit: 9308e54
+    - source_a0422_b1_commit: 0775934
+    - selected_vertical: Student Services / Welfare / Support Suite
+    - future_playwright_spec_path: frontend/e2e/smoke/a0424-student-services-welfare-support-suite.spec.ts
+    - planned_browser_route_count: 10
+    - planned_scenario_group_count: 15+
+    - auth_fixture_strategy_defined: PASS (fake-authenticated admin + restricted-user fixtures)
+    - bff_stubbing_strategy_defined: PASS (metadata-only deterministic stubs)
+    - boundary_assertion_plan_defined: PASS
+    - negative_dom_assertion_plan_defined: PASS
+    - artifact_hygiene_plan_defined: PASS
+    - docker_nginx_execution_plan_defined: PASS
+    - runtime_acceptance_criteria_defined: PASS
+    - spec_file_created_in_spec_step: NO
+    - playwright_runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - metrics_unchanged: PASS
+    - report_file: A-042.4-E2E-SPEC-STUDENT_SERVICES_WELFARE_SUPPORT_BROWSER_VALIDATION_PLAN_REPORT.md
+    - final_verdict: A-042.4-E2E-SPEC CLOSED - STUDENT SERVICES WELFARE SUPPORT BROWSER VALIDATION PLAN SPECIFIED
+    - recommended_next_action: A-042.4-E2E
+    - next_action_id: A-042.4-E2E
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
