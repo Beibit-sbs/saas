@@ -2025,3 +2025,28 @@ The following section seeds the Full University OS universe and guarantees the l
 - report_file: A-041.4-E2E-DOCUMENT_DECREE_CORRESPONDENCE_BROWSER_VALIDATION_REPORT.md
 - final_verdict: A-041.4-E2E BLOCKED - DOCUMENT DECREE CORRESPONDENCE BROWSER VALIDATION RUNTIME UNSTABLE
 - next_action_id: A-041.4-E2E.R1
+
+## A-041.4-E2E.R1 Document / Decree / Correspondence Browser Validation Recovery Note
+
+- source_a0414_e2e_blocked_commit: 1e48cd4
+- source_a0414_e2e_spec_commit: 6029cac
+- selected_vertical: Document / Decree / Correspondence Suite
+- mode: browser_validation_recovery_blocked
+- repair_scope: E2E_SPEC_ONLY
+- route_coverage_result: PASS 23/23
+- scenario_group_count: 25
+- isolated_chromium_result: PASS (02|06=2 passed 35.0s; 23=1 passed 33.0s; 19|20=2 passed 7.0s; 01=1 passed 1.6m; 01|06|19|20|23=5 passed 2.4m)
+- full_chromium_result: BLOCKED (exit 137 during full 25-test docker/nginx run)
+- failed_groups: FULL_SUITE_UNSTABLE_BEFORE_AUTHORITATIVE_GROUP_LEVEL_SUMMARY
+- remaining_blockers: full chromium runtime termination exit 137
+- typescript_result: PASS (TSC_EXIT=0)
+- targeted_frontend_result: PASS (8 files, 58 passed)
+- permission_denial_result: PASS (isolated group)
+- no_overclaim_result: PASS
+- artifact_hygiene_result: PASS
+- no_backend_changes: PASS
+- no_product_frontend_behavior_changes: PASS
+- metrics_unchanged: PASS
+- report_file: A-041.4-E2E.R1-DOCUMENT_DECREE_CORRESPONDENCE_BROWSER_VALIDATION_RECOVERY_REPORT.md
+- final_verdict: A-041.4-E2E.R1 BLOCKED - DOCUMENT DECREE CORRESPONDENCE BROWSER VALIDATION RECOVERY NOT COMPLETE
+- next_action_id: A-041.4-E2E.R2
