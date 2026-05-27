@@ -118,6 +118,14 @@ export const PERMISSIONS = {
   STUDENT_SERVICES_READ: "student_services.read",
   STUDENT_SERVICES_WRITE: "student_services.write",
 
+  // Student Services / Welfare / Support Suite (A-042)
+  STUDENT_SERVICES_SUPPORT_READ: "admin.student_services.read",
+  STUDENT_SERVICES_SUPPORT_WRITE: "admin.student_services.write",
+  STUDENT_SERVICES_SUPPORT_ASSIGN: "admin.student_services.assign",
+  STUDENT_SERVICES_SUPPORT_ESCALATE: "admin.student_services.escalate",
+  STUDENT_SERVICES_SUPPORT_DASHBOARD_READ: "admin.student_services.dashboard.read",
+  STUDENT_SERVICES_SUPPORT_AUDIT_READ: "admin.student_services.audit.read",
+
   // Student Life (counseling, wellbeing, accessibility, disciplinary)
   STUDENT_LIFE_READ: "student_life.read",
   STUDENT_LIFE_WRITE: "student_life.write",
