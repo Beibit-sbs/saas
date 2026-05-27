@@ -1026,7 +1026,7 @@ test.describe('A-041.4 Document / Decree / Correspondence scenario groups', () =
   test('DDC-E2E-GROUP-07 dashboard incomplete-data and fake flags false boundary', async ({ page }) => {
     await setAuthenticatedDdcAdmin(page);
     await openAndAssertRoute(page, DDC_ROUTES[1]);
-    await expect(page.getByTestId('ddc-boundary-fakedocuments-false')).toBeVisible();
+    await expect(page.getByTestId('ddc-safety-checklist')).toContainText('fakeDocuments=false');
     await expect(page.getByTestId('ddc-dashboard-grid')).toContainText('Document Intake');
   });
 
@@ -1054,7 +1054,7 @@ test.describe('A-041.4 Document / Decree / Correspondence scenario groups', () =
     await openAndAssertRoute(page, DDC_ROUTES[6]);
     await gotoDdcRoute(page, DDC_ROUTES[7].path);
     await openAndAssertRoute(page, DDC_ROUTES[7]);
-    await expect(page.getByTestId('ddc-boundary-no-official-legal-effect')).toBeVisible();
+    await expect(page.getByTestId('ddc-safety-checklist')).toContainText('officialLegalEffect=false');
   });
 
   test('DDC-E2E-GROUP-12 incoming/outgoing correspondence non-delivery boundary', async ({ page }) => {

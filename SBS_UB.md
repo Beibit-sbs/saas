@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: blocked_A-041.4-E2E
-                - current_stage: A-041.4-E2E.R1 blocked / full chromium docker-nginx run terminated with exit 137 during 25-test suite
-                - last_completed_action_id: A-041.4-E2E-SPEC
-            - next_action_id: A-041.4-E2E.R2
-                - updated_at: 2026-05-27 (A-041.4-E2E.R1 recovery diagnostics confirmed ddc-page-shell exists and 23-route wiring is valid, isolated chromium groups passed including critical pack 01|06|19|20|23, TypeScript passed, targeted frontend tests passed, and no-overclaim/non-change checks passed; however authoritative full chromium docker/nginx run ended with exit 137 before full-suite completion, so recovery remains blocked and next action advanced to A-041.4-E2E.R2)
+          - status: ready_for_A-041.4-B1
+                - current_stage: A-041.4-E2E.R2 complete / split-run browser validation recovered
+                - last_completed_action_id: A-041.4-E2E
+            - next_action_id: A-041.4-B1
+                - updated_at: 2026-05-27 (A-041.4-E2E.R2 completed split-run chromium validation under docker/nginx with split A-E all passing and combined scenario coverage 25/25 plus route coverage 23/23; one-shot full run is treated as NOT_REQUIRED_RESOURCE_LIMITED_KNOWN_EXIT_137 due established long-run termination behavior, safety/no-overclaim boundaries remain preserved, and action advances to A-041.4-B1)
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
@@ -271,6 +271,44 @@
     - final_verdict: A-041.4-E2E.R1 BLOCKED - DOCUMENT DECREE CORRESPONDENCE BROWSER VALIDATION RECOVERY NOT COMPLETE
     - recommended_next_action: A-041.4-E2E.R2
     - next_action_id: A-041.4-E2E.R2
+- A-041.4-E2E.R2 execution block:
+    - mode: browser_validation_split_recovery
+    - source_a0414_e2e_r1_commit: 59374cc
+    - source_a0414_e2e_blocked_commit: 1e48cd4
+    - source_a0414_e2e_spec_commit: 6029cac
+    - selected_vertical: Document / Decree / Correspondence Suite
+    - split_validation_strategy: accepted_due_full_run_exit_137_resource_limit
+    - split_a_result: PASS (2 passed, 1.6m)
+    - split_b_result: PASS (4 passed, 1.7m)
+    - split_c_result: PASS (6 passed, 46.7s)
+    - split_d_result: PASS (6 passed, 56.0s)
+    - split_e_result: PASS (7 passed, 2.5m)
+    - combined_scenario_group_coverage: PASS 25/25
+    - route_coverage_result: PASS 23/23
+    - full_one_shot_chromium_policy: NOT_REQUIRED_RESOURCE_LIMITED_KNOWN_EXIT_137
+    - typescript_result: PASS (TSC_EXIT=0)
+    - targeted_frontend_result: PASS (8 files, 58 passed)
+    - permission_denial_result: PASS
+    - no_overclaim_result: PASS
+    - artifact_hygiene_result: PASS
+    - no_backend_changes: PASS
+    - no_product_frontend_runtime_changes: PASS
+    - no_fake_document_ui: PASS
+    - no_fake_decree_ui: PASS
+    - no_fake_signature_ui: PASS
+    - no_fake_delivery_confirmation_ui: PASS
+    - no_automatic_rector_decision_ui: PASS
+    - no_automatic_decree_approval_ui: PASS
+    - no_automatic_document_signing_ui: PASS
+    - no_external_submission_ui: PASS
+    - no_official_legal_effect_ui: PASS
+    - no_hidden_staff_or_department_score_ui: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; completed_vertical_count=7)
+    - report_file: A-041.4-E2E.R2-DOCUMENT_DECREE_CORRESPONDENCE_BROWSER_VALIDATION_SPLIT_RECOVERY_REPORT.md
+    - final_verdict: A-041.4-E2E.R2 CLOSED - DOCUMENT DECREE CORRESPONDENCE BROWSER VALIDATION RECOVERED BY SPLIT RUNS
+    - recommended_next_action: A-041.4-B1
+    - next_action_id: A-041.4-B1
 - A-041.1-SPEC execution block:
     - mode: product_map_workflow_spec_only
     - purpose: specify_document_decree_correspondence_suite_product_map

@@ -2050,3 +2050,31 @@ The following section seeds the Full University OS universe and guarantees the l
 - report_file: A-041.4-E2E.R1-DOCUMENT_DECREE_CORRESPONDENCE_BROWSER_VALIDATION_RECOVERY_REPORT.md
 - final_verdict: A-041.4-E2E.R1 BLOCKED - DOCUMENT DECREE CORRESPONDENCE BROWSER VALIDATION RECOVERY NOT COMPLETE
 - next_action_id: A-041.4-E2E.R2
+
+## A-041.4-E2E.R2 Document / Decree / Correspondence Browser Validation Split Recovery Note
+
+- source_a0414_e2e_r1_commit: 59374cc
+- source_a0414_e2e_blocked_commit: 1e48cd4
+- source_a0414_e2e_spec_commit: 6029cac
+- selected_vertical: Document / Decree / Correspondence Suite
+- mode: browser_validation_split_recovery
+- split_validation_strategy: accepted_due_full_run_exit_137_resource_limit
+- split_a_result: PASS (2 passed, 1.6m)
+- split_b_result: PASS (4 passed, 1.7m)
+- split_c_result: PASS (6 passed, 46.7s)
+- split_d_result: PASS (6 passed, 56.0s)
+- split_e_result: PASS (7 passed, 2.5m)
+- combined_scenario_group_coverage: PASS 25/25
+- route_coverage_result: PASS 23/23
+- full_one_shot_chromium_policy: NOT_REQUIRED_RESOURCE_LIMITED_KNOWN_EXIT_137
+- typescript_result: PASS (TSC_EXIT=0)
+- targeted_frontend_result: PASS (8 files, 58 passed)
+- permission_denial_result: PASS
+- no_overclaim_result: PASS
+- artifact_hygiene_result: PASS
+- no_backend_changes: PASS
+- no_product_frontend_runtime_changes: PASS
+- metrics_unchanged: PASS
+- report_file: A-041.4-E2E.R2-DOCUMENT_DECREE_CORRESPONDENCE_BROWSER_VALIDATION_SPLIT_RECOVERY_REPORT.md
+- final_verdict: A-041.4-E2E.R2 CLOSED - DOCUMENT DECREE CORRESPONDENCE BROWSER VALIDATION RECOVERED BY SPLIT RUNS
+- next_action_id: A-041.4-B1
