@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-          - status: ready_for_A-042.0-SPEC
-                - current_stage: A-041.5-B1 complete / product vertical closure baseline confirmed
-                - last_completed_action_id: A-041.5-B1
-            - next_action_id: A-042.0-SPEC
-                - updated_at: 2026-05-27 (A-041.5-B1 completed validation/reporting-only product vertical closure for Document / Decree / Correspondence Suite with chain evidence reuse plus scoped re-validation gates (TSC PASS, targeted frontend 8 files/58 tests PASS, no-overclaim PASS, artifact hygiene PASS, non-change checks PASS); chain advances to A-042.0-SPEC)
+          - status: ready_for_A-042.1-SPEC
+                - current_stage: A-042.0-SPEC complete / next product vertical selected
+                - last_completed_action_id: A-042.0-SPEC
+            - next_action_id: A-042.1-SPEC
+                - updated_at: 2026-05-27 (A-042.0-SPEC completed as docs-only strategic selection after A-041.5-B1 closure; Student Services / Welfare / Support Suite selected for Wave 31 using value-risk scoring and deferred-lane evidence from prior wave planning; no runtime/API/provider changes and metrics unchanged)
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
@@ -399,6 +399,31 @@
     - final_verdict: A-041.5-B1 CLOSED - DOCUMENT DECREE CORRESPONDENCE SUITE PRODUCT VERTICAL CLOSED / BASELINED
     - recommended_next_action: A-042.0-SPEC
     - next_action_id: A-042.0-SPEC
+- A-042.0-SPEC execution block:
+    - mode: product_vertical_selection_spec_only
+    - purpose: select_next_product_vertical_after_document_decree_correspondence_closure
+    - source_a0415_b1_commit: 8896860
+    - completed_vertical_count_before: 8
+    - closed_vertical_inventory: PASS (Executive Governance, Student Lifecycle, Academic Operations, Research / Science, Quality / Accreditation, HR / Staff Governance, Finance / Procurement / Asset, Document / Decree / Correspondence)
+    - candidate_options_reviewed: PASS (Student Services / Welfare / Support; Campus / Facilities / Dormitory / Access; Library / Learning Resources; Security / Access / Compliance; Integration / Provider Readiness; Executive Brain / Strategic Intelligence; Infrastructure / Operations / SRE)
+    - scoring_matrix_result: PASS
+    - selected_vertical: Student Services / Welfare / Support Suite
+    - selected_reason: highest combined business value, demo/sales relevance, and safe evidence-chain feasibility while avoiding premature provider/autonomy risk
+    - deferred_verticals: Campus / Facilities / Dormitory / Access; Library / Learning Resources; Security / Access / Compliance; Integration / Provider Readiness; Executive Brain / Strategic Intelligence; Infrastructure / Operations / SRE
+    - planned_chain: A-042.1-SPEC -> A-042.2-SPEC/RUNTIME/B1 -> A-042.3-FRONTEND-SPEC/FRONTEND/B1 -> A-042.4-E2E-SPEC/E2E/B1 -> A-042.5-B1
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - api_behavior_changed: NO
+    - provider_integration_added: NO
+    - no_fake_boundaries_defined: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS
+    - report_file: A-042.0-SPEC-STUDENT_SERVICES_WELFARE_SUPPORT_SUITE_PRODUCT_VERTICAL_SELECTION_REPORT.md
+    - final_verdict: A-042.0-SPEC CLOSED - STUDENT SERVICES WELFARE SUPPORT SUITE SELECTED FOR WAVE 31
+    - recommended_next_action: A-042.1-SPEC
+    - next_action_id: A-042.1-SPEC
 - A-041.1-SPEC execution block:
     - mode: product_map_workflow_spec_only
     - purpose: specify_document_decree_correspondence_suite_product_map
