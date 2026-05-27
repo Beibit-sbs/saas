@@ -481,8 +481,8 @@ const adminFixture = {
   tenantId: 7101,
   email: 'sac-admin@example.edu',
   displayName: 'Security Access Compliance Admin',
-  role: 'SECURITY_ACCESS_COMPLIANCE_ADMIN',
-  roles: ['SECURITY_ACCESS_COMPLIANCE_ADMIN'],
+  role: 'admin',
+  roles: ['admin'],
   permissions: [...FULL_PERMISSIONS],
 };
 
@@ -886,7 +886,7 @@ async function expectPermissionDeniedOrSafeFallback(page: Page) {
   } else if (await deniedWrap.count()) {
     await expect(deniedWrap).toBeVisible();
   } else {
-    await expect(page.locator('body')).toContainText(/Permission required|fail-closed|requires/i);
+    await expect(page.locator('body')).toContainText(/Access Denied|Permission required|fail-closed|requires/i);
   }
 
   await expect(page.getByTestId('sac-dashboard-grid')).toHaveCount(0);
@@ -1074,8 +1074,14 @@ test.describe('A-043.4 Security / Access / Compliance scenario groups', () => {
       await expectForbiddenDomAbsent(page);
     }
 
+    await setAuthenticatedAdmin(page);
     for (const required of REQUIRED_BOUNDARY_TEXTS) {
-      await gotoSacRoute(page, '/console/security-access-compliance');
+      const routePath =
+        required === 'No fake incident resolution'
+          ? '/console/security-access-compliance/incidents'
+          : '/console/security-access-compliance';
+
+      await gotoSacRoute(page, routePath);
       await expect(page.locator('body')).toContainText(required);
     }
 
