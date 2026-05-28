@@ -15808,3 +15808,29 @@ Metrics preserved:
 - metrics_unchanged: PASS
 - report_file: A-044.2-B1-CAMPUS_FACILITIES_HOUSING_TRANSPORT_BACKEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-044.3-FRONTEND-SPEC
+
+## A-044.3-FRONTEND-SPEC - Campus / Facilities / Housing / Transport Frontend Contract
+
+- source_a0442_b1_commit: db0013d
+- source_a0442_runtime_commit: e461aa5
+- mode: frontend_contract_spec_only
+- selected_vertical: Campus / Facilities / Housing / Transport Suite
+- frontend_module_path: frontend/modules/campus-facilities/
+- frontend_app_base: frontend/app/(admin)/console/campus-facilities/
+- frontend_test_base: frontend/__tests__/admin/
+- api_base: /api/admin/campus-facilities
+- backend_route_count: 52
+- table_count: 26
+- permission_count: 46
+- planned_frontend_module_files: 7
+- planned_frontend_route_count: 24
+- planned_frontend_test_files: 9
+- planned_frontend_test_count_range: 90-130
+- planned_e2e_spec: frontend/e2e/smoke/a0444-campus-facilities-suite.spec.ts
+- backend_changed: NO
+- frontend_changed: NO
+- playwright_changed: NO
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-044.3-FRONTEND-SPEC-CAMPUS_FACILITIES_HOUSING_TRANSPORT_FRONTEND_CONTRACT_REPORT.md
+- next_action_id: A-044.3-FRONTEND
