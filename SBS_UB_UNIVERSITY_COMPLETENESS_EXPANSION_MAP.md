@@ -15916,3 +15916,22 @@ Metrics preserved:
 - metrics_unchanged: PASS
 - report_file: A-044.4-E2E-CAMPUS_FACILITIES_HOUSING_TRANSPORT_BROWSER_VALIDATION_REPORT.md
 - next_action_id: A-044.4-E2E.R1
+
+## A-044.4-E2E.R1 - Campus / Facilities Browser Runtime Recovery
+
+- source_a0444_blocked_commit: 2628c1e
+- source_a0444_e2e_spec_commit: dddb05b
+- mode: browser_runtime_recovery
+- selected_vertical: Campus / Facilities / Housing / Transport Suite
+- original_blocker: Chromium 27 failed / 1 passed due to 404/502 route-shell responses
+- diagnosis_result: frontend unavailable under dependency-gated compose flow because backend was down; nginx unhealthy on backend /health/ready; Campus route artifacts present; route availability recovered to 307 redirects via no-deps frontend/nginx runtime bring-up
+- route_smoke_result: PASS_REDIRECT_307_24_OF_24
+- route_coverage_result: INCONCLUSIVE_DUE_TO_RUN_TERMINATION
+- scenario_group_count: 28
+- chromium_result: FAIL_PARTIAL (permission-denial scenario failed; run terminated exit 137)
+- no_overclaim_dom_scan_result: INCONCLUSIVE_DUE_TO_RUN_TERMINATION (source scan PASS in allowed lists)
+- artifact_hygiene_result: PASS_NOT_STAGED_WITH_CLEANUP_PERMISSION_BLOCKER
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-044.4-E2E.R1-CAMPUS_FACILITIES_BROWSER_RUNTIME_RECOVERY_REPORT.md
+- next_action_id: A-044.4-E2E.R2

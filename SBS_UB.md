@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: blocked_A-044.4-E2E
-                    - current_stage: A-044.4-E2E blocked / Docker-nginx Chromium route-shell validation returned 404-502 and blocked Campus browser runtime closure
+                        - status: blocked_A-044.4-E2E.R1
+                    - current_stage: A-044.4-E2E.R1 blocked / permission-denial runtime assertion failed and Chromium Docker run terminated with exit 137 before completion
                     - last_completed_action_id: A-044.4-E2E-SPEC
-                        - next_action_id: A-044.4-E2E.R1
-                    - updated_at: 2026-05-28 (A-044.4-E2E attempted; Playwright spec implemented and browser runtime executed, but Docker/Nginx Chromium validation blocked with 27 failed/1 passed and route-shell visibility failures under 404/502 responses; TypeScript PASS; targeted frontend tests PASS (119); backend/frontend-runtime unchanged; metrics unchanged)
+                        - next_action_id: A-044.4-E2E.R2
+                    - updated_at: 2026-05-28 (A-044.4-E2E.R1 recovery attempted; runtime routing recovered to 307 redirects on all 24 Campus routes, but CFHT-E2E-GROUP-25 permission-denial assertion failed and Chromium run terminated exit 137 before full suite completion; TypeScript PASS; targeted frontend tests PASS 119; backend/frontend-runtime source unchanged; metrics unchanged)
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
@@ -1008,6 +1008,42 @@
     - final_verdict: A-044.4-E2E BLOCKED - CAMPUS FACILITIES HOUSING TRANSPORT BROWSER VALIDATION FAILED IN DOCKER/NGINX RUNTIME (ROUTE-SHELL 404/502)
     - recommended_next_action: A-044.4-E2E.R1
     - next_action_id: A-044.4-E2E.R1
+- A-044.4-E2E.R1 execution block:
+    - mode: browser_runtime_recovery
+    - purpose: recover_campus_facilities_browser_validation_after_404_502_blocker
+    - source_a0444_blocked_commit: 2628c1e
+    - source_a0444_e2e_spec_commit: dddb05b
+    - selected_vertical: Campus / Facilities / Housing / Transport Suite
+    - original_blocker: Chromium 27 failed / 1 passed due to 404/502 route-shell responses
+    - diagnosis_result: frontend was not running under dependency-gated compose flow because backend was down; nginx unhealthy on backend /health/ready; Campus route artifacts present; route smoke recovered to 307 for all 24 routes after no-deps frontend/nginx bring-up
+    - frontend_rebuild_required: NO
+    - playwright_spec_repaired: NO
+    - frontend_runtime_repaired: NO_SOURCE_CHANGE_RUNTIME_BRINGUP_ONLY
+    - route_smoke_result: PASS_REDIRECT_307_24_OF_24
+    - route_coverage_result: INCONCLUSIVE_DUE_TO_RUN_TERMINATION
+    - scenario_group_count: 28
+    - typescript_result: PASS (npx tsc --noEmit)
+    - targeted_frontend_result: PASS (9 files, 119 tests)
+    - chromium_result: FAIL_PARTIAL (permission-denial scenario failed; run terminated exit 137 before completion)
+    - permission_denial_result: FAIL (campus-facilities-permission-denied selector not found)
+    - no_overclaim_dom_scan_result: INCONCLUSIVE_DUE_TO_RUN_TERMINATION (source scan PASS in allowed lists)
+    - artifact_hygiene_result: PASS_NOT_STAGED_WITH_CLEANUP_PERMISSION_BLOCKER
+    - backend_changed: NO
+    - frontend_runtime_changed: NO
+    - no_fake_iot_live_sensor_integration: PASS
+    - no_fake_gps_live_tracking: PASS
+    - no_fake_building_automation: PASS
+    - no_fake_access_control_enforcement: PASS
+    - no_fake_safety_certification: PASS
+    - no_fake_maintenance_completion: PASS
+    - no_autonomous_dispatch: PASS
+    - no_external_provider_sync: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS
+    - report_file: A-044.4-E2E.R1-CAMPUS_FACILITIES_BROWSER_RUNTIME_RECOVERY_REPORT.md
+    - final_verdict: A-044.4-E2E.R1 BLOCKED - CAMPUS FACILITIES BROWSER RUNTIME RECOVERY INCOMPLETE (PERMISSION-DENIAL ASSERTION FAILED, RUN TERMINATED EXIT 137)
+    - recommended_next_action: A-044.4-E2E.R2
+    - next_action_id: A-044.4-E2E.R2
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
