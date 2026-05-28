@@ -3017,3 +3017,24 @@ The following section seeds the Full University OS universe and guarantees the l
 - metrics_unchanged: PASS
 - report_file: A-044.4-E2E.R2-CAMPUS_FACILITIES_PERMISSION_DENIAL_CHROMIUM_STABILITY_RECOVERY_REPORT.md
 - next_action_id: A-044.4-B1
+
+## A-044.4-B1 Campus / Facilities / Housing / Transport Browser Quality Baseline Note
+
+- source_a0444_r2_commit: 18ea7e9
+- source_a0444_r1_commit: e71d37b
+- selected_vertical: Campus / Facilities / Housing / Transport Suite
+- mode: validation_reporting_only / browser_validation_quality_baseline
+- playwright_spec: frontend/e2e/smoke/a0444-campus-facilities-suite.spec.ts
+- route_coverage_result: PASS 24/24
+- scenario_group_result: PASS 28/28
+- permission_denial_result: PASS
+- nginx_route_smoke_result: PASS_REDIRECT_307_24_OF_24
+- typescript_result: PASS (npx tsc --noEmit)
+- targeted_frontend_result: PASS (9 files, 119 tests)
+- chromium_split_result: PASS 28/28 groups
+- exit_137_observed_in_accepted_evidence: NO
+- backend_changed: NO
+- frontend_runtime_changed: NO
+- metrics_unchanged: PASS
+- report_file: A-044.4-B1-CAMPUS_FACILITIES_HOUSING_TRANSPORT_BROWSER_VALIDATION_QUALITY_BASELINE_REPORT.md
+- next_action_id: A-044.5-B1
