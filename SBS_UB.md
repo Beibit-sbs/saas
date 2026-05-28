@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: ready_for_A-044.1-SPEC
-                    - current_stage: A-044.0.R1 complete / HR closed vertical evidence confirmed
-                    - last_completed_action_id: A-044.0.R1
-                        - next_action_id: A-044.1-SPEC
-                    - updated_at: 2026-05-28 (A-044.0.R1 completed; user-triggered HR closure reconciliation for A-044.0 validated full A-039 closure chain and product closure report; hr_closure_classification=HR_CLOSED_CONFIRMED; completed_vertical_count remains 10; ten_vertical_milestone remains YES; docs-only, runtime unchanged, metrics unchanged)
+                        - status: ready_for_A-044.2-SPEC
+                    - current_stage: A-044.1-SPEC complete / Campus Facilities Housing Transport selected as 11th product vertical
+                    - last_completed_action_id: A-044.1-SPEC
+                        - next_action_id: A-044.2-SPEC
+                    - updated_at: 2026-05-28 (A-044.1-SPEC completed; selected_vertical=Campus / Facilities / Housing / Transport Suite from A-044.0 rank #1 after A-044.0.R1 reconciliation; completed_vertical_count remains 10; ten_vertical_milestone remains YES; docs-only selection; runtime not started; L5/L6 not started; metrics unchanged)
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
@@ -721,6 +721,34 @@
     - report_file: A-044.0.R1-CLOSED_PRODUCT_VERTICAL_INVENTORY_RECONCILIATION_REPORT.md
     - final_verdict: A-044.0.R1 CLOSED - CLOSED PRODUCT VERTICAL INVENTORY RECONCILED
     - next_action_id: A-044.1-SPEC
+- A-044.1-SPEC execution block:
+    - mode: next_product_vertical_selection_spec_only
+    - purpose: select_11th_product_vertical_after_ten_vertical_milestone
+    - source_a0440_r1_commit: ad5cedb
+    - source_a0440_spec_commit: d80db79
+    - completed_vertical_count_current: 10
+    - ten_vertical_milestone_reached: YES
+    - selected_vertical: Campus / Facilities / Housing / Transport Suite
+    - selected_vertical_rank_from_a0440: 1
+    - alternative_candidates_reviewed: 9
+    - selection_reason: highest safe near-term campus operations value with strong rectorate/demo value and low fake-provider/Brain risk when scoped as metadata/readiness/evidence only
+    - future_backend_contract_action: A-044.2-SPEC
+    - future_backend_runtime_action: A-044.2-RUNTIME
+    - future_frontend_action: A-044.3-FRONTEND
+    - future_browser_validation_action: A-044.4-E2E
+    - future_vertical_closure_action: A-044.5-B1
+    - l5_l6_promotion_started: NO
+    - l5_l6_metrics_changed: NO
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS
+    - report_file: A-044.1-SPEC-CAMPUS_FACILITIES_HOUSING_TRANSPORT_VERTICAL_SELECTION_REPORT.md
+    - final_verdict: A-044.1-SPEC CLOSED - CAMPUS FACILITIES HOUSING TRANSPORT SELECTED AS 11TH PRODUCT VERTICAL
+    - recommended_next_action: A-044.2-SPEC
+    - next_action_id: A-044.2-SPEC
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness

@@ -15730,3 +15730,19 @@ Metrics preserved:
 - metrics_unchanged: PASS
 - report_file: A-044.0.R1-CLOSED_PRODUCT_VERTICAL_INVENTORY_RECONCILIATION_REPORT.md
 - next_action_id: A-044.1-SPEC
+
+## A-044.1-SPEC - Campus / Facilities / Housing / Transport Vertical Selection
+
+- source_a0440_r1_commit: ad5cedb
+- source_a0440_spec_commit: d80db79
+- mode: next_product_vertical_selection_spec_only
+- completed_vertical_count_current: 10
+- ten_vertical_milestone_reached: YES
+- selected_vertical: Campus / Facilities / Housing / Transport Suite
+- selected_vertical_rank_from_a0440: 1
+- alternative_candidates_reviewed: 9
+- anti_fake_boundaries: preserved
+- l5_l6_promotion_started: NO
+- metrics_unchanged: PASS
+- report_file: A-044.1-SPEC-CAMPUS_FACILITIES_HOUSING_TRANSPORT_VERTICAL_SELECTION_REPORT.md
+- next_action_id: A-044.2-SPEC
