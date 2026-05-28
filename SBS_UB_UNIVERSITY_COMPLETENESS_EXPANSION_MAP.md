@@ -15855,3 +15855,25 @@ Metrics preserved:
 - metrics_unchanged: PASS
 - report_file: A-044.3-FRONTEND-CAMPUS_FACILITIES_HOUSING_TRANSPORT_FRONTEND_RUNTIME_REPORT.md
 - next_action_id: A-044.3-B1
+
+## A-044.3-B1 - Campus / Facilities / Housing / Transport Frontend Runtime Quality Baseline
+
+- source_a0443_frontend_commit: 3a72b73
+- source_a0443_frontend_spec_commit: 0b2b4b6
+- source_a0442_b1_commit: db0013d
+- mode: validation_reporting_only / frontend_runtime_quality_baseline
+- selected_vertical: Campus / Facilities / Housing / Transport Suite
+- frontend_module_path: frontend/modules/campus-facilities/
+- route_family: /console/campus-facilities
+- frontend_route_count: 24
+- backend_api_base: /api/admin/campus-facilities
+- backend_baseline_used: PASS 52 routes / 26 tables / 46 permissions / 209 tests
+- frontend_module_files_count: 7
+- frontend_test_files_count: 9
+- targeted_frontend_test_result: PASS (vitest targeted pack; 9 files, 119 tests passed)
+- typescript_result: PASS (npx tsc --noEmit; no errors)
+- route_inventory_result: PASS 24
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-044.3-B1-CAMPUS_FACILITIES_HOUSING_TRANSPORT_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
+- next_action_id: A-044.4-E2E-SPEC
