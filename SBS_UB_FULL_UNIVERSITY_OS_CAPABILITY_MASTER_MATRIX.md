@@ -2789,3 +2789,25 @@ The following section seeds the Full University OS universe and guarantees the l
 - metrics_unchanged: PASS
 - report_file: A-044.1-SPEC-CAMPUS_FACILITIES_HOUSING_TRANSPORT_VERTICAL_SELECTION_REPORT.md
 - next_action_id: A-044.2-SPEC
+
+## A-044.2-SPEC Campus / Facilities / Housing / Transport Backend Contract Note
+
+- source_a0441_spec_commit: ad22950
+- mode: backend_contract_spec_only
+- selected_vertical: Campus / Facilities / Housing / Transport Suite
+- planned_backend_module: backend/app/modules/campus_facilities_housing_transport/
+- planned_db_prefix: cfht_
+- planned_table_count: 26
+- planned_permission_namespace: campus_facilities.*
+- planned_permission_count: 46
+- planned_api_base: /api/admin/campus-facilities
+- planned_route_count: 52
+- planned_backend_test_files_count: 5
+- planned_backend_test_count: 120-180
+- runtime_started: NO
+- backend_changed: NO
+- frontend_changed: NO
+- playwright_changed: NO
+- metrics_unchanged: PASS
+- report_file: A-044.2-SPEC-CAMPUS_FACILITIES_HOUSING_TRANSPORT_BACKEND_CONTRACT_REPORT.md
+- next_action_id: A-044.2-RUNTIME

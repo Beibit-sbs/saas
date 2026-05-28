@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: ready_for_A-044.2-SPEC
-                    - current_stage: A-044.1-SPEC complete / Campus Facilities Housing Transport selected as 11th product vertical
-                    - last_completed_action_id: A-044.1-SPEC
-                        - next_action_id: A-044.2-SPEC
-                    - updated_at: 2026-05-28 (A-044.1-SPEC completed; selected_vertical=Campus / Facilities / Housing / Transport Suite from A-044.0 rank #1 after A-044.0.R1 reconciliation; completed_vertical_count remains 10; ten_vertical_milestone remains YES; docs-only selection; runtime not started; L5/L6 not started; metrics unchanged)
+                        - status: ready_for_A-044.2-RUNTIME
+                    - current_stage: A-044.2-SPEC complete / Campus backend contract specified
+                    - last_completed_action_id: A-044.2-SPEC
+                        - next_action_id: A-044.2-RUNTIME
+                    - updated_at: 2026-05-28 (A-044.2-SPEC completed; backend contract specified for Campus / Facilities / Housing / Transport Suite; planned module backend/app/modules/campus_facilities_housing_transport/; planned tables=26 permissions=46 routes=52 tests=120-180; docs-only, runtime not started, metrics unchanged)
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
@@ -749,6 +749,38 @@
     - final_verdict: A-044.1-SPEC CLOSED - CAMPUS FACILITIES HOUSING TRANSPORT SELECTED AS 11TH PRODUCT VERTICAL
     - recommended_next_action: A-044.2-SPEC
     - next_action_id: A-044.2-SPEC
+- A-044.2-SPEC execution block:
+    - mode: backend_contract_spec_only
+    - purpose: specify_campus_facilities_housing_transport_backend_contract
+    - source_a0441_spec_commit: ad22950
+    - selected_vertical: Campus / Facilities / Housing / Transport Suite
+    - planned_backend_module: backend/app/modules/campus_facilities_housing_transport/
+    - planned_db_prefix: cfht_
+    - planned_table_count: 26
+    - planned_permission_namespace: campus_facilities.*
+    - planned_permission_count: 46
+    - planned_api_base: /api/admin/campus-facilities
+    - planned_route_count: 52
+    - planned_backend_test_files_count: 5
+    - planned_backend_test_count: 120-180
+    - runtime_started: NO
+    - backend_changed: NO
+    - frontend_changed: NO
+    - playwright_changed: NO
+    - no_fake_iot_live_sensor_integration: PASS
+    - no_fake_gps_live_tracking: PASS
+    - no_fake_building_automation: PASS
+    - no_fake_access_control_enforcement: PASS
+    - no_fake_safety_certification: PASS
+    - no_fake_maintenance_completion: PASS
+    - no_autonomous_dispatch: PASS
+    - no_external_provider_sync: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS
+    - report_file: A-044.2-SPEC-CAMPUS_FACILITIES_HOUSING_TRANSPORT_BACKEND_CONTRACT_REPORT.md
+    - final_verdict: A-044.2-SPEC CLOSED - CAMPUS FACILITIES HOUSING TRANSPORT BACKEND CONTRACT SPECIFIED
+    - recommended_next_action: A-044.2-RUNTIME
+    - next_action_id: A-044.2-RUNTIME
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
