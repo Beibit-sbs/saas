@@ -1,5 +1,6 @@
 from app.core.db import get_raw_conn
 from app.modules.auth.local_users_service import local_user_store
+from app.modules.campus_facilities_housing_transport.permissions import ALL_PERMISSIONS as _CAMPUS_FACILITIES_PERMISSIONS
 from app.modules.security_access_compliance.permissions import ALL_PERMISSIONS as _SECURITY_ACCESS_COMPLIANCE_PERMISSIONS
 import os
 from dataclasses import dataclass, field
@@ -480,6 +481,12 @@ _SECURITY_ACCESS_COMPLIANCE_AUDITOR_PERMISSIONS: Set[str] = {
     if permission.endswith(".read") or permission.startswith("security_access_compliance.bridges.")
 }
 
+_CAMPUS_FACILITIES_AUDITOR_PERMISSIONS: Set[str] = {
+    permission
+    for permission in _CAMPUS_FACILITIES_PERMISSIONS
+    if permission.endswith(".read") or permission == "campus_facilities.metadata_contract.read"
+}
+
 BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     "superadmin": {
         "admin.dashboard.read",
@@ -565,7 +572,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _QUALITY_ACCREDITATION_PERMISSIONS
     | _FINANCE_PROCUREMENT_ASSET_PERMISSIONS
     | _STUDENT_SERVICES_SUPPORT_PERMISSIONS
-    | _SECURITY_ACCESS_COMPLIANCE_PERMISSIONS,
+    | _SECURITY_ACCESS_COMPLIANCE_PERMISSIONS
+    | _CAMPUS_FACILITIES_PERMISSIONS,
     "admin": {
         "admin.dashboard.read",
         "admin.expansion.read",
@@ -652,7 +660,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _QUALITY_ACCREDITATION_PERMISSIONS
     | _FINANCE_PROCUREMENT_ASSET_PERMISSIONS
     | _STUDENT_SERVICES_SUPPORT_PERMISSIONS
-    | _SECURITY_ACCESS_COMPLIANCE_PERMISSIONS,
+    | _SECURITY_ACCESS_COMPLIANCE_PERMISSIONS
+    | _CAMPUS_FACILITIES_PERMISSIONS,
     "auditor": {
         "admin.audit.read",
         "admin.dashboard.read",
@@ -677,7 +686,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _QUALITY_ACCREDITATION_AUDITOR_PERMISSIONS
     | _FINANCE_PROCUREMENT_ASSET_AUDITOR_PERMISSIONS
     | _STUDENT_SERVICES_SUPPORT_AUDITOR_PERMISSIONS
-    | _SECURITY_ACCESS_COMPLIANCE_AUDITOR_PERMISSIONS,
+    | _SECURITY_ACCESS_COMPLIANCE_AUDITOR_PERMISSIONS
+    | _CAMPUS_FACILITIES_AUDITOR_PERMISSIONS,
     "student": {
         "enrollments.read",
         "grades.read",

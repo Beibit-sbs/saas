@@ -139,6 +139,7 @@ from app.modules.finance_procurement_asset.router import router as finance_procu
 from app.modules.document_decree_correspondence.router import router as document_decree_correspondence_router
 from app.modules.student_services_support.router import router as student_services_support_router
 from app.modules.security_access_compliance.router import router as security_access_compliance_router
+from app.modules.campus_facilities_housing_transport.router import router as campus_facilities_housing_transport_router
 from app.modules.rector_assignment_workflow.router import router as rector_assignment_router
 from app.modules.profiles.router import router as profiles_router
 from app.modules.interventions.router import router as interventions_router
@@ -497,6 +498,7 @@ app.include_router(finance_procurement_asset_router)
 app.include_router(document_decree_correspondence_router)
 app.include_router(student_services_support_router)
 app.include_router(security_access_compliance_router)
+app.include_router(campus_facilities_housing_transport_router)
 
 
 def _register_optional_routers(fastapi_app: FastAPI) -> None:
