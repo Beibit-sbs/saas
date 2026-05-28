@@ -279,8 +279,8 @@ const restrictedFixture = {
   tenantId: 1,
   email: 'cfht-restricted@example.edu',
   displayName: 'Campus Facilities Restricted User',
-  role: 'viewer',
-  roles: ['viewer'],
+  role: 'admin',
+  roles: ['admin'],
   permissions: [...RESTRICTED_PERMISSIONS],
 };
 

@@ -2994,3 +2994,26 @@ The following section seeds the Full University OS universe and guarantees the l
 - metrics_unchanged: PASS
 - report_file: A-044.4-E2E.R1-CAMPUS_FACILITIES_BROWSER_RUNTIME_RECOVERY_REPORT.md
 - next_action_id: A-044.4-E2E.R2
+
+## A-044.4-E2E.R2 Campus / Facilities Permission-Denial and Chromium Stability Recovery Note
+
+- source_a0444_r1_commit: e71d37b
+- source_a0444_e2e_spec_commit: dddb05b
+- selected_vertical: Campus / Facilities / Housing / Transport Suite
+- mode: browser_runtime_recovery
+- root_cause: restricted fixture role mismatch against global admin layout gate; monolithic run pressure in prior attempt
+- playwright_spec_repaired: YES (restricted fixture role/roles viewer -> admin; permissions unchanged)
+- route_smoke_result: PASS_REDIRECT_307_24_OF_24
+- route_coverage_result: PASS (24/24)
+- scenario_group_count: 28
+- typescript_result: PASS
+- targeted_frontend_result: PASS (9 files, 119 tests)
+- chromium_result: PASS_SPLIT_EXECUTION (28/28 groups)
+- chromium_exit_137_observed: NO
+- permission_denial_result: PASS
+- no_overclaim_dom_scan_result: PASS
+- backend_changed: NO
+- frontend_runtime_changed: NO
+- metrics_unchanged: PASS
+- report_file: A-044.4-E2E.R2-CAMPUS_FACILITIES_PERMISSION_DENIAL_CHROMIUM_STABILITY_RECOVERY_REPORT.md
+- next_action_id: A-044.4-B1

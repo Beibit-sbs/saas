@@ -15935,3 +15935,24 @@ Metrics preserved:
 - metrics_unchanged: PASS
 - report_file: A-044.4-E2E.R1-CAMPUS_FACILITIES_BROWSER_RUNTIME_RECOVERY_REPORT.md
 - next_action_id: A-044.4-E2E.R2
+
+## A-044.4-E2E.R2 - Campus / Facilities Permission-Denial and Chromium Stability Recovery
+
+- source_a0444_r1_commit: e71d37b
+- source_a0444_e2e_spec_commit: dddb05b
+- mode: browser_runtime_recovery
+- selected_vertical: Campus / Facilities / Housing / Transport Suite
+- root_cause: restricted fixture role mismatch at admin layout gate; prior monolithic Chromium run pressure
+- playwright_spec_repaired: YES (restricted fixture role semantics corrected)
+- route_smoke_result: PASS_REDIRECT_307_24_OF_24
+- route_coverage_result: PASS (24/24)
+- scenario_group_count: 28
+- chromium_result: PASS_SPLIT_EXECUTION (28/28 groups)
+- chromium_exit_137_observed: NO
+- permission_denial_result: PASS
+- no_overclaim_dom_scan_result: PASS
+- artifact_hygiene_result: PASS_NOT_STAGED
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-044.4-E2E.R2-CAMPUS_FACILITIES_PERMISSION_DENIAL_CHROMIUM_STABILITY_RECOVERY_REPORT.md
+- next_action_id: A-044.4-B1

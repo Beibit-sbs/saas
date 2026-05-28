@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: blocked_A-044.4-E2E.R1
-                    - current_stage: A-044.4-E2E.R1 blocked / permission-denial runtime assertion failed and Chromium Docker run terminated with exit 137 before completion
-                    - last_completed_action_id: A-044.4-E2E-SPEC
-                        - next_action_id: A-044.4-E2E.R2
-                    - updated_at: 2026-05-28 (A-044.4-E2E.R1 recovery attempted; runtime routing recovered to 307 redirects on all 24 Campus routes, but CFHT-E2E-GROUP-25 permission-denial assertion failed and Chromium run terminated exit 137 before full suite completion; TypeScript PASS; targeted frontend tests PASS 119; backend/frontend-runtime source unchanged; metrics unchanged)
+                        - status: ready_A-044.4-B1
+                    - current_stage: A-044.4-E2E.R2 completed / permission-denial and chromium stability recovered via split execution (28/28 groups PASS)
+                    - last_completed_action_id: A-044.4-E2E.R2
+                        - next_action_id: A-044.4-B1
+                    - updated_at: 2026-05-28 (A-044.4-E2E.R2 PASS: permission-denial fixture semantics repaired; nginx route smoke still 307 on all 24 routes; split Docker/nginx Chromium batches passed all 28 groups; no exit 137 observed; TypeScript PASS; targeted frontend tests PASS 119; backend/frontend-runtime source unchanged; metrics unchanged)
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
@@ -1044,6 +1044,47 @@
     - final_verdict: A-044.4-E2E.R1 BLOCKED - CAMPUS FACILITIES BROWSER RUNTIME RECOVERY INCOMPLETE (PERMISSION-DENIAL ASSERTION FAILED, RUN TERMINATED EXIT 137)
     - recommended_next_action: A-044.4-E2E.R2
     - next_action_id: A-044.4-E2E.R2
+- A-044.4-E2E.R2 execution block:
+    - mode: browser_runtime_recovery
+    - purpose: recover_campus_facilities_permission_denial_and_chromium_stability
+    - source_a0444_r1_commit: e71d37b
+    - source_a0444_e2e_spec_commit: dddb05b
+    - selected_vertical: Campus / Facilities / Housing / Transport Suite
+    - root_cause_classification: TEST_FIXTURE_ROLE_ASSUMPTION_MISMATCH + MONOLITHIC_RUNTIME_PRESSURE
+    - diagnosis_result: restricted fixture used viewer role and was blocked by global admin layout gate before route-level permission-denial UI; prior monolithic run termination exit 137 addressed by bounded split execution
+    - playwright_spec_repaired: YES (restrictedFixture role/roles viewer->admin, permissions unchanged)
+    - frontend_runtime_repaired: NO_SOURCE_CHANGE
+    - route_smoke_result: PASS_REDIRECT_307_24_OF_24
+    - route_coverage_result: PASS (24/24)
+    - scenario_group_count: 28
+    - typescript_result: PASS (npx tsc --noEmit)
+    - targeted_frontend_result: PASS (9 files, 119 tests)
+    - chromium_result: PASS_SPLIT_EXECUTION (28/28 groups validated)
+    - chromium_split_group_00: PASS (1 passed, 1.7m)
+    - chromium_split_group_01_12: PASS (12 passed, 52.3s)
+    - chromium_split_group_13_24_27: PASS (13 passed, 56.7s)
+    - chromium_split_group_25: PASS (1 passed, 1.6m)
+    - chromium_split_group_26: PASS (1 passed, 2.8m)
+    - chromium_exit_137_observed: NO
+    - permission_denial_result: PASS
+    - no_overclaim_dom_scan_result: PASS
+    - artifact_hygiene_result: PASS_NOT_STAGED
+    - backend_changed: NO
+    - frontend_runtime_changed: NO
+    - no_fake_iot_live_sensor_integration: PASS
+    - no_fake_gps_live_tracking: PASS
+    - no_fake_building_automation: PASS
+    - no_fake_access_control_enforcement: PASS
+    - no_fake_safety_certification: PASS
+    - no_fake_maintenance_completion: PASS
+    - no_autonomous_dispatch: PASS
+    - no_external_provider_sync: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS
+    - report_file: A-044.4-E2E.R2-CAMPUS_FACILITIES_PERMISSION_DENIAL_CHROMIUM_STABILITY_RECOVERY_REPORT.md
+    - final_verdict: A-044.4-E2E.R2 CLOSED - CAMPUS FACILITIES PERMISSION-DENIAL AND CHROMIUM STABILITY RECOVERED; ALL 28 GROUPS VALIDATED VIA SPLIT DOCKER/NGINX CHROMIUM EXECUTION
+    - recommended_next_action: A-044.4-B1
+    - next_action_id: A-044.4-B1
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
