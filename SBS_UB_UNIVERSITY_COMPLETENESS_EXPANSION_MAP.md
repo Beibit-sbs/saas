@@ -15877,3 +15877,22 @@ Metrics preserved:
 - metrics_unchanged: PASS
 - report_file: A-044.3-B1-CAMPUS_FACILITIES_HOUSING_TRANSPORT_FRONTEND_RUNTIME_QUALITY_BASELINE_REPORT.md
 - next_action_id: A-044.4-E2E-SPEC
+
+## A-044.4-E2E-SPEC - Campus / Facilities / Housing / Transport Browser Validation Plan
+
+- source_a0443_b1_commit: d5cdd5a
+- source_a0443_frontend_commit: 3a72b73
+- source_a0442_b1_commit: db0013d
+- mode: browser_validation_plan_spec_only
+- selected_vertical: Campus / Facilities / Housing / Transport Suite
+- backend_baseline: PASS 52 routes / 26 tables / 46 permissions / 209 tests
+- frontend_baseline: PASS 24 routes / 9 test files / 119 tests / TypeScript PASS
+- future_playwright_spec: frontend/e2e/smoke/a0444-campus-facilities-suite.spec.ts
+- future_route_coverage_target: PASS 24/24
+- future_scenario_group_count: 28
+- playwright_spec_created: NO
+- browser_tests_run: NO
+- anti_fake_boundaries: preserved
+- metrics_unchanged: PASS
+- report_file: A-044.4-E2E-SPEC-CAMPUS_FACILITIES_HOUSING_TRANSPORT_BROWSER_VALIDATION_PLAN_REPORT.md
+- next_action_id: A-044.4-E2E

@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: ready_for_A-044.4-E2E-SPEC
-                    - current_stage: A-044.3-B1 complete / Campus frontend runtime quality baseline confirmed
-                    - last_completed_action_id: A-044.3-B1
-                        - next_action_id: A-044.4-E2E-SPEC
-                    - updated_at: 2026-05-28 (A-044.3-B1 completed; validation/reporting-only frontend baseline confirmed for Campus / Facilities / Housing / Transport Suite; frontend_module_files=7 frontend_route_count=24 frontend_test_files=9; TypeScript PASS; targeted frontend tests PASS (119 passed); route_inventory PASS 24; no_overclaim PASS; backend/playwright unchanged; metrics unchanged)
+                        - status: ready_for_A-044.4-E2E
+                    - current_stage: A-044.4-E2E-SPEC complete / Campus browser validation plan specified
+                    - last_completed_action_id: A-044.4-E2E-SPEC
+                        - next_action_id: A-044.4-E2E
+                    - updated_at: 2026-05-28 (A-044.4-E2E-SPEC completed; docs-only browser validation plan specified for Campus / Facilities / Housing / Transport Suite; future_playwright_spec=frontend/e2e/smoke/a0444-campus-facilities-suite.spec.ts future_route_coverage_target=PASS 24/24 future_scenario_group_count=28; no browser tests run; frontend/backend unchanged; metrics unchanged)
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
@@ -947,6 +947,36 @@
     - final_verdict: A-044.3-B1 CLOSED - CAMPUS FACILITIES HOUSING TRANSPORT FRONTEND RUNTIME QUALITY BASELINE CONFIRMED
     - recommended_next_action: A-044.4-E2E-SPEC
     - next_action_id: A-044.4-E2E-SPEC
+- A-044.4-E2E-SPEC execution block:
+    - mode: browser_validation_plan_spec_only
+    - purpose: specify_campus_facilities_housing_transport_browser_validation_plan
+    - source_a0443_b1_commit: d5cdd5a
+    - source_a0443_frontend_commit: 3a72b73
+    - source_a0442_b1_commit: db0013d
+    - selected_vertical: Campus / Facilities / Housing / Transport Suite
+    - backend_baseline: PASS 52 routes / 26 tables / 46 permissions / 209 tests
+    - frontend_baseline: PASS 24 routes / 9 test files / 119 tests / TypeScript PASS
+    - future_playwright_spec: frontend/e2e/smoke/a0444-campus-facilities-suite.spec.ts
+    - future_route_coverage_target: PASS 24/24
+    - future_scenario_group_count: 28
+    - playwright_spec_created: NO
+    - browser_tests_run: NO
+    - frontend_changed: NO
+    - backend_changed: NO
+    - no_fake_iot_live_sensor_integration: PASS
+    - no_fake_gps_live_tracking: PASS
+    - no_fake_building_automation: PASS
+    - no_fake_access_control_enforcement: PASS
+    - no_fake_safety_certification: PASS
+    - no_fake_maintenance_completion: PASS
+    - no_autonomous_dispatch: PASS
+    - no_external_provider_sync: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS
+    - report_file: A-044.4-E2E-SPEC-CAMPUS_FACILITIES_HOUSING_TRANSPORT_BROWSER_VALIDATION_PLAN_REPORT.md
+    - final_verdict: A-044.4-E2E-SPEC CLOSED - CAMPUS FACILITIES HOUSING TRANSPORT BROWSER VALIDATION PLAN SPECIFIED
+    - recommended_next_action: A-044.4-E2E
+    - next_action_id: A-044.4-E2E
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
