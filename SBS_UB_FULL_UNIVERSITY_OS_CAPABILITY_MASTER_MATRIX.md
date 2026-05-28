@@ -2950,3 +2950,24 @@ The following section seeds the Full University OS universe and guarantees the l
 - metrics_unchanged: PASS
 - report_file: A-044.4-E2E-SPEC-CAMPUS_FACILITIES_HOUSING_TRANSPORT_BROWSER_VALIDATION_PLAN_REPORT.md
 - next_action_id: A-044.4-E2E
+
+## A-044.4-E2E Campus / Facilities / Housing / Transport Browser Validation Runtime Note
+
+- source_a0444_e2e_spec_commit: dddb05b
+- source_a0443_b1_commit: d5cdd5a
+- selected_vertical: Campus / Facilities / Housing / Transport Suite
+- mode: browser_validation_runtime
+- playwright_spec: frontend/e2e/smoke/a0444-campus-facilities-suite.spec.ts
+- route_coverage_result: BLOCKED (target PASS 24/24 not reached; route-shell assertions failed under runtime 404/502)
+- scenario_group_count: 28
+- typescript_result: PASS (npx tsc --noEmit)
+- targeted_frontend_result: PASS (vitest targeted pack; 9 files, 119 tests passed)
+- chromium_result: BLOCKED (Docker/Nginx Chromium run; 27 failed, 1 passed)
+- permission_denial_result: BLOCKED (permission-denied selector not reachable due runtime route-shell failure state)
+- no_overclaim_dom_scan_result: BLOCKED_IN_RUNTIME (source scan PASS in allowed lists; DOM scan blocked by 404/502 runtime responses)
+- artifact_hygiene_result: PASS_NOT_STAGED_WITH_CLEANUP_PERMISSION_BLOCKER
+- backend_changed: NO
+- frontend_runtime_changed: NO
+- metrics_unchanged: PASS
+- report_file: A-044.4-E2E-CAMPUS_FACILITIES_HOUSING_TRANSPORT_BROWSER_VALIDATION_REPORT.md
+- next_action_id: A-044.4-E2E.R1

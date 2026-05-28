@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: ready_for_A-044.4-E2E
-                    - current_stage: A-044.4-E2E-SPEC complete / Campus browser validation plan specified
+                        - status: blocked_A-044.4-E2E
+                    - current_stage: A-044.4-E2E blocked / Docker-nginx Chromium route-shell validation returned 404-502 and blocked Campus browser runtime closure
                     - last_completed_action_id: A-044.4-E2E-SPEC
-                        - next_action_id: A-044.4-E2E
-                    - updated_at: 2026-05-28 (A-044.4-E2E-SPEC completed; docs-only browser validation plan specified for Campus / Facilities / Housing / Transport Suite; future_playwright_spec=frontend/e2e/smoke/a0444-campus-facilities-suite.spec.ts future_route_coverage_target=PASS 24/24 future_scenario_group_count=28; no browser tests run; frontend/backend unchanged; metrics unchanged)
+                        - next_action_id: A-044.4-E2E.R1
+                    - updated_at: 2026-05-28 (A-044.4-E2E attempted; Playwright spec implemented and browser runtime executed, but Docker/Nginx Chromium validation blocked with 27 failed/1 passed and route-shell visibility failures under 404/502 responses; TypeScript PASS; targeted frontend tests PASS (119); backend/frontend-runtime unchanged; metrics unchanged)
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
@@ -977,6 +977,37 @@
     - final_verdict: A-044.4-E2E-SPEC CLOSED - CAMPUS FACILITIES HOUSING TRANSPORT BROWSER VALIDATION PLAN SPECIFIED
     - recommended_next_action: A-044.4-E2E
     - next_action_id: A-044.4-E2E
+- A-044.4-E2E execution block:
+    - mode: browser_validation_runtime
+    - purpose: implement_campus_facilities_housing_transport_browser_validation
+    - source_a0444_e2e_spec_commit: dddb05b
+    - source_a0443_b1_commit: d5cdd5a
+    - selected_vertical: Campus / Facilities / Housing / Transport Suite
+    - playwright_spec: frontend/e2e/smoke/a0444-campus-facilities-suite.spec.ts
+    - route_coverage_result: BLOCKED (target PASS 24/24 not reached; route-shell assertions failed under runtime 404/502)
+    - scenario_group_count: 28
+    - typescript_result: PASS (npx tsc --noEmit)
+    - targeted_frontend_result: PASS (vitest targeted pack; 9 files, 119 tests passed)
+    - chromium_result: BLOCKED (Docker/Nginx Chromium run; 27 failed, 1 passed)
+    - permission_denial_result: BLOCKED (permission-denied selector not reachable due runtime route-shell failure state)
+    - no_overclaim_dom_scan_result: BLOCKED_IN_RUNTIME (source scan PASS in allowed lists; DOM scan blocked by 404/502 runtime responses)
+    - artifact_hygiene_result: PASS_NOT_STAGED_WITH_CLEANUP_PERMISSION_BLOCKER (generated test-results not staged; cleanup failed on nfsnobody-owned files)
+    - backend_changed: NO
+    - frontend_runtime_changed: NO
+    - no_fake_iot_live_sensor_integration: PASS
+    - no_fake_gps_live_tracking: PASS
+    - no_fake_building_automation: PASS
+    - no_fake_access_control_enforcement: PASS
+    - no_fake_safety_certification: PASS
+    - no_fake_maintenance_completion: PASS
+    - no_autonomous_dispatch: PASS
+    - no_external_provider_sync: PASS
+    - no_production_sales_gcc_l5_l6_claim: PASS
+    - metrics_unchanged: PASS
+    - report_file: A-044.4-E2E-CAMPUS_FACILITIES_HOUSING_TRANSPORT_BROWSER_VALIDATION_REPORT.md
+    - final_verdict: A-044.4-E2E BLOCKED - CAMPUS FACILITIES HOUSING TRANSPORT BROWSER VALIDATION FAILED IN DOCKER/NGINX RUNTIME (ROUTE-SHELL 404/502)
+    - recommended_next_action: A-044.4-E2E.R1
+    - next_action_id: A-044.4-E2E.R1
 - A-041.2-RUNTIME execution block:
     - mode: backend_runtime_implementation_and_validation_recovery
     - purpose: recover_document_decree_correspondence_runtime_closure_completeness
