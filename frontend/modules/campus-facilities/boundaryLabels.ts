@@ -1,0 +1,92 @@
+import type { CampusFacilitiesRouteKey } from './types';
+
+export const CAMPUS_FACILITIES_BOUNDARY_LABELS = {
+  metadataOnly: 'Metadata/readiness/evidence only',
+  humanReviewRequired: 'Human review required',
+  incompleteDataSupported: 'Incomplete data supported',
+  noLiveIotIntegration: 'No live IoT integration',
+  noGpsLiveTracking: 'No GPS live tracking',
+  noBuildingAutomation: 'No building automation',
+  noAccessControlEnforcement: 'No access-control enforcement',
+  noSafetyCertification: 'No safety certification',
+  noMaintenanceCompletionGuarantee: 'No maintenance completion guarantee',
+  noAutomaticHousingDecision: 'No automatic housing decision',
+  noAutomaticEviction: 'No automatic eviction',
+  noAutomaticStudentStaffSanction: 'No automatic student/staff sanction',
+  noAutonomousDispatch: 'No autonomous dispatch',
+  noExternalProviderSync: 'No external provider sync',
+  noProductionReadinessClaim: 'No production readiness claim',
+  noSalesReadinessClaim: 'No sales readiness claim',
+  noGccReadinessClaim: 'No GCC readiness claim',
+  noL5L6Claim: 'No L5/L6 claim',
+} as const;
+
+export const CAMPUS_FACILITIES_NO_OVERCLAIM_COPY = [
+  'No live IoT integration',
+  'No GPS live tracking',
+  'No building automation',
+  'No access-control enforcement',
+  'No safety certification',
+  'No maintenance completion guarantee',
+  'No automatic housing decision',
+  'No automatic eviction',
+  'No automatic student/staff sanction',
+  'No autonomous dispatch',
+  'No external provider sync',
+  'No production readiness claim',
+  'No sales readiness claim',
+  'No GCC readiness claim',
+  'No L5/L6 claim',
+] as const;
+
+const COMMON_LABELS = [
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.metadataOnly,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.humanReviewRequired,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.incompleteDataSupported,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noLiveIotIntegration,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noGpsLiveTracking,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noBuildingAutomation,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noAccessControlEnforcement,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noSafetyCertification,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noMaintenanceCompletionGuarantee,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noAutomaticHousingDecision,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noAutomaticEviction,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noAutomaticStudentStaffSanction,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noAutonomousDispatch,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noExternalProviderSync,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noProductionReadinessClaim,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noSalesReadinessClaim,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noGccReadinessClaim,
+  CAMPUS_FACILITIES_BOUNDARY_LABELS.noL5L6Claim,
+] as const;
+
+export const CAMPUS_FACILITIES_ROUTE_BOUNDARY_LABELS: Record<CampusFacilitiesRouteKey, string[]> = {
+  overview: [...COMMON_LABELS],
+  dashboard: [...COMMON_LABELS],
+  campus: [...COMMON_LABELS],
+  facilities: [...COMMON_LABELS],
+  buildings: [...COMMON_LABELS],
+  floors: [...COMMON_LABELS],
+  rooms: [...COMMON_LABELS],
+  availability: [...COMMON_LABELS],
+  occupancy: [...COMMON_LABELS],
+  dormitories: [...COMMON_LABELS],
+  'housing-units': [...COMMON_LABELS],
+  'housing-requests': [...COMMON_LABELS],
+  maintenance: [...COMMON_LABELS],
+  'service-requests': [...COMMON_LABELS],
+  'work-orders': [...COMMON_LABELS],
+  transport: [...COMMON_LABELS],
+  'responsible-units': [...COMMON_LABELS],
+  'safety-readiness': [...COMMON_LABELS],
+  'bridges-access-visitor': [...COMMON_LABELS],
+  'bridges-student-services': [...COMMON_LABELS],
+  'bridges-finance-asset': [...COMMON_LABELS],
+  'bridges-hr-staff': [...COMMON_LABELS],
+  'audit-evidence': [...COMMON_LABELS],
+  limitations: [...COMMON_LABELS],
+};
+
+export function getCampusFacilitiesBoundaryLabels(routeKey: CampusFacilitiesRouteKey) {
+  return CAMPUS_FACILITIES_ROUTE_BOUNDARY_LABELS[routeKey];
+}
