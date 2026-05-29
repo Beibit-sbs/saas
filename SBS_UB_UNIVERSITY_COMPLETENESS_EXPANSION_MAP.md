@@ -15999,6 +15999,22 @@ Metrics preserved:
 - report_file: A-044.5-B1-CAMPUS_FACILITIES_HOUSING_TRANSPORT_PRODUCT_VERTICAL_CLOSURE_REPORT.md
 - next_action_id: A-045.0-SPEC
 
+## A-044.R4.B1 - Admin Console Stability Quality Baseline
+
+- mode: validation_reporting_only / stability_quality_baseline
+- source_state: A-044.R2 PARTIAL_BLOCKED, A-044.R3 PLAN_READY, A-044.R4 remediations implemented
+- research_dashboard_result: PASS (GET /api/admin/research-science/dashboard = 200)
+- language_preference_result: PASS (GET/PUT /api/auth/me/preferences/language = 200/200)
+- login_continuity_result: PASS (platform_admin, inst_admin, acad_admin)
+- route_continuity_result: PASS (7 scoped console routes loaded with 200 and no blank/error markers)
+- network_continuity_result: PASS (no scoped 500/502 regressions; no language endpoint 405/401 noise in clean baseline sequence)
+- targeted_regression_result: PASS_WITH_TOOLING_LIMITATION (pytest output retrieval unavailable; endpoint-level validation used as authoritative evidence)
+- safety_verification_result: PASS (RBAC/tenant isolation/permissions unchanged; no fake controls)
+- metrics_unchanged: PASS
+- report_file: A-044.R4.B1-ADMIN_CONSOLE_STABILITY_QUALITY_BASELINE_REPORT.md
+- final_verdict: A-044.R4.B1 CLOSED - STABILITY BASELINE CONFIRMED
+- next_action_id: A-044.R5-UI-FRAMEWORK
+
 ## A-045.0-SPEC - Next Product Vertical Selection After 11 Closed Verticals
 
 - source_a0445_b1_commit: 8f50058

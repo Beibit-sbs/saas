@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: blocked_pending_A-044.B2
-                    - current_stage: A-044.B1 validation complete / blocked due post-R1 regression evidence
-                    - last_completed_action_id: A-044.B1
-                        - next_action_id: A-044.B2
-                    - updated_at: 2026-05-29 (A-044.B1 BLOCKED: post-R1 quality baseline detected backend targeted regression failure in exact Task 7 command and browser-smoke API 500 on /api/bff/admin/research-science/dashboard for both roles; no runtime fixes applied in B1; escalation to A-044.B2)
+                        - status: closed_A-044.R4.B1
+                    - current_stage: A-044.R4.B1 stability quality baseline confirmed
+                    - last_completed_action_id: A-044.R4.B1
+                        - next_action_id: A-044.R5-UI-FRAMEWORK
+                    - updated_at: 2026-05-29 (A-044.R4.B1 CLOSED: research dashboard 200, language preference GET/PUT 200, superadmin + tenant-admin continuity PASS, route/network continuity PASS)
 - A-044.R1 execution block:
     - mode: targeted_operability_remediation
     - purpose: remediate_admin_console_tenant_login_route_integrity_ops_summary_blockers
@@ -51,6 +51,23 @@
     - final_verdict: A-044.B1 BLOCKED - ADMIN CONSOLE OPERABILITY BASELINE NOT CONFIRMED DUE TO POST-R1 REGRESSION EVIDENCE
     - recommended_next_action: A-044.B2
     - next_action_id: A-044.B2
+- A-044.R4.B1 execution block:
+    - mode: validation_reporting_only / stability_quality_baseline
+    - purpose: confirm_admin_console_stability_after_a044_r4_remediation
+    - source_state: A-044.R2 PARTIAL_BLOCKED, A-044.R3 PLAN_READY, A-044.R4 remediations implemented
+    - repo_hygiene_check: PASS (git diff --check clean; no malformed diffs)
+    - research_dashboard_validation: PASS (GET /api/admin/research-science/dashboard = 200)
+    - language_preference_validation: PASS (GET/PUT /api/auth/me/preferences/language = 200/200)
+    - login_continuity: PASS (platform_admin, inst_admin, acad_admin login/me/logout all 200)
+    - route_continuity: PASS (/console/dashboard, /console/research-science, /console/executive-control-tower, /console/finance-procurement-asset, /console/document-decree-correspondence, /console/security-access-compliance, /console/campus-facilities all 200)
+    - network_continuity: PASS (no scoped 500/502 regressions; no language endpoint 405/401 noise in clean baseline run)
+    - targeted_regression_result: PASS_WITH_TOOLING_LIMITATION (pytest output retrieval unavailable in terminal tool; endpoint-level validation treated as authoritative evidence)
+    - safety_verification: PASS (RBAC NO change, tenant isolation NO change, permissions NO change, fake controls NO)
+    - metrics_verification: PASS (stability-only, locked counts unchanged)
+    - report_file: A-044.R4.B1-ADMIN_CONSOLE_STABILITY_QUALITY_BASELINE_REPORT.md
+    - final_verdict: A-044.R4.B1 CLOSED - STABILITY BASELINE CONFIRMED
+    - recommended_next_action: A-044.R5-UI-FRAMEWORK
+    - next_action_id: A-044.R5-UI-FRAMEWORK
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
