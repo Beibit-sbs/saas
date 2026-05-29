@@ -6,12 +6,14 @@ from __future__ import annotations
 
 import pytest
 
+from app import bootstrap_admin
 from app.bootstrap_admin import (
     _is_placeholder_secret,
     _read_bool_env,
     _read_env,
     _read_strong_password_env,
 )
+from app.modules.auth.local_users_service import local_user_store
 
 
 # ---------------------------------------------------------------------------
@@ -142,3 +144,33 @@ class TestReadStrongPasswordEnv:
         monkeypatch.setenv("_TEST_PW", "change_me")
         with pytest.raises(RuntimeError):
             _read_strong_password_env("_TEST_PW")
+
+
+class TestEnsureLocalTenantAdmins:
+    def _remove_if_exists(self, login: str, tenant_id: int) -> None:
+        existing = local_user_store.find_user_by_login(login)
+        if existing is not None:
+            local_user_store.delete_user(str(existing["user_id"]), tenant_id=tenant_id)
+
+    def test_disabled_noop(self, monkeypatch):
+        monkeypatch.setenv("LOCAL_TENANT_ADMIN_BOOTSTRAP_ENABLED", "false")
+        result = bootstrap_admin.ensure_local_tenant_admins()
+        assert result["enabled"] is False
+        assert result["logins"] == []
+
+    def test_creates_default_accounts(self, monkeypatch):
+        monkeypatch.setenv("LOCAL_TENANT_ADMIN_BOOTSTRAP_ENABLED", "true")
+        monkeypatch.setenv("LOCAL_TENANT_ADMIN_TENANT_ID", "1")
+        monkeypatch.setenv("LOCAL_TENANT_ADMIN_LOGINS", "inst_admin,acad_admin")
+        monkeypatch.setenv("LOCAL_TENANT_ADMIN_PASSWORD", "password123")
+        monkeypatch.setenv("LOCAL_TENANT_ADMIN_UPDATE_PASSWORD", "true")
+
+        self._remove_if_exists("inst_admin", tenant_id=1)
+        self._remove_if_exists("acad_admin", tenant_id=1)
+
+        result = bootstrap_admin.ensure_local_tenant_admins()
+
+        assert result["enabled"] is True
+        assert result["tenant_id"] == 1
+        assert result["logins"] == ["inst_admin", "acad_admin"]
+        assert [item["result"] for item in result["results"]] == ["created", "created"]

@@ -1,9 +1,33 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: ready_for_A-045.1-SPEC
-                    - current_stage: A-045.0-SPEC complete / 12th product vertical selected
-                    - last_completed_action_id: A-045.0-SPEC
+                        - status: ready_for_A-045.1-SPEC (A-044.R1 remediation closed)
+                    - current_stage: A-044.R1 complete / admin console operability remediation closed / forward flow unchanged
+                    - last_completed_action_id: A-044.R1
                         - next_action_id: A-045.1-SPEC
-                    - updated_at: 2026-05-28 (A-045.0-SPEC PASS: Integration / Provider Readiness Suite selected as target vertical #12; selection/spec only; completed_vertical_count remains 11; locked maturity metrics unchanged; no runtime code changes; next action A-045.1-SPEC)
+                    - updated_at: 2026-05-29 (A-044.R1 PASS: tenant admin local login path restored with explicit bootstrap controls; student-services-welfare-support compatibility route added; platform ops summary route registration + /api/bff/v1 alias restored; targeted backend/frontend tests and runtime curl checks passed; no fake metrics introduced; next action remains A-045.1-SPEC)
+- A-044.R1 execution block:
+    - mode: targeted_operability_remediation
+    - purpose: remediate_admin_console_tenant_login_route_integrity_ops_summary_blockers
+    - source_a044_audit_state: PARTIAL (three confirmed blockers)
+    - blocker_1_tenant_login: FIXED (env-controlled local tenant-admin bootstrap for tenant 1)
+    - blocker_2_student_services_route: FIXED (compatibility alias route for /console/student-services-welfare-support)
+    - blocker_3_ops_summary_404: FIXED (platform ops router registered + bff-compatible route alias)
+    - backend_changed: YES
+    - frontend_changed: YES
+    - infra_changed: YES
+    - playwright_changed: NO
+    - fake_metrics_added: NO
+    - provider_live_integration_added: NO
+    - targeted_backend_tests: PASS (40 passed)
+    - targeted_frontend_tests: PASS (2 files, 4 passed)
+    - frontend_typecheck: PASS (TYPECHECK_OK)
+    - runtime_db_seed_check: PASS (platform_admin, inst_admin, acad_admin present)
+    - runtime_login_check: PASS (inst_admin 200 via nginx)
+    - runtime_ops_summary_check: PASS (/api/v1 and /api/bff/v1 both 200 with authenticated admin)
+    - anti_fake_scan_result: PASS (no fake/hardcoded/stubbed metrics markers in changed scope)
+    - report_file: A-044.R1-ADMIN_CONSOLE_OPERABILITY_REMEDIATION_REPORT.md
+    - final_verdict: A-044.R1 CLOSED - ADMIN CONSOLE OPERABILITY REMEDIATION COMPLETED FOR CONFIRMED BLOCKERS
+    - recommended_next_action: A-045.1-SPEC
+    - next_action_id: A-045.1-SPEC
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime

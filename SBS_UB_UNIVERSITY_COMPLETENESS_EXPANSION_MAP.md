@@ -9,6 +9,10 @@ Key result:
 - The registry spans modules, workflows, integrations, reports, policy controls, Brain signals, autonomous workflow candidates, data entities, and audit evidence capabilities.
 - Baseline metrics remain unchanged.
 
+Cross-plane continuity note (2026-05-29):
+- A-044.R1 admin console operability remediation is closed for three confirmed blockers (tenant admin local login restoration, student-services welfare-support legacy route compatibility, and platform ops summary route integrity including /api/bff/v1 alias).
+- This is a runtime stability remediation only and does not change UCE candidate counts, baseline maturity distribution, or expansion-plane prioritization.
+
 ## A-030.4.B1 Continuity Timeout Ledger (R8-R11)
 
 - A-030.4.B1.R8: BLOCKED (A-028 combined gate timeout in bounded Docker validation).

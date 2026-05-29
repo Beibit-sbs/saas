@@ -11,7 +11,14 @@ from app.modules.ldap import service as ldap_service
 from app.modules.security import rate_limit as rate_limit_service
 
 
-def _ensure_local_user(login: str, password: str, roles: list[str], display_name: str) -> dict[str, object]:
+def _ensure_local_user(
+    login: str,
+    password: str,
+    roles: list[str],
+    display_name: str,
+    *,
+    tenant_id: int = 1,
+) -> dict[str, object]:
     existing = local_user_store.find_user_by_login(login)
     if existing is not None:
         return existing
@@ -21,7 +28,7 @@ def _ensure_local_user(login: str, password: str, roles: list[str], display_name
         display_name=display_name,
         roles=roles,
         default_language="ru",
-        tenant_id=1,
+        tenant_id=tenant_id,
     )
 
 
@@ -70,6 +77,66 @@ def test_login_endpoint_local_user_flow() -> None:
     assert "admin" in claims.roles
     assert claims.tenant_id == 1
     assert refresh_claims.user_id == user["user_id"]
+
+
+def test_tenant_admin_login_valid_credentials_succeeds() -> None:
+    client.cookies.clear()
+    user = _ensure_local_user(
+        "inst_admin",
+        "password123",
+        ["admin"],
+        "Institute Admin",
+        tenant_id=1,
+    )
+
+    response = client.post(
+        "/api/auth/login",
+        json={"login": "inst_admin", "password": "password123", "provider": "local"},
+        headers={"X-Tenant-ID": "1"},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["user_id"] == user["user_id"]
+    assert isinstance(response.cookies.get("app_access_token"), str)
+
+
+def test_tenant_admin_login_invalid_password_fails() -> None:
+    client.cookies.clear()
+    _ensure_local_user(
+        "acad_admin",
+        "password123",
+        ["admin"],
+        "Academic Admin",
+        tenant_id=1,
+    )
+
+    response = client.post(
+        "/api/auth/login",
+        json={"login": "acad_admin", "password": "wrong-password", "provider": "local"},
+        headers={"X-Tenant-ID": "1"},
+    )
+
+    assert response.status_code in (401, 403, 503), response.text
+
+
+def test_tenant_admin_login_wrong_tenant_fails_closed() -> None:
+    client.cookies.clear()
+    _ensure_local_user(
+        "tenant_scoped_admin",
+        "password123",
+        ["admin"],
+        "Tenant Scoped Admin",
+        tenant_id=1,
+    )
+
+    response = client.post(
+        "/api/auth/login",
+        json={"login": "tenant_scoped_admin", "password": "password123", "provider": "local"},
+        headers={"X-Tenant-ID": "2"},
+    )
+
+    assert response.status_code in (401, 403, 404, 503), response.text
 
 
 def test_login_sets_secure_cookie_flags_under_https_proxy() -> None:

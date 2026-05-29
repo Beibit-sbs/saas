@@ -127,6 +127,8 @@ from app.platform.router_public import router as platform_v1_public_router
 from app.platform.router_developer_api import router as platform_developer_api_router
 from app.platform.router_internal import router as platform_v1_internal_router
 from app.platform.router_mcp import router as platform_v1_mcp_router
+from app.platform.router_ops import bff_router as platform_v1_ops_bff_router
+from app.platform.router_ops import router as platform_v1_ops_router
 from app.platform.router_semantic import router as platform_v2_semantic_router
 from app.modules.executive_control_tower.router import router as executive_control_tower_router
 from app.modules.document_workflow_os.router import router as doc_workflow_router
@@ -485,6 +487,8 @@ app.include_router(platform_v1_public_router)
 app.include_router(platform_developer_api_router)
 app.include_router(platform_v1_internal_router)
 app.include_router(platform_v1_mcp_router)
+app.include_router(platform_v1_ops_router)
+app.include_router(platform_v1_ops_bff_router)
 app.include_router(platform_v2_semantic_router)
 app.include_router(rector_assignment_router)
 app.include_router(doc_workflow_router)

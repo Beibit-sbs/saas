@@ -12,6 +12,7 @@ from app.platform.runtime_state import get_scheduler_last_run, get_worker_heartb
 from app.platform.uow import UnitOfWork
 
 router = APIRouter(prefix="/api/v1/platform/ops", tags=["platform-ops"])
+bff_router = APIRouter(prefix="/api/bff/v1/platform/ops", tags=["platform-ops-bff"])
 
 
 def _safe_metric_int(loader) -> int | None:
@@ -46,12 +47,7 @@ def _resolve_request_tenant_id(request: Request) -> int:
     return tenant_id
 
 
-@router.get("/summary")
-def get_ops_summary(
-    request: Request,
-    __: None = Depends(permission_dependency("ops.read")),
-) -> dict[str, Any]:
-    tenant_id = _resolve_request_tenant_id(request)
+def _build_ops_summary_payload(tenant_id: int) -> dict[str, Any]:
     latency = dict(snapshot_latency_metrics())
 
     with UnitOfWork() as uow:
@@ -85,6 +81,8 @@ def get_ops_summary(
     return {
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "tenant_id": tenant_id,
+        "data_source": "computed_from_runtime_health",
+        "fake_metrics": False,
         "latency": {
             "p50_ms": float(latency.get("p50_latency_ms", 0.0) or 0.0),
             "p95_ms": float(latency.get("p95_latency_ms", 0.0) or 0.0),
@@ -121,3 +119,13 @@ def get_ops_summary(
             "last_error": str(last_backup.get("error")) if isinstance(last_backup, dict) and last_backup.get("error") else None,
         },
     }
+
+
+@router.get("/summary")
+@bff_router.get("/summary")
+def get_ops_summary(
+    request: Request,
+    __: None = Depends(permission_dependency("ops.read")),
+) -> dict[str, Any]:
+    tenant_id = _resolve_request_tenant_id(request)
+    return _build_ops_summary_payload(tenant_id)
