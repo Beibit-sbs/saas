@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { RequirePermission } from '@/shared/ui/permission-gate';
 import {
+  AuditTrailPanel,
+  DataTableShell,
   DateRangeFilter,
+  EmptyState,
   EvidenceUploadPanel,
   ExportButton,
   FilterBar,
@@ -62,8 +65,94 @@ interface DdcPageModel {
   noOverclaimAssertions: string[];
 }
 
+type DdcRegistryRow = {
+  key: string;
+  surface: string;
+  visibility: string;
+  endpoints: string[];
+  limitation: string;
+};
+
 function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function buildDdcRegistryRows(model: DdcPageModel): DdcRegistryRow[] {
+  const widgetRows = model.primaryWidgets.map((widget) => ({
+    key: widget.key,
+    surface: widget.title,
+    visibility: 'Lifecycle visibility',
+    endpoints: widget.endpointRefs,
+    limitation: widget.forbiddenAction,
+  }));
+
+  if (widgetRows.length > 0) {
+    return widgetRows;
+  }
+
+  return model.route.backendEndpoints.map((endpoint, index) => ({
+    key: `${model.route.key}-${index}`,
+    surface: `${model.route.title} contract ${index + 1}`,
+    visibility: 'Metadata only',
+    endpoints: [endpoint],
+    limitation: model.emptyState,
+  }));
+}
+
+function buildDdcAuditEvents(model: DdcPageModel) {
+  const workflows = model.workflows.length > 0 ? model.workflows : DOCUMENT_DECREE_CORRESPONDENCE_WORKFLOWS.slice(0, 2);
+  return workflows.map((workflow, index) => ({
+    id: workflow.key,
+    actor: 'Human review',
+    timestamp: `contract-step-${index + 1}`,
+    status: 'metadata_only',
+    event: workflow.title,
+    metadata: {
+      routeCount: workflow.routeKeys.length,
+      endpointCount: workflow.endpointRefs.length,
+      review: workflow.humanReviewPoint,
+    },
+  }));
+}
+
+function DdcRegistryTable({ rows }: { rows: DdcRegistryRow[] }) {
+  return (
+    <table className="w-full text-left text-sm" data-testid="ddc-registry-table">
+      <thead>
+        <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+          <th className="px-4 py-3 font-medium">Surface</th>
+          <th className="px-4 py-3 font-medium">Visibility</th>
+          <th className="px-4 py-3 font-medium">Endpoints</th>
+          <th className="px-4 py-3 font-medium">Limitation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.key} className="border-b align-top last:border-0">
+            <td className="px-4 py-3 font-medium">{row.surface}</td>
+            <td className="px-4 py-3 text-muted-foreground">{row.visibility}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground">
+              {row.endpoints.map((endpoint) => (
+                <div key={endpoint}>{endpoint}</div>
+              ))}
+            </td>
+            <td className="px-4 py-3 text-muted-foreground">{row.limitation}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function DdcStateGallery() {
+  return (
+    <section className="grid gap-4 xl:grid-cols-2" data-testid="ddc-state-gallery">
+      <EmptyState variant="no_data" title="No document lifecycle data" description="No document, decree, or correspondence rows are available for the selected route contract." />
+      <EmptyState variant="no_results" title="No matching lifecycle results" description="Shared search and status filters can narrow document visibility without enabling fake actions." />
+      <EmptyState variant="metadata_only" title="Metadata-only document visibility" description="Read-only lifecycle and evidence surfaces remain visible while execution stays disabled." limitation="No fake signing, approval, or legal-effect transition is exposed." />
+      <EmptyState variant="future_scope" title="Future-scope document execution" description="Live signing, decree approval, and external delivery execution remain outside A-044.R6." />
+    </section>
+  );
 }
 
 export function DdcBoundaryBanner({ labels }: { labels: string[] }) {
@@ -320,6 +409,8 @@ function DdcPageContent({ model }: { model: DdcPageModel }) {
     `Backend route count used: ${DOCUMENT_DECREE_CORRESPONDENCE_BACKEND_ROUTE_COUNT}`,
     `Backend permission count used: ${DOCUMENT_DECREE_CORRESPONDENCE_PERMISSION_COUNT}`,
   ];
+  const registryRows = buildDdcRegistryRows(model);
+  const auditEvents = buildDdcAuditEvents(model);
 
   return (
     <DocumentDecreeCorrespondencePageShell routeKey={model.route.key}>
@@ -346,10 +437,26 @@ function DdcPageContent({ model }: { model: DdcPageModel }) {
 
         {model.route.dashboardLike || model.primaryWidgets.length > 0 ? <DdcDashboardGrid widgets={model.primaryWidgets} /> : null}
 
+        <section className="space-y-4" data-testid="ddc-operability-registry">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold">Document lifecycle registry</h2>
+            <p className="text-sm text-muted-foreground">The shared table shell consolidates intake, routing, decree, and correspondence visibility without inventing approval or signing behavior.</p>
+          </div>
+          <DataTableShell
+            toolbar={<div className="px-1 text-sm text-muted-foreground">Rows: {registryRows.length}. Actions remain disabled unless backed by a real endpoint.</div>}
+            table={<DdcRegistryTable rows={registryRows} />}
+            isEmpty={registryRows.length === 0}
+            emptyTitle="No document lifecycle data"
+            emptyDescription={model.emptyState}
+          />
+        </section>
+
         <div className="grid gap-4 lg:grid-cols-2">
           <DdcEvidenceTable endpoints={model.route.backendEndpoints} />
-          <DdcAuditTimeline items={model.workflows.length > 0 ? model.workflows : DOCUMENT_DECREE_CORRESPONDENCE_WORKFLOWS.slice(0, 2)} />
+          <AuditTrailPanel events={auditEvents} />
         </div>
+
+        <DdcStateGallery />
 
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           <DdcMetricCard label="fakeDocuments" value={String(fakeDocuments)} helperText="No fake official document generation is exposed." />

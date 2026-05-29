@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { useAdminAuth } from '@/shared/auth/context';
 import {
+  DataTableShell,
   DateRangeFilter,
+  EmptyState,
   EvidenceUploadPanel,
   ExportButton,
   FilterBar,
@@ -217,10 +219,68 @@ function routeCards(route: CampusFacilitiesRouteDefinition): CampusFacilitiesDas
   }));
 }
 
+type CampusRegistryRow = {
+  key: string;
+  surface: string;
+  visibility: string;
+  endpoints: string[];
+  limitation: string;
+};
+
+function buildCampusRegistryRows(route: CampusFacilitiesRouteDefinition): CampusRegistryRow[] {
+  const cards = route.dashboardLike ? CAMPUS_FACILITIES_DASHBOARD_CARDS : routeCards(route);
+  return cards.map((card) => ({
+    key: card.key,
+    surface: card.title,
+    visibility: 'Facilities visibility',
+    endpoints: card.backendEndpoints,
+    limitation: 'Metadata/readiness visibility only.',
+  }));
+}
+
+function CampusFacilitiesRegistryTable({ rows }: { rows: CampusRegistryRow[] }) {
+  return (
+    <table className="w-full text-left text-sm" data-testid="campus-facilities-registry-table">
+      <thead>
+        <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+          <th className="px-4 py-3 font-medium">Surface</th>
+          <th className="px-4 py-3 font-medium">Visibility</th>
+          <th className="px-4 py-3 font-medium">Endpoints</th>
+          <th className="px-4 py-3 font-medium">Limitation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.key} className="border-b align-top last:border-0">
+            <td className="px-4 py-3 font-medium">{row.surface}</td>
+            <td className="px-4 py-3 text-muted-foreground">{row.visibility}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground">
+              {row.endpoints.map((endpoint) => <div key={endpoint}>{endpoint}</div>)}
+            </td>
+            <td className="px-4 py-3 text-muted-foreground">{row.limitation}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function CampusFacilitiesStateGallery() {
+  return (
+    <section className="grid gap-4 xl:grid-cols-2" data-testid="campus-facilities-state-gallery">
+      <EmptyState variant="no_data" title="No campus visibility data" description="No facilities, housing, transport, or maintenance rows are available for the selected contract." />
+      <EmptyState variant="no_results" title="No matching campus results" description="Shared search and filters can narrow campus visibility without introducing fake IoT or dispatch controls." />
+      <EmptyState variant="metadata_only" title="Metadata-only facilities visibility" description="Campus, housing, transport, and maintenance surfaces remain evidence-backed and read-only." limitation="No fake IoT, GPS, or building automation controls are exposed." />
+      <EmptyState variant="future_scope" title="Future-scope automation remains gated" description="Building automation, autonomous dispatch, and automatic housing decisions remain outside A-044.R6." />
+    </section>
+  );
+}
+
 function CampusFacilitiesPageContent({ routeKey, userPermissions }: { routeKey: CampusFacilitiesRouteKey; userPermissions: string[] }) {
   const route = getCampusFacilitiesRouteDefinition(routeKey);
   const allowedRoutes = getAllowedCampusFacilitiesRoutes(userPermissions);
   const canView = canReadCampusFacilitiesRoute(routeKey, userPermissions) || allowedRoutes.some((item) => item.routeKey === routeKey);
+  const registryRows = buildCampusRegistryRows(route);
 
   if (!canView) return <CampusFacilitiesPermissionDeniedPanel permission={route.requiredPermission} />;
 
@@ -237,10 +297,24 @@ function CampusFacilitiesPageContent({ routeKey, userPermissions }: { routeKey: 
           <MetricCard label="Permissions" value={CAMPUS_FACILITIES_PERMISSION_COUNT} source="campus_facilities_contract" timestamp="runtime" limitations={["metadata_only"]} incompleteData={true} />
           <MetricCard label="Frontend routes" value={CAMPUS_FACILITIES_PLANNED_ROUTE_COUNT} source="campus_facilities_contract" timestamp="runtime" limitations={["metadata_only"]} incompleteData={true} />
         </KPIGrid>
+        <section className="space-y-4" data-testid="campus-facilities-operability-registry">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold">Facilities, housing, transport, and maintenance visibility</h2>
+            <p className="text-sm text-muted-foreground">The shared table shell turns route metadata into a demo-grade registry without inventing IoT, GPS, or building automation behavior.</p>
+          </div>
+          <DataTableShell
+            toolbar={<div className="px-1 text-sm text-muted-foreground">Rows: {registryRows.length}. Contract visibility remains read-only and evidence-backed.</div>}
+            table={<CampusFacilitiesRegistryTable rows={registryRows} />}
+            isEmpty={registryRows.length === 0}
+            emptyTitle="No campus visibility data"
+            emptyDescription={route.description}
+          />
+        </section>
         <CampusFacilitiesDashboardCards cards={route.dashboardLike ? CAMPUS_FACILITIES_DASHBOARD_CARDS : routeCards(route)} />
         <CampusFacilitiesMetadataPanel route={route} />
         {route.bridgeRoute ? <CampusFacilitiesBridgePanel /> : null}
         {route.routeKey === 'limitations' ? <CampusFacilitiesLimitationsPanel limitations={CAMPUS_FACILITIES_LIMITATIONS} /> : null}
+        <CampusFacilitiesStateGallery />
         <CampusFacilitiesNoOverclaimFooter />
       </div>
     </CampusFacilitiesShell>

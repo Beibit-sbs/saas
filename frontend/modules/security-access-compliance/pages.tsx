@@ -4,9 +4,13 @@ import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { useAdminAuth } from '@/shared/auth/context';
 import {
+  DataTableShell,
   DateRangeFilter,
+  EmptyState,
   ExportButton,
   FilterBar,
+  KPIGrid as FrameworkKPIGrid,
+  MetricCard as FrameworkMetricCard,
   PageActionBar,
   PageActions,
   PageShell,
@@ -79,6 +83,72 @@ export function SacReadinessCard({ title, description }: { title: string; descri
       <h3 className="text-base font-semibold">{title}</h3>
       <p className="mt-2 text-sm text-muted-foreground">{description}</p>
     </article>
+  );
+}
+
+type SacRegistryRow = {
+  key: string;
+  surface: string;
+  visibility: string;
+  endpoints: string[];
+  limitation: string;
+};
+
+function buildSacRegistryRows(route: SacRouteDefinition): SacRegistryRow[] {
+  if (route.primaryWidgets.length > 0) {
+    return route.primaryWidgets.map((widget, index) => ({
+      key: `${route.key}-${index}`,
+      surface: widget.replace(/-/g, ' '),
+      visibility: 'Compliance metadata',
+      endpoints: route.backendEndpoints,
+      limitation: route.noForbiddenUiActions.join(', '),
+    }));
+  }
+
+  return route.backendEndpoints.map((endpoint, index) => ({
+    key: `${route.key}-endpoint-${index}`,
+    surface: `${route.title} contract ${index + 1}`,
+    visibility: 'Evidence only',
+    endpoints: [endpoint],
+    limitation: route.emptyState,
+  }));
+}
+
+function SacRegistryTable({ rows }: { rows: SacRegistryRow[] }) {
+  return (
+    <table className="w-full text-left text-sm" data-testid="sac-registry-table">
+      <thead>
+        <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+          <th className="px-4 py-3 font-medium">Surface</th>
+          <th className="px-4 py-3 font-medium">Visibility</th>
+          <th className="px-4 py-3 font-medium">Endpoints</th>
+          <th className="px-4 py-3 font-medium">Limitation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.key} className="border-b align-top last:border-0">
+            <td className="px-4 py-3 font-medium">{row.surface}</td>
+            <td className="px-4 py-3 text-muted-foreground">{row.visibility}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground">
+              {row.endpoints.map((endpoint) => <div key={endpoint}>{endpoint}</div>)}
+            </td>
+            <td className="px-4 py-3 text-muted-foreground">{row.limitation}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function SacStateGallery() {
+  return (
+    <section className="grid gap-4 xl:grid-cols-2" data-testid="sac-state-gallery">
+      <EmptyState variant="no_data" title="No security visibility data" description="No registry rows are available for the current security and compliance contract." />
+      <EmptyState variant="no_results" title="No matching access results" description="Shared filters narrow security metadata without enabling fake enforcement or automation." />
+      <EmptyState variant="metadata_only" title="Metadata-only compliance visibility" description="Security, access, and compliance surfaces stay evidence-backed and read-only." limitation="No autonomous enforcement or fake certification is exposed." />
+      <EmptyState variant="future_scope" title="Future-scope enforcement remains gated" description="Live enforcement, sanctions, and regulator submission remain outside A-044.R6." />
+    </section>
   );
 }
 
@@ -293,11 +363,17 @@ function getRouteSpecificBody(route: SacRouteDefinition) {
       return (
         <div className="space-y-4">
           <SacDashboardGrid widgets={buildWidgets(route)} />
-          <div className="grid gap-4 md:grid-cols-3">
-            <SacMetricCard label="Backend route count" value={String(SECURITY_ACCESS_COMPLIANCE_BACKEND_ROUTE_COUNT)} />
-            <SacMetricCard label="Table count" value={String(SECURITY_ACCESS_COMPLIANCE_TABLE_COUNT)} />
-            <SacMetricCard label="Planned frontend routes" value={String(SECURITY_ACCESS_COMPLIANCE_PLANNED_ROUTE_COUNT)} />
-          </div>
+          <FrameworkKPIGrid>
+            <div data-testid="sac-metric-backend-route-count">
+              <FrameworkMetricCard label="Backend route count" value={String(SECURITY_ACCESS_COMPLIANCE_BACKEND_ROUTE_COUNT)} source="security_access_compliance_contract" timestamp="runtime" limitations={["metadata_only"]} incompleteData={true} />
+            </div>
+            <div data-testid="sac-metric-table-count">
+              <FrameworkMetricCard label="Table count" value={String(SECURITY_ACCESS_COMPLIANCE_TABLE_COUNT)} source="security_access_compliance_contract" timestamp="runtime" limitations={["metadata_only"]} incompleteData={true} />
+            </div>
+            <div data-testid="sac-metric-planned-frontend-routes">
+              <FrameworkMetricCard label="Planned frontend routes" value={String(SECURITY_ACCESS_COMPLIANCE_PLANNED_ROUTE_COUNT)} source="security_access_compliance_contract" timestamp="runtime" limitations={["metadata_only"]} incompleteData={true} />
+            </div>
+          </FrameworkKPIGrid>
           <SacSafetyChecklist />
         </div>
       );
@@ -350,6 +426,7 @@ function SecurityAccessCompliancePageContent({ routeKey, userPermissions }: { ro
   const route = getSacRouteDefinition(routeKey);
   const allowedRoutes = getAllowedSacRoutes(userPermissions);
   const canView = hasSacPermission(userPermissions, route.requiredPermission) || hasAnySacPermission(userPermissions, [route.requiredPermission]) || allowedRoutes.some((item) => item.key === routeKey);
+  const registryRows = buildSacRegistryRows(route);
 
   if (!canView) {
     return (
@@ -369,7 +446,15 @@ function SecurityAccessCompliancePageContent({ routeKey, userPermissions }: { ro
           <SacIncidentMetadataBadge />
         </div>
         <SacIncompleteDataNotice />
+        <DataTableShell
+          toolbar={<div className="px-1 text-sm text-muted-foreground">Rows: {registryRows.length}. Security metadata remains review-only and fail-closed.</div>}
+          table={<SacRegistryTable rows={registryRows} />}
+          isEmpty={registryRows.length === 0}
+          emptyTitle="No security visibility data"
+          emptyDescription={route.emptyState}
+        />
         {getRouteSpecificBody(route)}
+        <SacStateGallery />
         <section className="rounded-xl border bg-card p-4 text-sm text-muted-foreground" data-testid="sac-route-contract-panel">
           <p>Route: {route.route}</p>
           <p>Required permission: {route.requiredPermission}</p>

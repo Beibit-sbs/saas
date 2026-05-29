@@ -17,6 +17,8 @@ describe('Finance Procurement Asset dashboard and shell', () => {
     render(<FinanceProcurementAssetPage routeKey="dashboard" userPermissions={[FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.dashboardRead]} />);
 
     expect(screen.getByTestId('fpa-dashboard-grid')).toBeInTheDocument();
+    expect(screen.getByTestId('fpa-registry-table')).toBeInTheDocument();
+    expect(screen.getByTestId('fpa-state-gallery')).toBeInTheDocument();
     expect(screen.getByTestId('fpa-incomplete-data-notice')).toBeInTheDocument();
     expect(screen.getAllByText('Billing Visibility').length).toBeGreaterThanOrEqual(1);
   });

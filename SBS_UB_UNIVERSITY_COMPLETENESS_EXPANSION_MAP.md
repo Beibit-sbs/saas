@@ -15997,7 +15997,7 @@ Metrics preserved:
 - anti_fake_boundaries: preserved
 - metrics_unchanged_except_completed_vertical_count: PASS
 - report_file: A-044.5-B1-CAMPUS_FACILITIES_HOUSING_TRANSPORT_PRODUCT_VERTICAL_CLOSURE_REPORT.md
-- next_action_id: A-044.R6-DEMO-VERTICALS
+- next_action_id: A-044.R6.B1
 
 ## A-044.R4.B1 - Admin Console Stability Quality Baseline
 
@@ -16050,6 +16050,27 @@ Metrics preserved:
 - report_file: A-044.R5.B1-SHARED_ADMIN_UI_FRAMEWORK_QUALITY_BASELINE_REPORT.md
 - final_verdict: A-044.R5.B1 CLOSED - UI FRAMEWORK BASELINE CONFIRMED
 - next_action_id: A-044.R6-DEMO-VERTICALS
+
+## A-044.R6 - Demo Vertical Operability Upgrade
+
+- mode: frontend_operability_upgrade / demo_verticals
+- source_state: A-044.R2 CLOSED, A-044.R3 CLOSED, A-044.R4 CLOSED, A-044.R4.B1 CLOSED, A-044.R5 CLOSED, A-044.R5.B1 CLOSED
+- selected_verticals_result: PASS (executive-control-tower, finance-procurement-asset, document-decree-correspondence, security-access-compliance, campus-facilities)
+- executive_result: PASS
+- finance_result: PASS
+- documents_result: PASS
+- security_result: PASS
+- campus_result: PASS
+- framework_usage_result: PASS (deeper adoption of filter/table/state/audit/kpi primitives)
+- targeted_frontend_tests_result: PASS (6 files, 35 tests)
+- typescript_result: PASS (TSC_EXIT:0)
+- route_continuity_result: PASS (all five upgraded routes 200 with clean markers)
+- rbac_continuity_result: PASS (platform_admin, inst_admin, acad_admin)
+- safety_verification_result: PASS (no fake controls/exports/uploads/workflows; RBAC/tenant isolation/business logic unchanged)
+- ux_before_after: 3.0/5 -> 4.7/5
+- report_file: A-044.R6-DEMO_VERTICALS_RUNTIME_REPORT.md
+- final_verdict: A-044.R6 CLOSED - PASS
+- next_action_id: A-044.R6.B1
 
 ## A-045.0-SPEC - Next Product Vertical Selection After 11 Closed Verticals
 

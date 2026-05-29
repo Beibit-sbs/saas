@@ -9,6 +9,7 @@ describe('Security / Access / Compliance dashboard', () => {
     render(<SecurityAccessCompliancePage routeKey="dashboard" userPermissions={['security_access_compliance.dashboard.read']} />);
 
     expect(screen.getByTestId('sac-page-dashboard')).toBeInTheDocument();
+    expect(screen.getByTestId('sac-registry-table')).toBeInTheDocument();
     expect(screen.getByTestId('sac-route-contract-panel')).toBeInTheDocument();
     expect(screen.getByText('Backend API base: /api/admin/security-access-compliance')).toBeInTheDocument();
   });
@@ -17,6 +18,7 @@ describe('Security / Access / Compliance dashboard', () => {
     render(<SecurityAccessCompliancePage routeKey="dashboard" userPermissions={['security_access_compliance.dashboard.read']} />);
 
     expect(screen.getByTestId('sac-metric-backend-route-count')).toBeInTheDocument();
+    expect(screen.getByTestId('sac-state-gallery')).toBeInTheDocument();
     expect(screen.getByText('47')).toBeInTheDocument();
     expect(screen.getByText('24')).toBeInTheDocument();
     expect(screen.getByText('23')).toBeInTheDocument();

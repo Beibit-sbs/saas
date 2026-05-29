@@ -1,11 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { LayoutDashboard } from 'lucide-react';
 import { EXECUTIVE_CONTROL_TOWER_SECTION_PERMISSIONS } from '../permissions';
 import { PermissionGate } from '@/shared/ui/permission-gate';
 import { PageHeader } from '@/shared/ui/page-header';
 import {
+  DateRangeFilter,
+  EmptyState,
+  FilterBar,
   KPIGrid,
   MetricCard,
   PageActionBar,
@@ -15,6 +19,8 @@ import {
   PageShell,
   ExportButton,
   EvidenceUploadPanel,
+  SearchInput,
+  StatusFilter,
 } from '@/shared/ui-framework';
 
 const NAV_ITEMS = [
@@ -95,6 +101,10 @@ export function ControlTowerShell({
   activePath: string;
   children: React.ReactNode;
 }) {
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [range, setRange] = useState({ from: '', to: '' });
+
   return (
     <PageShell>
       <SectionHeader eyebrow="Executive Control Tower" title={title} description={description} />
@@ -116,6 +126,11 @@ export function ControlTowerShell({
           </PageActions>
         }
       />
+      <FilterBar onApply={() => undefined} onClear={() => { setSearch(''); setStatus(''); setRange({ from: '', to: '' }); }} onPersistToUrl={() => undefined}>
+        <SearchInput value={search} onChange={setSearch} placeholder="Search executive surfaces" />
+        <StatusFilter value={status} onChange={setStatus} options={[{ value: 'visible', label: 'Visible' }, { value: 'future', label: 'Future scope' }]} />
+        <DateRangeFilter value={range} onChange={setRange} />
+      </FilterBar>
       <ControlTowerHeader title={title} description={description} />
         <ControlTowerNavTabs activePath={activePath} />
       <KPIGrid>
@@ -149,6 +164,12 @@ export function ControlTowerShell({
         <div data-testid="evidence-linked-metric-label">Evidence-linked metric</div>
         <div data-testid="no-automated-decision-label">No automated decision is made by this dashboard</div>
       </div>
+      <section className="grid gap-4 xl:grid-cols-2" data-testid="control-tower-state-gallery">
+        <EmptyState variant="no_data" title="No executive data" description="No executive rows are currently available for the selected contract surface." />
+        <EmptyState variant="no_results" title="No executive results" description="Shared filters can narrow executive visibility without introducing fake controls." />
+        <EmptyState variant="metadata_only" title="Executive metadata only" description="KPI and workflow visibility remain evidence-backed and read-only." limitation="No automated escalation or decision execution is exposed." />
+        <EmptyState variant="future_scope" title="Future-scope executive workflows" description="Live strategy execution and automated workflow intervention remain deferred outside A-044.R6." />
+      </section>
       <EvidenceUploadPanel uploadSupported={false} limitationLabel="Evidence upload endpoints are not available in this shared executive shell." />
         {children}
     </PageShell>

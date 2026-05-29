@@ -40,6 +40,8 @@ describe('Document Decree Correspondence dashboard runtime', () => {
   it('includes boundary banner and no-overclaim footer on overview page', () => {
     render(<DocumentDecreeCorrespondencePage routeKey="overview" userPermissions={[DOCUMENT_DECREE_CORRESPONDENCE_PERMISSION_VALUES.overviewRead]} />);
     expect(screen.getByTestId('ddc-boundary-banner')).toBeInTheDocument();
+    expect(screen.getByTestId('ddc-registry-table')).toBeInTheDocument();
+    expect(screen.getByTestId('ui-framework-audit-trail-panel')).toBeInTheDocument();
     expect(screen.getByTestId('ddc-no-overclaim-footer')).toBeInTheDocument();
   });
 

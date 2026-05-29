@@ -8,6 +8,7 @@ describe('Campus Facilities dashboard', () => {
   it('renders dashboard shell', () => {
     render(<CampusFacilitiesPage routeKey="dashboard" userPermissions={['campus_facilities.dashboard.read']} />);
     expect(screen.getByTestId('campus-facilities-page-shell')).toBeInTheDocument();
+    expect(screen.getByTestId('campus-facilities-registry-table')).toBeInTheDocument();
   });
 
   it('renders metrics cards', () => {
@@ -29,6 +30,7 @@ describe('Campus Facilities dashboard', () => {
   it('renders route contract metadata panel', () => {
     render(<CampusFacilitiesPage routeKey="dashboard" userPermissions={['campus_facilities.dashboard.read']} />);
     expect(screen.getByTestId('campus-facilities-metadata-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('campus-facilities-state-gallery')).toBeInTheDocument();
     expect(screen.getByText('Runtime mode: METADATA_READINESS_EVIDENCE_CONTROL_VISIBILITY_HUMAN_REVIEW_ONLY')).toBeInTheDocument();
   });
 });

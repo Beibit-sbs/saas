@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { RequirePermission } from '@/shared/ui/permission-gate';
 import {
+  DataTableShell,
   DateRangeFilter,
+  EmptyState,
   EvidenceUploadPanel,
   ExportButton,
   FilterBar,
@@ -49,8 +51,78 @@ interface FpaPageModel {
   noOverclaimAssertions: string[];
 }
 
+type FpaRegistryRow = {
+  key: string;
+  surface: string;
+  visibility: string;
+  endpoints: string[];
+  limitation: string;
+};
+
 function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function buildFpaRegistryRows(model: FpaPageModel): FpaRegistryRow[] {
+  const widgetRows = model.primaryWidgets.map((widget) => ({
+    key: widget.key,
+    surface: widget.title,
+    visibility: 'Registry visibility',
+    endpoints: widget.endpointRefs,
+    limitation: widget.forbiddenAction,
+  }));
+
+  if (widgetRows.length > 0) {
+    return widgetRows;
+  }
+
+  return model.route.backendEndpoints.map((endpoint, index) => ({
+    key: `${model.route.key}-${index}`,
+    surface: `${model.route.title} contract ${index + 1}`,
+    visibility: 'Metadata only',
+    endpoints: [endpoint],
+    limitation: model.emptyState,
+  }));
+}
+
+function FpaRegistryTable({ rows }: { rows: FpaRegistryRow[] }) {
+  return (
+    <table className="w-full text-left text-sm" data-testid="fpa-registry-table">
+      <thead>
+        <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+          <th className="px-4 py-3 font-medium">Surface</th>
+          <th className="px-4 py-3 font-medium">Visibility</th>
+          <th className="px-4 py-3 font-medium">Endpoints</th>
+          <th className="px-4 py-3 font-medium">Limitation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.key} className="border-b align-top last:border-0">
+            <td className="px-4 py-3 font-medium">{row.surface}</td>
+            <td className="px-4 py-3 text-muted-foreground">{row.visibility}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground">
+              {row.endpoints.map((endpoint) => (
+                <div key={endpoint}>{endpoint}</div>
+              ))}
+            </td>
+            <td className="px-4 py-3 text-muted-foreground">{row.limitation}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function FpaStateGallery() {
+  return (
+    <section className="grid gap-4 xl:grid-cols-2" data-testid="fpa-state-gallery">
+      <EmptyState variant="no_data" title="No finance registry data" description="No registry rows are available for the current route contract." />
+      <EmptyState variant="no_results" title="No procurement results" description="The shared search and filters can narrow the visible finance registry without inventing execution controls." />
+      <EmptyState variant="metadata_only" title="Metadata-only visibility" description="Execution remains disabled until a real backend contract supports it." limitation="No live payment, bank, or ERP execution is exposed." />
+      <EmptyState variant="future_scope" title="Future scope remains gated" description="Live procurement execution, vendor award, and settlement flows remain deferred outside A-044.R6." />
+    </section>
+  );
 }
 
 export function FpaBoundaryBanner({ labels }: { labels: string[] }) {
@@ -318,6 +390,7 @@ function FpaPageContent({ model }: { model: FpaPageModel }) {
     `Backend route count used: ${FINANCE_PROCUREMENT_ASSET_BACKEND_ROUTE_COUNT}`,
     `Backend permission count used: ${FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT}`,
   ];
+  const registryRows = buildFpaRegistryRows(model);
 
   return (
     <FinanceProcurementAssetPageShell routeKey={model.route.key}>
@@ -343,10 +416,26 @@ function FpaPageContent({ model }: { model: FpaPageModel }) {
 
         {model.route.dashboardLike || model.primaryWidgets.length > 0 ? <FpaDashboardGrid widgets={model.primaryWidgets} /> : null}
 
+        <section className="space-y-4" data-testid="fpa-operability-registry">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold">Procurement and asset registry visibility</h2>
+            <p className="text-sm text-muted-foreground">The shared table shell makes finance, procurement, and asset contract surfaces scannable without enabling fake execution.</p>
+          </div>
+          <DataTableShell
+            toolbar={<div className="px-1 text-sm text-muted-foreground">Rows: {registryRows.length}. Search/filter controls remain shell-level and metadata-only.</div>}
+            table={<FpaRegistryTable rows={registryRows} />}
+            isEmpty={registryRows.length === 0}
+            emptyTitle="No finance registry data"
+            emptyDescription={model.emptyState}
+          />
+        </section>
+
         <div className="grid gap-4 lg:grid-cols-2">
           <FpaEvidenceTable endpoints={model.route.backendEndpoints} />
           <FpaAuditTimeline items={model.workflows.length > 0 ? model.workflows : FINANCE_PROCUREMENT_ASSET_WORKFLOWS.slice(0, 2)} />
         </div>
+
+        <FpaStateGallery />
 
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           <FpaMetricCard label="fakeMetrics" value={String(fakeMetrics)} helperText="All dashboard-like surfaces expose fakeMetrics=false." />

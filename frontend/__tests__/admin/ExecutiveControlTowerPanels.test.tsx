@@ -88,6 +88,8 @@ describe('Executive control tower panels', () => {
     );
     expect(screen.getByTestId('computed-from-governance-workflows-label').textContent).toMatch(/computed from governance workflows/i);
     expect(screen.getByTestId('no-automated-decision-label').textContent).toMatch(/no automated decision/i);
+    expect(screen.getByPlaceholderText(/search executive surfaces/i)).toBeInTheDocument();
+    expect(screen.getByTestId('control-tower-state-gallery')).toBeInTheDocument();
     expect(screen.queryByText(/metric registry/i)).toBeNull();
   });
 

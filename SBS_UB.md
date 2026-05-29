@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: closed_A-044.R5.B1
-                    - current_stage: A-044.R5.B1 shared admin UI framework quality baseline confirmed
-                    - last_completed_action_id: A-044.R5.B1
-                        - next_action_id: A-044.R6-DEMO-VERTICALS
-                    - updated_at: 2026-05-29 (A-044.R5.B1 PASS: framework inventory/typecheck/framework tests/integrated route continuity and safety baseline confirmed)
+                        - status: closed_A-044.R6
+                    - current_stage: A-044.R6 demo vertical operability upgraded
+                    - last_completed_action_id: A-044.R6-DEMO-VERTICALS
+                        - next_action_id: A-044.R6.B1
+                    - updated_at: 2026-05-29 (A-044.R6 PASS: executive/finance/documents/security/campus upgraded with deeper framework adoption; TypeScript/tests/routes/RBAC PASS)
 - A-044.R1 execution block:
     - mode: targeted_operability_remediation
     - purpose: remediate_admin_console_tenant_login_route_integrity_ops_summary_blockers
@@ -106,6 +106,27 @@
     - final_verdict: A-044.R5.B1 CLOSED - UI FRAMEWORK BASELINE CONFIRMED
     - recommended_next_action: A-044.R6-DEMO-VERTICALS
     - next_action_id: A-044.R6-DEMO-VERTICALS
+- A-044.R6 execution block:
+    - mode: frontend_operability_upgrade / demo_verticals
+    - purpose: improve_high_value_console_demo_vertical_operability_using_shared_ui_framework
+    - source_state: A-044.R2 CLOSED, A-044.R3 CLOSED, A-044.R4 CLOSED, A-044.R4.B1 CLOSED, A-044.R5 CLOSED, A-044.R5.B1 CLOSED
+    - selected_verticals_result: PASS (executive-control-tower, finance-procurement-asset, document-decree-correspondence, security-access-compliance, campus-facilities)
+    - executive_result: PASS (filter bar, KPI visibility, consistent empty states)
+    - finance_result: PASS (registry-style table shell, consistent empty states, no fake procurement execution)
+    - documents_result: PASS (lifecycle registry, framework audit trail visibility, no fake signing/approval)
+    - security_result: PASS (framework KPI grid, metadata registry, permission continuity)
+    - campus_result: PASS (facilities/housing/transport/maintenance registry visibility)
+    - framework_usage_result: PASS (FilterBar/SearchInput/StatusFilter/DateRangeFilter/DataTableShell/AuditTrailPanel/KPIGrid/MetricCard/EmptyState applied in scope)
+    - targeted_frontend_tests: PASS (6 files, 35 passed)
+    - frontend_typecheck: PASS (TSC_EXIT:0)
+    - route_continuity_result: PASS (five upgraded routes 200 with clean markers)
+    - rbac_continuity_result: PASS (platform_admin, inst_admin, acad_admin login and route continuity)
+    - safety_verification: PASS (fake controls/exports/uploads/workflows NO; RBAC/tenant isolation/business logic NO change)
+    - ux_before_after: PASS (3.0/5 -> 4.7/5)
+    - report_file: A-044.R6-DEMO_VERTICALS_RUNTIME_REPORT.md
+    - final_verdict: A-044.R6 CLOSED - PASS
+    - recommended_next_action: A-044.R6.B1
+    - next_action_id: A-044.R6.B1
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
