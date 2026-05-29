@@ -1,8 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useAdminAuth } from '@/shared/auth/context';
+import {
+  DateRangeFilter,
+  EvidenceUploadPanel,
+  ExportButton,
+  FilterBar,
+  KPIGrid,
+  MetricCard,
+  PageActionBar,
+  PageActions,
+  PageShell,
+  PageToolbar,
+  PermissionDeniedState,
+  SearchInput,
+  SectionHeader,
+  StatusFilter,
+} from '@/shared/ui-framework';
 import {
   CAMPUS_FACILITIES_API_BASE,
   CAMPUS_FACILITIES_BACKEND_ROUTE_COUNT,
@@ -139,17 +155,43 @@ export function CampusFacilitiesNoOverclaimFooter() {
 
 function CampusFacilitiesPermissionDeniedPanel({ permission }: { permission: string }) {
   return (
-    <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6" data-testid="campus-facilities-permission-denied">
-      <h2 className="text-lg font-semibold">Permission required</h2>
-      <p className="mt-2 text-sm text-muted-foreground">This route is fail-closed and requires {permission}.</p>
-    </div>
+    <PermissionDeniedState role="tenant_admin" requiredPermission={permission} reason="This campus/facilities view is fail-closed for the current permission set." />
   );
 }
 
 function CampusFacilitiesShell({ routeKey, children }: { routeKey: CampusFacilitiesRouteKey; children: ReactNode }) {
   const currentRoute = getCampusFacilitiesRouteDefinition(routeKey);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [range, setRange] = useState({ from: '', to: '' });
+
   return (
     <div className="space-y-6" data-testid="campus-facilities-page-shell">
+      <PageShell>
+      <SectionHeader eyebrow="Campus / Facilities / Housing / Transport Suite" title={currentRoute.title} description={currentRoute.description} />
+      <PageToolbar
+        left={
+          <PageActions>
+            <PageActionBar
+              secondaryActions={[
+                { id: 'edit', label: 'Edit', disabled: true, disabledReason: 'No shell-level edit workflow.' },
+                { id: 'refresh', label: 'Refresh', disabled: true, disabledReason: 'Use route-native refresh behavior.' },
+              ]}
+              primaryAction={{ id: 'create', label: 'Create', disabled: true, disabledReason: 'No create endpoint on shell.' }}
+            />
+          </PageActions>
+        }
+        right={
+          <PageActions>
+            <ExportButton exportAvailable={false} unavailableReason="Export endpoint unavailable for this route shell." />
+          </PageActions>
+        }
+      />
+      <FilterBar onApply={() => undefined} onClear={() => { setSearch(''); setStatus(''); setRange({ from: '', to: '' }); }} onPersistToUrl={() => undefined}>
+        <SearchInput value={search} onChange={setSearch} placeholder="Search records" />
+        <StatusFilter value={status} onChange={setStatus} options={[{ value: 'active', label: 'Active' }, { value: 'planned', label: 'Planned' }]} />
+        <DateRangeFilter value={range} onChange={setRange} />
+      </FilterBar>
       <CampusFacilitiesRouteHeader route={currentRoute} />
       <nav className="flex flex-wrap gap-2" aria-label="Campus facilities navigation">
         {CAMPUS_FACILITIES_ROUTE_DEFINITIONS.map((route) => (
@@ -158,7 +200,9 @@ function CampusFacilitiesShell({ routeKey, children }: { routeKey: CampusFacilit
           </Link>
         ))}
       </nav>
-      {children}
+        <EvidenceUploadPanel uploadSupported={false} limitationLabel="Evidence upload remains disabled unless a route-specific backend contract is available." />
+        {children}
+      </PageShell>
     </div>
   );
 }
@@ -187,12 +231,12 @@ function CampusFacilitiesPageContent({ routeKey, userPermissions }: { routeKey: 
         <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground" data-testid="campus-facilities-incomplete-data-notice">
           incompleteData supported. Missing fields remain explicit and are never replaced with fake values.
         </div>
-        <section className="grid gap-4 md:grid-cols-4" data-testid="campus-facilities-metrics-grid">
-          <article className="rounded-xl border bg-card p-4"><p className="text-xs text-muted-foreground">Backend routes</p><p className="text-2xl font-semibold">{CAMPUS_FACILITIES_BACKEND_ROUTE_COUNT}</p></article>
-          <article className="rounded-xl border bg-card p-4"><p className="text-xs text-muted-foreground">Tables</p><p className="text-2xl font-semibold">{CAMPUS_FACILITIES_TABLE_COUNT}</p></article>
-          <article className="rounded-xl border bg-card p-4"><p className="text-xs text-muted-foreground">Permissions</p><p className="text-2xl font-semibold">{CAMPUS_FACILITIES_PERMISSION_COUNT}</p></article>
-          <article className="rounded-xl border bg-card p-4"><p className="text-xs text-muted-foreground">Frontend routes</p><p className="text-2xl font-semibold">{CAMPUS_FACILITIES_PLANNED_ROUTE_COUNT}</p></article>
-        </section>
+        <KPIGrid>
+          <MetricCard label="Backend routes" value={CAMPUS_FACILITIES_BACKEND_ROUTE_COUNT} source="campus_facilities_contract" timestamp="runtime" limitations={["metadata_only"]} incompleteData={true} />
+          <MetricCard label="Tables" value={CAMPUS_FACILITIES_TABLE_COUNT} source="campus_facilities_contract" timestamp="runtime" limitations={["metadata_only"]} incompleteData={true} />
+          <MetricCard label="Permissions" value={CAMPUS_FACILITIES_PERMISSION_COUNT} source="campus_facilities_contract" timestamp="runtime" limitations={["metadata_only"]} incompleteData={true} />
+          <MetricCard label="Frontend routes" value={CAMPUS_FACILITIES_PLANNED_ROUTE_COUNT} source="campus_facilities_contract" timestamp="runtime" limitations={["metadata_only"]} incompleteData={true} />
+        </KPIGrid>
         <CampusFacilitiesDashboardCards cards={route.dashboardLike ? CAMPUS_FACILITIES_DASHBOARD_CARDS : routeCards(route)} />
         <CampusFacilitiesMetadataPanel route={route} />
         {route.bridgeRoute ? <CampusFacilitiesBridgePanel /> : null}

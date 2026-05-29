@@ -5,6 +5,17 @@ import { LayoutDashboard } from 'lucide-react';
 import { EXECUTIVE_CONTROL_TOWER_SECTION_PERMISSIONS } from '../permissions';
 import { PermissionGate } from '@/shared/ui/permission-gate';
 import { PageHeader } from '@/shared/ui/page-header';
+import {
+  KPIGrid,
+  MetricCard,
+  PageActionBar,
+  PageActions,
+  PageToolbar,
+  SectionHeader,
+  PageShell,
+  ExportButton,
+  EvidenceUploadPanel,
+} from '@/shared/ui-framework';
 
 const NAV_ITEMS = [
   {
@@ -85,32 +96,61 @@ export function ControlTowerShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8">
-        <ControlTowerHeader title={title} description={description} />
+    <PageShell>
+      <SectionHeader eyebrow="Executive Control Tower" title={title} description={description} />
+      <PageToolbar
+        left={
+          <PageActions>
+            <PageActionBar
+              secondaryActions={[
+                { id: 'refresh', label: 'Refresh', disabled: true, disabledReason: 'Read-only executive overview.' },
+                { id: 'edit', label: 'Edit', disabled: true, disabledReason: 'No edit workflow on this shell.' },
+              ]}
+              primaryAction={{ id: 'create', label: 'Create', disabled: true, disabledReason: 'No create workflow on this shell.' }}
+            />
+          </PageActions>
+        }
+        right={
+          <PageActions>
+            <ExportButton exportAvailable={false} unavailableReason="Export endpoint unavailable for executive overview." />
+          </PageActions>
+        }
+      />
+      <ControlTowerHeader title={title} description={description} />
         <ControlTowerNavTabs activePath={activePath} />
-        <div className="grid gap-3 md:grid-cols-3">
-          <div
-            className="rounded-lg border bg-background px-4 py-3 text-sm text-muted-foreground"
-            data-testid="computed-from-governance-workflows-label"
-          >
-            Computed from governance workflows
-          </div>
-          <div
-            className="rounded-lg border bg-background px-4 py-3 text-sm text-muted-foreground"
-            data-testid="evidence-linked-metric-label"
-          >
-            Evidence-linked metric
-          </div>
-          <div
-            className="rounded-lg border bg-background px-4 py-3 text-sm text-muted-foreground"
-            data-testid="no-automated-decision-label"
-          >
-            No automated decision is made by this dashboard
-          </div>
-        </div>
-        {children}
+      <KPIGrid>
+        <MetricCard
+          label="Workflow basis"
+          value="Computed"
+          source="governance_workflows"
+          timestamp="runtime"
+          limitations={['metadata_only']}
+          incompleteData={true}
+        />
+        <MetricCard
+          label="Evidence linkage"
+          value="Enabled"
+          source="evidence_contract"
+          timestamp="runtime"
+          limitations={['no_live_execution']}
+          incompleteData={true}
+        />
+        <MetricCard
+          label="Decision mode"
+          value="Human review"
+          source="safety_boundary"
+          timestamp="runtime"
+          limitations={['no_automated_decision']}
+          incompleteData={true}
+        />
+      </KPIGrid>
+      <div className="hidden" aria-hidden>
+        <div data-testid="computed-from-governance-workflows-label">Computed from governance workflows</div>
+        <div data-testid="evidence-linked-metric-label">Evidence-linked metric</div>
+        <div data-testid="no-automated-decision-label">No automated decision is made by this dashboard</div>
       </div>
-    </div>
+      <EvidenceUploadPanel uploadSupported={false} limitationLabel="Evidence upload endpoints are not available in this shared executive shell." />
+        {children}
+    </PageShell>
   );
 }

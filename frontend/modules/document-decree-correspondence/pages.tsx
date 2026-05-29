@@ -1,8 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { RequirePermission } from '@/shared/ui/permission-gate';
+import {
+  DateRangeFilter,
+  EvidenceUploadPanel,
+  ExportButton,
+  FilterBar,
+  PageActionBar,
+  PageActions,
+  PageShell,
+  PageToolbar,
+  PermissionDeniedState,
+  SearchInput,
+  SectionHeader,
+  StatusFilter,
+} from '@/shared/ui-framework';
 import {
   automaticDecreeApprovalEnabled,
   automaticDocumentSigningEnabled,
@@ -151,9 +165,8 @@ export function DdcIncompleteDataNotice() {
 
 export function DdcPermissionDeniedPanel({ permission }: { permission: string }) {
   return (
-    <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6" data-testid="ddc-permission-denied-panel">
-      <h2 className="text-lg font-semibold">Permission required</h2>
-      <p className="mt-2 text-sm text-muted-foreground">This route is fail-closed and requires `{permission}`.</p>
+    <div data-testid="ddc-permission-denied-panel">
+      <PermissionDeniedState role="tenant_admin" requiredPermission={permission} reason="This document/decree/correspondence view is fail-closed for the current permission set." />
     </div>
   );
 }
@@ -376,13 +389,38 @@ function DdcPageContent({ model }: { model: DdcPageModel }) {
 
 export function DocumentDecreeCorrespondencePageShell({ routeKey, children }: { routeKey: DdcRouteKey; children: ReactNode }) {
   const route = getDdcRouteDefinition(routeKey);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [range, setRange] = useState({ from: '', to: '' });
+
   return (
     <div className="space-y-6" data-testid="ddc-page-shell">
-      <header className="space-y-2">
-        <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Document / Decree / Correspondence Suite</p>
-        <h1 className="text-3xl font-semibold">{route.title}</h1>
-        <p className="text-sm text-muted-foreground">{route.description}</p>
-      </header>
+      <PageShell>
+      <SectionHeader eyebrow="Document / Decree / Correspondence Suite" title={route.title} description={route.description} />
+      <PageToolbar
+        left={
+          <PageActions>
+            <PageActionBar
+              secondaryActions={[
+                { id: 'edit', label: 'Edit', disabled: true, disabledReason: 'No shell-level edit workflow.' },
+                { id: 'refresh', label: 'Refresh', disabled: true, disabledReason: 'Use route-native refresh behavior.' },
+                { id: 'upload', label: 'Upload', disabled: true, disabledReason: 'No upload endpoint on shell.' },
+              ]}
+              primaryAction={{ id: 'create', label: 'Create', disabled: true, disabledReason: 'No create endpoint on shell.' }}
+            />
+          </PageActions>
+        }
+        right={
+          <PageActions>
+            <ExportButton exportAvailable={false} unavailableReason="Export endpoint unavailable for this route shell." />
+          </PageActions>
+        }
+      />
+      <FilterBar onApply={() => undefined} onClear={() => { setSearch(''); setStatus(''); setRange({ from: '', to: '' }); }} onPersistToUrl={() => undefined}>
+        <SearchInput value={search} onChange={setSearch} placeholder="Search records" />
+        <StatusFilter value={status} onChange={setStatus} options={[{ value: 'active', label: 'Active' }, { value: 'draft', label: 'Draft' }]} />
+        <DateRangeFilter value={range} onChange={setRange} />
+      </FilterBar>
 
       <nav className="flex flex-wrap gap-2" aria-label="Document decree correspondence navigation">
         {DOCUMENT_DECREE_CORRESPONDENCE_NAV_ITEMS.map((item) => (
@@ -392,7 +430,9 @@ export function DocumentDecreeCorrespondencePageShell({ routeKey, children }: { 
         ))}
       </nav>
 
-      {children}
+        <EvidenceUploadPanel uploadSupported={false} limitationLabel="Evidence upload remains disabled unless a route-specific backend contract is available." />
+        {children}
+      </PageShell>
     </div>
   );
 }

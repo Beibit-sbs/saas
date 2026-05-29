@@ -1,8 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useAdminAuth } from '@/shared/auth/context';
+import {
+  DateRangeFilter,
+  ExportButton,
+  FilterBar,
+  PageActionBar,
+  PageActions,
+  PageShell,
+  PageToolbar,
+  PermissionDeniedState,
+  SearchInput,
+  SectionHeader,
+  StatusFilter,
+} from '@/shared/ui-framework';
 import {
   SECURITY_ACCESS_COMPLIANCE_API_BASE,
   SECURITY_ACCESS_COMPLIANCE_BACKEND_ROUTE_COUNT,
@@ -113,10 +126,7 @@ export function SacIncidentMetadataBadge() {
 
 export function SacPermissionDeniedPanel({ permission }: { permission: string }) {
   return (
-    <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6" data-testid="sac-permission-denied-panel">
-      <h2 className="text-lg font-semibold">Permission required</h2>
-      <p className="mt-2 text-sm text-muted-foreground">This route is fail-closed and requires {permission}.</p>
-    </div>
+    <PermissionDeniedState role="tenant_admin" requiredPermission={permission} reason="This security/access/compliance view is fail-closed for the current permission set." />
   );
 }
 
@@ -219,13 +229,37 @@ export function SacNoOverclaimFooter() {
 
 export function SecurityAccessCompliancePageShell({ routeKey, children }: { routeKey: SacRouteKey; children: ReactNode }) {
   const route = getSacRouteDefinition(routeKey);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [range, setRange] = useState({ from: '', to: '' });
+
   return (
     <div className="space-y-6" data-testid="sac-page-shell">
-      <header className="space-y-2">
-        <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Security / Access / Compliance Suite</p>
-        <h1 className="text-3xl font-semibold">{route.title}</h1>
-        <p className="text-sm text-muted-foreground">{route.route}</p>
-      </header>
+      <PageShell>
+      <SectionHeader eyebrow="Security / Access / Compliance Suite" title={route.title} description={route.route} />
+      <PageToolbar
+        left={
+          <PageActions>
+            <PageActionBar
+              secondaryActions={[
+                { id: 'edit', label: 'Edit', disabled: true, disabledReason: 'No shell-level edit workflow.' },
+                { id: 'refresh', label: 'Refresh', disabled: true, disabledReason: 'Use route-native refresh behavior.' },
+              ]}
+              primaryAction={{ id: 'create', label: 'Create', disabled: true, disabledReason: 'No create endpoint on shell.' }}
+            />
+          </PageActions>
+        }
+        right={
+          <PageActions>
+            <ExportButton exportAvailable={false} unavailableReason="Export endpoint unavailable for this route shell." />
+          </PageActions>
+        }
+      />
+      <FilterBar onApply={() => undefined} onClear={() => { setSearch(''); setStatus(''); setRange({ from: '', to: '' }); }} onPersistToUrl={() => undefined}>
+        <SearchInput value={search} onChange={setSearch} placeholder="Search records" />
+        <StatusFilter value={status} onChange={setStatus} options={[{ value: 'active', label: 'Active' }, { value: 'review', label: 'Review' }]} />
+        <DateRangeFilter value={range} onChange={setRange} />
+      </FilterBar>
 
       <nav className="flex flex-wrap gap-2" aria-label="Security access compliance navigation">
         {SECURITY_ACCESS_COMPLIANCE_ROUTE_DEFINITIONS.map((item) => (
@@ -235,7 +269,8 @@ export function SecurityAccessCompliancePageShell({ routeKey, children }: { rout
         ))}
       </nav>
 
-      {children}
+        {children}
+      </PageShell>
     </div>
   );
 }
