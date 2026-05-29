@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: ready_for_A-045.1-SPEC (A-044.R1 remediation closed)
-                    - current_stage: A-044.R1 complete / admin console operability remediation closed / forward flow unchanged
-                    - last_completed_action_id: A-044.R1
-                        - next_action_id: A-045.1-SPEC
-                    - updated_at: 2026-05-29 (A-044.R1 PASS: tenant admin local login path restored with explicit bootstrap controls; student-services-welfare-support compatibility route added; platform ops summary route registration + /api/bff/v1 alias restored; targeted backend/frontend tests and runtime curl checks passed; no fake metrics introduced; next action remains A-045.1-SPEC)
+                        - status: blocked_pending_A-044.B2
+                    - current_stage: A-044.B1 validation complete / blocked due post-R1 regression evidence
+                    - last_completed_action_id: A-044.B1
+                        - next_action_id: A-044.B2
+                    - updated_at: 2026-05-29 (A-044.B1 BLOCKED: post-R1 quality baseline detected backend targeted regression failure in exact Task 7 command and browser-smoke API 500 on /api/bff/admin/research-science/dashboard for both roles; no runtime fixes applied in B1; escalation to A-044.B2)
 - A-044.R1 execution block:
     - mode: targeted_operability_remediation
     - purpose: remediate_admin_console_tenant_login_route_integrity_ops_summary_blockers
@@ -28,6 +28,29 @@
     - final_verdict: A-044.R1 CLOSED - ADMIN CONSOLE OPERABILITY REMEDIATION COMPLETED FOR CONFIRMED BLOCKERS
     - recommended_next_action: A-045.1-SPEC
     - next_action_id: A-045.1-SPEC
+- A-044.B1 execution block:
+    - mode: validation_reporting_only / operability_quality_baseline_post_r1
+    - purpose: confirm_admin_console_operability_quality_baseline_after_a044_r1
+    - source_a044_r1_commit: e704239
+    - source_state_hygiene_check: PASS (e704239 present; infra/.env not committed; infra/.env.example committed)
+    - runtime_container_health: PASS (backend/frontend/nginx/db/redis/pgbouncer healthy)
+    - auth_smoke_result: PASS (platform_admin login 200; inst_admin login 200; /api/auth/me 200 for both)
+    - ops_summary_route_result: PASS (/api/v1/platform/ops/summary=200 and /api/bff/v1/platform/ops/summary=200 for both roles; no fake_metrics=true)
+    - student_services_route_result: PASS_NO_404 (/console/student-services-welfare-support and canonical route return 200)
+    - browser_smoke_superadmin: PASS_WITH_NOTED_API_500 (routes reachable; API 500 observed at /api/bff/admin/research-science/dashboard)
+    - browser_smoke_tenant_admin: PASS_WITH_EXPECTED_PERMISSION_DENIAL_AND_NOTED_API_500 (admin-only pages deny as expected; API 500 observed at /api/bff/admin/research-science/dashboard)
+    - responsive_spotcheck_result: PASS (desktop/laptop/tablet/mobile sampled routes reported no horizontal overflow)
+    - targeted_backend_tests_exact_task7: FAIL (1 failed, 68 passed; test_primary_login_local_user_survives_identity_db_unavailable)
+    - targeted_frontend_tests_exact_task7: PASS (2 files, 4 tests)
+    - frontend_typecheck_exact_task7: PASS (TYPECHECK_OK)
+    - anti_fake_scan_result: PASS_WITH_DOCUMENTATION_HITS_ONLY (hits are guardrail wording in tracker/docs, no new runtime overclaim introduced)
+    - runtime_changed_in_b1: NO
+    - frontend_runtime_changed_in_b1: NO
+    - infra_runtime_changed_in_b1: NO
+    - report_file: A-044.B1-ADMIN_CONSOLE_OPERABILITY_QUALITY_BASELINE_REPORT.md
+    - final_verdict: A-044.B1 BLOCKED - ADMIN CONSOLE OPERABILITY BASELINE NOT CONFIRMED DUE TO POST-R1 REGRESSION EVIDENCE
+    - recommended_next_action: A-044.B2
+    - next_action_id: A-044.B2
 - A-042.2-RUNTIME execution block:
     - mode: backend_runtime_implementation
     - purpose: implement_student_services_welfare_support_backend_runtime
