@@ -3150,3 +3150,15 @@ The following section seeds the Full University OS universe and guarantees the l
 - locked_maturity_metrics_unchanged: PASS
 - report_file: A-045.0-SPEC-NEXT_PRODUCT_VERTICAL_SELECTION_AFTER_11_CLOSED_VERTICALS_REPORT.md
 - next_action_id: A-045.1-SPEC
+
+## A-044.TENANT-R1.B2 Tenant Governance Policy Decision
+
+- capability: tenant_isolation_policy
+- selected_policy: OPTION_A_STRICT_TENANT_ISOLATION
+- superadmin_cross_tenant_enabled: FALSE
+- superadmin_cross_tenant_future_capability: RESERVED
+- runtime_alignment: PASS
+- decision_mode: docs_only_governance
+- report_file: A-044.TENANT-R1.B2-TENANT_GOVERNANCE_POLICY_DECISION_REPORT.md
+- final_verdict: A-044.TENANT-R1.B2 CLOSED - STRICT TENANT ISOLATION SELECTED
+- next_action_id: A-044.R6.B1
