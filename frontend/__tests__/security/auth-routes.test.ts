@@ -57,7 +57,11 @@ describe("auth routes hardening", () => {
     const fetchCalls = vi.mocked(global.fetch).mock.calls;
     expect(fetchCalls).toHaveLength(1);
     const [, init] = fetchCalls[0] as [string, RequestInit];
-    expect(init.body).toBe(JSON.stringify({ username: "owner@example.com", password: "secret", tenant_id: 1, login: "owner@example.com" }));
+    expect(JSON.parse(String(init.body))).toEqual({
+      password: "secret",
+      tenant_id: 1,
+      login: "owner@example.com",
+    });
     const headers = new Headers(init.headers as HeadersInit);
     expect(headers.get("x-tenant-id")).toBe("1");
 

@@ -139,7 +139,7 @@ describe("LoginPage tenant UX", () => {
     const loginCall = fetchMock.mock.calls.find(([input]) => getRequestUrl(input).endsWith("/api/auth/login"));
     expect(loginCall).toBeDefined();
     const [, init] = loginCall as [RequestInfo | URL, RequestInit];
-    expect(JSON.parse(String(init.body))).toEqual({ username: "local/root", password: "secret" });
+    expect(JSON.parse(String(init.body))).toEqual({ login: "root", password: "secret", provider: "local" });
   });
 
   it("loads directory and submits selected university", async () => {
@@ -182,7 +182,7 @@ describe("LoginPage tenant UX", () => {
     expect(loginCall).toBeDefined();
     const [, init] = loginCall as [RequestInfo | URL, RequestInit];
     expect(JSON.parse(String(init.body))).toEqual({
-      username: "dean@northwind.edu",
+      login: "dean@northwind.edu",
       password: "secret",
       tenant_id: 2,
     });
@@ -228,7 +228,7 @@ describe("LoginPage tenant UX", () => {
     expect(loginCall).toBeDefined();
     const [, init] = loginCall as [RequestInfo | URL, RequestInit];
     expect(JSON.parse(String(init.body))).toEqual({
-      username: "student@unknown.edu",
+      login: "student@unknown.edu",
       password: "secret",
       tenant_id: 1,
     });
@@ -282,7 +282,7 @@ describe("LoginPage tenant UX", () => {
     expect(loginCalls).toHaveLength(2);
     const [, secondInit] = loginCalls[1] as [RequestInfo | URL, RequestInit];
     expect(JSON.parse(String(secondInit.body))).toEqual({
-      username: "dean@northwind.edu",
+      login: "dean@northwind.edu",
       password: "secret",
       tenant_id: 2,
       mfa_code: "123456",

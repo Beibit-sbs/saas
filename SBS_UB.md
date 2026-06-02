@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: closed_A-044.R6.B1
-                    - current_stage: A-044.R6.B1 demo vertical quality baseline confirmed
-                    - last_completed_action_id: A-044.R6.B1
-                        - next_action_id: A-044.SYSTEM-AUDIT
-                    - updated_at: 2026-06-02 (A-044.R6.B1 PASS: 5 verticals routes 200, 30 vertical tests + 50 tenant/auth tests, TSC exit 0, STRICT tenant isolation runtime-aligned)
+                        - status: closed_A-044.R1.8
+                    - current_stage: A-044.R1.8 login contract reconciliation and targeted runtime validation cleared
+                    - last_completed_action_id: A-044.SYSTEM-AUDIT.R1.8
+                        - next_action_id: A-045.0-SPEC
+                    - updated_at: 2026-06-02 (A-044.R1.8 PASS: login contract reconciled, backend 106/106 pass, frontend targeted 26/26 pass, targeted total 132 pass / 0 fail, A-045 gate cleared)
 - A-044.R1 execution block:
     - mode: targeted_operability_remediation
     - purpose: remediate_admin_console_tenant_login_route_integrity_ops_summary_blockers

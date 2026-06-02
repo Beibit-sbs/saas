@@ -1,5 +1,12 @@
 # SBS_UB Full University OS Capability Master Matrix
 
+## 0. R1.8 Gate Clearance Continuity
+
+- A-044.SYSTEM-AUDIT.R1.8 validated targeted tenant/auth/RBAC/login runtime paths and reconciled login contract assertions to authoritative runtime payload shape.
+- Targeted regression totals: backend 106 passed / 0 failed, frontend focused 26 passed / 0 failed.
+- A-045 gate state: YES.
+- next_action_id: A-045.0-SPEC.
+
 ## 1. Role and Authority
 
 - `SBS_UB.md` remains the active execution tracker and handoff source of truth.
