@@ -16108,3 +16108,22 @@ Metrics preserved:
 - report_file: A-044.TENANT-R1.B2-TENANT_GOVERNANCE_POLICY_DECISION_REPORT.md
 - final_verdict: A-044.TENANT-R1.B2 CLOSED - STRICT TENANT ISOLATION SELECTED
 - next_action_id: A-044.R6.B1
+
+## A-044.R6.B1 - Demo Verticals Quality Baseline
+
+- mode: validation_reporting_only / demo_vertical_quality_baseline
+- source_a044_r6_commit: 6e4b3eb
+- source_a044_tenant_r1_b2_commit: fd1e89a
+- tenant_policy_active: STRICT_TENANT_ISOLATION
+- vertical_route_continuity: PASS (5/5 routes HTTP 200)
+- vertical_test_result: PASS (5 files, 30 tests)
+- backend_tenant_regression: PASS (50 tests)
+- typescript_result: PASS (TSC_EXIT:0)
+- rbac_continuity: PASS (platform_admin, inst_admin, acad_admin)
+- tenant_governance_continuity: PASS (mismatch deny for all 3 personas)
+- ux_baseline_score: 4.7/5
+- backend_changed: NO
+- frontend_changed: NO
+- report_file: A-044.R6.B1-DEMO_VERTICALS_QUALITY_BASELINE_REPORT.md
+- final_verdict: A-044.R6.B1 CLOSED - DEMO VERTICAL QUALITY BASELINE CONFIRMED
+- next_action_id: A-044.SYSTEM-AUDIT

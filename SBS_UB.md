@@ -1,9 +1,9 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: closed_A-044.R6
-                    - current_stage: A-044.R6 demo vertical operability upgraded
-                    - last_completed_action_id: A-044.R6-DEMO-VERTICALS
-                        - next_action_id: A-044.R6.B1
-                    - updated_at: 2026-05-29 (A-044.R6 PASS: executive/finance/documents/security/campus upgraded with deeper framework adoption; TypeScript/tests/routes/RBAC PASS)
+                        - status: closed_A-044.R6.B1
+                    - current_stage: A-044.R6.B1 demo vertical quality baseline confirmed
+                    - last_completed_action_id: A-044.R6.B1
+                        - next_action_id: A-044.SYSTEM-AUDIT
+                    - updated_at: 2026-06-02 (A-044.R6.B1 PASS: 5 verticals routes 200, 30 vertical tests + 50 tenant/auth tests, TSC exit 0, STRICT tenant isolation runtime-aligned)
 - A-044.R1 execution block:
     - mode: targeted_operability_remediation
     - purpose: remediate_admin_console_tenant_login_route_integrity_ops_summary_blockers
@@ -20436,6 +20436,29 @@ A-031.5-FRONTEND-B1 execution block:
     - metrics_unchanged: PASS (L0=0, L1=0, L2=0, L3=55, L4=68, L5=25, L6=2, total=150; extension_total_count=25; total_tracked_modules=175; expansion_L2_foundation_count=67; expansion_L3_logic_count=50; expansion_L4_visibility_count=40; expansion_L4_api_route_count=40; provider_readiness_foundation_count=11)
     - final_verdict: A-034.2-SPEC CLOSED - EXECUTIVE GOVERNANCE SUITE UNIFIED E2E / INTERNAL DEMO HARDENING PLAN SPECIFIED
     - next_action_id: A-034.2-RUNTIME
+- A-044.R6.B1 execution block:
+    - mode: validation_reporting_only / demo_vertical_quality_baseline
+    - purpose: validate_and_close_a044_r6_under_strict_tenant_isolation
+    - source_a044_r6_commit: 6e4b3eb
+    - source_a044_tenant_r1_b2_commit: fd1e89a
+    - tenant_policy_active: STRICT_TENANT_ISOLATION
+    - demo_vertical_route_continuity: PASS (5/5 routes HTTP 200)
+    - framework_continuity: PASS (5 vertical dashboard suites, 30 tests passed)
+    - rbac_continuity: PASS (platform_admin, inst_admin, acad_admin)
+    - tenant_governance_continuity: PASS (mismatch deny for all 3 personas)
+    - backend_tenant_regression: PASS (50 passed)
+    - typescript_result: PASS (TSC_EXIT:0)
+    - ux_baseline_score: 4.7/5
+    - backend_changed: NO
+    - frontend_changed: NO
+    - rbac_changed: NO
+    - tenant_changed: NO
+    - permissions_changed: NO
+    - routes_changed: NO
+    - fake_controls_added: NO
+    - report_file: A-044.R6.B1-DEMO_VERTICALS_QUALITY_BASELINE_REPORT.md
+    - final_verdict: A-044.R6.B1 CLOSED - DEMO VERTICAL QUALITY BASELINE CONFIRMED
+    - next_action_id: A-044.SYSTEM-AUDIT
 - A-044.TENANT-R1.B2 execution block:
     - mode: governance_policy_decision / docs_only
     - purpose: resolve_tenant_policy_contradiction_after_a044_tenant_r1_b1
