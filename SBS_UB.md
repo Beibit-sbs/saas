@@ -1,9 +1,38 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: closed_A-045.1.R1
-                    - current_stage: A-045.1.R1 closure-grade reconciliation completed and handoff prepared
-                    - last_completed_action_id: A-045.1.R1-SPEC
-                        - next_action_id: A-045.2-SPEC
-                    - updated_at: 2026-06-03 (A-045.1.R1 PASS: closure-grade product map/workflow reconciliation documented; trackers aligned; implementation scope remains NOT STARTED)
+                        - status: closed_A-045.2-SPEC
+                    - current_stage: A-045.2 backend contract specification completed; runtime handoff prepared
+                    - last_completed_action_id: A-045.2-SPEC
+                        - next_action_id: A-045.2-RUNTIME
+                    - updated_at: 2026-06-03 (A-045.2-SPEC PASS: admissions CRM backend domain/db/api/permission/workflow contract specified at closure-grade depth; runtime not started)
+- A-045.2-SPEC execution block:
+    - mode: backend_domain_db_api_permission_workflow_contract_spec_only
+    - purpose: specify_admissions_crm_backend_implementation_grade_contract
+    - source_state_before: A-045.1-SPEC CLOSED, A-045.1.R1 CLOSED, A-045.1.R1.C1 CLOSED
+    - selected_suite: Admissions & CRM
+    - planned_backend_module_path: backend/app/modules/admissions_crm/
+    - planned_backend_module_files: 12
+    - planned_subdomain_count: 11
+    - planned_table_count: 45
+    - planned_entity_count: 40
+    - planned_route_count: 84
+    - planned_permission_count: 64
+    - planned_dashboard_count: 6
+    - planned_workflow_group_count: 20
+    - planned_permission_namespace: admissions_crm.*
+    - planned_migration_prefix: acrm0452_
+    - strict_tenant_isolation_alignment: PASS
+    - brain_preparation_layer_result: PASS (signal-only; no execution)
+    - backend_changed: NO
+    - frontend_changed: NO
+    - migrations_created: NO
+    - apis_created: NO
+    - tests_created: NO
+    - playwright_runtime_started: NO
+    - anti_fake_boundaries_result: PASS (no auto-admit, no auto-reject, no hidden scoring, no fake verification/delivery/enrollment)
+    - report_file: A-045.2-SPEC-ADMISSIONS_CRM_BACKEND_DOMAIN_DB_API_PERMISSION_WORKFLOW_CONTRACT_REPORT.md
+    - final_verdict: A-045.2-SPEC CLOSED - ADMISSIONS CRM BACKEND CONTRACT SPECIFIED
+    - recommended_next_action: A-045.2-RUNTIME
+    - next_action_id: A-045.2-RUNTIME
 - A-045.1.R1-SPEC execution block:
     - mode: product_map_workflow_reconciliation_spec_only
     - purpose: reconcile_admissions_crm_product_map_to_closure_grade_vertical_standard
