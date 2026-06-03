@@ -1,9 +1,16 @@
 # SBS_UB Full University OS Capability Master Matrix
 
+## 0. A-045.2.R1 Contract Reconciliation Continuity
+
+- A-045.2.R1 reconciled B0-detected internal inconsistencies in Admissions & CRM backend contract declarations.
+- Reconciled totals confirmed: 45 tables, 40 entities, 84 routes, method mix GET 42 / POST 32 / PUT 9 / DELETE 1, 64 permissions, 6 dashboards, 21 workflow groups.
+- Runtime readiness after reconciliation: YES.
+- next_action_id: A-045.2-RUNTIME.
+
 ## 0. A-045.2 Backend Contract Continuity
 
 - A-045.2-SPEC completed implementation-grade backend contract specification for Admissions & CRM aligned to A-041/A-042/A-043 closure standard.
-- Contract totals locked for runtime handoff: 45 tables, 40 entities, 84 routes, 64 permissions, 6 dashboards, 20 workflow groups.
+- Contract totals locked for runtime handoff: 45 tables, 40 entities, 84 routes, 64 permissions, 6 dashboards, 21 workflow groups.
 - Tenant and safety posture preserved: strict tenant isolation, no autonomous admissions decisioning, no Brain execution, and no provider-live overclaim.
 - next_action_id: A-045.2-RUNTIME.
 

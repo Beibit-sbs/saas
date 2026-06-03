@@ -1,9 +1,32 @@
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: closed_A-045.2-SPEC
-                    - current_stage: A-045.2 backend contract specification completed; runtime handoff prepared
-                    - last_completed_action_id: A-045.2-SPEC
+                        - status: closed_A-045.2.R1
+                    - current_stage: A-045.2.R1 backend contract reconciliation completed; runtime handoff unblocked
+                    - last_completed_action_id: A-045.2.R1-SPEC
                         - next_action_id: A-045.2-RUNTIME
-                    - updated_at: 2026-06-03 (A-045.2-SPEC PASS: admissions CRM backend domain/db/api/permission/workflow contract specified at closure-grade depth; runtime not started)
+                    - updated_at: 2026-06-03 (A-045.2.R1 PASS: workflow/method/sizing cross-reference inconsistencies reconciled; runtime readiness YES)
+- A-045.2.R1-SPEC execution block:
+    - mode: backend_contract_reconciliation_spec_only
+    - purpose: reconcile_a0452_contract_totals_and_cross_references_after_b0
+    - source_state_before: A-045.2-SPEC CLOSED, A-045.2.B0 PARTIAL
+    - reconciliation_scope: docs_only
+    - workflow_count_reconciled: 21
+    - route_count_reconciled: 84
+    - method_distribution_reconciled: GET 42 / POST 32 / PUT 9 / DELETE 1
+    - permission_count_reconciled: 64
+    - dashboard_count_reconciled: 6
+    - table_count_reconciled: 45
+    - entity_count_reconciled: 40
+    - route_workflow_permission_coverage_matrix_added: YES
+    - runtime_readiness_result: YES
+    - backend_changed: NO
+    - frontend_changed: NO
+    - migrations_created: NO
+    - apis_created: NO
+    - tests_created: NO
+    - report_file: A-045.2.R1-SPEC-ADMISSIONS_CRM_BACKEND_CONTRACT_RECONCILIATION_REPORT.md
+    - final_verdict: A-045.2.R1 CLOSED - ADMISSIONS CRM BACKEND CONTRACT RECONCILED
+    - recommended_next_action: A-045.2-RUNTIME
+    - next_action_id: A-045.2-RUNTIME
 - A-045.2-SPEC execution block:
     - mode: backend_domain_db_api_permission_workflow_contract_spec_only
     - purpose: specify_admissions_crm_backend_implementation_grade_contract
@@ -17,7 +40,7 @@
     - planned_route_count: 84
     - planned_permission_count: 64
     - planned_dashboard_count: 6
-    - planned_workflow_group_count: 20
+    - planned_workflow_group_count: 21
     - planned_permission_namespace: admissions_crm.*
     - planned_migration_prefix: acrm0452_
     - strict_tenant_isolation_alignment: PASS
