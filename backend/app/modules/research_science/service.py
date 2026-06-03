@@ -592,7 +592,7 @@ def get_research_dashboard_service(db: Session, tenant_id: int) -> ResearchScien
         fake_metrics=False,
         incomplete_data=response.incomplete_data,
         data_source=DATA_SOURCE,
-        summary_json=response.model_dump(mode="json"),
+        summary_json=response.model_dump(),
         limitations_json=response.limitations,
         source_capability_id="A-037.2",
         source_matrix_row_id="A-037.2",

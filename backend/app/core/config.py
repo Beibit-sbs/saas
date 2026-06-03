@@ -82,12 +82,6 @@ def get_auth_refresh_token_ttl_minutes() -> int:
     return max(30, min(value, 30 * 24 * 60))
 
 
-def get_auth_embed_permissions_in_access_token() -> bool:
-    # Large permission scope claims can exceed browser cookie limits for high-privilege users.
-    # Keep default enabled to preserve existing behavior unless explicitly overridden.
-    return is_enabled(os.getenv("AUTH_EMBED_PERMISSIONS_IN_ACCESS_TOKEN", "true"))
-
-
 def get_auth_cookie_name() -> str:
     raw = os.getenv("AUTH_ACCESS_COOKIE_NAME", "app_access_token").strip()
     return raw or "app_access_token"
