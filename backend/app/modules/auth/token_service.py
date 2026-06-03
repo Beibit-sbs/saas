@@ -16,6 +16,7 @@ from fastapi import Request
 from app.core.config import (
     get_auth_access_token_ttl_minutes,
     get_auth_cookie_name,
+    get_auth_embed_permissions_in_access_token,
     get_auth_refresh_cookie_name,
     get_auth_refresh_token_ttl_minutes,
     get_auth_revocation_redis_url,
@@ -192,7 +193,7 @@ def create_access_token(
     payload = {
         "sub": user_id,
         "roles": roles,
-        "scp": normalized_permissions,
+        "scp": normalized_permissions if get_auth_embed_permissions_in_access_token() else [],
         "src": auth_source,
         "tid": normalized_tenant_id,
         "jti": str(uuid4()),
