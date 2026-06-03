@@ -1,5 +1,12 @@
 ]633;E;sed -n '1,11p' SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C]633;E;sed -n '1,13p' SBS_UB_UNIVERSITY_COMPLETENESS_EXPANSION_MAP.md;77c99e71-7785-4b31-acca-4216aece16ba]633;C# SBS_UB University Completeness Expansion Map
 
+## 0. A-045.3-SPEC Frontend Contract Continuity
+
+- A-045.3-SPEC defined Admissions CRM frontend architecture and UI contract as spec-only follow-on to A-045.2.B1.
+- Expansion-plane impact: none. UCE registry totals, priorities, and maturity distribution are unchanged.
+- Contract outcome: route/page/component/form/dashboard inventories defined, permission mapping aligned, tenant UX and anti-fake controls codified.
+- next_action_id: A-045.3-RUNTIME.
+
 ## 0. A-045.2.B1 Foundation Quality Baseline Continuity
 
 - A-045.2.B1 completed a validation-only quality baseline for Admissions CRM backend Batch 1 runtime foundation.
