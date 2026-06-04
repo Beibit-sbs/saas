@@ -1,9 +1,9 @@
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
-                        - status: closed_A-045.4-E2E
-                    - current_stage: A-045.4-E2E admissions_crm browser validation executed with runtime failures documented
-                    - last_completed_action_id: A-045.4-E2E
-                        - next_action_id: A-045.4.B1
-                    - updated_at: 2026-06-04 (A-045.4-E2E FAIL: playwright admissions browser validation failed while targeted frontend/backend validations remained PASS; remediation lane opened)
+                        - status: closed_A-045.4.B1
+                    - current_stage: A-045.4.B1 admissions_crm e2e product quality baseline and vertical closure confirmed
+                    - last_completed_action_id: A-045.4.B1
+                        - next_action_id: A-045.5-SPEC
+                    - updated_at: 2026-06-04 (A-045.4.B1 PASS: backend/frontend baselines PASS and admissions playwright runtime validated at 18/18 passing groups)
  - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
                         - status: closed_A-045.3-SPEC
                     - current_stage: A-045.3-SPEC admissions_crm frontend architecture and UI contract completed
@@ -39,8 +39,8 @@
     - fallback_validation_strategy: local_vitest_and_tsc
     - report_file: A-045.3-RUNTIME-ADMISSIONS_CRM_FRONTEND_FOUNDATION_REPORT.md
     - final_verdict: A-045.3-RUNTIME CLOSED - ADMISSIONS CRM FRONTEND FOUNDATION IMPLEMENTED
-    - recommended_next_action: A-045.4.B1
-    - next_action_id: A-045.4.B1
+    - recommended_next_action: A-045.5-SPEC
+    - next_action_id: A-045.5-SPEC
 - A-045.3-SPEC execution block:
     - mode: frontend_architecture_route_map_component_contract_spec_only
     - purpose: define_implementation_grade_admissions_crm_frontend_contract_aligned_to_backend

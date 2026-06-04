@@ -1,11 +1,12 @@
 # SBS_UB University Completeness Expansion Map
 
-## 0. A-045.3-RUNTIME Frontend Foundation Continuity
+## 0. A-045.4.B1 E2E Product Quality Baseline Continuity
 
-- A-045.3-RUNTIME implemented Admissions CRM frontend foundation (module + route wiring + focused tests) as runtime follow-on to A-045.3-SPEC.
+- A-045.4.B1 completed final Admissions CRM E2E/Product Quality Baseline and vertical closure validation.
 - Expansion-plane impact: none. UCE registry totals, priorities, and maturity distribution remain unchanged.
+- Browser closure result: Playwright Admissions CRM suite remains at 18/18 passing scenario groups.
 - Runtime safety posture preserved: tenant fail-closed behavior, permission fail-closed behavior, and anti-fake boundaries retained.
-- next_action_id: A-045.4.B1.
+- next_action_id: A-045.5-SPEC.
 
 ## 0. A-045.3-SPEC Frontend Contract Continuity
 
