@@ -5,7 +5,7 @@
 - A-045.3-RUNTIME implemented Admissions CRM frontend foundation (module + route wiring + focused tests) as runtime follow-on to A-045.3-SPEC.
 - Expansion-plane impact: none. UCE registry totals, priorities, and maturity distribution remain unchanged.
 - Runtime safety posture preserved: tenant fail-closed behavior, permission fail-closed behavior, and anti-fake boundaries retained.
-- next_action_id: A-045.3.B1.
+- next_action_id: A-045.4-E2E-SPEC.
 
 ## 0. A-045.3-SPEC Frontend Contract Continuity
 
