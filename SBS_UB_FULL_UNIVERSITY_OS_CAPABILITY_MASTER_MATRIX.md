@@ -6,7 +6,7 @@
 - Runtime implementation remains Batch1-scoped: tenant-safe route rendering, permission-safe fail-closed behavior, no synthetic data generation, and no autonomous admissions decisioning.
 - Validation continuity: targeted admissions frontend tests passed (8/8), workspace diagnostics report no TypeScript errors.
 - Environment note: container task execution for frontend lint/test was unavailable due missing docker binary; local fallback validation was executed.
-- next_action_id: A-045.4-E2E-SPEC.
+- next_action_id: A-045.4-E2E.
 
 ## 0. A-045.3-SPEC Frontend Contract Continuity
 
