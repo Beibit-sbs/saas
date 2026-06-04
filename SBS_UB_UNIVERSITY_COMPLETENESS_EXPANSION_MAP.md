@@ -1,5 +1,13 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.1-SPEC Integration / Provider Readiness Domain and Boundary Continuity
+
+- A-046.1-SPEC completed Integration / Provider Readiness Suite boundary definition as specification-only (no runtime/live provider integration).
+- Expansion-plane impact: none on baseline/extension arithmetic and no maturity inflation claims.
+- Provider-readiness domain architecture specified with provider inventory classification, workflow map, role matrix, dashboard inventory, and contract sizing estimates.
+- Anti-fake controls were explicitly reaffirmed across provider status, connectivity claims, credential boundaries, sync boundaries, and submission boundaries.
+- next_action_id: A-046.1.R1.
+
 ## 0. A-045.4.B1 E2E Product Quality Baseline Continuity
 
 - A-045.4.B1 completed final Admissions CRM E2E/Product Quality Baseline and vertical closure validation.

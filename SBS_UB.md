@@ -1,3 +1,32 @@
+- A-046.1-SPEC execution block:
+    - mode: provider_readiness_domain_selection_and_product_boundaries_spec_only
+    - purpose: define_integration_provider_readiness_suite_scope_boundaries_workflows_architecture_without_live_connections
+    - source_state_before: A-046.0-SPEC CLOSED, provider_readiness_foundation PASS, provider_l3_logic PASS, provider_l4_visibility PASS, provider_l4_api PASS, provider_l4_consolidated_summary PASS, provider_live_integrations NOT_IMPLEMENTED
+    - source_artifacts_reviewed: A-046.0-SPEC, A-029.2-SPEC, A-029.3-RUNTIME, A-029.10-RUNTIME
+    - provider_inventory_count: 14 (11 active readiness providers + 3 mapped provider candidates)
+    - workflow_count_specified: 12
+    - role_count_specified: 5
+    - dashboard_count_specified: 6
+    - estimated_entity_count: 18
+    - estimated_table_count: 26
+    - estimated_route_count: 44
+    - estimated_permission_count: 22
+    - estimated_report_count: 9
+    - anti_fake_boundaries_result: PASS (no fake status, no live claims, no credentials, no sync, no external submissions, no provider_connected=true without evidence)
+    - backend_changed: NO
+    - frontend_changed: NO
+    - migrations_created: NO
+    - apis_created: NO
+    - tests_created: NO
+    - runtime_started: NO
+    - report_file: A-046.1-SPEC-INTEGRATION_PROVIDER_READINESS_SUITE_DOMAIN_SELECTION_AND_PRODUCT_BOUNDARIES_REPORT.md
+    - final_verdict: A-046.1-SPEC SPECIFIED - INTEGRATION / PROVIDER READINESS SUITE DOMAIN AND PRODUCT BOUNDARIES DEFINED
+    - recommended_next_action: A-046.1.R1
+    - next_action_id: A-046.1.R1
+
+- strategic_execution_policy: SBS_UB_STRATEGIC_EXECUTION_POLICY_20_STRONG_VERTICALS_BEFORE_PRODUCTION.md
+- strategic_target_verticals_before_production: ~20 strong closed verticals
+- strategic_freeze_after_target: enabled (transition to production hardening program)
 - run_id: OP-AUDIT-2026-05-09-10 (A-022.0 WAVE 10 SELECTION / HUMAN-APPROVED TIMETABLE WORKFLOW PLANNING)
                         - status: closed_A-045.4.B1
                     - current_stage: A-045.4.B1 admissions_crm e2e product quality baseline and vertical closure confirmed

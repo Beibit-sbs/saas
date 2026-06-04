@@ -1,5 +1,14 @@
 # SBS_UB Full University OS Capability Master Matrix
 
+## 0. A-046.1-SPEC Integration / Provider Readiness Domain and Boundary Continuity
+
+- A-046.1-SPEC completed domain selection and product-boundary specification for Integration / Provider Readiness Suite as final-8 vertical #13 planning lane.
+- Provider inventory was fully classified: active readiness stack plus mapped candidate providers with readiness, implementation, future integration, business value, and risk posture.
+- Specification contracts were defined for workflows (12), roles (5), dashboards (6), and planning sizing (entities/tables/routes/permissions/reports).
+- Anti-fake boundary policy remains hard-fail: no fake provider status, no live-integration claims, no provider_connected=true without evidence, no credential storage, no sync, no external submissions.
+- Runtime implementation remains out of scope in this action.
+- next_action_id: A-046.1.R1.
+
 ## 0. A-045.4.B1 E2E Product Quality Baseline Continuity
 
 - A-045.4.B1 completed final Admissions CRM E2E/Product Quality Baseline and vertical closure validation.
