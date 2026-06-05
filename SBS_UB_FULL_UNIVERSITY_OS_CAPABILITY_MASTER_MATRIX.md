@@ -1,5 +1,13 @@
 # SBS_UB Full University OS Capability Master Matrix
 
+## 0. A-046.2.R1-SPEC Integration Provider Readiness Ownership and Permission Normalization Continuity
+
+- A-046.2.R1-SPEC closed the remaining A-046.2.B0 precision gaps and raised backend contract consistency from PARTIAL to PASS.
+- Normalization outputs are now explicit: provider ownership matrix (14), permission slug inventory (42), dashboard-permission matrix (6), and workflow-permission matrix (12).
+- Tenant and anti-fake contract posture remains unchanged and PASS.
+- Runtime implementation remains out of scope in this action.
+- next_action_id: A-046.2-RUNTIME.
+
 ## 0. A-046.2-SPEC Integration Provider Readiness Backend Contract Continuity
 
 - A-046.2-SPEC completed implementation-grade backend contract specification for Integration / Provider Readiness Suite using normalized A-046.1.R2 inputs.

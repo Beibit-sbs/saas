@@ -1,3 +1,26 @@
+- A-046.2.R1-SPEC execution block:
+    - mode: backend_contract_ownership_and_permission_normalization_spec_only
+    - purpose: resolve_b0_precision_gaps_in_provider_ownership_permissions_dashboards_and_workflow_permission_linkage
+    - source_state_before: A-046.2-SPEC SPECIFIED, A-046.2.B0 PARTIAL
+    - source_artifacts_reviewed: A-046.2-SPEC, A-046.2.B0
+    - provider_ownership_inventory_result: PASS (14/14 explicit provider ownership rows)
+    - permission_slug_inventory_result: PASS (42/42 concrete permission slugs enumerated)
+    - dashboard_permission_matrix_result: PASS (6/6 dashboards mapped to required permissions)
+    - workflow_permission_matrix_result: PASS (12/12 workflows mapped to read/write/review permissions)
+    - tenant_result: PASS
+    - anti_fake_result: PASS
+    - contract_consistency_result: PASS
+    - backend_changed: NO
+    - frontend_changed: NO
+    - migrations_created: NO
+    - apis_created: NO
+    - tests_created: NO
+    - runtime_started: NO
+    - report_file: A-046.2.R1-SPEC-INTEGRATION_PROVIDER_READINESS_BACKEND_CONTRACT_OWNERSHIP_PERMISSION_NORMALIZATION_REPORT.md
+    - final_verdict: A-046.2.R1-SPEC PASS - INTEGRATION PROVIDER READINESS BACKEND CONTRACT NORMALIZED FOR RUNTIME HANDOFF
+    - recommended_next_action: A-046.2-RUNTIME
+    - next_action_id: A-046.2-RUNTIME
+
 - A-046.2-SPEC execution block:
     - mode: backend_domain_db_api_permission_workflow_contract_spec_only
     - purpose: define_integration_provider_readiness_backend_contract_before_runtime_implementation
