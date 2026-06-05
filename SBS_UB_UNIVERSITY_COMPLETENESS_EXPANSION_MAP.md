@@ -1,5 +1,13 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.2-SPEC Integration Provider Readiness Backend Contract Continuity
+
+- A-046.2-SPEC completed backend domain/db/api/permission/workflow contract specification for Integration / Provider Readiness Suite (spec-only, no runtime implementation).
+- Expansion-plane impact: none on baseline/extension arithmetic and no maturity inflation claims.
+- Contract totals were locked for runtime handoff: providers 14, entities 18, tables 22, workflows 12, routes 44, permissions 42, dashboards 6.
+- Tenant and anti-fake boundaries were explicitly carried forward in backend contract form.
+- next_action_id: A-046.2-RUNTIME.
+
 ## 0. A-046.1-SPEC Integration / Provider Readiness Domain and Boundary Continuity
 
 - A-046.1-SPEC completed Integration / Provider Readiness Suite boundary definition as specification-only (no runtime/live provider integration).

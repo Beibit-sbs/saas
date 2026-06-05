@@ -1,3 +1,29 @@
+- A-046.2-SPEC execution block:
+    - mode: backend_domain_db_api_permission_workflow_contract_spec_only
+    - purpose: define_integration_provider_readiness_backend_contract_before_runtime_implementation
+    - source_state_before: A-046.1.R2-SPEC PASS, contract_consistency PASS
+    - source_artifacts_reviewed: A-046.1-SPEC, A-046.1.R1, A-046.1.R2-SPEC, A-029.2-SPEC, A-029.3-RUNTIME, A-029.10-RUNTIME
+    - provider_count_locked: 14
+    - entity_count_locked: 18
+    - table_count_locked: 22
+    - workflow_count_locked: 12
+    - route_count_locked: 44
+    - route_method_split_locked: GET 24 / POST 10 / PUT 8 / DELETE 2
+    - permission_count_locked: 42
+    - dashboard_count_locked: 6
+    - tenant_contract_result: PASS
+    - anti_fake_contract_result: PASS
+    - backend_changed: NO
+    - frontend_changed: NO
+    - migrations_created: NO
+    - apis_created: NO
+    - tests_created: NO
+    - runtime_started: NO
+    - report_file: A-046.2-SPEC-INTEGRATION_PROVIDER_READINESS_BACKEND_DOMAIN_DB_API_PERMISSION_WORKFLOW_CONTRACT_REPORT.md
+    - final_verdict: A-046.2-SPEC SPECIFIED - INTEGRATION PROVIDER READINESS BACKEND CONTRACT LOCKED
+    - recommended_next_action: A-046.2-RUNTIME
+    - next_action_id: A-046.2-RUNTIME
+
 - A-046.1-SPEC execution block:
     - mode: provider_readiness_domain_selection_and_product_boundaries_spec_only
     - purpose: define_integration_provider_readiness_suite_scope_boundaries_workflows_architecture_without_live_connections

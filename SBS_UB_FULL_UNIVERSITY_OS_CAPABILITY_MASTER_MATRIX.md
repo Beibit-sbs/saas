@@ -1,5 +1,14 @@
 # SBS_UB Full University OS Capability Master Matrix
 
+## 0. A-046.2-SPEC Integration Provider Readiness Backend Contract Continuity
+
+- A-046.2-SPEC completed implementation-grade backend contract specification for Integration / Provider Readiness Suite using normalized A-046.1.R2 inputs.
+- Locked contract totals: providers 14, entities 18, tables 22, workflows 12, routes 44 (GET 24 / POST 10 / PUT 8 / DELETE 2), permissions 42, dashboards 6.
+- Tenant architecture was explicitly locked: strict tenant isolation, fail-closed cross-tenant rules, and auditable governance override path.
+- Anti-fake backend contract remains hard-fail: no provider_connected overclaim, no live calls, no credential storage, no external submission, no sync execution, and no fake readiness/health metrics.
+- Runtime implementation remains out of scope in this action.
+- next_action_id: A-046.2-RUNTIME.
+
 ## 0. A-046.1-SPEC Integration / Provider Readiness Domain and Boundary Continuity
 
 - A-046.1-SPEC completed domain selection and product-boundary specification for Integration / Provider Readiness Suite as final-8 vertical #13 planning lane.
