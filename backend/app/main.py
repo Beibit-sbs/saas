@@ -139,6 +139,7 @@ from app.modules.quality_accreditation.router import router as quality_accredita
 from app.modules.hr_staff_governance.router import router as hr_staff_governance_router
 from app.modules.finance_procurement_asset.router import router as finance_procurement_asset_router
 from app.modules.document_decree_correspondence.router import router as document_decree_correspondence_router
+from app.modules.integration_provider_readiness.router import router as integration_provider_readiness_router
 from app.modules.student_services_support.router import router as student_services_support_router
 from app.modules.security_access_compliance.router import router as security_access_compliance_router
 from app.modules.campus_facilities_housing_transport.router import router as campus_facilities_housing_transport_router
@@ -328,6 +329,7 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.quality_accreditation_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.hr_staff_governance_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.finance_procurement_asset_session_factory = make_session_factory(_admissions_engine)
+        fastapi_app.state.integration_provider_readiness_session_factory = make_session_factory(_admissions_engine)
         fastapi_app.state.student_services_support_session_factory = make_session_factory(_admissions_engine)
         logger.info("admissions database engine initialised (pool_size=5, max_overflow=10)")
     except RuntimeError as exc:
@@ -344,6 +346,7 @@ async def lifespan(fastapi_app: FastAPI):
         fastapi_app.state.quality_accreditation_session_factory = None
         fastapi_app.state.hr_staff_governance_session_factory = None
         fastapi_app.state.finance_procurement_asset_session_factory = None
+        fastapi_app.state.integration_provider_readiness_session_factory = None
         fastapi_app.state.student_services_support_session_factory = None
         logger.warning(
             "admissions database not configured — admissions endpoints will return HTTP 503. "
@@ -417,6 +420,7 @@ app.include_router(courses_router)
 app.include_router(enrollments_router)
 app.include_router(expansion_visibility_router)
 app.include_router(provider_readiness_router)
+app.include_router(integration_provider_readiness_router)
 app.include_router(grades_router)
 app.include_router(scheduling_router)
 app.include_router(human_approved_timetable_workflow_router)
