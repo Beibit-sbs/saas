@@ -1,3 +1,39 @@
+- A-046.COV-R11 execution block:
+    - mode: coverage_harness_resource_diagnostics_and_authoritative_rebaseline_recovery
+    - purpose: diagnose_exit_137_and_recover_authoritative_rebaseline_without_any_code_or_config_changes
+    - source_state_before: A-046.COV-R10 PARTIAL, last_trusted_coverage 84.2664_percent
+    - input_validation: PASS
+    - exit_137_root_cause_classification: OTHER_INFRA_HARNESS_TERMINATION_CLASS
+    - in_container_oom_proven: NO
+    - container_memory_limit_detected: NO (memory.max=max)
+    - resource_profiling: PASS
+    - observed_shard_peak_memory: 321.4MiB
+    - observed_shard_peak_cpu: 99.82_percent
+    - shard_manifest_count: 12
+    - typical_shard_size: 61_files
+    - strategy_selected: OPTION_D_HYBRID
+    - authoritative_rebaseline_execution: BLOCKED
+    - coverage_combine_status: BLOCKED
+    - repository_coverage_before: 84.2664_percent
+    - repository_coverage_after: 84.2664_percent_last_trusted_authoritative_value
+    - absolute_gain_points: 0.0000_authoritative_not_remeasured
+    - integrity_validation: PASS
+    - same_harness: YES_INTENDED
+    - same_denominator: YES_INTENDED
+    - coverage_trusted: PARTIAL
+    - r9_impact_validated_repository_wide: NO
+    - remaining_to_87: 2.7336_percent
+    - remaining_to_87_5: 3.2336_percent
+    - remaining_to_88: 3.7336_percent
+    - recommendation_option: OPTION_C
+    - backend_changed: NO
+    - frontend_changed: NO
+    - runtime_changed: NO
+    - report_file: A-046.COV-R11-HARNESS_RESOURCE_DIAGNOSTICS_AND_AUTHORITATIVE_REBASELINE_RECOVERY_REPORT.md
+    - final_verdict: A-046.COV-R11 PARTIAL - INFRASTRUCTURE_BLOCKER_REMAINS_FOR_AUTHORITATIVE_REBASELINE
+    - recommended_next_action: A-046.COV-R12
+    - next_action_id: A-046.COV-R12
+
 - A-046.COV-R10 execution block:
     - mode: resource_safe_authoritative_rebaseline_and_final_recovery_validation
     - purpose: complete_blocked_r9_authoritative_rebaseline_without_any_code_or_config_changes

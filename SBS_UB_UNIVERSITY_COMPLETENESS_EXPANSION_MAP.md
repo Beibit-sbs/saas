@@ -1,5 +1,18 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R11 Harness Resource Diagnostics Continuity
+
+- A-046.COV-R11 executed diagnostics-only coverage harness recovery under strict no-change constraints for runtime/tests/config.
+- Input validation for R8/R9/R10 and trackers passed.
+- Exit 137 root-cause class was refined to OTHER_INFRA_HARNESS_TERMINATION_CLASS for this action window.
+- In-container OOM was not proven from direct diagnostics (`OOMKilled=false` samples; `memory.max=max`).
+- Resource profiling showed low-to-moderate shard memory footprint (observed peak around 321.4 MiB) with CPU bursts but no memory-cap breach signal.
+- Hybrid recovery strategy (OPTION_D) was attempted, including corrected shard invocation path and per-shard container-state inspection.
+- Authoritative rebaseline remained blocked and no completed authoritative combined coverage percentage was produced.
+- Last trusted repository coverage remains 84.2664%; integrity remained PASS.
+- decision_option: OPTION_C.
+- next_action_id: A-046.COV-R12.
+
 ## 0. A-046.COV-R10 Resource-Safe Rebaseline Continuity
 
 - A-046.COV-R10 performed validation-only authoritative rebaseline recovery work with strict no-change policy on runtime/tests/config.
