@@ -1,5 +1,17 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R2 Denominator Expansion and True Baseline Continuity
+
+- A-046.COV-R2 completed quantitative segmentation of the current 42.12% full-backend coverage baseline.
+- Best-available historical reconstruction anchored on the latest 87-era commit (`10f352b`) yielded 52,151 historical-comparable measured statements versus 68,706 currently measured statements.
+- Current codebase source LOC grew from 162,730 to 204,215 Python lines (+25.49%), but denominator expansion alone does not explain the drop because historical-comparable files under the current code only cover 36.20%.
+- Stable core-only coverage (core platform + high-coverage preexisting 87-era files) recalculates to 58.50%, while excluding legacy low-maintenance modules yields 59.07%.
+- New verticals are not the dominant drag: excluding them lowers the measured baseline to 37.28%, and the targeted A-035/A-036/A-037/A-042/A-043/A-045/A-046 set contributes only 8.26% of total missed lines.
+- Legacy low-maintenance files dominate current miss load at 63.08% of all missed lines; the top loss driver is `app/modules/brain_core/service.py` with 1,477 missed lines.
+- True baseline classification: SCENARIO_C_MIXED (real collapse in historical files plus heavy legacy-module weight, with denominator expansion as a secondary factor).
+- coverage_analysis_status: PASS.
+- next_action_id: A-046.COV-R3.
+
 ## 0. A-046.COV-R1 Coverage Forensics Continuity
 
 - A-046.COV-R1 reconciled the historical full-backend 87% class baselines against the current authoritative 42.12% full-backend result.

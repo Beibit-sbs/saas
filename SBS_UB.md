@@ -1,3 +1,45 @@
+- A-046.COV-R2 execution block:
+    - mode: coverage_denominator_expansion_analysis_only
+    - purpose: segment_current_42_point_12_percent_baseline_into_historical_core_new_vertical_expansion_provider_and_legacy_components
+    - source_state_before: A-046.COV-R1 PARTIAL, historical_87_percent_family identified, current_42_point_12_percent full_backend result identified
+    - historical_baseline_range: 87.07_to_87.89
+    - historical_reference_commit: 10f352b1871e9c1ec83e52360f5c2c3640cb6961
+    - historical_reconstructed_denominator_best_available: 52151_statements
+    - historical_reconstructed_covered_best_available: 45408_to_45836_statements
+    - historical_backend_source_loc_best_available: 162730
+    - current_full_backend_denominator: 68706_statements
+    - current_full_backend_covered: 28936_statements
+    - current_full_backend_missed: 39770_statements
+    - current_full_backend_coverage: 42.12_percent
+    - current_backend_source_loc: 204215
+    - backend_loc_growth_percent: 25.49
+    - group_a_core_platform: 10398_statements_at_33.95_percent
+    - group_b_preexisting_87_era: 7919_statements_at_90.74_percent
+    - group_c_new_verticals: 12093_statements_at_63.73_percent
+    - group_d_expansion_modules: 4534_statements_at_50.62_percent
+    - group_e_provider_readiness: 926_statements_at_50.76_percent
+    - group_f_legacy_low_maintenance: 32836_statements_at_23.60_percent
+    - historical_comparable_current_coverage: 36.20_percent
+    - core_only_current_coverage: 58.50_percent
+    - legacy_excluded_forecast: 59.07_percent
+    - new_verticals_excluded_forecast: 37.28_percent
+    - top_loss_driver: app/modules/brain_core/service.py (1477 missed lines, 12 percent coverage)
+    - recent_wave_miss_share_a035_a036_a037_a042_a043_a045_a046: 8.26_percent_of_total_missed_lines
+    - all_recent_vertical_miss_share_a033_to_a046_non_expansion: 12.18_percent_of_total_missed_lines
+    - legacy_miss_share: 63.08_percent_of_total_missed_lines
+    - true_baseline_classification: SCENARIO_C_MIXED
+    - primary_cause: REAL_COVERAGE_COLLAPSE_IN_HISTORICAL_FILES_PLUS_LEGACY_MODULE_WEIGHT_WITH_SECONDARY_DENOMINATOR_EXPANSION
+    - coverage_analysis_status: PASS
+    - is_42_percent_comparable_to_87_percent: PARTIAL
+    - backend_changed: NO
+    - frontend_changed: NO
+    - migrations_created: NO
+    - tests_created: NO
+    - report_file: A-046.COV-R2-COVERAGE_DENOMINATOR_EXPANSION_AND_TRUE_BASELINE_ANALYSIS_REPORT.md
+    - final_verdict: A-046.COV-R2 PASS - TRUE BASELINE ANALYSIS COMPLETED AND MIXED CAUSE ESTABLISHED
+    - recommended_next_action: A-046.COV-R3
+    - next_action_id: A-046.COV-R3
+
 - A-046.COV-R1 execution block:
     - mode: coverage_forensics_validation_only
     - purpose: reconcile_historical_87_percent_backend_baseline_against_current_42_point_12_percent_full_backend_result
