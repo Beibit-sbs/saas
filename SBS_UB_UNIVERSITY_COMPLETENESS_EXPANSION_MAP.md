@@ -1,5 +1,16 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R12.D2 Watchdog Stall Localization Continuity
+
+- A-046.COV-R12.D2 ran watchdog-wrapped authoritative diagnostics and localized the non-progress zone to pytest collection phase behavior.
+- The same authoritative harness lineage was executed with diagnostics wrappers only (timestamps, heartbeat, process-state snapshots, watchdog boundaries).
+- `pytest --collect-only` and `pytest --collect-only -vv` did not progress beyond `collecting ...` within diagnostic timeout windows.
+- Deterministic binary partitioning narrowed the reproducible collection stall scope to a 22-file candidate group (academic_integrity/academic_records/access_control/accreditation/admissions subset).
+- No single file/fixture was conclusively isolated in this action window.
+- Coverage artifacts were not produced; collection did not advance to coverage write boundary.
+- integrity remained PASS (no runtime/test/config drift introduced).
+- next_action_id: A-046.COV-R13.
+
 ## 0. A-046.COV-R12.D1 Authoritative Failure Root-Cause Continuity
 
 - A-046.COV-R12.D1 stopped coverage-recovery and executed diagnostics-only root-cause analysis.

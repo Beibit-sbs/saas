@@ -1,3 +1,30 @@
+- A-046.COV-R12.D2 execution block:
+    - mode: watchdog_wrapped_authoritative_pytest_execution_and_stall_localization
+    - purpose: localize_exact_pytest_stall_phase_without_any_runtime_or_test_changes
+    - source_state_before: A-046.COV-R12.D1 PASS, last_trusted_coverage 84.2664_percent
+    - input_validation: PASS
+    - authoritative_watchdog_instrumentation: PASS
+    - authoritative_watchdog_exit: 137
+    - authoritative_watchdog_oom: false
+    - collect_only_result: FAIL (stops_at_collecting)
+    - deterministic_binary_partition: PASS
+    - smallest_repro_set_size: 22
+    - stall_class_decision: A_COLLECTION_STALL
+    - exact_single_offender_identified: NO
+    - offender_scope: academic_integrity_academic_records_access_control_accreditation_admissions_candidate_group
+    - coverage_artifacts_created: NO
+    - integrity_validation: PASS
+    - repository_coverage_before: 84.2664_percent
+    - repository_coverage_after: 84.2664_percent_last_trusted_authoritative_value
+    - coverage_trusted: PARTIAL
+    - backend_changed: NO
+    - frontend_changed: NO
+    - runtime_changed: NO
+    - report_file: A-046.COV-R12.D2-WATCHDOG_PYTEST_STALL_LOCALIZATION_REPORT.md
+    - final_verdict: A-046.COV-R12.D2 PARTIAL - COLLECTION_STALL_LOCALIZED_TO_22_FILE_CANDIDATE_GROUP
+    - recommended_next_action: A-046.COV-R13
+    - next_action_id: A-046.COV-R13
+
 - A-046.COV-R12.D1 execution block:
     - mode: authoritative_coverage_execution_failure_root_cause_analysis
     - purpose: determine_exact_non_completion_cause_without_any_code_or_config_changes
