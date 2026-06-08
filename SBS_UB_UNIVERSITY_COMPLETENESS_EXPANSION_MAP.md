@@ -1,5 +1,15 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R8 Coverage Integrity Audit Continuity
+
+- A-046.COV-R8 validated the 84.2664% authoritative repository baseline as integrity-safe for current state usage.
+- Configuration audit passed across `backend/.coveragerc` and `backend/pytest.ini`; no R5/R6/R7 commit-scope evidence of omit/exclude manipulation was found.
+- Harness lineage remained consistent with historical authoritative runs (`ai-backend-tests:latest pytest -q`), while denominator changed (68,706 to 71,395), so same_harness=YES and same_denominator=NO.
+- Disabled-test inflation audit passed: deselected count remained 88 versus historical 87-era profiles; no evidence of coverage inflation via disabled coverage flags in authoritative execution.
+- Exact remaining gap from current 84.2664 baseline is 2.7336 to 87.00, 3.2336 to 87.50, and 3.7336 to 88.00.
+- Recommendation selected: OPTION_B (one final recovery batch R9).
+- next_action_id: A-046.COV-R9.
+
 ## 0. A-046.COV-R7 Authoritative Repository Rebaseline Continuity
 
 - A-046.COV-R7 executed the authoritative full-backend harness lineage and measured current repository coverage at 84.2664% (60,162/71,395).
