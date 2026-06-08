@@ -1,5 +1,18 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R16 Shard_01 Isolation Continuity
+
+- A-046.COV-R16 completed diagnostics-only deterministic narrowing inside shard_01 to isolate the collection blocker scope.
+- The reproducing branch was reduced from 61 files to a 2-file faculty pair.
+- Reproducer pair: `tests/modules/faculty/test_office_hours.py` + `tests/modules/faculty/test_proctoring.py` (`RC=137` when collected together in right2 run).
+- Single-file validation showed no hard single-file reproducer:
+	- `test_office_hours.py` alone: `RC=0`, `11 collected`
+	- `test_proctoring.py` alone: `RC=124`, `11 collected`
+- Classification for this action window: conftest/bootstrap interaction group (shared `tests.conftest` client/header import boundary), not pure plugin-autoload and not pure import exception boundary.
+- Single exact offender was not isolated; minimal candidate group is the 2-file interaction pair.
+- integrity remained PASS (no runtime/tests/coverage-config edits in R16).
+- next_action_id: A-046.COV-R17.
+
 ## 0. A-046.COV-R15 Early Termination RCA Continuity
 
 - A-046.COV-R15 executed diagnostics-only root-cause analysis for persistent authoritative `exit 137` after R13.R1 remediation.
