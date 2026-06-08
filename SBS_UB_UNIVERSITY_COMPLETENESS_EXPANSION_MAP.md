@@ -1,5 +1,17 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R12.D1 Authoritative Failure Root-Cause Continuity
+
+- A-046.COV-R12.D1 stopped coverage-recovery and executed diagnostics-only root-cause analysis.
+- Exact authoritative harness was reproduced and ended with exit code 137 after 81 seconds in a non-completing state.
+- Process diagnostics showed the main live process was `pytest -q` (PID 1), sleeping/waiting, with no separate active xargs/coverage process.
+- `OOMKilled=false` in reproduced event; in-container OOM was not proven as the direct cause.
+- Shard manifest/path/xargs format was validated as correct when invoked with proper container-relative path.
+- Coverage artifacts did not appear; failure boundary is before first coverage data write and before combine/report/json phases.
+- single root-cause decision: `ROOT_CAUSE_B` (pytest execution hang).
+- integrity remained PASS; runtime/tests/config were unchanged in this action.
+- next_action_id: A-046.COV-R12.D2.
+
 ## 0. A-046.COV-R11 Harness Resource Diagnostics Continuity
 
 - A-046.COV-R11 executed diagnostics-only coverage harness recovery under strict no-change constraints for runtime/tests/config.
