@@ -1,5 +1,21 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R17 Faculty Pair Interaction Remediation Continuity
+
+- A-046.COV-R17 remediated the shard_01 faculty pair collection interaction using test-only collection/bootstrap changes.
+- Root cause class selected: `E` (conftest interaction), centered on shared module-level access to `tests.conftest` objects.
+- Remediation replaced module-level `tests.conftest` imports with lazy module fixtures in:
+	- `backend/tests/modules/faculty/test_office_hours.py`
+	- `backend/tests/modules/faculty/test_proctoring.py`
+- Post-fix validation matrix passed:
+	- office_only collect: `RC=0`, 11 collected
+	- proctor_only collect: `RC=0`, 11 collected
+	- pair collect: `RC=0`, 22 collected
+	- shard_01 collect: `RC=0`, 422/426 collected (4 deselected)
+- Watchdog collection confirmation passed and progressed beyond the former pair blocker boundary.
+- integrity remained PASS (no runtime/coverage-config/denominator changes in R17).
+- next_action_id: A-046.COV-R18.
+
 ## 0. A-046.COV-R16 Shard_01 Isolation Continuity
 
 - A-046.COV-R16 completed diagnostics-only deterministic narrowing inside shard_01 to isolate the collection blocker scope.

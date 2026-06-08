@@ -6,7 +6,20 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.modules.faculty import service as faculty_service
-from tests.conftest import ADMIN_HEADERS, client as test_client
+
+
+@pytest.fixture(scope="module")
+def test_client():
+    from tests import conftest as test_conftest
+
+    return test_conftest.client
+
+
+@pytest.fixture(scope="module")
+def admin_headers() -> dict[str, str]:
+    from tests import conftest as test_conftest
+
+    return dict(test_conftest.ADMIN_HEADERS)
 
 
 # ---------------------------------------------------------------------------
@@ -163,17 +176,17 @@ def test_get_office_hours_brain_context_high_risk(monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_get_office_hours_list_empty_http(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_office_hours_list_empty_http(monkeypatch: pytest.MonkeyPatch, test_client, admin_headers) -> None:
     monkeypatch.setattr(
         "app.modules.faculty.router.list_office_hours",
         lambda tenant_id, faculty_id=None: [],
     )
-    resp = test_client.get("/api/admin/org/faculty/office-hours", headers=dict(ADMIN_HEADERS))
+    resp = test_client.get("/api/admin/org/faculty/office-hours", headers=admin_headers)
     assert resp.status_code == 200
     assert resp.json()["records"] == []
 
 
-def test_create_office_hours_via_api_http(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_create_office_hours_via_api_http(monkeypatch: pytest.MonkeyPatch, test_client, admin_headers) -> None:
     created = {
         "id": 20,
         "faculty_id": "FAC-10",
@@ -199,14 +212,14 @@ def test_create_office_hours_via_api_http(monkeypatch: pytest.MonkeyPatch) -> No
         "student_id": "STU-99",
         "no_show": False,
     }
-    resp = test_client.post("/api/admin/org/faculty/office-hours", json=payload, headers=dict(ADMIN_HEADERS))
+    resp = test_client.post("/api/admin/org/faculty/office-hours", json=payload, headers=admin_headers)
     assert resp.status_code == 200
     body = resp.json()
     assert body["record"]["id"] == 20
     assert body["record"]["faculty_id"] == "FAC-10"
 
 
-def test_get_office_hours_brain_context_http(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_office_hours_brain_context_http(monkeypatch: pytest.MonkeyPatch, test_client, admin_headers) -> None:
     ctx = {
         "module": "office_hours",
         "tenant_id": 1,
@@ -220,7 +233,7 @@ def test_get_office_hours_brain_context_http(monkeypatch: pytest.MonkeyPatch) ->
         "app.modules.faculty.router.get_office_hours_brain_context",
         lambda tenant_id: ctx,
     )
-    resp = test_client.get("/api/admin/org/faculty/office-hours/brain-context", headers=dict(ADMIN_HEADERS))
+    resp = test_client.get("/api/admin/org/faculty/office-hours/brain-context", headers=admin_headers)
     assert resp.status_code == 200
     body = resp.json()
     assert body["module"] == "office_hours"

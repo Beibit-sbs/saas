@@ -1,3 +1,33 @@
+- A-046.COV-R17 execution block:
+        - mode: faculty_pair_collection_interaction_remediation
+        - purpose: remediate_shared_collection_interaction_between_office_hours_and_proctoring_pair
+        - source_state_before: A-046.COV-R16 PARTIAL, last_trusted_coverage 84.2664_percent
+        - input_validation: PASS
+        - pair_decomposition: PASS
+        - interaction_trace: PASS
+        - root_cause_decision: E_conftest_interaction
+        - remediation_scope: test_collection_bootstrap_only
+        - remediation_files:
+            - backend/tests/modules/faculty/test_office_hours.py
+            - backend/tests/modules/faculty/test_proctoring.py
+        - remediation_pattern: replace_module_level_tests_conftest_imports_with_lazy_module_fixtures
+        - validation_office_only: PASS (rc_0, 11_collected)
+        - validation_proctor_only: PASS (rc_0, 11_collected)
+        - validation_pair: PASS (rc_0, 22_collected)
+        - validation_shard01: PASS (rc_0, 422_of_426_collected_4_deselected)
+        - authoritative_watchdog_collection_confirmation: PASS
+        - pair_blocker_removed: YES
+        - integrity_validation: PASS
+        - repository_coverage_before: 84.2664_percent
+        - repository_coverage_after: 84.2664_percent_last_trusted_authoritative_value
+        - runtime_modified: NO
+        - coverage_config_modified: NO
+        - denominator_modified: NO
+        - report_file: A-046.COV-R17-FACULTY_PAIR_COLLECTION_INTERACTION_REMEDIATION_REPORT.md
+        - final_verdict: A-046.COV-R17 PASS - FACULTY_PAIR_COLLECTION_INTERACTION_REMEDIATED
+        - recommended_next_action: A-046.COV-R18
+        - next_action_id: A-046.COV-R18
+
 - A-046.COV-R16 execution block:
     - mode: shard_01_collection_blocker_isolation_to_single_file
     - purpose: reduce_r15_shard01_collection_blocker_to_exact_single_offender_or_minimal_reproducing_group

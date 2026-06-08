@@ -6,7 +6,20 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.modules.faculty import service as faculty_service
-from tests.conftest import ADMIN_HEADERS, client as test_client
+
+
+@pytest.fixture(scope="module")
+def test_client():
+    from tests import conftest as test_conftest
+
+    return test_conftest.client
+
+
+@pytest.fixture(scope="module")
+def admin_headers() -> dict[str, str]:
+    from tests import conftest as test_conftest
+
+    return dict(test_conftest.ADMIN_HEADERS)
 
 
 # ---------------------------------------------------------------------------
@@ -164,17 +177,17 @@ def test_get_proctoring_brain_context_high_risk(monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_get_proctoring_list_empty_http(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_proctoring_list_empty_http(monkeypatch: pytest.MonkeyPatch, test_client, admin_headers) -> None:
     monkeypatch.setattr(
         "app.modules.faculty.router.list_proctoring_records",
         lambda tenant_id, faculty_id=None, exam_id=None: [],
     )
-    resp = test_client.get("/api/admin/org/faculty/proctoring", headers=dict(ADMIN_HEADERS))
+    resp = test_client.get("/api/admin/org/faculty/proctoring", headers=admin_headers)
     assert resp.status_code == 200
     assert resp.json()["records"] == []
 
 
-def test_create_proctoring_record_via_api_http(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_create_proctoring_record_via_api_http(monkeypatch: pytest.MonkeyPatch, test_client, admin_headers) -> None:
     created = {
         "id": 20,
         "exam_id": "EXAM-10",
@@ -199,14 +212,14 @@ def test_create_proctoring_record_via_api_http(monkeypatch: pytest.MonkeyPatch) 
         "severity": "high",
         "status": "open",
     }
-    resp = test_client.post("/api/admin/org/faculty/proctoring", json=payload, headers=dict(ADMIN_HEADERS))
+    resp = test_client.post("/api/admin/org/faculty/proctoring", json=payload, headers=admin_headers)
     assert resp.status_code == 200
     data = resp.json()
     assert data["record"]["exam_id"] == "EXAM-10"
     assert data["record"]["severity"] == "high"
 
 
-def test_proctoring_brain_context_endpoint_http(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_proctoring_brain_context_endpoint_http(monkeypatch: pytest.MonkeyPatch, test_client, admin_headers) -> None:
     ctx = {
         "module": "proctoring",
         "tenant_id": 1,
@@ -218,7 +231,7 @@ def test_proctoring_brain_context_endpoint_http(monkeypatch: pytest.MonkeyPatch)
         "risk_level": "medium",
     }
     monkeypatch.setattr("app.modules.faculty.router.get_proctoring_brain_context", lambda tenant_id: ctx)
-    resp = test_client.get("/api/admin/org/faculty/proctoring/brain-context", headers=dict(ADMIN_HEADERS))
+    resp = test_client.get("/api/admin/org/faculty/proctoring/brain-context", headers=admin_headers)
     assert resp.status_code == 200
     data = resp.json()
     assert data["module"] == "proctoring"
