@@ -1,5 +1,19 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R18 Authoritative Rebaseline Continuity
+
+- A-046.COV-R18 executed the first post-R17 full authoritative coverage rebaseline attempt after shard_01 faculty interaction remediation.
+- Authoritative command lineage was executed with in-container watchdog (`timeout -k 5 240 pytest -q`).
+- Run metadata: start `2026-06-08T15:52:45Z`, end `2026-06-08T15:56:48Z`, duration `243s`, exit `124`.
+- Coverage artifacts were not produced:
+	- `.coverage*` data: none
+	- `coverage combine`: `No data to combine`
+	- `coverage report/json`: `No data to report`
+- New trusted value could not be established from this run; trusted repository coverage remains `84.2664%`.
+- Historical anchors remain unrecovered (`87.07/87.50/87.89` all not reached).
+- integrity remained PASS for R18 scope (runtime/tests/coverage-config/denominator unchanged by this action).
+- next_action_id: A-046.COV-R19.
+
 ## 0. A-046.COV-R17 Faculty Pair Interaction Remediation Continuity
 
 - A-046.COV-R17 remediated the shard_01 faculty pair collection interaction using test-only collection/bootstrap changes.

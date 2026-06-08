@@ -1,3 +1,44 @@
+- A-046.COV-R18 execution block:
+    - mode: authoritative_coverage_rebaseline_after_shard01_remediation
+    - purpose: first_full_repository_wide_rebaseline_attempt_after_r17_pair_blocker_removal
+    - source_state_before: A-046.COV-R17 PASS, last_trusted_coverage 84.2664_percent
+    - input_validation: PASS
+    - authoritative_harness_execution: PARTIAL
+    - authoritative_harness_start: 2026-06-08T15:52:45Z
+    - authoritative_harness_end: 2026-06-08T15:56:48Z
+    - authoritative_harness_duration_sec: 243
+    - authoritative_harness_exit_code: 124
+    - collected_tests: N/A
+    - passed_tests: N/A
+    - failed_tests: N/A
+    - skipped_tests: N/A
+    - coverage_artifact_validation: FAIL
+    - coverage_files_generated: NO
+    - coverage_combine_status: FAIL (No_data_to_combine)
+    - coverage_report_status: FAIL (No_data_to_report)
+    - coverage_json_status: FAIL (No_data_to_report)
+    - new_trusted_coverage_established: NO
+    - repository_coverage_before: 84.2664_percent
+    - repository_coverage_after: 84.2664_percent_last_trusted_authoritative_value
+    - absolute_change_points: 0.0000
+    - relative_change_percent: 0.0000
+    - recovered_87_07: NO
+    - recovered_87_50: NO
+    - recovered_87_89: NO
+    - remaining_to_87_07: 2.8036_percent
+    - remaining_to_87_50: 3.2336_percent
+    - remaining_to_87_89: 3.6236_percent
+    - top20_missed_modules_status: FAIL (authoritative_data_not_available)
+    - integrity_validation: PASS
+    - runtime_modified: NO
+    - tests_modified: NO
+    - coverage_config_modified: NO
+    - denominator_modified: NO
+    - report_file: A-046.COV-R18-AUTHORITATIVE_COVERAGE_REBASELINE_AFTER_SHARD01_REMEDIATION_REPORT.md
+    - final_verdict: A-046.COV-R18 PARTIAL - AUTHORITATIVE_REBASELINE_ATTEMPTED_COVERAGE_ARTIFACTS_NOT_PRODUCED
+    - recommended_next_action: A-046.COV-R19
+    - next_action_id: A-046.COV-R19
+
 - A-046.COV-R17 execution block:
         - mode: faculty_pair_collection_interaction_remediation
         - purpose: remediate_shared_collection_interaction_between_office_hours_and_proctoring_pair
