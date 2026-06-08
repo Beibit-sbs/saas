@@ -6,10 +6,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.main import app
 from app.modules.academic_integrity import router as academic_integrity_router
 from app.modules.academic_integrity.schemas import IntegrityCaseStatus
-from tests.conftest import ADMIN_HEADERS, client
 
 
 @pytest.fixture
@@ -28,24 +26,41 @@ def mock_tenant(monkeypatch):
 
 @pytest.fixture
 def admin_headers() -> dict[str, str]:
+    from tests.conftest import ADMIN_HEADERS
+
     return dict(ADMIN_HEADERS)
 
 
 @pytest.fixture
-def dependency_overrides(mock_service, mock_tenant):
-    app.dependency_overrides[academic_integrity_router.get_service] = lambda: mock_service
-    app.dependency_overrides[academic_integrity_router.get_current_tenant] = lambda: mock_tenant
+def test_app():
+    from tests.conftest import app
+
+    return app
+
+
+@pytest.fixture
+def test_client():
+    from tests.conftest import client
+
+    return client
+
+
+@pytest.fixture
+def dependency_overrides(mock_service, mock_tenant, test_app):
+    test_app.dependency_overrides[academic_integrity_router.get_service] = lambda: mock_service
+    test_app.dependency_overrides[academic_integrity_router.get_current_tenant] = lambda: mock_tenant
     try:
         yield
     finally:
-        app.dependency_overrides.pop(academic_integrity_router.get_service, None)
-        app.dependency_overrides.pop(academic_integrity_router.get_current_tenant, None)
+        test_app.dependency_overrides.pop(academic_integrity_router.get_service, None)
+        test_app.dependency_overrides.pop(academic_integrity_router.get_current_tenant, None)
 
 
 def test_list_integrity_cases(
     mock_service,
     dependency_overrides,
     admin_headers: dict[str, str],
+    test_client,
 ):
     """Test listing integrity cases."""
     cases = [
@@ -75,7 +90,7 @@ def test_list_integrity_cases(
         "page_size": 20,
     }
 
-    response = client.get(
+    response = test_client.get(
         "/api/admin/academic-integrity/cases?page=1&page_size=20",
         headers=admin_headers,
     )
@@ -92,6 +107,7 @@ def test_create_integrity_case(
     mock_service,
     dependency_overrides,
     admin_headers: dict[str, str],
+    test_client,
 ):
     """Test creating an integrity case."""
     new_case = {
@@ -124,7 +140,7 @@ def test_create_integrity_case(
         "priority": "high",
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/admin/academic-integrity/cases",
         json=payload,
         headers=admin_headers,
@@ -140,6 +156,7 @@ def test_update_case_status(
     mock_service,
     dependency_overrides,
     admin_headers: dict[str, str],
+    test_client,
 ):
     """Test updating case status."""
     updated_case = {
@@ -167,7 +184,7 @@ def test_update_case_status(
         "resolution_notes": "Awaiting student response",
     }
 
-    response = client.patch(
+    response = test_client.patch(
         "/api/admin/academic-integrity/cases/case-1/status",
         json=payload,
         headers=admin_headers,

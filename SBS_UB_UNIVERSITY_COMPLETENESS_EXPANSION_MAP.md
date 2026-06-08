@@ -1,5 +1,19 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R13.R1 Collection Stall Remediation Continuity
+
+- A-046.COV-R13.R1 applied a minimal test-only remediation to the localized offender file.
+- Root cause class selected: `E` (mock/bootstrap side effect at collection-time import boundary).
+- Offender construct was module-level bootstrap imports in `backend/tests/modules/academic_integrity/test_router_academic_integrity.py`.
+- Remediation replaced module-level bootstrap access with lazy fixtures (`test_app`, `test_client`, lazy `admin_headers`) while preserving assertions and test intent.
+- Post-fix collect-only validation passed for all required scopes:
+	- offender file: PASS (3 collected in 5.63s)
+	- narrowed candidate group: PASS (9 collected in 5.76s)
+	- original 22-file group: PASS (139 collected in 33.76s)
+- Watchdog-bounded confirmation of previously stalled phase passed (3 collected in 5.81s).
+- integrity remained PASS: no runtime/test-framework-config/denominator drift outside allowed test remediation scope.
+- next_action_id: A-046.COV-R14.
+
 ## 0. A-046.COV-R13 Single-Offender Isolation Continuity
 
 - A-046.COV-R13 completed diagnostics-only narrowing from the D2 22-file candidate set to a single reproducible file.

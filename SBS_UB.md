@@ -1,3 +1,29 @@
+- A-046.COV-R13.R1 execution block:
+    - mode: academic_integrity_collection_stall_remediation
+    - purpose: remediate_single_offender_collection_blocker_without_runtime_or_coverage_config_changes
+    - source_state_before: A-046.COV-R13 PASS, last_trusted_coverage 84.2664_percent
+    - input_validation: PASS
+    - offender_file_exists: PASS
+    - offender_file: backend/tests/modules/academic_integrity/test_router_academic_integrity.py
+    - root_cause_selection: E_mock_bootstrap_side_effect
+    - exact_offender_construct: module_level_imports_of_app_main_and_tests_conftest_objects
+    - remediation_scope: test_only
+    - collect_only_offender: PASS (rc_0, 3_collected_in_5.63s)
+    - collect_only_narrowed_group: PASS (rc_0, 9_collected_in_5.76s)
+    - collect_only_original_22_group: PASS (rc_0, 139_collected_in_33.76s)
+    - watchdog_confirmation: PASS (rc_0, 3_collected_in_5.81s)
+    - collection_stall_removed: YES
+    - integrity_validation: PASS
+    - repository_coverage_before: 84.2664_percent
+    - repository_coverage_after: 84.2664_percent_last_trusted_authoritative_value
+    - runtime_modified: NO
+    - coverage_config_modified: NO
+    - backend_runtime_logic_changed: NO
+    - report_file: A-046.COV-R13.R1-ACADEMIC_INTEGRITY_COLLECTION_STALL_REMEDIATION_REPORT.md
+    - final_verdict: A-046.COV-R13.R1 PASS - COLLECTION_STALL_REMEDIATED
+    - recommended_next_action: A-046.COV-R14
+    - next_action_id: A-046.COV-R14
+
 - A-046.COV-R13 execution block:
     - mode: collection_blocker_single_offender_identification
     - purpose: isolate_exact_single_collect_only_offender_from_r12d2_22_file_candidate_group
