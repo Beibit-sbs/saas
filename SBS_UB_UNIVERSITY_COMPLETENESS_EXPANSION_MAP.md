@@ -1,5 +1,17 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R13 Single-Offender Isolation Continuity
+
+- A-046.COV-R13 completed diagnostics-only narrowing from the D2 22-file candidate set to a single reproducible file.
+- Deterministic collect-only chain (`22 -> 11 -> 5 -> 3 -> 1`) remained timeout-stalled at each step under fixed diagnostic bounds.
+- Single-file reproducer localized as `backend/tests/modules/academic_integrity/test_router_academic_integrity.py`.
+- Blocker type decision for this action window: `OTHER` (pytest collection-stage interaction specific to isolated file path).
+- Direct Python import checks for root/admissions conftest and the candidate module exited successfully, so the class is not pure import failure.
+- `--confcutdir` and `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` did not clear the stall, so blocker was not isolated as parent-conftest-only or plugin-autoload-only.
+- Coverage artifacts were not authoritatively produced from blocked collection runs; trusted baseline remains 84.2664%.
+- integrity remained PASS (no runtime/test/config drift introduced).
+- next_action_id: A-046.COV-R13.R1.
+
 ## 0. A-046.COV-R12.D2 Watchdog Stall Localization Continuity
 
 - A-046.COV-R12.D2 ran watchdog-wrapped authoritative diagnostics and localized the non-progress zone to pytest collection phase behavior.

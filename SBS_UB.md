@@ -1,3 +1,31 @@
+- A-046.COV-R13 execution block:
+    - mode: collection_blocker_single_offender_identification
+    - purpose: isolate_exact_single_collect_only_offender_from_r12d2_22_file_candidate_group
+    - source_state_before: A-046.COV-R12.D2 PARTIAL, last_trusted_coverage 84.2664_percent
+    - input_validation: PASS
+    - deterministic_narrowing_chain: PASS (22_to_11_to_5_to_3_to_1_all_stall_timeout)
+    - single_file_reproducible: YES
+    - single_offender_file: backend/tests/modules/academic_integrity/test_router_academic_integrity.py
+    - single_file_collect_only_recheck_60s: exit_137_stall_timeout
+    - blocker_type_decision: OTHER
+    - import_failure_classification: NO (direct_import_exit_0_for_root_conftest_admissions_conftest_and_candidate_module)
+    - conftest_chain_isolation: NO (confcutdir_did_not_clear_stall)
+    - plugin_autoload_isolation: NO (PYTEST_DISABLE_PLUGIN_AUTOLOAD_did_not_clear_stall)
+    - importtime_trace_status: PASS (killed_at_timeout_no_single_import_exception_boundary)
+    - exact_single_offender_identified: YES
+    - coverage_artifacts_created: NO
+    - integrity_validation: PASS
+    - repository_coverage_before: 84.2664_percent
+    - repository_coverage_after: 84.2664_percent_last_trusted_authoritative_value
+    - coverage_trusted: PARTIAL
+    - backend_changed: NO
+    - frontend_changed: NO
+    - runtime_changed: NO
+    - report_file: A-046.COV-R13-COLLECTION_BLOCKER_SINGLE_OFFENDER_IDENTIFICATION_REPORT.md
+    - final_verdict: A-046.COV-R13 PASS - SINGLE_COLLECTION_OFFENDER_FILE_LOCALIZED
+    - recommended_next_action: A-046.COV-R13.R1
+    - next_action_id: A-046.COV-R13.R1
+
 - A-046.COV-R12.D2 execution block:
     - mode: watchdog_wrapped_authoritative_pytest_execution_and_stall_localization
     - purpose: localize_exact_pytest_stall_phase_without_any_runtime_or_test_changes
