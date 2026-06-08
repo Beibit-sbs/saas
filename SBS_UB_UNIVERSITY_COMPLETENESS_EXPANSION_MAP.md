@@ -1,5 +1,15 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R4 Recovery Batch Selection Continuity
+
+- A-046.COV-R4 converted COV-R1/COV-R2 findings into an executable recovery backlog and first-batch selection plan.
+- Strict source validation for prior results is incomplete because `A-046.COV-R3` is not present in the workspace under the required filename; however, COV-R1/COV-R2 metrics and tracker state are numerically consistent.
+- Current authoritative coverage remains 42.12% against historical 87.07% to 87.89%.
+- First three batches were selected at 10 modules each with expected gains of +9.2641, +4.6516, and +3.4843 percentage points respectively under full-recovery planning assumptions.
+- Fastest cumulative route modeled from missed-line descending backlog requires 32 modules for 60%, 72 for 70%, 136 for 80%, and 203 for 87%.
+- Priority assignment: Batch 1 = P0, Batch 2 = P1, Batch 3 = P2.
+- next_action_id: A-046.COV-R5.
+
 ## 0. A-046.COV-R2 Denominator Expansion and True Baseline Continuity
 
 - A-046.COV-R2 completed quantitative segmentation of the current 42.12% full-backend coverage baseline.

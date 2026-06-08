@@ -1,3 +1,32 @@
+- A-046.COV-R4 execution block:
+    - mode: coverage_recovery_batch_selection_analysis_only
+    - purpose: select_first_recovery_batches_and_execution_priority_for_return_toward_80_plus_repository_coverage
+    - source_state_before: A-046.COV-R1 PARTIAL, A-046.COV-R2 PASS, A-046.COV-R3 SOURCE_FILE_MISSING_IN_WORKSPACE
+    - previous_results_validation: FAIL (strict source-of-truth check blocked by missing A-046.COV-R3 report file; COV-R1/COV-R2 and tracker metrics remain internally consistent)
+    - historical_coverage_reference: 87.07_to_87.89
+    - current_coverage_reference: 42.12
+    - top_backlog_size: 926_modules
+    - top_loss_driver: app/modules/brain_core/service.py (1477 missed lines)
+    - batch1_module_count: 10
+    - batch1_expected_gain: 9.2641_percent
+    - batch2_module_count: 10
+    - batch2_expected_gain: 4.6516_percent
+    - batch3_module_count: 10
+    - batch3_expected_gain: 3.4843_percent
+    - path_to_60_percent: 32_modules
+    - path_to_70_percent: 72_modules
+    - path_to_80_percent: 136_modules
+    - path_to_87_percent: 203_modules
+    - execution_priority_batch1: P0
+    - execution_priority_batch2: P1
+    - execution_priority_batch3: P2
+    - fastest_return_modules_top10: app/modules/brain_core/service.py, app/modules/ai_gateway/service.py, app/platform/kpi/service.py, app/modules/brain_core/classifiers/risk_classifier.py, app/platform/router_admin.py, app/modules/observability/metrics.py, app/modules/admissions/service.py, app/modules/scheduling/service.py, app/main.py, app/modules/scheduling/room_allocation_readiness.py
+    - coverage_analysis_status: PASS
+    - report_file: A-046.COV-R4-FIRST_RECOVERY_BATCH_SELECTION_AND_EXECUTION_PRIORITY_REPORT.md
+    - final_verdict: A-046.COV-R4 PASS - FIRST COVERAGE RECOVERY BATCHES AND EXECUTION PRIORITY SELECTED
+    - recommended_next_action: A-046.COV-R5
+    - next_action_id: A-046.COV-R5
+
 - A-046.COV-R2 execution block:
     - mode: coverage_denominator_expansion_analysis_only
     - purpose: segment_current_42_point_12_percent_baseline_into_historical_core_new_vertical_expansion_provider_and_legacy_components
