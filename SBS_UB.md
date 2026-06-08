@@ -1,3 +1,27 @@
+- A-046.COV-R1 execution block:
+    - mode: coverage_forensics_validation_only
+    - purpose: reconcile_historical_87_percent_backend_baseline_against_current_42_point_12_percent_full_backend_result
+    - source_state_before: A-046.2.B1 PASS_SCOPED, A-046.FULL-REGRESSION-01 BLOCKED, historical_A-024.8.B1 PASS, historical_A-028.0.B1.R2 PASS, historical_A-028.2 PASS, historical_A-028.5.B1 PASS
+    - historical_coverage_inventory: PASS (87.07 in A-024.8.B1, 87.82 in A-028.0.B1.R2, 87.86 in A-028.2, 87.89 in A-028.5.B1)
+    - current_full_backend_command_identified: PASS (`docker run --rm --network ai_default --env-file infra/.env -v "$PWD/backend:/app/backend" -v "$PWD/backend/tests:/app/backend/tests" -w /app/backend ai-backend-tests:latest pytest -q`)
+    - current_full_backend_result: FAIL (42.12% total coverage; 6 collection errors; fail-under 80 not met)
+    - historical_harness_identified: PASS (`docker compose --project-directory /home/sbs/AI/infra --env-file /home/sbs/AI/infra/.env run --rm backend-tests pytest tests/ --cov=app --cov-report=term-missing --cov-report=xml --cov-report=html -rA` and direct `ai-backend-tests:latest pytest -q` lineage)
+    - shard_aggregation_audit: FAIL_FOR_COMPARABILITY (pass_fail_warning_coverage backend shards explicitly clear addopts and run with `--no-cov`; no `coverage combine` / xml / html / shard merge path exists in scripts)
+    - denominator_analysis: PASS (current 42.12 run measures `app` root across 68,706 statements; low-coverage concentration dominated by large legacy repositories/services and new wave32-wave36 modules)
+    - root_cause_classification: REAL_COVERAGE_DROP + DENOMINATOR_EXPANSION + LEGACY_MODULE_INCLUSION
+    - coverage_forensics_status: PARTIAL_COMPLETE
+    - historical_87_real: YES
+    - current_42_point_12_real: YES_WITH_COLLECTION_ERROR_CONTAMINATION
+    - historical_baseline_recoverable_without_new_tests: UNCLEAR
+    - backend_changed: NO
+    - frontend_changed: NO
+    - migrations_created: NO
+    - tests_created: NO
+    - report_file: A-046.COV-R1-REPO_COVERAGE_HARNESS_RECONCILIATION_AND_HISTORICAL_BASELINE_RECOVERY_REPORT.md
+    - final_verdict: A-046.COV-R1 PARTIAL - HISTORICAL BASELINE RECONCILED BUT 87 PERCENT NOT RECOVERED UNDER CURRENT CODEBASE
+    - recommended_next_action: A-046.COV-R2
+    - next_action_id: A-046.COV-R2
+
 - A-046.2.B1 execution block:
     - mode: validation_quality_baseline_only
     - purpose: validate_integration_provider_readiness_backend_foundation_after_runtime_implementation

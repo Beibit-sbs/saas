@@ -1,5 +1,15 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R1 Coverage Forensics Continuity
+
+- A-046.COV-R1 reconciled the historical full-backend 87% class baselines against the current authoritative 42.12% full-backend result.
+- Historical baseline anchors remained real for their time slices: 87.07 (A-024.8.B1), 87.82 (A-028.0.B1.R2), 87.86 (A-028.2), 87.89 (A-028.5.B1).
+- Current 42.12% was reproduced from the exact direct `ai-backend-tests:latest pytest -q` harness lineage used by recent baselines, so the drop is not explained by a simple harness reset alone.
+- Shard-based audit harnesses are not coverage-authoritative: backend shards explicitly run with `--no-cov`, clear pytest addopts, and do not execute any `coverage combine` flow.
+- Dominant discrepancy drivers are denominator expansion and legacy module inclusion, with collection errors further contaminating the current full-backend signal.
+- coverage_forensics_status: PARTIAL_COMPLETE.
+- next_action_id: A-046.COV-R2.
+
 ## 0. A-046.2.B1 Integration Provider Readiness Backend Foundation Quality Baseline Continuity
 
 - A-046.2.B1 confirmed scoped runtime closure readiness for Integration / Provider Readiness Suite.
