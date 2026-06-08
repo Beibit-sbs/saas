@@ -1,5 +1,35 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R7 Authoritative Repository Rebaseline Continuity
+
+- A-046.COV-R7 executed the authoritative full-backend harness lineage and measured current repository coverage at 84.2664% (60,162/71,395).
+- Pre-R5/R6 authoritative reference remained 42.12% (COV-R2), yielding a measured +42.1507 point repository-level increase in current workspace state.
+- Recovery inputs were validated as present and complete: R5/R6 reports, commits (`f1fda92`, `c0d866e`), and tracker sources.
+- Anti-manipulation checks passed for R5/R6 commit scope: no coverage-config edits in those commits and no denominator reduction.
+- Attribution to only R5/R6 is marked PARTIAL because broader non-R5/R6 repository drift is present between the historical 42.12 baseline and this run.
+- decision_option: OPTION_C.
+- next_action_id: A-046.COV-R8.
+
+## 0. A-046.COV-R6 Batch1 Coverage Recovery Expansion Continuity
+
+- A-046.COV-R6 expanded the first Batch #1 recovery pack with a much broader helper-branch suite and no runtime code changes.
+- Added one new backend test file with 104 passing tests focused on `brain_core.service`, `platform.kpi.service`, `main`, `router_admin`, `observability.metrics`, `ai_gateway.service`, `scheduling.service`, and `room_allocation_readiness` helper branches.
+- Matched targeted-suite measurement improved batch-scope coverage from 35.68% to 42.2259% (+6.5459 points).
+- Confirmed the largest Batch #1 gains on `brain_core.service` 19%→29%, `platform.kpi.service` 11%→37%, `observability.metrics` 69%→79%, `main` 64%→69%, and `router_admin` 32%→36%.
+- Global authoritative repository baseline remains 42.12% for planning purposes because no honest whole-repo recovery claim is being made from this test-only action.
+- Regression, tenant, RBAC, and anti-fake posture remained PASS because only tests were added.
+- next_action_id: A-046.COV-R7.
+
+## 0. A-046.COV-R5 Batch1 Coverage Recovery Continuity
+
+- A-046.COV-R5 executed the first real Batch #1 coverage recovery tests without any runtime code changes.
+- Added one new backend test file with 6 passing tests focused on `ai_gateway.service`, `observability.metrics`, and `scheduling.room_allocation_readiness` helper branches.
+- Matched targeted-suite measurement improved batch-scope coverage from 35.68% to 36.15% (+0.47 points).
+- Confirmed per-module gains on at least three Batch #1 surfaces: `ai_gateway.service` 34%→35%, `observability.metrics` 69%→71%, `room_allocation_readiness` 89%→91%.
+- Global authoritative repository baseline remains 42.12% for planning purposes because no honest full-baseline recovery claim can be made until the known legacy collection blockers are addressed.
+- Regression, tenant, RBAC, and anti-fake posture remained PASS because only tests were added.
+- next_action_id: A-046.COV-R6.
+
 ## 0. A-046.COV-R4 Recovery Batch Selection Continuity
 
 - A-046.COV-R4 converted COV-R1/COV-R2 findings into an executable recovery backlog and first-batch selection plan.

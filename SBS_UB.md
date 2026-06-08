@@ -1,3 +1,96 @@
+- A-046.COV-R7 execution block:
+    - mode: authoritative_repository_coverage_rebaseline_and_true_impact_validation
+    - purpose: measure_true_repository_wide_post_r5_r6_coverage_with_authoritative_harness
+    - source_state_before: A-046.COV-R6 PASS, pre_r5_r6_authoritative_baseline 42.12_percent
+    - input_validation: PASS
+    - authoritative_harness_validation: PASS
+    - full_harness_execution: PASS_WITH_TEST_FAILURES (coverage_measured_authoritatively)
+    - repository_coverage_before: 42.12_percent
+    - repository_coverage_after: 84.2664_percent
+    - repository_statements_after: 71395
+    - repository_covered_after: 60162
+    - repository_missed_after: 11233
+    - absolute_gain_points: 42.1507
+    - relative_gain_percent: 100.0832
+    - tests_added_r5_r6_total: 110
+    - recovered_loc_statements: 31226
+    - gain_per_test_points: 0.383188
+    - anti_manipulation_validation: PASS
+    - no_config_change_in_r5_r6_commits: PASS
+    - no_denominator_reduction: PASS
+    - attribution_purity_to_only_r5_r6: PARTIAL (concurrent_non_r5_r6_repo_changes_present)
+    - decision_option: OPTION_C
+    - backend_changed: NO
+    - frontend_changed: NO
+    - runtime_changed: NO
+    - report_file: A-046.COV-R7-AUTHORITATIVE_REPOSITORY_COVERAGE_REBASELINE_AND_TRUE_IMPACT_REPORT.md
+    - final_verdict: A-046.COV-R7 PARTIAL - AUTHORITATIVE REBASELINE COMPLETED; PURE R5_R6_ONLY ATTRIBUTION CONSTRAINED BY CONCURRENT REPOSITORY DRIFT
+    - recommended_next_action: A-046.COV-R8
+    - next_action_id: A-046.COV-R8
+
+- A-046.COV-R6 execution block:
+    - mode: batch1_coverage_recovery_expansion_with_tests_only
+    - purpose: expand_first_batch_recovery_surface_with_brain_core_kpi_main_router_admin_metrics_and_scheduling_helpers
+    - source_state_before: A-046.COV-R5 PARTIAL, repository_coverage_baseline 42.12_percent
+    - batch_validation: PASS (all 10 batch members confirmed present)
+    - tests_added: 1_file / 104_tests
+    - targeted_new_file_validation: PASS (104 passed, 0 failed)
+    - targeted_regression_validation: PASS (224 passed, 0 failed, 2 warnings on matched suite with new file)
+    - batch_scope_before_fixed: 35.68_percent
+    - batch_scope_after_fixed: 42.2259_percent
+    - batch_scope_gain: 6.5459_percent
+    - module_gain_brain_core_service: 19_to_29_percent
+    - module_gain_ai_gateway_service: 34_to_35_percent
+    - module_gain_kpi_service: 11_to_37_percent
+    - module_gain_router_admin: 32_to_36_percent
+    - module_gain_observability_metrics: 69_to_79_percent
+    - module_gain_scheduling_service: 30_to_33_percent
+    - module_gain_main: 64_to_69_percent
+    - module_gain_room_allocation_readiness: 89_to_91_percent
+    - repository_coverage_before: 42.12_percent
+    - repository_coverage_after: 42.12_percent_authoritative_baseline_not_recomputed_as_recovered
+    - repository_gain_claim: NOT_CLAIMED
+    - regression_audit: PASS (no runtime code changes)
+    - tenant_audit: PASS
+    - rbac_audit: PASS
+    - anti_fake_audit: PASS
+    - backend_changed: NO
+    - frontend_changed: NO
+    - runtime_changed: NO
+    - report_file: A-046.COV-R6-BATCH1_EXPANSION_COVERAGE_RECOVERY_AND_REPOSITORY_IMPACT_REPORT.md
+    - final_verdict: A-046.COV-R6 PASS - REAL TEST EXPANSION MOVED THE BATCH #1 SURFACE MEANINGFULLY WITHOUT ANY RUNTIME CHANGES
+    - recommended_next_action: A-046.COV-R7
+    - next_action_id: A-046.COV-R7
+
+- A-046.COV-R5 execution block:
+    - mode: batch1_coverage_recovery_execution_with_tests_only
+    - purpose: execute_first_real_coverage_recovery_tests_for_batch1_without_runtime_changes
+    - source_state_before: A-046.COV-R4 PASS, repository_coverage_baseline 42.12_percent
+    - batch_validation: PASS (all 10 batch members confirmed present)
+    - tests_added: 1_file / 6_tests
+    - targeted_new_file_validation: PASS (6 passed, 0 failed)
+    - targeted_regression_validation: PASS (120 passed, 0 failed, 2 warnings on matched suite with new file)
+    - batch_scope_before_fixed: 35.68_percent
+    - batch_scope_after_fixed: 36.15_percent
+    - batch_scope_gain: 0.47_percent
+    - module_gain_ai_gateway_service: 34_to_35_percent
+    - module_gain_observability_metrics: 69_to_71_percent
+    - module_gain_room_allocation_readiness: 89_to_91_percent
+    - repository_coverage_before: 42.12_percent
+    - repository_coverage_after: 42.12_percent_authoritative_baseline_not_recomputed_as_recovered
+    - repository_gain_claim: NOT_CLAIMED
+    - regression_audit: PASS (no runtime code changes)
+    - tenant_audit: PASS
+    - rbac_audit: PASS
+    - anti_fake_audit: PASS
+    - backend_changed: NO
+    - frontend_changed: NO
+    - runtime_changed: NO
+    - report_file: A-046.COV-R5-BATCH1_COVERAGE_RECOVERY_EXECUTION_AND_VALIDATION_REPORT.md
+    - final_verdict: A-046.COV-R5 PARTIAL - REAL TESTS ADDED AND LOCAL BATCH COVERAGE INCREASED, BUT AUTHORITATIVE REPOSITORY BASELINE NOT YET MOVED
+    - recommended_next_action: A-046.COV-R6
+    - next_action_id: A-046.COV-R6
+
 - A-046.COV-R4 execution block:
     - mode: coverage_recovery_batch_selection_analysis_only
     - purpose: select_first_recovery_batches_and_execution_priority_for_return_toward_80_plus_repository_coverage
