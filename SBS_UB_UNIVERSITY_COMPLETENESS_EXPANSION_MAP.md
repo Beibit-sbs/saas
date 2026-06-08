@@ -1,5 +1,18 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R15 Early Termination RCA Continuity
+
+- A-046.COV-R15 executed diagnostics-only root-cause analysis for persistent authoritative `exit 137` after R13.R1 remediation.
+- Exact authoritative lineage still reproduces termination (`pytest -q`, duration ~87.135s, exit 137).
+- Process diagnostics show a single `pytest` PID 1 path with `oom=false` snapshots and memory plateau around ~311-357 MiB.
+- Coverage artifact timeline remains pre-write: no `.coverage` data observed before termination.
+- Earliest stage decision moved to `C` (test collection) based on shard discriminator evidence.
+- First authoritative shard (`tests/.r10_shards/shard_01.txt`) reproduces `exit 137` in both normal and `--collect-only` modes.
+- Root-cause class selected: `ROOT_CAUSE_A` (collection blocker).
+- Single file/fixture offender not isolated in this action window; minimal candidate group remains shard_01 file set.
+- integrity remained PASS (no runtime/tests/config edits in R15).
+- next_action_id: A-046.COV-R16.
+
 ## 0. A-046.COV-R14 Authoritative Rebaseline Continuity
 
 - A-046.COV-R14 attempted the first authoritative repository-wide rebaseline after R13.R1 remediation.

@@ -1,3 +1,37 @@
+- A-046.COV-R15 execution block:
+    - mode: full_harness_early_termination_root_cause_analysis_after_academic_integrity_remediation
+    - purpose: identify_new_earliest_authoritative_blocker_after_r13r1
+    - source_state_before: A-046.COV-R14 PARTIAL, last_trusted_coverage 84.2664_percent
+    - input_validation: PASS
+    - exact_authoritative_reproduction: PASS
+    - authoritative_duration_sec: 87.135
+    - authoritative_exit_code: 137
+    - process_diagnostics: PASS
+    - main_process_observed: pytest_pid_1
+    - in_container_oom_proven: NO (oom_flag_false_in_diagnostics)
+    - coverage_artifact_timeline: NO_ARTIFACTS_BEFORE_TERMINATION
+    - earliest_stage_decision: C_test_collection
+    - shard_isolation: PASS
+    - earliest_reproducing_shard: tests/.r10_shards/shard_01.txt
+    - shard_01_repro_duration_sec: 83.332
+    - shard_01_repro_exit: 137
+    - shard_01_collect_only_duration_sec: 76.742
+    - shard_01_collect_only_exit: 137
+    - root_cause_decision: ROOT_CAUSE_A
+    - exact_single_offender_identified: NO
+    - minimal_candidate_group: shard_01_file_set
+    - coverage_artifacts_created: NO
+    - integrity_validation: PASS
+    - repository_coverage_before: 84.2664_percent
+    - repository_coverage_after: 84.2664_percent_last_trusted_authoritative_value
+    - runtime_modified: NO
+    - tests_modified: NO
+    - coverage_config_modified: NO
+    - report_file: A-046.COV-R15-FULL_HARNESS_EARLY_TERMINATION_ROOT_CAUSE_ANALYSIS_REPORT.md
+    - final_verdict: A-046.COV-R15 PARTIAL - EARLIEST_COLLECTION_BLOCKER_LOCALIZED_TO_SHARD01_GROUP
+    - recommended_next_action: A-046.COV-R16
+    - next_action_id: A-046.COV-R16
+
 - A-046.COV-R14 execution block:
     - mode: authoritative_coverage_rebaseline_after_collection_stall_remediation
     - purpose: obtain_first_trustworthy_repository_wide_authoritative_coverage_after_r13r1
