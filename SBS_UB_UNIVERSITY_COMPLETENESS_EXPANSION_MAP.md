@@ -1,5 +1,18 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R10 Resource-Safe Rebaseline Continuity
+
+- A-046.COV-R10 performed validation-only authoritative rebaseline recovery work with strict no-change policy on runtime/tests/config.
+- Input validation passed for R7/R8/R9 artifacts and required commits.
+- Exit 137 root-cause class was reconfirmed as a SIGKILL/resource-kill pattern from repeated authoritative attempts.
+- Resource-safe strategy selected: pytest shard execution under the same docker harness lineage and coverage inclusion rules.
+- Shard attempt remained blocked by exit 137 before successful authoritative combine completion.
+- No new trusted repository-wide percentage was produced; trusted baseline remains 84.2664%.
+- Integrity remained PASS for R10 scope (no `.coveragerc`/`pytest.ini` edits, no exclusion manipulation).
+- Historical 87.xx band remains unrecovered in measured authoritative terms.
+- decision_option: OPTION_B.
+- next_action_id: A-046.COV-R11.
+
 ## 0. A-046.COV-R8 Coverage Integrity Audit Continuity
 
 - A-046.COV-R8 validated the 84.2664% authoritative repository baseline as integrity-safe for current state usage.

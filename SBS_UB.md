@@ -1,3 +1,33 @@
+- A-046.COV-R10 execution block:
+    - mode: resource_safe_authoritative_rebaseline_and_final_recovery_validation
+    - purpose: complete_blocked_r9_authoritative_rebaseline_without_any_code_or_config_changes
+    - source_state_before: A-046.COV-R9 PARTIAL, last_trusted_coverage 84.2664_percent
+    - input_validation: PASS
+    - exit_137_root_cause_analysis: PASS (sigkill_class_resource_pressure_or_forced_kill_pattern)
+    - resource_safe_strategy_selected: OPTION_A_PYTEST_SHARDS
+    - shard_execution_status: BLOCKED (exit_code_137)
+    - coverage_combine_status: BLOCKED
+    - repository_coverage_before: 84.2664_percent
+    - repository_coverage_after: 84.2664_percent_last_trusted_authoritative_value
+    - absolute_gain_points: 0.0000_authoritative_not_remeasured
+    - historical_baseline_recovered: NO
+    - integrity_validation: PASS
+    - same_harness: YES
+    - same_denominator: YES_INTENDED
+    - coverage_trusted: FULL_FOR_EXISTING_BASELINE_ONLY
+    - r9_impact_validated_repository_wide: NO
+    - remaining_to_87: 2.7336_percent
+    - remaining_to_87_5: 3.2336_percent
+    - remaining_to_88: 3.7336_percent
+    - recommendation_option: OPTION_B
+    - backend_changed: NO
+    - frontend_changed: NO
+    - runtime_changed: NO
+    - report_file: A-046.COV-R10-RESOURCE_SAFE_AUTHORITATIVE_REBASELINE_AND_FINAL_RECOVERY_VALIDATION_REPORT.md
+    - final_verdict: A-046.COV-R10 PARTIAL - RESOURCE_SAFE_REBASELINE_ATTEMPTED_BUT_EXIT_137_PERSISTED
+    - recommended_next_action: A-046.COV-R11
+    - next_action_id: A-046.COV-R11
+
 - A-046.COV-R8 execution block:
     - mode: coverage_integrity_audit_and_87_recovery_strategy
     - purpose: validate_84_point_2664_coverage_integrity_and_define_shortest_path_to_87_plus
