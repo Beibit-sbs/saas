@@ -1,5 +1,16 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R14 Authoritative Rebaseline Continuity
+
+- A-046.COV-R14 attempted the first authoritative repository-wide rebaseline after R13.R1 remediation.
+- Authoritative harness lineage was executed (`ai-backend-tests:latest pytest -q`) but ended with `exit 137` after 87.135 seconds.
+- Coverage artifact generation did not complete: no `.coverage` data for combine/report/json (`No data to combine/report`).
+- A new trusted repository-wide coverage value was not established in this action window.
+- Trusted baseline therefore remains 84.2664%.
+- 87/87.5/88 targets remain unreached; gaps remain 2.7336/3.2336/3.7336 points respectively.
+- integrity remained PASS for this action scope (no runtime/test/config modifications introduced by R14).
+- next_action_id: A-046.COV-R15.
+
 ## 0. A-046.COV-R13.R1 Collection Stall Remediation Continuity
 
 - A-046.COV-R13.R1 applied a minimal test-only remediation to the localized offender file.

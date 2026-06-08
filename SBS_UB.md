@@ -1,3 +1,40 @@
+- A-046.COV-R14 execution block:
+    - mode: authoritative_coverage_rebaseline_after_collection_stall_remediation
+    - purpose: obtain_first_trustworthy_repository_wide_authoritative_coverage_after_r13r1
+    - source_state_before: A-046.COV-R13.R1 PASS, last_trusted_coverage 84.2664_percent
+    - input_validation: PASS
+    - authoritative_harness_execution: FAIL
+    - authoritative_command_duration_sec: 87.135
+    - authoritative_command_exit_code: 137
+    - collected_tests: N/A
+    - passed_tests: N/A
+    - failed_tests: N/A
+    - skipped_tests: N/A
+    - coverage_artifact_validation: FAIL
+    - coverage_files_generated: NO
+    - coverage_combine_status: FAIL (No_data_to_combine)
+    - coverage_report_status: FAIL (No_data_to_report)
+    - coverage_json_status: FAIL (No_data_to_report)
+    - new_trusted_coverage_established: NO
+    - repository_coverage_before: 84.2664_percent
+    - repository_coverage_after: 84.2664_percent_last_trusted_authoritative_value
+    - absolute_change_points: 0.0000
+    - relative_change_percent: 0.0000
+    - reached_87: NO
+    - reached_87_5: NO
+    - reached_88: NO
+    - remaining_to_87: 2.7336_percent
+    - remaining_to_87_5: 3.2336_percent
+    - remaining_to_88: 3.7336_percent
+    - integrity_validation: PASS
+    - runtime_modified: NO
+    - tests_modified: NO
+    - coverage_config_modified: NO
+    - report_file: A-046.COV-R14-AUTHORITATIVE_COVERAGE_REBASELINE_AFTER_STALL_REMEDIATION_REPORT.md
+    - final_verdict: A-046.COV-R14 PARTIAL - AUTHORITATIVE_REBASELINE_NOT_COMPLETED
+    - recommended_next_action: A-046.COV-R15
+    - next_action_id: A-046.COV-R15
+
 - A-046.COV-R13.R1 execution block:
     - mode: academic_integrity_collection_stall_remediation
     - purpose: remediate_single_offender_collection_blocker_without_runtime_or_coverage_config_changes
