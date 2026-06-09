@@ -681,6 +681,35 @@
     - recommended_next_action: A-046.COV-R2
     - next_action_id: A-046.COV-R2
 
+- A-046.COV-R21 execution block:
+    - mode: historical_87_percent_reconciliation_and_denominator_forensics
+    - purpose: reconcile_historical_87_percent_family_against_current_84_2664_percent_authoritative_baseline
+    - source_state_before: A-046.COV-R20 PASS_PARTIAL, A-046.COV-R19.R1 PASS, A-046.COV-R8 PASS, A-046.COV-R7 PASS, A-046.COV-R2 PASS
+    - historical_87_real: YES
+    - historical_87_50_distinct_run_found: NO
+    - historical_87_50_status: threshold_only_in_recovery_lineage
+    - same_harness_lineage: YES
+    - same_denominator: NO
+    - historical_denominator_statements: 52151
+    - current_denominator_statements: 71395
+    - denominator_delta_statements: 19244
+    - denominator_delta_percent: 36.90_percent
+    - current_trusted_coverage: 84.2664_percent
+    - historical_coverage_family: 87.07_to_87.89_percent
+    - gap_classification: DENOMINATOR_EXPANSION_PLUS_LEGACY_MODULE_INCLUSION
+    - attribution_split: A45_B0_C0_D45_E10_F0
+    - honest_path_to_87_additional_coverage_needed: 2.7336_percent
+    - honest_path_to_87_additional_covered_lines_needed: 1952
+    - integrity_validation: PASS
+    - runtime_changed: NO
+    - tests_changed: NO
+    - coverage_config_changed: NO
+    - denominator_changed: NO
+    - report_file: A-046.COV-R21-HISTORICAL_87_PERCENT_RECONCILIATION_REPORT.md
+    - final_verdict: A-046.COV-R21 PASS - HISTORICAL_87_VALID_BUT_NOT_SAME_DENOMINATOR
+    - recommended_next_action: A-046.3-SPEC
+    - next_action_id: A-046.3-SPEC
+
 - A-046.2.B1 execution block:
     - mode: validation_quality_baseline_only
     - purpose: validate_integration_provider_readiness_backend_foundation_after_runtime_implementation

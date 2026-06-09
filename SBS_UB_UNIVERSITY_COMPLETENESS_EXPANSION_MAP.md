@@ -1,5 +1,18 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R21 Historical 87 Percent Reconciliation Continuity
+
+- A-046.COV-R21 reconciled the historical 87% family against the current authoritative 84.2664% baseline.
+- Historical 87.07 / 87.82 / 87.86 / 87.89 values are valid historical baselines, but they were not measured on the same denominator as the current baseline.
+- 87.50 does not appear as a distinct authoritative execution snapshot in the recovered source set; it is only a threshold reference in later recovery reports.
+- Historical denominator reconstruction: 52,151 statements.
+- Current authoritative denominator: 71,395 statements.
+- Same denominator verdict: NO.
+- Attribution split used for the gap: A45 / B0 / C0 / D45 / E10 / F0.
+- Honest path to 87.00% on the current denominator requires 2,733.6 percentage points of coverage improvement, or 1,952 additional covered lines.
+- integrity remained PASS for R21 scope (no runtime/tests/coverage-config/denominator changes).
+- next_action_id: A-046.3-SPEC.
+
 ## 0. A-046.COV-R20 Authoritative Rebaseline Continuity
 
 - A-046.COV-R20 executed repository-wide rebaseline attempt using Strategy E (per-file graceful watchdog + cov-append).
