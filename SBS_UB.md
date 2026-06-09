@@ -1,3 +1,54 @@
+- A-046.5 execution block:
+    - mode: browser_console_error_root_cause_analysis
+    - purpose: forensic_investigation_of_a0464_console_error_residual
+    - source_state_before: A-046.4 PARTIAL
+    - source_state_validation: PASS
+    - commit_0cd622f_exists: YES
+    - commit_1fdf0e2_exists: YES
+    - authoritative_playwright_baseline: PASS
+    - authoritative_playwright_passed: 2
+    - authoritative_playwright_failed: 0
+    - authoritative_playwright_skipped: 0
+    - console_error_count_reproduced: 2
+    - runtime_crashes_count: 0
+    - hydration_errors_count: 0
+    - error_1_text: Failed_to_load_resource_403_Forbidden
+    - error_1_url: https://nginx/api/auth/me/preferences/language
+    - error_1_method: PUT
+    - error_1_status: 403
+    - error_1_initiator_type: script
+    - error_1_initiator_stack: https://nginx/_next/static/chunks/6302-beb4f469c08a8451.js:0:130425
+    - error_2_text: Failed_to_load_resource_403_Forbidden
+    - error_2_url: https://nginx/api/auth/me/preferences/language
+    - error_2_method: PUT
+    - error_2_status: 403
+    - error_2_initiator_type: script
+    - error_2_initiator_stack: https://nginx/_next/static/chunks/6302-beb4f469c08a8451.js:0:130425
+    - classification_primary: C_mock_boundary
+    - classification_supporting: B_auth_boundary
+    - single_root_cause: YES
+    - root_cause_class: C
+    - rendering_impact: NO
+    - navigation_impact: NO
+    - workflow_cards_impact: NO
+    - governance_state_impact: NO
+    - rbac_impact: NO
+    - tenant_isolation_impact: NO
+    - playwright_stability_impact: NO
+    - runtime_impact_level: LOW
+    - expected_behavior: YES
+    - remediation_required: NO
+    - tenant: PASS
+    - rbac: PASS
+    - anti_fake: PASS
+    - backend_modified: NO
+    - frontend_feature_modified: NO
+    - schema_modified: NO
+    - report_file: A-046.5-CONSOLE_ERROR_FORENSIC_ANALYSIS_REPORT.md
+    - final_verdict: A-046.5 PASS - CONSOLE_ERRORS_CLASSIFIED_AS_EXPECTED_BOUNDARY_BEHAVIOR
+    - recommended_next_action: A-046.6
+    - next_action_id: A-046.6
+
 - A-046.4 execution block:
     - mode: integration_provider_readiness_browser_validation_runtime
     - purpose: validate_real_browser_runtime_against_actual_frontend_shell_and_workflow
