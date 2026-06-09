@@ -619,6 +619,12 @@ export const SUPERADMIN_NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.INTEGRATIONS_MANAGE,
       },
       {
+        label: "Provider Readiness",
+        href: "/console/integrations/provider-readiness",
+        icon: Network,
+        permission: PERMISSIONS.INTEGRATIONS_MANAGE,
+      },
+      {
         label: "Languages",
         href: "/console/languages",
         icon: Code2,

@@ -710,6 +710,34 @@
     - recommended_next_action: A-046.3-SPEC
     - next_action_id: A-046.3-SPEC
 
+- A-046.3-SPEC execution block:
+    - mode: integration_provider_readiness_frontend_spec_and_test_alignment
+    - purpose: align_frontend_route_shell_boundary_labels_workflow_coverage_and_test_alignment_for_provider_readiness_vertical
+    - source_state_before: A-046.COV-R21 PASS, next_action_id A-046.3-SPEC
+    - task0_source_state: BLOCKED (no dedicated integration provider readiness shell route, no dedicated vitest/playwright coverage)
+    - frontend_inventory_after_implementation: COMPLETE_FOR_SHELL_SCOPE
+    - route_shell_added: /console/integrations/provider-readiness
+    - integrations_root_upgraded: YES
+    - admin_console_route_map_wired: YES (/console/integrations/provider-readiness)
+    - ui_gap_count_post: 0
+    - workflow_gap_count_post: 0
+    - test_gap_count_post: 0
+    - validation_typescript: FAIL_PREEXISTING (host direct tsc reports 11 pre-existing errors in frontend/e2e/smoke/i18n-runtime.spec.ts)
+    - validation_vitest: PASS (3 passed, 0 failed)
+    - validation_playwright: FAIL_ENVIRONMENT (0 passed, 2 failed; net::ERR_NAME_NOT_RESOLVED for https://nginx)
+    - tenant_validation: PASS
+    - rbac_validation: PASS
+    - anti_fake_validation: PASS
+    - read_only_boundary_validation: PASS
+    - backend_changed: NO
+    - frontend_changed: YES
+    - migrations_created: NO
+    - tests_created: YES
+    - report_file: A-046.3-SPEC-INTEGRATION_PROVIDER_READINESS_FRONTEND_ALIGNMENT_REPORT.md
+    - final_verdict: A-046.3-SPEC PARTIAL - FRONTEND_ALIGNMENT_COMPLETE_WITH_E2E_ENVIRONMENT_BLOCKER
+    - recommended_next_action: A-046.4
+    - next_action_id: A-046.4
+
 - A-046.2.B1 execution block:
     - mode: validation_quality_baseline_only
     - purpose: validate_integration_provider_readiness_backend_foundation_after_runtime_implementation
