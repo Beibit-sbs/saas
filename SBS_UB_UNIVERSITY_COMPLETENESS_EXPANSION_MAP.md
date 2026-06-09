@@ -1,5 +1,38 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.6 Integration Provider Readiness Product Quality Baseline and Vertical Closure Continuity
+
+- A-046.6 executed certification-only closure for Integration Provider Readiness after A-046.3/B1/B2/A-046.4/A-046.5.
+- Source state passed with all required lineage commits present (`67ff0f7`, `6b2c19b`, `1fdf0e2`, `0cd622f`, `b7eba34`).
+- Final vertical inventory is COMPLETE:
+	- route and navigation present
+	- shell/cards/workflows/labels/governance state present
+	- targeted Vitest and Playwright coverage present
+- Quality gates are PASS in authoritative docker snapshot:
+	- TypeScript PASS
+	- Vitest PASS
+	- Playwright PASS
+	- Browser Runtime PASS
+	- Console Forensics PASS
+	- Regression Review PASS
+- Product readiness is YES across production/frontend/workflow/navigation/read-only governance dimensions.
+- Integrity remained PASS:
+	- tenant PASS
+	- RBAC PASS
+	- anti-fake PASS
+	- read-only boundaries PASS
+	- security boundaries PASS
+	- backend/frontend/schema/db changes: NO
+- Certification decision:
+	- vertical: Integration Provider Readiness
+	- certification_result: READY
+- Closure markers:
+	- vertical_status: CLOSED
+	- quality_baseline: CERTIFIED
+- report_file: A-046.6-INTEGRATION_PROVIDER_READINESS_PRODUCT_QUALITY_BASELINE_AND_VERTICAL_CLOSURE_REPORT.md
+- final_verdict: A-046.6 PASS - VERTICAL_CLOSED_QUALITY_BASELINE_CERTIFIED
+- next_action_id: A-047.1.
+
 ## 0. A-046.5 Browser Console Error Root Cause Analysis Continuity
 
 - A-046.5 executed forensic-only console error investigation for the A-046.4 residual (`console_errors_count=2`).
