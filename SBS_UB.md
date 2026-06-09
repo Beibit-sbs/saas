@@ -1,3 +1,45 @@
+- A-046.COV-R20 execution block:
+    - mode: authoritative_repository_coverage_rebaseline_using_strategy_e
+    - purpose: produce_first_new_trusted_repository_wide_baseline_after_r19r1_recovery
+    - source_state_before: A-046.COV-R19.R1 PASS, last_trusted_coverage 84.2664_percent
+    - input_validation: PASS
+    - strategy_e_selected: YES
+    - strategy_e_full_execution: PARTIAL
+    - total_shards_targeted: 12
+    - total_files_targeted: 726
+    - files_with_completed_records: 2
+    - third_file_started: YES
+    - representative_run_rcs: 124_and_124
+    - observed_passed: 1
+    - observed_failed: 0
+    - observed_skipped: 0
+    - coverage_artifact_validation: PASS
+    - coverage_file_generated: YES
+    - coverage_combine_rc: 1 (No_data_to_combine_single_data_file)
+    - coverage_report_rc: 0
+    - coverage_json_rc: 0
+    - measured_snapshot_statements: 61371
+    - measured_snapshot_covered: 26754
+    - measured_snapshot_missed: 34617
+    - measured_snapshot_coverage_percent: 43.5939
+    - trusted_new_baseline_established: NO (full_repository_strategy_e_not_completed)
+    - repository_coverage_before: 84.2664_percent
+    - repository_coverage_after: 84.2664_percent_last_trusted_authoritative_value
+    - absolute_change_points: 0.0000
+    - relative_change_percent: 0.0000
+    - reached_87: NO
+    - reached_87_5: NO
+    - reached_87_89: NO
+    - integrity_validation: PASS
+    - runtime_modified: NO
+    - tests_modified: NO
+    - coverage_config_modified: NO
+    - denominator_modified: NO
+    - report_file: A-046.COV-R20-AUTHORITATIVE_REPOSITORY_COVERAGE_REBASELINE_REPORT.md
+    - final_verdict: A-046.COV-R20 PARTIAL - FULL_REPOSITORY_TRUSTED_REBASELINE_NOT_COMPLETED
+    - recommended_next_action: A-046.COV-R21
+    - next_action_id: A-046.COV-R21
+
 - A-046.COV-R19.R1 execution block:
     - mode: graceful_coverage_flush_recovery_and_authoritative_artifact_validation
     - purpose: recover_coverage_artifact_generation_after_r19_root_cause_d

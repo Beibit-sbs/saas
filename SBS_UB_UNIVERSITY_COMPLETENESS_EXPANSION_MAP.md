@@ -1,5 +1,20 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R20 Authoritative Rebaseline Continuity
+
+- A-046.COV-R20 executed repository-wide rebaseline attempt using Strategy E (per-file graceful watchdog + cov-append).
+- Artifact pipeline remained healthy in R20 execution window:
+	- `.coverage` generated
+	- `coverage report` succeeded (`rc=0`)
+	- `coverage json` succeeded (`rc=0`)
+	- `coverage combine` returned `No data to combine` in single-data-file state (`rc=1`), non-blocking for report/json
+- Full repository Strategy E pass did not complete in the R20 window (observed completed records for file 1 and file 2, file 3 started).
+- Measured snapshot from generated artifacts was `43.5939%` (`61371` statements, `26754` covered, `34617` missed), but was not promoted to trusted baseline because full repository execution was incomplete.
+- Trusted authoritative baseline remains `84.2664%`.
+- Historical recovery thresholds (87.07 / 87.50 / 87.89) remain unrecovered against trusted baseline.
+- integrity remained PASS for R20 scope (no runtime/tests/coverage-config/denominator changes).
+- next_action_id: A-046.COV-R21.
+
 ## 0. A-046.COV-R19.R1 Graceful Flush Recovery Continuity
 
 - A-046.COV-R19.R1 executed harness-only recovery for R19 root cause `ROOT_CAUSE_D` (timeout before flush).
