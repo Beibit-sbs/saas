@@ -1,5 +1,37 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-047.4.B1 Research Brain Contract Consistency Review Continuity
+
+- A-047.4.B1 executed independent consistency review over A-047.3 without runtime changes.
+- Source validation passed:
+	- `A-047.1` exists
+	- `A-047.2` exists
+	- `A-047.3` exists
+	- inherited `next_action_id: A-047.4-B1`
+- Consistency review result:
+	- domain: PARTIAL
+	- entity: PARTIAL
+	- routes: PARTIAL
+	- workflows: PARTIAL
+	- signals: PARTIAL
+	- dashboards: PARTIAL
+	- providers: PARTIAL
+	- RBAC: PARTIAL
+	- security: PASS
+- Runtime decision remains `NEEDS_ADDITIONAL_SPEC`.
+- Primary blockers confirmed:
+	- missing canonical researcher owner
+	- missing citation analytics source/runtime
+	- missing scientometrics runtime
+	- missing research risk runtime
+	- ethics approval logic not exposed as routed endpoint
+	- missing explicit RBAC mapping for research-brain named roles
+- Scope integrity held:
+	- backend/frontend/database/tests changes: NO
+- report_file: A-047.4-B1-RESEARCH_BRAIN_CONTRACT_CONSISTENCY_REVIEW_REPORT.md
+- final_verdict: A-047.4.B1 PASS - CONSISTENCY_BASELINE_ESTABLISHED_WITH_BLOCKERS
+- next_action_id: A-047.4-B2.
+
 ## 0. A-047.3 Research Brain Runtime Contract Continuity
 
 - A-047.3 executed runtime-contract specification only for Research Brain with strict no-runtime-change boundaries.
