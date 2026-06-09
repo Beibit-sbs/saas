@@ -1,5 +1,19 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.COV-R19.R1 Graceful Flush Recovery Continuity
+
+- A-046.COV-R19.R1 executed harness-only recovery for R19 root cause `ROOT_CAUSE_D` (timeout before flush).
+- Selected strategy: per-file graceful watchdog with `--cov-append` over representative shard subset files.
+- Controlled validation proved coverage flush and persistence during timeout-bounded execution:
+	- `.coverage` generated and grew across per-file runs
+	- `coverage report` succeeded (`rc=0`)
+	- `coverage json` succeeded (`rc=0`, `coverage.json` written)
+- `coverage combine` returned `No data to combine` as expected for single-data-file state; this did not block report/json generation.
+- Root cause D is considered resolved for this orchestration path.
+- Full harness coverage generation feasibility is now YES (with graceful per-file orchestration).
+- integrity remained PASS for R19.R1 scope (no runtime/tests/coverage-config/denominator changes).
+- next_action_id: A-046.COV-R20.
+
 ## 0. A-046.COV-R19 Coverage Artifact Failure Diagnosis Continuity
 
 - A-046.COV-R19 executed diagnostics-only analysis to isolate why authoritative coverage artifacts are not produced after R18.
