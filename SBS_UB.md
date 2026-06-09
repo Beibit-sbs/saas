@@ -1,3 +1,33 @@
+- A-047.3 execution block:
+    - mode: spec_research_brain_runtime_contract
+    - purpose: define_canonical_runtime_contract_grounded_in_existing_research_modules_and_bridges
+    - source_state_before: A-047.2 PASS
+    - source_state_validation: PASS
+    - a0471_exists: YES
+    - a0472_exists: YES
+    - source_next_action_id_confirmed: A-047.3-SPEC
+    - domain_model_complete: YES
+    - entity_contract_complete: YES
+    - route_contract_complete: YES
+    - workflow_contract_complete: YES
+    - signal_contract_complete: YES
+    - dashboard_contract_complete: YES
+    - provider_contract_complete: YES
+    - rbac_contract_complete: YES
+    - tenant_security_contract_complete: YES
+    - ready_modules_count: 5
+    - bridge_modules_count: 11
+    - new_modules_count: 5
+    - runtime_readiness: NEEDS_ADDITIONAL_SPEC
+    - backend_modified: NO
+    - frontend_modified: NO
+    - database_modified: NO
+    - tests_modified: NO
+    - report_file: A-047.3-SPEC-RESEARCH_BRAIN_RUNTIME_CONTRACT_REPORT.md
+    - final_verdict: A-047.3 PASS - RESEARCH_BRAIN_RUNTIME_CONTRACT_SPECIFIED
+    - recommended_next_action: A-047.4-B1
+    - next_action_id: A-047.4-B1
+
 - A-047.2 execution block:
     - mode: canonical_research_science_reconciliation
     - purpose: reconcile_existing_research_science_surfaces_without_duplicate_runtime_creation
