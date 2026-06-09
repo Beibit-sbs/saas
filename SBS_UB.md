@@ -1,3 +1,50 @@
+- A-046.4 execution block:
+    - mode: integration_provider_readiness_browser_validation_runtime
+    - purpose: validate_real_browser_runtime_against_actual_frontend_shell_and_workflow
+    - source_state_before: A-046.3.B2 PASS
+    - source_state_validation: PASS
+    - commit_67ff0f7_exists: YES
+    - commit_6b2c19b_exists: YES
+    - commit_1fdf0e2_exists: YES
+    - runtime_route: /console/integrations/provider-readiness
+    - runtime_inventory_status: COMPLETE
+    - runtime_title_present: YES
+    - runtime_subtitle_present: YES
+    - runtime_shell_present: YES
+    - runtime_boundary_labels_count: 6
+    - runtime_workflow_cards_count: 12
+    - runtime_dashboard_cards_count: 6
+    - runtime_readiness_indicators_count: 14
+    - runtime_navigation_links_count: 3
+    - scenario_page_load: PASS
+    - scenario_navigation_visibility: PASS
+    - scenario_boundary_labels: PASS
+    - scenario_readiness_workflow_cards: PASS
+    - scenario_read_only_governance_state: PASS
+    - scenario_no_mutation_actions_exposed: PASS
+    - browser_validation: PASS
+    - regression_console_errors_count: 2
+    - regression_runtime_crashes_count: 0
+    - regression_hydration_errors_count: 0
+    - regression_broken_route: NO
+    - regression_check: FAIL
+    - authoritative_playwright_command: cd_/home/sbs/AI/infra_&&_docker_compose_--env-file_.env_run_--rm_-e_E2E_BASE_URL=https://nginx_frontend-tests_playwright_a0463
+    - playwright_passed: 2
+    - playwright_failed: 0
+    - playwright_skipped: 0
+    - playwright_exit_code: 0
+    - tenant: PASS
+    - rbac: PASS
+    - anti_fake: PASS
+    - read_only_boundaries: PASS
+    - backend_modified: NO
+    - frontend_feature_modified: NO
+    - schema_modified: NO
+    - report_file: A-046.4-INTEGRATION_PROVIDER_READINESS_BROWSER_VALIDATION_RUNTIME_REPORT.md
+    - final_verdict: A-046.4 PARTIAL - RUNTIME_VALIDATION_PASS_WITH_CONSOLE_ERROR_RESIDUAL
+    - recommended_next_action: A-046.5
+    - next_action_id: A-046.5
+
 - A-046.3.B2 execution block:
     - mode: pre_existing_typescript_failure_isolation_and_low_risk_remediation
     - purpose: prove_b1_pre_existing_classification_and_clear_typescript_blocker
