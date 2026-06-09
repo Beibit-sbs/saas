@@ -1,0 +1,1 @@
+export { ResearchBrainScientometricsPage as default } from '@/modules/research-brain/page';

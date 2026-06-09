@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -469,6 +469,16 @@ class ResearchBrainOrchestrationResponse(BaseModel):
     ethics: ResearchBrainOrchestrationItemResponse
     kpi: ResearchBrainOrchestrationItemResponse
     signals: ResearchBrainOrchestrationItemResponse
+    researchers: ResearchBrainOrchestrationItemResponse
+    researcher_summary: ResearchBrainOrchestrationItemResponse
+    researcher_health: ResearchBrainOrchestrationItemResponse
+    researcher_workload: ResearchBrainOrchestrationItemResponse
+    researcher_risk: ResearchBrainOrchestrationItemResponse
+    scientometrics: ResearchBrainOrchestrationItemResponse
+    citation_analytics: ResearchBrainOrchestrationItemResponse
+    impact_analytics: ResearchBrainOrchestrationItemResponse
+    publication_impact: ResearchBrainOrchestrationItemResponse
+    researcher_ranking: ResearchBrainOrchestrationItemResponse
 
 
 class ResearchBrainContextSourceResponse(BaseModel):
@@ -522,3 +532,170 @@ class ResearchBrainRbacValidationResponse(BaseModel):
     rbac: str
     audit: str
     roles: list[ResearchBrainRoleValidationResponse] = Field(default_factory=list)
+
+
+class ResearcherPublicationSummary(BaseModel):
+    publication_count: int = 0
+    citation_count: int = 0
+
+
+class ResearcherGrantSummary(BaseModel):
+    active_grants: int = 0
+
+
+class ResearcherProjectSummary(BaseModel):
+    active_projects: int = 0
+
+
+class ResearcherScientometricSummary(BaseModel):
+    h_index: int = 0
+    citation_count: int = 0
+
+
+class ResearcherProfile(BaseModel):
+    researcher_id: str
+    employee_id: str
+    full_name: str
+    position: str
+    faculty: str | None = None
+    department: str | None = None
+    laboratory: str | None = None
+    research_areas: list[str] = Field(default_factory=list)
+    specializations: list[str] = Field(default_factory=list)
+    status: str
+
+
+class Researcher(BaseModel):
+    researcher_id: str
+    employee_id: str
+    full_name: str
+    position: str
+    faculty: str | None = None
+    department: str | None = None
+    laboratory: str | None = None
+    research_areas: list[str] = Field(default_factory=list)
+    specializations: list[str] = Field(default_factory=list)
+    active_projects: int = 0
+    active_grants: int = 0
+    publication_count: int = 0
+    citation_count: int = 0
+    h_index: int = 0
+    risk_level: str = "LOW"
+    status: str = "ACTIVE"
+
+
+class ResearcherListResponse(BaseModel):
+    items: list[Researcher] = Field(default_factory=list)
+
+
+class ResearcherDashboardSummaryResponse(BaseModel):
+    tenant_id: int
+    total_researchers: int
+    active_researchers: int
+    high_risk_researchers: int
+    publication_total: int
+    active_projects_total: int
+    active_grants_total: int
+
+
+class ResearcherActivityProfileResponse(BaseModel):
+    tenant_id: int
+    researcher: ResearcherProfile
+    project_summary: ResearcherProjectSummary
+    grant_summary: ResearcherGrantSummary
+    publication_summary: ResearcherPublicationSummary
+    scientometric_summary: ResearcherScientometricSummary
+
+
+class ResearcherRiskProfileResponse(BaseModel):
+    tenant_id: int
+    researcher_id: str
+    risk_level: str
+    workload: dict[str, int] = Field(default_factory=dict)
+    signals: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
+ProviderStatus = Literal["NOT_CONNECTED", "READY", "PENDING"]
+
+
+class ExternalResearchIdentity(BaseModel):
+    provider_name: str
+    provider_identifier: str
+    provider_status: ProviderStatus
+
+
+class ScientometricTrend(BaseModel):
+    period: str
+    citation_count: int = 0
+    h_index: int = 0
+    i10_index: int = 0
+    trend_direction: str = "stable"
+    impact_score: float = 0.0
+
+
+class PublicationImpactProfile(BaseModel):
+    researcher_id: str
+    publication_count: int = 0
+    international_publications: int = 0
+    indexed_publications: int = 0
+    top_publications: list[str] = Field(default_factory=list)
+    citation_count: int = 0
+    h_index: int = 0
+    i10_index: int = 0
+    trend_direction: str = "stable"
+    impact_score: float = 0.0
+    scientometric_risk: str = "LOW"
+
+
+class CitationAnalyticsSummary(BaseModel):
+    researcher_id: str
+    citation_count: int = 0
+    h_index: int = 0
+    i10_index: int = 0
+    publication_count: int = 0
+    international_publications: int = 0
+    indexed_publications: int = 0
+    top_publications: list[str] = Field(default_factory=list)
+    trend_direction: str = "stable"
+    impact_score: float = 0.0
+    scientometric_risk: str = "LOW"
+
+
+class ResearcherScientometricProfile(BaseModel):
+    researcher_id: str
+    citation_count: int = 0
+    h_index: int = 0
+    i10_index: int = 0
+    publication_count: int = 0
+    international_publications: int = 0
+    indexed_publications: int = 0
+    top_publications: list[str] = Field(default_factory=list)
+    trend_direction: str = "stable"
+    impact_score: float = 0.0
+    scientometric_risk: str = "LOW"
+    external_identities: list[ExternalResearchIdentity] = Field(default_factory=list)
+    trends: list[ScientometricTrend] = Field(default_factory=list)
+
+
+class ScientometricsSummaryResponse(BaseModel):
+    tenant_id: int
+    top_researchers: list[ResearcherScientometricProfile] = Field(default_factory=list)
+    citation_leaderboard: list[CitationAnalyticsSummary] = Field(default_factory=list)
+    h_index_leaderboard: list[CitationAnalyticsSummary] = Field(default_factory=list)
+    publication_impact_summary: list[PublicationImpactProfile] = Field(default_factory=list)
+    scientometric_trend_summary: list[ScientometricTrend] = Field(default_factory=list)
+    provider_execution_enabled: bool = False
+    external_calls_enabled: bool = False
+
+
+class ResearcherRankingItem(BaseModel):
+    researcher_id: str
+    rank: int
+    impact_score: float
+    scientometric_risk: str
+
+
+class ResearcherRankingResponse(BaseModel):
+    tenant_id: int
+    items: list[ResearcherRankingItem] = Field(default_factory=list)

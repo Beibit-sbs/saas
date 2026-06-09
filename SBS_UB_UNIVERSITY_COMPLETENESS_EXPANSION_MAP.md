@@ -1,5 +1,52 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-047.8.E1 Scientometrics and Citation Analytics Runtime Continuity
+
+- A-047.8.E1 executed Batch 3 scientometrics runtime implementation under Research Brain.
+- Source validation passed:
+	- A-047.7.E1 completed
+	- researcher registry runtime exists
+	- inherited next_action_id `A-047.8-E1`
+- Canonical scientometric runtime contracts implemented:
+	- `ResearcherScientometricProfile`
+	- `CitationAnalyticsSummary`
+	- `PublicationImpactProfile`
+	- `ScientometricTrend`
+	- `ExternalResearchIdentity`
+- Provider-ready identity contracts implemented for:
+	- ORCID
+	- Scopus
+	- WebOfScience
+	- GoogleScholar
+	- DOI
+- Provider boundary enforcement preserved:
+	- no live synchronization
+	- no external API execution
+	- provider statuses constrained to `NOT_CONNECTED`, `READY`, `PENDING`
+- Runtime expansion completed:
+	- orchestration slices: scientometrics/citation_analytics/impact_analytics/publication_impact/researcher_ranking
+	- backend routes under `/api/admin/research-brain/scientometrics/*`
+	- frontend route `/console/research-brain/scientometrics`
+	- required widgets and views delivered
+- Signal inventory implemented (brain_core owner, read-only):
+	- citation_decline
+	- publication_stagnation
+	- impact_drop
+	- low_visibility
+	- researcher_ranking_drop
+- Validation evidence:
+	- TypeScript: PASS
+	- backend targeted tests: PASS (A-047.6/A-047.7/A-047.8 suites)
+	- frontend targeted tests: PASS (runtime shell + researchers + scientometrics)
+- Security/governance posture preserved:
+	- tenant PASS
+	- RBAC PASS
+	- audit PASS
+	- no duplicate publication ownership introduced
+- report_file: A-047.8-E1-SCIENTOMETRICS_RUNTIME_IMPLEMENTATION_REPORT.md
+- final_verdict: A-047.8.E1 PASS - SCIENTOMETRICS_RUNTIME_IMPLEMENTED
+- next_action_id: A-047.9-E1.
+
 ## 0. A-047.7.E1 Researcher Registry Runtime Finalization Continuity
 
 - A-047.7.E1 executed closeout-only finalization for the Researcher Registry Runtime.

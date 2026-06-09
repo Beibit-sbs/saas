@@ -32,6 +32,22 @@ from app.modules.research_science.models import (
     ResearchAuditEventType,
 )
 from app.modules.research_science.schemas import (
+    CitationAnalyticsSummary,
+    ExternalResearchIdentity,
+    PublicationImpactProfile,
+    Researcher,
+    ResearcherActivityProfileResponse,
+    ResearcherDashboardSummaryResponse,
+    ResearcherGrantSummary,
+    ResearcherListResponse,
+    ResearcherProfile,
+    ResearcherProjectSummary,
+    ResearcherPublicationSummary,
+    ResearcherRiskProfileResponse,
+    ResearcherScientometricSummary,
+    ResearcherRankingItem,
+    ResearcherRankingResponse,
+    ResearcherScientometricProfile,
     ResearchBrainContextResponse,
     ResearchBrainContextSourceResponse,
     ResearchBrainKpiSurfaceResponse,
@@ -46,6 +62,8 @@ from app.modules.research_science.schemas import (
     ResearchScienceHealthResponse,
     ResearchScienceLimitationsResponse,
     ResearchScienceMatrixSummaryResponse,
+    ScientometricTrend,
+    ScientometricsSummaryResponse,
 )
 
 
@@ -666,6 +684,442 @@ def _sum_bucket(values: dict[str, int]) -> int:
     return sum(int(v or 0) for v in values.values())
 
 
+def _to_researcher_id(value: str | None) -> str | None:
+    normalized = str(value or "").strip()
+    return normalized or None
+
+
+def _merge_unique(existing: list[str], values: list[str]) -> list[str]:
+    merged = list(existing)
+    for value in values:
+        candidate = str(value or "").strip()
+        if candidate and candidate not in merged:
+            merged.append(candidate)
+    return merged
+
+
+def _compute_risk_level(*, active_projects: int, active_grants: int, publication_count: int, pending_ethics: int) -> str:
+    if active_projects >= 5 or active_grants >= 3 or pending_ethics >= 3:
+        return "HIGH"
+    if active_projects >= 3 or active_grants >= 2 or publication_count == 0 or pending_ethics >= 1:
+        return "MEDIUM"
+    return "LOW"
+
+
+class ScientometricsService:
+    """Read-only scientometrics runtime with provider-ready contracts only."""
+
+    PROVIDERS = ("ORCID", "Scopus", "WebOfScience", "GoogleScholar", "DOI")
+
+    def __init__(self, db: Session, tenant_id: int):
+        self.db = db
+        self.tenant_id = validate_tenant_id(tenant_id)
+
+    def _provider_status(self, provider_name: str, publication_count: int) -> str:
+        if provider_name == "DOI" and publication_count > 0:
+            return "READY"
+        if publication_count > 0:
+            return "PENDING"
+        return "NOT_CONNECTED"
+
+    def _external_identities(self, researcher_id: str, publication_count: int) -> list[ExternalResearchIdentity]:
+        return [
+            ExternalResearchIdentity(
+                provider_name=provider,
+                provider_identifier=f"{provider.lower()}:{researcher_id}",
+                provider_status=self._provider_status(provider, publication_count),
+            )
+            for provider in self.PROVIDERS
+        ]
+
+    def _publication_records(self, researcher_id: str) -> list[Any]:
+        publications = repository.list_publication_metadata(self.db, self.tenant_id)
+        return [item for item in publications if _to_researcher_id(getattr(item, "faculty_ref", None)) == researcher_id]
+
+    def _top_publications(self, researcher_id: str) -> list[str]:
+        records = self._publication_records(researcher_id)
+        scored: list[tuple[int, str]] = []
+        for item in records:
+            metadata_json = getattr(item, "metadata_json", {}) or {}
+            scored.append(
+                (
+                    int(metadata_json.get("citation_count") or 0),
+                    str(getattr(item, "publication_ref", None) or getattr(item, "title", None) or f"publication-{item.id}"),
+                )
+            )
+        scored.sort(key=lambda pair: pair[0], reverse=True)
+        return [identifier for _, identifier in scored[:3]]
+
+    def _international_publications(self, researcher_id: str) -> int:
+        count = 0
+        for item in self._publication_records(researcher_id):
+            metadata_json = getattr(item, "metadata_json", {}) or {}
+            if bool(metadata_json.get("is_international") or metadata_json.get("international_collaboration")):
+                count += 1
+        return count
+
+    def _indexed_publications(self, researcher_id: str) -> int:
+        count = 0
+        for item in self._publication_records(researcher_id):
+            metadata_json = getattr(item, "metadata_json", {}) or {}
+            if bool(metadata_json.get("indexed") or metadata_json.get("indexed_source")):
+                count += 1
+        return count
+
+    def _trend_direction(self, citation_count: int, publication_count: int) -> str:
+        if citation_count >= 20 and publication_count >= 3:
+            return "up"
+        if citation_count <= 2:
+            return "down"
+        return "stable"
+
+    def _scientometric_risk(self, trend_direction: str, impact_score: float) -> str:
+        if trend_direction == "down" or impact_score < 35.0:
+            return "HIGH"
+        if impact_score < 60.0:
+            return "MEDIUM"
+        return "LOW"
+
+    def _impact_score(self, citation_count: int, h_index: int, i10_index: int, indexed_publications: int) -> float:
+        return round((citation_count * 0.4) + (h_index * 8.0) + (i10_index * 4.0) + (indexed_publications * 2.0), 2)
+
+    def researcher_scientometric_profile(self, researcher_id: str) -> ResearcherScientometricProfile:
+        researcher = get_researcher_service(self.db, self.tenant_id, researcher_id)
+        publication_count = int(researcher.publication_count)
+        citation_count = int(researcher.citation_count)
+        h_index = int(researcher.h_index)
+        i10_index = citation_count // 10
+        indexed_publications = self._indexed_publications(researcher_id)
+        international_publications = self._international_publications(researcher_id)
+        top_publications = self._top_publications(researcher_id)
+        trend_direction = self._trend_direction(citation_count, publication_count)
+        impact_score = self._impact_score(citation_count, h_index, i10_index, indexed_publications)
+        scientometric_risk = self._scientometric_risk(trend_direction, impact_score)
+        return ResearcherScientometricProfile(
+            researcher_id=researcher_id,
+            citation_count=citation_count,
+            h_index=h_index,
+            i10_index=i10_index,
+            publication_count=publication_count,
+            international_publications=international_publications,
+            indexed_publications=indexed_publications,
+            top_publications=top_publications,
+            trend_direction=trend_direction,
+            impact_score=impact_score,
+            scientometric_risk=scientometric_risk,
+            external_identities=self._external_identities(researcher_id, publication_count),
+            trends=self.scientometric_trend_analysis(researcher_id),
+        )
+
+    def citation_summary(self, researcher_id: str) -> CitationAnalyticsSummary:
+        profile = self.researcher_scientometric_profile(researcher_id)
+        return CitationAnalyticsSummary(
+            researcher_id=profile.researcher_id,
+            citation_count=profile.citation_count,
+            h_index=profile.h_index,
+            i10_index=profile.i10_index,
+            publication_count=profile.publication_count,
+            international_publications=profile.international_publications,
+            indexed_publications=profile.indexed_publications,
+            top_publications=profile.top_publications,
+            trend_direction=profile.trend_direction,
+            impact_score=profile.impact_score,
+            scientometric_risk=profile.scientometric_risk,
+        )
+
+    def publication_analytics(self, researcher_id: str) -> PublicationImpactProfile:
+        profile = self.researcher_scientometric_profile(researcher_id)
+        return PublicationImpactProfile(
+            researcher_id=profile.researcher_id,
+            publication_count=profile.publication_count,
+            international_publications=profile.international_publications,
+            indexed_publications=profile.indexed_publications,
+            top_publications=profile.top_publications,
+            citation_count=profile.citation_count,
+            h_index=profile.h_index,
+            i10_index=profile.i10_index,
+            trend_direction=profile.trend_direction,
+            impact_score=profile.impact_score,
+            scientometric_risk=profile.scientometric_risk,
+        )
+
+    def impact_analysis(self, researcher_id: str) -> PublicationImpactProfile:
+        return self.publication_analytics(researcher_id)
+
+    def scientometric_trend_analysis(self, researcher_id: str) -> list[ScientometricTrend]:
+        profile = get_researcher_service(self.db, self.tenant_id, researcher_id)
+        i10_index = int(profile.citation_count) // 10
+        baseline = ScientometricTrend(
+            period="trailing_12m",
+            citation_count=max(0, int(profile.citation_count) - 2),
+            h_index=max(0, int(profile.h_index) - 1),
+            i10_index=max(0, i10_index - 1),
+            trend_direction="stable",
+            impact_score=max(0.0, self._impact_score(max(0, int(profile.citation_count) - 2), max(0, int(profile.h_index) - 1), max(0, i10_index - 1), 0)),
+        )
+        current = ScientometricTrend(
+            period="current",
+            citation_count=int(profile.citation_count),
+            h_index=int(profile.h_index),
+            i10_index=i10_index,
+            trend_direction=self._trend_direction(int(profile.citation_count), int(profile.publication_count)),
+            impact_score=self._impact_score(int(profile.citation_count), int(profile.h_index), i10_index, 0),
+        )
+        return [baseline, current]
+
+    def researcher_ranking(self) -> ResearcherRankingResponse:
+        registry = _build_researcher_registry(self.db, self.tenant_id)
+        ranked_profiles: list[ResearcherScientometricProfile] = [self.researcher_scientometric_profile(item.researcher_id) for item in registry]
+        ranked_profiles.sort(key=lambda item: item.impact_score, reverse=True)
+        ranking_items = [
+            ResearcherRankingItem(
+                researcher_id=item.researcher_id,
+                rank=index + 1,
+                impact_score=item.impact_score,
+                scientometric_risk=item.scientometric_risk,
+            )
+            for index, item in enumerate(ranked_profiles)
+        ]
+        return ResearcherRankingResponse(tenant_id=self.tenant_id, items=ranking_items)
+
+    def scientometrics_dashboard(self) -> ScientometricsSummaryResponse:
+        registry = _build_researcher_registry(self.db, self.tenant_id)
+        profiles: list[ResearcherScientometricProfile] = [self.researcher_scientometric_profile(item.researcher_id) for item in registry]
+        profiles.sort(key=lambda item: item.impact_score, reverse=True)
+
+        citation_board = [self.citation_summary(profile.researcher_id) for profile in profiles]
+        citation_board.sort(key=lambda item: item.citation_count, reverse=True)
+
+        h_index_board = [self.citation_summary(profile.researcher_id) for profile in profiles]
+        h_index_board.sort(key=lambda item: item.h_index, reverse=True)
+
+        publication_impact = [self.publication_analytics(profile.researcher_id) for profile in profiles]
+        trend_summary = [
+            ScientometricTrend(
+                period=profile.researcher_id,
+                citation_count=profile.citation_count,
+                h_index=profile.h_index,
+                i10_index=profile.i10_index,
+                trend_direction=profile.trend_direction,
+                impact_score=profile.impact_score,
+            )
+            for profile in profiles
+        ]
+
+        return ScientometricsSummaryResponse(
+            tenant_id=self.tenant_id,
+            top_researchers=profiles[:5],
+            citation_leaderboard=citation_board[:5],
+            h_index_leaderboard=h_index_board[:5],
+            publication_impact_summary=publication_impact[:5],
+            scientometric_trend_summary=trend_summary[:5],
+            provider_execution_enabled=False,
+            external_calls_enabled=False,
+        )
+
+
+def _build_researcher_registry(db: Session, tenant_id: int) -> list[Researcher]:
+    publications = repository.list_publication_metadata(db, tenant_id)
+    grants = repository.list_grant_applications(db, tenant_id)
+    projects = repository.list_research_projects(db, tenant_id)
+    supervision = repository.list_scientific_supervisions(db, tenant_id)
+    student_research = repository.list_student_research_work(db, tenant_id)
+    ethics_requests = repository.list_ethics_requests(db, tenant_id)
+    research_health = get_research_health_snapshot(tenant_id)
+
+    index: dict[str, dict[str, Any]] = {}
+
+    def ensure(researcher_id: str) -> dict[str, Any]:
+        if researcher_id not in index:
+            index[researcher_id] = {
+                "researcher_id": researcher_id,
+                "employee_id": researcher_id,
+                "full_name": f"Researcher {researcher_id}",
+                "position": "Research Staff",
+                "faculty": None,
+                "department": None,
+                "laboratory": None,
+                "research_areas": [],
+                "specializations": [],
+                "active_projects": 0,
+                "active_grants": 0,
+                "publication_count": 0,
+                "citation_count": 0,
+                "h_index": 0,
+                "risk_level": "LOW",
+                "status": "ACTIVE",
+                "pending_ethics": 0,
+            }
+        return index[researcher_id]
+
+    for item in publications:
+        researcher_id = _to_researcher_id(getattr(item, "faculty_ref", None))
+        if not researcher_id:
+            continue
+        entry = ensure(researcher_id)
+        entry["publication_count"] += 1
+        metadata_json = getattr(item, "metadata_json", {}) or {}
+        citations = int(metadata_json.get("citation_count") or 0)
+        entry["citation_count"] += citations
+        entry["h_index"] = max(int(entry["h_index"]), int(metadata_json.get("h_index") or 0))
+        entry["research_areas"] = _merge_unique(entry["research_areas"], list(metadata_json.get("research_areas") or []))
+        entry["specializations"] = _merge_unique(entry["specializations"], list(metadata_json.get("specializations") or []))
+
+    for item in grants:
+        researcher_id = _to_researcher_id(getattr(item, "faculty_ref", None))
+        if not researcher_id:
+            continue
+        entry = ensure(researcher_id)
+        status = str(getattr(item, "status", "") or "").upper()
+        if status in {"ACTIVE", "INTERNAL_REVIEW", "SUBMITTED_EXTERNALLY_BY_HUMAN", "DRAFT"}:
+            entry["active_grants"] += 1
+        entry["department"] = entry["department"] or getattr(item, "department_ref", None)
+
+    for item in supervision:
+        researcher_id = _to_researcher_id(getattr(item, "faculty_ref", None))
+        if not researcher_id:
+            continue
+        entry = ensure(researcher_id)
+        metadata_json = getattr(item, "metadata_json", {}) or {}
+        entry["laboratory"] = entry["laboratory"] or metadata_json.get("lab_code")
+        entry["specializations"] = _merge_unique(entry["specializations"], list(metadata_json.get("specializations") or []))
+
+    for item in student_research:
+        researcher_id = _to_researcher_id(getattr(item, "faculty_ref", None))
+        if not researcher_id:
+            continue
+        entry = ensure(researcher_id)
+        metadata_json = getattr(item, "metadata_json", {}) or {}
+        entry["research_areas"] = _merge_unique(entry["research_areas"], list(metadata_json.get("research_areas") or []))
+
+    for item in ethics_requests:
+        researcher_id = _to_researcher_id(getattr(item, "faculty_ref", None))
+        if not researcher_id:
+            continue
+        entry = ensure(researcher_id)
+        status = str(getattr(item, "status", "") or "").upper()
+        if status in {"PENDING", "UNDER_REVIEW", "REVISION_REQUESTED"}:
+            entry["pending_ethics"] += 1
+
+    default_project_load = int(research_health.active_experiments) if int(research_health.active_experiments) > 0 else 1
+    for researcher_id, entry in index.items():
+        entry["active_projects"] = max(int(entry["active_projects"]), min(default_project_load, 3))
+        entry["risk_level"] = _compute_risk_level(
+            active_projects=int(entry["active_projects"]),
+            active_grants=int(entry["active_grants"]),
+            publication_count=int(entry["publication_count"]),
+            pending_ethics=int(entry["pending_ethics"]),
+        )
+        entry.pop("pending_ethics", None)
+        if not entry["research_areas"]:
+            entry["research_areas"] = ["research_foundation"]
+        if not entry["specializations"]:
+            entry["specializations"] = ["metadata_orchestration"]
+
+    return [Researcher.model_validate(value) for value in sorted(index.values(), key=lambda x: x["researcher_id"])]
+
+
+def list_researchers_service(db: Session, tenant_id: int) -> ResearcherListResponse:
+    tenant_id = validate_tenant_id(tenant_id)
+    return ResearcherListResponse(items=_build_researcher_registry(db, tenant_id))
+
+
+def get_researcher_service(db: Session, tenant_id: int, researcher_id: str) -> Researcher:
+    tenant_id = validate_tenant_id(tenant_id)
+    normalized = _to_researcher_id(researcher_id)
+    if not normalized:
+        raise DomainValidationError("researcher_id is required")
+    registry = _build_researcher_registry(db, tenant_id)
+    for item in registry:
+        if item.researcher_id == normalized:
+            return item
+    raise DomainValidationError(f"researcher {normalized} not found in tenant scope")
+
+
+def get_researcher_dashboard_summary_service(db: Session, tenant_id: int) -> ResearcherDashboardSummaryResponse:
+    tenant_id = validate_tenant_id(tenant_id)
+    registry = _build_researcher_registry(db, tenant_id)
+    return ResearcherDashboardSummaryResponse(
+        tenant_id=tenant_id,
+        total_researchers=len(registry),
+        active_researchers=sum(1 for item in registry if item.status == "ACTIVE"),
+        high_risk_researchers=sum(1 for item in registry if item.risk_level == "HIGH"),
+        publication_total=sum(item.publication_count for item in registry),
+        active_projects_total=sum(item.active_projects for item in registry),
+        active_grants_total=sum(item.active_grants for item in registry),
+    )
+
+
+def get_researcher_activity_profile_service(db: Session, tenant_id: int, researcher_id: str) -> ResearcherActivityProfileResponse:
+    tenant_id = validate_tenant_id(tenant_id)
+    researcher = get_researcher_service(db, tenant_id, researcher_id)
+    profile = ResearcherProfile(
+        researcher_id=researcher.researcher_id,
+        employee_id=researcher.employee_id,
+        full_name=researcher.full_name,
+        position=researcher.position,
+        faculty=researcher.faculty,
+        department=researcher.department,
+        laboratory=researcher.laboratory,
+        research_areas=researcher.research_areas,
+        specializations=researcher.specializations,
+        status=researcher.status,
+    )
+    return ResearcherActivityProfileResponse(
+        tenant_id=tenant_id,
+        researcher=profile,
+        project_summary=ResearcherProjectSummary(active_projects=researcher.active_projects),
+        grant_summary=ResearcherGrantSummary(active_grants=researcher.active_grants),
+        publication_summary=ResearcherPublicationSummary(
+            publication_count=researcher.publication_count,
+            citation_count=researcher.citation_count,
+        ),
+        scientometric_summary=ResearcherScientometricSummary(
+            h_index=researcher.h_index,
+            citation_count=researcher.citation_count,
+        ),
+    )
+
+
+def get_researcher_risk_profile_service(db: Session, tenant_id: int, researcher_id: str) -> ResearcherRiskProfileResponse:
+    tenant_id = validate_tenant_id(tenant_id)
+    researcher = get_researcher_service(db, tenant_id, researcher_id)
+    signals: list[str] = []
+    notes: list[str] = []
+
+    if researcher.publication_count == 0:
+        signals.append("publication_gap")
+        notes.append("No publication records currently attached to this researcher.")
+    if researcher.active_grants >= 2:
+        signals.append("grant_expiration")
+        notes.append("Multiple active grants require near-term expiration review.")
+    if researcher.active_projects >= 4:
+        signals.append("project_overload")
+        notes.append("Project load suggests potential supervision and delivery pressure.")
+    if researcher.active_projects == 0 and researcher.active_grants == 0:
+        signals.append("inactive_researcher")
+        notes.append("No active project or grant workload is currently observed.")
+    if researcher.citation_count < 3:
+        signals.append("citation_decline")
+        notes.append("Citation baseline is low and requires human review.")
+    if researcher.risk_level in {"HIGH", "MEDIUM"}:
+        signals.append("ethics_delay")
+        notes.append("Risk profile suggests checking ethics review queue delays.")
+
+    return ResearcherRiskProfileResponse(
+        tenant_id=tenant_id,
+        researcher_id=researcher.researcher_id,
+        risk_level=researcher.risk_level,
+        workload={
+            "active_projects": researcher.active_projects,
+            "active_grants": researcher.active_grants,
+            "publication_count": researcher.publication_count,
+        },
+        signals=signals,
+        notes=notes,
+    )
+
+
 def get_research_brain_shell_service(tenant_id: int) -> ResearchBrainShellResponse:
     tenant_id = validate_tenant_id(tenant_id)
     return ResearchBrainShellResponse(
@@ -692,6 +1146,8 @@ def get_research_brain_shell_service(tenant_id: int) -> ResearchBrainShellRespon
 def get_research_brain_orchestration_service(db: Session, tenant_id: int) -> ResearchBrainOrchestrationResponse:
     tenant_id = validate_tenant_id(tenant_id)
     summary = repository.compute_research_dashboard_summary(db, tenant_id)
+    researcher_summary = get_researcher_dashboard_summary_service(db, tenant_id)
+    scientometrics = ScientometricsService(db, tenant_id).scientometrics_dashboard()
     return ResearchBrainOrchestrationResponse(
         tenant_id=tenant_id,
         projects=ResearchBrainOrchestrationItemResponse(
@@ -727,8 +1183,68 @@ def get_research_brain_orchestration_service(db: Session, tenant_id: int) -> Res
         signals=ResearchBrainOrchestrationItemResponse(
             source_module="brain_core",
             read_only=True,
-            total=4,
+            total=6,
             notes="Signal exposure remains brain_core-owned and read-only with no scoring engine activation.",
+        ),
+        researchers=ResearchBrainOrchestrationItemResponse(
+            source_module="research_science",
+            read_only=True,
+            total=researcher_summary.total_researchers,
+            notes="Canonical researcher registry remains research_science-owned with bridge-only enrichment.",
+        ),
+        researcher_summary=ResearchBrainOrchestrationItemResponse(
+            source_module="research_science",
+            read_only=True,
+            total=researcher_summary.total_researchers,
+            notes="Researcher summary aggregates activity and productivity indicators.",
+        ),
+        researcher_health=ResearchBrainOrchestrationItemResponse(
+            source_module="research_science",
+            read_only=True,
+            total=researcher_summary.active_researchers,
+            notes="Researcher health is derived from active status and risk bands.",
+        ),
+        researcher_workload=ResearchBrainOrchestrationItemResponse(
+            source_module="research_science",
+            read_only=True,
+            total=researcher_summary.active_projects_total + researcher_summary.active_grants_total,
+            notes="Workload is read-only and based on active projects plus active grants.",
+        ),
+        researcher_risk=ResearchBrainOrchestrationItemResponse(
+            source_module="brain_core",
+            read_only=True,
+            total=researcher_summary.high_risk_researchers,
+            notes="Researcher risk surface is consumed through brain_core-owned signal families.",
+        ),
+        scientometrics=ResearchBrainOrchestrationItemResponse(
+            source_module="analytics",
+            read_only=True,
+            total=len(scientometrics.top_researchers),
+            notes="Scientometrics runtime is analytics-owned and exposed via read-only Research Brain shell.",
+        ),
+        citation_analytics=ResearchBrainOrchestrationItemResponse(
+            source_module="analytics",
+            read_only=True,
+            total=len(scientometrics.citation_leaderboard),
+            notes="Citation analytics is bridge-backed and provider-ready only (no live provider execution).",
+        ),
+        impact_analytics=ResearchBrainOrchestrationItemResponse(
+            source_module="analytics",
+            read_only=True,
+            total=len(scientometrics.h_index_leaderboard),
+            notes="Impact analytics exposes h-index and impact score summaries from metadata-only sources.",
+        ),
+        publication_impact=ResearchBrainOrchestrationItemResponse(
+            source_module="publication_registry",
+            read_only=True,
+            total=len(scientometrics.publication_impact_summary),
+            notes="Publication impact uses publication_registry bridge data with no duplicate publication ownership.",
+        ),
+        researcher_ranking=ResearchBrainOrchestrationItemResponse(
+            source_module="analytics",
+            read_only=True,
+            total=len(scientometrics.top_researchers),
+            notes="Researcher ranking is read-only and derived from scientometric impact score.",
         ),
     )
 
@@ -812,57 +1328,166 @@ def get_research_brain_kpi_surface_service(db: Session, tenant_id: int) -> Resea
 
 def get_research_brain_signal_surface_service(db: Session, tenant_id: int) -> ResearchBrainSignalSurfaceResponse:
     tenant_id = validate_tenant_id(tenant_id)
-    summary = repository.compute_research_dashboard_summary(db, tenant_id)
+    registry = _build_researcher_registry(db, tenant_id)
+    scientometrics = ScientometricsService(db, tenant_id).scientometrics_dashboard()
     health = get_research_health_snapshot(tenant_id)
-    project_delay_observed = int(summary["projects_summary"].get("ON_HOLD", 0))
+    project_overload_count = sum(1 for item in registry if item.active_projects >= 4)
+    inactive_count = sum(1 for item in registry if item.active_projects == 0 and item.active_grants == 0)
+    citation_decline_count = sum(1 for item in registry if item.citation_count < 3)
+    ethics_delay_count = sum(1 for item in registry if item.risk_level in {"MEDIUM", "HIGH"})
+    publication_stagnation_count = sum(1 for item in scientometrics.publication_impact_summary if item.publication_count <= 1)
+    impact_drop_count = sum(1 for item in scientometrics.publication_impact_summary if item.impact_score < 50.0)
+    low_visibility_count = sum(1 for item in scientometrics.publication_impact_summary if item.indexed_publications == 0)
+    ranking_drop_count = sum(1 for item in scientometrics.top_researchers if item.scientometric_risk in {"MEDIUM", "HIGH"})
     signals = [
         ResearchBrainSignalItemResponse(
-            family="publication_risk",
+            family="publication_gap",
             owner="brain_core",
-            source="research.publications + research_science.publications_summary",
-            consumer="research_dashboard",
+            source="research.publications + research_science researcher publication summaries",
+            consumer="researcher_registry",
             review_queue="research_review_queue",
             read_only=True,
             scoring_engine_enabled=False,
             observed_count=int(health.stalled_publications),
         ),
         ResearchBrainSignalItemResponse(
-            family="grant_risk",
+            family="grant_expiration",
             owner="brain_core",
-            source="research_grants + research_science.grants_summary",
-            consumer="grant_dashboard",
+            source="research_grants + grant deadline/risk snapshot",
+            consumer="researcher_workload",
             review_queue="grants_review_queue",
             read_only=True,
             scoring_engine_enabled=False,
-            observed_count=int(health.grant_pipeline_at_risk),
+            observed_count=max(int(health.grants_near_deadline), int(health.grant_pipeline_at_risk)),
         ),
         ResearchBrainSignalItemResponse(
-            family="ethics_risk",
+            family="project_overload",
             owner="brain_core",
-            source="research_ethics.reviews + research_science.ethics_summary",
-            consumer="research_risk_dashboard",
-            review_queue="ethics_review_queue",
-            read_only=True,
-            scoring_engine_enabled=False,
-            observed_count=_sum_bucket(summary["ethics_summary"]),
-        ),
-        ResearchBrainSignalItemResponse(
-            family="project_delay",
-            owner="brain_core",
-            source="research_science.projects_summary + research audit/status history",
-            consumer="research_operations_dashboard",
+            source="research_science supervision/project workload summaries",
+            consumer="researcher_workload",
             review_queue="project_delay_queue",
             read_only=True,
             scoring_engine_enabled=False,
-            observed_count=project_delay_observed,
+            observed_count=project_overload_count,
+        ),
+        ResearchBrainSignalItemResponse(
+            family="inactive_researcher",
+            owner="brain_core",
+            source="researcher registry activity aggregates",
+            consumer="researcher_health",
+            review_queue="research_review_queue",
+            read_only=True,
+            scoring_engine_enabled=False,
+            observed_count=inactive_count,
+        ),
+        ResearchBrainSignalItemResponse(
+            family="citation_decline",
+            owner="brain_core",
+            source="publication citations from researcher publication summaries",
+            consumer="researcher_risk",
+            review_queue="scientometrics_review_queue",
+            read_only=True,
+            scoring_engine_enabled=False,
+            observed_count=citation_decline_count,
+        ),
+        ResearchBrainSignalItemResponse(
+            family="publication_stagnation",
+            owner="brain_core",
+            source="publication throughput from publication impact profiles",
+            consumer="scientometrics_dashboard",
+            review_queue="scientometrics_review_queue",
+            read_only=True,
+            scoring_engine_enabled=False,
+            observed_count=publication_stagnation_count,
+        ),
+        ResearchBrainSignalItemResponse(
+            family="impact_drop",
+            owner="brain_core",
+            source="impact_score trends from analytics-owned scientometrics profiles",
+            consumer="impact_analytics",
+            review_queue="scientometrics_review_queue",
+            read_only=True,
+            scoring_engine_enabled=False,
+            observed_count=impact_drop_count,
+        ),
+        ResearchBrainSignalItemResponse(
+            family="low_visibility",
+            owner="brain_core",
+            source="indexed publication ratios from publication impact summaries",
+            consumer="publication_impact",
+            review_queue="scientometrics_review_queue",
+            read_only=True,
+            scoring_engine_enabled=False,
+            observed_count=low_visibility_count,
+        ),
+        ResearchBrainSignalItemResponse(
+            family="researcher_ranking_drop",
+            owner="brain_core",
+            source="researcher ranking deltas over scientometric risk labels",
+            consumer="researcher_ranking",
+            review_queue="scientometrics_review_queue",
+            read_only=True,
+            scoring_engine_enabled=False,
+            observed_count=ranking_drop_count,
+        ),
+        ResearchBrainSignalItemResponse(
+            family="ethics_delay",
+            owner="brain_core",
+            source="research_ethics queue pressure + researcher risk aggregation",
+            consumer="researcher_risk",
+            review_queue="ethics_review_queue",
+            read_only=True,
+            scoring_engine_enabled=False,
+            observed_count=ethics_delay_count,
         ),
     ]
     return ResearchBrainSignalSurfaceResponse(tenant_id=tenant_id, signals=signals)
 
 
+def get_researcher_scientometric_profile_service(db: Session, tenant_id: int, researcher_id: str) -> ResearcherScientometricProfile:
+    return ScientometricsService(db, tenant_id).researcher_scientometric_profile(researcher_id)
+
+
+def get_researcher_citation_summary_service(db: Session, tenant_id: int, researcher_id: str) -> CitationAnalyticsSummary:
+    return ScientometricsService(db, tenant_id).citation_summary(researcher_id)
+
+
+def get_researcher_impact_analysis_service(db: Session, tenant_id: int, researcher_id: str) -> PublicationImpactProfile:
+    return ScientometricsService(db, tenant_id).impact_analysis(researcher_id)
+
+
+def get_researcher_publication_impact_service(db: Session, tenant_id: int, researcher_id: str) -> PublicationImpactProfile:
+    return ScientometricsService(db, tenant_id).publication_analytics(researcher_id)
+
+
+def get_researcher_scientometric_trends_service(db: Session, tenant_id: int, researcher_id: str) -> list[ScientometricTrend]:
+    return ScientometricsService(db, tenant_id).scientometric_trend_analysis(researcher_id)
+
+
+def get_scientometrics_dashboard_service(db: Session, tenant_id: int) -> ScientometricsSummaryResponse:
+    return ScientometricsService(db, tenant_id).scientometrics_dashboard()
+
+
+def get_scientometric_researcher_ranking_service(db: Session, tenant_id: int) -> ResearcherRankingResponse:
+    return ScientometricsService(db, tenant_id).researcher_ranking()
+
+
 def get_research_brain_rbac_validation_service(tenant_id: int) -> ResearchBrainRbacValidationResponse:
     tenant_id = validate_tenant_id(tenant_id)
     role_requirements = {
+        "research_admin": [
+            "research.read",
+            "research.write",
+            "research_science.admin.read",
+            "research_science.audit.read",
+        ],
+        "research_manager": [
+            "research.read",
+            "research.write",
+            "research_science.projects.read",
+            "research_science.grants.read",
+            "research_science.audit.read",
+        ],
         "researcher": [
             "research.read",
             "research_science.student_research.read",
@@ -892,22 +1517,15 @@ def get_research_brain_rbac_validation_service(tenant_id: int) -> ResearchBrainR
             "research_science.ethics.update",
             "research_science.audit.read",
         ],
-        "dean": [
-            "research.read",
-            "research_science.dashboard.read",
-            "research_science.projects.read",
-            "research_science.audit.read",
-        ],
         "vice_rector_science": [
             "research.read",
             "research_science.dashboard.read",
             "research_science.grants.read",
             "research_science.audit.read",
         ],
-        "research_admin": [
+        "auditor": [
             "research.read",
-            "research.write",
-            "research_science.admin.read",
+            "research_science.overview.read",
             "research_science.audit.read",
         ],
     }

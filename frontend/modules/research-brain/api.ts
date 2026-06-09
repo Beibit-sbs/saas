@@ -1,5 +1,9 @@
 import { apiGet } from '@/shared/api/client';
 import type {
+  CitationAnalyticsSummary,
+  PublicationImpactProfile,
+  ResearcherRankingResponse,
+  ResearcherScientometricProfile,
   Researcher,
   ResearcherActivityProfileResponse,
   ResearcherDashboardSummaryResponse,
@@ -11,6 +15,8 @@ import type {
   ResearchBrainRbacValidationResponse,
   ResearchBrainShellResponse,
   ResearchBrainSignalSurfaceResponse,
+  ScientometricTrend,
+  ScientometricsSummaryResponse,
 } from './types';
 
 const BASE = '/api/admin/research-brain';
@@ -29,4 +35,16 @@ export const researchBrainApi = {
     apiGet<ResearcherActivityProfileResponse>(`${BASE}/researchers/${encodeURIComponent(researcherId)}/activity`),
   getResearcherRisk: (researcherId: string) =>
     apiGet<ResearcherRiskProfileResponse>(`${BASE}/researchers/${encodeURIComponent(researcherId)}/risk`),
+  getScientometricsDashboard: () => apiGet<ScientometricsSummaryResponse>(`${BASE}/scientometrics/dashboard`),
+  getScientometricRanking: () => apiGet<ResearcherRankingResponse>(`${BASE}/scientometrics/ranking`),
+  getResearcherScientometrics: (researcherId: string) =>
+    apiGet<ResearcherScientometricProfile>(`${BASE}/scientometrics/${encodeURIComponent(researcherId)}`),
+  getResearcherCitationAnalytics: (researcherId: string) =>
+    apiGet<CitationAnalyticsSummary>(`${BASE}/scientometrics/${encodeURIComponent(researcherId)}/citations`),
+  getResearcherImpactAnalytics: (researcherId: string) =>
+    apiGet<PublicationImpactProfile>(`${BASE}/scientometrics/${encodeURIComponent(researcherId)}/impact`),
+  getResearcherPublicationImpact: (researcherId: string) =>
+    apiGet<PublicationImpactProfile>(`${BASE}/scientometrics/${encodeURIComponent(researcherId)}/publication-impact`),
+  getResearcherScientometricTrends: (researcherId: string) =>
+    apiGet<ScientometricTrend[]>(`${BASE}/scientometrics/${encodeURIComponent(researcherId)}/trends`),
 };

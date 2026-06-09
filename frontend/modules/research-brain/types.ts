@@ -29,6 +29,11 @@ export interface ResearchBrainOrchestrationResponse {
   researcher_health: ResearchBrainOrchestrationItem;
   researcher_workload: ResearchBrainOrchestrationItem;
   researcher_risk: ResearchBrainOrchestrationItem;
+  scientometrics: ResearchBrainOrchestrationItem;
+  citation_analytics: ResearchBrainOrchestrationItem;
+  impact_analytics: ResearchBrainOrchestrationItem;
+  publication_impact: ResearchBrainOrchestrationItem;
+  researcher_ranking: ResearchBrainOrchestrationItem;
 }
 
 export interface ResearchBrainContextSource {
@@ -146,4 +151,88 @@ export interface ResearcherRiskProfileResponse {
   workload: Record<string, number>;
   signals: string[];
   notes: string[];
+}
+
+export type ProviderStatus = 'NOT_CONNECTED' | 'READY' | 'PENDING';
+
+export interface ExternalResearchIdentity {
+  provider_name: string;
+  provider_identifier: string;
+  provider_status: ProviderStatus;
+}
+
+export interface ScientometricTrend {
+  period: string;
+  citation_count: number;
+  h_index: number;
+  i10_index: number;
+  trend_direction: string;
+  impact_score: number;
+}
+
+export interface PublicationImpactProfile {
+  researcher_id: string;
+  publication_count: number;
+  international_publications: number;
+  indexed_publications: number;
+  top_publications: string[];
+  citation_count: number;
+  h_index: number;
+  i10_index: number;
+  trend_direction: string;
+  impact_score: number;
+  scientometric_risk: string;
+}
+
+export interface CitationAnalyticsSummary {
+  researcher_id: string;
+  citation_count: number;
+  h_index: number;
+  i10_index: number;
+  publication_count: number;
+  international_publications: number;
+  indexed_publications: number;
+  top_publications: string[];
+  trend_direction: string;
+  impact_score: number;
+  scientometric_risk: string;
+}
+
+export interface ResearcherScientometricProfile {
+  researcher_id: string;
+  citation_count: number;
+  h_index: number;
+  i10_index: number;
+  publication_count: number;
+  international_publications: number;
+  indexed_publications: number;
+  top_publications: string[];
+  trend_direction: string;
+  impact_score: number;
+  scientometric_risk: string;
+  external_identities: ExternalResearchIdentity[];
+  trends: ScientometricTrend[];
+}
+
+export interface ScientometricsSummaryResponse {
+  tenant_id: number;
+  top_researchers: ResearcherScientometricProfile[];
+  citation_leaderboard: CitationAnalyticsSummary[];
+  h_index_leaderboard: CitationAnalyticsSummary[];
+  publication_impact_summary: PublicationImpactProfile[];
+  scientometric_trend_summary: ScientometricTrend[];
+  provider_execution_enabled: boolean;
+  external_calls_enabled: boolean;
+}
+
+export interface ResearcherRankingItem {
+  researcher_id: string;
+  rank: number;
+  impact_score: number;
+  scientometric_risk: string;
+}
+
+export interface ResearcherRankingResponse {
+  tenant_id: number;
+  items: ResearcherRankingItem[];
 }

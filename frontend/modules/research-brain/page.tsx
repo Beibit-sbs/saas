@@ -113,6 +113,7 @@ export function ResearchBrainRuntimeShellPage() {
             <Link href="/console/research-science" className="rounded-full border px-3 py-1">Research Science Overview</Link>
             <Link href="/console/research-science/dashboard" className="rounded-full border px-3 py-1">Research Science Dashboard</Link>
             <Link href="/console/research-brain/researchers" className="rounded-full border px-3 py-1">Researcher Registry</Link>
+            <Link href="/console/research-brain/scientometrics" className="rounded-full border px-3 py-1">Scientometrics</Link>
             <Link href="/console/research-grants" className="rounded-full border px-3 py-1">Research Grants</Link>
             <Link href="/console/research-ethics" className="rounded-full border px-3 py-1">Research Ethics</Link>
           </div>
@@ -240,6 +241,220 @@ export function ResearchBrainResearchersPage() {
           <ul className="mt-2 list-disc pl-5 text-sm">
             {selectedRisk.notes.map((note) => (
               <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </RequirePermission>
+  );
+}
+
+export function ResearchBrainScientometricsPage() {
+  const dashboard = useQuery({ queryKey: ['research-brain:scientometrics-dashboard'], queryFn: researchBrainApi.getScientometricsDashboard, staleTime: 30000 });
+  const ranking = useQuery({ queryKey: ['research-brain:scientometrics-ranking'], queryFn: researchBrainApi.getScientometricRanking, staleTime: 30000 });
+  const researchers = useQuery({ queryKey: ['research-brain:researchers'], queryFn: researchBrainApi.listResearchers, staleTime: 30000 });
+
+  const selectedResearcherId = researchers.data?.items?.[0]?.researcher_id;
+
+  const profile = useQuery({
+    queryKey: ['research-brain:scientometric-profile', selectedResearcherId],
+    queryFn: () => researchBrainApi.getResearcherScientometrics(selectedResearcherId as string),
+    enabled: Boolean(selectedResearcherId),
+    staleTime: 30000,
+  });
+
+  const citation = useQuery({
+    queryKey: ['research-brain:scientometric-citation', selectedResearcherId],
+    queryFn: () => researchBrainApi.getResearcherCitationAnalytics(selectedResearcherId as string),
+    enabled: Boolean(selectedResearcherId),
+    staleTime: 30000,
+  });
+
+  const impact = useQuery({
+    queryKey: ['research-brain:scientometric-impact', selectedResearcherId],
+    queryFn: () => researchBrainApi.getResearcherImpactAnalytics(selectedResearcherId as string),
+    enabled: Boolean(selectedResearcherId),
+    staleTime: 30000,
+  });
+
+  const publicationImpact = useQuery({
+    queryKey: ['research-brain:scientometric-publication-impact', selectedResearcherId],
+    queryFn: () => researchBrainApi.getResearcherPublicationImpact(selectedResearcherId as string),
+    enabled: Boolean(selectedResearcherId),
+    staleTime: 30000,
+  });
+
+  const trends = useQuery({
+    queryKey: ['research-brain:scientometric-trends', selectedResearcherId],
+    queryFn: () => researchBrainApi.getResearcherScientometricTrends(selectedResearcherId as string),
+    enabled: Boolean(selectedResearcherId),
+    staleTime: 30000,
+  });
+
+  if (
+    dashboard.isPending ||
+    ranking.isPending ||
+    researchers.isPending ||
+    profile.isPending ||
+    citation.isPending ||
+    impact.isPending ||
+    publicationImpact.isPending ||
+    trends.isPending
+  ) {
+    return <LoadingState title="Loading Scientometrics runtime" />;
+  }
+
+  if (
+    dashboard.error ||
+    ranking.error ||
+    researchers.error ||
+    profile.error ||
+    citation.error ||
+    impact.error ||
+    publicationImpact.error ||
+    trends.error
+  ) {
+    return (
+      <ErrorState
+        message="Failed to load Scientometrics runtime."
+        error={
+          dashboard.error ??
+          ranking.error ??
+          researchers.error ??
+          profile.error ??
+          citation.error ??
+          impact.error ??
+          publicationImpact.error ??
+          trends.error
+        }
+      />
+    );
+  }
+
+  if (!dashboard.data || !ranking.data || !profile.data || !citation.data || !impact.data || !publicationImpact.data || !trends.data) {
+    return <ErrorState message="Scientometrics runtime is unavailable." />;
+  }
+
+  return (
+    <RequirePermission permission={PERMISSIONS.RESEARCH_SCIENCE_OVERVIEW_READ}>
+      <div className="space-y-6" data-testid="research-brain-scientometrics-page">
+        <header className="space-y-2">
+          <h1 className="text-2xl font-semibold">Scientometrics and Citation Analytics Runtime</h1>
+          <p className="text-sm text-muted-foreground">
+            Analytics-owned scientometrics runtime with provider-ready identities only. No live ORCID, Scopus, Web of Science, Google Scholar, or DOI synchronization.
+          </p>
+        </header>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Top Researchers" value={dashboard.data.top_researchers.length} helper="Scientometrics dashboard widget" />
+          <MetricCard label="Citation Leaderboard" value={dashboard.data.citation_leaderboard.length} helper="Read-only citation analytics" />
+          <MetricCard label="h-index Leaderboard" value={dashboard.data.h_index_leaderboard.length} helper="Read-only impact analytics" />
+          <MetricCard label="Publication Impact Profiles" value={dashboard.data.publication_impact_summary.length} helper="Bridge-backed publication impact" />
+        </div>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-lg border p-4" data-testid="scientometrics-top-researchers-widget">
+            <h2 className="text-lg font-semibold">Top Researchers</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              {dashboard.data.top_researchers.map((item) => (
+                <li key={item.researcher_id}>{item.researcher_id}: impact {item.impact_score}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-lg border p-4" data-testid="scientometrics-researcher-ranking-widget">
+            <h2 className="text-lg font-semibold">Researcher Ranking</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              {ranking.data.items.map((item) => (
+                <li key={item.researcher_id}>#{item.rank} {item.researcher_id} (risk {item.scientometric_risk})</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-lg border p-4" data-testid="scientometrics-citation-leaderboard-widget">
+            <h2 className="text-lg font-semibold">Citation Leaderboard</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              {dashboard.data.citation_leaderboard.map((item) => (
+                <li key={item.researcher_id}>{item.researcher_id}: {item.citation_count} citations</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-lg border p-4" data-testid="scientometrics-hindex-leaderboard-widget">
+            <h2 className="text-lg font-semibold">h-index Leaderboard</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              {dashboard.data.h_index_leaderboard.map((item) => (
+                <li key={item.researcher_id}>{item.researcher_id}: h-index {item.h_index}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-lg border p-4" data-testid="scientometrics-publication-impact-summary-widget">
+            <h2 className="text-lg font-semibold">Publication Impact Summary</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              {dashboard.data.publication_impact_summary.map((item) => (
+                <li key={item.researcher_id}>{item.researcher_id}: indexed {item.indexed_publications}, international {item.international_publications}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-lg border p-4" data-testid="scientometrics-trend-summary-widget">
+            <h2 className="text-lg font-semibold">Scientometric Trend Summary</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              {dashboard.data.scientometric_trend_summary.map((item) => (
+                <li key={item.period}>{item.period}: {item.trend_direction} (impact {item.impact_score})</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-lg border p-4" data-testid="scientometric-profile-view">
+            <h2 className="text-lg font-semibold">Researcher Scientometric Profile</h2>
+            <p className="mt-2 text-sm">Researcher: {profile.data.researcher_id}</p>
+            <p className="text-sm">Citations: {profile.data.citation_count}</p>
+            <p className="text-sm">h-index: {profile.data.h_index}</p>
+            <p className="text-sm">i10-index: {profile.data.i10_index}</p>
+            <p className="text-sm">Impact score: {profile.data.impact_score}</p>
+            <p className="text-sm">Scientometric risk: {profile.data.scientometric_risk}</p>
+          </div>
+
+          <div className="rounded-lg border p-4" data-testid="citation-analytics-view">
+            <h2 className="text-lg font-semibold">Citation Analytics</h2>
+            <p className="mt-2 text-sm">Publication count: {citation.data.publication_count}</p>
+            <p className="text-sm">Citation count: {citation.data.citation_count}</p>
+            <p className="text-sm">Top publications: {citation.data.top_publications.join(', ') || 'n/a'}</p>
+            <p className="text-sm">Trend: {citation.data.trend_direction}</p>
+          </div>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-lg border p-4" data-testid="publication-impact-view">
+            <h2 className="text-lg font-semibold">Publication Impact</h2>
+            <p className="mt-2 text-sm">Publication count: {publicationImpact.data.publication_count}</p>
+            <p className="text-sm">Indexed publications: {publicationImpact.data.indexed_publications}</p>
+            <p className="text-sm">International publications: {publicationImpact.data.international_publications}</p>
+            <p className="text-sm">Impact score: {impact.data.impact_score}</p>
+          </div>
+
+          <div className="rounded-lg border p-4" data-testid="external-identity-readiness-view">
+            <h2 className="text-lg font-semibold">External Identity Readiness</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              {profile.data.external_identities.map((identity) => (
+                <li key={identity.provider_name}>
+                  {identity.provider_name}: {identity.provider_status} ({identity.provider_identifier})
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="scientometric-trends-view">
+          <h2 className="text-lg font-semibold">Scientometric Trends</h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {trends.data.map((trend) => (
+              <li key={trend.period}>{trend.period}: citations {trend.citation_count}, h-index {trend.h_index}, direction {trend.trend_direction}</li>
             ))}
           </ul>
         </section>
