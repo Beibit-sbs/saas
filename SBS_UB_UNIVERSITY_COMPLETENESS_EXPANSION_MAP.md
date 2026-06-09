@@ -1,5 +1,41 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.3.B2 TypeScript Failure Attribution and Remediation Continuity
+
+- A-046.3.B2 executed evidence-first isolation of the remaining TypeScript blocker from B1 and validated attribution class against A-046.3 scope.
+- Source state passed:
+	- commit `67ff0f7` present (A-046.3 implementation)
+	- commit `6b2c19be2b3b2fd033b9df4b772e99fd250389c1` present (B1 validation)
+- Authoritative pre-remediation capture:
+	- Docker TypeScript `RC=2`
+	- `11` errors, all in `frontend/e2e/smoke/i18n-runtime.spec.ts`
+- Attribution matrix result:
+	- introduced by A-046.3: `0`
+	- pre-existing: `11`
+	- environment: `0`
+	- tooling: `0`
+	- dependency: `0`
+- Remediation decision: APPLY (low-risk, isolated, typing-only)
+	- updated `frontend/e2e/smoke/i18n-runtime.spec.ts` with explicit Playwright types (`Page`, `Route`, typed cookie predicate)
+	- no feature/runtime behavior changes
+- Revalidation (authoritative docker):
+	- after rebuild of `frontend-tests`, TypeScript `RC=0`
+	- errors reduced `11 -> 0`
+- A-046.3 impact check:
+	- A-046.3 files show zero TypeScript errors
+	- no type regressions
+	- no import regressions
+- Integrity checks:
+	- tenant: PASS
+	- RBAC: PASS
+	- anti-fake: PASS
+	- backend changes: NO
+	- frontend feature expansion: NO
+	- workflow additions: NO
+- report_file: A-046.3.B2-TYPESCRIPT_FAILURE_ATTRIBUTION_AND_REMEDIATION_REPORT.md
+- final_verdict: A-046.3.B2 PASS - TYPESCRIPT_BLOCKER_CLEARED
+- next_action_id: A-046.4.
+
 ## 0. A-046.3.B1 Docker Validation and Environment Confirmation Continuity
 
 - A-046.3.B1 executed validation-only closure for A-046.3 via docker-authoritative frontend harness.
