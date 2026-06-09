@@ -6,6 +6,7 @@ import { RequirePermission } from '@/shared/ui/permission-gate';
 import { ErrorState, LoadingState } from '@/shared/ui/page-states';
 import { PERMISSIONS } from '@/shared/config/permissions';
 import { researchBrainApi } from './api';
+import type { Researcher } from './types';
 
 function MetricCard({ label, value, helper }: { label: string; value: string | number; helper?: string }) {
   return (
@@ -111,9 +112,136 @@ export function ResearchBrainRuntimeShellPage() {
           <div className="mt-3 flex flex-wrap gap-2 text-sm">
             <Link href="/console/research-science" className="rounded-full border px-3 py-1">Research Science Overview</Link>
             <Link href="/console/research-science/dashboard" className="rounded-full border px-3 py-1">Research Science Dashboard</Link>
+            <Link href="/console/research-brain/researchers" className="rounded-full border px-3 py-1">Researcher Registry</Link>
             <Link href="/console/research-grants" className="rounded-full border px-3 py-1">Research Grants</Link>
             <Link href="/console/research-ethics" className="rounded-full border px-3 py-1">Research Ethics</Link>
           </div>
+        </section>
+      </div>
+    </RequirePermission>
+  );
+}
+
+export function ResearchBrainResearchersPage() {
+  const researchers = useQuery({ queryKey: ['research-brain:researchers'], queryFn: researchBrainApi.listResearchers, staleTime: 30000 });
+  const summary = useQuery({ queryKey: ['research-brain:researchers-summary'], queryFn: researchBrainApi.getResearcherSummary, staleTime: 30000 });
+
+  const selectedResearcherId = researchers.data?.items?.[0]?.researcher_id;
+
+  const profile = useQuery({
+    queryKey: ['research-brain:researcher-profile', selectedResearcherId],
+    queryFn: () => researchBrainApi.getResearcher(selectedResearcherId as string),
+    enabled: Boolean(selectedResearcherId),
+    staleTime: 30000,
+  });
+
+  const activity = useQuery({
+    queryKey: ['research-brain:researcher-activity', selectedResearcherId],
+    queryFn: () => researchBrainApi.getResearcherActivity(selectedResearcherId as string),
+    enabled: Boolean(selectedResearcherId),
+    staleTime: 30000,
+  });
+
+  const risk = useQuery({
+    queryKey: ['research-brain:researcher-risk', selectedResearcherId],
+    queryFn: () => researchBrainApi.getResearcherRisk(selectedResearcherId as string),
+    enabled: Boolean(selectedResearcherId),
+    staleTime: 30000,
+  });
+
+  if (researchers.isPending || summary.isPending || profile.isPending || activity.isPending || risk.isPending) {
+    return <LoadingState title="Loading Researcher Registry runtime" />;
+  }
+
+  if (researchers.error || summary.error || profile.error || activity.error || risk.error) {
+    return <ErrorState message="Failed to load Researcher Registry runtime." error={researchers.error ?? summary.error ?? profile.error ?? activity.error ?? risk.error} />;
+  }
+
+  if (!researchers.data || !summary.data || !profile.data || !activity.data || !risk.data) {
+    return <ErrorState message="Researcher Registry runtime is unavailable." />;
+  }
+
+  const selected = profile.data;
+  const selectedActivity = activity.data;
+  const selectedRisk = risk.data;
+
+  return (
+    <RequirePermission permission={PERMISSIONS.RESEARCH_SCIENCE_OVERVIEW_READ}>
+      <div className="space-y-6" data-testid="research-brain-researchers-page">
+        <header className="space-y-2">
+          <h1 className="text-2xl font-semibold">Researcher Registry Runtime</h1>
+          <p className="text-sm text-muted-foreground">
+            Canonical researcher registry under Research Brain. Read-only runtime with provider-ready boundaries and no live external integrations.
+          </p>
+        </header>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Researchers" value={summary.data.total_researchers} helper="Canonical registry size" />
+          <MetricCard label="Active Researchers" value={summary.data.active_researchers} helper="Status-driven" />
+          <MetricCard label="High Risk" value={summary.data.high_risk_researchers} helper="Brain-core signal consumer" />
+          <MetricCard label="Publications" value={summary.data.publication_total} helper="Metadata-derived" />
+        </div>
+
+        <section className="rounded-lg border p-4" data-testid="researcher-registry-list">
+          <h2 className="text-lg font-semibold">Researcher Registry</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {researchers.data.items.map((item: Researcher) => (
+              <div key={item.researcher_id} className="rounded-lg border p-3">
+                <p className="font-medium">{item.full_name}</p>
+                <p className="text-sm text-muted-foreground">{item.researcher_id}</p>
+                <p className="text-sm">Projects: {item.active_projects} | Grants: {item.active_grants}</p>
+                <p className="text-sm">Publications: {item.publication_count} | Citations: {item.citation_count}</p>
+                <p className="text-sm">Risk: {item.risk_level}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-lg border p-4" data-testid="researcher-profile-view">
+            <h2 className="text-lg font-semibold">Researcher Profile</h2>
+            <p className="mt-2 text-sm">Employee ID: {selected.employee_id}</p>
+            <p className="text-sm">Position: {selected.position}</p>
+            <p className="text-sm">Department: {selected.department ?? 'n/a'}</p>
+            <p className="text-sm">Laboratory: {selected.laboratory ?? 'n/a'}</p>
+            <p className="text-sm">Research Areas: {selected.research_areas.join(', ')}</p>
+            <p className="text-sm">Specializations: {selected.specializations.join(', ')}</p>
+          </div>
+
+          <div className="rounded-lg border p-4" data-testid="researcher-workload-view">
+            <h2 className="text-lg font-semibold">Researcher Workload</h2>
+            <p className="mt-2 text-sm">Active Projects: {selectedActivity.project_summary.active_projects}</p>
+            <p className="text-sm">Active Grants: {selectedActivity.grant_summary.active_grants}</p>
+            <p className="text-sm">Publications: {selectedActivity.publication_summary.publication_count}</p>
+            <p className="text-sm">Citations: {selectedActivity.publication_summary.citation_count}</p>
+            <p className="text-sm">h-index: {selectedActivity.scientometric_summary.h_index}</p>
+          </div>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-lg border p-4" data-testid="researcher-grants-view">
+            <h2 className="text-lg font-semibold">Researcher Grants</h2>
+            <p className="mt-2 text-sm">Active Grants: {selectedActivity.grant_summary.active_grants}</p>
+            <p className="text-xs text-muted-foreground">Read-only grant visibility bridged from research_science and research_grants.</p>
+          </div>
+
+          <div className="rounded-lg border p-4" data-testid="researcher-publications-view">
+            <h2 className="text-lg font-semibold">Researcher Publications</h2>
+            <p className="mt-2 text-sm">Publication Count: {selectedActivity.publication_summary.publication_count}</p>
+            <p className="text-sm">Citation Count: {selectedActivity.publication_summary.citation_count}</p>
+            <p className="text-xs text-muted-foreground">Provider-ready only: no Scopus/WoS/ORCID/Scholar live integrations.</p>
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="researcher-risk-view">
+          <h2 className="text-lg font-semibold">Researcher Risk</h2>
+          <p className="mt-2 text-sm">Risk Level: {selectedRisk.risk_level}</p>
+          <p className="text-sm">Signals: {selectedRisk.signals.join(', ') || 'none'}</p>
+          <ul className="mt-2 list-disc pl-5 text-sm">
+            {selectedRisk.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
         </section>
       </div>
     </RequirePermission>

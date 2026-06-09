@@ -72,6 +72,11 @@ def test_orchestration_surface(mock_orchestration) -> None:
         "ethics": {"source_module": "research_ethics", "read_only": True, "total": 1, "notes": "ethics"},
         "kpi": {"source_module": "analytics", "read_only": True, "total": 4, "notes": "kpi"},
         "signals": {"source_module": "brain_core", "read_only": True, "total": 4, "notes": "signals"},
+        "researchers": {"source_module": "research_science", "read_only": True, "total": 6, "notes": "researchers"},
+        "researcher_summary": {"source_module": "research_science", "read_only": True, "total": 1, "notes": "researcher_summary"},
+        "researcher_health": {"source_module": "analytics", "read_only": True, "total": 1, "notes": "researcher_health"},
+        "researcher_workload": {"source_module": "research_science", "read_only": True, "total": 6, "notes": "researcher_workload"},
+        "researcher_risk": {"source_module": "brain_core", "read_only": True, "total": 6, "notes": "researcher_risk"},
     }
     resp = client.get(f"{BASE}/orchestration", headers=ADMIN_HEADERS)
     assert resp.status_code == 200
