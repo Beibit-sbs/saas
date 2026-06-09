@@ -1,3 +1,86 @@
+- A-047.2 execution block:
+    - mode: canonical_research_science_reconciliation
+    - purpose: reconcile_existing_research_science_surfaces_without_duplicate_runtime_creation
+    - source_state_before: A-047.1 PASS
+    - source_state_validation: PASS
+    - a0471_exists: YES
+    - trackers_updated_for_a0471: YES
+    - source_next_action_id_confirmed: A-047.2
+    - backend_inventory_complete: YES
+    - frontend_inventory_complete: YES
+    - tests_inventory_complete: YES
+    - duplicate_detection_complete: YES
+    - canonical_reuse_modules_count: 6
+    - bridge_modules_count: 11
+    - true_new_modules_count: 5
+    - gap_researchers_registry: MISSING
+    - gap_laboratories_registry: PARTIAL
+    - gap_research_projects: IMPLEMENTED
+    - gap_citation_tracking: MISSING
+    - gap_scientometrics: PARTIAL
+    - gap_grant_monitoring: IMPLEMENTED
+    - gap_ethics_workflow: IMPLEMENTED
+    - gap_research_kpi_dashboard: PARTIAL
+    - gap_research_brain_signals: PARTIAL
+    - gap_research_risk_engine: PARTIAL
+    - provider_scopus: FUTURE_PROVIDER
+    - provider_wos: FUTURE_PROVIDER
+    - provider_orcid: FUTURE_PROVIDER
+    - provider_google_scholar: FUTURE_PROVIDER
+    - provider_doi_registry: FUTURE_PROVIDER
+    - provider_ministry_research_systems: BRIDGE
+    - current_coverage_percent: 55
+    - readiness_decision: NEEDS_SPEC_WORK
+    - backend_modified: NO
+    - frontend_modified: NO
+    - api_modified: NO
+    - schemas_modified: NO
+    - tests_modified: NO
+    - report_file: A-047.2-CANONICAL_RESEARCH_SCIENCE_RECONCILIATION_REPORT.md
+    - final_verdict: A-047.2 PASS - RESEARCH_SCIENCE_SUITE_RECONCILED_WITHOUT_DUPLICATE_RUNTIME_CREATION
+    - recommended_next_action: A-047.3-SPEC
+    - next_action_id: A-047.3-SPEC
+
+- A-047.1 execution block:
+    - mode: spec_research_brain_frontend_alignment_and_inventory
+    - purpose: evidence_based_inventory_gap_analysis_and_alignment_readiness_classification
+    - source_state_before: A-046.6 PASS
+    - source_state_validation: PASS
+    - vertical_status_inherited: CLOSED
+    - quality_baseline_inherited: CERTIFIED
+    - inventory_frontend_routes_research_science: PRESENT
+    - inventory_frontend_route_research_grants: PRESENT
+    - inventory_frontend_route_research_ethics: PRESENT
+    - inventory_backend_module_research_science: PRESENT
+    - inventory_backend_module_research: PRESENT
+    - inventory_backend_module_research_grants: PRESENT
+    - inventory_backend_module_publication_registry: PRESENT
+    - inventory_backend_api_research_science_prefix: /api/admin/research-science
+    - inventory_backend_api_research_prefix: /api/admin/research
+    - inventory_tests_frontend_unit: PRESENT
+    - inventory_tests_backend_unit_integration: PRESENT
+    - inventory_tests_playwright: PRESENT
+    - requested_research_dashboard_status: IMPLEMENTED
+    - requested_researcher_profile_status: MISSING
+    - requested_publication_registry_status: IMPLEMENTED
+    - requested_grant_registry_status: IMPLEMENTED
+    - requested_research_analytics_status: PARTIAL
+    - requested_laboratory_registry_status: PARTIAL
+    - requested_kpi_scientometrics_status: PARTIAL
+    - implemented_count: 3
+    - partial_count: 3
+    - missing_count: 1
+    - coverage_status: PRESENT
+    - readiness_decision: READY_FOR_ALIGNMENT
+    - backend_modified: NO
+    - frontend_modified: NO
+    - schema_modified: NO
+    - db_modified: NO
+    - report_file: A-047.1-SPEC-RESEARCH_BRAIN_ALIGNMENT_AND_INVENTORY_REPORT.md
+    - final_verdict: A-047.1 PASS - RESEARCH_BRAIN_INVENTORY_AND_ALIGNMENT_BASELINE_ESTABLISHED
+    - recommended_next_action: A-047.2
+    - next_action_id: A-047.2
+
 - A-046.6 execution block:
     - mode: integration_provider_readiness_product_quality_baseline_and_vertical_closure
     - purpose: official_vertical_closure_quality_baseline_certification_and_readiness_confirmation

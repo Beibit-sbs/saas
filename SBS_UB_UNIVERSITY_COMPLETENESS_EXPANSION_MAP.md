@@ -1,5 +1,67 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-047.2 Canonical Research Science Reconciliation Continuity
+
+- A-047.2 executed reconciliation-only analysis for Research / Science Suite with strict no-runtime-change boundaries.
+- Source validation passed:
+	- `A-047.1-SPEC-RESEARCH_BRAIN_ALIGNMENT_AND_INVENTORY_REPORT.md` exists
+	- trackers already contained A-047.1
+	- inherited `next_action_id: A-047.2`
+- Canonical reuse inventory confirms existing core surfaces:
+	- `research_science`
+	- `research`
+	- `research_ethics`
+	- `research_grants`
+	- `research_projects`
+	- `publication_registry`
+- Bridge surfaces already exist for adjacent integration:
+	- analytics and platform KPI
+	- brain_core, ai_guardrails, ai_copilot_ops, prompt_management
+	- thesis, library, accreditation family, document management family, academic integrity
+- Gap classification across 10 research-brain capabilities:
+	- implemented: 3
+	- partial: 5
+	- missing: 2
+	- current_coverage_percent: 55
+- Provider reconciliation:
+	- Scopus/WoS/ORCID/Google Scholar/DOI: FUTURE_PROVIDER
+	- ministry research systems: BRIDGE only
+- Final readiness decision: NEEDS_SPEC_WORK
+- Scope integrity held:
+	- backend/frontend/api/schema/test changes: NO
+- report_file: A-047.2-CANONICAL_RESEARCH_SCIENCE_RECONCILIATION_REPORT.md
+- final_verdict: A-047.2 PASS - RESEARCH_SCIENCE_CANONICAL_RECONCILIATION_COMPLETE
+- next_action_id: A-047.3-SPEC.
+
+## 0. A-047.1 Research Brain Frontend Alignment and Inventory Continuity
+
+- A-047.1 executed spec-only inventory and alignment classification for Research Brain after A-046.6 closure.
+- Source-state continuity validated from A-046.6:
+	- final_verdict: PASS
+	- vertical_status: CLOSED
+	- quality_baseline: CERTIFIED
+- Inventory evidence confirms active foundations are present:
+	- frontend routes for research-science, research-grants, research-ethics
+	- backend modules for `research_science` and `research`
+	- backend API prefixes `/api/admin/research-science` and `/api/admin/research`
+	- unit/backend/e2e test surfaces for research-science and research-adjacent coverage
+- Requested capability status matrix:
+	- implemented: Research Dashboard, Publication Registry, Grant Registry
+	- partial: Research Analytics, Laboratory Registry, KPI and Scientometrics
+	- missing: Researcher Profile
+- Computed totals:
+	- implemented_count: 3
+	- partial_count: 3
+	- missing_count: 1
+- Test coverage classification: PRESENT
+- Readiness decision: READY_FOR_ALIGNMENT
+- Scope integrity held:
+	- implementation_changes: NO
+	- backend/frontend/schema/db changes: NO
+- report_file: A-047.1-SPEC-RESEARCH_BRAIN_ALIGNMENT_AND_INVENTORY_REPORT.md
+- final_verdict: A-047.1 PASS - RESEARCH_BRAIN_ALIGNMENT_INVENTORY_BASELINE_READY
+- next_action_id: A-047.2.
+
 ## 0. A-046.6 Integration Provider Readiness Product Quality Baseline and Vertical Closure Continuity
 
 - A-046.6 executed certification-only closure for Integration Provider Readiness after A-046.3/B1/B2/A-046.4/A-046.5.
