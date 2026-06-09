@@ -1,0 +1,1 @@
+export { ResearchBrainRiskPage as default } from '@/modules/research-brain/page';

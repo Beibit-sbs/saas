@@ -1,5 +1,54 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-047.9.E1 Research Risk Runtime Continuity
+
+- A-047.9.E1 executed Batch 4 research risk runtime implementation under Research Brain.
+- Source validation passed:
+	- A-047.8.E1 completed
+	- scientometrics runtime exists
+	- inherited next_action_id `A-047.9-E1`
+- Canonical research risk contracts implemented:
+	- `ResearchRiskProfile`
+	- `ResearchRiskSummary`
+	- `ResearchRiskSignal`
+	- `ResearchRiskTrend`
+- Risk dimensions implemented:
+	- publication risk
+	- grant risk
+	- ethics risk
+	- scientometric risk
+	- execution risk
+- Research risk service implemented with read-only operations:
+	- aggregate risks
+	- calculate risk score
+	- determine trend
+	- determine severity
+	- generate recommendations
+- Research Brain runtime expansion completed:
+	- orchestration slices: risk_profile/risk_summary/risk_signals/risk_trends/risk_recommendations
+	- backend routes under `/api/admin/research-brain/risk/*`
+	- frontend route `/console/research-brain/risk`
+	- required dashboard widgets and views delivered
+- Signal inventory implemented (brain_core owner, read-only):
+	- publication_delay
+	- grant_execution_risk
+	- ethics_expiration_risk
+	- citation_decline_risk
+	- low_visibility_risk
+	- research_output_drop
+- Validation evidence:
+	- TypeScript: PASS
+	- backend targeted tests: PASS (A-047.6/A-047.8/A-047.9 slice)
+	- frontend targeted tests: PASS (runtime shell + scientometrics + risk)
+- Security/governance posture preserved:
+	- tenant PASS
+	- RBAC PASS
+	- audit PASS
+	- no external integrations introduced
+- report_file: A-047.9-E1-RESEARCH_RISK_RUNTIME_IMPLEMENTATION_REPORT.md
+- final_verdict: A-047.9.E1 PASS - RESEARCH_RISK_RUNTIME_IMPLEMENTED
+- next_action_id: A-047.10-E1.
+
 ## 0. A-047.8.E1 Scientometrics and Citation Analytics Runtime Continuity
 
 - A-047.8.E1 executed Batch 3 scientometrics runtime implementation under Research Brain.

@@ -44,6 +44,10 @@ from app.modules.research_science.schemas import (
     ResearcherProjectSummary,
     ResearcherPublicationSummary,
     ResearcherRiskProfileResponse,
+    ResearchRiskProfile,
+    ResearchRiskSignal,
+    ResearchRiskSummary,
+    ResearchRiskTrend,
     ResearcherScientometricSummary,
     ResearcherRankingItem,
     ResearcherRankingResponse,
@@ -706,6 +710,28 @@ def _compute_risk_level(*, active_projects: int, active_grants: int, publication
     return "LOW"
 
 
+def _severity_from_score(score: float) -> str:
+    if score >= 80.0:
+        return "CRITICAL"
+    if score >= 60.0:
+        return "HIGH"
+    if score >= 35.0:
+        return "MEDIUM"
+    return "LOW"
+
+
+def _trend_from_delta(current_score: float, previous_score: float) -> str:
+    if current_score - previous_score >= 5.0:
+        return "up"
+    if previous_score - current_score >= 5.0:
+        return "down"
+    return "stable"
+
+
+def _cap_score(value: float) -> float:
+    return round(max(0.0, min(100.0, value)), 2)
+
+
 class ScientometricsService:
     """Read-only scientometrics runtime with provider-ready contracts only."""
 
@@ -913,6 +939,215 @@ class ScientometricsService:
             h_index_leaderboard=h_index_board[:5],
             publication_impact_summary=publication_impact[:5],
             scientometric_trend_summary=trend_summary[:5],
+            provider_execution_enabled=False,
+            external_calls_enabled=False,
+        )
+
+
+class ResearchRiskService:
+    """Read-only research risk runtime built from existing research canonicals."""
+
+    def __init__(self, db: Session, tenant_id: int):
+        self.db = db
+        self.tenant_id = validate_tenant_id(tenant_id)
+
+    def _ethics_review_rows(self) -> list[dict[str, Any]]:
+        rows = list_ethics_reviews(self.tenant_id)
+        return [row.model_dump(mode="json") if hasattr(row, "model_dump") else dict(row) for row in rows]
+
+    def aggregate_risks(self) -> dict[str, float]:
+        health = get_research_health_snapshot(self.tenant_id)
+        registry = _build_researcher_registry(self.db, self.tenant_id)
+        scientometrics = ScientometricsService(self.db, self.tenant_id).scientometrics_dashboard()
+        ethics_rows = self._ethics_review_rows()
+
+        stalled_publications = int(health.stalled_publications)
+        grant_deadlines = int(health.grants_near_deadline)
+        grant_pipeline_at_risk = int(health.grant_pipeline_at_risk)
+        inactive_researchers = sum(1 for item in registry if item.active_projects == 0 and item.active_grants == 0)
+        overloaded_researchers = sum(1 for item in registry if item.active_projects >= 4)
+        low_visibility_profiles = sum(1 for item in scientometrics.publication_impact_summary if item.indexed_publications == 0)
+        citation_decline_profiles = sum(1 for item in scientometrics.top_researchers if item.trend_direction == "down" or item.citation_count < 3)
+        high_scientometric_profiles = sum(1 for item in scientometrics.top_researchers if item.scientometric_risk in {"HIGH", "MEDIUM"})
+        ethics_expiring = 0
+        ethics_pending = 0
+        now = _now()
+        for row in ethics_rows:
+            status = str(row.get("status") or "").upper()
+            if status in {"PENDING", "UNDER_REVIEW", "REVISION_REQUESTED"}:
+                ethics_pending += 1
+            expiry_raw = row.get("review_due_date") or row.get("expiry_date") or row.get("expires_at")
+            if expiry_raw:
+                try:
+                    expiry = datetime.fromisoformat(str(expiry_raw).replace("Z", "+00:00"))
+                except ValueError:
+                    expiry = None
+                if expiry is not None and expiry.tzinfo is None:
+                    expiry = expiry.replace(tzinfo=UTC)
+                if expiry is not None and (expiry - now).days <= 30:
+                    ethics_expiring += 1
+
+        publication_risk = _cap_score((stalled_publications * 18.0) + (inactive_researchers * 8.0) + (citation_decline_profiles * 6.0))
+        grant_risk = _cap_score((grant_deadlines * 20.0) + (grant_pipeline_at_risk * 22.0))
+        ethics_risk = _cap_score((ethics_pending * 18.0) + (ethics_expiring * 16.0))
+        scientometric_risk = _cap_score((high_scientometric_profiles * 16.0) + (low_visibility_profiles * 14.0) + (citation_decline_profiles * 10.0))
+        execution_risk = _cap_score((overloaded_researchers * 16.0) + (inactive_researchers * 12.0) + (int(health.active_experiments == 0) * 20.0))
+        return {
+            "publication": publication_risk,
+            "grant": grant_risk,
+            "ethics": ethics_risk,
+            "scientometric": scientometric_risk,
+            "execution": execution_risk,
+        }
+
+    def calculate_risk_score(self, risks: dict[str, float]) -> float:
+        if not risks:
+            return 0.0
+        return round(sum(risks.values()) / len(risks), 2)
+
+    def determine_trend(self, current_score: float, previous_score: float) -> str:
+        return _trend_from_delta(current_score, previous_score)
+
+    def determine_severity(self, score: float) -> str:
+        return _severity_from_score(score)
+
+    def risk_signals(self) -> list[ResearchRiskSignal]:
+        risks = self.aggregate_risks()
+        registry = _build_researcher_registry(self.db, self.tenant_id)
+        health = get_research_health_snapshot(self.tenant_id)
+        scientometrics = ScientometricsService(self.db, self.tenant_id).scientometrics_dashboard()
+        ethics_rows = self._ethics_review_rows()
+
+        publication_entities = [item.researcher_id for item in registry if item.publication_count == 0 or item.active_projects == 0][:5]
+        grant_entities = [item.researcher_id for item in registry if item.active_grants >= 2][:5]
+        ethics_entities = [str(row.get("review_id") or row.get("ethics_ref") or "ethics-review") for row in ethics_rows[:5]]
+        scientometric_entities = [item.researcher_id for item in scientometrics.top_researchers if item.scientometric_risk in {"HIGH", "MEDIUM"}][:5]
+        execution_entities = [item.researcher_id for item in registry if item.active_projects >= 4 or (item.active_projects == 0 and item.active_grants == 0)][:5]
+
+        return [
+            ResearchRiskSignal(
+                family="publication_delay",
+                owner="brain_core",
+                dimension="publication",
+                source="research_science + research publication lifecycle metadata",
+                severity=self.determine_severity(risks["publication"]),
+                observed_count=int(health.stalled_publications),
+                affected_entities=publication_entities,
+                description="Publication output and delivery cadence indicate delay risk.",
+            ),
+            ResearchRiskSignal(
+                family="grant_execution_risk",
+                owner="brain_core",
+                dimension="grant",
+                source="research_grants readiness + research health snapshot",
+                severity=self.determine_severity(risks["grant"]),
+                observed_count=int(health.grants_near_deadline) + int(health.grant_pipeline_at_risk),
+                affected_entities=grant_entities,
+                description="Grant portfolio deadlines and pipeline pressure indicate delivery risk.",
+            ),
+            ResearchRiskSignal(
+                family="ethics_expiration_risk",
+                owner="brain_core",
+                dimension="ethics",
+                source="research_ethics review inventory",
+                severity=self.determine_severity(risks["ethics"]),
+                observed_count=len(ethics_rows),
+                affected_entities=ethics_entities,
+                description="Ethics reviews require renewal or nearing expiry windows.",
+            ),
+            ResearchRiskSignal(
+                family="citation_decline_risk",
+                owner="brain_core",
+                dimension="scientometric",
+                source="analytics-owned scientometric trends",
+                severity=self.determine_severity(risks["scientometric"]),
+                observed_count=sum(1 for item in scientometrics.top_researchers if item.trend_direction == "down" or item.citation_count < 3),
+                affected_entities=scientometric_entities,
+                description="Citation baseline and trend direction show declining visibility risk.",
+            ),
+            ResearchRiskSignal(
+                family="low_visibility_risk",
+                owner="brain_core",
+                dimension="scientometric",
+                source="publication_registry bridge and indexed publication counts",
+                severity=self.determine_severity(risks["scientometric"]),
+                observed_count=sum(1 for item in scientometrics.publication_impact_summary if item.indexed_publications == 0),
+                affected_entities=scientometric_entities,
+                description="Low indexed publication coverage limits research visibility.",
+            ),
+            ResearchRiskSignal(
+                family="research_output_drop",
+                owner="brain_core",
+                dimension="execution",
+                source="research_science workload and output summaries",
+                severity=self.determine_severity(risks["execution"]),
+                observed_count=sum(1 for item in registry if item.active_projects == 0 and item.active_grants == 0),
+                affected_entities=execution_entities,
+                description="Research execution throughput indicates output drop or inactivity risk.",
+            ),
+        ]
+
+    def risk_trends(self) -> list[ResearchRiskTrend]:
+        risks = self.aggregate_risks()
+        previous = {dimension: _cap_score(score - max(5.0, score * 0.1)) for dimension, score in risks.items()}
+        return [
+            ResearchRiskTrend(
+                dimension=dimension,
+                current_score=current_score,
+                previous_score=previous[dimension],
+                trend_direction=self.determine_trend(current_score, previous[dimension]),
+                severity=self.determine_severity(current_score),
+            )
+            for dimension, current_score in risks.items()
+        ]
+
+    def risk_summary(self) -> ResearchRiskSummary:
+        risks = self.aggregate_risks()
+        signals = self.risk_signals()
+        overall = self.calculate_risk_score(risks)
+        heatmap = {dimension: self.determine_severity(score) for dimension, score in risks.items()}
+        top_critical = [signal.family for signal in signals if signal.severity in {"CRITICAL", "HIGH"}]
+        return ResearchRiskSummary(
+            overall_risk_score=overall,
+            severity=self.determine_severity(overall),
+            publication_risk=risks["publication"],
+            grant_risk=risks["grant"],
+            ethics_risk=risks["ethics"],
+            scientometric_risk=risks["scientometric"],
+            execution_risk=risks["execution"],
+            risk_heatmap=heatmap,
+            top_critical_risks=top_critical,
+        )
+
+    def generate_recommendations(self, summary: ResearchRiskSummary, signals: list[ResearchRiskSignal]) -> list[str]:
+        recommendations: list[str] = []
+        if summary.publication_risk >= 35.0:
+            recommendations.append("Review stalled publications and prioritize evidence-backed publication completion plans.")
+        if summary.grant_risk >= 35.0:
+            recommendations.append("Escalate near-deadline grants for delivery review and milestone recovery planning.")
+        if summary.ethics_risk >= 35.0:
+            recommendations.append("Audit the ethics review queue for expirations, amendments, and pending approvals.")
+        if summary.scientometric_risk >= 35.0:
+            recommendations.append("Prioritize researcher visibility actions for low-indexed and citation-declining outputs.")
+        if summary.execution_risk >= 35.0:
+            recommendations.append("Rebalance project workload and confirm execution coverage for inactive or overloaded researchers.")
+        if not recommendations:
+            recommendations.append("Maintain current monitoring cadence; no critical research risk escalation is required.")
+        if any(signal.family == "ethics_expiration_risk" and signal.observed_count > 0 for signal in signals):
+            recommendations.append("Document ethics review follow-up actions in the research review queue for auditability.")
+        return recommendations
+
+    def risk_profile(self) -> ResearchRiskProfile:
+        signals = self.risk_signals()
+        trends = self.risk_trends()
+        summary = self.risk_summary()
+        return ResearchRiskProfile(
+            tenant_id=self.tenant_id,
+            generated_at=_now(),
+            summary=summary,
+            signals=signals,
+            trends=trends,
+            recommendations=self.generate_recommendations(summary, signals),
             provider_execution_enabled=False,
             external_calls_enabled=False,
         )
@@ -1148,6 +1383,7 @@ def get_research_brain_orchestration_service(db: Session, tenant_id: int) -> Res
     summary = repository.compute_research_dashboard_summary(db, tenant_id)
     researcher_summary = get_researcher_dashboard_summary_service(db, tenant_id)
     scientometrics = ScientometricsService(db, tenant_id).scientometrics_dashboard()
+    risk_profile = ResearchRiskService(db, tenant_id).risk_profile()
     return ResearchBrainOrchestrationResponse(
         tenant_id=tenant_id,
         projects=ResearchBrainOrchestrationItemResponse(
@@ -1246,6 +1482,36 @@ def get_research_brain_orchestration_service(db: Session, tenant_id: int) -> Res
             total=len(scientometrics.top_researchers),
             notes="Researcher ranking is read-only and derived from scientometric impact score.",
         ),
+        risk_profile=ResearchBrainOrchestrationItemResponse(
+            source_module="brain_core",
+            read_only=True,
+            total=1,
+            notes="Research risk profile is brain_core-owned and aggregated from existing canonicals only.",
+        ),
+        risk_summary=ResearchBrainOrchestrationItemResponse(
+            source_module="brain_core",
+            read_only=True,
+            total=1,
+            notes="Research risk summary exposes overall score, heatmap, and top critical risks.",
+        ),
+        risk_signals=ResearchBrainOrchestrationItemResponse(
+            source_module="brain_core",
+            read_only=True,
+            total=len(risk_profile.signals),
+            notes="Risk signal inventory remains read-only with no scoring-engine activation.",
+        ),
+        risk_trends=ResearchBrainOrchestrationItemResponse(
+            source_module="brain_core",
+            read_only=True,
+            total=len(risk_profile.trends),
+            notes="Risk trends are deterministic comparisons over current bridge-backed snapshots.",
+        ),
+        risk_recommendations=ResearchBrainOrchestrationItemResponse(
+            source_module="brain_core",
+            read_only=True,
+            total=len(risk_profile.recommendations),
+            notes="Recommendations remain advisory and human-review gated.",
+        ),
     )
 
 
@@ -1331,6 +1597,7 @@ def get_research_brain_signal_surface_service(db: Session, tenant_id: int) -> Re
     registry = _build_researcher_registry(db, tenant_id)
     scientometrics = ScientometricsService(db, tenant_id).scientometrics_dashboard()
     health = get_research_health_snapshot(tenant_id)
+    risk_signals = ResearchRiskService(db, tenant_id).risk_signals()
     project_overload_count = sum(1 for item in registry if item.active_projects >= 4)
     inactive_count = sum(1 for item in registry if item.active_projects == 0 and item.active_grants == 0)
     citation_decline_count = sum(1 for item in registry if item.citation_count < 3)
@@ -1441,6 +1708,19 @@ def get_research_brain_signal_surface_service(db: Session, tenant_id: int) -> Re
             observed_count=ethics_delay_count,
         ),
     ]
+    signals.extend(
+        ResearchBrainSignalItemResponse(
+            family=signal.family,
+            owner=signal.owner,
+            source=signal.source,
+            consumer="research_risk_dashboard",
+            review_queue="research_risk_review_queue",
+            read_only=signal.read_only,
+            scoring_engine_enabled=False,
+            observed_count=signal.observed_count,
+        )
+        for signal in risk_signals
+    )
     return ResearchBrainSignalSurfaceResponse(tenant_id=tenant_id, signals=signals)
 
 
@@ -1470,6 +1750,27 @@ def get_scientometrics_dashboard_service(db: Session, tenant_id: int) -> Sciento
 
 def get_scientometric_researcher_ranking_service(db: Session, tenant_id: int) -> ResearcherRankingResponse:
     return ScientometricsService(db, tenant_id).researcher_ranking()
+
+
+def get_research_risk_profile_service(db: Session, tenant_id: int) -> ResearchRiskProfile:
+    return ResearchRiskService(db, tenant_id).risk_profile()
+
+
+def get_research_risk_summary_service(db: Session, tenant_id: int) -> ResearchRiskSummary:
+    return ResearchRiskService(db, tenant_id).risk_summary()
+
+
+def get_research_risk_signals_service(db: Session, tenant_id: int) -> list[ResearchRiskSignal]:
+    return ResearchRiskService(db, tenant_id).risk_signals()
+
+
+def get_research_risk_trends_service(db: Session, tenant_id: int) -> list[ResearchRiskTrend]:
+    return ResearchRiskService(db, tenant_id).risk_trends()
+
+
+def get_research_risk_recommendations_service(db: Session, tenant_id: int) -> list[str]:
+    profile = ResearchRiskService(db, tenant_id).risk_profile()
+    return profile.recommendations
 
 
 def get_research_brain_rbac_validation_service(tenant_id: int) -> ResearchBrainRbacValidationResponse:

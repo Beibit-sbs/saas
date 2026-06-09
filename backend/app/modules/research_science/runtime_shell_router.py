@@ -18,6 +18,10 @@ from app.modules.research_science.schemas import (
     ResearcherListResponse,
     ResearcherRankingResponse,
     ResearcherRiskProfileResponse,
+    ResearchRiskProfile,
+    ResearchRiskSignal,
+    ResearchRiskSummary,
+    ResearchRiskTrend,
     ResearcherScientometricProfile,
     Researcher,
     ResearchBrainContextResponse,
@@ -222,3 +226,63 @@ def get_researcher_scientometric_trends(
     db: _DB = None,
 ) -> list[ScientometricTrend]:
     return service.get_researcher_scientometric_trends_service(db, tenant, researcher_id)
+
+
+@router.get("/risk/dashboard", response_model=ResearchRiskProfile)
+def get_research_risk_dashboard(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant: _Tenant,
+    db: _DB,
+) -> ResearchRiskProfile:
+    return service.get_research_risk_profile_service(db, tenant)
+
+
+@router.get("/risk/profile", response_model=ResearchRiskProfile)
+def get_research_risk_profile(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant: _Tenant,
+    db: _DB,
+) -> ResearchRiskProfile:
+    return service.get_research_risk_profile_service(db, tenant)
+
+
+@router.get("/risk/summary", response_model=ResearchRiskSummary)
+def get_research_risk_summary(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant: _Tenant,
+    db: _DB,
+) -> ResearchRiskSummary:
+    return service.get_research_risk_summary_service(db, tenant)
+
+
+@router.get("/risk/signals", response_model=list[ResearchRiskSignal])
+def get_research_risk_signals(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant: _Tenant,
+    db: _DB,
+) -> list[ResearchRiskSignal]:
+    return service.get_research_risk_signals_service(db, tenant)
+
+
+@router.get("/risk/trends", response_model=list[ResearchRiskTrend])
+def get_research_risk_trends(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant: _Tenant,
+    db: _DB,
+) -> list[ResearchRiskTrend]:
+    return service.get_research_risk_trends_service(db, tenant)
+
+
+@router.get("/risk/recommendations", response_model=list[str])
+def get_research_risk_recommendations(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant: _Tenant,
+    db: _DB,
+) -> list[str]:
+    return service.get_research_risk_recommendations_service(db, tenant)

@@ -479,6 +479,11 @@ class ResearchBrainOrchestrationResponse(BaseModel):
     impact_analytics: ResearchBrainOrchestrationItemResponse
     publication_impact: ResearchBrainOrchestrationItemResponse
     researcher_ranking: ResearchBrainOrchestrationItemResponse
+    risk_profile: ResearchBrainOrchestrationItemResponse
+    risk_summary: ResearchBrainOrchestrationItemResponse
+    risk_signals: ResearchBrainOrchestrationItemResponse
+    risk_trends: ResearchBrainOrchestrationItemResponse
+    risk_recommendations: ResearchBrainOrchestrationItemResponse
 
 
 class ResearchBrainContextSourceResponse(BaseModel):
@@ -699,3 +704,46 @@ class ResearcherRankingItem(BaseModel):
 class ResearcherRankingResponse(BaseModel):
     tenant_id: int
     items: list[ResearcherRankingItem] = Field(default_factory=list)
+
+
+class ResearchRiskSignal(BaseModel):
+    family: str
+    owner: str
+    dimension: Literal["publication", "grant", "ethics", "scientometric", "execution"]
+    source: str
+    severity: str = "LOW"
+    observed_count: int = 0
+    affected_entities: list[str] = Field(default_factory=list)
+    description: str
+    read_only: bool = True
+
+
+class ResearchRiskTrend(BaseModel):
+    dimension: Literal["publication", "grant", "ethics", "scientometric", "execution"]
+    current_score: float = 0.0
+    previous_score: float = 0.0
+    trend_direction: str = "stable"
+    severity: str = "LOW"
+
+
+class ResearchRiskSummary(BaseModel):
+    overall_risk_score: float = 0.0
+    severity: str = "LOW"
+    publication_risk: float = 0.0
+    grant_risk: float = 0.0
+    ethics_risk: float = 0.0
+    scientometric_risk: float = 0.0
+    execution_risk: float = 0.0
+    risk_heatmap: dict[str, str] = Field(default_factory=dict)
+    top_critical_risks: list[str] = Field(default_factory=list)
+
+
+class ResearchRiskProfile(BaseModel):
+    tenant_id: int
+    generated_at: datetime | None = None
+    summary: ResearchRiskSummary
+    signals: list[ResearchRiskSignal] = Field(default_factory=list)
+    trends: list[ResearchRiskTrend] = Field(default_factory=list)
+    recommendations: list[str] = Field(default_factory=list)
+    provider_execution_enabled: bool = False
+    external_calls_enabled: bool = False

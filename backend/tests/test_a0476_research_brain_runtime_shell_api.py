@@ -82,6 +82,11 @@ def test_orchestration_surface(mock_orchestration) -> None:
         "impact_analytics": {"source_module": "analytics", "read_only": True, "total": 5, "notes": "impact_analytics"},
         "publication_impact": {"source_module": "publication_registry", "read_only": True, "total": 5, "notes": "publication_impact"},
         "researcher_ranking": {"source_module": "analytics", "read_only": True, "total": 5, "notes": "researcher_ranking"},
+        "risk_profile": {"source_module": "brain_core", "read_only": True, "total": 1, "notes": "risk_profile"},
+        "risk_summary": {"source_module": "brain_core", "read_only": True, "total": 1, "notes": "risk_summary"},
+        "risk_signals": {"source_module": "brain_core", "read_only": True, "total": 6, "notes": "risk_signals"},
+        "risk_trends": {"source_module": "brain_core", "read_only": True, "total": 5, "notes": "risk_trends"},
+        "risk_recommendations": {"source_module": "brain_core", "read_only": True, "total": 3, "notes": "risk_recommendations"},
     }
     resp = client.get(f"{BASE}/orchestration", headers=ADMIN_HEADERS)
     assert resp.status_code == 200

@@ -114,6 +114,7 @@ export function ResearchBrainRuntimeShellPage() {
             <Link href="/console/research-science/dashboard" className="rounded-full border px-3 py-1">Research Science Dashboard</Link>
             <Link href="/console/research-brain/researchers" className="rounded-full border px-3 py-1">Researcher Registry</Link>
             <Link href="/console/research-brain/scientometrics" className="rounded-full border px-3 py-1">Scientometrics</Link>
+            <Link href="/console/research-brain/risk" className="rounded-full border px-3 py-1">Research Risk</Link>
             <Link href="/console/research-grants" className="rounded-full border px-3 py-1">Research Grants</Link>
             <Link href="/console/research-ethics" className="rounded-full border px-3 py-1">Research Ethics</Link>
           </div>
@@ -455,6 +456,136 @@ export function ResearchBrainScientometricsPage() {
           <ul className="mt-2 space-y-1 text-sm">
             {trends.data.map((trend) => (
               <li key={trend.period}>{trend.period}: citations {trend.citation_count}, h-index {trend.h_index}, direction {trend.trend_direction}</li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </RequirePermission>
+  );
+}
+
+export function ResearchBrainRiskPage() {
+  const dashboard = useQuery({ queryKey: ['research-brain:risk-dashboard'], queryFn: researchBrainApi.getResearchRiskDashboard, staleTime: 30000 });
+  const profile = useQuery({ queryKey: ['research-brain:risk-profile'], queryFn: researchBrainApi.getResearchRiskProfile, staleTime: 30000 });
+  const summary = useQuery({ queryKey: ['research-brain:risk-summary'], queryFn: researchBrainApi.getResearchRiskSummary, staleTime: 30000 });
+  const signals = useQuery({ queryKey: ['research-brain:risk-signals'], queryFn: researchBrainApi.getResearchRiskSignals, staleTime: 30000 });
+  const trends = useQuery({ queryKey: ['research-brain:risk-trends'], queryFn: researchBrainApi.getResearchRiskTrends, staleTime: 30000 });
+  const recommendations = useQuery({ queryKey: ['research-brain:risk-recommendations'], queryFn: researchBrainApi.getResearchRiskRecommendations, staleTime: 30000 });
+
+  if (dashboard.isPending || profile.isPending || summary.isPending || signals.isPending || trends.isPending || recommendations.isPending) {
+    return <LoadingState title="Loading Research Risk runtime" />;
+  }
+
+  if (dashboard.error || profile.error || summary.error || signals.error || trends.error || recommendations.error) {
+    return (
+      <ErrorState
+        message="Failed to load Research Risk runtime."
+        error={dashboard.error ?? profile.error ?? summary.error ?? signals.error ?? trends.error ?? recommendations.error}
+      />
+    );
+  }
+
+  if (!dashboard.data || !profile.data || !summary.data || !signals.data || !trends.data || !recommendations.data) {
+    return <ErrorState message="Research Risk runtime is unavailable." />;
+  }
+
+  const riskSummary = summary.data;
+
+  return (
+    <RequirePermission permission={PERMISSIONS.RESEARCH_SCIENCE_DASHBOARD_READ}>
+      <div className="space-y-6" data-testid="research-brain-risk-page">
+        <header className="space-y-2">
+          <h1 className="text-2xl font-semibold">Research Risk Runtime</h1>
+          <p className="text-sm text-muted-foreground">
+            Brain-core-owned research risk monitoring over publication, grant, ethics, scientometric, and execution dimensions. Read-only and human-review gated.
+          </p>
+        </header>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Overall Risk Score" value={riskSummary.overall_risk_score} helper={`Severity ${riskSummary.severity}`} />
+          <MetricCard label="Publication Risk" value={riskSummary.publication_risk} helper={riskSummary.risk_heatmap.publication} />
+          <MetricCard label="Grant Risk" value={riskSummary.grant_risk} helper={riskSummary.risk_heatmap.grant} />
+          <MetricCard label="Ethics Risk" value={riskSummary.ethics_risk} helper={riskSummary.risk_heatmap.ethics} />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="rounded-lg border p-4" data-testid="research-risk-overall-score-widget">
+            <h2 className="text-lg font-semibold">Overall Risk Score</h2>
+            <p className="mt-2 text-3xl font-semibold">{riskSummary.overall_risk_score}</p>
+            <p className="text-sm text-muted-foreground">Current severity: {riskSummary.severity}</p>
+          </div>
+          <div className="rounded-lg border p-4" data-testid="research-risk-heatmap-widget">
+            <h2 className="text-lg font-semibold">Risk Heatmap</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              {Object.entries(riskSummary.risk_heatmap).map(([dimension, severity]) => (
+                <li key={dimension}>{dimension}: {severity}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-lg border p-4" data-testid="top-critical-risks-widget">
+            <h2 className="text-lg font-semibold">Top Critical Risks</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              {riskSummary.top_critical_risks.map((risk) => (
+                <li key={risk}>{risk}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="rounded-lg border p-4" data-testid="publication-risk-widget">
+            <h2 className="text-lg font-semibold">Publication Risk</h2>
+            <p className="mt-2 text-sm">Score: {riskSummary.publication_risk}</p>
+          </div>
+          <div className="rounded-lg border p-4" data-testid="grant-risk-widget">
+            <h2 className="text-lg font-semibold">Grant Risk</h2>
+            <p className="mt-2 text-sm">Score: {riskSummary.grant_risk}</p>
+          </div>
+          <div className="rounded-lg border p-4" data-testid="ethics-risk-widget">
+            <h2 className="text-lg font-semibold">Ethics Risk</h2>
+            <p className="mt-2 text-sm">Score: {riskSummary.ethics_risk}</p>
+          </div>
+          <div className="rounded-lg border p-4" data-testid="scientometric-risk-widget">
+            <h2 className="text-lg font-semibold">Scientometric Risk</h2>
+            <p className="mt-2 text-sm">Score: {riskSummary.scientometric_risk}</p>
+          </div>
+        </div>
+
+        <section className="rounded-lg border p-4" data-testid="risk-profile-view">
+          <h2 className="text-lg font-semibold">Risk Profile</h2>
+          <p className="mt-2 text-sm">Generated at: {profile.data.generated_at ?? 'n/a'}</p>
+          <p className="text-sm">Execution risk: {profile.data.summary.execution_risk}</p>
+          <p className="text-sm">Provider execution enabled: {String(profile.data.provider_execution_enabled)}</p>
+          <p className="text-sm">External calls enabled: {String(profile.data.external_calls_enabled)}</p>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="risk-signal-inventory-view">
+          <h2 className="text-lg font-semibold">Signal Inventory</h2>
+          <ul className="mt-2 space-y-2 text-sm">
+            {signals.data.map((signal) => (
+              <li key={signal.family}>
+                <span className="font-medium">{signal.family}</span>: {signal.severity} ({signal.dimension}) - {signal.description}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="risk-recommendations-view">
+          <h2 className="text-lg font-semibold">Risk Recommendations</h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {recommendations.data.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="risk-trend-analysis-view">
+          <h2 className="text-lg font-semibold">Trend Analysis</h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {trends.data.map((trend) => (
+              <li key={trend.dimension}>
+                {trend.dimension}: {trend.previous_score} {'->'} {trend.current_score} ({trend.trend_direction})
+              </li>
             ))}
           </ul>
         </section>

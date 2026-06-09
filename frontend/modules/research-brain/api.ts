@@ -2,6 +2,10 @@ import { apiGet } from '@/shared/api/client';
 import type {
   CitationAnalyticsSummary,
   PublicationImpactProfile,
+  ResearchRiskProfile,
+  ResearchRiskSignal,
+  ResearchRiskSummary,
+  ResearchRiskTrend,
   ResearcherRankingResponse,
   ResearcherScientometricProfile,
   Researcher,
@@ -47,4 +51,10 @@ export const researchBrainApi = {
     apiGet<PublicationImpactProfile>(`${BASE}/scientometrics/${encodeURIComponent(researcherId)}/publication-impact`),
   getResearcherScientometricTrends: (researcherId: string) =>
     apiGet<ScientometricTrend[]>(`${BASE}/scientometrics/${encodeURIComponent(researcherId)}/trends`),
+  getResearchRiskDashboard: () => apiGet<ResearchRiskProfile>(`${BASE}/risk/dashboard`),
+  getResearchRiskProfile: () => apiGet<ResearchRiskProfile>(`${BASE}/risk/profile`),
+  getResearchRiskSummary: () => apiGet<ResearchRiskSummary>(`${BASE}/risk/summary`),
+  getResearchRiskSignals: () => apiGet<ResearchRiskSignal[]>(`${BASE}/risk/signals`),
+  getResearchRiskTrends: () => apiGet<ResearchRiskTrend[]>(`${BASE}/risk/trends`),
+  getResearchRiskRecommendations: () => apiGet<string[]>(`${BASE}/risk/recommendations`),
 };

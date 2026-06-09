@@ -34,6 +34,11 @@ export interface ResearchBrainOrchestrationResponse {
   impact_analytics: ResearchBrainOrchestrationItem;
   publication_impact: ResearchBrainOrchestrationItem;
   researcher_ranking: ResearchBrainOrchestrationItem;
+  risk_profile: ResearchBrainOrchestrationItem;
+  risk_summary: ResearchBrainOrchestrationItem;
+  risk_signals: ResearchBrainOrchestrationItem;
+  risk_trends: ResearchBrainOrchestrationItem;
+  risk_recommendations: ResearchBrainOrchestrationItem;
 }
 
 export interface ResearchBrainContextSource {
@@ -235,4 +240,49 @@ export interface ResearcherRankingItem {
 export interface ResearcherRankingResponse {
   tenant_id: number;
   items: ResearcherRankingItem[];
+}
+
+export type ResearchRiskDimension = 'publication' | 'grant' | 'ethics' | 'scientometric' | 'execution';
+
+export interface ResearchRiskSignal {
+  family: string;
+  owner: string;
+  dimension: ResearchRiskDimension;
+  source: string;
+  severity: string;
+  observed_count: number;
+  affected_entities: string[];
+  description: string;
+  read_only: boolean;
+}
+
+export interface ResearchRiskTrend {
+  dimension: ResearchRiskDimension;
+  current_score: number;
+  previous_score: number;
+  trend_direction: string;
+  severity: string;
+}
+
+export interface ResearchRiskSummary {
+  overall_risk_score: number;
+  severity: string;
+  publication_risk: number;
+  grant_risk: number;
+  ethics_risk: number;
+  scientometric_risk: number;
+  execution_risk: number;
+  risk_heatmap: Record<string, string>;
+  top_critical_risks: string[];
+}
+
+export interface ResearchRiskProfile {
+  tenant_id: number;
+  generated_at: string | null;
+  summary: ResearchRiskSummary;
+  signals: ResearchRiskSignal[];
+  trends: ResearchRiskTrend[];
+  recommendations: string[];
+  provider_execution_enabled: boolean;
+  external_calls_enabled: boolean;
 }
