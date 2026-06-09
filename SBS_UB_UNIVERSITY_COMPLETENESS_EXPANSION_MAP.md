@@ -1,5 +1,28 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-047.5 Research Brain Runtime Implementation Plan Continuity
+
+- A-047.5 executed planning-only runtime implementation decomposition for Research Brain.
+- Source validation passed:
+	- `A-047.4-B2` exists
+	- runtime readiness confirmed as `READY_FOR_RUNTIME_WITH_BRIDGES`
+	- inherited `next_action_id: A-047.5-SPEC`
+- Planning outputs completed:
+	- runtime decomposition PASS (BATCH_1..BATCH_5)
+	- bridge mapping PASS
+	- researcher registry spec PASS
+	- scientometrics readiness matrix PASS
+	- risk engine signal-family plan PASS
+	- dashboard spec PASS
+	- dependency ordering PASS
+	- batch risk review PASS
+- Runtime disposition advanced to `READY_FOR_RUNTIME_IMPLEMENTATION`.
+- Scope integrity held:
+	- backend/frontend/database/tests changes: NO
+- report_file: A-047.5-SPEC-RESEARCH_BRAIN_RUNTIME_IMPLEMENTATION_PLAN_REPORT.md
+- final_verdict: A-047.5 PASS - IMPLEMENTATION_PLANNING_COMPLETE_RUNTIME_READY_FOR_EXECUTION
+- next_action_id: A-047.5-B1.
+
 ## 0. A-047.4.B2 Research Brain Contract Normalization Continuity
 
 - A-047.4.B2 executed contract-only normalization over the B1 blocker set without runtime changes.
