@@ -1,3 +1,43 @@
+- A-046.3.B1 execution block:
+    - mode: docker_validation_and_environment_confirmation
+    - purpose: convert_a0463_partial_validation_into_docker_authoritative_status
+    - source_state_before: A-046.3-SPEC PARTIAL
+    - source_state_validation: PASS
+    - commit_67ff0f7_exists: YES
+    - source_of_truth_files_present: YES
+    - typescript_command: cd_/home/sbs/AI/infra_&&_docker_compose_--env-file_.env_run_--rm_frontend-tests_sh_-lc_npm_run_type-check
+    - typescript_container_service: frontend-tests
+    - typescript_exit_code: 2
+    - typescript_total_errors: 11
+    - typescript_a0463_regression_errors: 0
+    - typescript_pre_existing_errors: 11
+    - typescript_environment_errors: 0
+    - vitest_command: cd_/home/sbs/AI/infra_&&_docker_compose_--env-file_.env_run_--rm_frontend-tests_sh_-lc_npm_run_test:frontend_targeted
+    - vitest_exit_code: 0
+    - vitest_passed: 3
+    - vitest_failed: 0
+    - playwright_command: cd_/home/sbs/AI/infra_&&_docker_compose_--env-file_.env_run_--rm_-e_E2E_BASE_URL=https://nginx_frontend-tests_playwright_targeted
+    - playwright_exit_code: 0
+    - playwright_passed: 2
+    - playwright_failed: 0
+    - playwright_skipped: 0
+    - failure_attribution_regression: 0
+    - failure_attribution_pre_existing: 11
+    - failure_attribution_environment: 0
+    - failure_attribution_harness_final: 0
+    - failure_attribution_external_dependency: 0
+    - harness_transient_failures_resolved: 2
+    - tenant: PASS
+    - rbac: PASS
+    - anti_fake: PASS
+    - backend_modified: NO
+    - frontend_feature_modified: NO
+    - schema_or_db_modified: NO
+    - report_file: A-046.3.B1-DOCKER_VALIDATION_AND_ENVIRONMENT_CONFIRMATION_REPORT.md
+    - final_verdict: A-046.3.B1 PARTIAL - DOCKER_VALIDATION_GREEN_EXCEPT_PRE_EXISTING_TYPESCRIPT
+    - recommended_next_action: A-046.3.B2
+    - next_action_id: A-046.3.B2
+
 - A-046.COV-R20 execution block:
     - mode: authoritative_repository_coverage_rebaseline_using_strategy_e
     - purpose: produce_first_new_trusted_repository_wide_baseline_after_r19r1_recovery

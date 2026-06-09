@@ -1,5 +1,31 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-046.3.B1 Docker Validation and Environment Confirmation Continuity
+
+- A-046.3.B1 executed validation-only closure for A-046.3 via docker-authoritative frontend harness.
+- Source-state confirmation passed:
+	- commit `67ff0f7` exists
+	- A-046.3 source-of-truth report and both trackers exist
+- Docker validation outcomes:
+	- TypeScript: FAIL (`RC=2`) with `11` errors, all pre-existing in `frontend/e2e/smoke/i18n-runtime.spec.ts`
+	- Vitest targeted: PASS (`3 passed`, `0 failed`)
+	- Playwright targeted: PASS (`2 passed`, `0 failed`, `0 skipped`) with `E2E_BASE_URL=https://nginx`
+- Failure attribution (final authoritative runs):
+	- A-046.3 regression: `0`
+	- pre-existing: `11`
+	- environment: `0`
+	- harness: `0`
+	- external dependency: `0`
+- Integrity checks:
+	- tenant: PASS
+	- RBAC: PASS
+	- anti-fake: PASS
+	- backend/schema/db changes: NO
+	- frontend feature expansion: NO
+- report_file: A-046.3.B1-DOCKER_VALIDATION_AND_ENVIRONMENT_CONFIRMATION_REPORT.md
+- final_verdict: A-046.3.B1 PARTIAL - PRE_EXISTING_TYPESCRIPT_REMAINS
+- next_action_id: A-046.3.B2.
+
 ## 0. A-046.3-SPEC Integration Provider Readiness Frontend Alignment Continuity
 
 - A-046.3-SPEC executed frontend-only alignment for Integration / Provider Readiness vertical after A-046.COV-R21 closure.
