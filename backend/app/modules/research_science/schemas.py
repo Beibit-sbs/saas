@@ -441,3 +441,84 @@ class ResearchBridgeSummaryResponse(BaseModel):
     mutation_allowed: bool = False
     provider_sync_enabled: bool = False
     external_submission_enabled: bool = False
+
+
+class ResearchBrainShellResponse(BaseModel):
+    tenant_id: int
+    owner_module: str
+    runtime_boundary: str
+    navigation_entry: str
+    bridge_modules: list[str] = Field(default_factory=list)
+    read_only_aggregation: bool = True
+    provider_execution_enabled: bool = False
+    external_calls_enabled: bool = False
+
+
+class ResearchBrainOrchestrationItemResponse(BaseModel):
+    source_module: str
+    read_only: bool = True
+    total: int = 0
+    notes: str
+
+
+class ResearchBrainOrchestrationResponse(BaseModel):
+    tenant_id: int
+    projects: ResearchBrainOrchestrationItemResponse
+    grants: ResearchBrainOrchestrationItemResponse
+    publications: ResearchBrainOrchestrationItemResponse
+    ethics: ResearchBrainOrchestrationItemResponse
+    kpi: ResearchBrainOrchestrationItemResponse
+    signals: ResearchBrainOrchestrationItemResponse
+
+
+class ResearchBrainContextSourceResponse(BaseModel):
+    source: str
+    contract_status: str
+    read_only: bool = True
+    summary: dict[str, Any] = Field(default_factory=dict)
+
+
+class ResearchBrainContextResponse(BaseModel):
+    tenant_id: int
+    context: dict[str, ResearchBrainContextSourceResponse] = Field(default_factory=dict)
+
+
+class ResearchBrainKpiSurfaceResponse(BaseModel):
+    tenant_id: int
+    owner_module: str
+    publication_count: int
+    grant_count: int
+    project_count: int
+    ethics_count: int
+    read_only: bool = True
+    provider_execution_enabled: bool = False
+
+
+class ResearchBrainSignalItemResponse(BaseModel):
+    family: str
+    owner: str
+    source: str
+    consumer: str
+    review_queue: str
+    read_only: bool = True
+    scoring_engine_enabled: bool = False
+    observed_count: int = 0
+
+
+class ResearchBrainSignalSurfaceResponse(BaseModel):
+    tenant_id: int
+    signals: list[ResearchBrainSignalItemResponse] = Field(default_factory=list)
+
+
+class ResearchBrainRoleValidationResponse(BaseModel):
+    role: str
+    required_permissions: list[str] = Field(default_factory=list)
+    status: str
+
+
+class ResearchBrainRbacValidationResponse(BaseModel):
+    tenant_id: int
+    tenant: str
+    rbac: str
+    audit: str
+    roles: list[ResearchBrainRoleValidationResponse] = Field(default_factory=list)

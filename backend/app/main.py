@@ -135,6 +135,7 @@ from app.modules.document_workflow_os.router import router as doc_workflow_route
 from app.modules.academic_operations.router import router as academic_operations_router
 from app.modules.student_lifecycle.router import router as student_lifecycle_router
 from app.modules.research_science.router import router as research_science_router
+from app.modules.research_science.runtime_shell_router import router as research_brain_runtime_shell_router
 from app.modules.quality_accreditation.router import router as quality_accreditation_router
 from app.modules.hr_staff_governance.router import router as hr_staff_governance_router
 from app.modules.finance_procurement_asset.router import router as finance_procurement_asset_router
@@ -500,6 +501,7 @@ app.include_router(executive_control_tower_router)
 app.include_router(academic_operations_router)
 app.include_router(student_lifecycle_router)
 app.include_router(research_science_router)
+app.include_router(research_brain_runtime_shell_router)
 app.include_router(quality_accreditation_router)
 app.include_router(hr_staff_governance_router)
 app.include_router(finance_procurement_asset_router)

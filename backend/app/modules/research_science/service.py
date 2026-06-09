@@ -8,7 +8,12 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.core.module_helpers.service_validation import DomainValidationError
-from app.modules.research_science import repository
+from app.modules.publication_registry.service import get_publication_registry_foundation_contract
+from app.modules.research.service import get_research_health_snapshot
+from app.modules.research_ethics.service import list_ethics_reviews
+from app.modules.research_grants.service import evaluate_research_grants_readiness
+from app.modules.research_projects.service import get_research_projects_foundation_contract
+from app.modules.research_science import permissions, repository
 from app.modules.research_science.dependencies import validate_tenant_id
 from app.modules.research_science.models import (
     AUTONOMY_MODE,
@@ -27,6 +32,16 @@ from app.modules.research_science.models import (
     ResearchAuditEventType,
 )
 from app.modules.research_science.schemas import (
+    ResearchBrainContextResponse,
+    ResearchBrainContextSourceResponse,
+    ResearchBrainKpiSurfaceResponse,
+    ResearchBrainOrchestrationItemResponse,
+    ResearchBrainOrchestrationResponse,
+    ResearchBrainRbacValidationResponse,
+    ResearchBrainRoleValidationResponse,
+    ResearchBrainShellResponse,
+    ResearchBrainSignalItemResponse,
+    ResearchBrainSignalSurfaceResponse,
     ResearchScienceDashboardResponse,
     ResearchScienceHealthResponse,
     ResearchScienceLimitationsResponse,
@@ -645,3 +660,279 @@ def list_research_limitations_service(db: Session, tenant_id: int) -> ResearchSc
     items = repository.list_research_limitations(db, tenant_id)
     limitations = [item.limitation_text for item in items] or _merge_limitations([])
     return ResearchScienceLimitationsResponse(items=limitations)
+
+
+def _sum_bucket(values: dict[str, int]) -> int:
+    return sum(int(v or 0) for v in values.values())
+
+
+def get_research_brain_shell_service(tenant_id: int) -> ResearchBrainShellResponse:
+    tenant_id = validate_tenant_id(tenant_id)
+    return ResearchBrainShellResponse(
+        tenant_id=tenant_id,
+        owner_module="research_science",
+        runtime_boundary="UNIFIED_READ_ONLY_RUNTIME_SHELL",
+        navigation_entry="/console/research-brain",
+        bridge_modules=[
+            "research",
+            "research_projects",
+            "research_grants",
+            "publication_registry",
+            "research_ethics",
+            "analytics",
+            "brain_core",
+            "document_workflow",
+        ],
+        read_only_aggregation=True,
+        provider_execution_enabled=False,
+        external_calls_enabled=False,
+    )
+
+
+def get_research_brain_orchestration_service(db: Session, tenant_id: int) -> ResearchBrainOrchestrationResponse:
+    tenant_id = validate_tenant_id(tenant_id)
+    summary = repository.compute_research_dashboard_summary(db, tenant_id)
+    return ResearchBrainOrchestrationResponse(
+        tenant_id=tenant_id,
+        projects=ResearchBrainOrchestrationItemResponse(
+            source_module="research_science",
+            read_only=True,
+            total=_sum_bucket(summary["projects_summary"]),
+            notes="Project aggregation over research_science project metadata.",
+        ),
+        grants=ResearchBrainOrchestrationItemResponse(
+            source_module="research_science",
+            read_only=True,
+            total=_sum_bucket(summary["grants_summary"]),
+            notes="Grant aggregation over research_science grants with research/research_grants bridge alignment.",
+        ),
+        publications=ResearchBrainOrchestrationItemResponse(
+            source_module="research_science",
+            read_only=True,
+            total=_sum_bucket(summary["publications_summary"]),
+            notes="Publication aggregation over research_science publications with publication_registry bridge alignment.",
+        ),
+        ethics=ResearchBrainOrchestrationItemResponse(
+            source_module="research_ethics",
+            read_only=True,
+            total=_sum_bucket(summary["ethics_summary"]),
+            notes="Ethics aggregation over research_ethics review pathways and research_science metadata visibility.",
+        ),
+        kpi=ResearchBrainOrchestrationItemResponse(
+            source_module="analytics",
+            read_only=True,
+            total=4,
+            notes="KPI exposure remains analytics-owned and read-only in shell batch.",
+        ),
+        signals=ResearchBrainOrchestrationItemResponse(
+            source_module="brain_core",
+            read_only=True,
+            total=4,
+            notes="Signal exposure remains brain_core-owned and read-only with no scoring engine activation.",
+        ),
+    )
+
+
+def get_research_brain_context_service(db: Session, tenant_id: int) -> ResearchBrainContextResponse:
+    tenant_id = validate_tenant_id(tenant_id)
+    summary = repository.compute_research_dashboard_summary(db, tenant_id)
+    research_health = get_research_health_snapshot(tenant_id).model_dump()
+    publication_registry_contract = get_publication_registry_foundation_contract(tenant_id)
+    research_projects_contract = get_research_projects_foundation_contract(tenant_id)
+    research_grants_contract = evaluate_research_grants_readiness(tenant_id=tenant_id, grant_payload={})
+    ethics_rows = list_ethics_reviews(tenant_id)
+
+    return ResearchBrainContextResponse(
+        tenant_id=tenant_id,
+        context={
+            "research": ResearchBrainContextSourceResponse(
+                source="research",
+                contract_status="ACTIVE_BRIDGE",
+                read_only=True,
+                summary={
+                    "grants_total": research_health.get("grants_total", 0),
+                    "publications_total": research_health.get("publications_total", 0),
+                    "labs_total": research_health.get("labs_total", 0),
+                },
+            ),
+            "publication_registry": ResearchBrainContextSourceResponse(
+                source="publication_registry",
+                contract_status=str(publication_registry_contract.get("contract_status") or "FOUNDATION_CONTRACT_READY"),
+                read_only=True,
+                summary={
+                    "maturity_level": publication_registry_contract.get("maturity_level", "L2"),
+                    "next_maturity_gap": publication_registry_contract.get("next_maturity_gap", "deterministic_service_logic_needed"),
+                },
+            ),
+            "research_projects": ResearchBrainContextSourceResponse(
+                source="research_projects",
+                contract_status=str(research_projects_contract.get("contract_status") or "FOUNDATION_CONTRACT_READY"),
+                read_only=True,
+                summary={
+                    "maturity_level": research_projects_contract.get("maturity_level", "L2"),
+                    "project_total": _sum_bucket(summary["projects_summary"]),
+                },
+            ),
+            "research_grants": ResearchBrainContextSourceResponse(
+                source="research_grants",
+                contract_status=str(research_grants_contract.get("evaluation_status") or "EVALUATED"),
+                read_only=True,
+                summary={
+                    "classification": research_grants_contract.get("classification", "GRANT_INPUT_INCOMPLETE"),
+                    "grants_total": _sum_bucket(summary["grants_summary"]),
+                },
+            ),
+            "research_ethics": ResearchBrainContextSourceResponse(
+                source="research_ethics",
+                contract_status="ACTIVE_BRIDGE",
+                read_only=True,
+                summary={
+                    "ethics_total": _sum_bucket(summary["ethics_summary"]),
+                    "review_records": len(ethics_rows),
+                },
+            ),
+        },
+    )
+
+
+def get_research_brain_kpi_surface_service(db: Session, tenant_id: int) -> ResearchBrainKpiSurfaceResponse:
+    tenant_id = validate_tenant_id(tenant_id)
+    summary = repository.compute_research_dashboard_summary(db, tenant_id)
+    return ResearchBrainKpiSurfaceResponse(
+        tenant_id=tenant_id,
+        owner_module="analytics",
+        publication_count=_sum_bucket(summary["publications_summary"]),
+        grant_count=_sum_bucket(summary["grants_summary"]),
+        project_count=_sum_bucket(summary["projects_summary"]),
+        ethics_count=_sum_bucket(summary["ethics_summary"]),
+        read_only=True,
+        provider_execution_enabled=False,
+    )
+
+
+def get_research_brain_signal_surface_service(db: Session, tenant_id: int) -> ResearchBrainSignalSurfaceResponse:
+    tenant_id = validate_tenant_id(tenant_id)
+    summary = repository.compute_research_dashboard_summary(db, tenant_id)
+    health = get_research_health_snapshot(tenant_id)
+    project_delay_observed = int(summary["projects_summary"].get("ON_HOLD", 0))
+    signals = [
+        ResearchBrainSignalItemResponse(
+            family="publication_risk",
+            owner="brain_core",
+            source="research.publications + research_science.publications_summary",
+            consumer="research_dashboard",
+            review_queue="research_review_queue",
+            read_only=True,
+            scoring_engine_enabled=False,
+            observed_count=int(health.stalled_publications),
+        ),
+        ResearchBrainSignalItemResponse(
+            family="grant_risk",
+            owner="brain_core",
+            source="research_grants + research_science.grants_summary",
+            consumer="grant_dashboard",
+            review_queue="grants_review_queue",
+            read_only=True,
+            scoring_engine_enabled=False,
+            observed_count=int(health.grant_pipeline_at_risk),
+        ),
+        ResearchBrainSignalItemResponse(
+            family="ethics_risk",
+            owner="brain_core",
+            source="research_ethics.reviews + research_science.ethics_summary",
+            consumer="research_risk_dashboard",
+            review_queue="ethics_review_queue",
+            read_only=True,
+            scoring_engine_enabled=False,
+            observed_count=_sum_bucket(summary["ethics_summary"]),
+        ),
+        ResearchBrainSignalItemResponse(
+            family="project_delay",
+            owner="brain_core",
+            source="research_science.projects_summary + research audit/status history",
+            consumer="research_operations_dashboard",
+            review_queue="project_delay_queue",
+            read_only=True,
+            scoring_engine_enabled=False,
+            observed_count=project_delay_observed,
+        ),
+    ]
+    return ResearchBrainSignalSurfaceResponse(tenant_id=tenant_id, signals=signals)
+
+
+def get_research_brain_rbac_validation_service(tenant_id: int) -> ResearchBrainRbacValidationResponse:
+    tenant_id = validate_tenant_id(tenant_id)
+    role_requirements = {
+        "researcher": [
+            "research.read",
+            "research_science.student_research.read",
+            "research_science.publications.read",
+        ],
+        "laboratory_head": [
+            "research.read",
+            "research.write",
+            "research_science.projects.read",
+            "research_science.supervision.read",
+        ],
+        "project_manager": [
+            "research.read",
+            "research.write",
+            "research_science.projects.update",
+            "research_science.audit.read",
+        ],
+        "grant_manager": [
+            "research.read",
+            "research.write",
+            "research_science.grants.update",
+            "research_science.grant_deliverables.read",
+        ],
+        "ethics_reviewer": [
+            "research.read",
+            "research_science.ethics.read",
+            "research_science.ethics.update",
+            "research_science.audit.read",
+        ],
+        "dean": [
+            "research.read",
+            "research_science.dashboard.read",
+            "research_science.projects.read",
+            "research_science.audit.read",
+        ],
+        "vice_rector_science": [
+            "research.read",
+            "research_science.dashboard.read",
+            "research_science.grants.read",
+            "research_science.audit.read",
+        ],
+        "research_admin": [
+            "research.read",
+            "research.write",
+            "research_science.admin.read",
+            "research_science.audit.read",
+        ],
+    }
+
+    available_permissions = set(permissions.ALL_PERMISSIONS)
+    available_permissions.update({"research.read", "research.write"})
+
+    roles: list[ResearchBrainRoleValidationResponse] = []
+    for role, required in role_requirements.items():
+        status = "PASS" if all(permission in available_permissions for permission in required) else "FAIL"
+        roles.append(
+            ResearchBrainRoleValidationResponse(
+                role=role,
+                required_permissions=required,
+                status=status,
+            )
+        )
+
+    rbac_pass = all(role.status == "PASS" for role in roles)
+    audit_pass = "research_science.audit.read" in available_permissions
+
+    return ResearchBrainRbacValidationResponse(
+        tenant_id=tenant_id,
+        tenant="PASS",
+        rbac="PASS" if rbac_pass else "FAIL",
+        audit="PASS" if audit_pass else "FAIL",
+        roles=roles,
+    )

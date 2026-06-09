@@ -1,5 +1,35 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-047.6.E1 Research Brain Runtime Shell Implementation Continuity
+
+- A-047.6.E1 executed Batch 1 runtime implementation for Research Brain shell.
+- Source validation passed:
+	- `A-047.5-B1` exists
+	- runtime readiness confirmed as `READY_FOR_EXECUTION_WITH_LIMITATIONS`
+	- inherited `next_action_id: A-047.6-E1`
+- Implemented runtime surfaces:
+	- unified backend shell boundary under `/api/admin/research-brain/*`
+	- read-only orchestration contracts for projects/grants/publications/ethics/KPI/signals
+	- read-only context aggregation across research/publication_registry/research_projects/research_grants/research_ethics
+	- analytics-owned KPI surface
+	- brain_core-owned signal surface (`publication_risk`, `grant_risk`, `ethics_risk`, `project_delay`)
+	- RBAC validation surface for required research roles
+	- unified frontend route `/console/research-brain` with navigation entry
+- Validation outcomes:
+	- TypeScript PASS
+	- targeted frontend runtime shell tests PASS
+	- targeted backend runtime shell tests PASS
+	- research brain backend slice regression PASS
+- Security/governance posture preserved:
+	- tenant PASS
+	- RBAC PASS
+	- audit PASS
+	- no provider execution
+	- no live external integrations
+- report_file: A-047.6-E1-RESEARCH_BRAIN_RUNTIME_SHELL_IMPLEMENTATION_REPORT.md
+- final_verdict: A-047.6.E1 PASS - BATCH1_RUNTIME_SHELL_IMPLEMENTED
+- next_action_id: A-047.7-E1.
+
 ## 0. A-047.5.B1 Research Brain Runtime Batch Validation Continuity
 
 - A-047.5.B1 executed validation-only readiness assessment of the A-047.5 runtime implementation plan.
