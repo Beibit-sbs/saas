@@ -1,6 +1,45 @@
 - Research Brain:
     - status: CLOSED_BASELINED
     - closure_report: A-047.13-RESEARCH_BRAIN_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
+    - next_action_id: A-048.2-B1
+
+- A-048.1 spec execution block:
+    - mode: executive_governance_brain_runtime_contract_specification
+    - purpose: define_canonical_runtime_contract_without_runtime_implementation
+    - source_validation: PASS
+    - domain_model: PASS
+    - ownership_model: PASS
+    - decision_registry: PASS
+    - meeting_registry: PASS
+    - protocol_registry: PASS
+    - execution_control: PASS
+    - brain_signals: PASS
+    - dashboard_contract: PASS
+    - rbac_contract: PASS
+    - provider_contract: PASS (provider-ready only)
+    - gap_consolidation: PASS
+    - readiness: READY_FOR_RECONCILIATION
+    - report_file: A-048.1-SPEC-EXECUTIVE_GOVERNANCE_BRAIN_RUNTIME_CONTRACT_REPORT.md
+    - final_verdict: A-048.1 SPEC PASS - EXECUTIVE_GOVERNANCE_BRAIN_RUNTIME_CONTRACT_DEFINED
+    - recommended_next_action: A-048.2-B1
+    - next_action_id: A-048.2-B1
+
+- A-048.1 audit execution block:
+    - mode: executive_governance_brain_existing_capability_analysis
+    - purpose: classify_existing_capabilities_and_gaps_before_a0481_spec
+    - source_state_before: Research Brain CLOSED_BASELINED
+    - source_state_validation: PASS
+    - analysis_only_guard: PASS (no runtime/schema/test changes)
+    - capability_inventory: PASS
+    - ownership_review: PASS
+    - route_surface_review: PASS
+    - rbac_review: PASS
+    - provider_review: PASS
+    - gap_matrix: PASS
+    - readiness_decision: READY_FOR_SPEC
+    - report_file: A-048.1-AUDIT-EXECUTIVE_GOVERNANCE_BRAIN_EXISTING_CAPABILITY_ANALYSIS_REPORT.md
+    - final_verdict: A-048.1 AUDIT PASS - EXECUTIVE_GOVERNANCE_BRAIN_READY_FOR_SPEC
+    - recommended_next_action: A-048.1-SPEC
     - next_action_id: A-048.1-SPEC
 
 - A-047.12.B1 execution block:
