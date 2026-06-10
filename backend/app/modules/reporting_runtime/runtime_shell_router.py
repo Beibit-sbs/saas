@@ -11,6 +11,15 @@ from app.core.module_helpers.service_validation import DomainValidationError, Te
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.reporting_runtime import permissions
+from app.modules.reporting_runtime.runtime_ministry_schemas import (
+    MinistryReportingCompletenessResponse,
+    MinistryReportingCycleResponse,
+    MinistryReportingDeadlineResponse,
+    MinistryReportingReadinessResponse,
+    MinistryReportingRiskResponse,
+    MinistryReportingSummaryResponse,
+)
+from app.modules.reporting_runtime.runtime_ministry_service import MinistryReportingRuntimeService
 from app.modules.reporting_runtime.runtime_registry_schemas import (
     ReportingCycleResponse,
     ReportingEvidenceResponse,
@@ -31,6 +40,7 @@ _Actor = Annotated[str, Depends(get_actor)]
 
 _service = ReportingRuntimeShellService()
 _registry_service = ReportingRegistryRuntimeService()
+_ministry_service = MinistryReportingRuntimeService()
 
 
 def _handle(exc: Exception) -> None:
@@ -123,5 +133,77 @@ def get_reporting_providers_runtime(
 ) -> ReportingProviderResponse:
     try:
         return _registry_service.get_providers(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ministry", response_model=MinistryReportingSummaryResponse)
+def get_ministry_reporting_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> MinistryReportingSummaryResponse:
+    try:
+        return _ministry_service.get_ministry(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ministry/cycles", response_model=MinistryReportingCycleResponse)
+def get_ministry_reporting_cycles_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> MinistryReportingCycleResponse:
+    try:
+        return _ministry_service.get_cycles(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ministry/deadlines", response_model=MinistryReportingDeadlineResponse)
+def get_ministry_reporting_deadlines_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> MinistryReportingDeadlineResponse:
+    try:
+        return _ministry_service.get_deadlines(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ministry/readiness", response_model=MinistryReportingReadinessResponse)
+def get_ministry_reporting_readiness_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> MinistryReportingReadinessResponse:
+    try:
+        return _ministry_service.get_readiness(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ministry/risks", response_model=MinistryReportingRiskResponse)
+def get_ministry_reporting_risks_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> MinistryReportingRiskResponse:
+    try:
+        return _ministry_service.get_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ministry/completeness", response_model=MinistryReportingCompletenessResponse)
+def get_ministry_reporting_completeness_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> MinistryReportingCompletenessResponse:
+    try:
+        return _ministry_service.get_completeness(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)

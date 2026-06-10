@@ -158,3 +158,85 @@ export interface ReportingProviderResponse {
   read_only: boolean;
   providers: ReportingProviderSummary[];
 }
+
+export interface MinistryReportingSummary {
+  id: string;
+  report_code: string;
+  report_name: string;
+  reporting_period: string;
+  deadline: string;
+  completion_percentage: number;
+  readiness_status: string;
+  submission_status: string;
+  risk_level: string;
+  days_remaining: number;
+  owner_module: string;
+  generated_at: string;
+  read_only: boolean;
+}
+
+export interface MinistryReportingCycle extends MinistryReportingSummary {
+  cycle_status: string;
+}
+
+export interface MinistryReportingDeadline extends MinistryReportingSummary {
+  deadline_status: string;
+  overdue: boolean;
+}
+
+export interface MinistryReportingReadiness extends MinistryReportingSummary {
+  readiness_score: number;
+}
+
+export interface MinistryReportingCompleteness extends MinistryReportingSummary {
+  required_data_points: number;
+  completed_data_points: number;
+}
+
+export interface MinistryReportingRisk extends MinistryReportingSummary {
+  signal_name: string;
+  signal_owner_module: string;
+}
+
+export interface MinistryReportingSummaryResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  reports: MinistryReportingSummary[];
+  signal_inventory: string[];
+}
+
+export interface MinistryReportingCycleResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  cycles: MinistryReportingCycle[];
+}
+
+export interface MinistryReportingDeadlineResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  deadlines: MinistryReportingDeadline[];
+}
+
+export interface MinistryReportingReadinessResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  readiness: MinistryReportingReadiness[];
+}
+
+export interface MinistryReportingCompletenessResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  completeness: MinistryReportingCompleteness[];
+}
+
+export interface MinistryReportingRiskResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  risks: MinistryReportingRisk[];
+}

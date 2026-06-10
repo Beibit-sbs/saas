@@ -29,21 +29,83 @@ export function ReportingRuntimeShellPage() {
   const submissions = useQuery({ queryKey: ['reporting-runtime:submissions'], queryFn: reportingRuntimeApi.getSubmissions, staleTime: 30000 });
   const evidence = useQuery({ queryKey: ['reporting-runtime:evidence'], queryFn: reportingRuntimeApi.getEvidence, staleTime: 30000 });
   const providers = useQuery({ queryKey: ['reporting-runtime:providers'], queryFn: reportingRuntimeApi.getProviders, staleTime: 30000 });
+  const ministry = useQuery({ queryKey: ['reporting-runtime:ministry'], queryFn: reportingRuntimeApi.getMinistry, staleTime: 30000 });
+  const ministryCycles = useQuery({ queryKey: ['reporting-runtime:ministry:cycles'], queryFn: reportingRuntimeApi.getMinistryCycles, staleTime: 30000 });
+  const ministryDeadlines = useQuery({ queryKey: ['reporting-runtime:ministry:deadlines'], queryFn: reportingRuntimeApi.getMinistryDeadlines, staleTime: 30000 });
+  const ministryReadiness = useQuery({ queryKey: ['reporting-runtime:ministry:readiness'], queryFn: reportingRuntimeApi.getMinistryReadiness, staleTime: 30000 });
+  const ministryCompleteness = useQuery({ queryKey: ['reporting-runtime:ministry:completeness'], queryFn: reportingRuntimeApi.getMinistryCompleteness, staleTime: 30000 });
+  const ministryRisks = useQuery({ queryKey: ['reporting-runtime:ministry:risks'], queryFn: reportingRuntimeApi.getMinistryRisks, staleTime: 30000 });
 
-  if (runtime.isPending || registry.isPending || templates.isPending || cycles.isPending || submissions.isPending || evidence.isPending || providers.isPending) {
+  if (
+    runtime.isPending ||
+    registry.isPending ||
+    templates.isPending ||
+    cycles.isPending ||
+    submissions.isPending ||
+    evidence.isPending ||
+    providers.isPending ||
+    ministry.isPending ||
+    ministryCycles.isPending ||
+    ministryDeadlines.isPending ||
+    ministryReadiness.isPending ||
+    ministryCompleteness.isPending ||
+    ministryRisks.isPending
+  ) {
     return <LoadingState title="Loading Reporting Runtime shell" />;
   }
 
-  if (runtime.error || registry.error || templates.error || cycles.error || submissions.error || evidence.error || providers.error) {
+  if (
+    runtime.error ||
+    registry.error ||
+    templates.error ||
+    cycles.error ||
+    submissions.error ||
+    evidence.error ||
+    providers.error ||
+    ministry.error ||
+    ministryCycles.error ||
+    ministryDeadlines.error ||
+    ministryReadiness.error ||
+    ministryCompleteness.error ||
+    ministryRisks.error
+  ) {
     return (
       <ErrorState
         message="Failed to load Reporting Runtime shell."
-        error={runtime.error ?? registry.error ?? templates.error ?? cycles.error ?? submissions.error ?? evidence.error ?? providers.error}
+        error={
+          runtime.error ??
+          registry.error ??
+          templates.error ??
+          cycles.error ??
+          submissions.error ??
+          evidence.error ??
+          providers.error ??
+          ministry.error ??
+          ministryCycles.error ??
+          ministryDeadlines.error ??
+          ministryReadiness.error ??
+          ministryCompleteness.error ??
+          ministryRisks.error
+        }
       />
     );
   }
 
-  if (!runtime.data || !registry.data || !templates.data || !cycles.data || !submissions.data || !evidence.data || !providers.data) {
+  if (
+    !runtime.data ||
+    !registry.data ||
+    !templates.data ||
+    !cycles.data ||
+    !submissions.data ||
+    !evidence.data ||
+    !providers.data ||
+    !ministry.data ||
+    !ministryCycles.data ||
+    !ministryDeadlines.data ||
+    !ministryReadiness.data ||
+    !ministryCompleteness.data ||
+    !ministryRisks.data
+  ) {
     return <ErrorState message="Reporting Runtime shell is unavailable." />;
   }
 
@@ -156,6 +218,67 @@ export function ReportingRuntimeShellPage() {
           <div className="mt-3 space-y-1 text-sm">
             {providers.data.providers.map((item) => (
               <p key={item.id}>{item.provider_key}: provider_status={item.provider_status}, live_integrations_enabled={String(item.live_integrations_enabled)}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ministry-reporting-center-section">
+          <h2 className="text-lg font-semibold">Ministry Reporting Center</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Read-only runtime visibility for canonical Ministry reporting workflows. No submissions are executed and no external synchronization is enabled.
+          </p>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {ministry.data.reports.map((item) => (
+              <div key={item.id} className="rounded border p-3 text-sm">
+                <p className="font-medium">{item.report_name}</p>
+                <p>{item.report_code} | owner={item.owner_module}</p>
+                <p className="text-xs text-muted-foreground">period={item.reporting_period} | readiness={item.readiness_status} | risk={item.risk_level}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ministry-reporting-cycles-section">
+          <h2 className="text-lg font-semibold">Reporting Cycles</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {ministryCycles.data.cycles.map((item) => (
+              <p key={item.id}>{item.report_name}: cycle={item.cycle_status}, days_remaining={item.days_remaining}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ministry-reporting-deadlines-section">
+          <h2 className="text-lg font-semibold">Reporting Deadlines</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {ministryDeadlines.data.deadlines.map((item) => (
+              <p key={item.id}>{item.report_name}: deadline_status={item.deadline_status}, days_remaining={item.days_remaining}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ministry-reporting-readiness-section">
+          <h2 className="text-lg font-semibold">Reporting Readiness</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {ministryReadiness.data.readiness.map((item) => (
+              <p key={item.id}>{item.report_name}: readiness_score={item.readiness_score}, status={item.readiness_status}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ministry-reporting-completeness-section">
+          <h2 className="text-lg font-semibold">Reporting Completeness</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {ministryCompleteness.data.completeness.map((item) => (
+              <p key={item.id}>{item.report_name}: completion={item.completion_percentage}% ({item.completed_data_points}/{item.required_data_points})</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ministry-reporting-risks-section">
+          <h2 className="text-lg font-semibold">Reporting Risks</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {ministryRisks.data.risks.map((item) => (
+              <p key={item.id}>{item.report_name}: signal={item.signal_name}, owner={item.signal_owner_module}, risk={item.risk_level}</p>
             ))}
           </div>
         </section>

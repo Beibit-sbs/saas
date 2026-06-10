@@ -1,6 +1,7 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import { within } from '@testing-library/dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockApi } = vi.hoisted(() => ({
@@ -12,6 +13,12 @@ const { mockApi } = vi.hoisted(() => ({
     getSubmissions: vi.fn(),
     getEvidence: vi.fn(),
     getProviders: vi.fn(),
+    getMinistry: vi.fn(),
+    getMinistryCycles: vi.fn(),
+    getMinistryDeadlines: vi.fn(),
+    getMinistryReadiness: vi.fn(),
+    getMinistryCompleteness: vi.fn(),
+    getMinistryRisks: vi.fn(),
   },
 }));
 
@@ -143,26 +150,81 @@ describe('Reporting Runtime Shell', () => {
       read_only: true,
       providers: [{ ...baseEntry, id: 'provider-1-1', provider_key: 'MINISTRY_PROVIDER_PROFILE', live_integrations_enabled: false, submission_execution_enabled: false }],
     });
+
+    const ministryEntry = {
+      id: 'ministry-1-1',
+      report_code: 'MIN-STAT-01',
+      report_name: 'Statistical reporting',
+      reporting_period: '2026-Q2',
+      deadline: '2026-06-30T00:00:00Z',
+      completion_percentage: 82,
+      readiness_status: 'PARTIAL',
+      submission_status: 'IN_REVIEW',
+      risk_level: 'MEDIUM',
+      days_remaining: 10,
+      owner_module: 'analytics',
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+    };
+
+    mockApi.getMinistry.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      reports: [ministryEntry],
+      signal_inventory: ['ministry_deadline_risk', 'report_overdue', 'missing_required_data', 'reporting_incomplete', 'reporting_readiness_low'],
+    });
+    mockApi.getMinistryCycles.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      cycles: [{ ...ministryEntry, cycle_status: 'ACTIVE' }],
+    });
+    mockApi.getMinistryDeadlines.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      deadlines: [{ ...ministryEntry, deadline_status: 'UPCOMING', overdue: false }],
+    });
+    mockApi.getMinistryReadiness.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      readiness: [{ ...ministryEntry, readiness_score: 82 }],
+    });
+    mockApi.getMinistryCompleteness.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      completeness: [{ ...ministryEntry, required_data_points: 10, completed_data_points: 8 }],
+    });
+    mockApi.getMinistryRisks.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      risks: [{ ...ministryEntry, signal_name: 'reporting_readiness_low', signal_owner_module: 'brain_core' }],
+    });
   });
 
   it('renders runtime shell sections', async () => {
     renderWithClient(<ReportingRuntimeShellPage />);
 
     expect(await screen.findByTestId('reporting-runtime-shell')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Reporting Overview' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Provider Readiness' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Compliance Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Reporting Deadlines' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Reporting Status' })).toBeInTheDocument();
+    expect(screen.getByTestId('reporting-overview-section')).toBeInTheDocument();
+    expect(screen.getByTestId('provider-readiness-section')).toBeInTheDocument();
+    expect(screen.getByTestId('compliance-summary-section')).toBeInTheDocument();
+    expect(screen.getByTestId('reporting-deadlines-section')).toBeInTheDocument();
+    expect(screen.getByTestId('reporting-status-section')).toBeInTheDocument();
   });
 
   it('renders read-only runtime values', async () => {
     renderWithClient(<ReportingRuntimeShellPage />);
+    const complianceSection = await screen.findByTestId('compliance-summary-section');
+    const complianceScoped = within(complianceSection);
 
     expect(await screen.findByText('Reporting Runtime Shell')).toBeInTheDocument();
-    expect(screen.getByText('6')).toBeInTheDocument();
-    expect(screen.getByText('8')).toBeInTheDocument();
-    expect(screen.getByText('9')).toBeInTheDocument();
+    expect(complianceScoped.getByText(/Risk band: MEDIUM/i)).toBeInTheDocument();
+    expect(complianceScoped.getByText(/Compliance score: 78/i)).toBeInTheDocument();
     expect(screen.getByText(/NOT_CONNECTED=1, READY=3, PENDING=1/i)).toBeInTheDocument();
     expect(screen.getByText(/read_only=true/i)).toBeInTheDocument();
   });
