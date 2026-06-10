@@ -222,6 +222,88 @@ export interface ExecutiveKpiOverview {
   generated_at: string;
 }
 
+export interface ExecutiveKpiEntry {
+  kpi_id: string;
+  kpi_code: string;
+  kpi_name: string;
+  kpi_owner: string;
+  kpi_category: string;
+  target_value: number;
+  current_value: number;
+  achievement_percent: number;
+  status: 'ON_TRACK' | 'AT_RISK' | 'MISSED' | 'EXCEEDED';
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  trend_direction: 'UP' | 'DOWN' | 'STABLE';
+  linked_initiatives: string[];
+}
+
+export interface ExecutiveKpiSummary {
+  tenant_id: number;
+  entries: ExecutiveKpiEntry[];
+  total_kpis: number;
+  completion_rate: number;
+  achievement_rate: number;
+  deviation_rate: number;
+  risk_rate: number;
+  status_counts: Record<string, number>;
+  owner_modules: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
+export interface ExecutivePerformanceScore {
+  kpi_id: string;
+  kpi_code: string;
+  score: number;
+  trend_direction: 'UP' | 'DOWN' | 'STABLE';
+  deviation_percent: number;
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
+export interface PerformanceGovernanceSummary {
+  tenant_id: number;
+  university_performance_score: number;
+  executive_performance_score: number;
+  unit_performance_score: number;
+  strategic_performance_score: number;
+  kpi_completion_rate: number;
+  kpi_risk_rate: number;
+  performance_trend: string;
+  kpi_achievement_rate: number;
+  kpi_deviation_rate: number;
+  unit_kpi_performance: Record<string, number>;
+  strategic_kpi_alignment: Record<string, number>;
+  trend_analysis: Record<string, number>;
+  signal_families: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
+export interface ExecutiveKpiRiskCenter {
+  tenant_id: number;
+  high_risk_kpis: ExecutiveKpiEntry[];
+  missed_kpis: ExecutiveKpiEntry[];
+  kpi_deviation_hotspots: Record<string, number>;
+  low_performance_units: Record<string, number>;
+  strategic_kpi_gaps: Record<string, number>;
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
+export interface ExecutiveKpiTrendSummary {
+  tenant_id: number;
+  trend_direction_counts: Record<string, number>;
+  performance_scores: ExecutivePerformanceScore[];
+  trend_analysis: Record<string, number>;
+  signal_families: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
 export interface RectorDashboardRuntimeSummary {
   tenant_id: number;
   rector_overview: ExecutiveControlTowerSummary;

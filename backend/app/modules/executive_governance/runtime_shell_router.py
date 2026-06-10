@@ -21,9 +21,14 @@ from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutiveExecutionMetrics,
     ExecutiveGovernanceDashboardSummary,
     ExecutiveKpiOverview,
+    ExecutiveKpiEntry,
+    ExecutiveKpiRiskCenter,
+    ExecutiveKpiSummary,
+    ExecutiveKpiTrendSummary,
     ExecutiveMeetingEntry,
     ExecutiveMeetingSummary,
     ExecutivePerformanceMetrics,
+    PerformanceGovernanceSummary,
     ExecutiveProtocolEntry,
     ExecutiveProtocolExecutionSummary,
     ExecutiveProtocolSummary,
@@ -246,6 +251,66 @@ def get_runtime_control_tower_escalations(
 ) -> ExecutivePerformanceMetrics:
     try:
         return _service.get_control_tower_escalations(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/kpis", response_model=list[ExecutiveKpiEntry])
+def get_runtime_kpis(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> list[ExecutiveKpiEntry]:
+    try:
+        return _service.get_kpis(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/kpis/summary", response_model=ExecutiveKpiSummary)
+def get_runtime_kpis_summary(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveKpiSummary:
+    try:
+        return _service.get_kpi_summary(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/kpis/performance", response_model=PerformanceGovernanceSummary)
+def get_runtime_kpis_performance(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> PerformanceGovernanceSummary:
+    try:
+        return _service.get_kpi_performance(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/kpis/risks", response_model=ExecutiveKpiRiskCenter)
+def get_runtime_kpis_risks(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveKpiRiskCenter:
+    try:
+        return _service.get_kpi_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/kpis/trends", response_model=ExecutiveKpiTrendSummary)
+def get_runtime_kpis_trends(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveKpiTrendSummary:
+    try:
+        return _service.get_kpi_trends(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)
 

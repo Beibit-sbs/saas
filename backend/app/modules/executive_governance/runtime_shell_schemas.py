@@ -24,6 +24,11 @@ ExecutiveSignalFamily = Literal[
     "roadmap_delay",
     "initiative_stagnation",
     "kpi_deviation",
+    "target_miss_risk",
+    "performance_decline",
+    "strategic_misalignment",
+    "unit_underperformance",
+    "executive_performance_drop",
     "execution_gap",
     "strategic_risk",
     "transformation_delay",
@@ -260,6 +265,93 @@ class ExecutiveKpiOverview(BaseModel):
     unit_performance: dict[str, int] = Field(default_factory=dict)
     strategic_initiative_status: dict[str, int] = Field(default_factory=dict)
     signal_families: list[str] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+KpiTrendDirection = Literal["UP", "DOWN", "STABLE"]
+KpiRiskLevel = Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+KpiStatus = Literal["ON_TRACK", "AT_RISK", "MISSED", "EXCEEDED"]
+
+
+class ExecutiveKpiEntry(BaseModel):
+    kpi_id: str
+    kpi_code: str
+    kpi_name: str
+    kpi_owner: str
+    kpi_category: str
+    target_value: float
+    current_value: float
+    achievement_percent: int = 0
+    status: KpiStatus = "ON_TRACK"
+    risk_level: KpiRiskLevel = "LOW"
+    trend_direction: KpiTrendDirection = "STABLE"
+    linked_initiatives: list[str] = Field(default_factory=list)
+
+
+class ExecutiveKpiSummary(BaseModel):
+    tenant_id: int
+    entries: list[ExecutiveKpiEntry] = Field(default_factory=list)
+    total_kpis: int = 0
+    completion_rate: int = 0
+    achievement_rate: int = 0
+    deviation_rate: int = 0
+    risk_rate: int = 0
+    status_counts: dict[str, int] = Field(default_factory=dict)
+    owner_modules: list[str] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class ExecutivePerformanceScore(BaseModel):
+    kpi_id: str
+    kpi_code: str
+    score: int = 0
+    trend_direction: KpiTrendDirection = "STABLE"
+    deviation_percent: int = 0
+    risk_level: KpiRiskLevel = "LOW"
+
+
+class PerformanceGovernanceSummary(BaseModel):
+    tenant_id: int
+    university_performance_score: int = 0
+    executive_performance_score: int = 0
+    unit_performance_score: int = 0
+    strategic_performance_score: int = 0
+    kpi_completion_rate: int = 0
+    kpi_risk_rate: int = 0
+    performance_trend: str = "STABLE"
+    kpi_achievement_rate: int = 0
+    kpi_deviation_rate: int = 0
+    unit_kpi_performance: dict[str, int] = Field(default_factory=dict)
+    strategic_kpi_alignment: dict[str, int] = Field(default_factory=dict)
+    trend_analysis: dict[str, int] = Field(default_factory=dict)
+    signal_families: list[ExecutiveSignalFamily] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class ExecutiveKpiRiskCenter(BaseModel):
+    tenant_id: int
+    high_risk_kpis: list[ExecutiveKpiEntry] = Field(default_factory=list)
+    missed_kpis: list[ExecutiveKpiEntry] = Field(default_factory=list)
+    kpi_deviation_hotspots: dict[str, int] = Field(default_factory=dict)
+    low_performance_units: dict[str, int] = Field(default_factory=dict)
+    strategic_kpi_gaps: dict[str, int] = Field(default_factory=dict)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class ExecutiveKpiTrendSummary(BaseModel):
+    tenant_id: int
+    trend_direction_counts: dict[str, int] = Field(default_factory=dict)
+    performance_scores: list[ExecutivePerformanceScore] = Field(default_factory=list)
+    trend_analysis: dict[str, int] = Field(default_factory=dict)
+    signal_families: list[ExecutiveSignalFamily] = Field(default_factory=list)
     read_only: bool = True
     aggregator_only: bool = True
     generated_at: datetime

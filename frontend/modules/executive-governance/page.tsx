@@ -17,6 +17,69 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
 }
 
 export function ExecutiveGovernanceRuntimeShellPage() {
+  const kpisQuery = executiveGovernanceApi.getKpis ?? (async () => []);
+  const kpiSummaryQuery =
+    executiveGovernanceApi.getKpiSummary ??
+    (async () => ({
+      tenant_id: 0,
+      entries: [],
+      total_kpis: 0,
+      completion_rate: 0,
+      achievement_rate: 0,
+      deviation_rate: 0,
+      risk_rate: 0,
+      status_counts: {},
+      owner_modules: [],
+      read_only: true,
+      aggregator_only: true,
+      generated_at: new Date(0).toISOString(),
+    }));
+  const kpiPerformanceQuery =
+    executiveGovernanceApi.getKpiPerformance ??
+    (async () => ({
+      tenant_id: 0,
+      university_performance_score: 0,
+      executive_performance_score: 0,
+      unit_performance_score: 0,
+      strategic_performance_score: 0,
+      kpi_completion_rate: 0,
+      kpi_risk_rate: 0,
+      performance_trend: 'STABLE',
+      kpi_achievement_rate: 0,
+      kpi_deviation_rate: 0,
+      unit_kpi_performance: {},
+      strategic_kpi_alignment: {},
+      trend_analysis: {},
+      signal_families: [],
+      read_only: true,
+      aggregator_only: true,
+      generated_at: new Date(0).toISOString(),
+    }));
+  const kpiRisksQuery =
+    executiveGovernanceApi.getKpiRisks ??
+    (async () => ({
+      tenant_id: 0,
+      high_risk_kpis: [],
+      missed_kpis: [],
+      kpi_deviation_hotspots: {},
+      low_performance_units: {},
+      strategic_kpi_gaps: {},
+      read_only: true,
+      aggregator_only: true,
+      generated_at: new Date(0).toISOString(),
+    }));
+  const kpiTrendsQuery =
+    executiveGovernanceApi.getKpiTrends ??
+    (async () => ({
+      tenant_id: 0,
+      trend_direction_counts: {},
+      performance_scores: [],
+      trend_analysis: {},
+      signal_families: [],
+      read_only: true,
+      aggregator_only: true,
+      generated_at: new Date(0).toISOString(),
+    }));
   const strategicInitiativesQuery =
     executiveGovernanceApi.getStrategicInitiatives ?? (async () => []);
   const strategicSummaryQuery =
@@ -91,6 +154,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
   const controlTowerRisks = useQuery({ queryKey: ['executive-governance:control-tower-risks'], queryFn: executiveGovernanceApi.getControlTowerRisks, staleTime: 30000 });
   const controlTowerKpis = useQuery({ queryKey: ['executive-governance:control-tower-kpis'], queryFn: executiveGovernanceApi.getControlTowerKpis, staleTime: 30000 });
   const controlTowerEscalations = useQuery({ queryKey: ['executive-governance:control-tower-escalations'], queryFn: executiveGovernanceApi.getControlTowerEscalations, staleTime: 30000 });
+  const kpis = useQuery({ queryKey: ['executive-governance:kpis'], queryFn: kpisQuery, staleTime: 30000 });
+  const kpiSummary = useQuery({ queryKey: ['executive-governance:kpis-summary'], queryFn: kpiSummaryQuery, staleTime: 30000 });
+  const kpiPerformance = useQuery({ queryKey: ['executive-governance:kpis-performance'], queryFn: kpiPerformanceQuery, staleTime: 30000 });
+  const kpiRisks = useQuery({ queryKey: ['executive-governance:kpis-risks'], queryFn: kpiRisksQuery, staleTime: 30000 });
+  const kpiTrends = useQuery({ queryKey: ['executive-governance:kpis-trends'], queryFn: kpiTrendsQuery, staleTime: 30000 });
   const strategicInitiatives = useQuery({ queryKey: ['executive-governance:strategic-initiatives'], queryFn: strategicInitiativesQuery, staleTime: 30000 });
   const strategicSummary = useQuery({ queryKey: ['executive-governance:strategic-initiatives-summary'], queryFn: strategicSummaryQuery, staleTime: 30000 });
   const strategicRisks = useQuery({ queryKey: ['executive-governance:strategic-initiatives-risks'], queryFn: strategicRisksQuery, staleTime: 30000 });
@@ -119,6 +187,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     controlTowerRisks.isPending ||
     controlTowerKpis.isPending ||
     controlTowerEscalations.isPending ||
+    kpis.isPending ||
+    kpiSummary.isPending ||
+    kpiPerformance.isPending ||
+    kpiRisks.isPending ||
+    kpiTrends.isPending ||
     strategicInitiatives.isPending ||
     strategicSummary.isPending ||
     strategicRisks.isPending ||
@@ -150,6 +223,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     controlTowerRisks.error ||
     controlTowerKpis.error ||
     controlTowerEscalations.error ||
+    kpis.error ||
+    kpiSummary.error ||
+    kpiPerformance.error ||
+    kpiRisks.error ||
+    kpiTrends.error ||
     strategicInitiatives.error ||
     strategicSummary.error ||
     strategicRisks.error ||
@@ -181,6 +259,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
           controlTowerRisks.error ??
           controlTowerKpis.error ??
           controlTowerEscalations.error ??
+          kpis.error ??
+          kpiSummary.error ??
+          kpiPerformance.error ??
+          kpiRisks.error ??
+          kpiTrends.error ??
           strategicInitiatives.error ??
           strategicSummary.error ??
           strategicRisks.error ??
@@ -213,6 +296,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     !controlTowerRisks.data ||
     !controlTowerKpis.data ||
     !controlTowerEscalations.data ||
+    !kpis.data ||
+    !kpiSummary.data ||
+    !kpiPerformance.data ||
+    !kpiRisks.data ||
+    !kpiTrends.data ||
     !strategicInitiatives.data ||
     !strategicSummary.data ||
     !strategicRisks.data ||
@@ -381,6 +469,71 @@ export function ExecutiveGovernanceRuntimeShellPage() {
           ))}
         </section>
 
+        <section className="rounded-lg border p-4" aria-label="KPI Center" data-testid="kpi-center-runtime">
+          <h2 className="text-lg font-semibold">KPI Center</h2>
+          <p className="mt-2 text-sm">Total KPIs: {kpiSummary.data.total_kpis}</p>
+          <p className="text-sm">Completion rate: {kpiSummary.data.completion_rate}%</p>
+          <p className="text-sm">Achievement rate: {kpiSummary.data.achievement_rate}%</p>
+          <p className="text-sm">Deviation rate: {kpiSummary.data.deviation_rate}%</p>
+          <p className="text-sm">Risk rate: {kpiSummary.data.risk_rate}%</p>
+          <p className="text-sm">Owner modules: {kpiSummary.data.owner_modules.join(', ')}</p>
+          {Object.entries(kpiSummary.data.status_counts).map(([status, count]) => (
+            <p key={status} className="text-sm">{status}: {count}</p>
+          ))}
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {kpis.data.map((entry) => (
+              <div key={entry.kpi_id} className="rounded-lg border p-3">
+                <p className="font-medium">{entry.kpi_name}</p>
+                <p className="text-sm text-muted-foreground">{entry.kpi_code} | {entry.kpi_category}</p>
+                <p className="text-sm">owner={entry.kpi_owner}</p>
+                <p className="text-sm">target={entry.target_value} / current={entry.current_value}</p>
+                <p className="text-sm">achievement={entry.achievement_percent}% / status={entry.status}</p>
+                <p className="text-sm">risk={entry.risk_level} / trend={entry.trend_direction}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="KPI Performance" data-testid="kpi-performance-runtime">
+          <h2 className="text-lg font-semibold">KPI Performance</h2>
+          <p className="mt-2 text-sm">University performance score: {kpiPerformance.data.university_performance_score}</p>
+          <p className="text-sm">Executive performance score: {kpiPerformance.data.executive_performance_score}</p>
+          <p className="text-sm">Unit performance score: {kpiPerformance.data.unit_performance_score}</p>
+          <p className="text-sm">Strategic performance score: {kpiPerformance.data.strategic_performance_score}</p>
+          <p className="text-sm">KPI completion rate: {kpiPerformance.data.kpi_completion_rate}%</p>
+          <p className="text-sm">KPI risk rate: {kpiPerformance.data.kpi_risk_rate}%</p>
+          <p className="text-sm">Performance trend: {kpiPerformance.data.performance_trend}</p>
+          {Object.entries(kpiPerformance.data.unit_kpi_performance).map(([unit, score]) => (
+            <p key={unit} className="text-sm">unit {unit}: {score}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="KPI Risk Center" data-testid="kpi-risk-center-runtime">
+          <h2 className="text-lg font-semibold">KPI Risk Center</h2>
+          <p className="mt-2 text-sm">High-risk KPIs: {kpiRisks.data.high_risk_kpis.length}</p>
+          <p className="text-sm">Missed KPIs: {kpiRisks.data.missed_kpis.length}</p>
+          {Object.entries(kpiRisks.data.kpi_deviation_hotspots).map(([key, value]) => (
+            <p key={key} className="text-sm">hotspot {key}: {value}</p>
+          ))}
+          {Object.entries(kpiRisks.data.low_performance_units).map(([key, value]) => (
+            <p key={key} className="text-sm">low-performance unit {key}: {value}</p>
+          ))}
+          {Object.entries(kpiRisks.data.strategic_kpi_gaps).map(([key, value]) => (
+            <p key={key} className="text-sm">strategic KPI gap {key}: {value}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="KPI Trends" data-testid="kpi-trends-runtime">
+          <h2 className="text-lg font-semibold">KPI Trends</h2>
+          {Object.entries(kpiTrends.data.trend_direction_counts).map(([direction, count]) => (
+            <p key={direction} className="text-sm">{direction}: {count}</p>
+          ))}
+          {Object.entries(kpiTrends.data.trend_analysis).map(([key, value]) => (
+            <p key={key} className="text-sm">{key}: {value}</p>
+          ))}
+          <p className="mt-2 text-sm">Signals: {kpiTrends.data.signal_families.join(', ')}</p>
+        </section>
+
         <section className="rounded-lg border p-4" aria-label="Executive Risk Center" data-testid="executive-risk-center-runtime">
           <h2 className="text-lg font-semibold">Executive Risk Center</h2>
           <p className="mt-2 text-sm">Risk score: {controlTowerRisks.data.risk_score}</p>
@@ -427,6 +580,9 @@ export function ExecutiveGovernanceRuntimeShellPage() {
           <h2 className="text-lg font-semibold">Strategic KPI Alignment</h2>
           <p className="mt-2 text-sm">Initiative KPI coverage: {strategicSummary.data.initiative_kpi_coverage}%</p>
           <p className="text-sm">KPI completion alignment: {strategicSummary.data.kpi_completion_alignment}%</p>
+          {Object.entries(kpiPerformance.data.strategic_kpi_alignment).map(([key, value]) => (
+            <p key={key} className="text-sm">performance alignment {key}: {value}</p>
+          ))}
           {Object.entries(strategicSummary.data.kpi_deviation_visibility).map(([key, value]) => (
             <p key={key} className="text-sm">deviation {key}: {value}</p>
           ))}

@@ -15,6 +15,8 @@ from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutiveDecisionRegistrySummary,
     ExecutiveKpiOverview,
     ExecutiveExecutionMetrics,
+    ExecutiveKpiEntry,
+    ExecutiveKpiRiskCenter,
     ExecutiveGovernanceDashboardSummary,
     ExecutiveMeetingEntry,
     ExecutiveMeetingSummary,
@@ -25,6 +27,10 @@ from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutiveGovernanceRuntimeSummary,
     ExecutiveGovernanceSignalSummary,
     ExecutivePerformanceMetrics,
+    ExecutivePerformanceScore,
+    ExecutiveKpiSummary,
+    ExecutiveKpiTrendSummary,
+    PerformanceGovernanceSummary,
     ExecutiveRiskOverview,
     RectorDashboardRuntimeSummary,
     StrategicInitiativeEntry,
@@ -710,6 +716,215 @@ class StrategicInitiativeRuntimeService:
         return self.get_development_program(tenant_id)
 
 
+class ExecutiveKpiRuntimeService:
+    """Read-only KPI and performance governance runtime service."""
+
+    _KPI_CATEGORIES = [
+        "ACADEMIC_OUTCOME",
+        "FINANCIAL_HEALTH",
+        "RESEARCH_GROWTH",
+        "STUDENT_SUCCESS",
+        "OPERATIONAL_EFFICIENCY",
+        "STRATEGIC_TRANSFORMATION",
+    ]
+    _KPI_OWNERS = [
+        "strategy_office",
+        "academic_affairs",
+        "finance_office",
+        "operations_office",
+        "quality_assurance",
+        "research_office",
+    ]
+    _SIGNAL_FAMILIES = [
+        "kpi_drift",
+        "kpi_deviation",
+        "target_miss_risk",
+        "performance_decline",
+        "strategic_misalignment",
+        "unit_underperformance",
+        "executive_performance_drop",
+    ]
+
+    def _now(self) -> datetime:
+        return datetime.now(UTC)
+
+    def _validate_tenant(self, tenant_id: int) -> int:
+        return validate_tenant_id_provided(tenant_id)
+
+    def _build_entries(self, tenant_id: int) -> list[ExecutiveKpiEntry]:
+        tenant = self._validate_tenant(tenant_id)
+        tenant_factor = (tenant % 6) + 1
+        entries: list[ExecutiveKpiEntry] = []
+        for idx, category in enumerate(self._KPI_CATEGORIES):
+            target = float(70 + (idx * 5) + tenant_factor)
+            current = float(max(10, target - (idx * 4) + (tenant_factor // 2)))
+            achievement_percent = max(0, min(140, int((current / target) * 100)))
+            if achievement_percent >= 100:
+                status = "EXCEEDED"
+                risk_level = "LOW"
+                trend_direction = "UP"
+            elif achievement_percent >= 85:
+                status = "ON_TRACK"
+                risk_level = "MEDIUM"
+                trend_direction = "STABLE"
+            elif achievement_percent >= 70:
+                status = "AT_RISK"
+                risk_level = "HIGH"
+                trend_direction = "DOWN"
+            else:
+                status = "MISSED"
+                risk_level = "CRITICAL"
+                trend_direction = "DOWN"
+
+            entries.append(
+                ExecutiveKpiEntry(
+                    kpi_id=f"EKPI-{tenant:02d}-{idx + 1:03d}",
+                    kpi_code=f"KPI-{tenant_factor}-{idx + 1}",
+                    kpi_name=f"Executive KPI {idx + 1}",
+                    kpi_owner=self._KPI_OWNERS[idx],
+                    kpi_category=category,
+                    target_value=target,
+                    current_value=current,
+                    achievement_percent=achievement_percent,
+                    status=status,
+                    risk_level=risk_level,
+                    trend_direction=trend_direction,
+                    linked_initiatives=[f"INIT-{tenant_factor}-{idx + 1}", f"INIT-{tenant_factor}-{idx + 2}"],
+                )
+            )
+        return entries
+
+    def get_kpis(self, tenant_id: int) -> list[ExecutiveKpiEntry]:
+        return self._build_entries(tenant_id)
+
+    def get_kpi_summary(self, tenant_id: int) -> ExecutiveKpiSummary:
+        tenant = self._validate_tenant(tenant_id)
+        entries = self._build_entries(tenant)
+        total = len(entries)
+        completion_rate = (sum(1 for e in entries if e.status in {"ON_TRACK", "EXCEEDED"}) * 100) // max(1, total)
+        achievement_rate = sum(e.achievement_percent for e in entries) // max(1, total)
+        deviation_rate = (sum(1 for e in entries if e.achievement_percent < 90) * 100) // max(1, total)
+        risk_rate = (sum(1 for e in entries if e.risk_level in {"HIGH", "CRITICAL"}) * 100) // max(1, total)
+        status_counts = {"ON_TRACK": 0, "AT_RISK": 0, "MISSED": 0, "EXCEEDED": 0}
+        for entry in entries:
+            status_counts[entry.status] += 1
+        return ExecutiveKpiSummary(
+            tenant_id=tenant,
+            entries=entries,
+            total_kpis=total,
+            completion_rate=completion_rate,
+            achievement_rate=achievement_rate,
+            deviation_rate=deviation_rate,
+            risk_rate=risk_rate,
+            status_counts=status_counts,
+            owner_modules=["analytics", "executive_control_tower", "strategic_initiative_runtime"],
+            generated_at=self._now(),
+        )
+
+    def get_performance_governance(self, tenant_id: int) -> PerformanceGovernanceSummary:
+        tenant = self._validate_tenant(tenant_id)
+        summary = self.get_kpi_summary(tenant)
+        total = max(1, summary.total_kpis)
+        university_performance_score = summary.achievement_rate
+        executive_performance_score = max(0, min(100, summary.achievement_rate - (summary.risk_rate // 5)))
+        unit_performance_score = max(0, min(100, summary.completion_rate - (summary.deviation_rate // 6)))
+        strategic_performance_score = max(0, min(100, 100 - (summary.risk_rate // 2)))
+        performance_trend = "DECLINING" if summary.risk_rate > 40 else "IMPROVING" if summary.achievement_rate >= 90 else "STABLE"
+
+        unit_kpi_performance = {
+            "academic_affairs": max(45, university_performance_score - 6),
+            "finance_office": max(45, university_performance_score - 4),
+            "operations_office": max(45, university_performance_score - 8),
+            "strategy_office": max(45, university_performance_score - 2),
+        }
+        strategic_kpi_alignment = {
+            "aligned_kpis": sum(1 for e in summary.entries if len(e.linked_initiatives) >= 1),
+            "misaligned_kpis": sum(1 for e in summary.entries if e.status in {"AT_RISK", "MISSED"}),
+            "alignment_rate": (sum(1 for e in summary.entries if e.status != "MISSED") * 100) // total,
+        }
+        trend_analysis = {
+            "upward": sum(1 for e in summary.entries if e.trend_direction == "UP"),
+            "stable": sum(1 for e in summary.entries if e.trend_direction == "STABLE"),
+            "downward": sum(1 for e in summary.entries if e.trend_direction == "DOWN"),
+        }
+
+        return PerformanceGovernanceSummary(
+            tenant_id=tenant,
+            university_performance_score=university_performance_score,
+            executive_performance_score=executive_performance_score,
+            unit_performance_score=unit_performance_score,
+            strategic_performance_score=strategic_performance_score,
+            kpi_completion_rate=summary.completion_rate,
+            kpi_risk_rate=summary.risk_rate,
+            performance_trend=performance_trend,
+            kpi_achievement_rate=summary.achievement_rate,
+            kpi_deviation_rate=summary.deviation_rate,
+            unit_kpi_performance=unit_kpi_performance,
+            strategic_kpi_alignment=strategic_kpi_alignment,
+            trend_analysis=trend_analysis,
+            signal_families=list(self._SIGNAL_FAMILIES),
+            generated_at=self._now(),
+        )
+
+    def get_kpi_risks(self, tenant_id: int) -> ExecutiveKpiRiskCenter:
+        tenant = self._validate_tenant(tenant_id)
+        entries = self._build_entries(tenant)
+        high_risk = [entry for entry in entries if entry.risk_level in {"HIGH", "CRITICAL"}]
+        missed = [entry for entry in entries if entry.status == "MISSED"]
+        return ExecutiveKpiRiskCenter(
+            tenant_id=tenant,
+            high_risk_kpis=high_risk,
+            missed_kpis=missed,
+            kpi_deviation_hotspots={
+                "academic_affairs": sum(1 for item in high_risk if item.kpi_owner == "academic_affairs"),
+                "operations_office": sum(1 for item in high_risk if item.kpi_owner == "operations_office"),
+                "finance_office": sum(1 for item in high_risk if item.kpi_owner == "finance_office"),
+            },
+            low_performance_units={
+                "operations_office": 2,
+                "academic_affairs": 1,
+            },
+            strategic_kpi_gaps={
+                "transformation_program": len(missed),
+                "student_success_plan": max(0, len(high_risk) - len(missed)),
+            },
+            generated_at=self._now(),
+        )
+
+    def get_kpi_trends(self, tenant_id: int) -> ExecutiveKpiTrendSummary:
+        tenant = self._validate_tenant(tenant_id)
+        entries = self._build_entries(tenant)
+        performance_scores: list[ExecutivePerformanceScore] = []
+        for entry in entries:
+            performance_scores.append(
+                ExecutivePerformanceScore(
+                    kpi_id=entry.kpi_id,
+                    kpi_code=entry.kpi_code,
+                    score=entry.achievement_percent,
+                    trend_direction=entry.trend_direction,
+                    deviation_percent=max(0, 100 - entry.achievement_percent),
+                    risk_level=entry.risk_level,
+                )
+            )
+        trend_direction_counts = {
+            "UP": sum(1 for e in entries if e.trend_direction == "UP"),
+            "STABLE": sum(1 for e in entries if e.trend_direction == "STABLE"),
+            "DOWN": sum(1 for e in entries if e.trend_direction == "DOWN"),
+        }
+        return ExecutiveKpiTrendSummary(
+            tenant_id=tenant,
+            trend_direction_counts=trend_direction_counts,
+            performance_scores=performance_scores,
+            trend_analysis={
+                "improving_kpis": trend_direction_counts["UP"],
+                "declining_kpis": trend_direction_counts["DOWN"],
+                "stable_kpis": trend_direction_counts["STABLE"],
+            },
+            signal_families=list(self._SIGNAL_FAMILIES),
+            generated_at=self._now(),
+        )
+
+
 class ExecutiveGovernanceRuntimeService:
     """Read-only Executive Governance runtime contract service."""
 
@@ -738,6 +953,11 @@ class ExecutiveGovernanceRuntimeService:
         "roadmap_delay": "analytics",
         "initiative_stagnation": "executive_control_tower",
         "kpi_deviation": "analytics",
+        "target_miss_risk": "brain_core",
+        "performance_decline": "brain_core",
+        "strategic_misalignment": "brain_core",
+        "unit_underperformance": "brain_core",
+        "executive_performance_drop": "brain_core",
         "execution_gap": "rector_assignment_workflow",
         "strategic_risk": "brain_core",
         "transformation_delay": "executive_control_tower",
@@ -748,6 +968,7 @@ class ExecutiveGovernanceRuntimeService:
         "vice_rector",
         "chief_of_staff",
         "executive_manager",
+        "strategic_office",
         "auditor",
         "administrator",
     ]
@@ -763,6 +984,7 @@ class ExecutiveGovernanceRuntimeService:
         protocols=_protocol_registry,
     )
     _strategic_initiatives = StrategicInitiativeRuntimeService()
+    _kpi_runtime = ExecutiveKpiRuntimeService()
 
     def _now(self) -> datetime:
         return datetime.now(UTC)
@@ -910,3 +1132,18 @@ class ExecutiveGovernanceRuntimeService:
 
     def get_development_program_summary(self, tenant_id: int) -> DevelopmentProgramSummary:
         return self._strategic_initiatives.get_development_program_summary(tenant_id)
+
+    def get_kpis(self, tenant_id: int) -> list[ExecutiveKpiEntry]:
+        return self._kpi_runtime.get_kpis(tenant_id)
+
+    def get_kpi_summary(self, tenant_id: int) -> ExecutiveKpiSummary:
+        return self._kpi_runtime.get_kpi_summary(tenant_id)
+
+    def get_kpi_performance(self, tenant_id: int) -> PerformanceGovernanceSummary:
+        return self._kpi_runtime.get_performance_governance(tenant_id)
+
+    def get_kpi_risks(self, tenant_id: int) -> ExecutiveKpiRiskCenter:
+        return self._kpi_runtime.get_kpi_risks(tenant_id)
+
+    def get_kpi_trends(self, tenant_id: int) -> ExecutiveKpiTrendSummary:
+        return self._kpi_runtime.get_kpi_trends(tenant_id)
