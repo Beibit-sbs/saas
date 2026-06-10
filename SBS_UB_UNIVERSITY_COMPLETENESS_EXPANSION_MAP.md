@@ -24,7 +24,37 @@
 	- audit PASS
 	- provider boundary PASS
 - Next action handoff:
-	- next_action_id `A-049.14-B1`
+	- next_action_id `A-049.15-B1`
+
+## 0. A-049.14-B1 Ministry Regulatory Reporting End-to-End Validation Continuity
+
+- A-049.14-B1 completed as validation-only action for ministry and regulatory reporting runtime chain closure evidence.
+- Source validation passed:
+	- A-049.13-E1 completed
+	- readiness confirmed as `READY_FOR_MINISTRY_REGULATORY_REPORTING_END_TO_END_VALIDATION`
+	- inherited next_action_id `A-049.14-B1` confirmed
+- Validation outcomes:
+	- contract continuity and reporting runtime chain coverage: PASS
+	- route inventory and domain coverage completeness: PASS
+	- read-only runtime enforcement and ownership metadata continuity: PASS
+	- tenant and RBAC guard posture: PASS
+	- security boundary and no-side-effects validation: PASS
+	- backend authoritative target suite (A-049.5..A-049.13 API tests): PASS (60 passed, 1 warning)
+	- frontend authoritative target suite (9 reporting runtime files): FAIL (1 file failed, 2 tests failed)
+	- frontend TypeScript gate (`npx tsc --noEmit`): PASS
+- Failure focus:
+	- failing file: `__tests__/admin/NobdReportingRuntime.test.tsx`
+	- failures: missing `nobd-reporting-center-section` due runtime shell error state (`Failed to load Reporting Runtime shell.`)
+- Validation policy integrity:
+	- runtime edits: NO
+	- schema edits: NO
+	- frontend edits: NO
+	- backend edits: NO
+	- API changes: NO
+	- evidence review only: YES
+- report_file: A-049.14-B1-MINISTRY_REGULATORY_REPORTING_END_TO_END_VALIDATION_REPORT.md
+- final_verdict: A-049.14-B1 FAIL - MINISTRY_REGULATORY_REPORTING_END_TO_END_VALIDATION_NOT_CLOSED
+- next_action_id: A-049.15-B1.
 
 ## 0. A-049.13-E1 Reporting Dashboard Runtime Implementation Continuity
 

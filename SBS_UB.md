@@ -1,7 +1,32 @@
 - Research Brain:
     - status: CLOSED_BASELINED
     - closure_report: A-047.13-RESEARCH_BRAIN_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
-    - next_action_id: A-049.14-B1
+    - next_action_id: A-049.15-B1
+
+- A-049.14-B1 execution block:
+    - mode: ministry_regulatory_reporting_end_to_end_validation
+    - purpose: validate_reporting_runtime_chain_evidence_and_authoritative_test_matrix_without_runtime_or_api_changes
+    - source_state_before: A-049.13-E1 PASS
+    - source_state_validation: PASS
+    - source_readiness_confirmed: READY_FOR_MINISTRY_REGULATORY_REPORTING_END_TO_END_VALIDATION
+    - source_next_action_id_confirmed: A-049.14-B1
+    - contract_continuity_validation: PASS
+    - route_coverage_validation: PASS
+    - read_only_enforcement_validation: PASS
+    - tenant_rbac_validation: PASS
+    - signal_ownership_validation: PASS
+    - dashboard_aggregation_validation: PASS
+    - no_runtime_side_effects_validation: PASS
+    - backend_authoritative_tests: PASS
+    - frontend_authoritative_tests: FAIL
+    - frontend_typescript: PASS
+    - security_boundary_validation: PASS
+    - validation_status: FAIL
+    - validation_notes: authoritative_frontend_suite_failed_in_nobd_runtime_tests_with_runtime_shell_error_state_and_missing_nobd_reporting_center_section
+    - report_file: A-049.14-B1-MINISTRY_REGULATORY_REPORTING_END_TO_END_VALIDATION_REPORT.md
+    - final_verdict: A-049.14-B1 FAIL - MINISTRY_REGULATORY_REPORTING_END_TO_END_VALIDATION_NOT_CLOSED
+    - recommended_next_action: A-049.15-B1
+    - next_action_id: A-049.15-B1
 
 - A-049.13-E1 execution block:
     - mode: reporting_dashboard_runtime_implementation
