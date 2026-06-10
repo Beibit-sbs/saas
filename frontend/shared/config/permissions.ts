@@ -452,6 +452,9 @@ export const PERMISSIONS = {
   EXECUTIVE_CONTROL_TOWER_AUDIT_READ: "admin.executive_control_tower.audit.read",
   EXECUTIVE_CONTROL_TOWER_DEPARTMENT_READ: "admin.executive_control_tower.department.read",
   EXECUTIVE_CONTROL_TOWER_METRIC_REGISTRY_READ: "admin.executive_control_tower.metric_registry.read",
+
+  // Reporting Runtime Shell (Wave 40 / A-049.5)
+  REPORTING_RUNTIME_SUMMARY_READ: "admin.reporting_runtime.summary.read",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
