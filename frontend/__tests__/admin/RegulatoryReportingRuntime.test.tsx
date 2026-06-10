@@ -37,6 +37,12 @@ const { mockApi } = vi.hoisted(() => ({
     getRankingBenchmarks: vi.fn(),
     getRankingTrends: vi.fn(),
     getRankingRisks: vi.fn(),
+    getNobd: vi.fn(),
+    getNobdDatasets: vi.fn(),
+    getNobdCompleteness: vi.fn(),
+    getNobdQuality: vi.fn(),
+    getNobdSyncStatus: vi.fn(),
+    getNobdRisks: vi.fn(),
   },
 }));
 
@@ -358,6 +364,42 @@ describe('Regulatory Reporting Runtime', () => {
     mockApi.getRankingBenchmarks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, benchmarks: [{ ...rankingEntry, benchmark_gap: 6 }] });
     mockApi.getRankingTrends.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, trends: [{ ...rankingEntry, trend_delta: -2 }] });
     mockApi.getRankingRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: [{ ...rankingEntry, signal_name: 'ranking_risk_high', signal_owner_module: 'brain_core' }] });
+
+    const nobdRows = [
+      ['NOBD-STUDENT', 'Student Data', 'student_lifecycle'],
+      ['NOBD-STAFF', 'Staff Data', 'hr'],
+      ['NOBD-ACADEMIC', 'Academic Data', 'academic_operations'],
+      ['NOBD-PROGRAM', 'Educational Programs', 'admissions'],
+      ['NOBD-RESEARCH', 'Research Data', 'research_science'],
+      ['NOBD-GRADUATE', 'Graduate Data', 'analytics'],
+      ['NOBD-INFRA', 'Infrastructure Data', 'finance'],
+    ].map(([code, name, owner], index) => ({
+      id: 'nobd-1-' + (index + 1),
+      dataset_code: code,
+      dataset_name: name,
+      records_total: 1800 + index * 200,
+      records_complete: 1500 + index * 160,
+      completeness_percentage: 82 - (index % 5),
+      quality_score: 84 - (index % 4),
+      sync_status: index % 3 === 0 ? 'DELAYED' : 'SCHEDULED',
+      risk_level: index % 4 === 0 ? 'HIGH' : 'MEDIUM',
+      owner_module: owner,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+    }));
+
+    mockApi.getNobd.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      reports: nobdRows,
+      signal_inventory: ['nobd_completeness_low', 'nobd_quality_risk', 'nobd_sync_delay', 'missing_required_dataset', 'nobd_readiness_low'],
+    });
+    mockApi.getNobdDatasets.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, datasets: nobdRows.map((item, index) => ({ ...item, dataset_priority: index < 3 ? 'HIGH' : 'MEDIUM' })) });
+    mockApi.getNobdCompleteness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, completeness: nobdRows.map((item) => ({ ...item, completeness_gap: item.records_total - item.records_complete })) });
+    mockApi.getNobdQuality.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, quality: nobdRows.map((item) => ({ ...item, quality_band: item.quality_score >= 85 ? 'HIGH' : 'MEDIUM' })) });
+    mockApi.getNobdSyncStatus.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, sync_status: nobdRows.map((item, index) => ({ ...item, sync_lag_hours: 4 + index })) });
+    mockApi.getNobdRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: nobdRows.map((item, index) => ({ ...item, signal_name: ['nobd_completeness_low', 'nobd_quality_risk', 'nobd_sync_delay', 'missing_required_dataset', 'nobd_readiness_low'][index % 5], signal_owner_module: 'brain_core' })) });
   });
 
   it('renders regulatory reporting sections', async () => {

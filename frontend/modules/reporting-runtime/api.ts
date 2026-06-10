@@ -31,6 +31,12 @@ import type {
   RankingReportingResponse,
   RankingRiskResponse,
   RankingTrendResponse,
+  NobdCompletenessResponse,
+  NobdDatasetResponse,
+  NobdQualityResponse,
+  NobdReportingResponse,
+  NobdRiskResponse,
+  NobdSyncStatusResponse,
 } from './types';
 
 const BASE = '/api/admin/reporting-brain';
@@ -67,4 +73,10 @@ export const reportingRuntimeApi = {
   getRankingBenchmarks: () => apiGet<RankingBenchmarkResponse>(`${BASE}/runtime/ranking/benchmarks`),
   getRankingTrends: () => apiGet<RankingTrendResponse>(`${BASE}/runtime/ranking/trends`),
   getRankingRisks: () => apiGet<RankingRiskResponse>(`${BASE}/runtime/ranking/risks`),
+  getNobd: () => apiGet<NobdReportingResponse>(`${BASE}/runtime/nobd`),
+  getNobdDatasets: () => apiGet<NobdDatasetResponse>(`${BASE}/runtime/nobd/datasets`),
+  getNobdCompleteness: () => apiGet<NobdCompletenessResponse>(`${BASE}/runtime/nobd/completeness`),
+  getNobdQuality: () => apiGet<NobdQualityResponse>(`${BASE}/runtime/nobd/quality`),
+  getNobdSyncStatus: () => apiGet<NobdSyncStatusResponse>(`${BASE}/runtime/nobd/sync-status`),
+  getNobdRisks: () => apiGet<NobdRiskResponse>(`${BASE}/runtime/nobd/risks`),
 };

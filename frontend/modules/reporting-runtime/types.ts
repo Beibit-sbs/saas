@@ -481,3 +481,82 @@ export interface RankingRiskResponse {
   read_only: boolean;
   risks: RankingRiskSummary[];
 }
+
+export interface NobdReportingSummary {
+  id: string;
+  dataset_code: string;
+  dataset_name: string;
+  records_total: number;
+  records_complete: number;
+  completeness_percentage: number;
+  quality_score: number;
+  sync_status: string;
+  risk_level: string;
+  owner_module: string;
+  generated_at: string;
+  read_only: boolean;
+}
+
+export interface NobdDatasetSummary extends NobdReportingSummary {
+  dataset_priority: string;
+}
+
+export interface NobdCompletenessSummary extends NobdReportingSummary {
+  completeness_gap: number;
+}
+
+export interface NobdQualitySummary extends NobdReportingSummary {
+  quality_band: string;
+}
+
+export interface NobdSyncStatusSummary extends NobdReportingSummary {
+  sync_lag_hours: number;
+}
+
+export interface NobdRiskSummary extends NobdReportingSummary {
+  signal_name: string;
+  signal_owner_module: string;
+}
+
+export interface NobdReportingResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  reports: NobdReportingSummary[];
+  signal_inventory: string[];
+}
+
+export interface NobdDatasetResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  datasets: NobdDatasetSummary[];
+}
+
+export interface NobdCompletenessResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  completeness: NobdCompletenessSummary[];
+}
+
+export interface NobdQualityResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  quality: NobdQualitySummary[];
+}
+
+export interface NobdSyncStatusResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  sync_status: NobdSyncStatusSummary[];
+}
+
+export interface NobdRiskResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  risks: NobdRiskSummary[];
+}

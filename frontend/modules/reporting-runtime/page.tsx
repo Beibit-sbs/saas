@@ -53,6 +53,12 @@ export function ReportingRuntimeShellPage() {
   const rankingBenchmarks = useQuery({ queryKey: ['reporting-runtime:ranking:benchmarks'], queryFn: reportingRuntimeApi.getRankingBenchmarks, staleTime: 30000 });
   const rankingTrends = useQuery({ queryKey: ['reporting-runtime:ranking:trends'], queryFn: reportingRuntimeApi.getRankingTrends, staleTime: 30000 });
   const rankingRisks = useQuery({ queryKey: ['reporting-runtime:ranking:risks'], queryFn: reportingRuntimeApi.getRankingRisks, staleTime: 30000 });
+  const nobd = useQuery({ queryKey: ['reporting-runtime:nobd'], queryFn: reportingRuntimeApi.getNobd, staleTime: 30000 });
+  const nobdDatasets = useQuery({ queryKey: ['reporting-runtime:nobd:datasets'], queryFn: reportingRuntimeApi.getNobdDatasets, staleTime: 30000 });
+  const nobdCompleteness = useQuery({ queryKey: ['reporting-runtime:nobd:completeness'], queryFn: reportingRuntimeApi.getNobdCompleteness, staleTime: 30000 });
+  const nobdQuality = useQuery({ queryKey: ['reporting-runtime:nobd:quality'], queryFn: reportingRuntimeApi.getNobdQuality, staleTime: 30000 });
+  const nobdSyncStatus = useQuery({ queryKey: ['reporting-runtime:nobd:sync-status'], queryFn: reportingRuntimeApi.getNobdSyncStatus, staleTime: 30000 });
+  const nobdRisks = useQuery({ queryKey: ['reporting-runtime:nobd:risks'], queryFn: reportingRuntimeApi.getNobdRisks, staleTime: 30000 });
 
   if (
     runtime.isPending ||
@@ -85,7 +91,13 @@ export function ReportingRuntimeShellPage() {
     rankingReadiness.isPending ||
     rankingBenchmarks.isPending ||
     rankingTrends.isPending ||
-    rankingRisks.isPending
+    rankingRisks.isPending ||
+    nobd.isPending ||
+    nobdDatasets.isPending ||
+    nobdCompleteness.isPending ||
+    nobdQuality.isPending ||
+    nobdSyncStatus.isPending ||
+    nobdRisks.isPending
   ) {
     return <LoadingState title="Loading Reporting Runtime shell" />;
   }
@@ -121,7 +133,13 @@ export function ReportingRuntimeShellPage() {
     rankingReadiness.error ||
     rankingBenchmarks.error ||
     rankingTrends.error ||
-    rankingRisks.error
+    rankingRisks.error ||
+    nobd.error ||
+    nobdDatasets.error ||
+    nobdCompleteness.error ||
+    nobdQuality.error ||
+    nobdSyncStatus.error ||
+    nobdRisks.error
   ) {
     return (
       <ErrorState
@@ -157,7 +175,13 @@ export function ReportingRuntimeShellPage() {
           rankingReadiness.error ??
           rankingBenchmarks.error ??
           rankingTrends.error ??
-          rankingRisks.error
+          rankingRisks.error ??
+          nobd.error ??
+          nobdDatasets.error ??
+          nobdCompleteness.error ??
+          nobdQuality.error ??
+          nobdSyncStatus.error ??
+          nobdRisks.error
         }
       />
     );
@@ -194,7 +218,13 @@ export function ReportingRuntimeShellPage() {
     !rankingReadiness.data ||
     !rankingBenchmarks.data ||
     !rankingTrends.data ||
-    !rankingRisks.data
+    !rankingRisks.data ||
+    !nobd.data ||
+    !nobdDatasets.data ||
+    !nobdCompleteness.data ||
+    !nobdQuality.data ||
+    !nobdSyncStatus.data ||
+    !nobdRisks.data
   ) {
     return <ErrorState message="Reporting Runtime shell is unavailable." />;
   }
@@ -556,6 +586,67 @@ export function ReportingRuntimeShellPage() {
           <div className="mt-3 space-y-1 text-sm">
             {rankingRisks.data.risks.map((item) => (
               <p key={item.id}>{item.ranking_system} {item.indicator_name}: signal={item.signal_name}, owner={item.signal_owner_module}, risk={item.risk_level}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="nobd-reporting-center-section">
+          <h2 className="text-lg font-semibold">NOBD Reporting Center</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Read-only runtime monitoring for NOBD visibility, readiness, and risk posture. No NOBD synchronization execution, no write operations, and no external API calls.
+          </p>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {nobd.data.reports.map((item) => (
+              <div key={item.id} className="rounded border p-3 text-sm">
+                <p className="font-medium">{item.dataset_name}</p>
+                <p>{item.dataset_code} | owner={item.owner_module}</p>
+                <p className="text-xs text-muted-foreground">records={item.records_complete}/{item.records_total} | completeness={item.completeness_percentage}% | quality={item.quality_score} | sync={item.sync_status}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="nobd-dataset-coverage-section">
+          <h2 className="text-lg font-semibold">Dataset Coverage</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {nobdDatasets.data.datasets.map((item) => (
+              <p key={item.id}>{item.dataset_name}: code={item.dataset_code}, priority={item.dataset_priority}, owner={item.owner_module}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="nobd-completeness-monitoring-section">
+          <h2 className="text-lg font-semibold">Completeness Monitoring</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {nobdCompleteness.data.completeness.map((item) => (
+              <p key={item.id}>{item.dataset_name}: completeness={item.completeness_percentage}% (gap={item.completeness_gap})</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="nobd-quality-monitoring-section">
+          <h2 className="text-lg font-semibold">Data Quality Monitoring</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {nobdQuality.data.quality.map((item) => (
+              <p key={item.id}>{item.dataset_name}: quality_score={item.quality_score}, quality_band={item.quality_band}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="nobd-sync-status-section">
+          <h2 className="text-lg font-semibold">Sync Status</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {nobdSyncStatus.data.sync_status.map((item) => (
+              <p key={item.id}>{item.dataset_name}: sync_status={item.sync_status}, lag_hours={item.sync_lag_hours}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="nobd-risks-section">
+          <h2 className="text-lg font-semibold">NOBD Risks</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {nobdRisks.data.risks.map((item) => (
+              <p key={item.id}>{item.dataset_name}: signal={item.signal_name}, owner={item.signal_owner_module}, risk={item.risk_level}</p>
             ))}
           </div>
         </section>

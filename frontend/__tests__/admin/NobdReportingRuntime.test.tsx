@@ -56,7 +56,7 @@ function renderWithClient(ui: React.ReactNode) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
-describe('Ranking Reporting Runtime', () => {
+describe('NOBD Reporting Runtime', () => {
   beforeEach(() => {
     mockApi.getRuntimeShell.mockResolvedValue({
       tenant_id: 1,
@@ -112,7 +112,7 @@ describe('Ranking Reporting Runtime', () => {
         read_only: true,
       },
       widgets: ['Reporting Overview', 'Provider Readiness', 'Compliance Summary', 'Reporting Deadlines', 'Reporting Status'],
-      rbac_roles: ['reporting_admin', 'vice_rector', 'quality_manager', 'auditor', 'analyst', 'research_manager'],
+      rbac_roles: ['reporting_admin', 'vice_rector', 'quality_manager', 'auditor', 'analyst', 'registrar', 'data_manager'],
     });
 
     const registryEntry = {
@@ -130,62 +130,17 @@ describe('Ranking Reporting Runtime', () => {
       read_only: true,
     };
 
-    mockApi.getRegistry.mockResolvedValue({
-      tenant_id: 1,
-      generated_at: '2026-06-10T00:00:00Z',
-      read_only: true,
-      entries: [registryEntry],
-      requirements: [{ ...registryEntry, id: 'requirement-1-1', requirement_code: 'REQ-MINISTRY-01', requirement_status: 'MET' }],
-      statuses: [{ ...registryEntry, id: 'status-1-1', risk_signal: 'stable' }],
-    });
-    mockApi.getTemplates.mockResolvedValue({
-      tenant_id: 1,
-      generated_at: '2026-06-10T00:00:00Z',
-      read_only: true,
-      templates: [{ ...registryEntry, id: 'template-1-1', template_version: 'v1.0', section_count: 6 }],
-    });
-    mockApi.getCycles.mockResolvedValue({
-      tenant_id: 1,
-      generated_at: '2026-06-10T00:00:00Z',
-      read_only: true,
-      cycles: [{ ...registryEntry, id: 'cycle-1-1', cycle_stage: 'ACTIVE', active_days_remaining: 12 }],
-    });
-    mockApi.getSubmissions.mockResolvedValue({
-      tenant_id: 1,
-      generated_at: '2026-06-10T00:00:00Z',
-      read_only: true,
-      submissions: [{ ...registryEntry, id: 'submission-1-1', submission_id: 'SUB-MINISTRY-01-1', reviewer_required: true }],
-    });
-    mockApi.getEvidence.mockResolvedValue({
-      tenant_id: 1,
-      generated_at: '2026-06-10T00:00:00Z',
-      read_only: true,
-      evidence: [{ ...registryEntry, id: 'evidence-1-1', evidence_count: 5, evidence_completeness: 80 }],
-    });
-    mockApi.getProviders.mockResolvedValue({
-      tenant_id: 1,
-      generated_at: '2026-06-10T00:00:00Z',
-      read_only: true,
-      providers: [{ ...registryEntry, id: 'provider-1-1', provider_key: 'MINISTRY_PROVIDER_PROFILE', live_integrations_enabled: false, submission_execution_enabled: false }],
-    });
+    mockApi.getRegistry.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, entries: [registryEntry], requirements: [{ ...registryEntry, id: 'requirement-1-1', requirement_code: 'REQ-MINISTRY-01', requirement_status: 'MET' }], statuses: [{ ...registryEntry, id: 'status-1-1', risk_signal: 'stable' }] });
+    mockApi.getTemplates.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, templates: [{ ...registryEntry, id: 'template-1-1', template_version: 'v1.0', section_count: 6 }] });
+    mockApi.getCycles.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, cycles: [{ ...registryEntry, id: 'cycle-1-1', cycle_stage: 'ACTIVE', active_days_remaining: 12 }] });
+    mockApi.getSubmissions.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, submissions: [{ ...registryEntry, id: 'submission-1-1', submission_id: 'SUB-MINISTRY-01-1', reviewer_required: true }] });
+    mockApi.getEvidence.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, evidence: [{ ...registryEntry, id: 'evidence-1-1', evidence_count: 5, evidence_completeness: 80 }] });
+    mockApi.getProviders.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, providers: [{ ...registryEntry, id: 'provider-1-1', provider_key: 'MINISTRY_PROVIDER_PROFILE', live_integrations_enabled: false, submission_execution_enabled: false }] });
 
     const ministryEntry = {
-      id: 'ministry-1-1',
-      report_code: 'MIN-STAT-01',
-      report_name: 'Statistical reporting',
-      reporting_period: '2026-Q2',
-      deadline: '2026-06-30T00:00:00Z',
-      completion_percentage: 82,
-      readiness_status: 'PARTIAL',
-      submission_status: 'IN_REVIEW',
-      risk_level: 'MEDIUM',
-      days_remaining: 10,
-      owner_module: 'analytics',
-      generated_at: '2026-06-10T00:00:00Z',
-      read_only: true,
+      id: 'ministry-1-1', report_code: 'MIN-STAT-01', report_name: 'Statistical reporting', reporting_period: '2026-Q2', deadline: '2026-06-30T00:00:00Z', completion_percentage: 82, readiness_status: 'PARTIAL', submission_status: 'IN_REVIEW', risk_level: 'MEDIUM', days_remaining: 10, owner_module: 'analytics', generated_at: '2026-06-10T00:00:00Z', read_only: true,
     };
-
-    mockApi.getMinistry.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, reports: [ministryEntry], signal_inventory: ['ministry_deadline_risk', 'report_overdue', 'missing_required_data', 'reporting_incomplete', 'reporting_readiness_low'] });
+    mockApi.getMinistry.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, reports: [ministryEntry], signal_inventory: ['ministry_deadline_risk'] });
     mockApi.getMinistryCycles.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, cycles: [{ ...ministryEntry, cycle_status: 'ACTIVE' }] });
     mockApi.getMinistryDeadlines.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, deadlines: [{ ...ministryEntry, deadline_status: 'UPCOMING', overdue: false }] });
     mockApi.getMinistryReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: [{ ...ministryEntry, readiness_score: 82 }] });
@@ -193,23 +148,9 @@ describe('Ranking Reporting Runtime', () => {
     mockApi.getMinistryRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: [{ ...ministryEntry, signal_name: 'reporting_readiness_low', signal_owner_module: 'brain_core' }] });
 
     const accreditationEntry = {
-      id: 'accreditation-1-1',
-      accreditation_code: 'ACC-INST-01',
-      accreditation_name: 'Institutional Accreditation',
-      accreditation_type: 'INSTITUTIONAL',
-      agency_name: 'National Accreditation Council',
-      deadline: '2026-06-30T00:00:00Z',
-      completion_percentage: 84,
-      evidence_readiness: 'PARTIAL',
-      compliance_status: 'WATCH',
-      risk_level: 'MEDIUM',
-      days_remaining: 12,
-      owner_module: 'quality_accreditation',
-      generated_at: '2026-06-10T00:00:00Z',
-      read_only: true,
+      id: 'accreditation-1-1', accreditation_code: 'ACC-INST-01', accreditation_name: 'Institutional Accreditation', accreditation_type: 'INSTITUTIONAL', agency_name: 'National Accreditation Council', deadline: '2026-06-30T00:00:00Z', completion_percentage: 84, evidence_readiness: 'PARTIAL', compliance_status: 'WATCH', risk_level: 'MEDIUM', days_remaining: 12, owner_module: 'quality_accreditation', generated_at: '2026-06-10T00:00:00Z', read_only: true,
     };
-
-    mockApi.getAccreditation.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, reports: [accreditationEntry], signal_inventory: ['accreditation_deadline_risk', 'accreditation_gap', 'missing_evidence', 'accreditation_compliance_risk', 'accreditation_readiness_low'] });
+    mockApi.getAccreditation.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, reports: [accreditationEntry], signal_inventory: ['accreditation_deadline_risk'] });
     mockApi.getAccreditationCycles.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, cycles: [{ ...accreditationEntry, cycle_status: 'ACTIVE' }] });
     mockApi.getAccreditationReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: [{ ...accreditationEntry, readiness_score: 84 }] });
     mockApi.getAccreditationCompliance.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, compliance: [{ ...accreditationEntry, compliance_score: 82 }] });
@@ -217,65 +158,24 @@ describe('Ranking Reporting Runtime', () => {
     mockApi.getAccreditationRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: [{ ...accreditationEntry, signal_name: 'accreditation_gap', signal_owner_module: 'brain_core' }] });
 
     const regulatoryEntry = {
-      id: 'regulatory-1-1',
-      requirement_code: 'REG-LIC-01',
-      requirement_name: 'Licensing Requirements',
-      regulator_name: 'National Licensing Authority',
-      compliance_status: 'WATCH',
-      deadline: '2026-06-30T00:00:00Z',
-      days_remaining: 11,
-      risk_level: 'MEDIUM',
-      document_status: 'PARTIAL',
-      owner_module: 'regulatory_reporting_integration',
-      generated_at: '2026-06-10T00:00:00Z',
-      read_only: true,
+      id: 'regulatory-1-1', requirement_code: 'REG-LIC-01', requirement_name: 'Licensing Requirements', regulator_name: 'National Licensing Authority', compliance_status: 'WATCH', deadline: '2026-06-30T00:00:00Z', days_remaining: 11, risk_level: 'MEDIUM', document_status: 'PARTIAL', owner_module: 'regulatory_reporting_integration', generated_at: '2026-06-10T00:00:00Z', read_only: true,
     };
-
-    mockApi.getRegulatory.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, reports: [regulatoryEntry], signal_inventory: ['regulatory_deadline_risk', 'compliance_violation_risk', 'missing_required_document', 'licensing_gap', 'regulatory_readiness_low'] });
+    mockApi.getRegulatory.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, reports: [regulatoryEntry], signal_inventory: ['regulatory_deadline_risk'] });
     mockApi.getRegulatoryRequirements.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, requirements: [{ ...regulatoryEntry, requirement_status: 'OPEN' }] });
     mockApi.getRegulatoryCompliance.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, compliance: [{ ...regulatoryEntry, compliance_score: 78 }] });
     mockApi.getRegulatoryDeadlines.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, deadlines: [{ ...regulatoryEntry, deadline_status: 'UPCOMING', overdue: false }] });
     mockApi.getRegulatoryDocuments.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, documents: [{ ...regulatoryEntry, document_name: 'REG-LIC-01-PRIMARY-DOC', document_completeness: 78 }] });
     mockApi.getRegulatoryRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: [{ ...regulatoryEntry, signal_name: 'regulatory_deadline_risk', signal_owner_module: 'brain_core' }] });
 
-    const rankingRows = [
-      ['QS', 'Academic Reputation', 'research_science'],
-      ['QS', 'Employer Reputation', 'analytics'],
-      ['QS', 'Faculty Student Ratio', 'quality_accreditation'],
-      ['QS', 'Citations Per Faculty', 'research_science'],
-      ['QS', 'International Faculty', 'analytics'],
-      ['QS', 'International Students', 'analytics'],
-      ['THE', 'Teaching', 'quality_accreditation'],
-      ['THE', 'Research Environment', 'research_science'],
-      ['THE', 'Research Quality', 'research_science'],
-      ['THE', 'International Outlook', 'analytics'],
-      ['THE', 'Industry Engagement', 'analytics'],
-    ].map(([system, indicator, owner], index) => ({
-      id: `ranking-1-${index + 1}`,
-      ranking_system: system,
-      indicator_name: indicator,
-      indicator_score: 82 - (index % 4),
-      benchmark_score: 86 - (index % 3),
-      trend_direction: index % 3 === 0 ? 'DOWN' : index % 2 === 0 ? 'UP' : 'STABLE',
-      readiness_level: index < 4 ? 'READY' : 'PARTIAL',
-      risk_level: index % 4 === 0 ? 'HIGH' : 'MEDIUM',
-      owner_module: owner,
-      generated_at: '2026-06-10T00:00:00Z',
-      read_only: true,
-    }));
-
-    mockApi.getRanking.mockResolvedValue({
-      tenant_id: 1,
-      generated_at: '2026-06-10T00:00:00Z',
-      read_only: true,
-      reports: rankingRows,
-      signal_inventory: ['ranking_readiness_low', 'qs_indicator_decline', 'the_indicator_decline', 'ranking_risk_high', 'benchmark_gap_high'],
-    });
-    mockApi.getRankingIndicators.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, indicators: rankingRows.map((item, index) => ({ ...item, indicator_weight: 16 - (index % 5) })) });
-    mockApi.getRankingReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: rankingRows.map((item) => ({ ...item, readiness_score: item.indicator_score })) });
-    mockApi.getRankingBenchmarks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, benchmarks: rankingRows.map((item) => ({ ...item, benchmark_gap: Math.max(0, item.benchmark_score - item.indicator_score) })) });
-    mockApi.getRankingTrends.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, trends: rankingRows.map((item, index) => ({ ...item, trend_delta: (index % 5) - 2 })) });
-    mockApi.getRankingRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: rankingRows.map((item, index) => ({ ...item, signal_name: ['ranking_readiness_low', 'qs_indicator_decline', 'the_indicator_decline', 'ranking_risk_high', 'benchmark_gap_high'][index % 5], signal_owner_module: 'brain_core' })) });
+    const rankingEntry = {
+      id: 'ranking-1-1', ranking_system: 'QS', indicator_name: 'Academic Reputation', indicator_score: 80, benchmark_score: 86, trend_direction: 'DOWN', readiness_level: 'PARTIAL', risk_level: 'HIGH', owner_module: 'research_science', generated_at: '2026-06-10T00:00:00Z', read_only: true,
+    };
+    mockApi.getRanking.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, reports: [rankingEntry], signal_inventory: ['ranking_risk_high'] });
+    mockApi.getRankingIndicators.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, indicators: [{ ...rankingEntry, indicator_weight: 16 }] });
+    mockApi.getRankingReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: [{ ...rankingEntry, readiness_score: 80 }] });
+    mockApi.getRankingBenchmarks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, benchmarks: [{ ...rankingEntry, benchmark_gap: 6 }] });
+    mockApi.getRankingTrends.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, trends: [{ ...rankingEntry, trend_delta: -2 }] });
+    mockApi.getRankingRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: [{ ...rankingEntry, signal_name: 'ranking_risk_high', signal_owner_module: 'brain_core' }] });
 
     const nobdRows = [
       ['NOBD-STUDENT', 'Student Data', 'student_lifecycle'],
@@ -286,7 +186,7 @@ describe('Ranking Reporting Runtime', () => {
       ['NOBD-GRADUATE', 'Graduate Data', 'analytics'],
       ['NOBD-INFRA', 'Infrastructure Data', 'finance'],
     ].map(([code, name, owner], index) => ({
-      id: 'nobd-1-' + (index + 1),
+      id: `nobd-1-${index + 1}`,
       dataset_code: code,
       dataset_name: name,
       records_total: 1800 + index * 200,
@@ -314,36 +214,32 @@ describe('Ranking Reporting Runtime', () => {
     mockApi.getNobdRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: nobdRows.map((item, index) => ({ ...item, signal_name: ['nobd_completeness_low', 'nobd_quality_risk', 'nobd_sync_delay', 'missing_required_dataset', 'nobd_readiness_low'][index % 5], signal_owner_module: 'brain_core' })) });
   });
 
-  it('renders ranking reporting sections', async () => {
+  it('renders NOBD reporting runtime sections', async () => {
     renderWithClient(<ReportingRuntimeShellPage />);
 
-    expect(await screen.findByTestId('ranking-reporting-center-section')).toBeInTheDocument();
-    expect(screen.getByTestId('ranking-qs-readiness-section')).toBeInTheDocument();
-    expect(screen.getByTestId('ranking-the-readiness-section')).toBeInTheDocument();
-    expect(screen.getByTestId('ranking-benchmarks-section')).toBeInTheDocument();
-    expect(screen.getByTestId('ranking-trends-section')).toBeInTheDocument();
-    expect(screen.getByTestId('ranking-risks-section')).toBeInTheDocument();
+    expect(await screen.findByTestId('nobd-reporting-center-section')).toBeInTheDocument();
+    expect(screen.getByTestId('nobd-dataset-coverage-section')).toBeInTheDocument();
+    expect(screen.getByTestId('nobd-completeness-monitoring-section')).toBeInTheDocument();
+    expect(screen.getByTestId('nobd-quality-monitoring-section')).toBeInTheDocument();
+    expect(screen.getByTestId('nobd-sync-status-section')).toBeInTheDocument();
+    expect(screen.getByTestId('nobd-risks-section')).toBeInTheDocument();
   });
 
-  it('renders QS/THE coverage and risk owner surface', async () => {
+  it('renders NOBD datasets and risk owner visibility', async () => {
     renderWithClient(<ReportingRuntimeShellPage />);
 
-    const center = await screen.findByTestId('ranking-reporting-center-section');
+    const center = await screen.findByTestId('nobd-reporting-center-section');
     const scoped = within(center);
-    const risks = await screen.findByTestId('ranking-risks-section');
+    const risks = await screen.findByTestId('nobd-risks-section');
     const riskScoped = within(risks);
 
-    expect(scoped.getByText('Academic Reputation')).toBeInTheDocument();
-    expect(scoped.getByText('Employer Reputation')).toBeInTheDocument();
-    expect(scoped.getByText('Faculty Student Ratio')).toBeInTheDocument();
-    expect(scoped.getByText('Citations Per Faculty')).toBeInTheDocument();
-    expect(scoped.getByText('International Faculty')).toBeInTheDocument();
-    expect(scoped.getByText('International Students')).toBeInTheDocument();
-    expect(scoped.getByText('Teaching')).toBeInTheDocument();
-    expect(scoped.getByText('Research Environment')).toBeInTheDocument();
-    expect(scoped.getByText('Research Quality')).toBeInTheDocument();
-    expect(scoped.getByText('International Outlook')).toBeInTheDocument();
-    expect(scoped.getByText('Industry Engagement')).toBeInTheDocument();
+    expect(scoped.getByText('Student Data')).toBeInTheDocument();
+    expect(scoped.getByText('Staff Data')).toBeInTheDocument();
+    expect(scoped.getByText('Academic Data')).toBeInTheDocument();
+    expect(scoped.getByText('Educational Programs')).toBeInTheDocument();
+    expect(scoped.getByText('Research Data')).toBeInTheDocument();
+    expect(scoped.getByText('Graduate Data')).toBeInTheDocument();
+    expect(scoped.getByText('Infrastructure Data')).toBeInTheDocument();
     expect(riskScoped.getAllByText(/owner=brain_core/i).length).toBeGreaterThan(0);
   });
 });

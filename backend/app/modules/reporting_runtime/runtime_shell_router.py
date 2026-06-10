@@ -38,6 +38,15 @@ from app.modules.reporting_runtime.runtime_ranking_schemas import (
     RankingTrendResponse,
 )
 from app.modules.reporting_runtime.runtime_ranking_service import RankingReportingRuntimeService
+from app.modules.reporting_runtime.runtime_nobd_schemas import (
+    NobdCompletenessResponse,
+    NobdDatasetResponse,
+    NobdQualityResponse,
+    NobdReportingResponse,
+    NobdRiskResponse,
+    NobdSyncStatusResponse,
+)
+from app.modules.reporting_runtime.runtime_nobd_service import NobdReportingRuntimeService
 from app.modules.reporting_runtime.runtime_ministry_schemas import (
     MinistryReportingCompletenessResponse,
     MinistryReportingCycleResponse,
@@ -71,6 +80,7 @@ _ministry_service = MinistryReportingRuntimeService()
 _accreditation_service = AccreditationReportingRuntimeService()
 _regulatory_service = RegulatoryReportingRuntimeService()
 _ranking_service = RankingReportingRuntimeService()
+_nobd_service = NobdReportingRuntimeService()
 
 
 def _handle(exc: Exception) -> None:
@@ -451,5 +461,77 @@ def get_ranking_reporting_risks_runtime(
 ) -> RankingRiskResponse:
     try:
         return _ranking_service.get_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/nobd", response_model=NobdReportingResponse)
+def get_nobd_reporting_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> NobdReportingResponse:
+    try:
+        return _nobd_service.get_nobd(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/nobd/datasets", response_model=NobdDatasetResponse)
+def get_nobd_reporting_datasets_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> NobdDatasetResponse:
+    try:
+        return _nobd_service.get_datasets(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/nobd/completeness", response_model=NobdCompletenessResponse)
+def get_nobd_reporting_completeness_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> NobdCompletenessResponse:
+    try:
+        return _nobd_service.get_completeness(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/nobd/quality", response_model=NobdQualityResponse)
+def get_nobd_reporting_quality_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> NobdQualityResponse:
+    try:
+        return _nobd_service.get_quality(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/nobd/sync-status", response_model=NobdSyncStatusResponse)
+def get_nobd_reporting_sync_status_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> NobdSyncStatusResponse:
+    try:
+        return _nobd_service.get_sync_status(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/nobd/risks", response_model=NobdRiskResponse)
+def get_nobd_reporting_risks_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> NobdRiskResponse:
+    try:
+        return _nobd_service.get_risks(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)
