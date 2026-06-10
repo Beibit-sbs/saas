@@ -87,6 +87,11 @@ def test_orchestration_surface(mock_orchestration) -> None:
         "risk_signals": {"source_module": "brain_core", "read_only": True, "total": 6, "notes": "risk_signals"},
         "risk_trends": {"source_module": "brain_core", "read_only": True, "total": 5, "notes": "risk_trends"},
         "risk_recommendations": {"source_module": "brain_core", "read_only": True, "total": 3, "notes": "risk_recommendations"},
+        "dashboard_summary": {"source_module": "research_science", "read_only": True, "total": 1, "notes": "dashboard_summary"},
+        "dashboard_kpi_plane": {"source_module": "analytics", "read_only": True, "total": 10, "notes": "dashboard_kpi_plane"},
+        "dashboard_signal_plane": {"source_module": "brain_core", "read_only": True, "total": 9, "notes": "dashboard_signal_plane"},
+        "dashboard_risk_plane": {"source_module": "brain_core", "read_only": True, "total": 5, "notes": "dashboard_risk_plane"},
+        "dashboard_scientometric_plane": {"source_module": "analytics", "read_only": True, "total": 5, "notes": "dashboard_scientometric_plane"},
     }
     resp = client.get(f"{BASE}/orchestration", headers=ADMIN_HEADERS)
     assert resp.status_code == 200

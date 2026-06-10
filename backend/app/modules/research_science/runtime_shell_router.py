@@ -30,6 +30,11 @@ from app.modules.research_science.schemas import (
     ResearchBrainRbacValidationResponse,
     ResearchBrainShellResponse,
     ResearchBrainSignalSurfaceResponse,
+    ResearchDashboardKPIs,
+    ResearchDashboardRisks,
+    ResearchDashboardScientometrics,
+    ResearchDashboardSignals,
+    ResearchDashboardSummary,
     ScientometricTrend,
     ScientometricsSummaryResponse,
 )
@@ -286,3 +291,53 @@ def get_research_risk_recommendations(
     db: _DB,
 ) -> list[str]:
     return service.get_research_risk_recommendations_service(db, tenant)
+
+
+@router.get("/dashboard/summary", response_model=ResearchDashboardSummary)
+def get_research_dashboard_summary(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant: _Tenant,
+    db: _DB,
+) -> ResearchDashboardSummary:
+    return service.get_research_dashboard_summary_service(db, tenant)
+
+
+@router.get("/dashboard/kpis", response_model=ResearchDashboardKPIs)
+def get_research_dashboard_kpis(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant: _Tenant,
+    db: _DB,
+) -> ResearchDashboardKPIs:
+    return service.get_research_dashboard_kpi_plane_service(db, tenant)
+
+
+@router.get("/dashboard/signals", response_model=ResearchDashboardSignals)
+def get_research_dashboard_signals(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant: _Tenant,
+    db: _DB,
+) -> ResearchDashboardSignals:
+    return service.get_research_dashboard_signal_plane_service(db, tenant)
+
+
+@router.get("/dashboard/risks", response_model=ResearchDashboardRisks)
+def get_research_dashboard_risks(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant: _Tenant,
+    db: _DB,
+) -> ResearchDashboardRisks:
+    return service.get_research_dashboard_risk_plane_service(db, tenant)
+
+
+@router.get("/dashboard/scientometrics", response_model=ResearchDashboardScientometrics)
+def get_research_dashboard_scientometrics(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.DASHBOARD_READ))],
+    tenant: _Tenant,
+    db: _DB,
+) -> ResearchDashboardScientometrics:
+    return service.get_research_dashboard_scientometric_plane_service(db, tenant)

@@ -113,6 +113,7 @@ export function ResearchBrainRuntimeShellPage() {
             <Link href="/console/research-science" className="rounded-full border px-3 py-1">Research Science Overview</Link>
             <Link href="/console/research-science/dashboard" className="rounded-full border px-3 py-1">Research Science Dashboard</Link>
             <Link href="/console/research-brain/researchers" className="rounded-full border px-3 py-1">Researcher Registry</Link>
+            <Link href="/console/research-brain/dashboard" className="rounded-full border px-3 py-1">Research Dashboard</Link>
             <Link href="/console/research-brain/scientometrics" className="rounded-full border px-3 py-1">Scientometrics</Link>
             <Link href="/console/research-brain/risk" className="rounded-full border px-3 py-1">Research Risk</Link>
             <Link href="/console/research-grants" className="rounded-full border px-3 py-1">Research Grants</Link>
@@ -588,6 +589,103 @@ export function ResearchBrainRiskPage() {
               </li>
             ))}
           </ul>
+        </section>
+      </div>
+    </RequirePermission>
+  );
+}
+
+export function ResearchBrainDashboardPage() {
+  const summary = useQuery({ queryKey: ['research-brain:dashboard-summary'], queryFn: researchBrainApi.getResearchDashboardSummary, staleTime: 30000 });
+  const kpis = useQuery({ queryKey: ['research-brain:dashboard-kpis'], queryFn: researchBrainApi.getResearchDashboardKpis, staleTime: 30000 });
+  const signals = useQuery({ queryKey: ['research-brain:dashboard-signals'], queryFn: researchBrainApi.getResearchDashboardSignals, staleTime: 30000 });
+  const risks = useQuery({ queryKey: ['research-brain:dashboard-risks'], queryFn: researchBrainApi.getResearchDashboardRisks, staleTime: 30000 });
+  const scientometrics = useQuery({ queryKey: ['research-brain:dashboard-scientometrics'], queryFn: researchBrainApi.getResearchDashboardScientometrics, staleTime: 30000 });
+
+  if (summary.isPending || kpis.isPending || signals.isPending || risks.isPending || scientometrics.isPending) {
+    return <LoadingState title="Loading Research Dashboard runtime" />;
+  }
+
+  if (summary.error || kpis.error || signals.error || risks.error || scientometrics.error) {
+    return (
+      <ErrorState
+        message="Failed to load Research Dashboard runtime."
+        error={summary.error ?? kpis.error ?? signals.error ?? risks.error ?? scientometrics.error}
+      />
+    );
+  }
+
+  if (!summary.data || !kpis.data || !signals.data || !risks.data || !scientometrics.data) {
+    return <ErrorState message="Research Dashboard runtime is unavailable." />;
+  }
+
+  return (
+    <RequirePermission permission={PERMISSIONS.RESEARCH_SCIENCE_DASHBOARD_READ}>
+      <div className="space-y-6" data-testid="research-brain-dashboard-page">
+        <header className="space-y-2">
+          <h1 className="text-2xl font-semibold">Executive Research Dashboard Runtime</h1>
+          <p className="text-sm text-muted-foreground">
+            Unified executive runtime over researchers, publications, scientometrics, risks, grants, ethics, and signals. Read-only and provider-ready only.
+          </p>
+        </header>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5" data-testid="dashboard-kpi-overview-widget">
+          <MetricCard label="Researchers" value={kpis.data.researchers} />
+          <MetricCard label="Publications" value={kpis.data.publications} />
+          <MetricCard label="Citations" value={kpis.data.citations} />
+          <MetricCard label="Grants" value={kpis.data.grants} />
+          <MetricCard label="Ethics Reviews" value={kpis.data.ethics_reviews} />
+        </div>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-lg border p-4" data-testid="dashboard-research-health-widget">
+            <h2 className="text-lg font-semibold">Research Health</h2>
+            <p className="mt-2 text-sm">Signal count: {signals.data.signal_count}</p>
+            <p className="text-sm">Risk trend: {risks.data.trend_direction}</p>
+            <p className="text-sm">Risk distribution: critical {risks.data.critical_risks}, medium {risks.data.medium_risks}, low {risks.data.low_risks}</p>
+          </div>
+          <div className="rounded-lg border p-4" data-testid="dashboard-scientometric-summary-widget">
+            <h2 className="text-lg font-semibold">Scientometric Summary</h2>
+            <p className="mt-2 text-sm">Top researchers: {scientometrics.data.top_researchers.length}</p>
+            <p className="text-sm">Citation leaders: {scientometrics.data.citation_leaderboard.length}</p>
+            <p className="text-sm">h-index leaders: {scientometrics.data.h_index_leaderboard.length}</p>
+          </div>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-lg border p-4" data-testid="dashboard-risk-summary-widget">
+            <h2 className="text-lg font-semibold">Risk Summary</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              {risks.data.recommendations.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-lg border p-4" data-testid="dashboard-signal-summary-widget">
+            <h2 className="text-lg font-semibold">Signal Summary</h2>
+            <ul className="mt-2 space-y-1 text-sm">
+              {signals.data.signals.map((signal) => (
+                <li key={signal.family}>{signal.family}: {signal.severity}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="dashboard-top-researchers-widget">
+          <h2 className="text-lg font-semibold">Top Researchers</h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {scientometrics.data.top_researchers.map((item) => (
+              <li key={item.researcher_id}>{item.researcher_id}: impact {item.impact_score}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="dashboard-activity-summary-widget">
+          <h2 className="text-lg font-semibold">Activity Summary</h2>
+          <p className="mt-2 text-sm">Publication activity: {summary.data.activity.publication_activity}</p>
+          <p className="text-sm">Grant activity: {summary.data.activity.grant_activity}</p>
+          <p className="text-sm">Risk activity: {summary.data.activity.risk_activity}</p>
+          <p className="text-sm">Signal activity: {summary.data.activity.signal_activity}</p>
         </section>
       </div>
     </RequirePermission>

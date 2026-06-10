@@ -39,6 +39,11 @@ export interface ResearchBrainOrchestrationResponse {
   risk_signals: ResearchBrainOrchestrationItem;
   risk_trends: ResearchBrainOrchestrationItem;
   risk_recommendations: ResearchBrainOrchestrationItem;
+  dashboard_summary: ResearchBrainOrchestrationItem;
+  dashboard_kpi_plane: ResearchBrainOrchestrationItem;
+  dashboard_signal_plane: ResearchBrainOrchestrationItem;
+  dashboard_risk_plane: ResearchBrainOrchestrationItem;
+  dashboard_scientometric_plane: ResearchBrainOrchestrationItem;
 }
 
 export interface ResearchBrainContextSource {
@@ -283,6 +288,64 @@ export interface ResearchRiskProfile {
   signals: ResearchRiskSignal[];
   trends: ResearchRiskTrend[];
   recommendations: string[];
+  provider_execution_enabled: boolean;
+  external_calls_enabled: boolean;
+}
+
+export interface ResearchDashboardKPIs {
+  researchers: number;
+  publications: number;
+  citations: number;
+  h_index: number;
+  international_publications: number;
+  indexed_publications: number;
+  grants: number;
+  ethics_reviews: number;
+  risk_count: number;
+  signal_count: number;
+}
+
+export interface ResearchDashboardSignals {
+  owner: string;
+  signals: ResearchRiskSignal[];
+  signal_count: number;
+}
+
+export interface ResearchDashboardRisks {
+  owner: string;
+  critical_risks: number;
+  medium_risks: number;
+  low_risks: number;
+  trend_direction: string;
+  recommendations: string[];
+}
+
+export interface ResearchDashboardScientometrics {
+  owner: string;
+  top_researchers: ResearcherScientometricProfile[];
+  citation_leaderboard: CitationAnalyticsSummary[];
+  h_index_leaderboard: CitationAnalyticsSummary[];
+  impact_leaders: PublicationImpactProfile[];
+  publication_leaders: PublicationImpactProfile[];
+}
+
+export interface ResearchDashboardActivity {
+  generated_at: string | null;
+  publication_activity: number;
+  grant_activity: number;
+  ethics_activity: number;
+  risk_activity: number;
+  signal_activity: number;
+}
+
+export interface ResearchDashboardSummary {
+  tenant_id: number;
+  generated_at: string | null;
+  kpis: ResearchDashboardKPIs;
+  signals: ResearchDashboardSignals;
+  risks: ResearchDashboardRisks;
+  scientometrics: ResearchDashboardScientometrics;
+  activity: ResearchDashboardActivity;
   provider_execution_enabled: boolean;
   external_calls_enabled: boolean;
 }

@@ -62,6 +62,12 @@ from app.modules.research_science.schemas import (
     ResearchBrainShellResponse,
     ResearchBrainSignalItemResponse,
     ResearchBrainSignalSurfaceResponse,
+    ResearchDashboardActivity,
+    ResearchDashboardKPIs,
+    ResearchDashboardRisks,
+    ResearchDashboardScientometrics,
+    ResearchDashboardSignals,
+    ResearchDashboardSummary,
     ResearchScienceDashboardResponse,
     ResearchScienceHealthResponse,
     ResearchScienceLimitationsResponse,
@@ -1153,6 +1159,204 @@ class ResearchRiskService:
         )
 
 
+class ResearchExecutiveDashboardService:
+    """Executive dashboard runtime that aggregates existing Research Brain planes."""
+
+    def __init__(self, db: Session, tenant_id: int):
+        self.db = db
+        self.tenant_id = validate_tenant_id(tenant_id)
+
+    def kpis(self) -> ResearchDashboardKPIs:
+        researcher_summary = get_researcher_dashboard_summary_service(self.db, self.tenant_id)
+        scientometrics = ScientometricsService(self.db, self.tenant_id).scientometrics_dashboard()
+        risk_profile = ResearchRiskService(self.db, self.tenant_id).risk_profile()
+        citations = sum(item.citation_count for item in scientometrics.top_researchers)
+        h_index_total = sum(item.h_index for item in scientometrics.top_researchers)
+        international_total = sum(item.international_publications for item in scientometrics.publication_impact_summary)
+        indexed_total = sum(item.indexed_publications for item in scientometrics.publication_impact_summary)
+        return ResearchDashboardKPIs(
+            researchers=researcher_summary.total_researchers,
+            publications=researcher_summary.publication_total,
+            citations=citations,
+            h_index=h_index_total,
+            international_publications=international_total,
+            indexed_publications=indexed_total,
+            grants=researcher_summary.active_grants_total,
+            ethics_reviews=int(_sum_bucket(repository.compute_research_dashboard_summary(self.db, self.tenant_id)["ethics_summary"])),
+            risk_count=len(risk_profile.signals),
+            signal_count=len(self.signals().signals),
+        )
+
+    def signals(self) -> ResearchDashboardSignals:
+        registry = _build_researcher_registry(self.db, self.tenant_id)
+        scientometrics = ScientometricsService(self.db, self.tenant_id).scientometrics_dashboard()
+        risk_profile = ResearchRiskService(self.db, self.tenant_id).risk_profile()
+        publication_gap = [item.researcher_id for item in registry if item.publication_count == 0]
+        inactivity = [item.researcher_id for item in registry if item.active_projects == 0 and item.active_grants == 0]
+        ranking_drop = [item.researcher_id for item in scientometrics.top_researchers if item.scientometric_risk in {"MEDIUM", "HIGH"}]
+        citation_decline = [item.researcher_id for item in scientometrics.top_researchers if item.trend_direction == "down" or item.citation_count < 3]
+        publication_stagnation = [item.researcher_id for item in scientometrics.publication_impact_summary if item.publication_count <= 1]
+        impact_drop = [item.researcher_id for item in scientometrics.publication_impact_summary if item.impact_score < 50.0]
+        low_visibility = [item.researcher_id for item in scientometrics.publication_impact_summary if item.indexed_publications == 0]
+        grant_risk_count = sum(1 for signal in risk_profile.signals if signal.family == "grant_execution_risk")
+        ethics_delay_count = sum(1 for signal in risk_profile.signals if signal.family == "ethics_expiration_risk")
+
+        signals = [
+            ResearchRiskSignal(
+                family="citation_decline",
+                owner="brain_core",
+                dimension="scientometric",
+                source="analytics-owned citation trend baseline",
+                severity="HIGH" if len(citation_decline) > 0 else "LOW",
+                observed_count=len(citation_decline),
+                affected_entities=citation_decline[:5],
+                description="Citation baseline and trend indicate decline risk.",
+            ),
+            ResearchRiskSignal(
+                family="publication_stagnation",
+                owner="brain_core",
+                dimension="publication",
+                source="publication throughput from scientometric publication profiles",
+                severity="HIGH" if len(publication_stagnation) > 0 else "LOW",
+                observed_count=len(publication_stagnation),
+                affected_entities=publication_stagnation[:5],
+                description="Low publication throughput indicates stagnation.",
+            ),
+            ResearchRiskSignal(
+                family="impact_drop",
+                owner="brain_core",
+                dimension="scientometric",
+                source="impact score summaries from analytics scientometrics",
+                severity="HIGH" if len(impact_drop) > 0 else "LOW",
+                observed_count=len(impact_drop),
+                affected_entities=impact_drop[:5],
+                description="Impact score drift indicates potential impact drop.",
+            ),
+            ResearchRiskSignal(
+                family="low_visibility",
+                owner="brain_core",
+                dimension="scientometric",
+                source="indexed publication coverage inventory",
+                severity="HIGH" if len(low_visibility) > 0 else "LOW",
+                observed_count=len(low_visibility),
+                affected_entities=low_visibility[:5],
+                description="Low indexed publication coverage indicates visibility risk.",
+            ),
+            ResearchRiskSignal(
+                family="researcher_ranking_drop",
+                owner="brain_core",
+                dimension="scientometric",
+                source="researcher ranking and scientometric risk bands",
+                severity="MEDIUM" if len(ranking_drop) > 0 else "LOW",
+                observed_count=len(ranking_drop),
+                affected_entities=ranking_drop[:5],
+                description="Ranking movement indicates potential researcher ranking drop.",
+            ),
+            ResearchRiskSignal(
+                family="grant_risk",
+                owner="brain_core",
+                dimension="grant",
+                source="research risk runtime grant risk inventory",
+                severity="HIGH" if grant_risk_count > 0 else "LOW",
+                observed_count=grant_risk_count,
+                affected_entities=[signal.affected_entities[0] for signal in risk_profile.signals if signal.family == "grant_execution_risk" and signal.affected_entities][:5],
+                description="Grant execution pathways indicate elevated grant risk.",
+            ),
+            ResearchRiskSignal(
+                family="ethics_delay",
+                owner="brain_core",
+                dimension="ethics",
+                source="research ethics queue and risk runtime",
+                severity="MEDIUM" if ethics_delay_count > 0 else "LOW",
+                observed_count=ethics_delay_count,
+                affected_entities=[signal.affected_entities[0] for signal in risk_profile.signals if signal.family == "ethics_expiration_risk" and signal.affected_entities][:5],
+                description="Ethics queue state indicates potential review delay.",
+            ),
+            ResearchRiskSignal(
+                family="publication_gap",
+                owner="brain_core",
+                dimension="publication",
+                source="researcher publication registry summary",
+                severity="HIGH" if len(publication_gap) > 0 else "LOW",
+                observed_count=len(publication_gap),
+                affected_entities=publication_gap[:5],
+                description="Researchers with no publications indicate publication gap.",
+            ),
+            ResearchRiskSignal(
+                family="researcher_inactivity",
+                owner="brain_core",
+                dimension="execution",
+                source="researcher activity and workload summary",
+                severity="HIGH" if len(inactivity) > 0 else "LOW",
+                observed_count=len(inactivity),
+                affected_entities=inactivity[:5],
+                description="No active project/grant activity indicates researcher inactivity.",
+            ),
+        ]
+        return ResearchDashboardSignals(owner="brain_core", signals=signals, signal_count=len(signals))
+
+    def risks(self) -> ResearchDashboardRisks:
+        profile = ResearchRiskService(self.db, self.tenant_id).risk_profile()
+        critical = sum(1 for signal in profile.signals if signal.severity in {"CRITICAL", "HIGH"})
+        medium = sum(1 for signal in profile.signals if signal.severity == "MEDIUM")
+        low = sum(1 for signal in profile.signals if signal.severity == "LOW")
+        trend = "stable"
+        if any(item.trend_direction == "up" for item in profile.trends):
+            trend = "up"
+        elif all(item.trend_direction == "down" for item in profile.trends):
+            trend = "down"
+        return ResearchDashboardRisks(
+            owner="brain_core",
+            critical_risks=critical,
+            medium_risks=medium,
+            low_risks=low,
+            trend_direction=trend,
+            recommendations=profile.recommendations,
+        )
+
+    def scientometrics(self) -> ResearchDashboardScientometrics:
+        summary = ScientometricsService(self.db, self.tenant_id).scientometrics_dashboard()
+        impact_leaders = sorted(summary.publication_impact_summary, key=lambda item: item.impact_score, reverse=True)
+        publication_leaders = sorted(summary.publication_impact_summary, key=lambda item: item.publication_count, reverse=True)
+        return ResearchDashboardScientometrics(
+            owner="analytics",
+            top_researchers=summary.top_researchers[:5],
+            citation_leaderboard=summary.citation_leaderboard[:5],
+            h_index_leaderboard=summary.h_index_leaderboard[:5],
+            impact_leaders=impact_leaders[:5],
+            publication_leaders=publication_leaders[:5],
+        )
+
+    def activity(self) -> ResearchDashboardActivity:
+        kpis = self.kpis()
+        risks = self.risks()
+        return ResearchDashboardActivity(
+            generated_at=_now(),
+            publication_activity=kpis.publications,
+            grant_activity=kpis.grants,
+            ethics_activity=kpis.ethics_reviews,
+            risk_activity=risks.critical_risks + risks.medium_risks + risks.low_risks,
+            signal_activity=kpis.signal_count,
+        )
+
+    def summary(self) -> ResearchDashboardSummary:
+        kpis = self.kpis()
+        signals = self.signals()
+        risks = self.risks()
+        scientometrics = self.scientometrics()
+        return ResearchDashboardSummary(
+            tenant_id=self.tenant_id,
+            generated_at=_now(),
+            kpis=kpis,
+            signals=signals,
+            risks=risks,
+            scientometrics=scientometrics,
+            activity=self.activity(),
+            provider_execution_enabled=False,
+            external_calls_enabled=False,
+        )
+
+
 def _build_researcher_registry(db: Session, tenant_id: int) -> list[Researcher]:
     publications = repository.list_publication_metadata(db, tenant_id)
     grants = repository.list_grant_applications(db, tenant_id)
@@ -1512,6 +1716,36 @@ def get_research_brain_orchestration_service(db: Session, tenant_id: int) -> Res
             total=len(risk_profile.recommendations),
             notes="Recommendations remain advisory and human-review gated.",
         ),
+        dashboard_summary=ResearchBrainOrchestrationItemResponse(
+            source_module="research_science",
+            read_only=True,
+            total=1,
+            notes="Executive dashboard summary plane is exposed by the research_science shell.",
+        ),
+        dashboard_kpi_plane=ResearchBrainOrchestrationItemResponse(
+            source_module="analytics",
+            read_only=True,
+            total=10,
+            notes="Executive KPI plane remains analytics-owned and read-only.",
+        ),
+        dashboard_signal_plane=ResearchBrainOrchestrationItemResponse(
+            source_module="brain_core",
+            read_only=True,
+            total=9,
+            notes="Executive signal plane remains brain_core-owned and read-only.",
+        ),
+        dashboard_risk_plane=ResearchBrainOrchestrationItemResponse(
+            source_module="brain_core",
+            read_only=True,
+            total=5,
+            notes="Executive risk plane reuses research risk runtime outputs.",
+        ),
+        dashboard_scientometric_plane=ResearchBrainOrchestrationItemResponse(
+            source_module="analytics",
+            read_only=True,
+            total=5,
+            notes="Executive scientometric plane reuses existing scientometrics runtime outputs.",
+        ),
     )
 
 
@@ -1771,6 +2005,26 @@ def get_research_risk_trends_service(db: Session, tenant_id: int) -> list[Resear
 def get_research_risk_recommendations_service(db: Session, tenant_id: int) -> list[str]:
     profile = ResearchRiskService(db, tenant_id).risk_profile()
     return profile.recommendations
+
+
+def get_research_dashboard_summary_service(db: Session, tenant_id: int) -> ResearchDashboardSummary:
+    return ResearchExecutiveDashboardService(db, tenant_id).summary()
+
+
+def get_research_dashboard_kpi_plane_service(db: Session, tenant_id: int) -> ResearchDashboardKPIs:
+    return ResearchExecutiveDashboardService(db, tenant_id).kpis()
+
+
+def get_research_dashboard_signal_plane_service(db: Session, tenant_id: int) -> ResearchDashboardSignals:
+    return ResearchExecutiveDashboardService(db, tenant_id).signals()
+
+
+def get_research_dashboard_risk_plane_service(db: Session, tenant_id: int) -> ResearchDashboardRisks:
+    return ResearchExecutiveDashboardService(db, tenant_id).risks()
+
+
+def get_research_dashboard_scientometric_plane_service(db: Session, tenant_id: int) -> ResearchDashboardScientometrics:
+    return ResearchExecutiveDashboardService(db, tenant_id).scientometrics()
 
 
 def get_research_brain_rbac_validation_service(tenant_id: int) -> ResearchBrainRbacValidationResponse:

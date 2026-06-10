@@ -19,6 +19,11 @@ import type {
   ResearchBrainRbacValidationResponse,
   ResearchBrainShellResponse,
   ResearchBrainSignalSurfaceResponse,
+  ResearchDashboardKPIs,
+  ResearchDashboardRisks,
+  ResearchDashboardScientometrics,
+  ResearchDashboardSignals,
+  ResearchDashboardSummary,
   ScientometricTrend,
   ScientometricsSummaryResponse,
 } from './types';
@@ -57,4 +62,9 @@ export const researchBrainApi = {
   getResearchRiskSignals: () => apiGet<ResearchRiskSignal[]>(`${BASE}/risk/signals`),
   getResearchRiskTrends: () => apiGet<ResearchRiskTrend[]>(`${BASE}/risk/trends`),
   getResearchRiskRecommendations: () => apiGet<string[]>(`${BASE}/risk/recommendations`),
+  getResearchDashboardSummary: () => apiGet<ResearchDashboardSummary>(`${BASE}/dashboard/summary`),
+  getResearchDashboardKpis: () => apiGet<ResearchDashboardKPIs>(`${BASE}/dashboard/kpis`),
+  getResearchDashboardSignals: () => apiGet<ResearchDashboardSignals>(`${BASE}/dashboard/signals`),
+  getResearchDashboardRisks: () => apiGet<ResearchDashboardRisks>(`${BASE}/dashboard/risks`),
+  getResearchDashboardScientometrics: () => apiGet<ResearchDashboardScientometrics>(`${BASE}/dashboard/scientometrics`),
 };

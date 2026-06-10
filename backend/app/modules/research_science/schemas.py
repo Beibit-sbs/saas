@@ -484,6 +484,11 @@ class ResearchBrainOrchestrationResponse(BaseModel):
     risk_signals: ResearchBrainOrchestrationItemResponse
     risk_trends: ResearchBrainOrchestrationItemResponse
     risk_recommendations: ResearchBrainOrchestrationItemResponse
+    dashboard_summary: ResearchBrainOrchestrationItemResponse
+    dashboard_kpi_plane: ResearchBrainOrchestrationItemResponse
+    dashboard_signal_plane: ResearchBrainOrchestrationItemResponse
+    dashboard_risk_plane: ResearchBrainOrchestrationItemResponse
+    dashboard_scientometric_plane: ResearchBrainOrchestrationItemResponse
 
 
 class ResearchBrainContextSourceResponse(BaseModel):
@@ -745,5 +750,63 @@ class ResearchRiskProfile(BaseModel):
     signals: list[ResearchRiskSignal] = Field(default_factory=list)
     trends: list[ResearchRiskTrend] = Field(default_factory=list)
     recommendations: list[str] = Field(default_factory=list)
+    provider_execution_enabled: bool = False
+    external_calls_enabled: bool = False
+
+
+class ResearchDashboardKPIs(BaseModel):
+    researchers: int = 0
+    publications: int = 0
+    citations: int = 0
+    h_index: int = 0
+    international_publications: int = 0
+    indexed_publications: int = 0
+    grants: int = 0
+    ethics_reviews: int = 0
+    risk_count: int = 0
+    signal_count: int = 0
+
+
+class ResearchDashboardSignals(BaseModel):
+    owner: str = "brain_core"
+    signals: list[ResearchRiskSignal] = Field(default_factory=list)
+    signal_count: int = 0
+
+
+class ResearchDashboardRisks(BaseModel):
+    owner: str = "brain_core"
+    critical_risks: int = 0
+    medium_risks: int = 0
+    low_risks: int = 0
+    trend_direction: str = "stable"
+    recommendations: list[str] = Field(default_factory=list)
+
+
+class ResearchDashboardScientometrics(BaseModel):
+    owner: str = "analytics"
+    top_researchers: list[ResearcherScientometricProfile] = Field(default_factory=list)
+    citation_leaderboard: list[CitationAnalyticsSummary] = Field(default_factory=list)
+    h_index_leaderboard: list[CitationAnalyticsSummary] = Field(default_factory=list)
+    impact_leaders: list[PublicationImpactProfile] = Field(default_factory=list)
+    publication_leaders: list[PublicationImpactProfile] = Field(default_factory=list)
+
+
+class ResearchDashboardActivity(BaseModel):
+    generated_at: datetime | None = None
+    publication_activity: int = 0
+    grant_activity: int = 0
+    ethics_activity: int = 0
+    risk_activity: int = 0
+    signal_activity: int = 0
+
+
+class ResearchDashboardSummary(BaseModel):
+    tenant_id: int
+    generated_at: datetime | None = None
+    kpis: ResearchDashboardKPIs
+    signals: ResearchDashboardSignals
+    risks: ResearchDashboardRisks
+    scientometrics: ResearchDashboardScientometrics
+    activity: ResearchDashboardActivity
     provider_execution_enabled: bool = False
     external_calls_enabled: bool = False
