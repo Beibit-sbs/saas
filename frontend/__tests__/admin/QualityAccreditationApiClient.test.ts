@@ -26,6 +26,7 @@ describe('qualityAccreditationApi', () => {
     await qualityAccreditationApi.getQualityAccreditationRuntimeShell();
     await qualityAccreditationApi.getAccreditationRegistry();
     await qualityAccreditationApi.getAccreditationEvidenceRuntime();
+    await qualityAccreditationApi.getSelfAssessmentRuntime();
     await qualityAccreditationApi.getQualityAccreditationHealth();
     await qualityAccreditationApi.getQualityAccreditationOverview();
     await qualityAccreditationApi.getQualityAccreditationDashboard();
@@ -36,6 +37,7 @@ describe('qualityAccreditationApi', () => {
       '/api/v1/quality-accreditation/runtime-shell',
       '/api/v1/quality-accreditation/accreditation-registry',
       '/api/v1/quality-accreditation/accreditation-evidence',
+      '/api/v1/quality-accreditation/self-assessment',
       '/api/admin/quality-accreditation/health',
       '/api/admin/quality-accreditation/overview',
       '/api/admin/quality-accreditation/dashboard',
@@ -52,6 +54,7 @@ describe('qualityAccreditationApi', () => {
       'listQualityFrameworks',
       'getAccreditationRegistry',
       'getAccreditationEvidenceRuntime',
+      'getSelfAssessmentRuntime',
       'listAccreditationStandards',
       'listStandardCriteria',
       'listQualityEvidence',

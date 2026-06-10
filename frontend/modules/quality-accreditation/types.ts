@@ -338,6 +338,73 @@ export interface AccreditationEvidenceRuntimeResponse {
   evidence_risk: EvidenceRiskSummary[];
 }
 
+export type SelfAssessmentRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN';
+
+export interface SelfAssessmentStandard {
+  standard_id: string;
+  standard_name: string;
+  accreditation_framework: string;
+  readiness_score: number;
+  completion_percentage: number;
+  evidence_coverage: number;
+  gap_count: number;
+  risk_level: SelfAssessmentRiskLevel;
+  owner_unit: string;
+  last_updated: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface SelfAssessmentScorecard {
+  standards_total: number;
+  ready_standards: number;
+  average_readiness_score: number;
+  average_completion_percentage: number;
+  average_evidence_coverage: number;
+  high_risk_standards: number;
+  gap_total: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface SelfAssessmentReadinessSummary {
+  readiness_band: string;
+  standard_count: number;
+  average_readiness_score: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface SelfAssessmentCoverageSummary {
+  coverage_scope: string;
+  standard_count: number;
+  average_evidence_coverage: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface SelfAssessmentRiskSummary {
+  risk_level: SelfAssessmentRiskLevel;
+  standard_count: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface SelfAssessmentRuntimeResponse {
+  tenant_id: number;
+  owner_module: string;
+  runtime_registry: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  standards: SelfAssessmentStandard[];
+  scorecard: SelfAssessmentScorecard;
+  readiness_summary: SelfAssessmentReadinessSummary[];
+  coverage_summary: SelfAssessmentCoverageSummary[];
+  risk_summary: SelfAssessmentRiskSummary[];
+}
+
 export interface QualityAccreditationDashboardResponse extends QualityAccreditationBoundaryFlags {
   tenant_id: number;
   generated_at: string | null;

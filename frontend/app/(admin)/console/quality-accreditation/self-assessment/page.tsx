@@ -1,1 +1,1 @@
-export { QualityAccreditationSelfAssessmentPage as default } from '@/modules/quality-accreditation/pages';
+export { QualityAccreditationSelfAssessmentRuntimePage as default } from '@/modules/quality-accreditation/pages';

@@ -80,7 +80,13 @@ import type {
   QualityRisk,
   QualityStatusHistory,
   SelfAssessmentReport,
+  SelfAssessmentRuntimeResponse,
+  SelfAssessmentCoverageSummary,
+  SelfAssessmentReadinessSummary,
+  SelfAssessmentRiskSummary,
+  SelfAssessmentScorecard,
   SelfAssessmentSection,
+  SelfAssessmentStandard,
   StakeholderFeedbackMetadata,
   StandardCriterion,
   StandardsEvidenceRequirement,
@@ -91,6 +97,7 @@ const CACHE_KEYS = {
   health: ['quality-accreditation:health'] as const,
   overview: ['quality-accreditation:overview'] as const,
   accreditationEvidence: ['quality-accreditation:accreditation-evidence'] as const,
+  selfAssessmentRuntime: ['quality-accreditation:self-assessment-runtime'] as const,
   dashboard: ['quality-accreditation:dashboard'] as const,
   matrixSummary: ['quality-accreditation:matrix-summary'] as const,
   limitations: ['quality-accreditation:limitations'] as const,
@@ -200,6 +207,14 @@ function useAccreditationEvidenceRuntime() {
   return useQuery({
     queryKey: CACHE_KEYS.accreditationEvidence,
     queryFn: qualityAccreditationApi.getAccreditationEvidenceRuntime,
+    staleTime: 30000,
+  });
+}
+
+function useSelfAssessmentRuntime() {
+  return useQuery({
+    queryKey: CACHE_KEYS.selfAssessmentRuntime,
+    queryFn: qualityAccreditationApi.getSelfAssessmentRuntime,
     staleTime: 30000,
   });
 }
@@ -929,6 +944,174 @@ export function QualityAccreditationAccreditationEvidenceRuntimePage() {
 
           <EvidenceSummarySection data={evidenceRuntime.data} />
           <EvidenceInventoryTable items={evidenceRuntime.data.evidence_inventory} />
+        </section>
+      </ModuleShell>
+    </RequirePermission>
+  );
+}
+
+function SelfAssessmentScorecardSection({ scorecard }: { scorecard: SelfAssessmentScorecard }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="self-assessment-scorecard">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Self-assessment scorecard</h2>
+        <p className="text-sm text-muted-foreground">Aggregated scorecard for accreditation preparation visibility.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <QualityAccreditationMetricCard label="Standards total" value={scorecard.standards_total} />
+        <QualityAccreditationMetricCard label="Ready standards" value={scorecard.ready_standards} />
+        <QualityAccreditationMetricCard label="Avg readiness" value={scorecard.average_readiness_score.toFixed(1)} />
+        <QualityAccreditationMetricCard label="Avg completion" value={scorecard.average_completion_percentage.toFixed(1)} />
+        <QualityAccreditationMetricCard label="Avg evidence coverage" value={scorecard.average_evidence_coverage.toFixed(1)} />
+        <QualityAccreditationMetricCard label="High risk standards" value={scorecard.high_risk_standards} />
+        <QualityAccreditationMetricCard label="Gap total" value={scorecard.gap_total} />
+        <QualityAccreditationMetricCard label="Read-only" value={String(scorecard.read_only)} />
+      </div>
+    </section>
+  );
+}
+
+function SelfAssessmentReadinessCard({ item }: { item: SelfAssessmentReadinessSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`self-assessment-readiness-${slugify(item.readiness_band)}`}>
+      <p className="text-sm font-semibold">{item.readiness_band}</p>
+      <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+        <p>Standards: {item.standard_count}</p>
+        <p>Average score: {item.average_readiness_score.toFixed(1)}</p>
+      </div>
+    </div>
+  );
+}
+
+function SelfAssessmentCoverageCard({ item }: { item: SelfAssessmentCoverageSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`self-assessment-coverage-${slugify(item.coverage_scope)}`}>
+      <p className="text-sm font-semibold">{item.coverage_scope}</p>
+      <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+        <p>Standards: {item.standard_count}</p>
+        <p>Avg coverage: {item.average_evidence_coverage.toFixed(1)}</p>
+      </div>
+    </div>
+  );
+}
+
+function SelfAssessmentRiskCard({ item }: { item: SelfAssessmentRiskSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`self-assessment-risk-${slugify(item.risk_level)}`}>
+      <p className="text-sm font-semibold">{item.risk_level}</p>
+      <p className="mt-3 text-sm text-muted-foreground">Standards: {item.standard_count}</p>
+    </div>
+  );
+}
+
+function SelfAssessmentStandardsTable({ standards }: { standards: SelfAssessmentStandard[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="self-assessment-standards-table">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Self-assessment standards</h2>
+        <p className="text-sm text-muted-foreground">Read-only standards readiness table with completion, evidence coverage, gap, and risk signals.</p>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-border text-left text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">Standard</th>
+              <th className="px-3 py-2">Framework</th>
+              <th className="px-3 py-2">Readiness</th>
+              <th className="px-3 py-2">Completion %</th>
+              <th className="px-3 py-2">Evidence Coverage</th>
+              <th className="px-3 py-2">Gap Count</th>
+              <th className="px-3 py-2">Risk</th>
+              <th className="px-3 py-2">Owner</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {standards.length === 0 ? (
+              <tr>
+                <td className="px-3 py-4 text-muted-foreground" colSpan={8}>No standards available.</td>
+              </tr>
+            ) : (
+              standards.map((item) => (
+                <tr key={item.standard_id}>
+                  <td className="px-3 py-3">
+                    <div className="space-y-1">
+                      <p className="font-medium">{item.standard_name}</p>
+                      <p className="text-xs text-muted-foreground">{item.standard_id}</p>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3">{item.accreditation_framework}</td>
+                  <td className="px-3 py-3">{item.readiness_score}</td>
+                  <td className="px-3 py-3">{item.completion_percentage}</td>
+                  <td className="px-3 py-3">{item.evidence_coverage}</td>
+                  <td className="px-3 py-3">{item.gap_count}</td>
+                  <td className="px-3 py-3">{item.risk_level}</td>
+                  <td className="px-3 py-3">{item.owner_unit}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function SelfAssessmentRuntimeSummary({ data }: { data: SelfAssessmentRuntimeResponse }) {
+  return (
+    <>
+      <QualityAccreditationRegistryPanel
+        title="Readiness summary"
+        description="Readiness distribution and average readiness score across standards."
+        items={data.readiness_summary}
+        emptyMessage="No readiness summary available."
+        renderItem={(item: SelfAssessmentReadinessSummary) => <SelfAssessmentReadinessCard item={item} />}
+        testId="self-assessment-readiness-summary"
+      />
+      <QualityAccreditationRegistryPanel
+        title="Coverage summary"
+        description="Evidence coverage summary grouped by accreditation framework."
+        items={data.coverage_summary}
+        emptyMessage="No coverage summary available."
+        renderItem={(item: SelfAssessmentCoverageSummary) => <SelfAssessmentCoverageCard item={item} />}
+        testId="self-assessment-coverage-summary"
+      />
+      <QualityAccreditationRegistryPanel
+        title="Risk summary"
+        description="Risk distribution derived from standards readiness and gaps."
+        items={data.risk_summary}
+        emptyMessage="No risk summary available."
+        renderItem={(item: SelfAssessmentRiskSummary) => <SelfAssessmentRiskCard item={item} />}
+        testId="self-assessment-risk-summary"
+      />
+    </>
+  );
+}
+
+export function QualityAccreditationSelfAssessmentRuntimePage() {
+  const runtime = useSelfAssessmentRuntime();
+
+  if (runtime.isPending) return <LoadingState title="Loading self assessment runtime" />;
+  if (runtime.error) return PageError('Failed to load self assessment runtime.', runtime.error);
+  if (!runtime.data) return <ErrorState message="Self assessment runtime is unavailable." />;
+
+  return (
+    <RequirePermission permission={QUALITY_ACCREDITATION_PERMISSIONS.summaryRead}>
+      <ModuleShell
+        title={QUALITY_ACCREDITATION_PAGE_TITLES.selfAssessment}
+        description="Read-only self-assessment runtime with standards readiness, completion, coverage, and risk visibility."
+        currentPath={QUALITY_ACCREDITATION_ROUTES.selfAssessment}
+        boundaryPage="selfAssessment"
+      >
+        <section className="grid gap-6" data-testid="self-assessment-runtime">
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <QualityAccreditationMetricCard label="Standards" value={runtime.data.standards.length} helper="Read-only standards inventory." />
+            <QualityAccreditationMetricCard label="Readiness groups" value={runtime.data.readiness_summary.length} helper="Readiness summary groups." />
+            <QualityAccreditationMetricCard label="Read-only" value={String(runtime.data.read_only)} helper="No write operations." />
+            <QualityAccreditationMetricCard label="Aggregator-only" value={String(runtime.data.aggregator_only)} helper="Visibility-only runtime." />
+          </section>
+          <SelfAssessmentScorecardSection scorecard={runtime.data.scorecard} />
+          <SelfAssessmentRuntimeSummary data={runtime.data} />
+          <SelfAssessmentStandardsTable standards={runtime.data.standards} />
         </section>
       </ModuleShell>
     </RequirePermission>
