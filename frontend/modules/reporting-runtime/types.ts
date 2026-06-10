@@ -64,3 +64,97 @@ export interface ReportingRuntimeShellResponse {
   widgets: string[];
   rbac_roles: string[];
 }
+
+export interface ReportingRegistryEntry {
+  id: string;
+  report_code: string;
+  report_name: string;
+  report_type: string;
+  owner_module: string;
+  reporting_period: string;
+  submission_deadline: string;
+  submission_status: string;
+  compliance_status: string;
+  provider_status: string;
+  generated_at: string;
+  read_only: boolean;
+}
+
+export interface ReportingTemplateSummary extends ReportingRegistryEntry {
+  template_version: string;
+  section_count: number;
+}
+
+export interface ReportingCycleSummary extends ReportingRegistryEntry {
+  cycle_stage: string;
+  active_days_remaining: number;
+}
+
+export interface ReportingSubmissionSummary extends ReportingRegistryEntry {
+  submission_id: string;
+  reviewer_required: boolean;
+}
+
+export interface ReportingRequirementSummary extends ReportingRegistryEntry {
+  requirement_code: string;
+  requirement_status: string;
+}
+
+export interface ReportingEvidenceSummary extends ReportingRegistryEntry {
+  evidence_count: number;
+  evidence_completeness: number;
+}
+
+export interface ReportingProviderSummary extends ReportingRegistryEntry {
+  provider_key: string;
+  live_integrations_enabled: boolean;
+  submission_execution_enabled: boolean;
+}
+
+export interface ReportingStatusSummary extends ReportingRegistryEntry {
+  risk_signal: string;
+}
+
+export interface ReportingRegistryResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  entries: ReportingRegistryEntry[];
+  requirements: ReportingRequirementSummary[];
+  statuses: ReportingStatusSummary[];
+}
+
+export interface ReportingTemplateResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  templates: ReportingTemplateSummary[];
+}
+
+export interface ReportingCycleResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  cycles: ReportingCycleSummary[];
+}
+
+export interface ReportingSubmissionResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  submissions: ReportingSubmissionSummary[];
+}
+
+export interface ReportingEvidenceResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  evidence: ReportingEvidenceSummary[];
+}
+
+export interface ReportingProviderResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  providers: ReportingProviderSummary[];
+}

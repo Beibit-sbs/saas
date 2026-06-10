@@ -25,19 +25,19 @@ function renderWithClient(ui: React.ReactNode) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
-describe('Reporting Runtime Shell', () => {
+describe('Reporting Registry Runtime', () => {
   beforeEach(() => {
     mockApi.getRuntimeShell.mockResolvedValue({
       tenant_id: 1,
       reporting_center_name: 'Reporting Brain Runtime Shell',
-      active_reporting_cycles: 6,
-      active_submissions: 8,
-      active_deadlines: 9,
+      active_reporting_cycles: 4,
+      active_submissions: 6,
+      active_deadlines: 7,
       provider_readiness: {
         owner_module: 'regulatory_reporting_integration',
         provider_status_counts: { NOT_CONNECTED: 1, READY: 3, PENDING: 1 },
         provider_readiness: 'NON_LIVE_PROFILE_ONLY',
-        blocker_count: 2,
+        blocker_count: 1,
         warning_count: 1,
         live_integrations_enabled: false,
         sync_enabled: false,
@@ -45,57 +45,60 @@ describe('Reporting Runtime Shell', () => {
         source_modules: ['regulatory_reporting_integration', 'provider_readiness'],
         read_only: true,
       },
-      compliance_score: 78,
+      compliance_score: 81,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
       auditability_preserved: true,
       overview: {
         reporting_center_name: 'Reporting Brain Runtime Shell',
         owner_module: 'reporting_runtime',
-        active_reporting_cycles: 6,
-        active_submissions: 8,
-        active_deadlines: 9,
+        active_reporting_cycles: 4,
+        active_submissions: 6,
+        active_deadlines: 7,
         source_modules: ['reporting_runtime', 'analytics', 'executive_governance'],
         read_only: true,
       },
       compliance: {
         owner_module: 'reporting_runtime',
-        compliance_score: 78,
-        risk_band: 'MEDIUM',
+        compliance_score: 81,
+        risk_band: 'LOW',
         source_modules: ['reporting_runtime', 'brain_core', 'executive_governance'],
         read_only: true,
       },
       deadlines: {
         owner_module: 'reporting_runtime',
-        active_deadlines: 9,
+        active_deadlines: 7,
         overdue_deadlines: 2,
-        upcoming_deadlines: 7,
-        deadline_signals: ['report_overdue', 'ministry_deadline_risk', 'submission_risk'],
+        upcoming_deadlines: 5,
+        deadline_signals: ['report_overdue', 'submission_risk'],
         source_modules: ['reporting_runtime', 'brain_core', 'executive_governance'],
         read_only: true,
       },
       reporting_status: {
-        open_items: 4,
-        in_review_items: 3,
-        blocked_items: 2,
+        open_items: 3,
+        in_review_items: 2,
+        blocked_items: 1,
         read_only: true,
       },
-      widgets: [
-        'Reporting Overview',
-        'Provider Readiness',
-        'Compliance Summary',
-        'Reporting Deadlines',
-        'Reporting Status',
-      ],
+      widgets: ['Reporting Overview', 'Provider Readiness', 'Compliance Summary', 'Reporting Deadlines', 'Reporting Status'],
       rbac_roles: ['reporting_admin', 'vice_rector', 'quality_manager', 'auditor', 'analyst'],
     });
 
-    const baseEntry = {
-      id: 'registry-1-1',
-      report_code: 'MINISTRY-01',
-      report_name: 'Ministry Reporting',
-      report_type: 'MINISTRY',
-      owner_module: 'ministry_reporting_dashboard',
+    const registryEntries = [
+      ['MINISTRY', 'MINISTRY-01'],
+      ['ACCREDITATION', 'ACCREDITATION-01'],
+      ['REGULATORY', 'REGULATORY-01'],
+      ['QS', 'QS-01'],
+      ['THE', 'THE-01'],
+      ['NOBD', 'NOBD-01'],
+      ['RECTOR', 'RECTOR-01'],
+      ['STATISTICAL', 'STATISTICAL-01'],
+    ].map(([type, code], index) => ({
+      id: `registry-1-${index + 1}`,
+      report_code: code,
+      report_name: `${type} Reporting`,
+      report_type: type,
+      owner_module: 'analytics',
       reporting_period: '2026-Q2',
       submission_deadline: '2026-06-30T00:00:00Z',
       submission_status: 'IN_REVIEW',
@@ -103,67 +106,79 @@ describe('Reporting Runtime Shell', () => {
       provider_status: 'PENDING',
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-    };
+    }));
 
     mockApi.getRegistry.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      entries: [baseEntry],
-      requirements: [{ ...baseEntry, id: 'requirement-1-1', requirement_code: 'REQ-MINISTRY-01', requirement_status: 'MET' }],
-      statuses: [{ ...baseEntry, id: 'status-1-1', risk_signal: 'stable' }],
+      entries: registryEntries,
+      requirements: registryEntries.map((entry, index) => ({
+        ...entry,
+        id: `requirement-1-${index + 1}`,
+        requirement_code: `REQ-${entry.report_code}`,
+        requirement_status: 'MET',
+      })),
+      statuses: registryEntries.map((entry, index) => ({
+        ...entry,
+        id: `status-1-${index + 1}`,
+        risk_signal: 'stable',
+      })),
     });
+
     mockApi.getTemplates.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      templates: [{ ...baseEntry, id: 'template-1-1', template_version: 'v1.0', section_count: 6 }],
+      templates: [{ ...registryEntries[0], id: 'template-1-1', template_version: 'v1.0', section_count: 6 }],
     });
     mockApi.getCycles.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      cycles: [{ ...baseEntry, id: 'cycle-1-1', cycle_stage: 'ACTIVE', active_days_remaining: 12 }],
+      cycles: [{ ...registryEntries[0], id: 'cycle-1-1', cycle_stage: 'ACTIVE', active_days_remaining: 12 }],
     });
     mockApi.getSubmissions.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      submissions: [{ ...baseEntry, id: 'submission-1-1', submission_id: 'SUB-MINISTRY-01-1', reviewer_required: true }],
+      submissions: [{ ...registryEntries[0], id: 'submission-1-1', submission_id: 'SUB-MINISTRY-01-1', reviewer_required: true }],
     });
     mockApi.getEvidence.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      evidence: [{ ...baseEntry, id: 'evidence-1-1', evidence_count: 5, evidence_completeness: 80 }],
+      evidence: [{ ...registryEntries[0], id: 'evidence-1-1', evidence_count: 5, evidence_completeness: 80 }],
     });
     mockApi.getProviders.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      providers: [{ ...baseEntry, id: 'provider-1-1', provider_key: 'MINISTRY_PROVIDER_PROFILE', live_integrations_enabled: false, submission_execution_enabled: false }],
+      providers: [{ ...registryEntries[0], id: 'provider-1-1', provider_key: 'MINISTRY_PROVIDER_PROFILE', live_integrations_enabled: false, submission_execution_enabled: false }],
     });
   });
 
-  it('renders runtime shell sections', async () => {
+  it('renders reporting registry runtime sections', async () => {
     renderWithClient(<ReportingRuntimeShellPage />);
 
-    expect(await screen.findByTestId('reporting-runtime-shell')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Reporting Overview' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Provider Readiness' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Compliance Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Reporting Deadlines' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Reporting Status' })).toBeInTheDocument();
+    expect(await screen.findByTestId('reporting-registry-section')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Reporting Templates' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Reporting Cycles' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Reporting Submissions' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Reporting Evidence' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Provider Registry' })).toBeInTheDocument();
   });
 
-  it('renders read-only runtime values', async () => {
+  it('renders all required report type coverage entries', async () => {
     renderWithClient(<ReportingRuntimeShellPage />);
 
-    expect(await screen.findByText('Reporting Runtime Shell')).toBeInTheDocument();
-    expect(screen.getByText('6')).toBeInTheDocument();
-    expect(screen.getByText('8')).toBeInTheDocument();
-    expect(screen.getByText('9')).toBeInTheDocument();
-    expect(screen.getByText(/NOT_CONNECTED=1, READY=3, PENDING=1/i)).toBeInTheDocument();
-    expect(screen.getByText(/read_only=true/i)).toBeInTheDocument();
+    expect(await screen.findByText('MINISTRY')).toBeInTheDocument();
+    expect(screen.getByText('ACCREDITATION')).toBeInTheDocument();
+    expect(screen.getByText('REGULATORY')).toBeInTheDocument();
+    expect(screen.getByText('QS')).toBeInTheDocument();
+    expect(screen.getByText('THE')).toBeInTheDocument();
+    expect(screen.getByText('NOBD')).toBeInTheDocument();
+    expect(screen.getByText('RECTOR')).toBeInTheDocument();
+    expect(screen.getByText('STATISTICAL')).toBeInTheDocument();
   });
 });

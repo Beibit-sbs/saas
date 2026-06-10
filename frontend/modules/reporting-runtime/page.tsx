@@ -23,16 +23,27 @@ export function ReportingRuntimeShellPage() {
     queryFn: reportingRuntimeApi.getRuntimeShell,
     staleTime: 30000,
   });
+  const registry = useQuery({ queryKey: ['reporting-runtime:registry'], queryFn: reportingRuntimeApi.getRegistry, staleTime: 30000 });
+  const templates = useQuery({ queryKey: ['reporting-runtime:templates'], queryFn: reportingRuntimeApi.getTemplates, staleTime: 30000 });
+  const cycles = useQuery({ queryKey: ['reporting-runtime:cycles'], queryFn: reportingRuntimeApi.getCycles, staleTime: 30000 });
+  const submissions = useQuery({ queryKey: ['reporting-runtime:submissions'], queryFn: reportingRuntimeApi.getSubmissions, staleTime: 30000 });
+  const evidence = useQuery({ queryKey: ['reporting-runtime:evidence'], queryFn: reportingRuntimeApi.getEvidence, staleTime: 30000 });
+  const providers = useQuery({ queryKey: ['reporting-runtime:providers'], queryFn: reportingRuntimeApi.getProviders, staleTime: 30000 });
 
-  if (runtime.isPending) {
+  if (runtime.isPending || registry.isPending || templates.isPending || cycles.isPending || submissions.isPending || evidence.isPending || providers.isPending) {
     return <LoadingState title="Loading Reporting Runtime shell" />;
   }
 
-  if (runtime.error) {
-    return <ErrorState message="Failed to load Reporting Runtime shell." error={runtime.error} />;
+  if (runtime.error || registry.error || templates.error || cycles.error || submissions.error || evidence.error || providers.error) {
+    return (
+      <ErrorState
+        message="Failed to load Reporting Runtime shell."
+        error={runtime.error ?? registry.error ?? templates.error ?? cycles.error ?? submissions.error ?? evidence.error ?? providers.error}
+      />
+    );
   }
 
-  if (!runtime.data) {
+  if (!runtime.data || !registry.data || !templates.data || !cycles.data || !submissions.data || !evidence.data || !providers.data) {
     return <ErrorState message="Reporting Runtime shell is unavailable." />;
   }
 
@@ -89,6 +100,64 @@ export function ReportingRuntimeShellPage() {
           <p className="mt-2 text-xs text-muted-foreground">
             read_only={String(runtime.data.read_only)} | auditability_preserved={String(runtime.data.auditability_preserved)}
           </p>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="reporting-registry-section">
+          <h2 className="text-lg font-semibold">Reporting Registry</h2>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {registry.data.entries.map((entry) => (
+              <div key={entry.id} className="rounded border p-3 text-sm">
+                <p className="font-medium">{entry.report_type}</p>
+                <p>{entry.report_name}</p>
+                <p className="text-xs text-muted-foreground">owner={entry.owner_module} | period={entry.reporting_period}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="reporting-templates-section">
+          <h2 className="text-lg font-semibold">Reporting Templates</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {templates.data.templates.map((item) => (
+              <p key={item.id}>{item.report_code}: {item.template_version} ({item.section_count} sections)</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="reporting-cycles-section">
+          <h2 className="text-lg font-semibold">Reporting Cycles</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {cycles.data.cycles.map((item) => (
+              <p key={item.id}>{item.report_code}: {item.cycle_stage} ({item.active_days_remaining} days remaining)</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="reporting-submissions-section">
+          <h2 className="text-lg font-semibold">Reporting Submissions</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {submissions.data.submissions.map((item) => (
+              <p key={item.id}>{item.submission_id}: {item.submission_status}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="reporting-evidence-section">
+          <h2 className="text-lg font-semibold">Reporting Evidence</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {evidence.data.evidence.map((item) => (
+              <p key={item.id}>{item.report_code}: evidence={item.evidence_count}, completeness={item.evidence_completeness}%</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="provider-registry-section">
+          <h2 className="text-lg font-semibold">Provider Registry</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {providers.data.providers.map((item) => (
+              <p key={item.id}>{item.provider_key}: provider_status={item.provider_status}, live_integrations_enabled={String(item.live_integrations_enabled)}</p>
+            ))}
+          </div>
         </section>
       </div>
     </RequirePermission>
