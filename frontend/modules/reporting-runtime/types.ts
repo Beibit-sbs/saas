@@ -403,3 +403,81 @@ export interface RegulatoryRiskResponse {
   read_only: boolean;
   risks: RegulatoryRiskSummary[];
 }
+
+export interface RankingReportingSummary {
+  id: string;
+  ranking_system: string;
+  indicator_name: string;
+  indicator_score: number;
+  benchmark_score: number;
+  trend_direction: string;
+  readiness_level: string;
+  risk_level: string;
+  owner_module: string;
+  generated_at: string;
+  read_only: boolean;
+}
+
+export interface RankingIndicatorSummary extends RankingReportingSummary {
+  indicator_weight: number;
+}
+
+export interface RankingReadinessSummary extends RankingReportingSummary {
+  readiness_score: number;
+}
+
+export interface RankingBenchmarkSummary extends RankingReportingSummary {
+  benchmark_gap: number;
+}
+
+export interface RankingTrendSummary extends RankingReportingSummary {
+  trend_delta: number;
+}
+
+export interface RankingRiskSummary extends RankingReportingSummary {
+  signal_name: string;
+  signal_owner_module: string;
+}
+
+export interface RankingReportingResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  reports: RankingReportingSummary[];
+  signal_inventory: string[];
+}
+
+export interface RankingIndicatorResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  indicators: RankingIndicatorSummary[];
+}
+
+export interface RankingReadinessResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  readiness: RankingReadinessSummary[];
+}
+
+export interface RankingBenchmarkResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  benchmarks: RankingBenchmarkSummary[];
+}
+
+export interface RankingTrendResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  trends: RankingTrendSummary[];
+}
+
+export interface RankingRiskResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  risks: RankingRiskSummary[];
+}

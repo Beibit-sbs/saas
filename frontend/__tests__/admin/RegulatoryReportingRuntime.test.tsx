@@ -31,6 +31,12 @@ const { mockApi } = vi.hoisted(() => ({
     getRegulatoryDeadlines: vi.fn(),
     getRegulatoryDocuments: vi.fn(),
     getRegulatoryRisks: vi.fn(),
+    getRanking: vi.fn(),
+    getRankingIndicators: vi.fn(),
+    getRankingReadiness: vi.fn(),
+    getRankingBenchmarks: vi.fn(),
+    getRankingTrends: vi.fn(),
+    getRankingRisks: vi.fn(),
   },
 }));
 
@@ -331,6 +337,27 @@ describe('Regulatory Reporting Runtime', () => {
         signal_owner_module: 'brain_core',
       })),
     });
+
+    const rankingEntry = {
+      id: 'ranking-1-1',
+      ranking_system: 'QS',
+      indicator_name: 'Academic Reputation',
+      indicator_score: 80,
+      benchmark_score: 86,
+      trend_direction: 'DOWN',
+      readiness_level: 'PARTIAL',
+      risk_level: 'MEDIUM',
+      owner_module: 'research_science',
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+    };
+
+    mockApi.getRanking.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, reports: [rankingEntry], signal_inventory: ['ranking_readiness_low', 'qs_indicator_decline', 'the_indicator_decline', 'ranking_risk_high', 'benchmark_gap_high'] });
+    mockApi.getRankingIndicators.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, indicators: [{ ...rankingEntry, indicator_weight: 16 }] });
+    mockApi.getRankingReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: [{ ...rankingEntry, readiness_score: 80 }] });
+    mockApi.getRankingBenchmarks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, benchmarks: [{ ...rankingEntry, benchmark_gap: 6 }] });
+    mockApi.getRankingTrends.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, trends: [{ ...rankingEntry, trend_delta: -2 }] });
+    mockApi.getRankingRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: [{ ...rankingEntry, signal_name: 'ranking_risk_high', signal_owner_module: 'brain_core' }] });
   });
 
   it('renders regulatory reporting sections', async () => {

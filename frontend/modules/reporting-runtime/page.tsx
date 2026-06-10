@@ -47,6 +47,12 @@ export function ReportingRuntimeShellPage() {
   const regulatoryDeadlines = useQuery({ queryKey: ['reporting-runtime:regulatory:deadlines'], queryFn: reportingRuntimeApi.getRegulatoryDeadlines, staleTime: 30000 });
   const regulatoryDocuments = useQuery({ queryKey: ['reporting-runtime:regulatory:documents'], queryFn: reportingRuntimeApi.getRegulatoryDocuments, staleTime: 30000 });
   const regulatoryRisks = useQuery({ queryKey: ['reporting-runtime:regulatory:risks'], queryFn: reportingRuntimeApi.getRegulatoryRisks, staleTime: 30000 });
+  const ranking = useQuery({ queryKey: ['reporting-runtime:ranking'], queryFn: reportingRuntimeApi.getRanking, staleTime: 30000 });
+  const rankingIndicators = useQuery({ queryKey: ['reporting-runtime:ranking:indicators'], queryFn: reportingRuntimeApi.getRankingIndicators, staleTime: 30000 });
+  const rankingReadiness = useQuery({ queryKey: ['reporting-runtime:ranking:readiness'], queryFn: reportingRuntimeApi.getRankingReadiness, staleTime: 30000 });
+  const rankingBenchmarks = useQuery({ queryKey: ['reporting-runtime:ranking:benchmarks'], queryFn: reportingRuntimeApi.getRankingBenchmarks, staleTime: 30000 });
+  const rankingTrends = useQuery({ queryKey: ['reporting-runtime:ranking:trends'], queryFn: reportingRuntimeApi.getRankingTrends, staleTime: 30000 });
+  const rankingRisks = useQuery({ queryKey: ['reporting-runtime:ranking:risks'], queryFn: reportingRuntimeApi.getRankingRisks, staleTime: 30000 });
 
   if (
     runtime.isPending ||
@@ -73,7 +79,13 @@ export function ReportingRuntimeShellPage() {
     regulatoryCompliance.isPending ||
     regulatoryDeadlines.isPending ||
     regulatoryDocuments.isPending ||
-    regulatoryRisks.isPending
+    regulatoryRisks.isPending ||
+    ranking.isPending ||
+    rankingIndicators.isPending ||
+    rankingReadiness.isPending ||
+    rankingBenchmarks.isPending ||
+    rankingTrends.isPending ||
+    rankingRisks.isPending
   ) {
     return <LoadingState title="Loading Reporting Runtime shell" />;
   }
@@ -103,7 +115,13 @@ export function ReportingRuntimeShellPage() {
     regulatoryCompliance.error ||
     regulatoryDeadlines.error ||
     regulatoryDocuments.error ||
-    regulatoryRisks.error
+    regulatoryRisks.error ||
+    ranking.error ||
+    rankingIndicators.error ||
+    rankingReadiness.error ||
+    rankingBenchmarks.error ||
+    rankingTrends.error ||
+    rankingRisks.error
   ) {
     return (
       <ErrorState
@@ -133,7 +151,13 @@ export function ReportingRuntimeShellPage() {
           regulatoryCompliance.error ??
           regulatoryDeadlines.error ??
           regulatoryDocuments.error ??
-          regulatoryRisks.error
+          regulatoryRisks.error ??
+          ranking.error ??
+          rankingIndicators.error ??
+          rankingReadiness.error ??
+          rankingBenchmarks.error ??
+          rankingTrends.error ??
+          rankingRisks.error
         }
       />
     );
@@ -164,7 +188,13 @@ export function ReportingRuntimeShellPage() {
     !regulatoryCompliance.data ||
     !regulatoryDeadlines.data ||
     !regulatoryDocuments.data ||
-    !regulatoryRisks.data
+    !regulatoryRisks.data ||
+    !ranking.data ||
+    !rankingIndicators.data ||
+    !rankingReadiness.data ||
+    !rankingBenchmarks.data ||
+    !rankingTrends.data ||
+    !rankingRisks.data
   ) {
     return <ErrorState message="Reporting Runtime shell is unavailable." />;
   }
@@ -461,6 +491,71 @@ export function ReportingRuntimeShellPage() {
           <div className="mt-3 space-y-1 text-sm">
             {regulatoryRisks.data.risks.map((item) => (
               <p key={item.id}>{item.requirement_name}: signal={item.signal_name}, owner={item.signal_owner_module}, risk={item.risk_level}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ranking-reporting-center-section">
+          <h2 className="text-lg font-semibold">Ranking Reporting Center</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Read-only runtime monitoring for QS and THE ranking analytics visibility. No live QS integration, no live THE integration, and no ranking submission execution.
+          </p>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {ranking.data.reports.map((item) => (
+              <div key={item.id} className="rounded border p-3 text-sm">
+                <p className="font-medium">{item.indicator_name}</p>
+                <p>{item.ranking_system} | owner={item.owner_module}</p>
+                <p className="text-xs text-muted-foreground">score={item.indicator_score} | benchmark={item.benchmark_score} | trend={item.trend_direction} | risk={item.risk_level}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ranking-qs-readiness-section">
+          <h2 className="text-lg font-semibold">QS Readiness</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {rankingReadiness.data.readiness
+              .filter((item) => item.ranking_system === 'QS')
+              .map((item) => (
+                <p key={item.id}>{item.indicator_name}: readiness_score={item.readiness_score}, readiness_level={item.readiness_level}</p>
+              ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ranking-the-readiness-section">
+          <h2 className="text-lg font-semibold">THE Readiness</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {rankingReadiness.data.readiness
+              .filter((item) => item.ranking_system === 'THE')
+              .map((item) => (
+                <p key={item.id}>{item.indicator_name}: readiness_score={item.readiness_score}, readiness_level={item.readiness_level}</p>
+              ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ranking-benchmarks-section">
+          <h2 className="text-lg font-semibold">Ranking Benchmarks</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {rankingBenchmarks.data.benchmarks.map((item) => (
+              <p key={item.id}>{item.ranking_system} {item.indicator_name}: indicator={item.indicator_score}, benchmark={item.benchmark_score}, gap={item.benchmark_gap}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ranking-trends-section">
+          <h2 className="text-lg font-semibold">Ranking Trends</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {rankingTrends.data.trends.map((item) => (
+              <p key={item.id}>{item.ranking_system} {item.indicator_name}: trend_direction={item.trend_direction}, trend_delta={item.trend_delta}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="ranking-risks-section">
+          <h2 className="text-lg font-semibold">Ranking Risks</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {rankingRisks.data.risks.map((item) => (
+              <p key={item.id}>{item.ranking_system} {item.indicator_name}: signal={item.signal_name}, owner={item.signal_owner_module}, risk={item.risk_level}</p>
             ))}
           </div>
         </section>

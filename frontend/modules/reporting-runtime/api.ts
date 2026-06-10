@@ -25,6 +25,12 @@ import type {
   RegulatoryReportingResponse,
   RegulatoryRequirementResponse,
   RegulatoryRiskResponse,
+  RankingBenchmarkResponse,
+  RankingIndicatorResponse,
+  RankingReadinessResponse,
+  RankingReportingResponse,
+  RankingRiskResponse,
+  RankingTrendResponse,
 } from './types';
 
 const BASE = '/api/admin/reporting-brain';
@@ -55,4 +61,10 @@ export const reportingRuntimeApi = {
   getRegulatoryDeadlines: () => apiGet<RegulatoryDeadlineResponse>(`${BASE}/runtime/regulatory/deadlines`),
   getRegulatoryDocuments: () => apiGet<RegulatoryDocumentResponse>(`${BASE}/runtime/regulatory/documents`),
   getRegulatoryRisks: () => apiGet<RegulatoryRiskResponse>(`${BASE}/runtime/regulatory/risks`),
+  getRanking: () => apiGet<RankingReportingResponse>(`${BASE}/runtime/ranking`),
+  getRankingIndicators: () => apiGet<RankingIndicatorResponse>(`${BASE}/runtime/ranking/indicators`),
+  getRankingReadiness: () => apiGet<RankingReadinessResponse>(`${BASE}/runtime/ranking/readiness`),
+  getRankingBenchmarks: () => apiGet<RankingBenchmarkResponse>(`${BASE}/runtime/ranking/benchmarks`),
+  getRankingTrends: () => apiGet<RankingTrendResponse>(`${BASE}/runtime/ranking/trends`),
+  getRankingRisks: () => apiGet<RankingRiskResponse>(`${BASE}/runtime/ranking/risks`),
 };

@@ -29,6 +29,15 @@ from app.modules.reporting_runtime.runtime_regulatory_schemas import (
     RegulatoryRiskResponse,
 )
 from app.modules.reporting_runtime.runtime_regulatory_service import RegulatoryReportingRuntimeService
+from app.modules.reporting_runtime.runtime_ranking_schemas import (
+    RankingBenchmarkResponse,
+    RankingIndicatorResponse,
+    RankingReadinessResponse,
+    RankingReportingResponse,
+    RankingRiskResponse,
+    RankingTrendResponse,
+)
+from app.modules.reporting_runtime.runtime_ranking_service import RankingReportingRuntimeService
 from app.modules.reporting_runtime.runtime_ministry_schemas import (
     MinistryReportingCompletenessResponse,
     MinistryReportingCycleResponse,
@@ -61,6 +70,7 @@ _registry_service = ReportingRegistryRuntimeService()
 _ministry_service = MinistryReportingRuntimeService()
 _accreditation_service = AccreditationReportingRuntimeService()
 _regulatory_service = RegulatoryReportingRuntimeService()
+_ranking_service = RankingReportingRuntimeService()
 
 
 def _handle(exc: Exception) -> None:
@@ -369,5 +379,77 @@ def get_regulatory_reporting_risks_runtime(
 ) -> RegulatoryRiskResponse:
     try:
         return _regulatory_service.get_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ranking", response_model=RankingReportingResponse)
+def get_ranking_reporting_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RankingReportingResponse:
+    try:
+        return _ranking_service.get_ranking(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ranking/indicators", response_model=RankingIndicatorResponse)
+def get_ranking_reporting_indicators_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RankingIndicatorResponse:
+    try:
+        return _ranking_service.get_indicators(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ranking/readiness", response_model=RankingReadinessResponse)
+def get_ranking_reporting_readiness_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RankingReadinessResponse:
+    try:
+        return _ranking_service.get_readiness(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ranking/benchmarks", response_model=RankingBenchmarkResponse)
+def get_ranking_reporting_benchmarks_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RankingBenchmarkResponse:
+    try:
+        return _ranking_service.get_benchmarks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ranking/trends", response_model=RankingTrendResponse)
+def get_ranking_reporting_trends_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RankingTrendResponse:
+    try:
+        return _ranking_service.get_trends(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/ranking/risks", response_model=RankingRiskResponse)
+def get_ranking_reporting_risks_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RankingRiskResponse:
+    try:
+        return _ranking_service.get_risks(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)
