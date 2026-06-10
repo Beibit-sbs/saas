@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 from app.core.module_helpers.service_validation import validate_tenant_id_provided
 from app.modules.executive_governance.runtime_shell_schemas import (
+    DevelopmentProgramSummary,
     ExecutiveAssignmentEntry,
     ExecutiveAssignmentSummary,
     ExecutiveControlTowerSummary,
@@ -26,6 +27,9 @@ from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutivePerformanceMetrics,
     ExecutiveRiskOverview,
     RectorDashboardRuntimeSummary,
+    StrategicInitiativeEntry,
+    StrategicInitiativeMetrics,
+    StrategicInitiativeSummary,
 )
 
 
@@ -575,6 +579,137 @@ class ExecutiveControlTowerRuntimeService:
         )
 
 
+class StrategicInitiativeRuntimeService:
+    """Read-only strategic initiative runtime aggregation service."""
+
+    _STATUSES = ["PLANNED", "ACTIVE", "AT_RISK", "DELAYED", "COMPLETED", "ON_HOLD"]
+    _SIGNAL_FAMILIES = [
+        "strategic_goal_slippage",
+        "roadmap_delay",
+        "initiative_stagnation",
+        "kpi_deviation",
+        "execution_gap",
+        "strategic_risk",
+        "transformation_delay",
+    ]
+    _RBAC_ROLES = [
+        "rector",
+        "vice_rector",
+        "chief_of_staff",
+        "executive_manager",
+        "strategic_office",
+        "auditor",
+        "administrator",
+    ]
+
+    def _now(self) -> datetime:
+        return datetime.now(UTC)
+
+    def _validate_tenant(self, tenant_id: int) -> int:
+        return validate_tenant_id_provided(tenant_id)
+
+    def _build_entries(self, tenant_id: int) -> list[StrategicInitiativeEntry]:
+        tenant = self._validate_tenant(tenant_id)
+        tenant_factor = (tenant % 6) + 1
+        now = self._now()
+        entries: list[StrategicInitiativeEntry] = []
+        for idx, status in enumerate(self._STATUSES):
+            risk_level = "CRITICAL" if status == "DELAYED" else "HIGH" if status == "AT_RISK" else "MEDIUM" if status in {"ACTIVE", "ON_HOLD"} else "LOW"
+            entries.append(
+                StrategicInitiativeEntry(
+                    initiative_id=f"SI-{tenant:02d}-{idx + 1:03d}",
+                    initiative_code=f"INIT-{tenant_factor}-{idx + 1}",
+                    initiative_title=f"Strategic initiative {idx + 1}",
+                    initiative_owner="strategic_office" if idx % 2 == 0 else "rectorate",
+                    initiative_status=status,
+                    start_date=now,
+                    target_date=now,
+                    completion_percent=min(100, (idx + tenant_factor) * 14),
+                    linked_kpi_count=2 + (idx % 3),
+                    linked_assignment_count=3 + idx,
+                    risk_level=risk_level,
+                    escalation_flag=status in {"AT_RISK", "DELAYED"},
+                )
+            )
+        return entries
+
+    def get_strategic_initiatives(self, tenant_id: int) -> list[StrategicInitiativeEntry]:
+        return self._build_entries(tenant_id)
+
+    def get_strategic_initiatives_summary(self, tenant_id: int) -> StrategicInitiativeSummary:
+        tenant = self._validate_tenant(tenant_id)
+        initiatives = self._build_entries(tenant)
+        total = len(initiatives)
+        active = sum(1 for i in initiatives if i.initiative_status in {"ACTIVE", "AT_RISK", "DELAYED", "ON_HOLD"})
+        completed = sum(1 for i in initiatives if i.initiative_status == "COMPLETED")
+        at_risk = sum(1 for i in initiatives if i.initiative_status == "AT_RISK")
+        delayed = sum(1 for i in initiatives if i.initiative_status == "DELAYED")
+        linked_kpis = sum(i.linked_kpi_count for i in initiatives)
+        initiative_kpi_coverage = (linked_kpis * 100) // max(1, total * 4)
+        kpi_completion_alignment = sum(i.completion_percent for i in initiatives) // max(1, total)
+        return StrategicInitiativeSummary(
+            tenant_id=tenant,
+            initiatives=initiatives,
+            total_initiatives=total,
+            active_initiatives=active,
+            completed_initiatives=completed,
+            at_risk_initiatives=at_risk,
+            delayed_initiatives=delayed,
+            initiative_kpi_coverage=initiative_kpi_coverage,
+            kpi_completion_alignment=kpi_completion_alignment,
+            kpi_deviation_visibility={"low": 2, "medium": 2, "high": 1},
+            kpi_ownership_visibility={"analytics": linked_kpis, "executive_control_tower": total},
+            roadmap_visibility={"on_track": 3, "behind": 2, "blocked": 1},
+            strategic_signal_families=list(self._SIGNAL_FAMILIES),
+            rbac_roles=list(self._RBAC_ROLES),
+            generated_at=self._now(),
+        )
+
+    def get_strategic_initiatives_risks(self, tenant_id: int) -> StrategicInitiativeMetrics:
+        tenant = self._validate_tenant(tenant_id)
+        initiatives = self._build_entries(tenant)
+        delayed = [i for i in initiatives if i.initiative_status == "DELAYED"]
+        high_risk = [i for i in initiatives if i.risk_level in {"HIGH", "CRITICAL"}]
+        risk_distribution = {
+            "low": sum(1 for i in initiatives if i.risk_level == "LOW"),
+            "medium": sum(1 for i in initiatives if i.risk_level == "MEDIUM"),
+            "high": sum(1 for i in initiatives if i.risk_level == "HIGH"),
+            "critical": sum(1 for i in initiatives if i.risk_level == "CRITICAL"),
+        }
+        return StrategicInitiativeMetrics(
+            tenant_id=tenant,
+            delayed_initiatives=delayed,
+            high_risk_initiatives=high_risk,
+            kpi_deviation_hotspots={"strategy-office": 2, "operations": 1},
+            strategic_bottlenecks={"procurement_dependency": 1, "cross_unit_coordination": 1},
+            execution_blockers={"resource_gap": 1, "deadline_conflict": 1},
+            risk_distribution=risk_distribution,
+            strategic_signal_families=list(self._SIGNAL_FAMILIES),
+            generated_at=self._now(),
+        )
+
+    def get_development_program(self, tenant_id: int) -> DevelopmentProgramSummary:
+        tenant = self._validate_tenant(tenant_id)
+        summary = self.get_strategic_initiatives_summary(tenant)
+        overall_progress = sum(i.completion_percent for i in summary.initiatives) // max(1, summary.total_initiatives)
+        return DevelopmentProgramSummary(
+            tenant_id=tenant,
+            program_name="University Transformation Program",
+            program_year=self._now().year,
+            initiative_count=summary.total_initiatives,
+            active_initiatives=summary.active_initiatives,
+            completed_initiatives=summary.completed_initiatives,
+            at_risk_initiatives=summary.at_risk_initiatives,
+            delayed_initiatives=summary.delayed_initiatives,
+            overall_progress=overall_progress,
+            strategic_signal_families=list(self._SIGNAL_FAMILIES),
+            generated_at=self._now(),
+        )
+
+    def get_development_program_summary(self, tenant_id: int) -> DevelopmentProgramSummary:
+        return self.get_development_program(tenant_id)
+
+
 class ExecutiveGovernanceRuntimeService:
     """Read-only Executive Governance runtime contract service."""
 
@@ -600,6 +735,12 @@ class ExecutiveGovernanceRuntimeService:
         "protocol_non_execution": "order_decree_registry",
         "decision_stagnation": "committee_decision_registry",
         "assignment_stagnation": "rector_assignment_workflow",
+        "roadmap_delay": "analytics",
+        "initiative_stagnation": "executive_control_tower",
+        "kpi_deviation": "analytics",
+        "execution_gap": "rector_assignment_workflow",
+        "strategic_risk": "brain_core",
+        "transformation_delay": "executive_control_tower",
     }
 
     _RBAC_ROLES = [
@@ -621,6 +762,7 @@ class ExecutiveGovernanceRuntimeService:
         meetings=_meeting_registry,
         protocols=_protocol_registry,
     )
+    _strategic_initiatives = StrategicInitiativeRuntimeService()
 
     def _now(self) -> datetime:
         return datetime.now(UTC)
@@ -753,3 +895,18 @@ class ExecutiveGovernanceRuntimeService:
 
     def get_control_tower_escalations(self, tenant_id: int) -> ExecutivePerformanceMetrics:
         return self._control_tower.get_control_tower_escalations(tenant_id)
+
+    def get_strategic_initiatives(self, tenant_id: int) -> list[StrategicInitiativeEntry]:
+        return self._strategic_initiatives.get_strategic_initiatives(tenant_id)
+
+    def get_strategic_initiatives_summary(self, tenant_id: int) -> StrategicInitiativeSummary:
+        return self._strategic_initiatives.get_strategic_initiatives_summary(tenant_id)
+
+    def get_strategic_initiatives_risks(self, tenant_id: int) -> StrategicInitiativeMetrics:
+        return self._strategic_initiatives.get_strategic_initiatives_risks(tenant_id)
+
+    def get_development_program(self, tenant_id: int) -> DevelopmentProgramSummary:
+        return self._strategic_initiatives.get_development_program(tenant_id)
+
+    def get_development_program_summary(self, tenant_id: int) -> DevelopmentProgramSummary:
+        return self._strategic_initiatives.get_development_program_summary(tenant_id)

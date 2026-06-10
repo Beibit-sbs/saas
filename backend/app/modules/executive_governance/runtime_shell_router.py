@@ -11,6 +11,7 @@ from app.core.module_helpers.service_validation import DomainValidationError, Te
 from app.core.tenant import get_current_tenant
 from app.modules.executive_control_tower import permissions
 from app.modules.executive_governance.runtime_shell_schemas import (
+    DevelopmentProgramSummary,
     ExecutiveAssignmentEntry,
     ExecutiveAssignmentSummary,
     ExecutiveControlTowerSummary,
@@ -31,6 +32,9 @@ from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutiveGovernanceRuntimeSummary,
     ExecutiveGovernanceSignalSummary,
     RectorDashboardRuntimeSummary,
+    StrategicInitiativeEntry,
+    StrategicInitiativeMetrics,
+    StrategicInitiativeSummary,
 )
 from app.modules.executive_governance.runtime_shell_service import ExecutiveGovernanceRuntimeService
 from app.modules.rbac.security import get_actor, permission_dependency
@@ -242,6 +246,66 @@ def get_runtime_control_tower_escalations(
 ) -> ExecutivePerformanceMetrics:
     try:
         return _service.get_control_tower_escalations(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/strategic-initiatives", response_model=list[StrategicInitiativeEntry])
+def get_runtime_strategic_initiatives(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> list[StrategicInitiativeEntry]:
+    try:
+        return _service.get_strategic_initiatives(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/strategic-initiatives/summary", response_model=StrategicInitiativeSummary)
+def get_runtime_strategic_initiatives_summary(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> StrategicInitiativeSummary:
+    try:
+        return _service.get_strategic_initiatives_summary(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/strategic-initiatives/risks", response_model=StrategicInitiativeMetrics)
+def get_runtime_strategic_initiatives_risks(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> StrategicInitiativeMetrics:
+    try:
+        return _service.get_strategic_initiatives_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/development-program", response_model=DevelopmentProgramSummary)
+def get_runtime_development_program(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> DevelopmentProgramSummary:
+    try:
+        return _service.get_development_program(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/development-program/summary", response_model=DevelopmentProgramSummary)
+def get_runtime_development_program_summary(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> DevelopmentProgramSummary:
+    try:
+        return _service.get_development_program_summary(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)
 

@@ -1,5 +1,6 @@
 import { apiGet } from '@/shared/api/client';
 import type {
+  DevelopmentProgramSummary,
   ExecutiveAssignmentEntry,
   ExecutiveAssignmentSummary,
   ExecutiveControlTowerSummary,
@@ -17,6 +18,9 @@ import type {
   ExecutiveProtocolSummary,
   ExecutiveRiskOverview,
   RectorDashboardRuntimeSummary,
+  StrategicInitiativeEntry,
+  StrategicInitiativeMetrics,
+  StrategicInitiativeSummary,
   ExecutiveGovernanceRuntimeOverview,
   ExecutiveGovernanceRuntimeSummary,
   ExecutiveGovernanceSignalSummary,
@@ -41,6 +45,11 @@ export const executiveGovernanceApi = {
   getControlTowerRisks: () => apiGet<ExecutiveRiskOverview>(`${BASE}/control-tower/risks`),
   getControlTowerKpis: () => apiGet<ExecutiveKpiOverview>(`${BASE}/control-tower/kpis`),
   getControlTowerEscalations: () => apiGet<ExecutivePerformanceMetrics>(`${BASE}/control-tower/escalations`),
+  getStrategicInitiatives: () => apiGet<StrategicInitiativeEntry[]>(`${BASE}/strategic-initiatives`),
+  getStrategicInitiativesSummary: () => apiGet<StrategicInitiativeSummary>(`${BASE}/strategic-initiatives/summary`),
+  getStrategicInitiativesRisks: () => apiGet<StrategicInitiativeMetrics>(`${BASE}/strategic-initiatives/risks`),
+  getDevelopmentProgram: () => apiGet<DevelopmentProgramSummary>(`${BASE}/development-program`),
+  getDevelopmentProgramSummary: () => apiGet<DevelopmentProgramSummary>(`${BASE}/development-program/summary`),
   getMeetings: () => apiGet<ExecutiveMeetingEntry[]>(`${BASE}/meetings`),
   getMeetingSummary: () => apiGet<ExecutiveMeetingSummary>(`${BASE}/meetings/summary`),
   getProtocols: () => apiGet<ExecutiveProtocolEntry[]>(`${BASE}/protocols`),

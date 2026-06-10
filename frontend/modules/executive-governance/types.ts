@@ -235,6 +235,71 @@ export interface RectorDashboardRuntimeSummary {
   generated_at: string;
 }
 
+export interface StrategicInitiativeEntry {
+  initiative_id: string;
+  initiative_code: string;
+  initiative_title: string;
+  initiative_owner: string;
+  initiative_status: string;
+  start_date: string;
+  target_date: string;
+  completion_percent: number;
+  linked_kpi_count: number;
+  linked_assignment_count: number;
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  escalation_flag: boolean;
+}
+
+export interface StrategicInitiativeSummary {
+  tenant_id: number;
+  initiatives: StrategicInitiativeEntry[];
+  total_initiatives: number;
+  active_initiatives: number;
+  completed_initiatives: number;
+  at_risk_initiatives: number;
+  delayed_initiatives: number;
+  initiative_kpi_coverage: number;
+  kpi_completion_alignment: number;
+  kpi_deviation_visibility: Record<string, number>;
+  kpi_ownership_visibility: Record<string, number>;
+  roadmap_visibility: Record<string, number>;
+  strategic_signal_families: string[];
+  rbac_roles: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
+export interface StrategicInitiativeMetrics {
+  tenant_id: number;
+  delayed_initiatives: StrategicInitiativeEntry[];
+  high_risk_initiatives: StrategicInitiativeEntry[];
+  kpi_deviation_hotspots: Record<string, number>;
+  strategic_bottlenecks: Record<string, number>;
+  execution_blockers: Record<string, number>;
+  risk_distribution: Record<string, number>;
+  strategic_signal_families: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
+export interface DevelopmentProgramSummary {
+  tenant_id: number;
+  program_name: string;
+  program_year: number;
+  initiative_count: number;
+  active_initiatives: number;
+  completed_initiatives: number;
+  at_risk_initiatives: number;
+  delayed_initiatives: number;
+  overall_progress: number;
+  strategic_signal_families: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
 export interface ExecutiveMeetingEntry {
   meeting_id: string;
   meeting_type: string;

@@ -17,6 +17,64 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
 }
 
 export function ExecutiveGovernanceRuntimeShellPage() {
+  const strategicInitiativesQuery =
+    executiveGovernanceApi.getStrategicInitiatives ?? (async () => []);
+  const strategicSummaryQuery =
+    executiveGovernanceApi.getStrategicInitiativesSummary ??
+    (async () => ({
+      tenant_id: 0,
+      initiatives: [],
+      total_initiatives: 0,
+      active_initiatives: 0,
+      completed_initiatives: 0,
+      at_risk_initiatives: 0,
+      delayed_initiatives: 0,
+      initiative_kpi_coverage: 0,
+      kpi_completion_alignment: 0,
+      kpi_deviation_visibility: {},
+      kpi_ownership_visibility: {},
+      roadmap_visibility: {},
+      strategic_signal_families: [],
+      rbac_roles: [],
+      read_only: true,
+      aggregator_only: true,
+      generated_at: new Date(0).toISOString(),
+    }));
+  const strategicRisksQuery =
+    executiveGovernanceApi.getStrategicInitiativesRisks ??
+    (async () => ({
+      tenant_id: 0,
+      delayed_initiatives: [],
+      high_risk_initiatives: [],
+      kpi_deviation_hotspots: {},
+      strategic_bottlenecks: {},
+      execution_blockers: {},
+      risk_distribution: {},
+      strategic_signal_families: [],
+      read_only: true,
+      aggregator_only: true,
+      generated_at: new Date(0).toISOString(),
+    }));
+  const developmentProgramQuery =
+    executiveGovernanceApi.getDevelopmentProgram ??
+    (async () => ({
+      tenant_id: 0,
+      program_name: 'Unavailable',
+      program_year: 0,
+      initiative_count: 0,
+      active_initiatives: 0,
+      completed_initiatives: 0,
+      at_risk_initiatives: 0,
+      delayed_initiatives: 0,
+      overall_progress: 0,
+      strategic_signal_families: [],
+      read_only: true,
+      aggregator_only: true,
+      generated_at: new Date(0).toISOString(),
+    }));
+  const developmentProgramSummaryQuery =
+    executiveGovernanceApi.getDevelopmentProgramSummary ?? developmentProgramQuery;
+
   const overview = useQuery({ queryKey: ['executive-governance:overview'], queryFn: executiveGovernanceApi.getOverview, staleTime: 30000 });
   const summary = useQuery({ queryKey: ['executive-governance:summary'], queryFn: executiveGovernanceApi.getSummary, staleTime: 30000 });
   const signals = useQuery({ queryKey: ['executive-governance:signals'], queryFn: executiveGovernanceApi.getSignals, staleTime: 30000 });
@@ -33,6 +91,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
   const controlTowerRisks = useQuery({ queryKey: ['executive-governance:control-tower-risks'], queryFn: executiveGovernanceApi.getControlTowerRisks, staleTime: 30000 });
   const controlTowerKpis = useQuery({ queryKey: ['executive-governance:control-tower-kpis'], queryFn: executiveGovernanceApi.getControlTowerKpis, staleTime: 30000 });
   const controlTowerEscalations = useQuery({ queryKey: ['executive-governance:control-tower-escalations'], queryFn: executiveGovernanceApi.getControlTowerEscalations, staleTime: 30000 });
+  const strategicInitiatives = useQuery({ queryKey: ['executive-governance:strategic-initiatives'], queryFn: strategicInitiativesQuery, staleTime: 30000 });
+  const strategicSummary = useQuery({ queryKey: ['executive-governance:strategic-initiatives-summary'], queryFn: strategicSummaryQuery, staleTime: 30000 });
+  const strategicRisks = useQuery({ queryKey: ['executive-governance:strategic-initiatives-risks'], queryFn: strategicRisksQuery, staleTime: 30000 });
+  const developmentProgram = useQuery({ queryKey: ['executive-governance:development-program'], queryFn: developmentProgramQuery, staleTime: 30000 });
+  const developmentProgramSummary = useQuery({ queryKey: ['executive-governance:development-program-summary'], queryFn: developmentProgramSummaryQuery, staleTime: 30000 });
   const meetings = useQuery({ queryKey: ['executive-governance:meetings'], queryFn: executiveGovernanceApi.getMeetings, staleTime: 30000 });
   const meetingSummary = useQuery({ queryKey: ['executive-governance:meetings-summary'], queryFn: executiveGovernanceApi.getMeetingSummary, staleTime: 30000 });
   const protocols = useQuery({ queryKey: ['executive-governance:protocols'], queryFn: executiveGovernanceApi.getProtocols, staleTime: 30000 });
@@ -56,6 +119,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     controlTowerRisks.isPending ||
     controlTowerKpis.isPending ||
     controlTowerEscalations.isPending ||
+    strategicInitiatives.isPending ||
+    strategicSummary.isPending ||
+    strategicRisks.isPending ||
+    developmentProgram.isPending ||
+    developmentProgramSummary.isPending ||
     meetings.isPending ||
     meetingSummary.isPending ||
     protocols.isPending ||
@@ -82,6 +150,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     controlTowerRisks.error ||
     controlTowerKpis.error ||
     controlTowerEscalations.error ||
+    strategicInitiatives.error ||
+    strategicSummary.error ||
+    strategicRisks.error ||
+    developmentProgram.error ||
+    developmentProgramSummary.error ||
     meetings.error ||
     meetingSummary.error ||
     protocols.error ||
@@ -108,6 +181,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
           controlTowerRisks.error ??
           controlTowerKpis.error ??
           controlTowerEscalations.error ??
+          strategicInitiatives.error ??
+          strategicSummary.error ??
+          strategicRisks.error ??
+          developmentProgram.error ??
+          developmentProgramSummary.error ??
           meetings.error ??
           meetingSummary.error ??
           protocols.error ??
@@ -135,6 +213,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     !controlTowerRisks.data ||
     !controlTowerKpis.data ||
     !controlTowerEscalations.data ||
+    !strategicInitiatives.data ||
+    !strategicSummary.data ||
+    !strategicRisks.data ||
+    !developmentProgram.data ||
+    !developmentProgramSummary.data ||
     !meetings.data ||
     !meetingSummary.data ||
     !protocols.data ||
@@ -312,9 +395,67 @@ export function ExecutiveGovernanceRuntimeShellPage() {
 
         <section className="rounded-lg border p-4" aria-label="Strategic Initiatives" data-testid="strategic-initiatives-runtime">
           <h2 className="text-lg font-semibold">Strategic Initiatives</h2>
-          {Object.entries(controlTowerSummary.data.strategic_initiatives).map(([key, value]) => (
+          <p className="mt-2 text-sm">Total initiatives: {strategicSummary.data.total_initiatives}</p>
+          <p className="text-sm">Active initiatives: {strategicSummary.data.active_initiatives}</p>
+          <p className="text-sm">Completed initiatives: {strategicSummary.data.completed_initiatives}</p>
+          <p className="text-sm">At-risk initiatives: {strategicSummary.data.at_risk_initiatives}</p>
+          <p className="text-sm">Delayed initiatives: {strategicSummary.data.delayed_initiatives}</p>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {strategicInitiatives.data.map((initiative) => (
+              <div key={initiative.initiative_id} className="rounded-lg border p-3">
+                <p className="font-medium">{initiative.initiative_title}</p>
+                <p className="text-sm text-muted-foreground">{initiative.initiative_code} | {initiative.initiative_owner}</p>
+                <p className="text-sm">status={initiative.initiative_status} / risk={initiative.risk_level}</p>
+                <p className="text-sm">completion={initiative.completion_percent}%</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Development Program" data-testid="development-program-runtime">
+          <h2 className="text-lg font-semibold">Development Program</h2>
+          <p className="mt-2 text-sm">Program: {developmentProgram.data.program_name} ({developmentProgram.data.program_year})</p>
+          <p className="text-sm">Initiatives: {developmentProgramSummary.data.initiative_count}</p>
+          <p className="text-sm">Active: {developmentProgramSummary.data.active_initiatives}</p>
+          <p className="text-sm">Completed: {developmentProgramSummary.data.completed_initiatives}</p>
+          <p className="text-sm">At risk: {developmentProgramSummary.data.at_risk_initiatives}</p>
+          <p className="text-sm">Delayed: {developmentProgramSummary.data.delayed_initiatives}</p>
+          <p className="text-sm">Overall progress: {developmentProgramSummary.data.overall_progress}%</p>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Strategic KPI Alignment" data-testid="strategic-kpi-alignment-runtime">
+          <h2 className="text-lg font-semibold">Strategic KPI Alignment</h2>
+          <p className="mt-2 text-sm">Initiative KPI coverage: {strategicSummary.data.initiative_kpi_coverage}%</p>
+          <p className="text-sm">KPI completion alignment: {strategicSummary.data.kpi_completion_alignment}%</p>
+          {Object.entries(strategicSummary.data.kpi_deviation_visibility).map(([key, value]) => (
+            <p key={key} className="text-sm">deviation {key}: {value}</p>
+          ))}
+          {Object.entries(strategicSummary.data.kpi_ownership_visibility).map(([key, value]) => (
+            <p key={key} className="text-sm">owner {key}: {value}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Strategic Risk Center" data-testid="strategic-risk-center-runtime">
+          <h2 className="text-lg font-semibold">Strategic Risk Center</h2>
+          <p className="mt-2 text-sm">Delayed initiatives: {strategicRisks.data.delayed_initiatives.length}</p>
+          <p className="text-sm">High-risk initiatives: {strategicRisks.data.high_risk_initiatives.length}</p>
+          {Object.entries(strategicRisks.data.kpi_deviation_hotspots).map(([key, value]) => (
+            <p key={key} className="text-sm">KPI hotspot {key}: {value}</p>
+          ))}
+          {Object.entries(strategicRisks.data.strategic_bottlenecks).map(([key, value]) => (
+            <p key={key} className="text-sm">bottleneck {key}: {value}</p>
+          ))}
+          {Object.entries(strategicRisks.data.execution_blockers).map(([key, value]) => (
+            <p key={key} className="text-sm">blocker {key}: {value}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Roadmap Visibility" data-testid="roadmap-visibility-runtime">
+          <h2 className="text-lg font-semibold">Roadmap Visibility</h2>
+          {Object.entries(strategicSummary.data.roadmap_visibility).map(([key, value]) => (
             <p key={key} className="text-sm">{key}: {value}</p>
           ))}
+          <p className="mt-2 text-sm">Signals: {strategicSummary.data.strategic_signal_families.join(', ')}</p>
         </section>
 
         <section className="rounded-lg border p-4" aria-label="Escalation Center" data-testid="control-tower-escalation-runtime">

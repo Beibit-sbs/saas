@@ -21,6 +21,12 @@ ExecutiveSignalFamily = Literal[
     "protocol_non_execution",
     "decision_stagnation",
     "assignment_stagnation",
+    "roadmap_delay",
+    "initiative_stagnation",
+    "kpi_deviation",
+    "execution_gap",
+    "strategic_risk",
+    "transformation_delay",
 ]
 
 
@@ -267,6 +273,71 @@ class RectorDashboardRuntimeSummary(BaseModel):
     executive_risks: ExecutiveRiskOverview
     kpi_performance: ExecutiveKpiOverview
     escalation_summary: dict[str, int] = Field(default_factory=dict)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class StrategicInitiativeEntry(BaseModel):
+    initiative_id: str
+    initiative_code: str
+    initiative_title: str
+    initiative_owner: str
+    initiative_status: str
+    start_date: datetime
+    target_date: datetime
+    completion_percent: int = 0
+    linked_kpi_count: int = 0
+    linked_assignment_count: int = 0
+    risk_level: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = "LOW"
+    escalation_flag: bool = False
+
+
+class StrategicInitiativeSummary(BaseModel):
+    tenant_id: int
+    initiatives: list[StrategicInitiativeEntry] = Field(default_factory=list)
+    total_initiatives: int = 0
+    active_initiatives: int = 0
+    completed_initiatives: int = 0
+    at_risk_initiatives: int = 0
+    delayed_initiatives: int = 0
+    initiative_kpi_coverage: int = 0
+    kpi_completion_alignment: int = 0
+    kpi_deviation_visibility: dict[str, int] = Field(default_factory=dict)
+    kpi_ownership_visibility: dict[str, int] = Field(default_factory=dict)
+    roadmap_visibility: dict[str, int] = Field(default_factory=dict)
+    strategic_signal_families: list[str] = Field(default_factory=list)
+    rbac_roles: list[str] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class StrategicInitiativeMetrics(BaseModel):
+    tenant_id: int
+    delayed_initiatives: list[StrategicInitiativeEntry] = Field(default_factory=list)
+    high_risk_initiatives: list[StrategicInitiativeEntry] = Field(default_factory=list)
+    kpi_deviation_hotspots: dict[str, int] = Field(default_factory=dict)
+    strategic_bottlenecks: dict[str, int] = Field(default_factory=dict)
+    execution_blockers: dict[str, int] = Field(default_factory=dict)
+    risk_distribution: dict[str, int] = Field(default_factory=dict)
+    strategic_signal_families: list[str] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class DevelopmentProgramSummary(BaseModel):
+    tenant_id: int
+    program_name: str
+    program_year: int
+    initiative_count: int = 0
+    active_initiatives: int = 0
+    completed_initiatives: int = 0
+    at_risk_initiatives: int = 0
+    delayed_initiatives: int = 0
+    overall_progress: int = 0
+    strategic_signal_families: list[str] = Field(default_factory=list)
     read_only: bool = True
     aggregator_only: bool = True
     generated_at: datetime
