@@ -626,3 +626,61 @@ export interface ComplianceRiskResponse {
   read_only: boolean;
   risks: ComplianceRiskSummary[];
 }
+
+export interface ReportingDashboardSummary {
+  id: string;
+  dashboard_code: string;
+  dashboard_name: string;
+  status: string;
+  readiness_score: number;
+  risk_score: number;
+  workload_score: number;
+  signal_count: number;
+  owner_module: string;
+  generated_at: string;
+  read_only: boolean;
+}
+
+export interface ReportingReadinessSummary extends ReportingDashboardSummary {}
+
+export interface ReportingRiskSummary extends ReportingDashboardSummary {}
+
+export interface ReportingWorkloadSummary extends ReportingDashboardSummary {}
+
+export interface ReportingSignalSummary extends ReportingDashboardSummary {}
+
+export interface ReportingDashboardResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  dashboards: ReportingDashboardSummary[];
+  signal_inventory: string[];
+}
+
+export interface ReportingReadinessResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  readiness: ReportingReadinessSummary[];
+}
+
+export interface ReportingWorkloadResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  workload: ReportingWorkloadSummary[];
+}
+
+export interface ReportingRiskResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  risks: ReportingRiskSummary[];
+}
+
+export interface ReportingSignalResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  signals: ReportingSignalSummary[];
+}

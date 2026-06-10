@@ -64,6 +64,11 @@ export function ReportingRuntimeShellPage() {
   const complianceReadiness = useQuery({ queryKey: ['reporting-runtime:compliance:readiness'], queryFn: reportingRuntimeApi.getComplianceReadiness, staleTime: 30000 });
   const complianceGaps = useQuery({ queryKey: ['reporting-runtime:compliance:gaps'], queryFn: reportingRuntimeApi.getComplianceGaps, staleTime: 30000 });
   const complianceRisks = useQuery({ queryKey: ['reporting-runtime:compliance:risks'], queryFn: reportingRuntimeApi.getComplianceRisks, staleTime: 30000 });
+  const reportingDashboard = useQuery({ queryKey: ['reporting-runtime:dashboard'], queryFn: reportingRuntimeApi.getReportingDashboard, staleTime: 30000 });
+  const reportingDashboardReadiness = useQuery({ queryKey: ['reporting-runtime:dashboard:readiness'], queryFn: reportingRuntimeApi.getReportingDashboardReadiness, staleTime: 30000 });
+  const reportingDashboardWorkload = useQuery({ queryKey: ['reporting-runtime:dashboard:workload'], queryFn: reportingRuntimeApi.getReportingDashboardWorkload, staleTime: 30000 });
+  const reportingDashboardRisks = useQuery({ queryKey: ['reporting-runtime:dashboard:risks'], queryFn: reportingRuntimeApi.getReportingDashboardRisks, staleTime: 30000 });
+  const reportingDashboardSignals = useQuery({ queryKey: ['reporting-runtime:dashboard:signals'], queryFn: reportingRuntimeApi.getReportingDashboardSignals, staleTime: 30000 });
 
   if (
     runtime.isPending ||
@@ -107,7 +112,12 @@ export function ReportingRuntimeShellPage() {
     complianceControls.isPending ||
     complianceReadiness.isPending ||
     complianceGaps.isPending ||
-    complianceRisks.isPending
+    complianceRisks.isPending ||
+    reportingDashboard.isPending ||
+    reportingDashboardReadiness.isPending ||
+    reportingDashboardWorkload.isPending ||
+    reportingDashboardRisks.isPending ||
+    reportingDashboardSignals.isPending
   ) {
     return <LoadingState title="Loading Reporting Runtime shell" />;
   }
@@ -154,7 +164,12 @@ export function ReportingRuntimeShellPage() {
     complianceControls.error ||
     complianceReadiness.error ||
     complianceGaps.error ||
-    complianceRisks.error
+    complianceRisks.error ||
+    reportingDashboard.error ||
+    reportingDashboardReadiness.error ||
+    reportingDashboardWorkload.error ||
+    reportingDashboardRisks.error ||
+    reportingDashboardSignals.error
   ) {
     return (
       <ErrorState
@@ -201,7 +216,12 @@ export function ReportingRuntimeShellPage() {
           complianceControls.error ??
           complianceReadiness.error ??
           complianceGaps.error ??
-          complianceRisks.error
+          complianceRisks.error ??
+          reportingDashboard.error ??
+          reportingDashboardReadiness.error ??
+          reportingDashboardWorkload.error ??
+          reportingDashboardRisks.error ??
+          reportingDashboardSignals.error
         }
       />
     );
@@ -249,7 +269,12 @@ export function ReportingRuntimeShellPage() {
     !complianceControls.data ||
     !complianceReadiness.data ||
     !complianceGaps.data ||
-    !complianceRisks.data
+    !complianceRisks.data ||
+    !reportingDashboard.data ||
+    !reportingDashboardReadiness.data ||
+    !reportingDashboardWorkload.data ||
+    !reportingDashboardRisks.data ||
+    !reportingDashboardSignals.data
   ) {
     return <ErrorState message="Reporting Runtime shell is unavailable." />;
   }
@@ -724,6 +749,58 @@ export function ReportingRuntimeShellPage() {
           <div className="mt-3 space-y-1 text-sm">
             {complianceGaps.data.gaps.map((item) => (
               <p key={item.id}>{item.control_name}: gap_count={item.gap_count}, gap_severity={item.gap_severity}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="reporting-executive-dashboard-section">
+          <h2 className="text-lg font-semibold">Reporting Executive Dashboard</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Read-only runtime executive dashboard for Ministry, Accreditation, Regulatory, Ranking, NOBD, and Compliance monitoring surfaces.
+          </p>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {reportingDashboard.data.dashboards.map((item) => (
+              <div key={item.id} className="rounded border p-3 text-sm">
+                <p className="font-medium">{item.dashboard_name}</p>
+                <p>{item.dashboard_code} | owner={item.owner_module}</p>
+                <p className="text-xs text-muted-foreground">status={item.status} | readiness={item.readiness_score} | risk={item.risk_score} | workload={item.workload_score}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="reporting-dashboard-readiness-section">
+          <h2 className="text-lg font-semibold">Readiness Center</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {reportingDashboardReadiness.data.readiness.map((item) => (
+              <p key={item.id}>{item.dashboard_name}: readiness_score={item.readiness_score}, status={item.status}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="reporting-dashboard-workload-section">
+          <h2 className="text-lg font-semibold">Workload Center</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {reportingDashboardWorkload.data.workload.map((item) => (
+              <p key={item.id}>{item.dashboard_name}: workload_score={item.workload_score}, signal_count={item.signal_count}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="reporting-dashboard-risks-section">
+          <h2 className="text-lg font-semibold">Risk Center</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {reportingDashboardRisks.data.risks.map((item) => (
+              <p key={item.id}>{item.dashboard_name}: risk_score={item.risk_score}, status={item.status}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="reporting-dashboard-signals-section">
+          <h2 className="text-lg font-semibold">Signal Center</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {reportingDashboardSignals.data.signals.map((item) => (
+              <p key={item.id}>{item.dashboard_name}: signal_count={item.signal_count}, owner={item.owner_module}</p>
             ))}
           </div>
         </section>

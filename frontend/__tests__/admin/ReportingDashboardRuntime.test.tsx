@@ -65,7 +65,7 @@ function renderWithClient(ui: React.ReactNode) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
-describe('Compliance Monitoring Runtime', () => {
+describe('Reporting Dashboard Runtime', () => {
   beforeEach(() => {
     mockApi.getRuntimeShell.mockResolvedValue({
       tenant_id: 1,
@@ -289,7 +289,8 @@ describe('Compliance Monitoring Runtime', () => {
     mockApi.getComplianceReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: complianceRows.map((item) => ({ ...item, readiness_level: item.readiness_score >= 85 ? 'READY' : 'PARTIAL' })) });
     mockApi.getComplianceGaps.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, gaps: complianceRows.map((item) => ({ ...item, gap_severity: item.gap_count >= 2 ? 'MEDIUM' : 'LOW' })) });
     mockApi.getComplianceRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: complianceRows.map((item, index) => ({ ...item, signal_name: ['compliance_gap_high', 'compliance_readiness_low', 'compliance_risk_high', 'control_failure_detected', 'mandatory_submission_missing'][index % 5], signal_owner_module: 'brain_core' })) });
-    const reportingDashboardRows = [
+
+    const dashboardRows = [
       ['DASH-MINISTRY', 'Ministry Reporting', 'ministry_reporting_dashboard'],
       ['DASH-ACCREDITATION', 'Accreditation Reporting', 'quality_accreditation'],
       ['DASH-REGULATORY', 'Regulatory Reporting', 'regulatory_reporting_integration'],
@@ -309,28 +310,55 @@ describe('Compliance Monitoring Runtime', () => {
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
     }));
-    mockApi.getReportingDashboard.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, dashboards: reportingDashboardRows, signal_inventory: ['reporting_readiness_low', 'reporting_workload_high', 'reporting_risk_high', 'reporting_submission_delay', 'reporting_attention_required'] });
-    mockApi.getReportingDashboardReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: reportingDashboardRows });
-    mockApi.getReportingDashboardWorkload.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, workload: reportingDashboardRows });
-    mockApi.getReportingDashboardRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: reportingDashboardRows });
-    mockApi.getReportingDashboardSignals.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, signals: reportingDashboardRows });
+
+    mockApi.getReportingDashboard.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      dashboards: dashboardRows,
+      signal_inventory: ['reporting_readiness_low', 'reporting_workload_high', 'reporting_risk_high', 'reporting_submission_delay', 'reporting_attention_required'],
+    });
+    mockApi.getReportingDashboardReadiness.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      readiness: dashboardRows,
+    });
+    mockApi.getReportingDashboardWorkload.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      workload: dashboardRows,
+    });
+    mockApi.getReportingDashboardRisks.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      risks: dashboardRows,
+    });
+    mockApi.getReportingDashboardSignals.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      signals: dashboardRows,
+    });
   });
 
-  it('renders compliance monitoring runtime sections and values', async () => {
+  it('renders reporting dashboard runtime sections and values', async () => {
     renderWithClient(<ReportingRuntimeShellPage />);
 
-    expect(await screen.findByTestId('compliance-monitoring-center-section')).toBeInTheDocument();
-    expect(screen.getByTestId('compliance-controls-section')).toBeInTheDocument();
-    expect(screen.getByTestId('compliance-readiness-section')).toBeInTheDocument();
-    expect(screen.getByTestId('compliance-risks-section')).toBeInTheDocument();
-    expect(screen.getByTestId('compliance-gaps-section')).toBeInTheDocument();
+    expect(await screen.findByTestId('reporting-executive-dashboard-section')).toBeInTheDocument();
+    expect(screen.getByTestId('reporting-dashboard-readiness-section')).toBeInTheDocument();
+    expect(screen.getByTestId('reporting-dashboard-workload-section')).toBeInTheDocument();
+    expect(screen.getByTestId('reporting-dashboard-risks-section')).toBeInTheDocument();
+    expect(screen.getByTestId('reporting-dashboard-signals-section')).toBeInTheDocument();
 
-    expect(screen.getByText('Ministry Compliance')).toBeInTheDocument();
-    expect(screen.getByText('Accreditation Compliance')).toBeInTheDocument();
-    expect(screen.getByText('NOBD Compliance')).toBeInTheDocument();
-    expect(screen.getByText('Regulatory Compliance')).toBeInTheDocument();
-    expect(screen.getByText('Ranking Compliance')).toBeInTheDocument();
-    expect(screen.getByText('Internal Policy Compliance')).toBeInTheDocument();
+    expect(screen.getAllByText('Ministry Reporting').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Accreditation Reporting').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Regulatory Reporting').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Ranking Reporting').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NOBD Reporting').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Compliance Monitoring').length).toBeGreaterThan(0);
     expect(screen.getAllByText(/owner=brain_core/i).length).toBeGreaterThan(0);
   });
 });

@@ -48,6 +48,11 @@ const { mockApi } = vi.hoisted(() => ({
     getComplianceReadiness: vi.fn(),
     getComplianceGaps: vi.fn(),
     getComplianceRisks: vi.fn(),
+    getReportingDashboard: vi.fn(),
+    getReportingDashboardReadiness: vi.fn(),
+    getReportingDashboardWorkload: vi.fn(),
+    getReportingDashboardRisks: vi.fn(),
+    getReportingDashboardSignals: vi.fn(),
   },
 }));
 
@@ -404,6 +409,31 @@ describe('Accreditation Reporting Runtime', () => {
     mockApi.getComplianceReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: complianceRows.map((item) => ({ ...item, readiness_level: item.readiness_score >= 85 ? 'READY' : 'PARTIAL' })) });
     mockApi.getComplianceGaps.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, gaps: complianceRows.map((item) => ({ ...item, gap_severity: item.gap_count >= 2 ? 'MEDIUM' : 'LOW' })) });
     mockApi.getComplianceRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: complianceRows.map((item, index) => ({ ...item, signal_name: ['compliance_gap_high', 'compliance_readiness_low', 'compliance_risk_high', 'control_failure_detected', 'mandatory_submission_missing'][index % 5], signal_owner_module: 'brain_core' })) });
+    const reportingDashboardRows = [
+      ['DASH-MINISTRY', 'Ministry Reporting', 'ministry_reporting_dashboard'],
+      ['DASH-ACCREDITATION', 'Accreditation Reporting', 'quality_accreditation'],
+      ['DASH-REGULATORY', 'Regulatory Reporting', 'regulatory_reporting_integration'],
+      ['DASH-RANKING', 'Ranking Reporting', 'research_science'],
+      ['DASH-NOBD', 'NOBD Reporting', 'student_lifecycle'],
+      ['DASH-COMPLIANCE', 'Compliance Monitoring', 'brain_core'],
+    ].map(([code, name, owner], index) => ({
+      id: 'dashboard-1-' + (index + 1),
+      dashboard_code: code,
+      dashboard_name: name,
+      status: index < 2 ? 'READY' : 'WATCH',
+      readiness_score: 86 - index * 3,
+      risk_score: 35 + index * 6,
+      workload_score: 48 + index * 5,
+      signal_count: 3 + (index % 3),
+      owner_module: owner,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+    }));
+    mockApi.getReportingDashboard.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, dashboards: reportingDashboardRows, signal_inventory: ['reporting_readiness_low', 'reporting_workload_high', 'reporting_risk_high', 'reporting_submission_delay', 'reporting_attention_required'] });
+    mockApi.getReportingDashboardReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: reportingDashboardRows });
+    mockApi.getReportingDashboardWorkload.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, workload: reportingDashboardRows });
+    mockApi.getReportingDashboardRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: reportingDashboardRows });
+    mockApi.getReportingDashboardSignals.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, signals: reportingDashboardRows });
   });
 
   it('renders accreditation reporting sections', async () => {

@@ -55,6 +55,14 @@ from app.modules.reporting_runtime.runtime_compliance_schemas import (
     ComplianceRiskResponse,
 )
 from app.modules.reporting_runtime.runtime_compliance_service import ComplianceMonitoringRuntimeService
+from app.modules.reporting_runtime.runtime_dashboard_schemas import (
+    ReportingDashboardResponse,
+    ReportingReadinessResponse,
+    ReportingRiskResponse,
+    ReportingSignalResponse,
+    ReportingWorkloadResponse,
+)
+from app.modules.reporting_runtime.runtime_dashboard_service import ReportingDashboardRuntimeService
 from app.modules.reporting_runtime.runtime_ministry_schemas import (
     MinistryReportingCompletenessResponse,
     MinistryReportingCycleResponse,
@@ -90,6 +98,7 @@ _regulatory_service = RegulatoryReportingRuntimeService()
 _ranking_service = RankingReportingRuntimeService()
 _nobd_service = NobdReportingRuntimeService()
 _compliance_service = ComplianceMonitoringRuntimeService()
+_dashboard_service = ReportingDashboardRuntimeService()
 
 
 def _handle(exc: Exception) -> None:
@@ -602,5 +611,65 @@ def get_compliance_monitoring_risks_runtime(
 ) -> ComplianceRiskResponse:
     try:
         return _compliance_service.get_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/reporting-dashboard", response_model=ReportingDashboardResponse)
+def get_reporting_dashboard_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ReportingDashboardResponse:
+    try:
+        return _dashboard_service.get_dashboard(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/reporting-dashboard/readiness", response_model=ReportingReadinessResponse)
+def get_reporting_dashboard_readiness_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ReportingReadinessResponse:
+    try:
+        return _dashboard_service.get_readiness(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/reporting-dashboard/workload", response_model=ReportingWorkloadResponse)
+def get_reporting_dashboard_workload_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ReportingWorkloadResponse:
+    try:
+        return _dashboard_service.get_workload(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/reporting-dashboard/risks", response_model=ReportingRiskResponse)
+def get_reporting_dashboard_risks_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ReportingRiskResponse:
+    try:
+        return _dashboard_service.get_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/reporting-dashboard/signals", response_model=ReportingSignalResponse)
+def get_reporting_dashboard_signals_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ReportingSignalResponse:
+    try:
+        return _dashboard_service.get_signals(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)

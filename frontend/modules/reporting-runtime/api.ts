@@ -1,5 +1,10 @@
 import { apiGet } from '@/shared/api/client';
 import type {
+  ReportingDashboardResponse,
+  ReportingReadinessResponse,
+  ReportingRiskResponse,
+  ReportingSignalResponse,
+  ReportingWorkloadResponse,
   ComplianceControlResponse,
   ComplianceGapResponse,
   ComplianceMonitoringResponse,
@@ -89,4 +94,9 @@ export const reportingRuntimeApi = {
   getComplianceReadiness: () => apiGet<ComplianceReadinessResponse>(`${BASE}/runtime/compliance/readiness`),
   getComplianceGaps: () => apiGet<ComplianceGapResponse>(`${BASE}/runtime/compliance/gaps`),
   getComplianceRisks: () => apiGet<ComplianceRiskResponse>(`${BASE}/runtime/compliance/risks`),
+  getReportingDashboard: () => apiGet<ReportingDashboardResponse>(`${BASE}/runtime/reporting-dashboard`),
+  getReportingDashboardReadiness: () => apiGet<ReportingReadinessResponse>(`${BASE}/runtime/reporting-dashboard/readiness`),
+  getReportingDashboardWorkload: () => apiGet<ReportingWorkloadResponse>(`${BASE}/runtime/reporting-dashboard/workload`),
+  getReportingDashboardRisks: () => apiGet<ReportingRiskResponse>(`${BASE}/runtime/reporting-dashboard/risks`),
+  getReportingDashboardSignals: () => apiGet<ReportingSignalResponse>(`${BASE}/runtime/reporting-dashboard/signals`),
 };
