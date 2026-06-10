@@ -25,6 +25,12 @@ const { mockApi } = vi.hoisted(() => ({
     getAccreditationCompliance: vi.fn(),
     getAccreditationDeadlines: vi.fn(),
     getAccreditationRisks: vi.fn(),
+    getRegulatory: vi.fn(),
+    getRegulatoryRequirements: vi.fn(),
+    getRegulatoryCompliance: vi.fn(),
+    getRegulatoryDeadlines: vi.fn(),
+    getRegulatoryDocuments: vi.fn(),
+    getRegulatoryRisks: vi.fn(),
   },
 }));
 
@@ -270,6 +276,28 @@ describe('Accreditation Reporting Runtime', () => {
         signal_owner_module: 'brain_core',
       })),
     });
+
+    const regulatoryEntry = {
+      id: 'regulatory-1-1',
+      requirement_code: 'REG-LIC-01',
+      requirement_name: 'Licensing Requirements',
+      regulator_name: 'National Licensing Authority',
+      compliance_status: 'WATCH',
+      deadline: '2026-06-30T00:00:00Z',
+      days_remaining: 10,
+      risk_level: 'MEDIUM',
+      document_status: 'PARTIAL',
+      owner_module: 'regulatory_reporting_integration',
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+    };
+
+    mockApi.getRegulatory.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, reports: [regulatoryEntry], signal_inventory: ['regulatory_deadline_risk', 'compliance_violation_risk', 'missing_required_document', 'licensing_gap', 'regulatory_readiness_low'] });
+    mockApi.getRegulatoryRequirements.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, requirements: [{ ...regulatoryEntry, requirement_status: 'OPEN' }] });
+    mockApi.getRegulatoryCompliance.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, compliance: [{ ...regulatoryEntry, compliance_score: 79 }] });
+    mockApi.getRegulatoryDeadlines.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, deadlines: [{ ...regulatoryEntry, deadline_status: 'UPCOMING', overdue: false }] });
+    mockApi.getRegulatoryDocuments.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, documents: [{ ...regulatoryEntry, document_name: 'REG-LIC-01-PRIMARY-DOC', document_completeness: 79 }] });
+    mockApi.getRegulatoryRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: [{ ...regulatoryEntry, signal_name: 'regulatory_deadline_risk', signal_owner_module: 'brain_core' }] });
   });
 
   it('renders accreditation reporting sections', async () => {

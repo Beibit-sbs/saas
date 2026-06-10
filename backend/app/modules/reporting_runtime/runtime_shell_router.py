@@ -20,6 +20,15 @@ from app.modules.reporting_runtime.runtime_accreditation_schemas import (
     AccreditationRiskResponse,
 )
 from app.modules.reporting_runtime.runtime_accreditation_service import AccreditationReportingRuntimeService
+from app.modules.reporting_runtime.runtime_regulatory_schemas import (
+    RegulatoryComplianceResponse,
+    RegulatoryDeadlineResponse,
+    RegulatoryDocumentResponse,
+    RegulatoryReportingResponse,
+    RegulatoryRequirementResponse,
+    RegulatoryRiskResponse,
+)
+from app.modules.reporting_runtime.runtime_regulatory_service import RegulatoryReportingRuntimeService
 from app.modules.reporting_runtime.runtime_ministry_schemas import (
     MinistryReportingCompletenessResponse,
     MinistryReportingCycleResponse,
@@ -51,6 +60,7 @@ _service = ReportingRuntimeShellService()
 _registry_service = ReportingRegistryRuntimeService()
 _ministry_service = MinistryReportingRuntimeService()
 _accreditation_service = AccreditationReportingRuntimeService()
+_regulatory_service = RegulatoryReportingRuntimeService()
 
 
 def _handle(exc: Exception) -> None:
@@ -287,5 +297,77 @@ def get_accreditation_reporting_risks_runtime(
 ) -> AccreditationRiskResponse:
     try:
         return _accreditation_service.get_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/regulatory", response_model=RegulatoryReportingResponse)
+def get_regulatory_reporting_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RegulatoryReportingResponse:
+    try:
+        return _regulatory_service.get_regulatory(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/regulatory/requirements", response_model=RegulatoryRequirementResponse)
+def get_regulatory_reporting_requirements_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RegulatoryRequirementResponse:
+    try:
+        return _regulatory_service.get_requirements(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/regulatory/compliance", response_model=RegulatoryComplianceResponse)
+def get_regulatory_reporting_compliance_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RegulatoryComplianceResponse:
+    try:
+        return _regulatory_service.get_compliance(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/regulatory/deadlines", response_model=RegulatoryDeadlineResponse)
+def get_regulatory_reporting_deadlines_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RegulatoryDeadlineResponse:
+    try:
+        return _regulatory_service.get_deadlines(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/regulatory/documents", response_model=RegulatoryDocumentResponse)
+def get_regulatory_reporting_documents_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RegulatoryDocumentResponse:
+    try:
+        return _regulatory_service.get_documents(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/regulatory/risks", response_model=RegulatoryRiskResponse)
+def get_regulatory_reporting_risks_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RegulatoryRiskResponse:
+    try:
+        return _regulatory_service.get_risks(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)

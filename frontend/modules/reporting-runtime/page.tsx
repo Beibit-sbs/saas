@@ -41,6 +41,12 @@ export function ReportingRuntimeShellPage() {
   const accreditationCompliance = useQuery({ queryKey: ['reporting-runtime:accreditation:compliance'], queryFn: reportingRuntimeApi.getAccreditationCompliance, staleTime: 30000 });
   const accreditationDeadlines = useQuery({ queryKey: ['reporting-runtime:accreditation:deadlines'], queryFn: reportingRuntimeApi.getAccreditationDeadlines, staleTime: 30000 });
   const accreditationRisks = useQuery({ queryKey: ['reporting-runtime:accreditation:risks'], queryFn: reportingRuntimeApi.getAccreditationRisks, staleTime: 30000 });
+  const regulatory = useQuery({ queryKey: ['reporting-runtime:regulatory'], queryFn: reportingRuntimeApi.getRegulatory, staleTime: 30000 });
+  const regulatoryRequirements = useQuery({ queryKey: ['reporting-runtime:regulatory:requirements'], queryFn: reportingRuntimeApi.getRegulatoryRequirements, staleTime: 30000 });
+  const regulatoryCompliance = useQuery({ queryKey: ['reporting-runtime:regulatory:compliance'], queryFn: reportingRuntimeApi.getRegulatoryCompliance, staleTime: 30000 });
+  const regulatoryDeadlines = useQuery({ queryKey: ['reporting-runtime:regulatory:deadlines'], queryFn: reportingRuntimeApi.getRegulatoryDeadlines, staleTime: 30000 });
+  const regulatoryDocuments = useQuery({ queryKey: ['reporting-runtime:regulatory:documents'], queryFn: reportingRuntimeApi.getRegulatoryDocuments, staleTime: 30000 });
+  const regulatoryRisks = useQuery({ queryKey: ['reporting-runtime:regulatory:risks'], queryFn: reportingRuntimeApi.getRegulatoryRisks, staleTime: 30000 });
 
   if (
     runtime.isPending ||
@@ -61,7 +67,13 @@ export function ReportingRuntimeShellPage() {
     accreditationReadiness.isPending ||
     accreditationCompliance.isPending ||
     accreditationDeadlines.isPending ||
-    accreditationRisks.isPending
+    accreditationRisks.isPending ||
+    regulatory.isPending ||
+    regulatoryRequirements.isPending ||
+    regulatoryCompliance.isPending ||
+    regulatoryDeadlines.isPending ||
+    regulatoryDocuments.isPending ||
+    regulatoryRisks.isPending
   ) {
     return <LoadingState title="Loading Reporting Runtime shell" />;
   }
@@ -85,7 +97,13 @@ export function ReportingRuntimeShellPage() {
     accreditationReadiness.error ||
     accreditationCompliance.error ||
     accreditationDeadlines.error ||
-    accreditationRisks.error
+    accreditationRisks.error ||
+    regulatory.error ||
+    regulatoryRequirements.error ||
+    regulatoryCompliance.error ||
+    regulatoryDeadlines.error ||
+    regulatoryDocuments.error ||
+    regulatoryRisks.error
   ) {
     return (
       <ErrorState
@@ -109,7 +127,13 @@ export function ReportingRuntimeShellPage() {
           accreditationReadiness.error ??
           accreditationCompliance.error ??
           accreditationDeadlines.error ??
-          accreditationRisks.error
+          accreditationRisks.error ??
+          regulatory.error ??
+          regulatoryRequirements.error ??
+          regulatoryCompliance.error ??
+          regulatoryDeadlines.error ??
+          regulatoryDocuments.error ??
+          regulatoryRisks.error
         }
       />
     );
@@ -134,7 +158,13 @@ export function ReportingRuntimeShellPage() {
     !accreditationReadiness.data ||
     !accreditationCompliance.data ||
     !accreditationDeadlines.data ||
-    !accreditationRisks.data
+    !accreditationRisks.data ||
+    !regulatory.data ||
+    !regulatoryRequirements.data ||
+    !regulatoryCompliance.data ||
+    !regulatoryDeadlines.data ||
+    !regulatoryDocuments.data ||
+    !regulatoryRisks.data
   ) {
     return <ErrorState message="Reporting Runtime shell is unavailable." />;
   }
@@ -370,6 +400,67 @@ export function ReportingRuntimeShellPage() {
           <div className="mt-3 space-y-1 text-sm">
             {accreditationRisks.data.risks.map((item) => (
               <p key={item.id}>{item.accreditation_name}: signal={item.signal_name}, owner={item.signal_owner_module}, risk={item.risk_level}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="regulatory-reporting-center-section">
+          <h2 className="text-lg font-semibold">Regulatory Reporting Center</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Runtime monitoring only for regulatory obligations. No regulatory submission execution, no external regulator integrations, and no provider synchronization.
+          </p>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {regulatory.data.reports.map((item) => (
+              <div key={item.id} className="rounded border p-3 text-sm">
+                <p className="font-medium">{item.requirement_name}</p>
+                <p>{item.requirement_code} | regulator={item.regulator_name}</p>
+                <p className="text-xs text-muted-foreground">compliance={item.compliance_status} | documents={item.document_status} | risk={item.risk_level}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="regulatory-requirements-section">
+          <h2 className="text-lg font-semibold">Regulatory Requirements</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {regulatoryRequirements.data.requirements.map((item) => (
+              <p key={item.id}>{item.requirement_name}: status={item.requirement_status}, compliance={item.compliance_status}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="regulatory-compliance-section">
+          <h2 className="text-lg font-semibold">Compliance Status</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {regulatoryCompliance.data.compliance.map((item) => (
+              <p key={item.id}>{item.requirement_name}: compliance_score={item.compliance_score}, status={item.compliance_status}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="regulatory-deadlines-section">
+          <h2 className="text-lg font-semibold">Regulatory Deadlines</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {regulatoryDeadlines.data.deadlines.map((item) => (
+              <p key={item.id}>{item.requirement_name}: deadline_status={item.deadline_status}, days_remaining={item.days_remaining}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="regulatory-documents-section">
+          <h2 className="text-lg font-semibold">Document Readiness</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {regulatoryDocuments.data.documents.map((item) => (
+              <p key={item.id}>{item.requirement_name}: document={item.document_name}, completeness={item.document_completeness}%, status={item.document_status}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="regulatory-risks-section">
+          <h2 className="text-lg font-semibold">Regulatory Risks</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {regulatoryRisks.data.risks.map((item) => (
+              <p key={item.id}>{item.requirement_name}: signal={item.signal_name}, owner={item.signal_owner_module}, risk={item.risk_level}</p>
             ))}
           </div>
         </section>

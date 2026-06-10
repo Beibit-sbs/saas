@@ -322,3 +322,84 @@ export interface AccreditationRiskResponse {
   read_only: boolean;
   risks: AccreditationRiskSummary[];
 }
+
+export interface RegulatoryReportingSummary {
+  id: string;
+  requirement_code: string;
+  requirement_name: string;
+  regulator_name: string;
+  compliance_status: string;
+  deadline: string;
+  days_remaining: number;
+  risk_level: string;
+  document_status: string;
+  owner_module: string;
+  generated_at: string;
+  read_only: boolean;
+}
+
+export interface RegulatoryRequirementSummary extends RegulatoryReportingSummary {
+  requirement_status: string;
+}
+
+export interface RegulatoryComplianceSummary extends RegulatoryReportingSummary {
+  compliance_score: number;
+}
+
+export interface RegulatoryDeadlineSummary extends RegulatoryReportingSummary {
+  deadline_status: string;
+  overdue: boolean;
+}
+
+export interface RegulatoryDocumentStatus extends RegulatoryReportingSummary {
+  document_name: string;
+  document_completeness: number;
+}
+
+export interface RegulatoryRiskSummary extends RegulatoryReportingSummary {
+  signal_name: string;
+  signal_owner_module: string;
+}
+
+export interface RegulatoryReportingResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  reports: RegulatoryReportingSummary[];
+  signal_inventory: string[];
+}
+
+export interface RegulatoryRequirementResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  requirements: RegulatoryRequirementSummary[];
+}
+
+export interface RegulatoryComplianceResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  compliance: RegulatoryComplianceSummary[];
+}
+
+export interface RegulatoryDeadlineResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  deadlines: RegulatoryDeadlineSummary[];
+}
+
+export interface RegulatoryDocumentResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  documents: RegulatoryDocumentStatus[];
+}
+
+export interface RegulatoryRiskResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  risks: RegulatoryRiskSummary[];
+}

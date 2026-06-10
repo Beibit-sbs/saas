@@ -19,6 +19,12 @@ import type {
   ReportingRuntimeShellResponse,
   ReportingSubmissionResponse,
   ReportingTemplateResponse,
+  RegulatoryComplianceResponse,
+  RegulatoryDeadlineResponse,
+  RegulatoryDocumentResponse,
+  RegulatoryReportingResponse,
+  RegulatoryRequirementResponse,
+  RegulatoryRiskResponse,
 } from './types';
 
 const BASE = '/api/admin/reporting-brain';
@@ -43,4 +49,10 @@ export const reportingRuntimeApi = {
   getAccreditationCompliance: () => apiGet<AccreditationComplianceResponse>(`${BASE}/runtime/accreditation/compliance`),
   getAccreditationDeadlines: () => apiGet<AccreditationDeadlineResponse>(`${BASE}/runtime/accreditation/deadlines`),
   getAccreditationRisks: () => apiGet<AccreditationRiskResponse>(`${BASE}/runtime/accreditation/risks`),
+  getRegulatory: () => apiGet<RegulatoryReportingResponse>(`${BASE}/runtime/regulatory`),
+  getRegulatoryRequirements: () => apiGet<RegulatoryRequirementResponse>(`${BASE}/runtime/regulatory/requirements`),
+  getRegulatoryCompliance: () => apiGet<RegulatoryComplianceResponse>(`${BASE}/runtime/regulatory/compliance`),
+  getRegulatoryDeadlines: () => apiGet<RegulatoryDeadlineResponse>(`${BASE}/runtime/regulatory/deadlines`),
+  getRegulatoryDocuments: () => apiGet<RegulatoryDocumentResponse>(`${BASE}/runtime/regulatory/documents`),
+  getRegulatoryRisks: () => apiGet<RegulatoryRiskResponse>(`${BASE}/runtime/regulatory/risks`),
 };
