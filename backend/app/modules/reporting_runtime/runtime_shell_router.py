@@ -47,6 +47,14 @@ from app.modules.reporting_runtime.runtime_nobd_schemas import (
     NobdSyncStatusResponse,
 )
 from app.modules.reporting_runtime.runtime_nobd_service import NobdReportingRuntimeService
+from app.modules.reporting_runtime.runtime_compliance_schemas import (
+    ComplianceControlResponse,
+    ComplianceGapResponse,
+    ComplianceMonitoringResponse,
+    ComplianceReadinessResponse,
+    ComplianceRiskResponse,
+)
+from app.modules.reporting_runtime.runtime_compliance_service import ComplianceMonitoringRuntimeService
 from app.modules.reporting_runtime.runtime_ministry_schemas import (
     MinistryReportingCompletenessResponse,
     MinistryReportingCycleResponse,
@@ -81,6 +89,7 @@ _accreditation_service = AccreditationReportingRuntimeService()
 _regulatory_service = RegulatoryReportingRuntimeService()
 _ranking_service = RankingReportingRuntimeService()
 _nobd_service = NobdReportingRuntimeService()
+_compliance_service = ComplianceMonitoringRuntimeService()
 
 
 def _handle(exc: Exception) -> None:
@@ -533,5 +542,65 @@ def get_nobd_reporting_risks_runtime(
 ) -> NobdRiskResponse:
     try:
         return _nobd_service.get_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/compliance", response_model=ComplianceMonitoringResponse)
+def get_compliance_monitoring_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ComplianceMonitoringResponse:
+    try:
+        return _compliance_service.get_compliance(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/compliance/controls", response_model=ComplianceControlResponse)
+def get_compliance_monitoring_controls_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ComplianceControlResponse:
+    try:
+        return _compliance_service.get_controls(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/compliance/readiness", response_model=ComplianceReadinessResponse)
+def get_compliance_monitoring_readiness_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ComplianceReadinessResponse:
+    try:
+        return _compliance_service.get_readiness(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/compliance/gaps", response_model=ComplianceGapResponse)
+def get_compliance_monitoring_gaps_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ComplianceGapResponse:
+    try:
+        return _compliance_service.get_gaps(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/compliance/risks", response_model=ComplianceRiskResponse)
+def get_compliance_monitoring_risks_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ComplianceRiskResponse:
+    try:
+        return _compliance_service.get_risks(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)

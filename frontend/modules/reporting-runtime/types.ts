@@ -560,3 +560,69 @@ export interface NobdRiskResponse {
   read_only: boolean;
   risks: NobdRiskSummary[];
 }
+
+export interface ComplianceMonitoringSummary {
+  id: string;
+  control_code: string;
+  control_name: string;
+  compliance_status: string;
+  readiness_score: number;
+  risk_level: string;
+  gap_count: number;
+  owner_module: string;
+  generated_at: string;
+  read_only: boolean;
+}
+
+export interface ComplianceControlSummary extends ComplianceMonitoringSummary {
+  control_type: string;
+}
+
+export interface ComplianceReadinessSummary extends ComplianceMonitoringSummary {
+  readiness_level: string;
+}
+
+export interface ComplianceGapSummary extends ComplianceMonitoringSummary {
+  gap_severity: string;
+}
+
+export interface ComplianceRiskSummary extends ComplianceMonitoringSummary {
+  signal_name: string;
+  signal_owner_module: string;
+}
+
+export interface ComplianceMonitoringResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  reports: ComplianceMonitoringSummary[];
+  signal_inventory: string[];
+}
+
+export interface ComplianceControlResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  controls: ComplianceControlSummary[];
+}
+
+export interface ComplianceReadinessResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  readiness: ComplianceReadinessSummary[];
+}
+
+export interface ComplianceGapResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  gaps: ComplianceGapSummary[];
+}
+
+export interface ComplianceRiskResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  risks: ComplianceRiskSummary[];
+}

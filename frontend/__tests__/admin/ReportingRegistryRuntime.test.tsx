@@ -42,6 +42,11 @@ const { mockApi } = vi.hoisted(() => ({
     getNobdQuality: vi.fn(),
     getNobdSyncStatus: vi.fn(),
     getNobdRisks: vi.fn(),
+    getCompliance: vi.fn(),
+    getComplianceControls: vi.fn(),
+    getComplianceReadiness: vi.fn(),
+    getComplianceGaps: vi.fn(),
+    getComplianceRisks: vi.fn(),
   },
 }));
 
@@ -374,6 +379,38 @@ describe('Reporting Registry Runtime', () => {
     mockApi.getNobdQuality.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, quality: nobdRows.map((item) => ({ ...item, quality_band: item.quality_score >= 85 ? 'HIGH' : 'MEDIUM' })) });
     mockApi.getNobdSyncStatus.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, sync_status: nobdRows.map((item, index) => ({ ...item, sync_lag_hours: 4 + index })) });
     mockApi.getNobdRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: nobdRows.map((item, index) => ({ ...item, signal_name: ['nobd_completeness_low', 'nobd_quality_risk', 'nobd_sync_delay', 'missing_required_dataset', 'nobd_readiness_low'][index % 5], signal_owner_module: 'brain_core' })) });
+
+    const complianceRows = [
+      ['CMP-MINISTRY', 'Ministry Compliance', 'quality_accreditation'],
+      ['CMP-ACCREDITATION', 'Accreditation Compliance', 'quality_accreditation'],
+      ['CMP-NOBD', 'NOBD Compliance', 'student_lifecycle'],
+      ['CMP-REGULATORY', 'Regulatory Compliance', 'executive_governance'],
+      ['CMP-RANKING', 'Ranking Compliance', 'research_science'],
+      ['CMP-POLICY', 'Internal Policy Compliance', 'hr'],
+    ].map(([code, name, owner], index) => ({
+      id: 'compliance-1-' + (index + 1),
+      control_code: code,
+      control_name: name,
+      compliance_status: index < 2 ? 'COMPLIANT' : 'WATCH',
+      readiness_score: 88 - index * 3,
+      risk_level: index < 2 ? 'LOW' : 'MEDIUM',
+      gap_count: index % 3,
+      owner_module: owner,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+    }));
+
+    mockApi.getCompliance.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      reports: complianceRows,
+      signal_inventory: ['compliance_gap_high', 'compliance_readiness_low', 'compliance_risk_high', 'control_failure_detected', 'mandatory_submission_missing'],
+    });
+    mockApi.getComplianceControls.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, controls: complianceRows.map((item, index) => ({ ...item, control_type: index < 4 ? 'MANDATORY' : 'INTERNAL' })) });
+    mockApi.getComplianceReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: complianceRows.map((item) => ({ ...item, readiness_level: item.readiness_score >= 85 ? 'READY' : 'PARTIAL' })) });
+    mockApi.getComplianceGaps.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, gaps: complianceRows.map((item) => ({ ...item, gap_severity: item.gap_count >= 2 ? 'MEDIUM' : 'LOW' })) });
+    mockApi.getComplianceRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: complianceRows.map((item, index) => ({ ...item, signal_name: ['compliance_gap_high', 'compliance_readiness_low', 'compliance_risk_high', 'control_failure_detected', 'mandatory_submission_missing'][index % 5], signal_owner_module: 'brain_core' })) });
   });
 
   it('renders reporting registry runtime sections', async () => {

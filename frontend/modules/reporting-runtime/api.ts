@@ -1,5 +1,10 @@
 import { apiGet } from '@/shared/api/client';
 import type {
+  ComplianceControlResponse,
+  ComplianceGapResponse,
+  ComplianceMonitoringResponse,
+  ComplianceReadinessResponse,
+  ComplianceRiskResponse,
   AccreditationComplianceResponse,
   AccreditationCycleResponse,
   AccreditationDeadlineResponse,
@@ -79,4 +84,9 @@ export const reportingRuntimeApi = {
   getNobdQuality: () => apiGet<NobdQualityResponse>(`${BASE}/runtime/nobd/quality`),
   getNobdSyncStatus: () => apiGet<NobdSyncStatusResponse>(`${BASE}/runtime/nobd/sync-status`),
   getNobdRisks: () => apiGet<NobdRiskResponse>(`${BASE}/runtime/nobd/risks`),
+  getCompliance: () => apiGet<ComplianceMonitoringResponse>(`${BASE}/runtime/compliance`),
+  getComplianceControls: () => apiGet<ComplianceControlResponse>(`${BASE}/runtime/compliance/controls`),
+  getComplianceReadiness: () => apiGet<ComplianceReadinessResponse>(`${BASE}/runtime/compliance/readiness`),
+  getComplianceGaps: () => apiGet<ComplianceGapResponse>(`${BASE}/runtime/compliance/gaps`),
+  getComplianceRisks: () => apiGet<ComplianceRiskResponse>(`${BASE}/runtime/compliance/risks`),
 };

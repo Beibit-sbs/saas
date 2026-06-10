@@ -59,6 +59,11 @@ export function ReportingRuntimeShellPage() {
   const nobdQuality = useQuery({ queryKey: ['reporting-runtime:nobd:quality'], queryFn: reportingRuntimeApi.getNobdQuality, staleTime: 30000 });
   const nobdSyncStatus = useQuery({ queryKey: ['reporting-runtime:nobd:sync-status'], queryFn: reportingRuntimeApi.getNobdSyncStatus, staleTime: 30000 });
   const nobdRisks = useQuery({ queryKey: ['reporting-runtime:nobd:risks'], queryFn: reportingRuntimeApi.getNobdRisks, staleTime: 30000 });
+  const compliance = useQuery({ queryKey: ['reporting-runtime:compliance'], queryFn: reportingRuntimeApi.getCompliance, staleTime: 30000 });
+  const complianceControls = useQuery({ queryKey: ['reporting-runtime:compliance:controls'], queryFn: reportingRuntimeApi.getComplianceControls, staleTime: 30000 });
+  const complianceReadiness = useQuery({ queryKey: ['reporting-runtime:compliance:readiness'], queryFn: reportingRuntimeApi.getComplianceReadiness, staleTime: 30000 });
+  const complianceGaps = useQuery({ queryKey: ['reporting-runtime:compliance:gaps'], queryFn: reportingRuntimeApi.getComplianceGaps, staleTime: 30000 });
+  const complianceRisks = useQuery({ queryKey: ['reporting-runtime:compliance:risks'], queryFn: reportingRuntimeApi.getComplianceRisks, staleTime: 30000 });
 
   if (
     runtime.isPending ||
@@ -97,7 +102,12 @@ export function ReportingRuntimeShellPage() {
     nobdCompleteness.isPending ||
     nobdQuality.isPending ||
     nobdSyncStatus.isPending ||
-    nobdRisks.isPending
+    nobdRisks.isPending ||
+    compliance.isPending ||
+    complianceControls.isPending ||
+    complianceReadiness.isPending ||
+    complianceGaps.isPending ||
+    complianceRisks.isPending
   ) {
     return <LoadingState title="Loading Reporting Runtime shell" />;
   }
@@ -139,7 +149,12 @@ export function ReportingRuntimeShellPage() {
     nobdCompleteness.error ||
     nobdQuality.error ||
     nobdSyncStatus.error ||
-    nobdRisks.error
+    nobdRisks.error ||
+    compliance.error ||
+    complianceControls.error ||
+    complianceReadiness.error ||
+    complianceGaps.error ||
+    complianceRisks.error
   ) {
     return (
       <ErrorState
@@ -181,7 +196,12 @@ export function ReportingRuntimeShellPage() {
           nobdCompleteness.error ??
           nobdQuality.error ??
           nobdSyncStatus.error ??
-          nobdRisks.error
+          nobdRisks.error ??
+          compliance.error ??
+          complianceControls.error ??
+          complianceReadiness.error ??
+          complianceGaps.error ??
+          complianceRisks.error
         }
       />
     );
@@ -224,7 +244,12 @@ export function ReportingRuntimeShellPage() {
     !nobdCompleteness.data ||
     !nobdQuality.data ||
     !nobdSyncStatus.data ||
-    !nobdRisks.data
+    !nobdRisks.data ||
+    !compliance.data ||
+    !complianceControls.data ||
+    !complianceReadiness.data ||
+    !complianceGaps.data ||
+    !complianceRisks.data
   ) {
     return <ErrorState message="Reporting Runtime shell is unavailable." />;
   }
@@ -647,6 +672,58 @@ export function ReportingRuntimeShellPage() {
           <div className="mt-3 space-y-1 text-sm">
             {nobdRisks.data.risks.map((item) => (
               <p key={item.id}>{item.dataset_name}: signal={item.signal_name}, owner={item.signal_owner_module}, risk={item.risk_level}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="compliance-monitoring-center-section">
+          <h2 className="text-lg font-semibold">Compliance Monitoring Center</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Runtime monitoring only for Ministry and Regulatory compliance posture. No compliance workflow execution, no corrective action execution, no external submissions, and no provider calls.
+          </p>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {compliance.data.reports.map((item) => (
+              <div key={item.id} className="rounded border p-3 text-sm">
+                <p className="font-medium">{item.control_name}</p>
+                <p>{item.control_code} | owner={item.owner_module}</p>
+                <p className="text-xs text-muted-foreground">status={item.compliance_status} | readiness={item.readiness_score} | gaps={item.gap_count} | risk={item.risk_level}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="compliance-controls-section">
+          <h2 className="text-lg font-semibold">Compliance Controls</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {complianceControls.data.controls.map((item) => (
+              <p key={item.id}>{item.control_name}: type={item.control_type}, status={item.compliance_status}, gaps={item.gap_count}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="compliance-readiness-section">
+          <h2 className="text-lg font-semibold">Readiness Monitoring</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {complianceReadiness.data.readiness.map((item) => (
+              <p key={item.id}>{item.control_name}: readiness_level={item.readiness_level}, readiness_score={item.readiness_score}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="compliance-risks-section">
+          <h2 className="text-lg font-semibold">Compliance Risks</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {complianceRisks.data.risks.map((item) => (
+              <p key={item.id}>{item.control_name}: signal={item.signal_name}, owner={item.signal_owner_module}, risk={item.risk_level}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="compliance-gaps-section">
+          <h2 className="text-lg font-semibold">Compliance Gaps</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {complianceGaps.data.gaps.map((item) => (
+              <p key={item.id}>{item.control_name}: gap_count={item.gap_count}, gap_severity={item.gap_severity}</p>
             ))}
           </div>
         </section>
