@@ -1,5 +1,52 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-047.11.B1 Research Brain End-to-End Validation Continuity
+
+- A-047.11.B1 executed validation-only end-to-end closure over A-047.6-E1 through A-047.10-E1.
+- Source validation passed:
+	- A-047.10.E1 completed
+	- research dashboard runtime exists
+	- inherited next_action_id `A-047.11-B1`
+- Runtime inventory validation passed for:
+	- Runtime Shell
+	- Researcher Registry Runtime
+	- Scientometrics Runtime
+	- Research Risk Runtime
+	- Research Dashboard Runtime
+- API validation passed for all Research Brain groups:
+	- runtime shell
+	- researchers
+	- scientometrics
+	- risks
+	- dashboard
+- Frontend route/runtime integrity validated:
+	- `/console/research-brain`
+	- `/console/research-brain/researchers`
+	- `/console/research-brain/scientometrics`
+	- `/console/research-brain/risk`
+	- `/console/research-brain/dashboard`
+- Signal validation passed:
+	- scientometric signals: citation_decline/publication_stagnation/impact_drop/low_visibility/researcher_ranking_drop
+	- risk signals: grant_risk/ethics_delay/publication_gap/researcher_inactivity
+	- owner remained `brain_core`, read-only preserved, no provider dependency introduced
+- Security/governance validation passed:
+	- RBAC PASS (researcher/laboratory_head/research_manager/vice_rector_science/research_admin/auditor)
+	- tenant PASS
+	- provider boundary PASS (ORCID/Scopus/WebOfScience/GoogleScholar/DOI remain provider-ready only)
+- Validation evidence:
+	- backend targeted tests: PASS (28 passed)
+	- frontend targeted tests: PASS (10 passed)
+	- TypeScript: PASS
+- Quality review:
+	- no conflicting duplicate ownership
+	- no route duplication conflict
+	- no dashboard duplication conflict
+	- no signal ownership duplication conflict
+	- no provider duplication conflict
+- report_file: A-047.11-B1-RESEARCH_BRAIN_END_TO_END_VALIDATION_REPORT.md
+- final_verdict: A-047.11.B1 PASS - RESEARCH_BRAIN_VERTICAL_END_TO_END_VALIDATED
+- next_action_id: A-047.12.
+
 ## 0. A-047.10.E1 Research Dashboard Runtime Continuity
 
 - A-047.10.E1 executed Batch 5 research executive dashboard runtime implementation under Research Brain.
