@@ -39,6 +39,8 @@ import {
   getQualityAccreditationBoundaryLabels,
 } from './guards';
 import type {
+  AccreditationEvidenceItem,
+  AccreditationEvidenceRuntimeResponse,
   AccreditationProviderSummary,
   AccreditationReadinessSummary,
   AccreditationRegistryItem,
@@ -49,6 +51,10 @@ import type {
   AccreditationStandard,
   ComplianceGapAnalysis,
   EvidenceLimitation,
+  EvidenceCategorySummary,
+  EvidenceCoverageSummary,
+  EvidenceReadinessSummary,
+  EvidenceRiskSummary,
   ExpertRecommendationResponsePlan,
   ExternalExpertReview,
   InstitutionalReadiness,
@@ -84,6 +90,7 @@ import type {
 const CACHE_KEYS = {
   health: ['quality-accreditation:health'] as const,
   overview: ['quality-accreditation:overview'] as const,
+  accreditationEvidence: ['quality-accreditation:accreditation-evidence'] as const,
   dashboard: ['quality-accreditation:dashboard'] as const,
   matrixSummary: ['quality-accreditation:matrix-summary'] as const,
   limitations: ['quality-accreditation:limitations'] as const,
@@ -185,6 +192,14 @@ function useAccreditationRegistry() {
   return useQuery({
     queryKey: ['quality-accreditation:accreditation-registry'],
     queryFn: qualityAccreditationApi.getAccreditationRegistry,
+    staleTime: 30000,
+  });
+}
+
+function useAccreditationEvidenceRuntime() {
+  return useQuery({
+    queryKey: CACHE_KEYS.accreditationEvidence,
+    queryFn: qualityAccreditationApi.getAccreditationEvidenceRuntime,
     staleTime: 30000,
   });
 }
@@ -741,6 +756,179 @@ export function QualityAccreditationAccreditationRegistryPage() {
             renderItem={(item: AccreditationRegistryItem) => <AccreditationRegistryRowCard item={item} />}
             testId="accreditation-expiring-watchlist"
           />
+        </section>
+      </ModuleShell>
+    </RequirePermission>
+  );
+}
+
+function formatEvidenceDate(value: string) {
+  return new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(value));
+}
+
+function EvidenceCategorySummaryCard({ item }: { item: EvidenceCategorySummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`evidence-category-${slugify(item.evidence_category)}`}>
+      <p className="text-sm font-semibold">{item.evidence_category}</p>
+      <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+        <p>Evidence count: {item.evidence_count}</p>
+        <p>Average completeness: {item.average_completeness_score.toFixed(1)}</p>
+      </div>
+    </div>
+  );
+}
+
+function EvidenceReadinessSummaryCard({ item }: { item: EvidenceReadinessSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`evidence-readiness-${slugify(item.readiness_band)}`}>
+      <p className="text-sm font-semibold">{item.readiness_band}</p>
+      <p className="mt-3 text-sm text-muted-foreground">Evidence count: {item.evidence_count}</p>
+    </div>
+  );
+}
+
+function EvidenceCoverageSummaryCard({ item }: { item: EvidenceCoverageSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`evidence-coverage-${slugify(item.coverage_scope)}`}>
+      <p className="text-sm font-semibold">{item.coverage_scope}</p>
+      <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+        <p>Evidence count: {item.evidence_count}</p>
+        <p>Covered: {item.covered_count}</p>
+        <p>Coverage %: {item.coverage_percent.toFixed(1)}</p>
+      </div>
+    </div>
+  );
+}
+
+function EvidenceRiskSummaryCard({ item }: { item: EvidenceRiskSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`evidence-risk-${slugify(item.risk_level)}`}>
+      <p className="text-sm font-semibold">{item.risk_level}</p>
+      <p className="mt-3 text-sm text-muted-foreground">Evidence count: {item.evidence_count}</p>
+    </div>
+  );
+}
+
+function EvidenceInventoryTable({ items }: { items: AccreditationEvidenceItem[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="evidence-inventory-table">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Evidence inventory</h2>
+        <p className="text-sm text-muted-foreground">Read-only accreditation evidence inventory with category, standard, completeness, and risk visibility.</p>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-border text-left text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">Evidence</th>
+              <th className="px-3 py-2">Category</th>
+              <th className="px-3 py-2">Standard</th>
+              <th className="px-3 py-2">Owner Unit</th>
+              <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2">Completeness</th>
+              <th className="px-3 py-2">Risk</th>
+              <th className="px-3 py-2">Last Updated</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {items.length === 0 ? (
+              <tr>
+                <td className="px-3 py-4 text-muted-foreground" colSpan={8}>No evidence inventory recorded.</td>
+              </tr>
+            ) : (
+              items.map((item) => (
+                <tr key={item.evidence_id}>
+                  <td className="px-3 py-3">
+                    <div className="space-y-1">
+                      <p className="font-medium">{item.evidence_name}</p>
+                      <p className="text-xs text-muted-foreground">{item.evidence_id}</p>
+                      <p className="text-xs text-muted-foreground">{item.accreditation_section}</p>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3">{item.evidence_category}</td>
+                  <td className="px-3 py-3">{item.accreditation_standard}</td>
+                  <td className="px-3 py-3">{item.owner_unit}</td>
+                  <td className="px-3 py-3">{item.evidence_status}</td>
+                  <td className="px-3 py-3">{item.completeness_score}</td>
+                  <td className="px-3 py-3">{item.risk_level}</td>
+                  <td className="px-3 py-3">{formatEvidenceDate(item.last_updated)}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function EvidenceSummarySection({ data }: { data: AccreditationEvidenceRuntimeResponse }) {
+  return (
+    <>
+      <QualityAccreditationRegistryPanel
+        title="Evidence category summary"
+        description="Evidence distribution and completeness by category."
+        items={data.evidence_categories}
+        emptyMessage="No evidence category summary available."
+        renderItem={(item: EvidenceCategorySummary) => <EvidenceCategorySummaryCard item={item} />}
+        testId="evidence-category-summary"
+      />
+
+      <QualityAccreditationRegistryPanel
+        title="Evidence readiness summary"
+        description="Readiness distribution based on evidence completeness bands."
+        items={data.evidence_readiness}
+        emptyMessage="No evidence readiness summary available."
+        renderItem={(item: EvidenceReadinessSummary) => <EvidenceReadinessSummaryCard item={item} />}
+        testId="evidence-readiness-summary"
+      />
+
+      <QualityAccreditationRegistryPanel
+        title="Evidence coverage summary"
+        description="Coverage of evidence by accreditation standard/category scope."
+        items={data.evidence_coverage}
+        emptyMessage="No evidence coverage summary available."
+        renderItem={(item: EvidenceCoverageSummary) => <EvidenceCoverageSummaryCard item={item} />}
+        testId="evidence-coverage-summary"
+      />
+
+      <QualityAccreditationRegistryPanel
+        title="Evidence risk summary"
+        description="Risk distribution derived from evidence status and limitation posture."
+        items={data.evidence_risk}
+        emptyMessage="No evidence risk summary available."
+        renderItem={(item: EvidenceRiskSummary) => <EvidenceRiskSummaryCard item={item} />}
+        testId="evidence-risk-summary"
+      />
+    </>
+  );
+}
+
+export function QualityAccreditationAccreditationEvidenceRuntimePage() {
+  const evidenceRuntime = useAccreditationEvidenceRuntime();
+
+  if (evidenceRuntime.isPending) return <LoadingState title="Loading accreditation evidence runtime" />;
+  if (evidenceRuntime.error) return PageError('Failed to load accreditation evidence runtime.', evidenceRuntime.error);
+  if (!evidenceRuntime.data) return <ErrorState message="Accreditation evidence runtime is unavailable." />;
+
+  return (
+    <RequirePermission permission={QUALITY_ACCREDITATION_PERMISSIONS.summaryRead}>
+      <ModuleShell
+        title={QUALITY_ACCREDITATION_PAGE_TITLES.accreditationEvidence}
+        description="Read-only accreditation evidence runtime with evidence inventory, readiness, coverage, and risk summaries."
+        currentPath={QUALITY_ACCREDITATION_ROUTES.accreditationEvidence}
+        boundaryPage="accreditationEvidence"
+      >
+        <section className="grid gap-6" data-testid="accreditation-evidence-runtime">
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <QualityAccreditationMetricCard label="Evidence items" value={evidenceRuntime.data.evidence_inventory.length} helper="Read-only evidence inventory records." />
+            <QualityAccreditationMetricCard label="Category groups" value={evidenceRuntime.data.evidence_categories.length} helper="Aggregated evidence categories." />
+            <QualityAccreditationMetricCard label="Read-only" value={String(evidenceRuntime.data.read_only)} helper="No write operations." />
+            <QualityAccreditationMetricCard label="Aggregator-only" value={String(evidenceRuntime.data.aggregator_only)} helper="Visibility-only runtime." />
+          </section>
+
+          <EvidenceSummarySection data={evidenceRuntime.data} />
+          <EvidenceInventoryTable items={evidenceRuntime.data.evidence_inventory} />
         </section>
       </ModuleShell>
     </RequirePermission>

@@ -23,6 +23,8 @@ export const QUALITY_ACCREDITATION_BOUNDARY_LABELS = {
     'Runtime shell is read-only and aggregator-only. It provides visibility across overview, readiness, evidence, risk, and dashboard without mutation.',
   accreditationRegistryPage:
     'Accreditation registry is read-only and aggregator-only. It summarizes accreditation metadata without provider integrations or write operations.',
+  accreditationEvidencePage:
+    'Accreditation evidence runtime is read-only and aggregator-only. It summarizes evidence inventory and readiness visibility without provider integrations or write operations.',
   dashboardPage:
     'fake_metrics=false. Data source: computed_from_quality_accreditation_metadata. Readiness is metadata-only and requires human review.',
   standardsPage:
@@ -93,6 +95,11 @@ export const QUALITY_ACCREDITATION_PAGE_BOUNDARY_LABELS = {
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.readOnlyFirstBridge,
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.humanReviewRequired,
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.accreditationRegistryPage,
+  ],
+  accreditationEvidence: [
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.readOnlyFirstBridge,
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.humanReviewRequired,
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.accreditationEvidencePage,
   ],
   overview: [...QUALITY_ACCREDITATION_BOUNDARY_COPY],
   dashboard: [

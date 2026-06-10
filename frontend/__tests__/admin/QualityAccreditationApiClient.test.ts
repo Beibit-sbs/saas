@@ -25,6 +25,7 @@ describe('qualityAccreditationApi', () => {
 
     await qualityAccreditationApi.getQualityAccreditationRuntimeShell();
     await qualityAccreditationApi.getAccreditationRegistry();
+    await qualityAccreditationApi.getAccreditationEvidenceRuntime();
     await qualityAccreditationApi.getQualityAccreditationHealth();
     await qualityAccreditationApi.getQualityAccreditationOverview();
     await qualityAccreditationApi.getQualityAccreditationDashboard();
@@ -34,6 +35,7 @@ describe('qualityAccreditationApi', () => {
     expect(mockApiGet.mock.calls.map((call) => call[0])).toEqual([
       '/api/v1/quality-accreditation/runtime-shell',
       '/api/v1/quality-accreditation/accreditation-registry',
+      '/api/v1/quality-accreditation/accreditation-evidence',
       '/api/admin/quality-accreditation/health',
       '/api/admin/quality-accreditation/overview',
       '/api/admin/quality-accreditation/dashboard',
@@ -49,6 +51,7 @@ describe('qualityAccreditationApi', () => {
     expect(keys).toEqual(expect.arrayContaining([
       'listQualityFrameworks',
       'getAccreditationRegistry',
+      'getAccreditationEvidenceRuntime',
       'listAccreditationStandards',
       'listStandardCriteria',
       'listQualityEvidence',

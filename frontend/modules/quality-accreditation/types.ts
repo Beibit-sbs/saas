@@ -274,6 +274,70 @@ export interface AccreditationRegistryRuntimeResponse {
   accreditation_risk: AccreditationRiskSummary[];
 }
 
+export type EvidenceCategory = string;
+export type EvidenceStatus = string;
+
+export interface AccreditationEvidenceItem {
+  evidence_id: string;
+  evidence_name: string;
+  evidence_category: EvidenceCategory;
+  accreditation_standard: string;
+  accreditation_section: string;
+  owner_unit: string;
+  evidence_status: EvidenceStatus;
+  completeness_score: number;
+  last_updated: string;
+  risk_level: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface EvidenceCategorySummary {
+  evidence_category: EvidenceCategory;
+  evidence_count: number;
+  average_completeness_score: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface EvidenceReadinessSummary {
+  readiness_band: string;
+  evidence_count: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface EvidenceCoverageSummary {
+  coverage_scope: string;
+  evidence_count: number;
+  covered_count: number;
+  coverage_percent: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface EvidenceRiskSummary {
+  risk_level: string;
+  evidence_count: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AccreditationEvidenceRuntimeResponse {
+  tenant_id: number;
+  owner_module: string;
+  runtime_registry: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  evidence_inventory: AccreditationEvidenceItem[];
+  evidence_categories: EvidenceCategorySummary[];
+  evidence_readiness: EvidenceReadinessSummary[];
+  evidence_coverage: EvidenceCoverageSummary[];
+  evidence_risk: EvidenceRiskSummary[];
+}
+
 export interface QualityAccreditationDashboardResponse extends QualityAccreditationBoundaryFlags {
   tenant_id: number;
   generated_at: string | null;
