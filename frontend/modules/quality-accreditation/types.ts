@@ -212,6 +212,68 @@ export interface QualityAccreditationRuntimeShellResponse {
   safety: QualityAccreditationRuntimeShellSafety;
 }
 
+export interface AccreditationRegistryItem {
+  accreditation_id: string;
+  accreditation_name: string;
+  accreditation_type: string;
+  accreditation_scope: string;
+  provider: string;
+  status: string;
+  issued_date: string;
+  expiry_date: string;
+  readiness_score: number;
+  risk_level: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AccreditationProviderSummary {
+  provider: string;
+  accreditation_count: number;
+  active_count: number;
+  expiring_count: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AccreditationStatusSummary {
+  status: string;
+  accreditation_count: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AccreditationReadinessSummary {
+  readiness_band: string;
+  accreditation_count: number;
+  average_readiness_score: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AccreditationRiskSummary {
+  risk_level: string;
+  accreditation_count: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AccreditationRegistryRuntimeResponse {
+  tenant_id: number;
+  owner_module: string;
+  runtime_registry: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  active_accreditations: AccreditationRegistryItem[];
+  expiring_accreditations: AccreditationRegistryItem[];
+  accreditation_provider: AccreditationProviderSummary[];
+  accreditation_status: AccreditationStatusSummary[];
+  accreditation_readiness: AccreditationReadinessSummary[];
+  accreditation_risk: AccreditationRiskSummary[];
+}
+
 export interface QualityAccreditationDashboardResponse extends QualityAccreditationBoundaryFlags {
   tenant_id: number;
   generated_at: string | null;

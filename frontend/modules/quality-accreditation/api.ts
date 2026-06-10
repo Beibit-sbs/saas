@@ -1,6 +1,7 @@
 import { apiGet, apiPatch, apiPost } from '@/shared/api/client';
 import { QUALITY_ACCREDITATION_API_PATHS } from './constants';
 import type {
+  AccreditationRegistryRuntimeResponse,
   AccreditationCalendarCreatePayload,
   AccreditationCalendarItem,
   AccreditationCalendarUpdatePayload,
@@ -86,6 +87,7 @@ import type {
 
 export const qualityAccreditationApi = {
   getQualityAccreditationRuntimeShell: () => apiGet<QualityAccreditationRuntimeShellResponse>(QUALITY_ACCREDITATION_API_PATHS.runtimeShell),
+  getAccreditationRegistry: () => apiGet<AccreditationRegistryRuntimeResponse>(QUALITY_ACCREDITATION_API_PATHS.accreditationRegistry),
   getQualityAccreditationHealth: () => apiGet<QualityAccreditationHealthResponse>(QUALITY_ACCREDITATION_API_PATHS.health),
   getQualityAccreditationOverview: () => apiGet<QualityAccreditationOverviewResponse>(QUALITY_ACCREDITATION_API_PATHS.overview),
   getQualityAccreditationDashboard: () => apiGet<QualityAccreditationDashboardResponse>(QUALITY_ACCREDITATION_API_PATHS.dashboard),

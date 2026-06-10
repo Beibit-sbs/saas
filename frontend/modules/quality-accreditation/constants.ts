@@ -31,6 +31,7 @@ export const HUMAN_REVIEW_REQUIRED = true;
 
 export const QUALITY_ACCREDITATION_ROUTES = {
   runtimeShell: `${UI_BASE_PATH}/runtime-shell`,
+  accreditationRegistry: `${UI_BASE_PATH}/accreditation-registry`,
   overview: UI_BASE_PATH,
   dashboard: `${UI_BASE_PATH}/dashboard`,
   standards: `${UI_BASE_PATH}/standards`,
@@ -54,6 +55,7 @@ export const QUALITY_ACCREDITATION_ROUTES = {
 
 export const QUALITY_ACCREDITATION_API_PATHS = {
   runtimeShell: '/api/v1/quality-accreditation/runtime-shell',
+  accreditationRegistry: '/api/v1/quality-accreditation/accreditation-registry',
   health: `${API_PREFIX}/health`,
   overview: `${API_PREFIX}/overview`,
   dashboard: `${API_PREFIX}/dashboard`,
@@ -91,6 +93,7 @@ export const QUALITY_ACCREDITATION_API_PATHS = {
 
 export const QUALITY_ACCREDITATION_PAGE_TITLES = {
   runtimeShell: 'Runtime Shell',
+  accreditationRegistry: 'Accreditation Registry',
   overview: 'Quality / Accreditation Suite',
   dashboard: 'Dashboard',
   standards: 'Standards and Frameworks',
@@ -114,6 +117,7 @@ export const QUALITY_ACCREDITATION_PAGE_TITLES = {
 
 export const QUALITY_ACCREDITATION_NAV_ITEMS = [
   { key: 'runtimeShell', title: 'Runtime Shell', href: QUALITY_ACCREDITATION_ROUTES.runtimeShell },
+  { key: 'accreditationRegistry', title: 'Accreditation Registry', href: QUALITY_ACCREDITATION_ROUTES.accreditationRegistry },
   { key: 'overview', title: 'Overview', href: QUALITY_ACCREDITATION_ROUTES.overview },
   { key: 'dashboard', title: 'Dashboard', href: QUALITY_ACCREDITATION_ROUTES.dashboard },
   { key: 'standards', title: 'Standards', href: QUALITY_ACCREDITATION_ROUTES.standards },

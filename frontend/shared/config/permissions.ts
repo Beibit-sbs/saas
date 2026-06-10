@@ -439,6 +439,7 @@ export const PERMISSIONS = {
   QUALITY_ACCREDITATION_BRAIN_SIGNALS_READ: "quality_accreditation.brain_signals.read",
   QUALITY_ACCREDITATION_AUDIT_READ: "quality_accreditation.audit.read",
   QUALITY_ACCREDITATION_STATUS_HISTORY_READ: "quality_accreditation.status_history.read",
+  QUALITY_ACCREDITATION_SUMMARY_READ: "quality_accreditation.summary.read",
   QUALITY_ACCREDITATION_ADMIN_READ: "quality_accreditation.admin.read",
   QUALITY_ACCREDITATION_ADMIN_CONFIGURE: "quality_accreditation.admin.configure",
 

@@ -39,6 +39,11 @@ import {
   getQualityAccreditationBoundaryLabels,
 } from './guards';
 import type {
+  AccreditationProviderSummary,
+  AccreditationReadinessSummary,
+  AccreditationRegistryItem,
+  AccreditationRiskSummary,
+  AccreditationStatusSummary,
   AccreditationCalendarItem,
   AccreditationCommitteeWorkflow,
   AccreditationStandard,
@@ -172,6 +177,14 @@ function useQualityAccreditationRuntimeShell() {
   return useQuery({
     queryKey: ['quality-accreditation:runtime-shell'],
     queryFn: qualityAccreditationApi.getQualityAccreditationRuntimeShell,
+    staleTime: 30000,
+  });
+}
+
+function useAccreditationRegistry() {
+  return useQuery({
+    queryKey: ['quality-accreditation:accreditation-registry'],
+    queryFn: qualityAccreditationApi.getAccreditationRegistry,
     staleTime: 30000,
   });
 }
@@ -507,6 +520,121 @@ function RuntimeShellCard({
   );
 }
 
+function formatRegistryDate(value: string) {
+  return new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(value));
+}
+
+function AccreditationRegistryRowCard({ item }: { item: AccreditationRegistryItem }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`accreditation-registry-item-${slugify(item.accreditation_id)}`}>
+      <p className="text-sm font-semibold">{item.accreditation_name}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{item.accreditation_id}</p>
+      <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+        <p>Type: {item.accreditation_type}</p>
+        <p>Scope: {item.accreditation_scope}</p>
+        <p>Provider: {item.provider}</p>
+        <p>Status: {item.status}</p>
+        <p>Issued: {formatRegistryDate(item.issued_date)}</p>
+        <p>Expiry: {formatRegistryDate(item.expiry_date)}</p>
+        <p>Readiness: {item.readiness_score}</p>
+        <p>Risk: {item.risk_level}</p>
+      </div>
+    </div>
+  );
+}
+
+function AccreditationProviderSummaryCard({ item }: { item: AccreditationProviderSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`accreditation-provider-${slugify(item.provider)}`}>
+      <p className="text-sm font-semibold">{item.provider}</p>
+      <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+        <p>Accreditations: {item.accreditation_count}</p>
+        <p>Active: {item.active_count}</p>
+        <p>Expiring: {item.expiring_count}</p>
+      </div>
+    </div>
+  );
+}
+
+function AccreditationStatusSummaryCard({ item }: { item: AccreditationStatusSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`accreditation-status-${slugify(item.status)}`}>
+      <p className="text-sm font-semibold">{item.status}</p>
+      <p className="mt-3 text-sm text-muted-foreground">Accreditations: {item.accreditation_count}</p>
+    </div>
+  );
+}
+
+function AccreditationReadinessSummaryCard({ item }: { item: AccreditationReadinessSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`accreditation-readiness-${slugify(item.readiness_band)}`}>
+      <p className="text-sm font-semibold">{item.readiness_band}</p>
+      <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+        <p>Accreditations: {item.accreditation_count}</p>
+        <p>Average readiness: {item.average_readiness_score.toFixed(1)}</p>
+      </div>
+    </div>
+  );
+}
+
+function AccreditationRiskSummaryCard({ item }: { item: AccreditationRiskSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`accreditation-risk-${slugify(item.risk_level)}`}>
+      <p className="text-sm font-semibold">{item.risk_level}</p>
+      <p className="mt-3 text-sm text-muted-foreground">Accreditations: {item.accreditation_count}</p>
+    </div>
+  );
+}
+
+function AccreditationRegistryTable({ items }: { items: AccreditationRegistryItem[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="accreditation-registry-table">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Accreditation registry</h2>
+        <p className="text-sm text-muted-foreground">Read-only registry of active accreditation metadata, expiry timing, readiness, and risk.</p>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-border text-left text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">Accreditation</th>
+              <th className="px-3 py-2">Provider</th>
+              <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2">Expiry</th>
+              <th className="px-3 py-2">Readiness</th>
+              <th className="px-3 py-2">Risk</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {items.length === 0 ? (
+              <tr>
+                <td className="px-3 py-4 text-muted-foreground" colSpan={6}>No accreditations recorded.</td>
+              </tr>
+            ) : (
+              items.map((item) => (
+                <tr key={item.accreditation_id}>
+                  <td className="px-3 py-3">
+                    <div className="space-y-1">
+                      <p className="font-medium">{item.accreditation_name}</p>
+                      <p className="text-xs text-muted-foreground">{item.accreditation_id}</p>
+                      <p className="text-xs text-muted-foreground">{item.accreditation_type} / {item.accreditation_scope}</p>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3">{item.provider}</td>
+                  <td className="px-3 py-3">{item.status}</td>
+                  <td className="px-3 py-3">{formatRegistryDate(item.expiry_date)}</td>
+                  <td className="px-3 py-3">{item.readiness_score}</td>
+                  <td className="px-3 py-3">{item.risk_level}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export function QualityAccreditationRuntimeShellPage() {
   const runtimeShell = useQualityAccreditationRuntimeShell();
 
@@ -538,6 +666,81 @@ export function QualityAccreditationRuntimeShellPage() {
             </div>
             <QualityAccreditationLimitationsPanel limitations={runtimeShell.data.safety.limitations} />
           </section>
+        </section>
+      </ModuleShell>
+    </RequirePermission>
+  );
+}
+
+export function QualityAccreditationAccreditationRegistryPage() {
+  const registry = useAccreditationRegistry();
+
+  if (registry.isPending) return <LoadingState title="Loading accreditation registry" />;
+  if (registry.error) return PageError('Failed to load accreditation registry.', registry.error);
+  if (!registry.data) return <ErrorState message="Accreditation registry is unavailable." />;
+
+  return (
+    <RequirePermission permission={QUALITY_ACCREDITATION_PERMISSIONS.summaryRead}>
+      <ModuleShell
+        title={QUALITY_ACCREDITATION_PAGE_TITLES.accreditationRegistry}
+        description="Read-only accreditation registry runtime with active and expiring accreditation visibility, provider summaries, and risk/readiness aggregation."
+        currentPath={QUALITY_ACCREDITATION_ROUTES.accreditationRegistry}
+        boundaryPage="accreditationRegistry"
+      >
+        <section className="grid gap-6" data-testid="accreditation-registry-runtime">
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <QualityAccreditationMetricCard label="Active accreditations" value={registry.data.active_accreditations.length} helper="Read-only registry entries." />
+            <QualityAccreditationMetricCard label="Expiring accreditations" value={registry.data.expiring_accreditations.length} helper="Within the registry expiry window." />
+            <QualityAccreditationMetricCard label="Read-only" value={String(registry.data.read_only)} helper="Aggregator-only runtime." />
+            <QualityAccreditationMetricCard label="Aggregator-only" value={String(registry.data.aggregator_only)} helper="No write operations." />
+          </section>
+
+          <QualityAccreditationRegistryPanel
+            title="Provider summary"
+            description="Internal provider labels and activation counts derived from registry metadata."
+            items={registry.data.accreditation_provider}
+            emptyMessage="No provider summary available."
+            renderItem={(item: AccreditationProviderSummary) => <AccreditationProviderSummaryCard item={item} />}
+            testId="accreditation-provider-summary"
+          />
+
+          <QualityAccreditationRegistryPanel
+            title="Status summary"
+            description="Registry status distribution for active accreditation metadata."
+            items={registry.data.accreditation_status}
+            emptyMessage="No status summary available."
+            renderItem={(item: AccreditationStatusSummary) => <AccreditationStatusSummaryCard item={item} />}
+            testId="accreditation-status-summary"
+          />
+
+          <QualityAccreditationRegistryPanel
+            title="Readiness summary"
+            description="Readiness bands and average scores for accreditation metadata."
+            items={registry.data.accreditation_readiness}
+            emptyMessage="No readiness summary available."
+            renderItem={(item: AccreditationReadinessSummary) => <AccreditationReadinessSummaryCard item={item} />}
+            testId="accreditation-readiness-summary"
+          />
+
+          <QualityAccreditationRegistryPanel
+            title="Risk summary"
+            description="Risk bands derived from the registry's read-only aggregation layer."
+            items={registry.data.accreditation_risk}
+            emptyMessage="No risk summary available."
+            renderItem={(item: AccreditationRiskSummary) => <AccreditationRiskSummaryCard item={item} />}
+            testId="accreditation-risk-summary"
+          />
+
+          <AccreditationRegistryTable items={registry.data.active_accreditations} />
+
+          <QualityAccreditationRegistryPanel
+            title="Expiring accreditation watchlist"
+            description="Accreditations nearing expiry within the read-only aggregation window."
+            items={registry.data.expiring_accreditations}
+            emptyMessage="No accreditations are currently nearing expiry."
+            renderItem={(item: AccreditationRegistryItem) => <AccreditationRegistryRowCard item={item} />}
+            testId="accreditation-expiring-watchlist"
+          />
         </section>
       </ModuleShell>
     </RequirePermission>

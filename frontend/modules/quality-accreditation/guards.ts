@@ -46,6 +46,7 @@ export class QualityAccreditationDataQualityError extends Error {}
 
 export const QUALITY_ACCREDITATION_PERMISSIONS = {
   overviewRead: PERMISSIONS.QUALITY_ACCREDITATION_OVERVIEW_READ,
+  summaryRead: PERMISSIONS.QUALITY_ACCREDITATION_SUMMARY_READ,
   dashboardRead: PERMISSIONS.QUALITY_ACCREDITATION_DASHBOARD_READ,
   healthRead: PERMISSIONS.QUALITY_ACCREDITATION_HEALTH_READ,
   matrixRead: PERMISSIONS.QUALITY_ACCREDITATION_MATRIX_READ,
@@ -108,6 +109,10 @@ export function hasQualityAccreditationPermission(user: PermissionUser, permissi
 
 export function canReadQualityAccreditationOverview(user: PermissionUser) {
   return hasQualityAccreditationPermission(user, QUALITY_ACCREDITATION_PERMISSIONS.overviewRead);
+}
+
+export function canReadQualityAccreditationSummary(user: PermissionUser) {
+  return hasQualityAccreditationPermission(user, QUALITY_ACCREDITATION_PERMISSIONS.summaryRead);
 }
 
 export function canReadQualityAccreditationDashboard(user: PermissionUser) {
