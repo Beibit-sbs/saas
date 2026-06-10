@@ -1,6 +1,6 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockApi } = vi.hoisted(() => ({
@@ -12,6 +12,10 @@ const { mockApi } = vi.hoisted(() => ({
     getDecisions: vi.fn(),
     getDecisionSummary: vi.fn(),
     getDecisionExecution: vi.fn(),
+    getAssignments: vi.fn(),
+    getAssignmentSummary: vi.fn(),
+    getAssignmentExecution: vi.fn(),
+    getAssignmentRisks: vi.fn(),
     getMeetings: vi.fn(),
     getMeetingSummary: vi.fn(),
     getProtocols: vi.fn(),
@@ -147,6 +151,89 @@ describe('Executive Decision Registry runtime', () => {
       generated_at: '2026-06-10T00:00:00Z',
     });
 
+    mockApi.getAssignments.mockResolvedValue([
+      {
+        assignment_id: 'EGA-01-001',
+        assignment_title: 'Executive assignment item 1',
+        assignment_source: 'rector_assignment_workflow',
+        assignment_type: 'RECTOR_ASSIGNMENT',
+        assigned_unit: 'strategy-office',
+        assigned_person: 'exec.user.1',
+        created_at: '2026-06-10T00:00:00Z',
+        due_date: '2026-06-10T00:00:00Z',
+        completion_percent: 52,
+        execution_status: 'IN_PROGRESS',
+        risk_level: 'MEDIUM',
+        overdue_flag: false,
+        escalation_flag: false,
+      },
+    ]);
+    mockApi.getAssignmentSummary.mockResolvedValue({
+      tenant_id: 1,
+      entries: [],
+      total_assignments: 7,
+      active_assignments: 5,
+      completed_assignments: 2,
+      overdue_assignments: 1,
+      escalated_assignments: 1,
+      execution_performance: 62,
+      execution_trend: 'STABLE',
+      read_only: true,
+      aggregator_only: true,
+      owner_modules: ['rector_assignment_workflow', 'decision_registry', 'protocol_registry', 'analytics'],
+      generated_at: '2026-06-10T00:00:00Z',
+    });
+    mockApi.getAssignmentExecution.mockResolvedValue({
+      tenant_id: 1,
+      total_assignments: 7,
+      execution_status_counts: {
+        NOT_STARTED: 1,
+        IN_PROGRESS: 2,
+        AT_RISK: 1,
+        ESCALATED: 1,
+        OVERDUE: 1,
+        COMPLETED: 1,
+        CLOSED: 0,
+      },
+      overdue_assignments: 1,
+      escalated_assignments: 1,
+      execution_performance: 62,
+      execution_trend: 'STABLE',
+      escalation_inventory: { high: 1, critical: 0, overdue: 1 },
+      escalation_summary: { total_escalations: 1, high_risk: 1, overdue: 1 },
+      escalation_trends: ['weekly_stable', 'monthly_improving'],
+      high_risk_assignments: [],
+      signal_families: ['overdue_assignment', 'execution_delay', 'escalation_risk', 'assignment_stagnation', 'workload_imbalance'],
+      read_only: true,
+      aggregator_only: true,
+      generated_at: '2026-06-10T00:00:00Z',
+    });
+    mockApi.getAssignmentRisks.mockResolvedValue({
+      tenant_id: 1,
+      total_assignments: 7,
+      execution_status_counts: {
+        NOT_STARTED: 1,
+        IN_PROGRESS: 2,
+        AT_RISK: 1,
+        ESCALATED: 1,
+        OVERDUE: 1,
+        COMPLETED: 1,
+        CLOSED: 0,
+      },
+      overdue_assignments: 1,
+      escalated_assignments: 1,
+      execution_performance: 62,
+      execution_trend: 'DECLINING',
+      escalation_inventory: { high: 1, critical: 0, overdue: 1 },
+      escalation_summary: { total_escalations: 1, high_risk: 1, overdue: 1 },
+      escalation_trends: ['high_risk_watchlist_active', 'escalation_rate_stable'],
+      high_risk_assignments: [],
+      signal_families: ['overdue_assignment', 'execution_delay', 'escalation_risk', 'assignment_stagnation', 'workload_imbalance'],
+      read_only: true,
+      aggregator_only: true,
+      generated_at: '2026-06-10T00:00:00Z',
+    });
+
     mockApi.getMeetings.mockResolvedValue([
       {
         meeting_id: 'MEET-01-001',
@@ -238,8 +325,9 @@ describe('Executive Decision Registry runtime', () => {
     expect(await screen.findByText('Total decisions: 7')).toBeInTheDocument();
     expect(screen.getByText('committee_decision_registry: 4')).toBeInTheDocument();
     expect(screen.getByText('order_decree_registry: 3')).toBeInTheDocument();
-    expect(screen.getByText('IN_PROGRESS: 1')).toBeInTheDocument();
-    expect(screen.getByText('OVERDUE: 1')).toBeInTheDocument();
+    const executionSection = screen.getByTestId('decision-execution-summary');
+    expect(within(executionSection).getAllByText('IN_PROGRESS: 1').length).toBeGreaterThan(0);
+    expect(within(executionSection).getAllByText('OVERDUE: 1').length).toBeGreaterThan(0);
   });
 
   it('renders decision signal summary', async () => {

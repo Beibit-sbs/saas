@@ -34,31 +34,24 @@ function renderWithClient(ui: React.ReactNode) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
-describe('Executive Governance runtime shell', () => {
+describe('Executive Assignment Execution runtime', () => {
   beforeEach(() => {
     mockApi.getOverview.mockResolvedValue({
       tenant_id: 1,
       owner_module: 'executive_control_tower',
       runtime_boundary: 'UNIFIED_READ_ONLY_RUNTIME_SHELL',
       navigation_entry: '/console/executive-governance',
-      canonical_modules: [
-        'executive_control_tower',
-        'rector_assignment_workflow',
-        'committee_decision_registry',
-        'order_decree_registry',
-        'analytics',
-        'brain_core',
-      ],
+      canonical_modules: ['executive_control_tower', 'rector_assignment_workflow', 'committee_decision_registry', 'order_decree_registry', 'analytics', 'brain_core'],
       read_only_runtime: true,
       provider_integrations_enabled: false,
       external_calls_enabled: false,
-      executive_assignments: 21,
-      executive_decisions: 13,
+      executive_assignments: 20,
+      executive_decisions: 12,
       executive_protocols: 8,
       executive_meetings: 5,
-      overdue_items: 4,
+      overdue_items: 3,
       escalated_items: 2,
-      strategic_items: 7,
+      strategic_items: 6,
       executive_signals: 10,
       generated_at: '2026-06-10T00:00:00Z',
     });
@@ -67,34 +60,33 @@ describe('Executive Governance runtime shell', () => {
       tenant_id: 1,
       read_only: true,
       owner_modules: ['executive_control_tower', 'rector_assignment_workflow', 'brain_core'],
-      executive_assignments: 21,
-      executive_decisions: 13,
+      executive_assignments: 20,
+      executive_decisions: 12,
       executive_protocols: 8,
       executive_meetings: 5,
-      overdue_items: 4,
+      overdue_items: 3,
       escalated_items: 2,
-      strategic_items: 7,
+      strategic_items: 6,
       executive_signals: 10,
       generated_at: '2026-06-10T00:00:00Z',
     });
 
     mockApi.getSignals.mockResolvedValue([
       { signal_family: 'overdue_assignment', owner_module: 'brain_core', source_module: 'rector_assignment_workflow', read_only: true, observed_items: 3, notes: 'n1' },
-      { signal_family: 'decision_stagnation', owner_module: 'brain_core', source_module: 'committee_decision_registry', read_only: true, observed_items: 4, notes: 'n2' },
     ]);
 
     mockApi.getDashboard.mockResolvedValue({
       tenant_id: 1,
       dashboard_owner_module: 'executive_control_tower',
       dashboard_view: 'executive_control_tower',
-      widgets: ['Executive Overview', 'Signal Summary'],
-      executive_assignments: 21,
-      executive_decisions: 13,
+      widgets: ['Executive Overview'],
+      executive_assignments: 20,
+      executive_decisions: 12,
       executive_protocols: 8,
       executive_meetings: 5,
-      overdue_items: 4,
+      overdue_items: 3,
       escalated_items: 2,
-      strategic_items: 7,
+      strategic_items: 6,
       executive_signals: 10,
       signal_summaries: [],
       rbac_roles: ['rector', 'vice_rector', 'chief_of_staff', 'executive_manager', 'auditor', 'administrator'],
@@ -103,22 +95,7 @@ describe('Executive Governance runtime shell', () => {
       generated_at: '2026-06-10T00:00:00Z',
     });
 
-    mockApi.getDecisions.mockResolvedValue([
-      {
-        decision_id: 'EGD-01-001',
-        decision_type: 'committee_decision',
-        decision_source: 'committee_decision_registry',
-        decision_title: 'Executive decision item 1',
-        decision_status: 'ACTIVE',
-        decision_date: '2026-06-10T00:00:00Z',
-        execution_status: 'IN_PROGRESS',
-        execution_progress: 40,
-        assigned_units: ['rectorate'],
-        overdue_flag: false,
-        escalation_flag: false,
-      },
-    ]);
-
+    mockApi.getDecisions.mockResolvedValue([]);
     mockApi.getDecisionSummary.mockResolvedValue({
       tenant_id: 1,
       entries: [],
@@ -138,7 +115,6 @@ describe('Executive Governance runtime shell', () => {
       owner_modules: ['committee_decision_registry', 'order_decree_registry', 'rector_assignment_workflow'],
       generated_at: '2026-06-10T00:00:00Z',
     });
-
     mockApi.getDecisionExecution.mockResolvedValue({
       tenant_id: 1,
       total_decisions: 7,
@@ -166,7 +142,7 @@ describe('Executive Governance runtime shell', () => {
         assignment_source: 'rector_assignment_workflow',
         assignment_type: 'RECTOR_ASSIGNMENT',
         assigned_unit: 'strategy-office',
-        assigned_person: 'exec.user.1',
+        assigned_person: 'exec.user.3',
         created_at: '2026-06-10T00:00:00Z',
         due_date: '2026-06-10T00:00:00Z',
         completion_percent: 52,
@@ -175,7 +151,23 @@ describe('Executive Governance runtime shell', () => {
         overdue_flag: false,
         escalation_flag: false,
       },
+      {
+        assignment_id: 'EGA-01-002',
+        assignment_title: 'Executive assignment item 2',
+        assignment_source: 'decision_registry',
+        assignment_type: 'DECISION_ASSIGNMENT',
+        assigned_unit: 'chief-of-staff-office',
+        assigned_person: 'exec.user.4',
+        created_at: '2026-06-10T00:00:00Z',
+        due_date: '2026-06-10T00:00:00Z',
+        completion_percent: 35,
+        execution_status: 'AT_RISK',
+        risk_level: 'HIGH',
+        overdue_flag: false,
+        escalation_flag: true,
+      },
     ]);
+
     mockApi.getAssignmentSummary.mockResolvedValue({
       tenant_id: 1,
       entries: [],
@@ -191,6 +183,7 @@ describe('Executive Governance runtime shell', () => {
       owner_modules: ['rector_assignment_workflow', 'decision_registry', 'protocol_registry', 'analytics'],
       generated_at: '2026-06-10T00:00:00Z',
     });
+
     mockApi.getAssignmentExecution.mockResolvedValue({
       tenant_id: 1,
       total_assignments: 7,
@@ -211,11 +204,18 @@ describe('Executive Governance runtime shell', () => {
       escalation_summary: { total_escalations: 1, high_risk: 1, overdue: 1 },
       escalation_trends: ['weekly_stable', 'monthly_improving'],
       high_risk_assignments: [],
-      signal_families: ['overdue_assignment', 'execution_delay', 'escalation_risk', 'assignment_stagnation', 'workload_imbalance'],
+      signal_families: [
+        'overdue_assignment',
+        'execution_delay',
+        'escalation_risk',
+        'assignment_stagnation',
+        'workload_imbalance',
+      ],
       read_only: true,
       aggregator_only: true,
       generated_at: '2026-06-10T00:00:00Z',
     });
+
     mockApi.getAssignmentRisks.mockResolvedValue({
       tenant_id: 1,
       total_assignments: 7,
@@ -235,28 +235,36 @@ describe('Executive Governance runtime shell', () => {
       escalation_inventory: { high: 1, critical: 0, overdue: 1 },
       escalation_summary: { total_escalations: 1, high_risk: 1, overdue: 1 },
       escalation_trends: ['high_risk_watchlist_active', 'escalation_rate_stable'],
-      high_risk_assignments: [],
-      signal_families: ['overdue_assignment', 'execution_delay', 'escalation_risk', 'assignment_stagnation', 'workload_imbalance'],
+      high_risk_assignments: [
+        {
+          assignment_id: 'EGA-01-002',
+          assignment_title: 'Executive assignment item 2',
+          assignment_source: 'decision_registry',
+          assignment_type: 'DECISION_ASSIGNMENT',
+          assigned_unit: 'chief-of-staff-office',
+          assigned_person: 'exec.user.4',
+          created_at: '2026-06-10T00:00:00Z',
+          due_date: '2026-06-10T00:00:00Z',
+          completion_percent: 35,
+          execution_status: 'AT_RISK',
+          risk_level: 'HIGH',
+          overdue_flag: false,
+          escalation_flag: true,
+        },
+      ],
+      signal_families: [
+        'overdue_assignment',
+        'execution_delay',
+        'escalation_risk',
+        'assignment_stagnation',
+        'workload_imbalance',
+      ],
       read_only: true,
       aggregator_only: true,
       generated_at: '2026-06-10T00:00:00Z',
     });
 
-    mockApi.getMeetings.mockResolvedValue([
-      {
-        meeting_id: 'MEET-01-001',
-        meeting_type: 'executive_board',
-        meeting_title: 'Executive governance meeting 1',
-        meeting_date: '2026-06-10T00:00:00Z',
-        meeting_status: 'SCHEDULED',
-        chairperson: 'rector',
-        participants_count: 10,
-        protocol_count: 2,
-        decision_count: 3,
-        execution_status: 'IN_PROGRESS',
-      },
-    ]);
-
+    mockApi.getMeetings.mockResolvedValue([]);
     mockApi.getMeetingSummary.mockResolvedValue({
       tenant_id: 1,
       entries: [],
@@ -268,21 +276,7 @@ describe('Executive Governance runtime shell', () => {
       generated_at: '2026-06-10T00:00:00Z',
     });
 
-    mockApi.getProtocols.mockResolvedValue([
-      {
-        protocol_id: 'PROT-01-001',
-        protocol_number: 'PG-01-100',
-        protocol_title: 'Executive protocol item 1',
-        protocol_date: '2026-06-10T00:00:00Z',
-        protocol_status: 'IN_EXECUTION',
-        decision_count: 3,
-        assignment_count: 4,
-        execution_progress: 60,
-        overdue_items: 1,
-        escalated_items: 0,
-      },
-    ]);
-
+    mockApi.getProtocols.mockResolvedValue([]);
     mockApi.getProtocolSummary.mockResolvedValue({
       tenant_id: 1,
       entries: [],
@@ -296,7 +290,6 @@ describe('Executive Governance runtime shell', () => {
       read_only: true,
       generated_at: '2026-06-10T00:00:00Z',
     });
-
     mockApi.getProtocolExecution.mockResolvedValue({
       tenant_id: 1,
       total_protocols: 5,
@@ -316,32 +309,21 @@ describe('Executive Governance runtime shell', () => {
     });
   });
 
-  it('renders runtime shell sections', async () => {
+  it('renders assignment execution and escalation sections', async () => {
     renderWithClient(<ExecutiveGovernanceRuntimeShellPage />);
 
-    expect(await screen.findByTestId('executive-governance-runtime-shell')).toBeInTheDocument();
-    expect(screen.getByText('Executive Governance Runtime Shell')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Decision Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Assignment Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Protocol Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Signal Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Dashboard Summary' })).toBeInTheDocument();
+    expect(await screen.findByTestId('assignment-registry-runtime')).toBeInTheDocument();
+    expect(screen.getByTestId('assignment-execution-runtime')).toBeInTheDocument();
+    expect(screen.getByTestId('execution-analytics-runtime')).toBeInTheDocument();
+    expect(screen.getByTestId('escalation-center-runtime')).toBeInTheDocument();
+    expect(screen.getByTestId('executive-signals-runtime')).toBeInTheDocument();
   });
 
-  it('renders overview cards and signal families', async () => {
+  it('shows assignment escalation trends and signal families', async () => {
     renderWithClient(<ExecutiveGovernanceRuntimeShellPage />);
 
-    expect(await screen.findByText('Executive Assignments')).toBeInTheDocument();
-    expect(screen.getByText('21')).toBeInTheDocument();
-    expect(screen.getByText('overdue_assignment')).toBeInTheDocument();
-    expect(screen.getByText('decision_stagnation')).toBeInTheDocument();
-  });
-
-  it('renders dashboard summary and rbac roles', async () => {
-    renderWithClient(<ExecutiveGovernanceRuntimeShellPage />);
-
-    expect(await screen.findByTestId('executive-governance-dashboard-summary')).toBeInTheDocument();
-    expect(screen.getByText(/Dashboard owner: executive_control_tower/i)).toBeInTheDocument();
-    expect(screen.getByText(/RBAC roles: rector, vice_rector, chief_of_staff, executive_manager, auditor, administrator/i)).toBeInTheDocument();
+    expect(await screen.findByText('Escalation trends: weekly_stable, monthly_improving')).toBeInTheDocument();
+    expect(screen.getByText('High risk assignment count: 1')).toBeInTheDocument();
+    expect(screen.getAllByText(/overdue_assignment, execution_delay, escalation_risk, assignment_stagnation, workload_imbalance/i).length).toBeGreaterThan(0);
   });
 });

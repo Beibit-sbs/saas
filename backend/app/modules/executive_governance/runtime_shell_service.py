@@ -6,9 +6,12 @@ from datetime import UTC, datetime
 
 from app.core.module_helpers.service_validation import validate_tenant_id_provided
 from app.modules.executive_governance.runtime_shell_schemas import (
+    ExecutiveAssignmentEntry,
+    ExecutiveAssignmentSummary,
     ExecutiveDecisionExecutionSummary,
     ExecutiveDecisionRegistryEntry,
     ExecutiveDecisionRegistrySummary,
+    ExecutiveExecutionMetrics,
     ExecutiveGovernanceDashboardSummary,
     ExecutiveMeetingEntry,
     ExecutiveMeetingSummary,
@@ -276,6 +279,145 @@ class ExecutiveProtocolRegistryRuntimeService:
         )
 
 
+class ExecutiveAssignmentExecutionRuntimeService:
+    """Read-only assignment execution aggregator runtime service."""
+
+    _ASSIGNMENT_SOURCES = [
+        "rector_assignment_workflow",
+        "protocol_registry",
+        "decision_registry",
+    ]
+    _ASSIGNMENT_TYPES = [
+        "RECTOR_ASSIGNMENT",
+        "PROTOCOL_ASSIGNMENT",
+        "DECISION_ASSIGNMENT",
+    ]
+    _EXECUTION_STATUSES = [
+        "NOT_STARTED",
+        "IN_PROGRESS",
+        "AT_RISK",
+        "ESCALATED",
+        "OVERDUE",
+        "COMPLETED",
+        "CLOSED",
+    ]
+    _RISK_LEVELS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    _SIGNAL_FAMILIES = [
+        "overdue_assignment",
+        "execution_delay",
+        "escalation_risk",
+        "assignment_stagnation",
+        "workload_imbalance",
+        "strategic_goal_slippage",
+        "ministry_deadline_risk",
+    ]
+
+    def _now(self) -> datetime:
+        return datetime.now(UTC)
+
+    def _validate_tenant(self, tenant_id: int) -> int:
+        return validate_tenant_id_provided(tenant_id)
+
+    def _build_entries(self, tenant_id: int) -> list[ExecutiveAssignmentEntry]:
+        tenant = self._validate_tenant(tenant_id)
+        tenant_factor = (tenant % 7) + 1
+        now = self._now()
+        entries: list[ExecutiveAssignmentEntry] = []
+        for idx, status in enumerate(self._EXECUTION_STATUSES):
+            risk_level = self._RISK_LEVELS[min(len(self._RISK_LEVELS) - 1, idx // 2)]
+            overdue = status == "OVERDUE"
+            escalated = status == "ESCALATED"
+            entries.append(
+                ExecutiveAssignmentEntry(
+                    assignment_id=f"EGA-{tenant:02d}-{idx + 1:03d}",
+                    assignment_title=f"Executive assignment item {idx + 1}",
+                    assignment_source=self._ASSIGNMENT_SOURCES[idx % len(self._ASSIGNMENT_SOURCES)],
+                    assignment_type=self._ASSIGNMENT_TYPES[idx % len(self._ASSIGNMENT_TYPES)],
+                    assigned_unit="strategy-office" if idx % 2 == 0 else "chief-of-staff-office",
+                    assigned_person=f"exec.user.{tenant_factor + idx}",
+                    created_at=now,
+                    due_date=now,
+                    completion_percent=min(100, (idx + tenant_factor) * 12),
+                    execution_status=status,
+                    risk_level=risk_level,
+                    overdue_flag=overdue,
+                    escalation_flag=escalated,
+                )
+            )
+        return entries
+
+    def get_assignments(self, tenant_id: int) -> list[ExecutiveAssignmentEntry]:
+        return self._build_entries(tenant_id)
+
+    def get_assignments_summary(self, tenant_id: int) -> ExecutiveAssignmentSummary:
+        tenant = self._validate_tenant(tenant_id)
+        entries = self._build_entries(tenant)
+        total_assignments = len(entries)
+        active_assignments = sum(1 for item in entries if item.execution_status not in {"COMPLETED", "CLOSED"})
+        completed_assignments = sum(1 for item in entries if item.execution_status in {"COMPLETED", "CLOSED"})
+        overdue_assignments = sum(1 for item in entries if item.overdue_flag)
+        escalated_assignments = sum(1 for item in entries if item.escalation_flag)
+        execution_performance = sum(item.completion_percent for item in entries) // total_assignments if total_assignments else 0
+        execution_trend = "IMPROVING" if execution_performance >= 65 else "DECLINING" if overdue_assignments > 1 else "STABLE"
+        return ExecutiveAssignmentSummary(
+            tenant_id=tenant,
+            entries=entries,
+            total_assignments=total_assignments,
+            active_assignments=active_assignments,
+            completed_assignments=completed_assignments,
+            overdue_assignments=overdue_assignments,
+            escalated_assignments=escalated_assignments,
+            execution_performance=execution_performance,
+            execution_trend=execution_trend,
+            owner_modules=["rector_assignment_workflow", "decision_registry", "protocol_registry", "analytics"],
+            generated_at=self._now(),
+        )
+
+    def get_assignments_execution(self, tenant_id: int) -> ExecutiveExecutionMetrics:
+        tenant = self._validate_tenant(tenant_id)
+        summary = self.get_assignments_summary(tenant)
+        status_counts = {status: 0 for status in self._EXECUTION_STATUSES}
+        escalation_inventory = {"high": 0, "critical": 0, "overdue": 0}
+        high_risk_assignments: list[ExecutiveAssignmentEntry] = []
+        for entry in summary.entries:
+            status_counts[entry.execution_status] += 1
+            if entry.risk_level in {"HIGH", "CRITICAL"}:
+                high_risk_assignments.append(entry)
+            if entry.risk_level == "HIGH":
+                escalation_inventory["high"] += 1
+            if entry.risk_level == "CRITICAL":
+                escalation_inventory["critical"] += 1
+            if entry.overdue_flag:
+                escalation_inventory["overdue"] += 1
+        escalation_summary = {
+            "total_escalations": summary.escalated_assignments,
+            "high_risk": escalation_inventory["high"] + escalation_inventory["critical"],
+            "overdue": summary.overdue_assignments,
+        }
+        return ExecutiveExecutionMetrics(
+            tenant_id=tenant,
+            total_assignments=summary.total_assignments,
+            execution_status_counts=status_counts,
+            overdue_assignments=summary.overdue_assignments,
+            escalated_assignments=summary.escalated_assignments,
+            execution_performance=summary.execution_performance,
+            execution_trend=summary.execution_trend,
+            escalation_inventory=escalation_inventory,
+            escalation_summary=escalation_summary,
+            escalation_trends=["weekly_stable", "monthly_improving"],
+            high_risk_assignments=high_risk_assignments,
+            signal_families=list(self._SIGNAL_FAMILIES),
+            generated_at=self._now(),
+        )
+
+    def get_assignments_risks(self, tenant_id: int) -> ExecutiveExecutionMetrics:
+        tenant = self._validate_tenant(tenant_id)
+        metrics = self.get_assignments_execution(tenant)
+        metrics.execution_trend = "DECLINING" if metrics.overdue_assignments > 1 else metrics.execution_trend
+        metrics.escalation_trends = ["high_risk_watchlist_active", "escalation_rate_stable"]
+        return metrics
+
+
 class ExecutiveGovernanceRuntimeService:
     """Read-only Executive Governance runtime contract service."""
 
@@ -296,9 +438,11 @@ class ExecutiveGovernanceRuntimeService:
         "escalation_risk": "rector_assignment_workflow",
         "strategic_goal_slippage": "analytics",
         "executive_workload": "executive_control_tower",
+        "workload_imbalance": "analytics",
         "ministry_deadline_risk": "order_decree_registry",
         "protocol_non_execution": "order_decree_registry",
         "decision_stagnation": "committee_decision_registry",
+        "assignment_stagnation": "rector_assignment_workflow",
     }
 
     _RBAC_ROLES = [
@@ -311,6 +455,7 @@ class ExecutiveGovernanceRuntimeService:
     ]
 
     _decision_aggregator = ExecutiveDecisionRegistryAggregatorService()
+    _assignment_execution = ExecutiveAssignmentExecutionRuntimeService()
     _meeting_registry = ExecutiveMeetingRegistryRuntimeService()
     _protocol_registry = ExecutiveProtocolRegistryRuntimeService()
 
@@ -403,6 +548,18 @@ class ExecutiveGovernanceRuntimeService:
 
     def get_decision_execution_summary(self, tenant_id: int) -> ExecutiveDecisionExecutionSummary:
         return self._decision_aggregator.get_decision_execution_summary(tenant_id)
+
+    def get_assignments(self, tenant_id: int) -> list[ExecutiveAssignmentEntry]:
+        return self._assignment_execution.get_assignments(tenant_id)
+
+    def get_assignments_summary(self, tenant_id: int) -> ExecutiveAssignmentSummary:
+        return self._assignment_execution.get_assignments_summary(tenant_id)
+
+    def get_assignments_execution(self, tenant_id: int) -> ExecutiveExecutionMetrics:
+        return self._assignment_execution.get_assignments_execution(tenant_id)
+
+    def get_assignments_risks(self, tenant_id: int) -> ExecutiveExecutionMetrics:
+        return self._assignment_execution.get_assignments_risks(tenant_id)
 
     def get_meetings(self, tenant_id: int) -> list[ExecutiveMeetingEntry]:
         return self._meeting_registry.get_meetings(tenant_id)

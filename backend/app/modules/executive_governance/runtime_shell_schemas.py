@@ -16,9 +16,11 @@ ExecutiveSignalFamily = Literal[
     "escalation_risk",
     "strategic_goal_slippage",
     "executive_workload",
+    "workload_imbalance",
     "ministry_deadline_risk",
     "protocol_non_execution",
     "decision_stagnation",
+    "assignment_stagnation",
 ]
 
 
@@ -129,6 +131,56 @@ class ExecutiveDecisionExecutionSummary(BaseModel):
     execution_status_counts: dict[str, int] = Field(default_factory=dict)
     overdue_items: int = 0
     escalated_items: int = 0
+    signal_families: list[str] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class ExecutiveAssignmentEntry(BaseModel):
+    assignment_id: str
+    assignment_title: str
+    assignment_source: str
+    assignment_type: str
+    assigned_unit: str
+    assigned_person: str
+    created_at: datetime
+    due_date: datetime
+    completion_percent: int = 0
+    execution_status: DecisionExecutionStatus
+    risk_level: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = "LOW"
+    overdue_flag: bool = False
+    escalation_flag: bool = False
+
+
+class ExecutiveAssignmentSummary(BaseModel):
+    tenant_id: int
+    entries: list[ExecutiveAssignmentEntry] = Field(default_factory=list)
+    total_assignments: int = 0
+    active_assignments: int = 0
+    completed_assignments: int = 0
+    overdue_assignments: int = 0
+    escalated_assignments: int = 0
+    execution_performance: int = 0
+    execution_trend: str = "STABLE"
+    read_only: bool = True
+    aggregator_only: bool = True
+    owner_modules: list[str] = Field(default_factory=list)
+    generated_at: datetime
+
+
+class ExecutiveExecutionMetrics(BaseModel):
+    tenant_id: int
+    total_assignments: int = 0
+    execution_status_counts: dict[str, int] = Field(default_factory=dict)
+    overdue_assignments: int = 0
+    escalated_assignments: int = 0
+    execution_performance: int = 0
+    execution_trend: str = "STABLE"
+    escalation_inventory: dict[str, int] = Field(default_factory=dict)
+    escalation_summary: dict[str, int] = Field(default_factory=dict)
+    escalation_trends: list[str] = Field(default_factory=list)
+    high_risk_assignments: list[ExecutiveAssignmentEntry] = Field(default_factory=list)
     signal_families: list[str] = Field(default_factory=list)
     read_only: bool = True
     aggregator_only: bool = True

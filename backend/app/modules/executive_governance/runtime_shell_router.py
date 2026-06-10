@@ -11,9 +11,12 @@ from app.core.module_helpers.service_validation import DomainValidationError, Te
 from app.core.tenant import get_current_tenant
 from app.modules.executive_control_tower import permissions
 from app.modules.executive_governance.runtime_shell_schemas import (
+    ExecutiveAssignmentEntry,
+    ExecutiveAssignmentSummary,
     ExecutiveDecisionExecutionSummary,
     ExecutiveDecisionRegistryEntry,
     ExecutiveDecisionRegistrySummary,
+    ExecutiveExecutionMetrics,
     ExecutiveGovernanceDashboardSummary,
     ExecutiveMeetingEntry,
     ExecutiveMeetingSummary,
@@ -126,6 +129,54 @@ def get_runtime_decisions_execution(
 ) -> ExecutiveDecisionExecutionSummary:
     try:
         return _service.get_decision_execution_summary(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/assignments", response_model=list[ExecutiveAssignmentEntry])
+def get_runtime_assignments(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> list[ExecutiveAssignmentEntry]:
+    try:
+        return _service.get_assignments(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/assignments/summary", response_model=ExecutiveAssignmentSummary)
+def get_runtime_assignments_summary(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveAssignmentSummary:
+    try:
+        return _service.get_assignments_summary(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/assignments/execution", response_model=ExecutiveExecutionMetrics)
+def get_runtime_assignments_execution(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveExecutionMetrics:
+    try:
+        return _service.get_assignments_execution(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/assignments/risks", response_model=ExecutiveExecutionMetrics)
+def get_runtime_assignments_risks(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveExecutionMetrics:
+    try:
+        return _service.get_assignments_risks(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)
 

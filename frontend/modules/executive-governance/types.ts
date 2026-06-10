@@ -100,6 +100,56 @@ export interface ExecutiveDecisionExecutionSummary {
   generated_at: string;
 }
 
+export interface ExecutiveAssignmentEntry {
+  assignment_id: string;
+  assignment_title: string;
+  assignment_source: string;
+  assignment_type: string;
+  assigned_unit: string;
+  assigned_person: string;
+  created_at: string;
+  due_date: string;
+  completion_percent: number;
+  execution_status: 'NOT_STARTED' | 'IN_PROGRESS' | 'AT_RISK' | 'ESCALATED' | 'OVERDUE' | 'COMPLETED' | 'CLOSED';
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  overdue_flag: boolean;
+  escalation_flag: boolean;
+}
+
+export interface ExecutiveAssignmentSummary {
+  tenant_id: number;
+  entries: ExecutiveAssignmentEntry[];
+  total_assignments: number;
+  active_assignments: number;
+  completed_assignments: number;
+  overdue_assignments: number;
+  escalated_assignments: number;
+  execution_performance: number;
+  execution_trend: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  owner_modules: string[];
+  generated_at: string;
+}
+
+export interface ExecutiveExecutionMetrics {
+  tenant_id: number;
+  total_assignments: number;
+  execution_status_counts: Record<string, number>;
+  overdue_assignments: number;
+  escalated_assignments: number;
+  execution_performance: number;
+  execution_trend: string;
+  escalation_inventory: Record<string, number>;
+  escalation_summary: Record<string, number>;
+  escalation_trends: string[];
+  high_risk_assignments: ExecutiveAssignmentEntry[];
+  signal_families: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
 export interface ExecutiveMeetingEntry {
   meeting_id: string;
   meeting_type: string;

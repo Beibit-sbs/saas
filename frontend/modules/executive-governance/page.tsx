@@ -24,6 +24,10 @@ export function ExecutiveGovernanceRuntimeShellPage() {
   const decisions = useQuery({ queryKey: ['executive-governance:decisions'], queryFn: executiveGovernanceApi.getDecisions, staleTime: 30000 });
   const decisionSummary = useQuery({ queryKey: ['executive-governance:decision-summary'], queryFn: executiveGovernanceApi.getDecisionSummary, staleTime: 30000 });
   const decisionExecution = useQuery({ queryKey: ['executive-governance:decision-execution'], queryFn: executiveGovernanceApi.getDecisionExecution, staleTime: 30000 });
+  const assignments = useQuery({ queryKey: ['executive-governance:assignments'], queryFn: executiveGovernanceApi.getAssignments, staleTime: 30000 });
+  const assignmentSummary = useQuery({ queryKey: ['executive-governance:assignments-summary'], queryFn: executiveGovernanceApi.getAssignmentSummary, staleTime: 30000 });
+  const assignmentExecution = useQuery({ queryKey: ['executive-governance:assignments-execution'], queryFn: executiveGovernanceApi.getAssignmentExecution, staleTime: 30000 });
+  const assignmentRisks = useQuery({ queryKey: ['executive-governance:assignments-risks'], queryFn: executiveGovernanceApi.getAssignmentRisks, staleTime: 30000 });
   const meetings = useQuery({ queryKey: ['executive-governance:meetings'], queryFn: executiveGovernanceApi.getMeetings, staleTime: 30000 });
   const meetingSummary = useQuery({ queryKey: ['executive-governance:meetings-summary'], queryFn: executiveGovernanceApi.getMeetingSummary, staleTime: 30000 });
   const protocols = useQuery({ queryKey: ['executive-governance:protocols'], queryFn: executiveGovernanceApi.getProtocols, staleTime: 30000 });
@@ -38,6 +42,10 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     decisions.isPending ||
     decisionSummary.isPending ||
     decisionExecution.isPending ||
+    assignments.isPending ||
+    assignmentSummary.isPending ||
+    assignmentExecution.isPending ||
+    assignmentRisks.isPending ||
     meetings.isPending ||
     meetingSummary.isPending ||
     protocols.isPending ||
@@ -55,6 +63,10 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     decisions.error ||
     decisionSummary.error ||
     decisionExecution.error ||
+    assignments.error ||
+    assignmentSummary.error ||
+    assignmentExecution.error ||
+    assignmentRisks.error ||
     meetings.error ||
     meetingSummary.error ||
     protocols.error ||
@@ -72,6 +84,10 @@ export function ExecutiveGovernanceRuntimeShellPage() {
           decisions.error ??
           decisionSummary.error ??
           decisionExecution.error ??
+          assignments.error ??
+          assignmentSummary.error ??
+          assignmentExecution.error ??
+          assignmentRisks.error ??
           meetings.error ??
           meetingSummary.error ??
           protocols.error ??
@@ -90,6 +106,10 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     !decisions.data ||
     !decisionSummary.data ||
     !decisionExecution.data ||
+    !assignments.data ||
+    !assignmentSummary.data ||
+    !assignmentExecution.data ||
+    !assignmentRisks.data ||
     !meetings.data ||
     !meetingSummary.data ||
     !protocols.data ||
@@ -156,11 +176,71 @@ export function ExecutiveGovernanceRuntimeShellPage() {
           <p className="text-sm">Escalated items: {decisionExecution.data.escalated_items}</p>
         </section>
 
-        <section className="rounded-lg border p-4" aria-label="Assignment Summary">
+        <section className="rounded-lg border p-4" aria-label="Assignment Summary" data-testid="assignment-summary-runtime">
           <h2 className="text-lg font-semibold">Assignment Summary</h2>
-          <p className="mt-2 text-sm">Assignments: {summary.data.executive_assignments}</p>
-          <p className="text-sm">Overdue items: {summary.data.overdue_items}</p>
-          <p className="text-sm">Escalated items: {summary.data.escalated_items}</p>
+          <p className="mt-2 text-sm">Assignments: {assignmentSummary.data.total_assignments}</p>
+          <p className="text-sm">Active assignments: {assignmentSummary.data.active_assignments}</p>
+          <p className="text-sm">Completed assignments: {assignmentSummary.data.completed_assignments}</p>
+          <p className="text-sm">Overdue items: {assignmentSummary.data.overdue_assignments}</p>
+          <p className="text-sm">Escalated items: {assignmentSummary.data.escalated_assignments}</p>
+          <p className="text-sm">Execution trend: {assignmentSummary.data.execution_trend}</p>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Assignment Registry" data-testid="assignment-registry-runtime">
+          <h2 className="text-lg font-semibold">Assignment Registry</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {assignments.data.map((entry) => (
+              <div key={entry.assignment_id} className="rounded-lg border p-3">
+                <p className="font-medium">{entry.assignment_title}</p>
+                <p className="text-sm text-muted-foreground">{entry.assignment_id} | {entry.assignment_source}</p>
+                <p className="text-sm">type={entry.assignment_type} / owner={entry.assigned_unit}</p>
+                <p className="text-sm">assignee={entry.assigned_person}</p>
+                <p className="text-sm">status={entry.execution_status} / risk={entry.risk_level}</p>
+                <p className="text-sm">completion={entry.completion_percent}%</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Assignment Execution" data-testid="assignment-execution-runtime">
+          <h2 className="text-lg font-semibold">Assignment Execution</h2>
+          <p className="mt-2 text-sm">Execution performance: {assignmentExecution.data.execution_performance}%</p>
+          <p className="text-sm">Execution trend: {assignmentExecution.data.execution_trend}</p>
+          <p className="text-sm">Overdue assignments: {assignmentExecution.data.overdue_assignments}</p>
+          <p className="text-sm">Escalated assignments: {assignmentExecution.data.escalated_assignments}</p>
+          {Object.entries(assignmentExecution.data.execution_status_counts).map(([status, count]) => (
+            <p key={status} className="text-sm">{status}: {count}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Execution Analytics" data-testid="execution-analytics-runtime">
+          <h2 className="text-lg font-semibold">Execution Analytics</h2>
+          {Object.entries(assignmentExecution.data.escalation_inventory).map(([key, value]) => (
+            <p key={key} className="text-sm">{key}: {value}</p>
+          ))}
+          {Object.entries(assignmentExecution.data.escalation_summary).map(([key, value]) => (
+            <p key={key} className="text-sm">{key}: {value}</p>
+          ))}
+          <p className="mt-2 text-sm">Escalation trends: {assignmentExecution.data.escalation_trends.join(', ')}</p>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Escalation Center" data-testid="escalation-center-runtime">
+          <h2 className="text-lg font-semibold">Escalation Center</h2>
+          <p className="mt-2 text-sm">High risk assignment count: {assignmentRisks.data.high_risk_assignments.length}</p>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {assignmentRisks.data.high_risk_assignments.map((entry) => (
+              <div key={entry.assignment_id} className="rounded-lg border p-3">
+                <p className="font-medium">{entry.assignment_title}</p>
+                <p className="text-sm text-muted-foreground">{entry.assignment_id} | {entry.assignment_source}</p>
+                <p className="text-sm">status={entry.execution_status} / risk={entry.risk_level}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Executive Signals" data-testid="executive-signals-runtime">
+          <h2 className="text-lg font-semibold">Executive Signals</h2>
+          <p className="mt-2 text-sm">{assignmentExecution.data.signal_families.join(', ')}</p>
         </section>
 
         <section className="rounded-lg border p-4" aria-label="Protocol Summary">

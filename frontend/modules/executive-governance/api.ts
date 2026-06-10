@@ -1,8 +1,11 @@
 import { apiGet } from '@/shared/api/client';
 import type {
+  ExecutiveAssignmentEntry,
+  ExecutiveAssignmentSummary,
   ExecutiveDecisionExecutionSummary,
   ExecutiveDecisionRegistryEntry,
   ExecutiveDecisionRegistrySummary,
+  ExecutiveExecutionMetrics,
   ExecutiveGovernanceDashboardSummary,
   ExecutiveMeetingEntry,
   ExecutiveMeetingSummary,
@@ -24,6 +27,10 @@ export const executiveGovernanceApi = {
   getDecisions: () => apiGet<ExecutiveDecisionRegistryEntry[]>(`${BASE}/decisions`),
   getDecisionSummary: () => apiGet<ExecutiveDecisionRegistrySummary>(`${BASE}/decisions/summary`),
   getDecisionExecution: () => apiGet<ExecutiveDecisionExecutionSummary>(`${BASE}/decisions/execution`),
+  getAssignments: () => apiGet<ExecutiveAssignmentEntry[]>(`${BASE}/assignments`),
+  getAssignmentSummary: () => apiGet<ExecutiveAssignmentSummary>(`${BASE}/assignments/summary`),
+  getAssignmentExecution: () => apiGet<ExecutiveExecutionMetrics>(`${BASE}/assignments/execution`),
+  getAssignmentRisks: () => apiGet<ExecutiveExecutionMetrics>(`${BASE}/assignments/risks`),
   getMeetings: () => apiGet<ExecutiveMeetingEntry[]>(`${BASE}/meetings`),
   getMeetingSummary: () => apiGet<ExecutiveMeetingSummary>(`${BASE}/meetings/summary`),
   getProtocols: () => apiGet<ExecutiveProtocolEntry[]>(`${BASE}/protocols`),
