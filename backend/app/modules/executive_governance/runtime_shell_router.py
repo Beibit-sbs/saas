@@ -11,6 +11,9 @@ from app.core.module_helpers.service_validation import DomainValidationError, Te
 from app.core.tenant import get_current_tenant
 from app.modules.executive_control_tower import permissions
 from app.modules.executive_governance.runtime_shell_schemas import (
+    ExecutiveDecisionExecutionSummary,
+    ExecutiveDecisionRegistryEntry,
+    ExecutiveDecisionRegistrySummary,
     ExecutiveGovernanceDashboardSummary,
     ExecutiveGovernanceRuntimeOverview,
     ExecutiveGovernanceRuntimeSummary,
@@ -82,5 +85,41 @@ def get_runtime_dashboard(
 ) -> ExecutiveGovernanceDashboardSummary:
     try:
         return _service.get_dashboard(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/decisions", response_model=list[ExecutiveDecisionRegistryEntry])
+def get_runtime_decisions(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> list[ExecutiveDecisionRegistryEntry]:
+    try:
+        return _service.get_decisions(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/decisions/summary", response_model=ExecutiveDecisionRegistrySummary)
+def get_runtime_decisions_summary(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveDecisionRegistrySummary:
+    try:
+        return _service.get_decisions_summary(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/decisions/execution", response_model=ExecutiveDecisionExecutionSummary)
+def get_runtime_decisions_execution(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveDecisionExecutionSummary:
+    try:
+        return _service.get_decision_execution_summary(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)

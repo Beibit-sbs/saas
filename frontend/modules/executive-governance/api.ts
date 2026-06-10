@@ -1,5 +1,8 @@
 import { apiGet } from '@/shared/api/client';
 import type {
+  ExecutiveDecisionExecutionSummary,
+  ExecutiveDecisionRegistryEntry,
+  ExecutiveDecisionRegistrySummary,
   ExecutiveGovernanceDashboardSummary,
   ExecutiveGovernanceRuntimeOverview,
   ExecutiveGovernanceRuntimeSummary,
@@ -13,4 +16,7 @@ export const executiveGovernanceApi = {
   getSummary: () => apiGet<ExecutiveGovernanceRuntimeSummary>(`${BASE}/summary`),
   getSignals: () => apiGet<ExecutiveGovernanceSignalSummary[]>(`${BASE}/signals`),
   getDashboard: () => apiGet<ExecutiveGovernanceDashboardSummary>(`${BASE}/dashboard`),
+  getDecisions: () => apiGet<ExecutiveDecisionRegistryEntry[]>(`${BASE}/decisions`),
+  getDecisionSummary: () => apiGet<ExecutiveDecisionRegistrySummary>(`${BASE}/decisions/summary`),
+  getDecisionExecution: () => apiGet<ExecutiveDecisionExecutionSummary>(`${BASE}/decisions/execution`),
 };

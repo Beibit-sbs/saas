@@ -61,3 +61,41 @@ export interface ExecutiveGovernanceDashboardSummary {
   auditability_preserved: boolean;
   generated_at: string;
 }
+
+export interface ExecutiveDecisionRegistryEntry {
+  decision_id: string;
+  decision_type: string;
+  decision_source: string;
+  decision_title: string;
+  decision_status: string;
+  decision_date: string;
+  execution_status: 'NOT_STARTED' | 'IN_PROGRESS' | 'AT_RISK' | 'ESCALATED' | 'OVERDUE' | 'COMPLETED' | 'CLOSED';
+  execution_progress: number;
+  assigned_units: string[];
+  overdue_flag: boolean;
+  escalation_flag: boolean;
+}
+
+export interface ExecutiveDecisionRegistrySummary {
+  tenant_id: number;
+  entries: ExecutiveDecisionRegistryEntry[];
+  total_decisions: number;
+  decision_sources: Record<string, number>;
+  execution_status_counts: Record<string, number>;
+  read_only: boolean;
+  aggregator_only: boolean;
+  owner_modules: string[];
+  generated_at: string;
+}
+
+export interface ExecutiveDecisionExecutionSummary {
+  tenant_id: number;
+  total_decisions: number;
+  execution_status_counts: Record<string, number>;
+  overdue_items: number;
+  escalated_items: number;
+  signal_families: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}

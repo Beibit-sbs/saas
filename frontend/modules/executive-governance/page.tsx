@@ -21,16 +21,19 @@ export function ExecutiveGovernanceRuntimeShellPage() {
   const summary = useQuery({ queryKey: ['executive-governance:summary'], queryFn: executiveGovernanceApi.getSummary, staleTime: 30000 });
   const signals = useQuery({ queryKey: ['executive-governance:signals'], queryFn: executiveGovernanceApi.getSignals, staleTime: 30000 });
   const dashboard = useQuery({ queryKey: ['executive-governance:dashboard'], queryFn: executiveGovernanceApi.getDashboard, staleTime: 30000 });
+  const decisions = useQuery({ queryKey: ['executive-governance:decisions'], queryFn: executiveGovernanceApi.getDecisions, staleTime: 30000 });
+  const decisionSummary = useQuery({ queryKey: ['executive-governance:decision-summary'], queryFn: executiveGovernanceApi.getDecisionSummary, staleTime: 30000 });
+  const decisionExecution = useQuery({ queryKey: ['executive-governance:decision-execution'], queryFn: executiveGovernanceApi.getDecisionExecution, staleTime: 30000 });
 
-  if (overview.isPending || summary.isPending || signals.isPending || dashboard.isPending) {
+  if (overview.isPending || summary.isPending || signals.isPending || dashboard.isPending || decisions.isPending || decisionSummary.isPending || decisionExecution.isPending) {
     return <LoadingState title="Loading Executive Governance runtime shell" />;
   }
 
-  if (overview.error || summary.error || signals.error || dashboard.error) {
-    return <ErrorState message="Failed to load Executive Governance runtime shell." error={overview.error ?? summary.error ?? signals.error ?? dashboard.error} />;
+  if (overview.error || summary.error || signals.error || dashboard.error || decisions.error || decisionSummary.error || decisionExecution.error) {
+    return <ErrorState message="Failed to load Executive Governance runtime shell." error={overview.error ?? summary.error ?? signals.error ?? dashboard.error ?? decisions.error ?? decisionSummary.error ?? decisionExecution.error} />;
   }
 
-  if (!overview.data || !summary.data || !signals.data || !dashboard.data) {
+  if (!overview.data || !summary.data || !signals.data || !dashboard.data || !decisions.data || !decisionSummary.data || !decisionExecution.data) {
     return <ErrorState message="Executive Governance runtime shell is unavailable." />;
   }
 
@@ -53,8 +56,42 @@ export function ExecutiveGovernanceRuntimeShellPage() {
 
         <section className="rounded-lg border p-4" aria-label="Decision Summary">
           <h2 className="text-lg font-semibold">Decision Summary</h2>
-          <p className="mt-2 text-sm">Total decisions: {summary.data.executive_decisions}</p>
+          <p className="mt-2 text-sm">Total decisions: {decisionSummary.data.total_decisions}</p>
           <p className="text-sm text-muted-foreground">Owner modules: {summary.data.owner_modules.join(', ')}</p>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Executive Decisions" data-testid="executive-decision-registry-view">
+          <h2 className="text-lg font-semibold">Executive Decisions</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {decisions.data.map((entry) => (
+              <div key={entry.decision_id} className="rounded-lg border p-3">
+                <p className="font-medium">{entry.decision_title}</p>
+                <p className="text-sm text-muted-foreground">{entry.decision_id} | {entry.decision_source}</p>
+                <p className="text-sm">status={entry.decision_status} / execution={entry.execution_status}</p>
+                <p className="text-sm">progress={entry.execution_progress}%</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Decision Sources">
+          <h2 className="text-lg font-semibold">Decision Sources</h2>
+          {Object.entries(decisionSummary.data.decision_sources).map(([source, count]) => (
+            <p key={source} className="text-sm">{source}: {count}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Execution Status" data-testid="decision-execution-summary">
+          <h2 className="text-lg font-semibold">Execution Status</h2>
+          {Object.entries(decisionExecution.data.execution_status_counts).map(([status, count]) => (
+            <p key={status} className="text-sm">{status}: {count}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Escalation Summary">
+          <h2 className="text-lg font-semibold">Escalation Summary</h2>
+          <p className="mt-2 text-sm">Overdue items: {decisionExecution.data.overdue_items}</p>
+          <p className="text-sm">Escalated items: {decisionExecution.data.escalated_items}</p>
         </section>
 
         <section className="rounded-lg border p-4" aria-label="Assignment Summary">
@@ -82,6 +119,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Decision Signals" data-testid="decision-signal-summary">
+          <h2 className="text-lg font-semibold">Decision Signals</h2>
+          <p className="mt-2 text-sm">{decisionExecution.data.signal_families.join(', ')}</p>
         </section>
 
         <section className="rounded-lg border p-4" aria-label="Dashboard Summary" data-testid="executive-governance-dashboard-summary">

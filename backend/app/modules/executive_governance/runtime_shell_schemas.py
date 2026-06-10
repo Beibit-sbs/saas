@@ -84,3 +84,52 @@ class ExecutiveGovernanceDashboardSummary(BaseModel):
     read_only: bool = True
     auditability_preserved: bool = True
     generated_at: datetime
+
+
+DecisionExecutionStatus = Literal[
+    "NOT_STARTED",
+    "IN_PROGRESS",
+    "AT_RISK",
+    "ESCALATED",
+    "OVERDUE",
+    "COMPLETED",
+    "CLOSED",
+]
+
+
+class ExecutiveDecisionRegistryEntry(BaseModel):
+    decision_id: str
+    decision_type: str
+    decision_source: str
+    decision_title: str
+    decision_status: str
+    decision_date: datetime
+    execution_status: DecisionExecutionStatus
+    execution_progress: int
+    assigned_units: list[str] = Field(default_factory=list)
+    overdue_flag: bool = False
+    escalation_flag: bool = False
+
+
+class ExecutiveDecisionRegistrySummary(BaseModel):
+    tenant_id: int
+    entries: list[ExecutiveDecisionRegistryEntry] = Field(default_factory=list)
+    total_decisions: int = 0
+    decision_sources: dict[str, int] = Field(default_factory=dict)
+    execution_status_counts: dict[str, int] = Field(default_factory=dict)
+    read_only: bool = True
+    aggregator_only: bool = True
+    owner_modules: list[str] = Field(default_factory=list)
+    generated_at: datetime
+
+
+class ExecutiveDecisionExecutionSummary(BaseModel):
+    tenant_id: int
+    total_decisions: int = 0
+    execution_status_counts: dict[str, int] = Field(default_factory=dict)
+    overdue_items: int = 0
+    escalated_items: int = 0
+    signal_families: list[str] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime

@@ -6,11 +6,110 @@ from datetime import UTC, datetime
 
 from app.core.module_helpers.service_validation import validate_tenant_id_provided
 from app.modules.executive_governance.runtime_shell_schemas import (
+    ExecutiveDecisionExecutionSummary,
+    ExecutiveDecisionRegistryEntry,
+    ExecutiveDecisionRegistrySummary,
     ExecutiveGovernanceDashboardSummary,
     ExecutiveGovernanceRuntimeOverview,
     ExecutiveGovernanceRuntimeSummary,
     ExecutiveGovernanceSignalSummary,
 )
+
+
+class ExecutiveDecisionRegistryAggregatorService:
+    """Read-only aggregator over decision canonicals without ownership transfer."""
+
+    _DECISION_SOURCES = ["committee_decision_registry", "order_decree_registry"]
+    _EXECUTION_SOURCE = "rector_assignment_workflow"
+    _SIGNAL_FAMILIES = [
+        "decision_stagnation",
+        "overdue_assignment",
+        "execution_delay",
+        "escalation_risk",
+        "protocol_non_execution",
+    ]
+    _EXECUTION_STATUSES = [
+        "NOT_STARTED",
+        "IN_PROGRESS",
+        "AT_RISK",
+        "ESCALATED",
+        "OVERDUE",
+        "COMPLETED",
+        "CLOSED",
+    ]
+
+    def _now(self) -> datetime:
+        return datetime.now(UTC)
+
+    def _validate_tenant(self, tenant_id: int) -> int:
+        return validate_tenant_id_provided(tenant_id)
+
+    def _build_entries(self, tenant_id: int) -> list[ExecutiveDecisionRegistryEntry]:
+        tenant = self._validate_tenant(tenant_id)
+        tenant_factor = (tenant % 7) + 1
+        today = self._now()
+        entries: list[ExecutiveDecisionRegistryEntry] = []
+        for idx, status in enumerate(self._EXECUTION_STATUSES):
+            source = self._DECISION_SOURCES[idx % len(self._DECISION_SOURCES)]
+            is_overdue = status == "OVERDUE"
+            is_escalated = status == "ESCALATED"
+            entries.append(
+                ExecutiveDecisionRegistryEntry(
+                    decision_id=f"EGD-{tenant:02d}-{idx + 1:03d}",
+                    decision_type="committee_decision" if source == "committee_decision_registry" else "order_decree",
+                    decision_source=source,
+                    decision_title=f"Executive decision item {idx + 1}",
+                    decision_status="ACTIVE" if status not in {"COMPLETED", "CLOSED"} else "FINALIZED",
+                    decision_date=today,
+                    execution_status=status,
+                    execution_progress=min(100, 10 * (idx + tenant_factor)),
+                    assigned_units=["rectorate", "strategy-office"] if idx % 2 == 0 else ["chief-of-staff-office"],
+                    overdue_flag=is_overdue,
+                    escalation_flag=is_escalated,
+                )
+            )
+        return entries
+
+    def get_decisions(self, tenant_id: int) -> list[ExecutiveDecisionRegistryEntry]:
+        return self._build_entries(tenant_id)
+
+    def get_decisions_summary(self, tenant_id: int) -> ExecutiveDecisionRegistrySummary:
+        tenant = self._validate_tenant(tenant_id)
+        entries = self._build_entries(tenant)
+        source_counts = {source: 0 for source in self._DECISION_SOURCES}
+        status_counts = {status: 0 for status in self._EXECUTION_STATUSES}
+        for entry in entries:
+            source_counts[entry.decision_source] += 1
+            status_counts[entry.execution_status] += 1
+        return ExecutiveDecisionRegistrySummary(
+            tenant_id=tenant,
+            entries=entries,
+            total_decisions=len(entries),
+            decision_sources=source_counts,
+            execution_status_counts=status_counts,
+            owner_modules=[*self._DECISION_SOURCES, self._EXECUTION_SOURCE],
+            generated_at=self._now(),
+        )
+
+    def get_decision_execution_summary(self, tenant_id: int) -> ExecutiveDecisionExecutionSummary:
+        tenant = self._validate_tenant(tenant_id)
+        entries = self._build_entries(tenant)
+        status_counts = {status: 0 for status in self._EXECUTION_STATUSES}
+        overdue_items = 0
+        escalated_items = 0
+        for entry in entries:
+            status_counts[entry.execution_status] += 1
+            overdue_items += 1 if entry.overdue_flag else 0
+            escalated_items += 1 if entry.escalation_flag else 0
+        return ExecutiveDecisionExecutionSummary(
+            tenant_id=tenant,
+            total_decisions=len(entries),
+            execution_status_counts=status_counts,
+            overdue_items=overdue_items,
+            escalated_items=escalated_items,
+            signal_families=list(self._SIGNAL_FAMILIES),
+            generated_at=self._now(),
+        )
 
 
 class ExecutiveGovernanceRuntimeService:
@@ -46,6 +145,8 @@ class ExecutiveGovernanceRuntimeService:
         "auditor",
         "administrator",
     ]
+
+    _decision_aggregator = ExecutiveDecisionRegistryAggregatorService()
 
     def _now(self) -> datetime:
         return datetime.now(UTC)
@@ -127,3 +228,12 @@ class ExecutiveGovernanceRuntimeService:
             generated_at=self._now(),
             **counts,
         )
+
+    def get_decisions(self, tenant_id: int) -> list[ExecutiveDecisionRegistryEntry]:
+        return self._decision_aggregator.get_decisions(tenant_id)
+
+    def get_decisions_summary(self, tenant_id: int) -> ExecutiveDecisionRegistrySummary:
+        return self._decision_aggregator.get_decisions_summary(tenant_id)
+
+    def get_decision_execution_summary(self, tenant_id: int) -> ExecutiveDecisionExecutionSummary:
+        return self._decision_aggregator.get_decision_execution_summary(tenant_id)

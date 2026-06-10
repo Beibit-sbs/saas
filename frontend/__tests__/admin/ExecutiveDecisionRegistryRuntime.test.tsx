@@ -25,31 +25,24 @@ function renderWithClient(ui: React.ReactNode) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
-describe('Executive Governance runtime shell', () => {
+describe('Executive Decision Registry runtime', () => {
   beforeEach(() => {
     mockApi.getOverview.mockResolvedValue({
       tenant_id: 1,
       owner_module: 'executive_control_tower',
       runtime_boundary: 'UNIFIED_READ_ONLY_RUNTIME_SHELL',
       navigation_entry: '/console/executive-governance',
-      canonical_modules: [
-        'executive_control_tower',
-        'rector_assignment_workflow',
-        'committee_decision_registry',
-        'order_decree_registry',
-        'analytics',
-        'brain_core',
-      ],
+      canonical_modules: ['executive_control_tower', 'rector_assignment_workflow', 'committee_decision_registry', 'order_decree_registry', 'analytics', 'brain_core'],
       read_only_runtime: true,
       provider_integrations_enabled: false,
       external_calls_enabled: false,
-      executive_assignments: 21,
-      executive_decisions: 13,
+      executive_assignments: 20,
+      executive_decisions: 12,
       executive_protocols: 8,
       executive_meetings: 5,
-      overdue_items: 4,
+      overdue_items: 3,
       escalated_items: 2,
-      strategic_items: 7,
+      strategic_items: 6,
       executive_signals: 10,
       generated_at: '2026-06-10T00:00:00Z',
     });
@@ -58,34 +51,33 @@ describe('Executive Governance runtime shell', () => {
       tenant_id: 1,
       read_only: true,
       owner_modules: ['executive_control_tower', 'rector_assignment_workflow', 'brain_core'],
-      executive_assignments: 21,
-      executive_decisions: 13,
+      executive_assignments: 20,
+      executive_decisions: 12,
       executive_protocols: 8,
       executive_meetings: 5,
-      overdue_items: 4,
+      overdue_items: 3,
       escalated_items: 2,
-      strategic_items: 7,
+      strategic_items: 6,
       executive_signals: 10,
       generated_at: '2026-06-10T00:00:00Z',
     });
 
     mockApi.getSignals.mockResolvedValue([
       { signal_family: 'overdue_assignment', owner_module: 'brain_core', source_module: 'rector_assignment_workflow', read_only: true, observed_items: 3, notes: 'n1' },
-      { signal_family: 'decision_stagnation', owner_module: 'brain_core', source_module: 'committee_decision_registry', read_only: true, observed_items: 4, notes: 'n2' },
     ]);
 
     mockApi.getDashboard.mockResolvedValue({
       tenant_id: 1,
       dashboard_owner_module: 'executive_control_tower',
       dashboard_view: 'executive_control_tower',
-      widgets: ['Executive Overview', 'Signal Summary'],
-      executive_assignments: 21,
-      executive_decisions: 13,
+      widgets: ['Executive Overview'],
+      executive_assignments: 20,
+      executive_decisions: 12,
       executive_protocols: 8,
       executive_meetings: 5,
-      overdue_items: 4,
+      overdue_items: 3,
       escalated_items: 2,
-      strategic_items: 7,
+      strategic_items: 6,
       executive_signals: 10,
       signal_summaries: [],
       rbac_roles: ['rector', 'vice_rector', 'chief_of_staff', 'executive_manager', 'auditor', 'administrator'],
@@ -151,32 +143,31 @@ describe('Executive Governance runtime shell', () => {
     });
   });
 
-  it('renders runtime shell sections', async () => {
+  it('renders decision registry and summaries', async () => {
     renderWithClient(<ExecutiveGovernanceRuntimeShellPage />);
 
-    expect(await screen.findByTestId('executive-governance-runtime-shell')).toBeInTheDocument();
-    expect(screen.getByText('Executive Governance Runtime Shell')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Decision Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Assignment Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Protocol Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Signal Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Dashboard Summary' })).toBeInTheDocument();
+    expect(await screen.findByTestId('executive-decision-registry-view')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Executive Decisions' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Decision Sources' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Execution Status' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Escalation Summary' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Decision Signals' })).toBeInTheDocument();
   });
 
-  it('renders overview cards and signal families', async () => {
+  it('renders decision summary and execution statuses', async () => {
     renderWithClient(<ExecutiveGovernanceRuntimeShellPage />);
 
-    expect(await screen.findByText('Executive Assignments')).toBeInTheDocument();
-    expect(screen.getByText('21')).toBeInTheDocument();
-    expect(screen.getByText('overdue_assignment')).toBeInTheDocument();
-    expect(screen.getByText('decision_stagnation')).toBeInTheDocument();
+    expect(await screen.findByText('Total decisions: 7')).toBeInTheDocument();
+    expect(screen.getByText('committee_decision_registry: 4')).toBeInTheDocument();
+    expect(screen.getByText('order_decree_registry: 3')).toBeInTheDocument();
+    expect(screen.getByText('IN_PROGRESS: 1')).toBeInTheDocument();
+    expect(screen.getByText('OVERDUE: 1')).toBeInTheDocument();
   });
 
-  it('renders dashboard summary and rbac roles', async () => {
+  it('renders decision signal summary', async () => {
     renderWithClient(<ExecutiveGovernanceRuntimeShellPage />);
 
-    expect(await screen.findByTestId('executive-governance-dashboard-summary')).toBeInTheDocument();
-    expect(screen.getByText(/Dashboard owner: executive_control_tower/i)).toBeInTheDocument();
-    expect(screen.getByText(/RBAC roles: rector, vice_rector, chief_of_staff, executive_manager, auditor, administrator/i)).toBeInTheDocument();
+    expect(await screen.findByTestId('decision-signal-summary')).toBeInTheDocument();
+    expect(screen.getByText(/decision_stagnation, overdue_assignment, execution_delay, escalation_risk, protocol_non_execution/i)).toBeInTheDocument();
   });
 });
