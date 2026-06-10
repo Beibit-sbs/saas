@@ -240,3 +240,85 @@ export interface MinistryReportingRiskResponse {
   read_only: boolean;
   risks: MinistryReportingRisk[];
 }
+
+export interface AccreditationReportingSummary {
+  id: string;
+  accreditation_code: string;
+  accreditation_name: string;
+  accreditation_type: string;
+  agency_name: string;
+  deadline: string;
+  completion_percentage: number;
+  evidence_readiness: string;
+  compliance_status: string;
+  risk_level: string;
+  days_remaining: number;
+  owner_module: string;
+  generated_at: string;
+  read_only: boolean;
+}
+
+export interface AccreditationCycle extends AccreditationReportingSummary {
+  cycle_status: string;
+}
+
+export interface AccreditationEvidenceReadiness extends AccreditationReportingSummary {
+  readiness_score: number;
+}
+
+export interface AccreditationComplianceSummary extends AccreditationReportingSummary {
+  compliance_score: number;
+}
+
+export interface AccreditationDeadlineSummary extends AccreditationReportingSummary {
+  deadline_status: string;
+  overdue: boolean;
+}
+
+export interface AccreditationRiskSummary extends AccreditationReportingSummary {
+  signal_name: string;
+  signal_owner_module: string;
+}
+
+export interface AccreditationReportingResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  reports: AccreditationReportingSummary[];
+  signal_inventory: string[];
+}
+
+export interface AccreditationCycleResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  cycles: AccreditationCycle[];
+}
+
+export interface AccreditationEvidenceReadinessResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  readiness: AccreditationEvidenceReadiness[];
+}
+
+export interface AccreditationComplianceResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  compliance: AccreditationComplianceSummary[];
+}
+
+export interface AccreditationDeadlineResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  deadlines: AccreditationDeadlineSummary[];
+}
+
+export interface AccreditationRiskResponse {
+  tenant_id: number;
+  generated_at: string;
+  read_only: boolean;
+  risks: AccreditationRiskSummary[];
+}

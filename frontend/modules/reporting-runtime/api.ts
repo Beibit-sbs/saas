@@ -1,5 +1,11 @@
 import { apiGet } from '@/shared/api/client';
 import type {
+  AccreditationComplianceResponse,
+  AccreditationCycleResponse,
+  AccreditationDeadlineResponse,
+  AccreditationEvidenceReadinessResponse,
+  AccreditationReportingResponse,
+  AccreditationRiskResponse,
   MinistryReportingCompletenessResponse,
   MinistryReportingCycleResponse,
   MinistryReportingDeadlineResponse,
@@ -31,4 +37,10 @@ export const reportingRuntimeApi = {
   getMinistryReadiness: () => apiGet<MinistryReportingReadinessResponse>(`${BASE}/runtime/ministry/readiness`),
   getMinistryCompleteness: () => apiGet<MinistryReportingCompletenessResponse>(`${BASE}/runtime/ministry/completeness`),
   getMinistryRisks: () => apiGet<MinistryReportingRiskResponse>(`${BASE}/runtime/ministry/risks`),
+  getAccreditation: () => apiGet<AccreditationReportingResponse>(`${BASE}/runtime/accreditation`),
+  getAccreditationCycles: () => apiGet<AccreditationCycleResponse>(`${BASE}/runtime/accreditation/cycles`),
+  getAccreditationReadiness: () => apiGet<AccreditationEvidenceReadinessResponse>(`${BASE}/runtime/accreditation/readiness`),
+  getAccreditationCompliance: () => apiGet<AccreditationComplianceResponse>(`${BASE}/runtime/accreditation/compliance`),
+  getAccreditationDeadlines: () => apiGet<AccreditationDeadlineResponse>(`${BASE}/runtime/accreditation/deadlines`),
+  getAccreditationRisks: () => apiGet<AccreditationRiskResponse>(`${BASE}/runtime/accreditation/risks`),
 };

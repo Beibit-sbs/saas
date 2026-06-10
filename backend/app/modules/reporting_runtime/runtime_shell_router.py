@@ -11,6 +11,15 @@ from app.core.module_helpers.service_validation import DomainValidationError, Te
 from app.core.tenant import get_current_tenant
 from app.modules.rbac.security import get_actor, permission_dependency
 from app.modules.reporting_runtime import permissions
+from app.modules.reporting_runtime.runtime_accreditation_schemas import (
+    AccreditationComplianceResponse,
+    AccreditationCycleResponse,
+    AccreditationDeadlineResponse,
+    AccreditationEvidenceReadinessResponse,
+    AccreditationReportingResponse,
+    AccreditationRiskResponse,
+)
+from app.modules.reporting_runtime.runtime_accreditation_service import AccreditationReportingRuntimeService
 from app.modules.reporting_runtime.runtime_ministry_schemas import (
     MinistryReportingCompletenessResponse,
     MinistryReportingCycleResponse,
@@ -41,6 +50,7 @@ _Actor = Annotated[str, Depends(get_actor)]
 _service = ReportingRuntimeShellService()
 _registry_service = ReportingRegistryRuntimeService()
 _ministry_service = MinistryReportingRuntimeService()
+_accreditation_service = AccreditationReportingRuntimeService()
 
 
 def _handle(exc: Exception) -> None:
@@ -205,5 +215,77 @@ def get_ministry_reporting_completeness_runtime(
 ) -> MinistryReportingCompletenessResponse:
     try:
         return _ministry_service.get_completeness(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/accreditation", response_model=AccreditationReportingResponse)
+def get_accreditation_reporting_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> AccreditationReportingResponse:
+    try:
+        return _accreditation_service.get_accreditation(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/accreditation/cycles", response_model=AccreditationCycleResponse)
+def get_accreditation_reporting_cycles_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> AccreditationCycleResponse:
+    try:
+        return _accreditation_service.get_cycles(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/accreditation/readiness", response_model=AccreditationEvidenceReadinessResponse)
+def get_accreditation_reporting_readiness_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> AccreditationEvidenceReadinessResponse:
+    try:
+        return _accreditation_service.get_readiness(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/accreditation/compliance", response_model=AccreditationComplianceResponse)
+def get_accreditation_reporting_compliance_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> AccreditationComplianceResponse:
+    try:
+        return _accreditation_service.get_compliance(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/accreditation/deadlines", response_model=AccreditationDeadlineResponse)
+def get_accreditation_reporting_deadlines_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> AccreditationDeadlineResponse:
+    try:
+        return _accreditation_service.get_deadlines(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/runtime/accreditation/risks", response_model=AccreditationRiskResponse)
+def get_accreditation_reporting_risks_runtime(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> AccreditationRiskResponse:
+    try:
+        return _accreditation_service.get_risks(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)

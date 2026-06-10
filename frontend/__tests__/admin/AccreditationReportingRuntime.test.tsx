@@ -38,7 +38,7 @@ function renderWithClient(ui: React.ReactNode) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
-describe('Ministry Reporting Runtime', () => {
+describe('Accreditation Reporting Runtime', () => {
   beforeEach(() => {
     mockApi.getRuntimeShell.mockResolvedValue({
       tenant_id: 1,
@@ -151,70 +151,58 @@ describe('Ministry Reporting Runtime', () => {
       providers: [{ ...registryEntry, id: 'provider-1-1', provider_key: 'MINISTRY_PROVIDER_PROFILE', live_integrations_enabled: false, submission_execution_enabled: false }],
     });
 
-    const ministryReports = [
-      ['MIN-STAT-01', 'Statistical reporting', 'analytics'],
-      ['MIN-ACAD-01', 'Academic reporting', 'ministry_reporting_dashboard'],
-      ['MIN-SCI-01', 'Scientific reporting', 'research_science'],
-      ['MIN-FIN-01', 'Financial reporting', 'finance_procurement_asset'],
-      ['MIN-INFRA-01', 'Infrastructure reporting', 'campus_facilities_housing_transport'],
-      ['MIN-HR-01', 'Human resource reporting', 'hr_staff_governance'],
-      ['MIN-DIGI-01', 'Digitalization reporting', 'platform'],
-    ].map(([code, name, owner], index) => ({
-      id: `ministry-1-${index + 1}`,
-      report_code: code,
-      report_name: name,
+    const ministryEntry = {
+      id: 'ministry-1-1',
+      report_code: 'MIN-STAT-01',
+      report_name: 'Statistical reporting',
       reporting_period: '2026-Q2',
       deadline: '2026-06-30T00:00:00Z',
-      completion_percentage: 75 + index,
-      readiness_status: index < 2 ? 'READY' : 'PARTIAL',
-      submission_status: index < 3 ? 'IN_REVIEW' : 'DRAFT',
-      risk_level: index < 2 ? 'LOW' : 'MEDIUM',
-      days_remaining: 10 - index,
-      owner_module: owner,
+      completion_percentage: 82,
+      readiness_status: 'PARTIAL',
+      submission_status: 'IN_REVIEW',
+      risk_level: 'MEDIUM',
+      days_remaining: 10,
+      owner_module: 'analytics',
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-    }));
+    };
 
     mockApi.getMinistry.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      reports: ministryReports,
+      reports: [ministryEntry],
       signal_inventory: ['ministry_deadline_risk', 'report_overdue', 'missing_required_data', 'reporting_incomplete', 'reporting_readiness_low'],
     });
     mockApi.getMinistryCycles.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      cycles: ministryReports.map((item, index) => ({ ...item, cycle_status: index < 4 ? 'ACTIVE' : 'PLANNED' })),
+      cycles: [{ ...ministryEntry, cycle_status: 'ACTIVE' }],
     });
     mockApi.getMinistryDeadlines.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      deadlines: ministryReports.map((item, index) => ({ ...item, deadline_status: index < 5 ? 'UPCOMING' : 'OVERDUE', overdue: index >= 5 })),
+      deadlines: [{ ...ministryEntry, deadline_status: 'UPCOMING', overdue: false }],
     });
     mockApi.getMinistryReadiness.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      readiness: ministryReports.map((item) => ({ ...item, readiness_score: item.completion_percentage })),
+      readiness: [{ ...ministryEntry, readiness_score: 82 }],
     });
     mockApi.getMinistryCompleteness.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      completeness: ministryReports.map((item, index) => ({ ...item, required_data_points: 10 + index, completed_data_points: 8 + index })),
+      completeness: [{ ...ministryEntry, required_data_points: 10, completed_data_points: 8 }],
     });
     mockApi.getMinistryRisks.mockResolvedValue({
       tenant_id: 1,
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
-      risks: ministryReports.map((item, index) => ({
-        ...item,
-        signal_name: ['ministry_deadline_risk', 'report_overdue', 'missing_required_data', 'reporting_incomplete', 'reporting_readiness_low'][index % 5],
-        signal_owner_module: 'brain_core',
-      })),
+      risks: [{ ...ministryEntry, signal_name: 'reporting_readiness_low', signal_owner_module: 'brain_core' }],
     });
 
     const accreditationReports = [
@@ -284,31 +272,30 @@ describe('Ministry Reporting Runtime', () => {
     });
   });
 
-  it('renders ministry reporting sections', async () => {
+  it('renders accreditation reporting sections', async () => {
     renderWithClient(<ReportingRuntimeShellPage />);
 
-    expect(await screen.findByTestId('ministry-reporting-center-section')).toBeInTheDocument();
-    expect(screen.getByTestId('ministry-reporting-cycles-section')).toBeInTheDocument();
-    expect(screen.getByTestId('ministry-reporting-deadlines-section')).toBeInTheDocument();
-    expect(screen.getByTestId('ministry-reporting-readiness-section')).toBeInTheDocument();
-    expect(screen.getByTestId('ministry-reporting-completeness-section')).toBeInTheDocument();
-    expect(screen.getByTestId('ministry-reporting-risks-section')).toBeInTheDocument();
+    expect(await screen.findByTestId('accreditation-reporting-center-section')).toBeInTheDocument();
+    expect(screen.getByTestId('accreditation-cycles-section')).toBeInTheDocument();
+    expect(screen.getByTestId('accreditation-readiness-section')).toBeInTheDocument();
+    expect(screen.getByTestId('accreditation-compliance-section')).toBeInTheDocument();
+    expect(screen.getByTestId('accreditation-deadlines-section')).toBeInTheDocument();
+    expect(screen.getByTestId('accreditation-risks-section')).toBeInTheDocument();
   });
 
-  it('renders required ministry reporting coverage and read-only risk signals', async () => {
+  it('renders required accreditation coverage and risk owner surface', async () => {
     renderWithClient(<ReportingRuntimeShellPage />);
-    const ministryCenter = await screen.findByTestId('ministry-reporting-center-section');
-    const scoped = within(ministryCenter);
-    const riskSection = await screen.findByTestId('ministry-reporting-risks-section');
+    const accreditationCenter = await screen.findByTestId('accreditation-reporting-center-section');
+    const scoped = within(accreditationCenter);
+    const riskSection = await screen.findByTestId('accreditation-risks-section');
     const riskScoped = within(riskSection);
 
-    expect(scoped.getByText('Statistical reporting')).toBeInTheDocument();
-    expect(scoped.getByText('Academic reporting')).toBeInTheDocument();
-    expect(scoped.getByText('Scientific reporting')).toBeInTheDocument();
-    expect(scoped.getByText('Financial reporting')).toBeInTheDocument();
-    expect(scoped.getByText('Infrastructure reporting')).toBeInTheDocument();
-    expect(scoped.getByText('Human resource reporting')).toBeInTheDocument();
-    expect(scoped.getByText('Digitalization reporting')).toBeInTheDocument();
+    expect(scoped.getByText('Institutional Accreditation')).toBeInTheDocument();
+    expect(scoped.getByText('Specialized Accreditation')).toBeInTheDocument();
+    expect(scoped.getByText('Program Accreditation')).toBeInTheDocument();
+    expect(scoped.getByText('International Accreditation')).toBeInTheDocument();
+    expect(scoped.getByText('Internal Quality Reviews')).toBeInTheDocument();
+    expect(scoped.getByText('Accreditation Evidence Packages')).toBeInTheDocument();
     expect(riskScoped.getAllByText(/owner=brain_core/i).length).toBeGreaterThan(0);
   });
 });

@@ -18,6 +18,12 @@ const { mockApi } = vi.hoisted(() => ({
     getMinistryReadiness: vi.fn(),
     getMinistryCompleteness: vi.fn(),
     getMinistryRisks: vi.fn(),
+    getAccreditation: vi.fn(),
+    getAccreditationCycles: vi.fn(),
+    getAccreditationReadiness: vi.fn(),
+    getAccreditationCompliance: vi.fn(),
+    getAccreditationDeadlines: vi.fn(),
+    getAccreditationRisks: vi.fn(),
   },
 }));
 
@@ -215,6 +221,61 @@ describe('Reporting Registry Runtime', () => {
       generated_at: '2026-06-10T00:00:00Z',
       read_only: true,
       risks: [{ ...ministryEntry, signal_name: 'reporting_readiness_low', signal_owner_module: 'brain_core' }],
+    });
+
+    const accreditationEntry = {
+      id: 'accreditation-1-1',
+      accreditation_code: 'ACC-INST-01',
+      accreditation_name: 'Institutional Accreditation',
+      accreditation_type: 'INSTITUTIONAL',
+      agency_name: 'National Accreditation Council',
+      deadline: '2026-06-30T00:00:00Z',
+      completion_percentage: 86,
+      evidence_readiness: 'READY',
+      compliance_status: 'COMPLIANT',
+      risk_level: 'LOW',
+      days_remaining: 14,
+      owner_module: 'quality_accreditation',
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+    };
+
+    mockApi.getAccreditation.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      reports: [accreditationEntry],
+      signal_inventory: ['accreditation_deadline_risk', 'accreditation_gap', 'missing_evidence', 'accreditation_compliance_risk', 'accreditation_readiness_low'],
+    });
+    mockApi.getAccreditationCycles.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      cycles: [{ ...accreditationEntry, cycle_status: 'ACTIVE' }],
+    });
+    mockApi.getAccreditationReadiness.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      readiness: [{ ...accreditationEntry, readiness_score: 86 }],
+    });
+    mockApi.getAccreditationCompliance.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      compliance: [{ ...accreditationEntry, compliance_score: 88 }],
+    });
+    mockApi.getAccreditationDeadlines.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      deadlines: [{ ...accreditationEntry, deadline_status: 'UPCOMING', overdue: false }],
+    });
+    mockApi.getAccreditationRisks.mockResolvedValue({
+      tenant_id: 1,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+      risks: [{ ...accreditationEntry, signal_name: 'accreditation_deadline_risk', signal_owner_module: 'brain_core' }],
     });
   });
 

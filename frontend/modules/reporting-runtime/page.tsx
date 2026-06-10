@@ -35,6 +35,12 @@ export function ReportingRuntimeShellPage() {
   const ministryReadiness = useQuery({ queryKey: ['reporting-runtime:ministry:readiness'], queryFn: reportingRuntimeApi.getMinistryReadiness, staleTime: 30000 });
   const ministryCompleteness = useQuery({ queryKey: ['reporting-runtime:ministry:completeness'], queryFn: reportingRuntimeApi.getMinistryCompleteness, staleTime: 30000 });
   const ministryRisks = useQuery({ queryKey: ['reporting-runtime:ministry:risks'], queryFn: reportingRuntimeApi.getMinistryRisks, staleTime: 30000 });
+  const accreditation = useQuery({ queryKey: ['reporting-runtime:accreditation'], queryFn: reportingRuntimeApi.getAccreditation, staleTime: 30000 });
+  const accreditationCycles = useQuery({ queryKey: ['reporting-runtime:accreditation:cycles'], queryFn: reportingRuntimeApi.getAccreditationCycles, staleTime: 30000 });
+  const accreditationReadiness = useQuery({ queryKey: ['reporting-runtime:accreditation:readiness'], queryFn: reportingRuntimeApi.getAccreditationReadiness, staleTime: 30000 });
+  const accreditationCompliance = useQuery({ queryKey: ['reporting-runtime:accreditation:compliance'], queryFn: reportingRuntimeApi.getAccreditationCompliance, staleTime: 30000 });
+  const accreditationDeadlines = useQuery({ queryKey: ['reporting-runtime:accreditation:deadlines'], queryFn: reportingRuntimeApi.getAccreditationDeadlines, staleTime: 30000 });
+  const accreditationRisks = useQuery({ queryKey: ['reporting-runtime:accreditation:risks'], queryFn: reportingRuntimeApi.getAccreditationRisks, staleTime: 30000 });
 
   if (
     runtime.isPending ||
@@ -49,7 +55,13 @@ export function ReportingRuntimeShellPage() {
     ministryDeadlines.isPending ||
     ministryReadiness.isPending ||
     ministryCompleteness.isPending ||
-    ministryRisks.isPending
+    ministryRisks.isPending ||
+    accreditation.isPending ||
+    accreditationCycles.isPending ||
+    accreditationReadiness.isPending ||
+    accreditationCompliance.isPending ||
+    accreditationDeadlines.isPending ||
+    accreditationRisks.isPending
   ) {
     return <LoadingState title="Loading Reporting Runtime shell" />;
   }
@@ -67,7 +79,13 @@ export function ReportingRuntimeShellPage() {
     ministryDeadlines.error ||
     ministryReadiness.error ||
     ministryCompleteness.error ||
-    ministryRisks.error
+    ministryRisks.error ||
+    accreditation.error ||
+    accreditationCycles.error ||
+    accreditationReadiness.error ||
+    accreditationCompliance.error ||
+    accreditationDeadlines.error ||
+    accreditationRisks.error
   ) {
     return (
       <ErrorState
@@ -85,7 +103,13 @@ export function ReportingRuntimeShellPage() {
           ministryDeadlines.error ??
           ministryReadiness.error ??
           ministryCompleteness.error ??
-          ministryRisks.error
+          ministryRisks.error ??
+          accreditation.error ??
+          accreditationCycles.error ??
+          accreditationReadiness.error ??
+          accreditationCompliance.error ??
+          accreditationDeadlines.error ??
+          accreditationRisks.error
         }
       />
     );
@@ -104,7 +128,13 @@ export function ReportingRuntimeShellPage() {
     !ministryDeadlines.data ||
     !ministryReadiness.data ||
     !ministryCompleteness.data ||
-    !ministryRisks.data
+    !ministryRisks.data ||
+    !accreditation.data ||
+    !accreditationCycles.data ||
+    !accreditationReadiness.data ||
+    !accreditationCompliance.data ||
+    !accreditationDeadlines.data ||
+    !accreditationRisks.data
   ) {
     return <ErrorState message="Reporting Runtime shell is unavailable." />;
   }
@@ -279,6 +309,67 @@ export function ReportingRuntimeShellPage() {
           <div className="mt-3 space-y-1 text-sm">
             {ministryRisks.data.risks.map((item) => (
               <p key={item.id}>{item.report_name}: signal={item.signal_name}, owner={item.signal_owner_module}, risk={item.risk_level}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="accreditation-reporting-center-section">
+          <h2 className="text-lg font-semibold">Accreditation Reporting Center</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Read-only accreditation monitoring for institutional and quality assurance reporting domains. No agency submission execution and no provider synchronization.
+          </p>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {accreditation.data.reports.map((item) => (
+              <div key={item.id} className="rounded border p-3 text-sm">
+                <p className="font-medium">{item.accreditation_name}</p>
+                <p>{item.accreditation_code} | agency={item.agency_name}</p>
+                <p className="text-xs text-muted-foreground">type={item.accreditation_type} | evidence={item.evidence_readiness} | risk={item.risk_level}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="accreditation-cycles-section">
+          <h2 className="text-lg font-semibold">Accreditation Cycles</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {accreditationCycles.data.cycles.map((item) => (
+              <p key={item.id}>{item.accreditation_name}: cycle={item.cycle_status}, days_remaining={item.days_remaining}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="accreditation-readiness-section">
+          <h2 className="text-lg font-semibold">Evidence Readiness</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {accreditationReadiness.data.readiness.map((item) => (
+              <p key={item.id}>{item.accreditation_name}: readiness_score={item.readiness_score}, evidence={item.evidence_readiness}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="accreditation-compliance-section">
+          <h2 className="text-lg font-semibold">Compliance Status</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {accreditationCompliance.data.compliance.map((item) => (
+              <p key={item.id}>{item.accreditation_name}: compliance_score={item.compliance_score}, status={item.compliance_status}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="accreditation-deadlines-section">
+          <h2 className="text-lg font-semibold">Accreditation Deadlines</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {accreditationDeadlines.data.deadlines.map((item) => (
+              <p key={item.id}>{item.accreditation_name}: deadline_status={item.deadline_status}, days_remaining={item.days_remaining}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" data-testid="accreditation-risks-section">
+          <h2 className="text-lg font-semibold">Accreditation Risks</h2>
+          <div className="mt-3 space-y-1 text-sm">
+            {accreditationRisks.data.risks.map((item) => (
+              <p key={item.id}>{item.accreditation_name}: signal={item.signal_name}, owner={item.signal_owner_module}, risk={item.risk_level}</p>
             ))}
           </div>
         </section>
