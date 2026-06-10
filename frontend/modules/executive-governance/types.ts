@@ -99,3 +99,67 @@ export interface ExecutiveDecisionExecutionSummary {
   aggregator_only: boolean;
   generated_at: string;
 }
+
+export interface ExecutiveMeetingEntry {
+  meeting_id: string;
+  meeting_type: string;
+  meeting_title: string;
+  meeting_date: string;
+  meeting_status: string;
+  chairperson: string;
+  participants_count: number;
+  protocol_count: number;
+  decision_count: number;
+  execution_status: 'NOT_STARTED' | 'IN_PROGRESS' | 'AT_RISK' | 'ESCALATED' | 'OVERDUE' | 'COMPLETED' | 'CLOSED';
+}
+
+export interface ExecutiveMeetingSummary {
+  tenant_id: number;
+  entries: ExecutiveMeetingEntry[];
+  total_meetings: number;
+  meeting_status_counts: Record<string, number>;
+  total_protocols: number;
+  total_decisions: number;
+  read_only: boolean;
+  generated_at: string;
+}
+
+export interface ExecutiveProtocolEntry {
+  protocol_id: string;
+  protocol_number: string;
+  protocol_title: string;
+  protocol_date: string;
+  protocol_status: string;
+  decision_count: number;
+  assignment_count: number;
+  execution_progress: number;
+  overdue_items: number;
+  escalated_items: number;
+}
+
+export interface ExecutiveProtocolSummary {
+  tenant_id: number;
+  entries: ExecutiveProtocolEntry[];
+  total_protocols: number;
+  protocol_status_counts: Record<string, number>;
+  total_decisions: number;
+  total_assignments: number;
+  average_execution_progress: number;
+  overdue_items: number;
+  escalated_items: number;
+  read_only: boolean;
+  generated_at: string;
+}
+
+export interface ExecutiveProtocolExecutionSummary {
+  tenant_id: number;
+  total_protocols: number;
+  average_execution_progress: number;
+  overdue_items: number;
+  escalated_items: number;
+  completion_status: Record<string, number>;
+  linkage_inventory: Record<string, number>;
+  signal_families: string[];
+  read_only: boolean;
+  generated_at: string;
+}

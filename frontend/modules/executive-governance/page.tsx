@@ -24,16 +24,78 @@ export function ExecutiveGovernanceRuntimeShellPage() {
   const decisions = useQuery({ queryKey: ['executive-governance:decisions'], queryFn: executiveGovernanceApi.getDecisions, staleTime: 30000 });
   const decisionSummary = useQuery({ queryKey: ['executive-governance:decision-summary'], queryFn: executiveGovernanceApi.getDecisionSummary, staleTime: 30000 });
   const decisionExecution = useQuery({ queryKey: ['executive-governance:decision-execution'], queryFn: executiveGovernanceApi.getDecisionExecution, staleTime: 30000 });
+  const meetings = useQuery({ queryKey: ['executive-governance:meetings'], queryFn: executiveGovernanceApi.getMeetings, staleTime: 30000 });
+  const meetingSummary = useQuery({ queryKey: ['executive-governance:meetings-summary'], queryFn: executiveGovernanceApi.getMeetingSummary, staleTime: 30000 });
+  const protocols = useQuery({ queryKey: ['executive-governance:protocols'], queryFn: executiveGovernanceApi.getProtocols, staleTime: 30000 });
+  const protocolSummary = useQuery({ queryKey: ['executive-governance:protocols-summary'], queryFn: executiveGovernanceApi.getProtocolSummary, staleTime: 30000 });
+  const protocolExecution = useQuery({ queryKey: ['executive-governance:protocols-execution'], queryFn: executiveGovernanceApi.getProtocolExecution, staleTime: 30000 });
 
-  if (overview.isPending || summary.isPending || signals.isPending || dashboard.isPending || decisions.isPending || decisionSummary.isPending || decisionExecution.isPending) {
+  if (
+    overview.isPending ||
+    summary.isPending ||
+    signals.isPending ||
+    dashboard.isPending ||
+    decisions.isPending ||
+    decisionSummary.isPending ||
+    decisionExecution.isPending ||
+    meetings.isPending ||
+    meetingSummary.isPending ||
+    protocols.isPending ||
+    protocolSummary.isPending ||
+    protocolExecution.isPending
+  ) {
     return <LoadingState title="Loading Executive Governance runtime shell" />;
   }
 
-  if (overview.error || summary.error || signals.error || dashboard.error || decisions.error || decisionSummary.error || decisionExecution.error) {
-    return <ErrorState message="Failed to load Executive Governance runtime shell." error={overview.error ?? summary.error ?? signals.error ?? dashboard.error ?? decisions.error ?? decisionSummary.error ?? decisionExecution.error} />;
+  if (
+    overview.error ||
+    summary.error ||
+    signals.error ||
+    dashboard.error ||
+    decisions.error ||
+    decisionSummary.error ||
+    decisionExecution.error ||
+    meetings.error ||
+    meetingSummary.error ||
+    protocols.error ||
+    protocolSummary.error ||
+    protocolExecution.error
+  ) {
+    return (
+      <ErrorState
+        message="Failed to load Executive Governance runtime shell."
+        error={
+          overview.error ??
+          summary.error ??
+          signals.error ??
+          dashboard.error ??
+          decisions.error ??
+          decisionSummary.error ??
+          decisionExecution.error ??
+          meetings.error ??
+          meetingSummary.error ??
+          protocols.error ??
+          protocolSummary.error ??
+          protocolExecution.error
+        }
+      />
+    );
   }
 
-  if (!overview.data || !summary.data || !signals.data || !dashboard.data || !decisions.data || !decisionSummary.data || !decisionExecution.data) {
+  if (
+    !overview.data ||
+    !summary.data ||
+    !signals.data ||
+    !dashboard.data ||
+    !decisions.data ||
+    !decisionSummary.data ||
+    !decisionExecution.data ||
+    !meetings.data ||
+    !meetingSummary.data ||
+    !protocols.data ||
+    !protocolSummary.data ||
+    !protocolExecution.data
+  ) {
     return <ErrorState message="Executive Governance runtime shell is unavailable." />;
   }
 
@@ -124,6 +186,59 @@ export function ExecutiveGovernanceRuntimeShellPage() {
         <section className="rounded-lg border p-4" aria-label="Decision Signals" data-testid="decision-signal-summary">
           <h2 className="text-lg font-semibold">Decision Signals</h2>
           <p className="mt-2 text-sm">{decisionExecution.data.signal_families.join(', ')}</p>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Meeting Registry" data-testid="meeting-registry-runtime">
+          <h2 className="text-lg font-semibold">Meeting Registry</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {meetings.data.map((meeting) => (
+              <div key={meeting.meeting_id} className="rounded-lg border p-3">
+                <p className="font-medium">{meeting.meeting_title}</p>
+                <p className="text-sm text-muted-foreground">{meeting.meeting_id} | {meeting.meeting_type}</p>
+                <p className="text-sm">status={meeting.meeting_status} / execution={meeting.execution_status}</p>
+                <p className="text-sm">protocols={meeting.protocol_count}, decisions={meeting.decision_count}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Meeting Analytics" data-testid="meeting-analytics-runtime">
+          <h2 className="text-lg font-semibold">Meeting Analytics</h2>
+          <p className="mt-2 text-sm">Total meetings: {meetingSummary.data.total_meetings}</p>
+          <p className="text-sm">Protocols linked: {meetingSummary.data.total_protocols}</p>
+          <p className="text-sm">Decisions linked: {meetingSummary.data.total_decisions}</p>
+          {Object.entries(meetingSummary.data.meeting_status_counts).map(([status, count]) => (
+            <p key={status} className="text-sm">{status}: {count}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Protocol Registry" data-testid="protocol-registry-runtime">
+          <h2 className="text-lg font-semibold">Protocol Registry</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {protocols.data.map((protocol) => (
+              <div key={protocol.protocol_id} className="rounded-lg border p-3">
+                <p className="font-medium">{protocol.protocol_title}</p>
+                <p className="text-sm text-muted-foreground">{protocol.protocol_number} | {protocol.protocol_status}</p>
+                <p className="text-sm">decisions={protocol.decision_count}, assignments={protocol.assignment_count}</p>
+                <p className="text-sm">progress={protocol.execution_progress}%</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Protocol Execution" data-testid="protocol-execution-runtime">
+          <h2 className="text-lg font-semibold">Protocol Execution</h2>
+          <p className="mt-2 text-sm">Average execution progress: {protocolExecution.data.average_execution_progress}%</p>
+          <p className="text-sm">Overdue items: {protocolExecution.data.overdue_items}</p>
+          <p className="text-sm">Escalated items: {protocolExecution.data.escalated_items}</p>
+          {Object.entries(protocolExecution.data.linkage_inventory).map(([key, value]) => (
+            <p key={key} className="text-sm">{key}: {value}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Protocol Signals" data-testid="protocol-signals-runtime">
+          <h2 className="text-lg font-semibold">Protocol Signals</h2>
+          <p className="mt-2 text-sm">{protocolExecution.data.signal_families.join(', ')}</p>
         </section>
 
         <section className="rounded-lg border p-4" aria-label="Dashboard Summary" data-testid="executive-governance-dashboard-summary">

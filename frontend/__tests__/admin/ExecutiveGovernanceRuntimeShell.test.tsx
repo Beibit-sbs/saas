@@ -12,6 +12,11 @@ const { mockApi } = vi.hoisted(() => ({
     getDecisions: vi.fn(),
     getDecisionSummary: vi.fn(),
     getDecisionExecution: vi.fn(),
+    getMeetings: vi.fn(),
+    getMeetingSummary: vi.fn(),
+    getProtocols: vi.fn(),
+    getProtocolSummary: vi.fn(),
+    getProtocolExecution: vi.fn(),
   },
 }));
 
@@ -147,6 +152,79 @@ describe('Executive Governance runtime shell', () => {
       signal_families: ['decision_stagnation', 'overdue_assignment', 'execution_delay', 'escalation_risk', 'protocol_non_execution'],
       read_only: true,
       aggregator_only: true,
+      generated_at: '2026-06-10T00:00:00Z',
+    });
+
+    mockApi.getMeetings.mockResolvedValue([
+      {
+        meeting_id: 'MEET-01-001',
+        meeting_type: 'executive_board',
+        meeting_title: 'Executive governance meeting 1',
+        meeting_date: '2026-06-10T00:00:00Z',
+        meeting_status: 'SCHEDULED',
+        chairperson: 'rector',
+        participants_count: 10,
+        protocol_count: 2,
+        decision_count: 3,
+        execution_status: 'IN_PROGRESS',
+      },
+    ]);
+
+    mockApi.getMeetingSummary.mockResolvedValue({
+      tenant_id: 1,
+      entries: [],
+      total_meetings: 4,
+      meeting_status_counts: { SCHEDULED: 1, CONDUCTED: 1, APPROVED: 1, CLOSED: 1 },
+      total_protocols: 6,
+      total_decisions: 10,
+      read_only: true,
+      generated_at: '2026-06-10T00:00:00Z',
+    });
+
+    mockApi.getProtocols.mockResolvedValue([
+      {
+        protocol_id: 'PROT-01-001',
+        protocol_number: 'PG-01-100',
+        protocol_title: 'Executive protocol item 1',
+        protocol_date: '2026-06-10T00:00:00Z',
+        protocol_status: 'IN_EXECUTION',
+        decision_count: 3,
+        assignment_count: 4,
+        execution_progress: 60,
+        overdue_items: 1,
+        escalated_items: 0,
+      },
+    ]);
+
+    mockApi.getProtocolSummary.mockResolvedValue({
+      tenant_id: 1,
+      entries: [],
+      total_protocols: 5,
+      protocol_status_counts: { DRAFT: 1, APPROVED: 1, IN_EXECUTION: 1, COMPLETED: 1, CLOSED: 1 },
+      total_decisions: 15,
+      total_assignments: 20,
+      average_execution_progress: 62,
+      overdue_items: 2,
+      escalated_items: 1,
+      read_only: true,
+      generated_at: '2026-06-10T00:00:00Z',
+    });
+
+    mockApi.getProtocolExecution.mockResolvedValue({
+      tenant_id: 1,
+      total_protocols: 5,
+      average_execution_progress: 62,
+      overdue_items: 2,
+      escalated_items: 1,
+      completion_status: { COMPLETED: 1, CLOSED: 1, IN_EXECUTION: 1 },
+      linkage_inventory: {
+        meeting_registry: 5,
+        protocol_registry: 5,
+        decision_registry: 15,
+        rector_assignment_workflow: 20,
+      },
+      signal_families: ['protocol_non_execution', 'execution_delay', 'overdue_assignment', 'escalation_risk', 'decision_stagnation'],
+      read_only: true,
       generated_at: '2026-06-10T00:00:00Z',
     });
   });

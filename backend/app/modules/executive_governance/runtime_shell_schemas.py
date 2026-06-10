@@ -133,3 +133,67 @@ class ExecutiveDecisionExecutionSummary(BaseModel):
     read_only: bool = True
     aggregator_only: bool = True
     generated_at: datetime
+
+
+class ExecutiveMeetingEntry(BaseModel):
+    meeting_id: str
+    meeting_type: str
+    meeting_title: str
+    meeting_date: datetime
+    meeting_status: str
+    chairperson: str
+    participants_count: int = 0
+    protocol_count: int = 0
+    decision_count: int = 0
+    execution_status: DecisionExecutionStatus
+
+
+class ExecutiveMeetingSummary(BaseModel):
+    tenant_id: int
+    entries: list[ExecutiveMeetingEntry] = Field(default_factory=list)
+    total_meetings: int = 0
+    meeting_status_counts: dict[str, int] = Field(default_factory=dict)
+    total_protocols: int = 0
+    total_decisions: int = 0
+    read_only: bool = True
+    generated_at: datetime
+
+
+class ExecutiveProtocolEntry(BaseModel):
+    protocol_id: str
+    protocol_number: str
+    protocol_title: str
+    protocol_date: datetime
+    protocol_status: str
+    decision_count: int = 0
+    assignment_count: int = 0
+    execution_progress: int = 0
+    overdue_items: int = 0
+    escalated_items: int = 0
+
+
+class ExecutiveProtocolSummary(BaseModel):
+    tenant_id: int
+    entries: list[ExecutiveProtocolEntry] = Field(default_factory=list)
+    total_protocols: int = 0
+    protocol_status_counts: dict[str, int] = Field(default_factory=dict)
+    total_decisions: int = 0
+    total_assignments: int = 0
+    average_execution_progress: int = 0
+    overdue_items: int = 0
+    escalated_items: int = 0
+    read_only: bool = True
+    generated_at: datetime
+
+
+class ExecutiveProtocolExecutionSummary(BaseModel):
+    tenant_id: int
+    total_protocols: int = 0
+    average_execution_progress: int = 0
+    overdue_items: int = 0
+    escalated_items: int = 0
+    completion_status: dict[str, int] = Field(default_factory=dict)
+    linkage_inventory: dict[str, int] = Field(default_factory=dict)
+    signal_families: list[str] = Field(default_factory=list)
+    read_only: bool = True
+    generated_at: datetime

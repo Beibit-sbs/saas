@@ -15,6 +15,11 @@ from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutiveDecisionRegistryEntry,
     ExecutiveDecisionRegistrySummary,
     ExecutiveGovernanceDashboardSummary,
+    ExecutiveMeetingEntry,
+    ExecutiveMeetingSummary,
+    ExecutiveProtocolEntry,
+    ExecutiveProtocolExecutionSummary,
+    ExecutiveProtocolSummary,
     ExecutiveGovernanceRuntimeOverview,
     ExecutiveGovernanceRuntimeSummary,
     ExecutiveGovernanceSignalSummary,
@@ -121,5 +126,65 @@ def get_runtime_decisions_execution(
 ) -> ExecutiveDecisionExecutionSummary:
     try:
         return _service.get_decision_execution_summary(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/meetings", response_model=list[ExecutiveMeetingEntry])
+def get_runtime_meetings(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> list[ExecutiveMeetingEntry]:
+    try:
+        return _service.get_meetings(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/meetings/summary", response_model=ExecutiveMeetingSummary)
+def get_runtime_meetings_summary(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveMeetingSummary:
+    try:
+        return _service.get_meetings_summary(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/protocols", response_model=list[ExecutiveProtocolEntry])
+def get_runtime_protocols(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> list[ExecutiveProtocolEntry]:
+    try:
+        return _service.get_protocols(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/protocols/summary", response_model=ExecutiveProtocolSummary)
+def get_runtime_protocols_summary(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveProtocolSummary:
+    try:
+        return _service.get_protocols_summary(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/protocols/execution", response_model=ExecutiveProtocolExecutionSummary)
+def get_runtime_protocols_execution(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveProtocolExecutionSummary:
+    try:
+        return _service.get_protocols_execution(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)

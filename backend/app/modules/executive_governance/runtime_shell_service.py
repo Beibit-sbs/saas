@@ -10,6 +10,11 @@ from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutiveDecisionRegistryEntry,
     ExecutiveDecisionRegistrySummary,
     ExecutiveGovernanceDashboardSummary,
+    ExecutiveMeetingEntry,
+    ExecutiveMeetingSummary,
+    ExecutiveProtocolEntry,
+    ExecutiveProtocolExecutionSummary,
+    ExecutiveProtocolSummary,
     ExecutiveGovernanceRuntimeOverview,
     ExecutiveGovernanceRuntimeSummary,
     ExecutiveGovernanceSignalSummary,
@@ -112,6 +117,165 @@ class ExecutiveDecisionRegistryAggregatorService:
         )
 
 
+class ExecutiveMeetingRegistryRuntimeService:
+    """Read-only meeting registry runtime service."""
+
+    _MEETING_STATUSES = ["SCHEDULED", "CONDUCTED", "APPROVED", "CLOSED"]
+    _EXECUTION_STATUSES = ["NOT_STARTED", "IN_PROGRESS", "AT_RISK", "COMPLETED"]
+
+    def _now(self) -> datetime:
+        return datetime.now(UTC)
+
+    def _validate_tenant(self, tenant_id: int) -> int:
+        return validate_tenant_id_provided(tenant_id)
+
+    def _build_entries(self, tenant_id: int) -> list[ExecutiveMeetingEntry]:
+        tenant = self._validate_tenant(tenant_id)
+        tenant_factor = (tenant % 5) + 1
+        entries: list[ExecutiveMeetingEntry] = []
+        for idx, status in enumerate(self._MEETING_STATUSES):
+            entries.append(
+                ExecutiveMeetingEntry(
+                    meeting_id=f"MEET-{tenant:02d}-{idx + 1:03d}",
+                    meeting_type="executive_board" if idx % 2 == 0 else "protocol_committee",
+                    meeting_title=f"Executive governance meeting {idx + 1}",
+                    meeting_date=self._now(),
+                    meeting_status=status,
+                    chairperson="rector" if idx % 2 == 0 else "chief_of_staff",
+                    participants_count=6 + tenant_factor + idx,
+                    protocol_count=1 + (idx % 2),
+                    decision_count=2 + idx,
+                    execution_status=self._EXECUTION_STATUSES[idx],
+                )
+            )
+        return entries
+
+    def get_meetings(self, tenant_id: int) -> list[ExecutiveMeetingEntry]:
+        return self._build_entries(tenant_id)
+
+    def get_meetings_summary(self, tenant_id: int) -> ExecutiveMeetingSummary:
+        tenant = self._validate_tenant(tenant_id)
+        entries = self._build_entries(tenant)
+        status_counts = {status: 0 for status in self._MEETING_STATUSES}
+        total_protocols = 0
+        total_decisions = 0
+        for entry in entries:
+            status_counts[entry.meeting_status] += 1
+            total_protocols += entry.protocol_count
+            total_decisions += entry.decision_count
+        return ExecutiveMeetingSummary(
+            tenant_id=tenant,
+            entries=entries,
+            total_meetings=len(entries),
+            meeting_status_counts=status_counts,
+            total_protocols=total_protocols,
+            total_decisions=total_decisions,
+            generated_at=self._now(),
+        )
+
+
+class ExecutiveProtocolRegistryRuntimeService:
+    """Read-only protocol registry runtime service."""
+
+    _PROTOCOL_STATUSES = ["DRAFT", "APPROVED", "IN_EXECUTION", "COMPLETED", "CLOSED"]
+    _SIGNAL_FAMILIES = [
+        "protocol_non_execution",
+        "execution_delay",
+        "overdue_assignment",
+        "escalation_risk",
+        "decision_stagnation",
+    ]
+
+    def _now(self) -> datetime:
+        return datetime.now(UTC)
+
+    def _validate_tenant(self, tenant_id: int) -> int:
+        return validate_tenant_id_provided(tenant_id)
+
+    def _build_entries(self, tenant_id: int) -> list[ExecutiveProtocolEntry]:
+        tenant = self._validate_tenant(tenant_id)
+        tenant_factor = (tenant % 6) + 1
+        entries: list[ExecutiveProtocolEntry] = []
+        for idx, status in enumerate(self._PROTOCOL_STATUSES):
+            progress = min(100, (idx + tenant_factor) * 15)
+            overdue = 1 if status in {"IN_EXECUTION", "APPROVED"} and idx % 2 == 0 else 0
+            escalated = 1 if status == "IN_EXECUTION" and idx % 2 == 1 else 0
+            entries.append(
+                ExecutiveProtocolEntry(
+                    protocol_id=f"PROT-{tenant:02d}-{idx + 1:03d}",
+                    protocol_number=f"PG-{tenant:02d}-{100 + idx}",
+                    protocol_title=f"Executive protocol item {idx + 1}",
+                    protocol_date=self._now(),
+                    protocol_status=status,
+                    decision_count=2 + idx,
+                    assignment_count=3 + idx,
+                    execution_progress=progress,
+                    overdue_items=overdue,
+                    escalated_items=escalated,
+                )
+            )
+        return entries
+
+    def get_protocols(self, tenant_id: int) -> list[ExecutiveProtocolEntry]:
+        return self._build_entries(tenant_id)
+
+    def get_protocols_summary(self, tenant_id: int) -> ExecutiveProtocolSummary:
+        tenant = self._validate_tenant(tenant_id)
+        entries = self._build_entries(tenant)
+        status_counts = {status: 0 for status in self._PROTOCOL_STATUSES}
+        total_decisions = 0
+        total_assignments = 0
+        total_progress = 0
+        overdue_items = 0
+        escalated_items = 0
+        for entry in entries:
+            status_counts[entry.protocol_status] += 1
+            total_decisions += entry.decision_count
+            total_assignments += entry.assignment_count
+            total_progress += entry.execution_progress
+            overdue_items += entry.overdue_items
+            escalated_items += entry.escalated_items
+        avg_progress = total_progress // len(entries) if entries else 0
+        return ExecutiveProtocolSummary(
+            tenant_id=tenant,
+            entries=entries,
+            total_protocols=len(entries),
+            protocol_status_counts=status_counts,
+            total_decisions=total_decisions,
+            total_assignments=total_assignments,
+            average_execution_progress=avg_progress,
+            overdue_items=overdue_items,
+            escalated_items=escalated_items,
+            generated_at=self._now(),
+        )
+
+    def get_protocols_execution(self, tenant_id: int) -> ExecutiveProtocolExecutionSummary:
+        tenant = self._validate_tenant(tenant_id)
+        summary = self.get_protocols_summary(tenant)
+        completion_status = {
+            "COMPLETED": summary.protocol_status_counts.get("COMPLETED", 0),
+            "CLOSED": summary.protocol_status_counts.get("CLOSED", 0),
+            "IN_EXECUTION": summary.protocol_status_counts.get("IN_EXECUTION", 0),
+        }
+        linkage_inventory = {
+            "meeting_registry": summary.total_protocols,
+            "protocol_registry": summary.total_protocols,
+            "decision_registry": summary.total_decisions,
+            "rector_assignment_workflow": summary.total_assignments,
+        }
+        return ExecutiveProtocolExecutionSummary(
+            tenant_id=tenant,
+            total_protocols=summary.total_protocols,
+            average_execution_progress=summary.average_execution_progress,
+            overdue_items=summary.overdue_items,
+            escalated_items=summary.escalated_items,
+            completion_status=completion_status,
+            linkage_inventory=linkage_inventory,
+            signal_families=list(self._SIGNAL_FAMILIES),
+            generated_at=self._now(),
+        )
+
+
 class ExecutiveGovernanceRuntimeService:
     """Read-only Executive Governance runtime contract service."""
 
@@ -147,6 +311,8 @@ class ExecutiveGovernanceRuntimeService:
     ]
 
     _decision_aggregator = ExecutiveDecisionRegistryAggregatorService()
+    _meeting_registry = ExecutiveMeetingRegistryRuntimeService()
+    _protocol_registry = ExecutiveProtocolRegistryRuntimeService()
 
     def _now(self) -> datetime:
         return datetime.now(UTC)
@@ -237,3 +403,18 @@ class ExecutiveGovernanceRuntimeService:
 
     def get_decision_execution_summary(self, tenant_id: int) -> ExecutiveDecisionExecutionSummary:
         return self._decision_aggregator.get_decision_execution_summary(tenant_id)
+
+    def get_meetings(self, tenant_id: int) -> list[ExecutiveMeetingEntry]:
+        return self._meeting_registry.get_meetings(tenant_id)
+
+    def get_meetings_summary(self, tenant_id: int) -> ExecutiveMeetingSummary:
+        return self._meeting_registry.get_meetings_summary(tenant_id)
+
+    def get_protocols(self, tenant_id: int) -> list[ExecutiveProtocolEntry]:
+        return self._protocol_registry.get_protocols(tenant_id)
+
+    def get_protocols_summary(self, tenant_id: int) -> ExecutiveProtocolSummary:
+        return self._protocol_registry.get_protocols_summary(tenant_id)
+
+    def get_protocols_execution(self, tenant_id: int) -> ExecutiveProtocolExecutionSummary:
+        return self._protocol_registry.get_protocols_execution(tenant_id)

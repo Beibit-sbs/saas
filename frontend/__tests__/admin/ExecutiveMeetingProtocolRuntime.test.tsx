@@ -30,7 +30,7 @@ function renderWithClient(ui: React.ReactNode) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
-describe('Executive Decision Registry runtime', () => {
+describe('Executive Meeting and Protocol runtime', () => {
   beforeEach(() => {
     mockApi.getOverview.mockResolvedValue({
       tenant_id: 1,
@@ -91,22 +91,7 @@ describe('Executive Decision Registry runtime', () => {
       generated_at: '2026-06-10T00:00:00Z',
     });
 
-    mockApi.getDecisions.mockResolvedValue([
-      {
-        decision_id: 'EGD-01-001',
-        decision_type: 'committee_decision',
-        decision_source: 'committee_decision_registry',
-        decision_title: 'Executive decision item 1',
-        decision_status: 'ACTIVE',
-        decision_date: '2026-06-10T00:00:00Z',
-        execution_status: 'IN_PROGRESS',
-        execution_progress: 40,
-        assigned_units: ['rectorate'],
-        overdue_flag: false,
-        escalation_flag: false,
-      },
-    ]);
-
+    mockApi.getDecisions.mockResolvedValue([]);
     mockApi.getDecisionSummary.mockResolvedValue({
       tenant_id: 1,
       entries: [],
@@ -126,7 +111,6 @@ describe('Executive Decision Registry runtime', () => {
       owner_modules: ['committee_decision_registry', 'order_decree_registry', 'rector_assignment_workflow'],
       generated_at: '2026-06-10T00:00:00Z',
     });
-
     mockApi.getDecisionExecution.mockResolvedValue({
       tenant_id: 1,
       total_decisions: 7,
@@ -161,7 +145,6 @@ describe('Executive Decision Registry runtime', () => {
         execution_status: 'IN_PROGRESS',
       },
     ]);
-
     mockApi.getMeetingSummary.mockResolvedValue({
       tenant_id: 1,
       entries: [],
@@ -187,7 +170,6 @@ describe('Executive Decision Registry runtime', () => {
         escalated_items: 0,
       },
     ]);
-
     mockApi.getProtocolSummary.mockResolvedValue({
       tenant_id: 1,
       entries: [],
@@ -201,7 +183,6 @@ describe('Executive Decision Registry runtime', () => {
       read_only: true,
       generated_at: '2026-06-10T00:00:00Z',
     });
-
     mockApi.getProtocolExecution.mockResolvedValue({
       tenant_id: 1,
       total_protocols: 5,
@@ -221,31 +202,21 @@ describe('Executive Decision Registry runtime', () => {
     });
   });
 
-  it('renders decision registry and summaries', async () => {
+  it('renders meeting and protocol runtime sections', async () => {
     renderWithClient(<ExecutiveGovernanceRuntimeShellPage />);
 
-    expect(await screen.findByTestId('executive-decision-registry-view')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Executive Decisions' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Decision Sources' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Execution Status' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Escalation Summary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Decision Signals' })).toBeInTheDocument();
+    expect(await screen.findByTestId('meeting-registry-runtime')).toBeInTheDocument();
+    expect(screen.getByTestId('meeting-analytics-runtime')).toBeInTheDocument();
+    expect(screen.getByTestId('protocol-registry-runtime')).toBeInTheDocument();
+    expect(screen.getByTestId('protocol-execution-runtime')).toBeInTheDocument();
+    expect(screen.getByTestId('protocol-signals-runtime')).toBeInTheDocument();
   });
 
-  it('renders decision summary and execution statuses', async () => {
+  it('renders protocol linkage inventory and signal families', async () => {
     renderWithClient(<ExecutiveGovernanceRuntimeShellPage />);
 
-    expect(await screen.findByText('Total decisions: 7')).toBeInTheDocument();
-    expect(screen.getByText('committee_decision_registry: 4')).toBeInTheDocument();
-    expect(screen.getByText('order_decree_registry: 3')).toBeInTheDocument();
-    expect(screen.getByText('IN_PROGRESS: 1')).toBeInTheDocument();
-    expect(screen.getByText('OVERDUE: 1')).toBeInTheDocument();
-  });
-
-  it('renders decision signal summary', async () => {
-    renderWithClient(<ExecutiveGovernanceRuntimeShellPage />);
-
-    expect(await screen.findByTestId('decision-signal-summary')).toBeInTheDocument();
-    expect(screen.getByText(/decision_stagnation, overdue_assignment, execution_delay, escalation_risk, protocol_non_execution/i)).toBeInTheDocument();
+    expect(await screen.findByText('meeting_registry: 5')).toBeInTheDocument();
+    expect(screen.getByText('decision_registry: 15')).toBeInTheDocument();
+    expect(screen.getByText(/protocol_non_execution, execution_delay, overdue_assignment, escalation_risk, decision_stagnation/i)).toBeInTheDocument();
   });
 });
