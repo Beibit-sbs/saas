@@ -13,19 +13,24 @@ from app.modules.executive_control_tower import permissions
 from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutiveAssignmentEntry,
     ExecutiveAssignmentSummary,
+    ExecutiveControlTowerSummary,
     ExecutiveDecisionExecutionSummary,
     ExecutiveDecisionRegistryEntry,
     ExecutiveDecisionRegistrySummary,
     ExecutiveExecutionMetrics,
     ExecutiveGovernanceDashboardSummary,
+    ExecutiveKpiOverview,
     ExecutiveMeetingEntry,
     ExecutiveMeetingSummary,
+    ExecutivePerformanceMetrics,
     ExecutiveProtocolEntry,
     ExecutiveProtocolExecutionSummary,
     ExecutiveProtocolSummary,
+    ExecutiveRiskOverview,
     ExecutiveGovernanceRuntimeOverview,
     ExecutiveGovernanceRuntimeSummary,
     ExecutiveGovernanceSignalSummary,
+    RectorDashboardRuntimeSummary,
 )
 from app.modules.executive_governance.runtime_shell_service import ExecutiveGovernanceRuntimeService
 from app.modules.rbac.security import get_actor, permission_dependency
@@ -177,6 +182,66 @@ def get_runtime_assignments_risks(
 ) -> ExecutiveExecutionMetrics:
     try:
         return _service.get_assignments_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/control-tower", response_model=ExecutiveControlTowerSummary)
+def get_runtime_control_tower(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveControlTowerSummary:
+    try:
+        return _service.get_control_tower(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/control-tower/summary", response_model=RectorDashboardRuntimeSummary)
+def get_runtime_control_tower_summary(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> RectorDashboardRuntimeSummary:
+    try:
+        return _service.get_control_tower_summary(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/control-tower/risks", response_model=ExecutiveRiskOverview)
+def get_runtime_control_tower_risks(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveRiskOverview:
+    try:
+        return _service.get_control_tower_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/control-tower/kpis", response_model=ExecutiveKpiOverview)
+def get_runtime_control_tower_kpis(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveKpiOverview:
+    try:
+        return _service.get_control_tower_kpis(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/control-tower/escalations", response_model=ExecutivePerformanceMetrics)
+def get_runtime_control_tower_escalations(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutivePerformanceMetrics:
+    try:
+        return _service.get_control_tower_escalations(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)
 

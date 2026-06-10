@@ -8,9 +8,11 @@ from app.core.module_helpers.service_validation import validate_tenant_id_provid
 from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutiveAssignmentEntry,
     ExecutiveAssignmentSummary,
+    ExecutiveControlTowerSummary,
     ExecutiveDecisionExecutionSummary,
     ExecutiveDecisionRegistryEntry,
     ExecutiveDecisionRegistrySummary,
+    ExecutiveKpiOverview,
     ExecutiveExecutionMetrics,
     ExecutiveGovernanceDashboardSummary,
     ExecutiveMeetingEntry,
@@ -21,6 +23,9 @@ from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutiveGovernanceRuntimeOverview,
     ExecutiveGovernanceRuntimeSummary,
     ExecutiveGovernanceSignalSummary,
+    ExecutivePerformanceMetrics,
+    ExecutiveRiskOverview,
+    RectorDashboardRuntimeSummary,
 )
 
 
@@ -418,6 +423,158 @@ class ExecutiveAssignmentExecutionRuntimeService:
         return metrics
 
 
+class ExecutiveControlTowerRuntimeService:
+    """Read-only executive control tower aggregation service."""
+
+    _CONTROL_SIGNALS = [
+        "executive_workload",
+        "strategic_goal_slippage",
+        "execution_delay",
+        "escalation_risk",
+        "ministry_deadline_risk",
+        "overdue_assignment",
+        "kpi_drift",
+    ]
+
+    _UNITS = ["rectorate", "strategy-office", "chief-of-staff-office", "academic-affairs", "operations"]
+
+    def __init__(
+        self,
+        decisions: ExecutiveDecisionRegistryAggregatorService,
+        assignments: ExecutiveAssignmentExecutionRuntimeService,
+        meetings: ExecutiveMeetingRegistryRuntimeService,
+        protocols: ExecutiveProtocolRegistryRuntimeService,
+    ) -> None:
+        self._decisions = decisions
+        self._assignments = assignments
+        self._meetings = meetings
+        self._protocols = protocols
+
+    def _now(self) -> datetime:
+        return datetime.now(UTC)
+
+    def _validate_tenant(self, tenant_id: int) -> int:
+        return validate_tenant_id_provided(tenant_id)
+
+    def _base_metrics(self, tenant_id: int) -> tuple[int, int, ExecutiveAssignmentSummary, ExecutiveExecutionMetrics]:
+        tenant = self._validate_tenant(tenant_id)
+        decision_summary = self._decisions.get_decisions_summary(tenant)
+        protocol_summary = self._protocols.get_protocols_summary(tenant)
+        assignment_summary = self._assignments.get_assignments_summary(tenant)
+        assignment_exec = self._assignments.get_assignments_execution(tenant)
+        return decision_summary.total_decisions, protocol_summary.total_protocols, assignment_summary, assignment_exec
+
+    def get_control_tower(self, tenant_id: int) -> ExecutiveControlTowerSummary:
+        tenant = self._validate_tenant(tenant_id)
+        total_decisions, total_protocols, assignment_summary, assignment_exec = self._base_metrics(tenant)
+        risk_score = min(100, 30 + (assignment_summary.overdue_assignments * 8) + (assignment_summary.escalated_assignments * 10))
+        kpi_score = max(0, min(100, assignment_exec.execution_performance + 12 - (assignment_summary.overdue_assignments * 6)))
+        executive_workload = max(1, assignment_summary.active_assignments * 10)
+        return ExecutiveControlTowerSummary(
+            tenant_id=tenant,
+            total_decisions=total_decisions,
+            total_protocols=total_protocols,
+            total_assignments=assignment_summary.total_assignments,
+            active_assignments=assignment_summary.active_assignments,
+            completed_assignments=assignment_summary.completed_assignments,
+            overdue_assignments=assignment_summary.overdue_assignments,
+            escalated_assignments=assignment_summary.escalated_assignments,
+            execution_rate=assignment_exec.execution_performance,
+            risk_score=risk_score,
+            kpi_score=kpi_score,
+            executive_workload=executive_workload,
+            strategic_initiatives={"on_track": 4, "at_risk": 2, "delayed": 1},
+            generated_at=self._now(),
+        )
+
+    def get_control_tower_summary(self, tenant_id: int) -> RectorDashboardRuntimeSummary:
+        tenant = self._validate_tenant(tenant_id)
+        overview = self.get_control_tower(tenant)
+        perf = self.get_control_tower_escalations(tenant)
+        risks = self.get_control_tower_risks(tenant)
+        kpis = self.get_control_tower_kpis(tenant)
+        return RectorDashboardRuntimeSummary(
+            tenant_id=tenant,
+            rector_overview=overview,
+            university_execution_status=perf,
+            strategic_initiatives=overview.strategic_initiatives,
+            executive_risks=risks,
+            kpi_performance=kpis,
+            escalation_summary={
+                "overdue_assignments": overview.overdue_assignments,
+                "escalated_assignments": overview.escalated_assignments,
+                "escalation_rate": perf.escalation_rate,
+            },
+            generated_at=self._now(),
+        )
+
+    def get_control_tower_risks(self, tenant_id: int) -> ExecutiveRiskOverview:
+        tenant = self._validate_tenant(tenant_id)
+        overview = self.get_control_tower(tenant)
+        assignment_risks = self._assignments.get_assignments_risks(tenant)
+        risk_distribution = {
+            "low": max(0, overview.total_assignments - len(assignment_risks.high_risk_assignments) - 2),
+            "medium": 2,
+            "high": assignment_risks.escalation_inventory.get("high", 0),
+            "critical": assignment_risks.escalation_inventory.get("critical", 0),
+        }
+        return ExecutiveRiskOverview(
+            tenant_id=tenant,
+            risk_score=overview.risk_score,
+            risk_distribution=risk_distribution,
+            high_risk_assignments=assignment_risks.high_risk_assignments,
+            high_risk_units={"chief-of-staff-office": 2, "strategy-office": 1},
+            high_risk_initiatives={"strategic_reform_track": 1, "deadline_recovery": 1},
+            escalation_hotspots={"chief-of-staff-office": 2, "operations": 1},
+            overdue_hotspots={"strategy-office": 1, "operations": 1},
+            signal_families=list(self._CONTROL_SIGNALS),
+            generated_at=self._now(),
+        )
+
+    def get_control_tower_kpis(self, tenant_id: int) -> ExecutiveKpiOverview:
+        tenant = self._validate_tenant(tenant_id)
+        overview = self.get_control_tower(tenant)
+        _, _, assignment_summary, assignment_exec = self._base_metrics(tenant)
+        completion_rate = (assignment_summary.completed_assignments * 100) // max(1, assignment_summary.total_assignments)
+        escalation_rate = (assignment_summary.escalated_assignments * 100) // max(1, assignment_summary.total_assignments)
+        return ExecutiveKpiOverview(
+            tenant_id=tenant,
+            kpi_score=overview.kpi_score,
+            kpi_distribution={"green": 5, "amber": 2, "red": 1},
+            execution_rate=assignment_exec.execution_performance,
+            completion_rate=completion_rate,
+            escalation_rate=escalation_rate,
+            unit_performance={unit: max(50, 78 - (idx * 5)) for idx, unit in enumerate(self._UNITS)},
+            strategic_initiative_status=overview.strategic_initiatives,
+            signal_families=list(self._CONTROL_SIGNALS),
+            generated_at=self._now(),
+        )
+
+    def get_control_tower_escalations(self, tenant_id: int) -> ExecutivePerformanceMetrics:
+        tenant = self._validate_tenant(tenant_id)
+        overview = self.get_control_tower(tenant)
+        completion_rate = (overview.completed_assignments * 100) // max(1, overview.total_assignments)
+        escalation_rate = (overview.escalated_assignments * 100) // max(1, overview.total_assignments)
+        workload_distribution = {unit: max(1, (overview.active_assignments + idx) // 2) for idx, unit in enumerate(self._UNITS)}
+        return ExecutivePerformanceMetrics(
+            tenant_id=tenant,
+            total_decisions=overview.total_decisions,
+            total_protocols=overview.total_protocols,
+            total_assignments=overview.total_assignments,
+            active_assignments=overview.active_assignments,
+            completed_assignments=overview.completed_assignments,
+            overdue_assignments=overview.overdue_assignments,
+            escalated_assignments=overview.escalated_assignments,
+            execution_rate=overview.execution_rate,
+            completion_rate=completion_rate,
+            escalation_rate=escalation_rate,
+            workload_distribution=workload_distribution,
+            unit_performance={unit: max(48, 80 - (idx * 6)) for idx, unit in enumerate(self._UNITS)},
+            strategic_initiative_status=overview.strategic_initiatives,
+            generated_at=self._now(),
+        )
+
+
 class ExecutiveGovernanceRuntimeService:
     """Read-only Executive Governance runtime contract service."""
 
@@ -458,6 +615,12 @@ class ExecutiveGovernanceRuntimeService:
     _assignment_execution = ExecutiveAssignmentExecutionRuntimeService()
     _meeting_registry = ExecutiveMeetingRegistryRuntimeService()
     _protocol_registry = ExecutiveProtocolRegistryRuntimeService()
+    _control_tower = ExecutiveControlTowerRuntimeService(
+        decisions=_decision_aggregator,
+        assignments=_assignment_execution,
+        meetings=_meeting_registry,
+        protocols=_protocol_registry,
+    )
 
     def _now(self) -> datetime:
         return datetime.now(UTC)
@@ -575,3 +738,18 @@ class ExecutiveGovernanceRuntimeService:
 
     def get_protocols_execution(self, tenant_id: int) -> ExecutiveProtocolExecutionSummary:
         return self._protocol_registry.get_protocols_execution(tenant_id)
+
+    def get_control_tower(self, tenant_id: int) -> ExecutiveControlTowerSummary:
+        return self._control_tower.get_control_tower(tenant_id)
+
+    def get_control_tower_summary(self, tenant_id: int) -> RectorDashboardRuntimeSummary:
+        return self._control_tower.get_control_tower_summary(tenant_id)
+
+    def get_control_tower_risks(self, tenant_id: int) -> ExecutiveRiskOverview:
+        return self._control_tower.get_control_tower_risks(tenant_id)
+
+    def get_control_tower_kpis(self, tenant_id: int) -> ExecutiveKpiOverview:
+        return self._control_tower.get_control_tower_kpis(tenant_id)
+
+    def get_control_tower_escalations(self, tenant_id: int) -> ExecutivePerformanceMetrics:
+        return self._control_tower.get_control_tower_escalations(tenant_id)

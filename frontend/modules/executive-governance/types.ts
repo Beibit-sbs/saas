@@ -150,6 +150,91 @@ export interface ExecutiveExecutionMetrics {
   generated_at: string;
 }
 
+export interface ExecutiveControlTowerSummary {
+  tenant_id: number;
+  dashboard_owner_module: string;
+  dashboard_view: string;
+  total_decisions: number;
+  total_protocols: number;
+  total_assignments: number;
+  active_assignments: number;
+  completed_assignments: number;
+  overdue_assignments: number;
+  escalated_assignments: number;
+  execution_rate: number;
+  risk_score: number;
+  kpi_score: number;
+  executive_workload: number;
+  strategic_initiatives: Record<string, number>;
+  read_only: boolean;
+  aggregator_only: boolean;
+  auditability_preserved: boolean;
+  generated_at: string;
+}
+
+export interface ExecutivePerformanceMetrics {
+  tenant_id: number;
+  total_decisions: number;
+  total_protocols: number;
+  total_assignments: number;
+  active_assignments: number;
+  completed_assignments: number;
+  overdue_assignments: number;
+  escalated_assignments: number;
+  execution_rate: number;
+  completion_rate: number;
+  escalation_rate: number;
+  workload_distribution: Record<string, number>;
+  unit_performance: Record<string, number>;
+  strategic_initiative_status: Record<string, number>;
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
+export interface ExecutiveRiskOverview {
+  tenant_id: number;
+  risk_score: number;
+  risk_distribution: Record<string, number>;
+  high_risk_assignments: ExecutiveAssignmentEntry[];
+  high_risk_units: Record<string, number>;
+  high_risk_initiatives: Record<string, number>;
+  escalation_hotspots: Record<string, number>;
+  overdue_hotspots: Record<string, number>;
+  signal_families: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
+export interface ExecutiveKpiOverview {
+  tenant_id: number;
+  kpi_score: number;
+  kpi_distribution: Record<string, number>;
+  execution_rate: number;
+  completion_rate: number;
+  escalation_rate: number;
+  unit_performance: Record<string, number>;
+  strategic_initiative_status: Record<string, number>;
+  signal_families: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
+export interface RectorDashboardRuntimeSummary {
+  tenant_id: number;
+  rector_overview: ExecutiveControlTowerSummary;
+  university_execution_status: ExecutivePerformanceMetrics;
+  strategic_initiatives: Record<string, number>;
+  executive_risks: ExecutiveRiskOverview;
+  kpi_performance: ExecutiveKpiOverview;
+  escalation_summary: Record<string, number>;
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
 export interface ExecutiveMeetingEntry {
   meeting_id: string;
   meeting_type: string;

@@ -187,6 +187,91 @@ class ExecutiveExecutionMetrics(BaseModel):
     generated_at: datetime
 
 
+class ExecutiveControlTowerSummary(BaseModel):
+    tenant_id: int
+    dashboard_owner_module: str = "executive_control_tower"
+    dashboard_view: str = "rector_dashboard"
+    total_decisions: int = 0
+    total_protocols: int = 0
+    total_assignments: int = 0
+    active_assignments: int = 0
+    completed_assignments: int = 0
+    overdue_assignments: int = 0
+    escalated_assignments: int = 0
+    execution_rate: int = 0
+    risk_score: int = 0
+    kpi_score: int = 0
+    executive_workload: int = 0
+    strategic_initiatives: dict[str, int] = Field(default_factory=dict)
+    read_only: bool = True
+    aggregator_only: bool = True
+    auditability_preserved: bool = True
+    generated_at: datetime
+
+
+class ExecutivePerformanceMetrics(BaseModel):
+    tenant_id: int
+    total_decisions: int = 0
+    total_protocols: int = 0
+    total_assignments: int = 0
+    active_assignments: int = 0
+    completed_assignments: int = 0
+    overdue_assignments: int = 0
+    escalated_assignments: int = 0
+    execution_rate: int = 0
+    completion_rate: int = 0
+    escalation_rate: int = 0
+    workload_distribution: dict[str, int] = Field(default_factory=dict)
+    unit_performance: dict[str, int] = Field(default_factory=dict)
+    strategic_initiative_status: dict[str, int] = Field(default_factory=dict)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class ExecutiveRiskOverview(BaseModel):
+    tenant_id: int
+    risk_score: int = 0
+    risk_distribution: dict[str, int] = Field(default_factory=dict)
+    high_risk_assignments: list[ExecutiveAssignmentEntry] = Field(default_factory=list)
+    high_risk_units: dict[str, int] = Field(default_factory=dict)
+    high_risk_initiatives: dict[str, int] = Field(default_factory=dict)
+    escalation_hotspots: dict[str, int] = Field(default_factory=dict)
+    overdue_hotspots: dict[str, int] = Field(default_factory=dict)
+    signal_families: list[str] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class ExecutiveKpiOverview(BaseModel):
+    tenant_id: int
+    kpi_score: int = 0
+    kpi_distribution: dict[str, int] = Field(default_factory=dict)
+    execution_rate: int = 0
+    completion_rate: int = 0
+    escalation_rate: int = 0
+    unit_performance: dict[str, int] = Field(default_factory=dict)
+    strategic_initiative_status: dict[str, int] = Field(default_factory=dict)
+    signal_families: list[str] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class RectorDashboardRuntimeSummary(BaseModel):
+    tenant_id: int
+    rector_overview: ExecutiveControlTowerSummary
+    university_execution_status: ExecutivePerformanceMetrics
+    strategic_initiatives: dict[str, int] = Field(default_factory=dict)
+    executive_risks: ExecutiveRiskOverview
+    kpi_performance: ExecutiveKpiOverview
+    escalation_summary: dict[str, int] = Field(default_factory=dict)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
 class ExecutiveMeetingEntry(BaseModel):
     meeting_id: str
     meeting_type: str

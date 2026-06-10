@@ -28,6 +28,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
   const assignmentSummary = useQuery({ queryKey: ['executive-governance:assignments-summary'], queryFn: executiveGovernanceApi.getAssignmentSummary, staleTime: 30000 });
   const assignmentExecution = useQuery({ queryKey: ['executive-governance:assignments-execution'], queryFn: executiveGovernanceApi.getAssignmentExecution, staleTime: 30000 });
   const assignmentRisks = useQuery({ queryKey: ['executive-governance:assignments-risks'], queryFn: executiveGovernanceApi.getAssignmentRisks, staleTime: 30000 });
+  const controlTower = useQuery({ queryKey: ['executive-governance:control-tower'], queryFn: executiveGovernanceApi.getControlTower, staleTime: 30000 });
+  const controlTowerSummary = useQuery({ queryKey: ['executive-governance:control-tower-summary'], queryFn: executiveGovernanceApi.getControlTowerSummary, staleTime: 30000 });
+  const controlTowerRisks = useQuery({ queryKey: ['executive-governance:control-tower-risks'], queryFn: executiveGovernanceApi.getControlTowerRisks, staleTime: 30000 });
+  const controlTowerKpis = useQuery({ queryKey: ['executive-governance:control-tower-kpis'], queryFn: executiveGovernanceApi.getControlTowerKpis, staleTime: 30000 });
+  const controlTowerEscalations = useQuery({ queryKey: ['executive-governance:control-tower-escalations'], queryFn: executiveGovernanceApi.getControlTowerEscalations, staleTime: 30000 });
   const meetings = useQuery({ queryKey: ['executive-governance:meetings'], queryFn: executiveGovernanceApi.getMeetings, staleTime: 30000 });
   const meetingSummary = useQuery({ queryKey: ['executive-governance:meetings-summary'], queryFn: executiveGovernanceApi.getMeetingSummary, staleTime: 30000 });
   const protocols = useQuery({ queryKey: ['executive-governance:protocols'], queryFn: executiveGovernanceApi.getProtocols, staleTime: 30000 });
@@ -46,6 +51,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     assignmentSummary.isPending ||
     assignmentExecution.isPending ||
     assignmentRisks.isPending ||
+    controlTower.isPending ||
+    controlTowerSummary.isPending ||
+    controlTowerRisks.isPending ||
+    controlTowerKpis.isPending ||
+    controlTowerEscalations.isPending ||
     meetings.isPending ||
     meetingSummary.isPending ||
     protocols.isPending ||
@@ -67,6 +77,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     assignmentSummary.error ||
     assignmentExecution.error ||
     assignmentRisks.error ||
+    controlTower.error ||
+    controlTowerSummary.error ||
+    controlTowerRisks.error ||
+    controlTowerKpis.error ||
+    controlTowerEscalations.error ||
     meetings.error ||
     meetingSummary.error ||
     protocols.error ||
@@ -88,6 +103,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
           assignmentSummary.error ??
           assignmentExecution.error ??
           assignmentRisks.error ??
+          controlTower.error ??
+          controlTowerSummary.error ??
+          controlTowerRisks.error ??
+          controlTowerKpis.error ??
+          controlTowerEscalations.error ??
           meetings.error ??
           meetingSummary.error ??
           protocols.error ??
@@ -110,6 +130,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     !assignmentSummary.data ||
     !assignmentExecution.data ||
     !assignmentRisks.data ||
+    !controlTower.data ||
+    !controlTowerSummary.data ||
+    !controlTowerRisks.data ||
+    !controlTowerKpis.data ||
+    !controlTowerEscalations.data ||
     !meetings.data ||
     !meetingSummary.data ||
     !protocols.data ||
@@ -241,6 +266,63 @@ export function ExecutiveGovernanceRuntimeShellPage() {
         <section className="rounded-lg border p-4" aria-label="Executive Signals" data-testid="executive-signals-runtime">
           <h2 className="text-lg font-semibold">Executive Signals</h2>
           <p className="mt-2 text-sm">{assignmentExecution.data.signal_families.join(', ')}</p>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Executive Control Tower" data-testid="executive-control-tower-runtime">
+          <h2 className="text-lg font-semibold">Executive Control Tower</h2>
+          <p className="mt-2 text-sm">Total decisions: {controlTower.data.total_decisions}</p>
+          <p className="text-sm">Total protocols: {controlTower.data.total_protocols}</p>
+          <p className="text-sm">Total assignments: {controlTower.data.total_assignments}</p>
+          <p className="text-sm">Execution rate: {controlTower.data.execution_rate}%</p>
+          <p className="text-sm">Risk score: {controlTower.data.risk_score}</p>
+          <p className="text-sm">KPI score: {controlTower.data.kpi_score}</p>
+          <p className="text-sm">Executive workload: {controlTower.data.executive_workload}</p>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Rector Dashboard" data-testid="rector-dashboard-runtime">
+          <h2 className="text-lg font-semibold">Rector Dashboard</h2>
+          <p className="mt-2 text-sm">Rector overview owner: {controlTowerSummary.data.rector_overview.dashboard_owner_module}</p>
+          <p className="text-sm">University execution rate: {controlTowerSummary.data.university_execution_status.execution_rate}%</p>
+          <p className="text-sm">Completion rate: {controlTowerSummary.data.university_execution_status.completion_rate}%</p>
+          <p className="text-sm">Escalation rate: {controlTowerSummary.data.university_execution_status.escalation_rate}%</p>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Executive KPI Center" data-testid="executive-kpi-center-runtime">
+          <h2 className="text-lg font-semibold">Executive KPI Center</h2>
+          <p className="mt-2 text-sm">KPI score: {controlTowerKpis.data.kpi_score}</p>
+          <p className="text-sm">Execution rate: {controlTowerKpis.data.execution_rate}%</p>
+          <p className="text-sm">Completion rate: {controlTowerKpis.data.completion_rate}%</p>
+          <p className="text-sm">Escalation rate: {controlTowerKpis.data.escalation_rate}%</p>
+          {Object.entries(controlTowerKpis.data.kpi_distribution).map(([key, value]) => (
+            <p key={key} className="text-sm">{key}: {value}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Executive Risk Center" data-testid="executive-risk-center-runtime">
+          <h2 className="text-lg font-semibold">Executive Risk Center</h2>
+          <p className="mt-2 text-sm">Risk score: {controlTowerRisks.data.risk_score}</p>
+          <p className="text-sm">High-risk assignments: {controlTowerRisks.data.high_risk_assignments.length}</p>
+          {Object.entries(controlTowerRisks.data.high_risk_units).map(([key, value]) => (
+            <p key={key} className="text-sm">unit {key}: {value}</p>
+          ))}
+          {Object.entries(controlTowerRisks.data.escalation_hotspots).map(([key, value]) => (
+            <p key={key} className="text-sm">escalation hotspot {key}: {value}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Strategic Initiatives" data-testid="strategic-initiatives-runtime">
+          <h2 className="text-lg font-semibold">Strategic Initiatives</h2>
+          {Object.entries(controlTowerSummary.data.strategic_initiatives).map(([key, value]) => (
+            <p key={key} className="text-sm">{key}: {value}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Escalation Center" data-testid="control-tower-escalation-runtime">
+          <h2 className="text-lg font-semibold">Escalation Center</h2>
+          <p className="mt-2 text-sm">Escalation rate: {controlTowerEscalations.data.escalation_rate}%</p>
+          {Object.entries(controlTowerEscalations.data.workload_distribution).map(([key, value]) => (
+            <p key={key} className="text-sm">workload {key}: {value}</p>
+          ))}
         </section>
 
         <section className="rounded-lg border p-4" aria-label="Protocol Summary">
