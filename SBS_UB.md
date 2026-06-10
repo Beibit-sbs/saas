@@ -1,7 +1,28 @@
 - Research Brain:
     - status: CLOSED_BASELINED
     - closure_report: A-047.13-RESEARCH_BRAIN_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
-    - next_action_id: A-049.4-SPEC
+    - next_action_id: A-049.5-E1
+
+- A-049.4-SPEC execution block:
+    - mode: ministry_regulatory_reporting_brain_runtime_implementation_planning
+    - purpose: produce_runtime_implementation_plan_after_contract_normalization_without_any_runtime_or_schema_change
+    - source_state_before: A-049.3-B2 PASS
+    - source_state_validation: PASS
+    - source_readiness_confirmed: READY_FOR_RUNTIME_WITH_BRIDGES
+    - source_next_action_id_confirmed: A-049.4-SPEC
+    - runtime_decomposition: PASS
+    - registry_plan: PASS
+    - provider_plan: PASS
+    - signal_plan: PASS
+    - dashboard_plan: PASS
+    - canonical_reuse_plan: PASS
+    - implementation_order: PASS
+    - risk_review: PASS
+    - runtime_readiness: READY_FOR_RUNTIME_IMPLEMENTATION
+    - report_file: A-049.4-SPEC-MINISTRY_REGULATORY_REPORTING_RUNTIME_IMPLEMENTATION_PLAN_REPORT.md
+    - final_verdict: A-049.4-SPEC PASS - MINISTRY_REGULATORY_REPORTING_RUNTIME_PLAN_READY
+    - recommended_next_action: A-049.5-E1
+    - next_action_id: A-049.5-E1
 
 - A-049.3-B2 execution block:
     - mode: ministry_regulatory_reporting_brain_contract_normalization
