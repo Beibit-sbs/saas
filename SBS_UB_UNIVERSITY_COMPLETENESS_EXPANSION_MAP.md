@@ -24,7 +24,29 @@
 	- audit PASS
 	- provider boundary PASS
 - Next action handoff:
-	- next_action_id `A-049.3-B2`
+	- next_action_id `A-049.4-SPEC`
+
+## 0. A-049.3-B2 Ministry and Regulatory Reporting Brain Contract Normalization Continuity
+
+- A-049.3-B2 completed as normalization-only resolution action for A-049.3-B1 contract consistency failures.
+- Source validation passed:
+	- A-049.3-B1 completed
+	- readiness confirmed as `NEEDS_REWORK`
+	- inherited next_action_id `A-049.3-B2` confirmed
+- Normalization outcomes:
+	- ownership_normalization: PASS
+	- provider_normalization: PASS
+	- registry_normalization: PASS
+	- dashboard_normalization: PASS
+	- signal_normalization: PASS
+	- gap_resolution: PASS
+- Primary normalization decision:
+	- `provider_readiness` normalized to BRIDGE-only role; canonical provider-contract ownership remains with `regulatory_reporting_integration` and reporting orchestration ownership remains with Reporting Brain.
+- Readiness review:
+	- READY_FOR_RUNTIME_WITH_BRIDGES
+- report_file: A-049.3-B2-MINISTRY_REGULATORY_REPORTING_BRAIN_CONTRACT_NORMALIZATION_REPORT.md
+- final_verdict: A-049.3-B2 PASS - CONTRACT_INCONSISTENCIES_NORMALIZED
+- next_action_id: A-049.4-SPEC.
 
 ## 0. A-049.3-B1 Ministry and Regulatory Reporting Brain Contract Consistency Review Continuity
 

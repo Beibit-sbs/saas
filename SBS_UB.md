@@ -1,7 +1,27 @@
 - Research Brain:
     - status: CLOSED_BASELINED
     - closure_report: A-047.13-RESEARCH_BRAIN_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
-    - next_action_id: A-049.3-B2
+    - next_action_id: A-049.4-SPEC
+
+- A-049.3-B2 execution block:
+    - mode: ministry_regulatory_reporting_brain_contract_normalization
+    - purpose: resolve_all_evidence_backed_contract_level_inconsistencies_from_a0493b1
+    - source_state_before: A-049.3-B1 FAIL
+    - source_state_validation: PASS
+    - source_readiness_confirmed: NEEDS_REWORK
+    - source_next_action_id_confirmed: A-049.3-B2
+    - ownership_normalization: PASS
+    - provider_normalization: PASS
+    - registry_normalization: PASS
+    - dashboard_normalization: PASS
+    - signal_normalization: PASS
+    - gap_resolution: PASS
+    - readiness: READY_FOR_RUNTIME_WITH_BRIDGES
+    - key_normalization_decision: provider_readiness_classified_as_bridge_only_not_canonical_owner
+    - report_file: A-049.3-B2-MINISTRY_REGULATORY_REPORTING_BRAIN_CONTRACT_NORMALIZATION_REPORT.md
+    - final_verdict: A-049.3-B2 PASS - CONTRACT_INCONSISTENCIES_NORMALIZED
+    - recommended_next_action: A-049.4-SPEC
+    - next_action_id: A-049.4-SPEC
 
 - A-049.3-B1 execution block:
     - mode: ministry_regulatory_reporting_brain_contract_consistency_review
