@@ -24,7 +24,37 @@
 	- audit PASS
 	- provider boundary PASS
 - Next action handoff:
-	- next_action_id `A-049.2-SPEC`
+	- next_action_id `A-049.3-B1`
+
+## 0. A-049.2-SPEC Ministry and Regulatory Reporting Brain Runtime Contract Continuity
+
+- A-049.2-SPEC completed as canonical specification-only contract for Ministry and Regulatory Reporting Brain runtime.
+- Source validation passed:
+	- A-049.1 audit confirmed PASS
+	- readiness confirmed as `READY_FOR_SPEC`
+	- inherited next_action_id `A-049.2-SPEC` confirmed
+- Canonical contract definition completed for:
+	- domain model and subdomains (Ministry, Accreditation, Regulatory, Government Statistical, Rector, Ranking)
+	- reporting registry entities and required fields
+	- report-family contract set (MINISTRY, ACCREDITATION, REGULATORY, RECTOR, STATISTICAL, QS, THE, NOBD)
+	- ownership normalization across reporting brain, analytics, brain_core, accreditation, executive_governance
+	- read-only runtime route contract (`/runtime` plane)
+	- provider-ready contract with statuses `NOT_CONNECTED`, `READY`, `PENDING`
+	- reporting signal contract ownership in `brain_core`
+	- dashboard contract ownership for reporting, ministry, accreditation, ranking, compliance, rector centers
+- Gap consolidation preserved from audit with canonical remediation direction:
+	- Ministry Reporting: PARTIAL
+	- Accreditation Reporting: EXISTS
+	- QS Reporting: MISSING
+	- THE Reporting: MISSING
+	- NOBD Reporting: MISSING
+	- Government Statistical Reporting: PARTIAL
+	- Rector Reporting: PARTIAL
+- Readiness review:
+	- READY_FOR_RECONCILIATION
+- report_file: A-049.2-SPEC-MINISTRY_REGULATORY_REPORTING_BRAIN_RUNTIME_CONTRACT_REPORT.md
+- final_verdict: A-049.2 PASS - MINISTRY_REGULATORY_REPORTING_RUNTIME_CONTRACT_SPECIFIED
+- next_action_id: A-049.3-B1.
 
 ## 0. A-049.1-AUDIT Ministry and Regulatory Reporting Brain Existing Capability Continuity
 

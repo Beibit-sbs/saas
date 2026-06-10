@@ -1,7 +1,29 @@
 - Research Brain:
     - status: CLOSED_BASELINED
     - closure_report: A-047.13-RESEARCH_BRAIN_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
-    - next_action_id: A-049.2-SPEC
+    - next_action_id: A-049.3-B1
+
+- A-049.2-SPEC execution block:
+    - mode: ministry_regulatory_reporting_brain_runtime_contract_specification
+    - purpose: define_canonical_runtime_contract_for_ministry_and_regulatory_reporting_brain_without_implementation
+    - source_state_before: A-049.1 PASS
+    - source_state_validation: PASS
+    - source_readiness_confirmed: READY_FOR_SPEC
+    - source_next_action_id_confirmed: A-049.2-SPEC
+    - domain_model: PASS
+    - reporting_registry: PASS
+    - report_types: PASS
+    - ownership_model: PASS
+    - route_contract: PASS
+    - provider_contract: PASS
+    - signal_contract: PASS
+    - dashboard_contract: PASS
+    - gap_consolidation: PASS
+    - readiness: READY_FOR_RECONCILIATION
+    - report_file: A-049.2-SPEC-MINISTRY_REGULATORY_REPORTING_BRAIN_RUNTIME_CONTRACT_REPORT.md
+    - final_verdict: A-049.2 PASS - MINISTRY_REGULATORY_REPORTING_RUNTIME_CONTRACT_SPECIFIED
+    - recommended_next_action: A-049.3-B1
+    - next_action_id: A-049.3-B1
 
 - A-049.1-AUDIT execution block:
     - mode: ministry_regulatory_reporting_brain_existing_capability_analysis
