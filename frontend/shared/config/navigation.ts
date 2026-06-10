@@ -257,6 +257,12 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.RESEARCH_SCIENCE_OVERVIEW_READ,
       },
       {
+        label: "Executive Governance Runtime",
+        href: "/console/executive-governance",
+        icon: Network,
+        permission: PERMISSIONS.EXECUTIVE_CONTROL_TOWER_SUMMARY_READ,
+      },
+      {
         label: "Research Ethics",
         href: "/console/research-ethics",
         icon: ShieldCheck,
