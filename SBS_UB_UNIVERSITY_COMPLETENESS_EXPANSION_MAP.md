@@ -1,5 +1,50 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. A-047.12.B1 Research Brain Product Quality Baseline Continuity
+
+- A-047.12.B1 executed validation-only certification-readiness review over the completed Research Brain vertical.
+- Source validation passed:
+	- A-047.11.B1 completed
+	- Research Brain runtime exists
+	- Research Brain validation exists
+	- inherited next_action_id `A-047.12-B1`
+- Inventory review passed:
+	- Runtime Shell
+	- Researcher Registry Runtime
+	- Scientometrics Runtime
+	- Research Risk Runtime
+	- Research Dashboard Runtime
+- Ownership review passed:
+	- `research_science` shell/dashboard ownership
+	- `analytics` KPI/scientometric ownership
+	- `brain_core` signal/risk ownership
+	- bridge ownership documented for research/research_grants/publication_registry/research_ethics
+- Provider review passed:
+	- ORCID/Scopus/WebOfScience/GoogleScholar/DOI remain provider-ready only
+	- no live integrations or synchronization logic
+- Signal review passed:
+	- scientometric signals: citation_decline/publication_stagnation/impact_drop/low_visibility/researcher_ranking_drop
+	- risk signals: grant_risk/ethics_delay/publication_gap/researcher_inactivity
+	- owner remained `brain_core`, read-only preserved
+- Dashboard review passed:
+	- KPI summary, researcher leaderboard, scientometrics summary, publication summary, risk summary, activity summary
+	- no duplicate dashboards
+- Security review passed:
+	- tenant PASS
+	- RBAC PASS
+	- audit PASS
+	- provider boundary PASS
+	- read-only behavior preserved
+- Quality gates passed:
+	- backend tests: PASS (28 passed)
+	- frontend tests: PASS (10 passed)
+	- TypeScript: PASS
+- Certification readiness decision:
+	- READY_FOR_CERTIFICATION
+- report_file: A-047.12-B1-RESEARCH_BRAIN_PRODUCT_QUALITY_BASELINE_REPORT.md
+- final_verdict: A-047.12.B1 PASS - RESEARCH_BRAIN_BASELINE_READY_FOR_CERTIFICATION
+- next_action_id: A-047.13.
+
 ## 0. A-047.11.B1 Research Brain End-to-End Validation Continuity
 
 - A-047.11.B1 executed validation-only end-to-end closure over A-047.6-E1 through A-047.10-E1.
