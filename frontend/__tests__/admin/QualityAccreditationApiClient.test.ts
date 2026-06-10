@@ -20,9 +20,10 @@ describe('qualityAccreditationApi', () => {
     mockApiPatch.mockResolvedValue({});
   });
 
-  it('uses the admin quality-accreditation namespace for health, overview, dashboard, matrix, and limitations', async () => {
+  it('uses runtime shell and admin quality-accreditation namespaces for baseline endpoints', async () => {
     const { qualityAccreditationApi } = await import('@/modules/quality-accreditation/api');
 
+    await qualityAccreditationApi.getQualityAccreditationRuntimeShell();
     await qualityAccreditationApi.getQualityAccreditationHealth();
     await qualityAccreditationApi.getQualityAccreditationOverview();
     await qualityAccreditationApi.getQualityAccreditationDashboard();
@@ -30,6 +31,7 @@ describe('qualityAccreditationApi', () => {
     await qualityAccreditationApi.getQualityAccreditationLimitations();
 
     expect(mockApiGet.mock.calls.map((call) => call[0])).toEqual([
+      '/api/v1/quality-accreditation/runtime-shell',
       '/api/admin/quality-accreditation/health',
       '/api/admin/quality-accreditation/overview',
       '/api/admin/quality-accreditation/dashboard',

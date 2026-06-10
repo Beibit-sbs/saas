@@ -176,6 +176,42 @@ export interface QualityAccreditationHealthResponse {
   table_count: number;
 }
 
+export interface QualityAccreditationRuntimeShellSection {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+}
+
+export interface QualityAccreditationRuntimeShellSafety {
+  read_only: boolean;
+  aggregator_only: boolean;
+  human_review_required: boolean;
+  provider_integration_enabled: boolean;
+  official_accreditation_approval_enabled: boolean;
+  official_ministry_submission_enabled: boolean;
+  official_ranking_claim_enabled: boolean;
+  hidden_score_present: boolean;
+  limitations: string[];
+}
+
+export interface QualityAccreditationRuntimeShellResponse {
+  tenant_id: number;
+  owner_module: string;
+  runtime_shell: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  overview: QualityAccreditationRuntimeShellSection;
+  readiness: QualityAccreditationRuntimeShellSection;
+  evidence: QualityAccreditationRuntimeShellSection;
+  risk: QualityAccreditationRuntimeShellSection;
+  dashboard: QualityAccreditationRuntimeShellSection;
+  safety: QualityAccreditationRuntimeShellSafety;
+}
+
 export interface QualityAccreditationDashboardResponse extends QualityAccreditationBoundaryFlags {
   tenant_id: number;
   generated_at: string | null;

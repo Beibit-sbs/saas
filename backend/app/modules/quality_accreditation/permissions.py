@@ -64,6 +64,7 @@ BRIDGES_UPDATE = "quality_accreditation.bridges.update"
 BRAIN_SIGNALS_READ = "quality_accreditation.brain_signals.read"
 AUDIT_READ = "quality_accreditation.audit.read"
 STATUS_HISTORY_READ = "quality_accreditation.status_history.read"
+SUMMARY_READ = "quality_accreditation.summary.read"
 
 ADMIN_READ = "quality_accreditation.admin.read"
 ADMIN_CONFIGURE = "quality_accreditation.admin.configure"

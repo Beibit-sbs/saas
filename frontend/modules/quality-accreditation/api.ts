@@ -41,6 +41,7 @@ import type {
   QualityAccreditationListResponse,
   QualityAccreditationMatrixSummaryResponse,
   QualityAccreditationOverviewResponse,
+  QualityAccreditationRuntimeShellResponse,
   QualityAuditEvent,
   QualityAuditFinding,
   QualityAuditFindingCreatePayload,
@@ -84,6 +85,7 @@ import type {
 } from './types';
 
 export const qualityAccreditationApi = {
+  getQualityAccreditationRuntimeShell: () => apiGet<QualityAccreditationRuntimeShellResponse>(QUALITY_ACCREDITATION_API_PATHS.runtimeShell),
   getQualityAccreditationHealth: () => apiGet<QualityAccreditationHealthResponse>(QUALITY_ACCREDITATION_API_PATHS.health),
   getQualityAccreditationOverview: () => apiGet<QualityAccreditationOverviewResponse>(QUALITY_ACCREDITATION_API_PATHS.overview),
   getQualityAccreditationDashboard: () => apiGet<QualityAccreditationDashboardResponse>(QUALITY_ACCREDITATION_API_PATHS.dashboard),

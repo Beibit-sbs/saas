@@ -57,6 +57,7 @@ import type {
   QualityAccreditationMatrixSummaryResponse,
   QualityAccreditationMetadataEntity,
   QualityAccreditationOverviewResponse,
+  QualityAccreditationRuntimeShellResponse,
   QualityAuditEvent,
   QualityAuditFinding,
   QualityBrainSignal,
@@ -164,6 +165,14 @@ function useTrustedQualityAccreditationHealth() {
       return payload;
     },
     staleTime: 60000,
+  });
+}
+
+function useQualityAccreditationRuntimeShell() {
+  return useQuery({
+    queryKey: ['quality-accreditation:runtime-shell'],
+    queryFn: qualityAccreditationApi.getQualityAccreditationRuntimeShell,
+    staleTime: 30000,
   });
 }
 
@@ -472,6 +481,66 @@ function BaselineCards({ overview, health }: { overview: QualityAccreditationOve
       <QualityAccreditationMetricCard label="Backend permissions" value={QUALITY_ACCREDITATION_BACKEND_PERMISSION_COUNT} helper="Aligned to shared permission registry." />
       <QualityAccreditationMetricCard label="Runtime mode" value={health.runtime_mode} helper={`Backend B1 commit ${SOURCE_BACKEND_B1_COMMIT}`} />
     </section>
+  );
+}
+
+function RuntimeShellCard({
+  title,
+  section,
+  testId,
+}: {
+  title: string;
+  section: QualityAccreditationRuntimeShellResponse['overview'];
+  testId: string;
+}) {
+  return (
+    <section className="rounded-lg border p-4" data-testid={testId}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <QualityAccreditationMetricCard label="Owner" value={section.owner_module} />
+        <QualityAccreditationMetricCard label="Records" value={section.records} />
+        <QualityAccreditationMetricCard label="Read-only" value={String(section.read_only)} />
+        <QualityAccreditationMetricCard label="Aggregator-only" value={String(section.aggregator_only)} />
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">Sources: {section.source_modules.join(', ') || 'none'}</p>
+    </section>
+  );
+}
+
+export function QualityAccreditationRuntimeShellPage() {
+  const runtimeShell = useQualityAccreditationRuntimeShell();
+
+  if (runtimeShell.isPending) return <LoadingState title="Loading Quality / Accreditation runtime shell" />;
+  if (runtimeShell.error) return PageError('Failed to load Quality / Accreditation runtime shell.', runtimeShell.error);
+  if (!runtimeShell.data) return <ErrorState message="Quality / Accreditation runtime shell is unavailable." />;
+
+  return (
+    <RequirePermission permission={QUALITY_ACCREDITATION_PERMISSIONS.overviewRead}>
+      <ModuleShell
+        title={QUALITY_ACCREDITATION_PAGE_TITLES.runtimeShell}
+        description="Unified read-only runtime shell that aggregates quality accreditation overview, readiness, evidence, risk, and dashboard surfaces."
+        currentPath={QUALITY_ACCREDITATION_ROUTES.runtimeShell}
+        boundaryPage="runtimeShell"
+      >
+        <section className="grid gap-6" data-testid="quality-accreditation-runtime-shell">
+          <RuntimeShellCard title="Overview" section={runtimeShell.data.overview} testId="quality-accreditation-overview" />
+          <RuntimeShellCard title="Readiness" section={runtimeShell.data.readiness} testId="quality-accreditation-readiness" />
+          <RuntimeShellCard title="Evidence" section={runtimeShell.data.evidence} testId="quality-accreditation-evidence" />
+          <RuntimeShellCard title="Risk" section={runtimeShell.data.risk} testId="quality-accreditation-risk" />
+          <RuntimeShellCard title="Dashboard" section={runtimeShell.data.dashboard} testId="quality-accreditation-dashboard" />
+          <section className="rounded-lg border p-4" data-testid="quality-accreditation-runtime-safety">
+            <h2 className="text-lg font-semibold">Runtime safety</h2>
+            <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <QualityAccreditationMetricCard label="Human review required" value={String(runtimeShell.data.safety.human_review_required)} />
+              <QualityAccreditationMetricCard label="Provider integration" value={String(runtimeShell.data.safety.provider_integration_enabled)} />
+              <QualityAccreditationMetricCard label="Official approval" value={String(runtimeShell.data.safety.official_accreditation_approval_enabled)} />
+              <QualityAccreditationMetricCard label="Official ministry submission" value={String(runtimeShell.data.safety.official_ministry_submission_enabled)} />
+            </div>
+            <QualityAccreditationLimitationsPanel limitations={runtimeShell.data.safety.limitations} />
+          </section>
+        </section>
+      </ModuleShell>
+    </RequirePermission>
   );
 }
 

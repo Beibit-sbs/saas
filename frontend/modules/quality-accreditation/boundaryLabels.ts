@@ -19,6 +19,8 @@ export const QUALITY_ACCREDITATION_BOUNDARY_LABELS = {
   fakeEvidenceFalse: 'fake_evidence=false',
   incompleteDataSupported: 'incomplete_data supported',
   readOnlyFirstBridge: 'Read-only-first bridge',
+  runtimeShellPage:
+    'Runtime shell is read-only and aggregator-only. It provides visibility across overview, readiness, evidence, risk, and dashboard without mutation.',
   dashboardPage:
     'fake_metrics=false. Data source: computed_from_quality_accreditation_metadata. Readiness is metadata-only and requires human review.',
   standardsPage:
@@ -80,6 +82,11 @@ export const QUALITY_ACCREDITATION_BOUNDARY_COPY = [
 ] as const;
 
 export const QUALITY_ACCREDITATION_PAGE_BOUNDARY_LABELS = {
+  runtimeShell: [
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.readOnlyFirstBridge,
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.humanReviewRequired,
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.runtimeShellPage,
+  ],
   overview: [...QUALITY_ACCREDITATION_BOUNDARY_COPY],
   dashboard: [
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.readinessNotApproval,

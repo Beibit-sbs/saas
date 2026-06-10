@@ -139,6 +139,7 @@ from app.modules.research_science.runtime_shell_router import router as research
 from app.modules.executive_governance.runtime_shell_router import router as executive_governance_runtime_shell_router
 from app.modules.reporting_runtime.runtime_shell_router import router as reporting_runtime_shell_router
 from app.modules.quality_accreditation.router import router as quality_accreditation_router
+from app.modules.quality_accreditation.runtime_shell_router import router as quality_accreditation_runtime_shell_router
 from app.modules.hr_staff_governance.router import router as hr_staff_governance_router
 from app.modules.finance_procurement_asset.router import router as finance_procurement_asset_router
 from app.modules.document_decree_correspondence.router import router as document_decree_correspondence_router
@@ -506,6 +507,7 @@ app.include_router(research_science_router)
 app.include_router(research_brain_runtime_shell_router)
 app.include_router(executive_governance_runtime_shell_router)
 app.include_router(reporting_runtime_shell_router)
+app.include_router(quality_accreditation_runtime_shell_router)
 app.include_router(quality_accreditation_router)
 app.include_router(hr_staff_governance_router)
 app.include_router(finance_procurement_asset_router)
