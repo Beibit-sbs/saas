@@ -304,6 +304,75 @@ export interface ExecutiveKpiTrendSummary {
   generated_at: string;
 }
 
+export interface ExecutiveRiskEntry {
+  risk_id: string;
+  risk_category: string;
+  risk_source: string;
+  risk_title: string;
+  risk_description: string;
+  risk_owner: string;
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  probability: number;
+  impact: number;
+  risk_score: number;
+  status: 'OPEN' | 'MONITORING' | 'MITIGATING' | 'ESCALATED' | 'CLOSED';
+  trend_direction: 'UP' | 'DOWN' | 'STABLE';
+  escalation_flag: boolean;
+}
+
+export interface ExecutiveRiskSummary {
+  tenant_id: number;
+  entries: ExecutiveRiskEntry[];
+  total_risks: number;
+  risk_distribution: Record<string, number>;
+  risk_category_breakdown: Record<string, number>;
+  risk_ownership_visibility: Record<string, number>;
+  risk_trend_analysis: Record<string, number>;
+  risk_hotspots: Record<string, number>;
+  executive_risk_score: number;
+  owner_modules: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
+export interface ExecutiveRiskHeatmap {
+  tenant_id: number;
+  heatmap: Record<string, Record<string, number>>;
+  risk_distribution: Record<string, number>;
+  risk_hotspots: Record<string, number>;
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
+export interface ExecutiveRiskCenter {
+  tenant_id: number;
+  high_risk_items: ExecutiveRiskEntry[];
+  critical_risks: ExecutiveRiskEntry[];
+  escalating_risks: ExecutiveRiskEntry[];
+  overdue_risks: ExecutiveRiskEntry[];
+  risk_hotspots: Record<string, number>;
+  signal_families: string[];
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
+export interface ExecutiveRiskScore {
+  tenant_id: number;
+  executive_risk_score: number;
+  risk_band: 'LOW' | 'GUARDED' | 'ELEVATED' | 'SEVERE';
+  high_risk_items: number;
+  critical_risks: number;
+  escalating_risks: number;
+  overdue_risks: number;
+  trend_direction: 'UP' | 'DOWN' | 'STABLE';
+  read_only: boolean;
+  aggregator_only: boolean;
+  generated_at: string;
+}
+
 export interface RectorDashboardRuntimeSummary {
   tenant_id: number;
   rector_overview: ExecutiveControlTowerSummary;

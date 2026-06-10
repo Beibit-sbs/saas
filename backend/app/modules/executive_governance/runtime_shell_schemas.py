@@ -32,6 +32,7 @@ ExecutiveSignalFamily = Literal[
     "execution_gap",
     "strategic_risk",
     "transformation_delay",
+    "accreditation_risk",
 ]
 
 
@@ -352,6 +353,80 @@ class ExecutiveKpiTrendSummary(BaseModel):
     performance_scores: list[ExecutivePerformanceScore] = Field(default_factory=list)
     trend_analysis: dict[str, int] = Field(default_factory=dict)
     signal_families: list[ExecutiveSignalFamily] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+RiskTrendDirection = Literal["UP", "DOWN", "STABLE"]
+RiskLevel = Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+RiskStatus = Literal["OPEN", "MONITORING", "MITIGATING", "ESCALATED", "CLOSED"]
+
+
+class ExecutiveRiskEntry(BaseModel):
+    risk_id: str
+    risk_category: str
+    risk_source: str
+    risk_title: str
+    risk_description: str
+    risk_owner: str
+    risk_level: RiskLevel = "LOW"
+    probability: int = 0
+    impact: int = 0
+    risk_score: int = 0
+    status: RiskStatus = "OPEN"
+    trend_direction: RiskTrendDirection = "STABLE"
+    escalation_flag: bool = False
+
+
+class ExecutiveRiskSummary(BaseModel):
+    tenant_id: int
+    entries: list[ExecutiveRiskEntry] = Field(default_factory=list)
+    total_risks: int = 0
+    risk_distribution: dict[str, int] = Field(default_factory=dict)
+    risk_category_breakdown: dict[str, int] = Field(default_factory=dict)
+    risk_ownership_visibility: dict[str, int] = Field(default_factory=dict)
+    risk_trend_analysis: dict[str, int] = Field(default_factory=dict)
+    risk_hotspots: dict[str, int] = Field(default_factory=dict)
+    executive_risk_score: int = 0
+    owner_modules: list[str] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class ExecutiveRiskHeatmap(BaseModel):
+    tenant_id: int
+    heatmap: dict[str, dict[str, int]] = Field(default_factory=dict)
+    risk_distribution: dict[str, int] = Field(default_factory=dict)
+    risk_hotspots: dict[str, int] = Field(default_factory=dict)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class ExecutiveRiskCenter(BaseModel):
+    tenant_id: int
+    high_risk_items: list[ExecutiveRiskEntry] = Field(default_factory=list)
+    critical_risks: list[ExecutiveRiskEntry] = Field(default_factory=list)
+    escalating_risks: list[ExecutiveRiskEntry] = Field(default_factory=list)
+    overdue_risks: list[ExecutiveRiskEntry] = Field(default_factory=list)
+    risk_hotspots: dict[str, int] = Field(default_factory=dict)
+    signal_families: list[ExecutiveSignalFamily] = Field(default_factory=list)
+    read_only: bool = True
+    aggregator_only: bool = True
+    generated_at: datetime
+
+
+class ExecutiveRiskScore(BaseModel):
+    tenant_id: int
+    executive_risk_score: int = 0
+    risk_band: Literal["LOW", "GUARDED", "ELEVATED", "SEVERE"] = "LOW"
+    high_risk_items: int = 0
+    critical_risks: int = 0
+    escalating_risks: int = 0
+    overdue_risks: int = 0
+    trend_direction: RiskTrendDirection = "STABLE"
     read_only: bool = True
     aggregator_only: bool = True
     generated_at: datetime

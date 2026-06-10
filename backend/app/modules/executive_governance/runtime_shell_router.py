@@ -21,8 +21,13 @@ from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutiveExecutionMetrics,
     ExecutiveGovernanceDashboardSummary,
     ExecutiveKpiOverview,
+    ExecutiveRiskCenter,
     ExecutiveKpiEntry,
     ExecutiveKpiRiskCenter,
+    ExecutiveRiskEntry,
+    ExecutiveRiskHeatmap,
+    ExecutiveRiskScore,
+    ExecutiveRiskSummary,
     ExecutiveKpiSummary,
     ExecutiveKpiTrendSummary,
     ExecutiveMeetingEntry,
@@ -311,6 +316,66 @@ def get_runtime_kpis_trends(
 ) -> ExecutiveKpiTrendSummary:
     try:
         return _service.get_kpi_trends(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/risks", response_model=list[ExecutiveRiskEntry])
+def get_runtime_risks(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> list[ExecutiveRiskEntry]:
+    try:
+        return _service.get_risks(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/risks/summary", response_model=ExecutiveRiskSummary)
+def get_runtime_risks_summary(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveRiskSummary:
+    try:
+        return _service.get_risk_summary(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/risks/heatmap", response_model=ExecutiveRiskHeatmap)
+def get_runtime_risks_heatmap(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveRiskHeatmap:
+    try:
+        return _service.get_risk_heatmap(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/risks/escalations", response_model=ExecutiveRiskCenter)
+def get_runtime_risks_escalations(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveRiskCenter:
+    try:
+        return _service.get_risk_escalations(int(tenant["id"]))
+    except Exception as exc:
+        _handle(exc)
+
+
+@router.get("/risks/score", response_model=ExecutiveRiskScore)
+def get_runtime_risks_score(
+    actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency(permissions.SUMMARY_READ))],
+    tenant: _Tenant,
+) -> ExecutiveRiskScore:
+    try:
+        return _service.get_risk_score(int(tenant["id"]))
     except Exception as exc:
         _handle(exc)
 

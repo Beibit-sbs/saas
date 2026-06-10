@@ -80,6 +80,64 @@ export function ExecutiveGovernanceRuntimeShellPage() {
       aggregator_only: true,
       generated_at: new Date(0).toISOString(),
     }));
+  const risksQuery = executiveGovernanceApi.getRisks ?? (async () => []);
+  const riskSummaryQuery =
+    executiveGovernanceApi.getRiskSummary ??
+    (async () => ({
+      tenant_id: 0,
+      entries: [],
+      total_risks: 0,
+      risk_distribution: {},
+      risk_category_breakdown: {},
+      risk_ownership_visibility: {},
+      risk_trend_analysis: {},
+      risk_hotspots: {},
+      executive_risk_score: 0,
+      owner_modules: [],
+      read_only: true,
+      aggregator_only: true,
+      generated_at: new Date(0).toISOString(),
+    }));
+  const riskHeatmapQuery =
+    executiveGovernanceApi.getRiskHeatmap ??
+    (async () => ({
+      tenant_id: 0,
+      heatmap: {},
+      risk_distribution: {},
+      risk_hotspots: {},
+      read_only: true,
+      aggregator_only: true,
+      generated_at: new Date(0).toISOString(),
+    }));
+  const riskEscalationsQuery =
+    executiveGovernanceApi.getRiskEscalations ??
+    (async () => ({
+      tenant_id: 0,
+      high_risk_items: [],
+      critical_risks: [],
+      escalating_risks: [],
+      overdue_risks: [],
+      risk_hotspots: {},
+      signal_families: [],
+      read_only: true,
+      aggregator_only: true,
+      generated_at: new Date(0).toISOString(),
+    }));
+  const riskScoreQuery =
+    executiveGovernanceApi.getRiskScore ??
+    (async () => ({
+      tenant_id: 0,
+      executive_risk_score: 0,
+      risk_band: 'LOW',
+      high_risk_items: 0,
+      critical_risks: 0,
+      escalating_risks: 0,
+      overdue_risks: 0,
+      trend_direction: 'STABLE',
+      read_only: true,
+      aggregator_only: true,
+      generated_at: new Date(0).toISOString(),
+    }));
   const strategicInitiativesQuery =
     executiveGovernanceApi.getStrategicInitiatives ?? (async () => []);
   const strategicSummaryQuery =
@@ -159,6 +217,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
   const kpiPerformance = useQuery({ queryKey: ['executive-governance:kpis-performance'], queryFn: kpiPerformanceQuery, staleTime: 30000 });
   const kpiRisks = useQuery({ queryKey: ['executive-governance:kpis-risks'], queryFn: kpiRisksQuery, staleTime: 30000 });
   const kpiTrends = useQuery({ queryKey: ['executive-governance:kpis-trends'], queryFn: kpiTrendsQuery, staleTime: 30000 });
+  const risks = useQuery({ queryKey: ['executive-governance:risks'], queryFn: risksQuery, staleTime: 30000 });
+  const riskSummary = useQuery({ queryKey: ['executive-governance:risks-summary'], queryFn: riskSummaryQuery, staleTime: 30000 });
+  const riskHeatmap = useQuery({ queryKey: ['executive-governance:risks-heatmap'], queryFn: riskHeatmapQuery, staleTime: 30000 });
+  const riskEscalations = useQuery({ queryKey: ['executive-governance:risks-escalations'], queryFn: riskEscalationsQuery, staleTime: 30000 });
+  const riskScore = useQuery({ queryKey: ['executive-governance:risks-score'], queryFn: riskScoreQuery, staleTime: 30000 });
   const strategicInitiatives = useQuery({ queryKey: ['executive-governance:strategic-initiatives'], queryFn: strategicInitiativesQuery, staleTime: 30000 });
   const strategicSummary = useQuery({ queryKey: ['executive-governance:strategic-initiatives-summary'], queryFn: strategicSummaryQuery, staleTime: 30000 });
   const strategicRisks = useQuery({ queryKey: ['executive-governance:strategic-initiatives-risks'], queryFn: strategicRisksQuery, staleTime: 30000 });
@@ -192,6 +255,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     kpiPerformance.isPending ||
     kpiRisks.isPending ||
     kpiTrends.isPending ||
+    risks.isPending ||
+    riskSummary.isPending ||
+    riskHeatmap.isPending ||
+    riskEscalations.isPending ||
+    riskScore.isPending ||
     strategicInitiatives.isPending ||
     strategicSummary.isPending ||
     strategicRisks.isPending ||
@@ -228,6 +296,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     kpiPerformance.error ||
     kpiRisks.error ||
     kpiTrends.error ||
+    risks.error ||
+    riskSummary.error ||
+    riskHeatmap.error ||
+    riskEscalations.error ||
+    riskScore.error ||
     strategicInitiatives.error ||
     strategicSummary.error ||
     strategicRisks.error ||
@@ -264,6 +337,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
           kpiPerformance.error ??
           kpiRisks.error ??
           kpiTrends.error ??
+          risks.error ??
+          riskSummary.error ??
+          riskHeatmap.error ??
+          riskEscalations.error ??
+          riskScore.error ??
           strategicInitiatives.error ??
           strategicSummary.error ??
           strategicRisks.error ??
@@ -301,6 +379,11 @@ export function ExecutiveGovernanceRuntimeShellPage() {
     !kpiPerformance.data ||
     !kpiRisks.data ||
     !kpiTrends.data ||
+    !risks.data ||
+    !riskSummary.data ||
+    !riskHeatmap.data ||
+    !riskEscalations.data ||
+    !riskScore.data ||
     !strategicInitiatives.data ||
     !strategicSummary.data ||
     !strategicRisks.data ||
@@ -544,6 +627,78 @@ export function ExecutiveGovernanceRuntimeShellPage() {
           {Object.entries(controlTowerRisks.data.escalation_hotspots).map(([key, value]) => (
             <p key={key} className="text-sm">escalation hotspot {key}: {value}</p>
           ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Executive Risk Center Runtime" data-testid="executive-risk-runtime-center">
+          <h2 className="text-lg font-semibold">Executive Risk Center</h2>
+          <p className="mt-2 text-sm">Total risks: {riskSummary.data.total_risks}</p>
+          <p className="text-sm">Executive risk score: {riskSummary.data.executive_risk_score}</p>
+          <p className="text-sm">High-risk items: {riskEscalations.data.high_risk_items.length}</p>
+          <p className="text-sm">Critical risks: {riskEscalations.data.critical_risks.length}</p>
+          <p className="text-sm">Escalating risks: {riskEscalations.data.escalating_risks.length}</p>
+          <p className="text-sm">Overdue risks: {riskEscalations.data.overdue_risks.length}</p>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {risks.data.map((entry) => (
+              <div key={entry.risk_id} className="rounded-lg border p-3">
+                <p className="font-medium">{entry.risk_title}</p>
+                <p className="text-sm text-muted-foreground">{entry.risk_id} | {entry.risk_source}</p>
+                <p className="text-sm">owner={entry.risk_owner} / category={entry.risk_category}</p>
+                <p className="text-sm">level={entry.risk_level} / score={entry.risk_score}</p>
+                <p className="text-sm">status={entry.status} / trend={entry.trend_direction}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Risk Heatmap" data-testid="risk-heatmap-runtime">
+          <h2 className="text-lg font-semibold">Risk Heatmap</h2>
+          {Object.entries(riskHeatmap.data.heatmap).map(([bucket, levels]) => (
+            <div key={bucket} className="mt-2">
+              <p className="text-sm font-medium">{bucket}</p>
+              {Object.entries(levels).map(([level, count]) => (
+                <p key={`${bucket}-${level}`} className="text-sm">{level}: {count}</p>
+              ))}
+            </div>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Risk Analytics" data-testid="risk-analytics-runtime">
+          <h2 className="text-lg font-semibold">Risk Analytics</h2>
+          <p className="mt-2 text-sm">Distribution:</p>
+          {Object.entries(riskSummary.data.risk_distribution).map(([key, value]) => (
+            <p key={`dist-${key}`} className="text-sm">{key}: {value}</p>
+          ))}
+          <p className="mt-2 text-sm">Category breakdown:</p>
+          {Object.entries(riskSummary.data.risk_category_breakdown).map(([key, value]) => (
+            <p key={`cat-${key}`} className="text-sm">{key}: {value}</p>
+          ))}
+          <p className="mt-2 text-sm">Ownership visibility:</p>
+          {Object.entries(riskSummary.data.risk_ownership_visibility).map(([key, value]) => (
+            <p key={`owner-${key}`} className="text-sm">{key}: {value}</p>
+          ))}
+          <p className="mt-2 text-sm">Trend analysis:</p>
+          {Object.entries(riskSummary.data.risk_trend_analysis).map(([key, value]) => (
+            <p key={`trend-${key}`} className="text-sm">{key}: {value}</p>
+          ))}
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Executive Risk Score" data-testid="executive-risk-score-runtime">
+          <h2 className="text-lg font-semibold">Executive Risk Score</h2>
+          <p className="mt-2 text-sm">Score: {riskScore.data.executive_risk_score}</p>
+          <p className="text-sm">Band: {riskScore.data.risk_band}</p>
+          <p className="text-sm">High-risk items: {riskScore.data.high_risk_items}</p>
+          <p className="text-sm">Critical risks: {riskScore.data.critical_risks}</p>
+          <p className="text-sm">Escalating risks: {riskScore.data.escalating_risks}</p>
+          <p className="text-sm">Overdue risks: {riskScore.data.overdue_risks}</p>
+          <p className="text-sm">Trend direction: {riskScore.data.trend_direction}</p>
+        </section>
+
+        <section className="rounded-lg border p-4" aria-label="Risk Hotspots" data-testid="risk-hotspots-runtime">
+          <h2 className="text-lg font-semibold">Risk Hotspots</h2>
+          {Object.entries(riskSummary.data.risk_hotspots).map(([key, value]) => (
+            <p key={`hotspot-${key}`} className="text-sm">{key}: {value}</p>
+          ))}
+          <p className="mt-2 text-sm">Signal surface: {riskEscalations.data.signal_families.join(', ')}</p>
         </section>
 
         <section className="rounded-lg border p-4" aria-label="Strategic Initiatives" data-testid="strategic-initiatives-runtime">

@@ -17,6 +17,11 @@ from app.modules.executive_governance.runtime_shell_schemas import (
     ExecutiveExecutionMetrics,
     ExecutiveKpiEntry,
     ExecutiveKpiRiskCenter,
+    ExecutiveRiskCenter,
+    ExecutiveRiskEntry,
+    ExecutiveRiskHeatmap,
+    ExecutiveRiskScore,
+    ExecutiveRiskSummary,
     ExecutiveGovernanceDashboardSummary,
     ExecutiveMeetingEntry,
     ExecutiveMeetingSummary,
@@ -925,6 +930,296 @@ class ExecutiveKpiRuntimeService:
         )
 
 
+class ExecutiveRiskRuntimeService:
+    """Read-only executive risk runtime service with aggregation-only semantics."""
+
+    _RISK_SOURCES = {
+        "assignment_execution": "rector_assignment_workflow",
+        "kpi_runtime": "analytics",
+        "strategic_runtime": "executive_control_tower",
+        "executive_signals": "brain_core",
+        "escalation_center": "rector_assignment_workflow",
+    }
+    _SIGNAL_FAMILIES = [
+        "escalation_risk",
+        "strategic_risk",
+        "kpi_drift",
+        "ministry_deadline_risk",
+        "overdue_assignment",
+        "execution_delay",
+        "accreditation_risk",
+        "transformation_delay",
+    ]
+
+    def __init__(
+        self,
+        assignments: ExecutiveAssignmentExecutionRuntimeService,
+        kpis: ExecutiveKpiRuntimeService,
+        strategic: StrategicInitiativeRuntimeService,
+        control_tower: ExecutiveControlTowerRuntimeService,
+    ) -> None:
+        self._assignments = assignments
+        self._kpis = kpis
+        self._strategic = strategic
+        self._control_tower = control_tower
+
+    def _now(self) -> datetime:
+        return datetime.now(UTC)
+
+    def _validate_tenant(self, tenant_id: int) -> int:
+        return validate_tenant_id_provided(tenant_id)
+
+    def _risk_level(self, risk_score: int) -> str:
+        if risk_score >= 75:
+            return "CRITICAL"
+        if risk_score >= 55:
+            return "HIGH"
+        if risk_score >= 35:
+            return "MEDIUM"
+        return "LOW"
+
+    def _status(self, risk_score: int, escalation_flag: bool) -> str:
+        if escalation_flag:
+            return "ESCALATED"
+        if risk_score >= 55:
+            return "MITIGATING"
+        if risk_score >= 35:
+            return "MONITORING"
+        return "OPEN"
+
+    def _trend(self, risk_score: int) -> str:
+        if risk_score >= 55:
+            return "UP"
+        if risk_score >= 35:
+            return "STABLE"
+        return "DOWN"
+
+    def _build_entries(self, tenant_id: int) -> list[ExecutiveRiskEntry]:
+        tenant = self._validate_tenant(tenant_id)
+        assignment_metrics = self._assignments.get_assignments_risks(tenant)
+        kpi_summary = self._kpis.get_kpi_summary(tenant)
+        strategic_risks = self._strategic.get_strategic_initiatives_risks(tenant)
+        control_escalations = self._control_tower.get_control_tower_escalations(tenant)
+
+        entries: list[ExecutiveRiskEntry] = []
+
+        for idx, entry in enumerate(assignment_metrics.high_risk_assignments, start=1):
+            probability = min(95, 55 + (idx * 6))
+            impact = 78 if entry.risk_level == "CRITICAL" else 68
+            score = (probability + impact) // 2
+            entries.append(
+                ExecutiveRiskEntry(
+                    risk_id=f"ER-{tenant:02d}-AX-{idx:03d}",
+                    risk_category="EXECUTION",
+                    risk_source="assignment_execution",
+                    risk_title=f"Overdue assignment risk: {entry.assignment_title}",
+                    risk_description="Assignment execution runtime indicates elevated delay or overdue exposure.",
+                    risk_owner=entry.assigned_unit,
+                    risk_level=self._risk_level(score),
+                    probability=probability,
+                    impact=impact,
+                    risk_score=score,
+                    status=self._status(score, entry.escalation_flag),
+                    trend_direction=self._trend(score),
+                    escalation_flag=entry.escalation_flag,
+                )
+            )
+
+        for idx, entry in enumerate(self._kpis.get_kpi_risks(tenant).high_risk_kpis, start=1):
+            probability = min(95, 50 + max(0, 100 - entry.achievement_percent))
+            impact = 72 if entry.risk_level in {"HIGH", "CRITICAL"} else 58
+            score = (probability + impact) // 2
+            entries.append(
+                ExecutiveRiskEntry(
+                    risk_id=f"ER-{tenant:02d}-KP-{idx:03d}",
+                    risk_category="KPI",
+                    risk_source="kpi_runtime",
+                    risk_title=f"KPI drift risk: {entry.kpi_name}",
+                    risk_description="KPI runtime reports significant deviation from target trajectory.",
+                    risk_owner=entry.kpi_owner,
+                    risk_level=self._risk_level(score),
+                    probability=probability,
+                    impact=impact,
+                    risk_score=score,
+                    status=self._status(score, entry.risk_level in {"HIGH", "CRITICAL"}),
+                    trend_direction=self._trend(score),
+                    escalation_flag=entry.risk_level in {"HIGH", "CRITICAL"},
+                )
+            )
+
+        for idx, entry in enumerate(strategic_risks.high_risk_initiatives, start=1):
+            probability = 70 if entry.initiative_status in {"AT_RISK", "DELAYED"} else 52
+            impact = 82 if entry.risk_level == "CRITICAL" else 68
+            score = (probability + impact) // 2
+            entries.append(
+                ExecutiveRiskEntry(
+                    risk_id=f"ER-{tenant:02d}-ST-{idx:03d}",
+                    risk_category="STRATEGIC",
+                    risk_source="strategic_runtime",
+                    risk_title=f"Strategic execution risk: {entry.initiative_title}",
+                    risk_description="Strategic runtime indicates initiative delay or execution bottleneck.",
+                    risk_owner=entry.initiative_owner,
+                    risk_level=self._risk_level(score),
+                    probability=probability,
+                    impact=impact,
+                    risk_score=score,
+                    status=self._status(score, entry.escalation_flag),
+                    trend_direction=self._trend(score),
+                    escalation_flag=entry.escalation_flag,
+                )
+            )
+
+        signal_base = [
+            ("SIGNAL", "executive_signals", "Executive signal risk", "brain_core", 58, 66),
+            ("ESCALATION", "escalation_center", "Escalation center risk", "chief_of_staff", 64, 72),
+        ]
+        for idx, (category, source, title, owner, probability, impact) in enumerate(signal_base, start=1):
+            score = (probability + impact) // 2
+            entries.append(
+                ExecutiveRiskEntry(
+                    risk_id=f"ER-{tenant:02d}-SG-{idx:03d}",
+                    risk_category=category,
+                    risk_source=source,
+                    risk_title=title,
+                    risk_description="Risk item synthesized from executive signal and escalation inventories.",
+                    risk_owner=owner,
+                    risk_level=self._risk_level(score),
+                    probability=probability,
+                    impact=impact,
+                    risk_score=score,
+                    status=self._status(score, source == "escalation_center"),
+                    trend_direction=self._trend(score),
+                    escalation_flag=source == "escalation_center",
+                )
+            )
+
+        # Keep risk inventory deterministic and tenant-scoped.
+        entries.sort(key=lambda item: item.risk_score, reverse=True)
+        return entries
+
+    def get_risks(self, tenant_id: int) -> list[ExecutiveRiskEntry]:
+        return self._build_entries(tenant_id)
+
+    def get_risk_summary(self, tenant_id: int) -> ExecutiveRiskSummary:
+        tenant = self._validate_tenant(tenant_id)
+        entries = self._build_entries(tenant)
+        total = len(entries)
+
+        risk_distribution = {"LOW": 0, "MEDIUM": 0, "HIGH": 0, "CRITICAL": 0}
+        risk_category_breakdown: dict[str, int] = {}
+        risk_ownership_visibility: dict[str, int] = {}
+        risk_trend_analysis = {"UP": 0, "STABLE": 0, "DOWN": 0}
+        risk_hotspots: dict[str, int] = {}
+
+        for entry in entries:
+            risk_distribution[entry.risk_level] += 1
+            risk_category_breakdown[entry.risk_category] = risk_category_breakdown.get(entry.risk_category, 0) + 1
+            risk_ownership_visibility[entry.risk_owner] = risk_ownership_visibility.get(entry.risk_owner, 0) + 1
+            risk_trend_analysis[entry.trend_direction] += 1
+            risk_hotspots[entry.risk_source] = risk_hotspots.get(entry.risk_source, 0) + 1
+
+        executive_risk_score = (sum(item.risk_score for item in entries) // max(1, total)) if entries else 0
+
+        return ExecutiveRiskSummary(
+            tenant_id=tenant,
+            entries=entries,
+            total_risks=total,
+            risk_distribution=risk_distribution,
+            risk_category_breakdown=risk_category_breakdown,
+            risk_ownership_visibility=risk_ownership_visibility,
+            risk_trend_analysis=risk_trend_analysis,
+            risk_hotspots=risk_hotspots,
+            executive_risk_score=executive_risk_score,
+            owner_modules=["rector_assignment_workflow", "analytics", "brain_core", "executive_control_tower"],
+            generated_at=self._now(),
+        )
+
+    def get_risk_heatmap(self, tenant_id: int) -> ExecutiveRiskHeatmap:
+        tenant = self._validate_tenant(tenant_id)
+        entries = self._build_entries(tenant)
+
+        bands = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+        heatmap: dict[str, dict[str, int]] = {
+            "0-24": {level: 0 for level in bands},
+            "25-49": {level: 0 for level in bands},
+            "50-74": {level: 0 for level in bands},
+            "75-100": {level: 0 for level in bands},
+        }
+
+        for entry in entries:
+            if entry.risk_score >= 75:
+                bucket = "75-100"
+            elif entry.risk_score >= 50:
+                bucket = "50-74"
+            elif entry.risk_score >= 25:
+                bucket = "25-49"
+            else:
+                bucket = "0-24"
+            heatmap[bucket][entry.risk_level] += 1
+
+        summary = self.get_risk_summary(tenant)
+        return ExecutiveRiskHeatmap(
+            tenant_id=tenant,
+            heatmap=heatmap,
+            risk_distribution=summary.risk_distribution,
+            risk_hotspots=summary.risk_hotspots,
+            generated_at=self._now(),
+        )
+
+    def get_risk_escalations(self, tenant_id: int) -> ExecutiveRiskCenter:
+        tenant = self._validate_tenant(tenant_id)
+        entries = self._build_entries(tenant)
+
+        high_risk_items = [item for item in entries if item.risk_level in {"HIGH", "CRITICAL"}]
+        critical_risks = [item for item in entries if item.risk_level == "CRITICAL"]
+        escalating_risks = [item for item in entries if item.escalation_flag]
+        overdue_risks = [item for item in entries if "overdue" in item.risk_title.lower() or item.risk_source == "assignment_execution"]
+
+        hotspots: dict[str, int] = {}
+        for item in high_risk_items:
+            hotspots[item.risk_source] = hotspots.get(item.risk_source, 0) + 1
+
+        return ExecutiveRiskCenter(
+            tenant_id=tenant,
+            high_risk_items=high_risk_items,
+            critical_risks=critical_risks,
+            escalating_risks=escalating_risks,
+            overdue_risks=overdue_risks,
+            risk_hotspots=hotspots,
+            signal_families=list(self._SIGNAL_FAMILIES),
+            generated_at=self._now(),
+        )
+
+    def get_risk_score(self, tenant_id: int) -> ExecutiveRiskScore:
+        tenant = self._validate_tenant(tenant_id)
+        summary = self.get_risk_summary(tenant)
+        escalations = self.get_risk_escalations(tenant)
+        score = summary.executive_risk_score
+
+        if score >= 75:
+            risk_band = "SEVERE"
+        elif score >= 55:
+            risk_band = "ELEVATED"
+        elif score >= 35:
+            risk_band = "GUARDED"
+        else:
+            risk_band = "LOW"
+
+        trend_direction = "UP" if summary.risk_trend_analysis.get("UP", 0) >= summary.risk_trend_analysis.get("DOWN", 0) else "DOWN"
+
+        return ExecutiveRiskScore(
+            tenant_id=tenant,
+            executive_risk_score=score,
+            risk_band=risk_band,
+            high_risk_items=len(escalations.high_risk_items),
+            critical_risks=len(escalations.critical_risks),
+            escalating_risks=len(escalations.escalating_risks),
+            overdue_risks=len(escalations.overdue_risks),
+            trend_direction=trend_direction,
+            generated_at=self._now(),
+        )
+
+
 class ExecutiveGovernanceRuntimeService:
     """Read-only Executive Governance runtime contract service."""
 
@@ -961,6 +1256,7 @@ class ExecutiveGovernanceRuntimeService:
         "execution_gap": "rector_assignment_workflow",
         "strategic_risk": "brain_core",
         "transformation_delay": "executive_control_tower",
+        "accreditation_risk": "brain_core",
     }
 
     _RBAC_ROLES = [
@@ -985,6 +1281,12 @@ class ExecutiveGovernanceRuntimeService:
     )
     _strategic_initiatives = StrategicInitiativeRuntimeService()
     _kpi_runtime = ExecutiveKpiRuntimeService()
+    _risk_runtime = ExecutiveRiskRuntimeService(
+        assignments=_assignment_execution,
+        kpis=_kpi_runtime,
+        strategic=_strategic_initiatives,
+        control_tower=_control_tower,
+    )
 
     def _now(self) -> datetime:
         return datetime.now(UTC)
@@ -1147,3 +1449,18 @@ class ExecutiveGovernanceRuntimeService:
 
     def get_kpi_trends(self, tenant_id: int) -> ExecutiveKpiTrendSummary:
         return self._kpi_runtime.get_kpi_trends(tenant_id)
+
+    def get_risks(self, tenant_id: int) -> list[ExecutiveRiskEntry]:
+        return self._risk_runtime.get_risks(tenant_id)
+
+    def get_risk_summary(self, tenant_id: int) -> ExecutiveRiskSummary:
+        return self._risk_runtime.get_risk_summary(tenant_id)
+
+    def get_risk_heatmap(self, tenant_id: int) -> ExecutiveRiskHeatmap:
+        return self._risk_runtime.get_risk_heatmap(tenant_id)
+
+    def get_risk_escalations(self, tenant_id: int) -> ExecutiveRiskCenter:
+        return self._risk_runtime.get_risk_escalations(tenant_id)
+
+    def get_risk_score(self, tenant_id: int) -> ExecutiveRiskScore:
+        return self._risk_runtime.get_risk_score(tenant_id)
