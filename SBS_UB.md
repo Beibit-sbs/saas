@@ -1,3 +1,8 @@
+- Research Brain:
+    - status: CLOSED_BASELINED
+    - closure_report: A-047.13-RESEARCH_BRAIN_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
+    - next_action_id: A-048.1-SPEC
+
 - A-047.12.B1 execution block:
     - mode: research_brain_product_quality_baseline
     - purpose: certify_research_brain_vertical_baseline_after_a04711_validation

@@ -1,5 +1,31 @@
 # SBS_UB University Completeness Expansion Map
 
+## 0. Research Brain Vertical Closure
+
+- Research Brain status: CLOSED_BASELINED
+- Closure evidence:
+	- A-047.11-B1 end-to-end validation PASS
+	- A-047.12-B1 product-quality baseline PASS and READY_FOR_CERTIFICATION
+	- A-047.13 certification and closure PASS
+- Closed layers:
+	- Runtime Shell
+	- Researcher Registry Runtime
+	- Scientometrics Runtime
+	- Research Risk Runtime
+	- Research Dashboard Runtime
+- Canonical ownership remains fixed:
+	- `research_science`
+	- `analytics`
+	- `brain_core`
+	- bridge sources: `research`, `research_grants`, `publication_registry`, `research_ethics`
+- Security posture remains fixed:
+	- tenant PASS
+	- RBAC PASS
+	- audit PASS
+	- provider boundary PASS
+- Next action handoff:
+	- next_action_id `A-048.1-SPEC`
+
 ## 0. A-047.12.B1 Research Brain Product Quality Baseline Continuity
 
 - A-047.12.B1 executed validation-only certification-readiness review over the completed Research Brain vertical.
