@@ -1,7 +1,26 @@
 - Research Brain:
     - status: CLOSED_BASELINED
     - closure_report: A-047.13-RESEARCH_BRAIN_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
-    - next_action_id: A-048.14
+    - next_action_id: A-049.1-SPEC
+
+- A-048.14 execution block:
+    - mode: executive_governance_certification_and_vertical_closure
+    - purpose: certify_and_formally_close_executive_governance_brain_vertical
+    - source_state_before: A-048.13-B1 PASS
+    - source_state_validation: PASS
+    - certification_readiness_confirmed: READY_FOR_CERTIFICATION
+    - source_next_action_id_confirmed: A-048.14
+    - certification_review: PASS
+    - quality_certification: PASS
+    - security_certification: PASS
+    - vertical_status: CLOSED_BASELINED
+    - quality_baseline: CERTIFIED
+    - runtime_status: READY_FOR_PRODUCTION
+    - blockers: NONE
+    - report_file: A-048.14-EXECUTIVE_GOVERNANCE_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
+    - final_verdict: A-048.14 PASS - EXECUTIVE_GOVERNANCE_VERTICAL_CLOSED
+    - recommended_next_action: A-049.1-SPEC
+    - next_action_id: A-049.1-SPEC
 
 - A-048.13-B1 execution block:
     - mode: executive_governance_product_quality_baseline
