@@ -13,11 +13,13 @@
     - audit_status: COMPLETED
     - spec_status: COMPLETED
     - validation_status: COMPLETED_WITH_CONFLICTS
-    - readiness: NEEDS_REWORK
+    - normalization_status: COMPLETED
+    - readiness: READY_FOR_RUNTIME_WITH_BRIDGES
     - audit_report_file: A-050.1-AUDIT-QUALITY_ACCREDITATION_BRAIN_EXISTING_CAPABILITY_ANALYSIS_REPORT.md
     - spec_report_file: A-050.2-SPEC-QUALITY_ACCREDITATION_BRAIN_RUNTIME_CONTRACT_REPORT.md
     - validation_report_file: A-050.3-B1-QUALITY_ACCREDITATION_BRAIN_CONTRACT_CONSISTENCY_REVIEW_REPORT.md
-    - next_action_id: A-050.3-B2
+    - normalization_report_file: A-050.3-B2-QUALITY_ACCREDITATION_BRAIN_CONTRACT_NORMALIZATION_REPORT.md
+    - next_action_id: A-050.4-SPEC
 
 - A-050.1-AUDIT execution block:
     - mode: quality_accreditation_brain_existing_capability_analysis
@@ -85,6 +87,26 @@
     - final_verdict: A-050.3-B1 FAIL - QUALITY_ACCREDITATION_CONTRACT_OWNERSHIP_CONSISTENCY_CONFLICTS_FOUND
     - recommended_next_action: A-050.3-B2
     - next_action_id: A-050.3-B2
+
+- A-050.3-B2 execution block:
+    - mode: quality_accreditation_brain_contract_normalization
+    - purpose: normalize_ownership_and_contract_boundaries_after_b1_conflict
+    - source_state_before: A-050.3-B1 FAIL
+    - source_state_validation: PASS
+    - source_readiness_confirmed: NEEDS_REWORK
+    - source_next_action_id_confirmed: A-050.3-B2
+    - ownership_conflict_analysis: PASS
+    - canonical_owner_normalization: PASS
+    - registry_normalization: PASS
+    - workflow_normalization: PASS
+    - signal_normalization: PASS
+    - dashboard_normalization: PASS
+    - provider_normalization: PASS
+    - readiness: READY_FOR_RUNTIME_WITH_BRIDGES
+    - report_file: A-050.3-B2-QUALITY_ACCREDITATION_BRAIN_CONTRACT_NORMALIZATION_REPORT.md
+    - final_verdict: A-050.3-B2 PASS - QUALITY_ACCREDITATION_CONTRACT_NORMALIZED
+    - recommended_next_action: A-050.4-SPEC
+    - next_action_id: A-050.4-SPEC
 
 - A-049.16 execution block:
     - mode: ministry_regulatory_reporting_certification_and_vertical_closure
