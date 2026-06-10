@@ -43,6 +43,16 @@ const { mockApi } = vi.hoisted(() => ({
     getNobdQuality: vi.fn(),
     getNobdSyncStatus: vi.fn(),
     getNobdRisks: vi.fn(),
+    getCompliance: vi.fn(),
+    getComplianceControls: vi.fn(),
+    getComplianceReadiness: vi.fn(),
+    getComplianceGaps: vi.fn(),
+    getComplianceRisks: vi.fn(),
+    getReportingDashboard: vi.fn(),
+    getReportingDashboardReadiness: vi.fn(),
+    getReportingDashboardWorkload: vi.fn(),
+    getReportingDashboardRisks: vi.fn(),
+    getReportingDashboardSignals: vi.fn(),
   },
 }));
 
@@ -212,6 +222,46 @@ describe('NOBD Reporting Runtime', () => {
     mockApi.getNobdQuality.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, quality: nobdRows.map((item) => ({ ...item, quality_band: item.quality_score >= 85 ? 'HIGH' : 'MEDIUM' })) });
     mockApi.getNobdSyncStatus.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, sync_status: nobdRows.map((item, index) => ({ ...item, sync_lag_hours: 4 + index })) });
     mockApi.getNobdRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: nobdRows.map((item, index) => ({ ...item, signal_name: ['nobd_completeness_low', 'nobd_quality_risk', 'nobd_sync_delay', 'missing_required_dataset', 'nobd_readiness_low'][index % 5], signal_owner_module: 'brain_core' })) });
+
+    const complianceEntry = {
+      id: 'compliance-1-1',
+      control_code: 'COMP-01',
+      control_name: 'NOBD Coverage Control',
+      control_type: 'DATA_QUALITY',
+      compliance_status: 'WATCH',
+      readiness_level: 'PARTIAL',
+      readiness_score: 80,
+      gap_count: 2,
+      gap_severity: 'MEDIUM',
+      risk_level: 'MEDIUM',
+      owner_module: 'compliance_monitoring',
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+    };
+    mockApi.getCompliance.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, reports: [complianceEntry], signal_inventory: ['compliance_risk_high'] });
+    mockApi.getComplianceControls.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, controls: [complianceEntry] });
+    mockApi.getComplianceReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: [complianceEntry] });
+    mockApi.getComplianceGaps.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, gaps: [complianceEntry] });
+    mockApi.getComplianceRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: [{ ...complianceEntry, signal_name: 'compliance_risk_high', signal_owner_module: 'brain_core' }] });
+
+    const dashboardEntry = {
+      id: 'dashboard-1-1',
+      dashboard_code: 'REPORTING-DASHBOARD',
+      dashboard_name: 'Reporting Executive Dashboard',
+      owner_module: 'reporting_dashboard_runtime',
+      status: 'ACTIVE',
+      readiness_score: 82,
+      workload_score: 74,
+      risk_score: 41,
+      signal_count: 3,
+      generated_at: '2026-06-10T00:00:00Z',
+      read_only: true,
+    };
+    mockApi.getReportingDashboard.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, dashboards: [dashboardEntry], signal_inventory: ['reporting_attention_required'] });
+    mockApi.getReportingDashboardReadiness.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, readiness: [dashboardEntry] });
+    mockApi.getReportingDashboardWorkload.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, workload: [dashboardEntry] });
+    mockApi.getReportingDashboardRisks.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, risks: [dashboardEntry] });
+    mockApi.getReportingDashboardSignals.mockResolvedValue({ tenant_id: 1, generated_at: '2026-06-10T00:00:00Z', read_only: true, signals: [dashboardEntry] });
   });
 
   it('renders NOBD reporting runtime sections', async () => {

@@ -24,7 +24,32 @@
 	- audit PASS
 	- provider boundary PASS
 - Next action handoff:
-	- next_action_id `A-049.15-B1`
+	- next_action_id `A-049.14-B3`
+
+## 0. A-049.14-B2 Ministry Regulatory Reporting Validation Failure Remediation Continuity
+
+- A-049.14-B2 completed as targeted frontend remediation action for A-049.14-B1 validation failures.
+- Source validation passed:
+	- A-049.14-B1 FAIL confirmed
+	- failure scope limited to frontend runtime test path
+	- backend authoritative suite remained PASS
+	- frontend TypeScript gate remained PASS
+- Failure analysis and remediation outcome:
+	- root cause: `frontend/__tests__/admin/NobdReportingRuntime.test.tsx` had incomplete mock API surface for current shell query set
+	- missing compliance and reporting-dashboard query mocks triggered shell error state (`Failed to load Reporting Runtime shell.`)
+	- remediation: added required mock methods and minimal resolved payloads in NOBD runtime test file only
+	- backend changes: NO
+	- schema changes: NO
+	- runtime ownership changes: NO
+	- reporting domain logic changes: NO
+	- API contract changes: NO
+- Validation evidence:
+	- targeted frontend tests (`NobdReportingRuntime` + `ReportingRuntimeShell`): PASS (2 files, 4 tests)
+	- full reporting frontend suite (9 files): PASS (16 tests)
+	- frontend TypeScript (`npx tsc --noEmit`): PASS (`TSC_PASS`)
+- report_file: A-049.14-B2-MINISTRY_REGULATORY_REPORTING_VALIDATION_REMEDIATION_REPORT.md
+- final_verdict: A-049.14-B2 PASS - MINISTRY_REGULATORY_REPORTING_VALIDATION_FAILURES_REMEDIATED
+- next_action_id: A-049.14-B3.
 
 ## 0. A-049.14-B1 Ministry Regulatory Reporting End-to-End Validation Continuity
 

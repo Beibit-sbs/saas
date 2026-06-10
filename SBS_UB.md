@@ -1,7 +1,27 @@
 - Research Brain:
     - status: CLOSED_BASELINED
     - closure_report: A-047.13-RESEARCH_BRAIN_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
-    - next_action_id: A-049.15-B1
+    - next_action_id: A-049.14-B3
+
+- A-049.14-B2 execution block:
+    - mode: ministry_regulatory_reporting_validation_failure_remediation
+    - purpose: remediate_frontend_runtime_validation_failures_from_a04914b1_without_backend_or_contract_changes
+    - source_state_before: A-049.14-B1 FAIL
+    - source_state_validation: PASS
+    - source_readiness_confirmed: READY_FOR_TARGETED_FRONTEND_REMEDIATION
+    - source_next_action_id_confirmed: A-049.14-B2
+    - failure_analysis: PASS
+    - nobd_runtime_fix: PASS
+    - shell_runtime_fix: PASS
+    - frontend_targeted_tests: PASS
+    - frontend_full_reporting_suite: PASS
+    - frontend_typescript: PASS
+    - validation_status: PASS
+    - validation_notes: nobd_runtime_test_mock_surface_completed_for_compliance_and_reporting_dashboard_query_families_to_prevent_shell_error_state_and_restore_nobd_section_rendering
+    - report_file: A-049.14-B2-MINISTRY_REGULATORY_REPORTING_VALIDATION_REMEDIATION_REPORT.md
+    - final_verdict: A-049.14-B2 PASS - MINISTRY_REGULATORY_REPORTING_VALIDATION_FAILURES_REMEDIATED
+    - recommended_next_action: A-049.14-B3
+    - next_action_id: A-049.14-B3
 
 - A-049.14-B1 execution block:
     - mode: ministry_regulatory_reporting_end_to_end_validation
