@@ -10,18 +10,11 @@
     - next_action_id: NONE
 
 - Quality / Accreditation Brain:
-    - audit_status: COMPLETED
-    - spec_status: COMPLETED
-    - validation_status: COMPLETED_WITH_CONFLICTS
-    - normalization_status: COMPLETED
-    - implementation_plan_status: COMPLETED
-    - readiness: READY_FOR_CERTIFICATION
-    - audit_report_file: A-050.1-AUDIT-QUALITY_ACCREDITATION_BRAIN_EXISTING_CAPABILITY_ANALYSIS_REPORT.md
-    - spec_report_file: A-050.2-SPEC-QUALITY_ACCREDITATION_BRAIN_RUNTIME_CONTRACT_REPORT.md
-    - validation_report_file: A-050.3-B1-QUALITY_ACCREDITATION_BRAIN_CONTRACT_CONSISTENCY_REVIEW_REPORT.md
-    - normalization_report_file: A-050.3-B2-QUALITY_ACCREDITATION_BRAIN_CONTRACT_NORMALIZATION_REPORT.md
-    - implementation_plan_report_file: A-050.4-SPEC-QUALITY_ACCREDITATION_RUNTIME_IMPLEMENTATION_PLAN_REPORT.md
-    - next_action_id: A-050.15
+    - vertical_status: CLOSED_BASELINED
+    - closure_report: A-050.15-QUALITY_ACCREDITATION_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
+    - production_readiness: READY_FOR_PRODUCTION
+    - active_handoff: REMOVED
+    - next_action_id: NONE
 
 - A-050.1-AUDIT execution block:
     - mode: quality_accreditation_brain_existing_capability_analysis
@@ -481,6 +474,25 @@
     - final_verdict: A-050.14-B2 PASS - QUALITY_ACCREDITATION_BASELINE_CERTIFIED
     - recommended_next_action: A-050.15
     - next_action_id: A-050.15
+
+- A-050.15 execution block:
+    - mode: quality_accreditation_certification_and_vertical_closure
+    - purpose: finalize_certification_and_close_quality_accreditation_vertical
+    - source_state_before: A-050.14-B2 PASS
+    - source_state_validation: PASS
+    - source_readiness_confirmed: READY_FOR_CERTIFICATION
+    - source_next_action_id_confirmed: A-050.15
+    - historical_b1_override_accepted: PASS
+    - certification_review: PASS
+    - quality_certification: PASS
+    - security_certification: PASS
+    - production_readiness: READY_FOR_PRODUCTION
+    - vertical_status: CLOSED_BASELINED
+    - validation_notes: full_9_slice_runtime_chain_certified_with_tenant_rbac_read_only_aggregator_confirmed_and_no_open_blockers
+    - report_file: A-050.15-QUALITY_ACCREDITATION_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
+    - final_verdict: A-050.15 PASS - QUALITY_ACCREDITATION_VERTICAL_CLOSED_BASELINED
+    - recommended_next_action: NONE
+    - next_action_id: NONE
 
 - A-049.16 execution block:
     - mode: ministry_regulatory_reporting_certification_and_vertical_closure
