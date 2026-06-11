@@ -134,6 +134,7 @@ from app.modules.executive_control_tower.router import router as executive_contr
 from app.modules.document_workflow_os.router import router as doc_workflow_router
 from app.modules.academic_operations.router import router as academic_operations_router
 from app.modules.student_lifecycle.router import router as student_lifecycle_router
+from app.modules.student_success_runtime.runtime_shell_router import router as student_success_runtime_shell_router
 from app.modules.research_science.router import router as research_science_router
 from app.modules.research_science.runtime_shell_router import router as research_brain_runtime_shell_router
 from app.modules.executive_governance.runtime_shell_router import router as executive_governance_runtime_shell_router
@@ -511,6 +512,7 @@ app.include_router(doc_workflow_router)
 app.include_router(executive_control_tower_router)
 app.include_router(academic_operations_router)
 app.include_router(student_lifecycle_router)
+app.include_router(student_success_runtime_shell_router)
 app.include_router(research_science_router)
 app.include_router(research_brain_runtime_shell_router)
 app.include_router(executive_governance_runtime_shell_router)

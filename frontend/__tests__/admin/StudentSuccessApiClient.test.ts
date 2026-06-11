@@ -1,0 +1,21 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mockApiGet = vi.fn();
+
+vi.mock('@/shared/api/client', () => ({
+  apiGet: (...args: unknown[]) => mockApiGet(...args),
+}));
+
+describe('studentSuccessApi', () => {
+  beforeEach(() => {
+    mockApiGet.mockReset();
+    mockApiGet.mockResolvedValue({});
+  });
+
+  it('uses the student success runtime shell API endpoint', async () => {
+    const { studentSuccessApi } = await import('@/modules/student-success/api');
+    await studentSuccessApi.getRuntimeShell();
+
+    expect(mockApiGet).toHaveBeenCalledWith('/api/v1/student-success/runtime-shell');
+  });
+});
