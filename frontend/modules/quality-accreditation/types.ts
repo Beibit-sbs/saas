@@ -708,6 +708,62 @@ export interface ReadinessMonitoringRuntime {
   readiness_indicators: ReadinessMonitoringIndicator[];
 }
 
+export interface DashboardRuntimeSummaryCard {
+  metric_key: string;
+  label: string;
+  value: number;
+  status: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface DashboardRuntimeKpiRollup {
+  kpi_group: string;
+  score: number;
+  threshold: number;
+  trend: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface DashboardRuntimeComplianceIndicator {
+  indicator_name: string;
+  indicator_value: number;
+  threshold: number;
+  status: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface DashboardRuntimeRiskIndicator {
+  risk_name: string;
+  risk_level: string;
+  impacted_area: string;
+  mitigation_status: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface QualityAccreditationDashboardRuntime {
+  tenant_id: number;
+  owner_module: string;
+  runtime_registry: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  accreditation_summary: DashboardRuntimeSummaryCard[];
+  evidence_coverage_summary: DashboardRuntimeSummaryCard[];
+  self_assessment_status: DashboardRuntimeSummaryCard[];
+  corrective_action_status: DashboardRuntimeSummaryCard[];
+  improvement_plan_status: DashboardRuntimeSummaryCard[];
+  readiness_monitoring_summary: DashboardRuntimeSummaryCard[];
+  audit_findings_summary: DashboardRuntimeSummaryCard[];
+  executive_kpi_rollup: DashboardRuntimeKpiRollup[];
+  compliance_indicators: DashboardRuntimeComplianceIndicator[];
+  accreditation_risk_indicators: DashboardRuntimeRiskIndicator[];
+}
+
 export interface QualityAccreditationDashboardResponse extends QualityAccreditationBoundaryFlags {
   tenant_id: number;
   generated_at: string | null;

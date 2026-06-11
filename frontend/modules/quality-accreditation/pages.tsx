@@ -86,6 +86,7 @@ import type {
   ImprovementRoadmap,
   NonConformity,
   ProgramReadiness,
+  QualityAccreditationDashboardRuntime,
   ProgramReviewCycle,
   QualityAccreditationDashboardResponse,
   QualityAccreditationHealthResponse,
@@ -127,6 +128,7 @@ const CACHE_KEYS = {
   improvementPlanRuntime: ['quality-accreditation:improvement-plan-runtime'] as const,
   auditFindingsRuntime: ['quality-accreditation:audit-findings-runtime'] as const,
   readinessMonitoringRuntime: ['quality-accreditation:readiness-monitoring-runtime'] as const,
+  dashboardRuntime: ['quality-accreditation:dashboard-runtime'] as const,
   dashboard: ['quality-accreditation:dashboard'] as const,
   matrixSummary: ['quality-accreditation:matrix-summary'] as const,
   limitations: ['quality-accreditation:limitations'] as const,
@@ -276,6 +278,14 @@ function useReadinessMonitoringRuntimeQuery() {
   return useQuery({
     queryKey: CACHE_KEYS.readinessMonitoringRuntime,
     queryFn: qualityAccreditationApi.useReadinessMonitoringRuntime,
+    staleTime: 30000,
+  });
+}
+
+function useDashboardRuntimeQuery() {
+  return useQuery({
+    queryKey: CACHE_KEYS.dashboardRuntime,
+    queryFn: qualityAccreditationApi.useDashboardRuntime,
     staleTime: 30000,
   });
 }
@@ -536,7 +546,7 @@ export function QualityAccreditationShell({
         <h2 className="text-sm font-semibold">Navigation</h2>
         <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {QUALITY_ACCREDITATION_NAV_ITEMS.map((item) => (
-            <QualityAccreditationNavCard key={item.href} title={item.title} href={item.href} />
+            <QualityAccreditationNavCard key={item.key} title={item.title} href={item.href} />
           ))}
         </div>
         <p className="mt-3 text-xs text-muted-foreground">Current path: {currentPath}</p>
@@ -1953,6 +1963,122 @@ export function QualityAccreditationReadinessMonitoringRuntimePage() {
           <ReadinessRiskPanel risks={payload.readiness_risks} />
           <ReadinessRemediationPanel items={payload.remediation_tracking} />
           <ReadinessIndicatorsPanel indicators={payload.readiness_indicators} />
+        </section>
+      </ModuleShell>
+    </RequirePermission>
+  );
+}
+
+function DashboardRuntimeSummaryGroup({
+  title,
+  testId,
+  items,
+}: {
+  title: string;
+  testId: string;
+  items: Array<{ metric_key: string; label: string; value: number; status: string }>;
+}) {
+  return (
+    <section className="rounded-lg border p-4" data-testid={testId}>
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">{title}</h2>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No entries available.</p>
+        ) : (
+          items.map((item) => (
+            <div key={item.metric_key} className="rounded-lg border p-3">
+              <p className="font-medium">{item.label}</p>
+              <p className="text-sm text-muted-foreground">Value: {item.value}</p>
+              <p className="text-sm text-muted-foreground">Status: {item.status}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function QualityAccreditationDashboardRuntimePage() {
+  const runtime = useDashboardRuntimeQuery();
+
+  if (runtime.isPending) return <LoadingState title="Loading dashboard runtime" />;
+  if (runtime.error) return PageError('Failed to load dashboard runtime.', runtime.error);
+  if (!runtime.data) return <ErrorState message="Dashboard runtime is unavailable." />;
+
+  const payload: QualityAccreditationDashboardRuntime = runtime.data;
+
+  return (
+    <RequirePermission permission={QUALITY_ACCREDITATION_PERMISSIONS.summaryRead}>
+      <ModuleShell
+        title={QUALITY_ACCREDITATION_PAGE_TITLES.dashboardRuntime}
+        description="Read-only dashboard runtime consolidating accreditation, evidence, self-assessment, corrective actions, improvement plans, readiness, audit findings, executive KPIs, compliance, and risk indicators."
+        currentPath={QUALITY_ACCREDITATION_ROUTES.dashboardRuntime}
+        boundaryPage="dashboardRuntime"
+      >
+        <section className="grid gap-6" data-testid="dashboard-runtime">
+          <DashboardRuntimeSummaryGroup title="Accreditation summary" testId="dashboard-accreditation-summary" items={payload.accreditation_summary} />
+          <DashboardRuntimeSummaryGroup title="Evidence coverage summary" testId="dashboard-evidence-coverage-summary" items={payload.evidence_coverage_summary} />
+          <DashboardRuntimeSummaryGroup title="Self-assessment status" testId="dashboard-self-assessment-status" items={payload.self_assessment_status} />
+          <DashboardRuntimeSummaryGroup title="Corrective action status" testId="dashboard-corrective-action-status" items={payload.corrective_action_status} />
+          <DashboardRuntimeSummaryGroup title="Improvement plan status" testId="dashboard-improvement-plan-status" items={payload.improvement_plan_status} />
+          <DashboardRuntimeSummaryGroup title="Readiness monitoring summary" testId="dashboard-readiness-monitoring-summary" items={payload.readiness_monitoring_summary} />
+          <DashboardRuntimeSummaryGroup title="Audit findings summary" testId="dashboard-audit-findings-summary" items={payload.audit_findings_summary} />
+
+          <section className="rounded-lg border p-4" data-testid="dashboard-executive-kpi-rollup">
+            <h2 className="text-lg font-semibold">Executive KPI rollup</h2>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {payload.executive_kpi_rollup.map((item) => (
+                <div key={item.kpi_group} className="rounded-lg border p-3">
+                  <p className="font-medium">{item.kpi_group}</p>
+                  <p className="text-sm text-muted-foreground">Score: {item.score}</p>
+                  <p className="text-sm text-muted-foreground">Threshold: {item.threshold}</p>
+                  <p className="text-sm text-muted-foreground">Trend: {item.trend}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-lg border p-4" data-testid="dashboard-compliance-indicators">
+            <h2 className="text-lg font-semibold">Compliance indicators</h2>
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full divide-y divide-border text-left text-sm">
+                <thead>
+                  <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-3 py-2">Indicator</th>
+                    <th className="px-3 py-2">Value</th>
+                    <th className="px-3 py-2">Threshold</th>
+                    <th className="px-3 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {payload.compliance_indicators.map((item) => (
+                    <tr key={item.indicator_name}>
+                      <td className="px-3 py-3">{item.indicator_name}</td>
+                      <td className="px-3 py-3">{item.indicator_value}</td>
+                      <td className="px-3 py-3">{item.threshold}</td>
+                      <td className="px-3 py-3">{item.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="rounded-lg border p-4" data-testid="dashboard-accreditation-risk-indicators">
+            <h2 className="text-lg font-semibold">Accreditation risk indicators</h2>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {payload.accreditation_risk_indicators.map((item) => (
+                <div key={item.risk_name} className="rounded-lg border p-3">
+                  <p className="font-medium">{item.risk_name}</p>
+                  <p className="text-sm text-muted-foreground">Level: {item.risk_level}</p>
+                  <p className="text-sm text-muted-foreground">Area: {item.impacted_area}</p>
+                  <p className="text-sm text-muted-foreground">Mitigation: {item.mitigation_status}</p>
+                </div>
+              ))}
+            </div>
+          </section>
         </section>
       </ModuleShell>
     </RequirePermission>

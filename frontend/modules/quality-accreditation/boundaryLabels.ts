@@ -47,6 +47,8 @@ export const QUALITY_ACCREDITATION_BOUNDARY_LABELS = {
     'Audit findings runtime is read-only and aggregator-only. It summarizes findings, non-conformities, recommendations, remediation, closure tracking, and readiness indicators without provider integrations or write operations.',
   readinessMonitoringRuntimePage:
     'Readiness monitoring runtime is read-only and aggregator-only. It summarizes readiness posture, risk, remediation progress, and indicators without provider integrations, background jobs, or write operations.',
+  dashboardRuntimePage:
+    'Dashboard runtime is read-only and aggregator-only. It consolidates accreditation/evidence/self-assessment/corrective/improvement/readiness/audit/KPI/compliance/risk indicators without provider mutations or workflow execution.',
   improvementPlansPage:
     'Improvement plans track human-owned actions. No autonomous sanction or automatic program closure is performed.',
   internalAuditsPage:
@@ -164,6 +166,11 @@ export const QUALITY_ACCREDITATION_PAGE_BOUNDARY_LABELS = {
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.readOnlyFirstBridge,
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.humanReviewRequired,
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.readinessMonitoringRuntimePage,
+  ],
+  dashboardRuntime: [
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.readOnlyFirstBridge,
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.humanReviewRequired,
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.dashboardRuntimePage,
   ],
   improvementPlans: [
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.humanReviewRequired,

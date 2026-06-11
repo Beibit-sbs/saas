@@ -31,6 +31,7 @@ describe('qualityAccreditationApi', () => {
     await qualityAccreditationApi.getImprovementPlanRuntime();
     await qualityAccreditationApi.getAuditFindingsRuntime();
     await qualityAccreditationApi.getReadinessMonitoringRuntime();
+    await qualityAccreditationApi.getDashboardRuntime();
     await qualityAccreditationApi.getQualityAccreditationHealth();
     await qualityAccreditationApi.getQualityAccreditationOverview();
     await qualityAccreditationApi.getQualityAccreditationDashboard();
@@ -46,6 +47,7 @@ describe('qualityAccreditationApi', () => {
       '/api/v1/quality-accreditation/improvement-plan-runtime',
       '/api/v1/quality-accreditation/audit-findings-runtime',
       '/api/v1/quality-accreditation/readiness-monitoring-runtime',
+      '/api/v1/quality-accreditation/dashboard-runtime',
       '/api/admin/quality-accreditation/health',
       '/api/admin/quality-accreditation/overview',
       '/api/admin/quality-accreditation/dashboard',
@@ -70,6 +72,8 @@ describe('qualityAccreditationApi', () => {
       'useAuditFindingsRuntime',
       'getReadinessMonitoringRuntime',
       'useReadinessMonitoringRuntime',
+      'getDashboardRuntime',
+      'useDashboardRuntime',
       'listAccreditationStandards',
       'listStandardCriteria',
       'listQualityEvidence',
