@@ -41,6 +41,13 @@ import {
 import type {
   AccreditationEvidenceItem,
   AccreditationEvidenceRuntimeResponse,
+  AuditFinding,
+  AuditFindingRuntime,
+  AuditObservation,
+  AuditReadiness,
+  AuditRecommendation,
+  AuditRemediationStatus,
+  AuditRiskAnalysis,
   AccreditationProviderSummary,
   AccreditationReadinessSummary,
   AccreditationRegistryItem,
@@ -71,8 +78,8 @@ import type {
   ImprovementKpiTarget,
   ImprovementMilestone,
   ImprovementPlanRuntime,
-  ImprovementPlanRuntimeResponse,
   ImprovementRoadmap,
+  NonConformity,
   ProgramReadiness,
   ProgramReviewCycle,
   QualityAccreditationDashboardResponse,
@@ -113,6 +120,7 @@ const CACHE_KEYS = {
   selfAssessmentRuntime: ['quality-accreditation:self-assessment-runtime'] as const,
   correctiveActionRuntime: ['quality-accreditation:corrective-action-runtime'] as const,
   improvementPlanRuntime: ['quality-accreditation:improvement-plan-runtime'] as const,
+  auditFindingsRuntime: ['quality-accreditation:audit-findings-runtime'] as const,
   dashboard: ['quality-accreditation:dashboard'] as const,
   matrixSummary: ['quality-accreditation:matrix-summary'] as const,
   limitations: ['quality-accreditation:limitations'] as const,
@@ -246,6 +254,14 @@ function useImprovementPlanRuntimeQuery() {
   return useQuery({
     queryKey: CACHE_KEYS.improvementPlanRuntime,
     queryFn: qualityAccreditationApi.useImprovementPlanRuntime,
+    staleTime: 30000,
+  });
+}
+
+function useAuditFindingsRuntimeQuery() {
+  return useQuery({
+    queryKey: CACHE_KEYS.auditFindingsRuntime,
+    queryFn: qualityAccreditationApi.useAuditFindingsRuntime,
     staleTime: 30000,
   });
 }
@@ -1485,6 +1501,256 @@ export function QualityAccreditationImprovementPlanRuntimePage() {
           <ImprovementKpiTargetsPanel initiatives={initiatives} />
           <ImprovementProgressPanel plans={plans} />
           <ImprovementForecastPanel forecasts={forecasts} />
+        </section>
+      </ModuleShell>
+    </RequirePermission>
+  );
+}
+
+function AuditFindingsPanel({ findings }: { findings: AuditFinding[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="audit-findings-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Internal, external, and accreditation findings</h2>
+        <p className="text-sm text-muted-foreground">Consolidated findings inventory with severity, remediation, and closure tracking posture.</p>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-border text-left text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">Finding</th>
+              <th className="px-3 py-2">Source</th>
+              <th className="px-3 py-2">Severity</th>
+              <th className="px-3 py-2">Remediation</th>
+              <th className="px-3 py-2">Closure</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {findings.length === 0 ? (
+              <tr>
+                <td className="px-3 py-4 text-muted-foreground" colSpan={5}>No findings available.</td>
+              </tr>
+            ) : (
+              findings.map((item) => (
+                <tr key={item.finding_id}>
+                  <td className="px-3 py-3">{item.finding_title}</td>
+                  <td className="px-3 py-3">{item.finding_source}</td>
+                  <td className="px-3 py-3">{item.severity}</td>
+                  <td className="px-3 py-3">{item.remediation_status}</td>
+                  <td className="px-3 py-3">{item.closure_tracking_status}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function NonConformitiesPanel({ nonConformities }: { nonConformities: NonConformity[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="non-conformities-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Non-conformities</h2>
+        <p className="text-sm text-muted-foreground">Tracked non-conformities identified in audit and accreditation review lanes.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {nonConformities.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No non-conformities available.</p>
+        ) : (
+          nonConformities.map((item) => (
+            <div key={item.non_conformity_id} className="rounded-lg border p-3">
+              <p className="font-medium">{item.category}</p>
+              <p className="text-sm text-muted-foreground">Area: {item.affected_area}</p>
+              <p className="text-sm text-muted-foreground">Severity: {item.severity}</p>
+              <p className="text-sm text-muted-foreground">Status: {item.status}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function AuditObservationsPanel({ observations }: { observations: AuditObservation[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="audit-observations-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Observations</h2>
+        <p className="text-sm text-muted-foreground">Operational observations collected across audit cycles.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {observations.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No observations available.</p>
+        ) : (
+          observations.map((item) => (
+            <div key={item.observation_id} className="rounded-lg border p-3">
+              <p className="font-medium">{item.observation_type}</p>
+              <p className="text-sm text-muted-foreground">{item.summary}</p>
+              <p className="text-sm text-muted-foreground">Impact: {item.impact_level}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function AuditRecommendationsPanel({ recommendations }: { recommendations: AuditRecommendation[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="audit-recommendations-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Recommendations</h2>
+        <p className="text-sm text-muted-foreground">Recommended corrective steps with ownership and target timelines.</p>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-border text-left text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">Recommendation</th>
+              <th className="px-3 py-2">Priority</th>
+              <th className="px-3 py-2">Owner</th>
+              <th className="px-3 py-2">Target Date</th>
+              <th className="px-3 py-2">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {recommendations.length === 0 ? (
+              <tr>
+                <td className="px-3 py-4 text-muted-foreground" colSpan={5}>No recommendations available.</td>
+              </tr>
+            ) : (
+              recommendations.map((item) => (
+                <tr key={item.recommendation_id}>
+                  <td className="px-3 py-3">{item.recommendation_title}</td>
+                  <td className="px-3 py-3">{item.priority}</td>
+                  <td className="px-3 py-3">{item.owner_unit}</td>
+                  <td className="px-3 py-3">{new Intl.DateTimeFormat('en-GB').format(new Date(item.target_date))}</td>
+                  <td className="px-3 py-3">{item.status}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function AuditRiskAnalysisPanel({ risk }: { risk: AuditRiskAnalysis[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="audit-risk-analysis-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Risk severity analysis</h2>
+        <p className="text-sm text-muted-foreground">Risk-band distribution of findings, non-conformities, and open recommendations.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {risk.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No risk analysis available.</p>
+        ) : (
+          risk.map((item) => (
+            <div key={item.risk_band} className="rounded-lg border p-3">
+              <p className="font-medium">{item.risk_band}</p>
+              <p className="text-sm text-muted-foreground">Findings: {item.findings_count}</p>
+              <p className="text-sm text-muted-foreground">Non-conformities: {item.non_conformities_count}</p>
+              <p className="text-sm text-muted-foreground">Open recommendations: {item.recommendations_open}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function AuditRemediationStatusPanel({ remediation }: { remediation: AuditRemediationStatus[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="audit-remediation-status-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Remediation status</h2>
+        <p className="text-sm text-muted-foreground">Remediation posture across tracked findings and closure actions.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {remediation.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No remediation status entries available.</p>
+        ) : (
+          remediation.map((item) => (
+            <div key={item.remediation_state} className="rounded-lg border p-3">
+              <p className="font-medium">{item.remediation_state}</p>
+              <p className="text-sm text-muted-foreground">Findings: {item.findings_count}</p>
+              <p className="text-sm text-muted-foreground">Avg completion: {item.average_completion_percentage}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function AuditReadinessPanel({ readiness }: { readiness: AuditReadiness[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="audit-readiness-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Audit readiness indicators</h2>
+        <p className="text-sm text-muted-foreground">Indicator-level readiness posture for upcoming accreditation and audit cycles.</p>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-border text-left text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">Indicator</th>
+              <th className="px-3 py-2">Value</th>
+              <th className="px-3 py-2">Threshold</th>
+              <th className="px-3 py-2">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {readiness.length === 0 ? (
+              <tr>
+                <td className="px-3 py-4 text-muted-foreground" colSpan={4}>No readiness indicators available.</td>
+              </tr>
+            ) : (
+              readiness.map((item) => (
+                <tr key={item.indicator_name}>
+                  <td className="px-3 py-3">{item.indicator_name}</td>
+                  <td className="px-3 py-3">{item.indicator_value}</td>
+                  <td className="px-3 py-3">{item.threshold}</td>
+                  <td className="px-3 py-3">{item.status}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+export function QualityAccreditationAuditFindingsRuntimePage() {
+  const runtime = useAuditFindingsRuntimeQuery();
+
+  if (runtime.isPending) return <LoadingState title="Loading audit findings runtime" />;
+  if (runtime.error) return PageError('Failed to load audit findings runtime.', runtime.error);
+  if (!runtime.data) return <ErrorState message="Audit findings runtime is unavailable." />;
+
+  const payload: AuditFindingRuntime = runtime.data;
+
+  return (
+    <RequirePermission permission={QUALITY_ACCREDITATION_PERMISSIONS.summaryRead}>
+      <ModuleShell
+        title={QUALITY_ACCREDITATION_PAGE_TITLES.auditFindingsRuntime}
+        description="Read-only audit findings runtime with findings, non-conformities, observations, recommendations, risk analysis, remediation status, closure tracking, and readiness indicators."
+        currentPath={QUALITY_ACCREDITATION_ROUTES.auditFindingsRuntime}
+        boundaryPage="auditFindingsRuntime"
+      >
+        <section className="grid gap-6" data-testid="audit-findings-runtime">
+          <AuditFindingsPanel findings={payload.findings} />
+          <NonConformitiesPanel nonConformities={payload.non_conformities} />
+          <AuditObservationsPanel observations={payload.observations} />
+          <AuditRecommendationsPanel recommendations={payload.recommendations} />
+          <AuditRiskAnalysisPanel risk={payload.risk_severity_analysis} />
+          <AuditRemediationStatusPanel remediation={payload.remediation_status} />
+          <AuditReadinessPanel readiness={payload.audit_readiness_indicators} />
         </section>
       </ModuleShell>
     </RequirePermission>

@@ -555,6 +555,94 @@ export interface ImprovementPlanRuntimeResponse {
   improvement_plans: ImprovementPlanRuntime[];
 }
 
+export interface AuditFinding {
+  finding_id: string;
+  finding_source: string;
+  finding_type: string;
+  finding_title: string;
+  severity: string;
+  impacted_standard: string;
+  remediation_status: string;
+  closure_tracking_status: string;
+  opened_at: string;
+  due_date: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface NonConformity {
+  non_conformity_id: string;
+  category: string;
+  severity: string;
+  affected_area: string;
+  status: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AuditObservation {
+  observation_id: string;
+  observation_type: string;
+  summary: string;
+  impact_level: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AuditRecommendation {
+  recommendation_id: string;
+  recommendation_title: string;
+  priority: string;
+  owner_unit: string;
+  target_date: string;
+  status: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AuditRiskAnalysis {
+  risk_band: string;
+  findings_count: number;
+  non_conformities_count: number;
+  recommendations_open: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AuditRemediationStatus {
+  remediation_state: string;
+  findings_count: number;
+  average_completion_percentage: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AuditReadiness {
+  indicator_name: string;
+  indicator_value: number;
+  threshold: number;
+  status: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface AuditFindingRuntime {
+  tenant_id: number;
+  owner_module: string;
+  runtime_registry: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  findings: AuditFinding[];
+  non_conformities: NonConformity[];
+  observations: AuditObservation[];
+  recommendations: AuditRecommendation[];
+  risk_severity_analysis: AuditRiskAnalysis[];
+  remediation_status: AuditRemediationStatus[];
+  audit_readiness_indicators: AuditReadiness[];
+}
+
 export interface QualityAccreditationDashboardResponse extends QualityAccreditationBoundaryFlags {
   tenant_id: number;
   generated_at: string | null;
