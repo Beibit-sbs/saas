@@ -472,6 +472,89 @@ export interface CorrectiveActionRuntimeResponse {
   overdue_summary: CorrectiveActionOverdueSummary[];
 }
 
+export interface ImprovementMilestone {
+  milestone_id: string;
+  milestone_title: string;
+  due_date: string;
+  completion_percentage: number;
+  status: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface ImprovementKpiTarget {
+  kpi_target_id: string;
+  kpi_name: string;
+  baseline_value: number;
+  target_value: number;
+  current_value: number;
+  unit: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface ImprovementInitiative {
+  initiative_id: string;
+  initiative_title: string;
+  strategic_theme: string;
+  owner_unit: string;
+  status: string;
+  completion_percentage: number;
+  milestones: ImprovementMilestone[];
+  kpi_targets: ImprovementKpiTarget[];
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface ImprovementRoadmap {
+  roadmap_id: string;
+  roadmap_title: string;
+  accreditation_cycle: string;
+  phase: string;
+  initiatives_total: number;
+  initiatives_completed: number;
+  completion_percentage: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface ImprovementForecast {
+  forecast_id: string;
+  forecast_type: string;
+  confidence_level: string;
+  projected_completion_date: string;
+  readiness_forecast_score: number;
+  risk_level: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface ImprovementPlanRuntime {
+  plan_id: string;
+  plan_title: string;
+  accreditation_standard: string;
+  owner_unit: string;
+  progress_tracking_status: string;
+  completion_percentage: number;
+  initiatives: ImprovementInitiative[];
+  roadmaps: ImprovementRoadmap[];
+  forecasts: ImprovementForecast[];
+  last_updated: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface ImprovementPlanRuntimeResponse {
+  tenant_id: number;
+  owner_module: string;
+  runtime_registry: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  improvement_plans: ImprovementPlanRuntime[];
+}
+
 export interface QualityAccreditationDashboardResponse extends QualityAccreditationBoundaryFlags {
   tenant_id: number;
   generated_at: string | null;

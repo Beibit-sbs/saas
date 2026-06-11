@@ -41,6 +41,8 @@ export const QUALITY_ACCREDITATION_BOUNDARY_LABELS = {
     'Self-assessment reports are draft/internal review artifacts only. No official submission is performed.',
   selfAssessmentRuntimePage:
     'Self-assessment runtime is read-only and aggregator-only. It summarizes standards readiness, coverage, and risk without provider integrations or write operations.',
+  improvementPlanRuntimePage:
+    'Improvement plan runtime is read-only and aggregator-only. It summarizes initiatives, milestones, KPI targets, progress, and forecast visibility without provider integrations or write operations.',
   improvementPlansPage:
     'Improvement plans track human-owned actions. No autonomous sanction or automatic program closure is performed.',
   internalAuditsPage:
@@ -143,6 +145,11 @@ export const QUALITY_ACCREDITATION_PAGE_BOUNDARY_LABELS = {
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.humanReviewRequired,
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.noOfficialMinistrySubmission,
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.selfAssessmentRuntimePage,
+  ],
+  improvementPlanRuntime: [
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.readOnlyFirstBridge,
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.humanReviewRequired,
+    QUALITY_ACCREDITATION_BOUNDARY_LABELS.improvementPlanRuntimePage,
   ],
   improvementPlans: [
     QUALITY_ACCREDITATION_BOUNDARY_LABELS.humanReviewRequired,

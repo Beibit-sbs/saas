@@ -66,6 +66,13 @@ import type {
   InstitutionalReadiness,
   InternalQualityAudit,
   LearningOutcomesAssessment,
+  ImprovementForecast,
+  ImprovementInitiative,
+  ImprovementKpiTarget,
+  ImprovementMilestone,
+  ImprovementPlanRuntime,
+  ImprovementPlanRuntimeResponse,
+  ImprovementRoadmap,
   ProgramReadiness,
   ProgramReviewCycle,
   QualityAccreditationDashboardResponse,
@@ -105,6 +112,7 @@ const CACHE_KEYS = {
   accreditationEvidence: ['quality-accreditation:accreditation-evidence'] as const,
   selfAssessmentRuntime: ['quality-accreditation:self-assessment-runtime'] as const,
   correctiveActionRuntime: ['quality-accreditation:corrective-action-runtime'] as const,
+  improvementPlanRuntime: ['quality-accreditation:improvement-plan-runtime'] as const,
   dashboard: ['quality-accreditation:dashboard'] as const,
   matrixSummary: ['quality-accreditation:matrix-summary'] as const,
   limitations: ['quality-accreditation:limitations'] as const,
@@ -230,6 +238,14 @@ function useCorrectiveActionRuntime() {
   return useQuery({
     queryKey: CACHE_KEYS.correctiveActionRuntime,
     queryFn: qualityAccreditationApi.getCorrectiveActionRuntime,
+    staleTime: 30000,
+  });
+}
+
+function useImprovementPlanRuntimeQuery() {
+  return useQuery({
+    queryKey: CACHE_KEYS.improvementPlanRuntime,
+    queryFn: qualityAccreditationApi.useImprovementPlanRuntime,
     staleTime: 30000,
   });
 }
@@ -1297,6 +1313,178 @@ export function QualityAccreditationCorrectiveActionRuntimePage() {
           <CorrectiveActionSummaryPanel summary={runtime.data.action_summary} />
           <CorrectiveActionRuntimeSummary data={runtime.data} />
           <CorrectiveActionTable items={runtime.data.corrective_actions} />
+        </section>
+      </ModuleShell>
+    </RequirePermission>
+  );
+}
+
+function ImprovementRoadmapPanel({ roadmaps }: { roadmaps: ImprovementRoadmap[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="improvement-roadmap-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Accreditation roadmaps</h2>
+        <p className="text-sm text-muted-foreground">Roadmap coverage for strategic initiatives and completion readiness.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {roadmaps.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No roadmap entries available.</p>
+        ) : (
+          roadmaps.map((item) => (
+            <div key={item.roadmap_id} className="rounded-lg border p-3">
+              <p className="font-medium">{item.roadmap_title}</p>
+              <p className="text-sm text-muted-foreground">Cycle: {item.accreditation_cycle}</p>
+              <p className="text-sm text-muted-foreground">Phase: {item.phase}</p>
+              <p className="text-sm text-muted-foreground">Completion: {item.completion_percentage}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ImprovementMilestonesPanel({ initiatives }: { initiatives: ImprovementInitiative[] }) {
+  const milestones: ImprovementMilestone[] = initiatives.flatMap((item) => item.milestones);
+  return (
+    <section className="rounded-lg border p-4" data-testid="improvement-milestones-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Improvement milestones</h2>
+        <p className="text-sm text-muted-foreground">Milestone-level progress tracking for remediation execution.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {milestones.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No milestones available.</p>
+        ) : (
+          milestones.map((item) => (
+            <div key={item.milestone_id} className="rounded-lg border p-3">
+              <p className="font-medium">{item.milestone_title}</p>
+              <p className="text-sm text-muted-foreground">Due: {new Intl.DateTimeFormat('en-GB').format(new Date(item.due_date))}</p>
+              <p className="text-sm text-muted-foreground">Status: {item.status}</p>
+              <p className="text-sm text-muted-foreground">Completion: {item.completion_percentage}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ImprovementKpiTargetsPanel({ initiatives }: { initiatives: ImprovementInitiative[] }) {
+  const targets: ImprovementKpiTarget[] = initiatives.flatMap((item) => item.kpi_targets);
+  return (
+    <section className="rounded-lg border p-4" data-testid="improvement-kpi-targets-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">KPI targets</h2>
+        <p className="text-sm text-muted-foreground">KPI baseline-to-target progression for accreditation improvement outcomes.</p>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-border text-left text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">KPI</th>
+              <th className="px-3 py-2">Baseline</th>
+              <th className="px-3 py-2">Current</th>
+              <th className="px-3 py-2">Target</th>
+              <th className="px-3 py-2">Unit</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {targets.length === 0 ? (
+              <tr>
+                <td className="px-3 py-4 text-muted-foreground" colSpan={5}>No KPI targets available.</td>
+              </tr>
+            ) : (
+              targets.map((item) => (
+                <tr key={item.kpi_target_id}>
+                  <td className="px-3 py-3">{item.kpi_name}</td>
+                  <td className="px-3 py-3">{item.baseline_value}</td>
+                  <td className="px-3 py-3">{item.current_value}</td>
+                  <td className="px-3 py-3">{item.target_value}</td>
+                  <td className="px-3 py-3">{item.unit}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function ImprovementProgressPanel({ plans }: { plans: ImprovementPlanRuntime[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="improvement-progress-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Progress tracking</h2>
+        <p className="text-sm text-muted-foreground">Operational status and completion posture for improvement plans and initiatives.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {plans.map((plan) => (
+          <div key={plan.plan_id} className="rounded-lg border p-3">
+            <p className="font-medium">{plan.plan_title}</p>
+            <p className="text-sm text-muted-foreground">Owner: {plan.owner_unit}</p>
+            <p className="text-sm text-muted-foreground">Status: {plan.progress_tracking_status}</p>
+            <p className="text-sm text-muted-foreground">Completion: {plan.completion_percentage}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ImprovementForecastPanel({ forecasts }: { forecasts: ImprovementForecast[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="improvement-forecast-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Completion and readiness forecast</h2>
+        <p className="text-sm text-muted-foreground">Forecast outlook for plan completion and accreditation readiness trajectory.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {forecasts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No forecast entries available.</p>
+        ) : (
+          forecasts.map((item) => (
+            <div key={item.forecast_id} className="rounded-lg border p-3">
+              <p className="font-medium">{item.forecast_type}</p>
+              <p className="text-sm text-muted-foreground">Projected completion: {new Intl.DateTimeFormat('en-GB').format(new Date(item.projected_completion_date))}</p>
+              <p className="text-sm text-muted-foreground">Readiness score: {item.readiness_forecast_score}</p>
+              <p className="text-sm text-muted-foreground">Risk: {item.risk_level}</p>
+              <p className="text-sm text-muted-foreground">Confidence: {item.confidence_level}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function QualityAccreditationImprovementPlanRuntimePage() {
+  const runtime = useImprovementPlanRuntimeQuery();
+
+  if (runtime.isPending) return <LoadingState title="Loading improvement plan runtime" />;
+  if (runtime.error) return PageError('Failed to load improvement plan runtime.', runtime.error);
+  if (!runtime.data) return <ErrorState message="Improvement plan runtime is unavailable." />;
+
+  const plans = runtime.data.improvement_plans;
+  const initiatives = plans.flatMap((item) => item.initiatives);
+  const roadmaps = plans.flatMap((item) => item.roadmaps);
+  const forecasts = plans.flatMap((item) => item.forecasts);
+
+  return (
+    <RequirePermission permission={QUALITY_ACCREDITATION_PERMISSIONS.summaryRead}>
+      <ModuleShell
+        title={QUALITY_ACCREDITATION_PAGE_TITLES.improvementPlanRuntime}
+        description="Read-only improvement plan runtime with initiatives, milestones, KPI targets, progress tracking, and completion/readiness forecasts."
+        currentPath={QUALITY_ACCREDITATION_ROUTES.improvementPlanRuntime}
+        boundaryPage="improvementPlanRuntime"
+      >
+        <section className="grid gap-6" data-testid="improvement-plan-runtime">
+          <ImprovementRoadmapPanel roadmaps={roadmaps} />
+          <ImprovementMilestonesPanel initiatives={initiatives} />
+          <ImprovementKpiTargetsPanel initiatives={initiatives} />
+          <ImprovementProgressPanel plans={plans} />
+          <ImprovementForecastPanel forecasts={forecasts} />
         </section>
       </ModuleShell>
     </RequirePermission>
