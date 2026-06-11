@@ -50,6 +50,12 @@ import type {
   AccreditationCommitteeWorkflow,
   AccreditationStandard,
   ComplianceGapAnalysis,
+  CorrectiveActionItem,
+  CorrectiveActionOverdueSummary,
+  CorrectiveActionReadinessSummary,
+  CorrectiveActionRiskSummary,
+  CorrectiveActionRuntimeResponse,
+  CorrectiveActionSummary,
   EvidenceLimitation,
   EvidenceCategorySummary,
   EvidenceCoverageSummary,
@@ -98,6 +104,7 @@ const CACHE_KEYS = {
   overview: ['quality-accreditation:overview'] as const,
   accreditationEvidence: ['quality-accreditation:accreditation-evidence'] as const,
   selfAssessmentRuntime: ['quality-accreditation:self-assessment-runtime'] as const,
+  correctiveActionRuntime: ['quality-accreditation:corrective-action-runtime'] as const,
   dashboard: ['quality-accreditation:dashboard'] as const,
   matrixSummary: ['quality-accreditation:matrix-summary'] as const,
   limitations: ['quality-accreditation:limitations'] as const,
@@ -215,6 +222,14 @@ function useSelfAssessmentRuntime() {
   return useQuery({
     queryKey: CACHE_KEYS.selfAssessmentRuntime,
     queryFn: qualityAccreditationApi.getSelfAssessmentRuntime,
+    staleTime: 30000,
+  });
+}
+
+function useCorrectiveActionRuntime() {
+  return useQuery({
+    queryKey: CACHE_KEYS.correctiveActionRuntime,
+    queryFn: qualityAccreditationApi.getCorrectiveActionRuntime,
     staleTime: 30000,
   });
 }
@@ -1112,6 +1127,176 @@ export function QualityAccreditationSelfAssessmentRuntimePage() {
           <SelfAssessmentScorecardSection scorecard={runtime.data.scorecard} />
           <SelfAssessmentRuntimeSummary data={runtime.data} />
           <SelfAssessmentStandardsTable standards={runtime.data.standards} />
+        </section>
+      </ModuleShell>
+    </RequirePermission>
+  );
+}
+
+function formatCorrectiveDate(value: string) {
+  return new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(value));
+}
+
+function CorrectiveActionSummaryPanel({ summary }: { summary: CorrectiveActionSummary }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="corrective-action-summary">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Corrective action summary</h2>
+        <p className="text-sm text-muted-foreground">Aggregated remediation progress and overdue posture.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <QualityAccreditationMetricCard label="Total actions" value={summary.total_actions} />
+        <QualityAccreditationMetricCard label="Completed" value={summary.completed_actions} />
+        <QualityAccreditationMetricCard label="In progress" value={summary.in_progress_actions} />
+        <QualityAccreditationMetricCard label="Overdue" value={summary.overdue_actions} />
+        <QualityAccreditationMetricCard label="Avg completion" value={summary.average_completion_percentage.toFixed(1)} />
+      </div>
+    </section>
+  );
+}
+
+function CorrectiveReadinessCard({ item }: { item: CorrectiveActionReadinessSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`corrective-readiness-${slugify(item.readiness_band)}`}>
+      <p className="text-sm font-semibold">{item.readiness_band}</p>
+      <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+        <p>Actions: {item.action_count}</p>
+        <p>Average score: {item.average_readiness_score.toFixed(1)}</p>
+      </div>
+    </div>
+  );
+}
+
+function CorrectiveRiskCard({ item }: { item: CorrectiveActionRiskSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`corrective-risk-${slugify(item.risk_level)}`}>
+      <p className="text-sm font-semibold">{item.risk_level}</p>
+      <p className="mt-3 text-sm text-muted-foreground">Actions: {item.action_count}</p>
+    </div>
+  );
+}
+
+function CorrectiveOverdueCard({ item }: { item: CorrectiveActionOverdueSummary }) {
+  return (
+    <div className="rounded-lg border p-4" data-testid={`corrective-overdue-${slugify(item.overdue_state)}`}>
+      <p className="text-sm font-semibold">{item.overdue_state}</p>
+      <p className="mt-3 text-sm text-muted-foreground">Actions: {item.action_count}</p>
+    </div>
+  );
+}
+
+function CorrectiveActionTable({ items }: { items: CorrectiveActionItem[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="corrective-action-table">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Corrective actions</h2>
+        <p className="text-sm text-muted-foreground">Read-only remediation table with readiness, risk, and overdue visibility.</p>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-border text-left text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">Action</th>
+              <th className="px-3 py-2">Standard</th>
+              <th className="px-3 py-2">Finding</th>
+              <th className="px-3 py-2">Owner</th>
+              <th className="px-3 py-2">Due Date</th>
+              <th className="px-3 py-2">Completion %</th>
+              <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2">Readiness</th>
+              <th className="px-3 py-2">Risk</th>
+              <th className="px-3 py-2">Overdue</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {items.length === 0 ? (
+              <tr>
+                <td className="px-3 py-4 text-muted-foreground" colSpan={10}>No corrective actions available.</td>
+              </tr>
+            ) : (
+              items.map((item) => (
+                <tr key={item.action_id}>
+                  <td className="px-3 py-3">
+                    <div className="space-y-1">
+                      <p className="font-medium">{item.action_title}</p>
+                      <p className="text-xs text-muted-foreground">{item.action_id}</p>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3">{item.accreditation_standard}</td>
+                  <td className="px-3 py-3">{item.finding_reference}</td>
+                  <td className="px-3 py-3">{item.owner_unit}</td>
+                  <td className="px-3 py-3">{formatCorrectiveDate(item.due_date)}</td>
+                  <td className="px-3 py-3">{item.completion_percentage}</td>
+                  <td className="px-3 py-3">{item.status}</td>
+                  <td className="px-3 py-3">{item.readiness_score}</td>
+                  <td className="px-3 py-3">{item.risk_level}</td>
+                  <td className="px-3 py-3">{String(item.overdue_flag)}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function CorrectiveActionRuntimeSummary({ data }: { data: CorrectiveActionRuntimeResponse }) {
+  return (
+    <>
+      <QualityAccreditationRegistryPanel
+        title="Readiness summary"
+        description="Corrective action readiness bands and average readiness scores."
+        items={data.readiness_summary}
+        emptyMessage="No readiness summary available."
+        renderItem={(item: CorrectiveActionReadinessSummary) => <CorrectiveReadinessCard item={item} />}
+        testId="corrective-action-readiness-summary"
+      />
+      <QualityAccreditationRegistryPanel
+        title="Risk summary"
+        description="Corrective action risk distribution."
+        items={data.risk_summary}
+        emptyMessage="No risk summary available."
+        renderItem={(item: CorrectiveActionRiskSummary) => <CorrectiveRiskCard item={item} />}
+        testId="corrective-action-risk-summary"
+      />
+      <QualityAccreditationRegistryPanel
+        title="Overdue summary"
+        description="Corrective action overdue state distribution."
+        items={data.overdue_summary}
+        emptyMessage="No overdue summary available."
+        renderItem={(item: CorrectiveActionOverdueSummary) => <CorrectiveOverdueCard item={item} />}
+        testId="corrective-action-overdue-summary"
+      />
+    </>
+  );
+}
+
+export function QualityAccreditationCorrectiveActionRuntimePage() {
+  const runtime = useCorrectiveActionRuntime();
+
+  if (runtime.isPending) return <LoadingState title="Loading corrective action runtime" />;
+  if (runtime.error) return PageError('Failed to load corrective action runtime.', runtime.error);
+  if (!runtime.data) return <ErrorState message="Corrective action runtime is unavailable." />;
+
+  return (
+    <RequirePermission permission={QUALITY_ACCREDITATION_PERMISSIONS.summaryRead}>
+      <ModuleShell
+        title={QUALITY_ACCREDITATION_PAGE_TITLES.correctiveActions}
+        description="Read-only corrective action runtime for remediation tracking, overdue monitoring, and gap closure readiness visibility."
+        currentPath={QUALITY_ACCREDITATION_ROUTES.correctiveActions}
+        boundaryPage="correctiveActions"
+      >
+        <section className="grid gap-6" data-testid="corrective-action-runtime">
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <QualityAccreditationMetricCard label="Actions" value={runtime.data.corrective_actions.length} helper="Read-only corrective actions inventory." />
+            <QualityAccreditationMetricCard label="Readiness groups" value={runtime.data.readiness_summary.length} helper="Readiness summary groups." />
+            <QualityAccreditationMetricCard label="Read-only" value={String(runtime.data.read_only)} helper="No write operations." />
+            <QualityAccreditationMetricCard label="Aggregator-only" value={String(runtime.data.aggregator_only)} helper="Visibility-only runtime." />
+          </section>
+          <CorrectiveActionSummaryPanel summary={runtime.data.action_summary} />
+          <CorrectiveActionRuntimeSummary data={runtime.data} />
+          <CorrectiveActionTable items={runtime.data.corrective_actions} />
         </section>
       </ModuleShell>
     </RequirePermission>

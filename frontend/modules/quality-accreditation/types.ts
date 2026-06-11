@@ -405,6 +405,73 @@ export interface SelfAssessmentRuntimeResponse {
   risk_summary: SelfAssessmentRiskSummary[];
 }
 
+export type CorrectiveActionStatus = string;
+export type CorrectiveActionRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN';
+
+export interface CorrectiveActionItem {
+  action_id: string;
+  action_title: string;
+  accreditation_standard: string;
+  finding_reference: string;
+  owner_unit: string;
+  due_date: string;
+  completion_percentage: number;
+  status: CorrectiveActionStatus;
+  readiness_score: number;
+  risk_level: CorrectiveActionRiskLevel;
+  overdue_flag: boolean;
+  last_updated: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface CorrectiveActionSummary {
+  total_actions: number;
+  completed_actions: number;
+  in_progress_actions: number;
+  overdue_actions: number;
+  average_completion_percentage: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface CorrectiveActionReadinessSummary {
+  readiness_band: string;
+  action_count: number;
+  average_readiness_score: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface CorrectiveActionRiskSummary {
+  risk_level: CorrectiveActionRiskLevel;
+  action_count: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface CorrectiveActionOverdueSummary {
+  overdue_state: string;
+  action_count: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface CorrectiveActionRuntimeResponse {
+  tenant_id: number;
+  owner_module: string;
+  runtime_registry: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  corrective_actions: CorrectiveActionItem[];
+  action_summary: CorrectiveActionSummary;
+  readiness_summary: CorrectiveActionReadinessSummary[];
+  risk_summary: CorrectiveActionRiskSummary[];
+  overdue_summary: CorrectiveActionOverdueSummary[];
+}
+
 export interface QualityAccreditationDashboardResponse extends QualityAccreditationBoundaryFlags {
   tenant_id: number;
   generated_at: string | null;
