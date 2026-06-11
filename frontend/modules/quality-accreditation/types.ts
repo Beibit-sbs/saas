@@ -643,6 +643,71 @@ export interface AuditFindingRuntime {
   audit_readiness_indicators: AuditReadiness[];
 }
 
+export interface ReadinessMonitoringSummary {
+  monitored_domains_total: number;
+  domains_on_track: number;
+  domains_at_risk: number;
+  average_readiness_score: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface ReadinessMonitoringDomain {
+  domain_id: string;
+  domain_name: string;
+  readiness_score: number;
+  threshold: number;
+  status: string;
+  trend: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface ReadinessMonitoringRisk {
+  risk_id: string;
+  risk_title: string;
+  risk_level: string;
+  impacted_domain: string;
+  mitigation_status: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface ReadinessMonitoringRemediation {
+  remediation_id: string;
+  remediation_title: string;
+  owner_unit: string;
+  completion_percentage: number;
+  status: string;
+  due_date: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface ReadinessMonitoringIndicator {
+  indicator_name: string;
+  indicator_value: number;
+  threshold: number;
+  status: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+}
+
+export interface ReadinessMonitoringRuntime {
+  tenant_id: number;
+  owner_module: string;
+  runtime_registry: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  readiness_summary: ReadinessMonitoringSummary;
+  readiness_domains: ReadinessMonitoringDomain[];
+  readiness_risks: ReadinessMonitoringRisk[];
+  remediation_tracking: ReadinessMonitoringRemediation[];
+  readiness_indicators: ReadinessMonitoringIndicator[];
+}
+
 export interface QualityAccreditationDashboardResponse extends QualityAccreditationBoundaryFlags {
   tenant_id: number;
   generated_at: string | null;

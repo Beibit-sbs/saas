@@ -78,6 +78,11 @@ import type {
   ImprovementKpiTarget,
   ImprovementMilestone,
   ImprovementPlanRuntime,
+  ReadinessMonitoringDomain,
+  ReadinessMonitoringIndicator,
+  ReadinessMonitoringRemediation,
+  ReadinessMonitoringRisk,
+  ReadinessMonitoringRuntime,
   ImprovementRoadmap,
   NonConformity,
   ProgramReadiness,
@@ -121,6 +126,7 @@ const CACHE_KEYS = {
   correctiveActionRuntime: ['quality-accreditation:corrective-action-runtime'] as const,
   improvementPlanRuntime: ['quality-accreditation:improvement-plan-runtime'] as const,
   auditFindingsRuntime: ['quality-accreditation:audit-findings-runtime'] as const,
+  readinessMonitoringRuntime: ['quality-accreditation:readiness-monitoring-runtime'] as const,
   dashboard: ['quality-accreditation:dashboard'] as const,
   matrixSummary: ['quality-accreditation:matrix-summary'] as const,
   limitations: ['quality-accreditation:limitations'] as const,
@@ -262,6 +268,14 @@ function useAuditFindingsRuntimeQuery() {
   return useQuery({
     queryKey: CACHE_KEYS.auditFindingsRuntime,
     queryFn: qualityAccreditationApi.useAuditFindingsRuntime,
+    staleTime: 30000,
+  });
+}
+
+function useReadinessMonitoringRuntimeQuery() {
+  return useQuery({
+    queryKey: CACHE_KEYS.readinessMonitoringRuntime,
+    queryFn: qualityAccreditationApi.useReadinessMonitoringRuntime,
     staleTime: 30000,
   });
 }
@@ -1751,6 +1765,194 @@ export function QualityAccreditationAuditFindingsRuntimePage() {
           <AuditRiskAnalysisPanel risk={payload.risk_severity_analysis} />
           <AuditRemediationStatusPanel remediation={payload.remediation_status} />
           <AuditReadinessPanel readiness={payload.audit_readiness_indicators} />
+        </section>
+      </ModuleShell>
+    </RequirePermission>
+  );
+}
+
+function ReadinessOverviewPanel({ averageScore, monitoredDomains, atRiskDomains }: { averageScore: number; monitoredDomains: number; atRiskDomains: number }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="readiness-overview-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Readiness overview</h2>
+        <p className="text-sm text-muted-foreground">Aggregate readiness posture across monitored quality accreditation domains.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <div className="rounded-lg border p-3">
+          <p className="text-sm text-muted-foreground">Average readiness score</p>
+          <p className="text-xl font-semibold">{averageScore}</p>
+        </div>
+        <div className="rounded-lg border p-3">
+          <p className="text-sm text-muted-foreground">Monitored domains</p>
+          <p className="text-xl font-semibold">{monitoredDomains}</p>
+        </div>
+        <div className="rounded-lg border p-3">
+          <p className="text-sm text-muted-foreground">Domains at risk</p>
+          <p className="text-xl font-semibold">{atRiskDomains}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReadinessDomainPanel({ domains }: { domains: ReadinessMonitoringDomain[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="readiness-domain-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Domain readiness monitoring</h2>
+        <p className="text-sm text-muted-foreground">Readiness scores and trends by internal, external, evidence, and closure domains.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {domains.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No readiness domains available.</p>
+        ) : (
+          domains.map((item) => (
+            <div key={item.domain_id} className="rounded-lg border p-3">
+              <p className="font-medium">{item.domain_name}</p>
+              <p className="text-sm text-muted-foreground">Score: {item.readiness_score}</p>
+              <p className="text-sm text-muted-foreground">Threshold: {item.threshold}</p>
+              <p className="text-sm text-muted-foreground">Status: {item.status}</p>
+              <p className="text-sm text-muted-foreground">Trend: {item.trend}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ReadinessRiskPanel({ risks }: { risks: ReadinessMonitoringRisk[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="readiness-risk-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Readiness risk analysis</h2>
+        <p className="text-sm text-muted-foreground">Risk register for readiness blockers and mitigation posture.</p>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-border text-left text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">Risk</th>
+              <th className="px-3 py-2">Level</th>
+              <th className="px-3 py-2">Domain</th>
+              <th className="px-3 py-2">Mitigation</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {risks.length === 0 ? (
+              <tr>
+                <td className="px-3 py-4 text-muted-foreground" colSpan={4}>No readiness risks available.</td>
+              </tr>
+            ) : (
+              risks.map((item) => (
+                <tr key={item.risk_id}>
+                  <td className="px-3 py-3">{item.risk_title}</td>
+                  <td className="px-3 py-3">{item.risk_level}</td>
+                  <td className="px-3 py-3">{item.impacted_domain}</td>
+                  <td className="px-3 py-3">{item.mitigation_status}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function ReadinessRemediationPanel({ items }: { items: ReadinessMonitoringRemediation[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="readiness-remediation-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Remediation tracking</h2>
+        <p className="text-sm text-muted-foreground">Execution status for readiness remediation workstreams.</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No remediation tracking entries available.</p>
+        ) : (
+          items.map((item) => (
+            <div key={item.remediation_id} className="rounded-lg border p-3">
+              <p className="font-medium">{item.remediation_title}</p>
+              <p className="text-sm text-muted-foreground">Owner: {item.owner_unit}</p>
+              <p className="text-sm text-muted-foreground">Completion: {item.completion_percentage}</p>
+              <p className="text-sm text-muted-foreground">Status: {item.status}</p>
+              <p className="text-sm text-muted-foreground">Due: {new Intl.DateTimeFormat('en-GB').format(new Date(item.due_date))}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ReadinessIndicatorsPanel({ indicators }: { indicators: ReadinessMonitoringIndicator[] }) {
+  return (
+    <section className="rounded-lg border p-4" data-testid="readiness-indicators-panel">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Audit readiness indicators</h2>
+        <p className="text-sm text-muted-foreground">Threshold tracking for global readiness, closure rate, and evidence completeness.</p>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-border text-left text-sm">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">Indicator</th>
+              <th className="px-3 py-2">Value</th>
+              <th className="px-3 py-2">Threshold</th>
+              <th className="px-3 py-2">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {indicators.length === 0 ? (
+              <tr>
+                <td className="px-3 py-4 text-muted-foreground" colSpan={4}>No readiness indicators available.</td>
+              </tr>
+            ) : (
+              indicators.map((item) => (
+                <tr key={item.indicator_name}>
+                  <td className="px-3 py-3">{item.indicator_name}</td>
+                  <td className="px-3 py-3">{item.indicator_value}</td>
+                  <td className="px-3 py-3">{item.threshold}</td>
+                  <td className="px-3 py-3">{item.status}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+export function QualityAccreditationReadinessMonitoringRuntimePage() {
+  const runtime = useReadinessMonitoringRuntimeQuery();
+
+  if (runtime.isPending) return <LoadingState title="Loading readiness monitoring runtime" />;
+  if (runtime.error) return PageError('Failed to load readiness monitoring runtime.', runtime.error);
+  if (!runtime.data) return <ErrorState message="Readiness monitoring runtime is unavailable." />;
+
+  const payload: ReadinessMonitoringRuntime = runtime.data;
+
+  return (
+    <RequirePermission permission={QUALITY_ACCREDITATION_PERMISSIONS.summaryRead}>
+      <ModuleShell
+        title={QUALITY_ACCREDITATION_PAGE_TITLES.readinessMonitoringRuntime}
+        description="Read-only readiness monitoring runtime with readiness overview, domain monitoring, risk analysis, remediation tracking, and indicator visibility."
+        currentPath={QUALITY_ACCREDITATION_ROUTES.readinessMonitoringRuntime}
+        boundaryPage="readinessMonitoringRuntime"
+      >
+        <section className="grid gap-6" data-testid="readiness-monitoring-runtime">
+          <ReadinessOverviewPanel
+            averageScore={payload.readiness_summary.average_readiness_score}
+            monitoredDomains={payload.readiness_summary.monitored_domains_total}
+            atRiskDomains={payload.readiness_summary.domains_at_risk}
+          />
+          <ReadinessDomainPanel domains={payload.readiness_domains} />
+          <ReadinessRiskPanel risks={payload.readiness_risks} />
+          <ReadinessRemediationPanel items={payload.remediation_tracking} />
+          <ReadinessIndicatorsPanel indicators={payload.readiness_indicators} />
         </section>
       </ModuleShell>
     </RequirePermission>

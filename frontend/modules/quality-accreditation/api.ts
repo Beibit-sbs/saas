@@ -3,6 +3,7 @@ import { QUALITY_ACCREDITATION_API_PATHS } from './constants';
 import type {
   AccreditationEvidenceRuntimeResponse,
   AuditFindingRuntime,
+  ReadinessMonitoringRuntime,
   AccreditationRegistryRuntimeResponse,
   CorrectiveActionRuntimeResponse,
   ImprovementPlanRuntimeResponse,
@@ -100,6 +101,8 @@ export const qualityAccreditationApi = {
   useImprovementPlanRuntime: () => apiGet<ImprovementPlanRuntimeResponse>(QUALITY_ACCREDITATION_API_PATHS.improvementPlanRuntime),
   getAuditFindingsRuntime: () => apiGet<AuditFindingRuntime>(QUALITY_ACCREDITATION_API_PATHS.auditFindingsRuntime),
   useAuditFindingsRuntime: () => apiGet<AuditFindingRuntime>(QUALITY_ACCREDITATION_API_PATHS.auditFindingsRuntime),
+  getReadinessMonitoringRuntime: () => apiGet<ReadinessMonitoringRuntime>(QUALITY_ACCREDITATION_API_PATHS.readinessMonitoringRuntime),
+  useReadinessMonitoringRuntime: () => apiGet<ReadinessMonitoringRuntime>(QUALITY_ACCREDITATION_API_PATHS.readinessMonitoringRuntime),
   getQualityAccreditationHealth: () => apiGet<QualityAccreditationHealthResponse>(QUALITY_ACCREDITATION_API_PATHS.health),
   getQualityAccreditationOverview: () => apiGet<QualityAccreditationOverviewResponse>(QUALITY_ACCREDITATION_API_PATHS.overview),
   getQualityAccreditationDashboard: () => apiGet<QualityAccreditationDashboardResponse>(QUALITY_ACCREDITATION_API_PATHS.dashboard),
