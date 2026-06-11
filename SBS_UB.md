@@ -21,7 +21,7 @@
     - validation_report_file: A-050.3-B1-QUALITY_ACCREDITATION_BRAIN_CONTRACT_CONSISTENCY_REVIEW_REPORT.md
     - normalization_report_file: A-050.3-B2-QUALITY_ACCREDITATION_BRAIN_CONTRACT_NORMALIZATION_REPORT.md
     - implementation_plan_report_file: A-050.4-SPEC-QUALITY_ACCREDITATION_RUNTIME_IMPLEMENTATION_PLAN_REPORT.md
-    - next_action_id: A-050.14-B1
+    - next_action_id: A-050.14-B2
 
 - A-050.1-AUDIT execution block:
     - mode: quality_accreditation_brain_existing_capability_analysis
@@ -433,6 +433,34 @@
     - final_verdict: A-050.13-E1 PASS - DASHBOARD_RUNTIME_IMPLEMENTED
     - recommended_next_action: A-050.14-B1
     - next_action_id: A-050.14-B1
+
+- A-050.14-B1 execution block:
+    - mode: quality_accreditation_end_to_end_validation
+    - purpose: validate_quality_accreditation_runtime_chain_with_historical_b1_override
+    - source_state_before: A-050.13-E1 PASS
+    - source_state_validation: PASS
+    - source_override_rule_applied: PASS
+    - source_next_action_id_confirmed: A-050.14-B1
+    - historical_b1_defect_acknowledged: PASS
+    - b1_conflict_remediated_by_b2: PASS
+    - backend_validation_matrix: PASS
+    - frontend_validation_matrix: PASS
+    - typescript_validation: PASS
+    - runtime_boundary_validation: PASS
+    - tenant_isolation_enforced: PASS
+    - rbac_summary_read_enforced: PASS
+    - read_only_aggregator_contract: PASS
+    - no_provider_integrations: PASS
+    - no_write_operations: PASS
+    - no_background_jobs: PASS
+    - no_workflow_execution: PASS
+    - audit_compatible_runtime_paths: PASS
+    - regression_validation: PASS
+    - validation_notes: override_source_gate_passed_with_b1_historical_fail_remediated_by_b2_and_full_backend_frontend_typescript_matrix_pass
+    - report_file: A-050.14-B1-QUALITY_ACCREDITATION_END_TO_END_VALIDATION_REPORT.md
+    - final_verdict: A-050.14-B1 PASS - QUALITY_ACCREDITATION_RUNTIME_VALIDATED_END_TO_END
+    - recommended_next_action: A-050.14-B2
+    - next_action_id: A-050.14-B2
 
 - A-049.16 execution block:
     - mode: ministry_regulatory_reporting_certification_and_vertical_closure
