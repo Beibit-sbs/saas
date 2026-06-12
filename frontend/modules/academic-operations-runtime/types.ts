@@ -33,3 +33,63 @@ export type AcademicOperationsRuntimeShellResponse = {
   runtime_shell_readiness: AcademicOperationsRuntimeShellSection;
   safety: AcademicOperationsRuntimeShellSafety;
 };
+
+export type AcademicRegistryRuntimeSection = {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+};
+
+export type AcademicRegistryRuntimeOverview = {
+  owner_module: string;
+  runtime_scope: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+};
+
+export type AcademicRegistryRuntimeStatistics = {
+  academic_periods_total: number;
+  academic_groups_total: number;
+  curriculum_registry_total: number;
+  course_catalog_linkage_total: number;
+  student_registry_linkage_total: number;
+  canonical_bridge_total: number;
+};
+
+export type AcademicRegistryRuntimeIntegrationStatus = {
+  provider: string;
+  status: string;
+  integration_mode: string;
+  ready: boolean;
+  evidence_count: number;
+  read_only: boolean;
+};
+
+export type AcademicRegistryRuntimeHealth = {
+  healthy: boolean;
+  consistency_score: number;
+  issues: string[];
+};
+
+export type AcademicRegistryRuntimeReadiness = {
+  ready_for_runtime: boolean;
+  checklist: string[];
+  readiness_score: number;
+};
+
+export type AcademicRegistryRuntimeResponse = {
+  tenant_id: number;
+  overview: AcademicRegistryRuntimeOverview;
+  registry_statistics: AcademicRegistryRuntimeStatistics;
+  academic_periods: AcademicRegistryRuntimeSection;
+  academic_groups: AcademicRegistryRuntimeSection;
+  curriculum_linkage: AcademicRegistryRuntimeSection;
+  catalog_linkage: AcademicRegistryRuntimeSection;
+  sis_status: AcademicRegistryRuntimeIntegrationStatus;
+  lms_status: AcademicRegistryRuntimeIntegrationStatus;
+  health: AcademicRegistryRuntimeHealth;
+  readiness: AcademicRegistryRuntimeReadiness;
+};
