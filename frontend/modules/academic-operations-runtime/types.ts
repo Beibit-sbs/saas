@@ -93,3 +93,62 @@ export type AcademicRegistryRuntimeResponse = {
   health: AcademicRegistryRuntimeHealth;
   readiness: AcademicRegistryRuntimeReadiness;
 };
+
+export type CurriculumRuntimeSection = {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+};
+
+export type CurriculumRuntimeOverview = {
+  owner_module: string;
+  runtime_scope: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+};
+
+export type CurriculumRuntimeStatistics = {
+  program_structures_total: number;
+  curriculum_versions_total: number;
+  curriculum_health_score: number;
+  course_catalog_linkage_total: number;
+  prerequisite_chains_total: number;
+  learning_outcomes_total: number;
+  academic_plans_total: number;
+  canonical_bridge_total: number;
+};
+
+export type CurriculumRuntimeHealth = {
+  healthy: boolean;
+  consistency_score: number;
+  issues: string[];
+};
+
+export type CurriculumRuntimeRisks = {
+  risk_score: number;
+  open_risks: number;
+  indicators: string[];
+};
+
+export type CurriculumRuntimeReadiness = {
+  ready_for_runtime: boolean;
+  checklist: string[];
+  readiness_score: number;
+};
+
+export type CurriculumRuntimeResponse = {
+  tenant_id: number;
+  overview: CurriculumRuntimeOverview;
+  curriculum_statistics: CurriculumRuntimeStatistics;
+  program_structures: CurriculumRuntimeSection;
+  curriculum_versions: CurriculumRuntimeSection;
+  curriculum_health: CurriculumRuntimeHealth;
+  course_catalog_linkage: CurriculumRuntimeSection;
+  prerequisite_chains: CurriculumRuntimeSection;
+  learning_outcomes_summary: CurriculumRuntimeSection;
+  curriculum_risks: CurriculumRuntimeRisks;
+  curriculum_readiness: CurriculumRuntimeReadiness;
+};

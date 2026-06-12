@@ -124,4 +124,12 @@ describe('academicOperationsRuntimeApi', () => {
 
     expect(mockApiGet).toHaveBeenCalledWith('/api/academic-operations/runtime/academic-registry');
   });
+
+  it('uses the curriculum runtime endpoint', async () => {
+    const { academicOperationsRuntimeApi } = await import('@/modules/academic-operations-runtime/api');
+
+    await academicOperationsRuntimeApi.getCurriculumRuntime();
+
+    expect(mockApiGet).toHaveBeenCalledWith('/api/academic-operations/runtime/curriculum');
+  });
 });

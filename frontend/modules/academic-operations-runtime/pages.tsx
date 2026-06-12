@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ErrorState, LoadingState } from '@/shared/ui/page-states';
 import { academicOperationsRuntimeApi } from './api';
-import type { AcademicOperationsRuntimeShellSection, AcademicRegistryRuntimeSection } from './types';
+import type { AcademicOperationsRuntimeShellSection, AcademicRegistryRuntimeSection, CurriculumRuntimeSection } from './types';
 
 function RuntimeSectionCard({
   title,
@@ -100,7 +100,7 @@ function RegistrySectionCard({
   testId,
 }: {
   title: string;
-  section: AcademicRegistryRuntimeSection;
+  section: AcademicRegistryRuntimeSection | CurriculumRuntimeSection;
   testId: string;
 }) {
   return (
@@ -205,6 +205,110 @@ export function AcademicRegistryRuntimePage() {
         <p className="text-sm">Readiness score: {runtime.data.readiness.readiness_score}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
           {runtime.data.readiness.checklist.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function CurriculumRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['academic-operations:curriculum-runtime'],
+    queryFn: academicOperationsRuntimeApi.getCurriculumRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Curriculum runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Curriculum runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Curriculum runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="curriculum-overview-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Curriculum Runtime</h1>
+        <p className="text-sm text-muted-foreground">
+          Read-only Curriculum runtime for structure, outcomes, prerequisite chains, and readiness visibility.
+        </p>
+      </header>
+
+      <section className="rounded-lg border p-4" data-testid="curriculum-statistics-panel">
+        <h2 className="text-lg font-semibold">Curriculum statistics</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Program structures total: {runtime.data.curriculum_statistics.program_structures_total}</p>
+          <p>Curriculum versions total: {runtime.data.curriculum_statistics.curriculum_versions_total}</p>
+          <p>Curriculum health score: {runtime.data.curriculum_statistics.curriculum_health_score}</p>
+          <p>Course catalog linkage total: {runtime.data.curriculum_statistics.course_catalog_linkage_total}</p>
+          <p>Prerequisite chains total: {runtime.data.curriculum_statistics.prerequisite_chains_total}</p>
+          <p>Learning outcomes total: {runtime.data.curriculum_statistics.learning_outcomes_total}</p>
+          <p>Academic plans total: {runtime.data.curriculum_statistics.academic_plans_total}</p>
+          <p>Canonical bridge total: {runtime.data.curriculum_statistics.canonical_bridge_total}</p>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <RegistrySectionCard
+          title="Program structures"
+          section={runtime.data.program_structures}
+          testId="curriculum-program-structures-panel"
+        />
+        <RegistrySectionCard
+          title="Curriculum versions"
+          section={runtime.data.curriculum_versions}
+          testId="curriculum-versions-panel"
+        />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="curriculum-health-panel">
+        <h2 className="text-lg font-semibold">Curriculum health</h2>
+        <p className="mt-2 text-sm">Healthy: {String(runtime.data.curriculum_health.healthy)}</p>
+        <p className="text-sm">Consistency score: {runtime.data.curriculum_health.consistency_score}</p>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <RegistrySectionCard
+          title="Course catalog linkage"
+          section={runtime.data.course_catalog_linkage}
+          testId="curriculum-catalog-linkage-panel"
+        />
+        <RegistrySectionCard
+          title="Prerequisite chains"
+          section={runtime.data.prerequisite_chains}
+          testId="curriculum-prerequisites-panel"
+        />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="curriculum-learning-outcomes-panel">
+        <h2 className="text-lg font-semibold">Learning outcomes summary</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Owner module: {runtime.data.learning_outcomes_summary.owner_module}</p>
+          <p>Records: {runtime.data.learning_outcomes_summary.records}</p>
+          <p>Read-only: {String(runtime.data.learning_outcomes_summary.read_only)}</p>
+          <p>Aggregator-only: {String(runtime.data.learning_outcomes_summary.aggregator_only)}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="curriculum-risks-panel">
+        <h2 className="text-lg font-semibold">Curriculum risks</h2>
+        <p className="mt-2 text-sm">Risk score: {runtime.data.curriculum_risks.risk_score}</p>
+        <p className="text-sm">Open risks: {runtime.data.curriculum_risks.open_risks}</p>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="curriculum-readiness-panel">
+        <h2 className="text-lg font-semibold">Curriculum readiness</h2>
+        <p className="mt-2 text-sm">Ready for runtime: {String(runtime.data.curriculum_readiness.ready_for_runtime)}</p>
+        <p className="text-sm">Readiness score: {runtime.data.curriculum_readiness.readiness_score}</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.curriculum_readiness.checklist.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
