@@ -33,7 +33,8 @@
     - a05112_e1_status: COMPLETED
     - a05113_e1_status: COMPLETED
     - a05114_b1_status: COMPLETED
-    - readiness: READY_FOR_BASELINE
+    - a05114_b2_status: COMPLETED
+    - readiness: READY_FOR_CLOSURE
     - audit_report_file: A-051.1-AUDIT-STUDENT_SUCCESS_BRAIN_EXISTING_CAPABILITY_ANALYSIS_REPORT.md
     - spec_report_file: A-051.2-SPEC-STUDENT_SUCCESS_BRAIN_RUNTIME_CONTRACT_REPORT.md
     - b1_review_report_file: A-051.3-B1-STUDENT_SUCCESS_BRAIN_CONTRACT_CONSISTENCY_REVIEW_REPORT.md
@@ -49,7 +50,8 @@
     - a05112_e1_report_file: A-051.12-E1-STUDENT_SUCCESS_SIGNALS_RUNTIME_IMPLEMENTATION_REPORT.md
     - a05113_e1_report_file: A-051.13-E1-STUDENT_SUCCESS_DASHBOARD_RUNTIME_IMPLEMENTATION_REPORT.md
     - a05114_b1_report_file: A-051.14-B1-STUDENT_SUCCESS_END_TO_END_VALIDATION_REPORT.md
-    - next_action_id: A-051.14-B2
+    - a05114_b2_report_file: A-051.14-B2-STUDENT_SUCCESS_PRODUCT_QUALITY_BASELINE_REPORT.md
+    - next_action_id: A-051.15
 
 - A-050.1-AUDIT execution block:
     - mode: quality_accreditation_brain_existing_capability_analysis
