@@ -1311,6 +1311,28 @@
 - final_verdict: A-052.3-B2 PASS - ACADEMIC_OPERATIONS_BRAIN_CONTRACT_NORMALIZED
 - next_action_id: A-052.4-SPEC.
 
+## 0. A-052.4 Academic Operations Runtime Implementation Plan Continuity
+
+- A-052.4 completed as planning-only runtime implementation-plan action for Academic Operations Brain runtime.
+- Source validation outcomes:
+	- A-052.1 AUDIT PASS confirmed
+	- A-052.2 SPEC PASS confirmed
+	- A-052.3-B1 PASS confirmed
+	- A-052.3-B2 PASS confirmed
+	- runtime_readiness confirmed as `READY_FOR_RUNTIME_PLANNING`
+	- source handoff before execution confirmed as `A-052.4-SPEC`
+- Planning outcomes:
+	- runtime decomposition defined for A-052.5-E1 through A-052.14-E1 with per-slice backend files, frontend files, route, tests, dependencies, validation gates, and report names
+	- reuse strategy defined for 11 required modules plus new runtime shell substrate with explicit DIRECT_REUSE / PARTIAL_REUSE / NEW_RUNTIME_REQUIRED classification
+	- security implementation plan normalized across all slices (SUMMARY_READ, tenant fail-closed enforcement, GET-only, read-only, aggregator-only, no writes/workflows/approvals/background/provider writes)
+	- frontend implementation plan defined for `frontend/modules/academic-operations-runtime/` with required `constants.ts`, `types.ts`, `api.ts`, `pages.tsx`, route map, and targeted test inventory
+	- validation matrix defined for backend targeted pytest, frontend targeted vitest, TypeScript gate (`npx tsc --noEmit`), and closure gates (A-052.15-B1, A-052.15-B2, A-052.16)
+	- implementation sequence finalized from A-052.5-E1 to A-052.14-E1 followed by B1/B2/closure gates
+- runtime_readiness: READY_FOR_RUNTIME_IMPLEMENTATION
+- report_file: A-052.4-SPEC-ACADEMIC_OPERATIONS_RUNTIME_IMPLEMENTATION_PLAN_REPORT.md
+- final_verdict: A-052.4-SPEC PASS - ACADEMIC_OPERATIONS_RUNTIME_PLAN_READY
+- next_action_id: A-052.5-E1.
+
 ## 0. A-049.15-B1 Ministry Regulatory Reporting Product Quality Baseline Continuity
 
 - A-049.15-B1 completed as certification-baseline action for the Ministry & Regulatory Reporting Brain vertical.
