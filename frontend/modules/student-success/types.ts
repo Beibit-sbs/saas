@@ -180,3 +180,44 @@ export interface StudentAcademicRiskRuntime {
   academic_signal_summary: StudentAcademicRiskRuntimeSection;
   safety: StudentAcademicRiskRuntimeSafety;
 }
+
+export interface StudentAttendanceRiskRuntimeSection {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+}
+
+export interface StudentAttendanceRiskRuntimeSafety {
+  read_only: boolean;
+  aggregator_only: boolean;
+  tenant_aware: boolean;
+  summary_read_required: boolean;
+  write_operations_enabled: boolean;
+  workflow_execution_enabled: boolean;
+  approval_execution_enabled: boolean;
+  background_jobs_enabled: boolean;
+  provider_mutation_enabled: boolean;
+  outbound_integrations_enabled: boolean;
+  limitations: string[];
+}
+
+export interface StudentAttendanceRiskRuntime {
+  tenant_id: number;
+  owner_module: string;
+  runtime_surface: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  attendance_risk_summary: StudentAttendanceRiskRuntimeSection;
+  absence_distribution: StudentAttendanceRiskRuntimeSection;
+  chronic_absence_summary: StudentAttendanceRiskRuntimeSection;
+  missed_class_summary: StudentAttendanceRiskRuntimeSection;
+  attendance_trend_summary: StudentAttendanceRiskRuntimeSection;
+  punctuality_summary: StudentAttendanceRiskRuntimeSection;
+  engagement_attendance_summary: StudentAttendanceRiskRuntimeSection;
+  attendance_signal_summary: StudentAttendanceRiskRuntimeSection;
+  safety: StudentAttendanceRiskRuntimeSafety;
+}

@@ -5,6 +5,7 @@ import { ErrorState, LoadingState } from '@/shared/ui/page-states';
 import { studentSuccessApi } from './api';
 import type {
   StudentAcademicRiskRuntime,
+  StudentAttendanceRiskRuntime,
   StudentRetentionRuntime,
   StudentRegistryRuntimeSection,
   StudentSuccessRuntimeShellSection,
@@ -116,6 +117,39 @@ function AcademicRiskSectionCard({
 }: {
   title: string;
   section: StudentAcademicRiskRuntime['academic_risk_summary'];
+  testId: string;
+}) {
+  return (
+    <section className="rounded-lg border p-4" data-testid={testId}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="mt-3 grid gap-2 text-sm">
+        <p>
+          <span className="font-medium">Owner:</span> {section.owner_module}
+        </p>
+        <p>
+          <span className="font-medium">Records:</span> {section.records}
+        </p>
+        <p>
+          <span className="font-medium">Read-only:</span> {String(section.read_only)}
+        </p>
+        <p>
+          <span className="font-medium">Aggregator-only:</span> {String(section.aggregator_only)}
+        </p>
+        <p>
+          <span className="font-medium">Sources:</span> {section.source_modules.join(', ')}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function AttendanceRiskSectionCard({
+  title,
+  section,
+  testId,
+}: {
+  title: string;
+  section: StudentAttendanceRiskRuntime['attendance_risk_summary'];
   testId: string;
 }) {
   return (
@@ -358,6 +392,67 @@ export function StudentAcademicRiskRuntimePage() {
       </section>
 
       <section className="rounded-lg border p-4" data-testid="student-academic-risk-runtime-safety">
+        <h2 className="text-lg font-semibold">Runtime safety</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Read-only: {String(runtime.data.safety.read_only)}</p>
+          <p>Aggregator-only: {String(runtime.data.safety.aggregator_only)}</p>
+          <p>Tenant-aware: {String(runtime.data.safety.tenant_aware)}</p>
+          <p>SUMMARY_READ required: {String(runtime.data.safety.summary_read_required)}</p>
+          <p>Write operations enabled: {String(runtime.data.safety.write_operations_enabled)}</p>
+          <p>Workflow execution enabled: {String(runtime.data.safety.workflow_execution_enabled)}</p>
+          <p>Approvals enabled: {String(runtime.data.safety.approval_execution_enabled)}</p>
+          <p>Background jobs enabled: {String(runtime.data.safety.background_jobs_enabled)}</p>
+          <p>Provider mutation enabled: {String(runtime.data.safety.provider_mutation_enabled)}</p>
+          <p>Outbound integrations enabled: {String(runtime.data.safety.outbound_integrations_enabled)}</p>
+        </div>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.safety.limitations.map((limitation) => (
+            <li key={limitation}>{limitation}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function StudentAttendanceRiskRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['student-success:student-attendance-risk-runtime'],
+    queryFn: studentSuccessApi.getStudentAttendanceRiskRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Student Attendance Risk runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Student Attendance Risk runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Student Attendance Risk runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="attendance-risk-runtime-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Student Attendance Risk Runtime</h1>
+        <p className="text-sm text-muted-foreground">Read-only aggregated Student Attendance Risk runtime for absence, chronic absence, missed class, trend, punctuality, engagement, and attendance signals.</p>
+      </header>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <AttendanceRiskSectionCard title="Attendance Risk Summary" section={runtime.data.attendance_risk_summary} testId="attendance-risk-summary-panel" />
+        <AttendanceRiskSectionCard title="Absence Distribution" section={runtime.data.absence_distribution} testId="absence-distribution-panel" />
+        <AttendanceRiskSectionCard title="Chronic Absence Summary" section={runtime.data.chronic_absence_summary} testId="chronic-absence-panel" />
+        <AttendanceRiskSectionCard title="Missed Class Summary" section={runtime.data.missed_class_summary} testId="missed-class-panel" />
+        <AttendanceRiskSectionCard title="Attendance Trend Summary" section={runtime.data.attendance_trend_summary} testId="attendance-trend-panel" />
+        <AttendanceRiskSectionCard title="Punctuality Summary" section={runtime.data.punctuality_summary} testId="punctuality-panel" />
+        <AttendanceRiskSectionCard title="Engagement Attendance Summary" section={runtime.data.engagement_attendance_summary} testId="engagement-attendance-panel" />
+        <AttendanceRiskSectionCard title="Attendance Signal Summary" section={runtime.data.attendance_signal_summary} testId="attendance-signal-panel" />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="student-attendance-risk-runtime-safety">
         <h2 className="text-lg font-semibold">Runtime safety</h2>
         <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
           <p>Read-only: {String(runtime.data.safety.read_only)}</p>
