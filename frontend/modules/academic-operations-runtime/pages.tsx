@@ -9,6 +9,7 @@ import type {
   AcademicRegistryRuntimeSection,
   AssessmentRuntimeSection,
   CurriculumRuntimeSection,
+  InternshipRuntimeSection,
   TeachingLoadRuntimeSection,
   TimetableRuntimeSection,
 } from './types';
@@ -114,7 +115,8 @@ function RegistrySectionCard({
     | TimetableRuntimeSection
     | AttendanceRuntimeSection
     | AssessmentRuntimeSection
-    | TeachingLoadRuntimeSection;
+    | TeachingLoadRuntimeSection
+    | InternshipRuntimeSection;
   testId: string;
 }) {
   return (
@@ -776,6 +778,121 @@ export function TeachingLoadRuntimePage() {
         <p className="text-sm">Readiness score: {runtime.data.teaching_load_readiness.readiness_score}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
           {runtime.data.teaching_load_readiness.checklist.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function InternshipRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['academic-operations:internship-runtime'],
+    queryFn: academicOperationsRuntimeApi.getInternshipRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Internship runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Internship runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Internship runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="internship-overview-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Internship Runtime</h1>
+        <p className="text-sm text-muted-foreground">
+          Read-only internship runtime for placement visibility, employer engagement, completion tracking, and readiness signals.
+        </p>
+      </header>
+
+      <section className="rounded-lg border p-4" data-testid="internship-statistics-panel">
+        <h2 className="text-lg font-semibold">Internship statistics</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Participation rate: {runtime.data.internship_statistics.participation_rate}</p>
+          <p>Completion rate: {runtime.data.internship_statistics.completion_rate}</p>
+          <p>Active rate: {runtime.data.internship_statistics.active_rate}</p>
+          <p>Placement rate: {runtime.data.internship_statistics.placement_rate}</p>
+          <p>Total internships: {runtime.data.internship_statistics.total_internships}</p>
+          <p>Active internships: {runtime.data.internship_statistics.active_internships}</p>
+          <p>Completed internships: {runtime.data.internship_statistics.completed_internships}</p>
+          <p>Employer count: {runtime.data.internship_statistics.employer_count}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="placement-distribution-panel">
+        <h2 className="text-lg font-semibold">Placement distribution</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>By employer: {Object.keys(runtime.data.placement_distribution.by_employer).length}</p>
+          <p>By industry: {Object.keys(runtime.data.placement_distribution.by_industry).length}</p>
+          <p>By department: {Object.keys(runtime.data.placement_distribution.by_department).length}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="completion-summary-panel">
+        <h2 className="text-lg font-semibold">Completion summary</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Completed: {runtime.data.completion_summary.completed}</p>
+          <p>Active: {runtime.data.completion_summary.active}</p>
+          <p>Overdue: {runtime.data.completion_summary.overdue}</p>
+        </div>
+      </section>
+
+      <RegistrySectionCard
+        title="Active internships"
+        section={runtime.data.active_internships}
+        testId="active-internships-panel"
+      />
+
+      <section className="rounded-lg border p-4" data-testid="employer-engagement-panel">
+        <h2 className="text-lg font-semibold">Employer engagement</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Employer participation rate: {runtime.data.employer_engagement.employer_participation_rate}</p>
+          <p>Repeat employers: {runtime.data.employer_engagement.repeat_employers}</p>
+          <p>Placement volume: {runtime.data.employer_engagement.placement_volume}</p>
+          <p>Employer count: {runtime.data.employer_engagement.employer_count}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="internship-risk-panel">
+        <h2 className="text-lg font-semibold">Internship risk summary</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>High risk count: {runtime.data.internship_risk_summary.high_risk_count}</p>
+          <p>Medium risk count: {runtime.data.internship_risk_summary.medium_risk_count}</p>
+          <p>Low risk count: {runtime.data.internship_risk_summary.low_risk_count}</p>
+        </div>
+      </section>
+
+      <RegistrySectionCard
+        title="High-risk internships"
+        section={runtime.data.high_risk_internships}
+        testId="high-risk-internships-panel"
+      />
+
+      <section className="rounded-lg border p-4" data-testid="internship-signals-panel">
+        <h2 className="text-lg font-semibold">Internship signals</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Generated signals: {runtime.data.internship_signals.generated_signals}</p>
+          <p>Signal types: {runtime.data.internship_signals.signal_types.join(', ') || 'none'}</p>
+          <p>Indicators: {runtime.data.internship_signals.indicators.join(', ') || 'none'}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="internship-readiness-panel">
+        <h2 className="text-lg font-semibold">Internship readiness</h2>
+        <p className="mt-2 text-sm">Readiness score: {runtime.data.internship_readiness.readiness_score}</p>
+        <p className="text-sm">Classification: {runtime.data.internship_readiness.readiness_classification}</p>
+        <p className="text-sm">Ready for runtime: {String(runtime.data.internship_readiness.ready_for_runtime)}</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.internship_readiness.readiness_drivers.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>

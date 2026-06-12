@@ -8,4 +8,5 @@ export const ACADEMIC_OPERATIONS_RUNTIME_PATHS = {
   attendanceRuntime: '/api/academic-operations/runtime/attendance',
   assessmentRuntime: '/api/academic-operations/runtime/assessment',
   teachingLoadRuntime: '/api/academic-operations/runtime/teaching-load',
+  internshipRuntime: '/api/academic-operations/runtime/internship',
 } as const;

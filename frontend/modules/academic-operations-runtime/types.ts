@@ -454,3 +454,111 @@ export type TeachingLoadRuntimeResponse = {
   teaching_load_signals: TeachingLoadSignals;
   teaching_load_readiness: TeachingLoadReadiness;
 };
+
+export type InternshipRuntimeOverview = {
+  owner_module: string;
+  runtime_scope: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+};
+
+export type InternshipRuntimeStatistics = {
+  participation_rate: number;
+  completion_rate: number;
+  active_rate: number;
+  placement_rate: number;
+  total_internships: number;
+  active_internships: number;
+  completed_internships: number;
+  employer_count: number;
+};
+
+export type InternshipPlacementDistribution = {
+  by_employer: Record<string, number>;
+  by_industry: Record<string, number>;
+  by_department: Record<string, number>;
+  read_only: boolean;
+};
+
+export type InternshipCompletionSummary = {
+  completed: number;
+  active: number;
+  overdue: number;
+  read_only: boolean;
+};
+
+export type InternshipActiveInternshipRecord = {
+  internship_identifier: string;
+  employer: string;
+  student_count: number;
+  status: string;
+};
+
+export type InternshipRuntimeSection = {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+  items: InternshipActiveInternshipRecord[];
+};
+
+export type InternshipEmployerEngagement = {
+  employer_participation_rate: number;
+  repeat_employers: number;
+  placement_volume: number;
+  employer_count: number;
+  read_only: boolean;
+};
+
+export type InternshipRiskSummary = {
+  high_risk_count: number;
+  medium_risk_count: number;
+  low_risk_count: number;
+  read_only: boolean;
+};
+
+export type InternshipHighRiskInternship = {
+  internship_identifier: string;
+  employer: string;
+  student_count: number;
+  risk_reason: string;
+};
+
+export type InternshipHighRiskSection = {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+  items: InternshipHighRiskInternship[];
+};
+
+export type InternshipSignals = {
+  generated_signals: number;
+  signal_types: string[];
+  indicators: string[];
+  read_only: boolean;
+};
+
+export type InternshipReadiness = {
+  readiness_score: number;
+  readiness_classification: string;
+  readiness_drivers: string[];
+  ready_for_runtime: boolean;
+};
+
+export type InternshipRuntimeResponse = {
+  tenant_id: number;
+  overview: InternshipRuntimeOverview;
+  internship_statistics: InternshipRuntimeStatistics;
+  placement_distribution: InternshipPlacementDistribution;
+  completion_summary: InternshipCompletionSummary;
+  active_internships: InternshipRuntimeSection;
+  employer_engagement: InternshipEmployerEngagement;
+  internship_risk_summary: InternshipRiskSummary;
+  high_risk_internships: InternshipHighRiskSection;
+  internship_signals: InternshipSignals;
+  internship_readiness: InternshipReadiness;
+};
