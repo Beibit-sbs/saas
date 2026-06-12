@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ErrorState, LoadingState } from '@/shared/ui/page-states';
 import { academicOperationsRuntimeApi } from './api';
 import type {
+  AttendanceRuntimeSection,
   AcademicOperationsRuntimeShellSection,
   AcademicRegistryRuntimeSection,
   CurriculumRuntimeSection,
@@ -105,7 +106,11 @@ function RegistrySectionCard({
   testId,
 }: {
   title: string;
-  section: AcademicRegistryRuntimeSection | CurriculumRuntimeSection | TimetableRuntimeSection;
+  section:
+    | AcademicRegistryRuntimeSection
+    | CurriculumRuntimeSection
+    | TimetableRuntimeSection
+    | AttendanceRuntimeSection;
   testId: string;
 }) {
   return (
@@ -427,6 +432,115 @@ export function TimetableRuntimePage() {
         <p className="text-sm">Readiness score: {runtime.data.timetable_readiness.readiness_score}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
           {runtime.data.timetable_readiness.checklist.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function AttendanceRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['academic-operations:attendance-runtime'],
+    queryFn: academicOperationsRuntimeApi.getAttendanceRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Attendance runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Attendance runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Attendance runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="attendance-overview-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Attendance Runtime</h1>
+        <p className="text-sm text-muted-foreground">
+          Read-only attendance runtime for health, risk, trends, intervention candidates, and readiness visibility.
+        </p>
+      </header>
+
+      <section className="rounded-lg border p-4" data-testid="attendance-statistics-panel">
+        <h2 className="text-lg font-semibold">Attendance statistics</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Tracked students total: {runtime.data.attendance_statistics.tracked_students_total}</p>
+          <p>Tracked courses total: {runtime.data.attendance_statistics.tracked_courses_total}</p>
+          <p>Average attendance rate: {runtime.data.attendance_statistics.average_attendance_rate}</p>
+          <p>At-risk students total: {runtime.data.attendance_statistics.at_risk_students_total}</p>
+          <p>Intervention candidates total: {runtime.data.attendance_statistics.intervention_candidates_total}</p>
+          <p>Trend windows total: {runtime.data.attendance_statistics.trend_windows_total}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="attendance-distribution-panel">
+        <h2 className="text-lg font-semibold">Attendance distribution</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Excellent band: {runtime.data.attendance_distribution.excellent_band}</p>
+          <p>Good band: {runtime.data.attendance_distribution.good_band}</p>
+          <p>Warning band: {runtime.data.attendance_distribution.warning_band}</p>
+          <p>Critical band: {runtime.data.attendance_distribution.critical_band}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="attendance-trends-panel">
+        <h2 className="text-lg font-semibold">Attendance trends</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Improving count: {runtime.data.attendance_trends.improving_count}</p>
+          <p>Stable count: {runtime.data.attendance_trends.stable_count}</p>
+          <p>Declining count: {runtime.data.attendance_trends.declining_count}</p>
+          <p>Trend score: {runtime.data.attendance_trends.trend_score}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="attendance-risk-summary-panel">
+        <h2 className="text-lg font-semibold">Attendance risk summary</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Risk score: {runtime.data.attendance_risk_summary.risk_score}</p>
+          <p>Open risks: {runtime.data.attendance_risk_summary.open_risks}</p>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <RegistrySectionCard
+          title="High-risk population"
+          section={runtime.data.high_risk_population}
+          testId="high-risk-population-panel"
+        />
+        <RegistrySectionCard
+          title="Course attendance health"
+          section={runtime.data.course_attendance_health}
+          testId="course-attendance-health-panel"
+        />
+      </section>
+
+      <RegistrySectionCard
+        title="Attendance intervention candidates"
+        section={runtime.data.attendance_intervention_candidates}
+        testId="attendance-intervention-panel"
+      />
+
+      <section className="rounded-lg border p-4" data-testid="attendance-signals-panel">
+        <h2 className="text-lg font-semibold">Attendance signals</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Generated signals: {runtime.data.attendance_signals.generated_signals}</p>
+          <p>Signal types: {runtime.data.attendance_signals.signal_types.join(', ') || 'none'}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="attendance-readiness-panel">
+        <h2 className="text-lg font-semibold">Attendance readiness</h2>
+        <p className="mt-2 text-sm">Ready for runtime: {String(runtime.data.attendance_readiness.ready_for_runtime)}</p>
+        <p className="text-sm">Readiness score: {runtime.data.attendance_readiness.readiness_score}</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.attendance_readiness.checklist.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>

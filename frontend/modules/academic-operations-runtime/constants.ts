@@ -5,4 +5,5 @@ export const ACADEMIC_OPERATIONS_RUNTIME_PATHS = {
   academicRegistryRuntime: '/api/academic-operations/runtime/academic-registry',
   curriculumRuntime: '/api/academic-operations/runtime/curriculum',
   timetableRuntime: '/api/academic-operations/runtime/timetable',
+  attendanceRuntime: '/api/academic-operations/runtime/attendance',
 } as const;

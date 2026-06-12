@@ -235,3 +235,78 @@ export type TimetableRuntimeResponse = {
   timetable_health: TimetableRuntimeHealth;
   timetable_readiness: TimetableRuntimeReadiness;
 };
+
+export type AttendanceRuntimeOverview = {
+  owner_module: string;
+  runtime_scope: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+};
+
+export type AttendanceRuntimeStatistics = {
+  tracked_students_total: number;
+  tracked_courses_total: number;
+  average_attendance_rate: number;
+  at_risk_students_total: number;
+  intervention_candidates_total: number;
+  trend_windows_total: number;
+  canonical_bridge_total: number;
+};
+
+export type AttendanceDistribution = {
+  excellent_band: number;
+  good_band: number;
+  warning_band: number;
+  critical_band: number;
+  read_only: boolean;
+};
+
+export type AttendanceTrends = {
+  improving_count: number;
+  stable_count: number;
+  declining_count: number;
+  trend_score: number;
+  read_only: boolean;
+};
+
+export type AttendanceRiskSummary = {
+  risk_score: number;
+  open_risks: number;
+  primary_risks: string[];
+  read_only: boolean;
+};
+
+export type AttendanceRuntimeSection = {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+};
+
+export type AttendanceSignals = {
+  generated_signals: number;
+  signal_types: string[];
+  read_only: boolean;
+};
+
+export type AttendanceReadiness = {
+  ready_for_runtime: boolean;
+  checklist: string[];
+  readiness_score: number;
+};
+
+export type AttendanceRuntimeResponse = {
+  tenant_id: number;
+  overview: AttendanceRuntimeOverview;
+  attendance_statistics: AttendanceRuntimeStatistics;
+  attendance_distribution: AttendanceDistribution;
+  attendance_trends: AttendanceTrends;
+  attendance_risk_summary: AttendanceRiskSummary;
+  high_risk_population: AttendanceRuntimeSection;
+  course_attendance_health: AttendanceRuntimeSection;
+  attendance_intervention_candidates: AttendanceRuntimeSection;
+  attendance_signals: AttendanceSignals;
+  attendance_readiness: AttendanceReadiness;
+};

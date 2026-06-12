@@ -140,4 +140,12 @@ describe('academicOperationsRuntimeApi', () => {
 
     expect(mockApiGet).toHaveBeenCalledWith('/api/academic-operations/runtime/timetable');
   });
+
+  it('uses the attendance runtime endpoint', async () => {
+    const { academicOperationsRuntimeApi } = await import('@/modules/academic-operations-runtime/api');
+
+    await academicOperationsRuntimeApi.getAttendanceRuntime();
+
+    expect(mockApiGet).toHaveBeenCalledWith('/api/academic-operations/runtime/attendance');
+  });
 });
