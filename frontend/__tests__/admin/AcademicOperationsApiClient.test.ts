@@ -98,3 +98,22 @@ describe('academicOperationsApi', () => {
     ]);
   });
 });
+
+describe('academicOperationsRuntimeApi', () => {
+  beforeEach(() => {
+    mockApiGet.mockReset();
+    mockApiPost.mockReset();
+    mockApiPatch.mockReset();
+    mockApiGet.mockResolvedValue({});
+    mockApiPost.mockResolvedValue({});
+    mockApiPatch.mockResolvedValue({});
+  });
+
+  it('uses the v1 runtime-shell endpoint', async () => {
+    const { academicOperationsRuntimeApi } = await import('@/modules/academic-operations-runtime/api');
+
+    await academicOperationsRuntimeApi.getRuntimeShell();
+
+    expect(mockApiGet).toHaveBeenCalledWith('/api/v1/academic-operations/runtime-shell');
+  });
+});
