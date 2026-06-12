@@ -6,6 +6,7 @@ import { studentSuccessApi } from './api';
 import type {
   StudentAcademicRiskRuntime,
   StudentAttendanceRiskRuntime,
+  StudentInterventionRuntime,
   StudentRetentionRuntime,
   StudentRegistryRuntimeSection,
   StudentSuccessRuntimeShellSection,
@@ -150,6 +151,39 @@ function AttendanceRiskSectionCard({
 }: {
   title: string;
   section: StudentAttendanceRiskRuntime['attendance_risk_summary'];
+  testId: string;
+}) {
+  return (
+    <section className="rounded-lg border p-4" data-testid={testId}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="mt-3 grid gap-2 text-sm">
+        <p>
+          <span className="font-medium">Owner:</span> {section.owner_module}
+        </p>
+        <p>
+          <span className="font-medium">Records:</span> {section.records}
+        </p>
+        <p>
+          <span className="font-medium">Read-only:</span> {String(section.read_only)}
+        </p>
+        <p>
+          <span className="font-medium">Aggregator-only:</span> {String(section.aggregator_only)}
+        </p>
+        <p>
+          <span className="font-medium">Sources:</span> {section.source_modules.join(', ')}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function InterventionSectionCard({
+  title,
+  section,
+  testId,
+}: {
+  title: string;
+  section: StudentInterventionRuntime['intervention_summary'];
   testId: string;
 }) {
   return (
@@ -465,6 +499,69 @@ export function StudentAttendanceRiskRuntimePage() {
           <p>Background jobs enabled: {String(runtime.data.safety.background_jobs_enabled)}</p>
           <p>Provider mutation enabled: {String(runtime.data.safety.provider_mutation_enabled)}</p>
           <p>Outbound integrations enabled: {String(runtime.data.safety.outbound_integrations_enabled)}</p>
+        </div>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.safety.limitations.map((limitation) => (
+            <li key={limitation}>{limitation}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function StudentInterventionRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['student-success:student-intervention-runtime'],
+    queryFn: studentSuccessApi.getStudentInterventionRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Student Intervention runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Student Intervention runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Student Intervention runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="intervention-runtime-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Student Intervention Runtime</h1>
+        <p className="text-sm text-muted-foreground">Read-only aggregated intervention intelligence for advisors, curators, deans, and student success teams.</p>
+      </header>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <InterventionSectionCard title="Intervention Summary" section={runtime.data.intervention_summary} testId="intervention-summary-panel" />
+        <InterventionSectionCard title="Intervention Priority Groups" section={runtime.data.intervention_priority_groups} testId="intervention-priority-panel" />
+        <InterventionSectionCard title="Intervention Recommendations" section={runtime.data.intervention_recommendations} testId="intervention-recommendations-panel" />
+        <InterventionSectionCard title="Advisor Interventions" section={runtime.data.advisor_interventions} testId="advisor-interventions-panel" />
+        <InterventionSectionCard title="Dean Interventions" section={runtime.data.dean_interventions} testId="dean-interventions-panel" />
+        <InterventionSectionCard title="Support Programs" section={runtime.data.support_programs} testId="support-programs-panel" />
+        <InterventionSectionCard title="Intervention Effectiveness Signals" section={runtime.data.intervention_effectiveness_signals} testId="intervention-effectiveness-panel" />
+        <InterventionSectionCard title="Intervention Signal Summary" section={runtime.data.intervention_signal_summary} testId="intervention-signal-panel" />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="student-intervention-runtime-safety">
+        <h2 className="text-lg font-semibold">Runtime safety</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Read-only: {String(runtime.data.safety.read_only)}</p>
+          <p>Aggregator-only: {String(runtime.data.safety.aggregator_only)}</p>
+          <p>Tenant-aware: {String(runtime.data.safety.tenant_aware)}</p>
+          <p>SUMMARY_READ required: {String(runtime.data.safety.summary_read_required)}</p>
+          <p>Write operations enabled: {String(runtime.data.safety.write_operations_enabled)}</p>
+          <p>Workflow execution enabled: {String(runtime.data.safety.workflow_execution_enabled)}</p>
+          <p>Approvals enabled: {String(runtime.data.safety.approval_execution_enabled)}</p>
+          <p>Background jobs enabled: {String(runtime.data.safety.background_jobs_enabled)}</p>
+          <p>Notifications enabled: {String(runtime.data.safety.notification_execution_enabled)}</p>
+          <p>Provider mutation enabled: {String(runtime.data.safety.provider_mutation_enabled)}</p>
+          <p>Outbound integrations enabled: {String(runtime.data.safety.outbound_integrations_enabled)}</p>
+          <p>Intervention execution enabled: {String(runtime.data.safety.intervention_execution_enabled)}</p>
         </div>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
           {runtime.data.safety.limitations.map((limitation) => (

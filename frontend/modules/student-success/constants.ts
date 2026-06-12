@@ -4,6 +4,7 @@ export const STUDENT_SUCCESS_API_PATHS = {
   studentRetention: '/api/v1/student-success/student-retention',
   academicRisk: '/api/v1/student-success/academic-risk',
   attendanceRisk: '/api/v1/student-success/attendance-risk',
+  interventions: '/api/v1/student-success/interventions',
 } as const;
 
 export const STUDENT_SUCCESS_ROUTES = {
@@ -12,5 +13,6 @@ export const STUDENT_SUCCESS_ROUTES = {
   studentRetention: '/console/student-success/student-retention',
   academicRisk: '/console/student-success/academic-risk',
   attendanceRisk: '/console/student-success/attendance-risk',
+  interventions: '/console/student-success/interventions',
   overview: '/console/student-success',
 } as const;

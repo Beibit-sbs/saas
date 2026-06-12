@@ -4,6 +4,7 @@ import { STUDENT_SUCCESS_API_PATHS } from './constants';
 import type {
   StudentAcademicRiskRuntime,
   StudentAttendanceRiskRuntime,
+  StudentInterventionRuntime,
   StudentRegistryRuntimeResponse,
   StudentRetentionRuntime,
   StudentSuccessRuntimeShellResponse,
@@ -15,6 +16,7 @@ export const studentSuccessApi = {
   getStudentRetentionRuntime: () => apiGet<StudentRetentionRuntime>(STUDENT_SUCCESS_API_PATHS.studentRetention),
   getStudentAcademicRiskRuntime: () => apiGet<StudentAcademicRiskRuntime>(STUDENT_SUCCESS_API_PATHS.academicRisk),
   getStudentAttendanceRiskRuntime: () => apiGet<StudentAttendanceRiskRuntime>(STUDENT_SUCCESS_API_PATHS.attendanceRisk),
+  getStudentInterventionRuntime: () => apiGet<StudentInterventionRuntime>(STUDENT_SUCCESS_API_PATHS.interventions),
 };
 
 export function useStudentRetentionRuntime() {
@@ -37,6 +39,14 @@ export function useStudentAttendanceRiskRuntime() {
   return useQuery({
     queryKey: ['student-success:student-attendance-risk-runtime'],
     queryFn: studentSuccessApi.getStudentAttendanceRiskRuntime,
+    staleTime: 30000,
+  });
+}
+
+export function useStudentInterventionRuntime() {
+  return useQuery({
+    queryKey: ['student-success:student-intervention-runtime'],
+    queryFn: studentSuccessApi.getStudentInterventionRuntime,
     staleTime: 30000,
   });
 }
