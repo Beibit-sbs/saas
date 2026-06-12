@@ -264,3 +264,47 @@ export interface StudentInterventionRuntime {
   intervention_signal_summary: StudentInterventionRuntimeSection;
   safety: StudentInterventionRuntimeSafety;
 }
+
+export interface StudentAdvisorRuntimeSection {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+}
+
+export interface StudentAdvisorRuntimeSafety {
+  read_only: boolean;
+  aggregator_only: boolean;
+  tenant_aware: boolean;
+  summary_read_required: boolean;
+  write_operations_enabled: boolean;
+  intervention_execution_enabled: boolean;
+  workflow_execution_enabled: boolean;
+  approval_execution_enabled: boolean;
+  background_jobs_enabled: boolean;
+  notification_execution_enabled: boolean;
+  provider_mutation_enabled: boolean;
+  outbound_integrations_enabled: boolean;
+  scheduling_engine_enabled: boolean;
+  limitations: string[];
+}
+
+export interface StudentAdvisorRuntime {
+  tenant_id: number;
+  owner_module: string;
+  runtime_surface: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  advisor_summary: StudentAdvisorRuntimeSection;
+  advisor_workload_distribution: StudentAdvisorRuntimeSection;
+  advisor_student_assignments: StudentAdvisorRuntimeSection;
+  advisor_intervention_queue: StudentAdvisorRuntimeSection;
+  advisor_follow_up_summary: StudentAdvisorRuntimeSection;
+  advisor_risk_coverage: StudentAdvisorRuntimeSection;
+  advisor_effectiveness_summary: StudentAdvisorRuntimeSection;
+  advisor_signal_summary: StudentAdvisorRuntimeSection;
+  safety: StudentAdvisorRuntimeSafety;
+}

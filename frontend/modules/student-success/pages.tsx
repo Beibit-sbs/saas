@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ErrorState, LoadingState } from '@/shared/ui/page-states';
 import { studentSuccessApi } from './api';
 import type {
+  StudentAdvisorRuntime,
   StudentAcademicRiskRuntime,
   StudentAttendanceRiskRuntime,
   StudentInterventionRuntime,
@@ -184,6 +185,39 @@ function InterventionSectionCard({
 }: {
   title: string;
   section: StudentInterventionRuntime['intervention_summary'];
+  testId: string;
+}) {
+  return (
+    <section className="rounded-lg border p-4" data-testid={testId}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="mt-3 grid gap-2 text-sm">
+        <p>
+          <span className="font-medium">Owner:</span> {section.owner_module}
+        </p>
+        <p>
+          <span className="font-medium">Records:</span> {section.records}
+        </p>
+        <p>
+          <span className="font-medium">Read-only:</span> {String(section.read_only)}
+        </p>
+        <p>
+          <span className="font-medium">Aggregator-only:</span> {String(section.aggregator_only)}
+        </p>
+        <p>
+          <span className="font-medium">Sources:</span> {section.source_modules.join(', ')}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function AdvisorSectionCard({
+  title,
+  section,
+  testId,
+}: {
+  title: string;
+  section: StudentAdvisorRuntime['advisor_summary'];
   testId: string;
 }) {
   return (
@@ -562,6 +596,70 @@ export function StudentInterventionRuntimePage() {
           <p>Provider mutation enabled: {String(runtime.data.safety.provider_mutation_enabled)}</p>
           <p>Outbound integrations enabled: {String(runtime.data.safety.outbound_integrations_enabled)}</p>
           <p>Intervention execution enabled: {String(runtime.data.safety.intervention_execution_enabled)}</p>
+        </div>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.safety.limitations.map((limitation) => (
+            <li key={limitation}>{limitation}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function StudentAdvisorRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['student-success:student-advisor-runtime'],
+    queryFn: studentSuccessApi.getStudentAdvisorRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Student Advisor runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Student Advisor runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Student Advisor runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="advisor-runtime-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Student Advisor Runtime</h1>
+        <p className="text-sm text-muted-foreground">Read-only aggregated advisor intelligence for workload balancing, student assignments, follow-up sequencing, and risk coverage.</p>
+      </header>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <AdvisorSectionCard title="Advisor Summary" section={runtime.data.advisor_summary} testId="advisor-summary-panel" />
+        <AdvisorSectionCard title="Advisor Workload Distribution" section={runtime.data.advisor_workload_distribution} testId="advisor-workload-panel" />
+        <AdvisorSectionCard title="Advisor Student Assignments" section={runtime.data.advisor_student_assignments} testId="advisor-assignment-panel" />
+        <AdvisorSectionCard title="Advisor Intervention Queue" section={runtime.data.advisor_intervention_queue} testId="advisor-queue-panel" />
+        <AdvisorSectionCard title="Advisor Follow-up Summary" section={runtime.data.advisor_follow_up_summary} testId="advisor-followup-panel" />
+        <AdvisorSectionCard title="Advisor Risk Coverage" section={runtime.data.advisor_risk_coverage} testId="advisor-risk-coverage-panel" />
+        <AdvisorSectionCard title="Advisor Effectiveness Summary" section={runtime.data.advisor_effectiveness_summary} testId="advisor-effectiveness-panel" />
+        <AdvisorSectionCard title="Advisor Signal Summary" section={runtime.data.advisor_signal_summary} testId="advisor-signal-panel" />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="student-advisor-runtime-safety">
+        <h2 className="text-lg font-semibold">Runtime safety</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Read-only: {String(runtime.data.safety.read_only)}</p>
+          <p>Aggregator-only: {String(runtime.data.safety.aggregator_only)}</p>
+          <p>Tenant-aware: {String(runtime.data.safety.tenant_aware)}</p>
+          <p>SUMMARY_READ required: {String(runtime.data.safety.summary_read_required)}</p>
+          <p>Write operations enabled: {String(runtime.data.safety.write_operations_enabled)}</p>
+          <p>Intervention execution enabled: {String(runtime.data.safety.intervention_execution_enabled)}</p>
+          <p>Workflow execution enabled: {String(runtime.data.safety.workflow_execution_enabled)}</p>
+          <p>Approvals enabled: {String(runtime.data.safety.approval_execution_enabled)}</p>
+          <p>Background jobs enabled: {String(runtime.data.safety.background_jobs_enabled)}</p>
+          <p>Notifications enabled: {String(runtime.data.safety.notification_execution_enabled)}</p>
+          <p>Provider mutation enabled: {String(runtime.data.safety.provider_mutation_enabled)}</p>
+          <p>Outbound integrations enabled: {String(runtime.data.safety.outbound_integrations_enabled)}</p>
+          <p>Scheduling engine enabled: {String(runtime.data.safety.scheduling_engine_enabled)}</p>
         </div>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
           {runtime.data.safety.limitations.map((limitation) => (

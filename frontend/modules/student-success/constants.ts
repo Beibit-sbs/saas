@@ -5,6 +5,7 @@ export const STUDENT_SUCCESS_API_PATHS = {
   academicRisk: '/api/v1/student-success/academic-risk',
   attendanceRisk: '/api/v1/student-success/attendance-risk',
   interventions: '/api/v1/student-success/interventions',
+  advisors: '/api/v1/student-success/advisors',
 } as const;
 
 export const STUDENT_SUCCESS_ROUTES = {
@@ -14,5 +15,6 @@ export const STUDENT_SUCCESS_ROUTES = {
   academicRisk: '/console/student-success/academic-risk',
   attendanceRisk: '/console/student-success/attendance-risk',
   interventions: '/console/student-success/interventions',
+  advisors: '/console/student-success/advisors',
   overview: '/console/student-success',
 } as const;
