@@ -74,3 +74,68 @@ export interface StudentRegistryRuntimeResponse {
   lifecycle_status_summary: StudentRegistryRuntimeSection;
   safety: StudentRegistryRuntimeSafety;
 }
+
+export interface RetentionSummary {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+}
+
+export interface RetentionRiskSummary {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+}
+
+export interface RetentionTrendSummary {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+}
+
+export interface CohortRetentionSummary {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+}
+
+export interface StudentRetentionRuntimeSafety {
+  read_only: boolean;
+  aggregator_only: boolean;
+  tenant_aware: boolean;
+  summary_read_required: boolean;
+  write_operations_enabled: boolean;
+  workflow_execution_enabled: boolean;
+  approval_execution_enabled: boolean;
+  background_jobs_enabled: boolean;
+  outbound_providers_enabled: boolean;
+  external_integrations_enabled: boolean;
+  limitations: string[];
+}
+
+export interface StudentRetentionRuntime {
+  tenant_id: number;
+  owner_module: string;
+  runtime_surface: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  retention_summary: RetentionSummary;
+  retention_score_distribution: RetentionSummary;
+  retention_risk_distribution: RetentionRiskSummary;
+  dropout_risk_summary: RetentionRiskSummary;
+  persistence_summary: RetentionSummary;
+  retention_trend_summary: RetentionTrendSummary;
+  cohort_retention_summary: CohortRetentionSummary;
+  retention_signal_summary: RetentionSummary;
+  safety: StudentRetentionRuntimeSafety;
+}
