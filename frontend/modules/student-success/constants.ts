@@ -7,6 +7,7 @@ export const STUDENT_SUCCESS_API_PATHS = {
   interventions: '/api/v1/student-success/interventions',
   advisors: '/api/v1/student-success/advisors',
   signals: '/api/v1/student-success/signals',
+  dashboard: '/api/v1/student-success/dashboard',
 } as const;
 
 export const STUDENT_SUCCESS_ROUTES = {
@@ -18,5 +19,6 @@ export const STUDENT_SUCCESS_ROUTES = {
   interventions: '/console/student-success/interventions',
   advisors: '/console/student-success/advisors',
   signals: '/console/student-success/signals',
+  dashboard: '/console/student-success/dashboard',
   overview: '/console/student-success',
 } as const;

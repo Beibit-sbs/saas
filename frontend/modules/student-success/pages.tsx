@@ -9,6 +9,7 @@ import type {
   StudentAttendanceRiskRuntime,
   StudentInterventionRuntime,
   StudentRetentionRuntime,
+  StudentSuccessDashboardRuntime,
   StudentRegistryRuntimeSection,
   StudentSuccessSignalsRuntime,
   StudentSuccessRuntimeShellSection,
@@ -252,6 +253,39 @@ function SuccessSignalsSectionCard({
 }: {
   title: string;
   section: StudentSuccessSignalsRuntime['success_signal_summary'];
+  testId: string;
+}) {
+  return (
+    <section className="rounded-lg border p-4" data-testid={testId}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="mt-3 grid gap-2 text-sm">
+        <p>
+          <span className="font-medium">Owner:</span> {section.owner_module}
+        </p>
+        <p>
+          <span className="font-medium">Records:</span> {section.records}
+        </p>
+        <p>
+          <span className="font-medium">Read-only:</span> {String(section.read_only)}
+        </p>
+        <p>
+          <span className="font-medium">Aggregator-only:</span> {String(section.aggregator_only)}
+        </p>
+        <p>
+          <span className="font-medium">Sources:</span> {section.source_modules.join(', ')}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function DashboardSectionCard({
+  title,
+  section,
+  testId,
+}: {
+  title: string;
+  section: StudentSuccessDashboardRuntime['executive_summary'];
   testId: string;
 }) {
   return (
@@ -760,6 +794,72 @@ export function StudentSuccessSignalsRuntimePage() {
           <p>Outbound integrations enabled: {String(runtime.data.safety.outbound_integrations_enabled)}</p>
           <p>Scheduling engine enabled: {String(runtime.data.safety.scheduling_engine_enabled)}</p>
           <p>Signal execution engine enabled: {String(runtime.data.safety.signal_execution_engine_enabled)}</p>
+          <p>Persistence enabled: {String(runtime.data.safety.persistence_enabled)}</p>
+        </div>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.safety.limitations.map((limitation) => (
+            <li key={limitation}>{limitation}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function StudentSuccessDashboardRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['student-success:student-success-dashboard-runtime'],
+    queryFn: studentSuccessApi.getStudentSuccessDashboardRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Student Success Dashboard runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Student Success Dashboard runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Student Success Dashboard runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="dashboard-runtime-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Student Success Dashboard Runtime</h1>
+        <p className="text-sm text-muted-foreground">Read-only executive dashboard aggregation layer across population, risk, interventions, advising, and success signals.</p>
+      </header>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <DashboardSectionCard title="Executive Summary" section={runtime.data.executive_summary} testId="dashboard-summary-panel" />
+        <DashboardSectionCard title="Dashboard KPIs" section={runtime.data.dashboard_kpis} testId="dashboard-kpi-panel" />
+        <DashboardSectionCard title="Retention Overview" section={runtime.data.retention_overview} testId="dashboard-retention-panel" />
+        <DashboardSectionCard title="Academic Risk Overview" section={runtime.data.academic_risk_overview} testId="dashboard-academic-risk-panel" />
+        <DashboardSectionCard title="Attendance Risk Overview" section={runtime.data.attendance_risk_overview} testId="dashboard-attendance-risk-panel" />
+        <DashboardSectionCard title="Intervention Overview" section={runtime.data.intervention_overview} testId="dashboard-intervention-panel" />
+        <DashboardSectionCard title="Advisor Overview" section={runtime.data.advisor_overview} testId="dashboard-advisor-panel" />
+        <DashboardSectionCard title="Success Signals" section={runtime.data.success_signals} testId="dashboard-signals-panel" />
+        <DashboardSectionCard title="Priority Actions" section={runtime.data.priority_actions} testId="dashboard-priority-actions-panel" />
+        <DashboardSectionCard title="Student Population" section={runtime.data.student_population} testId="dashboard-student-population-panel" />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="student-success-dashboard-runtime-safety">
+        <h2 className="text-lg font-semibold">Runtime safety</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Read-only: {String(runtime.data.safety.read_only)}</p>
+          <p>Aggregator-only: {String(runtime.data.safety.aggregator_only)}</p>
+          <p>Tenant-aware: {String(runtime.data.safety.tenant_aware)}</p>
+          <p>SUMMARY_READ required: {String(runtime.data.safety.summary_read_required)}</p>
+          <p>Write operations enabled: {String(runtime.data.safety.write_operations_enabled)}</p>
+          <p>Workflow execution enabled: {String(runtime.data.safety.workflow_execution_enabled)}</p>
+          <p>Approvals enabled: {String(runtime.data.safety.approval_execution_enabled)}</p>
+          <p>Background jobs enabled: {String(runtime.data.safety.background_jobs_enabled)}</p>
+          <p>Notifications enabled: {String(runtime.data.safety.notification_execution_enabled)}</p>
+          <p>Provider mutation enabled: {String(runtime.data.safety.provider_mutation_enabled)}</p>
+          <p>Outbound integrations enabled: {String(runtime.data.safety.outbound_integrations_enabled)}</p>
+          <p>Scheduling engine enabled: {String(runtime.data.safety.scheduling_engine_enabled)}</p>
           <p>Persistence enabled: {String(runtime.data.safety.persistence_enabled)}</p>
         </div>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">

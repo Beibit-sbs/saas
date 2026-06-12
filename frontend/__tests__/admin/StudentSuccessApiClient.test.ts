@@ -67,4 +67,11 @@ describe('studentSuccessApi', () => {
 
     expect(mockApiGet).toHaveBeenCalledWith('/api/v1/student-success/signals');
   });
+
+  it('uses the student success dashboard runtime API endpoint', async () => {
+    const { studentSuccessApi } = await import('@/modules/student-success/api');
+    await studentSuccessApi.getStudentSuccessDashboardRuntime();
+
+    expect(mockApiGet).toHaveBeenCalledWith('/api/v1/student-success/dashboard');
+  });
 });
