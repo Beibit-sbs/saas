@@ -10,6 +10,7 @@ import type {
   StudentInterventionRuntime,
   StudentRetentionRuntime,
   StudentRegistryRuntimeSection,
+  StudentSuccessSignalsRuntime,
   StudentSuccessRuntimeShellSection,
 } from './types';
 
@@ -218,6 +219,39 @@ function AdvisorSectionCard({
 }: {
   title: string;
   section: StudentAdvisorRuntime['advisor_summary'];
+  testId: string;
+}) {
+  return (
+    <section className="rounded-lg border p-4" data-testid={testId}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="mt-3 grid gap-2 text-sm">
+        <p>
+          <span className="font-medium">Owner:</span> {section.owner_module}
+        </p>
+        <p>
+          <span className="font-medium">Records:</span> {section.records}
+        </p>
+        <p>
+          <span className="font-medium">Read-only:</span> {String(section.read_only)}
+        </p>
+        <p>
+          <span className="font-medium">Aggregator-only:</span> {String(section.aggregator_only)}
+        </p>
+        <p>
+          <span className="font-medium">Sources:</span> {section.source_modules.join(', ')}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function SuccessSignalsSectionCard({
+  title,
+  section,
+  testId,
+}: {
+  title: string;
+  section: StudentSuccessSignalsRuntime['success_signal_summary'];
   testId: string;
 }) {
   return (
@@ -660,6 +694,73 @@ export function StudentAdvisorRuntimePage() {
           <p>Provider mutation enabled: {String(runtime.data.safety.provider_mutation_enabled)}</p>
           <p>Outbound integrations enabled: {String(runtime.data.safety.outbound_integrations_enabled)}</p>
           <p>Scheduling engine enabled: {String(runtime.data.safety.scheduling_engine_enabled)}</p>
+        </div>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.safety.limitations.map((limitation) => (
+            <li key={limitation}>{limitation}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function StudentSuccessSignalsRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['student-success:student-success-signals-runtime'],
+    queryFn: studentSuccessApi.getStudentSuccessSignalsRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Student Success Signals runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Student Success Signals runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Student Success Signals runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="success-signals-runtime-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Student Success Signals Runtime</h1>
+        <p className="text-sm text-muted-foreground">Read-only aggregated signal intelligence across retention, academic risk, attendance risk, interventions, and advisor outcomes.</p>
+      </header>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <SuccessSignalsSectionCard title="Signal Summary" section={runtime.data.success_signal_summary} testId="signal-summary-panel" />
+        <SuccessSignalsSectionCard title="Retention Signals" section={runtime.data.retention_signals} testId="retention-signals-panel" />
+        <SuccessSignalsSectionCard title="Academic Signals" section={runtime.data.academic_signals} testId="academic-signals-panel" />
+        <SuccessSignalsSectionCard title="Attendance Signals" section={runtime.data.attendance_signals} testId="attendance-signals-panel" />
+        <SuccessSignalsSectionCard title="Intervention Signals" section={runtime.data.intervention_signals} testId="intervention-signals-panel" />
+        <SuccessSignalsSectionCard title="Advisor Signals" section={runtime.data.advisor_signals} testId="advisor-signals-panel" />
+        <SuccessSignalsSectionCard title="Early Warning Signals" section={runtime.data.early_warning_signals} testId="early-warning-panel" />
+        <SuccessSignalsSectionCard title="Success Indicator Signals" section={runtime.data.success_indicator_signals} testId="success-indicators-panel" />
+        <SuccessSignalsSectionCard title="Signal Trend Summary" section={runtime.data.signal_trend_summary} testId="signal-trends-panel" />
+        <SuccessSignalsSectionCard title="Signal Scorecard" section={runtime.data.signal_scorecard} testId="signal-scorecard-panel" />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="student-success-signals-runtime-safety">
+        <h2 className="text-lg font-semibold">Runtime safety</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Read-only: {String(runtime.data.safety.read_only)}</p>
+          <p>Aggregator-only: {String(runtime.data.safety.aggregator_only)}</p>
+          <p>Tenant-aware: {String(runtime.data.safety.tenant_aware)}</p>
+          <p>SUMMARY_READ required: {String(runtime.data.safety.summary_read_required)}</p>
+          <p>Write operations enabled: {String(runtime.data.safety.write_operations_enabled)}</p>
+          <p>Workflow execution enabled: {String(runtime.data.safety.workflow_execution_enabled)}</p>
+          <p>Approvals enabled: {String(runtime.data.safety.approval_execution_enabled)}</p>
+          <p>Background jobs enabled: {String(runtime.data.safety.background_jobs_enabled)}</p>
+          <p>Notifications enabled: {String(runtime.data.safety.notification_execution_enabled)}</p>
+          <p>Provider mutation enabled: {String(runtime.data.safety.provider_mutation_enabled)}</p>
+          <p>Outbound integrations enabled: {String(runtime.data.safety.outbound_integrations_enabled)}</p>
+          <p>Scheduling engine enabled: {String(runtime.data.safety.scheduling_engine_enabled)}</p>
+          <p>Signal execution engine enabled: {String(runtime.data.safety.signal_execution_engine_enabled)}</p>
+          <p>Persistence enabled: {String(runtime.data.safety.persistence_enabled)}</p>
         </div>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
           {runtime.data.safety.limitations.map((limitation) => (

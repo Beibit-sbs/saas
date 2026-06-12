@@ -60,4 +60,11 @@ describe('studentSuccessApi', () => {
 
     expect(mockApiGet).toHaveBeenCalledWith('/api/v1/student-success/advisors');
   });
+
+  it('uses the student success signals runtime API endpoint', async () => {
+    const { studentSuccessApi } = await import('@/modules/student-success/api');
+    await studentSuccessApi.getStudentSuccessSignalsRuntime();
+
+    expect(mockApiGet).toHaveBeenCalledWith('/api/v1/student-success/signals');
+  });
 });
