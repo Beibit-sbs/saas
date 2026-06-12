@@ -310,3 +310,70 @@ export type AttendanceRuntimeResponse = {
   attendance_signals: AttendanceSignals;
   attendance_readiness: AttendanceReadiness;
 };
+
+export type AssessmentRuntimeOverview = {
+  owner_module: string;
+  runtime_scope: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+};
+
+export type AssessmentRuntimeStatistics = {
+  exams_total: number;
+  completed_exams_total: number;
+  gradebook_entries_total: number;
+  grading_distribution_total: number;
+  schedule_alignment_total: number;
+  assessment_signals_total: number;
+  canonical_bridge_total: number;
+};
+
+export type AssessmentRuntimeSection = {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+};
+
+export type AssessmentGradingDistribution = {
+  excellent_band: number;
+  good_band: number;
+  warning_band: number;
+  critical_band: number;
+  read_only: boolean;
+};
+
+export type AssessmentRiskSummary = {
+  risk_score: number;
+  open_risks: number;
+  indicators: string[];
+  read_only: boolean;
+};
+
+export type AssessmentSignals = {
+  generated_signals: number;
+  signal_types: string[];
+  read_only: boolean;
+};
+
+export type AssessmentReadiness = {
+  ready_for_runtime: boolean;
+  checklist: string[];
+  readiness_score: number;
+};
+
+export type AssessmentRuntimeResponse = {
+  tenant_id: number;
+  overview: AssessmentRuntimeOverview;
+  assessment_statistics: AssessmentRuntimeStatistics;
+  exam_governance_summary: AssessmentRuntimeSection;
+  gradebook_readiness: AssessmentRuntimeSection;
+  grading_distribution: AssessmentGradingDistribution;
+  assessment_schedule_alignment: AssessmentRuntimeSection;
+  assessment_risk_summary: AssessmentRiskSummary;
+  high_risk_assessments: AssessmentRuntimeSection;
+  assessment_signals: AssessmentSignals;
+  assessment_readiness: AssessmentReadiness;
+};

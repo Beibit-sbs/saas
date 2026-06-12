@@ -133,6 +133,7 @@ from app.platform.router_semantic import router as platform_v2_semantic_router
 from app.modules.executive_control_tower.router import router as executive_control_tower_router
 from app.modules.document_workflow_os.router import router as doc_workflow_router
 from app.modules.academic_operations.router import router as academic_operations_router
+from app.modules.academic_operations_runtime.assessment_runtime_router import router as assessment_runtime_router
 from app.modules.academic_operations_runtime.attendance_runtime_router import router as attendance_runtime_router
 from app.modules.academic_operations_runtime.academic_registry_runtime_router import router as academic_registry_runtime_router
 from app.modules.academic_operations_runtime.curriculum_runtime_router import router as curriculum_runtime_router
@@ -529,6 +530,7 @@ app.include_router(academic_registry_runtime_router)
 app.include_router(curriculum_runtime_router)
 app.include_router(timetable_runtime_router)
 app.include_router(attendance_runtime_router)
+app.include_router(assessment_runtime_router)
 app.include_router(student_lifecycle_router)
 app.include_router(student_success_runtime_shell_router)
 app.include_router(student_registry_runtime_router)

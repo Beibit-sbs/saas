@@ -7,6 +7,7 @@ import type {
   AttendanceRuntimeSection,
   AcademicOperationsRuntimeShellSection,
   AcademicRegistryRuntimeSection,
+  AssessmentRuntimeSection,
   CurriculumRuntimeSection,
   TimetableRuntimeSection,
 } from './types';
@@ -110,7 +111,8 @@ function RegistrySectionCard({
     | AcademicRegistryRuntimeSection
     | CurriculumRuntimeSection
     | TimetableRuntimeSection
-    | AttendanceRuntimeSection;
+    | AttendanceRuntimeSection
+    | AssessmentRuntimeSection;
   testId: string;
 }) {
   return (
@@ -541,6 +543,114 @@ export function AttendanceRuntimePage() {
         <p className="text-sm">Readiness score: {runtime.data.attendance_readiness.readiness_score}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
           {runtime.data.attendance_readiness.checklist.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function AssessmentRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['academic-operations:assessment-runtime'],
+    queryFn: academicOperationsRuntimeApi.getAssessmentRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Assessment runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Assessment runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Assessment runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="assessment-overview-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Assessment Runtime</h1>
+        <p className="text-sm text-muted-foreground">
+          Read-only assessment runtime for exam visibility, gradebook readiness, risk signals, and operational readiness.
+        </p>
+      </header>
+
+      <section className="rounded-lg border p-4" data-testid="assessment-statistics-panel">
+        <h2 className="text-lg font-semibold">Assessment statistics</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Exams total: {runtime.data.assessment_statistics.exams_total}</p>
+          <p>Completed exams total: {runtime.data.assessment_statistics.completed_exams_total}</p>
+          <p>Gradebook entries total: {runtime.data.assessment_statistics.gradebook_entries_total}</p>
+          <p>Grading distribution total: {runtime.data.assessment_statistics.grading_distribution_total}</p>
+          <p>Schedule alignment total: {runtime.data.assessment_statistics.schedule_alignment_total}</p>
+          <p>Assessment signals total: {runtime.data.assessment_statistics.assessment_signals_total}</p>
+          <p>Canonical bridge total: {runtime.data.assessment_statistics.canonical_bridge_total}</p>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <RegistrySectionCard
+          title="Exam governance summary"
+          section={runtime.data.exam_governance_summary}
+          testId="exam-governance-panel"
+        />
+        <RegistrySectionCard
+          title="Gradebook readiness"
+          section={runtime.data.gradebook_readiness}
+          testId="gradebook-readiness-panel"
+        />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="grading-distribution-panel">
+        <h2 className="text-lg font-semibold">Grading distribution</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Excellent band: {runtime.data.grading_distribution.excellent_band}</p>
+          <p>Good band: {runtime.data.grading_distribution.good_band}</p>
+          <p>Warning band: {runtime.data.grading_distribution.warning_band}</p>
+          <p>Critical band: {runtime.data.grading_distribution.critical_band}</p>
+        </div>
+      </section>
+
+      <RegistrySectionCard
+        title="Assessment schedule alignment"
+        section={runtime.data.assessment_schedule_alignment}
+        testId="assessment-schedule-alignment-panel"
+      />
+
+      <section className="rounded-lg border p-4" data-testid="assessment-risk-summary-panel">
+        <h2 className="text-lg font-semibold">Assessment risk summary</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Risk score: {runtime.data.assessment_risk_summary.risk_score}</p>
+          <p>Open risks: {runtime.data.assessment_risk_summary.open_risks}</p>
+          <p>Indicators: {runtime.data.assessment_risk_summary.indicators.join(', ') || 'none'}</p>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <RegistrySectionCard
+          title="High-risk assessments"
+          section={runtime.data.high_risk_assessments}
+          testId="high-risk-assessments-panel"
+        />
+        <section className="rounded-lg border p-4" data-testid="assessment-signals-panel">
+          <h2 className="text-lg font-semibold">Assessment signals</h2>
+          <div className="mt-2 space-y-1 text-sm">
+            <p>Generated signals: {runtime.data.assessment_signals.generated_signals}</p>
+            <p>Signal types: {runtime.data.assessment_signals.signal_types.join(', ') || 'none'}</p>
+          </div>
+        </section>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="assessment-readiness-panel">
+        <h2 className="text-lg font-semibold">Assessment readiness</h2>
+        <p className="mt-2 text-sm">Ready for runtime: {String(runtime.data.assessment_readiness.ready_for_runtime)}</p>
+        <p className="text-sm">Readiness score: {runtime.data.assessment_readiness.readiness_score}</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.assessment_readiness.checklist.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
