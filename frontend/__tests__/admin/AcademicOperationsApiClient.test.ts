@@ -132,4 +132,12 @@ describe('academicOperationsRuntimeApi', () => {
 
     expect(mockApiGet).toHaveBeenCalledWith('/api/academic-operations/runtime/curriculum');
   });
+
+  it('uses the timetable runtime endpoint', async () => {
+    const { academicOperationsRuntimeApi } = await import('@/modules/academic-operations-runtime/api');
+
+    await academicOperationsRuntimeApi.getTimetableRuntime();
+
+    expect(mockApiGet).toHaveBeenCalledWith('/api/academic-operations/runtime/timetable');
+  });
 });

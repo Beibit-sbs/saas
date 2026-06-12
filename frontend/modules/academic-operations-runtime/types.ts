@@ -152,3 +152,86 @@ export type CurriculumRuntimeResponse = {
   curriculum_risks: CurriculumRuntimeRisks;
   curriculum_readiness: CurriculumRuntimeReadiness;
 };
+
+export type TimetableRuntimeOverview = {
+  owner_module: string;
+  runtime_scope: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+};
+
+export type TimetableRuntimeStatistics = {
+  course_sections_total: number;
+  schedules_total: number;
+  calendar_periods_total: number;
+  rooms_total: number;
+  instructors_total: number;
+  students_total: number;
+  conflicts_total: number;
+  capacity_alerts_total: number;
+  canonical_bridge_total: number;
+};
+
+export type TimetableRuntimeSection = {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+};
+
+export type TimetableRoomUtilization = {
+  records: number;
+  utilization_rate: number;
+  underutilized_rooms: number;
+  overloaded_rooms: number;
+  read_only: boolean;
+};
+
+export type TimetableInstructorAllocation = {
+  records: number;
+  assigned_instructors: number;
+  unassigned_sections: number;
+  read_only: boolean;
+};
+
+export type TimetableScheduleConflicts = {
+  records: number;
+  conflict_rate: number;
+  critical_conflicts: number;
+  read_only: boolean;
+};
+
+export type TimetableCapacityIndicators = {
+  records: number;
+  over_capacity_sections: number;
+  under_capacity_sections: number;
+  read_only: boolean;
+};
+
+export type TimetableRuntimeHealth = {
+  healthy: boolean;
+  consistency_score: number;
+  issues: string[];
+};
+
+export type TimetableRuntimeReadiness = {
+  ready_for_runtime: boolean;
+  checklist: string[];
+  readiness_score: number;
+};
+
+export type TimetableRuntimeResponse = {
+  tenant_id: number;
+  overview: TimetableRuntimeOverview;
+  timetable_statistics: TimetableRuntimeStatistics;
+  academic_calendar_summary: TimetableRuntimeSection;
+  room_utilization: TimetableRoomUtilization;
+  instructor_allocation: TimetableInstructorAllocation;
+  student_schedule_summary: TimetableRuntimeSection;
+  schedule_conflicts: TimetableScheduleConflicts;
+  capacity_indicators: TimetableCapacityIndicators;
+  timetable_health: TimetableRuntimeHealth;
+  timetable_readiness: TimetableRuntimeReadiness;
+};

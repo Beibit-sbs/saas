@@ -4,6 +4,7 @@ import type {
   AcademicOperationsRuntimeShellResponse,
   AcademicRegistryRuntimeResponse,
   CurriculumRuntimeResponse,
+  TimetableRuntimeResponse,
 } from './types';
 
 export const academicOperationsRuntimeApi = {
@@ -11,4 +12,5 @@ export const academicOperationsRuntimeApi = {
   getAcademicRegistryRuntime: () =>
     apiGet<AcademicRegistryRuntimeResponse>(ACADEMIC_OPERATIONS_RUNTIME_PATHS.academicRegistryRuntime),
   getCurriculumRuntime: () => apiGet<CurriculumRuntimeResponse>(ACADEMIC_OPERATIONS_RUNTIME_PATHS.curriculumRuntime),
+  getTimetableRuntime: () => apiGet<TimetableRuntimeResponse>(ACADEMIC_OPERATIONS_RUNTIME_PATHS.timetableRuntime),
 };

@@ -3,7 +3,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { ErrorState, LoadingState } from '@/shared/ui/page-states';
 import { academicOperationsRuntimeApi } from './api';
-import type { AcademicOperationsRuntimeShellSection, AcademicRegistryRuntimeSection, CurriculumRuntimeSection } from './types';
+import type {
+  AcademicOperationsRuntimeShellSection,
+  AcademicRegistryRuntimeSection,
+  CurriculumRuntimeSection,
+  TimetableRuntimeSection,
+} from './types';
 
 function RuntimeSectionCard({
   title,
@@ -100,7 +105,7 @@ function RegistrySectionCard({
   testId,
 }: {
   title: string;
-  section: AcademicRegistryRuntimeSection | CurriculumRuntimeSection;
+  section: AcademicRegistryRuntimeSection | CurriculumRuntimeSection | TimetableRuntimeSection;
   testId: string;
 }) {
   return (
@@ -309,6 +314,119 @@ export function CurriculumRuntimePage() {
         <p className="text-sm">Readiness score: {runtime.data.curriculum_readiness.readiness_score}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
           {runtime.data.curriculum_readiness.checklist.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function TimetableRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['academic-operations:timetable-runtime'],
+    queryFn: academicOperationsRuntimeApi.getTimetableRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Timetable runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Timetable runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Timetable runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="timetable-overview-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Timetable Runtime</h1>
+        <p className="text-sm text-muted-foreground">
+          Read-only timetable runtime for calendar coverage, room utilization, instructor allocation, and conflict visibility.
+        </p>
+      </header>
+
+      <section className="rounded-lg border p-4" data-testid="timetable-statistics-panel">
+        <h2 className="text-lg font-semibold">Timetable statistics</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Course sections total: {runtime.data.timetable_statistics.course_sections_total}</p>
+          <p>Schedules total: {runtime.data.timetable_statistics.schedules_total}</p>
+          <p>Calendar periods total: {runtime.data.timetable_statistics.calendar_periods_total}</p>
+          <p>Rooms total: {runtime.data.timetable_statistics.rooms_total}</p>
+          <p>Instructors total: {runtime.data.timetable_statistics.instructors_total}</p>
+          <p>Students total: {runtime.data.timetable_statistics.students_total}</p>
+          <p>Conflicts total: {runtime.data.timetable_statistics.conflicts_total}</p>
+          <p>Capacity alerts total: {runtime.data.timetable_statistics.capacity_alerts_total}</p>
+        </div>
+      </section>
+
+      <RegistrySectionCard
+        title="Academic calendar summary"
+        section={runtime.data.academic_calendar_summary}
+        testId="academic-calendar-panel"
+      />
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <section className="rounded-lg border p-4" data-testid="room-utilization-panel">
+          <h2 className="text-lg font-semibold">Room utilization</h2>
+          <div className="mt-2 space-y-1 text-sm">
+            <p>Rooms tracked: {runtime.data.room_utilization.records}</p>
+            <p>Utilization rate: {runtime.data.room_utilization.utilization_rate}</p>
+            <p>Underutilized rooms: {runtime.data.room_utilization.underutilized_rooms}</p>
+            <p>Overloaded rooms: {runtime.data.room_utilization.overloaded_rooms}</p>
+          </div>
+        </section>
+        <section className="rounded-lg border p-4" data-testid="instructor-allocation-panel">
+          <h2 className="text-lg font-semibold">Instructor allocation</h2>
+          <div className="mt-2 space-y-1 text-sm">
+            <p>Instructor records: {runtime.data.instructor_allocation.records}</p>
+            <p>Assigned instructors: {runtime.data.instructor_allocation.assigned_instructors}</p>
+            <p>Unassigned sections: {runtime.data.instructor_allocation.unassigned_sections}</p>
+          </div>
+        </section>
+      </section>
+
+      <RegistrySectionCard
+        title="Student schedule summary"
+        section={runtime.data.student_schedule_summary}
+        testId="student-schedule-panel"
+      />
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <section className="rounded-lg border p-4" data-testid="schedule-conflicts-panel">
+          <h2 className="text-lg font-semibold">Schedule conflicts</h2>
+          <div className="mt-2 space-y-1 text-sm">
+            <p>Conflict records: {runtime.data.schedule_conflicts.records}</p>
+            <p>Conflict rate: {runtime.data.schedule_conflicts.conflict_rate}</p>
+            <p>Critical conflicts: {runtime.data.schedule_conflicts.critical_conflicts}</p>
+          </div>
+        </section>
+        <section className="rounded-lg border p-4" data-testid="capacity-indicators-panel">
+          <h2 className="text-lg font-semibold">Capacity indicators</h2>
+          <div className="mt-2 space-y-1 text-sm">
+            <p>Indicator records: {runtime.data.capacity_indicators.records}</p>
+            <p>Over-capacity sections: {runtime.data.capacity_indicators.over_capacity_sections}</p>
+            <p>Under-capacity sections: {runtime.data.capacity_indicators.under_capacity_sections}</p>
+          </div>
+        </section>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="timetable-health-panel">
+        <h2 className="text-lg font-semibold">Timetable health</h2>
+        <p className="mt-2 text-sm">Healthy: {String(runtime.data.timetable_health.healthy)}</p>
+        <p className="text-sm">Consistency score: {runtime.data.timetable_health.consistency_score}</p>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="timetable-readiness-panel">
+        <h2 className="text-lg font-semibold">Timetable readiness</h2>
+        <p className="mt-2 text-sm">Ready for runtime: {String(runtime.data.timetable_readiness.ready_for_runtime)}</p>
+        <p className="text-sm">Readiness score: {runtime.data.timetable_readiness.readiness_score}</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.timetable_readiness.checklist.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>

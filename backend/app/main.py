@@ -136,6 +136,7 @@ from app.modules.academic_operations.router import router as academic_operations
 from app.modules.academic_operations_runtime.academic_registry_runtime_router import router as academic_registry_runtime_router
 from app.modules.academic_operations_runtime.curriculum_runtime_router import router as curriculum_runtime_router
 from app.modules.academic_operations_runtime.runtime_shell_router import router as academic_operations_runtime_shell_router
+from app.modules.academic_operations_runtime.timetable_runtime_router import router as timetable_runtime_router
 from app.modules.student_lifecycle.router import router as student_lifecycle_router
 from app.modules.student_success_runtime.runtime_shell_router import router as student_success_runtime_shell_router
 from app.modules.student_success_runtime.student_registry_runtime_router import router as student_registry_runtime_router
@@ -525,6 +526,7 @@ app.include_router(academic_operations_router)
 app.include_router(academic_operations_runtime_shell_router)
 app.include_router(academic_registry_runtime_router)
 app.include_router(curriculum_runtime_router)
+app.include_router(timetable_runtime_router)
 app.include_router(student_lifecycle_router)
 app.include_router(student_success_runtime_shell_router)
 app.include_router(student_registry_runtime_router)
