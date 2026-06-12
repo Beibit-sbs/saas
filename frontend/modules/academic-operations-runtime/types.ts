@@ -377,3 +377,80 @@ export type AssessmentRuntimeResponse = {
   assessment_signals: AssessmentSignals;
   assessment_readiness: AssessmentReadiness;
 };
+
+export type TeachingLoadRuntimeOverview = {
+  owner_module: string;
+  runtime_scope: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+};
+
+export type TeachingLoadRuntimeStatistics = {
+  tracked_faculty_total: number;
+  department_groups_total: number;
+  high_utilization_total: number;
+  low_utilization_total: number;
+  high_risk_assignments_total: number;
+  teaching_load_signals_total: number;
+  canonical_bridge_total: number;
+};
+
+export type TeachingLoadRuntimeSection = {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+};
+
+export type FacultyWorkloadDistribution = {
+  evenly_distributed_total: number;
+  overloaded_total: number;
+  underutilized_total: number;
+  fairness_alert_total: number;
+  read_only: boolean;
+};
+
+export type WorkloadUtilization = {
+  average_utilization_pct: number;
+  median_utilization_pct: number;
+  min_utilization_pct: number;
+  max_utilization_pct: number;
+  utilization_std_dev: number;
+  read_only: boolean;
+};
+
+export type TeachingLoadRiskSummary = {
+  risk_score: number;
+  open_risks: number;
+  indicators: string[];
+  read_only: boolean;
+};
+
+export type TeachingLoadSignals = {
+  generated_signals: number;
+  signal_types: string[];
+  read_only: boolean;
+};
+
+export type TeachingLoadReadiness = {
+  ready_for_runtime: boolean;
+  checklist: string[];
+  readiness_score: number;
+};
+
+export type TeachingLoadRuntimeResponse = {
+  tenant_id: number;
+  overview: TeachingLoadRuntimeOverview;
+  teaching_load_statistics: TeachingLoadRuntimeStatistics;
+  faculty_workload_distribution: FacultyWorkloadDistribution;
+  workload_utilization: WorkloadUtilization;
+  overload_risk_summary: TeachingLoadRiskSummary;
+  underutilization_summary: TeachingLoadRuntimeSection;
+  faculty_assignment_health: TeachingLoadRuntimeSection;
+  coverage_risk_summary: TeachingLoadRiskSummary;
+  high_risk_assignments: TeachingLoadRuntimeSection;
+  teaching_load_signals: TeachingLoadSignals;
+  teaching_load_readiness: TeachingLoadReadiness;
+};

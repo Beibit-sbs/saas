@@ -156,4 +156,12 @@ describe('academicOperationsRuntimeApi', () => {
 
     expect(mockApiGet).toHaveBeenCalledWith('/api/academic-operations/runtime/assessment');
   });
+
+  it('uses the teaching-load runtime endpoint', async () => {
+    const { academicOperationsRuntimeApi } = await import('@/modules/academic-operations-runtime/api');
+
+    await academicOperationsRuntimeApi.getTeachingLoadRuntime();
+
+    expect(mockApiGet).toHaveBeenCalledWith('/api/academic-operations/runtime/teaching-load');
+  });
 });

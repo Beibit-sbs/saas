@@ -9,6 +9,7 @@ import type {
   AcademicRegistryRuntimeSection,
   AssessmentRuntimeSection,
   CurriculumRuntimeSection,
+  TeachingLoadRuntimeSection,
   TimetableRuntimeSection,
 } from './types';
 
@@ -112,7 +113,8 @@ function RegistrySectionCard({
     | CurriculumRuntimeSection
     | TimetableRuntimeSection
     | AttendanceRuntimeSection
-    | AssessmentRuntimeSection;
+    | AssessmentRuntimeSection
+    | TeachingLoadRuntimeSection;
   testId: string;
 }) {
   return (
@@ -651,6 +653,129 @@ export function AssessmentRuntimePage() {
         <p className="text-sm">Readiness score: {runtime.data.assessment_readiness.readiness_score}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
           {runtime.data.assessment_readiness.checklist.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function TeachingLoadRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['academic-operations:teaching-load-runtime'],
+    queryFn: academicOperationsRuntimeApi.getTeachingLoadRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Teaching Load runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Teaching Load runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Teaching Load runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="teaching-load-overview-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Teaching Load Runtime</h1>
+        <p className="text-sm text-muted-foreground">
+          Read-only teaching load runtime for workload allocation, utilization, overload visibility, coverage risk, and runtime readiness.
+        </p>
+      </header>
+
+      <section className="rounded-lg border p-4" data-testid="teaching-load-statistics-panel">
+        <h2 className="text-lg font-semibold">Teaching load statistics</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Tracked faculty total: {runtime.data.teaching_load_statistics.tracked_faculty_total}</p>
+          <p>Department groups total: {runtime.data.teaching_load_statistics.department_groups_total}</p>
+          <p>High utilization total: {runtime.data.teaching_load_statistics.high_utilization_total}</p>
+          <p>Low utilization total: {runtime.data.teaching_load_statistics.low_utilization_total}</p>
+          <p>High-risk assignments total: {runtime.data.teaching_load_statistics.high_risk_assignments_total}</p>
+          <p>Teaching-load signals total: {runtime.data.teaching_load_statistics.teaching_load_signals_total}</p>
+          <p>Canonical bridge total: {runtime.data.teaching_load_statistics.canonical_bridge_total}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="faculty-workload-distribution-panel">
+        <h2 className="text-lg font-semibold">Faculty workload distribution</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Evenly distributed total: {runtime.data.faculty_workload_distribution.evenly_distributed_total}</p>
+          <p>Overloaded total: {runtime.data.faculty_workload_distribution.overloaded_total}</p>
+          <p>Underutilized total: {runtime.data.faculty_workload_distribution.underutilized_total}</p>
+          <p>Fairness alert total: {runtime.data.faculty_workload_distribution.fairness_alert_total}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="workload-utilization-panel">
+        <h2 className="text-lg font-semibold">Workload utilization</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Average utilization: {runtime.data.workload_utilization.average_utilization_pct}</p>
+          <p>Median utilization: {runtime.data.workload_utilization.median_utilization_pct}</p>
+          <p>Minimum utilization: {runtime.data.workload_utilization.min_utilization_pct}</p>
+          <p>Maximum utilization: {runtime.data.workload_utilization.max_utilization_pct}</p>
+          <p>Utilization std dev: {runtime.data.workload_utilization.utilization_std_dev}</p>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <section className="rounded-lg border p-4" data-testid="overload-risk-panel">
+          <h2 className="text-lg font-semibold">Overload risk</h2>
+          <div className="mt-2 space-y-1 text-sm">
+            <p>Risk score: {runtime.data.overload_risk_summary.risk_score}</p>
+            <p>Open risks: {runtime.data.overload_risk_summary.open_risks}</p>
+            <p>Indicators: {runtime.data.overload_risk_summary.indicators.join(', ') || 'none'}</p>
+          </div>
+        </section>
+        <RegistrySectionCard
+          title="Underutilization summary"
+          section={runtime.data.underutilization_summary}
+          testId="underutilization-panel"
+        />
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <RegistrySectionCard
+          title="Faculty assignment health"
+          section={runtime.data.faculty_assignment_health}
+          testId="faculty-assignment-health-panel"
+        />
+        <section className="rounded-lg border p-4" data-testid="coverage-risk-panel">
+          <h2 className="text-lg font-semibold">Coverage risk</h2>
+          <div className="mt-2 space-y-1 text-sm">
+            <p>Risk score: {runtime.data.coverage_risk_summary.risk_score}</p>
+            <p>Open risks: {runtime.data.coverage_risk_summary.open_risks}</p>
+            <p>Indicators: {runtime.data.coverage_risk_summary.indicators.join(', ') || 'none'}</p>
+          </div>
+        </section>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <RegistrySectionCard
+          title="High-risk assignments"
+          section={runtime.data.high_risk_assignments}
+          testId="high-risk-assignments-panel"
+        />
+        <section className="rounded-lg border p-4" data-testid="teaching-load-signals-panel">
+          <h2 className="text-lg font-semibold">Teaching-load signals</h2>
+          <div className="mt-2 space-y-1 text-sm">
+            <p>Generated signals: {runtime.data.teaching_load_signals.generated_signals}</p>
+            <p>Signal types: {runtime.data.teaching_load_signals.signal_types.join(', ') || 'none'}</p>
+          </div>
+        </section>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="teaching-load-readiness-panel">
+        <h2 className="text-lg font-semibold">Teaching-load readiness</h2>
+        <p className="mt-2 text-sm">Ready for runtime: {String(runtime.data.teaching_load_readiness.ready_for_runtime)}</p>
+        <p className="text-sm">Readiness score: {runtime.data.teaching_load_readiness.readiness_score}</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.teaching_load_readiness.checklist.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
