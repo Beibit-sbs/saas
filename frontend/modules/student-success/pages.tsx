@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ErrorState, LoadingState } from '@/shared/ui/page-states';
 import { studentSuccessApi } from './api';
 import type {
+  StudentAcademicRiskRuntime,
   StudentRetentionRuntime,
   StudentRegistryRuntimeSection,
   StudentSuccessRuntimeShellSection,
@@ -82,6 +83,39 @@ function RetentionSectionCard({
 }: {
   title: string;
   section: StudentRetentionRuntime['retention_summary'];
+  testId: string;
+}) {
+  return (
+    <section className="rounded-lg border p-4" data-testid={testId}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="mt-3 grid gap-2 text-sm">
+        <p>
+          <span className="font-medium">Owner:</span> {section.owner_module}
+        </p>
+        <p>
+          <span className="font-medium">Records:</span> {section.records}
+        </p>
+        <p>
+          <span className="font-medium">Read-only:</span> {String(section.read_only)}
+        </p>
+        <p>
+          <span className="font-medium">Aggregator-only:</span> {String(section.aggregator_only)}
+        </p>
+        <p>
+          <span className="font-medium">Sources:</span> {section.source_modules.join(', ')}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function AcademicRiskSectionCard({
+  title,
+  section,
+  testId,
+}: {
+  title: string;
+  section: StudentAcademicRiskRuntime['academic_risk_summary'];
   testId: string;
 }) {
   return (
@@ -275,6 +309,67 @@ export function StudentRetentionRuntimePage() {
           <p>Background jobs enabled: {String(runtime.data.safety.background_jobs_enabled)}</p>
           <p>Outbound providers enabled: {String(runtime.data.safety.outbound_providers_enabled)}</p>
           <p>External integrations enabled: {String(runtime.data.safety.external_integrations_enabled)}</p>
+        </div>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.safety.limitations.map((limitation) => (
+            <li key={limitation}>{limitation}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function StudentAcademicRiskRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['student-success:student-academic-risk-runtime'],
+    queryFn: studentSuccessApi.getStudentAcademicRiskRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Student Academic Risk runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Student Academic Risk runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Student Academic Risk runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="academic-risk-runtime-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Student Academic Risk Runtime</h1>
+        <p className="text-sm text-muted-foreground">Read-only aggregated Student Academic Risk runtime for GPA, failed course, low performance, probation, progression risk, and academic alerts.</p>
+      </header>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <AcademicRiskSectionCard title="Academic Risk Summary" section={runtime.data.academic_risk_summary} testId="academic-risk-summary-panel" />
+        <AcademicRiskSectionCard title="GPA Risk Distribution" section={runtime.data.gpa_risk_distribution} testId="gpa-risk-panel" />
+        <AcademicRiskSectionCard title="Failed Course Risk Summary" section={runtime.data.failed_course_risk_summary} testId="failed-course-risk-panel" />
+        <AcademicRiskSectionCard title="Probation Summary" section={runtime.data.probation_summary} testId="probation-panel" />
+        <AcademicRiskSectionCard title="Progression Risk Summary" section={runtime.data.progression_risk_summary} testId="progression-risk-panel" />
+        <AcademicRiskSectionCard title="Academic Alert Summary" section={runtime.data.academic_alert_summary} testId="academic-alert-panel" />
+        <AcademicRiskSectionCard title="Low Performance Summary" section={runtime.data.low_performance_summary} testId="low-performance-panel" />
+        <AcademicRiskSectionCard title="Academic Signal Summary" section={runtime.data.academic_signal_summary} testId="academic-signal-panel" />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="student-academic-risk-runtime-safety">
+        <h2 className="text-lg font-semibold">Runtime safety</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Read-only: {String(runtime.data.safety.read_only)}</p>
+          <p>Aggregator-only: {String(runtime.data.safety.aggregator_only)}</p>
+          <p>Tenant-aware: {String(runtime.data.safety.tenant_aware)}</p>
+          <p>SUMMARY_READ required: {String(runtime.data.safety.summary_read_required)}</p>
+          <p>Write operations enabled: {String(runtime.data.safety.write_operations_enabled)}</p>
+          <p>Workflow execution enabled: {String(runtime.data.safety.workflow_execution_enabled)}</p>
+          <p>Approvals enabled: {String(runtime.data.safety.approval_execution_enabled)}</p>
+          <p>Background jobs enabled: {String(runtime.data.safety.background_jobs_enabled)}</p>
+          <p>Provider mutation enabled: {String(runtime.data.safety.provider_mutation_enabled)}</p>
+          <p>Outbound integrations enabled: {String(runtime.data.safety.outbound_integrations_enabled)}</p>
         </div>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
           {runtime.data.safety.limitations.map((limitation) => (

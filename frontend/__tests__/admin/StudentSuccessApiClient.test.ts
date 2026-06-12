@@ -32,4 +32,11 @@ describe('studentSuccessApi', () => {
 
     expect(mockApiGet).toHaveBeenCalledWith('/api/v1/student-success/student-retention');
   });
+
+  it('uses the student academic risk runtime API endpoint', async () => {
+    const { studentSuccessApi } = await import('@/modules/student-success/api');
+    await studentSuccessApi.getStudentAcademicRiskRuntime();
+
+    expect(mockApiGet).toHaveBeenCalledWith('/api/v1/student-success/academic-risk');
+  });
 });

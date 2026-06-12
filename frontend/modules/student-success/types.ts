@@ -139,3 +139,44 @@ export interface StudentRetentionRuntime {
   retention_signal_summary: RetentionSummary;
   safety: StudentRetentionRuntimeSafety;
 }
+
+export interface StudentAcademicRiskRuntimeSection {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+}
+
+export interface StudentAcademicRiskRuntimeSafety {
+  read_only: boolean;
+  aggregator_only: boolean;
+  tenant_aware: boolean;
+  summary_read_required: boolean;
+  write_operations_enabled: boolean;
+  workflow_execution_enabled: boolean;
+  approval_execution_enabled: boolean;
+  background_jobs_enabled: boolean;
+  provider_mutation_enabled: boolean;
+  outbound_integrations_enabled: boolean;
+  limitations: string[];
+}
+
+export interface StudentAcademicRiskRuntime {
+  tenant_id: number;
+  owner_module: string;
+  runtime_surface: string;
+  runtime_mode: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+  academic_risk_summary: StudentAcademicRiskRuntimeSection;
+  gpa_risk_distribution: StudentAcademicRiskRuntimeSection;
+  failed_course_risk_summary: StudentAcademicRiskRuntimeSection;
+  low_performance_summary: StudentAcademicRiskRuntimeSection;
+  probation_summary: StudentAcademicRiskRuntimeSection;
+  progression_risk_summary: StudentAcademicRiskRuntimeSection;
+  academic_alert_summary: StudentAcademicRiskRuntimeSection;
+  academic_signal_summary: StudentAcademicRiskRuntimeSection;
+  safety: StudentAcademicRiskRuntimeSafety;
+}
