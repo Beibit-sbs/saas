@@ -17,7 +17,7 @@
     - next_action_id: NONE
 
 - Student Success / Student Lifecycle Brain:
-    - vertical_status: ACTIVE
+    - vertical_status: CLOSED_BASELINED
     - audit_status: COMPLETED
     - spec_status: COMPLETED
     - b1_review_status: COMPLETED
@@ -35,6 +35,8 @@
     - a05114_b1_status: COMPLETED
     - a05114_b2_status: COMPLETED
     - readiness: READY_FOR_CLOSURE
+    - production_readiness: READY_FOR_PRODUCTION
+    - active_handoff: REMOVED
     - audit_report_file: A-051.1-AUDIT-STUDENT_SUCCESS_BRAIN_EXISTING_CAPABILITY_ANALYSIS_REPORT.md
     - spec_report_file: A-051.2-SPEC-STUDENT_SUCCESS_BRAIN_RUNTIME_CONTRACT_REPORT.md
     - b1_review_report_file: A-051.3-B1-STUDENT_SUCCESS_BRAIN_CONTRACT_CONSISTENCY_REVIEW_REPORT.md
@@ -51,7 +53,8 @@
     - a05113_e1_report_file: A-051.13-E1-STUDENT_SUCCESS_DASHBOARD_RUNTIME_IMPLEMENTATION_REPORT.md
     - a05114_b1_report_file: A-051.14-B1-STUDENT_SUCCESS_END_TO_END_VALIDATION_REPORT.md
     - a05114_b2_report_file: A-051.14-B2-STUDENT_SUCCESS_PRODUCT_QUALITY_BASELINE_REPORT.md
-    - next_action_id: A-051.15
+    - a05115_closure_report_file: A-051.15-STUDENT_SUCCESS_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md
+    - next_action_id: NONE
 
 - A-050.1-AUDIT execution block:
     - mode: quality_accreditation_brain_existing_capability_analysis
