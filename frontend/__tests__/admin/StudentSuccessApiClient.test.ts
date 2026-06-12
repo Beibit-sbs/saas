@@ -18,4 +18,11 @@ describe('studentSuccessApi', () => {
 
     expect(mockApiGet).toHaveBeenCalledWith('/api/v1/student-success/runtime-shell');
   });
+
+  it('uses the student registry runtime API endpoint', async () => {
+    const { studentSuccessApi } = await import('@/modules/student-success/api');
+    await studentSuccessApi.getStudentRegistryRuntime();
+
+    expect(mockApiGet).toHaveBeenCalledWith('/api/v1/student-success/student-registry');
+  });
 });

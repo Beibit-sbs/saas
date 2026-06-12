@@ -3,7 +3,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { ErrorState, LoadingState } from '@/shared/ui/page-states';
 import { studentSuccessApi } from './api';
-import type { StudentSuccessRuntimeShellSection } from './types';
+import type {
+  StudentRegistryRuntimeSection,
+  StudentSuccessRuntimeShellSection,
+} from './types';
 
 function RuntimeSectionCard({
   title,
@@ -12,6 +15,39 @@ function RuntimeSectionCard({
 }: {
   title: string;
   section: StudentSuccessRuntimeShellSection;
+  testId: string;
+}) {
+  return (
+    <section className="rounded-lg border p-4" data-testid={testId}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="mt-3 grid gap-2 text-sm">
+        <p>
+          <span className="font-medium">Owner:</span> {section.owner_module}
+        </p>
+        <p>
+          <span className="font-medium">Records:</span> {section.records}
+        </p>
+        <p>
+          <span className="font-medium">Read-only:</span> {String(section.read_only)}
+        </p>
+        <p>
+          <span className="font-medium">Aggregator-only:</span> {String(section.aggregator_only)}
+        </p>
+        <p>
+          <span className="font-medium">Sources:</span> {section.source_modules.join(', ')}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function RegistrySectionCard({
+  title,
+  section,
+  testId,
+}: {
+  title: string;
+  section: StudentRegistryRuntimeSection;
   testId: string;
 }) {
   return (
@@ -87,6 +123,66 @@ export function StudentSuccessRuntimeShellPage() {
         </div>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
           {runtimeShell.data.safety.limitations.map((limitation) => (
+            <li key={limitation}>{limitation}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function StudentRegistryRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['student-success:student-registry-runtime'],
+    queryFn: studentSuccessApi.getStudentRegistryRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Student Registry runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Student Registry runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Student Registry runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="student-registry-runtime">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Student Registry Runtime</h1>
+        <p className="text-sm text-muted-foreground">Read-only aggregated Student Registry runtime for enrollment, academic standing, lifecycle status, and advisor/risk/retention linkage surfaces.</p>
+      </header>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <RegistrySectionCard title="Student Registry Summary" section={runtime.data.student_registry_summary} testId="student-registry-summary" />
+        <RegistrySectionCard title="Enrollment Summary" section={runtime.data.enrollment_summary} testId="student-registry-enrollment-summary" />
+        <RegistrySectionCard title="Academic Standing Summary" section={runtime.data.academic_standing_summary} testId="student-registry-academic-standing-summary" />
+        <RegistrySectionCard title="Retention Link Summary" section={runtime.data.retention_link_summary} testId="student-registry-retention-link-summary" />
+        <RegistrySectionCard title="Advisor Link Summary" section={runtime.data.advisor_link_summary} testId="student-registry-advisor-link-summary" />
+        <RegistrySectionCard title="Risk Link Summary" section={runtime.data.risk_link_summary} testId="student-registry-risk-link-summary" />
+        <RegistrySectionCard title="Lifecycle Status Summary" section={runtime.data.lifecycle_status_summary} testId="student-registry-lifecycle-status-summary" />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="student-registry-runtime-safety">
+        <h2 className="text-lg font-semibold">Runtime safety</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Read-only: {String(runtime.data.safety.read_only)}</p>
+          <p>Aggregator-only: {String(runtime.data.safety.aggregator_only)}</p>
+          <p>Tenant-aware: {String(runtime.data.safety.tenant_aware)}</p>
+          <p>SUMMARY_READ required: {String(runtime.data.safety.summary_read_required)}</p>
+          <p>Write operations enabled: {String(runtime.data.safety.write_operations_enabled)}</p>
+          <p>Workflow execution enabled: {String(runtime.data.safety.workflow_execution_enabled)}</p>
+          <p>Approvals enabled: {String(runtime.data.safety.approval_execution_enabled)}</p>
+          <p>Background jobs enabled: {String(runtime.data.safety.background_jobs_enabled)}</p>
+          <p>Provider mutation enabled: {String(runtime.data.safety.provider_mutation_enabled)}</p>
+          <p>Outbound calls enabled: {String(runtime.data.safety.outbound_calls_enabled)}</p>
+        </div>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.safety.limitations.map((limitation) => (
             <li key={limitation}>{limitation}</li>
           ))}
         </ul>
