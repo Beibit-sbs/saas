@@ -1,1 +1,3 @@
-export { AcademicOperationsDashboardPage as default } from '@/modules/academic-operations/pages';
+import { AcademicOperationsDashboardRuntimePage } from '@/modules/academic-operations-runtime/pages';
+
+export default AcademicOperationsDashboardRuntimePage;

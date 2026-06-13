@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ErrorState, LoadingState } from '@/shared/ui/page-states';
 import { academicOperationsRuntimeApi } from './api';
 import type {
+  AcademicOperationsDashboardSummarySection,
   AcademicOperationsSignalSection,
   AttendanceRuntimeSection,
   AcademicOperationsRuntimeShellSection,
@@ -111,6 +112,7 @@ function RegistrySectionCard({
 }: {
   title: string;
   section:
+    | AcademicOperationsDashboardSummarySection
     | AcademicOperationsSignalSection
     | AcademicRegistryRuntimeSection
     | CurriculumRuntimeSection
@@ -1017,6 +1019,123 @@ export function AcademicOperationsSignalsRuntimePage() {
             </li>
           ))}
         </ul>
+      </section>
+    </section>
+  );
+}
+
+export function AcademicOperationsDashboardRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['academic-operations:dashboard-runtime'],
+    queryFn: academicOperationsRuntimeApi.getAcademicOperationsDashboardRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Academic Operations Dashboard runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Academic Operations Dashboard runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Academic Operations Dashboard runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="dashboard-overview-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Academic Operations Dashboard Runtime</h1>
+        <p className="text-sm text-muted-foreground">
+          Read-only executive runtime aggregation across Academic Operations domains and signals.
+        </p>
+      </header>
+
+      <section className="rounded-lg border p-4" data-testid="dashboard-kpi-panel">
+        <h2 className="text-lg font-semibold">Dashboard KPI summary</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Runtime slices: {runtime.data.kpi_summary.runtime_slice_count}</p>
+          <p>Aggregated records: {runtime.data.kpi_summary.aggregated_records_total}</p>
+          <p>High priority total: {runtime.data.kpi_summary.high_priority_total}</p>
+          <p>Recommended actions total: {runtime.data.kpi_summary.recommended_actions_total}</p>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <RegistrySectionCard
+          title="Registry summary"
+          section={runtime.data.registry_summary}
+          testId="dashboard-registry-panel"
+        />
+        <RegistrySectionCard
+          title="Curriculum summary"
+          section={runtime.data.curriculum_summary}
+          testId="dashboard-curriculum-panel"
+        />
+        <RegistrySectionCard
+          title="Timetable summary"
+          section={runtime.data.timetable_summary}
+          testId="dashboard-timetable-panel"
+        />
+        <RegistrySectionCard
+          title="Attendance summary"
+          section={runtime.data.attendance_summary}
+          testId="dashboard-attendance-panel"
+        />
+        <RegistrySectionCard
+          title="Assessment summary"
+          section={runtime.data.assessment_summary}
+          testId="dashboard-assessment-panel"
+        />
+        <RegistrySectionCard
+          title="Teaching-load summary"
+          section={runtime.data.teaching_load_summary}
+          testId="dashboard-teaching-load-panel"
+        />
+        <RegistrySectionCard
+          title="Internship summary"
+          section={runtime.data.internship_summary}
+          testId="dashboard-internship-panel"
+        />
+        <RegistrySectionCard
+          title="Signals summary"
+          section={runtime.data.signals_summary}
+          testId="dashboard-signals-panel"
+        />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="dashboard-priority-panel">
+        <h2 className="text-lg font-semibold">High-priority items</h2>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.high_priority_items.map((item) => (
+            <li key={item.item_id}>
+              {item.title} ({item.priority})
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="dashboard-actions-panel">
+        <h2 className="text-lg font-semibold">Recommended actions</h2>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.recommended_actions.map((item) => (
+            <li key={item.action_id}>
+              {item.title} ({item.priority})
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="dashboard-health-panel">
+        <h2 className="text-lg font-semibold">Academic Operations health score</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Composite score: {runtime.data.academic_operations_health_score.composite_score}</p>
+          <p>Classification: {runtime.data.academic_operations_health_score.classification}</p>
+          <p>
+            Contributing factors: {runtime.data.academic_operations_health_score.contributing_factors.length}
+          </p>
+        </div>
       </section>
     </section>
   );

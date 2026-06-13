@@ -180,4 +180,12 @@ describe('academicOperationsRuntimeApi', () => {
 
     expect(mockApiGet).toHaveBeenCalledWith('/api/academic-operations/runtime/signals');
   });
+
+  it('uses the dashboard runtime endpoint', async () => {
+    const { academicOperationsRuntimeApi } = await import('@/modules/academic-operations-runtime/api');
+
+    await academicOperationsRuntimeApi.getAcademicOperationsDashboardRuntime();
+
+    expect(mockApiGet).toHaveBeenCalledWith('/api/academic-operations/runtime/dashboard');
+  });
 });

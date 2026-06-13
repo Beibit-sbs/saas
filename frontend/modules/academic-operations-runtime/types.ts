@@ -637,3 +637,70 @@ export type AcademicOperationsSignalsRuntimeResponse = {
   health_score: AcademicOperationsHealthScore;
   recommended_actions: AcademicOperationsRecommendedAction[];
 };
+
+export type AcademicOperationsDashboardRuntimeOverview = {
+  owner_module: string;
+  runtime_scope: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+};
+
+export type AcademicOperationsDashboardKpiSummary = {
+  runtime_slice_count: number;
+  aggregated_records_total: number;
+  high_priority_total: number;
+  recommended_actions_total: number;
+  read_only: boolean;
+};
+
+export type AcademicOperationsDashboardSummarySection = {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+};
+
+export type AcademicOperationsDashboardPriorityItem = {
+  item_id: string;
+  title: string;
+  priority: string;
+  status: string;
+  score: number;
+  domain: string;
+  source_signal_ids: string[];
+  read_only: boolean;
+};
+
+export type AcademicOperationsDashboardRecommendedAction = {
+  action_id: string;
+  title: string;
+  priority: string;
+  rationale: string;
+  source_signal_ids: string[];
+};
+
+export type AcademicOperationsDashboardHealthScore = {
+  composite_score: number;
+  classification: string;
+  contributing_factors: string[];
+  read_only: boolean;
+};
+
+export type AcademicOperationsDashboardRuntimeResponse = {
+  tenant_id: number;
+  overview: AcademicOperationsDashboardRuntimeOverview;
+  kpi_summary: AcademicOperationsDashboardKpiSummary;
+  registry_summary: AcademicOperationsDashboardSummarySection;
+  curriculum_summary: AcademicOperationsDashboardSummarySection;
+  timetable_summary: AcademicOperationsDashboardSummarySection;
+  attendance_summary: AcademicOperationsDashboardSummarySection;
+  assessment_summary: AcademicOperationsDashboardSummarySection;
+  teaching_load_summary: AcademicOperationsDashboardSummarySection;
+  internship_summary: AcademicOperationsDashboardSummarySection;
+  signals_summary: AcademicOperationsDashboardSummarySection;
+  high_priority_items: AcademicOperationsDashboardPriorityItem[];
+  recommended_actions: AcademicOperationsDashboardRecommendedAction[];
+  academic_operations_health_score: AcademicOperationsDashboardHealthScore;
+};

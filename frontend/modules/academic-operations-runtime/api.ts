@@ -2,6 +2,7 @@ import { apiGet } from '@/shared/api/client';
 import { ACADEMIC_OPERATIONS_RUNTIME_PATHS } from './constants';
 import type {
   AttendanceRuntimeResponse,
+  AcademicOperationsDashboardRuntimeResponse,
   AssessmentRuntimeResponse,
   AcademicOperationsRuntimeShellResponse,
   AcademicRegistryRuntimeResponse,
@@ -24,4 +25,6 @@ export const academicOperationsRuntimeApi = {
   getInternshipRuntime: () => apiGet<InternshipRuntimeResponse>(ACADEMIC_OPERATIONS_RUNTIME_PATHS.internshipRuntime),
   getAcademicOperationsSignalsRuntime: () =>
     apiGet<AcademicOperationsSignalsRuntimeResponse>(ACADEMIC_OPERATIONS_RUNTIME_PATHS.signalsRuntime),
+  getAcademicOperationsDashboardRuntime: () =>
+    apiGet<AcademicOperationsDashboardRuntimeResponse>(ACADEMIC_OPERATIONS_RUNTIME_PATHS.dashboardRuntime),
 };
