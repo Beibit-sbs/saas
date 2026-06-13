@@ -5,6 +5,7 @@ import type {
   AssessmentRuntimeResponse,
   AcademicOperationsRuntimeShellResponse,
   AcademicRegistryRuntimeResponse,
+  AcademicOperationsSignalsRuntimeResponse,
   CurriculumRuntimeResponse,
   InternshipRuntimeResponse,
   TeachingLoadRuntimeResponse,
@@ -21,4 +22,6 @@ export const academicOperationsRuntimeApi = {
   getAssessmentRuntime: () => apiGet<AssessmentRuntimeResponse>(ACADEMIC_OPERATIONS_RUNTIME_PATHS.assessmentRuntime),
   getTeachingLoadRuntime: () => apiGet<TeachingLoadRuntimeResponse>(ACADEMIC_OPERATIONS_RUNTIME_PATHS.teachingLoadRuntime),
   getInternshipRuntime: () => apiGet<InternshipRuntimeResponse>(ACADEMIC_OPERATIONS_RUNTIME_PATHS.internshipRuntime),
+  getAcademicOperationsSignalsRuntime: () =>
+    apiGet<AcademicOperationsSignalsRuntimeResponse>(ACADEMIC_OPERATIONS_RUNTIME_PATHS.signalsRuntime),
 };

@@ -562,3 +562,78 @@ export type InternshipRuntimeResponse = {
   internship_signals: InternshipSignals;
   internship_readiness: InternshipReadiness;
 };
+
+export type AcademicOperationsSignalsRuntimeOverview = {
+  owner_module: string;
+  runtime_scope: string;
+  generated_at: string;
+  read_only: boolean;
+  aggregator_only: boolean;
+};
+
+export type AcademicOperationsSignalSummary = {
+  total_signals: number;
+  high_priority_total: number;
+  medium_priority_total: number;
+  low_priority_total: number;
+  read_only: boolean;
+};
+
+export type AcademicOperationsSignalDistribution = {
+  by_severity: Record<string, number>;
+  by_domain: Record<string, number>;
+  read_only: boolean;
+};
+
+export type AcademicOperationsSignalItem = {
+  signal_id: string;
+  signal_name: string;
+  severity: string;
+  score: number;
+  status: string;
+  summary: string;
+  source_modules: string[];
+  read_only: boolean;
+};
+
+export type AcademicOperationsSignalSection = {
+  owner_module: string;
+  records: number;
+  read_only: boolean;
+  aggregator_only: boolean;
+  source_modules: string[];
+  items: AcademicOperationsSignalItem[];
+};
+
+export type AcademicOperationsHealthScore = {
+  composite_score: number;
+  classification: string;
+  contributing_factors: string[];
+  read_only: boolean;
+};
+
+export type AcademicOperationsRecommendedAction = {
+  action_id: string;
+  title: string;
+  priority: string;
+  rationale: string;
+  source_signal_ids: string[];
+};
+
+export type AcademicOperationsSignalsRuntimeResponse = {
+  tenant_id: number;
+  overview: AcademicOperationsSignalsRuntimeOverview;
+  signal_summary: AcademicOperationsSignalSummary;
+  signal_distribution: AcademicOperationsSignalDistribution;
+  high_priority_signals: AcademicOperationsSignalSection;
+  medium_priority_signals: AcademicOperationsSignalSection;
+  low_priority_signals: AcademicOperationsSignalSection;
+  curriculum_signals: AcademicOperationsSignalSection;
+  timetable_signals: AcademicOperationsSignalSection;
+  attendance_signals: AcademicOperationsSignalSection;
+  assessment_signals: AcademicOperationsSignalSection;
+  teaching_load_signals: AcademicOperationsSignalSection;
+  internship_signals: AcademicOperationsSignalSection;
+  health_score: AcademicOperationsHealthScore;
+  recommended_actions: AcademicOperationsRecommendedAction[];
+};

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ErrorState, LoadingState } from '@/shared/ui/page-states';
 import { academicOperationsRuntimeApi } from './api';
 import type {
+  AcademicOperationsSignalSection,
   AttendanceRuntimeSection,
   AcademicOperationsRuntimeShellSection,
   AcademicRegistryRuntimeSection,
@@ -110,6 +111,7 @@ function RegistrySectionCard({
 }: {
   title: string;
   section:
+    | AcademicOperationsSignalSection
     | AcademicRegistryRuntimeSection
     | CurriculumRuntimeSection
     | TimetableRuntimeSection
@@ -894,6 +896,125 @@ export function InternshipRuntimePage() {
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
           {runtime.data.internship_readiness.readiness_drivers.map((item) => (
             <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+    </section>
+  );
+}
+
+export function AcademicOperationsSignalsRuntimePage() {
+  const runtime = useQuery({
+    queryKey: ['academic-operations:signals-runtime'],
+    queryFn: academicOperationsRuntimeApi.getAcademicOperationsSignalsRuntime,
+    staleTime: 30000,
+  });
+
+  if (runtime.isPending) {
+    return <LoadingState title="Loading Academic Operations Signals runtime" />;
+  }
+
+  if (runtime.error) {
+    return <ErrorState message="Failed to load Academic Operations Signals runtime." error={runtime.error} />;
+  }
+
+  if (!runtime.data) {
+    return <ErrorState message="Academic Operations Signals runtime is unavailable." />;
+  }
+
+  return (
+    <section className="space-y-6" data-testid="signals-overview-panel">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Academic Operations Signals Runtime</h1>
+        <p className="text-sm text-muted-foreground">
+          Read-only runtime aggregation for cross-domain academic operations risk and health signals.
+        </p>
+      </header>
+
+      <section className="rounded-lg border p-4" data-testid="signal-summary-panel">
+        <h2 className="text-lg font-semibold">Signal summary</h2>
+        <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+          <p>Total signals: {runtime.data.signal_summary.total_signals}</p>
+          <p>High priority: {runtime.data.signal_summary.high_priority_total}</p>
+          <p>Medium priority: {runtime.data.signal_summary.medium_priority_total}</p>
+          <p>Low priority: {runtime.data.signal_summary.low_priority_total}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="signal-distribution-panel">
+        <h2 className="text-lg font-semibold">Signal distribution</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>By severity keys: {Object.keys(runtime.data.signal_distribution.by_severity).length}</p>
+          <p>By domain keys: {Object.keys(runtime.data.signal_distribution.by_domain).length}</p>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <RegistrySectionCard
+          title="High-priority signals"
+          section={runtime.data.high_priority_signals}
+          testId="high-priority-signals-panel"
+        />
+        <RegistrySectionCard
+          title="Medium-priority signals"
+          section={runtime.data.medium_priority_signals}
+          testId="medium-priority-signals-panel"
+        />
+        <RegistrySectionCard
+          title="Low-priority signals"
+          section={runtime.data.low_priority_signals}
+          testId="low-priority-signals-panel"
+        />
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <RegistrySectionCard
+          title="Curriculum signals"
+          section={runtime.data.curriculum_signals}
+          testId="curriculum-signals-panel"
+        />
+        <RegistrySectionCard
+          title="Timetable signals"
+          section={runtime.data.timetable_signals}
+          testId="timetable-signals-panel"
+        />
+        <RegistrySectionCard
+          title="Attendance signals"
+          section={runtime.data.attendance_signals}
+          testId="attendance-signals-panel"
+        />
+        <RegistrySectionCard
+          title="Assessment signals"
+          section={runtime.data.assessment_signals}
+          testId="assessment-signals-panel"
+        />
+        <RegistrySectionCard
+          title="Teaching-load signals"
+          section={runtime.data.teaching_load_signals}
+          testId="teaching-load-signals-panel"
+        />
+        <RegistrySectionCard
+          title="Internship signals"
+          section={runtime.data.internship_signals}
+          testId="internship-signals-panel"
+        />
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="health-score-panel">
+        <h2 className="text-lg font-semibold">Health score</h2>
+        <div className="mt-2 space-y-1 text-sm">
+          <p>Composite score: {runtime.data.health_score.composite_score}</p>
+          <p>Classification: {runtime.data.health_score.classification}</p>
+        </div>
+      </section>
+
+      <section className="rounded-lg border p-4" data-testid="recommended-actions-panel">
+        <h2 className="text-lg font-semibold">Recommended actions</h2>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+          {runtime.data.recommended_actions.map((item) => (
+            <li key={item.action_id}>
+              {item.title} ({item.priority})
+            </li>
           ))}
         </ul>
       </section>
