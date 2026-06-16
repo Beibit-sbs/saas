@@ -155,3 +155,77 @@ class NotificationListResponse(BaseModel):
     external_delivery_claimed: bool = False
     no_live_delivery_reason: str = "Notification list is generated from internal read-only slice state."
     provider_status_label: str = "Provider boundary only"
+
+
+class AnnouncementRegistryItem(BaseModel):
+    """Read-only announcement registry item for A-054.7-E1."""
+
+    announcement_id: str
+    title: str
+    category: str
+    audience_scope: str
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    created_at: datetime
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    publish_workflow_enabled: bool = False
+    broadcast_enabled: bool = False
+    no_live_delivery_reason: str = "A-054.7-E1 is read-only; publish/broadcast workflows are disabled."
+    provider_status_label: str = "Provider boundary only - no live delivery"
+
+
+class AnnouncementRegistryBoundary(BaseModel):
+    """Announcement registry boundary response."""
+
+    tenant_id: int
+    source_type: str = "readiness_static"
+    internal_status: str = "provider_publish_broadcast_boundary_enforced"
+    external_delivery_status: str = "PROVIDER_BOUNDARY_ONLY"
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    publish_workflow_enabled: bool = False
+    broadcast_enabled: bool = False
+    no_live_delivery_reason: str = "Provider delivery and publish/broadcast workflows are deferred to later slices."
+    provider_status_label: str = "Readiness-only boundary"
+
+
+class AnnouncementRegistrySummaryResponse(BaseModel):
+    """Read-only summary for announcement registry."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    total_announcements: int
+    active_announcements: int
+    expiring_soon_announcements: int
+    boundary: AnnouncementRegistryBoundary
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    publish_workflow_enabled: bool = False
+    broadcast_enabled: bool = False
+    no_live_delivery_reason: str = "Announcement registry summary is read-only in A-054.7-E1."
+    provider_status_label: str = "Provider not connected"
+
+
+class AnnouncementListResponse(BaseModel):
+    """Read-only announcement registry list response."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    announcements: List[AnnouncementRegistryItem]
+    total: int
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    publish_workflow_enabled: bool = False
+    broadcast_enabled: bool = False
+    no_live_delivery_reason: str = "Announcement registry list is generated from internal read-only state."
+    provider_status_label: str = "Provider boundary only"

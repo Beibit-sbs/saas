@@ -16,6 +16,9 @@ from app.modules.communications.services import (
     get_notification_center_summary,
     list_notifications,
     get_notification_center_boundary,
+    get_announcement_registry_summary,
+    list_announcements,
+    get_announcement_registry_boundary,
 )
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -169,3 +172,35 @@ def get_notifications_boundary(
 ):
     """Get notification provider/live-delivery anti-fake boundary state."""
     return get_notification_center_boundary(tenant)
+
+
+@router.get("/announcements")
+def get_announcements(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.announcements.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only announcement registry list (A-054.7-E1)."""
+    return list_announcements(db, tenant)
+
+
+@router.get("/announcements/summary")
+def get_announcements_summary(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.summary.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only announcement registry summary (A-054.7-E1)."""
+    return get_announcement_registry_summary(db, tenant)
+
+
+@router.get("/announcements/boundary")
+def get_announcements_boundary(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.announcements.read"))],
+    tenant: _Tenant,
+):
+    """Get announcement registry provider/publish/broadcast anti-fake boundary state."""
+    return get_announcement_registry_boundary(tenant)

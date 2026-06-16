@@ -15,6 +15,10 @@ from app.modules.communications.schemas import (
     NotificationCenterSummaryResponse,
     NotificationListResponse,
     NotificationProviderBoundary,
+    AnnouncementRegistryItem,
+    AnnouncementRegistryBoundary,
+    AnnouncementRegistrySummaryResponse,
+    AnnouncementListResponse,
 )
 
 
@@ -203,4 +207,92 @@ def list_notifications(db: Session, tenant_id: int) -> NotificationListResponse:
         notifications=items,
         total=len(items),
         provider_status_label="Provider boundary only - no live delivery",
+    )
+
+
+def _announcement_seed_items() -> list[AnnouncementRegistryItem]:
+    """Static read-only announcement registry data for A-054.7-E1."""
+
+    now = _now()
+    return [
+        AnnouncementRegistryItem(
+            announcement_id="comm-ann-001",
+            title="Semester timeline update",
+            category="academic",
+            audience_scope="all_students",
+            source_type="readiness_static",
+            internal_status="draft_registry_state",
+            external_delivery_status="NOT_ATTEMPTED",
+            created_at=now,
+            provider_status_label="Provider boundary only - no external publish",
+        ),
+        AnnouncementRegistryItem(
+            announcement_id="comm-ann-002",
+            title="Library schedule advisory",
+            category="operations",
+            audience_scope="campus_community",
+            source_type="readiness_static",
+            internal_status="review_registry_state",
+            external_delivery_status="NOT_CONNECTED",
+            created_at=now,
+            provider_status_label="Provider not connected",
+        ),
+        AnnouncementRegistryItem(
+            announcement_id="comm-ann-003",
+            title="Scholarship policy reminder",
+            category="finance",
+            audience_scope="eligible_students",
+            source_type="readiness_static",
+            internal_status="approved_registry_state",
+            external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+            created_at=now,
+            provider_status_label="Boundary enforced - no live broadcast",
+        ),
+    ]
+
+
+def get_announcement_registry_boundary(tenant_id: int) -> AnnouncementRegistryBoundary:
+    """Return anti-fake provider and publish/broadcast boundary state for announcements."""
+
+    return AnnouncementRegistryBoundary(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="provider_publish_broadcast_boundary_enforced",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        provider_status_label="Provider boundary only - publish/broadcast disabled",
+    )
+
+
+def get_announcement_registry_summary(db: Session, tenant_id: int) -> AnnouncementRegistrySummaryResponse:
+    """Return read-only announcement registry summary with anti-fake fields."""
+
+    items = _announcement_seed_items()
+    active = sum(1 for item in items if item.internal_status in {"review_registry_state", "approved_registry_state"})
+    expiring_soon = sum(1 for item in items if "policy" in item.title.lower())
+
+    return AnnouncementRegistrySummaryResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_announcement_registry",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        total_announcements=len(items),
+        active_announcements=active,
+        expiring_soon_announcements=expiring_soon,
+        boundary=get_announcement_registry_boundary(tenant_id),
+        provider_status_label="Provider boundary only - read-only summary",
+    )
+
+
+def list_announcements(db: Session, tenant_id: int) -> AnnouncementListResponse:
+    """Return read-only announcement list with publish/broadcast boundary fields."""
+
+    items = _announcement_seed_items()
+    return AnnouncementListResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_announcement_list",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        announcements=items,
+        total=len(items),
+        provider_status_label="Provider boundary only - no publish/broadcast",
     )
