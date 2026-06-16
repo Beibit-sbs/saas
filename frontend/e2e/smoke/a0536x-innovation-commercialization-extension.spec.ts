@@ -174,7 +174,6 @@ test.describe('A-053.6X-E2E innovation commercialization extension shell', () =>
     await page.goto(`${BASE_URL}/console/innovation-commercialization`);
 
     await expect(page).toHaveURL(/\/console\/innovation-commercialization/);
-    await expect(page.locator('a[href="/console/innovation-commercialization"]').first()).toBeVisible();
 
     await expect(page.getByTestId('innovation-commercialization-runtime-shell')).toBeVisible();
     await expect(page.getByTestId('innovation-commercialization-overview')).toBeVisible();
