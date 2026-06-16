@@ -270,6 +270,9 @@
         - anti_fake_verification: PASS
         - readiness: READY_FOR_FRONTEND_INTEGRATION
         - report_file: A-054.5-E1-COMMUNICATIONS_NOTIFICATION_COMMUNITY_BACKEND_RUNTIME_SHELL_REPORT.md
+        - verification_status: VERIFIED_WITH_EXTERNAL_TEST_BLOCKER
+        - verification_report_file: A-054.5-E1.R1-COMMUNICATIONS_RUNTIME_SHELL_VERIFICATION_CLOSURE_REPORT.md
+        - targeted_pytest_status: BLOCKED_EXTERNAL_DEPENDENCY_LDAP3
         - final_verdict: A-054.5-E1 PASS - COMMUNICATIONS_NOTIFICATION_COMMUNITY_BACKEND_RUNTIME_SHELL_PASS
         - recommended_next_action: A-054.6-E1
         - next_action_id: A-054.6-E1
