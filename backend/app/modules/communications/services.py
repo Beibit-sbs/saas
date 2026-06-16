@@ -27,6 +27,14 @@ from app.modules.communications.schemas import (
     NotificationPreferenceRegistryBoundary,
     NotificationPreferenceRegistrySummaryResponse,
     NotificationPreferenceListResponse,
+    DeliveryAuditEventItem,
+    DeliveryAuditBoundary,
+    DeliveryAuditSummaryResponse,
+    DeliveryAuditListResponse,
+    EscalationWorkflowItem,
+    EscalationWorkflowBoundary,
+    EscalationWorkflowSummaryResponse,
+    EscalationWorkflowListResponse,
 )
 
 
@@ -479,4 +487,180 @@ def list_notification_preferences(db: Session, tenant_id: int) -> NotificationPr
         preferences=items,
         total=len(items),
         provider_status_label="Provider boundary only - no preference mutation",
+    )
+
+
+def _delivery_audit_seed_items() -> list[DeliveryAuditEventItem]:
+    """Static read-only delivery audit readiness data for A-054.9-E1."""
+
+    now = _now()
+    return [
+        DeliveryAuditEventItem(
+            audit_event_id="comm-audit-001",
+            event_type="notification_compiled",
+            channel_type="email",
+            audience_scope="at_risk_students",
+            source_type="readiness_static",
+            internal_status="queued_internal_orchestration",
+            external_delivery_status="NOT_ATTEMPTED",
+            recorded_at=now,
+            provider_status_label="Provider boundary only - no external delivery",
+        ),
+        DeliveryAuditEventItem(
+            audit_event_id="comm-audit-002",
+            event_type="announcement_reviewed",
+            channel_type="push",
+            audience_scope="campus_staff",
+            source_type="readiness_static",
+            internal_status="policy_review_logged",
+            external_delivery_status="NOT_CONNECTED",
+            recorded_at=now,
+            provider_status_label="Provider not connected",
+        ),
+        DeliveryAuditEventItem(
+            audit_event_id="comm-audit-003",
+            event_type="escalation_gate_recorded",
+            channel_type="sms",
+            audience_scope="deans_office",
+            source_type="readiness_static",
+            internal_status="approval_gate_recorded",
+            external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+            recorded_at=now,
+            provider_status_label="Boundary enforced - no delivery success claim",
+        ),
+    ]
+
+
+def get_delivery_audit_boundary(tenant_id: int) -> DeliveryAuditBoundary:
+    """Return anti-fake provider and delivery-audit boundary state."""
+
+    return DeliveryAuditBoundary(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="provider_delivery_audit_boundary_enforced",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        provider_status_label="Provider boundary only - delivery success disabled",
+    )
+
+
+def get_delivery_audit_summary(db: Session, tenant_id: int) -> DeliveryAuditSummaryResponse:
+    """Return read-only delivery audit summary with anti-fake fields."""
+
+    items = _delivery_audit_seed_items()
+    pending = sum(1 for item in items if item.internal_status == "queued_internal_orchestration")
+    policy_review = sum(1 for item in items if "policy" in item.internal_status)
+
+    return DeliveryAuditSummaryResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_delivery_audit",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        total_audit_events=len(items),
+        pending_internal_events=pending,
+        policy_review_events=policy_review,
+        boundary=get_delivery_audit_boundary(tenant_id),
+        provider_status_label="Provider boundary only - read-only summary",
+    )
+
+
+def list_delivery_audit_events(db: Session, tenant_id: int) -> DeliveryAuditListResponse:
+    """Return read-only delivery audit event list with no delivery success claims."""
+
+    items = _delivery_audit_seed_items()
+    return DeliveryAuditListResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_delivery_audit_list",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        events=items,
+        total=len(items),
+        provider_status_label="Provider boundary only - no delivery success",
+    )
+
+
+def _escalation_workflow_seed_items() -> list[EscalationWorkflowItem]:
+    """Static read-only escalation workflow readiness data for A-054.9-E1."""
+
+    now = _now()
+    return [
+        EscalationWorkflowItem(
+            escalation_id="comm-esc-001",
+            workflow_type="attendance_risk_escalation",
+            approval_level="department_director",
+            policy_gate="advisor_review_required",
+            source_type="readiness_static",
+            internal_status="approval_gated_readiness_only",
+            external_delivery_status="NOT_ATTEMPTED",
+            reviewed_at=now,
+            provider_status_label="Provider boundary only - no escalation execution",
+        ),
+        EscalationWorkflowItem(
+            escalation_id="comm-esc-002",
+            workflow_type="financial_aid_escalation",
+            approval_level="registrar",
+            policy_gate="policy_validation_required",
+            source_type="readiness_static",
+            internal_status="human_approval_pending_readiness_only",
+            external_delivery_status="NOT_CONNECTED",
+            reviewed_at=now,
+            provider_status_label="Provider not connected",
+        ),
+        EscalationWorkflowItem(
+            escalation_id="comm-esc-003",
+            workflow_type="academic_integrity_escalation",
+            approval_level="rector",
+            policy_gate="critical_multilevel_approval",
+            source_type="readiness_static",
+            internal_status="critical_policy_gate_recorded",
+            external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+            reviewed_at=now,
+            provider_status_label="Boundary enforced - no autonomous escalation",
+        ),
+    ]
+
+
+def get_escalation_workflow_boundary(tenant_id: int) -> EscalationWorkflowBoundary:
+    """Return anti-fake provider and escalation execution boundary state."""
+
+    return EscalationWorkflowBoundary(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="provider_escalation_execution_boundary_enforced",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        provider_status_label="Provider boundary only - escalation execution disabled",
+    )
+
+
+def get_escalation_workflow_summary(db: Session, tenant_id: int) -> EscalationWorkflowSummaryResponse:
+    """Return read-only escalation workflow summary with anti-fake fields."""
+
+    items = _escalation_workflow_seed_items()
+    approval_gated = sum(1 for item in items if "approval" in item.internal_status)
+    critical = sum(1 for item in items if "critical" in item.internal_status or "critical" in item.policy_gate)
+
+    return EscalationWorkflowSummaryResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_escalation_workflow",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        total_workflows=len(items),
+        approval_gated_workflows=approval_gated,
+        critical_policy_workflows=critical,
+        boundary=get_escalation_workflow_boundary(tenant_id),
+        provider_status_label="Provider boundary only - read-only summary",
+    )
+
+
+def list_escalation_workflows(db: Session, tenant_id: int) -> EscalationWorkflowListResponse:
+    """Return read-only escalation workflow list with execution boundary fields."""
+
+    items = _escalation_workflow_seed_items()
+    return EscalationWorkflowListResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_escalation_workflow_list",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        workflows=items,
+        total=len(items),
+        provider_status_label="Provider boundary only - no escalation execution",
     )

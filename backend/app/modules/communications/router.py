@@ -25,6 +25,12 @@ from app.modules.communications.services import (
     get_preference_registry_summary,
     list_notification_preferences,
     get_preference_registry_boundary,
+    get_delivery_audit_summary,
+    list_delivery_audit_events,
+    get_delivery_audit_boundary,
+    get_escalation_workflow_summary,
+    list_escalation_workflows,
+    get_escalation_workflow_boundary,
 )
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -274,3 +280,67 @@ def get_preferences_boundary(
 ):
     """Get preference registry provider/mutation anti-fake boundary state."""
     return get_preference_registry_boundary(tenant)
+
+
+@router.get("/delivery-audit")
+def get_delivery_audit(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.audit.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only delivery audit trail list (A-054.9-E1)."""
+    return list_delivery_audit_events(db, tenant)
+
+
+@router.get("/delivery-audit/summary")
+def get_delivery_audit_summary_route(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.summary.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only delivery audit trail summary (A-054.9-E1)."""
+    return get_delivery_audit_summary(db, tenant)
+
+
+@router.get("/delivery-audit/boundary")
+def get_delivery_audit_boundary_route(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.audit.read"))],
+    tenant: _Tenant,
+):
+    """Get delivery audit provider/delivery-success anti-fake boundary state."""
+    return get_delivery_audit_boundary(tenant)
+
+
+@router.get("/escalations")
+def get_escalations(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.escalations.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only escalation workflow readiness list (A-054.9-E1)."""
+    return list_escalation_workflows(db, tenant)
+
+
+@router.get("/escalations/summary")
+def get_escalations_summary(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.summary.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only escalation workflow readiness summary (A-054.9-E1)."""
+    return get_escalation_workflow_summary(db, tenant)
+
+
+@router.get("/escalations/boundary")
+def get_escalations_boundary(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.escalations.read"))],
+    tenant: _Tenant,
+):
+    """Get escalation workflow provider/execution anti-fake boundary state."""
+    return get_escalation_workflow_boundary(tenant)

@@ -377,3 +377,159 @@ class NotificationPreferenceListResponse(BaseModel):
     preference_mutation_enabled: bool = False
     no_live_delivery_reason: str = "Preference registry list is generated from internal read-only state."
     provider_status_label: str = "Provider boundary only"
+
+
+class DeliveryAuditEventItem(BaseModel):
+    """Read-only delivery audit event item for A-054.9-E1."""
+
+    audit_event_id: str
+    event_type: str
+    channel_type: str
+    audience_scope: str
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    recorded_at: datetime
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    delivery_success_claimed: bool = False
+    escalation_execution_enabled: bool = False
+    autonomous_escalation_enabled: bool = False
+    no_live_delivery_reason: str = "A-054.9-E1 is read-only; delivery success and escalation execution workflows are disabled."
+    provider_status_label: str = "Provider boundary only - no live delivery"
+
+
+class DeliveryAuditBoundary(BaseModel):
+    """Delivery audit boundary response."""
+
+    tenant_id: int
+    source_type: str = "readiness_static"
+    internal_status: str = "provider_delivery_audit_boundary_enforced"
+    external_delivery_status: str = "PROVIDER_BOUNDARY_ONLY"
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    delivery_success_claimed: bool = False
+    escalation_execution_enabled: bool = False
+    autonomous_escalation_enabled: bool = False
+    no_live_delivery_reason: str = "Provider delivery, delivery success, and escalation execution are deferred to later slices."
+    provider_status_label: str = "Readiness-only boundary"
+
+
+class DeliveryAuditSummaryResponse(BaseModel):
+    """Read-only summary for delivery audit trail."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    total_audit_events: int
+    pending_internal_events: int
+    policy_review_events: int
+    boundary: DeliveryAuditBoundary
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    delivery_success_claimed: bool = False
+    escalation_execution_enabled: bool = False
+    autonomous_escalation_enabled: bool = False
+    no_live_delivery_reason: str = "Delivery audit summary is read-only in A-054.9-E1."
+    provider_status_label: str = "Provider not connected"
+
+
+class DeliveryAuditListResponse(BaseModel):
+    """Read-only delivery audit event list response."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    events: List[DeliveryAuditEventItem]
+    total: int
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    delivery_success_claimed: bool = False
+    escalation_execution_enabled: bool = False
+    autonomous_escalation_enabled: bool = False
+    no_live_delivery_reason: str = "Delivery audit events are generated from internal read-only state."
+    provider_status_label: str = "Provider boundary only"
+
+
+class EscalationWorkflowItem(BaseModel):
+    """Read-only escalation workflow readiness item for A-054.9-E1."""
+
+    escalation_id: str
+    workflow_type: str
+    approval_level: str
+    policy_gate: str
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    reviewed_at: datetime
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    delivery_success_claimed: bool = False
+    escalation_execution_enabled: bool = False
+    autonomous_escalation_enabled: bool = False
+    no_live_delivery_reason: str = "A-054.9-E1 is read-only; escalation execution and autonomous escalation are disabled."
+    provider_status_label: str = "Provider boundary only - no live delivery"
+
+
+class EscalationWorkflowBoundary(BaseModel):
+    """Escalation workflow boundary response."""
+
+    tenant_id: int
+    source_type: str = "readiness_static"
+    internal_status: str = "provider_escalation_execution_boundary_enforced"
+    external_delivery_status: str = "PROVIDER_BOUNDARY_ONLY"
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    delivery_success_claimed: bool = False
+    escalation_execution_enabled: bool = False
+    autonomous_escalation_enabled: bool = False
+    no_live_delivery_reason: str = "Provider delivery and escalation execution workflows are deferred to later slices."
+    provider_status_label: str = "Readiness-only boundary"
+
+
+class EscalationWorkflowSummaryResponse(BaseModel):
+    """Read-only summary for escalation workflow readiness."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    total_workflows: int
+    approval_gated_workflows: int
+    critical_policy_workflows: int
+    boundary: EscalationWorkflowBoundary
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    delivery_success_claimed: bool = False
+    escalation_execution_enabled: bool = False
+    autonomous_escalation_enabled: bool = False
+    no_live_delivery_reason: str = "Escalation workflow summary is read-only in A-054.9-E1."
+    provider_status_label: str = "Provider not connected"
+
+
+class EscalationWorkflowListResponse(BaseModel):
+    """Read-only escalation workflow list response."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    workflows: List[EscalationWorkflowItem]
+    total: int
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    delivery_success_claimed: bool = False
+    escalation_execution_enabled: bool = False
+    autonomous_escalation_enabled: bool = False
+    no_live_delivery_reason: str = "Escalation workflow list is generated from internal read-only state."
+    provider_status_label: str = "Provider boundary only"
