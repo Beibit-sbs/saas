@@ -12,6 +12,11 @@ from app.modules.communications.dependencies import (
     require_communications_tenant,
 )
 from app.modules.communications.services import get_communications_runtime_shell
+from app.modules.communications.services import (
+    get_notification_center_summary,
+    list_notifications,
+    get_notification_center_boundary,
+)
 from app.modules.rbac.security import get_actor, permission_dependency
 
 
@@ -132,3 +137,35 @@ def get_brain_actions(
             },
         ]
     }
+
+
+@router.get("/notifications")
+def get_notifications(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.notifications.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only notification center list (A-054.6-E1)."""
+    return list_notifications(db, tenant)
+
+
+@router.get("/notifications/summary")
+def get_notifications_summary(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.summary.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only notification center summary (A-054.6-E1)."""
+    return get_notification_center_summary(db, tenant)
+
+
+@router.get("/notifications/boundary")
+def get_notifications_boundary(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.notifications.read"))],
+    tenant: _Tenant,
+):
+    """Get notification provider/live-delivery anti-fake boundary state."""
+    return get_notification_center_boundary(tenant)

@@ -11,6 +11,10 @@ from app.modules.communications.schemas import (
     ProviderReadinessSummary,
     BrainActionBoundaryItem,
     CommunicationsRuntimeShellResponse,
+    NotificationCenterItem,
+    NotificationCenterSummaryResponse,
+    NotificationListResponse,
+    NotificationProviderBoundary,
 )
 
 
@@ -114,4 +118,89 @@ def get_communications_runtime_shell(db: Session, tenant_id: int) -> Communicati
         domains=domain_summaries,
         provider_readiness=provider_summaries,
         brain_action_samples=brain_action_samples,
+    )
+
+
+def _notification_seed_items() -> list[NotificationCenterItem]:
+    """Static read-only notification center data for A-054.6-E1."""
+
+    now = _now()
+    return [
+        NotificationCenterItem(
+            notification_id="comm-notif-001",
+            title="Advising window reminder",
+            message_preview="Course advising window opens this week.",
+            source_type="readiness_static",
+            internal_status="queued_internal",
+            external_delivery_status="NOT_ATTEMPTED",
+            created_at=now,
+            provider_status_label="Provider boundary only - no external dispatch",
+        ),
+        NotificationCenterItem(
+            notification_id="comm-notif-002",
+            title="Fee statement update",
+            message_preview="Monthly fee statement is ready for review.",
+            source_type="readiness_static",
+            internal_status="read_internal",
+            external_delivery_status="NOT_CONNECTED",
+            created_at=now,
+            provider_status_label="Provider not connected",
+        ),
+        NotificationCenterItem(
+            notification_id="comm-notif-003",
+            title="Attendance risk signal",
+            message_preview="Attendance threshold warning requires advisor attention.",
+            source_type="readiness_static",
+            internal_status="requires_review",
+            external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+            created_at=now,
+            provider_status_label="Boundary enforced - no live provider",
+        ),
+    ]
+
+
+def get_notification_center_boundary(tenant_id: int) -> NotificationProviderBoundary:
+    """Return anti-fake provider boundary state for notification center."""
+
+    return NotificationProviderBoundary(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="provider_boundary_enforced",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        provider_status_label="Provider boundary only - no live channel",
+    )
+
+
+def get_notification_center_summary(db: Session, tenant_id: int) -> NotificationCenterSummaryResponse:
+    """Return read-only notification center summary with anti-fake fields."""
+
+    items = _notification_seed_items()
+    unread = sum(1 for item in items if item.internal_status != "read_internal")
+    high_priority = sum(1 for item in items if "risk" in item.title.lower())
+
+    return NotificationCenterSummaryResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_notification_center",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        total_notifications=len(items),
+        unread_notifications=unread,
+        high_priority_notifications=high_priority,
+        boundary=get_notification_center_boundary(tenant_id),
+        provider_status_label="Provider boundary only - read-only summary",
+    )
+
+
+def list_notifications(db: Session, tenant_id: int) -> NotificationListResponse:
+    """Return read-only notification list with explicit non-delivery claims."""
+
+    items = _notification_seed_items()
+    return NotificationListResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_notification_list",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        notifications=items,
+        total=len(items),
+        provider_status_label="Provider boundary only - no live delivery",
     )

@@ -90,3 +90,68 @@ class CommunicationsRuntimeShellResponse(BaseModel):
             "rbac_permission_required",
         ]
     )
+
+
+class NotificationCenterItem(BaseModel):
+    """Read-only notification item for A-054.6-E1 notification center slice."""
+
+    notification_id: str
+    title: str
+    message_preview: str
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    created_at: datetime
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    no_live_delivery_reason: str = "A-054.6-E1 is read-only; live provider delivery is deferred."
+    provider_status_label: str = "Provider boundary only - no live delivery"
+
+
+class NotificationProviderBoundary(BaseModel):
+    """Notification center provider boundary response."""
+
+    tenant_id: int
+    source_type: str = "readiness_static"
+    internal_status: str = "provider_boundary_enforced"
+    external_delivery_status: str = "PROVIDER_BOUNDARY_ONLY"
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    no_live_delivery_reason: str = "Provider integrations are deferred to later slices; no external delivery attempted."
+    provider_status_label: str = "Readiness-only boundary"
+
+
+class NotificationCenterSummaryResponse(BaseModel):
+    """Read-only summary for notification center."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    total_notifications: int
+    unread_notifications: int
+    high_priority_notifications: int
+    boundary: NotificationProviderBoundary
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    no_live_delivery_reason: str = "Notification center summary is read-only in A-054.6-E1."
+    provider_status_label: str = "Provider not connected"
+
+
+class NotificationListResponse(BaseModel):
+    """Read-only notification list response."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    notifications: List[NotificationCenterItem]
+    total: int
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    no_live_delivery_reason: str = "Notification list is generated from internal read-only slice state."
+    provider_status_label: str = "Provider boundary only"
