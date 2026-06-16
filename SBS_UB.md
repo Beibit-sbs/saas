@@ -101,20 +101,24 @@
     - next_action_id: NONE
 
 - Research & Innovation Brain:
-    - vertical_status: NORMALIZED
+    - vertical_status: SUPERSEDED_EXTENSION_RECOVERY
     - audit_status: COMPLETED
     - spec_status: COMPLETED
     - b1_review_status: COMPLETED
     - b2_normalization_status: COMPLETED
     - runtime_plan_status: COMPLETED
-    - readiness: READY_FOR_RUNTIME_IMPLEMENTATION
+    - sequence_classification: DUPLICATE_VERTICAL_NEEDS_SUPERSESSION
+    - normalized_meaning: INNOVATION_AND_COMMERCIALIZATION_EXTENSION_OVER_A047_CLOSED_RESEARCH_BRAIN
+    - legacy_chain_status: SUPERSEDED_AS_DUPLICATE_VERTICAL_CHAIN
+    - readiness: READY_FOR_EXTENSION_REBASE_SPECIFICATION
     - active_handoff: ACTIVE
     - audit_report_file: A-053.1-AUDIT-RESEARCH_AND_INNOVATION_BRAIN_EXISTING_CAPABILITY_ANALYSIS_REPORT.md
     - spec_report_file: A-053.2-SPEC-RESEARCH_AND_INNOVATION_BRAIN_RUNTIME_CONTRACT_REPORT.md
     - b1_review_report_file: A-053.3-B1-RESEARCH_AND_INNOVATION_BRAIN_CONTRACT_CONSISTENCY_REVIEW_REPORT.md
     - b2_normalization_report_file: A-053.3-B2-RESEARCH_AND_INNOVATION_BRAIN_CONTRACT_NORMALIZATION_REPORT.md
     - runtime_plan_report_file: A-053.4-SPEC-RESEARCH_AND_INNOVATION_RUNTIME_IMPLEMENTATION_PLAN_REPORT.md
-    - next_action_id: A-053.5-E1
+    - recovery_report_file: A-053.R1-RECOVERY-RESEARCH_INNOVATION_EXTENSION_SEQUENCE_NORMALIZATION_REPORT.md
+    - next_action_id: A-053.2X-SPEC
 
 - A-053.1-AUDIT execution block:
     - mode: research_and_innovation_brain_existing_capability_analysis
@@ -137,6 +141,8 @@
     - final_verdict: A-053.1 AUDIT PASS - RESEARCH_AND_INNOVATION_BRAIN_READY_FOR_SPECIFICATION
     - recommended_next_action: A-053.2-SPEC
     - next_action_id: A-053.2-SPEC
+    - sequence_recovery_disposition: REVIEWED_REUSABLE_FOR_EXTENSION_GAPS_ONLY
+    - superseded_as_vertical_chain_by: A-053.R1-RECOVERY
 
 - A-053.2-SPEC execution block:
     - mode: research_and_innovation_brain_runtime_contract_specification
@@ -158,6 +164,8 @@
     - final_verdict: A-053.2-SPEC PASS - RESEARCH_AND_INNOVATION_RUNTIME_CONTRACT_READY_FOR_RECONCILIATION
     - recommended_next_action: A-053.3-B1
     - next_action_id: A-053.3-B1
+    - sequence_recovery_disposition: REVIEWED_PARTIAL_REUSE_AFTER_EXTENSION_REBASE
+    - superseded_as_vertical_chain_by: A-053.R1-RECOVERY
 
 - A-053.3-B1 execution block:
     - mode: research_and_innovation_brain_contract_consistency_review
@@ -178,6 +186,8 @@
     - final_verdict: A-053.3-B1 PASS - RESEARCH_AND_INNOVATION_CONTRACT_CONSISTENT
     - recommended_next_action: A-053.3-B2
     - next_action_id: A-053.3-B2
+    - sequence_recovery_disposition: REVIEWED_PARTIAL_REUSE_AFTER_EXTENSION_REBASE
+    - superseded_as_vertical_chain_by: A-053.R1-RECOVERY
 
 - A-053.3-B2 execution block:
     - mode: research_and_innovation_brain_contract_normalization
@@ -197,6 +207,8 @@
     - final_verdict: A-053.3-B2 PASS - RESEARCH_AND_INNOVATION_CONTRACT_NORMALIZED
     - recommended_next_action: A-053.4-SPEC
     - next_action_id: A-053.4-SPEC
+    - sequence_recovery_disposition: REVIEWED_PARTIAL_REUSE_AFTER_EXTENSION_REBASE
+    - superseded_as_vertical_chain_by: A-053.R1-RECOVERY
 
 - A-053.4-SPEC execution block:
     - mode: research_and_innovation_runtime_implementation_planning
@@ -222,6 +234,26 @@
     - final_verdict: A-053.4-SPEC PASS - RESEARCH_AND_INNOVATION_RUNTIME_PLAN_READY
     - recommended_next_action: A-053.5-E1
     - next_action_id: A-053.5-E1
+    - sequence_recovery_disposition: SUPERSEDED_AS_DUPLICATE_VERTICAL_RUNTIME_PLAN
+    - superseded_as_vertical_chain_by: A-053.R1-RECOVERY
+
+- A-053.R1-RECOVERY execution block:
+    - mode: research_innovation_extension_sequence_normalization
+    - purpose: normalize_a053_from_duplicate_vertical_path_to_extension_over_closed_a047_research_brain
+    - source_state_before: A-053.4-SPEC PASS
+    - source_state_validation: PASS
+    - a04713_closure_confirmed: PASS
+    - duplicate_vertical_detection: PASS
+    - recovery_verdict: DUPLICATE_VERTICAL_NEEDS_SUPERSESSION
+    - corrected_meaning: INNOVATION_AND_COMMERCIALIZATION_EXTENSION_OVER_A047_CLOSED_RESEARCH_BRAIN
+    - legacy_a053_chain_status: SUPERSEDED_AS_VERTICAL_CHAIN
+    - reusable_evidence_scope: A-053.1_THROUGH_A-053.4_EXTENSION_GAP_REFERENCE_ONLY
+    - corrected_sequence: PASS
+    - readiness: READY_FOR_EXTENSION_REBASE_SPECIFICATION
+    - report_file: A-053.R1-RECOVERY-RESEARCH_INNOVATION_EXTENSION_SEQUENCE_NORMALIZATION_REPORT.md
+    - final_verdict: A-053.R1-RECOVERY PASS - A053_SEQUENCE_NORMALIZED_AS_EXTENSION
+    - recommended_next_action: A-053.2X-SPEC
+    - next_action_id: A-053.2X-SPEC
 
 - A-052.1-AUDIT execution block:
     - mode: academic_operations_brain_existing_capability_analysis

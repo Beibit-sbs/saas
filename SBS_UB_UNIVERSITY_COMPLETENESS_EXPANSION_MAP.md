@@ -2040,6 +2040,28 @@
 - final_verdict: A-053.4-SPEC PASS - RESEARCH_AND_INNOVATION_RUNTIME_PLAN_READY
 - next_action_id: A-053.5-E1.
 
+## 0. A-053.R1 Recovery Research Innovation Extension Sequence Normalization Continuity
+
+- A-053.R1 completed as governance recovery and sequence-normalization action for A-053.
+- Source validation outcomes:
+	- A-047.13 closure confirmed as `CLOSED_BASELINED`
+	- A-053.1 through A-053.4 chain reviewed
+	- tracker and capability references validated as present
+- Recovery classification:
+	- verdict: `DUPLICATE_VERTICAL_NEEDS_SUPERSESSION`
+	- reason: A-053 was framed as a parallel vertical closure lane over already-closed A-047 Research Brain scope
+- Corrected meaning:
+	- A-053 is normalized to `Innovation/Commercialization Extension` over the A-047 closed Research Brain baseline
+	- no reopening or re-closure of A-047-certified research core runtime slices is allowed in corrected sequence
+- Disposition of prior A-053 files:
+	- A-053.1 through A-053.4 are `SUPERSEDED_AS_VERTICAL_CHAIN`
+	- A-053.1 through A-053.4 remain `REUSABLE_AS_EXTENSION_EVIDENCE` within rebased extension-only scope
+- Corrected sequence handoff:
+	- readiness_decision: `READY_FOR_EXTENSION_REBASE_SPECIFICATION`
+	- corrected_next_action_id: `A-053.2X-SPEC`
+	- report_file: A-053.R1-RECOVERY-RESEARCH_INNOVATION_EXTENSION_SEQUENCE_NORMALIZATION_REPORT.md
+	- final_verdict: A-053.R1-RECOVERY PASS - A053 normalized to extension-over-closure model.
+
 ## 0. A-049.15-B1 Ministry Regulatory Reporting Product Quality Baseline Continuity
 
 - A-049.15-B1 completed as certification-baseline action for the Ministry & Regulatory Reporting Brain vertical.
