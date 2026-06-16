@@ -147,3 +147,7 @@ class CommDomainRegistry:
     def brain_signal_domains(cls) -> List[CommDomainRegistryItem]:
         """Return domains where Brain signal is applicable."""
         return [d for d in cls.DOMAINS if d.brain_signal_applicable]
+
+
+# Compatibility alias used by post-commit verification probes.
+COMMUNICATIONS_DOMAIN_REGISTRY = CommDomainRegistry.DOMAINS

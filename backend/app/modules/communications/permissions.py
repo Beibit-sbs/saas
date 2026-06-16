@@ -88,3 +88,7 @@ def get_permissions_for_role(role: str) -> set[str]:
         "rector": RECTOR_PERMISSIONS,
     }
     return role_map.get(role.lower(), set())
+
+
+# Compatibility alias used by post-commit verification probes.
+COMMUNICATIONS_CORE_PERMISSIONS = CORE_PERMISSIONS
