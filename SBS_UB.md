@@ -111,7 +111,7 @@
     - normalized_meaning: INNOVATION_AND_COMMERCIALIZATION_EXTENSION_OVER_A047_CLOSED_RESEARCH_BRAIN
     - legacy_chain_status: SUPERSEDED_AS_DUPLICATE_VERTICAL_CHAIN
     - readiness: READY_FOR_EXTENSION_REBASE_SPECIFICATION
-    - active_handoff: ACTIVE
+    - active_handoff: REMOVED
     - audit_report_file: A-053.1-AUDIT-RESEARCH_AND_INNOVATION_BRAIN_EXISTING_CAPABILITY_ANALYSIS_REPORT.md
     - spec_report_file: A-053.2-SPEC-RESEARCH_AND_INNOVATION_BRAIN_RUNTIME_CONTRACT_REPORT.md
     - b1_review_report_file: A-053.3-B1-RESEARCH_AND_INNOVATION_BRAIN_CONTRACT_CONSISTENCY_REVIEW_REPORT.md
@@ -140,6 +140,8 @@
     - a0536x_r2_report_file: A-053.6X-R2-BLOCKER-RESOLUTION-INNOVATION_COMMERCIALIZATION_E2E_REPORT.md
     - legacy_a053_1_through_5_authoritative_sequence: NO
     - readiness: READY_FOR_CLOSURE
+    - closure_note: A-053 closed by A-053.6X-R2 PASS; no A-053 continuation authorized.
+    - roadmap_gate_note: next roadmap branch selection requires human decision.
     - next_action_id: NONE
 
 - A-053.1-AUDIT execution block:
