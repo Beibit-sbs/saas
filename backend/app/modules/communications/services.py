@@ -19,6 +19,14 @@ from app.modules.communications.schemas import (
     AnnouncementRegistryBoundary,
     AnnouncementRegistrySummaryResponse,
     AnnouncementListResponse,
+    MessageTemplateRegistryItem,
+    MessageTemplateRegistryBoundary,
+    MessageTemplateRegistrySummaryResponse,
+    MessageTemplateListResponse,
+    NotificationPreferenceRegistryItem,
+    NotificationPreferenceRegistryBoundary,
+    NotificationPreferenceRegistrySummaryResponse,
+    NotificationPreferenceListResponse,
 )
 
 
@@ -295,4 +303,180 @@ def list_announcements(db: Session, tenant_id: int) -> AnnouncementListResponse:
         announcements=items,
         total=len(items),
         provider_status_label="Provider boundary only - no publish/broadcast",
+    )
+
+
+def _template_seed_items() -> list[MessageTemplateRegistryItem]:
+    """Static read-only message template registry data for A-054.8-E1."""
+
+    now = _now()
+    return [
+        MessageTemplateRegistryItem(
+            template_id="comm-tpl-001",
+            template_name="Attendance Risk Advisory",
+            channel_type="email",
+            locale="en-US",
+            source_type="readiness_static",
+            internal_status="draft_template_registry_state",
+            external_delivery_status="NOT_ATTEMPTED",
+            updated_at=now,
+            provider_status_label="Provider boundary only - no template send",
+        ),
+        MessageTemplateRegistryItem(
+            template_id="comm-tpl-002",
+            template_name="Exam Schedule Reminder",
+            channel_type="push",
+            locale="en-US",
+            source_type="readiness_static",
+            internal_status="review_template_registry_state",
+            external_delivery_status="NOT_CONNECTED",
+            updated_at=now,
+            provider_status_label="Provider not connected",
+        ),
+        MessageTemplateRegistryItem(
+            template_id="comm-tpl-003",
+            template_name="Scholarship Deadline Alert",
+            channel_type="sms",
+            locale="en-US",
+            source_type="readiness_static",
+            internal_status="approved_template_registry_state",
+            external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+            updated_at=now,
+            provider_status_label="Boundary enforced - send workflow disabled",
+        ),
+    ]
+
+
+def get_template_registry_boundary(tenant_id: int) -> MessageTemplateRegistryBoundary:
+    """Return anti-fake provider and template send boundary state for template registry."""
+
+    return MessageTemplateRegistryBoundary(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="provider_template_send_boundary_enforced",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        provider_status_label="Provider boundary only - template send disabled",
+    )
+
+
+def get_template_registry_summary(db: Session, tenant_id: int) -> MessageTemplateRegistrySummaryResponse:
+    """Return read-only template registry summary with anti-fake fields."""
+
+    items = _template_seed_items()
+    active = sum(1 for item in items if item.internal_status in {"review_template_registry_state", "approved_template_registry_state"})
+    channels_covered = len({item.channel_type for item in items})
+
+    return MessageTemplateRegistrySummaryResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_template_registry",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        total_templates=len(items),
+        active_templates=active,
+        channels_covered=channels_covered,
+        boundary=get_template_registry_boundary(tenant_id),
+        provider_status_label="Provider boundary only - read-only summary",
+    )
+
+
+def list_message_templates(db: Session, tenant_id: int) -> MessageTemplateListResponse:
+    """Return read-only message template list with template send boundary fields."""
+
+    items = _template_seed_items()
+    return MessageTemplateListResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_template_list",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        templates=items,
+        total=len(items),
+        provider_status_label="Provider boundary only - no template send",
+    )
+
+
+def _preference_seed_items() -> list[NotificationPreferenceRegistryItem]:
+    """Static read-only notification preference registry data for A-054.8-E1."""
+
+    now = _now()
+    return [
+        NotificationPreferenceRegistryItem(
+            preference_id="comm-pref-001",
+            audience_type="student",
+            channel_type="email",
+            preference_scope="attendance_alerts",
+            source_type="readiness_static",
+            internal_status="default_preference_registry_state",
+            external_delivery_status="NOT_ATTEMPTED",
+            updated_at=now,
+            provider_status_label="Provider boundary only - no subscription mutation",
+        ),
+        NotificationPreferenceRegistryItem(
+            preference_id="comm-pref-002",
+            audience_type="staff",
+            channel_type="push",
+            preference_scope="exam_alerts",
+            source_type="readiness_static",
+            internal_status="custom_preference_registry_state",
+            external_delivery_status="NOT_CONNECTED",
+            updated_at=now,
+            provider_status_label="Provider not connected",
+        ),
+        NotificationPreferenceRegistryItem(
+            preference_id="comm-pref-003",
+            audience_type="parent",
+            channel_type="sms",
+            preference_scope="fee_statement_updates",
+            source_type="readiness_static",
+            internal_status="review_preference_registry_state",
+            external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+            updated_at=now,
+            provider_status_label="Boundary enforced - mutation workflow disabled",
+        ),
+    ]
+
+
+def get_preference_registry_boundary(tenant_id: int) -> NotificationPreferenceRegistryBoundary:
+    """Return anti-fake provider and preference mutation boundary state for preference registry."""
+
+    return NotificationPreferenceRegistryBoundary(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="provider_preference_mutation_boundary_enforced",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        provider_status_label="Provider boundary only - preference mutation disabled",
+    )
+
+
+def get_preference_registry_summary(db: Session, tenant_id: int) -> NotificationPreferenceRegistrySummaryResponse:
+    """Return read-only preference registry summary with anti-fake fields."""
+
+    items = _preference_seed_items()
+    defaults = sum(1 for item in items if item.internal_status == "default_preference_registry_state")
+    segments = len({item.audience_type for item in items})
+
+    return NotificationPreferenceRegistrySummaryResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_preference_registry",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        total_preferences=len(items),
+        default_preferences=defaults,
+        audience_segments=segments,
+        boundary=get_preference_registry_boundary(tenant_id),
+        provider_status_label="Provider boundary only - read-only summary",
+    )
+
+
+def list_notification_preferences(db: Session, tenant_id: int) -> NotificationPreferenceListResponse:
+    """Return read-only preference list with mutation boundary fields."""
+
+    items = _preference_seed_items()
+    return NotificationPreferenceListResponse(
+        tenant_id=tenant_id,
+        source_type="readiness_static",
+        internal_status="read_only_preference_list",
+        external_delivery_status="PROVIDER_BOUNDARY_ONLY",
+        preferences=items,
+        total=len(items),
+        provider_status_label="Provider boundary only - no preference mutation",
     )

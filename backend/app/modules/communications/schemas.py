@@ -229,3 +229,151 @@ class AnnouncementListResponse(BaseModel):
     broadcast_enabled: bool = False
     no_live_delivery_reason: str = "Announcement registry list is generated from internal read-only state."
     provider_status_label: str = "Provider boundary only"
+
+
+class MessageTemplateRegistryItem(BaseModel):
+    """Read-only message template registry item for A-054.8-E1."""
+
+    template_id: str
+    template_name: str
+    channel_type: str
+    locale: str
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    updated_at: datetime
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    template_send_enabled: bool = False
+    preference_mutation_enabled: bool = False
+    no_live_delivery_reason: str = "A-054.8-E1 is read-only; template send and preference mutation workflows are disabled."
+    provider_status_label: str = "Provider boundary only - no live delivery"
+
+
+class MessageTemplateRegistryBoundary(BaseModel):
+    """Message template registry boundary response."""
+
+    tenant_id: int
+    source_type: str = "readiness_static"
+    internal_status: str = "provider_template_send_boundary_enforced"
+    external_delivery_status: str = "PROVIDER_BOUNDARY_ONLY"
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    template_send_enabled: bool = False
+    preference_mutation_enabled: bool = False
+    no_live_delivery_reason: str = "Provider delivery and template send workflows are deferred to later slices."
+    provider_status_label: str = "Readiness-only boundary"
+
+
+class MessageTemplateRegistrySummaryResponse(BaseModel):
+    """Read-only summary for message template registry."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    total_templates: int
+    active_templates: int
+    channels_covered: int
+    boundary: MessageTemplateRegistryBoundary
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    template_send_enabled: bool = False
+    preference_mutation_enabled: bool = False
+    no_live_delivery_reason: str = "Template registry summary is read-only in A-054.8-E1."
+    provider_status_label: str = "Provider not connected"
+
+
+class MessageTemplateListResponse(BaseModel):
+    """Read-only message template list response."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    templates: List[MessageTemplateRegistryItem]
+    total: int
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    template_send_enabled: bool = False
+    preference_mutation_enabled: bool = False
+    no_live_delivery_reason: str = "Template registry list is generated from internal read-only state."
+    provider_status_label: str = "Provider boundary only"
+
+
+class NotificationPreferenceRegistryItem(BaseModel):
+    """Read-only notification preference registry item for A-054.8-E1."""
+
+    preference_id: str
+    audience_type: str
+    channel_type: str
+    preference_scope: str
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    updated_at: datetime
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    template_send_enabled: bool = False
+    preference_mutation_enabled: bool = False
+    no_live_delivery_reason: str = "A-054.8-E1 is read-only; preference mutation workflows are disabled."
+    provider_status_label: str = "Provider boundary only - no live delivery"
+
+
+class NotificationPreferenceRegistryBoundary(BaseModel):
+    """Notification preference registry boundary response."""
+
+    tenant_id: int
+    source_type: str = "readiness_static"
+    internal_status: str = "provider_preference_mutation_boundary_enforced"
+    external_delivery_status: str = "PROVIDER_BOUNDARY_ONLY"
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    template_send_enabled: bool = False
+    preference_mutation_enabled: bool = False
+    no_live_delivery_reason: str = "Provider delivery and preference mutation workflows are deferred to later slices."
+    provider_status_label: str = "Readiness-only boundary"
+
+
+class NotificationPreferenceRegistrySummaryResponse(BaseModel):
+    """Read-only summary for notification preference registry."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    total_preferences: int
+    default_preferences: int
+    audience_segments: int
+    boundary: NotificationPreferenceRegistryBoundary
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    template_send_enabled: bool = False
+    preference_mutation_enabled: bool = False
+    no_live_delivery_reason: str = "Preference registry summary is read-only in A-054.8-E1."
+    provider_status_label: str = "Provider not connected"
+
+
+class NotificationPreferenceListResponse(BaseModel):
+    """Read-only notification preference list response."""
+
+    tenant_id: int
+    source_type: str
+    internal_status: str
+    external_delivery_status: str
+    preferences: List[NotificationPreferenceRegistryItem]
+    total: int
+    live_delivery_enabled: bool = False
+    provider_connected: bool = False
+    external_delivery_claimed: bool = False
+    template_send_enabled: bool = False
+    preference_mutation_enabled: bool = False
+    no_live_delivery_reason: str = "Preference registry list is generated from internal read-only state."
+    provider_status_label: str = "Provider boundary only"

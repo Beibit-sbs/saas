@@ -19,6 +19,12 @@ from app.modules.communications.services import (
     get_announcement_registry_summary,
     list_announcements,
     get_announcement_registry_boundary,
+    get_template_registry_summary,
+    list_message_templates,
+    get_template_registry_boundary,
+    get_preference_registry_summary,
+    list_notification_preferences,
+    get_preference_registry_boundary,
 )
 from app.modules.rbac.security import get_actor, permission_dependency
 
@@ -204,3 +210,67 @@ def get_announcements_boundary(
 ):
     """Get announcement registry provider/publish/broadcast anti-fake boundary state."""
     return get_announcement_registry_boundary(tenant)
+
+
+@router.get("/templates")
+def get_templates(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.templates.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only message template registry list (A-054.8-E1)."""
+    return list_message_templates(db, tenant)
+
+
+@router.get("/templates/summary")
+def get_templates_summary(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.summary.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only message template registry summary (A-054.8-E1)."""
+    return get_template_registry_summary(db, tenant)
+
+
+@router.get("/templates/boundary")
+def get_templates_boundary(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.templates.read"))],
+    tenant: _Tenant,
+):
+    """Get template registry provider/template-send anti-fake boundary state."""
+    return get_template_registry_boundary(tenant)
+
+
+@router.get("/preferences")
+def get_preferences(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.preferences.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only notification preference registry list (A-054.8-E1)."""
+    return list_notification_preferences(db, tenant)
+
+
+@router.get("/preferences/summary")
+def get_preferences_summary(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.summary.read"))],
+    tenant: _Tenant,
+    db: _DB,
+):
+    """Get read-only notification preference registry summary (A-054.8-E1)."""
+    return get_preference_registry_summary(db, tenant)
+
+
+@router.get("/preferences/boundary")
+def get_preferences_boundary(
+    _actor: _Actor,
+    _: Annotated[None, Depends(permission_dependency("communications.preferences.read"))],
+    tenant: _Tenant,
+):
+    """Get preference registry provider/mutation anti-fake boundary state."""
+    return get_preference_registry_boundary(tenant)
