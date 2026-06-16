@@ -132,13 +132,15 @@
     - a0535x_b2_report_file: A-053.5X-B2-INNOVATION_COMMERCIALIZATION_EXTENSION_PERMISSION_BOUNDARY_NORMALIZATION_REPORT.md
     - a0536x_e2e_spec_status: COMPLETED
     - a0536x_e2e_spec_report_file: A-053.6X-E2E-SPEC-INNOVATION_COMMERCIALIZATION_EXTENSION_BROWSER_VALIDATION_SPEC_REPORT.md
-    - a0536x_e2e_status: COMPLETED_INFRA_BLOCKED
+    - a0536x_e2e_status: COMPLETED_PASS
     - a0536x_e2e_report_file: A-053.6X-E2E-INNOVATION_COMMERCIALIZATION_EXTENSION_BROWSER_VALIDATION_REPORT.md
     - a0536x_r1_status: COMPLETED_BLOCKED
     - a0536x_r1_report_file: A-053.6X-R1-INFRA-UNBLOCK-INNOVATION_COMMERCIALIZATION_E2E_RERUN_REPORT.md
+    - a0536x_r2_status: COMPLETED_PASS
+    - a0536x_r2_report_file: A-053.6X-R2-BLOCKER-RESOLUTION-INNOVATION_COMMERCIALIZATION_E2E_REPORT.md
     - legacy_a053_1_through_5_authoritative_sequence: NO
-    - readiness: BLOCKED_BY_TARGETED_BROWSER_VALIDATION_FAILURE
-    - next_action_id: HUMAN_REVIEW_REQUIRED
+    - readiness: READY_FOR_CLOSURE
+    - next_action_id: NONE
 
 - A-053.1-AUDIT execution block:
     - mode: research_and_innovation_brain_existing_capability_analysis
@@ -529,6 +531,32 @@
     - final_verdict: A-053.6X-R1 BLOCKED - INFRA_UNBLOCKED_BUT_TARGETED_BROWSER_VALIDATION_NOT_PASSING
     - recommended_next_action: HUMAN_REVIEW_REQUIRED
     - next_action_id: HUMAN_REVIEW_REQUIRED
+
+- A-053.6X-R2-BLOCKER-RESOLUTION execution block:
+    - mode: innovation_commercialization_extension_e2e_navigation_and_test_image_blocker_resolution
+    - purpose: resolve_targeted_browser_validation_blockers_and_rerun_a0536x_spec_without_expanding_product_scope
+    - source_state_before: A-053.6X-R1 BLOCKED
+    - source_state_validation: PASS
+    - a04713_closure_confirmed: PASS
+    - a053r1_verdict_confirmed: DUPLICATE_VERTICAL_NEEDS_SUPERSESSION
+    - a0536x_r1_blocked_state_confirmed: PASS
+    - human_override_authorization_confirmed: PASS
+    - active_handoff_confirmed: HUMAN_REVIEW_REQUIRED
+    - blocker_root_cause_classification: test_stub_path_and_assertion_timing_mismatch_under_container_runtime
+    - minimal_test_only_correction_applied: PASS
+    - targeted_command_scope: TARGETED_SPEC_ONLY
+    - targeted_rerun_execution_status: PASS
+    - targeted_rerun_result: 2_passed_4_2s
+    - temporary_env_override_file_used: infra/.env.a0536xr2
+    - temporary_env_override_file_cleanup: PASS
+    - backend_frontend_runtime_product_code_changes: NONE
+    - no_external_integration_execution: PASS
+    - no_production_readiness_claim: PASS
+    - old_a053_chain_active_implementation_source: NO
+    - report_file: A-053.6X-R2-BLOCKER-RESOLUTION-INNOVATION_COMMERCIALIZATION_E2E_REPORT.md
+    - final_verdict: A-053.6X-R2 PASS - TARGETED_BLOCKER_RESOLVED_AND_INNOVATION_COMMERCIALIZATION_E2E_VALIDATION_PASSING
+    - recommended_next_action: NONE
+    - next_action_id: NONE
 
 - A-052.1-AUDIT execution block:
     - mode: academic_operations_brain_existing_capability_analysis

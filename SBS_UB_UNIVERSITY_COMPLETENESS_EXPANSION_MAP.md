@@ -2350,6 +2350,36 @@
 - final_verdict: A-053.6X-R1 BLOCKED - INFRA_UNBLOCKED_BUT_TARGETED_BROWSER_VALIDATION_NOT_PASSING
 - next_action_id: HUMAN_REVIEW_REQUIRED.
 
+## 0. A-053.6X-R2-BLOCKER-RESOLUTION Innovation / Commercialization Extension E2E Navigation and Test Image Blocker Resolution Continuity
+
+- A-053.6X-R2-BLOCKER-RESOLUTION executed as scoped blocker-resolution plus targeted-rerun action from `HUMAN_REVIEW_REQUIRED` state.
+- Source validation outcomes:
+	- A-053.6X-R1 blocked state confirmed as `COMPLETED_BLOCKED`
+	- next_action_id before execution confirmed as `HUMAN_REVIEW_REQUIRED`
+	- A-047.13 closure confirmed as `CLOSED_BASELINED`
+	- A-053.R1 normalization verdict confirmed as `DUPLICATE_VERTICAL_NEEDS_SUPERSESSION`
+	- old A-053.1 through A-053.5 superseded/non-active source status preserved
+- Blocker-resolution outcomes:
+	- frontend test stubs normalized to cover both `/api/admin/...` and `/api/bff/admin/...` runtime paths
+	- targeted assertion timing normalized for container-runtime determinism
+	- change scope remained test-only (`frontend/e2e/smoke/a0536x-innovation-commercialization-extension.spec.ts`)
+	- no backend/frontend runtime product feature implementation performed
+- Targeted rerun outcomes:
+	- command executed with targeted scope only:
+		- `docker compose --env-file .env.a0536xr2 run --build --rm -e E2E_BASE_URL=https://nginx frontend-tests sh -lc 'find . -name "*a0536x*" -print; npm run test:e2e -- a0536x-innovation-commercialization-extension.spec.ts'`
+	- spec visibility confirmed in container path
+	- targeted Playwright result: `2 passed (4.2s)`
+	- temporary override env file cleaned: `infra/.env.a0536xr2` removed
+- Governance and safety outcomes:
+	- no external integrations implemented
+	- no production-readiness claim made
+	- artifact hygiene preserved (no Playwright artifacts staged)
+	- old A-053.1 through A-053.5 remain superseded/non-active implementation sources
+- report_file: A-053.6X-R2-BLOCKER-RESOLUTION-INNOVATION_COMMERCIALIZATION_E2E_REPORT.md
+- readiness_decision: TARGETED_BROWSER_VALIDATION_PASSING
+- final_verdict: A-053.6X-R2 PASS - TARGETED_BLOCKER_RESOLVED_AND_INNOVATION_COMMERCIALIZATION_E2E_VALIDATION_PASSING
+- next_action_id: NONE.
+
 ## 0. A-049.15-B1 Ministry Regulatory Reporting Product Quality Baseline Continuity
 
 - A-049.15-B1 completed as certification-baseline action for the Ministry & Regulatory Reporting Brain vertical.

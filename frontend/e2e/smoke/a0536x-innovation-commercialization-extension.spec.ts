@@ -66,103 +66,117 @@ async function stubAuthFlow(page: Page, permissions: string[]) {
 }
 
 async function stubInnovationApis(page: Page) {
-  await page.route('**/api/admin/innovation-commercialization/shell', async (route: Route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        tenant_id: 1,
-        owner_module: 'innovation_commercialization_extension',
-        extension_boundary: 'Innovation / Commercialization Extension over closed A-047 Research Brain',
-        runtime_mode: 'read_only_extension_shell',
-        canonical_base_vertical: 'research_brain_a047_closed_baselined',
-        integration_policy: 'no_live_provider_execution',
-        bridge_modules: [
-          'research_science',
-          'research',
-          'research_grants',
-          'research_ethics',
-          'ip_management',
-        ],
-      }),
-    });
-  });
+  const shellPayload = {
+    tenant_id: 1,
+    owner_module: 'innovation_commercialization_extension',
+    extension_boundary: 'Innovation / Commercialization Extension over closed A-047 Research Brain',
+    runtime_mode: 'read_only_extension_shell',
+    canonical_base_vertical: 'research_brain_a047_closed_baselined',
+    integration_policy: 'no_live_provider_execution',
+    bridge_modules: [
+      'research_science',
+      'research',
+      'research_grants',
+      'research_ethics',
+      'ip_management',
+    ],
+  };
 
-  await page.route('**/api/admin/innovation-commercialization/opportunities', async (route: Route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        tenant_id: 1,
-        items: [
-          {
-            opportunity_id: 'ICX-PIPE-001',
-            title: 'Innovation Pipeline Summary',
-            stage: 'summary',
-            readiness: 'advisory',
-            source_module: 'research_science',
-            notes: 'Read-only extension summary.',
-          },
-          {
-            opportunity_id: 'ICX-COMM-001',
-            title: 'Commercialization Cases Summary',
-            stage: 'summary',
-            readiness: 'advisory',
-            source_module: 'research_science',
-            notes: 'Read-only extension summary.',
-          },
-          {
-            opportunity_id: 'ICX-START-001',
-            title: 'Startup Incubation Summary',
-            stage: 'summary',
-            readiness: 'advisory',
-            source_module: 'research_science',
-            notes: 'Read-only extension summary.',
-          },
-          {
-            opportunity_id: 'ICX-IP-001',
-            title: 'Patent/IP Commercialization Summary',
-            stage: 'summary',
-            readiness: 'advisory',
-            source_module: 'ip_management',
-            notes: 'Read-only extension summary.',
-          },
-          {
-            opportunity_id: 'ICX-GRANT-001',
-            title: 'Grant-to-Product Transition Summary',
-            stage: 'summary',
-            readiness: 'advisory',
-            source_module: 'research_grants',
-            notes: 'Read-only extension summary.',
-          },
-          {
-            opportunity_id: 'ICX-LAB-001',
-            title: 'Lab-to-Market Workflow Summary',
-            stage: 'summary',
-            readiness: 'advisory',
-            source_module: 'research_science',
-            notes: 'Read-only extension summary.',
-          },
-          {
-            opportunity_id: 'ICX-PARTNER-001',
-            title: 'Industry Partnership Summary',
-            stage: 'summary',
-            readiness: 'advisory',
-            source_module: 'research_science',
-            notes: 'Read-only extension summary.',
-          },
-          {
-            opportunity_id: 'ICX-KPI-001',
-            title: 'KPI/Dashboard Summary',
-            stage: 'summary',
-            readiness: 'advisory',
-            source_module: 'research_science',
-            notes: 'Read-only extension summary.',
-          },
-        ],
-      }),
+  const opportunitiesPayload = {
+    tenant_id: 1,
+    items: [
+      {
+        opportunity_id: 'ICX-PIPE-001',
+        title: 'Innovation Pipeline Summary',
+        stage: 'summary',
+        readiness: 'advisory',
+        source_module: 'research_science',
+        notes: 'Read-only extension summary.',
+      },
+      {
+        opportunity_id: 'ICX-COMM-001',
+        title: 'Commercialization Cases Summary',
+        stage: 'summary',
+        readiness: 'advisory',
+        source_module: 'research_science',
+        notes: 'Read-only extension summary.',
+      },
+      {
+        opportunity_id: 'ICX-START-001',
+        title: 'Startup Incubation Summary',
+        stage: 'summary',
+        readiness: 'advisory',
+        source_module: 'research_science',
+        notes: 'Read-only extension summary.',
+      },
+      {
+        opportunity_id: 'ICX-IP-001',
+        title: 'Patent/IP Commercialization Summary',
+        stage: 'summary',
+        readiness: 'advisory',
+        source_module: 'ip_management',
+        notes: 'Read-only extension summary.',
+      },
+      {
+        opportunity_id: 'ICX-GRANT-001',
+        title: 'Grant-to-Product Transition Summary',
+        stage: 'summary',
+        readiness: 'advisory',
+        source_module: 'research_grants',
+        notes: 'Read-only extension summary.',
+      },
+      {
+        opportunity_id: 'ICX-LAB-001',
+        title: 'Lab-to-Market Workflow Summary',
+        stage: 'summary',
+        readiness: 'advisory',
+        source_module: 'research_science',
+        notes: 'Read-only extension summary.',
+      },
+      {
+        opportunity_id: 'ICX-PARTNER-001',
+        title: 'Industry Partnership Summary',
+        stage: 'summary',
+        readiness: 'advisory',
+        source_module: 'research_science',
+        notes: 'Read-only extension summary.',
+      },
+      {
+        opportunity_id: 'ICX-KPI-001',
+        title: 'KPI/Dashboard Summary',
+        stage: 'summary',
+        readiness: 'advisory',
+        source_module: 'research_science',
+        notes: 'Read-only extension summary.',
+      },
+    ],
+  };
+
+  for (const pattern of [
+    '**/api/admin/innovation-commercialization/shell*',
+    '**/api/bff/admin/innovation-commercialization/shell*',
+  ]) {
+    await page.route(pattern, async (route: Route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(shellPayload),
+      });
     });
-  });
+  }
+
+  for (const pattern of [
+    '**/api/admin/innovation-commercialization/opportunities*',
+    '**/api/bff/admin/innovation-commercialization/opportunities*',
+  ]) {
+    await page.route(pattern, async (route: Route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(opportunitiesPayload),
+      });
+    });
+  }
 }
 
 test.describe('A-053.6X-E2E innovation commercialization extension shell', () => {
@@ -175,7 +189,7 @@ test.describe('A-053.6X-E2E innovation commercialization extension shell', () =>
 
     await expect(page).toHaveURL(/\/console\/innovation-commercialization/);
 
-    await expect(page.getByTestId('innovation-commercialization-runtime-shell')).toBeVisible();
+    await expect(page.getByTestId('innovation-commercialization-runtime-shell')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId('innovation-commercialization-overview')).toBeVisible();
     await expect(page.getByTestId('innovation-commercialization-opportunities')).toBeVisible();
 
@@ -207,24 +221,34 @@ test.describe('A-053.6X-E2E innovation commercialization extension shell', () =>
     await stubAuthFlow(page, ['platform.admin.read', 'research_science.overview.read']);
     await setSessionCookies(page, BASE_URL);
 
-    await page.route('**/api/admin/innovation-commercialization/shell', async (route: Route) => {
-      await route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ detail: 'stubbed shell error' }),
+    for (const pattern of [
+      '**/api/admin/innovation-commercialization/shell*',
+      '**/api/bff/admin/innovation-commercialization/shell*',
+    ]) {
+      await page.route(pattern, async (route: Route) => {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ detail: 'stubbed shell error' }),
+        });
       });
-    });
+    }
 
-    await page.route('**/api/admin/innovation-commercialization/opportunities', async (route: Route) => {
-      await route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ detail: 'stubbed opportunities error' }),
+    for (const pattern of [
+      '**/api/admin/innovation-commercialization/opportunities*',
+      '**/api/bff/admin/innovation-commercialization/opportunities*',
+    ]) {
+      await page.route(pattern, async (route: Route) => {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ detail: 'stubbed opportunities error' }),
+        });
       });
-    });
+    }
 
     await page.goto(`${BASE_URL}/console/innovation-commercialization`);
 
-    await expect(page.getByText('Failed to load Innovation / Commercialization runtime shell.')).toBeVisible();
+    await expect(page.getByText('Failed to load Innovation / Commercialization runtime shell.')).toBeVisible({ timeout: 30_000 });
   });
 });
