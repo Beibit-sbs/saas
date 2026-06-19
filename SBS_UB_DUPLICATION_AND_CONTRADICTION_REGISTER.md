@@ -38,3 +38,17 @@ Policy: register now → pick canonical → consolidate later as scoped slices w
 ## 4. Phase A verdict on duplication
 
 Duplication is REAL and structural (notification ×5, identity ×6+, research ×6, accreditation ×4, two academic_operations, two student_services). It is NOT fixable in one pass and MUST NOT be force-merged. Recommended: unify the **notification family (already in progress, A-054)** and resolve the **two git-untracked verticals (C-01, C-04)** first; defer identity/workflow consolidation to dedicated scoped efforts.
+
+## 5. D-07 detailed analysis (recon done 2026-06-19 — corrects the ×5 over-count)
+
+Evidence-based per-module status (the "5 modules for one domain" was an over-statement):
+
+| Module | Reality | Disposition |
+|---|---|---|
+| `communications` | **CANONICAL** — full vertical (A-054): 22 routes, models, mounted; implements notification center + announcements + templates + preferences + delivery audit (`/api/admin/communications/notifications/summary`, etc.) | keep as canonical |
+| `notification_center` | **TRUE superseded duplicate** — 1 route `/api/admin/notification-center/summary`, no frontend/backend consumer (only main.py mounts it), equivalent exists in communications | **deprecate-first** (done: schema now returns `deprecated=true` + `superseded_by`), remove after a deprecation cycle confirms zero callers |
+| `notification_gateway_integration` | L2 **integration adapter**, USED by `provider_readiness` | NOT a duplicate — keep |
+| `mobile_push_gateway` | intentional **L2 foundation stub** (`A-026.7.L1L2`), 0 routes / 0 imports by design | NOT dead, NOT a duplicate — keep as future-capability stub |
+| `parent_engagement` | intentional **L2 foundation stub** (`A-026.7.L1L2`), 0 routes / 0 imports by design | keep as stub |
+
+Corrected verdict: D-07 is really **1 canonical + 1 superseded-thin (notification_center) + 1 used-adapter + 2 intentional stubs**. The only consolidation target is `notification_center` → fold into communications. Step taken this pass (compatibility-first, non-breaking): added a deprecation signal (`deprecated`/`superseded_by`) to the notification_center summary response. Actual route removal deferred to a deprecation cycle (it is an exposed admin endpoint). Mobile-push / parent-engagement must NOT be removed — they are deliberate L2 maturity stubs.

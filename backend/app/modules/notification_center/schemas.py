@@ -14,3 +14,7 @@ class NotificationCenterVisibilitySchema(BaseModel):
     no_autonomous_execution: bool = True
     readonly: bool = True
     tenant_scoped: bool = True
+    # D-07 consolidation (compatibility-first): this thin module is superseded by the
+    # canonical communications notification center. Additive, non-breaking signal.
+    deprecated: bool = True
+    superseded_by: str = "/api/admin/communications/notifications/summary"
