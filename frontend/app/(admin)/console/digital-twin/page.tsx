@@ -124,6 +124,24 @@ export default function DigitalTwinPage() {
           without human approval. All recommendations explain evidence and produce an audit trail.
         </p>
       </section>
+
+      <section className="rounded-xl border bg-card p-4" data-testid="digital-twin-capacity-whatif">
+        <h2 className="text-base font-semibold">Capacity what-if (deterministic)</h2>
+        <p className="mt-1 text-xs text-muted-foreground">POST /api/admin/digital-twin/simulate/capacity</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Deterministic projection on provided baselines — no value is fabricated. Each input is tagged
+          to its source module (current_students→enrollments, classroom_capacity→scheduling,
+          dormitory_capacity→dormitory_management). Missing inputs are reported as incomplete_data, not
+          guessed. Output is a human-review readout (projected_students, classroom_utilization,
+          dormitory_pressure, risks) — it proposes nothing and executes nothing.
+        </p>
+        <ul className="mt-3 grid gap-1 text-xs text-muted-foreground md:grid-cols-2">
+          <li>human_review_required=true</li>
+          <li>fake_metrics=false</li>
+          <li>incomplete_data reported, never guessed</li>
+          <li>no autonomous action</li>
+        </ul>
+      </section>
     </div>
   );
 }

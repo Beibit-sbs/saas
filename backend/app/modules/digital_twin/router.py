@@ -36,3 +36,14 @@ def get_digital_twin_safety_boundaries(
     tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
 ) -> schemas.DigitalTwinSafetyResponse:
     return service.get_safety_boundaries(_tenant_id(tenant))
+
+
+@router.post("/simulate/capacity", response_model=schemas.CapacityWhatIfResponse)
+def simulate_digital_twin_capacity(
+    payload: schemas.CapacityWhatIfRequest,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency(permissions.SIMULATE_RUN))],
+    tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+) -> schemas.CapacityWhatIfResponse:
+    # Read-only deterministic projection; persists nothing, executes nothing.
+    return service.simulate_capacity(_tenant_id(tenant), payload)

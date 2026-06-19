@@ -45,3 +45,39 @@ class DigitalTwinSafetyResponse(BaseModel):
     runtime_mode: str = "METADATA_OBSERVATION_SIMULATION_HUMAN_REVIEW_ONLY"
     forbidden_actions: list[str] = Field(default_factory=list)
     safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)
+
+
+class CapacityWhatIfRequest(BaseModel):
+    """Caller-provided baselines (each tagged to a source module in the response).
+
+    Deterministic projection only; no value is fabricated. Until A-056.4 wires
+    these to live enrollments/scheduling reads, inputs are caller-provided and
+    the response marks incomplete_data accordingly.
+    """
+
+    current_students: int = Field(ge=0)
+    intake_growth_percent: float = Field(ge=-100)
+    classroom_capacity: int = Field(default=0, ge=0)
+    dormitory_capacity: int = Field(default=0, ge=0)
+    housing_demand_ratio: float = Field(default=0.0, ge=0, le=1)
+
+
+class CapacityWhatIfEvidence(BaseModel):
+    field: str
+    value: float
+    source_module: str
+
+
+class CapacityWhatIfResponse(BaseModel):
+    tenant_id: int
+    module: str = "digital_twin"
+    runtime_mode: str = "METADATA_OBSERVATION_SIMULATION_HUMAN_REVIEW_ONLY"
+    scenario: str = "intake_growth"
+    projected_students: int
+    classroom_utilization: float | None = None
+    dormitory_pressure: float | None = None
+    risks: list[str] = Field(default_factory=list)
+    evidence: list[CapacityWhatIfEvidence] = Field(default_factory=list)
+    incomplete_data: bool = False
+    human_review_required: bool = True
+    safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)

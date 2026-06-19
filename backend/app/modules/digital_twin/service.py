@@ -71,3 +71,46 @@ def get_safety_boundaries(tenant_id: Any) -> schemas.DigitalTwinSafetyResponse:
         tenant_id=tid,
         forbidden_actions=list(FORBIDDEN_ACTIONS),
     )
+
+
+def simulate_capacity(tenant_id: Any, request: schemas.CapacityWhatIfRequest) -> schemas.CapacityWhatIfResponse:
+    """Deterministic capacity what-if. No fabricated values; missing inputs -> incomplete_data."""
+    tid = _validate_tenant(tenant_id)
+
+    projected = round(request.current_students * (1 + request.intake_growth_percent / 100))
+    incomplete = False
+
+    classroom_util: float | None = None
+    if request.classroom_capacity > 0:
+        classroom_util = round(projected / request.classroom_capacity, 4)
+    else:
+        incomplete = True
+
+    housing_need = round(projected * request.housing_demand_ratio)
+    dorm_pressure: float | None = None
+    if request.dormitory_capacity > 0:
+        dorm_pressure = round(housing_need / request.dormitory_capacity, 4)
+    elif request.housing_demand_ratio > 0:
+        incomplete = True
+
+    risks: list[str] = []
+    if classroom_util is not None and classroom_util > 1.0:
+        risks.append("classroom_capacity_exceeded")
+    if dorm_pressure is not None and dorm_pressure > 1.0:
+        risks.append("dormitory_capacity_exceeded")
+
+    evidence = [
+        schemas.CapacityWhatIfEvidence(field="current_students", value=float(request.current_students), source_module="enrollments"),
+        schemas.CapacityWhatIfEvidence(field="classroom_capacity", value=float(request.classroom_capacity), source_module="scheduling"),
+        schemas.CapacityWhatIfEvidence(field="dormitory_capacity", value=float(request.dormitory_capacity), source_module="dormitory_management"),
+    ]
+
+    return schemas.CapacityWhatIfResponse(
+        tenant_id=tid,
+        projected_students=projected,
+        classroom_utilization=classroom_util,
+        dormitory_pressure=dorm_pressure,
+        risks=risks,
+        evidence=evidence,
+        incomplete_data=incomplete,
+    )
