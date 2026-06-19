@@ -98,3 +98,22 @@ Effective gate verdict: **PASS_WITH_NOTES** (all 5 domains green post-fix; no 50
 G1.3 backlog (next): enrollments HTTP-route authorized-success for change-status + drop (+ create_academic_term); out-of-order (non-terminal) enrollment transition rejection test; hardship RBAC-denial + tenant-fail-closed tests; (non-blocking) real-DB tenant cross-read isolation for DT decisions + acknowledge invalid-tenant test.
 
 next_exact_action: **A-056.G1.3** — remediate the backlog above (HTTP-route success/denial + transition/tenant gaps).
+
+## A-056.G1.3 — Close gate coverage gaps (slice 3 evidence) · 2026-06-20
+
+Single-agent. +9 tests (commit `b80bd09c`), all green. Closes the false-green gaps the G1.2 gate + A-055.ENR-R1 named.
+
+| Gap (from gate) | Test added | File | Result |
+|---|---|---|---|
+| PATCH /enrollments/{id}/status — no authorized-success route test | success (200, status+version) + viewer→403 | test_router_enrollments.py | pass |
+| POST /enrollments/{id}/drop — no authorized-success route test | success (200, dropped) + viewer→403 | test_router_enrollments.py | pass |
+| create_academic_term — no authorized-success test | POST /academic-terms success (201) + viewer→403 | test_router_enrollments.py | pass |
+| out-of-order (non-terminal) transition not covered | ENROLLED→WAITLIST rejected, no commit | test_enrollment_lifecycle_service.py | pass |
+| hardship tenant-fail-closed absent | get_hardship_request→None → "not found in tenant scope", no mutation | test_a0422_..._services.py | pass |
+| hardship RBAC denial absent | viewer→403 on POST /hardship | test_a0422_..._api.py | pass |
+
+Verified: enrollments router 8/8; lifecycle + SSS services + SSS api 39/39. No product code changed.
+
+G1 host-safe + test-evidence portion (G1.1+G1.2+G1.3) **COMPLETE**. Remaining = operational/E2E **BLOCKED_EXTERNAL**.
+
+next_exact_action: **A-056.G1.4 (operational/E2E, BLOCKED_EXTERNAL)** — `make up` full build, fresh-volume `alembic upgrade`, `npm run build`/`lint`, Playwright E2E, full backend regression, security deep checks; needs a controlled full-stack env. (Or pivot to the next product vertical per GLOBAL-ROADMAP-R3.)
