@@ -78,3 +78,11 @@ Environment: backend `backend/.venv` pytest (host); frontend host vitest (locale
 ## 10. Final verdict
 
 **PASS_WITH_NOTES.** All P0/P1 integrity problems and all locale-independent P2 test-debt found this pass are fixed and verified by real targeted tests; git no longer diverges from runtime at bootstrap. Remaining items are honestly registered: Docker/E2E (BLOCKED_EXTERNAL in this environment), duplication consolidation (P3, deferred), and one product decision (C-04). No production-ready or fully-complete claim is made.
+
+## 11. Addendum — A-056.G1.1 canonical runtime gate (2026-06-20)
+
+Post-recovery, the **A-056.G1 Canonical System Runtime & Governance Gate** was opened and its first bounded slice **G1.1 (environment / compose / startup / migration integrity)** was executed single-agent, host-safe + bounded LOCAL docker. This UPDATES section 8/9 limitations with newly-proven evidence (it does NOT change the PASS_WITH_NOTES verdict):
+
+- Newly PROVEN: `docker compose --env-file .env config` valid (12 services, exit 0); backend `app.main` bootstraps with 1695 routes; **single Alembic head `ipr0462rt01`** confirmed three ways (host scripts, backend image, and `alembic current` against a live db+pgbouncer+redis data plane = head, so no multiple/unexpected heads and the dev DB is at head); Digital Twin (9) + Admissions CRM (9) routes registered; Innovation bootstrap tracked (5 files, 0 uncommitted). Base data plane started from LOCAL images.
+- STILL BLOCKED_EXTERNAL / unproven (now scoped to G1.2+): full `make up` image build, fresh-volume migration `upgrade`, frontend `npm run build`/`lint`, Playwright E2E, full/controlled backend regression, and security deep checks. Operational/E2E PASS is therefore still NOT claimed.
+- Defects found in G1.1: none (read-only integrity slice; zero code changes).

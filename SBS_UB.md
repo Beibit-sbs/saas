@@ -1,3 +1,12 @@
+<!-- RUNTIME GATE NORMALIZATION 2026-06-20 (A-056.G1.1) — actual Git state, not a vertical-status rewrite.
+  actual_HEAD: d88c158b (branch main); all 25 tracked control-doc commits verified present.
+  Canonical runtime+governance gate A-056.G1 OPENED; slice G1.1 PASS (host-safe + bounded local docker):
+    compose config valid (12 services); app.main bootstrap = 1695 routes; single Alembic head ipr0462rt01 (applied on live db);
+    Digital Twin 9 routes + Admissions CRM 9 routes registered; Innovation bootstrap tracked.
+  SUPERSEDED active pointer: any "Communications next_action_id A-054.10-E1 / ACTIVE_SPEC_CHAIN" head below is STALE vs runtime —
+    execution moved past it into A-055 (end-to-end tree) + A-056 (Digital Twin). Do not treat the stale active pointer as current.
+  A-056.11 = BLOCKED_DOMAIN_DATA_SOURCE (no real consumable-stock source; never fabricate stock/consumption/days-of-stock).
+  Authoritative continuation control = SBS_UB_RECOVERY_CONTROL.md. -->
 - Research Brain:
     - status: CLOSED_BASELINED
     - closure_report: A-047.13-RESEARCH_BRAIN_CERTIFICATION_AND_VERTICAL_CLOSURE_REPORT.md

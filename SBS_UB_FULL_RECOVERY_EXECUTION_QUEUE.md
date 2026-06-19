@@ -4,10 +4,10 @@ Date: 2026-06-19 · Branch `main`. The short focus spine is `SBS_UB_RECOVERY_CON
 
 ## Continuation state
 
-- current_recovery_action: P2 partially done; at checkpoint with user.
-- completed_actions: Phase A (snapshot/inventory/dup register); P1 (R-P1-01/02/03); P2 partial (4 frontend suites stabilized).
-- commits_created: 7777b4f8 (Admissions CRM wire+commit) · 6a6b0374 (innovation bootstrap fix) · c9270408 (P2 frontend test stabilization).
-- next_exact_action: decide R-P2-04 (DDC audit timeline — real gap) and R-P2-05 (quality self-assessment boundary — brittle/async) below; then C-02 tracker normalization.
+- current_recovery_action: recovery CLOSED (PASS_WITH_NOTES). Post-recovery: A-056.G1 canonical runtime+governance gate OPENED; slice **G1.1 executed 2026-06-20** (see evidence section at bottom).
+- completed_actions: Phase A (snapshot/inventory/dup register); P1 (R-P1-01/02/03); P2 (R-P2-01..06 all DONE — c9270408 + 2adbd818); C-02 tracker normalization (c290b467); then A-055.30/.31, full A-056.* arc + R1/R2, A-055 REF/HSP/GRD-R1; then A-056.G1.1.
+- commits_created (recovery): 7777b4f8 · 6a6b0374 · c9270408 · 2adbd818 · c290b467.
+- next_exact_action: **A-056.G1.2** — controlled served-bootstrap + RBAC-denied AND authorized-success on critical write endpoints + Digital Twin capacity/resource flow smoke. (SUPERSEDED prior pointer: "decide R-P2-04/R-P2-05" — both already DONE per the verification report.)
 - external_blockers: Docker / Playwright E2E / full `npm run build` not run in this env (frontend docker-only; host vitest locale-false-positives). Full PASS verdict not achievable here → final will be PASS_WITH_NOTES / BLOCKED_EXTERNAL for ops/E2E.
 - do_not_repeat: Phase A discovery; P1 fixes; the 4 stabilized suites. See spine `do_not_repeat`.
 
@@ -54,3 +54,27 @@ node_modules/.bin/vitest run __tests__/admin/QualityAccreditationReadinessReport
 # backend boot + targeted regression when entering deeper Phase C
 backend/.venv/bin/python -c "from app.main import app; print(len(app.routes))"
 ```
+
+## A-056.G1.1 — Canonical System Runtime & Governance Gate (slice 1 evidence) · 2026-06-20
+
+Mode: single main agent, host-safe + bounded LOCAL docker (no `make up` build, no host-killing guard, no fresh-volume migrate). Environment: host venv Python 3.13.13; canonical container runtime Python 3.12; canonical command `cd infra && docker compose --env-file .env …` (infra/.env present, 2511 B).
+
+| Check | Command (abridged) | Result | Exit |
+|---|---|---|---|
+| Commit integrity | `git cat-file -e <sha>^{commit}` ×25 | 25/25 present, 0 missing | 0 |
+| HEAD | `git rev-parse HEAD` | `d88c158b` (branch `main`) | 0 |
+| Compose validity | `docker compose --env-file .env config` | exit 0; 12 services valid (backend, backend-tests, db, frontend, frontend-tests, ldap, nginx, pgbouncer, prometheus, redis, scheduler, worker) | 0 |
+| Backend bootstrap | `.venv/bin/python -c "from app.main import app"` | imports clean; **1695** routes | 0 |
+| Digital Twin routes | route introspection | **9** registered (state, safety-boundaries, simulate/{capacity,resource}, early-warning/{capacity,resource}, scenarios/{capacity,decision,decisions}) | 0 |
+| Admissions CRM routes | route introspection | **9** registered (applicants, applications, leads, …) | 0 |
+| Migration heads | `alembic -c alembic.ini heads` | single head `ipr0462rt01` (count=1) — no multiple heads | 0 |
+| Migration current | `docker compose run --rm backend alembic current` (db+pgbouncer+redis up) | `ipr0462rt01 (head)` — live DB at head | 0 |
+| Base data plane | `docker compose --env-file .env up -d db redis` + pgbouncer | db `pg_isready` accepting; redis `PONG`; all healthy (local images) | 0 |
+| Health endpoints | TestClient GET module `/health` | mounted; **401** auth-gated (route present, middleware active) | 0 |
+| Innovation bootstrap | `git ls-files …/innovation_commercialization`; status | 5 tracked, 0 uncommitted; main.py import resolves | 0 |
+
+Defects found: NONE (G1.1 is read-only integrity; zero code changes → docs-only normalization).
+
+BLOCKED_EXTERNAL / deferred to G1.2+ (NOT run this slice): full `make up` image build of all services; fresh-volume migration `upgrade`; frontend `npm run build` + `npm run lint` (docker-only, host-blocked by `scripts/docker_only_guard.sh`); Playwright E2E (`npm run test:e2e`); full/controlled backend regression; security deep checks (IDOR/priv-esc/secret-leak).
+
+next_exact_action: **A-056.G1.2** — served backend bootstrap + RBAC-denied AND authorized-success on critical write endpoints + Digital Twin capacity/resource flow smoke.
