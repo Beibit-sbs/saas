@@ -1,0 +1,129 @@
+"use client";
+
+// Digital Twin / Predictive Operations — read-only frontend shell (A-056.2).
+// Declares what the twin observes and the safety boundaries it runs under.
+// No fabricated metrics; mirrors the backend shell contract (A-056.1).
+
+const OBSERVED_DIMENSIONS = [
+  "student_population",
+  "staff_population",
+  "rooms_and_buildings",
+  "schedules",
+  "budgets",
+  "inventory",
+  "service_workload",
+  "security_events",
+];
+
+const SOURCE_SIGNAL_REGISTRIES = [
+  "student_risk_signal_registry",
+  "finance_anomaly_signal_registry",
+  "academic_quality_signal_registry",
+  "procurement_risk_signal_registry",
+  "curriculum_gap_signal_registry",
+];
+
+const SOURCE_CAPACITY_MODULES = [
+  "enrollments",
+  "scheduling",
+  "room_booking",
+  "asset_inventory",
+  "dormitory_management",
+  "dining",
+];
+
+const FORBIDDEN_ACTIONS = [
+  "autonomous_budget_commitment",
+  "autonomous_academic_decision",
+  "autonomous_disciplinary_decision",
+  "hidden_scoring",
+  "supplier_order_without_human_approval",
+  "any_execution_without_human_approval",
+];
+
+const SAFETY_FLAGS = [
+  "no_autonomous_budget_commitment=true",
+  "no_autonomous_academic_decision=true",
+  "no_autonomous_disciplinary_decision=true",
+  "no_hidden_scoring=true",
+  "no_supplier_order_without_human_approval=true",
+  "all_recommendations_explain_evidence=true",
+  "all_accepted_actions_audited=true",
+  "fake_metrics=false",
+];
+
+export default function DigitalTwinPage() {
+  return (
+    <div className="space-y-6 p-4" data-testid="digital-twin-page">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Digital Twin / Predictive Operations</h1>
+        <p className="text-sm text-muted-foreground">
+          Read-only observation + simulation shell. Runtime mode:
+          METADATA_OBSERVATION_SIMULATION_HUMAN_REVIEW_ONLY. No fabricated metrics; incomplete_data=true.
+        </p>
+        <p className="text-sm font-medium" data-testid="digital-twin-operating-principle">
+          Brain sees. Digital twin simulates. Workflow proposes. Human approves. Audit records.
+        </p>
+      </header>
+
+      <section className="rounded-xl border bg-card p-4" data-testid="digital-twin-observed-dimensions">
+        <h2 className="text-base font-semibold">Observed dimensions</h2>
+        <p className="mt-1 text-xs text-muted-foreground">GET /api/admin/digital-twin/state</p>
+        <ul className="mt-3 grid gap-1 text-sm text-muted-foreground md:grid-cols-2">
+          {OBSERVED_DIMENSIONS.map((dim) => (
+            <li key={dim}>{dim}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rounded-xl border bg-card p-4" data-testid="digital-twin-sources">
+        <h2 className="text-base font-semibold">Reused sources (no duplication)</h2>
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          <div>
+            <h3 className="text-sm font-medium">Signal registries</h3>
+            <ul className="mt-2 grid gap-1 text-xs text-muted-foreground">
+              {SOURCE_SIGNAL_REGISTRIES.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium">Capacity / resource modules</h3>
+            <ul className="mt-2 grid gap-1 text-xs text-muted-foreground">
+              {SOURCE_CAPACITY_MODULES.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border bg-card p-4" data-testid="digital-twin-safety-boundaries">
+        <h2 className="text-base font-semibold">Safety boundaries</h2>
+        <p className="mt-1 text-xs text-muted-foreground">GET /api/admin/digital-twin/safety-boundaries</p>
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          <div>
+            <h3 className="text-sm font-medium">Forbidden actions</h3>
+            <ul className="mt-2 grid gap-1 text-xs text-muted-foreground">
+              {FORBIDDEN_ACTIONS.map((a) => (
+                <li key={a}>{a}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium">Safety flags</h3>
+            <ul className="mt-2 grid gap-1 text-xs text-muted-foreground">
+              {SAFETY_FLAGS.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          No autonomous budget, academic, or disciplinary action. No hidden scoring. No supplier order
+          without human approval. All recommendations explain evidence and produce an audit trail.
+        </p>
+      </section>
+    </div>
+  );
+}

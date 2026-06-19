@@ -1,0 +1,29 @@
+import { describe, it, expect } from "vitest";
+import { render, screen } from "@testing-library/react";
+import DigitalTwinPage from "@/app/(admin)/console/digital-twin/page";
+
+describe("DigitalTwinPage (A-056.2 shell)", () => {
+  it("renders observed dimensions, reused sources, and safety boundaries read-only", () => {
+    render(<DigitalTwinPage />);
+
+    expect(screen.getByTestId("digital-twin-page")).toBeInTheDocument();
+    expect(screen.getByTestId("digital-twin-observed-dimensions")).toBeInTheDocument();
+    expect(screen.getByTestId("digital-twin-safety-boundaries")).toBeInTheDocument();
+
+    // observed dimension + reused source (no duplication)
+    expect(screen.getByText("student_population")).toBeInTheDocument();
+    expect(screen.getByText("student_risk_signal_registry")).toBeInTheDocument();
+    expect(screen.getByText("scheduling")).toBeInTheDocument();
+
+    // safety boundaries block autonomy; honest no-fake-metrics
+    expect(screen.getByText("no_autonomous_budget_commitment=true")).toBeInTheDocument();
+    expect(screen.getByText("no_hidden_scoring=true")).toBeInTheDocument();
+    expect(screen.getByText("fake_metrics=false")).toBeInTheDocument();
+    expect(screen.getByText("autonomous_academic_decision")).toBeInTheDocument();
+
+    // operating principle
+    expect(screen.getByTestId("digital-twin-operating-principle")).toHaveTextContent(
+      "Brain sees. Digital twin simulates.",
+    );
+  });
+});

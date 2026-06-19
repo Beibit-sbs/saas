@@ -17,6 +17,9 @@ export const PERMISSIONS = {
   JOBS_READ: "admin.jobs.read",
   JOBS_WRITE: "admin.jobs.write",
 
+  // Digital Twin / Predictive Operations (A-056)
+  DIGITAL_TWIN_STATE_READ: "digital_twin.state.read",
+
   // Notifications (under platform admin router, guarded by platform.admin.read/write)
   NOTIFICATIONS_READ: "platform.admin.read",
   NOTIFICATIONS_WRITE: "platform.admin.write",

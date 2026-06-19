@@ -263,6 +263,12 @@ export const NAVIGATION: NavGroup[] = [
         permission: PERMISSIONS.RESEARCH_SCIENCE_OVERVIEW_READ,
       },
       {
+        label: "Digital Twin",
+        href: "/console/digital-twin",
+        icon: Bot,
+        permission: PERMISSIONS.DIGITAL_TWIN_STATE_READ,
+      },
+      {
         label: "Executive Governance Runtime",
         href: "/console/executive-governance",
         icon: Network,
