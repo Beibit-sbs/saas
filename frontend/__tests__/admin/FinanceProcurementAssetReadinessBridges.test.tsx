@@ -42,10 +42,12 @@ describe('Finance Procurement Asset readiness and bridges', () => {
     expect(screen.getByTestId('fpa-student-finance-referral-intake-panel')).toBeInTheDocument();
     expect(screen.getByTestId('fpa-student-finance-referral-intake-shell')).toBeInTheDocument();
     expect(screen.getByTestId('fpa-student-finance-referral-acknowledge-shell')).toBeInTheDocument();
+    expect(screen.getByTestId('fpa-student-finance-referral-acknowledgement-ledger')).toBeInTheDocument();
+    expect(screen.getAllByText('acknowledgement_state=non_executing_acknowledged').length).toBeGreaterThan(0);
+    expect(screen.getByText(/referred_by_user_id \(acknowledging reviewer\)/)).toBeInTheDocument();
     expect(screen.getAllByText('POST /api/admin/finance-procurement-asset/bridges/student-finance-referrals/acknowledge').length).toBeGreaterThan(0);
-    expect(screen.getByText('acknowledgement_state=non_executing_acknowledged')).toBeInTheDocument();
     expect(screen.getAllByText('GET /api/admin/finance-procurement-asset/bridges/student-finance-referrals').length).toBeGreaterThan(0);
-    expect(screen.getByText('referral_target=student_finance_office')).toBeInTheDocument();
+    expect(screen.getAllByText('referral_target=student_finance_office').length).toBeGreaterThan(0);
     expect(screen.getAllByText('noPaymentExecution=true').length).toBeGreaterThan(0);
     expect(screen.getByText('tuitionChargeCreation=false')).toBeInTheDocument();
     expect(screen.getAllByText('paymentExecutionEnabled=false').length).toBeGreaterThan(0);
