@@ -87,6 +87,27 @@ def _live_enrollment_count(tenant_id: int) -> int | None:
         return None
 
 
+def _live_classroom_capacity(tenant_id: int) -> int | None:
+    """Best-effort tenant-scoped total classroom capacity (sum of campus_rooms.capacity).
+
+    Returns None on any failure or when no rooms exist, so the caller falls back honestly.
+    """
+    try:
+        from app.modules.university_core.tenant_entity_service import list_entities_for_tenant
+
+        rows = list_entities_for_tenant("campus_rooms", tenant_id)
+        if not isinstance(rows, list) or not rows:
+            return None
+        total = 0
+        for row in rows:
+            cap = row.get("capacity")
+            if cap is not None:
+                total += int(cap)
+        return total
+    except Exception:
+        return None
+
+
 def simulate_capacity(tenant_id: Any, request: schemas.CapacityWhatIfRequest) -> schemas.CapacityWhatIfResponse:
     """Deterministic capacity what-if. No fabricated values; missing inputs -> incomplete_data.
 
@@ -105,12 +126,23 @@ def simulate_capacity(tenant_id: Any, request: schemas.CapacityWhatIfRequest) ->
             students_mode = "live"
             live_sources_used.append("enrollments")
 
+    classroom_capacity = request.classroom_capacity
+    classroom_mode = "caller_provided"
+    classroom_source = "scheduling"
+    if request.use_live_sources:
+        live_cap = _live_classroom_capacity(tid)
+        if live_cap is not None:
+            classroom_capacity = live_cap
+            classroom_mode = "live"
+            classroom_source = "campus_rooms"
+            live_sources_used.append("campus_rooms")
+
     projected = round(current_students * (1 + request.intake_growth_percent / 100))
     incomplete = False
 
     classroom_util: float | None = None
-    if request.classroom_capacity > 0:
-        classroom_util = round(projected / request.classroom_capacity, 4)
+    if classroom_capacity > 0:
+        classroom_util = round(projected / classroom_capacity, 4)
     else:
         incomplete = True
 
@@ -129,7 +161,7 @@ def simulate_capacity(tenant_id: Any, request: schemas.CapacityWhatIfRequest) ->
 
     evidence = [
         schemas.CapacityWhatIfEvidence(field="current_students", value=float(current_students), source_module="enrollments", mode=students_mode),
-        schemas.CapacityWhatIfEvidence(field="classroom_capacity", value=float(request.classroom_capacity), source_module="scheduling", mode="caller_provided"),
+        schemas.CapacityWhatIfEvidence(field="classroom_capacity", value=float(classroom_capacity), source_module=classroom_source, mode=classroom_mode),
         schemas.CapacityWhatIfEvidence(field="dormitory_capacity", value=float(request.dormitory_capacity), source_module="dormitory_management", mode="caller_provided"),
     ]
 

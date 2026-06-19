@@ -13,7 +13,9 @@ describe("DigitalTwinPage (A-056.2 shell)", () => {
     expect(screen.getByText("POST /api/admin/digital-twin/simulate/capacity")).toBeInTheDocument();
     expect(screen.getByText("incomplete_data reported, never guessed")).toBeInTheDocument();
     expect(
-      screen.getByText("use_live_sources reads current_students from enrollments (best-effort, falls back honestly)"),
+      screen.getByText(
+        "use_live_sources reads current_students from enrollments and classroom_capacity from campus_rooms (best-effort, falls back honestly)",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByTestId("digital-twin-early-warning")).toBeInTheDocument();
     expect(screen.getByText("POST /api/admin/digital-twin/early-warning/capacity")).toBeInTheDocument();

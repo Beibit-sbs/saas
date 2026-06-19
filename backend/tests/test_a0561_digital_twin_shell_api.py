@@ -144,10 +144,29 @@ def test_capacity_simulation_uses_live_enrollments_when_requested(mock_count) ->
     body = resp.json()
     # live count (2000) overrides the caller value (10): projected = 2000 * 1.2
     assert body["projected_students"] == 2400
-    assert body["live_sources_used"] == ["enrollments"]
+    assert "enrollments" in body["live_sources_used"]
     students = next(e for e in body["evidence"] if e["field"] == "current_students")
     assert students["mode"] == "live"
     assert students["value"] == 2000
+
+
+@patch("app.modules.digital_twin.service._live_classroom_capacity", return_value=2000)
+@patch("app.modules.digital_twin.service._live_enrollment_count", return_value=None)
+def test_capacity_simulation_uses_live_classroom_capacity(mock_enr, mock_cap) -> None:
+    resp = client.post(
+        f"{BASE}/simulate/capacity",
+        headers=ADMIN_HEADERS,
+        json={"current_students": 1000, "intake_growth_percent": 0, "classroom_capacity": 5, "use_live_sources": True},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    # live room capacity (2000) overrides caller value (5): util = 1000/2000 = 0.5
+    assert body["classroom_utilization"] == 0.5
+    assert "campus_rooms" in body["live_sources_used"]
+    classroom = next(e for e in body["evidence"] if e["field"] == "classroom_capacity")
+    assert classroom["mode"] == "live"
+    assert classroom["source_module"] == "campus_rooms"
+    assert classroom["value"] == 2000
 
 
 @patch("app.modules.digital_twin.service._live_enrollment_count", return_value=None)
