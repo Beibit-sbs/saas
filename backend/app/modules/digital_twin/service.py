@@ -340,3 +340,79 @@ def list_scenario_decisions(tenant_id: Any) -> schemas.ScenarioDecisionLogRespon
         )
 
     return schemas.ScenarioDecisionLogResponse(tenant_id=tid, count=len(items), decisions=items)
+
+
+# --- A-056.10: resource-consumption what-if ---
+
+def simulate_resource(tenant_id: Any, request: schemas.ResourceWhatIfRequest) -> schemas.ResourceWhatIfResponse:
+    """Deterministic days-of-stock projection. No fabricated values; consumption 0 -> incomplete_data."""
+    tid = _validate_tenant(tenant_id)
+    _validate_finite(request.current_stock, 0.0, 1e12, "current_stock")
+    _validate_finite(request.daily_consumption, 0.0, 1e12, "daily_consumption")
+
+    incomplete = False
+    days_remaining: float | None = None
+    if request.daily_consumption > 0:
+        days_remaining = round(request.current_stock / request.daily_consumption, 2)
+    else:
+        incomplete = True
+
+    reorder_threshold = request.lead_time_days + request.safety_buffer_days
+    reorder_needed = days_remaining is not None and days_remaining <= reorder_threshold
+
+    risks: list[str] = []
+    if days_remaining is not None and days_remaining < request.lead_time_days:
+        risks.append("stockout_before_lead_time")
+    elif reorder_needed:
+        risks.append("reorder_point_reached")
+
+    evidence = [
+        schemas.CapacityWhatIfEvidence(field="current_stock", value=float(request.current_stock), source_module="asset_inventory", mode="caller_provided"),
+        schemas.CapacityWhatIfEvidence(field="daily_consumption", value=float(request.daily_consumption), source_module="operations", mode="caller_provided"),
+    ]
+
+    return schemas.ResourceWhatIfResponse(
+        tenant_id=tid,
+        resource_name=request.resource_name,
+        projected_days_remaining=days_remaining,
+        reorder_needed=reorder_needed,
+        risks=risks,
+        evidence=evidence,
+        incomplete_data=incomplete,
+    )
+
+
+def resource_early_warning(tenant_id: Any, request: schemas.ResourceWhatIfRequest) -> schemas.ResourceEarlyWarningResponse:
+    """Read-only resource shortage early-warning with a recommended (non-executed) human action."""
+    projection = simulate_resource(tenant_id, request)
+    warnings: list[schemas.EarlyWarningItem] = []
+
+    if projection.projected_days_remaining is not None:
+        if "stockout_before_lead_time" in projection.risks:
+            warnings.append(
+                schemas.EarlyWarningItem(
+                    signal="resource_stockout_risk",
+                    severity="high",
+                    metric=projection.projected_days_remaining,
+                    threshold=float(request.lead_time_days),
+                    recommended_human_action="escalate_to_procurement_reorder",
+                )
+            )
+        elif projection.reorder_needed:
+            warnings.append(
+                schemas.EarlyWarningItem(
+                    signal="resource_reorder_risk",
+                    severity="medium",
+                    metric=projection.projected_days_remaining,
+                    threshold=float(request.lead_time_days + request.safety_buffer_days),
+                    recommended_human_action="raise_reorder_request",
+                )
+            )
+
+    return schemas.ResourceEarlyWarningResponse(
+        tenant_id=projection.tenant_id,
+        projection=projection,
+        warnings=warnings,
+        candidate_signal_sources=["procurement_risk_signal_registry", "finance_anomaly_signal_registry"],
+        incomplete_data=projection.incomplete_data,
+    )

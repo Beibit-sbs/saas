@@ -28,6 +28,8 @@ describe("DigitalTwinPage (A-056.2 shell)", () => {
     expect(screen.getByText("recorded to app_audit_events with correlation_id")).toBeInTheDocument();
     expect(screen.getByTestId("digital-twin-decision-log")).toBeInTheDocument();
     expect(screen.getByText("GET /api/admin/digital-twin/scenarios/decisions")).toBeInTheDocument();
+    expect(screen.getByTestId("digital-twin-resource-whatif")).toBeInTheDocument();
+    expect(screen.getByText("stockout_before_lead_time → high")).toBeInTheDocument();
 
     // observed dimension + reused source (no duplication)
     expect(screen.getByText("student_population")).toBeInTheDocument();

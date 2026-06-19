@@ -82,6 +82,30 @@ def digital_twin_capacity_scenarios(
     return _guard(lambda: service.run_capacity_scenarios(tid, payload))
 
 
+@router.post("/simulate/resource", response_model=schemas.ResourceWhatIfResponse)
+def simulate_digital_twin_resource(
+    payload: schemas.ResourceWhatIfRequest,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency(permissions.SIMULATE_RUN))],
+    tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+) -> schemas.ResourceWhatIfResponse:
+    # Read-only deterministic resource projection; persists nothing, executes nothing.
+    tid = _tenant_id(tenant)
+    return _guard(lambda: service.simulate_resource(tid, payload))
+
+
+@router.post("/early-warning/resource", response_model=schemas.ResourceEarlyWarningResponse)
+def digital_twin_resource_early_warning(
+    payload: schemas.ResourceWhatIfRequest,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency(permissions.SIMULATE_RUN))],
+    tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+) -> schemas.ResourceEarlyWarningResponse:
+    # Read-only resource shortage warning; recommends human action, executes nothing.
+    tid = _tenant_id(tenant)
+    return _guard(lambda: service.resource_early_warning(tid, payload))
+
+
 @router.post("/scenarios/decision", response_model=schemas.ScenarioDecisionResponse)
 def digital_twin_record_scenario_decision(
     payload: schemas.ScenarioDecisionRequest,

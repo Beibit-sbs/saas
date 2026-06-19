@@ -194,6 +194,23 @@ export default function DigitalTwinPage() {
         </ul>
       </section>
 
+      <section className="rounded-xl border bg-card p-4" data-testid="digital-twin-resource-whatif">
+        <h2 className="text-base font-semibold">Resource-consumption what-if (supplies / utilities)</h2>
+        <p className="mt-1 text-xs text-muted-foreground">POST /api/admin/digital-twin/simulate/resource · /early-warning/resource</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Deterministic days-of-stock projection per resource (current_stock / daily_consumption), with a
+          reorder/stockout early warning and a recommended human action (escalate_to_procurement_reorder).
+          Inputs tagged to source modules (current_stock→asset_inventory, daily_consumption→operations);
+          missing consumption → incomplete_data, never guessed. Read-only; the twin proposes, a human reorders.
+        </p>
+        <ul className="mt-3 grid gap-1 text-xs text-muted-foreground md:grid-cols-2">
+          <li>stockout_before_lead_time → high</li>
+          <li>reorder_point_reached → medium</li>
+          <li>requires_human_approval=true · no_autonomous_action=true</li>
+          <li>no supplier order without human approval</li>
+        </ul>
+      </section>
+
       <section className="rounded-xl border bg-card p-4" data-testid="digital-twin-decision-log">
         <h2 className="text-base font-semibold">Executive decision log (read-back)</h2>
         <p className="mt-1 text-xs text-muted-foreground">GET /api/admin/digital-twin/scenarios/decisions</p>

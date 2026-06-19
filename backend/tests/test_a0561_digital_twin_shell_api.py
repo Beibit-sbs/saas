@@ -31,7 +31,7 @@ ADMIN_HEADERS = _admin_headers()
 
 def test_route_surface_count() -> None:
     routes = [r for r in app.routes if getattr(r, "path", "").startswith(BASE)]
-    assert len(routes) == 7
+    assert len(routes) == 9
 
 
 @pytest.mark.parametrize("path", ["/state", "/safety-boundaries"])
@@ -369,6 +369,8 @@ _FAIL_CLOSED_ROUTES = [
     ("post", "/scenarios/capacity", {"current_students": 1}),
     ("post", "/scenarios/decision", {"scenario_name": "x", "decision": "accepted", "rationale": "y"}),
     ("get", "/scenarios/decisions", None),
+    ("post", "/simulate/resource", {"resource_name": "r", "current_stock": 1, "daily_consumption": 1}),
+    ("post", "/early-warning/resource", {"resource_name": "r", "current_stock": 1, "daily_consumption": 1}),
 ]
 
 
@@ -525,3 +527,88 @@ def test_decision_log_uses_read_permission_not_record() -> None:
     assert dt_perms.DECISION_READ == "digital_twin.decision.read"
     assert dt_perms.DECISION_READ != dt_perms.DECISION_RECORD
     assert dt_perms.DECISION_READ in dt_perms.ALL_PERMISSIONS
+
+
+# --- A-056.10: resource-consumption what-if domain ---
+
+def test_resource_requires_auth_and_denies_viewer() -> None:
+    payload = {"resource_name": "cleaning_supplies", "current_stock": 100, "daily_consumption": 10}
+    assert client.post(f"{BASE}/simulate/resource", json=payload).status_code in (401, 403)
+    assert client.post(f"{BASE}/simulate/resource", headers=VIEWER_HEADERS, json=payload).status_code == 403
+
+
+def test_resource_projection_is_deterministic_and_reorder_logic() -> None:
+    resp = client.post(
+        f"{BASE}/simulate/resource",
+        headers=ADMIN_HEADERS,
+        json={"resource_name": "cleaning_chemicals", "current_stock": 100, "daily_consumption": 10, "lead_time_days": 7, "safety_buffer_days": 5},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["projected_days_remaining"] == 10.0  # 100/10
+    assert body["reorder_needed"] is True  # 10 <= 7+5
+    assert "reorder_point_reached" in body["risks"]
+    assert body["incomplete_data"] is False
+    assert body["safety_flags"]["fake_metrics"] is False
+    sources = {e["field"]: e["source_module"] for e in body["evidence"]}
+    assert sources["current_stock"] == "asset_inventory"
+
+
+def test_resource_stockout_before_lead_time() -> None:
+    resp = client.post(
+        f"{BASE}/simulate/resource",
+        headers=ADMIN_HEADERS,
+        json={"resource_name": "toilet_paper", "current_stock": 30, "daily_consumption": 10, "lead_time_days": 7},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["projected_days_remaining"] == 3.0
+    assert "stockout_before_lead_time" in body["risks"]
+    assert body["reorder_needed"] is True
+
+
+def test_resource_incomplete_when_consumption_unknown() -> None:
+    resp = client.post(
+        f"{BASE}/simulate/resource",
+        headers=ADMIN_HEADERS,
+        json={"resource_name": "water", "current_stock": 500, "daily_consumption": 0},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["projected_days_remaining"] is None
+    assert body["incomplete_data"] is True
+    assert body["reorder_needed"] is False
+
+
+def test_resource_non_finite_consumption_fails_closed_not_500() -> None:
+    resp = client.post(
+        f"{BASE}/simulate/resource",
+        headers=_JSON_HEADERS,
+        content='{"resource_name": "x", "current_stock": 100, "daily_consumption": 1e400}',
+    )
+    assert resp.status_code == 400
+
+
+def test_resource_early_warning_flags_stockout_with_human_action() -> None:
+    resp = client.post(
+        f"{BASE}/early-warning/resource",
+        headers=ADMIN_HEADERS,
+        json={"resource_name": "lab_consumables", "current_stock": 20, "daily_consumption": 10, "lead_time_days": 7},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    warn = next(w for w in body["warnings"] if w["signal"] == "resource_stockout_risk")
+    assert warn["severity"] == "high"
+    assert warn["recommended_human_action"] == "escalate_to_procurement_reorder"
+    assert warn["requires_human_approval"] is True
+    assert warn["no_autonomous_action"] is True
+    assert "procurement_risk_signal_registry" in body["candidate_signal_sources"]
+    assert body["human_review_required"] is True
+
+
+@patch("app.modules.audit.service.log_admin_action")
+def test_resource_routes_never_write_audit(mock_audit) -> None:
+    payload = {"resource_name": "r", "current_stock": 100, "daily_consumption": 10}
+    assert client.post(f"{BASE}/simulate/resource", headers=ADMIN_HEADERS, json=payload).status_code == 200
+    assert client.post(f"{BASE}/early-warning/resource", headers=ADMIN_HEADERS, json=payload).status_code == 200
+    mock_audit.assert_not_called()

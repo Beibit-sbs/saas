@@ -182,3 +182,44 @@ class ScenarioDecisionLogResponse(BaseModel):
     decisions: list[ScenarioDecisionLogItem] = Field(default_factory=list)
     no_autonomous_execution: bool = True
     safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)
+
+
+# --- A-056.10: resource-consumption what-if (supplies / utilities) ---
+
+class ResourceWhatIfRequest(BaseModel):
+    """Project days-of-stock remaining for a consumable / utility resource.
+
+    daily_consumption is a plain float (no constraint) so inf/nan are validated in
+    the service -> clean 400 (never a 500 or an inf-in-422 serialisation failure)."""
+
+    resource_name: str
+    current_stock: float = Field(ge=0)
+    daily_consumption: float  # validated finite & >= 0 in the service
+    lead_time_days: int = Field(default=0, ge=0)
+    safety_buffer_days: int = Field(default=0, ge=0)
+
+
+class ResourceWhatIfResponse(BaseModel):
+    tenant_id: int
+    module: str = "digital_twin"
+    runtime_mode: str = "METADATA_OBSERVATION_SIMULATION_HUMAN_REVIEW_ONLY"
+    resource_name: str
+    projected_days_remaining: float | None = None
+    reorder_needed: bool = False
+    risks: list[str] = Field(default_factory=list)
+    evidence: list[CapacityWhatIfEvidence] = Field(default_factory=list)
+    incomplete_data: bool = False
+    human_review_required: bool = True
+    safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)
+
+
+class ResourceEarlyWarningResponse(BaseModel):
+    tenant_id: int
+    module: str = "digital_twin"
+    runtime_mode: str = "METADATA_OBSERVATION_SIMULATION_HUMAN_REVIEW_ONLY"
+    projection: ResourceWhatIfResponse
+    warnings: list[EarlyWarningItem] = Field(default_factory=list)
+    candidate_signal_sources: list[str] = Field(default_factory=list)
+    incomplete_data: bool = False
+    human_review_required: bool = True
+    safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)
