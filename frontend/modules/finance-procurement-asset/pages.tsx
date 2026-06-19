@@ -340,6 +340,48 @@ export function FpaStudentFinanceBridgePanel() {
   );
 }
 
+export function FpaStudentFinanceReferralIntakePanel() {
+  const referralFields = [
+    'source_module=student_services_support',
+    'source_hardship_id',
+    'referral_target=student_finance_office',
+    'referral_priority',
+    'referral_reason',
+    'referred_by_user_id',
+  ];
+
+  return (
+    <section className="rounded-xl border bg-card p-4" data-testid="fpa-student-finance-referral-intake-panel">
+      <div className="flex flex-wrap items-center gap-2">
+        <FpaHumanReviewBadge />
+        <FpaPaymentReadinessBadge />
+      </div>
+      <h3 className="mt-3 text-base font-semibold">Student-services finance-office referral intake</h3>
+      <p className="mt-1 text-sm text-muted-foreground">GET /api/admin/finance-procurement-asset/bridges/student-finance-referrals</p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Read-only pickup of hardship referrals raised by student services. Finance reviewers see the referral context only; no aid approval, debt cancellation, billing balance mutation, or payment execution is exposed here.
+      </p>
+      <div className="mt-4 rounded-lg border p-3" data-testid="fpa-student-finance-referral-intake-shell">
+        <div className="text-sm font-medium">Expected referral metadata</div>
+        <ul className="mt-3 grid gap-1 text-xs text-muted-foreground md:grid-cols-2">
+          {referralFields.map((field) => (
+            <li key={field}>{field}</li>
+          ))}
+        </ul>
+      </div>
+      <div className="mt-4 grid gap-3 text-sm text-muted-foreground md:grid-cols-2">
+        <div className="rounded-lg border p-3">noAutomaticAidDecision=true</div>
+        <div className="rounded-lg border p-3">noBillingBalanceMutation=true</div>
+        <div className="rounded-lg border p-3">noPaymentExecution=true</div>
+        <div className="rounded-lg border p-3">humanReviewRequired=true</div>
+      </div>
+      <Link href="/console/student-services-support/dashboard" className="mt-4 inline-flex rounded-lg border px-3 py-2 text-sm hover:bg-muted/50" data-testid="fpa-student-finance-referral-source-link">
+        Student-services referral source
+      </Link>
+    </section>
+  );
+}
+
 export function FpaReviewActionPanel({ title, permission, description }: { title: string; permission: string; description: string }) {
   return (
     <section className="rounded-xl border bg-card p-4" data-testid={`fpa-review-panel-${slugify(title)}`}>
@@ -468,6 +510,7 @@ function FpaPageContent({ model }: { model: FpaPageModel }) {
         {model.route.dashboardLike || model.primaryWidgets.length > 0 ? <FpaDashboardGrid widgets={model.primaryWidgets} /> : null}
 
         {model.route.key === 'student-finance' ? <FpaStudentFinanceBridgePanel /> : null}
+        {model.route.key === 'student-finance' ? <FpaStudentFinanceReferralIntakePanel /> : null}
 
         <section className="space-y-4" data-testid="fpa-operability-registry">
           <div className="space-y-1">

@@ -106,6 +106,7 @@ _register_get("/bridges/hr-payroll", permissions.BRIDGES_HR_PAYROLL_READ, servic
 _register_get("/bridges/document-contracts", permissions.BRIDGES_DOCUMENT_CONTRACTS_READ, service.get_bridge_document_contracts, schemas.FpaBridgeResponse)
 _register_get("/bridges/provider-readiness", permissions.BRIDGES_PROVIDER_READINESS_READ, service.get_bridge_provider_readiness, schemas.FpaBridgeResponse)
 _register_get("/bridges/student-finance", permissions.BRIDGES_STUDENT_FINANCE_READ, service.get_bridge_student_finance, schemas.FpaBridgeResponse)
+_register_get("/bridges/student-finance-referrals", permissions.BRIDGES_STUDENT_FINANCE_READ, service.get_bridge_student_finance_referrals, schemas.FpaBridgeResponse)
 _register_get("/health", permissions.OVERVIEW_READ, service.get_health, dict[str, Any])
 _register_get("/roles", permissions.METADATA_READ, service.get_roles, dict[str, Any])
 _register_get("/permissions", permissions.METADATA_READ, service.get_permissions, dict[str, Any])

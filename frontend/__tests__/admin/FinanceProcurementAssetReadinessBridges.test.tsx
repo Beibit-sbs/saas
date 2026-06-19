@@ -39,9 +39,14 @@ describe('Finance Procurement Asset readiness and bridges', () => {
     expect(screen.getByTestId('fpa-student-finance-bridge-panel')).toBeInTheDocument();
     expect(screen.getByTestId('fpa-receivables-intake-shell')).toBeInTheDocument();
     expect(screen.getByTestId('fpa-hardship-handoff-link')).toBeInTheDocument();
+    expect(screen.getByTestId('fpa-student-finance-referral-intake-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('fpa-student-finance-referral-intake-shell')).toBeInTheDocument();
+    expect(screen.getAllByText('GET /api/admin/finance-procurement-asset/bridges/student-finance-referrals').length).toBeGreaterThan(0);
+    expect(screen.getByText('referral_target=student_finance_office')).toBeInTheDocument();
+    expect(screen.getByText('noPaymentExecution=true')).toBeInTheDocument();
     expect(screen.getByText('tuitionChargeCreation=false')).toBeInTheDocument();
-    expect(screen.getByText('paymentExecutionEnabled=false')).toBeInTheDocument();
-    expect(screen.getByText('POST /api/admin/finance-procurement-asset/receivables/metadata')).toBeInTheDocument();
+    expect(screen.getAllByText('paymentExecutionEnabled=false').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('POST /api/admin/finance-procurement-asset/receivables/metadata').length).toBeGreaterThan(0);
   });
 
   it('renders ERP and bank readiness routes with deferred boundaries', () => {

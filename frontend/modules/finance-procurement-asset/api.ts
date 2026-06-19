@@ -64,6 +64,7 @@ export const financeProcurementAssetApi = {
   getFpaBridgeDocumentContracts: () => apiGet<FpaBridgeSummary>(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeDocumentContracts),
   getFpaBridgeProviderReadiness: () => apiGet<FpaBridgeSummary>(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeProviderReadiness),
   getFpaBridgeStudentFinance: () => apiGet<FpaBridgeSummary>(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeStudentFinance),
+  getFpaBridgeStudentFinanceReferrals: () => apiGet<FpaBridgeSummary>(FINANCE_PROCUREMENT_ASSET_API_PATHS.bridgeStudentFinanceReferrals),
   getFpaHealth: () => apiGet<Record<string, unknown>>(FINANCE_PROCUREMENT_ASSET_API_PATHS.health),
   getFpaRoles: () => apiGet<FpaRole[]>(FINANCE_PROCUREMENT_ASSET_API_PATHS.roles),
   getFpaPermissions: () => apiGet<FpaPermission[]>(FINANCE_PROCUREMENT_ASSET_API_PATHS.permissions),

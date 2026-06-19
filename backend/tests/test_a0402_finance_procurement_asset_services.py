@@ -83,7 +83,7 @@ def test_health_contract_is_fail_closed() -> None:
     assert result["payment_execution_enabled"] is False
     assert result["automatic_decision_enabled"] is False
     assert result["hidden_score_present"] is False
-    assert result["route_count"] == 55
+    assert result["route_count"] == 56
     assert result["table_count"] == 24
 
 
@@ -100,7 +100,7 @@ def test_overview_contract_contains_counts() -> None:
     result = service.get_overview(db, 1)
     assert result.selected_vertical == "Finance / Procurement / Asset Suite"
     assert result.table_count == 24
-    assert result.route_count == 55
+    assert result.route_count == 56
     assert result.permission_count == 50
 
 

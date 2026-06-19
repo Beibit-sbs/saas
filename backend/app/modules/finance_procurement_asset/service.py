@@ -344,6 +344,10 @@ def get_bridge_student_finance(db: Session, tenant_id: int) -> schemas.FpaBridge
     return _bridge_response(db, tenant_id, "student_finance")
 
 
+def get_bridge_student_finance_referrals(db: Session, tenant_id: int) -> schemas.FpaBridgeResponse:
+    return _bridge_response(db, tenant_id, "student_finance_referrals")
+
+
 def get_health(db: Session, tenant_id: int) -> dict[str, Any]:
     del db
     tenant_id = _validate_tenant(tenant_id)

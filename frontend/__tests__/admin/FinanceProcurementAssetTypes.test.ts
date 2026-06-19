@@ -30,7 +30,7 @@ describe('Finance Procurement Asset types', () => {
     expect(FINANCE_PROCUREMENT_ASSET_API_BASE).toBe('/api/admin/finance-procurement-asset');
     expect(FINANCE_PROCUREMENT_ASSET_ROUTE_FAMILY).toBe('/console/finance-procurement-asset');
     expect(FINANCE_PROCUREMENT_ASSET_ROUTE_COUNT).toBe(23);
-    expect(FINANCE_PROCUREMENT_ASSET_BACKEND_ROUTE_COUNT).toBe(55);
+    expect(FINANCE_PROCUREMENT_ASSET_BACKEND_ROUTE_COUNT).toBe(56);
     expect(FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT).toBe(50);
     expect(FINANCE_PROCUREMENT_ASSET_RUNTIME_MODE).toBe('METADATA_EVIDENCE_READINESS_HUMAN_REVIEW_ONLY');
     expect(FINANCE_PROCUREMENT_ASSET_SOURCE_BACKEND_BASELINE_COMMIT).toBe('0453fbd');
@@ -94,7 +94,7 @@ describe('Finance Procurement Asset types', () => {
       contract_version: 'A-040.3',
       runtime_mode: FINANCE_PROCUREMENT_ASSET_RUNTIME_MODE,
       table_count: 24,
-      route_count: 55,
+      route_count: 56,
       permission_count: 50,
       planned_route_count: 23,
       data_source: FINANCE_PROCUREMENT_ASSET_DATA_SOURCE,
