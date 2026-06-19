@@ -1,5 +1,8 @@
 # SBS_UB Completed Waves
 
+> **RECOVERY CORRECTION (2026-06-19): PARTIAL HISTORY — stops at A-026 (May 2026).**
+> Completed work continued far beyond this: A-034..A-044 vertical closures, A-047..A-052 brain certifications, A-054 Communications, A-055 tree. Authoritative completion ledger: `SBS_UB.md` + `SBS_UB_AUTHORITATIVE_SYSTEM_EVIDENCE_INVENTORY.md`. Historical content preserved below.
+>
 > **STATUS: SUPPORTING DRAFT — NOT AUTHORITATIVE**
 > SBS_UB.md is the authoritative source of truth. This document is a draft index only.
 > Anti-loss audit (A-026.1.B3.A1) must pass before this document is promoted.

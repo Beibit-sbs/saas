@@ -1,5 +1,9 @@
 # SBS_UB Active Wave
 
+> **RECOVERY CORRECTION (2026-06-19): SUPERSEDED INDEX — describes the A-026 wave (May 2026), NOT current reality.**
+> Current reality is the A-055 end-to-end tree (latest commits) + Communications A-054. Strict strong-closed = 9/20.
+> For current/next action use: `SBS_UB.md` (control center) + `GLOBAL-ROADMAP-R3` (next vertical) + `SBS_UB_AUTHORITATIVE_SYSTEM_EVIDENCE_INVENTORY.md`. Do NOT trust the A-026 control block below for current state. Historical content preserved (audit history).
+>
 > **STATUS: SUPPORTING DRAFT — NOT AUTHORITATIVE**
 > SBS_UB.md is the authoritative source of truth. This document is a draft index only.
 > Anti-loss audit (A-026.1.B3.A1) must pass before this document is promoted.

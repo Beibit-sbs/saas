@@ -1,5 +1,8 @@
 # SBS_UB Module Inventory
 
+> **RECOVERY CORRECTION (2026-06-19): SUPERSEDED COUNTS — this baseline-150 inventory predates large expansion.**
+> Actual on-disk inventory is now ~241 backend modules / ~81 frontend modules. Authoritative current inventory: `SBS_UB_AUTHORITATIVE_SYSTEM_EVIDENCE_INVENTORY.md` + memory map. Historical content preserved below.
+>
 > **STATUS: SUPPORTING DRAFT — NOT AUTHORITATIVE**
 > SBS_UB.md is the authoritative source of truth. This document is a draft index only.
 > Anti-loss audit (A-026.1.B3.A1) must pass before this document is promoted.

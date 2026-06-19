@@ -1,5 +1,8 @@
 # SBS_UB Evidence Index
 
+> **RECOVERY CORRECTION (2026-06-19): SUPERSEDED EVIDENCE — A-024-era baseline.**
+> Note: recovery 2026-06-19 found this evidence claim drifted — several "closed" verticals had latent red tests / uncommitted code (see `SBS_UB_FULL_RECOVERY_EXECUTION_QUEUE.md`). Treat historical PASS markers as point-in-time, not current. Authoritative: re-verified status in `SBS_UB_AUTHORITATIVE_SYSTEM_EVIDENCE_INVENTORY.md`. Historical content preserved below.
+>
 > **STATUS: SUPPORTING DRAFT — NOT AUTHORITATIVE**
 > SBS_UB.md is the authoritative source of truth. This document is a draft index only.
 > Anti-loss audit (A-026.1.B3.A1) must pass before this document is promoted.

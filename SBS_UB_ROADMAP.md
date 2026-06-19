@@ -1,5 +1,8 @@
 # SBS_UB Roadmap
 
+> **RECOVERY CORRECTION (2026-06-19): SUPERSEDED — this roadmap is the A-026 wave plan (May 2026), NOT the current roadmap.**
+> Current roadmap authority: `GLOBAL-ROADMAP-R3` (next vertical selection, post-A-053) + `NATIONAL_UNIVERSITY_OS_TREE.md` (candidate families). Active work = A-055 tree. Historical content preserved below.
+>
 > **STATUS: SUPPORTING DRAFT — NOT AUTHORITATIVE**
 > SBS_UB.md is the authoritative source of truth. This document is a draft index only.
 > Anti-loss audit (A-026.1.B3.A1) must pass before this document is promoted.
