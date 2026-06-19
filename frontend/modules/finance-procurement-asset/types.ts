@@ -201,6 +201,23 @@ export interface FpaBridgeSummary extends FpaSafetyFlags {
   summary: Record<string, number | string | boolean>;
 }
 
+export interface FpaMetadataRecord {
+  id: number;
+  tenant_id: number;
+  status: string;
+  reference_key?: string | null;
+  title?: string | null;
+  source_module?: string | null;
+  source_record_id?: number | null;
+  metadata: Record<string, unknown>;
+  limitations: string[];
+  created_at?: string | null;
+}
+
+export interface FpaBridgeRecordsResponse {
+  records: FpaMetadataRecord[];
+}
+
 export interface FpaLimitations {
   code: string;
   title: string;

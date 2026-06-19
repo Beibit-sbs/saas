@@ -1,10 +1,35 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { FinanceProcurementAssetPage } from '@/modules/finance-procurement-asset/pages';
+import { FinanceProcurementAssetPage, FpaStudentFinanceReferralAcknowledgementLedger } from '@/modules/finance-procurement-asset/pages';
 import { FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES } from '@/modules/finance-procurement-asset/constants';
 
 describe('Finance Procurement Asset readiness and bridges', () => {
+  it('live-renders acknowledgement records from the bridge ledger without payment controls', () => {
+    render(
+      <FpaStudentFinanceReferralAcknowledgementLedger
+        records={[
+          {
+            id: 11,
+            tenant_id: 1,
+            status: 'HUMAN_REVIEW_REQUIRED',
+            source_record_id: 7,
+            metadata: {
+              acknowledgement_state: 'non_executing_acknowledged',
+              referred_by_user_id: 'reviewer-9',
+              source_hardship_id: 7,
+              referral_target: 'student_finance_office',
+            },
+            limitations: [],
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByTestId('fpa-student-finance-referral-acknowledgement-rows')).toBeInTheDocument();
+    expect(screen.getByTestId('fpa-student-finance-referral-acknowledgement-row')).toHaveTextContent('referred_by_user_id=reviewer-9');
+    expect(screen.getByTestId('fpa-student-finance-referral-acknowledgement-row')).toHaveTextContent('source_hardship_id=7');
+  });
+
   it('renders payment readiness badge on payment readiness route', () => {
     render(<FinanceProcurementAssetPage routeKey="payment-readiness" userPermissions={[FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.paymentReadinessRead]} />);
 

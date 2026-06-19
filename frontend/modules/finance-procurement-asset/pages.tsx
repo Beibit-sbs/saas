@@ -40,7 +40,7 @@ import {
   FINANCE_PROCUREMENT_ASSET_FORBIDDEN_LABELS,
 } from './boundaryLabels';
 import { hasFpaPermission } from './guards';
-import type { FpaDashboardWidget, FpaRouteDefinition, FpaRouteKey, FpaWorkflowDefinition } from './types';
+import type { FpaDashboardWidget, FpaMetadataRecord, FpaRouteDefinition, FpaRouteKey, FpaWorkflowDefinition } from './types';
 
 interface FpaPageModel {
   route: FpaRouteDefinition;
@@ -340,6 +340,36 @@ export function FpaStudentFinanceBridgePanel() {
   );
 }
 
+export function FpaStudentFinanceReferralAcknowledgementLedger({ records = [] }: { records?: FpaMetadataRecord[] }) {
+  const acknowledgements = records.filter((record) => record.metadata?.acknowledgement_state != null);
+  return (
+    <div className="mt-4 rounded-lg border p-3" data-testid="fpa-student-finance-referral-acknowledgement-ledger">
+      <div className="text-sm font-medium">Recorded acknowledgement ledger (read-only)</div>
+      <p className="mt-2 text-xs text-muted-foreground">GET /api/admin/finance-procurement-asset/bridges/student-finance-referrals returns the tenant-scoped records ledger; recorded acknowledgements appear as records with these fields:</p>
+      {acknowledgements.length > 0 ? (
+        <ol className="mt-3 space-y-2" data-testid="fpa-student-finance-referral-acknowledgement-rows">
+          {acknowledgements.map((record) => (
+            <li key={record.id} className="rounded border p-2 text-xs text-muted-foreground" data-testid="fpa-student-finance-referral-acknowledgement-row">
+              <span className="text-foreground">acknowledgement_state={String(record.metadata.acknowledgement_state ?? 'n/a')}</span>
+              {` · referred_by_user_id=${String(record.metadata.referred_by_user_id ?? 'n/a')}`}
+              {` · source_hardship_id=${String(record.metadata.source_hardship_id ?? record.source_record_id ?? 'n/a')}`}
+              {` · referral_target=${String(record.metadata.referral_target ?? 'n/a')}`}
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <ul className="mt-3 grid gap-1 text-xs text-muted-foreground md:grid-cols-2">
+          <li>acknowledgement_state=non_executing_acknowledged</li>
+          <li>referred_by_user_id (acknowledging reviewer)</li>
+          <li>source_hardship_id</li>
+          <li>referral_target=student_finance_office</li>
+        </ul>
+      )}
+      <p className="mt-2 text-xs text-muted-foreground">Visibility only. No aid approval, payment execution, billing balance mutation, or ERP posting is exposed from this ledger.</p>
+    </div>
+  );
+}
+
 export function FpaStudentFinanceReferralIntakePanel() {
   const referralFields = [
     'source_module=student_services_support',
@@ -386,17 +416,7 @@ export function FpaStudentFinanceReferralIntakePanel() {
         </ul>
         <p className="mt-2 text-xs text-muted-foreground">A finance reviewer records that the referral was seen. This is a note only; it approves nothing and moves no money.</p>
       </div>
-      <div className="mt-4 rounded-lg border p-3" data-testid="fpa-student-finance-referral-acknowledgement-ledger">
-        <div className="text-sm font-medium">Recorded acknowledgement ledger (read-only)</div>
-        <p className="mt-2 text-xs text-muted-foreground">GET /api/admin/finance-procurement-asset/bridges/student-finance-referrals returns the tenant-scoped records ledger; recorded acknowledgements appear as records with these fields:</p>
-        <ul className="mt-3 grid gap-1 text-xs text-muted-foreground md:grid-cols-2">
-          <li>acknowledgement_state=non_executing_acknowledged</li>
-          <li>referred_by_user_id (acknowledging reviewer)</li>
-          <li>source_hardship_id</li>
-          <li>referral_target=student_finance_office</li>
-        </ul>
-        <p className="mt-2 text-xs text-muted-foreground">Visibility only. No aid approval, payment execution, billing balance mutation, or ERP posting is exposed from this ledger.</p>
-      </div>
+      <FpaStudentFinanceReferralAcknowledgementLedger records={[]} />
       <Link href="/console/student-services-support/dashboard" className="mt-4 inline-flex rounded-lg border px-3 py-2 text-sm hover:bg-muted/50" data-testid="fpa-student-finance-referral-source-link">
         Student-services referral source
       </Link>
