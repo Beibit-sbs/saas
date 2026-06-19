@@ -63,3 +63,23 @@ Evidence: `student_services` and `student_services_support` are two distinct, bo
 | `student_services` | **Tickets surface**: 4 routes under `/api/admin/student-services/tickets` (list/create/status/brain-context), **actively used by frontend** (`console/student-services` page calls `/tickets`), brain-core integrated, no models | keep — distinct domain |
 
 Route-collision check: PASS — `student_services_support` defines no `/tickets` route; the two never overlap. Resolution: **keep both, do NOT merge** (merging would break the tickets surface + its frontend). Risk to watch: the shared base path + confusing names — any future route added to either under `/tickets*` must avoid collision. Recommended: document the boundary (done here); optionally rename for clarity later (low priority, cosmetic). No code change this pass — there is nothing duplicated to fix.
+
+## 7. D-08 detailed analysis (recon done 2026-06-19 — SECURITY: single identity source, NOT duplicated)
+
+Real security risk to check = multiple competing user/identity models (would threaten tenant isolation + RBAC). Evidence: there is **ONE** canonical user store, no competing models.
+
+| Module | Reality | Disposition |
+|---|---|---|
+| `auth` | **CANONICAL user store** — `local_users_service.LocalUserStore` → table `app_local_users` (PostgreSQL-backed, in-memory test fallback) + JWT token service + preferences | source of truth — keep |
+| `identity` | **External IdP federation only** — tables `app_identity_providers / _secrets`, `app_external_identities`, `app_identity_mappings`. Maps external identities → local users; NOT a competing user record | keep (distinct concern) |
+| `rbac` | role/permission **service** (no DB model) | keep |
+| `access_control` | policy/ABAC **service** (no model) | keep |
+| `service_accounts` | service-account surface | keep |
+| `ldap` / `sso_saml` / `identity_provider_integration` / `two_factor_auth` | auth **adapters/stubs** (mostly mounted=0, no models) | keep as adapters |
+| `local_user_management` | **dormant L2 skeleton** ("tenant-scoped local user profile ops"), not wired (mounted=0), conceptually overlaps auth's LocalUserStore | do NOT build a parallel store — if ever built out, build ON `app_local_users` |
+
+Whole-app table scan: NO `users`/`accounts` table other than `app_local_users` (auth) + identity's federation tables. **No split-brain identity.** Verdict: D-08 is NOT a duplication; it is a layered identity stack (store + federation + RBAC/ABAC services + adapters). Only watch-item: never let `local_user_management` fork a second user store.
+
+## 8. Cross-cutting meta-finding (after D-07, D-05, D-08 recons)
+
+3/3 evidence-first duplication recons REFUTED the original name-stem framing. The Phase-A register over-stated duplication because it matched module-name stems, not behavior. The real composition across these "families" is: 1 canonical + intentional A-026.7 L2 stubs + legitimate adapters + distinct same-base surfaces. **The codebase is materially less duplicated than 241 module names imply.** Remaining families (D-02 research, D-03 accreditation, D-04 hr, D-06 document_workflow, D-09 audit) are likely the same shape and should be recon'd (cheap) before any consolidation; force-merging on name similarity would destroy intentional stubs/adapters.
