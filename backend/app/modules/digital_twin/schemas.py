@@ -193,7 +193,9 @@ class ResourceWhatIfRequest(BaseModel):
     the service -> clean 400 (never a 500 or an inf-in-422 serialisation failure)."""
 
     resource_name: str
-    current_stock: float = Field(ge=0)
+    # Plain floats (no ge constraint) so inf/nan/negative reach the service validator and yield a
+    # clean 400 (a pydantic ge=0 rejects NaN with a 422 whose NaN echo then fails to serialise -> 500).
+    current_stock: float  # validated finite & >= 0 in the service
     daily_consumption: float  # validated finite & >= 0 in the service
     lead_time_days: int = Field(default=0, ge=0)
     safety_buffer_days: int = Field(default=0, ge=0)

@@ -352,16 +352,21 @@ def simulate_resource(tenant_id: Any, request: schemas.ResourceWhatIfRequest) ->
 
     incomplete = False
     days_remaining: float | None = None
+    raw_days: float | None = None
     if request.daily_consumption > 0:
-        days_remaining = round(request.current_stock / request.daily_consumption, 2)
+        raw_days = request.current_stock / request.daily_consumption
+        if not math.isfinite(raw_days):  # huge stock / tiny consumption -> clean 400, never inf in a response
+            raise ValueError("projected_days_overflow")
+        days_remaining = round(raw_days, 2)
     else:
         incomplete = True
 
+    # Classify on the RAW quotient (not the rounded display value) so boundary semantics are exact.
     reorder_threshold = request.lead_time_days + request.safety_buffer_days
-    reorder_needed = days_remaining is not None and days_remaining <= reorder_threshold
+    reorder_needed = raw_days is not None and raw_days <= reorder_threshold
 
     risks: list[str] = []
-    if days_remaining is not None and days_remaining < request.lead_time_days:
+    if raw_days is not None and raw_days < request.lead_time_days:
         risks.append("stockout_before_lead_time")
     elif reorder_needed:
         risks.append("reorder_point_reached")

@@ -612,3 +612,40 @@ def test_resource_routes_never_write_audit(mock_audit) -> None:
     assert client.post(f"{BASE}/simulate/resource", headers=ADMIN_HEADERS, json=payload).status_code == 200
     assert client.post(f"{BASE}/early-warning/resource", headers=ADMIN_HEADERS, json=payload).status_code == 200
     mock_audit.assert_not_called()
+
+
+# --- A-056.R2: resource-domain adversarial-review remediation ---
+
+@pytest.mark.parametrize("token", ["NaN", "1e400", "-1e400", "-5"])
+def test_resource_current_stock_non_finite_or_negative_fails_closed_not_500(token) -> None:
+    # R2-F1: current_stock NaN previously 500'd (ge=0 rejected NaN -> unserialisable 422). Now clean 400.
+    resp = client.post(
+        f"{BASE}/simulate/resource",
+        headers=_JSON_HEADERS,
+        content=f'{{"resource_name": "x", "current_stock": {token}, "daily_consumption": 1}}',
+    )
+    assert resp.status_code == 400
+
+
+def test_resource_division_overflow_fails_closed_not_500() -> None:
+    # R2-F3: huge stock / tiny consumption -> inf days; must be a clean 400, never inf in a response.
+    resp = client.post(
+        f"{BASE}/simulate/resource",
+        headers=ADMIN_HEADERS,
+        json={"resource_name": "x", "current_stock": 1e12, "daily_consumption": 1e-300},
+    )
+    assert resp.status_code == 400
+
+
+def test_resource_stockout_classification_uses_raw_not_rounded() -> None:
+    # R2-F2: 69.96/10 = 6.996 (< lead_time 7) is a real stockout, even though round(6.996,2)=7.0.
+    resp = client.post(
+        f"{BASE}/simulate/resource",
+        headers=ADMIN_HEADERS,
+        json={"resource_name": "x", "current_stock": 69.96, "daily_consumption": 10, "lead_time_days": 7},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["projected_days_remaining"] == 7.0  # rounded display value
+    assert "stockout_before_lead_time" in body["risks"]  # but classified on raw 6.996 < 7
+    assert "reorder_point_reached" not in body["risks"]
