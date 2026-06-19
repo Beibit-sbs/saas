@@ -52,3 +52,14 @@ Evidence-based per-module status (the "5 modules for one domain" was an over-sta
 | `parent_engagement` | intentional **L2 foundation stub** (`A-026.7.L1L2`), 0 routes / 0 imports by design | keep as stub |
 
 Corrected verdict: D-07 is really **1 canonical + 1 superseded-thin (notification_center) + 1 used-adapter + 2 intentional stubs**. The only consolidation target is `notification_center` → fold into communications. Step taken this pass (compatibility-first, non-breaking): added a deprecation signal (`deprecated`/`superseded_by`) to the notification_center summary response. Actual route removal deferred to a deprecation cycle (it is an exposed admin endpoint). Mobile-push / parent-engagement must NOT be removed — they are deliberate L2 maturity stubs.
+
+## 6. D-05 detailed analysis (recon done 2026-06-19 — NOT a duplicate; DO NOT MERGE)
+
+Evidence: `student_services` and `student_services_support` are two distinct, both-active surfaces sharing the `/api/admin/student-services` base path — NOT duplicates.
+
+| Module | Reality | Disposition |
+|---|---|---|
+| `student_services_support` | **Welfare/Support vertical** (A-042 closure + A-055 tree): 21 routes, models/repository/permissions, base `/api/admin/student-services` (cases, hardship, accommodations, complaints, escalations, dashboard) | canonical for welfare/support |
+| `student_services` | **Tickets surface**: 4 routes under `/api/admin/student-services/tickets` (list/create/status/brain-context), **actively used by frontend** (`console/student-services` page calls `/tickets`), brain-core integrated, no models | keep — distinct domain |
+
+Route-collision check: PASS — `student_services_support` defines no `/tickets` route; the two never overlap. Resolution: **keep both, do NOT merge** (merging would break the tickets surface + its frontend). Risk to watch: the shared base path + confusing names — any future route added to either under `/tickets*` must avoid collision. Recommended: document the boundary (done here); optionally rename for clarity later (low priority, cosmetic). No code change this pass — there is nothing duplicated to fix.
