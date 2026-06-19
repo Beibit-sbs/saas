@@ -1,6 +1,7 @@
 from app.core.db import get_raw_conn
 from app.modules.auth.local_users_service import local_user_store
 from app.modules.campus_facilities_housing_transport.permissions import ALL_PERMISSIONS as _CAMPUS_FACILITIES_PERMISSIONS
+from app.modules.digital_twin.permissions import ALL_PERMISSIONS as _DIGITAL_TWIN_PERMISSIONS
 from app.modules.security_access_compliance.permissions import ALL_PERMISSIONS as _SECURITY_ACCESS_COMPLIANCE_PERMISSIONS
 import os
 from dataclasses import dataclass, field
@@ -578,7 +579,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _FINANCE_PROCUREMENT_ASSET_PERMISSIONS
     | _STUDENT_SERVICES_SUPPORT_PERMISSIONS
     | _SECURITY_ACCESS_COMPLIANCE_PERMISSIONS
-    | _CAMPUS_FACILITIES_PERMISSIONS,
+    | _CAMPUS_FACILITIES_PERMISSIONS
+    | _DIGITAL_TWIN_PERMISSIONS,
     "admin": {
         "admin.dashboard.read",
         "admin.expansion.read",
@@ -666,7 +668,8 @@ BASELINE_ROLE_PERMISSIONS: Dict[str, Set[str]] = {
     | _FINANCE_PROCUREMENT_ASSET_PERMISSIONS
     | _STUDENT_SERVICES_SUPPORT_PERMISSIONS
     | _SECURITY_ACCESS_COMPLIANCE_PERMISSIONS
-    | _CAMPUS_FACILITIES_PERMISSIONS,
+    | _CAMPUS_FACILITIES_PERMISSIONS
+    | _DIGITAL_TWIN_PERMISSIONS,
     "auditor": {
         "admin.audit.read",
         "admin.dashboard.read",

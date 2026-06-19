@@ -56,10 +56,13 @@ class CapacityWhatIfRequest(BaseModel):
     """
 
     current_students: int = Field(ge=0)
-    intake_growth_percent: float = Field(ge=-100)
+    # Plain float (no ge/le) so inf/nan are accepted into the model and validated in the
+    # service -> clean 400, instead of a pydantic 422 whose body echoes inf and then fails
+    # to serialize (Starlette json.dumps(allow_nan=False)).
+    intake_growth_percent: float
     classroom_capacity: int = Field(default=0, ge=0)
     dormitory_capacity: int = Field(default=0, ge=0)
-    housing_demand_ratio: float = Field(default=0.0, ge=0, le=1)
+    housing_demand_ratio: float = 0.0
     # A-056.4: best-effort live read of current_students from the enrollments module.
     use_live_sources: bool = False
 
@@ -118,6 +121,7 @@ class CapacityScenarioRequest(BaseModel):
     dormitory_capacity: int = Field(default=0, ge=0)
     housing_demand_ratio: float = Field(default=0.0, ge=0, le=1)
     use_live_sources: bool = False
+    # Plain list[float]; non-finite/out-of-range elements are validated in the service -> 400.
     intake_growth_scenarios: list[float] = Field(default_factory=lambda: [0.0, 10.0, 20.0, 30.0])
 
 

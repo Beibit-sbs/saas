@@ -20,6 +20,14 @@ def _tenant_id(tenant: dict[str, object]) -> int:
         raise HTTPException(status_code=400, detail="invalid_tenant_scope")
 
 
+def _guard(fn):
+    """Map service input-validation errors (e.g. non-finite growth) to a clean 400."""
+    try:
+        return fn()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 @router.get("/state", response_model=schemas.DigitalTwinStateResponse)
 def get_digital_twin_state(
     _: Annotated[str, Depends(get_actor)],
@@ -46,7 +54,8 @@ def simulate_digital_twin_capacity(
     tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
 ) -> schemas.CapacityWhatIfResponse:
     # Read-only deterministic projection; persists nothing, executes nothing.
-    return service.simulate_capacity(_tenant_id(tenant), payload)
+    tid = _tenant_id(tenant)
+    return _guard(lambda: service.simulate_capacity(tid, payload))
 
 
 @router.post("/early-warning/capacity", response_model=schemas.CapacityEarlyWarningResponse)
@@ -57,7 +66,8 @@ def digital_twin_capacity_early_warning(
     tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
 ) -> schemas.CapacityEarlyWarningResponse:
     # Read-only warning readout; recommends human action, executes nothing.
-    return service.capacity_early_warning(_tenant_id(tenant), payload)
+    tid = _tenant_id(tenant)
+    return _guard(lambda: service.capacity_early_warning(tid, payload))
 
 
 @router.post("/scenarios/capacity", response_model=schemas.CapacityScenarioRegistryResponse)
@@ -68,7 +78,8 @@ def digital_twin_capacity_scenarios(
     tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
 ) -> schemas.CapacityScenarioRegistryResponse:
     # Read-only named-scenario comparison for executive review; executes nothing.
-    return service.run_capacity_scenarios(_tenant_id(tenant), payload)
+    tid = _tenant_id(tenant)
+    return _guard(lambda: service.run_capacity_scenarios(tid, payload))
 
 
 @router.post("/scenarios/decision", response_model=schemas.ScenarioDecisionResponse)
@@ -85,7 +96,7 @@ def digital_twin_record_scenario_decision(
 @router.get("/scenarios/decisions", response_model=schemas.ScenarioDecisionLogResponse)
 def list_digital_twin_scenario_decisions(
     _: Annotated[str, Depends(get_actor)],
-    __: Annotated[None, Depends(permission_dependency(permissions.DECISION_RECORD))],
+    __: Annotated[None, Depends(permission_dependency(permissions.DECISION_READ))],
     tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
 ) -> schemas.ScenarioDecisionLogResponse:
     # Read-only executive decision log from the audit trail.

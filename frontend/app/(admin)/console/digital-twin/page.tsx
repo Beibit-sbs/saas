@@ -50,6 +50,7 @@ const SAFETY_FLAGS = [
   "all_recommendations_explain_evidence=true",
   "all_accepted_actions_audited=true",
   "fake_metrics=false",
+  "provider_live_enabled=false",
 ];
 
 export default function DigitalTwinPage() {

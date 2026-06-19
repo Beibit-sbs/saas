@@ -5,6 +5,7 @@ Declares observed dimensions + reused sources. No fabricated simulation numbers.
 
 from __future__ import annotations
 
+import math
 from typing import Any
 from uuid import uuid4
 
@@ -56,6 +57,16 @@ def _validate_tenant(tenant_id: Any) -> int:
     return tenant_id
 
 
+def _validate_finite(value: float, lo: float, hi: float, name: str) -> float:
+    """Reject non-finite / out-of-range floats BEFORE any round()/int() math.
+
+    Raised as ValueError so the router maps it to a clean 400 (the value never
+    reaches a response body, avoiding the inf-not-JSON-serialisable failure)."""
+    if not math.isfinite(value) or value < lo or value > hi:
+        raise ValueError(f"invalid_{name}")
+    return value
+
+
 def get_state(tenant_id: Any) -> schemas.DigitalTwinStateResponse:
     tid = _validate_tenant(tenant_id)
     return schemas.DigitalTwinStateResponse(
@@ -104,7 +115,8 @@ def _live_classroom_capacity(tenant_id: int) -> int | None:
             cap = row.get("capacity")
             if cap is not None:
                 total += int(cap)
-        return total
+        # A zero total is not usable live data -> fall back honestly to the caller value.
+        return total if total > 0 else None
     except Exception:
         return None
 
@@ -116,6 +128,8 @@ def simulate_capacity(tenant_id: Any, request: schemas.CapacityWhatIfRequest) ->
     enrollments module (best-effort); on failure it falls back to the caller value.
     """
     tid = _validate_tenant(tenant_id)
+    _validate_finite(request.intake_growth_percent, -100.0, 10000.0, "intake_growth_percent")
+    _validate_finite(request.housing_demand_ratio, 0.0, 1.0, "housing_demand_ratio")
 
     current_students = request.current_students
     students_mode = "caller_provided"
@@ -132,7 +146,7 @@ def simulate_capacity(tenant_id: Any, request: schemas.CapacityWhatIfRequest) ->
     classroom_source = "scheduling"
     if request.use_live_sources:
         live_cap = _live_classroom_capacity(tid)
-        if live_cap is not None:
+        if live_cap:  # truthy -> None or 0 (no usable rooms) falls back to the caller value
             classroom_capacity = live_cap
             classroom_mode = "live"
             classroom_source = "campus_rooms"

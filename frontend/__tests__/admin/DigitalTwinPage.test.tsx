@@ -38,6 +38,7 @@ describe("DigitalTwinPage (A-056.2 shell)", () => {
     expect(screen.getByText("no_autonomous_budget_commitment=true")).toBeInTheDocument();
     expect(screen.getByText("no_hidden_scoring=true")).toBeInTheDocument();
     expect(screen.getAllByText("fake_metrics=false").length).toBeGreaterThan(0);
+    expect(screen.getByText("provider_live_enabled=false")).toBeInTheDocument();
     expect(screen.getByText("autonomous_academic_decision")).toBeInTheDocument();
 
     // operating principle
