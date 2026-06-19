@@ -349,20 +349,34 @@ def get_bridge_student_finance_referrals(db: Session, tenant_id: int) -> schemas
 
 
 def acknowledge_student_finance_referral(db: Session, tenant_id: int, actor_user_id: str, request: schemas.FpaReviewCreateRequest) -> dict[str, Any]:
-    return _create_metadata_record(
+    # Persist as a FinanceBridgeRecord with bridge_family="student_finance_referrals" — the exact
+    # column value the GET ledger filters on — so the acknowledgement is recordable AND shows up in
+    # the read-back. (Previously this wrote to a non-existent "student_finance_referrals" family key,
+    # which raised KeyError -> HTTP 500 on every acknowledge.) Acknowledgement details live in
+    # metadata_json (they are not bridge columns); the anti-fake flags are surfaced on the response.
+    ack_metadata = {
+        "acknowledgement_state": "non_executing_acknowledged",
+        "no_automatic_aid_decision": True,
+        "no_billing_balance_mutation": True,
+        "no_payment_execution": True,
+    }
+    caller_metadata = dict(request.model_dump(exclude_none=True).get("metadata") or {})
+    result = _create_metadata_record(
         db,
         tenant_id,
         actor_user_id,
-        "student_finance_referrals",
+        "bridges",
         request,
         status_default="HUMAN_REVIEW_REQUIRED",
         extra={
-            "acknowledgement_state": "non_executing_acknowledged",
-            "no_automatic_aid_decision": True,
-            "no_billing_balance_mutation": True,
-            "no_payment_execution": True,
+            "bridge_family": "student_finance_referrals",
+            "target_domain": "student_finance",
+            "read_only_first": True,
+            "mutation_allowed": False,
+            "metadata_json": {**caller_metadata, **ack_metadata},
         },
     )
+    return {**result, "bridge_family": "student_finance_referrals", "human_review_required": True, **ack_metadata}
 
 
 def get_health(db: Session, tenant_id: int) -> dict[str, Any]:

@@ -71,6 +71,35 @@ def test_viewer_cannot_acknowledge_student_finance_referral() -> None:
     assert resp.status_code == 403
 
 
+def test_acknowledge_student_finance_referral_records_bridge_not_500() -> None:
+    # Regression (adversarial review): acknowledge wrote to a non-existent family key -> KeyError -> 500.
+    # It must now succeed (201), surface the anti-fake flags, and persist a FinanceBridgeRecord whose
+    # bridge_family matches what GET /bridges/student-finance-referrals reads.
+    from app.modules.finance_procurement_asset import models
+
+    session = MagicMock(spec=Session)
+    app.dependency_overrides[get_finance_procurement_asset_db] = lambda: session
+    try:
+        resp = client.post(
+            f"{BASE}/bridges/student-finance-referrals/acknowledge",
+            headers=ADMIN_HEADERS,
+            json={"reference_key": "ref-1", "decision": "non_executing_acknowledged"},
+        )
+        assert resp.status_code == 201
+        body = resp.json()
+        assert body["no_automatic_aid_decision"] is True
+        assert body["no_billing_balance_mutation"] is True
+        assert body["no_payment_execution"] is True
+        assert body["human_review_required"] is True
+        assert body["bridge_family"] == "student_finance_referrals"
+        # a FinanceBridgeRecord was persisted with the exact bridge_family the ledger GET filters on
+        added = [call.args[0] for call in session.add.call_args_list if call.args]
+        bridges = [o for o in added if isinstance(o, models.FinanceBridgeRecord)]
+        assert any(getattr(o, "bridge_family", None) == "student_finance_referrals" for o in bridges)
+    finally:
+        app.dependency_overrides.pop(get_finance_procurement_asset_db, None)
+
+
 @patch("app.modules.finance_procurement_asset.router.service.get_dashboard")
 def test_dashboard_contract(mock_dashboard):
     mock_dashboard.return_value = {
