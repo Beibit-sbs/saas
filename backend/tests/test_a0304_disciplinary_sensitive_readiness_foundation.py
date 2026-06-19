@@ -1,7 +1,7 @@
 """A-030.4-RUNTIME: Disciplinary case management sensitive readiness foundation tests."""
 
 import pytest
-from backend.app.modules.disciplinary_case_management.service import (
+from app.modules.disciplinary_case_management.service import (
     get_disciplinary_sensitive_readiness_foundation,
     validate_tenant_id,
 )

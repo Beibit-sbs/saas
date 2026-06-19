@@ -24,9 +24,9 @@ Expected: 75+ assertions covering all candidates and boundaries
 """
 
 import pytest
-from backend.app.modules.student_appeals_workflow.service import get_student_appeals_sensitive_readiness_foundation
-from backend.app.modules.disability_support_services.service import get_disability_support_sensitive_readiness_foundation
-from backend.app.modules.student_financial_hardship.service import get_student_financial_hardship_sensitive_readiness_foundation
+from app.modules.student_appeals_workflow.service import get_student_appeals_sensitive_readiness_foundation
+from app.modules.disability_support_services.service import get_disability_support_sensitive_readiness_foundation
+from app.modules.student_financial_hardship.service import get_student_financial_hardship_sensitive_readiness_foundation
 
 
 @pytest.fixture(autouse=True)
