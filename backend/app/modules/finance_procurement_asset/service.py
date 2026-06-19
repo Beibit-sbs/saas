@@ -348,6 +348,23 @@ def get_bridge_student_finance_referrals(db: Session, tenant_id: int) -> schemas
     return _bridge_response(db, tenant_id, "student_finance_referrals")
 
 
+def acknowledge_student_finance_referral(db: Session, tenant_id: int, actor_user_id: str, request: schemas.FpaReviewCreateRequest) -> dict[str, Any]:
+    return _create_metadata_record(
+        db,
+        tenant_id,
+        actor_user_id,
+        "student_finance_referrals",
+        request,
+        status_default="HUMAN_REVIEW_REQUIRED",
+        extra={
+            "acknowledgement_state": "non_executing_acknowledged",
+            "no_automatic_aid_decision": True,
+            "no_billing_balance_mutation": True,
+            "no_payment_execution": True,
+        },
+    )
+
+
 def get_health(db: Session, tenant_id: int) -> dict[str, Any]:
     del db
     tenant_id = _validate_tenant(tenant_id)

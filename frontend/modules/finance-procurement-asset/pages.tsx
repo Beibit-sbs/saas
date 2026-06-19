@@ -375,6 +375,17 @@ export function FpaStudentFinanceReferralIntakePanel() {
         <div className="rounded-lg border p-3">noPaymentExecution=true</div>
         <div className="rounded-lg border p-3">humanReviewRequired=true</div>
       </div>
+      <div className="mt-4 rounded-lg border p-3" data-testid="fpa-student-finance-referral-acknowledge-shell">
+        <div className="text-sm font-medium">Non-executing acknowledgement</div>
+        <p className="mt-2 text-xs text-muted-foreground">POST /api/admin/finance-procurement-asset/bridges/student-finance-referrals/acknowledge</p>
+        <ul className="mt-3 grid gap-1 text-xs text-muted-foreground md:grid-cols-2">
+          <li>acknowledgement_state=non_executing_acknowledged</li>
+          <li>reviewer_note=metadata_only</li>
+          <li>noPaymentExecution=true</li>
+          <li>noBillingBalanceMutation=true</li>
+        </ul>
+        <p className="mt-2 text-xs text-muted-foreground">A finance reviewer records that the referral was seen. This is a note only; it approves nothing and moves no money.</p>
+      </div>
       <Link href="/console/student-services-support/dashboard" className="mt-4 inline-flex rounded-lg border px-3 py-2 text-sm hover:bg-muted/50" data-testid="fpa-student-finance-referral-source-link">
         Student-services referral source
       </Link>

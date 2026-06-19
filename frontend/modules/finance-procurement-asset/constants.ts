@@ -13,8 +13,8 @@ export const FINANCE_PROCUREMENT_ASSET_MODULE = 'finance-procurement-asset';
 export const FINANCE_PROCUREMENT_ASSET_ROUTE_FAMILY = '/console/finance-procurement-asset';
 export const FINANCE_PROCUREMENT_ASSET_API_BASE = '/api/admin/finance-procurement-asset';
 export const FINANCE_PROCUREMENT_ASSET_PLANNED_ROUTE_COUNT = 23;
-export const FINANCE_PROCUREMENT_ASSET_BACKEND_ROUTE_COUNT = 56;
-export const FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT = 50;
+export const FINANCE_PROCUREMENT_ASSET_BACKEND_ROUTE_COUNT = 57;
+export const FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT = 51;
 export const FINANCE_PROCUREMENT_ASSET_RUNTIME_MODE = 'METADATA_EVIDENCE_READINESS_HUMAN_REVIEW_ONLY';
 export const FINANCE_PROCUREMENT_ASSET_SOURCE_BACKEND_BASELINE_COMMIT = '0453fbd';
 export const FINANCE_PROCUREMENT_ASSET_SOURCE_BACKEND_RUNTIME_COMMIT = '0394414';
@@ -103,6 +103,7 @@ export const FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES = {
   bridgesDocumentContractsRead: 'finance_procurement_asset.bridges.document_contracts.read' as Permission,
   bridgesProviderReadinessRead: 'finance_procurement_asset.bridges.provider_readiness.read' as Permission,
   bridgesStudentFinanceRead: 'finance_procurement_asset.bridges.student_finance.read' as Permission,
+  bridgesStudentFinanceAcknowledge: 'finance_procurement_asset.bridges.student_finance.acknowledge' as Permission,
   metadataRead: 'finance_procurement_asset.metadata.read' as Permission,
 } as const;
 
@@ -178,6 +179,7 @@ export const FINANCE_PROCUREMENT_ASSET_API_PATHS = {
   bridgeProviderReadiness: apiPath('/bridges/provider-readiness'),
   bridgeStudentFinance: apiPath('/bridges/student-finance'),
   bridgeStudentFinanceReferrals: apiPath('/bridges/student-finance-referrals'),
+  bridgeStudentFinanceReferralAcknowledge: apiPath('/bridges/student-finance-referrals/acknowledge'),
   roles: apiPath('/roles'),
   permissions: apiPath('/permissions'),
   metadataContract: apiPath('/metadata-contract'),
@@ -217,7 +219,7 @@ export const FINANCE_PROCUREMENT_ASSET_ROUTES: FpaRouteDefinition[] = [
   routeDefinition('bank-readiness', 'Bank Readiness', `${FINANCE_PROCUREMENT_ASSET_ROUTE_FAMILY}/bank-readiness`, FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.bankReadinessRead, [endpoint('GET', '/bank-readiness'), endpoint('POST', '/bank-readiness/evidence')], 'Bank readiness metadata only with liveBankSync=false.', false, true),
   routeDefinition('provider-readiness', 'Provider Readiness', `${FINANCE_PROCUREMENT_ASSET_ROUTE_FAMILY}/provider-readiness`, FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.providerReadinessRead, [endpoint('GET', '/provider-readiness'), endpoint('GET', '/payment-gateway-readiness'), endpoint('POST', '/provider-readiness/evidence'), endpoint('POST', '/payment-gateway-readiness/evidence')], 'Provider and payment gateway readiness evidence with providerConnected=false.', false, false),
   routeDefinition('bridges', 'Bridge Visibility', `${FINANCE_PROCUREMENT_ASSET_ROUTE_FAMILY}/bridges`, FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.bridgesExecutiveRead, [endpoint('GET', '/bridges/executive'), endpoint('GET', '/bridges/hr-payroll'), endpoint('GET', '/bridges/document-contracts'), endpoint('GET', '/bridges/provider-readiness'), endpoint('GET', '/bridges/student-finance')], 'Read-only-first bridge surfaces into executive, HR/payroll, document/contracts, provider readiness, and student finance contexts.', false, false),
-  routeDefinition('student-finance', 'Student Finance Bridge', `${FINANCE_PROCUREMENT_ASSET_ROUTE_FAMILY}/student-finance`, FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.bridgesStudentFinanceRead, [endpoint('GET', '/bridges/student-finance'), endpoint('GET', '/bridges/student-finance-referrals'), endpoint('GET', '/receivables'), endpoint('POST', '/receivables/metadata'), endpoint('GET', '/billing'), endpoint('GET', '/payment-readiness')], 'Read-only student finance bridge from academic lifecycle into receivables, billing visibility, and payment readiness metadata.', false, false),
+  routeDefinition('student-finance', 'Student Finance Bridge', `${FINANCE_PROCUREMENT_ASSET_ROUTE_FAMILY}/student-finance`, FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.bridgesStudentFinanceRead, [endpoint('GET', '/bridges/student-finance'), endpoint('GET', '/bridges/student-finance-referrals'), endpoint('POST', '/bridges/student-finance-referrals/acknowledge'), endpoint('GET', '/receivables'), endpoint('POST', '/receivables/metadata'), endpoint('GET', '/billing'), endpoint('GET', '/payment-readiness')], 'Read-only student finance bridge from academic lifecycle into receivables, billing visibility, and payment readiness metadata.', false, false),
   routeDefinition('audit', 'Audit / Evidence', `${FINANCE_PROCUREMENT_ASSET_ROUTE_FAMILY}/audit`, FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.auditRead, [endpoint('GET', '/audit-events'), endpoint('GET', '/evidence'), endpoint('POST', '/audit-events'), endpoint('POST', '/evidence')], 'Audit and evidence surfaces remain metadata-only and human-reviewed.', false, true),
   routeDefinition('limitations', 'Limitations / Safety Boundaries', `${FINANCE_PROCUREMENT_ASSET_ROUTE_FAMILY}/limitations`, FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES.limitationsRead, [endpoint('GET', '/limitations'), endpoint('GET', '/safety-boundaries'), endpoint('GET', '/metadata-contract')], 'Explicit limitations, no-overclaim boundaries, and safety assertions for the FPA frontend runtime.', false, true),
 ];

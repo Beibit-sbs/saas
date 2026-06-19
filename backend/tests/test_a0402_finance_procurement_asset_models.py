@@ -42,8 +42,8 @@ def test_import_and_constants_sanity() -> None:
     assert models.API_PREFIX == "/api/admin/finance-procurement-asset"
     assert models.RUNTIME_MODE == "METADATA_EVIDENCE_READINESS_HUMAN_REVIEW_ONLY"
     assert models.EXPECTED_TABLE_COUNT == 24
-    assert models.EXPECTED_ROUTE_COUNT == 53
-    assert models.EXPECTED_PERMISSION_COUNT == 48
+    assert models.EXPECTED_ROUTE_COUNT == 57
+    assert models.EXPECTED_PERMISSION_COUNT == 51
     assert models.TABLE_PREFIX == "fpa_"
 
 
@@ -54,10 +54,11 @@ def test_metadata_contains_expected_24_tables() -> None:
 
 
 def test_permissions_cover_runtime_slice() -> None:
-    assert len(permissions.ALL_PERMISSIONS) == 48
+    assert len(permissions.ALL_PERMISSIONS) == 51
     assert permissions.BILLING_EVIDENCE in permissions.ALL_PERMISSIONS
     assert permissions.PROVIDER_READINESS_EVIDENCE in permissions.ALL_PERMISSIONS
     assert permissions.BRIDGES_PROVIDER_READINESS_READ in permissions.ALL_PERMISSIONS
+    assert permissions.BRIDGES_STUDENT_FINANCE_ACKNOWLEDGE in permissions.ALL_PERMISSIONS
 
 
 def test_migration_contains_all_foundation_tables() -> None:

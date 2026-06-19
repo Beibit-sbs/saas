@@ -10,9 +10,9 @@ import {
 import { FINANCE_PROCUREMENT_ASSET_PERMISSION_VALUES } from '@/modules/finance-procurement-asset/constants';
 
 describe('Finance Procurement Asset guards', () => {
-  it('keeps the full permission inventory explicit at 50 entries', () => {
-    expect(FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT).toBe(50);
-    expect(FINANCE_PROCUREMENT_ASSET_PERMISSIONS).toHaveLength(50);
+  it('keeps the full permission inventory explicit at 51 entries', () => {
+    expect(FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT).toBe(51);
+    expect(FINANCE_PROCUREMENT_ASSET_PERMISSIONS).toHaveLength(51);
   });
 
   it('fails closed when user permissions are missing', () => {

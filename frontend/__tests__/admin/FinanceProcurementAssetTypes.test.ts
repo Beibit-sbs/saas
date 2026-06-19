@@ -30,8 +30,8 @@ describe('Finance Procurement Asset types', () => {
     expect(FINANCE_PROCUREMENT_ASSET_API_BASE).toBe('/api/admin/finance-procurement-asset');
     expect(FINANCE_PROCUREMENT_ASSET_ROUTE_FAMILY).toBe('/console/finance-procurement-asset');
     expect(FINANCE_PROCUREMENT_ASSET_ROUTE_COUNT).toBe(23);
-    expect(FINANCE_PROCUREMENT_ASSET_BACKEND_ROUTE_COUNT).toBe(56);
-    expect(FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT).toBe(50);
+    expect(FINANCE_PROCUREMENT_ASSET_BACKEND_ROUTE_COUNT).toBe(57);
+    expect(FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT).toBe(51);
     expect(FINANCE_PROCUREMENT_ASSET_RUNTIME_MODE).toBe('METADATA_EVIDENCE_READINESS_HUMAN_REVIEW_ONLY');
     expect(FINANCE_PROCUREMENT_ASSET_SOURCE_BACKEND_BASELINE_COMMIT).toBe('0453fbd');
     expect(FINANCE_PROCUREMENT_ASSET_SOURCE_BACKEND_RUNTIME_COMMIT).toBe('0394414');
@@ -94,8 +94,8 @@ describe('Finance Procurement Asset types', () => {
       contract_version: 'A-040.3',
       runtime_mode: FINANCE_PROCUREMENT_ASSET_RUNTIME_MODE,
       table_count: 24,
-      route_count: 56,
-      permission_count: 50,
+      route_count: 57,
+      permission_count: 51,
       planned_route_count: 23,
       data_source: FINANCE_PROCUREMENT_ASSET_DATA_SOURCE,
       boundary_summary: { fake_metrics: false },
@@ -121,7 +121,7 @@ describe('Finance Procurement Asset types', () => {
       boundary_summary: { fake_metrics: false },
     };
 
-    expect(overview.permission_count).toBe(50);
+    expect(overview.permission_count).toBe(51);
     expect(dashboard.data_source).toBe(FINANCE_PROCUREMENT_ASSET_DATA_SOURCE);
   });
 

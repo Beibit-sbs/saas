@@ -86,7 +86,7 @@ def test_migration_create_drop_sets_match_24() -> None:
 
 def test_all_routes_are_actor_and_permission_guarded() -> None:
     routes = [route for route in app.routes if getattr(route, "path", "").startswith("/api/admin/finance-procurement-asset")]
-    assert len(routes) == 53
+    assert len(routes) == 57
     for route in routes:
         dependency_calls = [getattr(dep.call, "__name__", "") for dep in route.dependant.dependencies]
         assert "get_actor" in dependency_calls
@@ -94,4 +94,4 @@ def test_all_routes_are_actor_and_permission_guarded() -> None:
 
 
 def test_permission_inventory_count_is_exact() -> None:
-    assert len(permissions.ALL_PERMISSIONS) == 48
+    assert len(permissions.ALL_PERMISSIONS) == 51

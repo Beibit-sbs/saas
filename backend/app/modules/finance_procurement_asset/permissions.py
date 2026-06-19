@@ -51,6 +51,7 @@ BRIDGES_HR_PAYROLL_READ = "finance_procurement_asset.bridges.hr_payroll.read"
 BRIDGES_DOCUMENT_CONTRACTS_READ = "finance_procurement_asset.bridges.document_contracts.read"
 BRIDGES_PROVIDER_READINESS_READ = "finance_procurement_asset.bridges.provider_readiness.read"
 BRIDGES_STUDENT_FINANCE_READ = "finance_procurement_asset.bridges.student_finance.read"
+BRIDGES_STUDENT_FINANCE_ACKNOWLEDGE = "finance_procurement_asset.bridges.student_finance.acknowledge"
 METADATA_READ = "finance_procurement_asset.metadata.read"
 
 ALL_PERMISSIONS: frozenset[str] = frozenset(
@@ -104,9 +105,10 @@ ALL_PERMISSIONS: frozenset[str] = frozenset(
         BRIDGES_DOCUMENT_CONTRACTS_READ,
         BRIDGES_PROVIDER_READINESS_READ,
         BRIDGES_STUDENT_FINANCE_READ,
+        BRIDGES_STUDENT_FINANCE_ACKNOWLEDGE,
         METADATA_READ,
     }
 )
 
 FINANCE_PROCUREMENT_ASSET_PERMISSIONS = sorted(ALL_PERMISSIONS)
-FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT = 50
+FINANCE_PROCUREMENT_ASSET_PERMISSION_COUNT = 51

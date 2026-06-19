@@ -83,7 +83,7 @@ def test_health_contract_is_fail_closed() -> None:
     assert result["payment_execution_enabled"] is False
     assert result["automatic_decision_enabled"] is False
     assert result["hidden_score_present"] is False
-    assert result["route_count"] == 56
+    assert result["route_count"] == 57
     assert result["table_count"] == 24
 
 
@@ -91,7 +91,7 @@ def test_permissions_inventory_is_exact() -> None:
     db = _db()
     result = service.get_permissions(db, 1)
     assert result["permission_namespace"] == "finance_procurement_asset.*"
-    assert result["permission_count"] == 50
+    assert result["permission_count"] == 51
     assert result["permissions"] == permissions.FINANCE_PROCUREMENT_ASSET_PERMISSIONS
 
 
@@ -100,8 +100,8 @@ def test_overview_contract_contains_counts() -> None:
     result = service.get_overview(db, 1)
     assert result.selected_vertical == "Finance / Procurement / Asset Suite"
     assert result.table_count == 24
-    assert result.route_count == 56
-    assert result.permission_count == 50
+    assert result.route_count == 57
+    assert result.permission_count == 51
 
 
 def test_metadata_contract_contains_expected_files() -> None:
@@ -109,7 +109,7 @@ def test_metadata_contract_contains_expected_files() -> None:
     result = service.get_metadata_contract(db, 1)
     assert result.api_prefix == "/api/admin/finance-procurement-asset"
     assert len(result.module_files) == 8
-    assert result.permission_count == 50
+    assert result.permission_count == 51
 
 
 def test_create_audit_event_is_insert_only() -> None:

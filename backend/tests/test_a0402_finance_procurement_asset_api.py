@@ -42,7 +42,7 @@ def _override_db():
 
 def test_router_surface_count() -> None:
     routes = [route for route in app.routes if getattr(route, "path", "").startswith(BASE)]
-    assert len(routes) == 56
+    assert len(routes) == 57
 
 
 @pytest.mark.parametrize("path", ["/overview", "/dashboard", "/billing", "/vendors", "/audit-events", "/metadata-contract", "/bridges/student-finance-referrals"])
@@ -59,6 +59,15 @@ def test_invalid_tenant_fail_closed(tenant_id) -> None:
 
 def test_viewer_cannot_create_vendor_metadata() -> None:
     resp = client.post(f"{BASE}/vendors", headers=VIEWER_HEADERS, json={"reference_key": "vendor-1", "title": "Vendor"})
+    assert resp.status_code == 403
+
+
+def test_viewer_cannot_acknowledge_student_finance_referral() -> None:
+    resp = client.post(
+        f"{BASE}/bridges/student-finance-referrals/acknowledge",
+        headers=VIEWER_HEADERS,
+        json={"reference_key": "ref-1", "decision": "non_executing_acknowledged"},
+    )
     assert resp.status_code == 403
 
 
@@ -96,9 +105,9 @@ def test_dashboard_contract(mock_dashboard):
 def test_metadata_contract_endpoint() -> None:
     resp = client.get(f"{BASE}/metadata-contract", headers=ADMIN_HEADERS)
     assert resp.status_code == 200
-    assert resp.json()["route_count"] == 56
+    assert resp.json()["route_count"] == 57
     assert resp.json()["table_count"] == 24
-    assert resp.json()["permission_count"] == 50
+    assert resp.json()["permission_count"] == 51
 
 
 def test_safety_boundaries_endpoint() -> None:
