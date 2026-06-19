@@ -19,7 +19,7 @@ from app.core.module_helpers.service_validation import (
 from app.modules.audit.service import log_admin_action
 from app.modules.billing.service import assert_billing_write_allowed, assert_quota_with_increment
 from app.modules.courses.models import CourseModel
-from app.modules.enrollments.models import AcademicTermModel, EnrollmentModel
+from app.modules.enrollments.models import AcademicTermModel, EnrollmentModel, EnrollmentStatus
 from app.modules.grades.service import GradeLifecycleService
 from app.modules.students.models import StudentProfileModel
 from app.modules.transcripts.business_rules import TranscriptRules
@@ -112,6 +112,11 @@ class TranscriptService:
                 and_(
                     EnrollmentModel.tenant_id == tenant_id,
                     EnrollmentModel.student_profile_id == student_profile_id,
+                    # Dropped/withdrawn enrollments retain their historical grade for
+                    # audit but must not be credited to the transcript or GPA.
+                    EnrollmentModel.enrollment_status.notin_(
+                        (EnrollmentStatus.DROPPED, EnrollmentStatus.WITHDRAWN)
+                    ),
                 )
             )
             .order_by(EnrollmentModel.term_id, EnrollmentModel.course_id, EnrollmentModel.id)

@@ -232,12 +232,19 @@ def test_get_student_transcript_records_read_usage(
         version=1,
         metadata_json={},
     )
+    # Enrollment that matches the existing transcript record, so the consistency
+    # report finds no auto-healable gap and get_student_transcript serves the cached
+    # records (rather than regenerating).
+    enrollment = MagicMock(
+        id=4001, course_id=701, term_id=1, grade_code="A", grade_points=Decimal("4.00")
+    )
 
     db_session.execute.side_effect = [
-        ExecuteResult(scalar_one_or_none=MagicMock(id=1001, tenant_id=1)),
-        ExecuteResult(scalars=[record]),
-        ExecuteResult(scalar_one_or_none=course),
-        ExecuteResult(scalar_one_or_none=term),
+        ExecuteResult(scalar_one_or_none=MagicMock(id=1001, tenant_id=1)),  # _load_student
+        ExecuteResult(scalars=[enrollment]),  # _load_enrollments
+        ExecuteResult(scalars=[record]),  # existing transcript records
+        ExecuteResult(scalar_one_or_none=course),  # _load_course
+        ExecuteResult(scalar_one_or_none=term),  # _load_term
     ]
 
     service = TranscriptService(db_session)

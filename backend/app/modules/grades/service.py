@@ -21,7 +21,7 @@ from app.modules.audit.service import log_admin_action
 from app.modules.audit.service import log_data_access_event
 from app.modules.billing.service import assert_billing_write_allowed, assert_quota_with_increment
 from app.modules.courses.models import CourseModel
-from app.modules.enrollments.models import AcademicTermModel, EnrollmentModel
+from app.modules.enrollments.models import AcademicTermModel, EnrollmentModel, EnrollmentStatus
 from app.modules.grades.business_rules import GradeLifecycleRules
 from app.modules.grades.models import (
     GradeHistoryModel,
@@ -83,6 +83,16 @@ def _audit(
 # Institutional late-grade submission grace period after term end_date.
 # Grades cannot be submitted after end_date + grace period.
 _GRADE_SUBMISSION_GRACE_DAYS: int = 30
+
+# Enrollment statuses whose grade/credit must NOT contribute to GPA or the
+# transcript. grade_code/grade_points are deliberately NOT cleared when an
+# enrollment is dropped/withdrawn (the audit trail keeps the historical grade),
+# so a graded-then-dropped enrollment would otherwise corrupt the GPA and the
+# transcript. Aggregation must exclude these terminal non-credit-bearing states.
+_NON_CREDIT_BEARING_STATUSES: tuple[EnrollmentStatus, ...] = (
+    EnrollmentStatus.DROPPED,
+    EnrollmentStatus.WITHDRAWN,
+)
 
 
 class GradeLifecycleService:
@@ -616,6 +626,14 @@ class GradeLifecycleService:
         enrollment = self._load_enrollment(tenant_id, request.enrollment_id)
         GradeLifecycleRules.validate_grade_submission_allowed(enrollment)
 
+        # Same cross-entity integrity guards as submit_grade: a grade *change* is just
+        # as capable of corrupting an issued transcript as the original submission, so
+        # it must also respect the term submission window and the section's grading
+        # status. Without these, a closed-term / cancelled-section grade could be
+        # mutated through change_grade even though submit_grade blocks it.
+        self._check_section_not_cancelled(tenant_id, request.enrollment_id)
+        self._check_term_submission_window_open(tenant_id, enrollment.term_id)
+
         submission = self._load_grade_submission(tenant_id, request.enrollment_id)
         if submission is None:
             raise TenantResourceNotFoundError(
@@ -956,6 +974,7 @@ class GradeLifecycleService:
                     EnrollmentModel.tenant_id == tenant_id,
                     EnrollmentModel.student_profile_id == student_profile_id,
                     EnrollmentModel.grade_points.is_not(None),
+                    EnrollmentModel.enrollment_status.notin_(_NON_CREDIT_BEARING_STATUSES),
                 )
             )
         ).all()
@@ -1021,6 +1040,7 @@ class GradeLifecycleService:
                 and_(
                     EnrollmentModel.tenant_id == tenant_id,
                     EnrollmentModel.student_profile_id == student_profile_id,
+                    EnrollmentModel.enrollment_status.notin_(_NON_CREDIT_BEARING_STATUSES),
                 )
             )
             .order_by(AcademicTermModel.start_date, CourseModel.course_code, EnrollmentModel.id)

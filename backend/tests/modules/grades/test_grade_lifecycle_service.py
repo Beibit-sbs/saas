@@ -20,7 +20,7 @@ from app.modules.grades.models import (
     GradingScaleModel,
 )
 from app.modules.grades.schemas import GradeChangeSchema, GradeSubmitSchema
-from app.modules.grades.service import GradeLifecycleService
+from app.modules.grades.service import DomainValidationError, GradeLifecycleService
 from app.modules.students.models import (
     StudentAdmissionSource,
     StudentProfileModel,
@@ -360,10 +360,16 @@ class TestGradeChange:
         scale_factory,
         scale_item_factory,
         submission_factory,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         service = GradeLifecycleService(db_session)
         enrollment = enrollment_factory(id=4001, tenant_id=1, enrollment_status=EnrollmentStatus.COMPLETED)
         submission = submission_factory(enrollment_id=4001, version=1, grade_code="B", grade_points=Decimal("3.00"))
+
+        # change_grade now mirrors submit_grade's cross-entity integrity guards; the
+        # core change logic under test is independent of them (they have own tests).
+        monkeypatch.setattr(GradeLifecycleService, "_check_section_not_cancelled", lambda *a, **kw: None)
+        monkeypatch.setattr(GradeLifecycleService, "_check_term_submission_window_open", lambda *a, **kw: None)
 
         request = GradeChangeSchema(
             enrollment_id=4001,
@@ -411,10 +417,14 @@ class TestGradeChange:
         db_session,
         enrollment_factory,
         submission_factory,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         service = GradeLifecycleService(db_session)
         enrollment = enrollment_factory(id=4001, tenant_id=1, enrollment_status=EnrollmentStatus.COMPLETED)
         submission = submission_factory(enrollment_id=4001, version=5)
+
+        monkeypatch.setattr(GradeLifecycleService, "_check_section_not_cancelled", lambda *a, **kw: None)
+        monkeypatch.setattr(GradeLifecycleService, "_check_term_submission_window_open", lambda *a, **kw: None)
 
         request = GradeChangeSchema(
             enrollment_id=4001,
@@ -431,6 +441,48 @@ class TestGradeChange:
 
         with pytest.raises(OptimisticLockConflictError):
             run_async(service.change_grade(tenant_id=1, request=request, actor_id="admin@example.com"))
+
+    def test_change_grade_blocked_after_term_submission_window_closes(
+        self,
+        run_async,
+        db_session,
+        enrollment_factory,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Adversarial-review regression (A-055.GRD-R1, HIGH-B): submit_grade refused a
+        # grade once the term's submission window had closed, but change_grade did NOT
+        # enforce the same guard — a regrade could rewrite an issued transcript after
+        # the census deadline. change_grade must now also reject the closed window and
+        # persist nothing.
+        service = GradeLifecycleService(db_session)
+        enrollment = enrollment_factory(
+            id=4001, tenant_id=1, term_id=55, enrollment_status=EnrollmentStatus.COMPLETED
+        )
+        # Section guard passes; the closed term window is the gate under test.
+        monkeypatch.setattr(GradeLifecycleService, "_check_section_not_cancelled", lambda *a, **kw: None)
+        closed_term = type(
+            "TermStub",
+            (),
+            {"id": 55, "tenant_id": 1, "end_date": datetime(2000, 1, 1, tzinfo=UTC)},
+        )()
+
+        db_session.execute.side_effect = [
+            ExecuteResult(scalar_one_or_none=enrollment),  # _load_enrollment
+            ExecuteResult(scalar_one_or_none=closed_term),  # _check_term_submission_window_open
+        ]
+
+        request = GradeChangeSchema(
+            enrollment_id=4001,
+            grading_scale_id=9001,
+            new_grade_code="A",
+            new_grade_points=Decimal("4.00"),
+            expected_version=1,
+            reason="regrade",
+        )
+
+        with pytest.raises(DomainValidationError):
+            run_async(service.change_grade(tenant_id=1, request=request, actor_id="admin@example.com"))
+        db_session.commit.assert_not_called()
 
 
 class TestTranscriptAndGpa:
@@ -482,6 +534,53 @@ class TestTranscriptAndGpa:
         assert result.gpa == Decimal("4.00")
         assert len(result.items) == 1
         assert result.items[0].course_code == "CS101"
+
+    def test_calculate_student_gpa_excludes_dropped_and_withdrawn(
+        self, run_async, db_session, student_profile_factory
+    ) -> None:
+        # Adversarial-review regression (A-055.GRD-R1, HIGH-A): grade_code/grade_points
+        # are deliberately retained on drop/withdraw for audit, so the GPA aggregation
+        # query MUST exclude those non-credit-bearing statuses at the SQL level — a
+        # graded-then-dropped enrollment would otherwise corrupt the GPA.
+        service = GradeLifecycleService(db_session)
+        db_session.execute.side_effect = [
+            ExecuteResult(scalar_one_or_none=student_profile_factory(id=1001, tenant_id=1)),
+            ExecuteResult(rows=[(Decimal("4.00"), 3, "1")]),
+        ]
+
+        run_async(service.calculate_student_gpa(tenant_id=1, student_profile_id=1001))
+
+        gpa_stmt = db_session.execute.call_args_list[1].args[0]
+        compiled = str(gpa_stmt.compile()).upper()
+        assert "ENROLLMENT_STATUS" in compiled
+        assert "NOT IN" in compiled
+        from app.modules.grades import service as grades_service
+
+        assert grades_service._NON_CREDIT_BEARING_STATUSES == (
+            EnrollmentStatus.DROPPED,
+            EnrollmentStatus.WITHDRAWN,
+        )
+
+    def test_get_student_transcript_excludes_dropped_and_withdrawn(
+        self, run_async, db_session, student_profile_factory
+    ) -> None:
+        # Same regression at the transcript layer: the transcript row query must also
+        # exclude DROPPED/WITHDRAWN so they neither appear as items nor inflate
+        # total_credits.
+        service = GradeLifecycleService(db_session)
+        db_session.execute.side_effect = [
+            ExecuteResult(scalar_one_or_none=student_profile_factory(id=1001, tenant_id=1)),
+            ExecuteResult(rows=[]),
+            ExecuteResult(scalar_one_or_none=student_profile_factory(id=1001, tenant_id=1)),
+            ExecuteResult(rows=[]),
+        ]
+
+        run_async(service.get_student_transcript(tenant_id=1, student_profile_id=1001))
+
+        transcript_stmt = db_session.execute.call_args_list[1].args[0]
+        compiled = str(transcript_stmt.compile()).upper()
+        assert "ENROLLMENT_STATUS" in compiled
+        assert "NOT IN" in compiled
 
 
 class TestGradeEnrollmentConsistency:
