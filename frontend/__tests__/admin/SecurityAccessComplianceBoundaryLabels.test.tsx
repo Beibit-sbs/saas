@@ -30,7 +30,7 @@ describe('Security / Access / Compliance boundary labels', () => {
   it('renders permission denied panel when permission is missing', () => {
     render(<SecurityAccessCompliancePage routeKey="incidents" userPermissions={[]} />);
 
-    expect(screen.getByTestId('sac-permission-denied-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('sac-permission-denied-panel-wrap')).toBeInTheDocument();
   });
 
   it('renders no-overclaim footer text', () => {

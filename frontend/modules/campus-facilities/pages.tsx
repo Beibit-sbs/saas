@@ -157,7 +157,9 @@ export function CampusFacilitiesNoOverclaimFooter() {
 
 function CampusFacilitiesPermissionDeniedPanel({ permission }: { permission: string }) {
   return (
-    <PermissionDeniedState role="tenant_admin" requiredPermission={permission} reason="This campus/facilities view is fail-closed for the current permission set." />
+    <div data-testid="campus-facilities-permission-denied">
+      <PermissionDeniedState role="tenant_admin" requiredPermission={permission} reason="This campus/facilities view is fail-closed for the current permission set." />
+    </div>
   );
 }
 

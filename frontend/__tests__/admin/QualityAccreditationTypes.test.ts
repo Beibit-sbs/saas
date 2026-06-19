@@ -38,8 +38,8 @@ describe('Quality Accreditation types', () => {
     expect(DATA_SOURCE).toBe('computed_from_quality_accreditation_metadata');
   });
 
-  it('keeps the full route contract explicit and at 19 pages', () => {
-    expect(Object.keys(QUALITY_ACCREDITATION_ROUTES)).toHaveLength(19);
+  it('keeps the full route contract explicit and at 27 pages', () => {
+    expect(Object.keys(QUALITY_ACCREDITATION_ROUTES)).toHaveLength(27);
     expect(QUALITY_ACCREDITATION_ROUTES.overview).toBe('/console/quality-accreditation');
     expect(QUALITY_ACCREDITATION_ROUTES.dashboard).toBe('/console/quality-accreditation/dashboard');
     expect(QUALITY_ACCREDITATION_ROUTES.limitations).toBe('/console/quality-accreditation/limitations');

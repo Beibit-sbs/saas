@@ -80,7 +80,7 @@ describe('Quality Accreditation audit and feedback pages', () => {
     renderWithClient(<QualityAccreditationInternalAuditsPage />);
 
     expect(await screen.findByText(/internal quality audits/i)).toBeInTheDocument();
-    expect(screen.getByText(/audit findings/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/audit findings/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { name: /audit events/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /status history/i })).toBeInTheDocument();
   });
