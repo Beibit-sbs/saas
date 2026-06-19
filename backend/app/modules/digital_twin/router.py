@@ -47,3 +47,14 @@ def simulate_digital_twin_capacity(
 ) -> schemas.CapacityWhatIfResponse:
     # Read-only deterministic projection; persists nothing, executes nothing.
     return service.simulate_capacity(_tenant_id(tenant), payload)
+
+
+@router.post("/early-warning/capacity", response_model=schemas.CapacityEarlyWarningResponse)
+def digital_twin_capacity_early_warning(
+    payload: schemas.CapacityWhatIfRequest,
+    _: Annotated[str, Depends(get_actor)],
+    __: Annotated[None, Depends(permission_dependency(permissions.SIMULATE_RUN))],
+    tenant: Annotated[dict[str, object], Depends(get_current_tenant)],
+) -> schemas.CapacityEarlyWarningResponse:
+    # Read-only warning readout; recommends human action, executes nothing.
+    return service.capacity_early_warning(_tenant_id(tenant), payload)

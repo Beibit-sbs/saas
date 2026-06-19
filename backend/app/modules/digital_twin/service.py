@@ -143,3 +143,56 @@ def simulate_capacity(tenant_id: Any, request: schemas.CapacityWhatIfRequest) ->
         live_sources_used=live_sources_used,
         incomplete_data=incomplete,
     )
+
+
+def _severity(metric: float) -> str | None:
+    if metric > 1.2:
+        return "high"
+    if metric > 1.0:
+        return "medium"
+    return None
+
+
+def capacity_early_warning(tenant_id: Any, request: schemas.CapacityWhatIfRequest) -> schemas.CapacityEarlyWarningResponse:
+    """Read-only early-warning readout over the capacity projection.
+
+    Produces human-gated warnings with recommended (NOT executed) actions. Does
+    not fabricate signal data: signal registries are declared as candidate
+    sources to be live-wired later, not as live counts.
+    """
+    projection = simulate_capacity(tenant_id, request)
+    warnings: list[schemas.EarlyWarningItem] = []
+
+    if projection.classroom_utilization is not None:
+        sev = _severity(projection.classroom_utilization)
+        if sev:
+            warnings.append(
+                schemas.EarlyWarningItem(
+                    signal="classroom_capacity_risk",
+                    severity=sev,
+                    metric=projection.classroom_utilization,
+                    threshold=1.0,
+                    recommended_human_action="escalate_to_scheduling_and_facilities",
+                )
+            )
+
+    if projection.dormitory_pressure is not None:
+        sev = _severity(projection.dormitory_pressure)
+        if sev:
+            warnings.append(
+                schemas.EarlyWarningItem(
+                    signal="dormitory_capacity_risk",
+                    severity=sev,
+                    metric=projection.dormitory_pressure,
+                    threshold=1.0,
+                    recommended_human_action="escalate_to_housing_office",
+                )
+            )
+
+    return schemas.CapacityEarlyWarningResponse(
+        tenant_id=projection.tenant_id,
+        projection=projection,
+        warnings=warnings,
+        candidate_signal_sources=list(SOURCE_SIGNAL_REGISTRIES),
+        incomplete_data=projection.incomplete_data,
+    )

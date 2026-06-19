@@ -15,6 +15,9 @@ describe("DigitalTwinPage (A-056.2 shell)", () => {
     expect(
       screen.getByText("use_live_sources reads current_students from enrollments (best-effort, falls back honestly)"),
     ).toBeInTheDocument();
+    expect(screen.getByTestId("digital-twin-early-warning")).toBeInTheDocument();
+    expect(screen.getByText("POST /api/admin/digital-twin/early-warning/capacity")).toBeInTheDocument();
+    expect(screen.getByText("recommends action, executes nothing")).toBeInTheDocument();
 
     // observed dimension + reused source (no duplication)
     expect(screen.getByText("student_population")).toBeInTheDocument();

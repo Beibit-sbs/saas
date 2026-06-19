@@ -143,6 +143,22 @@ export default function DigitalTwinPage() {
           <li>use_live_sources reads current_students from enrollments (best-effort, falls back honestly)</li>
         </ul>
       </section>
+
+      <section className="rounded-xl border bg-card p-4" data-testid="digital-twin-early-warning">
+        <h2 className="text-base font-semibold">Early warning (read-only, human-gated)</h2>
+        <p className="mt-1 text-xs text-muted-foreground">POST /api/admin/digital-twin/early-warning/capacity</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Turns the capacity projection into severity-classified warnings (high/medium) with a
+          recommended human action — classroom capacity risk → escalate_to_scheduling_and_facilities,
+          dormitory capacity risk → escalate_to_housing_office. The twin proposes; a human decides.
+        </p>
+        <ul className="mt-3 grid gap-1 text-xs text-muted-foreground md:grid-cols-2">
+          <li>requires_human_approval=true</li>
+          <li>no_autonomous_action=true</li>
+          <li>signal registries declared as candidate sources (not fabricated counts)</li>
+          <li>recommends action, executes nothing</li>
+        </ul>
+      </section>
     </div>
   );
 }

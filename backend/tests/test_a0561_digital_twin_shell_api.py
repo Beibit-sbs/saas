@@ -31,7 +31,7 @@ ADMIN_HEADERS = _admin_headers()
 
 def test_route_surface_count() -> None:
     routes = [r for r in app.routes if getattr(r, "path", "").startswith(BASE)]
-    assert len(routes) == 3
+    assert len(routes) == 4
 
 
 @pytest.mark.parametrize("path", ["/state", "/safety-boundaries"])
@@ -164,3 +164,53 @@ def test_capacity_simulation_falls_back_when_live_read_fails(mock_count) -> None
     assert body["live_sources_used"] == []
     students = next(e for e in body["evidence"] if e["field"] == "current_students")
     assert students["mode"] == "caller_provided"
+
+
+def test_early_warning_requires_auth_and_denies_viewer() -> None:
+    assert client.post(f"{BASE}/early-warning/capacity", json={"current_students": 1, "intake_growth_percent": 0}).status_code in (401, 403)
+    resp = client.post(
+        f"{BASE}/early-warning/capacity",
+        headers=VIEWER_HEADERS,
+        json={"current_students": 1000, "intake_growth_percent": 20},
+    )
+    assert resp.status_code == 403
+
+
+def test_early_warning_flags_capacity_risk_with_human_action() -> None:
+    resp = client.post(
+        f"{BASE}/early-warning/capacity",
+        headers=ADMIN_HEADERS,
+        json={
+            "current_students": 1000,
+            "intake_growth_percent": 20,
+            "classroom_capacity": 600,
+            "dormitory_capacity": 300,
+            "housing_demand_ratio": 0.5,
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    signals = {w["signal"]: w for w in body["warnings"]}
+    # classroom util 1200/600 = 2.0 -> high; dormitory 600/300 = 2.0 -> high
+    assert signals["classroom_capacity_risk"]["severity"] == "high"
+    assert signals["classroom_capacity_risk"]["recommended_human_action"] == "escalate_to_scheduling_and_facilities"
+    assert signals["dormitory_capacity_risk"]["recommended_human_action"] == "escalate_to_housing_office"
+    # human-gated, no autonomy
+    assert all(w["requires_human_approval"] is True for w in body["warnings"])
+    assert all(w["no_autonomous_action"] is True for w in body["warnings"])
+    # honest: signal registries declared as candidate sources, not fabricated counts
+    assert "student_risk_signal_registry" in body["candidate_signal_sources"]
+    assert body["human_review_required"] is True
+    assert body["projection"]["safety_flags"]["fake_metrics"] is False
+
+
+def test_early_warning_silent_when_within_capacity() -> None:
+    resp = client.post(
+        f"{BASE}/early-warning/capacity",
+        headers=ADMIN_HEADERS,
+        json={"current_students": 1000, "intake_growth_percent": 0, "classroom_capacity": 2000},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    # util 1000/2000 = 0.5 -> no warning
+    assert all(w["signal"] != "classroom_capacity_risk" for w in body["warnings"])

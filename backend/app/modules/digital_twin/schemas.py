@@ -85,3 +85,26 @@ class CapacityWhatIfResponse(BaseModel):
     incomplete_data: bool = False
     human_review_required: bool = True
     safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)
+
+
+class EarlyWarningItem(BaseModel):
+    signal: str
+    severity: str  # "high" | "medium"
+    metric: float
+    threshold: float
+    recommended_human_action: str
+    requires_human_approval: bool = True
+    no_autonomous_action: bool = True
+
+
+class CapacityEarlyWarningResponse(BaseModel):
+    tenant_id: int
+    module: str = "digital_twin"
+    runtime_mode: str = "METADATA_OBSERVATION_SIMULATION_HUMAN_REVIEW_ONLY"
+    projection: CapacityWhatIfResponse
+    warnings: list[EarlyWarningItem] = Field(default_factory=list)
+    # Signal registries that would enrich warnings once live-instance wiring exists.
+    candidate_signal_sources: list[str] = Field(default_factory=list)
+    incomplete_data: bool = False
+    human_review_required: bool = True
+    safety_flags: DigitalTwinSafetyFlags = Field(default_factory=DigitalTwinSafetyFlags)
