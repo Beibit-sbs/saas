@@ -437,6 +437,8 @@ function DdcPageContent({ model }: { model: DdcPageModel }) {
 
         {model.route.dashboardLike || model.primaryWidgets.length > 0 ? <DdcDashboardGrid widgets={model.primaryWidgets} /> : null}
 
+        {model.workflows.length > 0 ? <DdcAuditTimeline items={model.workflows} /> : null}
+
         <section className="space-y-4" data-testid="ddc-operability-registry">
           <div className="space-y-1">
             <h2 className="text-lg font-semibold">Document lifecycle registry</h2>
