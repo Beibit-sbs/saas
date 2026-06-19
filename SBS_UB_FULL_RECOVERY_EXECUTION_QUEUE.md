@@ -78,3 +78,23 @@ Defects found: NONE (G1.1 is read-only integrity; zero code changes → docs-onl
 BLOCKED_EXTERNAL / deferred to G1.2+ (NOT run this slice): full `make up` image build of all services; fresh-volume migration `upgrade`; frontend `npm run build` + `npm run lint` (docker-only, host-blocked by `scripts/docker_only_guard.sh`); Playwright E2E (`npm run test:e2e`); full/controlled backend regression; security deep checks (IDOR/priv-esc/secret-leak).
 
 next_exact_action: **A-056.G1.2** — served backend bootstrap + RBAC-denied AND authorized-success on critical write endpoints + Digital Twin capacity/resource flow smoke.
+
+## A-056.G1.2 — Critical write endpoints + transitions + Digital Twin flow smoke (slice 2 evidence) · 2026-06-20
+
+Mode: multi-agent workflow `woriamlme` (5 domains, each really ran pytest via `.venv/bin/python -m pytest <files> -p no:cacheprovider -o addopts="" -q`), then a gate synthesis. In-process FastAPI TestClient = served ASGI stack incl. auth middleware (no container needed). Aggregate **226 passed / 0 failed** after remediation.
+
+| Domain | Files | Result | authorized-success | denial | transitions / flow | 500? |
+|---|---|---|---|---|---|---|
+| Digital Twin | test_a0561_digital_twin_shell_api.py | **110/0 PASS** | simulate/capacity + simulate/resource (deterministic, evidence-lineage) | viewer→403 on all write/read routes | capacity+resource+early-warning+scenarios+decision; non-finite→**400 not 500**; tenant fail-closed | none |
+| Finance acknowledge | test_a0402_*_api.py + _services.py | **38/0 PASS** | admin acknowledge→201, anti-fake flags, FinanceBridgeRecord persisted | viewer→403 | tenant fail-closed (generic) | **none (explicit)** |
+| Grades | test_grade_lifecycle_service.py + test_router_grades_phase3.py + test_service_hardening_lxxxiv.py | **20/0 PASS** (was 18/2) | submit_grade + change_grade success | window-close + section guards reject | valid/out-of-order/terminal/tenant covered | none |
+| Enrollments | tests/modules/enrollments/* + test_enrollments.py | **37/0 PASS_WITH_NOTES** | service-level enroll/change/drop | viewer/tenant | valid/terminal/tenant; **out-of-order absent** | none |
+| Hardship (student-services) | test_a0422_*_services.py | **23/0 PASS_WITH_NOTES** | in-order transitions + 3 rejections | **RBAC denial absent** | valid/out-of-order/terminal; **tenant absent** | none |
+
+Defect FOUND and FIXED this slice: 2 red grades tests = stale fixtures broken by census-lock fix `36ae8a3e` (change_grade gained two guards the tests didn't stub) → **fixed in commit `6f13c27e`** (separate code commit). The gate did its job: a regression that shipped green (full grades set never re-run after 36ae8a3e) was caught.
+
+Effective gate verdict: **PASS_WITH_NOTES** (all 5 domains green post-fix; no 500 anywhere; remaining items are evidence gaps, not failures). No production-readiness claim.
+
+G1.3 backlog (next): enrollments HTTP-route authorized-success for change-status + drop (+ create_academic_term); out-of-order (non-terminal) enrollment transition rejection test; hardship RBAC-denial + tenant-fail-closed tests; (non-blocking) real-DB tenant cross-read isolation for DT decisions + acknowledge invalid-tenant test.
+
+next_exact_action: **A-056.G1.3** — remediate the backlog above (HTTP-route success/denial + transition/tenant gaps).
