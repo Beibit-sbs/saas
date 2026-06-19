@@ -221,6 +221,10 @@ async def test_change_grade_records_metric_after_persist(
     )
 
     monkeypatch.setattr(service, "_load_enrollment", lambda tid, eid: enrollment)
+    # census-lock guards (added to change_grade in 36ae8a3e) have their own dedicated
+    # tests; this unit test targets the post-persist metric, so stub them out.
+    monkeypatch.setattr(service, "_check_section_not_cancelled", lambda *a, **kw: None)
+    monkeypatch.setattr(service, "_check_term_submission_window_open", lambda *a, **kw: None)
     monkeypatch.setattr(service, "_load_grade_submission", lambda tid, eid: submission)
     monkeypatch.setattr(service, "_load_grading_scale", lambda tid, sid: SimpleNamespace(id=sid, is_active=True))
     monkeypatch.setattr(
@@ -286,6 +290,10 @@ async def test_change_grade_invalid_version_raises_optimistic_lock_conflict(
     )
 
     monkeypatch.setattr(service, "_load_enrollment", lambda tid, eid: enrollment)
+    # census-lock guards run before the version check in change_grade; this test targets
+    # the optimistic-lock conflict, so stub the guards (they have their own tests).
+    monkeypatch.setattr(service, "_check_section_not_cancelled", lambda *a, **kw: None)
+    monkeypatch.setattr(service, "_check_term_submission_window_open", lambda *a, **kw: None)
     monkeypatch.setattr(service, "_load_grade_submission", lambda tid, eid: submission)
     monkeypatch.setattr("app.modules.grades.service.validate_grade_modification", AsyncMock(return_value=None))
 
